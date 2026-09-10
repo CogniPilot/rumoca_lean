@@ -1,5 +1,6 @@
 import RumocaC.TensorIVPCode
 import RumocaC.TensorNamedProofs
+import RumocaC.TensorTypedContract
 
 /-! Every emitted IVP member has a complete-call contract for its indexed
 Solve program. Naming conditions prevent entry/helper collisions. These
@@ -9,22 +10,28 @@ namespace Rumoca.CTensor.Lowering
 open CTree Solve.Tensor
 
 def ProgramEntry.Contract (entry : ProgramEntry p) (source : String) : Prop :=
-  CallArtifactContract source entry.function p (Named.Plan.erase p entry.plan) (Named.Layout.erase entry.layout)
+  CallArtifactContract source entry.function p (Named.Plan.erase p entry.plan) (Named.Layout.erase entry.layout) ∧
+    TypedCallCorrect entry.function p (Named.Plan.erase p entry.plan) (Named.Layout.erase entry.layout)
 
 theorem ProgramEntry.correct (entry : ProgramEntry p) (valid : entry.function.valid = true) :
-    entry.Contract entry.function.tree.render :=
-  Named.artifact_correct entry.name entry.parameters p entry.plan entry.layout valid
+    entry.Contract entry.function.tree.render := by
+  have checked := Named.artifact_correct entry.name entry.parameters p entry.plan entry.layout valid
+  exact ⟨checked, typed_call_correct checked.2⟩
 
 def DiagonalEntry.Valid (entry : DiagonalEntry p) : Prop :=
   entry.function.valid = true ∧ DiagonalScope entry.function
 
 def DiagonalEntry.Contract (entry : DiagonalEntry p) (source : String) : Prop :=
   DiagonalArtifactContract source entry.function p (Named.Plan.erase p.coefficients entry.plan)
-    (Named.Layout.erase entry.layout) entry.output.erase
+    (Named.Layout.erase entry.layout) entry.output.erase ∧
+    TypedDiagonalCallCorrect entry.function p (Named.Plan.erase p.coefficients entry.plan)
+      (Named.Layout.erase entry.layout) entry.output.erase
 
 theorem DiagonalEntry.correct (entry : DiagonalEntry p) (valid : entry.Valid) :
-    entry.Contract entry.function.tree.render :=
-  Named.diagonal_artifact_correct entry.name entry.parameters p entry.plan entry.layout entry.output valid.1 valid.2
+    entry.Contract entry.function.tree.render := by
+  have checked :=
+    Named.diagonal_artifact_correct entry.name entry.parameters p entry.plan entry.layout entry.output valid.1 valid.2
+  exact ⟨checked, typed_diagonal_call_correct checked.2.2.2⟩
 
 def OptionalDiagonalEntry.Valid : (p : Option (DiagonalProgram Γ shape)) → OptionalDiagonalEntry p → Prop
   | none, _ => True

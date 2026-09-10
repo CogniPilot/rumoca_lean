@@ -553,12 +553,41 @@ same model. There is no additional source example or rejection matrix.
 The package build passes in `build/c-ivp-package.log`. All 22 added roots and
 the actual-file/native gate pass in `build/c-ivp-gate.log`; the exact three-file
 theorem is audited in `build/tensor-c/ivp-contract.log`. The required full gate
-is tracked in `build/c-ivp-full-gate.log`.
+passed in `build/c-ivp-full-gate.log` and in
+[CI for e1a734b](https://github.com/CogniPilot/rumoca_lean/actions/runs/34491283172).
 
-Next, prove that the typed tensor call semantics integrate with FMI's
-status-returning calls; a helper name must never stand for an assumed result.
-Bind instance storage and metadata to the same prepared IVP, establish its
-finite overflow/error and lifecycle/time policy, and compose the actual
-source-to-archive certificate. General sparsity and further grammar remain
-deferred. The new product does not itself establish an allocator, ABI, solver,
-FMI lifecycle or complete FMU/eFMU contract.
+## Typed calls and caller composition
+
+`CCalls.Typed` combines typed tensor statement execution with ordinary returned
+values and destinations. A callee receives converted parameters and their types;
+its actual tree or previously specified numerical statements execute. Returning
+restores the saved caller scope, including declared local types. Header bindings,
+pure call arguments and the definition table remain explicit. Allocation,
+indirect/effectful nested calls and native ABI/linking are outside the fragment.
+
+`loop_step` proves a stepwise embedding of every successful tensor call-machine
+transition. `append_reaches` composes its terminating execution with an arbitrary
+caller, with a zero-step transition at the old closed terminal. `CallResult`
+combines this contextual completion with the exact standalone outcome.
+`invoke_return_reaches` then executes an ordinary call and the caller's actual
+return expression/conversion, including status-returning contexts. This does
+not assume an operation's result from its helper name.
+
+The generic program and diagonal contracts now preserve their result-buffer
+and memory-frame guarantees in this machine. The existing IVP file proposition
+requires these contracts in addition to every previous conjunct; its checker
+continues to bind the same three actual C files. No grammar case, emitted
+computation or native regression model is added.
+
+All 22 new roots, the exact-file certificate, existing mutation controls and
+native boundary check pass in `build/c-typed-gate.log`, using the unchanged
+axiom whitelist. The file root is audited in `build/tensor-c/ivp-contract.log`;
+the package build passes in `build/c-typed-package.log`. The required complete
+gate is tracked in `build/c-typed-full-gate.log`.
+
+Next, lift the existing FMI body proofs under the typed machine's scope rules
+and compose the actual tensor wrapper bodies. Bind instance storage and metadata
+to the same prepared IVP, establish its finite overflow/error and lifecycle/time
+policy, and compose the source-to-archive certificate. General sparsity and
+further grammar remain deferred. The typed call theorem alone does not establish
+an allocator, ABI, solver, FMI lifecycle or complete FMU/eFMU contract.

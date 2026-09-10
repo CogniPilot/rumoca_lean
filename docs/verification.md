@@ -210,15 +210,37 @@ produces the prepared IVP's exact zero state; RHS execution yields the independe
 finite Solve result. Each call preserves every cell outside its output range.
 All 22 added roots and the actual-file/native gate pass in `build/c-ivp-gate.log`.
 `build/tensor-c/ivp-contract.log` audits the exact three-file theorem. The
-required full gate is tracked in `build/c-ivp-full-gate.log`.
+required full gate passed in `build/c-ivp-full-gate.log` and in
+[CI for e1a734b](https://github.com/CogniPilot/rumoca_lean/actions/runs/34491283172).
 
-These remain instantaneous C contracts. Tensor functions currently execute in
-`CLoops.Calls`, whose ordinary calls return void; FMI bodies use the separate
-status-returning call machine. Their proved integration is still required,
-together with instance storage/metadata, overflow/error policy, lifecycle/time
-behavior and actual source-to-FMU/eFMU composition. Header/definition-table
-bindings and valid object storage remain explicit; there is no native ABI or
-machine-code theorem. Production source admission and the README are unchanged.
+`CCalls.Typed` now executes the same typed tensor loop bodies with ordinary
+return values, saved local types and call destinations. `loop_step` and
+`loop_reaches` embed successful `CLoops.Calls` executions into this machine.
+`append_reaches` carries a closed execution into an arbitrary caller context;
+only the old terminal step becomes a zero-step transition. `CallResult`
+requires both contextual completion and an exact standalone behavior, excluding
+stuck or divergent outcomes under the existing finite-execution premises.
+`invoke_return_reaches` composes the actual call statement with its caller's
+return expression and conversion. It does not assign a meaning to an FMI name.
+
+`ProgramEntry.Contract` and `DiagonalEntry.Contract` retain their previous
+printer/call/storage contracts and additionally require `TypedCallCorrect` and
+`TypedDiagonalCallCorrect`. The fixed three-file IVP checker therefore certifies
+the emitted functions under the typed, value-returning machine too. These
+theorems preserve the exact finite Solve result and whole-heap frame for all
+shapes, with the same explicit storage and header/definition-table premises.
+All 22 added roots, the stronger actual-file certificate, mutation rejection and
+the existing native boundary check pass in `build/c-typed-gate.log`. The exact
+file root is audited in `build/tensor-c/ivp-contract.log`; the package build
+passes in `build/c-typed-package.log`. No new source model or native test matrix
+is introduced. The required full gate is tracked in `build/c-typed-full-gate.log`.
+
+These remain instantaneous C contracts. The existing FMI body proofs must still
+be connected to the typed machine's statement/scope rules and composed with
+the actual tensor wrappers. Instance storage/metadata, overflow/error policy,
+lifecycle/time behavior and source-to-FMU/eFMU composition remain open. There
+is no allocator, native ABI or machine-code theorem. Production source admission
+and the README are unchanged.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real
