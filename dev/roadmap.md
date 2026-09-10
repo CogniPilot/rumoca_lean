@@ -60,10 +60,21 @@ The call/fill checkpoint passed the full local gate and
 The complete prepared-program execution proof now composes disjoint
 intermediate buffers and the exact result reference. Its structural C printer,
 22 new audit roots and the actual-file/native gate pass in
-`build/c-tensor-program-gate.log`; the full repository gate is running in
-`build/c-tensor-program-full-gate.log`. Next, construct and bind the
-concrete storage/metadata to the FMI and eFMI products, including diagonal
-output and overflow/error policy. No new grammar case is needed for this work.
+`build/c-tensor-program-gate.log`; the full repository gate passed in
+`build/c-tensor-program-full-gate.log` and in
+[CI for 08b8a7d](https://github.com/CogniPilot/rumoca_lean/actions/runs/34476481293).
+The subsequent outer-call theorem proves parameter binding, complete execution
+and return. The fixed file contract now also derives scratch/input invariants
+from concrete symbolic initial storage for the square coefficient program.
+Allocation, native object layout and ABI remain outside these proofs.
+All 34 added roots and the stronger actual-file/native gate pass in
+`build/c-tensor-entry-gate.log`; the required full gate is tracked in
+`build/c-tensor-entry-full-gate.log`.
+Next, bind storage/metadata to the FMI and eFMI products, including diagonal
+output and overflow/error policy. Preserve the existing diagonal representation;
+general sparsity analysis, compressed storage and coloring follow this FMU
+round, with structural-zero and execution-preservation proofs. No new grammar
+case is needed for the current work.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.

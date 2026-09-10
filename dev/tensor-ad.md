@@ -78,6 +78,27 @@ policies are later increments, each with its own proof. The matrix-free
 forward/reverse distinction follows the
 [CasADi calculus interface](https://web.casadi.org/docs/#calculus-algorithmic-differentiation).
 
+### Sparsity sequencing
+
+Preserve structure now; implement general sparsity after the existing tensor
+FMU round. `Solve.Tensor.DiagonalProgram` already keeps the coefficient program
+and diagonal operation separate. Retain that representation through lowering;
+materialize a dense matrix only for an explicit output that requires it. Keep
+JVP/VJP execution independent of dense Jacobian storage. This does not require
+new grammar or a general sparse container in the current increment.
+
+The later analysis belongs with Solve and AD, with backend consumers of its
+checked result. Its first obligation is structural-zero soundness: every
+omitted entry is zero throughout the admitted domain, not merely at one sampled
+input. A conservative pattern may retain extra entries but must not omit a
+possible dependency. Sparse storage must refine the same tensor denotation;
+compressed derivative evaluation must preserve the derivative action and the
+chosen finite-arithmetic/error contract. In particular, removing an unused
+operation must not silently remove an overflow required by the existing ordered
+execution semantics. CSR/CSC storage, coloring and sparse solvers remain deferred.
+Rust's `rumoca-eval-solve/src/sparsity.rs` is a design reference for deriving
+patterns from the owned Solve program and conservatively retaining dependencies.
+
 Current implementation: `Tensor.Operators` provides dense-array addition,
 pointwise multiplication and JVP/VJP rules with an explicit scalar arithmetic
 interface. `Tensor.Differentiation` proves those rules for arbitrary shapes
@@ -392,10 +413,42 @@ All 22 new roots pass the unchanged axiom audit in
 `build/tensor-c/program.c`, rejects an altered operator and checks native
 coefficient execution with externally supplied helper prototypes. The exact
 file theorem is audited in `build/tensor-c/program-contract.log`. The full
-repository gate is running in `build/c-tensor-program-full-gate.log`.
+repository gate passed in `build/c-tensor-program-full-gate.log` and in
+[CI for 08b8a7d](https://github.com/CogniPilot/rumoca_lean/actions/runs/34476481293).
 
 Review against Rust's `typed_program/program.rs` confirms the shared design:
 typed tensor registers, explicit destinations and a result register. Rust also
 retains region/operation provenance and a distinct diagonal operation. Their
 storage/metadata and source-span connections remain obligations here; the
 small C emitter does not perform AD, DAE solving or source-name resolution.
+
+## Complete call entry and supplied storage
+
+`TensorProgramParameters` proves conversion and scope binding for arbitrary
+valid tensor signatures. `program_call_reaches` executes entry into the actual
+function, all nested helper calls and the ordinary return. `program_call_refines`
+characterizes every complete call behavior by the finite Solve result and the
+memory frame. `CallArtifactContract` retains the prior grammar/body contract
+and adds this outer-call theorem for the same emitted text.
+
+`TensorRegions` supplies symbolic typed object regions and proves initialized
+reads, writable scratch ranges and separation of distinct fields for arbitrary
+shapes. `TensorCChecks.Entry` uses them for the existing square coefficient
+program. It derives argument validity, input representation and every scratch
+invariant from its concrete initial heap and the count bound. Its complete-call
+theorem no longer asks the consumer to supply low-level storage invariants for
+that profile. The fixed actual-file checker now includes this storage contract
+and the general outer-call contract, keeping every earlier conjunct.
+
+These proofs specify initial objects; they do not execute allocation or prove
+native object lifetime, struct byte layout or ABI linkage. Finite execution of
+all ordered intermediates and the external helper/header definitions remain
+explicit premises. Dense diagonal output, FMI storage/metadata and lifecycle,
+overflow/error policy and complete source-to-archive composition remain open.
+
+All 34 new roots pass the unchanged axiom audit in
+`build/c-tensor-entry-gate.log`. The same gate passes the strengthened actual-file
+certificate, altered-operator rejection and the existing native boundary check;
+no new native test case was needed. The exact file root is audited in
+`build/tensor-c/program-contract.log`. The required full gate for this increment
+is tracked in `build/c-tensor-entry-full-gate.log`.

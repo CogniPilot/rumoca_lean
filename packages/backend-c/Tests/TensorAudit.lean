@@ -1,7 +1,7 @@
 import ProofAudit.Audit
 import RumocaC.TensorCallContract
 import RumocaC.TensorFillContract
-import TensorCChecks.Fixture
+import TensorCChecks.Entry
 
 #audit axioms Rumoca.CArithmetic.floatMul_finite
 #audit axioms Rumoca.CLoops.increment_exact
@@ -57,3 +57,37 @@ import TensorCChecks.Fixture
 #audit axioms Rumoca.CTensor.ProgramFixture.six_calls
 #audit axioms Rumoca.CTensor.ProgramFixture.valid
 #audit axioms Rumoca.CTensor.ProgramFixture.artifact_correct
+#audit axioms Rumoca.CTensor.Lowering.Arguments.locals_absent
+#audit axioms Rumoca.CTensor.Lowering.Arguments.locals_present
+#audit axioms Rumoca.CTensor.Lowering.Arguments.types_absent
+#audit axioms Rumoca.CTensor.Lowering.Arguments.header_type
+#audit axioms Rumoca.CTensor.Lowering.Arguments.cast_admissible
+#audit axioms Rumoca.CTensor.Lowering.Arguments.bind_parameters
+#audit axioms Rumoca.CTensor.Lowering.Arguments.bind_types
+#audit axioms Rumoca.CTensor.Lowering.valid_nodup
+#audit axioms Rumoca.CTensor.Lowering.helper_absent
+#audit axioms Rumoca.CTensor.Lowering.Library.setup
+#audit axioms Rumoca.CTensor.Lowering.program_call_reaches
+#audit axioms Rumoca.CTensor.Lowering.program_call_refines
+#audit axioms Rumoca.CTensor.Lowering.call_artifact_correct
+#audit axioms Rumoca.CMemory.TensorRegion.contains_index
+#audit axioms Rumoca.CMemory.TensorRegion.contains_iff
+#audit axioms Rumoca.CMemory.TensorRegion.place_at
+#audit axioms Rumoca.CMemory.TensorRegion.place_frame
+#audit axioms Rumoca.CMemory.TensorRegion.place_writable
+#audit axioms Rumoca.CMemory.TensorRegion.place_reads
+#audit axioms Rumoca.CMemory.TensorRegion.member_separate
+#audit axioms Rumoca.CMemory.TensorRegion.place_other_member
+#audit axioms Rumoca.CMemory.TensorRegion.scratch_other
+#audit axioms Rumoca.CMemory.TensorRegion.scratch_at
+#audit axioms Rumoca.CMemory.TensorRegion.scratch_writable
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.reads_input
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.reads_state
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.writable
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.arguments_valid
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.named_bound
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.layout_bound
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.represented
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.ready
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.call_correct
+#audit axioms Rumoca.CTensor.ProgramFixture.Entry.artifact_correct

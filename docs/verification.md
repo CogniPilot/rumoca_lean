@@ -120,7 +120,30 @@ added audit roots and the actual-file/native gate pass in
 `build/c-tensor-program-gate.log`. A changed add-to-multiply call is rejected.
 The native check additionally requires external helper declarations; header
 preprocessing and native linkage are still boundary checks. The full repository
-gate for this increment is running in `build/c-tensor-program-full-gate.log`.
+gate for this increment passed in `build/c-tensor-program-full-gate.log` and in
+[CI for 08b8a7d](https://github.com/CogniPilot/rumoca_lean/actions/runs/34476481293).
+
+The next increment closes the authored outer-function entry and return:
+`Lowering.program_call_refines` proves every complete call behavior against
+`Finite.Executes`, with exact result storage and the whole memory frame.
+Parameter conversions and fresh scope binding are derived from the independent
+signature validity rules. `Lowering.CallArtifactContract` adds this guarantee
+to the existing text/body proposition. The fixed program-file checker also
+requires `ProgramFixture.Entry.StorageContract`: for the actual square
+coefficient program, named input and scratch objects establish all required
+readability, writability and separation invariants. It quantifies over arbitrary
+shapes and finite input values, subject to the count bound and ordered finite
+execution. The symbolic initial heap is supplied storage, not a verified
+allocator or native ABI layout. External helper/header definitions remain
+explicit. These call/storage proofs do not establish tensor FMI admission,
+overflow/error handling or complete source-to-FMU composition.
+
+All 34 added call/storage roots pass the unchanged axiom audit in
+`build/c-tensor-entry-gate.log`. That gate also passes the stronger actual-file
+certificate, operator-mutation rejection and the existing native boundary check.
+`build/tensor-c/program-contract.log` audits the exact file theorem with only
+`propext`, `Quot.sound` and `Classical.choice`. The required full gate for this
+increment is tracked in `build/c-tensor-entry-full-gate.log`.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real

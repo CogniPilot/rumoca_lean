@@ -1,4 +1,4 @@
-import TensorCChecks.Fixture
+import TensorCChecks.Entry
 import Lean
 
 /-! Fixed file-to-proposition adapter for the single development program fixture.
@@ -15,8 +15,8 @@ elab "verify_tensor_program " path:str : command => do
   let theoremId := mkIdent theoremName
   elabCommand (← `(command|
     set_option maxRecDepth 10000 in
-    theorem $theoremId:ident : ProgramFixture.ArtifactContract $literal := by
-      apply ProgramFixture.artifact_correct
+    theorem $theoremId:ident : Entry.ArtifactContract $literal := by
+      apply Entry.artifact_correct
       tensor_expand_program_fixture
       decide +kernel))
   let dependencies ← collectAxioms theoremName
