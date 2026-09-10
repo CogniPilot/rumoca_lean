@@ -45,7 +45,7 @@ def Document.diagnostic (d : Document) : Option (Parser.Source.Diagnostic d.sour
     | .error e => some e
     | .ok _ => none
 
-def Document.diagnostics (d : Document) : Array Lsp.Diagnostic :=
+def Document.diagnostics (d : Document) (includeRelated : Bool := false) : Array Lsp.Diagnostic :=
   match d.diagnostic with
   | none => #[]
   | some e => #[{
@@ -53,7 +53,18 @@ def Document.diagnostics (d : Document) : Array Lsp.Diagnostic :=
       severity? := some .error
       source? := some "rumoca"
       message := e.message
-      code? := some (.string e.phase) }]
+      code? := some (.string e.phase)
+      relatedInformation? := if !includeRelated || e.related.isEmpty then none else
+        some (e.related.toArray.map fun note => {
+          location := { uri := d.uri, range := d.range note.span }
+          message := note.message }) }]
+
+/-- Clients that do not advertise related-information support receive only
+the primary diagnostic. The source diagnostic itself retains every note. -/
+theorem Document.diagnostics_without_related (d : Document) :
+    ∀ e ∈ d.diagnostics false, e.relatedInformation? = none := by
+  unfold diagnostics
+  split <;> simp
 
 /-- No diagnostic means both the actual located parser and resolver succeeded. -/
 theorem Document.quiet (d : Document) (h : d.diagnostic = none) :

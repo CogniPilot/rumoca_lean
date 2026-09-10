@@ -14,6 +14,27 @@ The [FMI/eFMI standards review](standards-review.md) records SR01–SR07 from
 the actual unit artifacts. Its repair order takes priority over the next
 tensor/FMI implementation increment; full standards compliance is not claimed.
 
+**Hard stage-completion gate, reaffirmed by the user:** before adding any more
+scope, the entire admitted subset must justify calling the resulting compiler
+formally verified. A proved operator, lowering, numerical core, or successful
+body is progress inside an unfinished stage. It does not complete that stage.
+The present unit-only FMI/eFMI stage is unfinished. In particular, a green
+`lake test` run does not close obligations outside its checked propositions.
+
+Completion requires preservation theorems for every lowering, composed into
+the actual compiler's end-to-end contract for **all admitted sources**, with
+the emitted production C and both target artifacts bound to those semantics.
+The contract must account for every supported public operation and reachable
+behavior, including initialization, errors, memory effects, lifecycle and
+solver/numerical conditions. Unsupported features must remain rejected or
+follow their specified interface behavior. Parser and printer soundness,
+artifact binding, FMI/eFMI conformance obligations and the stated trusted
+boundary must all be reviewed at the scope of the whole claim. No new axioms,
+weaker contracts, hidden successful-execution premises or narrower tests may
+substitute for missing coverage. The proof target remains the authored C
+semantics; subsequent native compilation is an explicit external boundary,
+not a reason to add a machine backend now.
+
 The tiny [eFMI Algorithm Code checkpoint](efmi.md#algorithm-code-checkpoint-evidence)
 passes the full gate: E01–E03 cover the checked DAE product, tensor Solve
 refinement and actual `.alg` file. E04 now also checks the complete Production
@@ -173,10 +194,24 @@ of Modelica 3.7.
   calls connect to the existing Solve observations and updates, including exact
   bit patterns and memory frames. Twelve new roots and the full package audit
   pass in `build/fmi-array-call-audit.log`. The FMI artifact/mutation gate and
-  all thirteen native groups pass in `build/fmi-array-call-full-gate.log`;
-  that full run's GALEC/eFMU completion remains pending.
+  all thirteen native groups pass in `build/fmi-array-call-full-gate.log`.
+  That required full local run also passed the complete GALEC/eFMU archive,
+  extracted-manifest and mutation checks at `30ef448`;
+  [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34521375057)
+  also passed.
   Other public signatures, rejected calls, strings/callbacks, nonempty setter
   loops and the actual adapter contract remain open.
+- [ ] **C01/F03, string-printer prerequisite:** `CTree.quote` currently leaves
+  question marks unescaped. A C11 translation of its output for `??/n` changes
+  the bytes through trigraph replacement (strict GCC also rejects it under
+  `-Werror=trigraphs`). Reproduced at `30ef448` in
+  `build/c-string-trigraph-before.log`. Existing unit-runtime literal inputs
+  do not contain this sequence; this is a generic printer defect, not an
+  observed failure of the current FMU. Close it by proving literal-byte
+  preservation and preprocessing safety for the actual emitter, then connect
+  immutable string storage and ordinary parameter binding to the error-call
+  semantics. The checked candidate in `build/CStringDraft.lean` is only a
+  prototype, not an integrated emitter or artifact certificate.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
   mismatch and complete independent semantic/coding-guideline release review.
   A diagnostic wrapped copy passes deeper checker checks; the actual standalone
@@ -196,6 +231,19 @@ IR/printer provenance obligations are tracked in [provenance.md](provenance.md).
 pure analysis function. The native CLI exposes `rumoca parse --jobs N FILES...`.
 The LSP consumes structured source diagnostics; the CLI renders source context
 from the same range data. None of these additions admits a new grammar case.
+
+Name-resolution diagnostics now include a related declaration range. The
+kernel-checked `LocatedParsed.resolve_error_locations` theorem identifies the
+actual erroneous AST occurrence and the corresponding declaration, including
+their exact source text; `resolve_complete` preserves successful resolution.
+CLI JSON retains both byte ranges, terminal output renders both contexts, and
+the LSP publishes the related location when the client advertises support.
+The package audits and existing frontend integration checks pass in
+`build/diagnostic-locations-audit.log` and
+`build/diagnostic-locations-frontend.log`. Migration of the compiler entry point
+away from failure-only reparsing, wrapper completeness, and IR/output origin
+preservation remain open in PV05–PV09. This is a diagnostic improvement, not
+closure of the compiler or artifact proof gate.
 
 The user's airborne software assurance target is tracked in
 [airborne-assurance.md](airborne-assurance.md). It requires requirements and

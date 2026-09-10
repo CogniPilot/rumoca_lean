@@ -21,11 +21,14 @@ starts it for `.mo` files in this repository once the executable has been built.
 Restart Neovim in the updated `nix develop` environment to load that configuration.
 
 Supported: full-document open/change/close synchronization, diagnostics with
-UTF-16 ranges, hover and go-to-definition for model/state identifiers,
+UTF-16 ranges and related declaration locations, hover and go-to-definition for model/state identifiers,
 initialization and shutdown. Document versions are signed integers; stale
 changes cannot replace newer snapshots. There is no grammar expansion or
 backend invocation on edits. The server is serial; parallel batch parsing is
 available through `rumoca parse --jobs N FILES...` and `ModelicaParser.Parallel`.
+Related locations are sent only when the client advertises
+`textDocument.publishDiagnostics.relatedInformation`, as specified by
+[LSP 3.17](https://raw.githubusercontent.com/microsoft/language-server-protocol/gh-pages/_specifications/lsp/3.17/language/publishDiagnostics.md).
 
 The pure snapshot update and diagnostic properties have Lean proofs.
 Protocol I/O and Lean's file-map/UTF-16 implementation are tested infrastructure.

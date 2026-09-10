@@ -74,7 +74,8 @@ with subprocess.Popen([str(SERVER)], stdin=subprocess.PIPE, stdout=subprocess.PI
     try:
         assert query(proc, "textDocument/hover", 1)["error"]["code"] == -32002
         send(proc, "initialize", {"processId": None, "rootUri": None,
-                                  "capabilities": {}}, request=2)
+                                  "capabilities": {"textDocument": {"publishDiagnostics": {
+                                      "relatedInformation": True}}}}, request=2)
         response = receive(proc)
         assert response["id"] == 2, response
         caps = response["result"]["capabilities"]
@@ -92,12 +93,18 @@ with subprocess.Popen([str(SERVER)], stdin=subprocess.PIPE, stdout=subprocess.PI
         error = diagnostics(proc, 0)[0]
         assert error["code"] == "resolve" and error["range"] == {
             "start": {"line": 3, "character": 6}, "end": {"line": 3, "character": 7}}, error
+        assert error["relatedInformation"] == [{"location": {"uri": URI, "range": {
+            "start": {"line": 1, "character": 7}, "end": {"line": 1, "character": 8}}},
+            "message": "state declared here"}], error
         assert query(proc, "textDocument/definition", 6)["result"] is None
         change(proc, -1, GOOD)  # Stale notification emits no result and cannot change the snapshot.
         assert query(proc, "textDocument/definition", 7)["result"] is None
         change(proc, 1, GOOD.replace("end Integrator", "end Different"))
         error = diagnostics(proc, 1)[0]
         assert error["range"]["start"] == {"line": 4, "character": 4}, error
+        assert error["relatedInformation"] == [{"location": {"uri": URI, "range": {
+            "start": {"line": 0, "character": 6}, "end": {"line": 0, "character": 16}}},
+            "message": "model declared here"}], error
         change(proc, 2, GOOD + "😀")
         error = diagnostics(proc, 2)[0]
         assert error["code"] == "lex" and error["range"] == {

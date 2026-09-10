@@ -35,7 +35,10 @@ def resolve (p : LocatedParsed source) :
   match AST.resolve p.parsed.ast with
   | .ok resolved => .ok resolved
   | .error e => .error ⟨e.phase,
-      p.tokenSpan (if p.parsed.ast.endName = p.parsed.ast.name then 8 else 14), e.message⟩
+      p.tokenSpan (if p.parsed.ast.endName = p.parsed.ast.name then 8 else 14), e.message,
+      [if p.parsed.ast.endName = p.parsed.ast.name then
+        ⟨p.tokenSpan 3, "state declared here"⟩
+      else ⟨p.tokenSpan 1, "model declared here"⟩]⟩
 
 theorem erases (p : LocatedParsed source) : Rumoca.parse source = .ok p.parsed :=
   parse_eq_parsed p.parsed
@@ -63,7 +66,7 @@ def parseLocated (source : String) : Except (Parser.Source.Diagnostic source) (L
     match hp : parseTokens (l.tokens.map (·.value)) with
     | none => .error ⟨"parse", mismatch source l.tokens
         ((AST.Model.mk "" "" "" "").tokens.map Token.symbol),
-        "expected: model NAME Real STATE; equation der(STATE) = 1; end NAME;"⟩
+        "expected: model NAME Real STATE; equation der(STATE) = 1; end NAME;", []⟩
     | some ast => .ok ⟨⟨l.tokens.map (·.value), ast, l.lexical, hp⟩, l.tokens, l.aligned⟩
 
 end Rumoca

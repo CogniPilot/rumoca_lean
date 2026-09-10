@@ -47,7 +47,7 @@ def parseLocated (actions : Actions α) (source : String) :
   | .error e => .error e
   | .ok l =>
     match hp : parseTokens actions (l.tokens.map (·.value)) with
-    | none => .error ⟨"parse", .point source.startPos, "source is outside the selected grammar profile"⟩
+    | none => .error ⟨"parse", .point source.startPos, "source is outside the selected grammar profile", []⟩
     | some ast => .ok ⟨⟨l.tokens.map (·.value), ast, l.lexical, hp⟩, l.tokens, l.aligned⟩
 
 end Rumoca.ParserActions

@@ -72,18 +72,25 @@ def attach (trivia : Char → Bool) (p : source.Pos) (ts : List Token) :
       else none
     else none
 
+/-- Additional context in the same immutable source snapshot. The enclosing
+document supplies file identity; a grammar never invents paths or offsets. -/
+structure RelatedInformation (source : String) where
+  span : Span source
+  message : String
+
 structure Diagnostic (source : String) where
   phase : String
   span : Span source
   message : String
+  related : List (RelatedInformation source) := []
 
 /-- Character-offset lexer diagnostics are converted once at the API boundary.
 The new public diagnostic carries valid UTF-8 positions. -/
 def Diagnostic.ofCharacterOffset (source : String) (d : Parser.Diagnostic) : Diagnostic source :=
   let start := source.startPos.nextn d.offset
   let stop := start.nextn 1
-  if h : start ≤ stop then ⟨d.phase, ⟨start, stop, h⟩, d.message⟩
-  else ⟨d.phase, .point start, d.message⟩
+  if h : start ≤ stop then ⟨d.phase, ⟨start, stop, h⟩, d.message, []⟩
+  else ⟨d.phase, .point start, d.message, []⟩
 
 structure Lexed (lexer : String → Except Parser.Diagnostic (List Token)) (source : String)
     (trivia : Char → Bool) where
@@ -97,7 +104,7 @@ def lexLocated (lexer : String → Except Parser.Diagnostic (List Token))
   match hl : lexer source with
   | .error e => .error (.ofCharacterOffset source e)
   | .ok ts => match attach trivia source.startPos ts with
-    | none => .error ⟨"location", .point source.startPos, "lexer/source alignment failed"⟩
+    | none => .error ⟨"location", .point source.startPos, "lexer/source alignment failed", []⟩
     | some xs => .ok ⟨xs.val, by rw [xs.property.erases]; exact hl,
         by simpa only [xs.property.erases] using xs.property⟩
 

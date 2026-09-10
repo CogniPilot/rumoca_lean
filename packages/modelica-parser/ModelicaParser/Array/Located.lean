@@ -96,7 +96,7 @@ def LocatedParsed.resolve (p : LocatedParsed source) :
         else if call.expression.left ≠ m.header.input then (50, "product operand must reference the input")
         else if call.expression.right ≠ m.header.input then (52, "product operand must reference the input")
         else (54, "differentiate with respect to the input")
-    .error ⟨"resolve", p.tokenSpan index, message⟩
+    .error ⟨"resolve", p.tokenSpan index, message, []⟩
 
 theorem LocatedParsed.resolve_complete (p : LocatedParsed source) (h : p.parsed.ast.Resolved) :
     p.resolve = .ok ⟨h⟩ := by simp [resolve, h]

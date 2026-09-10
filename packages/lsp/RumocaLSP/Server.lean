@@ -13,11 +13,12 @@ open Lean.JsonRpc
 structure State where
   initialized : Bool := false
   shutdown : Bool := false
+  relatedInformation : Bool := false
   documents : Std.HashMap String Document := {}
 
-private def publish (d : Document) : Message :=
+private def publish (d : Document) (relatedInformation : Bool) : Message :=
   (⟨"textDocument/publishDiagnostics", {
-    uri := d.uri, version? := some d.version, diagnostics := d.diagnostics
+    uri := d.uri, version? := some d.version, diagnostics := d.diagnostics relatedInformation
   }⟩ : Notification Lsp.PublishDiagnosticsParams)
 
 private def warning (message : String) : Message :=
@@ -26,6 +27,16 @@ private def warning (message : String) : Message :=
 
 private def decode [FromJson α] (params : Option Json.Structured) : Except String α :=
   fromJson? (toJson params)
+
+/-- Lean's initialize record omits this optional LSP capability. Read it from
+the same request; missing or unrecognized values do not opt the client in. -/
+private def supportsRelatedInformation (params : Option Json.Structured) : Bool :=
+  let requested : Except String Bool := do
+    let capabilities ← (toJson params).getObjVal? "capabilities"
+    let document ← capabilities.getObjVal? "textDocument"
+    let diagnostics ← document.getObjVal? "publishDiagnostics"
+    diagnostics.getObjValAs? Bool "relatedInformation"
+  requested.toOption.getD false
 
 private def capabilities : Json := Json.mkObj [
   ("capabilities", Json.mkObj [
@@ -46,7 +57,11 @@ def handle (s : State) (message : Message) : State × Array Message × Option UI
         return (s, #[.responseError id .invalidRequest "already initialized" none], none)
       match decode (α := Lsp.InitializeParams) params with
       | .error e => return (s, #[.responseError id .invalidParams e none], none)
-      | .ok _ => return ({ s with initialized := true }, #[.response id capabilities], none)
+      | .ok _ =>
+        let ready := { s with
+          initialized := true
+          relatedInformation := supportsRelatedInformation params }
+        return (ready, #[.response id capabilities], none)
     if !s.initialized then
       return (s, #[.responseError id .serverNotInitialized "initialize first" none], none)
     if method == "shutdown" then
@@ -71,7 +86,8 @@ def handle (s : State) (message : Message) : State × Array Message × Option UI
         if s.documents.contains item.uri then
           return (s, #[warning "document is already open"], none)
         let d := Document.create item.uri item.version item.text
-        return ({ s with documents := s.documents.insert item.uri d }, #[publish d], none)
+        return ({ s with documents := s.documents.insert item.uri d },
+          #[publish d s.relatedInformation], none)
     if method == "textDocument/didChange" then
       match decode (α := Sync.Change) params with
       | .error e => return (s, #[warning e], none)
@@ -84,7 +100,8 @@ def handle (s : State) (message : Message) : State × Array Message × Option UI
         for change in p.contentChanges do source := change.text
         if p.contentChanges.isEmpty then return (s, #[], none)
         let d := old.update version source
-        return ({ s with documents := s.documents.insert d.uri d }, #[publish d], none)
+        return ({ s with documents := s.documents.insert d.uri d },
+          #[publish d s.relatedInformation], none)
     if method == "textDocument/didClose" then
       match decode (α := Lsp.DidCloseTextDocumentParams) params with
       | .error e => return (s, #[warning e], none)

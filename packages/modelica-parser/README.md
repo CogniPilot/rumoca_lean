@@ -26,6 +26,9 @@ and [verification boundary](../../docs/verification.md).
 
 `ModelicaParserChecks` audits the source lexer, grammar, AST actions and parser
 contracts, exact identifier spans and sequential/parallel equivalence.
+Name errors include the offending occurrence and a related declaration span;
+the error-location theorem binds both ranges to their actual AST fields and
+exact source text. The same structured diagnostic feeds terminal and LSP clients.
 
 `ModelicaParser.Array.Located` exposes the separate array/AD frontend under
 `Rumoca.ArrayProfile`. Its EBNF, decoder soundness/completeness, recognition and

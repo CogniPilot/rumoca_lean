@@ -5,12 +5,20 @@ tooling, compiler, source and target semantics, and every proof are Lean.
 Rumoca's AST → Flat → DAE → Solve separation and CompCert's pass-by-pass proof
 approach are design references; neither is a dependency.
 
+The numerical compiler core has checked semantic-preservation proofs. The
+complete FMI/eFMI compiler does **not yet have full verification coverage**:
+adapter execution and complete artifact/compliance obligations remain open.
+No further grammar expansion is allowed until the current admitted subset has
+that complete end-to-end guarantee; passing individual proofs or CI is not
+sufficient. See the [verification contract](docs/verification.md) and
+[remaining obligations](dev/roadmap.md).
+
 This repository is an experimental home for Rumoca's formally verified core.
 The plan is to merge it back into [Rumoca](https://github.com/CogniPilot/rumoca)
 once the core has been vetted and WebAssembly (WASM) deployment has been tested.
 Those milestones remain prerequisites for reintegration.
 
-The production compiler's verified Modelica profile is:
+The production compiler currently admits this Modelica profile:
 
 ```modelica
 model Integrator

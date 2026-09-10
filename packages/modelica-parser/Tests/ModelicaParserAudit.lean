@@ -52,3 +52,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.LocatedParsed.derivativeName_text
 #audit axioms Rumoca.LocatedParsed.endName_text
 #audit axioms Rumoca.LocatedParsed.resolved_references
+#audit axioms Rumoca.LocatedParsed.resolve_complete
+#audit axioms Rumoca.LocatedParsed.resolve_error_locations

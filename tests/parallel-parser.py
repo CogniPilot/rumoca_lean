@@ -37,12 +37,16 @@ with tempfile.TemporaryDirectory(prefix="parallel parsing α ", dir=ROOT / "buil
     assert results[-1]["ok"] and results[-1]["model"] == "Model17"
     failure = results[1000]["diagnostics"][0]
     assert wrong.read_bytes()[failure["span"]["startByte"]:failure["span"]["endByte"]] == b"y"
+    note, = failure["related"]
+    assert note["message"] == "state declared here"
+    assert wrong.read_bytes()[note["span"]["startByte"]:note["span"]["endByte"]] == b"x"
     pretty = subprocess.run([str(COMPILER), str(wrong)], capture_output=True, text=True)
     parsed_pretty = subprocess.run([str(COMPILER), "parse", str(wrong)], capture_output=True, text=True)
     assert pretty.returncode == parsed_pretty.returncode == 1
     assert pretty.stdout == parsed_pretty.stdout == ""
     assert pretty.stderr == parsed_pretty.stderr
     assert "error[resolve]:" in pretty.stderr and "1 | model Wrong" in pretty.stderr and "^" in pretty.stderr
+    assert "note: state declared here" in pretty.stderr
     invalid = subprocess.run([str(COMPILER), "parse", "--jobs", "0", files[0]], capture_output=True)
     assert invalid.returncode != 0 and b"must be positive" in invalid.stderr
 print("Parallel parsing preserves native results, paths, ranges, duplicates and failure order")

@@ -4,3 +4,4 @@ import ProofAudit.Audit
 #audit axioms RumocaLSP.Document.update_stale
 #audit axioms RumocaLSP.Document.update_version
 #audit axioms RumocaLSP.Document.quiet
+#audit axioms RumocaLSP.Document.diagnostics_without_related

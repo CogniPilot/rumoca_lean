@@ -1,5 +1,13 @@
 # Exact verification contract
 
+**Current claim boundary:** the numerical source-to-C core is formally
+checked. The whole FMI/eFMI compiler is not yet fully verified, even for the
+unit grammar subset, because the adapter/artifact/compliance obligations
+below remain open. Completing this stage requires one composed guarantee for
+the actual compiler and production artifacts, with every pass and admitted
+interface behavior covered. Individual theorem or CI checkpoints are partial
+progress and do not authorize grammar or product-scope expansion.
+
 The production end-to-end theorem covers one Modelica `Real` state and `der(state)=1`.
 The source equation is over mathematical reals. Generated C uses finite
 IEEE754 binary64 values and nearest-even addition. The host supplies `x(0)`;
@@ -355,6 +363,20 @@ OS concurrency implementation. The CLI's file reads are currently sequential.
 The separate LSP reuses structured source diagnostics and converts their ranges
 to UTF-16 with Lean's library. Terminal context rendering, LSP transport and
 file-map conversions are tested presentation/infrastructure boundaries.
+
+Name-resolution errors carry a primary span plus a related declaration span
+in the same immutable source. `LocatedParsed.resolve_error_locations` proves
+that each failing resolution points to the actual erroneous occurrence and
+its declaration, with the exact AST-field text at both ranges. End-name errors
+retain precedence over derivative-name errors. `resolve_complete` proves that
+the enriched diagnostics retain every successful resolution. CLI JSON, context
+notes and LSP related information consume this same data. The LSP respects
+the client's related-information capability; `diagnostics_without_related`
+proves those extra locations are omitted when support is disabled. The three
+new roots pass the unchanged axiom audit, and the existing real LSP/parallel
+frontend checks pass in `build/diagnostic-locations-frontend.log`.
+Compiler failure-only reparsing and later IR/printer provenance remain open;
+these local diagnostic theorems do not close those obligations.
 
 The [airborne assurance plan](../dev/airborne-assurance.md) records additional
 requirements, traceability, independent review, target integration and tool
@@ -930,7 +952,11 @@ separate obligations. All twelve added roots and the full package audit pass
 in `build/fmi-array-call-audit.log`, with the unchanged axiom whitelist. The
 FMI actual-file/source-build/mutation gate and all thirteen existing native
 groups also pass in `build/fmi-array-call-full-gate.log`. That required full
-run continues through the GALEC/eFMU checks; its final result is pending.
+local run passed at `30ef448`, including the complete GALEC/eFMU archive,
+extracted-manifest and mutation checks;
+[its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34521375057)
+also passed. Its FMU has SHA-256
+`782bc82fa92e2149c531d0ee53e1f9eb7a4760f6b54223f28093c541130d7ae2`.
 No new Modelica source case is admitted.
 
 Ordinary calls are supported as entire assignment, declaration, return or

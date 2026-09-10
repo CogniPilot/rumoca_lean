@@ -51,4 +51,38 @@ theorem resolved_references (p : LocatedParsed source) (h : AST.Resolved p.parse
   simp [p.derivativeName_text, p.state_text, p.endName_text, p.modelName_text,
     h.derivative_resolves, h.end_matches]
 
+/-- Enriching diagnostics preserves every successful resolution. -/
+theorem resolve_complete (p : LocatedParsed source) (h : AST.Resolved p.parsed.ast) :
+    p.resolve = .ok ⟨h⟩ := by
+  simp [resolve, AST.resolve_complete _ h]
+
+/-- Every name error identifies the offending AST occurrence and its actual
+declaration, including the source text at both ranges. End-name disagreement
+takes precedence when both names are wrong. No search for equal text is used. -/
+theorem resolve_error_locations (p : LocatedParsed source) (e : Source.Diagnostic source)
+    (h : p.resolve = .error e) :
+    e.phase = "resolve" ∧
+      ((p.parsed.ast.endName ≠ p.parsed.ast.name ∧
+        e.span = p.tokenSpan 14 ∧ e.span.text = p.parsed.ast.endName ∧
+        e.related.map (·.span) = [p.tokenSpan 1] ∧
+        e.related.map (fun note => note.span.text) = [p.parsed.ast.name]) ∨
+       (p.parsed.ast.endName = p.parsed.ast.name ∧
+        p.parsed.ast.derivativeName ≠ p.parsed.ast.state ∧
+        e.span = p.tokenSpan 8 ∧ e.span.text = p.parsed.ast.derivativeName ∧
+        e.related.map (·.span) = [p.tokenSpan 3] ∧
+        e.related.map (fun note => note.span.text) = [p.parsed.ast.state])) := by
+  by_cases hn : p.parsed.ast.endName = p.parsed.ast.name
+  · by_cases hd : p.parsed.ast.derivativeName = p.parsed.ast.state
+    · simp [resolve, AST.resolve, hn, hd] at h
+    · simp only [resolve, AST.resolve, hn, hd, ↓reduceDIte, ↓reduceIte,
+        Except.error.injEq] at h
+      subst e
+      exact ⟨rfl, .inr ⟨hn, hd, rfl, p.derivativeName_text, rfl,
+        by simp [p.state_text]⟩⟩
+  · simp only [resolve, AST.resolve, hn, ↓reduceDIte, ↓reduceIte,
+      Except.error.injEq] at h
+    subst e
+    exact ⟨rfl, .inl ⟨hn, rfl, p.endName_text, rfl,
+      by simp [p.modelName_text]⟩⟩
+
 end Rumoca.LocatedParsed

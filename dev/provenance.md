@@ -47,6 +47,19 @@ AST fields and proves the resolved reference/declaration text correspondence.
 The legacy compiler entry point and semantic AST layout have not yet migrated
 to this sidecar. No IR-to-generated-C source map is currently certified.
 
+Name-resolution errors additionally retain a related declaration span in the
+same immutable snapshot. `resolve_error_locations` proves, for every failing
+resolution, that the primary occurrence and related declaration are the right
+AST fields and that both ranges contain their exact text. It also preserves
+the resolver's end-name-before-derivative priority. `resolve_complete` checks
+that enriching diagnostics loses no successful resolution. CLI JSON emits a
+`related` list of byte spans/messages; terminal output renders each note with
+source context. The LSP maps these notes to the current document URI and
+UTF-16 ranges, conditional on the client's related-information capability.
+`diagnostics_without_related` proves omission for clients without support.
+These three roots and the existing LSP/parallel integration checks pass in
+`build/diagnostic-locations-frontend.log`. No additional test suite was added.
+
 ## Parallel frontend
 
 `Parser.Parallel.map_eq` proves exact equality to sequential mapping for
@@ -96,7 +109,7 @@ imply that this first LSP server schedules edits concurrently.
 | PV01 | Valid source-indexed spans; exact token text, order and disjointness | Checked for successful located lexing |
 | PV02 | Automatic grammar-node ranges, epsilon policy and grammar erasure | Checked for successful located parsing; generic wrapper completeness open |
 | PV03 | Immutable multi-file identity and deterministic parallel results | Checked pure API; native task/file boundary integration exercised |
-| PV04 | Tiny Modelica diagnostics and navigation through an actual LSP session | Implemented; transport is tested infrastructure |
+| PV04 | Tiny Modelica diagnostics and navigation through an actual LSP session | Implemented, including proved resolution-error/declaration ranges; transport is tested infrastructure |
 | PV05 | AST/action field origins with exact identifier/equation meaning | Modelica identifier accessor/AST-field correspondence checked; equation origins and generic action API open |
 | PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Open |
 | PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Open for the compiler/IR pipeline; located frontend has explicit EOF/error ranges |
@@ -110,6 +123,14 @@ Runtime/ABI/solver-generated code needs an explicit generated origin and its
 requirements reference. A source comment or `#line` directive alone is not
 an artifact-binding theorem. Requirements-to-proof/test links remain a
 separate relation from source-to-generated-code ranges.
+
+PV07 also requires removing `Diagnostics.locateFailure`: the production driver
+currently reparses after failure to reconstruct a located error. Moving it to
+the located entry point must preserve source-parser/compiler completeness,
+rather than introduce alignment failures as new exclusions. File I/O and
+artifact-validation errors need their own identities and explanations, not
+invented Modelica offsets. The current related-location type deliberately
+stays within one source snapshot; cross-file resolution is still out of scope.
 
 ## Generic engine ownership
 
