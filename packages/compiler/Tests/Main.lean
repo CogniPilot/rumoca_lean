@@ -3,6 +3,7 @@ import Parser.EBNF
 import ModelicaParser.Driven
 import ModelicaParser.Array.Located
 import RumocaCore.Solve.IVP
+import RumocaCore.Solve.Tensor.Reverse
 
 open _root_.Parser
 
@@ -64,11 +65,31 @@ def main : IO Unit := do
   let input : Tensor.Value Nat shape := ⟨Vector.ofFn (fun i : Fin 6 => i.val + 1)⟩
   let state := Tensor.Value.fill shape 9
   expect "tensor derivative preserves every input element"
-    ((Solve.drivenIVP shape).rhs 0 1 state input == input)
+    ((Solve.drivenIVP shape).rhs ⟨Nat.add, Nat.mul⟩ 0 1 state input == input)
   expect "tensor output preserves the state"
-    ((Solve.drivenIVP shape).outputs 0 1 state input == state)
+    ((Solve.drivenIVP shape).outputs ⟨Nat.add, Nat.mul⟩ 0 1 state input == state)
   expect "tensor initialization fills the state"
-    ((Solve.drivenIVP shape).initial (0 : Nat) 1 == Tensor.Value.fill shape 0)
+    ((Solve.drivenIVP shape).initial ⟨Nat.add, Nat.mul⟩ (0 : Nat) 1 == Tensor.Value.fill shape 0)
+  -- One native boundary check for shared nonlinear intermediates: (u .* u + 1)^2.
+  let program : Solve.Tensor.Program [shape] shape :=
+    .binary .mul .here .here (.fill shape .one
+      (.binary .add (.there .here) .here (.binary .mul .here .here (.ret .here))))
+  let primal : Solve.Tensor.Ren [shape] [shape, shape] :=
+    Solve.Tensor.Ren.push .here Solve.Tensor.Ren.empty
+  let tangent : Solve.Tensor.Ren [shape] [shape, shape] :=
+    Solve.Tensor.Ren.push (.there .here) Solve.Tensor.Ren.empty
+  let ones := Tensor.Value.fill shape 1
+  let values : Solve.Tensor.Env Nat [shape] := Solve.Tensor.Env.push input Solve.Tensor.Env.empty
+  let duals : Solve.Tensor.Env Nat [shape, shape] :=
+    Solve.Tensor.Env.push input (Solve.Tensor.Env.push ones Solve.Tensor.Env.empty)
+  let reverse := program.reverse ⟨Nat.add, Nat.mul⟩ 0 1 values
+  let expected : Tensor.Value Nat shape := ⟨input.data.map (fun x => (x * x + 1) * (x * x + 1))⟩
+  let expectedDerivative : Tensor.Value Nat shape := ⟨input.data.map (fun x => 4 * x * (x * x + 1))⟩
+  expect "native tensor program AD shares intermediates and accumulates both operand uses"
+    (reverse.value == expected &&
+      (program.forward primal tangent .primal).eval ⟨Nat.add, Nat.mul⟩ 0 1 duals == expected &&
+      (program.forward primal tangent .tangent).eval ⟨Nat.add, Nat.mul⟩ 0 1 duals == expectedDerivative &&
+      reverse.pullback ones .here == expectedDerivative)
   expect "identifiers and whitespace" (accepted
     "\r\nmodel _M2\tReal x2; equation der (x2)=1; end _M2;\n")
   for bad in ["", "der(x) = 1;", good ++ "garbage", good ++ ";",

@@ -10,11 +10,21 @@ the backend consumes its prepared operations and correlated metadata.
 
 The new pointwise primitives retain shape-indexed dense storage and use an
 explicit scalar arithmetic interface. Their mathlib proofs cover every shape,
-and the square pullback sums both uses of its input. They are operator proofs,
-not a whole-program AD or array-FMU theorem. The first intended grammar slice
+and the square pullback sums both uses of its input. The typed Solve program
+now includes these operators, with a forward transformation and saved-primal
+reverse evaluator proved against the whole-program mathlib derivative.
+These are not array-FMU theorems. The first intended grammar slice
 is recorded in [tensor-ad.md](tensor-ad.md). The intrinsic will remain a
 parsed built-in call; typed lowering will synthesize tensor programs rather
 than adopting Rust's generated-Modelica/unrolled-seed implementation.
+
+Rechecked Rust `typed_program/program.rs` during this increment: its binary
+operations consume typed register IDs and retain tensor shape. The Lean
+program similarly emits one operator per tensor operation. Lean's dependent
+references make ill-typed use impossible, but the current function-backed
+environment is a reference evaluator; a proved packed-register implementation
+is still needed for comparable lookup/update costs. Source provenance through
+these programs remains an open obligation in [provenance.md](provenance.md).
 
 The FMI correction in this round changes only adapter lifecycle semantics:
 errors enter Terminated and final ME queries remain available. It preserves

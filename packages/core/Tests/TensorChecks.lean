@@ -2,6 +2,7 @@ import ProofAudit.Audit
 import RumocaCore.Tensor.Matrix
 import RumocaCore.Tensor.Differentiation
 import RumocaCore.Array.Builtin
+import RumocaCore.Solve.Tensor.ReverseProofs
 import RumocaCore.Driven.Lowering
 
 namespace Rumoca.TensorChecks
@@ -57,5 +58,17 @@ theorem wrong_initialization_rejected (m : Driven.DAE.Model source)
 #audit axioms Rumoca.ArrayProfile.Call.denotes_unique
 #audit axioms Rumoca.ArrayProfile.Call.square_correct
 #audit axioms Rumoca.ArrayProfile.Model.jacobian_call_correct
+#audit axioms Rumoca.Solve.Tensor.Program.evalForward_primal
+#audit axioms Rumoca.Solve.Tensor.Program.forward_correct
+#audit axioms Rumoca.Solve.Tensor.Program.forward_primal
+#audit axioms Rumoca.Solve.Tensor.Program.forward_compact
+#audit axioms Rumoca.Solve.Tensor.Program.hasFDerivAt
+#audit axioms Rumoca.Solve.Tensor.Program.evalForward_tangent
+#audit axioms Rumoca.Solve.Tensor.Program.forward_derivative
+#audit axioms Rumoca.Solve.Tensor.Program.reverse_primal
+#audit axioms Rumoca.Solve.Tensor.Env.pair_addAt
+#audit axioms Rumoca.Solve.Tensor.Program.reverse_pairing
+#audit axioms Rumoca.Solve.Tensor.Program.reverse_differential
+#audit axioms Rumoca.Solve.Tensor.Program.reverse_derivative
 
 end Rumoca.TensorChecks

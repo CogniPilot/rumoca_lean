@@ -18,6 +18,8 @@ axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
 | `RumocaCore.Tensor.Differentiation` | Mathlib derivative, adjoint and shared-input square/Jacobian proofs for arbitrary shapes |
 | `RumocaCore.Array.Builtin` | Parsed Jacobian semantics, uniqueness and correctness of the resolved square call |
 | `RumocaCore.Solve.Tensor`, `Solve.IVP` | Compact tensor programs, independent denotation, executable evaluator and explicit IVP |
+| `RumocaCore.Solve.Tensor.Forward`, `Solve.Tensor.Differentiation` | Ordinary Solve-to-Solve forward AD, primal preservation, instruction bound and whole-program mathlib derivative theorem |
+| `RumocaCore.Solve.Tensor.Reverse`, `Solve.Tensor.ReverseProofs` | Saved-primal reverse execution with cotangent accumulation and the adjoint/derivative contract |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
 | `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
 | `RumocaCore.Solve.Algorithm`, `AlgorithmProofs` | Tensor register refinement of GALEC, preserving operation order and method execution |
@@ -67,6 +69,9 @@ The [tensor AD increment](../../dev/tensor-ad.md) has checked primitive rules
 for mathematical Real tensors, including cotangent accumulation for `x .* x`.
 `Array.Builtin` now connects the resolved source call to an independently
 specified Fréchet derivative, with uniqueness of the resulting matrix.
-Program transformations, full source-to-IR lowering and the finite target edge
-remain open. These analytic proofs do not differentiate the discontinuous
-IEEE rounding operation.
+`Solve.Tensor.Program` now includes whole-tensor arithmetic and a proved
+forward transformation. Its reverse evaluator saves the primal intermediates
+and accumulates contributions at shared references. Both have whole-program
+contracts against the same mathlib derivative, beyond the primitive rules.
+Static reverse lowering, full source-to-IR lowering and the finite target edge
+remain open. These analytic proofs do not differentiate IEEE rounding.

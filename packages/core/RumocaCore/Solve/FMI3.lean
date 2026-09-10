@@ -41,9 +41,9 @@ theorem FMI3Model.time_distinct (m : FMI3Model source) : m.timeName ≠ m.stateN
 
 theorem FMI3Model.prepared_solve (m : Model source) : m.prepareFMI3.solve = m := rfl
 
-theorem FMI3Model.rhs_correct (m : FMI3Model source) (zero one : α)
+theorem FMI3Model.rhs_correct (m : FMI3Model source) (ops : Rumoca.Tensor.ScalarOps α) (zero one : α)
     (x : Rumoca.Tensor.Value α Rumoca.Tensor.scalar)
     (u : Rumoca.Tensor.Value α ⟨[0]⟩) :
-    m.problem.rhs zero one x u = Rumoca.Tensor.Value.fill _ one := rfl
+    m.problem.rhs ops zero one x u = Rumoca.Tensor.Value.fill _ one := rfl
 
 end Rumoca.Solve

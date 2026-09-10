@@ -55,7 +55,7 @@ theorem DAE.lower_correct (m : Flat.Model source) (state input derivative : Valu
     fun h => Value.ext fun i hi => h ⟨i, hi⟩⟩
 
 theorem Solved.lower_correct (m : DAE.Model source) (state input derivative : Value ℝ scalar) :
-    m.Equation state input derivative ↔ derivative = (lower m).ivp.rhs (0 : ℝ) 1 state input := by
+    m.Equation state input derivative ↔ derivative = (lower m).ivp.rhs ⟨(· + ·), (· * ·)⟩ (0 : ℝ) 1 state input := by
   simp only [DAE.Model.Equation, m.residual_source, m.flat.lhs_source,
     m.flat.rhs_source, DAE.lowerExpr, DAE.Expr.eval, sub_eq_zero,
     lower, Solve.driven_rhs]
@@ -66,7 +66,7 @@ theorem lowering_chain_correct (m : Model) (h : Resolved m)
     (values derivatives : String → ℝ) :
     m.Equation values derivatives ↔
       singleton (derivatives m.state) =
-        (Solved.lower (DAE.lower (Flat.lower m h))).ivp.rhs (0 : ℝ) 1 (singleton (values m.state))
+        (Solved.lower (DAE.lower (Flat.lower m h))).ivp.rhs ⟨(· + ·), (· * ·)⟩ (0 : ℝ) 1 (singleton (values m.state))
           (singleton (values m.input)) :=
   (Flat.lower_correct m h values derivatives).trans
     ((DAE.lower_correct _ _ _ _).trans (Solved.lower_correct _ _ _ _))
@@ -92,7 +92,7 @@ theorem DAE.lower_initial (m : Flat.Model source) (state input derivative : Valu
     simpa using h ⟨i, hi⟩
 
 theorem Solved.lower_initial (m : DAE.Model source) (state input derivative : Value ℝ scalar) :
-    m.Initial state input derivative ↔ state = (lower m).ivp.initial (0 : ℝ) 1 := by
+    m.Initial state input derivative ↔ state = (lower m).ivp.initial ⟨(· + ·), (· * ·)⟩ (0 : ℝ) 1 := by
   simp only [DAE.Model.Initial, m.initialResidual_source, m.flat.initialLhs_source,
     m.flat.initialRhs_source, DAE.lowerExpr, DAE.Expr.eval, sub_zero,
     lower, Solve.driven_initial]
@@ -108,14 +108,14 @@ theorem Solved.lower_initial (m : DAE.Model source) (state input derivative : Va
 theorem initialization_chain_correct (m : Model) (h : Resolved m)
     (values derivatives : String → ℝ) :
     m.Initial values ↔ singleton (values m.state) =
-      (Solved.lower (DAE.lower (Flat.lower m h))).ivp.initial (0 : ℝ) 1 :=
+      (Solved.lower (DAE.lower (Flat.lower m h))).ivp.initial ⟨(· + ·), (· * ·)⟩ (0 : ℝ) 1 :=
   (Flat.lower_initial m h values derivatives).trans
     ((DAE.lower_initial _ _ _ _).trans (Solved.lower_initial _ _ _ _))
 
 theorem initialization_correct (m : DAE.Model source) :
-    (Solved.lower m).ivp.initial (0 : ℝ) 1 = singleton 0 := rfl
+    (Solved.lower m).ivp.initial ⟨(· + ·), (· * ·)⟩ (0 : ℝ) 1 = singleton 0 := rfl
 
-theorem output_correct (m : DAE.Model source) (state input : Value α scalar) (zero one : α) :
-    (Solved.lower m).ivp.outputs zero one state input = state := rfl
+theorem output_correct (m : DAE.Model source) (state input : Value α scalar) (ops : ScalarOps α) (zero one : α) :
+    (Solved.lower m).ivp.outputs ops zero one state input = state := rfl
 
 end Rumoca.Driven

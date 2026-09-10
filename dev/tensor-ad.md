@@ -107,7 +107,7 @@ Use `Rumoca.ArrayProfile.parseLocated` from `ModelicaParser.Array.Located` for
 the development frontend. It preserves other callee names for structured
 resolution errors; it does not silently interpret every call as a Jacobian.
 The production CLI/LSP still select the unit frontend. Array source-to-IR
-lowering, complete AD program transforms and finite tensor FMU/eFMU target
+lowering, static reverse transformation and finite tensor FMU/eFMU target
 certificates remain open. Parser acceptance does not authorize production
 generation.
 
@@ -118,3 +118,47 @@ contracts and their rejection checks. This revalidates the production unit
 profile; it does not certify tensor FMUs. A subsequent LALR certificate-emission
 refactor reduces proof-checking memory while preserving the same validator;
 its evidence is tracked in [the parser roadmap](lalr-parser.md).
+
+## Whole-program AD checkpoint
+
+`Solve.Tensor.Program` includes one typed binary instruction for pointwise
+addition or multiplication. Its evaluator and independent denotation agree
+for every program and arbitrary explicit scalar arithmetic. IVP evaluation
+takes that arithmetic explicitly; the existing unit/driven contracts remain
+checked. No backend performs this work and no source syntax was added here.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Dense array program implements its denotation | `Program.eval_correct` |
+| Forward transformation preserves its ordered operations | `Program.forward_correct` |
+| Forward transformation preserves primal output | `Program.forward_primal` |
+| At most four target instructions per source instruction, regardless of extents | `Program.forward_compact` |
+| Whole-program chain rule, allowing shared input dependencies | `Program.hasFDerivAt` |
+| Emitted forward program computes the mathematical derivative | `Program.forward_derivative` |
+| Reverse evaluation preserves primal output | `Program.reverse_primal` |
+| Every accumulated contribution is retained, without assuming distinct operands | `Env.pair_addAt` |
+| Reverse execution is the adjoint of forward execution | `Program.reverse_pairing` |
+| Reverse execution pairs with the mathematical derivative | `Program.reverse_derivative` |
+
+The twelve added audit roots pass in `build/tensor-program-audit.log`. The
+existing native integration executable has one additional smoke check for
+`(u .* u + 1)^2` on a tensor: primal execution, emitted JVP and saved VJP agree
+with their expected results (`build/tensor-program-native.log`). The program
+uses repeated nonlinear intermediates, literals and addition; it does not
+add that expression to the source grammar.
+
+Forward AD emits ordinary Solve instructions. Reverse execution currently
+builds a pullback closure over saved forward values. It does not re-evaluate
+the primal program when a cotangent is supplied, but it is not yet a static
+Solve-to-Solve reverse transformation suitable for C emission. Neither path
+constructs a full Jacobian to compute a directional product.
+
+The instruction bound is not a runtime complexity theorem. The reference
+environment uses dependent functions and references; lookup/update cost can
+grow with register depth. A packed register store needs a simulation theorem
+before replacing this evaluator. No claim of CasADi-level performance is made.
+
+Next, close the array AST → Flat → DAE → Solve equations, initialization and
+Jacobian-output contracts at the fixed declared shapes. Preserve one whole
+tensor operation in each stage and keep production rejection until the
+ordered finite arithmetic, shared C loops and actual FMU/eFMU contracts pass.

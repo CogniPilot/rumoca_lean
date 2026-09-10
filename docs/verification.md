@@ -29,8 +29,17 @@ audit (`build/tensor-parser-audit.log`). `jacobian` is selected by resolution,
 not reserved by the lexer. `Array.Builtin` defines its mathematical meaning by
 the derivative's action on every tangent, proves the matrix is unique, and
 proves the diagonal result correct for the actual resolved square call at
-every shape (`build/tensor-builtin-audit.log`). Array source-to-IR lowering, complete AD program
-transforms and finite target execution remain open;
+every shape (`build/tensor-builtin-audit.log`). Typed Solve programs now contain
+pointwise arithmetic. Their forward transformation preserves primal values and
+computes a true Fréchet derivative; reverse execution retains forward values
+and accumulates cotangents, with an adjoint theorem for the same derivative.
+`Program.forward_derivative` and `Program.reverse_derivative` quantify over
+arbitrary programs, shapes and differentiable entry-register functions. All
+twelve new roots pass the unchanged axiom audit (`build/tensor-program-audit.log`).
+The forward transform emits ordinary Solve instructions; the reverse evaluator
+currently returns a saved pullback closure, not a statically lowered target
+program. Array source-to-IR lowering, static reverse transformation and finite
+target execution remain open;
 [tensor-ad.md](../dev/tensor-ad.md) fixes the small scope. These development
 parsers do not enlarge the production compiler's admitted source language.
 
