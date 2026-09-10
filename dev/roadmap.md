@@ -264,6 +264,16 @@ of Modelica 3.7.
   binding, per-occurrence/native allocation correspondence, static lifetime,
   enabled logging and complete printed adapter remain open. SR04/F03 are not
   closed by the disabled-logging call theorem.
+  **Named storage preparation:** `CLiteral.Lowering.body_behaviors` now proves
+  exact preservation/reflection of termination, stuck execution and divergence
+  for the memory-body fragment, with maintained declaration freshness and
+  supplied identifier bindings. Expression and call-argument preservation are
+  also proved. The renderer does not yet use this pass: typed-loop/call lowering,
+  global-name construction/freshness, declaration printing/initialization and
+  actual-adapter binding remain required. See the exact scope in
+  [verification.md](../docs/verification.md).
+  The seven new audit roots pass `build/c-literal-lowering-package-audit.log`,
+  and the required full local gate passed in `build/c-literal-lowering-full-gate.log`.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
   mismatch and complete independent semantic/coding-guideline release review.
   A diagnostic wrapped copy passes deeper checker checks; the actual standalone
@@ -660,6 +670,9 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   to the selected C standard/profile, proof of required typing/progress and
   arithmetic conditions for all reachable compiled states, and explicit
   treatment of any defined C behavior excluded by the finite profile.
+  Specify how symbolic field/index addresses correspond to emitted object
+  layouts, including aliasing through different views of the same subobject,
+  before transferring symbolic heap-frame claims to native storage.
   CompCert/Clight can be a reference; all project proofs remain in Lean.
 - [ ] **C02 — Isolate a reusable target semantics and backend interface.**
   Depends on P01/C01/N02. Separate generic typed target syntax/semantics from

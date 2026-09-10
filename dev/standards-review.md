@@ -142,8 +142,12 @@ The log records this run's retained artifacts:
 These identities supersede the preceding snapshot for this run. **Stage decision: open.**
 This increment does not close any existing compliance finding or authorize
 grammar growth.
+The [hosted run for 1bbafeb](https://github.com/CogniPilot/rumoca_lean/actions/runs/34533601963)
+also passed.
 
 ### C literal-pointer and rejected-call increment: standards impact
+
+Reviewed checkpoint: `f3ad41dac6b150bff03b79fbdf5ab76f8bde82fe`.
 
 The next SR04/C01/F03 increment replaces abstract C string values with an
 explicit literal-address map, typed pointer conversion and a storage/printing
@@ -188,6 +192,35 @@ This run retained the following artifacts:
 These hashes identify this increment's local artifacts, not those from its
 preceding storage checkpoint. **Stage decision: open; grammar growth remains
 blocked.** The new function-tree proof is not a whole-adapter certificate.
+The [hosted run for f3ad41d](https://github.com/CogniPilot/rumoca_lean/actions/runs/34536535660)
+also passed.
+
+### Named string-storage preparation: standards impact
+
+The next C01/F03 increment prepares a string-expression-to-data-name lowering.
+Its memory-body theorem preserves all observations, including failure and
+divergence, under explicit binding and freshness conditions. It does not yet
+emit static-array declarations or replace the production renderer. Actual
+global storage, typed calls, enabled callbacks and complete adapter binding
+remain open. The theorem is about the authored C machine; it is not evidence
+that the native compiler uses the selected literal-address map.
+
+MLS admission, both EBNFs, initialization and numerical policy, FMI metadata
+and lifecycle, and eFMI GALEC/Production Code and manifests are unchanged.
+The current clause map and SR04–SR08 findings therefore carry forward. The
+core/C package audit passed in `build/c-literal-lowering-package-audit.log`,
+including all seven new audit roots under the unchanged whitelist. The required
+full local gate passed in `build/c-literal-lowering-full-gate.log`, including
+both FMI interfaces, the actual eFMU archive certificate, extracted manifests,
+schemas, native C and mutation controls. The retained artifacts are:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `a83b4c29e60867fa69052c5dd3ccf10bd46004fb22e41fadd8b294b027155d3d` |
+| `build/Integrator.efmu` | `4c2e2bb0693280dc3dafb66441d444bbb9e023053a6334ed7145c70436eb5657` |
+
+**Stage decision: open.** This preparation does not close actual global storage,
+the whole adapter or any existing compliance finding.
 
 ## Original FMI/eFMI snapshot and evidence
 

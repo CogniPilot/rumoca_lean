@@ -10,6 +10,7 @@ import RumocaCore.FMI3.Initialization
 import RumocaCore.FMI3.Lifecycle
 import RumocaCore.FMI3.Time
 import RumocaCore.Transition.Prefix
+import RumocaCore.Transition.Simulation
 import RumocaCore.Pass
 import RumocaCore.Profile
 import RumocaCore.Real.Binary64
@@ -39,6 +40,7 @@ import RumocaCore.Transition
 #audit axioms Rumoca.Binary64.signed_zero_bits
 #audit axioms Rumoca.Binary64.run_exact
 #audit axioms Rumoca.Transition.Machine.behavior_iff
+#audit axioms Rumoca.Transition.FunctionalBisimulation.behaviors
 #audit axioms Rumoca.Profile.behavior_congr
 #audit axioms Rumoca.Profile.behavior_iff
 #audit axioms Rumoca.ModelExchange.get_set

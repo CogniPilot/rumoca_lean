@@ -8,6 +8,7 @@ import RumocaC.BodyEmbedding
 import RumocaC.StringLiteral
 import RumocaC.LiteralStorage
 import RumocaC.LiteralPointers
+import RumocaC.LiteralLowering
 
 #audit axioms Rumoca.CString.denotes_unique
 #audit axioms Rumoca.CString.quote_iff
@@ -28,6 +29,12 @@ import RumocaC.LiteralPointers
 #audit axioms Rumoca.CLiteral.eval_index
 #audit axioms Rumoca.CLiteral.rendered_pointer
 #audit axioms Rumoca.CLiteral.Valid.after_steps
+#audit axioms Rumoca.CLiteral.Lowering.expression_correct
+#audit axioms Rumoca.CLiteral.Lowering.arguments_correct
+#audit axioms Rumoca.CLiteral.Lowering.body_next
+#audit axioms Rumoca.CLiteral.Lowering.body_run
+#audit axioms Rumoca.CLiteral.Lowering.body_terminates
+#audit axioms Rumoca.CLiteral.Lowering.body_behaviors
 
 #audit axioms Rumoca.C.compileProgram_correct
 #audit axioms Rumoca.C.ideal_run_correct

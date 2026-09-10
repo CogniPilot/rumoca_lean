@@ -1249,6 +1249,30 @@ and literal-binding premises. Complete adapter bytes, static object setup and
 lifetime, enabled external callbacks and whole FMI conformance remain open.
 No native compiler/ABI proof or new unit-test suite is introduced.
 
+`CLiteral.Lowering` prepares explicit named string storage without changing the
+production renderer. Its transformation replaces registered string expressions
+with data identifiers and retains unregistered literals. `expression_correct`
+preserves value/lvalue evaluation, including failure, and `arguments_correct`
+preserves evaluated argument lists. Both sides use the same supplied C interface;
+the named identifiers must resolve to the literal pointers and must not collide
+with the recognized `isfinite` intrinsic.
+
+`body_behaviors` preserves and reflects every observation of the memory-body
+machine: exact returned values and heaps, stuck execution, and divergence.
+Freshness of declarations prevents local capture, and the proof preserves that
+invariant through branches and loops. It uses the reusable
+`Transition.FunctionalBisimulation.behaviors` theorem, whose step reflection and
+final-state correspondence do not assume successful termination.
+This is not yet a lowering theorem for `CLoops` or typed calls. Constructing the
+global dictionary, proving freshness against existing identifiers and headers,
+printing/initializing static arrays, and binding those declarations to the actual
+adapter are still required before the production renderer can use this pass.
+The seven new audit roots and core/C package checks pass in
+`build/c-literal-lowering-package-audit.log`. The required complete root gate
+passed in `build/c-literal-lowering-full-gate.log`; the recurring standards
+review records both retained artifact hashes. No new tests or production
+language cases were added.
+
 `EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
 and constructs a fixed existential theorem with one compiler artifact and
 `ProductionContract` for both members. The kernel and exact-root axiom audit
