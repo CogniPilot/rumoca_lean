@@ -15,9 +15,22 @@ proofs with the complete existing numerical C contract. The publication gate
 checks the staged files before native compilation; the existing rebuild uses
 the XML and a separate loader process to catch unresolved symbols. Six new
 axiom roots and the targeted artifact gate pass in `build/fmi-build-package.log`
-and `build/fmi-build-artifact-gate.log`. Full-gate evidence is tracked in
-`build/fmi-build-full-gate.log`. Native compiler/linker behavior and the other
+and `build/fmi-build-artifact-gate.log`. The required full gate passed in
+`build/fmi-build-full-gate.log` and
+[CI for f1ce838](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582).
+Native compiler/linker behavior and the other
 metadata/runtime/archive obligations below remain outside this increment.
+
+The SR02 increment preserves the complete numerical contract under a proved
+internal-linkage printer and single compiled adapter translation unit. Its
+source/build/ME/CS identities derive from the same parsed model name, with a
+validity proof and injectivity for distinct names. The actual-file proposition
+additionally observes the two model-description identities and exact adapter
+prefix/include fragment. Its remainder is unconstrained, so preprocessing,
+linker behavior and the complete printed adapter still need their own bridges.
+Thirteen new roots pass `build/fmi-linkage-package.log`. The actual-file,
+importer, two-source-link, mutation and failure-preservation gate passes in
+`build/fmi-linkage-artifact-gate.log`; the required full gate remains pending.
 
 These are acceptance obligations, not declarations of existing theorems.
 

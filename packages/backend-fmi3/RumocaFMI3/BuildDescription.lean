@@ -1,8 +1,7 @@
 import XML.Basic
+import RumocaFMI3.Identifier
 
 namespace Rumoca.FMI3
-
-def modelIdentifier : String := "RumocaModel"
 
 namespace Build
 
@@ -26,11 +25,11 @@ structure Recipe where
   externalLibraries : List String
   deriving DecidableEq, Repr
 
-def recipe (p : Platform) : Recipe :=
-  ⟨modelIdentifier, p.name, "C11", "gcc",
+def recipe (modelName : String) (p : Platform) : Recipe :=
+  ⟨modelIdentifier modelName, p.name, "C11", "gcc",
     ["-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-Wno-unused-parameter",
       "-pedantic", "-fno-fast-math", "-ffp-contract=off", "-frounding-math"],
-    ["model.c", "fmi3.c"], ["m"]⟩
+    ["fmi3.c"], ["m"]⟩
 
 def Recipe.xml (r : Recipe) : XML.Element :=
   ⟨"BuildConfiguration", [("modelIdentifier", r.identifier), ("platform", r.platform)],
@@ -40,9 +39,9 @@ def Recipe.xml (r : Recipe) : XML.Element :=
     r.externalLibraries.map (fun name =>
       ⟨"Library", [("name", name), ("external", "true")], [], ""⟩), ""⟩
 
-def description : XML.Element :=
+def description (modelName : String) : XML.Element :=
   ⟨"fmiBuildDescription", [("fmiVersion", "3.0")],
-    [ (recipe .x86_64Linux).xml, (recipe .aarch64Linux).xml ], ""⟩
+    [ (recipe modelName .x86_64Linux).xml, (recipe modelName .aarch64Linux).xml ], ""⟩
 
 structure Invocation where
   compiler : String
@@ -50,9 +49,9 @@ structure Invocation where
   deriving DecidableEq, Repr
 
 /-- Paths are process arguments, never shell text. Link dependencies follow sources. -/
-def invocation (p : Platform) (sources headers output : String) : Invocation :=
-  let r := recipe p
-  ⟨r.compiler, r.options ++ ["-fPIC", "-shared", "-I", headers] ++
+def invocation (modelName : String) (p : Platform) (sources headers output : String) : Invocation :=
+  let r := recipe modelName p
+  ⟨r.compiler, r.options ++ ["-fPIC", "-shared", "-DFMI3_OVERRIDE_FUNCTION_PREFIX", "-I", headers] ++
     r.sources.map (fun file => sources ++ "/" ++ file) ++
     r.externalLibraries.map (fun lib => "-l" ++ lib) ++ ["-o", output]⟩
 

@@ -85,17 +85,29 @@ def preamble : String :=
   "#if FLT_RADIX != 2 || DBL_MANT_DIG != 53 || DBL_MAX_EXP != 1024 || DBL_MIN_EXP != -1021 || FLT_EVAL_METHOD != 0\n" ++
   "#error \"Modelica Real backend requires IEEE 754 binary64 double\"\n#endif\n\n"
 
-def render (m : Module) : String :=
+/-- File-scope C11 linkage. `inline` permits an unused private entry without
+suppressing warnings; it does not change the interpreted function body. -/
+inductive Linkage where
+  | external | internal
+  deriving Repr, BEq, DecidableEq
+
+def Linkage.render : Linkage → String
+  | .external => ""
+  | .internal => "static inline "
+
+def render (m : Module) (linkage : Linkage := .external) : String :=
   preamble ++
-  "double rumoca_rhs(void) {\n  return " ++ renderExpr m.rhs ++ ";\n}\n\n" ++
-  "double rumoca_step(double x) {\n  return " ++ renderExpr m.step ++ ";\n}\n\n" ++
-  "double rumoca_sample(double x, uint64_t n) {\n" ++
+  linkage.render ++ "double rumoca_rhs(void) {\n  return " ++ renderExpr m.rhs ++ ";\n}\n\n" ++
+  linkage.render ++ "double rumoca_step(double x) {\n  return " ++ renderExpr m.step ++ ";\n}\n\n" ++
+  linkage.render ++ "double rumoca_sample(double x, uint64_t n) {\n" ++
   "  while (n != 0) {\n    x = " ++ renderExpr m.step ++ ";\n" ++
   "    n = n - UINT64_C(1);\n  }\n  return x;\n}\n"
 
 /-- Byte layout only; CSyntax specifies its grammar and CExecution specifies execution. -/
-def unitText : String := preamble ++
-  "double rumoca_rhs(void) {\n  return 1.0;\n}\n\ndouble rumoca_step(double x) {\n  return (x + 1.0);\n}\n\ndouble rumoca_sample(double x, uint64_t n) {\n  while (n != 0) {\n    x = (x + 1.0);\n    n = n - UINT64_C(1);\n  }\n  return x;\n}\n"
+def unitText (linkage : Linkage := .external) : String := preamble ++
+  linkage.render ++ "double rumoca_rhs(void) {\n  return 1.0;\n}\n\n" ++
+  linkage.render ++ "double rumoca_step(double x) {\n  return (x + 1.0);\n}\n\n" ++
+  linkage.render ++ "double rumoca_sample(double x, uint64_t n) {\n  while (n != 0) {\n    x = (x + 1.0);\n    n = n - UINT64_C(1);\n  }\n  return x;\n}\n"
 
 def unitModule : Module := ⟨.one⟩
 
@@ -103,9 +115,11 @@ theorem lower_is_unit (m : Solve.Model source) : lower m = unitModule := by
   simp [lower, m.derivative_source, Solve.unitDerivative, compileProgram, unitModule]
 
 set_option maxRecDepth 10000 in
-theorem render_unit : render unitModule = unitText := by decide +kernel
+theorem render_unit (linkage : Linkage := .external) : render unitModule linkage = unitText linkage := by
+  cases linkage <;> decide +kernel
 
-theorem emission_is_unit (m : Solve.Model source) : render (lower m) = unitText := by
-  rw [lower_is_unit, render_unit]
+theorem emission_is_unit (m : Solve.Model source) (linkage : Linkage := .external) :
+    render (lower m) linkage = unitText linkage := by
+  rw [lower_is_unit, render_unit linkage]
 
 end Rumoca.C

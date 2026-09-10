@@ -227,13 +227,13 @@ def helpers : List CTree.Function := [
 def declarations : String :=
   "/* FMI 3 ABI adapter generated in Lean. See documentation/index.html for the proof boundary. */\n" ++
   "#include <fmi3Functions.h>\n#include <math.h>\n#include <stdlib.h>\n#include <string.h>\n#include <stdint.h>\n#include <fenv.h>\n\n" ++
-  "extern double rumoca_rhs(void);\nextern double rumoca_sample(double, uint64_t);\n\n" ++
   "typedef struct { double x; } Model;\n" ++
   "typedef struct {\n  Model model;\n  double time, stop, timeMin, eventTime, lastCompleted;\n  int kind, mode;\n" ++
   "  fmi3Boolean stopDefined, logging;\n  fmi3InstanceEnvironment environment;\n  fmi3LogMessageCallback logger;\n} Instance;\n\n"
 
 def render (m : Solve.FMI3Model source) (signatures : List Signature) : String :=
-  declarations ++ String.join (helpers.map CTree.Function.render) ++
+  functionPrefix m.name ++ "#include \"model.c\"\n" ++ declarations ++
+    String.join (helpers.map CTree.Function.render) ++
     String.join (signatures.map fun sig => (CTree.Function.mk sig (body m sig) false).render)
 
 end Rumoca.FMI3.Runtime

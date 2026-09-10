@@ -50,17 +50,21 @@ theorem expression_render (e : C.Expr) (c : Char) (rest : List Char) (ts : List 
     apply hb ')' _ _ (by decide +kernel)
     numerical_c_lex_fixed
 
-theorem module_render (module : C.Module) : Denotes (C.render module) (fromTarget module) := by
-  simp only [Denotes, C.render, String.toList_append, List.append_assoc]
-  refine ⟨_, rfl, ?_⟩
-  simp only [Program.tokens, fromTarget, rhsPrefix, stepPrefix, samplePrefix, sampleSuffix,
+theorem module_render (module : C.Module) (linkage : C.Linkage := .external) :
+    Denotes (C.render module linkage) (fromTarget module) linkage := by
+  cases linkage <;>
+    simp only [Denotes, C.render, C.Linkage.render, String.toList_append, List.append_assoc]
+  all_goals refine ⟨_, rfl, ?_⟩
+  all_goals simp only [Program.tokens, fromTarget, rhsPrefix, stepPrefix, samplePrefix, sampleSuffix,
+    linkageTokens,
     List.cons_append, List.nil_append, List.append_assoc]
-  numerical_c_lex_fixed
-  apply expression_render module.rhs ';' _ _ (by decide +kernel)
-  numerical_c_lex_fixed
-  apply expression_render module.step ';' _ _ (by decide +kernel)
-  numerical_c_lex_fixed
-  apply expression_render module.step ';' _ _ (by decide +kernel)
-  numerical_c_lex_fixed
+  all_goals
+    numerical_c_lex_fixed
+    apply expression_render module.rhs ';' _ _ (by decide +kernel)
+    numerical_c_lex_fixed
+    apply expression_render module.step ';' _ _ (by decide +kernel)
+    numerical_c_lex_fixed
+    apply expression_render module.step ';' _ _ (by decide +kernel)
+    numerical_c_lex_fixed
 
 end Rumoca.CSyntax

@@ -27,18 +27,19 @@ theorem expression_tokens_unique (a b : C.Expr) (xs ys : List String)
       obtain ⟨rfl, ht'⟩ := ih₂ b₂ _ _ (List.cons.inj ht).2
       exact ⟨rfl, (List.cons.inj ht').2⟩
 
-theorem program_tokens_unique (a b : Program) (h : a.tokens = b.tokens) : a = b := by
+theorem program_tokens_unique (a b : Program)
+    (h : a.tokens linkage = b.tokens linkage) : a = b := by
   simp only [Program.tokens, List.append_assoc] at h
-  have hr := (List.append_right_inj rhsPrefix).mp h
+  have hr := (List.append_right_inj (rhsPrefix linkage)).mp h
   obtain ⟨rhs, hr⟩ := expression_tokens_unique a.rhs b.rhs _ _ hr
-  have hs := (List.append_right_inj stepPrefix).mp hr
+  have hs := (List.append_right_inj (stepPrefix linkage)).mp hr
   obtain ⟨step, hs⟩ := expression_tokens_unique a.step b.step _ _ hs
-  have ht := (List.append_right_inj samplePrefix).mp hs
+  have ht := (List.append_right_inj (samplePrefix linkage)).mp hs
   obtain ⟨sample, _⟩ := expression_tokens_unique a.sample b.sample _ _ ht
   cases a; cases b
   simp_all
 
-theorem denotes_unique (ha : Denotes text a) (hb : Denotes text b) : a = b := by
+theorem denotes_unique (ha : Denotes text a linkage) (hb : Denotes text b linkage) : a = b := by
   obtain ⟨ca, ha, la⟩ := ha
   obtain ⟨cb, hb, lb⟩ := hb
   have hc := (List.append_right_inj C.preamble.toList).mp (ha.symm.trans hb)

@@ -107,16 +107,28 @@ of Modelica 3.7.
 
 ## Standards corrections before the next backend increment
 
-- [ ] **SR01/F03/F04:** declare the source-FMU math dependency and numerical
+- [x] **SR01/F03/F04:** declare the source-FMU math dependency and numerical
   compilation profile; have the existing source rebuild consume that metadata.
   **Implemented:** shared Linux/GCC recipes drive XML and the native invocation;
   independently decoded requirements and actual XML bytes strengthen the
   numerical file contract. Six new audit roots pass `build/fmi-build-package.log`.
   The existing rebuild reads the XML and uses a separate symbol-resolution
   process; the actual-file, schema, native and mutation gate passes in
-  `build/fmi-build-artifact-gate.log`. Closure awaits `build/fmi-build-full-gate.log`.
+  `build/fmi-build-artifact-gate.log`. The required full gate passed in
+  `build/fmi-build-full-gate.log`. This closes the source-build metadata correction.
+  [CI for f1ce838](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582)
+  also passed.
+  The complete FMI adapter/model-description/archive capstone remains open.
 - [ ] **SR02/F03/F04:** give numerical symbols private or consistently namespaced
   linkage, certify the declaration change, and check two source FMUs link together.
+  **Implemented, full gate pending:** generalized C/whole-compiler contracts
+  retain all prior obligations for internal linkage; FMI compiles one adapter
+  source including its private kernel. Parsed names determine valid, distinct
+  identifiers for distinct source names. The actual-file contract includes the
+  source prefix and ME/CS XML identities; the remaining adapter/CPP/linker/ZIP
+  capstone stays open. Thirteen new roots pass `build/fmi-linkage-package.log`.
+  The actual-file, importer, source-link, mutation and failure-preservation gate
+  passes in `build/fmi-linkage-artifact-gate.log`.
 - [x] **SR03/E05:** map each C status result to the Algorithm Code error anchor,
   prove that decoded mapping observes execution, and strengthen the actual
   manifest/archive contract. Schema validation alone previously missed this.

@@ -66,21 +66,22 @@ def stmtTokens : Stmt → List String
   | .whileNonzero b => ["while", "(", "n", "!=", "0", ")", "{"] ++ stmtTokens b ++ ["}"]
   | .ret e => ["return"] ++ CSyntax.exprTokens e ++ [";"]
 
-def programTokens (p : CSyntax.Program) : List String :=
-  ["double", "rumoca_rhs", "(", "void", ")", "{"] ++ stmtTokens (body p .rhs) ++ ["}"] ++
-  ["double", "rumoca_step", "(", "double", "x", ")", "{"] ++ stmtTokens (body p .step) ++ ["}"] ++
-  ["double", "rumoca_sample", "(", "double", "x", ",", "uint64_t", "n", ")", "{"] ++
+def programTokens (p : CSyntax.Program) (linkage : C.Linkage := .external) : List String :=
+  CSyntax.linkageTokens linkage ++ ["double", "rumoca_rhs", "(", "void", ")", "{"] ++ stmtTokens (body p .rhs) ++ ["}"] ++
+  CSyntax.linkageTokens linkage ++ ["double", "rumoca_step", "(", "double", "x", ")", "{"] ++ stmtTokens (body p .step) ++ ["}"] ++
+  CSyntax.linkageTokens linkage ++ ["double", "rumoca_sample", "(", "double", "x", ",", "uint64_t", "n", ")", "{"] ++
     stmtTokens (body p .sample) ++ ["}"]
 
-theorem body_tokens (p : CSyntax.Program) : p.tokens = programTokens p := by
+theorem body_tokens (p : CSyntax.Program) (linkage : C.Linkage := .external) :
+    p.tokens linkage = programTokens p linkage := by
   simp [CSyntax.Program.tokens, CSyntax.rhsPrefix, CSyntax.stepPrefix,
     CSyntax.samplePrefix, CSyntax.sampleSuffix, programTokens, body, stmtTokens,
     CSyntax.exprTokens, List.append_assoc]
 
-theorem denotes_statements (h : CSyntax.Denotes text p) :
-    ∃ chars, text.toList = C.preamble.toList ++ chars ∧ CSyntax.Lexes chars (programTokens p) := by
+theorem denotes_statements (h : CSyntax.Denotes text p linkage) :
+    ∃ chars, text.toList = C.preamble.toList ++ chars ∧ CSyntax.Lexes chars (programTokens p linkage) := by
   obtain ⟨chars, ht, hl⟩ := h
-  exact ⟨chars, ht, body_tokens p ▸ hl⟩
+  exact ⟨chars, ht, body_tokens p linkage ▸ hl⟩
 
 def WellScoped (p : CSyntax.Program) : Prop :=
   Scoped false p.rhs ∧ Scoped true p.step ∧ Scoped true p.sample

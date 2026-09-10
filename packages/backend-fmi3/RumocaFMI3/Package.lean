@@ -26,18 +26,23 @@ def documentation : String :=
   "<p>sources/model.c has an actual-file Lean certificate of source-to-C numerical semantic " ++
   "preservation, including all finite binary64 starts. The source-build description is also " ++
   "checked against its declared compiler, flags, sources and library requirements. " ++
-  "The FMI adapter, model-description XML, ZIP, native " ++
+  "The source API prefix and both XML model identifiers are checked against the parsed model name. " ++
+  "The remaining FMI adapter and model-description semantics, ZIP, native " ++
   "C compilation, linking, callbacks, and host solver are outside that theorem. " ++
   "Their validation is not a proof of full FMI compliance. " ++
   "See extra/org.cognipilot.rumoca for the source snapshot and kernel checking log.</p>" ++
   "<p>The shared library targets the platform named in binaries/. The build description " ++
   "declares Linux x86_64/aarch64 GCC source profiles, including the system math library. " ++
+  "Compile only sources/fmi3.c; it includes model.c with private numerical helpers. " ++
+  "Source functions use the modelIdentifier prefix; define FMI3_OVERRIDE_FUNCTION_PREFIX " ++
+  "when building a shared library with the standard unprefixed FMI API. " ++
   "Use the FMI 3 headers supplied by your importer. Other source-build platforms require " ++
   "a separately validated build profile. Execution requires IEEE binary64, gradual " ++
   "underflow and round-to-nearest; compiler flags do not establish these host conditions.</p></html>\n"
 
-/-- Write only data prepared by Solve, and the existing C lowering of that Solve
-program. The driver must check sources/model.c before invoking archive. -/
+/-- Write prepared Solve data and the shared C lowering with internal linkage.
+The driver checks staged numerical C, build metadata and source identity before
+invoking archive. -/
 def writeSources (m : Solve.FMI3Model source) (root vendor : FilePath) : IO Unit := do
   let _ ← command "sha256sum" #["-c", "SHA256SUMS"] (some vendor)
   let sigs ← match Header.signatures (← IO.FS.readFile (vendor / "fmi3FunctionTypes.h")) with
@@ -46,10 +51,10 @@ def writeSources (m : Solve.FMI3Model source) (root vendor : FilePath) : IO Unit
   IO.FS.createDirAll (root / "sources")
   IO.FS.createDirAll (root / "documentation/licenses")
   IO.FS.createDirAll (root / "extra/org.cognipilot.rumoca")
-  IO.FS.writeFile (root / "sources/model.c") (C.render (C.lower m.solve))
+  IO.FS.writeFile (root / "sources/model.c") (C.render (C.lower m.solve) .internal)
   IO.FS.writeFile (root / "sources/fmi3.c") (Runtime.render m sigs)
   IO.FS.writeFile (root / "modelDescription.xml") (XML.document (modelDescription m))
-  IO.FS.writeFile (root / "sources/buildDescription.xml") (XML.document Build.description)
+  IO.FS.writeFile (root / "sources/buildDescription.xml") (XML.document (Build.description m.name))
   IO.FS.writeFile (root / "documentation/index.html") documentation
   IO.FS.writeFile (root / "documentation/licenses/fmi-standard.txt")
     (← IO.FS.readFile (vendor / "LICENSE.txt"))
@@ -63,11 +68,11 @@ def hostPlatform : IO Build.Platform := do
 
 /-- Compile and validate in a private staging directory. Publication is left to
 the driver so failure cannot replace an earlier successful FMU. -/
-def archive (root vendor destination : FilePath) : IO Unit := do
+def archive (modelName : String) (root vendor destination : FilePath) : IO Unit := do
   let platform ← hostPlatform
   IO.FS.createDirAll (root / "binaries" / platform.name)
-  let library := root / "binaries" / platform.name / (modelIdentifier ++ ".so")
-  let invocation := Build.invocation platform (root / "sources").toString vendor.toString library.toString
+  let library := root / "binaries" / platform.name / (modelIdentifier modelName ++ ".so")
+  let invocation := Build.invocation modelName platform (root / "sources").toString vendor.toString library.toString
   let _ ← command invocation.compiler invocation.args.toArray
   let _ ← command "zip" #["-q", "-X", "-0", "-r", destination.toString,
     "modelDescription.xml", "sources", "binaries", "documentation", "extra"] (some root)

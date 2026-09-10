@@ -21,7 +21,7 @@ def workspace : IO FilePath := do
   try findRoot (← IO.Process.getCurrentDir)
   catch _ => findRoot (← IO.appPath)
 
-/-- The fixed checker reads the staged source, kernel and build-description bytes.
+/-- The fixed checker reads the staged source, kernel, adapter and XML bytes.
 Producer-supplied proofs, native compilation and ZIP validation cannot authorize
 this contract. -/
 def checkSources (workspace root : FilePath) : IO Unit := do
@@ -46,11 +46,11 @@ def build (source : String) (artifact : Artifact source) (output : FilePath) : I
     IO.println "Preparing FMI 3 Model Exchange / Co-Simulation sources..."
     FMI3.Package.writeSources artifact.solve.prepareFMI3 root vendor
     IO.FS.writeFile (root / "extra/org.cognipilot.rumoca/Source.mo") source
-    IO.println "Checking the actual numerical C and source-build description in Lean..."
+    IO.println "Checking the numerical C, source-build recipe and FMI identities in Lean..."
     checkSources workspace root
     IO.println "Building and validating the FMU..."
     let archive := staging / "model.fmu"
-    FMI3.Package.archive root vendor archive
+    FMI3.Package.archive artifact.solve.prepareFMI3.name root vendor archive
     IO.FS.rename archive destination
     IO.println s!"Created {destination}"
   finally IO.FS.removeDirAll staging

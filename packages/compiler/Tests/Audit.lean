@@ -9,6 +9,10 @@ import Rumoca.ArrayProofs
 import Rumoca.FMI3BuildProofs
 
 #audit axioms Rumoca.FMI3.sourceBuild_correct
+#audit axioms Rumoca.FMI3.lexed_name
+#audit axioms Rumoca.FMI3.parsed_name
+#audit axioms Rumoca.FMI3.parsed_modelIdentifier
+#audit axioms Rumoca.FMI3.parsed_functionPrefix
 
 #audit axioms Rumoca.ArrayCompiler.Prepared.source_correct
 #audit axioms Rumoca.ArrayCompiler.Prepared.equation_correct

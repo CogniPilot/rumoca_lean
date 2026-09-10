@@ -11,7 +11,8 @@ structure Artifact (source : String) where
   solve : Solve.Model parsed.ast
 
 def Artifact.target (a : Artifact source) : C.Module := C.lower a.solve
-def Artifact.cSource (a : Artifact source) : String := C.render a.target
+def Artifact.cSource (a : Artifact source) (linkage : C.Linkage := .external) : String :=
+  C.render a.target linkage
 
 def compile (source : String) : Except Diagnostic (Artifact source) := do
   let parsed ← parse source

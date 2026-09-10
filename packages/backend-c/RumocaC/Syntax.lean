@@ -38,20 +38,27 @@ structure Program where
 
 def fromTarget (m : C.Module) : Program := ⟨m.rhs, m.step, m.step⟩
 
-def rhsPrefix : List String := ["double", "rumoca_rhs", "(", "void", ")", "{", "return"]
-def stepPrefix : List String := [";", "}", "double", "rumoca_step", "(", "double", "x", ")", "{", "return"]
-def samplePrefix : List String :=
-  [";", "}", "double", "rumoca_sample", "(", "double", "x", ",", "uint64_t", "n", ")", "{",
+/-- Independent declaration specifiers, with C11 internal linkage for `static`. -/
+def linkageTokens : C.Linkage → List String
+  | .external => []
+  | .internal => ["static", "inline"]
+
+def rhsPrefix (linkage : C.Linkage := .external) : List String :=
+  linkageTokens linkage ++ ["double", "rumoca_rhs", "(", "void", ")", "{", "return"]
+def stepPrefix (linkage : C.Linkage := .external) : List String :=
+  [";", "}"] ++ linkageTokens linkage ++ ["double", "rumoca_step", "(", "double", "x", ")", "{", "return"]
+def samplePrefix (linkage : C.Linkage := .external) : List String :=
+  [";", "}"] ++ linkageTokens linkage ++ ["double", "rumoca_sample", "(", "double", "x", ",", "uint64_t", "n", ")", "{",
    "while", "(", "n", "!=", "0", ")", "{", "x", "="]
 def sampleSuffix : List String :=
   [";", "n", "=", "n", "-", "UINT64_C", "(", "1", ")", ";", "}", "return", "x", ";", "}"]
 
-def Program.tokens (p : Program) : List String :=
-  rhsPrefix ++ exprTokens p.rhs ++ stepPrefix ++ exprTokens p.step ++
-    samplePrefix ++ exprTokens p.sample ++ sampleSuffix
+def Program.tokens (p : Program) (linkage : C.Linkage := .external) : List String :=
+  rhsPrefix linkage ++ exprTokens p.rhs ++ stepPrefix linkage ++ exprTokens p.step ++
+    samplePrefix linkage ++ exprTokens p.sample ++ sampleSuffix
 
 /-- Declarative membership in the admitted C text grammar, including its ABI header. -/
-def Denotes (source : String) (p : Program) : Prop :=
-  ∃ body, source.toList = C.preamble.toList ++ body ∧ Lexes body p.tokens
+def Denotes (source : String) (p : Program) (linkage : C.Linkage := .external) : Prop :=
+  ∃ body, source.toList = C.preamble.toList ++ body ∧ Lexes body (p.tokens linkage)
 
 end Rumoca.CSyntax

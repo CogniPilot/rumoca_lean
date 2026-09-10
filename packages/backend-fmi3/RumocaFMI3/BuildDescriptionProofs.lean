@@ -1,5 +1,6 @@
 import RumocaFMI3.BuildDescription
-import XML.Proofs
+import XML.Certificate
+import RumocaFMI3.IdentifierProofs
 
 namespace Rumoca.FMI3.Build
 
@@ -45,49 +46,85 @@ def Recipe.decoded (r : Recipe) : Decoded :=
 
 /-- Independently stated obligations of the current Linux/GCC binary64 C profile.
 These are build requirements, not a proof about GCC or its output machine code. -/
-def Required (p : Platform) (r : Decoded) : Prop :=
-  r.identifier = "RumocaModel" ∧ r.platform = p.name ∧
+def Required (modelName : String) (p : Platform) (r : Decoded) : Prop :=
+  r.identifier = "Rumoca_" ++ modelName ∧ r.platform = p.name ∧
   r.language = "C11" ∧ r.compiler = "gcc" ∧
   r.options = "-std=c11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter -pedantic -fno-fast-math -ffp-contract=off -frounding-math" ∧
-  r.sources = ["model.c", "fmi3.c"] ∧ r.externalLibraries = ["m"]
+  r.sources = ["fmi3.c"] ∧ r.externalLibraries = ["m"]
 
 /-- Independently specified native invocation, including the required math library. -/
 def RequiredInvocation (sources headers output : String) (i : Invocation) : Prop :=
   i.compiler = "gcc" ∧ i.args =
     ["-std=c11", "-O2", "-Wall", "-Wextra", "-Werror", "-Wno-unused-parameter",
       "-pedantic", "-fno-fast-math", "-ffp-contract=off", "-frounding-math",
-      "-fPIC", "-shared", "-I", headers,
-      sources ++ "/model.c", sources ++ "/fmi3.c", "-lm", "-o", output]
+      "-fPIC", "-shared", "-DFMI3_OVERRIDE_FUNCTION_PREFIX", "-I", headers,
+      sources ++ "/fmi3.c", "-lm", "-o", output]
 
 /-- Actual XML text, uniquely selected recipes, and the matching producer invocation. -/
-def ArtifactContract (text : String) : Prop :=
+def ArtifactContract (modelName text : String) : Prop :=
   ∃ root : XML.Element, XML.Document root text ∧
     ∀ p : Platform, ∃ r : Decoded,
-      decode root "RumocaModel" p.name = some r ∧ Required p r ∧
+      decode root ("Rumoca_" ++ modelName) p.name = some r ∧ Required modelName p r ∧
       ∀ sources headers output, RequiredInvocation sources headers output
-        (invocation p sources headers output)
+        (invocation modelName p sources headers output)
 
-theorem recipe_required (p : Platform) : Required p (recipe p).decoded := by
-  cases p <;> unfold Required <;> decide +kernel
+theorem recipe_required (modelName : String) (p : Platform) :
+    Required modelName p (recipe modelName p).decoded := by
+  simp [Required, recipe, Recipe.decoded, modelIdentifier]
+  decide +kernel
 
-theorem decode_recipe (p : Platform) :
-    decode description "RumocaModel" p.name = some (recipe p).decoded := by
-  cases p <;> decide +kernel
+theorem decode_recipe (modelName : String) (p : Platform) :
+    decode (description modelName) (modelIdentifier modelName) p.name =
+      some (recipe modelName p).decoded := by
+  cases p <;> simp [decode, description, Recipe.xml, Recipe.decoded, recipe, only?, Platform.name,
+    guard, List.filter, List.lookup, List.mapM_cons, List.mapM_nil]
 
-theorem invocation_required (p : Platform) (sources headers output : String) :
-    RequiredInvocation sources headers output (invocation p sources headers output) := by
+theorem invocation_required (modelName : String) (p : Platform) (sources headers output : String) :
+    RequiredInvocation sources headers output (invocation modelName p sources headers output) := by
   simp [RequiredInvocation, invocation, recipe, String.append_assoc]
 
 set_option maxRecDepth 10000 in
-theorem description_valid : description.valid = true := by
-  simp only [description, Recipe.xml, recipe, List.map_cons, List.map_nil,
-    List.cons_append, List.nil_append]
-  repeat (rw [XML.Element.valid]; dsimp only [List.map, List.all, id])
-  decide +kernel
+theorem configuration_valid (modelName : String) (p : Platform)
+    (text : XML.Text (modelIdentifier modelName)) : (recipe modelName p).xml.valid = true := by
+  apply XML.Certificate.node_valid
+  · rw [decide_eq_true_eq]
+    refine ⟨?_, ?_, ?_, Or.inl rfl⟩
+    · change XML.Name "BuildConfiguration"; decide +kernel
+    · change XML.AttributesValid [("modelIdentifier", modelIdentifier modelName), ("platform", p.name)]
+      constructor
+      · change ["modelIdentifier", "platform"].Nodup; decide +kernel
+      · intro a ha
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
+        rcases ha with rfl | rfl
+        · exact ⟨by change XML.Name "modelIdentifier"; decide +kernel, text⟩
+        · cases p <;> dsimp only [Platform.name, Prod.fst, Prod.snd] <;>
+            exact ⟨by decide +kernel, by decide +kernel⟩
+    · change XML.Text ""; decide +kernel
+  · cases p <;>
+      simp only [Recipe.xml, recipe, List.map_cons, List.map_nil, List.cons_append, List.nil_append]
+    all_goals
+      repeat (rw [XML.Element.valid]; dsimp only [List.map, List.all, id])
+      decide +kernel
 
-theorem artifact_correct : ArtifactContract (XML.document description) := by
-  refine ⟨description, XML.document_correct _ description_valid, ?_⟩
+theorem description_valid (modelName : String) (parts : NameParts modelName) :
+    (description modelName).valid = true := by
+  apply XML.Certificate.node_valid
+  · rw [decide_eq_true_eq]
+    refine ⟨?_, ?_, ?_, Or.inl rfl⟩
+    · change XML.Name "fmiBuildDescription"; decide +kernel
+    · change XML.AttributesValid [("fmiVersion", "3.0")]; decide +kernel
+    · change XML.Text ""; decide +kernel
+  · change ((recipe modelName .x86_64Linux).xml.valid &&
+      ((recipe modelName .aarch64Linux).xml.valid && true)) = true
+    rw [configuration_valid modelName .x86_64Linux (modelIdentifier_parts parts).text,
+      configuration_valid modelName .aarch64Linux (modelIdentifier_parts parts).text]
+    rfl
+
+theorem artifact_correct (modelName : String) (parts : NameParts modelName) :
+    ArtifactContract modelName (XML.document (description modelName)) := by
+  refine ⟨description modelName, XML.document_correct _ (description_valid modelName parts), ?_⟩
   intro p
-  exact ⟨(recipe p).decoded, decode_recipe p, recipe_required p, invocation_required p⟩
+  exact ⟨(recipe modelName p).decoded, decode_recipe modelName p,
+    recipe_required modelName p, invocation_required modelName p⟩
 
 end Rumoca.FMI3.Build

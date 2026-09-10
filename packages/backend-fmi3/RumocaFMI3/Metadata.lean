@@ -10,8 +10,8 @@ def token (m : Solve.FMI3Model source) : String :=
 def modelDescription (m : Solve.FMI3Model source) : Element :=
   ⟨"fmiModelDescription", [("fmiVersion", "3.0"), ("modelName", m.name),
     ("instantiationToken", token m), ("generationTool", "lean_rumoca")], [
-    ⟨"ModelExchange", [("modelIdentifier", modelIdentifier)], [], ""⟩,
-    ⟨"CoSimulation", [("modelIdentifier", modelIdentifier),
+    ⟨"ModelExchange", [("modelIdentifier", modelIdentifier m.name)], [], ""⟩,
+    ⟨"CoSimulation", [("modelIdentifier", modelIdentifier m.name),
       ("canHandleVariableCommunicationStepSize", "true"), ("fixedInternalStepSize", "1")], [], ""⟩,
     ⟨"LogCategories", [], [⟨"Category", [("name", "logStatus")], [], ""⟩], ""⟩,
     ⟨"DefaultExperiment", [("startTime", "0"), ("stopTime", "3"), ("stepSize", "1")], [], ""⟩,

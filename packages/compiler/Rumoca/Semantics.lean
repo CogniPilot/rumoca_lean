@@ -68,7 +68,7 @@ theorem ideal_end_to_end (a : Artifact text) (x₀ : ℝ) (n : Nat) :
 
 /-- Layout only. Verified.lean connects the emitted text to the authored C
 grammar, operational semantics and binary64 rounding contract. -/
-theorem emitted_text_is_unit (a : Artifact text) : a.cSource = C.unitText :=
-  C.emission_is_unit a.solve
+theorem emitted_text_is_unit (a : Artifact text) (linkage : C.Linkage := .external) :
+    a.cSource linkage = C.unitText linkage := C.emission_is_unit a.solve linkage
 
 end Rumoca

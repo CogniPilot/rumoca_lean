@@ -1,7 +1,7 @@
 """Independent archive, schema, importer and raw FMI ABI regression checks.
 
 This is test infrastructure, not compiler implementation or a formal certificate.
-Run inside the Nix shell: python3 tests/fmi3.py build/Integrator.fmu
+Run inside the Nix shell: python3 tests/fmi3.py MODEL.fmu SECOND_MODEL.fmu
 """
 
 import ctypes as C
@@ -23,6 +23,7 @@ from fmpy.model_description import read_build_description
 
 
 FMU = Path(sys.argv.pop(1)).resolve()
+PEER_FMU = Path(sys.argv.pop(1)).resolve()
 VENDOR = Path(__file__).resolve().parents[1] / "packages/backend-fmi3/vendor/fmi3"
 D, B, N, VR, P = C.c_double, C.c_bool, C.c_size_t, C.c_uint32, C.c_void_p
 OK, DISCARD, ERROR = 0, 2, 3
@@ -374,25 +375,32 @@ class FMI3Tests(unittest.TestCase):
         # Validate the published schema, then use its actual compiler, flags,
         # source names and dependencies. The importer supplies only FMI headers
         # and the shared-object output convention for the selected Linux host.
-        read_build_description(self.root, validate=True)
-        build = ElementTree.parse(self.root / "sources/buildDescription.xml")
-        configs = [c for c in build.findall("BuildConfiguration")
-                   if c.get("modelIdentifier") == self.md.modelExchange.modelIdentifier
-                   and c.get("platform") == self.library.parent.name]
-        self.assertEqual(len(configs), 1)
-        sets = configs[0].findall("SourceFileSet")
-        self.assertEqual(len(sets), 1)
-        source_set = sets[0]
-        self.assertEqual(source_set.get("language"), "C11")
-        sources = [str(self.root / "sources" / s.get("name"))
-                   for s in source_set.findall("SourceFile")]
-        libraries = configs[0].findall("Library")
-        self.assertTrue(all(lib.get("external") == "true" for lib in libraries))
+        def recipe(root):
+            read_build_description(root, validate=True)
+            md = read_model_description(root, validate=True)
+            identifier = md.modelExchange.modelIdentifier
+            self.assertEqual(identifier, md.coSimulation.modelIdentifier)
+            build = ElementTree.parse(root / "sources/buildDescription.xml")
+            configs = [c for c in build.findall("BuildConfiguration")
+                       if c.get("modelIdentifier") == identifier
+                       and c.get("platform") == self.library.parent.name]
+            self.assertEqual(len(configs), 1)
+            sets = configs[0].findall("SourceFileSet")
+            self.assertEqual(len(sets), 1)
+            source_set = sets[0]
+            self.assertEqual(source_set.get("language"), "C11")
+            sources = [str(root / "sources" / s.get("name"))
+                       for s in source_set.findall("SourceFile")]
+            libraries = configs[0].findall("Library")
+            self.assertTrue(all(lib.get("external") == "true" for lib in libraries))
+            return (identifier, source_set.get("compiler"),
+                    shlex.split(source_set.get("compilerOptions", "")), sources,
+                    ["-l" + lib.get("name") for lib in libraries])
+
+        identifier, compiler, options, sources, libraries = recipe(self.root)
         rebuilt = self.root / "rebuilt.so"
-        subprocess.run([source_set.get("compiler"),
-                        *shlex.split(source_set.get("compilerOptions", "")),
-                        "-fPIC", "-shared", "-I", str(VENDOR), *sources,
-                        *("-l" + lib.get("name") for lib in libraries),
+        subprocess.run([compiler, *options, "-fPIC", "-shared",
+                        "-DFMI3_OVERRIDE_FUNCTION_PREFIX", "-I", str(VENDOR), *sources, *libraries,
                         "-o", str(rebuilt)], check=True)
         # Python already loads libm and can hide a missing dependency. Resolve
         # every symbol in a fresh loader process which links only libdl.
@@ -410,9 +418,36 @@ int main(int argc, char **argv) {
         subprocess.run(["gcc", str(loader_source), "-ldl", "-o", str(loader)], check=True)
         subprocess.run([str(loader), str(rebuilt)], check=True)
         library = C.CDLL(str(rebuilt))
-        fn = library.rumoca_sample
-        fn.argtypes, fn.restype = [D, C.c_uint64], D
-        self.assertEqual(fn(0.5, 3), 3.5)
+        fn = library.fmi3GetVersion
+        fn.argtypes, fn.restype = [], C.c_char_p
+        self.assertEqual(fn(), b"3.0")
+
+        # Static source composition uses the prefixes declared by the FMUs,
+        # without caller-invented names or exposed numerical helpers.
+        peer = self.root / "peer"
+        with zipfile.ZipFile(PEER_FMU) as archive:
+            archive.extractall(peer)
+        recipes = [recipe(self.root), recipe(peer)]
+        self.assertNotEqual(recipes[0][0], recipes[1][0])
+        objects = []
+        dependencies = []
+        for index, (_, cc, flags, files, libs) in enumerate(recipes):
+            self.assertEqual(len(files), 1)
+            obj = self.root / f"source-{index}.o"
+            subprocess.run([cc, *flags, "-fPIC", "-I", str(VENDOR), "-c", files[0], "-o", str(obj)], check=True)
+            objects.append(str(obj))
+            dependencies.extend(libs)
+        combined = self.root / "combined.so"
+        subprocess.run([compiler, "-shared", *objects, *dependencies, "-o", str(combined)], check=True)
+        subprocess.run([str(loader), str(combined)], check=True)
+        exports = subprocess.check_output(["nm", "-g", "--defined-only", str(combined)], text=True).splitlines()
+        prefixes = tuple(r[0] + "_fmi3" for r in recipes)
+        self.assertTrue(all(line.split()[-1].startswith(prefixes) for line in exports))
+        combined_api = C.CDLL(str(combined))
+        for name, *_ in recipes:
+            version = getattr(combined_api, name + "_fmi3GetVersion")
+            version.argtypes, version.restype = [], C.c_char_p
+            self.assertEqual(version(), b"3.0")
 
 
 if __name__ == "__main__":

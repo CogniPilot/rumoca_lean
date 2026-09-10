@@ -4,6 +4,8 @@ cd "$(dirname "$0")/.."
 mkdir -p build
 compiler=packages/compiler/.lake/build/bin/rumoca
 runner=packages/fmu-runner/.lake/build/bin/fmu-runner
+task_tmp=$(mktemp -d "$PWD/build/fmi-tools.XXXXXX")
+trap 'rm -rf "$task_tmp"' EXIT
 "$compiler" examples/Integrator.mo -o build/Integrator.fmu
 "$runner" validate build/Integrator.fmu
 "$runner" info build/Integrator.fmu
@@ -11,7 +13,10 @@ for mode in me cs; do
   "$runner" simulate build/Integrator.fmu --mode "$mode" --start x 0.5 \
     --variable x --stop 3 --step 1 --csv "build/Integrator-$mode.csv"
 done
-python3 tests/fmi3.py build/Integrator.fmu
+# Reuse the unit profile under a distinct source name to exercise source linking.
+sed 's/Integrator/SecondIntegrator/g' examples/Integrator.mo > "$task_tmp/SecondIntegrator.mo"
+"$compiler" "$task_tmp/SecondIntegrator.mo" -o "$task_tmp/SecondIntegrator.fmu" > build/fmi-second-model.log
+python3 tests/fmi3.py build/Integrator.fmu "$task_tmp/SecondIntegrator.fmu"
 python3 - <<'PY'
 import csv
 for mode in ['me', 'cs']:
@@ -34,9 +39,6 @@ if "$compiler" examples/DrivenIntegrator.mo -o build/preserved.fmu > build/fmi-u
   echo "compiler admitted the unverified driven profile" >&2; exit 1
 fi
 cmp build/Integrator.fmu build/preserved.fmu
-# A native build failure after the kernel check must preserve the old archive.
-task_tmp=$(mktemp -d "$PWD/build/fmi-tools.XXXXXX")
-trap 'rm -rf "$task_tmp"' EXIT
 # A missing declared dependency must fail the actual-file contract before the
 # native build. Keep this as one mutation of the existing packaged unit model.
 python - build/Integrator.fmu "$task_tmp/changed build" <<'PY'
@@ -58,6 +60,28 @@ if lake env lean "-Drumoca.fmi3.root=$task_tmp/changed build" \
 fi
 rg -q 'actual FMI build description differs from the required source-build profile' \
   build/fmi-build-metadata-rejection.log
+# The advertised identifier must also agree with the actual source API prefix.
+python - build/Integrator.fmu "$task_tmp/changed build" <<'PY'
+from pathlib import Path
+from zipfile import ZipFile
+import sys
+root = Path(sys.argv[2])
+with ZipFile(sys.argv[1]) as archive:
+    archive.extractall(root)
+path = root / 'sources/fmi3.c'
+text = path.read_text()
+changed = text.replace('#define FMI3_FUNCTION_PREFIX Rumoca_Integrator_',
+                       '#define FMI3_FUNCTION_PREFIX Wrong_Integrator_', 1)
+assert changed != text
+path.write_text(changed)
+PY
+if lake env lean "-Drumoca.fmi3.root=$task_tmp/changed build" \
+    packages/compiler/Tools/CheckFMI3Build.lean > build/fmi-source-prefix-rejection.log 2>&1; then
+  echo 'FMI source-build certificate accepted a mismatched API prefix' >&2; exit 1
+fi
+rg -q 'actual FMI source prefix or private-kernel inclusion differs from its model identifier' \
+  build/fmi-source-prefix-rejection.log
+# A native build failure after the kernel check must preserve the old archive.
 cat > "$task_tmp/gcc" <<'SH'
 #!/usr/bin/env bash
 echo 'deliberate native compiler failure' >&2

@@ -577,10 +577,10 @@ remain F01–F04 in the roadmap.
 
 The unit profile now has a Lean FMU producer and a separate Lean runner
 package reusing FMPy. `rumoca MODEL.mo -o MODEL.fmu` emits model/build XML,
-the original numerical `sources/model.c`, a structured C ABI adapter in
+an internally linked numerical `sources/model.c`, a structured C ABI adapter in
 `sources/fmi3.c`, and a host Linux shared library exposing ME and CS. Before
 native compilation it invokes the fixed actual-file checker on the staged
-Modelica source, current EBNF, numerical kernel and build description, then audits
+Modelica source, current EBNF, numerical kernel, adapter and both XML files, then audits
 the result.
 ZIP and FMPy validation run before an atomic publication rename. Failure
 leaves a previously published FMU intact. Toolchain I/O and publication are
@@ -589,7 +589,8 @@ tested infrastructure, not verified filesystem operations.
 `Build.recipe` supplies both the native compiler invocation and the source-build
 XML for Linux x86_64/aarch64 GCC. `Build.ArtifactContract` requires valid XML
 characters, a uniquely decoded recipe for each platform, the explicit C11 and
-floating-point options, both source members and the environment's math library.
+floating-point options, the single compiled `fmi3.c` source and the environment's math library.
+That translation unit includes the private numerical `model.c`.
 The independent `RequiredInvocation` also checks the producer's argument list,
 universally over its path arguments. `FMI3.SourceBuildContract` composes this
 with the unchanged numerical `ArtifactContract`. The fixed
@@ -607,7 +608,37 @@ binary in a fresh loader process. This prevents Python's already-loaded math
 library from concealing a missing dependency. These are build-recipe and file
 proofs plus a native boundary check; they do not prove GCC, linking, runtime
 floating-point settings, the actual FMI adapter/model-description XML or the
-complete FMU ZIP. The required full gate is tracked in `build/fmi-build-full-gate.log`.
+complete FMU ZIP. The required full gate passed in `build/fmi-build-full-gate.log`.
+[CI for f1ce838](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582)
+also passed.
+
+The SR02 linkage increment generalizes the existing complete numerical
+`ArtifactContract` over external or `static inline` declaration tokens, without
+changing its source, execution, behavior or rounding obligations. The FMI
+profile selects internal linkage and a single compiled adapter translation
+unit. `modelIdentifier` is `Rumoca_` followed by the parsed model name. Source
+lexical proofs establish a valid C identifier and XML text; distinct model
+names have distinct identifiers. Repeated instances share an identifier, and
+unrelated artifacts with the same name are not guaranteed distinct namespaces.
+
+`FMI3.SourceBuildContract` also requires decoded modelName/ME/CS identifiers in
+the actual model-description XML and the exact source prefix/include fragment
+in the actual adapter. The remainder of that adapter is unconstrained by this
+fragment proposition. It does not prove full preprocessing, linking, metadata
+semantics or whole-adapter behavior. The native binary build uses the official
+header's `FMI3_OVERRIDE_FUNCTION_PREFIX`; ordinary source composition retains
+the declared prefix. The fixed reader quotes the full adapter as bounded
+character blocks and uses `String.ofList` in the proposition; this avoids
+kernel reduction of a large UTF-8 builder. `sourcePrefix_of_chars` derives the
+same string decomposition from that input's checked character prefix. As with
+literal quotation, file reading and faithful input encoding remain part of the
+small trusted adapter. The certificate passes in `build/fmi-prefix-certificate.log`.
+Thirteen new roots and the generalized existing roots pass
+`build/fmi-linkage-package.log`. The targeted artifact/importer/source-link gate
+passes in `build/fmi-linkage-artifact-gate.log`, retaining thirteen native test
+groups and adding one prefix mutation. Both source FMUs compile from their own
+XML recipes, link together and expose only their declared FMI APIs. Failed
+native builds preserve earlier FMUs. The required full gate remains pending.
 
 `Solve.FMI3Model` carries the original Solve model, source names and a prepared
 scalar tensor IVP. Its numerical policy remains unit Euler; default start is

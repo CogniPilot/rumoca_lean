@@ -39,17 +39,18 @@ theorem execution_correct (m : Solve.Model source) (x : Binary64.Value) (n : Nat
 /-- This binds the independently interpreted C body to the entire lowering chain.
 The lexical witness refers to the actual source characters, and the target
 grammar witness refers to the actual emitted characters. -/
-structure ArtifactContract (a : Artifact source) (emitted : String) : Prop where
-  bytes : a.cSource = emitted
+structure ArtifactContract (a : Artifact source) (emitted : String)
+    (linkage : C.Linkage := .external) : Prop where
+  bytes : a.cSource linkage = emitted
   source_lexes : Lexes source.toList a.parsed.ast.tokens
   source_ebnf : Generated.rawGrammar.Accepts (a.parsed.tokens.map Token.symbol)
-  c_grammar : CSyntax.Denotes emitted (CExecution.program a.solve)
+  c_grammar : CSyntax.Denotes emitted (CExecution.program a.solve) linkage
   rhs_preserved : ∀ d input, Source.Equation a.parsed.ast d ↔
     d a.parsed.ast.state = C.eval (input : ℝ) a.target.rhs
   execution : ∀ x n, ExecutionContract (CExecution.program a.solve) a.parsed.ast x n
   well_scoped : CStatements.WellScoped (CExecution.program a.solve)
   statements : ∃ chars, emitted.toList = C.preamble.toList ++ chars ∧
-    CSyntax.Lexes chars (CStatements.programTokens (CExecution.program a.solve))
+    CSyntax.Lexes chars (CStatements.programTokens (CExecution.program a.solve) linkage)
   behaviors : ∀ f x n b,
     (CStatements.machine (CExecution.program a.solve)).Behaves (.entry f x n) b ↔
       Source.SampledBehavior a.parsed.ast f x n.val b
@@ -71,10 +72,10 @@ structure ArtifactContract (a : Artifact source) (emitted : String) : Prop where
     (CStatements.machine (CExecution.program a.solve)).Behaves (.entry .sample x n) b ↔
       b = .terminates ((CoSimulation.run a.solve ⟨⟨x⟩, 0⟩ n.val).model.x)
 
-theorem artifact_correct (a : Artifact source) (he : a.cSource = emitted) :
-    ArtifactContract a emitted := by
-  have hp : CSyntax.Denotes emitted (CExecution.program a.solve) :=
-    he ▸ CSyntax.module_render a.target
+theorem artifact_correct (a : Artifact source) (he : a.cSource linkage = emitted) :
+    ArtifactContract a emitted linkage := by
+  have hp : CSyntax.Denotes emitted (CExecution.program a.solve) linkage :=
+    he ▸ CSyntax.module_render a.target linkage
   exact ⟨he, parsed_lexes a.parsed, parsed_in_ebnf a.parsed, hp,
     compiler_correct a.solve, execution_correct a.solve, CStatements.lower_scoped a.solve,
     CStatements.denotes_statements hp, CStatements.lower_behavior_correct a.solve,
@@ -84,16 +85,16 @@ theorem artifact_correct (a : Artifact source) (he : a.cSource = emitted) :
 
 /-- The actual compiler result, actual emitted text and semantic contract are
 checked together. No cross-prover assumption or native Float axiom is used. -/
-theorem compile_verified (h : compile source = .ok a) (he : a.cSource = emitted) :
-    compile source = .ok a ∧ ArtifactContract a emitted :=
+theorem compile_verified (h : compile source = .ok a) (he : a.cSource linkage = emitted) :
+    compile source = .ok a ∧ ArtifactContract a emitted linkage :=
   ⟨h, artifact_correct a he⟩
 
 /-- Whole-compiler semantic preservation at the C boundary. Every behavior of
 the actual emitted output is a source numerical-profile behavior, and conversely.
 Inputs use actual finite IEEE bit patterns and an actual 64-bit unsigned count.
 The separate real-solution refinement is part of `compile_verified`. -/
-theorem compiler_semantic_preservation (h : compile source = .ok a) (he : a.cSource = emitted) :
-    ∃ p, CSyntax.Denotes emitted p ∧ CStatements.WellScoped p ∧
+theorem compiler_semantic_preservation (h : compile source = .ok a) (he : a.cSource linkage = emitted) :
+    ∃ p, CSyntax.Denotes emitted p linkage ∧ CStatements.WellScoped p ∧
       ∀ f (bits : Binary64.FiniteBits) (n : CStatements.Counter) b,
         (CStatements.machine p).Behaves (.entry f (Binary64.ofBits bits) n) b ↔
           Source.SampledBehavior a.parsed.ast f (Binary64.ofBits bits) n.val b := by
@@ -104,8 +105,8 @@ theorem compiler_semantic_preservation (h : compile source = .ok a) (he : a.cSou
 /-- Transfer any property of source-profile observations to every behavior of
 the actual emitted output. The property can constrain returned bits or rule out
 wrong/diverging executions; it is not restricted to a numeric error bound. -/
-theorem compiler_preserves_property (h : compile source = .ok a) (he : a.cSource = emitted)
-    (hp : CSyntax.Denotes emitted p) (f : Profile.Function)
+theorem compiler_preserves_property (h : compile source = .ok a) (he : a.cSource linkage = emitted)
+    (hp : CSyntax.Denotes emitted p linkage) (f : Profile.Function)
     (bits : Binary64.FiniteBits) (n : CStatements.Counter)
     (property : Transition.Observation Binary64.Value → Prop)
     (hs : ∀ b, Source.SampledBehavior a.parsed.ast f (Binary64.ofBits bits) n.val b → property b) :

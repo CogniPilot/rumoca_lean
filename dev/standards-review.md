@@ -73,17 +73,21 @@ the XML rather than hard-coding the producer's missing flags. Bind the declared
 configuration to the same artifact contract. Native linking remains a tested
 boundary; do not describe compiler flags as a machine-code proof.
 
-**Repair in progress:** shared Linux/GCC recipes now drive both the XML and
+**Repaired for the declared source profiles:** shared Linux/GCC recipes now drive both the XML and
 native argument list. `Build.ArtifactContract` independently decodes each
 platform's declared compiler, options, sources and math dependency and binds
 the actual XML characters. `FMI3.SourceBuildContract` retains the complete
 numerical C contract as a conjunct. Six new audit roots pass in
-`build/fmi-build-package.log`; the complete gate is tracked in
+`build/fmi-build-package.log`; the required full gate passed in
 `build/fmi-build-full-gate.log`. The existing rebuild now consumes the published
 XML and resolves symbols in a separate process, avoiding Python's ambient
 libm. The actual-file, official-schema, native and mutation checks pass in
 `build/fmi-build-artifact-gate.log`. The actual FMI adapter/model-description/archive
 capstone remains open.
+The checked FMU has SHA-256
+`c3019d6e316b65f8de3a279d48b66276433cbec151ac566322b46af37337d70f`.
+[CI for f1ce838](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582)
+also passed.
 
 ### SR02 — P1: two source FMUs collide at the numerical C symbols
 
@@ -109,6 +113,40 @@ unit, or a consistently namespaced numerical interface. Preserve the shared
 backend's Solve-only ownership and certify the chosen declaration/name
 transformation. Account for the model identifier and helper namespace together.
 Keep one source-link boundary check; do not duplicate numerical test matrices.
+
+**Repair in progress:** the shared C printer, independent declaration grammar,
+statement tokens and complete existing compiler contract now support external
+and `static inline` internal linkage. FMI compiles one `fmi3.c` translation
+unit which includes the certified private `model.c`. The numerical behavior,
+termination and rounding obligations remain unchanged. A parsed model name
+produces the valid C identifier `Rumoca_` followed by that name; the map is
+proved injective for distinct names. This does not promise globally unique
+identifiers for unrelated artifacts with the same model name.
+
+Build XML and ME/CS metadata use that identifier; the actual adapter begins
+with its `FMI3_FUNCTION_PREFIX` and private-kernel include. The producer uses
+the official header's `FMI3_OVERRIDE_FUNCTION_PREFIX` when compiling the
+unprefixed binary ABI, as specified by [FMI §2.2.2](https://fmi-standard.org/docs/3.0.2/#header-files-and-naming-of-functions).
+`FMI3.SourceBuildContract` adds actual XML identity observations and an exact
+source-prefix fragment to the internally linked numerical contract. The
+adapter remainder, preprocessing, native linking and complete archive remain
+outside that proposition; the fragment is not a proof of the entire adapter.
+
+Thirteen new roots and the generalized existing compiler/C roots pass the
+unchanged axiom audit in `build/fmi-linkage-package.log`. The actual-file gate
+caught a Lean stack overflow while certifying the 45 KB adapter prefix equality,
+before publication. The fixed file reader now quotes all independently read
+characters in bounded blocks. `sourcePrefix_of_chars` derives the unchanged
+string-decomposition contract from the checked prefix; the trusted input
+encoding uses `String.ofList` of those actual characters. No native equality
+check authorizes acceptance, no character is omitted, and the theorem uses the
+same axiom whitelist. The actual-file certificate passes in
+`build/fmi-prefix-certificate.log`. The integrated importer and native checks
+pass, including two actual source FMUs rebuilt from their own XML recipes,
+only their distinct FMI APIs exported, and fresh-process symbol resolution.
+A changed source prefix is rejected before native compilation, and a failed
+native build preserves the existing FMU. The complete targeted gate passed in
+`build/fmi-linkage-artifact-gate.log`; the required full gate remains pending.
 
 ### SR03 — P1: eFMI status returns have no logical error-status mapping
 

@@ -23,7 +23,10 @@ The complete printed ABI adapter and archive capstone remain open; see
 | --- | --- |
 | `Runtime`, `Header` | Structured FMI C bodies and signatures from the pinned official headers |
 | `CInterface` | FMI-specific constant and type bindings for shared C execution |
-| `Metadata` | Model/build XML projected from the prepared Solve model |
+| `Metadata` | Model-description XML projected from the prepared Solve model |
+| `Identifier`, `IdentifierProofs` | Valid C identifiers, injective for distinct parsed model names |
+| `BuildDescription`, `BuildDescriptionProofs` | Named single-translation-unit recipes, independent XML decoding and native argument requirements |
+| `SourceLinkageProofs` | Certified source prefix/private-kernel include fragment and decoded ME/CS model identifiers |
 | `GuardProofs`, `StateProofs` | Lifecycle predicates and generated state-access bodies |
 | `LifecycleGuard` | Universal lifecycle guard/prefix execution in the shared C machine, preserving the heap |
 | `LifecycleBodies` | Mode-write frames, complete successful termination and the error helper's terminating prefix |
