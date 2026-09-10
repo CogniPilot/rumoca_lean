@@ -27,6 +27,12 @@ array/operator slice with the `jacobian` built-in and proved forward/reverse AD;
 see [the tensor AD plan](tensor-ad.md). The unit-derivative compiler remains
 the verified regression floor. Each newly admitted production case still
 requires the complete lowering and actual-artifact contract.
+The development array parser now covers the two-wide driven and square/Jacobian
+profiles. Its EBNF tables, decoder contracts, lexical extension and exact call
+spans pass the package audit; native checks preserve ordinary call names and
+confirm that production still rejects both new profiles. This closes the
+first syntax/action increment in [tensor-ad.md](tensor-ad.md), without closing
+the array lowering, program AD or finite target obligations.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.

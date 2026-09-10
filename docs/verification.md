@@ -21,9 +21,18 @@ and multiplication with array-evaluation proofs. `Tensor.Differentiation`
 connects their JVP rules to mathlib `HasFDerivAt`, proves the VJP dual-pairing
 identity, and proves the accumulated pullback and diagonal Jacobian of a
 shared-input square. These mathematical Real operator proofs pass the core
-axiom audit (`build/tensor-ad-package.log`). The source `jacobian` built-in,
-array grammar/IR lowering, complete AD program transforms and finite target
-execution remain open; [tensor-ad.md](../dev/tensor-ad.md) fixes the small scope.
+axiom audit (`build/tensor-ad-package.log`). The array development frontend now
+parses fixed `[2]` input/state arrays, `[2,2]` Jacobian outputs, one `.*` product
+and ordinary two-argument calls. Decoder soundness/completeness, generated
+recognition, name checks and exact call/operand source ranges pass the parser
+audit (`build/tensor-parser-audit.log`). `jacobian` is selected by resolution,
+not reserved by the lexer. `Array.Builtin` defines its mathematical meaning by
+the derivative's action on every tangent, proves the matrix is unique, and
+proves the diagonal result correct for the actual resolved square call at
+every shape (`build/tensor-builtin-audit.log`). Array source-to-IR lowering, complete AD program
+transforms and finite target execution remain open;
+[tensor-ad.md](../dev/tensor-ad.md) fixes the small scope. These development
+parsers do not enlarge the production compiler's admitted source language.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real
@@ -180,6 +189,12 @@ actual tables, edge annotations, a kernel-checked `safety_checked` proof and its
 universal `execution_safe` consequence. Candidate generation is not assumed
 correct. Shared reduction/acceptance summaries avoid recomputing them for each
 table entry; `validate_iff` connects the implementation to its obligations.
+The emitter checks each reduction summary in its own theorem and substitutes
+the proved array equalities into this unchanged validator. Private proof-only
+snapshot definitions add no runtime parser storage. Both emitted language
+instances and the existing corruption controls pass
+`build/tensor-sharded-lalr-gate.log`; this changes certificate evaluation, not
+the parser's semantic contract.
 
 `LALR.FirstCheck.validate` independently checks nullable/FIRST closure for every
 grammar production. `FirstProofs.nullable_complete` and `first_complete` prove

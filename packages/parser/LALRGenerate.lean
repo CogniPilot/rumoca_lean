@@ -30,6 +30,40 @@ private def edge (e : Edge) : String := s!"⟨{e.source}, {atom e.symbol}, {e.ta
 private def firstFact (f : First) : String :=
   s!"⟨{f.nullable}, [" ++ String.intercalate ", " (f.terminals.map toString) ++ "]⟩"
 
+/-- Check each reduction summary separately, then substitute the proved
+equalities into the unchanged validator. Separate declarations avoid one
+monolithic normalization of all the reduction computations. -/
+private def safetyCertificates (g : Grammar) (tables : Tables) (edges : List Edge) : String := Id.run do
+  let rows := Safety.reductionStates g tables edges
+  let options := "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n"
+  let mut declarations := ""
+  let mut names : Array String := #[]
+  let mut cases := ""
+  for i in [:rows.size] do
+    let name := s!"reduction_{i}"
+    let prod := s!"(grammar.productions[{i}]?.getD (⟨0, []⟩ : LALR.Production))"
+    let expression := s!"LALR.Safety.popStates tables.actions.size edges {prod}.output.reverse " ++
+      s!"(LALR.Safety.gotoStates tables {prod}.input)"
+    declarations := declarations ++ s!"private noncomputable def {name} : Array Bool := {repr rows[i]!}\n\n" ++
+      options ++ s!"private theorem {name}_checked : {expression} = {name} := by decide +kernel\n\n"
+    names := names.push name
+    cases := cases ++ s!"    | {i} => exact {name}_checked\n"
+  return declarations ++ "private noncomputable def reductions : Array (Array Bool) := " ++ array names ++ "\n\n" ++
+    options ++ "private theorem reductions_checked :\n" ++
+    "    LALR.Safety.reductionStates grammar tables edges = reductions := by\n" ++
+    "  apply Array.ext\n" ++
+    "  · simp only [LALR.Safety.reductionStates, Array.size_map]\n    rfl\n" ++
+    "  · intro i hi _\n" ++
+    s!"    have bound : i < {rows.size} := by\n" ++
+    "      simpa only [LALR.Safety.reductionStates, Array.size_map] using hi\n" ++
+    "    simp only [LALR.Safety.reductionStates, Array.getElem_map]\n" ++
+    "    match i with\n" ++ cases ++ s!"    | n+{rows.size} => omega\n" ++
+    "\nprivate noncomputable def acceptance : Array Bool := " ++ reprStr (Safety.acceptStates g tables edges) ++ "\n\n" ++
+    options ++ "private theorem acceptance_checked :\n" ++
+    "    LALR.Safety.acceptStates grammar tables edges = acceptance := by decide +kernel\n\n" ++
+    options ++ "theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by\n" ++
+    "  unfold LALR.Safety.validate\n  rw [reductions_checked, acceptance_checked]\n  decide +kernel\n\n"
+
 def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") : Except String String := do
   if !(moduleNamespace.splitOn ".").all (fun part =>
       !part.isEmpty && part.toList.all (fun c => Parser.identRest c) &&
@@ -72,8 +106,7 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
     "    word.headD following ∈ LALR.lookaheads firstFacts symbols following :=\n" ++
     "  LALR.FirstProofs.lookahead_complete first_checked h\n\n" ++
     "-- Structural safety only; completeness, frontend correctness and progress remain open.\n" ++
-    "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
-    "theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by decide +kernel\n\n" ++
+    safetyCertificates g c.tables c.collection.edges.toList ++
     "theorem execution_safe (fuel : Nat) (input : List Nat) (error : LALR.Failure)\n" ++
     "    (h : LALR.parse grammar tables fuel input = .error error) :\n" ++
     "    error = .exhausted ∨ error = .rejected :=\n" ++

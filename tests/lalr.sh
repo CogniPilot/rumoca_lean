@@ -43,13 +43,15 @@ sed 's/some (.shift [0-9][0-9]*)/some (.shift 999)/' "$task_tmp/Recursive.lean" 
 if lake env lean "$task_tmp/BadShift.lean" > "$task_tmp/bad-shift.log" 2>&1; then
   echo 'corrupted shift passed its structural certificate' >&2; exit 1
 fi
-rg -q 'Safety.validate' "$task_tmp/bad-shift.log"
+# The partitioned proof exposes TableConditions after substituting its checked
+# summaries. Require failure of the public safety root, not its old goal text.
+rg -q 'safety_checked.*sorryAx' "$task_tmp/bad-shift.log"
 sed 's/^def edges : List LALR.Edge := .*/def edges : List LALR.Edge := []/' \
   "$task_tmp/Recursive.lean" > "$task_tmp/MissingEdges.lean"
 if lake env lean "$task_tmp/MissingEdges.lean" > "$task_tmp/missing-edges.log" 2>&1; then
   echo 'omitted transitions passed their structural certificate' >&2; exit 1
 fi
-rg -q 'Safety.validate' "$task_tmp/missing-edges.log"
+rg -q 'safety_checked.*sorryAx' "$task_tmp/missing-edges.log"
 
 # Facts are certified about the emitted grammar; stripping them cannot pass.
 sed 's/^def firstFacts : Array LALR.First := .*/def firstFacts : Array LALR.First := #[]/' \

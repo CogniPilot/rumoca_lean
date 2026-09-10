@@ -1,6 +1,7 @@
 import Rumoca.Compiler
 import Parser.EBNF
 import ModelicaParser.Driven
+import ModelicaParser.Array.Located
 import RumocaCore.Solve.IVP
 
 open _root_.Parser
@@ -30,6 +31,28 @@ def main : IO Unit := do
   let driven := "model Driven input Real u; output Real x(start=0, fixed=true); equation der(x)=u; end Driven;"
   expect "driven parser and resolution" (drivenAccepted driven)
   expect "driven profile not prematurely admitted by C compiler" (!accepted driven)
+  let arrayHeader := "model A input Real u[2]; output Real x[2](each start=0, each fixed=true); "
+  let arrayDriven := arrayHeader ++ "equation der(x)=u; end A;"
+  let arraySquare := arrayHeader ++
+    "output Real J[2,2]; equation der(x)=u.*u; J = jacobian (u .* u, u); end A;"
+  for source in [arrayDriven, arraySquare] do
+    match ArrayProfile.parseLocated source with
+    | .error e => throw (IO.userError s!"array frontend: {e.message}")
+    | .ok p =>
+      expect "array resolution" (decide p.parsed.ast.Resolved)
+      match ArrayProfile.LocatedParsed.call? p with
+      | none => pure ()
+      | some ⟨call, locations⟩ =>
+        expect "ordinary call retains builtin name and argument source ranges"
+          (call.name == "jacobian" && locations.name.text == "jacobian" &&
+            locations.expressionSpan.text == "u .* u" && locations.wrt.text == "u" &&
+            locations.span.text == "jacobian (u .* u, u)")
+    expect "array profile requires a target contract before compilation" (!accepted source)
+  match ArrayProfile.parseLocated (arraySquare.replace "jacobian" "other") with
+  | .error e => throw (IO.userError s!"ordinary function call did not parse: {e.message}")
+  | .ok p => match ArrayProfile.LocatedParsed.resolve p with
+    | .ok _ => throw (IO.userError "unrecognized builtin was resolved")
+    | .error e => expect "unknown function diagnosed at its own source range" (e.span.text == "other")
   expect "attribute names are identifiers" (drivenAccepted
     "model M input Real fixed; output Real start(start=0, fixed=true); equation der(start)=fixed; end M;")
   for bad in [driven.replace "der(x)" "der(u)", driven.replace "=u;" "=x;",

@@ -10,14 +10,14 @@ verified production FMU.
 
 Reuse the relevant productions from
 `~/git/rumoca/crates/rumoca-phase-parse/src/modelica.par`: array subscripts on
-Real declarations, component references, addition, pointwise multiplication,
-parentheses and the argument list for `jacobian(expression, variable)`.
+Real declarations, component references, pointwise multiplication,
+and the argument list for `jacobian(expression, variable)`.
 Keep dimensions static and the first source cases to vectors and their
 rank-two Jacobians. Do not bring in general functions, loops, indexing, dynamic
 dimensions or a broad expression grammar just to support this first case.
 
-The parser records a built-in call and both argument spans. Resolution checks
-the differentiated variable; typed lowering determines input and output
+The parser records an ordinary call and both argument spans. Resolution selects
+the built-in and checks the differentiated variable; typed lowering determines input and output
 shapes. The first nonlinear rule is pointwise multiplication, allowing
 `jacobian(x .* x, x)`. The result for an n-vector is an n-by-n tensor. It must
 not become n separate source equations or an unrolled n-by-n instruction list.
@@ -36,7 +36,8 @@ equation
 end TensorSquare;
 ```
 
-This is the admission target, not a model accepted by the current compiler.
+This is accepted by the development array parser, and is the production
+admission target. The current production compiler rejects it.
 The array input/state baseline precedes the nonlinear and Jacobian equations;
 source `+` is unnecessary until a model requires it, even though AD needs
 addition internally to accumulate cotangents.
@@ -85,7 +86,35 @@ proves the derivative, accumulated pullback and diagonal Jacobian of `x .* x`.
 `lake build check-core` passed in `build/tensor-ad-package.log` with eight new
 audited roots and no additional example tests. All roots use only the existing
 three permitted foundational axioms.
-Array and `jacobian` source acceptance, complete AD program transformations
-and tensor FMU target certificates are not yet complete. The public EBNF is
-still unchanged; syntax will be added with its AST actions and preservation
-proofs, rather than enabling unhandled grammar alternatives.
+The generated EBNF now also recognizes the two-wide driven and square/Jacobian
+profiles. `ModelicaParser.Array` supplies structured product/call syntax,
+decoder soundness/completeness, recognition proofs and name resolution.
+The lexer treats `.*` atomically and `jacobian` as an identifier; its universal
+soundness/completeness theorem covers the extension. `ActionsLocated` reuses
+the checked lexer alignment for any semantic action profile; `callLocation`
+binds each call-name/operand range to that AST field's source text and proves
+the full call range contains both arguments. The parser package audit passed
+in `build/tensor-parser-audit.log`, with no new axioms.
+
+`RumocaCore.Array.Builtin` specifies the parsed intrinsic using a true
+`HasFDerivAt` witness and equality of its action on every tangent to matrix
+multiplication. All other named values stay fixed while the selected variable
+changes. The matrix is proved unique; `Model.jacobian_call_correct` connects
+the resolved AST to the diagonal square Jacobian for arbitrary shapes. The
+three added roots pass the core audit in `build/tensor-builtin-audit.log`.
+
+Use `Rumoca.ArrayProfile.parseLocated` from `ModelicaParser.Array.Located` for
+the development frontend. It preserves other callee names for structured
+resolution errors; it does not silently interpret every call as a Jacobian.
+The production CLI/LSP still select the unit frontend. Array source-to-IR
+lowering, complete AD program transforms and finite tensor FMU/eFMU target
+certificates remain open. Parser acceptance does not authorize production
+generation.
+
+The required `nix develop .#verification --command lake test` passed for the
+array/frontend and intrinsic-semantics increment in
+`build/tensor-parser-full-gate.log`, including the actual C, FMU and eFMU
+contracts and their rejection checks. This revalidates the production unit
+profile; it does not certify tensor FMUs. A subsequent LALR certificate-emission
+refactor reduces proof-checking memory while preserving the same validator;
+its evidence is tracked in [the parser roadmap](lalr-parser.md).

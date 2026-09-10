@@ -137,6 +137,22 @@ token encoding; it is not yet the intended grammar-generic LR action interface.
   establish valid reduction symbols, enough stack, available return gotos and
   a singleton start tree at EOF, for every concrete stack path. The emitted
   Modelica and recursive tables carry kernel instances of this theorem.
+  The emitter now certifies each production's reduction summary separately,
+  combines them with array extensionality, and substitutes the checked arrays
+  into the same `Safety.validate` obligation. These private certificate arrays
+  are noncomputable definitions, so they add no runtime parser storage. On the
+  138-state array grammar, the local check with two Lean threads passed in
+  226 seconds with a measured process peak of 8,740,704 KiB
+  (`build/tensor-lalr-shards.log`); the monolithic check was observed above
+  18 GiB. This fits the public repository's
+  [16 GB GitHub runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
+  This changes certificate evaluation, not the validation conditions or the
+  runtime parser, and does not establish a bound for arbitrary grammars.
+  Both parser packages passed their audits in
+  `build/tensor-sharded-parser-gate.log`. Generated-file freshness and the
+  complete LALR certificate/mutation gate passed in
+  `build/tensor-sharded-lalr-gate.log`. Mutation checks identify failure of the
+  public safety root after rewriting, rather than matching its earlier goal text.
   **Next:** checked LR-item propagation facts that imply completeness, then a
   justified parsing bound. A reject-all table can satisfy
   structural safety; its counterexample is included in the kernel regressions.

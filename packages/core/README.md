@@ -16,6 +16,7 @@ axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
 | `RumocaCore.Tensor.Matrix` | Proved equivalence to mathlib matrices using mathlib's finite product indexing |
 | `RumocaCore.Tensor.Operators` | Dense-array pointwise addition/multiplication and forward/reverse rules with explicit scalar arithmetic |
 | `RumocaCore.Tensor.Differentiation` | Mathlib derivative, adjoint and shared-input square/Jacobian proofs for arbitrary shapes |
+| `RumocaCore.Array.Builtin` | Parsed Jacobian semantics, uniqueness and correctness of the resolved square call |
 | `RumocaCore.Solve.Tensor`, `Solve.IVP` | Compact tensor programs, independent denotation, executable evaluator and explicit IVP |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
 | `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
@@ -64,6 +65,8 @@ PDEs or neural ODEs to the compiler. See [the IR review](../../dev/ir-review.md)
 
 The [tensor AD increment](../../dev/tensor-ad.md) has checked primitive rules
 for mathematical Real tensors, including cotangent accumulation for `x .* x`.
-Program transformations, the source `jacobian` built-in and the finite target
-edge are still being developed. These analytic proofs do not differentiate
-the discontinuous IEEE rounding operation.
+`Array.Builtin` now connects the resolved source call to an independently
+specified Fréchet derivative, with uniqueness of the resulting matrix.
+Program transformations, full source-to-IR lowering and the finite target edge
+remain open. These analytic proofs do not differentiate the discontinuous
+IEEE rounding operation.

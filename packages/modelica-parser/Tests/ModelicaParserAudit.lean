@@ -1,6 +1,7 @@
 import ModelicaParser
 import ModelicaParser.ActionsProofs
 import ModelicaParser.Driven
+import ModelicaParser.Array.Located
 import ModelicaParser.ParserProofs
 import ModelicaParser.LocatedProofs
 import ProofAudit.Audit
@@ -28,6 +29,16 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ParserActions.parsed_in_ebnf
 #audit axioms Rumoca.Driven.decode_sound
 #audit axioms Rumoca.Driven.resolve_complete
+#audit axioms Rumoca.ArrayProfile.Call.jacobian_iff
+#audit axioms Rumoca.ArrayProfile.decode_sound
+#audit axioms Rumoca.ArrayProfile.decode_complete
+#audit axioms Rumoca.ArrayProfile.recognized
+#audit axioms Rumoca.ParserActions.LocatedParsed.erases
+#audit axioms Rumoca.ParserActions.LocatedParsed.tokenSpan_text
+#audit axioms Rumoca.ParserActions.LocatedParsed.disjoint
+#audit axioms Rumoca.ArrayProfile.LocatedCall.arguments_contained
+#audit axioms Rumoca.ArrayProfile.LocatedParsed.callLocation
+#audit axioms Rumoca.ArrayProfile.LocatedParsed.resolve_complete
 #audit axioms Rumoca.located_lex_sound
 #audit axioms Rumoca.LocatedParsed.erases
 #audit axioms Rumoca.LocatedParsed.lexemes

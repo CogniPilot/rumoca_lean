@@ -21,7 +21,7 @@ def reserved : List String :=
 def classifyWord (s : String) : Token :=
   if reserved.contains s then .literal s else .ident s
 
-def punctuation (c : Char) : Bool := [';', '(', ')', '=', ','].contains c
+def punctuation (c : Char) : Bool := [';', '(', ')', '=', ',', '[', ']'].contains c
 
 /-- Declarative maximal-munch lexical rules for the admitted ASCII slice.
 The first character chooses the token class; takeWhile/dropWhile specify the
@@ -38,6 +38,7 @@ inductive Lexes : List Char → List Token → Prop where
   | punct : modelicaSpace c = false → identStart c = false → c.isDigit = false →
       punctuation c = true → Lexes cs ts →
       Lexes (c :: cs) (.literal (String.singleton c) :: ts)
+  | dotmul : Lexes cs ts → Lexes ('.' :: '*' :: cs) (.literal ".*" :: ts)
 
 private def prepend (t : Token) : Except Diagnostic (List Token) → Except Diagnostic (List Token)
   | .error e => .error e
@@ -63,6 +64,8 @@ def scan (total : Nat) : Nat → List Char → Except Diagnostic (List Token)
         (scan total fuel (rest.dropWhile Char.isDigit))
     else if punctuation c then
       prepend (.literal (String.singleton c)) (scan total fuel rest)
+    else if c = '.' ∧ rest.head? = some '*' then
+      prepend (.literal ".*") (scan total fuel (rest.drop 1))
     else
       .error ⟨"lex", total - (rest.length + 1), s!"unsupported character {repr c}"⟩
 
@@ -92,7 +95,18 @@ theorem scan_sound (total fuel : Nat) (cs : List Char) (ts : List Token)
             split at h
             · obtain ⟨tail, ht, rfl⟩ := prepend_ok _ _ _ h
               exact .punct hs' hi' hd' (by assumption) (ih _ _ ht)
-            · contradiction
+            · split at h
+              · rename_i hop
+                obtain ⟨hc, hhead⟩ := hop
+                subst c
+                cases cs with
+                | nil => simp at hhead
+                | cons first rest =>
+                  have hf : first = '*' := Option.some.inj hhead
+                  subst first
+                  obtain ⟨tail, ht, rfl⟩ := prepend_ok _ _ _ h
+                  exact .dotmul (ih _ _ ht)
+              · contradiction
 
 theorem scan_complete (h : Lexes cs ts) (total fuel : Nat) (bound : cs.length < fuel) :
     scan total fuel cs = .ok ts := by
@@ -120,6 +134,16 @@ theorem scan_complete (h : Lexes cs ts) (total fuel : Nat) (bound : cs.length < 
     cases fuel with
     | zero => omega
     | succ fuel => simp [scan, hs, hi, hd, hp, ih fuel (by simpa using bound), prepend]
+  | dotmul h ih =>
+    cases fuel with
+    | zero => omega
+    | succ fuel =>
+      have hs : modelicaSpace '.' = false := by decide
+      have hi : identStart '.' = false := by decide
+      have hd : '.'.isDigit = false := by decide
+      have hp : punctuation '.' = false := by decide
+      simp [scan, hs, hi, hd, hp,
+        ih fuel (by simp only [List.length_cons] at bound; omega), prepend]
 
 def lex (source : String) : Except Diagnostic (List Token) :=
   let cs := source.toList

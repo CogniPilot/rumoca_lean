@@ -1,7 +1,8 @@
 // Selected from Rumoca's modelica.par at a1daf47556c1a6ffd7f4b203235ff09711089a85.
 // See README.md for the exact upstream path and every deliberate restriction.
-// The first production is the start symbol. Only the unit and driven profiles
-// are admitted here; attribute identifiers are checked by name resolution.
+// The first production is the start symbol. The array profiles are frontend
+// development cases; production compilation still admits only the unit case.
+// Attribute and function identifiers are checked by name resolution.
 
 stored_definition
     : class_definition ';'
@@ -22,7 +23,7 @@ standard_class_specifier
     : ident composition end ident
     ;
 composition
-    : unit_composition | driven_composition
+    : unit_composition | driven_composition | array_composition
     ;
 
 // A.2.4: one unmodified Real declaration for the unit regression profile.
@@ -89,6 +90,50 @@ driven_equation
     : der '(' component_reference ')' '=' component_reference
     ;
 
+// A.2.4/A.2.5: exactly two-wide arrays, with elementwise initialization.
+// Keep this profile separate from the scalar regression declarations.
+array_composition
+    : input array_component_clause ';' output initialized_array_clause ';' array_body
+    ;
+array_component_clause
+    : type_specifier ident array_subscripts
+    ;
+array_subscripts
+    : '[' subscript ']'
+    ;
+subscript
+    : '2'
+    ;
+initialized_array_clause
+    : type_specifier ident array_subscripts '(' each zero_modification ',' each fixed_modification ')'
+    ;
+array_body
+    : driven_equation_section | jacobian_body
+    ;
+jacobian_body
+    : output type_specifier ident '[' subscript ',' subscript ']' ';'
+      equation der '(' component_reference ')' '=' term ';'
+      component_reference '=' component_reference function_call_args ';'
+    ;
+
+// A.2.7: one pointwise product and an ordinary two-argument call. `jacobian`
+// is an IDENT here, never a reserved token. Resolution selects the built-in.
+term
+    : factor mul_operator factor
+    ;
+factor
+    : component_reference
+    ;
+mul_operator
+    : '.*'
+    ;
+function_call_args
+    : '(' function_arguments ')'
+    ;
+function_arguments
+    : term ',' component_reference
+    ;
+
 // A.1: use the already-verified ASCII identifier lexer; no quoted identifiers.
 ident
     : IDENT
@@ -112,4 +157,6 @@ end : 'end'
 der : 'der'
     ;
 true: 'true'
+    ;
+each: 'each'
     ;

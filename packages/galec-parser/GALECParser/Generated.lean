@@ -45,9 +45,88 @@ theorem lookahead_coverage (symbols : List LALR.Atom) (word : List Nat) (followi
   LALR.FirstProofs.lookahead_complete first_checked h
 
 -- Structural safety only; completeness, frontend correctness and progress remain open.
+private noncomputable def reduction_0 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, true,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false]
+
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by decide +kernel
+private theorem reduction_0_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[0]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[0]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_0 := by decide +kernel
+
+private noncomputable def reduction_1 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, true, false, false]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem reduction_1_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[1]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[1]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_1 := by decide +kernel
+
+private noncomputable def reduction_2 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem reduction_2_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[2]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[2]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_2 := by decide +kernel
+
+private noncomputable def reduction_3 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, true]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem reduction_3_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[3]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[3]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_3 := by decide +kernel
+
+private noncomputable def reduction_4 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem reduction_4_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[4]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[4]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_4 := by decide +kernel
+
+private noncomputable def reductions : Array (Array Bool) := #[reduction_0, reduction_1, reduction_2, reduction_3, reduction_4]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem reductions_checked :
+    LALR.Safety.reductionStates grammar tables edges = reductions := by
+  apply Array.ext
+  · simp only [LALR.Safety.reductionStates, Array.size_map]
+    rfl
+  · intro i hi _
+    have bound : i < 5 := by
+      simpa only [LALR.Safety.reductionStates, Array.size_map] using hi
+    simp only [LALR.Safety.reductionStates, Array.getElem_map]
+    match i with
+    | 0 => exact reduction_0_checked
+    | 1 => exact reduction_1_checked
+    | 2 => exact reduction_2_checked
+    | 3 => exact reduction_3_checked
+    | 4 => exact reduction_4_checked
+    | n+5 => omega
+
+private noncomputable def acceptance : Array Bool := #[false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem acceptance_checked :
+    LALR.Safety.acceptStates grammar tables edges = acceptance := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by
+  unfold LALR.Safety.validate
+  rw [reductions_checked, acceptance_checked]
+  decide +kernel
 
 theorem execution_safe (fuel : Nat) (input : List Nat) (error : LALR.Failure)
     (h : LALR.parse grammar tables fuel input = .error error) :

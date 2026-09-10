@@ -26,3 +26,9 @@ and [verification boundary](../../docs/verification.md).
 
 `ModelicaParserChecks` audits the source lexer, grammar, AST actions and parser
 contracts, exact identifier spans and sequential/parallel equivalence.
+
+`ModelicaParser.Array.Located` exposes the separate array/AD frontend under
+`Rumoca.ArrayProfile`. Its EBNF, decoder soundness/completeness, recognition and
+source-bound call/operand ranges are checked. `jacobian` uses ordinary call
+syntax and is selected by resolution. See [the array/AD scope](../../dev/tensor-ad.md)
+for its two fixed profiles and the outstanding production lowering contracts.
