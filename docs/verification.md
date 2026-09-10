@@ -8,6 +8,14 @@ the actual compiler and production artifacts, with every pass and admitted
 interface behavior covered. Individual theorem or CI checkpoints are partial
 progress and do not authorize grammar or product-scope expansion.
 
+Before every spiral-stage grammar expansion, the admitted subset must also
+complete a recorded review against MLS 3.7, FMI 3 ME/CS, and eFMI Algorithm and
+Production Code, using the [recurring stage checklist](../dev/standards-review.md#required-review-at-every-spiral-stage).
+That review maps normative clauses to the authored semantics,
+pass/target proofs, actual-artifact contracts and explicit external assumptions.
+Open compliance findings block expansion. Kernel checking proves the authored
+propositions; review against the prose standards is a separate obligation.
+
 The production end-to-end theorem covers one Modelica `Real` state and `der(state)=1`.
 The source equation is over mathematical reals. Generated C uses finite
 IEEE754 binary64 values and nearest-even addition. The host supplies `x(0)`;
@@ -375,6 +383,9 @@ the client's related-information capability; `diagnostics_without_related`
 proves those extra locations are omitted when support is disabled. The three
 new roots pass the unchanged axiom audit, and the existing real LSP/parallel
 frontend checks pass in `build/diagnostic-locations-frontend.log`.
+The required full local gate passed at `df382d0` in
+`build/diagnostic-locations-full-gate.log`, including FMI ME/CS and the complete
+eFMU artifact gate. This is evidence for the unchanged authored contracts.
 Compiler failure-only reparsing and later IR/printer provenance remain open;
 these local diagnostic theorems do not close those obligations.
 

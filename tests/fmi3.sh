@@ -95,4 +95,5 @@ rg -q 'deliberate native compiler failure' build/fmi-build-failure.log
 cmp build/Integrator.fmu build/preserved.fmu
 cp build/Integrator.fmu "$task_tmp/model with spaces.fmu"
 "$runner" simulate "$task_tmp/model with spaces.fmu" --variable x --csv "$task_tmp/results with spaces.csv"
+sha256sum build/Integrator.fmu
 echo "FMU archive, independent ME/CS importer, ABI, runner and failure checks passed"

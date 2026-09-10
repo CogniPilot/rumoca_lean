@@ -10,8 +10,8 @@ this roadmap records the work and evidence required for stronger claims.
 An open item is not a current guarantee. The active first-party review and
 initial fixes are owned by Codex; independent review owners are unassigned.
 See [the detailed compiler review](compiler-review.md) for findings RV01–RV10.
-The [FMI/eFMI standards review](standards-review.md) records SR01–SR07 from
-the actual unit artifacts. Its repair order takes priority over the next
+The [MLS/FMI/eFMI standards review](standards-review.md) records SR01–SR08 from
+the unit implementation and artifacts. Its repair order takes priority over the next
 tensor/FMI implementation increment; full standards compliance is not claimed.
 
 **Hard stage-completion gate, reaffirmed by the user:** before adding any more
@@ -35,13 +35,30 @@ substitute for missing coverage. The proof target remains the authored C
 semantics; subsequent native compilation is an explicit external boundary,
 not a reason to add a machine backend now.
 
+**Recurring standards gate:** before each spiral-stage grammar expansion,
+review the complete admitted subset against **MLS 3.7, FMI 3 ME/CS and eFMI
+Algorithm/Production Code**, using the pinned normative versions. Record the
+source revision and artifacts reviewed, applicable clauses, source/IR/target
+theorems, external assumptions and unresolved findings. Carry forward earlier
+findings and recheck affected interactions, including initialization, numeric
+representation, lifecycle, errors and correlated metadata. Any open compliance
+finding for that subset blocks expansion; the full compiler/artifact proof
+gate remains required as well. Tests remain a last resort for external
+boundaries, and no schema/importer pass substitutes for normative alignment.
+The standard-language portion and the deliberate `jacobian` extension must be
+identified separately. MLS means the Modelica Language Specification here;
+support for the Modelica Standard Library is a different coverage question.
+Use the [recurring stage checklist and current clause map](standards-review.md#required-review-at-every-spiral-stage)
+for the review record. It currently leaves the unit stage open.
+
 The tiny [eFMI Algorithm Code checkpoint](efmi.md#algorithm-code-checkpoint-evidence)
 passes the full gate: E01–E03 cover the checked DAE product, tensor Solve
 refinement and actual `.alg` file. E04 now also checks the complete Production
 C member, memory effects and serial traces. The correlated eFMU now has an
 actual source-to-archive contract and a passing publication gate; E05–E06
-remain open for the missing error-status mapping, the documented standards/checker
-discrepancy and release review. This checkpoint does not close whole-FMU or generic parser
+remain open for the documented standards/checker discrepancy, cross-standard
+initialization correspondence and release review. The status-mapping correction
+is checked below. This checkpoint does not close whole-FMU or generic parser
 completeness obligations in this roadmap.
 
 The destination is a maintainable Lean compiler whose supported Modelica
@@ -240,7 +257,9 @@ CLI JSON retains both byte ranges, terminal output renders both contexts, and
 the LSP publishes the related location when the client advertises support.
 The package audits and existing frontend integration checks pass in
 `build/diagnostic-locations-audit.log` and
-`build/diagnostic-locations-frontend.log`. Migration of the compiler entry point
+`build/diagnostic-locations-frontend.log`. The full local gate also passed at
+`df382d0` in `build/diagnostic-locations-full-gate.log`, including both target
+artifact gates. Migration of the compiler entry point
 away from failure-only reparsing, wrapper completeness, and IR/output origin
 preservation remain open in PV05–PV09. This is a diagnostic improvement, not
 closure of the compiler or artifact proof gate.
@@ -500,6 +519,10 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   **Review note:** distinguish the ideal unbounded `Source.Solves` trajectory
   from MLS §4.9.1's finite stored Real values. The numerical profile supplies
   the finite representation contract; the ideal ODE theorem alone does not.
+  The [current unit clause map](standards-review.md#current-unit-stage-follow-up)
+  now records this correspondence. **SR08 remains open:** reconcile source
+  initial-value choices, FMI initialization metadata and GALEC Startup under
+  MLS initialization/fallback rules, including required declaration diagnostics.
 - [ ] **S02 — Independently review the proof statements.** Depends on S01.
   Review model fidelity, quantifiers, non-vacuity, side conditions, source
   safety and the meaning of both directions of each pass relation. Include

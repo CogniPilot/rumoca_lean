@@ -20,10 +20,22 @@ Grow the small compiler core one formally checked slice at a time.
 - Read docs/verification.md before changing semantics or claims.
 - Every new case needs its source semantics, lowering theorem, target execution
   theorem, and actual-artifact certificate in the same change.
+- Before every spiral-stage grammar expansion, review the entire admitted
+  subset against the pinned Modelica Language Specification (MLS), FMI 3 ME/CS,
+  and eFMI Algorithm/Production Code standards. Record applicable clauses,
+  formal coverage, artifact evidence and open findings using the recurring
+  stage checklist in dev/standards-review.md.
+  Unresolved compliance findings for that subset block expansion. A schema
+  check, importer run or green CI alone does not establish conformance.
 - The required gate is `nix develop .#verification --command lake test`.
   `lake build audit` alone does not establish the C contract.
 - Never introduce `sorry`, `admit`, new axioms, or native-reduction proof axioms.
   Never weaken the contract or axiom audit to make a check pass.
+- Prefer formal proofs over unit tests. Prove compiler properties universally
+  in Lean; do not replace them with example-based checks. Tests are a last
+  resort for boundaries outside the proof model, such as native execution,
+  file I/O and protocol transport. Extend existing boundary checks when needed
+  rather than creating new test suites. Retain the required artifact gate.
 - Distinguish the authored C subset and IEEE semantics in Lean from later
   machine compilation and tested host behavior. Keep the trusted boundary explicit.
 - The compiler, EBNF tooling, semantics, and every proof must be in Lean.

@@ -230,4 +230,5 @@ sed 's/+ 1.0/+ 0.0/' "$stage/original.alg" > "$algorithm"
 reject mismatched-algorithm
 cp "$archive" build/Integrator.efmu
 cp "$stage/checked.log" build/efmi-publication-artifact.log
+sha256sum build/Integrator.efmu
 echo 'eFMU: checked CLI publication, failure preservation, independent extraction, official schemas/checksums, native C and mutation controls passed'

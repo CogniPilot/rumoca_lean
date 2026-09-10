@@ -59,6 +59,8 @@ UTF-16 ranges, conditional on the client's related-information capability.
 `diagnostics_without_related` proves omission for clients without support.
 These three roots and the existing LSP/parallel integration checks pass in
 `build/diagnostic-locations-frontend.log`. No additional test suite was added.
+The complete local gate passed at `df382d0` in
+`build/diagnostic-locations-full-gate.log`, including FMI and eFMU artifacts.
 
 ## Parallel frontend
 

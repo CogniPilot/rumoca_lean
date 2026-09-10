@@ -1,4 +1,4 @@
-# FMI and eFMI compliance review — 2026-09-10
+# MLS, FMI and eFMI compliance review — 2026-09-10
 
 The current artifacts are **not ready for a full standards-compliance claim**.
 This review reproduced two source-FMU integration failures, found an omitted
@@ -6,8 +6,81 @@ eFMI error-status mapping and an FMI lifecycle mismatch, and retained two
 initialization restrictions as unresolved policy questions. These issues take
 priority over the next tensor/FMI implementation round. No grammar, compiler
 semantics, proof contract or production artifact was changed for this review.
+The original findings below retain their reviewed revision and repair evidence.
+The stage checklist and MLS follow-up make this a recurring three-standard
+review, rather than a one-time backend inspection.
 
-## Scope and evidence
+## Required review at every spiral stage
+
+Before extending the grammar or admitting a development profile to production,
+complete the following record for the **entire currently admitted subset**.
+Reuse unaffected evidence only after checking its dependencies; review changed
+interactions across all three standards even when no grammar file changed.
+
+| Required record | Evidence needed to close the stage |
+| --- | --- |
+| Scope and identity | Source revision, production entry points, exact source/GALEC EBNFs, admitted and rejected forms, deliberate extensions, and the actual artifacts reviewed. |
+| Normative baseline | MLS, FMI and eFMI versions; relevant clauses; pinned header/schema identities. Upstream Rumoca and compliance tools are references, not normative authorities. |
+| MLS coverage | Lexical/syntactic admission, resolution, types and shapes, equation meaning, initialization, numeric interpretation and diagnostics. Keep `jacobian` explicitly identified as an extension. |
+| FMI coverage | Both advertised ME and CS interfaces: metadata, initialization, legal and rejected calls, time/solver policy, errors/logging, storage/lifetime, source builds and archive contents. |
+| eFMI coverage | GALEC semantics and methods, sample-period policy, Production C execution, logical mappings/status, correlated manifests/checksums, archive layout and coding-guideline obligations. |
+| Proof correspondence | For each applicable clause: independent specification, lowering/target theorem roots, actual-file/archive proposition and any remaining external assumptions. A theorem about an emitter's own policy does not establish that policy's conformance. |
+| Boundary evidence | Required `lake test` outcome and artifact identities, plus existing schema/importer/native checks where tools or interfaces lie outside Lean. Record checker limitations explicitly. |
+| Decision | Carry forward every open finding with closure criteria. Close applicable findings before growth. Record a reason for each excluded clause; an unproved advertised behavior cannot be marked inapplicable. |
+
+The stage is **open** if any applicable compliance finding or required compiler
+proof/artifact obligation remains unresolved. A passing schema, importer or CI
+run cannot change that decision by itself. This is a review gate, not an
+automated claim that Lean has formalized the prose standards. Use universal
+proofs for compiler properties and keep tests to the existing external boundaries.
+
+## Current unit-stage follow-up
+
+Reviewed implementation: `df382d05287449d2c987f7414482b4edb562c28f`.
+The normative baselines are [MLS 3.7](https://specification.modelica.org/maint/3.7/MLS.html),
+[FMI 3.0.2](https://fmi-standard.org/docs/3.0.2/) and the pinned
+[eFMI 1.0.0 Beta 1 archive](https://www.efmi-standard.org/media/resources/eFMI-Standard-1.0.0-Beta-1.zip).
+The eFMI archive identity is recorded below; this is not a final eFMI 1.0 claim.
+
+Production accepts a single unmodified `Real` declaration and `der(x) = 1`,
+with matching model/end names and a derivative reference to that declaration.
+The EBNF also contains frozen development profiles; their recognition does
+not imply production acceptance. Reviewed EBNF SHA-256 identities are:
+
+| File | SHA-256 |
+| --- | --- |
+| `packages/modelica-parser/grammar/Modelica.ebnf` | `90be2d4fe36634a43af1c0c57c394054468b8ebfc1c08c572f6bdfc7cb412b0e` |
+| `packages/galec-parser/grammar/GALEC.ebnf` | `0cfa1a87ac98a207d6fd05628414763e0d4b7640641d6c262f246cecae40ab7a` |
+
+This is the initial clause map for S01, not closure of the full source-semantics
+review. A restriction of the supported language and a mismatch for accepted
+input are different findings.
+
+| Applicable obligation | Implementation/proof correspondence | Review result or remaining obligation |
+| --- | --- | --- |
+| MLS §§2.1–2.4 and A.1: ordinary identifiers, keywords, whitespace and the integer literal `1`. [Lexical clauses](https://specification.modelica.org/maint/3.7/lexical-structure.html) | [Lexer](../packages/modelica-parser/ModelicaParser/Lexer.lean): `lex_correct` characterizes maximal-munch scanning; `reserved` includes the keywords and four protected predefined type names. | Reviewed for the ASCII restriction. Comments, quoted identifiers and other literal forms remain excluded; the theorem is about the authored lexical rules. |
+| MLS A.2.1, A.2.2, A.2.4, A.2.6–A.2.7: one model, declaration and equality equation. [Concrete syntax](https://specification.modelica.org/maint/3.7/modelica-concrete-syntax.html) | [ParserProofs](../packages/modelica-parser/ModelicaParser/ParserProofs.lean): `parsed_in_ebnf`; [Compiler](../packages/compiler/Rumoca/Compiler.lean): `compile_complete` for the resolved unit token shape. | Generated-grammar membership is proved. Independent metalanguage/grammar correspondence remains P02; there is no full MLS parser-completeness claim. |
+| MLS §§8.2–8.3.1: equation lookup and compatible equality operands. [Equation clauses](https://specification.modelica.org/maint/3.7/equations.html) | [AST](../packages/modelica-parser/ModelicaParser/AST.lean): `Resolved`; [LocatedProofs](../packages/modelica-parser/ModelicaParser/LocatedProofs.lean): `resolved_references`, `resolve_error_locations`. | The derivative must name the one declared state; failed resolution has exact occurrence/declaration spans. General scopes are excluded. Record the literal-Integer-to-Real interpretation explicitly in S01. |
+| MLS Operator 3.12: `der` is the time derivative of the continuous Real operand. [Operator clause](https://specification.modelica.org/maint/3.7/operators-and-expressions.html) | [Source](../packages/compiler/Rumoca/Source.lean): `Solves`, `trajectory_derivative`; [Behavioral](../packages/compiler/Rumoca/Behavioral.lean): `lowering_chain_behavior_correct`. | The ideal `x₀ + t` trajectory and unit derivative are proved. This does not give finite storage semantics or choose an initial value. |
+| MLS §4.9.1: finite stored Real values. [Real type](https://specification.modelica.org/maint/3.7/class-predefined-types-and-declarations.html) | [Encoding](../packages/core/RumocaCore/Real/Encoding.lean): `finiteEncodingEquiv`; [Verified](../packages/compiler/Rumoca/Verified.lean): `compiler_semantic_preservation` and `ArtifactContract.real_solution_refinement`. | Binary64 profile and rounding refinement are proved under the documented C/IEEE assumptions. S01/N01 still require reviewed correspondence; unbounded mathematical trajectories are not stored Real values. |
+| MLS §8.6 and §4.9: initialization and fallback selection; FMI initialization metadata; eFMI Startup. | Source takes an external finite initial value; [FMI metadata](../packages/backend-fmi3/RumocaFMI3/Metadata.lean) supplies a zero start; [GALEC](../packages/core/RumocaCore/GALEC/IR.lean) selects zero in Startup. | **Open SR08/S01:** justify and compose these policies, including any required diagnostic. Do not infer an initial equation from the derivative equation. |
+| FMI §§2.3–2.5, Chapters 3–4: common lifecycle, ME/CS, metadata and artifacts. [FMI specification](https://fmi-standard.org/docs/3.0.2/) | Existing [FMI contracts](fmi3/contracts.md), source-build certificate and selected public-call theorems. | SR01–SR02 corrections are checked. SR04–SR05 and SR07 remain open; selected calls and numerical-file proofs do not certify the complete adapter/archive. |
+| eFMI Chapters 2, 3 and 5: container, Algorithm Code and Production Code. [Beta 1 specification](https://www.efmi-standard.org/media/resources/eFMI-Standard-1.0.0-Beta-1.zip) | [EFMIArchiveProofs](../packages/compiler/Rumoca/EFMIArchiveProofs.lean): `compile_archive_verified`, retaining code, method, mapping and manifest contracts. | SR03's status correction is checked. SR06–SR07 and the SR08 cross-standard initialization review remain open. |
+
+**Evidence checkpoint:** the required full local gate passed at this revision
+in `build/diagnostic-locations-full-gate.log`, including both FMI interfaces,
+the actual eFMU archive theorem, extracted manifests and mutation controls.
+Both gates retain their successful archives; reviewed SHA-256 identities are:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `955258912a6037fe0c37bd243bc4b2e6a872cad9d2b1b618d89e6dea22d252f0` |
+| `build/Integrator.efmu` | `6c92cdd9e8beea6e1bef21349a6eb456514960a734d3f1911db664056fa9047f` |
+
+The [hosted run for this revision](https://github.com/CogniPilot/rumoca_lean/actions/runs/34524473640)
+is separate evidence. **Stage decision: open; grammar growth is blocked.**
+
+## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.
 The production profile remains one state with `der(x) = 1`. The development
@@ -288,8 +361,10 @@ are reused with the same runtime function constructor as the renderer.
 The FMI dictionary adds only the two required Float64 pointer spellings.
 All twelve new roots and the full package audit pass in
 `build/fmi-array-call-audit.log`. The FMI actual-file/source-build/mutation gate
-and all thirteen existing native groups pass in `build/fmi-array-call-full-gate.log`;
-the full run's GALEC/eFMU result remains pending. These are selected function-tree call theorems with
+and all thirteen existing native groups pass in `build/fmi-array-call-full-gate.log`.
+The full run also passed its GALEC/eFMU archive, extracted-manifest and mutation
+checks at `30ef448`; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34521375057)
+passed. These are selected function-tree call theorems with
 explicit definition-table and storage premises, not an official-header parser,
 actual adapter-byte or native ABI certificate. Remaining public signatures,
 string binding, enabled callbacks and nonempty SetFloat64-loop execution remain
@@ -354,6 +429,27 @@ violated in this review. See
 Functional preservation cannot replace that separate review. Native C
 compilation, ABI/linkage and hardware remain outside the Lean theorem.
 
+### SR08 — open correspondence gap: initialization across all three standards
+
+MLS gives ordinary Real variables `fixed=false`; absent start attributes use
+the applicable fallback rules. Zero is the fallback for the unit variable's
+unmodified bounds. This does not itself add `x(0)=0` to the derivative equation.
+See [MLS §4.9, Definition 4.7 and §4.9.1](https://specification.modelica.org/maint/3.7/class-predefined-types-and-declarations.html).
+Treating an unfixed start as fixed requires a diagnostic under
+[MLS §8.6](https://specification.modelica.org/maint/3.7/equations.html).
+
+The source theorem permits a supplied finite initial state, while FMI metadata
+and GALEC Startup introduce their own initialization choices. Their common MLS
+justification and diagnostic policy are not yet part of one reviewed contract.
+This is an unresolved correspondence finding, not a demonstrated requirement
+that all three interfaces expose the same initialization API.
+
+**Close with:** specify the source initialization relation and allowed tool/host
+choices, justify each from the clauses, then connect it to FMI initialization
+and eFMI Startup with lowering and actual-artifact proofs. Any required source
+diagnostic must point to the relevant declaration. Keep S01 and the stage gate
+open until this is checked; no new grammar is needed to resolve the policy.
+
 ## Items checked without a new defect
 
 The artifact contains both ME and CS descriptions of the same unit model,
@@ -370,8 +466,9 @@ independent checks described above. None of this closes the open proof items.
 1. **SR01–SR03:** repair source linkage/build metadata and eFMI status metadata,
    with their printer/semantic/actual-artifact contracts. Reuse existing
    package checks and integration entry points.
-2. **SR04–SR05:** reconcile lifecycle and initialization against cited clauses,
-   then prove the affected successful and rejected behaviors.
+2. **SR04–SR05 and SR08/S01:** reconcile lifecycle and initialization against
+   cited clauses across MLS, FMI and eFMI, then prove the affected successful
+   and rejected behaviors.
 3. Resume the existing small tensor/FMI work: typed public wrappers, instance
    storage/metadata, finite failure policy and source-to-archive composition.
    Arrays remain rejected in production until that complete path is checked.
