@@ -9,6 +9,7 @@ import RumocaC.StringLiteral
 import RumocaC.LiteralStorage
 import RumocaC.LiteralPointers
 import RumocaC.LiteralLowering
+import RumocaC.LiteralCallLowering
 
 #audit axioms Rumoca.CString.denotes_unique
 #audit axioms Rumoca.CString.quote_iff
@@ -35,6 +36,19 @@ import RumocaC.LiteralLowering
 #audit axioms Rumoca.CLiteral.Lowering.body_run
 #audit axioms Rumoca.CLiteral.Lowering.body_terminates
 #audit axioms Rumoca.CLiteral.Lowering.body_behaviors
+#audit axioms Rumoca.CLiteral.Lowering.loop_expression_correct
+#audit axioms Rumoca.CLiteral.Lowering.noDeclarations_lowered
+#audit axioms Rumoca.CLiteral.Lowering.loop_safe_next
+#audit axioms Rumoca.CLiteral.Lowering.loop_next
+#audit axioms Rumoca.CLiteral.Lowering.loop_behaviors
+#audit axioms Rumoca.CLiteral.Lowering.callOperand_lowered
+#audit axioms Rumoca.CLiteral.Lowering.parameter_bindings
+#audit axioms Rumoca.CLiteral.Lowering.enterCall_lowered
+#audit axioms Rumoca.CLiteral.Lowering.resume_lowered
+#audit axioms Rumoca.CLiteral.Lowering.next_lowered
+#audit axioms Rumoca.CLiteral.Lowering.next_safe
+#audit axioms Rumoca.CLiteral.Lowering.call_behaviors
+#audit axioms Rumoca.CLiteral.Lowering.invocation_behaviors
 
 #audit axioms Rumoca.C.compileProgram_correct
 #audit axioms Rumoca.C.ideal_run_correct

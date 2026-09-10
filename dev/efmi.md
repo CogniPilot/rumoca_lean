@@ -738,8 +738,11 @@ Rust reference's `templates/galec/target.toml` packaging description. Changing
 the certified member roster merely to satisfy this tool would depart from
 that selected definition. The existing independent ZIP, exact-resource and XSD
 checks are separate evidence; they do not count as a passing official checker.
-Resolving or explicitly accommodating this upstream tool limitation remains
-part of E05/E06 review before a release claim.
+The [SR06 review disposition](standards-review.md#sr06--resolved-packaging-question-documented-checker-limitation)
+now records this as an explicit pinned-tool limitation after rechecking the
+normative package formats and checker source. The standalone packaging question
+is resolved; E05/E06's other proof and release obligations remain open. Revisit
+the disposition if the standard, checker or selected package format changes.
 
 ## Archive certificate construction checkpoint
 
@@ -885,8 +888,8 @@ driver, prepared code/XML and ZIP transport to the backend, and no packaging
 work enters DAE or Solve. Grammar and IR cases are unchanged.
 
 Public-artifact evidence is complete for this implementation checkpoint.
-E05/E06 remain open for the documented standards/checker-layout review and
-release claim. Full FMI 3 adapter certification, the driven
+E05/E06 remain open for the remaining standards and release review; SR06 now
+records the checker's format limitation. Full FMI 3 adapter certification, the driven
 profile's target/artifact contract and generic parser completeness remain
 required before grammar expansion.
 
@@ -931,5 +934,6 @@ roots are recorded in `build/efmi-publication-artifact.log`. The checked archive
 has SHA-256 `712a9819677fad8fef65a672fffbbe8ca038540126a6d56fc2cd2071e63ed646`.
 [CI for feb57a9](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
 also passed.
-This closes SR03 for the unit profile. The official-checker layout discrepancy,
-release review and other SR findings remain open; this is not full eFMI compliance.
+This closes SR03 for the unit profile. SR06 now records the official checker's
+layout limitation. Release review and the other unresolved SR findings remain
+open; this is not full eFMI compliance.

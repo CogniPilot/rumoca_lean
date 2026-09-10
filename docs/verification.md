@@ -1263,7 +1263,7 @@ Freshness of declarations prevents local capture, and the proof preserves that
 invariant through branches and loops. It uses the reusable
 `Transition.FunctionalBisimulation.behaviors` theorem, whose step reflection and
 final-state correspondence do not assume successful termination.
-This is not yet a lowering theorem for `CLoops` or typed calls. Constructing the
+At that checkpoint the theorem covered the memory-body machine. Constructing the
 global dictionary, proving freshness against existing identifiers and headers,
 printing/initializing static arrays, and binding those declarations to the actual
 adapter are still required before the production renderer can use this pass.
@@ -1272,6 +1272,26 @@ The seven new audit roots and core/C package checks pass in
 passed in `build/c-literal-lowering-full-gate.log`; the recurring standards
 review records both retained artifact hashes. No new tests or production
 language cases were added.
+
+`LiteralLoopLowering` and `LiteralCallLowering` now extend that transformation
+to the typed loop and ordinary-call machines. `loop_behaviors` preserves and
+reflects their exact returned values/heaps, stuck execution and divergence.
+`call_behaviors` composes parameter conversion, fresh callee scopes, loop/body
+steps, continuation frames and ordinary returns for arbitrary programs,
+including recursive calls. `invocation_behaviors` specializes this result to
+public entry with an empty continuation; it does not assume termination.
+
+The proofs require a supplied global dictionary, names fresh against local
+parameters/declarations/writes, and structural exclusion of string literals
+as direct callees. Both machines still use the same interface. This does not
+prove that adding named globals preserves every existing source lookup, nor
+construct or print those globals. External callbacks, native storage/ABI and
+the complete emitted adapter remain outside this increment. The thirteen new
+roots pass the unchanged axiom audit in `build/c-literal-loop-call-package-audit.log`.
+The required full gate passed in `build/c-literal-loop-call-full-gate.log`,
+including both target artifacts and their existing boundary checks. The
+recurring standards review records the exact artifact hashes. No production
+renderer, grammar case or test suite is added; the stage remains open.
 
 `EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
 and constructs a fixed existential theorem with one compiler artifact and
@@ -1331,8 +1351,9 @@ gate passed with exit status zero in `build/efmi-identity-full-gate.log`,
 including rejection of an impossible calendar date despite a consistent
 checksum graph. Official XSD validation and independent checksum comparisons
 are integration checks; they do not license the Lean theorem.
-General XSD semantics and the official checker/layout discrepancy remain open;
-E05/E06 are incomplete. The later archive and publication checkpoints extend
+General XSD semantics remain a review obligation; the current SR06 disposition
+below records the checker's format limitation. E05/E06 are incomplete.
+The later archive and publication checkpoints extend
 this manifest contract. See
 [the checkpoint and remaining work](../dev/efmi.md).
 
@@ -1373,6 +1394,11 @@ failure-preserving publication. The retained product is `build/Integrator.efmu`;
 official checker rejects these same bytes at its extension/layout checks,
 as recorded in `build/efmi-publication-official.log`; no official-checker
 conformance pass is claimed.
+The current [SR06 disposition](../dev/standards-review.md#sr06--resolved-packaging-question-documented-checker-limitation)
+classifies those entry guards as a pinned-tool limitation: Beta 1 Chapter 2
+permits the emitted standalone layout. The required gate and artifact contract
+are unchanged. General standards correspondence, coding guidelines and the
+other release obligations remain open.
 No full eFMI conformance claim follows from the authored byte grammar alone.
 
 ## Binary64 and real refinement

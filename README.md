@@ -134,8 +134,10 @@ lake exe rumoca verify-efmi build/Integrator.efmu --source examples/Integrator.m
 The publisher kernel-checks the complete staged archive against the source and
 both grammars before replacing the destination. `ArchiveContract` connects its
 GALEC, C execution, XML mappings and exact ZIP bytes. This covers our authored
-tiny profile; complete standards conformance and the official checker's layout
-discrepancy remain under [eFMI review](dev/efmi.md).
+tiny profile; complete standards conformance remains under [eFMI review](dev/efmi.md).
+The pinned official checker cannot read the selected standalone layout;
+[SR06](dev/standards-review.md#sr06--resolved-packaging-question-documented-checker-limitation)
+records that tool limitation. No official-checker pass is claimed.
 
 ## Verification
 

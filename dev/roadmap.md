@@ -56,7 +56,7 @@ passes the full gate: E01–E03 cover the checked DAE product, tensor Solve
 refinement and actual `.alg` file. E04 now also checks the complete Production
 C member, memory effects and serial traces. The correlated eFMU now has an
 actual source-to-archive contract and a passing publication gate; E05–E06
-remain open for the documented standards/checker discrepancy, cross-standard
+remain open for the documented standards obligations, cross-standard
 initialization correspondence and release review. The status-mapping correction
 is checked below. This checkpoint does not close whole-FMU or generic parser
 completeness obligations in this roadmap.
@@ -274,10 +274,24 @@ of Modelica 3.7.
   [verification.md](../docs/verification.md).
   The seven new audit roots pass `build/c-literal-lowering-package-audit.log`,
   and the required full local gate passed in `build/c-literal-lowering-full-gate.log`.
-- [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
-  mismatch and complete independent semantic/coding-guideline release review.
-  A diagnostic wrapped copy passes deeper checker checks; the actual standalone
-  archive has no official-checker pass. Remaining FMI capstone proofs stay open.
+  **Typed loop/call preparation:** `loop_behaviors`, `call_behaviors` and
+  `invocation_behaviors` now preserve and reflect all observations through
+  typed loop execution, parameter conversion, fresh callee scopes and ordinary
+  returns, including recursive calls. The thirteen added roots pass
+  `build/c-literal-loop-call-package-audit.log`. Global binding and structural
+  freshness remain explicit premises; actual pool construction, preservation
+  of existing identifier lookup when globals are added, declaration printing,
+  storage and the complete adapter remain open. No production output changes.
+  The complete local gate passed in `build/c-literal-loop-call-full-gate.log`;
+  both artifact hashes are recorded in the recurring standards review.
+- [x] **SR06:** resolve the standalone packaging question against Beta 1
+  Chapter 2. The emitted root layout and `.efmu` suffix are permitted; the
+  pinned checker's `.fmu`/`eFMU/` guards are a documented tool limitation.
+  No official-checker pass is claimed for the actual standalone archive.
+  Reopen this disposition when the standard, checker or package format changes.
+- [ ] **SR07/E06/F04:** complete independent semantic/coding-guideline release
+  review and the remaining FMI capstone proofs. SR06's packaging disposition
+  does not establish full standards conformance or close these obligations.
 
 The [review](standards-review.md) gives reproduction evidence and closure
 conditions. These corrections add no grammar cases. Each interface increment

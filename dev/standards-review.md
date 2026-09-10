@@ -65,7 +65,7 @@ input are different findings.
 | MLS §4.9.1: finite stored Real values. [Real type](https://specification.modelica.org/maint/3.7/class-predefined-types-and-declarations.html) | [Encoding](../packages/core/RumocaCore/Real/Encoding.lean): `finiteEncodingEquiv`; [Verified](../packages/compiler/Rumoca/Verified.lean): `compiler_semantic_preservation` and `ArtifactContract.real_solution_refinement`. | Binary64 profile and rounding refinement are proved under the documented C/IEEE assumptions. S01/N01 still require reviewed correspondence; unbounded mathematical trajectories are not stored Real values. |
 | MLS §8.6 and §4.9: initialization and fallback selection; FMI initialization metadata; eFMI Startup. | Source takes an external finite initial value; [FMI metadata](../packages/backend-fmi3/RumocaFMI3/Metadata.lean) supplies a zero start; [GALEC](../packages/core/RumocaCore/GALEC/IR.lean) selects zero in Startup. | **Open SR08/S01:** justify and compose these policies, including any required diagnostic. Do not infer an initial equation from the derivative equation. |
 | FMI §§2.3–2.5, Chapters 3–4: common lifecycle, ME/CS, metadata and artifacts. [FMI specification](https://fmi-standard.org/docs/3.0.2/) | Existing [FMI contracts](fmi3/contracts.md), source-build certificate and selected public-call theorems. | SR01–SR02 corrections are checked. SR04–SR05 and SR07 remain open; selected calls and numerical-file proofs do not certify the complete adapter/archive. |
-| eFMI Chapters 2, 3 and 5: container, Algorithm Code and Production Code. [Beta 1 specification](https://www.efmi-standard.org/media/resources/eFMI-Standard-1.0.0-Beta-1.zip) | [EFMIArchiveProofs](../packages/compiler/Rumoca/EFMIArchiveProofs.lean): `compile_archive_verified`, retaining code, method, mapping and manifest contracts. | SR03's status correction is checked. SR06–SR07 and the SR08 cross-standard initialization review remain open. |
+| eFMI Chapters 2, 3 and 5: container, Algorithm Code and Production Code. [Beta 1 specification](https://www.efmi-standard.org/media/resources/eFMI-Standard-1.0.0-Beta-1.zip) | [EFMIArchiveProofs](../packages/compiler/Rumoca/EFMIArchiveProofs.lean): `compile_archive_verified`, retaining code, method, mapping and manifest contracts. | SR03's status correction is checked. SR06 is resolved as the documented checker limitation below; SR07 and the SR08 cross-standard initialization review remain open. |
 
 **Evidence checkpoint:** the required full local gate passed at this revision
 in `build/diagnostic-locations-full-gate.log`, including both FMI interfaces,
@@ -221,6 +221,40 @@ schemas, native C and mutation controls. The retained artifacts are:
 
 **Stage decision: open.** This preparation does not close actual global storage,
 the whole adapter or any existing compliance finding.
+The [hosted run for 9ea13be](https://github.com/CogniPilot/rumoca_lean/actions/runs/34539932871)
+also passed.
+
+### Typed loop/call string-storage preparation: standards impact
+
+This increment extends the previous lowering proof to typed loops and ordinary
+calls, including recursive calls, failed execution and divergence. The public
+entry theorem derives the empty continuation invariant. Supplied global-name
+bindings and structural freshness remain premises; the proof compares machines
+using the same interface and does not yet construct the actual global pool or
+certify insertion of declarations into the emitted C translation unit.
+
+| Standard | Review of this increment |
+| --- | --- |
+| MLS 3.7 | Source admission, both EBNFs, equation/initialization semantics and numeric policy are unchanged. The existing clause map, P02 and SR08/S01 carry forward. No development profile enters production. |
+| FMI 3.0.2 ME/CS | Runtime C, metadata, lifecycle, errors/logging and archive contents are unchanged by this proof pass. SR04 still needs enabled callback and complete adapter/global-storage coverage; SR05 and SR07 remain open. |
+| eFMI 1.0.0 Beta 1 | GALEC methods, prepared Solve program, Production C, logical mappings, manifests and packaging are unchanged. The layout review below resolves SR06 as a checker limitation. SR07's release obligations and SR08's initialization correspondence remain open. |
+
+The thirteen new roots pass the unchanged axiom whitelist in
+`build/c-literal-loop-call-package-audit.log`. The required full gate passed
+in `build/c-literal-loop-call-full-gate.log`, including both FMI interfaces,
+the exact eFMU archive theorem, official schemas/checksums, native C and mutation
+controls. No unit tests or source cases were added. Both EBNF hashes above
+were rechecked and are unchanged. The retained artifact identities are:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `4d3121d6cb44cd908ee3dc68e88fd2784f11137accee96d070c2995dbbb1436c` |
+| `build/Integrator.efmu` | `7e2a6d7587706337e8d45ebf386ba28582ee9ce0a1dbcfcc13010dd2aa937777` |
+
+**Stage decision: open; grammar expansion remains blocked.** The new theorem
+closes the conditional loop/call lowering obligation, not the actual global
+setup or complete compiler chain. SR04, SR05, SR07 and SR08 remain open; SR06's
+separate disposition resolves only the standalone packaging question.
 
 ## Original FMI/eFMI snapshot and evidence
 
@@ -540,7 +574,7 @@ proofs. Separate tolerance handling from stop-time validity. Review the entire
 rejected-call behavior, including the resulting lifecycle state; do not infer
 conformance just from `guard_reference`.
 
-### SR06 — existing release gap: official checker and standalone layout differ
+### SR06 — resolved packaging question: documented checker limitation
 
 The unmodified [official eFMI Compliance Checker v1.0.1](https://github.com/modelica/efmi-compliancechecker/releases/tag/v1.0.1),
 commit `edf33452ed0628bde1d8102c77b1030259ad5f57`, was rerun with its bundled
@@ -556,10 +590,26 @@ The copied member contents were unchanged. This only exercises deeper checker
 paths: the transformed archive is not the certified standalone product, and
 its pass does not resolve SR03 or establish production-C execution correctness.
 
-Beta 1 Chapter 2 describes the selected standalone root layout; changing the
-production archive merely to satisfy this checker's layout would need its own
-normative review. E05/E06 stay open. Record an explicit resolution or accepted
-tool limitation before a release claim.
+**Review disposition (2026-09-10):** the standalone layout is permitted by
+[Beta 1 Chapter 2](https://www.efmi-standard.org/media/resources/eFMI-Standard-1.0.0-Beta-1.zip).
+Its second package format places the eFMU contents, including `__content.xml`,
+at ZIP root with the `.efmu` extension. Its embedded FMU format instead uses
+`extra/org.efmi-standard`. The pinned checker's
+[entry checks](https://github.com/modelica/efmi-compliancechecker/blob/edf33452ed0628bde1d8102c77b1030259ad5f57/sources/eFMIComplianceChecker/eFMIComplianceChecker.py#L123-L170)
+require `.fmu` and `eFMU/`; they do not implement the selected standalone format.
+The specification archive SHA-256 and checker commit above were rechecked.
+
+SR06 is resolved as an explicit tool limitation, with no production-layout or
+verification-contract change. The loop/call checkpoint's complete local gate
+checks the actual standalone archive and independently extracts its members,
+schemas and checksum graph. The wrapped checker's deeper pass remains evidence
+for the earlier, identified diagnostic copy only. **There is no official-checker
+pass for the current standalone artifact.**
+
+Reopen this disposition if the normative version, checker revision or selected
+package format changes. It does not waive failures in member contents, GALEC,
+Production C or manifests, nor close SR07, SR08 or the remaining E05/E06 proof
+and release obligations.
 
 ### SR07 — existing release gaps: proof coverage and coding guidelines
 
