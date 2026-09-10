@@ -67,7 +67,7 @@ theorem bind_types (header : HeaderTypes interface) :
     CLoops.Calls.parameterTypes function.signature.parameters = some parameterTypes := by
   have he : CLoops.bindType (CLoops.bindType (CLoops.bindType (fun _ => none) "count" .size)
       "out" .pointer) "value" .float64 = parameterTypes := by funext name; rfl
-  simpa only [function, CLoops.Calls.parameterTypes, Bool.false_eq_true, ↓reduceIte,
+  simpa only [function, CLoops.Calls.parameterTypes, CCalls.parameterType, Bool.false_eq_true, ↓reduceIte,
     bind, Option.bind_some, pure, CLoops.bindType, Option.isSome_none,
     header.size, header.output, header.scalar] using congrArg some he
 

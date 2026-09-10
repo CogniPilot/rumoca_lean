@@ -57,7 +57,7 @@ theorem bind_types (op : Tensor.BinaryOp) (header : HeaderTypes interface) :
       by_cases ho : name = "out" <;> by_cases hc : name = "count" <;>
       simp_all [CLoops.bindType, parameterTypes]
   cases op <;>
-    simpa only [function, CLoops.Calls.parameterTypes, Bool.false_eq_true, ↓reduceIte,
+    simpa only [function, CLoops.Calls.parameterTypes, CCalls.parameterType, Bool.false_eq_true, ↓reduceIte,
       bind, Option.bind_some, pure, CLoops.bindType, Option.isSome_none,
       header.size, header.input, header.output] using congrArg some he
 

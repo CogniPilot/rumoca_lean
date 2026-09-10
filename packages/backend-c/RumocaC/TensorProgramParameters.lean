@@ -97,7 +97,7 @@ theorem bind_types (params : List Syntax.Parameter) (header : CTensor.HeaderType
   | nil => rfl
   | cons p ps ih =>
     simp only [List.map_cons, List.nodup_cons] at distinct
-    simp only [List.map_cons, CLoops.Calls.parameterTypes, Syntax.Parameter.tree,
+    simp only [List.map_cons, CLoops.Calls.parameterTypes, CCalls.parameterType, Syntax.Parameter.tree,
       Bool.false_eq_true, ↓reduceIte, ih distinct.2, types_absent ps p.name distinct.1,
       Option.isSome_none, header_type p.kind header, bind, Option.bind_some, pure, types]
 

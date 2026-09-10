@@ -14,7 +14,8 @@ namespace Rumoca.FMI3
   | _ => none
 
 @[simp] def cTypes (type : String) : Option CMemory.CType :=
-  if ["Instance *", "Model *", "const Model *", "fmi3Instance"].contains type then some .pointer
+  if ["Instance *", "Model *", "const Model *", "fmi3Instance",
+      "fmi3Float64 *", "const fmi3Float64 *"].contains type then some .pointer
   else if type = "double" || type = "fmi3Float64" then some .float64
   else if type = "size_t" || type = "uint64_t" then some .size
   else if type = "int" || type = "fmi3Status" then some .int32

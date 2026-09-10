@@ -43,15 +43,20 @@ def returnCast (type : String) (value : Value) : Option Value :=
   if type = "void" then if value = .void then some .void else none
   else CBody.cast type value
 
-/-- Each call receives a fresh parameter scope. Arity, duplicate names and
-conversions are checked; array parameters need a later typed adjustment rule. -/
+/-- C11 N1570 §6.7.6.3 paragraph 7 adjusts an array parameter to a pointer.
+The tree supports unsized `T name[]`, without qualifiers inside the brackets.
+The adjusted spelling must still resolve in the explicit header dictionary. -/
+def parameterType (p : Parameter) : String :=
+  if p.array then p.type ++ " *" else p.type
+
+/-- A fresh function scope. Arity, duplicate names and conversions to adjusted
+parameter types are checked. Unknown types and unsupported conversions fail. -/
 def parameters : List Parameter → List Value → Option CBody.Locals
   | [], [] => some (fun _ => none)
   | p :: ps, v :: vs => do
-    if p.array then none else do
       let env ← parameters ps vs
       if (env p.name).isSome then none else do
-        let value ← CBody.cast p.type v
+        let value ← CBody.cast (parameterType p) v
         return CBody.bind env p.name value
   | _, _ => none
 

@@ -165,8 +165,18 @@ of Modelica 3.7.
   SetFloat64 exclusion. Nine new roots pass `build/fmi-setter-scope-audit.log`.
   All thirteen existing artifact/importer groups and the source-link/mutation
   gate pass in `build/fmi-setter-scope-artifact-gate.log`, including null setters
-  and empty-call state preservation. The required full gate is pending; API argument binding,
-  callbacks, nonempty setter loops and the actual adapter contract remain open.
+  and empty-call state preservation. The required full gate passed in
+  `build/fmi-setter-scope-full-gate.log` at `1a53884`; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34516914151)
+  passed as well. **Public entry:** unsized-array parameters now adjust to
+  explicitly resolved pointer types. Shared binding proofs derive matching
+  value/type environments and exact arity. Complete ME get/set continuous-state
+  calls connect to the existing Solve observations and updates, including exact
+  bit patterns and memory frames. Twelve new roots and the full package audit
+  pass in `build/fmi-array-call-audit.log`. The FMI artifact/mutation gate and
+  all thirteen native groups pass in `build/fmi-array-call-full-gate.log`;
+  that full run's GALEC/eFMU completion remains pending.
+  Other public signatures, rejected calls, strings/callbacks, nonempty setter
+  loops and the actual adapter contract remain open.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
   mismatch and complete independent semantic/coding-guideline release review.
   A diagnostic wrapped copy passes deeper checker checks; the actual standalone

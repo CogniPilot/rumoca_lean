@@ -23,17 +23,16 @@ theorem bind_parameter (p : Parameter) (ps : List Parameter) (value converted : 
     (tailBound : CCalls.parameters ps vs = some env) (fresh : env p.name = none)
     (cast : CBody.cast p.type value = some converted) :
     CCalls.parameters (p :: ps) (value :: vs) = some (CBody.bind env p.name converted) := by
-  simp only [CCalls.parameters, ordinary, Bool.false_eq_true, ↓reduceIte, tailBound,
+  simp only [CCalls.parameters, CCalls.parameterType, ordinary, Bool.false_eq_true, ↓reduceIte, tailBound,
     bind, Option.bind_some, fresh, Option.isSome_none, cast, pure]
 
 def parameterTypes : List Parameter → Option Types
   | [] => some (fun _ => none)
   | p :: ps => do
-      if p.array then none else do
-        let rest ← parameterTypes ps
-        if (rest p.name).isSome then none else do
-          let type ← interface.types p.type
-          return bindType rest p.name type
+      let rest ← parameterTypes ps
+      if (rest p.name).isSome then none else do
+        let type ← interface.types (CCalls.parameterType p)
+        return bindType rest p.name type
 
 inductive Continuation where
   | done

@@ -901,14 +901,43 @@ all generated FMI bodies, with no setter exclusion and the unchanged nested
 declaration restriction. Nine new roots pass `build/fmi-setter-scope-audit.log`;
 all thirteen existing native groups and the actual-file/source-link/mutation
 gate pass in `build/fmi-setter-scope-artifact-gate.log`. The required full gate
-remains pending. API argument binding, nonempty
-setter-loop execution, callbacks and the actual adapter-byte contract remain open.
+passed in `build/fmi-setter-scope-full-gate.log` at `1a53884`, and
+[its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34516914151)
+passed. That full run's FMU has SHA-256
+`765662ef91d429089b4a22fd12dd29ec885f375a39a173c02bd4c8c35343a56f`.
+
+The next increment adds the unsized-array parameter adjustment from
+[C11 N1570 §6.7.6.3 paragraph 7](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+`CCalls.parameterType` preserves the declared pointee spelling, including
+`const`, and requires the adjusted pointer type to resolve in the explicit
+header dictionary. Binding still rejects unknown types, duplicate names,
+wrong arity and unsupported conversions. `CallParameters.parameters_typed`
+derives the matching local type environment and conversion-stable values from
+successful binding; `parameters_length` and `parameters_unknown` prove the
+arity and unknown-type obligations. `BodyEmbedding.typed_call_reaches` and
+`typed_call_behaviors` lift a checked body run through ordinary function entry
+and return, without assuming prebound locals or an arbitrary type environment.
+
+`StateCalls.get_behaviors` and `set_behaviors` apply that bridge to complete ME
+continuous-state calls. They execute the same function constructor used by
+`Runtime.render`, preserving exact binary64 values and the whole-heap frame
+of the existing Solve ME observation/update proofs. Only the required Float64
+pointer spellings were added to the FMI type dictionary. These calls require
+the explicit function-table binding, valid caller/instance storage and the
+stated lifecycle preconditions. Official-header parsing, actual adapter text,
+native ABI/linkage, other public signatures and rejected-call execution remain
+separate obligations. All twelve added roots and the full package audit pass
+in `build/fmi-array-call-audit.log`, with the unchanged axiom whitelist. The
+FMI actual-file/source-build/mutation gate and all thirteen existing native
+groups also pass in `build/fmi-array-call-full-gate.log`. That required full
+run continues through the GALEC/eFMU checks; its final result is pending.
+No new Modelica source case is admitted.
 
 Ordinary calls are supported as entire assignment, declaration, return or
 discard operands; their arguments are pure expressions. The typed tensor-call
 machine additionally supports declared-local writes and its selected arithmetic
 operators; the original memory-body machine does not. Function pointers,
-array-parameter adjustment, nested effectful expressions, block scopes,
+remaining parameter forms and typedefs, nested effectful expressions, block scopes,
 allocation/free, callbacks, general C arithmetic and remaining FMI bodies need
 additional rules and proofs. The selected generated assignments call pure
 numerical functions or the read-only RHS helper, so evaluating their lvalues

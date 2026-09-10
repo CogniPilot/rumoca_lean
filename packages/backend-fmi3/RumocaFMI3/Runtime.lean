@@ -238,9 +238,12 @@ def declarations : String :=
   "typedef struct {\n  Model model;\n  double time, stop, timeMin, eventTime, lastCompleted;\n  int kind, mode;\n" ++
   "  fmi3Boolean stopDefined, logging;\n  fmi3InstanceEnvironment environment;\n  fmi3LogMessageCallback logger;\n} Instance;\n\n"
 
+def function (m : Solve.FMI3Model source) (sig : Signature) : CTree.Function :=
+  ⟨sig, body m sig, false⟩
+
 def render (m : Solve.FMI3Model source) (signatures : List Signature) : String :=
   functionPrefix m.name ++ "#include \"model.c\"\n" ++ declarations ++
     String.join (helpers.map CTree.Function.render) ++
-    String.join (signatures.map fun sig => (CTree.Function.mk sig (body m sig) false).render)
+    String.join (signatures.map fun sig => (function m sig).render)
 
 end Rumoca.FMI3.Runtime

@@ -1,4 +1,5 @@
 import RumocaC.TypedCallProofs
+import RumocaC.CallParameters
 
 /-! Embed successful memory-body execution in the typed loop/call machine.
 The relation retains the code, values and heap and supplies local type bindings.
@@ -204,6 +205,42 @@ theorem typed_body_behaviors (program : CCalls.Program) (state : CBody.State)
   apply (CCalls.Typed.machine program).behavior_iff
   · exact (typed_return_reaches program state types result returnType returned .done n hs h cast).trans
       (.next (by rfl) (.refl _))
+  · rfl
+
+/-- Enter a function with checked argument conversions, execute its body and
+return under any caller. The matching local types follow from successful
+binding; callers do not get to supply an unrelated type environment. -/
+theorem typed_call_reaches (program : CCalls.Program) (fn : CTree.Function)
+    (args : List Value) (env : CBody.Locals) (heap : Heap)
+    (result : CBody.Result) (returned : Value) (stack : CCalls.Typed.Continuation) (n : Nat)
+    (defined : program.definitions fn.signature.name = some (.tree fn))
+    (bound : CCalls.parameters fn.signature.parameters args = some env)
+    (closed : fn.body.all closedBlocks = true)
+    (executed : CBody.run n (.running fn.body env heap) = some (.returned result))
+    (cast : CCalls.returnCast fn.signature.result result.value = some returned) :
+    Transition.Reaches (CCalls.Typed.machine program).step
+      (.calling fn.signature.name args heap stack) (.returning returned result.heap stack) := by
+  obtain ⟨types, typed, _⟩ := CCalls.Parameters.parameters_typed _ _ _ bound
+  exact .next (CCalls.Typed.tree_entry program fn.signature.name args heap stack fn env types
+      defined bound typed)
+    (typed_return_reaches program (.running fn.body env heap) types result fn.signature.result
+      returned stack n closed executed cast)
+
+/-- All complete-call behaviors, including failure and divergence, are
+accounted for by the checked body run and ordinary entry/return conversion. -/
+theorem typed_call_behaviors (program : CCalls.Program) (fn : CTree.Function)
+    (args : List Value) (env : CBody.Locals) (heap : Heap)
+    (result : CBody.Result) (returned : Value) (n : Nat)
+    (defined : program.definitions fn.signature.name = some (.tree fn))
+    (bound : CCalls.parameters fn.signature.parameters args = some env)
+    (closed : fn.body.all closedBlocks = true)
+    (executed : CBody.run n (.running fn.body env heap) = some (.returned result))
+    (cast : CCalls.returnCast fn.signature.result result.value = some returned) (behavior) :
+    (CCalls.Typed.machine program).Behaves (.calling fn.signature.name args heap .done) behavior ↔
+      behavior = .terminates ⟨returned, result.heap⟩ := by
+  apply (CCalls.Typed.machine program).behavior_iff
+  · exact (typed_call_reaches program fn args env heap result returned .done n
+      defined bound closed executed cast).trans (.next rfl (.refl _))
   · rfl
 end
 

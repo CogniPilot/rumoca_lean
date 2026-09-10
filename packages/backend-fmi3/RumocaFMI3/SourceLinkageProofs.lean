@@ -28,7 +28,7 @@ theorem sourcePrefix_correct (m : Solve.FMI3Model source) (signatures : List CTr
     (parts : NameParts m.name) : SourcePrefixContract m.name (Runtime.render m signatures) := by
   refine ⟨functionPrefix_word parts,
     ⟨Runtime.declarations ++ String.join (Runtime.helpers.map CTree.Function.render) ++
-      String.join (signatures.map fun sig => (CTree.Function.mk sig (Runtime.body m sig) false).render), ?_⟩⟩
+      String.join (signatures.map fun sig => (Runtime.function m sig).render), ?_⟩⟩
   simp only [Runtime.render, functionPrefix, String.append_assoc]
 
 /-- Read the public identity of each advertised interface independently of

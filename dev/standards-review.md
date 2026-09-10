@@ -271,9 +271,29 @@ block scopes have not been added. Nine new roots pass
 actual-file/source-link/mutation gate pass in
 `build/fmi-setter-scope-artifact-gate.log`. The existing argument/atomicity group
 also checks null setter calls and empty-call state preservation. The required
-full gate is pending.
-Public array/string argument binding, enabled callbacks, nonempty setter-loop
-execution and actual printed adapter binding remain open.
+full gate passed in `build/fmi-setter-scope-full-gate.log` at `1a53884`, and
+[its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34516914151)
+passed. The full-run FMU has SHA-256
+`765662ef91d429089b4a22fd12dd29ec885f375a39a173c02bd4c8c35343a56f`.
+
+**Public entry correction:** C array parameters previously failed before body
+entry even for valid pointer arguments. The authored C machine now implements
+the unsized-array adjustment in [C11 N1570 §6.7.6.3 paragraph 7](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf),
+retaining explicit type resolution and rejection of unknown types, duplicate
+names, arity mismatches and unsupported conversions. Generic proofs derive
+coherent local value/type environments; complete ME continuous-state get/set
+call theorems include entry, exact state observation/update, whole-heap results
+and ordinary returns under arbitrary continuations. The existing body proofs
+are reused with the same runtime function constructor as the renderer.
+The FMI dictionary adds only the two required Float64 pointer spellings.
+All twelve new roots and the full package audit pass in
+`build/fmi-array-call-audit.log`. The FMI actual-file/source-build/mutation gate
+and all thirteen existing native groups pass in `build/fmi-array-call-full-gate.log`;
+the full run's GALEC/eFMU result remains pending. These are selected function-tree call theorems with
+explicit definition-table and storage premises, not an official-header parser,
+actual adapter-byte or native ABI certificate. Remaining public signatures,
+string binding, enabled callbacks and nonempty SetFloat64-loop execution remain
+open; SR04 is not closed by this increment.
 
 ### SR05 — P2, unresolved: initialization rejects zero-duration/tolerance cases
 

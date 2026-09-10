@@ -32,7 +32,7 @@ theorem model_rhs_reaches (m : Solve.FMI3Model source) (heap : Heap) (p : Addres
   have numerical := kernel_correct (linked m) m.solve rfl .rhs
     Binary64.positiveZero ⟨0, by decide⟩ heap k
   refine .next (t := .body (.running (Runtime.helpers[1].body) env heap) "double" stack) ?_ ?_
-  · simp [machine, next, linked, Runtime.helpers, parameters, env, rhsLocals,
+  · simp [machine, next, linked, Runtime.helpers, parameters, parameterType, env, rhsLocals,
       CBody.cast, convert]
   refine .next (t := .calling "rumoca_rhs" [] heap k) ?_ ?_
   · simp [machine, next, Runtime.helpers, Runtime.ret, Runtime.call, Runtime.v,
@@ -59,7 +59,7 @@ private theorem advance_parameters (p : Address) (n : CStatements.Counter) :
       some (advanceLocals p n) := by
   have hc : CBody.cast "Model *" (.pointer (some p)) = some (.pointer (some p)) := by
     simp [CBody.cast, convert]
-  simp [Runtime.helpers, parameters, hc, advanceLocals, CBody.bind]
+  simp [Runtime.helpers, parameters, parameterType, hc, advanceLocals, CBody.bind]
 
 set_option maxRecDepth 10000 in
 private theorem advance_entry (m : Solve.FMI3Model source) (heap : Heap)

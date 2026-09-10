@@ -73,3 +73,9 @@ import RumocaC.BodyEmbedding
 #audit axioms Rumoca.CBodyEmbedding.run_refines
 #audit axioms Rumoca.CBodyEmbedding.typed_return_reaches
 #audit axioms Rumoca.CBodyEmbedding.typed_body_behaviors
+#audit axioms Rumoca.CCalls.Parameters.convert_stable
+#audit axioms Rumoca.CCalls.Parameters.parameters_typed
+#audit axioms Rumoca.CCalls.Parameters.parameters_length
+#audit axioms Rumoca.CCalls.Parameters.parameters_unknown
+#audit axioms Rumoca.CBodyEmbedding.typed_call_reaches
+#audit axioms Rumoca.CBodyEmbedding.typed_call_behaviors

@@ -23,9 +23,16 @@ import RumocaFMI3.HistoryProofs
 import RumocaC.Memory
 import RumocaFMI3.Metadata
 import RumocaFMI3.StateProofs
+import RumocaFMI3.StateCalls
 import RumocaFMI3.TimeProofs
 
 #audit axioms Rumoca.FMI3.metadata_name
+#audit axioms Rumoca.FMI3.StateCalls.parameters_bound
+#audit axioms Rumoca.FMI3.StateCalls.call_reaches
+#audit axioms Rumoca.FMI3.StateCalls.get_reaches
+#audit axioms Rumoca.FMI3.StateCalls.get_behaviors
+#audit axioms Rumoca.FMI3.StateCalls.set_reaches
+#audit axioms Rumoca.FMI3.StateCalls.set_behaviors
 #audit axioms Rumoca.FMI3.Build.recipe_required
 #audit axioms Rumoca.FMI3.Build.decode_recipe
 #audit axioms Rumoca.FMI3.Build.invocation_required
