@@ -54,11 +54,28 @@ overflow rejection and signed underflow. `Solve.Tensor.Finite.executes_iff`
 characterizes ordered finite program execution, including every intermediate
 instruction. `Array.Finite` proves nearest-value bounds for the actual square
 RHS and AD-generated Jacobian coefficients against their mathematical Real
-values. These 26 new roots pass the core audit in `build/finite-array-audit.log`.
-They do not yet simulate C tensor loops or FMI error handling. Static reverse
-transformation, the finite C target edge and tensor FMU/eFMU artifact certificates remain open;
+values. These 26 new roots pass the core audit in `build/finite-array-audit.log`,
+and the checkpoint passed [CI for 1413110](https://github.com/CogniPilot/rumoca_lean/actions/runs/34465555340).
+The next C increment proves the complete counted helper bodies for addition
+and multiplication over arbitrary tensor shapes. `CTensor.artifact_correct`
+binds independently specified C tokens to all body behaviors, finite Solve
+results and the whole-heap frame. Its eleven new roots pass the unchanged
+axiom audit in `build/c-tensor-audit.log`. These helpers require finite inputs,
+in-domain operations, valid readable input ranges, a separate writable output
+range and a count fitting the authored 64-bit `size_t`. They do not prove
+function-call ABI binding, scratch allocation, overflow/error paths or FMI
+interaction. Static reverse transformation, whole-program C simulation and
+tensor FMU/eFMU artifact certificates remain open;
 [tensor-ad.md](../dev/tensor-ad.md) fixes the small scope. These development
 parsers do not enlarge the production compiler's admitted source language.
+
+The helper actual-file gate passed in `build/c-tensor-artifact-gate.log`.
+`build/tensor-c/add-contract.log` and `mul-contract.log` audit the exact
+file-literal contracts. The gate also rejects a changed loop bound and checks
+native shared-input execution, output boundaries, signed underflow and empty
+execution. It runs as `lake run tensor-c-test` and is included in `lake test`.
+The complete repository gate for this increment is still pending; these
+helper certificates do not establish the remaining tensor FMU/eFMU chain.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real

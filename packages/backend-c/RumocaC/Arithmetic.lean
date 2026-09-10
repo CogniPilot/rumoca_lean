@@ -1,8 +1,9 @@
 import RumocaC.Calls
+import RumocaCore.Real.Multiplication
 
 /-! The straight-line C arithmetic extension needed by Solve register code.
-Other statements retain the existing object-memory semantics. The sole new
-operation is finite binary64 addition in a declaration's initializer; compound
+Other statements retain the existing object-memory semantics. The arithmetic
+operations are finite binary64 addition and multiplication in an initializer; compound
 arithmetic expressions, nonfinite operands and overflow remain unsupported.
 Generated unit-method proofs establish that all their additions are in domain. -/
 noncomputable section
@@ -28,11 +29,26 @@ theorem floatAdd_one (x : Binary64.Value) :
   · rw [Binary64.units_one]
     exact Binary64.advance_no_overflow x
 
+def floatMul (left right : Value) : Option Value := do
+  let x ← CCalls.finiteValue left
+  let y ← CCalls.finiteValue right
+  return .finite (← Binary64.multiply? x y)
+
+theorem floatMul_finite (x y : Binary64.Value) (h : Binary64.finiteProduct x y) :
+    floatMul (.finite x) (.finite y) = some (.finite (Binary64.roundedMul x y)) := by
+  simp only [floatMul, CCalls.finiteValue_finite, Binary64.multiply?, if_pos h,
+    bind, Option.bind_some, pure]
+
 variable [interface : CInterface]
 
 def next : CBody.State → Option CBody.State
   | .running (.declare type name (.bin .add a b) :: rest) env heap => do
       let value ← floatAdd (← CBody.eval env heap a) (← CBody.eval env heap b)
+      let converted ← CBody.cast type value
+      if (env name).isSome then none else
+        return .running rest (CBody.bind env name converted) heap
+  | .running (.declare type name (.bin .mul a b) :: rest) env heap => do
+      let value ← floatMul (← CBody.eval env heap a) (← CBody.eval env heap b)
       let converted ← CBody.cast type value
       if (env name).isSome then none else
         return .running rest (CBody.bind env name converted) heap

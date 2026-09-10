@@ -88,5 +88,7 @@ jobs:
             build/**/*.txt
             build/Integrator.fmu
             build/Integrator.efmu
+            build/tensor-c/*.c
+            build/tensor-c/Check-*.lean
           if-no-files-found: warn
           retention-days: 14

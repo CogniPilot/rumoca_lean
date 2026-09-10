@@ -146,6 +146,11 @@ private def verifyC : ScriptM Unit := do
   command "bash" #["scripts/verify-artifact.sh"]
   command "bash" #["tests/verification-negative.sh"]
 
+private def tensorCTest : ScriptM Unit := do
+  IO.println "Checking development tensor C helper artifacts"
+  buildTargets ["check-c", "rumoca_c/RumocaC.TensorArtifactCheck"]
+  command "bash" #["tests/tensor-c.sh"]
+
 private def fmiTest : ScriptM Unit := do
   IO.println "Checking FMI 3 archives, importers and native interfaces"
   buildTargets ["rumoca_compiler", "rumoca_fmu_runner", "rumoca_fmi3/RumocaFMI3"]
@@ -167,6 +172,7 @@ script «check-generated» args do noArgs args; checkGenerated; return 0
 script «lalr-test» args do noArgs args; lalrTest; return 0
 script «frontend-test» args do noArgs args; frontendTest; return 0
 script «verify-c» args do noArgs args; verifyC; return 0
+script «tensor-c-test» args do noArgs args; tensorCTest; return 0
 script «fmi-test» args do noArgs args; fmiTest; return 0
 script «efmi-algorithm-test» args do noArgs args; efmiAlgorithmTest; return 0
 script «efmi-production-test» args do noArgs args; efmiProductionTest; return 0
@@ -177,6 +183,7 @@ script test args do
   noArgs args
   leanTest
   verifyC
+  tensorCTest
   fmiTest
   efmiAlgorithmTest
   efmiProductionTest

@@ -43,8 +43,13 @@ register accumulation. Static reverse lowering and finite target/artifact
 contracts remain open. The complete local and hosted gates passed for both
 the AD checkpoint and the array source-to-Solve chain. Exact product rounding,
 signed underflow, ordered finite tensor execution and the array RHS/Jacobian
-coefficient error bounds now pass their package audits. C tensor loops, prepared
-metadata and actual tensor artifacts remain the next obligations.
+coefficient error bounds passed both their package audits and hosted CI.
+The counted C add/multiply helper bodies now have all-behavior finite Solve
+and memory-frame theorems, plus an independent token/printing contract and a
+fixed actual-file checker. The eleven new roots pass `build/c-tensor-audit.log`.
+Whole-program storage/call composition, prepared metadata, overflow/FMI policy
+and actual tensor FMU/eFMU artifacts remain the next obligations. The helper
+contract does not admit the array models into production compilation.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.

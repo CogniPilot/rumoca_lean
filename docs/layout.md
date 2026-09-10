@@ -113,6 +113,7 @@ Use these commands from the repository root inside `nix develop`:
 | `lake test` | Required full Lean, artifact, rejection and native C gate |
 | `lake run lalr-test` | Development LALR generation and native/actual-table checks; full proof audit is in `lake test` |
 | `lake run demo` | Compile and run the example |
+| `lake run tensor-c-test` | Check development tensor helper files, their semantic certificates and native boundary |
 | `lake run fmu` | Create and validate `build/Integrator.fmu` with ME and CS |
 | `lake run fmi-test` | Build the FMI packages and run archive/importer/ABI checks |
 | `lake run efmi-algorithm-test` | Check second-grammar reuse and actual Algorithm Code artifacts; no eFMU claim |

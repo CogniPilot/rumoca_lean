@@ -249,9 +249,60 @@ All 26 added arithmetic/program/array roots pass the unchanged axiom audit in
 program roots live in the independently cached `Tests.FiniteChecks`; the four
 array corollaries live in `Tests.TensorChecks`.
 
-Next, bind prepared declaration metadata to this kernel and simulate the finite
-programs with actual C loops and storage. The C multiplication expression and
-its printer/statement contract must be included. Input timing and the numerical step policy need their
-own contract. FMI dimensions/value references and actual FMU/eFMU certificates
-must follow before production accepts either array model. No further grammar
-growth is needed to complete these obligations.
+This checkpoint also passed
+[CI for 1413110](https://github.com/CogniPilot/rumoca_lean/actions/runs/34465555340).
+
+## Counted production C helpers
+
+`CTensor.function` emits one loop for each pointwise add/multiply operation,
+independent of shape and extent. `CLoops` retains declared local types and
+models the unsigned counter update; `loop_reaches` proves complete execution
+from initialization through every iteration and exit. The generated body has
+no nested declarations, so its flattened control flow does not lose C scope.
+
+`CMemory.TensorView` represents input/output buffers over the existing typed
+symbolic cells. `written_at` proves the initialized prefix invariant;
+`store_next` executes each actual typed write; `written_frame` preserves every
+cell outside the output range. Inputs may alias one another, which is needed
+for `u .* u`. The output range must be separate from both inputs. These
+invariants include zero-volume tensors and initially uninitialized outputs.
+
+`CTensor.function_correct` proves that every body behavior terminates with
+the finite Solve result. Its premises require valid storage, finite operands,
+all coordinate operations in domain, and a count below `2^64` for the authored
+`size_t` profile. It neither assumes the loop body implements an operation nor
+substitutes a tensor operation for the actual C writes and counter steps.
+
+`TensorSyntax` independently spells out the C tokens for the parameters,
+declaration, loop, indexed operation, increment and return. `render_denotes`
+checks the structured emitter against the shared scanner's maximal-munch
+relation; `denotes_unique` ensures the text cannot denote another operator.
+`artifact_correct` composes this with all body behaviors, the independent
+`Finite.Pointwise` relation, output reads and the complete memory frame.
+The fixed file adapter reads the entire actual helper file, constructs that
+contract for its literal contents and audits the exact theorem. Eleven new
+roots pass `build/c-tensor-audit.log`, using only the usual three axioms.
+
+`lake run tensor-c-test` retains actual `add.c`/`mul.c` and their checking logs
+in `build/tensor-c/`. It includes one changed-bound rejection and one native
+check for shared inputs, output frames, signed underflow and empty execution.
+These are file/toolchain boundary checks, not substitutes for the universal
+body proofs. Header preprocessing, the native ABI/compiler and hardware remain
+outside the authored C semantics.
+The gate passed in `build/c-tensor-artifact-gate.log`; both actual-file theorem
+audits list only `propext`, `Quot.sound` and `Classical.choice`. The complete
+repository gate for this increment is pending in `build/c-tensor-full-gate.log`.
+
+Alignment with the Rust typed Solve program is retained: the source/IR contains
+one pointwise tensor instruction, while execution traverses storage at runtime.
+This increment adds no source scalarization, shape inference, solver choice or
+AD lowering in the backend. Rust's register destinations, diagonal instruction
+and source spans identify the next storage/provenance interfaces to compose;
+the helper proof alone does not establish those connections.
+
+Next, compose prepared tensor program instructions with these helpers through
+actual calls and scratch storage, including fills and diagonal output. Bind
+declaration metadata to the same kernel and establish input timing, numerical
+step and overflow/error policy. FMI dimensions/value references and actual
+FMU/eFMU certificates must follow before production accepts either array model.
+No further grammar growth is needed to complete these obligations.
