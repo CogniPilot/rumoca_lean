@@ -4,6 +4,7 @@ import RumocaC.TensorFillContract
 import RumocaC.TensorDiagonalContract
 import TensorCChecks.Entry
 import TensorCChecks.DiagonalEntry
+import TensorCChecks.IVPEntry
 
 #audit axioms Rumoca.CArithmetic.floatMul_finite
 #audit axioms Rumoca.CLoops.increment_exact
@@ -151,3 +152,25 @@ import TensorCChecks.DiagonalEntry
 #audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.scope
 #audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.call_correct
 #audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.artifact_correct
+#audit axioms Rumoca.CTensor.Lowering.Named.Layout.erase_push
+#audit axioms Rumoca.CTensor.Lowering.Named.emit_correct
+#audit axioms Rumoca.CTensor.Lowering.Named.function_matches
+#audit axioms Rumoca.CTensor.Lowering.Named.diagonal_matches
+#audit axioms Rumoca.CTensor.Lowering.Named.artifact_correct
+#audit axioms Rumoca.CTensor.Lowering.Named.diagonal_artifact_correct
+#audit axioms Rumoca.CTensor.Lowering.ProgramEntry.correct
+#audit axioms Rumoca.CTensor.Lowering.DiagonalEntry.correct
+#audit axioms Rumoca.CTensor.Lowering.OptionalDiagonalEntry.correct
+#audit axioms Rumoca.CTensor.Lowering.PointwisePlan.correct
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.plan_valid
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.initial_result
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.derivative_result
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.jacobian_function
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.sources_shape
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.program_correct
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.initial_arguments
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.derivative_arguments
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.parameter_bound
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.initial_call_correct
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.derivative_call_correct
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.artifact_correct

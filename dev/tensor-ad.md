@@ -516,9 +516,49 @@ calls the same function; its separate coefficient-only entry was removed.
 
 All 23 added roots and the actual-file/native gate pass in
 `build/c-diagonal-model-gate.log` with the unchanged axiom policy. The exact file
-root is audited in `build/tensor-c/program-contract.log`; the full gate is tracked in
-`build/c-diagonal-model-full-gate.log`. This is the Jacobian function, not yet
+root is audited in `build/tensor-c/program-contract.log`; the full gate passed in
+`build/c-diagonal-model-full-gate.log` and in
+[CI for f63d69a](https://github.com/CogniPilot/rumoca_lean/actions/runs/34487668082).
+This is the Jacobian function, not yet
 the complete IVP: RHS/initialization output binding, finite overflow/error
 policy, FMI storage/metadata/lifecycle and source-to-archive composition remain
 open. Initial symbolic object storage and external helper/header definitions
 remain premises; no allocator, native ABI or machine-compilation proof is added.
+
+## Prepared IVP C product
+
+`Lowering.Named` renders the existing typed Solve instruction sequence using
+named buffers and count parameters. Its structural theorem proves that erasing
+the names produces exactly the existing C call sequence and result reference.
+The general call/printer contracts therefore apply to constructed functions;
+callers no longer need to hand-author a second statement list. The named plan
+still contains one destination per tensor instruction, independent of volume.
+Runtime construction and semantic proofs are separate modules.
+
+`PointwisePlan` attaches initial, derivative and optional diagonal entries to
+one prepared `Solve.PointwiseIVP`. Its complete-file contract covers each member,
+requires distinct entry names and excludes helper collisions. This is target
+storage/signature annotation, with no source resolution, AD synthesis or solver
+selection. `PointwisePlan.correct` composes the existing semantic and printer
+theorems for every such valid product.
+
+The actual-file fixture now emits `initial.c`, `derivative.c` and `jacobian.c`
+from this product for the existing square/Jacobian model. Its exact proposition
+retains the Jacobian contract and adds initializer/RHS call-storage theorems.
+They quantify over arbitrary tensor shapes and heaps, deriving the lowerer's
+entry predicates from typed readable inputs and writable outputs. Their memory
+frames preserve every cell outside the corresponding state/derivative range.
+The existing native check invokes initialization, RHS and observation on that
+same model. There is no additional source example or rejection matrix.
+The package build passes in `build/c-ivp-package.log`. All 22 added roots and
+the actual-file/native gate pass in `build/c-ivp-gate.log`; the exact three-file
+theorem is audited in `build/tensor-c/ivp-contract.log`. The required full gate
+is tracked in `build/c-ivp-full-gate.log`.
+
+Next, prove that the typed tensor call semantics integrate with FMI's
+status-returning calls; a helper name must never stand for an assumed result.
+Bind instance storage and metadata to the same prepared IVP, establish its
+finite overflow/error and lifecycle/time policy, and compose the actual
+source-to-archive certificate. General sparsity and further grammar remain
+deferred. The new product does not itself establish an allocator, ABI, solver,
+FMI lifecycle or complete FMU/eFMU contract.

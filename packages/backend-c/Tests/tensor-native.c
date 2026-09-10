@@ -28,10 +28,17 @@ int main(void) {
   assert(output[1] == 0.0 && signbit(output[1]));
   rumoca_tensor_add(NULL, NULL, NULL, 0);
   rumoca_tensor_mul(NULL, NULL, NULL, 0);
+  /* Initialize and evaluate the same prepared IVP before its observation. */
+  double state[4] = {17.0, -1.0, -1.0, 19.0};
+  rumoca_initialize(state + 1, 2);
+  assert(state[0] == 17.0 && state[1] == 0.0 && !signbit(state[1]) &&
+         state[2] == 0.0 && !signbit(state[2]) && state[3] == 19.0);
+  rumoca_rhs(state + 1, input, output + 1, 2);
+  assert(output[0] == 17.0 && output[1] == 4.0 && output[2] == 9.0 && output[3] == 19.0);
   /* The actual forward-AD program and its explicit diagonal output. */
   double scratch[5][2];
   double jacobian[6] = {17.0, -1.0, -1.0, -1.0, -1.0, 19.0};
-  rumoca_square_jacobian(input, input, scratch[0], scratch[1],
+  rumoca_square_jacobian(state + 1, input, scratch[0], scratch[1],
       scratch[2], scratch[3], scratch[4], output + 1, 2, jacobian + 1, 4);
   assert(output[0] == 17.0 && output[1] == 4.0 && output[2] == 6.0 && output[3] == 19.0);
   assert(scratch[2][0] == 4.0 && scratch[2][1] == 9.0);

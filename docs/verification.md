@@ -188,8 +188,37 @@ supplied object storage and external helper/header bindings remain explicit.
 This proves the Jacobian function, not the complete IVP or FMI lifecycle.
 Its 23 added roots and the actual-file/native gate pass in
 `build/c-diagonal-model-gate.log`. The exact file theorem is audited in
-`build/tensor-c/program-contract.log`; the required full gate is tracked in
-`build/c-diagonal-model-full-gate.log`.
+`build/tensor-c/program-contract.log`; the required full gate passed in
+`build/c-diagonal-model-full-gate.log` and in
+[CI for f63d69a](https://github.com/CogniPilot/rumoca_lean/actions/runs/34487668082).
+
+The next increment constructs C functions through `Lowering.Named` and groups
+them in `PointwisePlan`, indexed by one prepared `Solve.PointwiseIVP`.
+`Named.emit_correct` proves structural correspondence to the existing emitter,
+including the result buffer. `PointwisePlan.correct` composes the complete-call
+and independent printer contracts for initialization, RHS and the optional
+diagonal observation. It requires unique entry names and excludes helper-name
+collisions. Shape/count metadata remains attached to the target buffer plan;
+no tensor coordinates, differentiation decisions or solver policy are introduced.
+
+The fixed IVP artifact adapter reads all three actual C members of the existing
+square/Jacobian example. Its proposition retains the complete Jacobian storage
+contract and adds initializer/RHS storage contracts over arbitrary shapes,
+heaps and finite input values. These derive argument binding and the lowerer's
+storage predicates from readable input and writable output ranges. Initialization
+produces the prepared IVP's exact zero state; RHS execution yields the independent
+finite Solve result. Each call preserves every cell outside its output range.
+All 22 added roots and the actual-file/native gate pass in `build/c-ivp-gate.log`.
+`build/tensor-c/ivp-contract.log` audits the exact three-file theorem. The
+required full gate is tracked in `build/c-ivp-full-gate.log`.
+
+These remain instantaneous C contracts. Tensor functions currently execute in
+`CLoops.Calls`, whose ordinary calls return void; FMI bodies use the separate
+status-returning call machine. Their proved integration is still required,
+together with instance storage/metadata, overflow/error policy, lifecycle/time
+behavior and actual source-to-FMU/eFMU composition. Header/definition-table
+bindings and valid object storage remain explicit; there is no native ABI or
+machine-code theorem. Production source admission and the README are unchanged.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real

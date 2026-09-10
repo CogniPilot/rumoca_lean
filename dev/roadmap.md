@@ -79,10 +79,18 @@ and in [CI for 8a3b902](https://github.com/CogniPilot/rumoca_lean/actions/runs/3
 The complete Jacobian function now composes coefficient production and diagonal
 output, with call-entry/return, concrete symbolic storage and full memory-frame
 proofs. Its 23 added roots and the actual-file/native gate pass in
-`build/c-diagonal-model-gate.log`; the full gate is tracked in
-`build/c-diagonal-model-full-gate.log`.
-Next, bind RHS/initialization and Jacobian storage/metadata to FMI and eFMI,
-with the finite overflow/error policy and source-to-archive certificate.
+`build/c-diagonal-model-gate.log`; the full gate passed in
+`build/c-diagonal-model-full-gate.log` and in
+[CI for f63d69a](https://github.com/CogniPilot/rumoca_lean/actions/runs/34487668082).
+The reusable named function builder now constructs initial, RHS and optional
+Jacobian entries from one prepared IVP, with a per-member complete-call/printer
+contract. The same square model's three actual C files also require the concrete
+initializer/RHS and existing Jacobian storage proofs. Its 22 added roots and
+the actual-file/native gate pass in `build/c-ivp-gate.log`; the required full
+gate is tracked in `build/c-ivp-full-gate.log`.
+Next, prove integration of typed tensor calls with FMI's status-returning call
+machine, bind instance storage/metadata, and establish the finite overflow/error,
+lifecycle/time and source-to-archive contracts for FMI and eFMI.
 Preserve the existing diagonal representation;
 general sparsity analysis, compressed storage and coloring follow this FMU
 round, with structural-zero and execution-preservation proofs. No new grammar
