@@ -5,6 +5,12 @@ import Rumoca.Lowering
 import Rumoca.Semantics
 import Rumoca.Source
 import Rumoca.Verified
+import Rumoca.ArrayProofs
+
+#audit axioms Rumoca.ArrayCompiler.Prepared.source_correct
+#audit axioms Rumoca.ArrayCompiler.Prepared.equation_correct
+#audit axioms Rumoca.ArrayCompiler.Prepared.initialization_correct
+#audit axioms Rumoca.ArrayCompiler.prepare_correct
 
 #audit axioms Rumoca.compile_complete
 #audit axioms Rumoca.flatten_correct

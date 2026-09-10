@@ -106,9 +106,9 @@ three added roots pass the core audit in `build/tensor-builtin-audit.log`.
 Use `Rumoca.ArrayProfile.parseLocated` from `ModelicaParser.Array.Located` for
 the development frontend. It preserves other callee names for structured
 resolution errors; it does not silently interpret every call as a Jacobian.
-The production CLI/LSP still select the unit frontend. Array source-to-IR
-lowering, static reverse transformation and finite tensor FMU/eFMU target
-certificates remain open. Parser acceptance does not authorize production
+The production CLI/LSP still select the unit frontend. Array source-to-Solve
+lowering is now checked as described below. Static reverse transformation and
+finite tensor FMU/eFMU target certificates remain open. Parser acceptance does not authorize production
 generation.
 
 The required `nix develop .#verification --command lake test` passed for the
@@ -158,7 +158,51 @@ environment uses dependent functions and references; lookup/update cost can
 grow with register depth. A packed register store needs a simulation theorem
 before replacing this evaluator. No claim of CasADi-level performance is made.
 
-Next, close the array AST → Flat → DAE → Solve equations, initialization and
-Jacobian-output contracts at the fixed declared shapes. Preserve one whole
-tensor operation in each stage and keep production rejection until the
-ordered finite arithmetic, shared C loops and actual FMU/eFMU contracts pass.
+The full gate passed locally in `build/tensor-program-full-gate.log` and in
+[CI for 8e20731](https://github.com/CogniPilot/rumoca_lean/actions/runs/34459149967).
+This includes the production unit profile's actual C/FMU/eFMU checks.
+
+## Array source-to-Solve checkpoint
+
+`Array.IR` retains rank and extents through named source, Flat expressions and
+DAE residuals. Resolution fixes operand roles. The DAE still specifies an
+implicit derivative residual and an independent mathematical derivative for
+the Jacobian equation; it contains no candidate matrix formula.
+
+`Array.Solve` implements a partial residual solver. It accepts the driven and
+square residuals, fixed-zero initialization and the optional square Jacobian.
+Soundness holds for every successful candidate; completeness is proved for
+every source-indexed DAE in this development profile. The total wrapper uses
+that completeness proof to eliminate its impossible rejection branch.
+
+The resulting `Solve.PointwiseIVP` stores executable programs for initialization
+and the RHS, observes the state directly, and optionally stores a prepared
+`DiagonalProgram`. Forward AD generates its coefficients. Mathlib's diagonal
+matrix and the existing proved storage bridge materialize the explicit dense
+output. The square Jacobian has eight program nodes regardless of extents;
+lowering never enumerates tensor elements. This terminal observation is not a
+new arithmetic constructor, and no higher-derivative contract is claimed for it.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Named source equations and initialization → Flat | `ArrayProfile.Flat.lower_correct`, `lower_initial` |
+| Flat → residual DAE | `ArrayProfile.DAE.lower_correct`, `lower_initial` |
+| Successful residual/init/Jacobian solving → actual programs | `DAE.solveResidual_correct`, `solveInitial_correct`, `solveJacobian_correct` |
+| Every admitted DAE produces an executable kernel | `Solved.lower_complete`, `lower_checked` |
+| Complete DAE equations and initialization → actual Solve execution | `Solved.lower_correct`, `lower_initial` |
+| Actual dense AD output is the square's mathematical Jacobian | `ArrayProfile.square_jacobian_eval` |
+| Complete named AST → executable Solve chain | `ArrayProfile.lowering_chain_correct`, `initialization_chain_correct` |
+| Original source parse, EBNF membership and stored kernel contract | `ArrayCompiler.prepare_correct` |
+
+The 19 new core roots and four compiler roots pass the unchanged axiom audit
+in `build/array-compiler-audit.log`. The two existing array fixtures now live in
+`examples/development/`; the native integration executable prepares them from
+their actual file contents and checks initialization, derivatives, state output
+and dense Jacobian storage. The universal mathematical theorems, rather than
+these examples, establish the Real contract.
+
+Next, bind prepared declaration metadata to this kernel and prove the finite
+arithmetic/C loop edge. Input timing and the numerical step policy need their
+own contract. FMI dimensions/value references and actual FMU/eFMU certificates
+must follow before production accepts either array model. No further grammar
+growth is needed to complete these obligations.

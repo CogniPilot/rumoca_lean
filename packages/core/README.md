@@ -17,9 +17,11 @@ axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
 | `RumocaCore.Tensor.Operators` | Dense-array pointwise addition/multiplication and forward/reverse rules with explicit scalar arithmetic |
 | `RumocaCore.Tensor.Differentiation` | Mathlib derivative, adjoint and shared-input square/Jacobian proofs for arbitrary shapes |
 | `RumocaCore.Array.Builtin` | Parsed Jacobian semantics, uniqueness and correctness of the resolved square call |
+| `RumocaCore.Array.IR`, `Array.Semantics`, `Array.Solve`, `Array.Lowering` | Array source/Flat/DAE equations, checked residual solving and composed executable IVP/Jacobian preservation |
 | `RumocaCore.Solve.Tensor`, `Solve.IVP` | Compact tensor programs, independent denotation, executable evaluator and explicit IVP |
 | `RumocaCore.Solve.Tensor.Forward`, `Solve.Tensor.Differentiation` | Ordinary Solve-to-Solve forward AD, primal preservation, instruction bound and whole-program mathlib derivative theorem |
 | `RumocaCore.Solve.Tensor.Reverse`, `Solve.Tensor.ReverseProofs` | Saved-primal reverse execution with cotangent accumulation and the adjoint/derivative contract |
+| `RumocaCore.Solve.Tensor.Diagonal`, `Solve.Pointwise`, `Solve.PointwiseProofs` | Prepared IVP and dense diagonal observation using mathlib matrices, with execution contracts |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
 | `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
 | `RumocaCore.Solve.Algorithm`, `AlgorithmProofs` | Tensor register refinement of GALEC, preserving operation order and method execution |
@@ -35,8 +37,9 @@ axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
 | `RumocaCore.Transition` | Generic transitions, termination and observable behaviors |
 | `RumocaCore.Profile` | Target-independent calls and relational unit-step policy; transport through equation equivalence |
 
-The runtime IR imports only the parser's AST and its Std dependencies.
-Arithmetic and proof modules import mathlib separately. Declarations keep their
+The base runtime IR imports the parser's AST and its Std dependencies.
+Dense matrix observations reuse mathlib's matrix definitions and finite
+indexing; analytic proof modules add the derivative theory separately. Declarations keep their
 `Rumoca` namespaces. Solve remains source indexed and carries its lowering
 evidence; no C syntax or target function enumeration appears in these IR types.
 
@@ -73,5 +76,8 @@ specified Fréchet derivative, with uniqueness of the resulting matrix.
 forward transformation. Its reverse evaluator saves the primal intermediates
 and accumulates contributions at shared references. Both have whole-program
 contracts against the same mathlib derivative, beyond the primitive rules.
-Static reverse lowering, full source-to-IR lowering and the finite target edge
-remain open. These analytic proofs do not differentiate IEEE rounding.
+The array source-to-Solve chain now preserves the complete equations and fixed
+initialization. Its explicit square Jacobian uses the forward transformation
+and a diagonal materializer; the program has eight nodes independent of tensor
+extents. Static reverse lowering and the finite target edge remain open.
+These analytic proofs do not differentiate IEEE rounding.

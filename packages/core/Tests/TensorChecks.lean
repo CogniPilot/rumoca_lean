@@ -2,6 +2,7 @@ import ProofAudit.Audit
 import RumocaCore.Tensor.Matrix
 import RumocaCore.Tensor.Differentiation
 import RumocaCore.Array.Builtin
+import RumocaCore.Array.Lowering
 import RumocaCore.Solve.Tensor.ReverseProofs
 import RumocaCore.Driven.Lowering
 
@@ -70,5 +71,24 @@ theorem wrong_initialization_rejected (m : Driven.DAE.Model source)
 #audit axioms Rumoca.Solve.Tensor.Program.reverse_pairing
 #audit axioms Rumoca.Solve.Tensor.Program.reverse_differential
 #audit axioms Rumoca.Solve.Tensor.Program.reverse_derivative
+#audit axioms Rumoca.Solve.Tensor.DiagonalProgram.eval_correct
+#audit axioms Rumoca.Solve.PointwiseIVP.output_correct
+#audit axioms Rumoca.ArrayProfile.Flat.lower_correct
+#audit axioms Rumoca.ArrayProfile.Flat.lower_initial
+#audit axioms Rumoca.ArrayProfile.DAE.lowerExpr_correct
+#audit axioms Rumoca.ArrayProfile.DAE.lower_correct
+#audit axioms Rumoca.ArrayProfile.DAE.lower_initial
+#audit axioms Rumoca.ArrayProfile.DAE.solveResidual_correct
+#audit axioms Rumoca.ArrayProfile.DAE.solveInitial_correct
+#audit axioms Rumoca.ArrayProfile.DAE.solveJacobian_correct
+#audit axioms Rumoca.ArrayProfile.Solved.lower_complete
+#audit axioms Rumoca.ArrayProfile.Solved.lower_checked
+#audit axioms Rumoca.ArrayProfile.Solved.lower_correct
+#audit axioms Rumoca.ArrayProfile.Solved.lower_initial
+#audit axioms Rumoca.ArrayProfile.square_jacobian_eval
+#audit axioms Rumoca.ArrayProfile.square_jacobian_compact
+#audit axioms Rumoca.ArrayProfile.diagonal_shape
+#audit axioms Rumoca.ArrayProfile.lowering_chain_correct
+#audit axioms Rumoca.ArrayProfile.initialization_chain_correct
 
 end Rumoca.TensorChecks

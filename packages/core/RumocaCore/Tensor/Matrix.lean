@@ -1,5 +1,5 @@
 import RumocaCore.Tensor
-import Mathlib.Data.Matrix.Basic
+import Mathlib.LinearAlgebra.Matrix.Defs
 import Mathlib.Logic.Equiv.Fin.Basic
 
 /-! Reuse mathlib's matrix algebra as the rank-two semantic view. Only the
@@ -37,8 +37,8 @@ def Value.ofMatrix (value : Matrix (Fin rows) (Fin columns) α) : Value α (matr
   have h := ofMatrix_get value.toMatrix ⟨i, hi⟩
   simpa [toMatrix] using h
 
-/-- All existing mathlib matrix operations and theorems can be used through
-this equivalence without making the runtime evaluator depend on mathlib. -/
+/-- Mathlib matrix operations and theorems share the existing dense tensor
+storage through this equivalence; no separate matrix representation is needed. -/
 def matrixEquiv : Value α (matrixShape rows columns) ≃ Matrix (Fin rows) (Fin columns) α where
   toFun := Value.toMatrix
   invFun := Value.ofMatrix

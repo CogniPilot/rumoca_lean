@@ -1,7 +1,7 @@
 import Rumoca.Compiler
 import Parser.EBNF
 import ModelicaParser.Driven
-import ModelicaParser.Array.Located
+import Rumoca.ArrayCompiler
 import RumocaCore.Solve.IVP
 import RumocaCore.Solve.Tensor.Reverse
 
@@ -32,15 +32,28 @@ def main : IO Unit := do
   let driven := "model Driven input Real u; output Real x(start=0, fixed=true); equation der(x)=u; end Driven;"
   expect "driven parser and resolution" (drivenAccepted driven)
   expect "driven profile not prematurely admitted by C compiler" (!accepted driven)
-  let arrayHeader := "model A input Real u[2]; output Real x[2](each start=0, each fixed=true); "
-  let arrayDriven := arrayHeader ++ "equation der(x)=u; end A;"
-  let arraySquare := arrayHeader ++
-    "output Real J[2,2]; equation der(x)=u.*u; J = jacobian (u .* u, u); end A;"
+  let arrayDriven ← IO.FS.readFile "examples/development/ArrayDriven.mo"
+  let arraySquare ← IO.FS.readFile "examples/development/TensorSquare.mo"
   for source in [arrayDriven, arraySquare] do
-    match ArrayProfile.parseLocated source with
+    match ArrayCompiler.prepare source with
     | .error e => throw (IO.userError s!"array frontend: {e.message}")
-    | .ok p =>
-      expect "array resolution" (decide p.parsed.ast.Resolved)
+    | .ok prepared =>
+      let p := prepared.parsed
+      let kernel := prepared.kernel
+      let state := Tensor.Value.fill ArrayProfile.stateShape 7
+      let input : Tensor.Value Nat ArrayProfile.stateShape := ⟨Vector.ofFn (fun i => i.val + 2)⟩
+      let ops : Tensor.ScalarOps Nat := ⟨Nat.add, Nat.mul⟩
+      expect "array fixed initialization and state observation"
+        (kernel.problem.initial ops 0 1 == Tensor.Value.fill ArrayProfile.stateShape 0 &&
+          kernel.problem.outputs ops 0 1 state input == state)
+      match p.parsed.ast.body, kernel.diagonal with
+      | .driven .., none =>
+        expect "parsed driven array reaches executable Solve IR" (kernel.problem.rhs ops 0 1 state input == input)
+      | .jacobian .., some matrix =>
+        expect "parsed square and Jacobian reach executable Solve IR"
+          ((kernel.problem.rhs ops 0 1 state input).data.toArray == #[4, 9] &&
+            (matrix.eval ops 0 1 (kernel.problem.environment state input)).data.toArray == #[4, 0, 0, 6])
+      | _, _ => throw (IO.userError "Solve observation does not match the source profile")
       match ArrayProfile.LocatedParsed.call? p with
       | none => pure ()
       | some ⟨call, locations⟩ =>

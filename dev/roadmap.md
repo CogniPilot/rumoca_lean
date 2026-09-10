@@ -30,14 +30,18 @@ requires the complete lowering and actual-artifact contract.
 The development array parser now covers the two-wide driven and square/Jacobian
 profiles. Its EBNF tables, decoder contracts, lexical extension and exact call
 spans pass the package audit; native checks preserve ordinary call names and
-confirm that production still rejects both new profiles. This closes the
-first syntax/action increment in [tensor-ad.md](tensor-ad.md), without closing
-the array lowering or finite target obligations. Whole-program forward AD now
+confirm that production still rejects both new profiles. The array AST → Flat
+→ DAE → executable Solve chain now preserves the complete equations, fixed
+initialization and dense Jacobian observation. The compiler's development
+preparation API binds its stored kernel to the located source parse and EBNF
+membership. See the checked roots in [tensor-ad.md](tensor-ad.md).
+Whole-program forward AD now
 emits ordinary typed Solve instructions with primal preservation, a constant
 instruction expansion bound and a mathlib derivative theorem. Saved-primal
 reverse execution has the corresponding adjoint theorem, including shared
-register accumulation. Static reverse lowering, source binding and finite
-target/artifact contracts remain open; twelve new AD roots pass the core audit.
+register accumulation. Static reverse lowering and finite target/artifact
+contracts remain open. The complete local and hosted gates passed for the AD
+checkpoint; the new array chain passes its core/compiler audits.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.
