@@ -1178,12 +1178,41 @@ Four new public roots pass the unchanged axiom audit in
 `build/c-string-printer-audit.log`. A disposable native boundary reproduction
 uses the actual expression printer on the formerly corrupted `??/n` payload
 and passes strict C11 compilation and byte observation in
-`build/c-string-trigraph-after.log`. The required full gate is tracked in
-`build/c-string-printer-full-gate.log`. The decoder in the proof module is not
-a compiler pass. The proposition describes literal object bytes, not allocation,
+`build/c-string-trigraph-after.log`. The required full local gate passed at
+`a0327a1` in `build/c-string-printer-full-gate.log`, including both artifact
+paths; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34527453846)
+also passed. The decoder in the proof module is not a compiler pass.
+The proposition describes literal object bytes, not allocation,
 static lifetime, pointer decay, header binding, logger execution or surrounding
 adapter syntax. Those obligations and the full FMI artifact contract remain
 open; this repair admits no new grammar case.
+
+The next storage increment uses Std's `UInt8`/`Int8` conversions in
+`CCharacter`. It proves byte/value round trips for unsigned or two's-complement
+signed eight-bit characters; the inverse for integer inputs requires a
+representable value. `CMemory.convert` accepts only representable character
+values. This is a partial conversion profile, not a claim about arbitrary C
+casts or every implementation-defined signed representation.
+
+`CReadOnly.typed_reaches` proves that all existing read-only cells survive
+every reachable prefix of the authored typed-call machine, including its
+ordinary returns. The analogous body/loop invariants and a load-preservation
+corollary are also proved. `CLiteral.installed` constructs symbolic storage
+for every UTF-8 payload and terminating zero; fresh-block installation preserves
+previously supplied objects. `CLiteral.rendered_memory` binds decoded bytes of
+the actual expression printer to loads from these typed character objects,
+and `Stored.after_steps` preserves that storage through modeled calls.
+
+Nine new audit roots pass in `build/c-literal-storage-audit.log` under the
+unchanged axiom policy. The required full gate passed in
+`build/c-literal-storage-full-gate.log`, including both target artifacts and
+their existing boundary checks. There is no new unit-test suite.
+The construction establishes a possible symbolic initial heap, not native
+allocation, static lifetime or a global literal-address environment. It does
+not require separate addresses for distinct literal texts; C permits literal
+storage sharing. `CBody.eval` still uses its abstract string value: pointer
+decay, ordinary string-parameter binding, foreign callbacks and the complete
+FMI adapter/artifact contract remain open. No source case is newly admitted.
 
 `EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
 and constructs a fixed existential theorem with one compiler artifact and

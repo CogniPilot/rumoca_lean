@@ -91,12 +91,57 @@ printing is a prerequisite for complete call proofs, not their replacement.
 The current eFMI Production C profile contains no string expressions; its
 GALEC method, mapping and initialization obligations remain the same.
 
-The C package audit and disposable native reproduction pass. The complete gate
-for this increment is tracked in `build/c-string-printer-full-gate.log`; it
-includes both artifact paths and now records their SHA-256 identities. The
-earlier snapshot's artifact hashes must not be reused for this run. No SR04–SR08
+The C package audit and disposable native reproduction pass. The complete local
+gate for `a0327a1785b50d9cc4b10e4ce29134fc27cc632b` passed in
+`build/c-string-printer-full-gate.log`, including both artifact paths. The log
+now records their SHA-256 identities:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `0d27780b6d2e67f8e68be8157edb0ef52aa564d97e4032e50b63687841ba488a` |
+| `build/Integrator.efmu` | `31315a9ec8fc006e9e7c515bec6ae926a8f822fb51a175784ebd218504479886` |
+
+The [hosted run for this revision](https://github.com/CogniPilot/rumoca_lean/actions/runs/34527453846)
+also passed. The earlier snapshot's artifact hashes must not be reused for
+this run. No SR04–SR08
 or whole-adapter obligation is closed by the literal theorem, and this is not
 a new completed spiral stage.
+
+### C literal-storage increment: standards impact
+
+The C01/F03 increment adds typed character storage and universal
+read-only preservation proofs. It does not change the emitted production C,
+source admission, either EBNF, MLS equation/initialization semantics, FMI
+metadata/lifecycle policy or eFMI GALEC/Production Code policy. It is a
+prerequisite for modeling the FMI adapter's real string-pointer arguments.
+The existing clause map and its open findings therefore remain applicable.
+
+The selected C profile uses eight-bit unsigned or two's-complement signed
+characters; it does not cover every implementation allowed by
+[C11 N1570 §§6.2.5–6.2.6](https://www9.open-std.org/JTC1/SC22/WG14/www/docs/n1570.pdf).
+The representation proofs reuse Std, and integer-to-character conversion
+accepts only in-range values. Section 6.4.5's literal array bytes are related
+to loads from supplied read-only objects, with a fresh-block construction to
+establish that the storage premise can be satisfied. No address-distinctness
+claim is made for different literal texts; §6.4.5 permits storage sharing.
+Actual global storage, static lifetime, array-to-pointer decay and callback
+interaction remain unproved. Native character-profile validation is also an
+external obligation, not a consequence of the byte round-trip theorem.
+
+The nine new theorem roots pass `build/c-literal-storage-audit.log` with the
+unchanged axiom whitelist. The required complete gate passed in
+`build/c-literal-storage-full-gate.log`, including the actual archive theorem,
+independent extraction, schemas, native execution and mutation controls.
+The log records this run's retained artifacts:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `7dc758358ee5f5a253147d4095bef525732b69f4996714fc582e406306620ac3` |
+| `build/Integrator.efmu` | `ee10eada0dfb93e153a90375f09da7e5d68bc9c611fb99456ea96ce0a63188e8` |
+
+These identities supersede the preceding snapshot for this run. **Stage decision: open.**
+This increment does not close any existing compliance finding or authorize
+grammar growth.
 
 ## Original FMI/eFMI snapshot and evidence
 

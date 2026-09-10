@@ -232,9 +232,21 @@ of Modelica 3.7.
   pass in `build/c-string-printer-audit.log`. The original failing example,
   emitted through the actual Lean printer, passes strict native C11 in
   `build/c-string-trigraph-after.log`; no new permanent test suite was added.
-  The required full gate is tracked in `build/c-string-printer-full-gate.log`.
-  Immutable literal storage, pointer decay, ordinary string-parameter binding
-  and complete error-call/actual-adapter composition remain open.
+  The required full local gate passed at `a0327a1` in
+  `build/c-string-printer-full-gate.log`, including both target artifacts.
+  [Its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34527453846)
+  also passed. **Storage foundation implemented:** `CCharacter` reuses Std's
+  byte/character conversions for the explicit eight-bit profile. `CReadOnly`
+  proves preservation of supplied read-only cells through every reachable
+  prefix of the existing body, loop and typed-call machines. `CLiteral`
+  constructs fresh symbolic literal storage, connects its character loads to
+  the actual printer's byte denotation and proves preservation through calls.
+  Nine new roots pass the unchanged audit in `build/c-literal-storage-audit.log`;
+  the required full gate passed in `build/c-literal-storage-full-gate.log`,
+  including the complete eFMU archive and existing FMI/eFMI boundary checks.
+  Actual literal address selection, static lifetime, pointer decay, ordinary
+  string-parameter binding and complete error-call/adapter composition remain
+  open. This foundation neither changes production admission nor closes F03.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
   mismatch and complete independent semantic/coding-guideline release review.
   A diagnostic wrapped copy passes deeper checker checks; the actual standalone
@@ -731,13 +743,17 @@ Do not smuggle a solver assumption into an unconstrained compiler hypothesis.
 | Solve real → numerical → finite | Method refinement followed by rounding semantics | Existence/regularity, discretization and rounding bounds, exceptional cases |
 | Finite Solve → C | Operational/behavior preservation | Types, scopes, arithmetic, layout/calls, all reachable states and observations |
 | C AST → bytes | Parsing/rendering relation plus actual-file binding | Names/literals/declarations, exact emitted artifact, checked options/ABI assumptions |
+| Solve/C → FMI ME and CS | IVP observations and solver/lifecycle refinement | Complete advertised calls, initialization, errors, metadata and actual FMU binding |
+| DAE → GALEC → Solve/C → eFMI | Algorithm-method and production-code refinement | Method/state/status mappings, correlated manifests and actual eFMU binding |
+| Whole admitted subset → standards review | Correspondence to MLS, FMI and eFMI normative clauses | Complete the [recurring review record](standards-review.md#required-review-at-every-spiral-stage); carry open findings forward and close them before grammar growth |
 
 ## Deferred product work
 
 After R2, track each of these as a separate product with its own proof boundary:
 Lean/WebAssembly deployment, typed Solve backend plugins, FMI 2 packaging,
-eFMI AlgorithmCode/ProductionCode and `target.toml` products, events/hybrid
-semantics, and broader MSL coverage. Templates may package proven products;
+broader `target.toml` products, events/hybrid semantics, and broader MSL coverage.
+The unit FMI 3 and eFMI Algorithm/Production Code paths are required in the
+current stage and are not deferred products. Templates may package proven products;
 a template's flexibility is not a proof of a new language backend.
 
 Keep **Modelica → C** and **C → assembly** as separate projects for now. An

@@ -6,11 +6,21 @@ import RumocaC.Arithmetic
 import RumocaC.BooleanProofs
 import RumocaC.BodyEmbedding
 import RumocaC.StringLiteral
+import RumocaC.LiteralStorage
 
 #audit axioms Rumoca.CString.denotes_unique
 #audit axioms Rumoca.CString.quote_iff
 #audit axioms Rumoca.CString.quote_preprocessed
 #audit axioms Rumoca.CString.render_correct
+#audit axioms Rumoca.CCharacter.value_byteOf
+#audit axioms Rumoca.CReadOnly.body_reaches
+#audit axioms Rumoca.CReadOnly.loop_reaches
+#audit axioms Rumoca.CReadOnly.typed_reaches
+#audit axioms Rumoca.CReadOnly.typed_load
+#audit axioms Rumoca.CLiteral.installed
+#audit axioms Rumoca.CLiteral.install_preserves
+#audit axioms Rumoca.CLiteral.rendered_memory
+#audit axioms Rumoca.CLiteral.Stored.after_steps
 
 #audit axioms Rumoca.C.compileProgram_correct
 #audit axioms Rumoca.C.ideal_run_correct

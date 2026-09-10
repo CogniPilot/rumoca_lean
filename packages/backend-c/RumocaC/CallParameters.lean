@@ -30,6 +30,10 @@ theorem convert_stable (type : CType) (value result : Value)
     cases value <;> simp [convert] at h
     rcases h with ⟨bounds, rfl⟩
     simpa [convert] using bounds
+  | character signed =>
+    cases value <;> simp [convert] at h
+    rcases h with ⟨bounds, rfl⟩
+    simpa [convert] using bounds
   | pointer => cases value <;> simp [convert] at h; cases h; rfl
   | boolean =>
     cases ht : value.truth <;> simp [convert, ht] at h
@@ -116,4 +120,3 @@ theorem parameters_unknown (p : Parameter) (ps : List Parameter) (vs : List Valu
     cases ht : parameters ps vs <;> simp [parameters, ht, CBody.cast, unknown]
 
 end Rumoca.CCalls.Parameters
-
