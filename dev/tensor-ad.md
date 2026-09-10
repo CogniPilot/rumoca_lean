@@ -583,7 +583,8 @@ All 22 new roots, the exact-file certificate, existing mutation controls and
 native boundary check pass in `build/c-typed-gate.log`, using the unchanged
 axiom whitelist. The file root is audited in `build/tensor-c/ivp-contract.log`;
 the package build passes in `build/c-typed-package.log`. The required complete
-gate is tracked in `build/c-typed-full-gate.log`.
+gate passed in `build/c-typed-full-gate.log` and in
+[CI for 2e53e66](https://github.com/CogniPilot/rumoca_lean/actions/runs/34494402729).
 
 Next, lift the existing FMI body proofs under the typed machine's scope rules
 and compose the actual tensor wrapper bodies. Bind instance storage and metadata

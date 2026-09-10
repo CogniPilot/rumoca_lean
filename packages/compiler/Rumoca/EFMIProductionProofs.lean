@@ -34,10 +34,12 @@ structure ProductionContract (a : Artifact source) (algorithm c : String) : Prop
         (GALEC.UnitProfile.solveExecute a.algorithmSolve.block Binary64.positiveZero
           Binary64.one GALEC.roundedAdd method state) ∧
       (∀ q, q ≠ p.member "x" → q ≠ p.member "samplePeriod" →
+        q ≠ p.member CHeader.statusName →
         Production.resultHeap heap p state method q = heap q)) ∧
     (∀ heap p oldX oldPeriod,
       heap (p.member "x") = some ⟨.float64, true, oldX⟩ →
       heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩ →
+      Production.StatusStorage heap p →
       ∀ behavior, CArithmetic.machine.Behaves
         (.running module.startup.body (Production.parameters p) heap) behavior ↔
         behavior = .terminates ⟨.integer 0, Production.initialized heap p⟩) ∧
@@ -68,8 +70,8 @@ theorem production_correct (a : Artifact source) (alg : AlgorithmContract a algo
     ?_, ?_, ?_, ?_⟩
   · exact fun method heap p state h =>
       Production.method_correct _ _ (Production.lower_is_unit _) method heap p state h
-  · exact fun heap p oldX oldPeriod hx hp =>
-      CArithmetic.behaviors_of_run (Production.startup_run heap p oldX oldPeriod hx hp)
+  · exact fun heap p oldX oldPeriod hx hp hs =>
+      CArithmetic.behaviors_of_run (Production.startup_run heap p oldX oldPeriod hx hp hs)
   · exact fun p c s events c' h t =>
       CProtocol.trace_sound a.algorithmSolve _ (Production.lower_is_unit _) p s h t
   · exact fun p c s events s' h t =>

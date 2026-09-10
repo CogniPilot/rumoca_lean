@@ -710,6 +710,13 @@ gaps remain open.
 
 ## Official checker layout discrepancy
 
+The [2026-09-10 standards review](standards-review.md) reproduces this discrepancy
+and records a successful deeper checker run on a disposable wrapped copy.
+It also finds an unmapped `ErrorSignalStatus` anchor: existing status-zero and
+state/clock mapping proofs do not establish discovery of the status through
+the manifest. SR03 is an additional E05 obligation; the diagnostic checker pass
+does not close it or certify the standalone archive.
+
 The pinned official Compliance Checker v1.0.1, commit
 `edf33452ed0628bde1d8102c77b1030259ad5f57`, was run in a disposable directory
 under `build/`. Its bundled Lark 0.12.0 and colorama 0.4.6 were loaded directly
@@ -882,3 +889,42 @@ E05/E06 remain open for the documented standards/checker-layout review and
 release claim. Full FMI 3 adapter certification, the driven
 profile's target/artifact contract and generic parser completeness remain
 required before grammar expansion.
+
+## Error-status mapping correction
+
+SR03 in the [standards review](standards-review.md) identified a missing logical
+reference despite the previous status-zero theorem. Production C now owns an
+`EfmiStatus errorSignalStatus` field in each `Model`. All three unit methods
+clear it on entry and return it. The header/printer contracts, method execution,
+full-heap frames and serial protocol proofs cover this physical storage change.
+The initial status may be uninitialized or stale; it is never read before the
+entry store. Status is interface storage, not an additional GALEC model variable
+or a new Solve instruction.
+
+`Manifest.MappedStatus` follows the actual Algorithm Code anchor through the
+unique decoded `DataReference`, the C formal/type declaration and status
+component, to the value observed after execution. Its two execution theorems
+cover initialized calls and Startup on uninitialized storage. The compiler's
+actual XML and complete-archive contracts now require both, in addition to
+the previous numerical, state/clock, identity and transport obligations.
+
+The design follows the instance-field mapping in Rust Rumoca revision
+`82d87a16d11f6c6e86069510cfec471874da480a`,
+`crates/rumoca-phase-codegen/src/templates/galec-production/pc_manifest.xml.jinja`.
+It uses Beta 1's defined formal-parameter/component mapping without assuming
+that a return parameter can be named by `formalParameterRefId`. The field is
+cleared once per method, as described by `rumoca-ir-galec/src/signal_effect.rs`.
+DAE → GALEC → Solve ownership and tensor lowering are unchanged.
+
+`lake build check-efmi check-compiler` passes in `build/efmi-status-package.log`,
+including nine new audit roots under the same three-axiom policy. The existing
+native driver now observes status clearing and instance isolation; the existing
+manifest check follows status references and redirects one as a negative control.
+An early check using the actual pure compiler output passed that native driver
+in `build/efmi-status-native.log` and all three official XSDs in
+`build/status-preflight/schema.log`. These checks catch output-format and ABI
+errors before the more expensive complete-archive certificate; they are not
+the archive certificate themselves.
+The required full gate is tracked in `build/efmi-status-full-gate.log`.
+SR03 is pending that artifact gate. The official-checker layout discrepancy,
+release review and other SR findings remain open; this is not full eFMI compliance.

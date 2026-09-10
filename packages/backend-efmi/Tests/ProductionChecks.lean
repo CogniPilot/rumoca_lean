@@ -6,6 +6,7 @@ import RumocaEFMI.CProtocol
 import RumocaEFMI.ZIPProofs
 import RumocaEFMI.MetadataProofs
 import RumocaEFMI.ManifestProofs
+import RumocaEFMI.StatusProofs
 import RumocaEFMI.ArchiveProofs
 import RumocaEFMI.ZIPCertificate
 import RumocaEFMI.ZIPArchiveCertificate
@@ -48,6 +49,9 @@ theorem tensor_fill_not_scalarized :
 #audit axioms Production.result_represents
 #audit axioms Production.result_frame
 #audit axioms Production.result_other_instance
+#audit axioms Production.clearStatus_frame
+#audit axioms Production.clearStatus_store
+#audit axioms Production.result_status
 #audit axioms Production.read_output
 #audit axioms CSyntax.render_unit
 #audit axioms CSyntax.atom_render
@@ -73,6 +77,11 @@ theorem tensor_fill_not_scalarized :
 #audit axioms Manifest.function_nodes
 #audit axioms Manifest.variable_declared
 #audit axioms Manifest.mapped_execution
+#audit axioms Manifest.decode_statusMapping
+#audit axioms Manifest.status_unique
+#audit axioms Manifest.mapped_status_of_result
+#audit axioms Manifest.mapped_status
+#audit axioms Manifest.mapped_startup_status
 #audit axioms Manifest.file_checksum
 #audit axioms Manifest.origin_reference
 #audit axioms Manifest.representation_reference

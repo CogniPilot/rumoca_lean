@@ -5,6 +5,7 @@ import Rumoca.EFMIArchiveProofs
 #audit axioms Rumoca.EFMI.manifests_correct
 #audit axioms Rumoca.EFMI.manifests_correct_of_documents
 #audit axioms Rumoca.EFMI.ManifestContract.source_name
+#audit axioms Rumoca.EFMI.ManifestContract.status_observations
 #audit axioms Rumoca.EFMI.archive_correct
 #audit axioms Rumoca.EFMI.ArchiveContract.code_members
 #audit axioms Rumoca.EFMI.ArchiveContract.schema_members

@@ -48,7 +48,7 @@ def algorithm (modelName : String) (identity : Identity) (source : String) : Ele
     [files algorithmFileId "model.alg" source.toUTF8,
       node "Clock" [("id", "CLOCK_Period"), ("variableRefId", Variable.clock.id)],
       node "BlockMethods" [] (methods.map blockMethod),
-      node "ErrorSignalStatus" [("id", "ERROR_Status")],
+      node "ErrorSignalStatus" [("id", errorSignalId)],
       node "Units", node "Variables" [] (variables.map algorithmVariable)]
 
 def targetType (scalar : CHeader.Scalar) : Element :=
@@ -63,9 +63,13 @@ def component (var : Variable) : Element :=
   node "Component" [("id", var.componentId), ("name", var.name),
     ("typeDefRefId", scalarTypeId var.scalar)]
 
+def statusComponent : Element :=
+  node "Component" [("id", statusComponentId), ("name", CHeader.statusName),
+    ("typeDefRefId", scalarTypeId .status32)]
+
 def modelType : Element :=
   node "Typedef" [("id", modelTypeId), ("name", "Model")]
-    [node "Components" [] (variables.map component)]
+    [node "Components" [] (variables.map component ++ [statusComponent])]
 
 def formalParameter (description : FunctionDescription) : Element :=
   node "FormalParameter" [("id", description.parameterId), ("name", description.parameterName),
@@ -78,13 +82,18 @@ def function (module : Production.Module) (method : GALEC.Method) : Element :=
     [node "ReturnParameter" [("id", description.returnId), ("typeDefRefId", description.returnTypeId)],
       node "FormalParameters" [] [formalParameter description]]
 
-def dataMapping (method : GALEC.Method) (var : Variable) : Element :=
-  let reference := dataReference method var
+def referenceMapping (reference : DataReference) : Element :=
   node "DataReference" [] [
     node "ForeignVariableReference" [("manifestReferenceRefId", originId),
       ("foreignRefId", reference.foreignVariableId)],
     node "FormalParameter" [("formalParameterRefId", reference.formalParameterId),
       ("componentIdentifier", reference.componentIdentifier)]]
+
+def dataMapping (method : GALEC.Method) (var : Variable) : Element :=
+  referenceMapping (dataReference method var)
+
+def statusMapping (method : GALEC.Method) : Element :=
+  referenceMapping (statusReference method)
 
 def functionMapping (method : GALEC.Method) : Element :=
   node "FunctionReference" [] [
@@ -100,7 +109,8 @@ def codeFile (module : Production.Module) : Element :=
       node "Functions" [] (methods.map (function module))]
 
 def logicalData : Element := node "LogicalData" [] [
-  node "DataReferences" [] (methods.flatMap fun method => variables.map (dataMapping method)),
+  node "DataReferences" [] ((methods.flatMap fun method => variables.map (dataMapping method)) ++
+    methods.map statusMapping),
   node "FunctionReferences" [] (methods.map functionMapping)]
 
 def production (modelName : String) (identity : Identity) (algorithmXML : String)

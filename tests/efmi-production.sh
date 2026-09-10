@@ -69,6 +69,19 @@ for name, member in [('AlgorithmCode/manifest.xml', 'AlgorithmCode/model.alg'), 
     root = etree.parse(str(stage / name))
     assert root.find("Files/File[@role='Code']").get('checksum') == sha1((stage / member).read_bytes()).hexdigest()
 production = etree.parse(str(stage / 'ProductionCode/manifest.xml'))
+algorithm = etree.parse(str(stage / 'AlgorithmCode/manifest.xml'))
+error_anchor = algorithm.find('ErrorSignalStatus').get('id')
+for function in production.findall('CodeContainer/CodeFiles/CodeFile/Functions/Function'):
+    formal = function.find('FormalParameters/FormalParameter')
+    mappings = production.xpath('//DataReference[ForeignVariableReference/@foreignRefId=$anchor '
+        'and FormalParameter/@formalParameterRefId=$formal]',
+        anchor=error_anchor, formal=formal.get('id'))
+    assert len(mappings) == 1
+    component = mappings[0].find('FormalParameter').get('componentIdentifier')
+    fields = production.xpath('//Typedef[@id=$model]/Components/Component[@name=$field]',
+        model=formal.get('typeDefRefId'), field=component)
+    assert len(fields) == 1
+    assert fields[0].get('typeDefRefId') == function.find('ReturnParameter').get('typeDefRefId')
 assert production.find('ManifestReferences/ManifestReference').get('checksum') == sha1((stage / 'AlgorithmCode/manifest.xml').read_bytes()).hexdigest()
 content = etree.parse(str(stage / '__content.xml'))
 roots = [etree.parse(str(stage / name)).getroot() for name in [
@@ -177,15 +190,17 @@ rg -q 'invalid eFMI manifest UUIDs or UTC generation timestamp' "$stage/rejected
 cp "$stage/original-algorithm.xml" "$root/AlgorithmCode/manifest.xml"
 cp "$stage/original.xml" "$production_xml"
 cp "$stage/original-content.xml" "$root/__content.xml"
-sed 's/componentIdentifier="x"/componentIdentifier="samplePeriod"/' "$stage/original.xml" > "$production_xml"
-if cmp -s "$stage/original.xml" "$production_xml"; then
-  echo 'ineffective manifest mapping mutation' >&2
-  exit 1
-fi
-if check_files > "$stage/rejected-xml.log" 2>&1; then
-  echo 'accepted manifest with changed logical mapping' >&2
-  exit 1
-fi
+for field in x errorSignalStatus; do
+  sed "s/componentIdentifier=\"$field\"/componentIdentifier=\"samplePeriod\"/" "$stage/original.xml" > "$production_xml"
+  if cmp -s "$stage/original.xml" "$production_xml"; then
+    echo "ineffective manifest mapping mutation: $field" >&2
+    exit 1
+  fi
+  if check_files > "$stage/rejected-xml-$field.log" 2>&1; then
+    echo "accepted manifest with changed logical mapping: $field" >&2
+    exit 1
+  fi
+done
 cp "$stage/original.xml" "$production_xml"
 cp "$production" "$stage/original.c"
 cp "$algorithm" "$stage/original.alg"

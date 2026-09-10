@@ -80,10 +80,14 @@ def Function.valid (f : Function) : Bool :=
   identifier f.name && identifier f.parameter && f.statements.all Statement.valid
 def Function.tokens (f : Function) : List String :=
   ["EfmiStatus", f.name, "(", "Model", "*", f.parameter, ")", "{"] ++
-  f.statements.flatMap Statement.tokens ++ ["return", "0", ";", "}"]
+  ["(", f.parameter, "->", "errorSignalStatus", ")", "=", "0", ";"] ++
+  f.statements.flatMap Statement.tokens ++
+  ["return", "(", f.parameter, "->", "errorSignalStatus", ")", ";", "}"]
 def Function.tree (f : Function) : CTree.Function :=
   ⟨⟨"EfmiStatus", f.name, [⟨"Model *", f.parameter, false⟩]⟩,
-    f.statements.map Statement.tree ++ [.ret (some (.nat 0))], false⟩
+    .assign (.field (.id f.parameter) "errorSignalStatus" true) (.nat 0) ::
+      (f.statements.map Statement.tree ++
+        [.ret (some (.field (.id f.parameter) "errorSignalStatus" true))]), false⟩
 
 structure Program where
   startup : Function

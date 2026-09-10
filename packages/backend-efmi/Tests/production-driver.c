@@ -31,14 +31,22 @@ int main(void) {
   /* Startup must initialize allocated storage without reading old doubles. */
   assert(UnitIntegrator_Startup(&instances.first) == 0);
   assert(UnitIntegrator_Startup(&instances.second) == 0);
+  assert(instances.first.errorSignalStatus == 0);
+  assert(instances.second.errorSignalStatus == 0);
+  instances.second.errorSignalStatus = 7;
   assert(bits(instances.first.x) == 0);
   assert(instances.first.samplePeriod == 1.0);
   for (unsigned i = 1; i <= 100; ++i) {
+    instances.first.errorSignalStatus = INT32_MAX;
     assert(UnitIntegrator_DoStep(&instances.first) == 0);
+    assert(instances.first.errorSignalStatus == 0);
+    assert(instances.second.errorSignalStatus == 7);
     assert(instances.first.x == (double)i);
     assert(instances.second.x == 0.0);
     assert(instances.first.samplePeriod == 1.0);
+    instances.first.errorSignalStatus = -1;
     assert(UnitIntegrator_Recalibrate(&instances.first) == 0);
+    assert(instances.first.errorSignalStatus == 0);
     assert(instances.first.x == (double)i);
   }
   assert(instances.before == UINT64_C(0x123456789abcdef0));

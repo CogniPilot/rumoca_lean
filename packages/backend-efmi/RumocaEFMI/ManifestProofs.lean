@@ -19,7 +19,8 @@ theorem decode_function (module : Production.Module) (method : GALEC.Method) :
 
 theorem data_nodes (modelName : String) (identity : Identity) (algorithmXML : String) (module : Production.Module) :
     dataNodes (production modelName identity algorithmXML module) =
-      methods.flatMap (fun method => variables.map (dataMapping method)) := rfl
+      methods.flatMap (fun method => variables.map (dataMapping method)) ++
+        methods.map statusMapping := rfl
 
 theorem function_nodes (modelName : String) (identity : Identity) (algorithmXML : String) (module : Production.Module) :
     functionNodes (production modelName identity algorithmXML module) = methods.map (function module) := rfl

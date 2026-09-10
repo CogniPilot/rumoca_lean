@@ -15,8 +15,12 @@ def initialName (field : String) : Names [scalar]
 
 def stateField (name : String) : Expr := .field (.id "self") name true
 
+/-- The error-free unit profile exposes its per-call status through the
+instance field declared in the eFMI manifest and the matching C return value. -/
 def function (name : String) (body : List Stmt) : Function :=
-  ⟨⟨"EfmiStatus", name, [⟨"Model *", "self", false⟩]⟩, body ++ [.ret (some (.nat 0))], false⟩
+  ⟨⟨"EfmiStatus", name, [⟨"Model *", "self", false⟩]⟩,
+    .assign (stateField CHeader.statusName) (.nat 0) ::
+      (body ++ [.ret (some (stateField CHeader.statusName))]), false⟩
 
 structure Module where
   startup : Function

@@ -35,6 +35,7 @@ theorem types_declared (var : Variable) :
 theorem references_unique :
     (([CHeader.Scalar.real64, .status32].flatMap fun scalar =>
         [targetTypeId scalar, scalarTypeId scalar]) ++ [modelTypeId] ++
+      [errorSignalId, statusComponentId] ++
       variables.flatMap (fun var => [var.id, var.componentId]) ++
       methods.flatMap (fun method =>
         [algorithmMethodId method, functionId method, parameterId method, returnId method])).Nodup := by
@@ -68,7 +69,7 @@ theorem read_correct (module : Production.Module) (method : GALEC.Method) (var :
   have lx : load heap (p.member "x") = some (.finite state.x[0]) := by
     simp [load, represents.1, convert, Value.finite]
   have lp : load heap (p.member "samplePeriod") = some (.finite state.samplePeriod[0]) := by
-    simp [load, represents.2, convert, Value.finite]
+    simp [load, represents.2.1, convert, Value.finite]
   cases var <;> simp [referenceExpression, functionDescription, dataReference,
     Variable.name, Variable.value, Variable.scalarValue, CBody.eval,
     CBody.resolve, CBody.bind, Production.parameters, Value.address, lx, lp] <;> rfl

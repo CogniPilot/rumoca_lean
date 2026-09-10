@@ -144,7 +144,11 @@ theorem function_render (f : Function) (valid : f.valid = true)
   efmi_lex_fixed
   apply lex_word f.parameter ')' _ _ (word_parts _ valid.1.2) (by decide +kernel)
   efmi_lex_fixed
+  apply lex_word f.parameter '-' _ _ (word_parts _ valid.1.2) (by decide +kernel)
+  efmi_lex_fixed
   apply statements_render f.statements valid.2 1
+  efmi_lex_fixed
+  apply lex_word f.parameter '-' _ _ (word_parts _ valid.1.2) (by decide +kernel)
   efmi_lex_fixed
 
 /-- Every syntactically valid program in the existing Production C profile

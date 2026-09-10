@@ -45,6 +45,8 @@ def targetKind : CHeader.Scalar → String
 def targetTypeId (scalar : CHeader.Scalar) : String := "TT_" ++ scalar.alias
 def scalarTypeId (scalar : CHeader.Scalar) : String := "TD_" ++ scalar.alias
 def modelTypeId : String := "TD_Model"
+def errorSignalId : String := "ERROR_Status"
+def statusComponentId : String := "C_ErrorStatus"
 
 structure FunctionDescription where
   id : String
@@ -71,6 +73,11 @@ structure DataReference where
 
 def dataReference (method : GALEC.Method) (var : Variable) : DataReference :=
   ⟨var.id, parameterId method, var.name⟩
+
+/-- The standard's error anchor is an interface observation, not a GALEC
+model variable. Each method exposes it through its actual instance formal. -/
+def statusReference (method : GALEC.Method) : DataReference :=
+  ⟨errorSignalId, parameterId method, CHeader.statusName⟩
 
 def referenceExpression (module : Production.Module) (method : GALEC.Method)
     (var : Variable) : CTree.Expr :=

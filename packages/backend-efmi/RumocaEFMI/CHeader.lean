@@ -28,7 +28,9 @@ inductive Declaration where
   | structureType (name : String) (fields : List Field)
   deriving Repr, BEq, DecidableEq
 
-def stateFields : List Field := [⟨"x", .real64⟩, ⟨"samplePeriod", .real64⟩]
+def statusName : String := "errorSignalStatus"
+def stateFields : List Field :=
+  [⟨"x", .real64⟩, ⟨"samplePeriod", .real64⟩, ⟨statusName, .status32⟩]
 def declarations : List Declaration :=
   [.alias .real64, .alias .status32, .structureType "Model" stateFields]
 

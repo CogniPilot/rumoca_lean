@@ -233,7 +233,8 @@ All 22 added roots, the stronger actual-file certificate, mutation rejection and
 the existing native boundary check pass in `build/c-typed-gate.log`. The exact
 file root is audited in `build/tensor-c/ivp-contract.log`; the package build
 passes in `build/c-typed-package.log`. No new source model or native test matrix
-is introduced. The required full gate is tracked in `build/c-typed-full-gate.log`.
+is introduced. The required full gate passed in `build/c-typed-full-gate.log`
+and in [CI for 2e53e66](https://github.com/CogniPilot/rumoca_lean/actions/runs/34494402729).
 
 These remain instantaneous C contracts. The existing FMI body proofs must still
 be connected to the typed machine's statement/scope rules and composed with
@@ -914,6 +915,29 @@ destination directory permits a same-filesystem rename; file I/O, process
 execution and publication remain tested infrastructure.
 
 ## Tiny eFMI Production C
+
+The [standards review](../dev/standards-review.md) found that the previous
+status-zero proof did not connect the C result to the manifest's error anchor.
+The correction now declares an `EfmiStatus errorSignalStatus` instance field.
+Every unit method clears it on entry and returns its stored value. Startup
+accepts allocated, writable but uninitialized state, clock and status cells;
+later methods require finite state/clock cells and writable status storage.
+The previous status bits are arbitrary. Complete method execution still
+preserves the exact numerical Solve result and every cell outside the three
+declared instance fields; other instances are unchanged.
+
+`Manifest.MappedStatus` requires a unique decoded mapping from the actual
+Algorithm Code error anchor and C formal parameter to a declared status field.
+`mapped_status` and `mapped_startup_status` connect that field to the actual
+returned value, including uninitialized Startup storage. Both are conjuncts
+of `ManifestContract`; `ManifestContract.status_observations` exposes their
+composition with the actual XML/C members. `ArchiveContract` therefore also
+requires them. The certified C printer's independent tokens include the
+status store and return; the header contract describes all three fields.
+Nine new roots pass the unchanged axiom audit in `build/efmi-status-package.log`.
+The required complete artifact gate is tracked in `build/efmi-status-full-gate.log`.
+The unit profile still has no exposed error signals. This correction neither
+adds general GALEC error handling nor establishes full eFMI standards compliance.
 
 `Solve.Algorithm.Model` retains the GALEC product and the proof that its block
 is the actual algorithm lowering. `Production.lower` reads only that block.

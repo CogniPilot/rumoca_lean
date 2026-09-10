@@ -10,13 +10,17 @@ this roadmap records the work and evidence required for stronger claims.
 An open item is not a current guarantee. The active first-party review and
 initial fixes are owned by Codex; independent review owners are unassigned.
 See [the detailed compiler review](compiler-review.md) for findings RV01–RV10.
+The [FMI/eFMI standards review](standards-review.md) records SR01–SR07 from
+the actual unit artifacts. Its repair order takes priority over the next
+tensor/FMI implementation increment; full standards compliance is not claimed.
 
 The tiny [eFMI Algorithm Code checkpoint](efmi.md#algorithm-code-checkpoint-evidence)
 passes the full gate: E01–E03 cover the checked DAE product, tensor Solve
 refinement and actual `.alg` file. E04 now also checks the complete Production
 C member, memory effects and serial traces. The correlated eFMU now has an
 actual source-to-archive contract and a passing publication gate; E05–E06
-remain open for the documented standards/checker discrepancy and release review. This checkpoint does not close whole-FMU or generic parser
+remain open for the missing error-status mapping, the documented standards/checker
+discrepancy and release review. This checkpoint does not close whole-FMU or generic parser
 completeness obligations in this roadmap.
 
 The destination is a maintainable Lean compiler whose supported Modelica
@@ -88,8 +92,10 @@ contract. The same square model's three actual C files also require the concrete
 initializer/RHS and existing Jacobian storage proofs. Its 22 added roots and
 the actual-file/native gate pass in `build/c-ivp-gate.log`; the required full
 gate is tracked in `build/c-ivp-full-gate.log`.
-Next, prove integration of typed tensor calls with FMI's status-returning call
-machine, bind instance storage/metadata, and establish the finite overflow/error,
+Typed tensor calls now compose with value-returning caller contexts, and the
+prepared IVP's actual-file contracts include that stronger result. Actual FMI
+wrapper execution is still open. After the standards corrections below,
+compose those public wrappers, bind instance storage/metadata, and establish the finite overflow/error,
 lifecycle/time and source-to-archive contracts for FMI and eFMI.
 Preserve the existing diagonal representation;
 general sparsity analysis, compressed storage and coloring follow this FMU
@@ -98,6 +104,32 @@ case is needed for the current work.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.
+
+## Standards corrections before the next backend increment
+
+- [ ] **SR01/F03/F04:** declare the source-FMU math dependency and numerical
+  compilation profile; have the existing source rebuild consume that metadata.
+- [ ] **SR02/F03/F04:** give numerical symbols private or consistently namespaced
+  linkage, certify the declaration change, and check two source FMUs link together.
+- [ ] **SR03/E05:** map each C status result to the Algorithm Code error anchor,
+  prove that decoded mapping observes execution, and strengthen the actual
+  manifest/archive contract. Schema validation alone previously missed this.
+  **Implemented:** per-instance status storage/return, unique decoded mappings,
+  complete method/printer proofs and both initialized/uninitialized status
+  observations in the archive contract. Nine new roots pass the package audit
+  in `build/efmi-status-package.log`; closure awaits the complete artifact gate
+  in `build/efmi-status-full-gate.log`.
+- [ ] **SR04–SR05/F02:** correct premature nominal-state access and resolve the
+  strict initialization policy from normative clauses; include rejected behavior.
+- [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
+  mismatch and complete independent semantic/coding-guideline release review.
+  A diagnostic wrapped copy passes deeper checker checks; the actual standalone
+  archive has no official-checker pass. Remaining FMI capstone proofs stay open.
+
+The [review](standards-review.md) gives reproduction evidence and closure
+conditions. These corrections add no grammar cases. Each interface increment
+must connect a cited requirement, independent predicate, execution theorem and
+actual-artifact observation so specification errors are found before expansion.
 
 ## Frontend infrastructure before further grammar growth
 
