@@ -146,7 +146,13 @@ pass, including two actual source FMUs rebuilt from their own XML recipes,
 only their distinct FMI APIs exported, and fresh-process symbol resolution.
 A changed source prefix is rejected before native compilation, and a failed
 native build preserves the existing FMU. The complete targeted gate passed in
-`build/fmi-linkage-artifact-gate.log`; the required full gate remains pending.
+`build/fmi-linkage-artifact-gate.log`. The required full local gate passed in
+`build/fmi-linkage-full-gate.log` at `efb5c8030b807822fab69ed7817b321835be1a95`.
+Its checked FMU has SHA-256
+`780186d9d0694b2da60d06e55e55c4a8100d2fafca86b2198026b9adc21902ea`.
+[CI for efb5c80](https://github.com/CogniPilot/rumoca_lean/actions/runs/34509004071)
+also passed. This closes the checked source-linkage correction;
+the broader FMI capstone remains open.
 
 ### SR03 — P1: eFMI status returns have no logical error-status mapping
 
@@ -209,9 +215,42 @@ and [return statuses](https://fmi-standard.org/docs/3.0.2/#status-returned-by-fu
 generated guard together, retain the generalized guard proof, and cover this
 rejection through the existing error/lifecycle contract. A small addition to
 the existing ABI lifecycle check is sufficient at the native boundary.
-State-count queries were also inspected; their placement and reference-tool
-behavior need separate interpretation, so they are not listed as another
-confirmed defect here.
+State-count and event-indicator-count queries are explicitly listed in
+§2.3.2's Instantiated calls; their separate `getCounts` rule is retained.
+
+**Correction in progress:** the table and independently reviewed predicate
+now exclude Instantiated specifically for nominal queries. The core theorem
+`nominals_reject_instantiated` feeds the existing general guard proof.
+`ErrorBodies.nominals_reject_run` proves that the actual generated body reaches
+the failure call before reading or writing output storage, preserving the whole
+heap. `nominals_reject_reaches` carries that result into the typed C call machine.
+The existing ME lifecycle test now checks both logging settings, unchanged
+output on rejection, final observations and reset/reinitialization.
+
+`ErrorBodies` also proves the actual error helper's mode write and logging
+dispatch for both logging branches, the exact callback arguments, and complete
+body-entry termination/frame when logging is disabled. It does **not** execute
+an enabled callback or bind the helper's string parameter. Those obligations
+prevent composition into a complete public failed-call theorem. The generated
+nominal query bytes are not yet covered by the numerical/prefix file contract.
+SR04's full proof closure therefore remains open despite the corrected guard.
+
+The generic `CBodyEmbedding` proof reuses successful memory-body runs in the
+typed tensor-call machine. Instantiating its scope check exposed a nested
+`Instance *m` declaration in SetFloat64's empty-array branch. `CLoops` explicitly
+rejects nested declarations because it lacks C block scopes. The FMI bridge
+therefore excludes that body; no scope check was relaxed. Public array-parameter
+adjustment, string argument conversion and indirect callbacks remain separate
+target-semantics gaps. These are proof coverage findings, not evidence that the
+emitted C's lexical block is illegal. Resolve them before full FMI composition.
+
+Sixteen added audit roots pass the unchanged axiom policy in
+`build/fmi-error-embedding-audit.log`. The existing native lifecycle group
+fails on the preceding FMU (`build/fmi-nominals-before.log`, OK instead of
+Error), and the corrected FMU passes all thirteen groups and the actual-file,
+source-link, mutation and publication-failure gate in
+`build/fmi-nominals-artifact-gate.log`. The required full gate remains pending.
+No additional grammar case is admitted.
 
 ### SR05 — P2, unresolved: initialization rejects zero-duration/tolerance cases
 

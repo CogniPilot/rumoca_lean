@@ -40,7 +40,7 @@ def permittedModes : Command → Kind → List Mode
   | .setStates, .me => [.continuous]
   | .getStates, .me => [.initialization, .event, .continuous, .terminated]
   | .getDerivatives, .me => [.initialization, .event, .continuous, .terminated]
-  | .getNominals, .me => [.instantiated, .initialization, .event, .continuous, .terminated]
+  | .getNominals, .me => [.initialization, .event, .continuous, .terminated]
   | .getCounts, .me => [.instantiated, .initialization, .event, .continuous, .terminated]
   | .completedStep, .me => [.continuous]
   | .doStep, .cs => [.step]
@@ -61,10 +61,10 @@ def Allowed (c : Command) (k : Kind) (m : Mode) : Prop :=
   | .get | .logging => True
   | .setStart => m = .instantiated ∨ m = .initialization ∨
       (k = .me ∧ (m = .event ∨ m = .continuous))
-  | .getStates | .getDerivatives => k = .me ∧
+  | .getStates | .getDerivatives | .getNominals => k = .me ∧
       (m = .initialization ∨ m = .event ∨ m = .continuous ∨ m = .terminated)
   | .setTime | .setStates | .completedStep => k = .me ∧ m = .continuous
-  | .getNominals | .getCounts => k = .me ∧
+  | .getCounts => k = .me ∧
       (m = .instantiated ∨ m = .initialization ∨ m = .event ∨ m = .continuous ∨ m = .terminated)
   | .doStep => k = .cs ∧ m = .step
 end Reference
@@ -73,6 +73,13 @@ theorem allowed_correct (c : Command) (k : Kind) (m : Mode) :
     allowed c k m = true ↔ Reference.Allowed c k m := by
   cases c <;> cases k <;> cases m <;>
     simp [Reference.Allowed, allowed, permittedModes] <;> decide +kernel
+
+/-- FMI 3.0.2 §2.3.2 excludes the nominal query from Instantiated; §§2.3.3,
+2.3.4 and 2.3.8 allow it in Initialization, Initialized and Terminated.
+The prose-to-predicate correspondence still requires standards review. -/
+theorem nominals_reject_instantiated (k : Kind) :
+    ¬ Reference.Allowed .getNominals k .instantiated := by
+  simp [Reference.Allowed]
 
 def nextMode (c : Command) (k : Kind) (m : Mode) : Mode :=
   if allowed c k m then

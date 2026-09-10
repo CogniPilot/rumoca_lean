@@ -638,7 +638,9 @@ Thirteen new roots and the generalized existing roots pass
 passes in `build/fmi-linkage-artifact-gate.log`, retaining thirteen native test
 groups and adding one prefix mutation. Both source FMUs compile from their own
 XML recipes, link together and expose only their declared FMI APIs. Failed
-native builds preserve earlier FMUs. The required full gate remains pending.
+native builds preserve earlier FMUs. The required full local gate passed in
+`build/fmi-linkage-full-gate.log` at `efb5c80`;
+[CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34509004071) also passed.
 
 `Solve.FMI3Model` carries the original Solve model, source names and a prepared
 scalar tensor IVP. Its numerical policy remains unit Euler; default start is
@@ -855,6 +857,33 @@ requires those exact restrictions. Their conformance review remains open.
 Rejected initialization calls, nonfinite-start rejection through the full body,
 general cross-call lifecycle composition, logging, lifetime, CS arithmetic and
 printed adapter/ABI correspondence remain open.
+
+The SR04 correction removes nominal-state queries from Instantiated after
+independent review of FMI 3.0.2 §2.3.2. `ErrorBodies.nominals_reject_run` proves
+the actual generated query reaches its failure call with the whole heap intact;
+it requires no output-pointer premise because rejection precedes output access.
+`nominals_reject_reaches` embeds this prefix in the typed tensor-call machine.
+`failure_dispatch_run` covers both logging settings and `failure_log_arguments`
+identifies the actual callback arguments. `failure_silent_correct` proves all
+typed body-entry behaviors return Error and change only the mode cell when
+logging is disabled. Enabled callback execution, string parameter binding and
+the actual printed query/helper are outside those statements. This does not
+yet close the failed-call or entire-FMU contract.
+
+`RumocaC.BodyEmbedding` proves that successful `CBody` evaluation, steps and
+finite runs are preserved by `CLoops`, carrying the same code, values and heap
+with local type bindings. It then derives ordinary typed returns and all-body
+behavior equivalence. `RumocaFMI3.BodyEmbedding` applies that bridge to the
+generated runtime bodies and reuses the complete termination proof. The scope
+premise explicitly excludes SetFloat64: its empty-array branch declares a
+local variable, which the typed model rejects until block scope is implemented.
+This limitation was found by attempting the universal scope proof, rather than
+assuming every existing body embeds. It is not a defect in C's block semantics.
+Sixteen added roots pass `build/fmi-error-embedding-audit.log`. The lifecycle
+check rejects the old FMU, and the corrected artifact passes all thirteen native
+groups plus the actual-file/source-link/mutation gate in
+`build/fmi-nominals-artifact-gate.log`. The required full gate remains pending.
+Production language acceptance is unchanged.
 
 Ordinary calls are supported as entire assignment, declaration, return or
 discard operands; their arguments are pure expressions. Function pointers,

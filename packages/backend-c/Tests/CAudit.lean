@@ -4,6 +4,7 @@ import RumocaC.Statements
 import RumocaC.Calls
 import RumocaC.Arithmetic
 import RumocaC.BooleanProofs
+import RumocaC.BodyEmbedding
 
 #audit axioms Rumoca.C.compileProgram_correct
 #audit axioms Rumoca.C.ideal_run_correct
@@ -66,3 +67,9 @@ import RumocaC.BooleanProofs
 #audit axioms Rumoca.CArithmetic.floatAdd_one
 #audit axioms Rumoca.CArithmetic.run_reaches
 #audit axioms Rumoca.CArithmetic.behaviors_of_run
+
+#audit axioms Rumoca.CBodyEmbedding.eval_refines
+#audit axioms Rumoca.CBodyEmbedding.next_refines
+#audit axioms Rumoca.CBodyEmbedding.run_refines
+#audit axioms Rumoca.CBodyEmbedding.typed_return_reaches
+#audit axioms Rumoca.CBodyEmbedding.typed_body_behaviors

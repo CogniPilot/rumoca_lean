@@ -119,9 +119,9 @@ of Modelica 3.7.
   [CI for f1ce838](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582)
   also passed.
   The complete FMI adapter/model-description/archive capstone remains open.
-- [ ] **SR02/F03/F04:** give numerical symbols private or consistently namespaced
+- [x] **SR02/F03/F04:** give numerical symbols private or consistently namespaced
   linkage, certify the declaration change, and check two source FMUs link together.
-  **Implemented, full gate pending:** generalized C/whole-compiler contracts
+  **Implemented, full local gate passed:** generalized C/whole-compiler contracts
   retain all prior obligations for internal linkage; FMI compiles one adapter
   source including its private kernel. Parsed names determine valid, distinct
   identifiers for distinct source names. The actual-file contract includes the
@@ -129,6 +129,9 @@ of Modelica 3.7.
   capstone stays open. Thirteen new roots pass `build/fmi-linkage-package.log`.
   The actual-file, importer, source-link, mutation and failure-preservation gate
   passes in `build/fmi-linkage-artifact-gate.log`.
+  The required full local gate passed in `build/fmi-linkage-full-gate.log` at
+  `efb5c80`; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34509004071)
+  also passed. This closes the source-linkage correction only.
 - [x] **SR03/E05:** map each C status result to the Algorithm Code error anchor,
   prove that decoded mapping observes execution, and strengthen the actual
   manifest/archive contract. Schema validation alone previously missed this.
@@ -142,6 +145,17 @@ of Modelica 3.7.
   This closes the unit status-mapping correction; E05's broader obligations remain.
 - [ ] **SR04–SR05/F02:** correct premature nominal-state access and resolve the
   strict initialization policy from normative clauses; include rejected behavior.
+  **SR04 guard corrected:** the independent predicate and generated guard now
+  reject Instantiated. The rejection-prefix theorem preserves caller storage
+  and embeds in the typed tensor-call model. Complete disabled-logging error
+  body behavior and both logging dispatch branches are proved; public argument
+  binding, enabled callback execution and actual adapter-byte binding remain
+  open. Sixteen new roots pass `build/fmi-error-embedding-audit.log`.
+  The bridge exposed an existing nested declaration in SetFloat64; retain its
+  explicit exclusion until C block scope is handled. The existing lifecycle
+  check rejects the old artifact; all thirteen groups and the actual-file gate
+  pass for the correction in `build/fmi-nominals-artifact-gate.log`.
+  The required full gate remains pending.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
   mismatch and complete independent semantic/coding-guideline release review.
   A diagnostic wrapped copy passes deeper checker checks; the actual standalone

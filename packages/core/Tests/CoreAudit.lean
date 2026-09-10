@@ -71,6 +71,7 @@ import RumocaCore.Transition
 #audit axioms Rumoca.Solve.FMI3Model.prepared_solve
 #audit axioms Rumoca.Solve.FMI3Model.rhs_correct
 #audit axioms Rumoca.FMI3.allowed_correct
+#audit axioms Rumoca.FMI3.nominals_reject_instantiated
 #audit axioms Rumoca.FMI3.invalid_call_error
 #audit axioms Rumoca.FMI3.invalid_call_final_values
 #audit axioms Rumoca.FMI3.terminated_me_queries

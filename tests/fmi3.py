@@ -196,6 +196,22 @@ class FMI3Tests(unittest.TestCase):
         self.assertEqual(self.step(a, 0, 1)[0], ERROR)  # before initialization
 
     def test_me_initialization_event_and_state_access(self):
+        # FMI 3.0.2 §2.3.2 excludes nominals in Instantiated. Rejection must
+        # preserve the caller's output, enter Terminated, and respect loggingOn.
+        for logging in [False, True]:
+            rejected = self.create("me", logging=logging)
+            nominal = (D * 1)(42)
+            before = len(self.messages)
+            self.assertEqual(self.GetNominalsOfContinuousStates(rejected, nominal, 1), ERROR)
+            self.assertEqual(nominal[0], 42)
+            expected = [(123, ERROR, b"logStatus", b"Call is not allowed in the current FMI state")] if logging else []
+            self.assertEqual(self.messages[before:], expected)
+            # The same query is available for final observations in Terminated.
+            self.assertEqual(self.GetNominalsOfContinuousStates(rejected, nominal, 1), OK)
+            self.assertEqual(nominal[0], 1)
+            self.assertEqual(self.Reset(rejected), OK)
+            self.assertEqual(self.EnterInitializationMode(rejected, False, 0, 0, False, 0), OK)
+            self.assertEqual(self.GetNominalsOfContinuousStates(rejected, nominal, 1), OK)
         h = self.create("me")
         self.assertEqual(self.EnterInitializationMode(h, False, 0, 0, False, 0), OK)
         out = (D * 1)()
