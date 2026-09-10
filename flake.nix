@@ -10,7 +10,9 @@
         editor = import ./nix/neovim.nix { inherit pkgs; };
         python = pkgs.python3.withPackages (ps: [ ps.lxml ] ++
           pkgs.lib.optionals pkgs.stdenv.hostPlatform.isx86_64 [ ps.fmpy ]);
-        common = [ pkgs.lean4 pkgs.gcc pkgs.git pkgs.curl pkgs.ripgrep pkgs.tokei
+        # Elan installs the official version from lean-toolchain. Its build
+        # identity matches mathlib's upstream proof cache, unlike pkgs.lean4.
+        common = [ pkgs.elan pkgs.gcc pkgs.git pkgs.curl pkgs.ripgrep pkgs.tokei
           pkgs.zip pkgs.unzip python ];
       in {
         default = pkgs.mkShell {

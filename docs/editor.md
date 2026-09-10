@@ -9,9 +9,10 @@ nvim packages/compiler/Rumoca/Lowering.lean
 
 The default shell provides Neovim, `lean.nvim`, its dependencies and the
 Tokyo Night theme from the existing pinned nixpkgs input. Lean/Lake remain
-4.29.1, matching `lean-toolchain`. The editor includes Lean syntax highlighting,
-LSP semantic highlighting, diagnostics, completion, Unicode abbreviations and
-an interactive goal infoview. No plugin manager or startup downloads are needed.
+4.29.1, selected through Nix's Elan and `lean-toolchain`. The editor includes Lean
+syntax highlighting, LSP semantic highlighting, diagnostics, completion, Unicode
+abbreviations and an interactive goal infoview. Nix supplies the editor plugins;
+Elan downloads the pinned Lean release on first use if it is not installed.
 
 The Nix wrapper uses [nix/init.lua](../nix/init.lua) and does not edit your
 personal Neovim configuration. `EDITOR` and `VISUAL` select this wrapper inside

@@ -71,6 +71,31 @@ Use `lake exe cache get` for initial setup or after an intentional dependency
 change. Generated examples and logs stay under `build/`; deleting that directory
 does not delete the package proof cache.
 
+## Initial mathlib cache
+
+Nix supplies Elan, which installs the official release in `lean-toolchain`.
+Nixpkgs' Elan handles the executable loader and C toolchain integration; no
+manual environment variables or global default-toolchain change are needed.
+The release's build identity matches mathlib's upstream `.olean` artifacts.
+For a new checkout, fetch only this project's mathlib imports and their closure:
+
+```sh
+nix develop .#verification
+mapfile -t modules < <(rg --no-filename '^import Mathlib\.' packages --glob '*.lean' | sed 's/^import //' | sort -u)
+lake exe cache get "${modules[@]}"
+mapfile -t targets < <(printf 'mathlib/%s\n' "${modules[@]}")
+lake --no-build build "${targets[@]}"
+```
+
+The last command confirms that Lake can use every required mathlib proof
+without rebuilding it. The cache downloader itself may build its small helper
+program. Importing cached `.olean` declarations reuses proofs checked upstream;
+it does not introduce new axioms or disable checking of our declarations. See
+the [mathlib project setup](https://leanprover-community.github.io/install/project.html).
+Native executables can still need C object compilation (`:c.o` in Lake's output)
+on their first build. That does not re-elaborate the cached theorem proofs;
+CI's native Lake cache retains those object files for subsequent runs too.
+
 Once the change is ready, run the complete gate once:
 
 ```sh
@@ -133,21 +158,23 @@ and still invoke every normal Lake target. Lake's source/import/build traces
 decide what must be rebuilt, including changes to package configuration. There
 are no cached "passed" stamps or separate proof-checksum schemes.
 
-Only a complete cache miss downloads upstream artifacts for the directly imported
-mathlib modules and their dependencies. The workflow checks `cache-matched-key`,
-so restoring a previous commit also skips that download; `cache-hit` alone
-would incorrectly treat that useful restore as a miss. See the
-[cache restore action](https://github.com/actions/cache/tree/v5/restore).
-The pinned Nix Lean uses `USE_GITHASH=OFF` and reports `v4.29.1` as its compiler
-identity. Upstream mathlib artifacts have different native Lake traces, so a
-cold build can rebuild those imports once. Re-extracting upstream archives over
-a valid native cache would repeat that work. CI preserves the native artifacts
-and does not separately retain the redundant compressed downloads.
+Before building the project, CI checks all direct mathlib imports with
+`lake --no-build build`. A compatible cache from any prior commit satisfies
+this check without another download. If it fails, CI fetches the selected
+upstream artifacts and requires the same no-build check to pass. This handles
+both cold starts and newly added imports. A missing or incompatible upstream
+cache fails visibly instead of silently rebuilding mathlib's theorems.
+
+The official Lean toolchain is cached separately in `~/.elan/toolchains`, keyed
+by OS, architecture, the Nix lock and `lean-toolchain`. Its real commit identity
+matches the upstream proof cache. The earlier `pkgs.lean4` build reported a tag
+instead of that commit because it used `USE_GITHASH=OFF`, causing unnecessary
+rebuilds. No compiler identity or freshness trace is forged to avoid them.
 
 Normal source edits therefore reuse unchanged mathlib and project modules;
 changed modules and their dependents rebuild. A toolchain/dependency change or
 [GitHub cache eviction](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#usage-limits-and-eviction-policy)
-can still require a cold build.
+can still require downloading dependencies and rebuilding the project's proofs.
 
 Imported `.olean` declarations are trusted compiled artifacts: their tactics and
 kernel checking are not rerun merely because another module imports them.

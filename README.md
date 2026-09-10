@@ -46,9 +46,12 @@ nvim packages/compiler/Rumoca/Lowering.lean
 See [editor setup and keys](docs/editor.md). Re-enter the shell after changing
 the configuration. The `verification` shell below stays minimal for CI.
 
-Lean **4.29.1** and mathlib are pinned. The Nix shell supplies Lean, a C11
+Lean **4.29.1** and mathlib are pinned. The Nix shell supplies Elan, which
+installs the official Lean release selected by `lean-toolchain`, plus a C11
 compiler, ZIP tools and FMPy on x86_64 Linux. It does not require Rocq,
-Coq or CompCert.
+Coq or CompCert. For a fresh checkout, fetch mathlib's already-checked proofs
+using the [initial setup commands](docs/development.md#initial-mathlib-cache)
+before running the verification gate:
 
 ```sh
 nix develop .#verification
@@ -56,9 +59,8 @@ lake test
 lake run demo
 ```
 
-The first build checks the required dependency closure. Subsequent builds reuse
-Lake's native cache; do not routinely rerun mathlib cache extraction or clear
-`.lake`. See [incremental development and CI caching](docs/development.md).
+Subsequent builds reuse Lake's native cache. CI fetches missing upstream proofs
+and requires them to pass Lake's `--no-build` check, even on its first run.
 
 `lake run demo` compiles the example to C and runs three unit-time steps from 0.5:
 

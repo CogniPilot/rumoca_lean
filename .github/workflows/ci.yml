@@ -28,6 +28,12 @@ jobs:
         with:
           persist-credentials: false
       - uses: cachix/install-nix-action@b85815f71a6de0ddee80b8a80a98d43f4bcc66c7 # v31
+      - name: Cache the pinned official Lean toolchain
+        uses: actions/cache@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          # Nix's Elan patches the release executables for the pinned environment.
+          path: ~/.elan/toolchains
+          key: lean-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'lean-toolchain') }}
       - name: Restore native Lake builds
         id: lake
         uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
@@ -41,15 +47,21 @@ jobs:
           key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'flake.nix', 'lean-toolchain', 'lake-manifest.json') }}-${{ github.sha }}
           restore-keys: |
             lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'flake.nix', 'lean-toolchain', 'lake-manifest.json') }}-
-      - name: Fetch pinned dependency proofs
-        # A prior commit is a useful restore, although cache-hit is false.
-        # Never overwrite its native traces with upstream mathlib archives.
-        if: steps.lake.outputs.cache-matched-key == ''
+      - name: Reuse pinned mathlib proofs without rebuilding
         run: |
+          mkdir -p build
           nix develop .#verification --command bash -euo pipefail <<'SHELL'
           mapfile -t modules < <(rg --no-filename '^import Mathlib\.' packages --glob '*.lean' | sed 's/^import //' | sort -u)
           test "${#modules[@]}" -gt 0
-          lake exe cache get "${modules[@]}"
+          mapfile -t targets < <(printf 'mathlib/%s\n' "${modules[@]}")
+          # A prior commit's native cache normally satisfies this immediately.
+          # Fetch on a cold start or when new imports need more upstream proofs.
+          if lake --no-build build "${targets[@]}" > build/ci-mathlib-cache.log 2>&1; then
+            cat build/ci-mathlib-cache.log
+          else
+            lake exe cache get "${modules[@]}" 2>&1 | tee -a build/ci-mathlib-cache.log
+            lake --no-build build "${targets[@]}" 2>&1 | tee -a build/ci-mathlib-cache.log
+          fi
           SHELL
       - name: Check generic parser and language packages
         run: |
