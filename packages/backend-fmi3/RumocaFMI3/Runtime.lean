@@ -50,8 +50,10 @@ def instancePrefix : List Stmt := [
   .declare "Instance *" "m" (.cast "Instance *" (v "instance")),
   branch (negate (v "m")) [ret (v "fmi3Error")]]
 
-def require (c : Command) : List Stmt := instancePrefix ++ [
-  reject (negate (allowedExpression c)) "Call is not allowed in the current FMI state"]
+@[simp] def modeGuard (c : Command) : Stmt :=
+  reject (negate (allowedExpression c)) "Call is not allowed in the current FMI state"
+
+def require (c : Command) : List Stmt := instancePrefix ++ [modeGuard c]
 
 def countLoop (count : Expr) (body : List Stmt) : List Stmt := [
   .declare "size_t" "k" (n 0),
@@ -95,9 +97,8 @@ def getFloat64 : List Stmt := require .get ++ [
         [.assign (.index (v "values") (v "k")) (call "model_rhs" [.address (field "model")])]],
     .assign (v "k") (.bin .add (v "k") (n 1))], ok]
 
-def setFloat64 : List Stmt := [branch
-  (both (eqv (v "nValueReferences") (n 0)) (eqv (v "nValues") (n 0))) (require .get ++ [ok])] ++
-  require .setStart ++ [
+/-- Value validation and writes after the setter's instance/lifecycle guards. -/
+def setFloat64Values : List Stmt := [
   reject (any [nev (v "nValueReferences") (v "nValues"),
     both (v "nValueReferences") (negate (v "valueReferences")),
     both (v "nValues") (negate (v "values"))]) "Invalid Float64 array lengths or pointers"] ++
@@ -106,6 +107,12 @@ def setFloat64 : List Stmt := [branch
       (negate (finite (.index (v "values") (v "k"))))) "Only a finite continuous state value may be set"] ++
   [Stmt.assign (v "k") (n 0), .whileLoop (lt (v "k") (v "nValueReferences")) [
     .assign x (.index (v "values") (v "k")), .assign (v "k") (.bin .add (v "k") (n 1))], ok]
+
+/-- The instance binding has function scope. Empty calls still use the read
+guard and return before validating pointers or writing model values. -/
+def setFloat64 : List Stmt := instancePrefix ++ [
+  branch (both (eqv (v "nValueReferences") (n 0)) (eqv (v "nValues") (n 0)))
+    [modeGuard .get, ok], modeGuard .setStart] ++ setFloat64Values
 
 def doStep : List Stmt := require .doStep ++ [
   pointerCheck ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"],

@@ -151,11 +151,22 @@ of Modelica 3.7.
   body behavior and both logging dispatch branches are proved; public argument
   binding, enabled callback execution and actual adapter-byte binding remain
   open. Sixteen new roots pass `build/fmi-error-embedding-audit.log`.
-  The bridge exposed an existing nested declaration in SetFloat64; retain its
-  explicit exclusion until C block scope is handled. The existing lifecycle
+  The bridge exposed an existing nested declaration in SetFloat64. The existing lifecycle
   check rejects the old artifact; all thirteen groups and the actual-file gate
   pass for the correction in `build/fmi-nominals-artifact-gate.log`.
-  The required full gate remains pending.
+  The required full gate passed in `build/fmi-nominals-full-gate.log` at
+  `904e9bd`, and [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34512618273)
+  also passed. This closes that correction's validation, not the full failed-call proof.
+  **Scope correction:** the setter now binds its instance before the empty-call
+  branch and shares its mode guard. An all-behavior hoisting law retains the
+  original empty/nonempty/null outcomes in the authored C model; typed proofs
+  cover the emitted empty/null bodies and nonempty lifecycle prefix. Every
+  generated FMI body now satisfies the unchanged scope predicate, with no
+  SetFloat64 exclusion. Nine new roots pass `build/fmi-setter-scope-audit.log`.
+  All thirteen existing artifact/importer groups and the source-link/mutation
+  gate pass in `build/fmi-setter-scope-artifact-gate.log`, including null setters
+  and empty-call state preservation. The required full gate is pending; API argument binding,
+  callbacks, nonempty setter loops and the actual adapter contract remain open.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
   mismatch and complete independent semantic/coding-guideline release review.
   A diagnostic wrapped copy passes deeper checker checks; the actual standalone

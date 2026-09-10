@@ -9,6 +9,7 @@ import RumocaCore.FMI3.History
 import RumocaCore.FMI3.Initialization
 import RumocaCore.FMI3.Lifecycle
 import RumocaCore.FMI3.Time
+import RumocaCore.Transition.Prefix
 import RumocaCore.Pass
 import RumocaCore.Profile
 import RumocaCore.Real.Binary64
@@ -71,6 +72,8 @@ import RumocaCore.Transition
 #audit axioms Rumoca.Solve.FMI3Model.prepared_solve
 #audit axioms Rumoca.Solve.FMI3Model.rhs_correct
 #audit axioms Rumoca.FMI3.allowed_correct
+#audit axioms Rumoca.Transition.Machine.step_behaviors
+#audit axioms Rumoca.Transition.Machine.prefix_behaviors
 #audit axioms Rumoca.FMI3.nominals_reject_instantiated
 #audit axioms Rumoca.FMI3.invalid_call_error
 #audit axioms Rumoca.FMI3.invalid_call_final_values

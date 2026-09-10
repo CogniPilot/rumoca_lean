@@ -18,6 +18,7 @@ import RumocaFMI3.LifecycleGuard
 import RumocaFMI3.LifecycleBodies
 import RumocaFMI3.BodyEmbedding
 import RumocaFMI3.ErrorBodies
+import RumocaFMI3.SetterScope
 import RumocaFMI3.HistoryProofs
 import RumocaC.Memory
 import RumocaFMI3.Metadata
@@ -60,6 +61,13 @@ import RumocaFMI3.TimeProofs
 #audit axioms Rumoca.FMI3.BodyEmbedding.helpers_closed
 #audit axioms Rumoca.FMI3.BodyEmbedding.runtime_behaviors
 #audit axioms Rumoca.FMI3.BodyEmbedding.terminate_behaviors
+#audit axioms Rumoca.FMI3.SetterScope.nonnull_equivalent
+#audit axioms Rumoca.FMI3.SetterScope.null_equivalent
+#audit axioms Rumoca.FMI3.SetterScope.emitted
+#audit axioms Rumoca.FMI3.SetterScope.entry_run
+#audit axioms Rumoca.FMI3.SetterScope.entry_reaches
+#audit axioms Rumoca.FMI3.SetterScope.empty_behaviors
+#audit axioms Rumoca.FMI3.SetterScope.null_behaviors
 #audit axioms Rumoca.FMI3.ErrorBodies.failure_dispatch_run
 #audit axioms Rumoca.FMI3.ErrorBodies.failure_log_arguments
 #audit axioms Rumoca.FMI3.ErrorBodies.failure_silent_run

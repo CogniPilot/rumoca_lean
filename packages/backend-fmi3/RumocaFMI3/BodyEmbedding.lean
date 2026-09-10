@@ -4,19 +4,18 @@ import RumocaFMI3.LifecycleBodies
 /-! Reuse checked lifecycle body runs in the typed tensor-call machine.
 These results start at body entry, with supplied locals and memory. They do
 not establish public argument binding, callback execution or printed bytes.
-SetFloat64 still has a nested declaration and is explicitly excluded from
-the generic bridge until its block scope is accounted for. -/
+Every emitted body satisfies the nested-declaration restriction. -/
 namespace Rumoca.FMI3.BodyEmbedding
 private local instance targetInterface : CInterface := cInterface
 open CTree CMemory
 
-theorem body_closed (m : Solve.FMI3Model source) (sig : Signature)
-    (hsig : sig.name ≠ "fmi3SetFloat64") :
+theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     (Runtime.body m sig).all CBodyEmbedding.closedBlocks = true := by
   unfold Runtime.body
   split <;> simp_all [CBodyEmbedding.closedBlocks, CLoops.noDeclarations,
     Runtime.makeInstance, Runtime.require, Runtime.instancePrefix, Runtime.countLoop,
-    Runtime.getFloat64, Runtime.scalarAccessCheck, Runtime.pointerCheck,
+    Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
+    Runtime.scalarAccessCheck, Runtime.pointerCheck,
     Runtime.doStep, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
     Runtime.raiseField, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
     Runtime.put, Runtime.out, Runtime.ok, Runtime.setMode, Runtime.log]
@@ -34,7 +33,7 @@ noncomputable section
 result and heap in the typed machine. This reuses, rather than restates, the
 memory-body execution proof; return conversion remains an explicit premise. -/
 theorem runtime_behaviors (m : Solve.FMI3Model source) (sig : Signature)
-    (hsig : sig.name ≠ "fmi3SetFloat64") (program : CCalls.Program)
+    (program : CCalls.Program)
     (env : CBody.Locals) (types : CLoops.Types) (heap : Heap) (result : CBody.Result)
     (returned : Value) (n : Nat)
     (run : CBody.run n (.running (Runtime.body m sig) env heap) = some (.returned result))
@@ -44,7 +43,7 @@ theorem runtime_behaviors (m : Solve.FMI3Model source) (sig : Signature)
       behavior = .terminates ⟨returned, result.heap⟩ :=
   CBodyEmbedding.typed_body_behaviors program (.running (Runtime.body m sig) env heap)
     types result sig.result returned n
-    (body_closed m sig hsig) run cast behavior
+    (body_closed m sig) run cast behavior
 
 /-- Apply the bridge to the complete, previously proved termination body. -/
 theorem terminate_behaviors (m : Solve.FMI3Model source) (sig : Signature)
@@ -60,7 +59,7 @@ theorem terminate_behaviors (m : Solve.FMI3Model source) (sig : Signature)
   CBodyEmbedding.typed_body_behaviors program
     (.running (Runtime.body m sig) (HistoryBodies.parameters p) heap)
     types ⟨.integer 0, LifecycleBodies.writeMode heap p .terminated⟩ "fmi3Status" (.integer 0) 5
-    (body_closed m sig (by simp [hsig]))
+    (body_closed m sig)
     (LifecycleBodies.terminate_run m sig hsig heap p kind mode hk hm ha)
     (by simp [CCalls.returnCast, CBody.cast, convert]) behavior
 end

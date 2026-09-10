@@ -99,7 +99,7 @@ theorem nominals_reject_reaches (m : Solve.FMI3Model source) (sig : Signature)
         (CBody.bind env "m" (.pointer (some p))) types' heap) "fmi3Status" stack) := by
   obtain ⟨types', run, _⟩ := CBodyEmbedding.run_refines 3
     (.running (Runtime.body m sig) env heap) _ types
-    (BodyEmbedding.body_closed m sig (by simp [hsig]))
+    (BodyEmbedding.body_closed m sig)
     (nominals_reject_run m sig hsig env heap p kind hi hn hk hm)
   exact ⟨types', CCalls.Typed.body_reaches program (CLoops.run_reaches run) "fmi3Status" stack⟩
 

@@ -348,6 +348,8 @@ class FMI3Tests(unittest.TestCase):
         self.assertEqual(self.values(h)[1], 0.5)
 
     def test_invalid_arguments_and_output_atomicity(self):
+        self.assertEqual(self.SetFloat64(None, None, 0, None, 0), ERROR)
+        self.assertEqual(self.SetFloat64(None, None, 1, None, 1), ERROR)
         h = self.create()
         for value in [math.nan, math.inf, -math.inf]:
             self.assertEqual(self.SetFloat64(h, (VR * 1)(1), 1, (D * 1)(value), 1), ERROR)
@@ -362,7 +364,9 @@ class FMI3Tests(unittest.TestCase):
         self.assertEqual(self.Reset(h), OK)
         self.initialize(h)
         self.assertEqual(self.GetFloat64(h, None, 0, None, 0), OK)
+        unchanged = self.values(h)
         self.assertEqual(self.SetFloat64(h, None, 0, None, 0), OK)
+        self.assertEqual(self.values(h), unchanged)
         self.assertEqual(self.GetInt32(h, None, 0, None, 0), OK)
         self.assertEqual(self.SetInt32(h, None, 0, None, 0), OK)
         for point, size in [(1, 1), (0, 0), (0, -1), (math.nan, 1), (0, math.inf)]:

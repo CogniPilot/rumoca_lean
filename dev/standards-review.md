@@ -238,8 +238,8 @@ SR04's full proof closure therefore remains open despite the corrected guard.
 The generic `CBodyEmbedding` proof reuses successful memory-body runs in the
 typed tensor-call machine. Instantiating its scope check exposed a nested
 `Instance *m` declaration in SetFloat64's empty-array branch. `CLoops` explicitly
-rejects nested declarations because it lacks C block scopes. The FMI bridge
-therefore excludes that body; no scope check was relaxed. Public array-parameter
+rejects nested declarations because it lacks C block scopes. The initial FMI bridge
+excluded that body; no scope check was relaxed. Public array-parameter
 adjustment, string argument conversion and indirect callbacks remain separate
 target-semantics gaps. These are proof coverage findings, not evidence that the
 emitted C's lexical block is illegal. Resolve them before full FMI composition.
@@ -249,8 +249,31 @@ Sixteen added audit roots pass the unchanged axiom policy in
 fails on the preceding FMU (`build/fmi-nominals-before.log`, OK instead of
 Error), and the corrected FMU passes all thirteen groups and the actual-file,
 source-link, mutation and publication-failure gate in
-`build/fmi-nominals-artifact-gate.log`. The required full gate remains pending.
+`build/fmi-nominals-artifact-gate.log`. The required full gate passed in
+`build/fmi-nominals-full-gate.log` at `904e9bd`; its checked FMU has SHA-256
+`1de662a5191c62573f146fc47781473d81400432b0a5a646ce1681bee4468e0f`.
+[CI for 904e9bd](https://github.com/CogniPilot/rumoca_lean/actions/runs/34512618273)
+also passed. This validates the guard correction while its full failed-call
+proof obligations remain open.
 No additional grammar case is admitted.
+
+**Scope correction:** the instance declaration is now hoisted before the
+empty-array branch, and both paths reuse one mode-guard constructor. The
+existing validation/write suffix is unchanged. `SetterScope` proves the
+hoisting law for arbitrary suffixes and caller continuations, preserving all
+behaviors in `CCalls`, including wrong/divergent outcomes. It also proves the
+actual emitted empty/null bodies terminate with unchanged memory in the typed
+C machine and connects nonempty entry to the existing lifecycle predicate.
+`BodyEmbedding.body_closed` now covers every generated signature without an
+exclusion. The original `noDeclarations` restriction is retained; general C
+block scopes have not been added. Nine new roots pass
+`build/fmi-setter-scope-audit.log`. All thirteen existing native groups and the
+actual-file/source-link/mutation gate pass in
+`build/fmi-setter-scope-artifact-gate.log`. The existing argument/atomicity group
+also checks null setter calls and empty-call state preservation. The required
+full gate is pending.
+Public array/string argument binding, enabled callbacks, nonempty setter-loop
+execution and actual printed adapter binding remain open.
 
 ### SR05 — P2, unresolved: initialization rejects zero-duration/tolerance cases
 

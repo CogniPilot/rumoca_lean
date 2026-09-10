@@ -874,22 +874,43 @@ yet close the failed-call or entire-FMU contract.
 finite runs are preserved by `CLoops`, carrying the same code, values and heap
 with local type bindings. It then derives ordinary typed returns and all-body
 behavior equivalence. `RumocaFMI3.BodyEmbedding` applies that bridge to the
-generated runtime bodies and reuses the complete termination proof. The scope
-premise explicitly excludes SetFloat64: its empty-array branch declares a
-local variable, which the typed model rejects until block scope is implemented.
+generated runtime bodies and reuses the complete termination proof. The initial
+scope premise excluded SetFloat64: its empty-array branch declared a local
+variable, which the typed model rejects without block-scope semantics.
 This limitation was found by attempting the universal scope proof, rather than
 assuming every existing body embeds. It is not a defect in C's block semantics.
 Sixteen added roots pass `build/fmi-error-embedding-audit.log`. The lifecycle
 check rejects the old FMU, and the corrected artifact passes all thirteen native
 groups plus the actual-file/source-link/mutation gate in
-`build/fmi-nominals-artifact-gate.log`. The required full gate remains pending.
+`build/fmi-nominals-artifact-gate.log`. The required full gate passed in
+`build/fmi-nominals-full-gate.log` and in
+[CI for 904e9bd](https://github.com/CogniPilot/rumoca_lean/actions/runs/34512618273).
 Production language acceptance is unchanged.
 
+The subsequent setter refactor hoists the instance declaration and shares the
+mode guard, preserving all checks and the existing value-validation/write
+suffix. `SetterScope.nonnull_equivalent` and `null_equivalent` preserve every
+`CCalls` behavior for arbitrary suffixes, programs and caller continuations.
+They use a general finite-prefix equivalence theorem in `Transition.Prefix`;
+no successful termination assumption hides wrong or divergent outcomes.
+`emitted` binds the actual setter to that form. `empty_behaviors` and
+`null_behaviors` prove complete typed body-entry termination with unchanged
+heap, and `entry_reaches` covers the nonempty lifecycle prefix before its value
+operations or failure call. `BodyEmbedding.body_closed` now quantifies over
+all generated FMI bodies, with no setter exclusion and the unchanged nested
+declaration restriction. Nine new roots pass `build/fmi-setter-scope-audit.log`;
+all thirteen existing native groups and the actual-file/source-link/mutation
+gate pass in `build/fmi-setter-scope-artifact-gate.log`. The required full gate
+remains pending. API argument binding, nonempty
+setter-loop execution, callbacks and the actual adapter-byte contract remain open.
+
 Ordinary calls are supported as entire assignment, declaration, return or
-discard operands; their arguments are pure expressions. Function pointers,
-array-parameter adjustment, nested effectful expressions, local writes, block
-scopes, allocation/free, callbacks, general arithmetic and remaining FMI bodies
-need additional rules and proofs. The selected generated assignments call pure
+discard operands; their arguments are pure expressions. The typed tensor-call
+machine additionally supports declared-local writes and its selected arithmetic
+operators; the original memory-body machine does not. Function pointers,
+array-parameter adjustment, nested effectful expressions, block scopes,
+allocation/free, callbacks, general C arithmetic and remaining FMI bodies need
+additional rules and proofs. The selected generated assignments call pure
 numerical functions or the read-only RHS helper, so evaluating their lvalues
 after the call cannot observe a callee memory change. General C evaluation-order
 correspondence remains part of the target review. Unsupported operations are
