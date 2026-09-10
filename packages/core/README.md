@@ -5,7 +5,7 @@ binary64 specifications and generic transition/behavior proofs. This package
 does not import the compiler driver or any backend.
 
 Use `lake build check-core` from the repository root for incremental core proofs and
-axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
+axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/FiniteChecks.lean` belong to the
 `RumocaCoreChecks` library, also selected by this package's `lake test`. See
 [development commands](../../docs/development.md).
 
@@ -18,10 +18,12 @@ axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
 | `RumocaCore.Tensor.Differentiation` | Mathlib derivative, adjoint and shared-input square/Jacobian proofs for arbitrary shapes |
 | `RumocaCore.Array.Builtin` | Parsed Jacobian semantics, uniqueness and correctness of the resolved square call |
 | `RumocaCore.Array.IR`, `Array.Semantics`, `Array.Solve`, `Array.Lowering` | Array source/Flat/DAE equations, checked residual solving and composed executable IVP/Jacobian preservation |
+| `RumocaCore.Array.Finite` | Actual square/AD program execution and nearest-value bounds against the Real RHS/Jacobian |
 | `RumocaCore.Solve.Tensor`, `Solve.IVP` | Compact tensor programs, independent denotation, executable evaluator and explicit IVP |
 | `RumocaCore.Solve.Tensor.Forward`, `Solve.Tensor.Differentiation` | Ordinary Solve-to-Solve forward AD, primal preservation, instruction bound and whole-program mathlib derivative theorem |
 | `RumocaCore.Solve.Tensor.Reverse`, `Solve.Tensor.ReverseProofs` | Saved-primal reverse execution with cotangent accumulation and the adjoint/derivative contract |
 | `RumocaCore.Solve.Tensor.Diagonal`, `Solve.Pointwise`, `Solve.PointwiseProofs` | Prepared IVP and dense diagonal observation using mathlib matrices, with execution contracts |
+| `RumocaCore.Solve.Tensor.Finite` | Independent ordered finite execution, all-intermediate domain characterization and unique evaluator result |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
 | `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
 | `RumocaCore.Solve.Algorithm`, `AlgorithmProofs` | Tensor register refinement of GALEC, preserving operation order and method execution |
@@ -31,6 +33,7 @@ axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
 | `RumocaCore.SolveSemantics` | Interpretation of Solve using the admitted finite sampling policy |
 | `RumocaCore.Solve.ModelExchange` | Shared model state/derivatives, unit solver and nested CS state; internal contracts, not an FMI ABI |
 | `RumocaCore.Real.Binary64`, `Real.Encoding` | Arithmetic specification, rounding proofs and finite bit encodings |
+| `RumocaCore.Real.ScaledRounding`, `Real.Multiplication`, `Real.Addition` | Exact rational-input nearest/even rounding, finite product/zero-sign contract and Real error bounds |
 | `RumocaCore.Real.Comparison` | Binary64 classification and ordered/unordered comparisons, with finite comparison-to-real-order proofs |
 | `RumocaCore.FMI3.Time` | Independent ME time-history window and its lower-bound representation contract |
 | `RumocaCore.FMI3.Initialization` | Independent finite initialization admission profile, optional argument bits and mathematical order connection |
@@ -79,5 +82,11 @@ contracts against the same mathlib derivative, beyond the primitive rules.
 The array source-to-Solve chain now preserves the complete equations and fixed
 initialization. Its explicit square Jacobian uses the forward transformation
 and a diagonal materializer; the program has eight nodes independent of tensor
-extents. Static reverse lowering and the finite target edge remain open.
-These analytic proofs do not differentiate IEEE rounding.
+extents. Finite execution of these actual square and coefficient programs now
+has nearest-value bounds against the Real RHS and derivative. Static reverse
+lowering, C tensor loops and the FMI target edge remain open. These analytic
+proofs do not differentiate IEEE rounding.
+
+For arithmetic-only iteration, use `lake build rumoca_core/Tests.FiniteChecks`.
+Array source corollaries remain in `Tests.TensorChecks`; unrelated core and
+lifecycle audit roots keep their native Lake cache entries.

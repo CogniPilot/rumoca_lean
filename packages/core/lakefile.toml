@@ -22,7 +22,7 @@ path = "../verification"
 
 [[lean_lib]]
 name = "RumocaCoreChecks"
-roots = ["Tests.CoreAudit", "Tests.TensorChecks"]
+roots = ["Tests.CoreAudit", "Tests.TensorChecks", "Tests.FiniteChecks"]
 
 [[require]]
 name = "galec_parser"

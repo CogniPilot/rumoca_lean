@@ -201,8 +201,57 @@ their actual file contents and checks initialization, derivatives, state output
 and dense Jacobian storage. The universal mathematical theorems, rather than
 these examples, establish the Real contract.
 
-Next, bind prepared declaration metadata to this kernel and prove the finite
-arithmetic/C loop edge. Input timing and the numerical step policy need their
+The full gate passed locally in `build/array-source-full-gate.log` and in
+[CI for c4c4286](https://github.com/CogniPilot/rumoca_lean/actions/runs/34462561010),
+including the unchanged production unit C/FMU/eFMU artifacts and rejection
+checks. It does not certify production generation for the array examples.
+
+## Finite arithmetic and tensor execution
+
+`Real.ScaledRounding` rounds exact rational inputs on the existing binary64
+grid. A product with integer significand units `a` and `b` compares the complete
+integer `a*b` with each candidate's units multiplied by `2^1074`. No division
+discards bits before the final nearest/even choice. Mathlib supplies finite
+minimization and the arithmetic proofs; its opaque witness is proof-only.
+Denominator one agrees with the original integer-input rounding operation.
+
+`Real.Multiplication` proves a unique nearest/even product with the operand-sign
+XOR for zero results. This includes negative nonzero products that underflow.
+The integer overflow guard is equivalent to the strict Real threshold interval.
+The guarded operation accepts exactly the independent product relation, with
+exactness and half-spacing error bounds. `Real.Addition` proves the corresponding
+nearest-value result for the existing addition primitive.
+The signed-zero rule was reviewed against the
+[Oracle numerical guide](https://docs.oracle.com/cd/E19059-01/stud.9/817-6702/ncg_goldberg.html).
+[SoftFloat's documentation](https://www.jhauser.us/arithmetic/SoftFloat-3/doc/SoftFloat.html)
+is a reference for rounding/underflow behavior, not a dependency or proof
+assumption. Floating-point flags, traps and nonfinite inputs remain outside
+this authored finite numerical model.
+
+`Solve.Tensor.Finite.Executes` is an independent inductive execution relation.
+Each binary instruction requires its scalar rounding relation at every tensor
+coordinate before execution continues. `executes_iff` proves that execution
+exists exactly when all instructions are in domain, and equals the actual
+array evaluator with binary64 operations. Shared registers, empty tensors and
+unused intermediate instructions are included. There is no source-coordinate
+enumeration in lowering and no assumption of native Float correctness.
+
+`Array.Finite.square_finite_correct` connects the actual square program to the
+product relation at every coordinate; `square_finite_nearest` bounds its result
+against the mathematical source RHS. The two Jacobian coefficient theorems
+retain the actual ordered `u*1 + u*1` computation and show it is nearest to the
+Real derivative `2*u`. The forward program also computes primal intermediates;
+their overflow obligations are retained even when only the tangent is returned.
+Dense diagonal storage still uses the earlier general materialization theorem.
+
+All 26 added arithmetic/program/array roots pass the unchanged axiom audit in
+`build/finite-array-audit.log`. No new example tests were added. Numerical and
+program roots live in the independently cached `Tests.FiniteChecks`; the four
+array corollaries live in `Tests.TensorChecks`.
+
+Next, bind prepared declaration metadata to this kernel and simulate the finite
+programs with actual C loops and storage. The C multiplication expression and
+its printer/statement contract must be included. Input timing and the numerical step policy need their
 own contract. FMI dimensions/value references and actual FMU/eFMU certificates
 must follow before production accepts either array model. No further grammar
 growth is needed to complete these obligations.

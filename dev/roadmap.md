@@ -40,8 +40,11 @@ emits ordinary typed Solve instructions with primal preservation, a constant
 instruction expansion bound and a mathlib derivative theorem. Saved-primal
 reverse execution has the corresponding adjoint theorem, including shared
 register accumulation. Static reverse lowering and finite target/artifact
-contracts remain open. The complete local and hosted gates passed for the AD
-checkpoint; the new array chain passes its core/compiler audits.
+contracts remain open. The complete local and hosted gates passed for both
+the AD checkpoint and the array source-to-Solve chain. Exact product rounding,
+signed underflow, ordered finite tensor execution and the array RHS/Jacobian
+coefficient error bounds now pass their package audits. C tensor loops, prepared
+metadata and actual tensor artifacts remain the next obligations.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.

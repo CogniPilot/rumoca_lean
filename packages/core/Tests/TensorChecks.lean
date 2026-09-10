@@ -3,6 +3,7 @@ import RumocaCore.Tensor.Matrix
 import RumocaCore.Tensor.Differentiation
 import RumocaCore.Array.Builtin
 import RumocaCore.Array.Lowering
+import RumocaCore.Array.Finite
 import RumocaCore.Solve.Tensor.ReverseProofs
 import RumocaCore.Driven.Lowering
 
@@ -90,5 +91,9 @@ theorem wrong_initialization_rejected (m : Driven.DAE.Model source)
 #audit axioms Rumoca.ArrayProfile.diagonal_shape
 #audit axioms Rumoca.ArrayProfile.lowering_chain_correct
 #audit axioms Rumoca.ArrayProfile.initialization_chain_correct
+#audit axioms Rumoca.ArrayProfile.square_finite_correct
+#audit axioms Rumoca.ArrayProfile.square_finite_nearest
+#audit axioms Rumoca.ArrayProfile.square_jacobian_coefficients_finite
+#audit axioms Rumoca.ArrayProfile.square_jacobian_coefficients_nearest
 
 end Rumoca.TensorChecks

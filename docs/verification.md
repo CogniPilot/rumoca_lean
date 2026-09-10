@@ -46,9 +46,17 @@ forward AD and a mathlib diagonal materializer. `ArrayProfile.lowering_chain_cor
 and `initialization_chain_correct` compose these edges over mathematical Real
 values. `ArrayCompiler.prepare_correct` also binds the stored kernel to the
 actual parsed source, its EBNF membership and its complete source equations.
-The new core/compiler roots pass the unchanged axiom audit in
-`build/array-compiler-audit.log`. Static reverse transformation, finite target
-execution and tensor FMU/eFMU artifact certificates remain open;
+The source-to-Solve checkpoint passed the complete local gate in
+`build/array-source-full-gate.log` and
+[CI for c4c4286](https://github.com/CogniPilot/rumoca_lean/actions/runs/34462561010).
+The next numerical increment now specifies exact binary64 product rounding,
+overflow rejection and signed underflow. `Solve.Tensor.Finite.executes_iff`
+characterizes ordered finite program execution, including every intermediate
+instruction. `Array.Finite` proves nearest-value bounds for the actual square
+RHS and AD-generated Jacobian coefficients against their mathematical Real
+values. These 26 new roots pass the core audit in `build/finite-array-audit.log`.
+They do not yet simulate C tensor loops or FMI error handling. Static reverse
+transformation, the finite C target edge and tensor FMU/eFMU artifact certificates remain open;
 [tensor-ad.md](../dev/tensor-ad.md) fixes the small scope. These development
 parsers do not enlarge the production compiler's admitted source language.
 
@@ -879,6 +887,29 @@ conformance pass is claimed.
 No full eFMI conformance claim follows from the authored byte grammar alone.
 
 ## Binary64 and real refinement
+
+The development tensor profile additionally uses `Real.ScaledRounding`,
+`Real.Multiplication` and `Real.Addition`. Product rounding compares exact
+integer cross-products on the binary64 grid; it never truncates the product
+to an integer before rounding. The nearest/even/canonical relation has a unique
+result, and the product relation separately fixes signed zero. `multiply?`
+accepts exactly that relation within the strict finite overflow interval.
+Its guard is proved equivalent to the Real interval; strict underflow returns
+the sign-selected zero. Exactness and half-spacing error bounds are proved.
+The scaled rule at denominator one agrees with the original rounding rule.
+
+`Solve.Tensor.Finite` gives an independent execution relation for literals,
+addition and multiplication on whole tensors. Execution exists exactly when
+every ordered operation is in domain, and its result equals the array evaluator
+with the explicit binary64 arithmetic. This includes unused intermediate
+instructions: a target may not silently remove their overflow checks. The
+actual square program's result is nearest to the Real RHS at every coordinate;
+the AD coefficient program's result is nearest to the Real derivative `2*u`.
+These are mathematical specifications used in proofs, not an implementation
+of native floating-point arithmetic or a derivative of IEEE rounding.
+Exception flags, traps, nonfinite inputs and the C/FMI failure policy remain
+outside this new numerical contract. The production unit contract below is
+unchanged.
 
 `Binary64.Value` contains all finite encodings, including both signed zeros;
 NaNs and infinities are outside the input domain. Values decode to signed
