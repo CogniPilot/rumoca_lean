@@ -1,6 +1,7 @@
 import ProofAudit.Audit
 import RumocaC.TensorCallContract
 import RumocaC.TensorFillContract
+import TensorCChecks.Fixture
 
 #audit axioms Rumoca.CArithmetic.floatMul_finite
 #audit axioms Rumoca.CLoops.increment_exact
@@ -34,3 +35,25 @@ import RumocaC.TensorFillContract
 #audit axioms Rumoca.CTensor.Fill.solve_fill_correct
 #audit axioms Rumoca.CTensor.Fill.Syntax.render_denotes
 #audit axioms Rumoca.CTensor.Fill.artifact_correct
+#audit axioms Rumoca.CIdentifier.word_parts
+#audit axioms Rumoca.CIdentifier.lex_word
+#audit axioms Rumoca.CTensor.Lowering.emit_code_count
+#audit axioms Rumoca.CTensor.Lowering.bound_push
+#audit axioms Rumoca.CTensor.Lowering.represents_written
+#audit axioms Rumoca.CTensor.Lowering.writable_written
+#audit axioms Rumoca.CTensor.Lowering.ready_written
+#audit axioms Rumoca.CTensor.Lowering.emit_correct
+#audit axioms Rumoca.CTensor.Lowering.emit_refines
+#audit axioms Rumoca.CTensor.Lowering.Syntax.statement_render
+#audit axioms Rumoca.CTensor.Lowering.Syntax.parameter_render
+#audit axioms Rumoca.CTensor.Lowering.Syntax.parameters_render
+#audit axioms Rumoca.CTensor.Lowering.Syntax.statements_render
+#audit axioms Rumoca.CTensor.Lowering.Syntax.render_denotes
+#audit axioms Rumoca.CTensor.Lowering.body_correct
+#audit axioms Rumoca.CTensor.Lowering.artifact_correct
+#audit axioms Rumoca.CTensor.ProgramFixture.body_matches
+#audit axioms Rumoca.CTensor.ProgramFixture.function_tree
+#audit axioms Rumoca.CTensor.ProgramFixture.result_buffer
+#audit axioms Rumoca.CTensor.ProgramFixture.six_calls
+#audit axioms Rumoca.CTensor.ProgramFixture.valid
+#audit axioms Rumoca.CTensor.ProgramFixture.artifact_correct

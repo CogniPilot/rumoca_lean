@@ -148,7 +148,8 @@ private def verifyC : ScriptM Unit := do
 
 private def tensorCTest : ScriptM Unit := do
   IO.println "Checking development tensor C helper artifacts"
-  buildTargets ["check-c", "rumoca_c/RumocaC.TensorArtifactCheck"]
+  buildTargets ["check-c", "rumoca_c/RumocaC.TensorArtifactCheck",
+    "rumoca_c/TensorCChecks.ArtifactCheck"]
   command "bash" #["tests/tensor-c.sh"]
 
 private def fmiTest : ScriptM Unit := do

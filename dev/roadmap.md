@@ -55,9 +55,15 @@ caller restoration and runtime fills for the existing initialization/AD seeds.
 It strengthens the actual-file contract and shares one counted-write proof
 across all three helpers. Its package and artifact gates pass in
 `build/c-tensor-call-fill-audit.log` and `build/c-tensor-call-fill-gate.log`.
-Next, compose a complete prepared program through disjoint intermediate
-buffers and its result reference, then bind the same storage/metadata to the
-FMI and eFMI products. No new grammar case is needed for this work.
+The call/fill checkpoint passed the full local gate and
+[CI for e89e4f4](https://github.com/CogniPilot/rumoca_lean/actions/runs/34471779750).
+The complete prepared-program execution proof now composes disjoint
+intermediate buffers and the exact result reference. Its structural C printer,
+22 new audit roots and the actual-file/native gate pass in
+`build/c-tensor-program-gate.log`; the full repository gate is running in
+`build/c-tensor-program-full-gate.log`. Next, construct and bind the
+concrete storage/metadata to the FMI and eFMI products, including diagonal
+output and overflow/error policy. No new grammar case is needed for this work.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.

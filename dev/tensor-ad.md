@@ -344,8 +344,9 @@ One signed-zero fill assertion was added to the existing native boundary check;
 no new example model or test matrix was introduced. The earlier local full
 gate encountered subsequent in-progress call code; it is not a successful
 full-gate record. The hosted run for the fixed `1007286` checkpoint passed.
-The required full gate for the call/fill increment is now running in
-`build/c-tensor-call-fill-full-gate.log`.
+The required full gate for the call/fill increment passed locally in
+`build/c-tensor-call-fill-full-gate.log` and in
+[CI for e89e4f4](https://github.com/CogniPilot/rumoca_lean/actions/runs/34471779750).
 
 Next, compile the complete prepared instruction sequence with a checked map
 from shape-indexed references to disjoint intermediate buffers and a result
@@ -353,3 +354,48 @@ reference. Each call must carry the same storage invariant into the next
 instruction, including unused intermediates and their arithmetic-domain
 obligations. Result storage, dense diagonal materialization, FMI metadata,
 overflow/error handling and complete source/archive binding remain open.
+
+## Complete prepared tensor programs
+
+`CTensor.Lowering` now maps shape-indexed Solve references to buffer/count
+expressions. A storage plan supplies one fresh destination per instruction;
+`emit` emits one fill or binary helper call and retains a shaped result
+reference. `emit_code_count` proves that code size depends only on the number
+of instructions, with no tensor-coordinate expansion.
+
+`Ready` checks all destinations against the initial heap and all prior
+registers. `represents_written` extends the register interpretation after an
+instruction, including references of different shapes. `ready_written` proves
+that the write preserves the remaining destinations. `emit_correct` composes
+the actual argument evaluation, ordinary calls, finite arithmetic and writes
+across the whole sequence. `emit_refines` states that every target behavior
+terminates with the independently specified finite Solve result and the full
+memory frame. Its arithmetic-domain premise includes unused intermediates.
+
+The proof currently assumes caller-supplied valid storage and pointer/count
+expressions whose bindings do not depend on mutable heap contents. It starts
+at the prepared function body; it does not establish an allocator, the outer
+function's call ABI or a production FMI lifecycle. Dense diagonal output,
+concrete source/kernel storage and metadata, overflow/error policy and the
+complete tensor FMU/eFMU certificates remain required before admission.
+
+The corresponding independent token grammar validates target identifiers,
+parameter uniqueness, helper-name shadowing, argument scope and pointer
+mutability. Its structural printer theorem covers arbitrary valid functions.
+The actual-file contract binds the same target body to finite Solve execution
+and identifies the output buffer. The single boundary fixture consumes the
+existing AD-generated square coefficient program; it does not substitute a
+hand-written `2*u` computation. Its certificate quantifies over all shapes.
+
+All 22 new roots pass the unchanged axiom audit in
+`build/c-tensor-program-gate.log`. That gate also certifies the actual complete
+`build/tensor-c/program.c`, rejects an altered operator and checks native
+coefficient execution with externally supplied helper prototypes. The exact
+file theorem is audited in `build/tensor-c/program-contract.log`. The full
+repository gate is running in `build/c-tensor-program-full-gate.log`.
+
+Review against Rust's `typed_program/program.rs` confirms the shared design:
+typed tensor registers, explicit destinations and a result register. Rust also
+retains region/operation provenance and a distinct diagonal operation. Their
+storage/metadata and source-span connections remain obligations here; the
+small C emitter does not perform AD, DAE solving or source-name resolution.

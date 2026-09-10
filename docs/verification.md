@@ -92,8 +92,35 @@ The prior add/multiply body, finite and frame contracts remain conjuncts of the
 stronger file proposition. The body-only limits above describe the earlier
 checkpoint; ordinary calls are now covered, while whole-program allocation,
 result storage, error policy and source-to-FMU composition remain open.
-The required full gate for the call/fill increment is running in
-`build/c-tensor-call-fill-full-gate.log`; it is not yet a recorded pass.
+The required full gate for the call/fill increment passed locally in
+`build/c-tensor-call-fill-full-gate.log` and in
+[CI for e89e4f4](https://github.com/CogniPilot/rumoca_lean/actions/runs/34471779750).
+
+The complete prepared-program increment introduces a shape-indexed storage
+plan with one destination per tensor instruction. `CTensor.Lowering.emit_refines`
+proves all behaviors of its actual sequence of C calls against independent
+`Finite.Executes`, including intermediate operations, the exact result buffer
+and preservation of every cell outside the planned destinations. Initial
+storage must provide disjoint writable destinations, readable finite inputs,
+stable pointer/count bindings and the explicit helper/header definitions.
+Intermediate storage validity is derived by the proof, not assumed separately
+for each call. `emit_code_count` proves one emitted call per instruction,
+independent of tensor volume. The theorem starts at function-body entry;
+allocation, the outer wrapper's argument binding and native linkage remain
+separate obligations. This does not admit array models into production.
+
+`TensorProgramSyntax` independently specifies scoped pointer/count parameters
+and fill/binary calls. `render_denotes` structurally certifies the printer for
+arbitrary valid names and instruction lists. `Lowering.ArtifactContract` binds
+that complete text to the emitted body and its finite execution theorem.
+The fixed development file adapter checks the actual AD-generated square
+coefficient program, universally over tensor shapes, with an explicit result
+parameter. Its exact root passes `build/tensor-c/program-contract.log`; all 22
+added audit roots and the actual-file/native gate pass in
+`build/c-tensor-program-gate.log`. A changed add-to-multiply call is rejected.
+The native check additionally requires external helper declarations; header
+preprocessing and native linkage are still boundary checks. The full repository
+gate for this increment is running in `build/c-tensor-program-full-gate.log`.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real

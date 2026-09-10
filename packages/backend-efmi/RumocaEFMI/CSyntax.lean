@@ -1,5 +1,6 @@
 import RumocaEFMI.ProductionCode
 import Parser.Scanner
+import RumocaC.Identifier
 
 open _root_.Parser
 
@@ -11,15 +12,8 @@ namespace Rumoca.EFMI.CSyntax
 
 set_option maxRecDepth 10000
 
-def identifier (s : String) : Bool := match s.toList with
-  | [] => false
-  | c :: cs => identStart c && cs.all identRest &&
-      !["auto", "break", "case", "char", "const", "continue", "default", "do", "double",
-        "else", "enum", "extern", "float", "for", "goto", "if", "inline", "int", "long",
-        "register", "restrict", "return", "short", "signed", "sizeof", "static", "struct",
-        "switch", "typedef", "union", "unsigned", "void", "volatile", "while", "_Alignas",
-        "_Alignof", "_Atomic", "_Bool", "_Complex", "_Generic", "_Imaginary", "_Noreturn",
-        "_Static_assert", "_Thread_local", "Model", "EfmiReal", "EfmiStatus", "int32_t"].contains s
+def identifier (s : String) : Bool :=
+  CIdentifier.valid ["Model", "EfmiReal", "EfmiStatus", "int32_t"] s
 
 inductive Atom where
   | variable (name : String)

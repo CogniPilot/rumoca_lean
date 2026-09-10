@@ -18,3 +18,8 @@ globs = ["RumocaC", "RumocaC.+"]
 [[lean_lib]]
 name = "RumocaCChecks"
 roots = ["Tests.CAudit", "Tests.TensorAudit"]
+
+[[lean_lib]]
+name = "TensorCChecks"
+srcDir = "Tests"
+roots = ["TensorCChecks.Fixture", "TensorCChecks.ArtifactCheck"]

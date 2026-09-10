@@ -35,6 +35,9 @@ source/IR evidence and have their own composed correctness contracts.
 | `TensorCode`, `TensorMemory`, `TensorProofs` | Shape-independent pointwise helpers, writable output ranges and complete body execution |
 | `TensorSyntax`, `TensorContract`, `TensorArtifactCheck` | Independent helper token grammar, finite Solve/text contract and actual-file certificates |
 | `TensorCallContract`, `TensorFill*` | Stronger call/file contracts and exact Solve initialization/seed fills |
+| `Identifier` | Shared C11 identifier and lexical facts used by target printers |
+| `TensorProgramCode`, `TensorProgramMemory`, `TensorProgramProofs` | Shaped storage plans, thin whole-program emission and finite execution/frame proofs |
+| `TensorProgramSyntax`, `TensorProgramPrinter`, `TensorProgramContract` | Independent scoped function grammar, structural printer and complete-body artifact contract |
 
 `CInterface` is a parameter of the shared execution definitions. There is no
 global default instance. Each adapter proof selects its dictionary locally;
@@ -67,12 +70,21 @@ types, readable finite inputs, valid output storage and no arithmetic overflow.
 for zero/one initialization and AD seeds. The same counted writer proof handles
 all helpers. Calls restore the saved caller scope and retain only heap effects;
 the admitted fragment uses pure arguments and explicit void returns.
-Whole-program register storage, nonfinite/error behavior, native ABI/linkage
-and FMI wrappers are still separate obligations. No array source model gains
-production acceptance from these helper theorems.
-`lake run tensor-c-test` emits add/multiply/fill helper files in
-`build/tensor-c/`, checks their exact semantic certificates, rejects a changed
-loop bound and runs one native boundary check. The full gate includes it.
+`CTensor.Lowering.emit_refines` composes these helpers for arbitrary prepared
+programs, ranks and extents. The initial storage plan must provide disjoint
+destinations and stable pointer/count bindings; the proof derives all later
+register and storage invariants. It identifies the result buffer and preserves
+the heap outside all destinations. Emission creates one call per instruction.
+Allocation, nonfinite/error behavior, the outer ABI/linkage and FMI wrappers
+remain separate obligations. No array source model gains production acceptance
+from these theorems.
+`lake run tensor-c-test` emits add/multiply/fill helpers and the existing
+AD-generated square coefficient program in `build/tensor-c/`. It checks their
+exact semantic certificates, rejects a changed helper bound and program
+operator, and runs one native boundary check. The program fixture and its
+fixed file adapter live in the separately named `TensorCChecks` library under
+`Tests/`, keeping them out of runtime imports and avoiding shared `Tests.*`
+module-path collisions. The full gate includes this artifact check.
 
 Run `lake build check-c` at the repository root for this package's cached
 proof/audit library, or `lake test` in this package's own workspace. The full

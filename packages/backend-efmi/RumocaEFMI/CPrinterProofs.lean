@@ -9,47 +9,16 @@ the independent token grammar and maximal-munch character relation in
 namespace Rumoca.EFMI.CSyntax
 open CTree
 
-private theorem ident_not_space {c : Char} (h : identStart c = true) :
-    asciiSpace c = false := by
-  apply Bool.eq_false_iff.mpr
-  intro hs
-  simp only [asciiSpace, Bool.or_eq_true, beq_iff_eq] at hs
-  rcases hs with ((rfl | rfl) | rfl) | rfl <;> contradiction
-
 private theorem word_parts (name : String) (h : identifier name = true) :
-    ∃ c cs, name.toList = c :: cs ∧ identStart c = true ∧ cs.all identRest = true := by
-  unfold identifier at h
-  split at h
-  · contradiction
-  · rename_i c cs hc
-    simp only [Bool.and_eq_true] at h
-    exact ⟨c, cs, hc, h.1.1, h.1.2⟩
-
-private theorem take_word (word rest : List Char) (c : Char)
-    (h : word.all identRest = true) (stop : identRest c = false) :
-    (word ++ c :: rest).takeWhile identRest = word ∧
-      (word ++ c :: rest).dropWhile identRest = c :: rest := by
-  induction word with
-  | nil => simp [stop]
-  | cons a word ih =>
-    simp only [List.all_cons, Bool.and_eq_true] at h
-    obtain ⟨ht, hd⟩ := ih h.2
-    simp [h.1, ht, hd]
+    ∃ c cs, name.toList = c :: cs ∧ identStart c = true ∧ cs.all identRest = true :=
+  CIdentifier.word_parts _ name h
 
 private theorem lex_word (name : String) (c : Char) (rest : List Char) (ts : List Token)
     (valid : ∃ head tail, name.toList = head :: tail ∧
       identStart head = true ∧ tail.all identRest = true)
     (stop : identRest c = false) (h : Scanner.Lexes config (c :: rest) ts) :
-    Scanner.Lexes config (name.toList ++ c :: rest) (.literal name :: ts) := by
-  obtain ⟨head, tail, hn, hs, ht⟩ := valid
-  obtain ⟨take, drop⟩ := take_word tail rest c ht stop
-  have nameEq : String.ofList (head :: tail) = name := by
-    rw [← hn, String.ofList_toList]
-  rw [hn]
-  have step := Scanner.Lexes.word (cfg := config) (cs := tail ++ c :: rest)
-    (ident_not_space hs) hs
-    (by simpa only [config, drop] using h)
-  simpa only [config, take, nameEq, List.cons_append] using step
+    Scanner.Lexes config (name.toList ++ c :: rest) (.literal name :: ts) :=
+  CIdentifier.lex_word config rfl rfl rfl rfl name c rest ts valid stop h
 
 /-- Discharge fixed punctuation/keyword fragments by the lexical constructors.
 Only short character-class facts are reduced; the C parser is not evaluated. -/

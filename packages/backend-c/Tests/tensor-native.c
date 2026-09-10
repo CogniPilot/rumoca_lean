@@ -4,14 +4,11 @@
 #include <math.h>
 #include <stddef.h>
 #include <stdint.h>
+#include "tensor-native.h"
 
 _Static_assert(sizeof(size_t) == 8, "authored tensor target uses 64-bit size_t");
 _Static_assert(FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 &&
                DBL_MIN_EXP == -1021 && FLT_EVAL_METHOD == 0, "binary64 target required");
-
-void rumoca_tensor_add(const double *left, const double *right, double *out, size_t count);
-void rumoca_tensor_mul(const double *left, const double *right, double *out, size_t count);
-void rumoca_tensor_fill(double value, double *out, size_t count);
 
 /* One native boundary check complements the universal Lean proofs. */
 int main(void) {
@@ -31,5 +28,11 @@ int main(void) {
   assert(output[1] == 0.0 && signbit(output[1]));
   rumoca_tensor_add(NULL, NULL, NULL, 0);
   rumoca_tensor_mul(NULL, NULL, NULL, 0);
+  /* Six whole-tensor calls emitted from the actual forward-AD program. */
+  double scratch[5][2];
+  rumoca_square_jacobian_coefficients(input, input, scratch[0], scratch[1],
+      scratch[2], scratch[3], scratch[4], output + 1, 2);
+  assert(output[0] == 17.0 && output[1] == 4.0 && output[2] == 6.0 && output[3] == 19.0);
+  assert(scratch[2][0] == 4.0 && scratch[2][1] == 9.0);
   return 0;
 }
