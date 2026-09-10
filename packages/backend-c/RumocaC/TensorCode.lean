@@ -26,4 +26,8 @@ def function (op : Tensor.BinaryOp) : Function where
   body := body op
   static := false
 
+/-- A prepared tensor instruction supplies buffer expressions and its count. -/
+def invoke (op : Tensor.BinaryOp) (left right output count : Expr) : Stmt :=
+  .eval (.call (.id (function op).signature.name) [left, right, output, count])
+
 end Rumoca.CTensor

@@ -291,7 +291,8 @@ body proofs. Header preprocessing, the native ABI/compiler and hardware remain
 outside the authored C semantics.
 The gate passed in `build/c-tensor-artifact-gate.log`; both actual-file theorem
 audits list only `propext`, `Quot.sound` and `Classical.choice`. The complete
-repository gate for this increment is pending in `build/c-tensor-full-gate.log`.
+repository gate passed in
+[CI for 1007286](https://github.com/CogniPilot/rumoca_lean/actions/runs/34469374951).
 
 Alignment with the Rust typed Solve program is retained: the source/IR contains
 one pointwise tensor instruction, while execution traverses storage at runtime.
@@ -306,3 +307,49 @@ declaration metadata to the same kernel and establish input timing, numerical
 step and overflow/error policy. FMI dimensions/value references and actual
 FMU/eFMU certificates must follow before production accepts either array model.
 No further grammar growth is needed to complete these obligations.
+
+## Ordinary calls and initialization/AD fills
+
+`CLoops.Calls` looks up a C function tree, converts the evaluated arguments
+using the declared header types, creates a fresh parameter scope, executes
+that tree through the existing loop machine, and returns to its continuation.
+It reuses `CCalls.parameters` and its pure argument evaluator. `body_reaches`
+lifts every existing body transition; no helper name is assigned an assumed
+tensor result. The fragment admits discarded void calls with explicit returns.
+The binding/scope rules were reviewed against C11 draft
+[N1570 §6.5.2.2 and §6.9.1](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+This authored subset does not formalize the native ABI, allocation, general
+return values or all C call expressions.
+
+`CTensor.bind_parameters` and `bind_types` prove the concrete add/multiply
+signatures. `helper_call_correct` covers all behaviors from call entry through
+return against the independent `Finite.Pointwise` relation. `invoke_reaches`
+also evaluates the generated call's arguments, restores the saved caller
+locals/types and continues with the helper's exact heap effects.
+`CallArtifactContract` retains the previous text/body/finite/frame proposition
+and adds this function-call contract for the same file and operator.
+
+`TensorWriter.writer_reaches` now owns the shared loop/write proof; the existing
+binary theorem statements are unchanged. `TensorFill*` uses it to emit and
+prove the exact finite tensor fill, including signed zero. The fill signature,
+call, generated invocation, independent C token grammar and printer are checked.
+`literal_eval` proves the existing shared C zero/one renderer, and
+`solve_fill_correct` identifies the target result with the actual Solve fill
+program used for initialization and forward AD seeds.
+
+All 21 added roots pass `build/c-tensor-call-fill-audit.log`. The fixed file
+adapter now checks the stronger call contracts for add/multiply and the full
+fill contract; all three actual files passed `build/c-tensor-call-fill-gate.log`.
+One signed-zero fill assertion was added to the existing native boundary check;
+no new example model or test matrix was introduced. The earlier local full
+gate encountered subsequent in-progress call code; it is not a successful
+full-gate record. The hosted run for the fixed `1007286` checkpoint passed.
+The required full gate for the call/fill increment is now running in
+`build/c-tensor-call-fill-full-gate.log`.
+
+Next, compile the complete prepared instruction sequence with a checked map
+from shape-indexed references to disjoint intermediate buffers and a result
+reference. Each call must carry the same storage invariant into the next
+instruction, including unused intermediates and their arithmetic-domain
+obligations. Result storage, dense diagonal materialization, FMI metadata,
+overflow/error handling and complete source/archive binding remain open.

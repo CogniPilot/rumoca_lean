@@ -74,8 +74,26 @@ The helper actual-file gate passed in `build/c-tensor-artifact-gate.log`.
 file-literal contracts. The gate also rejects a changed loop bound and checks
 native shared-input execution, output boundaries, signed underflow and empty
 execution. It runs as `lake run tensor-c-test` and is included in `lake test`.
-The complete repository gate for this increment is still pending; these
-helper certificates do not establish the remaining tensor FMU/eFMU chain.
+The complete gate passed in
+[CI for 1007286](https://github.com/CogniPilot/rumoca_lean/actions/runs/34469374951).
+These helper certificates do not establish the remaining tensor FMU/eFMU chain.
+
+The subsequent call/fill increment strengthens the actual-file checker to
+`CTensor.CallArtifactContract` for add/multiply and `CTensor.Fill.ArtifactContract`
+for fill. It executes parameter conversions, fresh callee scopes, the actual
+counted bodies and ordinary returns. `invoke_reaches` restores the exact caller
+locals/types with the updated heap. A supplied definition-table binding and
+header dictionary remain explicit; native linkage/ABI is not proved. Fill
+preserves the exact finite value, including signed zero, and `solve_fill_correct`
+identifies its result with the existing Solve initialization/seed program.
+The three helper files passed `build/c-tensor-call-fill-gate.log`; all 21 new
+roots pass `build/c-tensor-call-fill-audit.log` with the unchanged axiom policy.
+The prior add/multiply body, finite and frame contracts remain conjuncts of the
+stronger file proposition. The body-only limits above describe the earlier
+checkpoint; ordinary calls are now covered, while whole-program allocation,
+result storage, error policy and source-to-FMU composition remain open.
+The required full gate for the call/fill increment is running in
+`build/c-tensor-call-fill-full-gate.log`; it is not yet a recorded pass.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real

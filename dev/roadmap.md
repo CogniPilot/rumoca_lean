@@ -50,6 +50,14 @@ fixed actual-file checker. The eleven new roots pass `build/c-tensor-audit.log`.
 Whole-program storage/call composition, prepared metadata, overflow/FMI policy
 and actual tensor FMU/eFMU artifacts remain the next obligations. The helper
 contract does not admit the array models into production compilation.
+The next increment now also checks ordinary helper calls, parameter conversion,
+caller restoration and runtime fills for the existing initialization/AD seeds.
+It strengthens the actual-file contract and shares one counted-write proof
+across all three helpers. Its package and artifact gates pass in
+`build/c-tensor-call-fill-audit.log` and `build/c-tensor-call-fill-gate.log`.
+Next, compose a complete prepared program through disjoint intermediate
+buffers and its result reference, then bind the same storage/metadata to the
+FMI and eFMI products. No new grammar case is needed for this work.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.

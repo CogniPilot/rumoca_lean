@@ -30,8 +30,11 @@ source/IR evidence and have their own composed correctness contracts.
 | `Arithmetic` | Finite binary64 addition and multiplication for Solve expressions |
 | `Algorithm` | Thin emission of prepared tensor Solve instructions |
 | `LoopCode`, `Loops`, `LoopProofs` | Counted C loops, declared local types and compositional execution proofs |
+| `LoopCalls`, `TensorCalls` | Ordinary void calls, parameter conversions and restoration of caller locals/types |
+| `TensorWriter` | Shared counted-write, output-initialization and frame proof |
 | `TensorCode`, `TensorMemory`, `TensorProofs` | Shape-independent pointwise helpers, writable output ranges and complete body execution |
 | `TensorSyntax`, `TensorContract`, `TensorArtifactCheck` | Independent helper token grammar, finite Solve/text contract and actual-file certificates |
+| `TensorCallContract`, `TensorFill*` | Stronger call/file contracts and exact Solve initialization/seed fills |
 
 `CInterface` is a parameter of the shared execution definitions. There is no
 global default instance. Each adapter proof selects its dictionary locally;
@@ -56,12 +59,18 @@ that output range is preserved. Loop counters have the authored unsigned
 Loop/branch bodies contain no local declarations, so flattening their control
 flow does not erase an active block scope.
 
-`CTensor.ArtifactContract` relates the complete actual helper text to the
-independent finite Solve relation. Its conditions include readable finite
-inputs, valid output storage and no arithmetic overflow. Whole-program
-register allocation/calls, nonfinite/error behavior and FMI wrappers are
-still separate obligations. No array source model gains production acceptance
-from this helper theorem. `lake run tensor-c-test` emits the helper files in
+`CTensor.CallArtifactContract` retains the body-level `ArtifactContract` and
+also executes ordinary call entry, parameter conversions and return. Its
+conditions include a supplied definition-table binding, supported header
+types, readable finite inputs, valid output storage and no arithmetic overflow.
+`TensorFill*` covers exact runtime fills and the existing Solve fill program
+for zero/one initialization and AD seeds. The same counted writer proof handles
+all helpers. Calls restore the saved caller scope and retain only heap effects;
+the admitted fragment uses pure arguments and explicit void returns.
+Whole-program register storage, nonfinite/error behavior, native ABI/linkage
+and FMI wrappers are still separate obligations. No array source model gains
+production acceptance from these helper theorems.
+`lake run tensor-c-test` emits add/multiply/fill helper files in
 `build/tensor-c/`, checks their exact semantic certificates, rejects a changed
 loop bound and runs one native boundary check. The full gate includes it.
 

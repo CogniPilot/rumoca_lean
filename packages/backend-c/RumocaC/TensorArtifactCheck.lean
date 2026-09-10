@@ -1,7 +1,8 @@
-import RumocaC.TensorContract
+import RumocaC.TensorCallContract
+import RumocaC.TensorFillContract
 import Lean
 
-/-! Trusted file-to-proposition adapter for the two development tensor C
+/-! Trusted file-to-proposition adapter for the development tensor C
 helpers. The caller supplies only a path and operator; the adapter itself
 reads the complete file and constructs the fixed semantic contract. It never
 executes producer-supplied Lean commands or trusts a producer's proposition. -/
@@ -9,27 +10,29 @@ namespace Rumoca.CTensor.ArtifactCheck
 open Lean Elab Command
 
 elab "verify_tensor_helper " path:str " as " operation:ident : command => do
-  let op ← match operation.getId with
-    | `add => pure Tensor.BinaryOp.add
-    | `mul => pure Tensor.BinaryOp.mul
-    | _ => throwError "expected tensor operator add or mul"
+  let expected ← match operation.getId with
+    | `add => pure (function .add).render
+    | `mul => pure (function .mul).render
+    | `fill => pure Fill.function.render
+    | _ => throwError "expected tensor helper add, mul or fill"
   let source ← IO.FS.readFile path.getString
   -- Early rejection is only a convenience. Kernel-checked literal equality
   -- below is the sole authorization for applying the artifact theorem.
-  if source != (function op).render then
+  if source != expected then
     throwError "actual tensor C file differs from the certified helper"
   let literal := Syntax.mkStrLit source
-  let term ← match op with
-    | .add => `(term| Tensor.BinaryOp.add)
-    | .mul => `(term| Tensor.BinaryOp.mul)
+  let statement ← match operation.getId with
+    | `add => `(term| CallArtifactContract $literal Tensor.BinaryOp.add)
+    | `mul => `(term| CallArtifactContract $literal Tensor.BinaryOp.mul)
+    | _ => `(term| Fill.ArtifactContract $literal)
+  let proof ← match operation.getId with
+    | `fill => `(tactic| (apply Fill.artifact_correct; tensor_expand_fill_printer; decide +kernel))
+    | _ => `(tactic| (apply call_artifact_correct; tensor_expand_printer; decide +kernel))
   let theoremName := `Rumoca.CTensor.CheckedFile.contract
   let theoremId := mkIdent theoremName
   elabCommand (← `(command|
     set_option maxRecDepth 10000 in
-    theorem $theoremId:ident : ArtifactContract $literal $term := by
-      apply artifact_correct
-      tensor_expand_printer
-      decide +kernel))
+    theorem $theoremId:ident : $statement := by $proof:tactic))
   let dependencies ← collectAxioms theoremName
   for dependency in dependencies do
     unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
