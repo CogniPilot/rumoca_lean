@@ -1164,6 +1164,27 @@ contract audits are preserved in `build/c-printer-artifact-contract.log` and
 `build/c-printer-efmi-artifact-contract.log`. No new axiom or source-language
 case was introduced.
 
+The shared `CTree` string-expression printer now also has an independent
+literal contract in `RumocaC.StringLiteral`. `CString.render_correct` proves
+for every Lean string that the printed C literal uniquely denotes its UTF-8
+payload followed by zero, including empty strings and embedded zero bytes.
+It also proves that the modeled trigraph and line-splice rewrites cannot
+change the emitted characters. The actual emitter escapes question marks;
+three-digit octal escapes prevent following digits from changing a byte.
+The selected rules follow [C11 N1570 §§5.1.1.2, 5.2.1.1, 6.4.4.4 and 6.4.5](https://www9.open-std.org/JTC1/SC22/WG14/www/docs/n1570.pdf)
+under an explicit eight-bit ASCII source/execution profile.
+
+Four new public roots pass the unchanged axiom audit in
+`build/c-string-printer-audit.log`. A disposable native boundary reproduction
+uses the actual expression printer on the formerly corrupted `??/n` payload
+and passes strict C11 compilation and byte observation in
+`build/c-string-trigraph-after.log`. The required full gate is tracked in
+`build/c-string-printer-full-gate.log`. The decoder in the proof module is not
+a compiler pass. The proposition describes literal object bytes, not allocation,
+static lifetime, pointer decay, header binding, logger execution or surrounding
+adapter syntax. Those obligations and the full FMI artifact contract remain
+open; this repair admits no new grammar case.
+
 `EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
 and constructs a fixed existential theorem with one compiler artifact and
 `ProductionContract` for both members. The kernel and exact-root axiom audit

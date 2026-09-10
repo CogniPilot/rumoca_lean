@@ -26,10 +26,16 @@ inductive Expr where
   | sizeof (type : String)
   deriving Repr
 
-def quote (s : String) : String := "\"" ++ String.join (s.toUTF8.data.toList.map fun b =>
+/-- Three-digit octal escapes cannot absorb the next byte's digit. Escaping
+question marks also prevents C11 trigraph replacement before tokenization. -/
+def quoteByte (b : UInt8) : String :=
   if b.toNat = 34 then "\\\"" else if b.toNat = 92 then "\\\\"
+  else if b.toNat = 63 then "\\?"
   else if b.toNat ≥ 32 && b.toNat ≤ 126 then String.singleton (Char.ofNat b.toNat)
-  else s!"\\{b.toNat / 64}{b.toNat % 64 / 8}{b.toNat % 8}") ++ "\""
+  else s!"\\{b.toNat / 64}{b.toNat % 64 / 8}{b.toNat % 8}"
+
+def quote (s : String) : String :=
+  "\"" ++ String.join (s.toUTF8.data.toList.map quoteByte) ++ "\""
 
 def Expr.render : Expr → String
   | .id s => s | .nat n => toString n | .str s => quote s

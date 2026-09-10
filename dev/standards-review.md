@@ -78,7 +78,25 @@ Both gates retain their successful archives; reviewed SHA-256 identities are:
 | `build/Integrator.efmu` | `6c92cdd9e8beea6e1bef21349a6eb456514960a734d3f1911db664056fa9047f` |
 
 The [hosted run for this revision](https://github.com/CogniPilot/rumoca_lean/actions/runs/34524473640)
-is separate evidence. **Stage decision: open; grammar growth is blocked.**
+also passed. **Stage decision: open; grammar growth is blocked.**
+
+### C literal-printer increment: standards impact
+
+The subsequent shared-printer correction is tracked under C01/F03 in
+[the roadmap](roadmap.md). It escapes question marks and proves exact literal
+bytes after the selected C11 preprocessing rewrites. MLS source admission,
+resolution, equation semantics and both EBNFs are unchanged. The FMI impact is
+its emitted literals for version/token/category/error handling; correct literal
+printing is a prerequisite for complete call proofs, not their replacement.
+The current eFMI Production C profile contains no string expressions; its
+GALEC method, mapping and initialization obligations remain the same.
+
+The C package audit and disposable native reproduction pass. The complete gate
+for this increment is tracked in `build/c-string-printer-full-gate.log`; it
+includes both artifact paths and now records their SHA-256 identities. The
+earlier snapshot's artifact hashes must not be reused for this run. No SR04–SR08
+or whole-adapter obligation is closed by the literal theorem, and this is not
+a new completed spiral stage.
 
 ## Original FMI/eFMI snapshot and evidence
 

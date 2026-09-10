@@ -24,6 +24,7 @@ source/IR evidence and have their own composed correctness contracts.
 | `Codegen`, `Execution`, `Lowering`, `Statements` | Numerical Solve emission and ideal/IEEE execution, scoping, control and behavior proofs |
 | `Syntax`, `SyntaxProofs`, `PrinterProofs` | Independent numerical C grammar, unique denotation and structural printer proof |
 | `Tree` | Structured C expressions, declarations and functions used by both wrappers |
+| `StringLiteral` | Independent C literal denotation, unique UTF-8 payload decoding and preprocessing-safe string printing |
 | `Memory`, `Body`, `Calls` | Typed symbolic subobjects, small-step body execution and ordinary calls |
 | `BooleanProofs` | Composition of Boolean-valued expressions using the existing short-circuit semantics |
 | `Interface` | Explicit dictionary of header constant/type bindings |
@@ -44,6 +45,15 @@ global default instance. Each adapter proof selects its dictionary locally;
 FMI 3 names and eFMI header aliases belong to those adapters. There is one
 implementation of the shared machine, with universal execution/lifting proofs.
 Adapter body and actual-artifact contracts select the appropriate dictionary.
+
+`CString.render_correct` proves that every string expression emitted by `Tree`
+has exactly its UTF-8 payload bytes followed by C's terminating zero, including
+embedded zeros and empty strings. Question marks are escaped to prevent C11
+trigraph replacement; all other nonprinting/non-ASCII bytes use three-digit
+octal escapes. The proof covers any sequence of the modeled trigraph and line
+splice rewrites under the eight-bit ASCII C profile. Its deterministic decoder
+is only a proof device. Static object storage, pointer decay, surrounding
+declarations and whole-adapter text/execution require separate contracts.
 
 The current tensor C storage profile rejects unsupported ranks without
 scalarization. `Algorithm` emits instructions and receives register names and

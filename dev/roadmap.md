@@ -218,17 +218,23 @@ of Modelica 3.7.
   also passed.
   Other public signatures, rejected calls, strings/callbacks, nonempty setter
   loops and the actual adapter contract remain open.
-- [ ] **C01/F03, string-printer prerequisite:** `CTree.quote` currently leaves
-  question marks unescaped. A C11 translation of its output for `??/n` changes
+- [ ] **C01/F03, string-printer and storage prerequisite:** `CTree.quote` previously left
+  question marks unescaped. A C11 translation of its output for `??/n` changed
   the bytes through trigraph replacement (strict GCC also rejects it under
   `-Werror=trigraphs`). Reproduced at `30ef448` in
   `build/c-string-trigraph-before.log`. Existing unit-runtime literal inputs
   do not contain this sequence; this is a generic printer defect, not an
-  observed failure of the current FMU. Close it by proving literal-byte
-  preservation and preprocessing safety for the actual emitter, then connect
-  immutable string storage and ordinary parameter binding to the error-call
-  semantics. The checked candidate in `build/CStringDraft.lean` is only a
-  prototype, not an integrated emitter or artifact certificate.
+  observed failure of the current FMU. **Printer correction implemented:**
+  `CTree.quoteByte` now escapes question marks. `CString.render_correct`
+  universally binds the actual expression printer to independent, unique
+  UTF-8-plus-zero byte denotation after trigraph/line-splice rewrites, under
+  the eight-bit ASCII C profile. All four added roots and the package audit
+  pass in `build/c-string-printer-audit.log`. The original failing example,
+  emitted through the actual Lean printer, passes strict native C11 in
+  `build/c-string-trigraph-after.log`; no new permanent test suite was added.
+  The required full gate is tracked in `build/c-string-printer-full-gate.log`.
+  Immutable literal storage, pointer decay, ordinary string-parameter binding
+  and complete error-call/actual-adapter composition remain open.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
   mismatch and complete independent semantic/coding-guideline release review.
   A diagnostic wrapped copy passes deeper checker checks; the actual standalone

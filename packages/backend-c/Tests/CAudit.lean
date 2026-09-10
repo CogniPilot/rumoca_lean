@@ -5,6 +5,12 @@ import RumocaC.Calls
 import RumocaC.Arithmetic
 import RumocaC.BooleanProofs
 import RumocaC.BodyEmbedding
+import RumocaC.StringLiteral
+
+#audit axioms Rumoca.CString.denotes_unique
+#audit axioms Rumoca.CString.quote_iff
+#audit axioms Rumoca.CString.quote_preprocessed
+#audit axioms Rumoca.CString.render_correct
 
 #audit axioms Rumoca.C.compileProgram_correct
 #audit axioms Rumoca.C.ideal_run_correct
