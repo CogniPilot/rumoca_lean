@@ -25,6 +25,8 @@ The complete printed ABI adapter and archive capstone remain open; see
 | `CInterface` | FMI-specific constant and type bindings for shared C execution |
 | `Metadata` | Model/build XML projected from the prepared Solve model |
 | `GuardProofs`, `StateProofs` | Lifecycle predicates and generated state-access bodies |
+| `LifecycleGuard` | Universal lifecycle guard/prefix execution in the shared C machine, preserving the heap |
+| `LifecycleBodies` | Mode-write frames, complete successful termination and the error helper's terminating prefix |
 | `CallProofs`, `DerivativeProofs` | Helper calls and the actual ME derivative body |
 | `TimeProofs`, `HistoryProofs`, `HistoryBodies` | Binary64 time comparisons, reference history and generated history bodies |
 | `InitializationBodies` | Successful ME/CS initialization exit, reference mode, model/history preservation and memory frame |

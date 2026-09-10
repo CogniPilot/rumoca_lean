@@ -12,6 +12,8 @@ import RumocaFMI3.GuardProofs
 import RumocaFMI3.HistoryBodies
 import RumocaFMI3.InitializationBodies
 import RumocaFMI3.InitializationEntry
+import RumocaFMI3.LifecycleGuard
+import RumocaFMI3.LifecycleBodies
 import RumocaFMI3.HistoryProofs
 import RumocaC.Memory
 import RumocaFMI3.Metadata
@@ -21,6 +23,21 @@ import RumocaFMI3.TimeProofs
 #audit axioms Rumoca.FMI3.metadata_name
 #audit axioms Rumoca.FMI3.guard_correct
 #audit axioms Rumoca.FMI3.guard_reference
+#audit axioms Rumoca.FMI3.LifecycleGuard.mode_code_beq
+#audit axioms Rumoca.FMI3.LifecycleGuard.modes_eval
+#audit axioms Rumoca.FMI3.LifecycleGuard.eval_correct
+#audit axioms Rumoca.FMI3.LifecycleGuard.reference
+#audit axioms Rumoca.FMI3.LifecycleGuard.require_run
+#audit axioms Rumoca.FMI3.LifecycleGuard.accept
+#audit axioms Rumoca.FMI3.LifecycleGuard.reject_prefix
+#audit axioms Rumoca.FMI3.LifecycleBodies.write_frame
+#audit axioms Rumoca.FMI3.LifecycleBodies.write_mode
+#audit axioms Rumoca.FMI3.LifecycleBodies.write_run
+#audit axioms Rumoca.FMI3.LifecycleBodies.write_history
+#audit axioms Rumoca.FMI3.LifecycleBodies.write_model
+#audit axioms Rumoca.FMI3.LifecycleBodies.failure_mode_run
+#audit axioms Rumoca.FMI3.LifecycleBodies.terminate_run
+#audit axioms Rumoca.FMI3.LifecycleBodies.terminate_correct
 #audit axioms Rumoca.FMI3.StateProofs.null_instance_behaviors
 #audit axioms Rumoca.FMI3.StateProofs.get_behaviors
 #audit axioms Rumoca.FMI3.StateProofs.set_behaviors

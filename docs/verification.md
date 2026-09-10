@@ -16,6 +16,15 @@ tensor types preserve rank and shape, with array-backed storage; the original
 unit-only register program remains a regression path. See the
 [IR review](../dev/ir-review.md) for exact correspondence and remaining work.
 
+The newly authorized array/AD slice has shape-preserving pointwise addition
+and multiplication with array-evaluation proofs. `Tensor.Differentiation`
+connects their JVP rules to mathlib `HasFDerivAt`, proves the VJP dual-pairing
+identity, and proves the accumulated pullback and diagonal Jacobian of a
+shared-input square. These mathematical Real operator proofs pass the core
+axiom audit (`build/tensor-ad-package.log`). The source `jacobian` built-in,
+array grammar/IR lowering, complete AD program transforms and finite target
+execution remain open; [tensor-ad.md](../dev/tensor-ad.md) fixes the small scope.
+
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real
 class. MLS 3.7 §4.9.1 requires finite stored Real values; this implementation's
@@ -360,7 +369,9 @@ contains the ME model data and calls the existing numerical kernel directly;
 it never calls ME-only FMI functions on a CS handle. Positive integer
 communication steps run that many internal unit steps, with a limit of one
 million per call. Unsupported/nonprogressing steps return Discard without
-advancing; invalid arguments and calls return Error and require reset.
+advancing; invalid arguments and calls return Error and enter Terminated.
+Final values remain readable there; reset is required before restarting
+simulation in this profile.
 
 `Rumoca.FMI3.allowed_correct` in `RumocaCore.FMI3.Lifecycle` checks the mode table against
 separately written reference predicates. `Rumoca.FMI3.guard_reference` in `RumocaFMI3.GuardProofs`
@@ -380,6 +391,34 @@ type conversion. Float64 contents are actual `BitVec 64` payloads, with finite
 values connected to the existing binary64 encoding bijection. Addresses use
 block identity, struct-member paths and array offsets; byte layout and the
 native pointer ABI are not formalized by this representation.
+
+`RumocaFMI3.LifecycleGuard.reference` connects the generated guard to those
+same reference predicates in `CBody.eval`, using the actual symbolic heap.
+`require_run` executes the complete three-step instance/lifecycle prefix for
+every existing command, interface kind and represented mode. It preserves the
+entire heap and selects either the remaining body or the emitted failure call.
+The premises supply the instance binding, a fresh local `m`, and readable
+kind/mode fields. `reject_prefix` stops at the failure helper; it does not
+claim that logging or the final Error return has been executed.
+
+`LifecycleBodies.terminate_correct` proves every behavior of the successful
+ME/CS termination body: OK status, Terminated mode, and model/history
+preservation. Its general mode-write frame protects all other cells.
+`failure_mode_run` executes the actual error helper's first write and reaches
+its logger; it is not a complete failed-call theorem. The state and derivative
+getter proofs now cover Terminated through the common guard theorem, matching
+the final-query requirement in FMI 3.0.2 §2.3.8. Core/C/FMI checks passed in
+`build/fmi-termination-package.log`. The actual combined FMU, independent ME/CS
+importers, native ABI and runner passed in `build/fmi-termination-artifact.log`.
+The complete cross-package gate remains required. No additional source grammar
+or solver is admitted by this correction.
+
+The event/completed-step prefix and both successful initialization bodies now
+use this shared guard theorem. `CBody.run_add` composes blocks through their
+exact intermediate machine state. Their existing all-behavior, frame and
+history/model theorems retain their statements. The shared C and FMI audits
+passed in `build/fmi-lifecycle-guard-package.log`; no runtime or grammar case
+changed, and these package checks do not replace the actual-artifact gate.
 
 `StateProofs.get_behaviors` proves every behavior of the actual generated
 `fmi3GetContinuousStates` body returns OK and copies the model's exact finite

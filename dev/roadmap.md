@@ -22,9 +22,11 @@ completeness obligations in this roadmap.
 The destination is a maintainable Lean compiler whose supported Modelica
 language has compositional correctness guarantees through
 **Modelica → Flat → DAE → Solve → production C inside an FMI 3 FMU**.
-The user has selected a tiny input/state profile as the next complete slice;
-the unit-derivative compiler remains the verified regression floor. Broader
-language growth waits until that FMI slice and its assurance work are closed.
+The user has selected a tiny input/state profile and now requests a minimal
+array/operator slice with the `jacobian` built-in and proved forward/reverse AD;
+see [the tensor AD plan](tensor-ad.md). The unit-derivative compiler remains
+the verified regression floor. Each newly admitted production case still
+requires the complete lowering and actual-artifact contract.
 The roadmap does not declare the broader core finished because the unit
 integrator has a theorem. It also does not equate a supported core with all
 of Modelica 3.7.
@@ -696,6 +698,34 @@ by relabeling `rumoca_sample`.
   nonfinite-start and other rejected initialization paths, general lifecycle
   composition, logging, lifetime, CS time arithmetic and actual adapter/ABI
   binding. This successful-body proof does not close F02.
+  **General lifecycle-prefix increment (2026-09-10):**
+  `LifecycleGuard.reference` connects the actual guard to the independent
+  lifecycle predicate in the shared C memory/execution model. `require_run`
+  covers every existing command, kind and represented mode, preserves the
+  whole heap, and reaches either the continuation or the emitted failure call.
+  The event/completed-step prefix and initialization entry/exit now use this
+  theorem; `CBody.run_add` composes blocks through the exact intermediate state.
+  Existing body theorem statements and all prior audit roots are retained.
+  `lake build check-c check-fmi3` passed in
+  `build/fmi-lifecycle-guard-package.log`. No runtime, grammar or example-test
+  case changed. The required actual-artifact gate remains separate.
+  **Alignment review:** the current Rust `rumoca-ir-solve/src/fmi.rs` keeps
+  FMI metadata correlated with one owned Solve kernel; its typed program keeps
+  tensor types, storage and source provenance together. This increment adds
+  only adapter execution proofs. It leaves Solve ownership intact and adds no
+  scalarization, alternate solver representation or backend lowering. The
+  provenance and actual-metadata obligations already tracked here remain open.
+  **Standards finding (2026-09-10):** the private error mode blocks final-value
+  reads, contrary to FMI 3's error-to-Terminated transition. ME getter guards
+  also excluded Terminated. The reference, guards and error helper now agree
+  on Terminated; general getter proofs cover it. `LifecycleBodies` proves
+  mode-write frames and all behaviors of successful termination. Core/C/FMI
+  audits passed in `build/fmi-termination-package.log`; the corrected combined
+  FMU passed the existing thirteen ABI/importer test groups in
+  `build/fmi-termination-artifact.log`. The complete cross-package gate remains
+  required. See [the correction](fmi3/contracts.md#error-state-correction).
+  **Next:** complete failed-call/helper execution and lifecycle composition,
+  then bind the remaining adapter and metadata proofs to actual artifact bytes.
 - [ ] **F03 — Generated ME+CS C and actual package binding.** Depends on
   F01/F02/C02/A01. Emit both FMI interfaces over the shared model, official C
   types/signatures, model/build XML and a flat `.fmu` archive. Extend the C

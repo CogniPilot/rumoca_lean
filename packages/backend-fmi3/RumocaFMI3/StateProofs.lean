@@ -1,4 +1,4 @@
-import RumocaFMI3.CInterface
+import RumocaFMI3.LifecycleGuard
 import RumocaC.Body
 import RumocaFMI3.Runtime
 import RumocaCore.Solve.ModelExchange
@@ -50,15 +50,18 @@ theorem get_run (m : Solve.FMI3Model source) (sig : Signature)
     run 6 (.running (Runtime.body m sig) (parameters p buffer) heap) =
       some (.returned ⟨.integer 0, written heap buffer (Binary64.toBits x).val⟩) := by
   change load heap ((p.member "model").member "x") = some (.float64 (Binary64.toBits x).val) at hx
-  rcases allowed.2 with h | h | h <;> subst mode
-  all_goals simp [Runtime.body, hsig, Runtime.require, Runtime.instancePrefix, Runtime.reject,
-    Runtime.allowedExpression, Runtime.any, permittedModes, Runtime.mode, Mode.code,
-    Runtime.scalarAccessCheck, Runtime.branch, Runtime.ret, Runtime.fail, Runtime.ok,
-    Runtime.field, Runtime.x, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
-    Runtime.negate, Runtime.v, Runtime.n, Runtime.call,
-    run, next, eval, lvalue, parameters, CBody.bind, resolve, constants, CBody.cast, convert,
-    comparison, boolean, Value.truth, Value.address,
-    hk, hm, hx, store_float64 heap buffer old _ ho, written]
+  let tail := Runtime.scalarAccessCheck "continuousStates" "nContinuousStates" ++
+    [Stmt.assign (.index (Runtime.v "continuousStates") (Runtime.n 0)) Runtime.x, Runtime.ok]
+  have hp := LifecycleGuard.accept (parameters p buffer) heap p .getStates .me mode tail
+    (by simp [parameters]) (by simp [parameters]) hk hm allowed
+  have hb : Runtime.body m sig = Runtime.require .getStates ++ tail := by
+    simp [Runtime.body, hsig, tail]
+  rw [hb, show 6 = 3 + 3 from rfl, run_add, hp]
+  simp [tail, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
+    Runtime.ret, Runtime.ok, Runtime.field, Runtime.x, Runtime.nev, Runtime.either,
+    Runtime.negate, Runtime.v, Runtime.n, run, next, eval, lvalue, parameters,
+    CBody.bind, resolve, constants, CBody.cast, convert, comparison, boolean,
+    Value.truth, Value.address, hx, store_float64 heap buffer old _ ho, written]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 2000000 in

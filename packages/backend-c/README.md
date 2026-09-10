@@ -25,6 +25,7 @@ source/IR evidence and have their own composed correctness contracts.
 | `Syntax`, `SyntaxProofs`, `PrinterProofs` | Independent numerical C grammar, unique denotation and structural printer proof |
 | `Tree` | Structured C expressions, declarations and functions used by both wrappers |
 | `Memory`, `Body`, `Calls` | Typed symbolic subobjects, small-step body execution and ordinary calls |
+| `BooleanProofs` | Composition of Boolean-valued expressions using the existing short-circuit semantics |
 | `Interface` | Explicit dictionary of header constant/type bindings |
 | `Arithmetic` | Existing finite-addition extension for straight-line Solve code |
 | `Algorithm` | Thin emission of prepared tensor Solve instructions |

@@ -3,12 +3,14 @@ import Std
 /-! The continuous, event-free FMI 3 profile. This table is shared with code
 generation; Reference.Allowed separately records the reference lifecycle
 rules for the implemented commands (FMI 3.0.2 §§2.3, 3.2, 4.2).
-It does not model pointers, argument validity, callbacks or native execution. -/
+Errors enter Terminated (FMI 3.0.2 §2.3.1); final-value queries remain
+available there (§2.3.8). This does not model pointers, argument validity,
+callbacks or native execution. -/
 namespace Rumoca.FMI3
 
 inductive Kind where | me | cs
   deriving Repr, BEq, DecidableEq
-inductive Mode where | instantiated | initialization | event | continuous | step | terminated | error
+inductive Mode where | instantiated | initialization | event | continuous | step | terminated
   deriving Repr, BEq, DecidableEq
 inductive Command where
   | enterInitialization | exitInitialization | enterEvent | enterContinuous
@@ -19,7 +21,7 @@ inductive Command where
 
 def Mode.code : Mode → Nat
   | .instantiated => 0 | .initialization => 1 | .event => 2 | .continuous => 3
-  | .step => 4 | .terminated => 5 | .error => 6
+  | .step => 4 | .terminated => 5
 
 def permittedModes : Command → Kind → List Mode
   | .enterInitialization, _ => [.instantiated]
@@ -30,16 +32,16 @@ def permittedModes : Command → Kind → List Mode
   | .evaluateDiscrete, .me => [.initialization, .event]
   | .terminate, .me => [.event, .continuous]
   | .terminate, .cs => [.step]
-  | .reset, _ => [.instantiated, .initialization, .event, .continuous, .step, .terminated, .error]
+  | .reset, _ => [.instantiated, .initialization, .event, .continuous, .step, .terminated]
   | .get, _ | .logging, _ => [.instantiated, .initialization, .event, .continuous, .step, .terminated]
   | .setStart, .me => [.instantiated, .initialization, .event, .continuous]
   | .setStart, .cs => [.instantiated, .initialization]
   | .setTime, .me => [.continuous]
   | .setStates, .me => [.continuous]
-  | .getStates, .me => [.initialization, .event, .continuous]
-  | .getDerivatives, .me => [.initialization, .event, .continuous]
-  | .getNominals, .me => [.instantiated, .initialization, .event, .continuous]
-  | .getCounts, .me => [.instantiated, .initialization, .event, .continuous]
+  | .getStates, .me => [.initialization, .event, .continuous, .terminated]
+  | .getDerivatives, .me => [.initialization, .event, .continuous, .terminated]
+  | .getNominals, .me => [.instantiated, .initialization, .event, .continuous, .terminated]
+  | .getCounts, .me => [.instantiated, .initialization, .event, .continuous, .terminated]
   | .completedStep, .me => [.continuous]
   | .doStep, .cs => [.step]
   | _, _ => []
@@ -56,13 +58,14 @@ def Allowed (c : Command) (k : Kind) (m : Mode) : Prop :=
   | .evaluateDiscrete => k = .me ∧ (m = .initialization ∨ m = .event)
   | .terminate => (k = .me ∧ (m = .event ∨ m = .continuous)) ∨ (k = .cs ∧ m = .step)
   | .reset => True
-  | .get | .logging => m ≠ .error
+  | .get | .logging => True
   | .setStart => m = .instantiated ∨ m = .initialization ∨
       (k = .me ∧ (m = .event ∨ m = .continuous))
-  | .getStates | .getDerivatives => k = .me ∧ (m = .initialization ∨ m = .event ∨ m = .continuous)
+  | .getStates | .getDerivatives => k = .me ∧
+      (m = .initialization ∨ m = .event ∨ m = .continuous ∨ m = .terminated)
   | .setTime | .setStates | .completedStep => k = .me ∧ m = .continuous
   | .getNominals | .getCounts => k = .me ∧
-      (m = .instantiated ∨ m = .initialization ∨ m = .event ∨ m = .continuous)
+      (m = .instantiated ∨ m = .initialization ∨ m = .event ∨ m = .continuous ∨ m = .terminated)
   | .doStep => k = .cs ∧ m = .step
 end Reference
 
@@ -81,11 +84,25 @@ def nextMode (c : Command) (k : Kind) (m : Mode) : Mode :=
     | .terminate => .terminated
     | .reset => .instantiated
     | _ => m
-  else .error
+  else .terminated
 
-theorem invalid_call_error (h : ¬ Reference.Allowed c k m) : nextMode c k m = .error := by
+theorem invalid_call_error (h : ¬ Reference.Allowed c k m) : nextMode c k m = .terminated := by
   have ha : allowed c k m ≠ true := fun he => h ((allowed_correct c k m).mp he)
   simp [nextMode, ha]
+
+/-- Error ends simulation, but the final variables remain observable. -/
+theorem invalid_call_final_values (h : ¬ Reference.Allowed c k m) :
+    allowed .get k (nextMode c k m) = true ∧
+    allowed .setStart k (nextMode c k m) = false ∧
+    allowed .doStep k (nextMode c k m) = false := by
+  rw [invalid_call_error h]
+  cases k <;> decide
+
+/-- ME final-state queries remain available after normal or erroneous termination. -/
+theorem terminated_me_queries (c : Command)
+    (h : c ∈ [.getStates, .getDerivatives, .getNominals, .getCounts]) :
+    allowed c .me .terminated = true := by
+  cases c <;> simp_all [allowed, permittedModes] <;> decide
 
 theorem reset_recovers (k : Kind) (m : Mode) : nextMode .reset k m = .instantiated := by
   cases k <;> cases m <;> decide

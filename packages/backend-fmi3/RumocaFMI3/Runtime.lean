@@ -219,7 +219,7 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
 
 def helpers : List CTree.Function := [
   ⟨⟨"fmi3Status", "fail", [⟨"Instance *", "m", false⟩, ⟨"const char *", "message", false⟩]⟩,
-    [setMode .error, log "fmi3Error" (v "message"), ret (v "fmi3Error")], true⟩,
+    [setMode .terminated, log "fmi3Error" (v "message"), ret (v "fmi3Error")], true⟩,
   ⟨⟨"double", "model_rhs", [⟨"const Model *", "model", false⟩]⟩, [ret (call "rumoca_rhs")], true⟩,
   ⟨⟨"void", "model_advance", [⟨"Model *", "model", false⟩, ⟨"uint64_t", "count", false⟩]⟩,
     [.assign (.field (v "model") "x" true) (call "rumoca_sample" [.field (v "model") "x" true, v "count"])], true⟩]

@@ -1,5 +1,27 @@
 # IR alignment review
 
+## Tensor AD direction, 2026-09-10
+
+The next user-authorized slice is static arrays and the `jacobian` built-in,
+with forward/reverse rules formally checked before production admission.
+Reviewed Rust `rumoca-ir-solve/src/fmi.rs`, the typed tensor program and
+SPEC_0051_JACOBIAN_SYNTHESIS. Solve still owns one executable tensor kernel;
+the backend consumes its prepared operations and correlated metadata.
+
+The new pointwise primitives retain shape-indexed dense storage and use an
+explicit scalar arithmetic interface. Their mathlib proofs cover every shape,
+and the square pullback sums both uses of its input. They are operator proofs,
+not a whole-program AD or array-FMU theorem. The first intended grammar slice
+is recorded in [tensor-ad.md](tensor-ad.md). The intrinsic will remain a
+parsed built-in call; typed lowering will synthesize tensor programs rather
+than adopting Rust's generated-Modelica/unrolled-seed implementation.
+
+The FMI correction in this round changes only adapter lifecycle semantics:
+errors enter Terminated and final ME queries remain available. It preserves
+Solve ownership, tensor shapes and the solver policy. Core/C/FMI audits and
+the actual combined FMU checks passed; callback and full artifact-capstone
+obligations remain open.
+
 The current full gate is `nix develop .#verification --command lake test`.
 Make commands in dated checkpoints below record historical runs before the
 Lake migration; see the [current commands](../docs/development.md).

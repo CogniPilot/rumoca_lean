@@ -14,6 +14,8 @@ axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
 | `RumocaCore`, `RumocaCore.IR` | Runtime IR types and lowering functions |
 | `RumocaCore.Tensor` | Shared rank/extent types and shape-preserving array-backed storage |
 | `RumocaCore.Tensor.Matrix` | Proved equivalence to mathlib matrices using mathlib's finite product indexing |
+| `RumocaCore.Tensor.Operators` | Dense-array pointwise addition/multiplication and forward/reverse rules with explicit scalar arithmetic |
+| `RumocaCore.Tensor.Differentiation` | Mathlib derivative, adjoint and shared-input square/Jacobian proofs for arbitrary shapes |
 | `RumocaCore.Solve.Tensor`, `Solve.IVP` | Compact tensor programs, independent denotation, executable evaluator and explicit IVP |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
 | `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
@@ -59,3 +61,9 @@ unit-only `Solve.Model` remains the production regression path until the new
 path has a target execution and actual-artifact theorem. Neither the new tensor
 types nor their mathlib bridge add Modelica arrays, matrix multiplication,
 PDEs or neural ODEs to the compiler. See [the IR review](../../dev/ir-review.md).
+
+The [tensor AD increment](../../dev/tensor-ad.md) has checked primitive rules
+for mathematical Real tensors, including cotangent accumulation for `x .* x`.
+Program transformations, the source `jacobian` built-in and the finite target
+edge are still being developed. These analytic proofs do not differentiate
+the discontinuous IEEE rounding operation.

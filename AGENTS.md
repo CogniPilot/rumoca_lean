@@ -1,10 +1,13 @@
 # Verification-first development
 
-The user requires a completely checked tiny core before any expansion.
+Grow the small compiler core one formally checked slice at a time.
 
 - The user has authorized the minimal input/state initialization profile for
-  FMI 3 alongside the unit-derivative regression profile. Do not admit further
-  language cases until this complete path has its proofs and artifact gate.
+  FMI 3 alongside the unit-derivative regression profile, and now requests
+  arrays, the `jacobian` built-in, tensor-native operators, and proved
+  forward/reverse automatic differentiation as the next slice. Develop it with
+  mathematical derivative/adjoint proofs; production acceptance of each new
+  source case still requires its complete lowering and actual-artifact contract.
   Keep tensor rank, extents and operations in every indexed IR; do not
   enumerate tensor elements during compiler lowering.
   Do not add FMI/eFMI packaging, target plugins,

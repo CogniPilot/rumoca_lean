@@ -1,5 +1,6 @@
 import RumocaFMI3.CInterface
 import RumocaFMI3.HistoryProofs
+import RumocaFMI3.LifecycleGuard
 
 /-! Successful public ME event-entry and completed-step bodies. Execution
 includes the instance/lifecycle guards, caller outputs, history updates and
@@ -21,8 +22,6 @@ def completedParameters (p event terminate : Address) (noSetState : Bool) : Loca
 def locals (env : Locals) (p : Address) : Locals :=
   CBody.bind env "m" (.pointer (some p))
 
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 2000000 in
 theorem continuous_prefix (env : Locals) (heap : Heap) (p : Address)
     (cmd : Command) (rest : List Stmt)
     (hc : cmd = .enterEvent ∨ cmd = .completedStep)
@@ -31,14 +30,9 @@ theorem continuous_prefix (env : Locals) (heap : Heap) (p : Address)
     (hm : load heap (p.member "mode") = some (.integer 3)) :
     run 3 (.running (Runtime.require cmd ++ rest) env heap) =
       some (.running rest (locals env p) heap) := by
-  rcases hc with hc | hc <;> subst cmd
-  all_goals simp [Runtime.require, Runtime.instancePrefix, Runtime.reject,
-    Runtime.allowedExpression, Runtime.any, permittedModes, Runtime.mode, Mode.code,
-    Runtime.branch, Runtime.ret, Runtime.fail, Runtime.field, Runtime.eqv,
-    Runtime.both, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
-    run, next, eval, locals, CBody.bind, resolve, constants,
-    CBody.cast, convert, comparison, boolean, Value.truth, Value.address,
-    hp, hn, hk, hm]
+  have ha : Reference.Allowed cmd .me .continuous := by
+    rcases hc with rfl | rfl <;> simp [Reference.Allowed]
+  exact LifecycleGuard.accept env heap p cmd .me .continuous rest hp hn hk hm ha
 
 theorem return_ok (env : Locals) (heap : Heap)
     (ho : resolve env "fmi3OK" = some (.integer 0)) :

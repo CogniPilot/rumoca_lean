@@ -1,4 +1,4 @@
-import RumocaFMI3.CInterface
+import RumocaFMI3.LifecycleGuard
 import RumocaFMI3.CallProofs
 
 /-! The generated ME derivative getter executes its helper and numerical C
@@ -35,15 +35,16 @@ private theorem prefix_run (m : Solve.FMI3Model source) (sig : Signature)
     (allowed : Reference.Allowed .getDerivatives .me mode) :
     CBody.run 4 (.running (Runtime.body m sig) (parameters p buffer) heap) =
       some (.running tailBody (locals p buffer) heap) := by
-  rcases allowed.2 with h | h | h <;> subst mode
-  all_goals simp [Runtime.body, hsig, Runtime.require, Runtime.instancePrefix, Runtime.reject,
-    Runtime.allowedExpression, Runtime.any, permittedModes, Runtime.mode, Mode.code,
-    Runtime.scalarAccessCheck, Runtime.branch, Runtime.ret, Runtime.fail, Runtime.ok,
-    Runtime.field, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
-    Runtime.negate, Runtime.v, Runtime.n, Runtime.call,
-    CBody.run, CBody.next, CBody.eval, parameters, locals, tailBody, target,
-    CBody.bind, CBody.resolve, CBody.constants, CBody.cast, convert,
-    CBody.comparison, CBody.boolean, Value.truth, Value.address, hk, hm]
+  let tail := Runtime.scalarAccessCheck "derivatives" "nContinuousStates" ++ tailBody
+  have hp := LifecycleGuard.accept (parameters p buffer) heap p .getDerivatives .me mode tail
+    (by simp [parameters]) (by simp [parameters]) hk hm allowed
+  have hb : Runtime.body m sig = Runtime.require .getDerivatives ++ tail := by
+    simp [Runtime.body, hsig, tail, tailBody, target, Runtime.v, Runtime.n]
+  rw [hb, show 4 = 3 + 1 from rfl, CBody.run_add, hp]
+  simp [tail, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
+    Runtime.nev, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
+    CBody.run, CBody.next, CBody.eval, parameters, locals, CBody.bind,
+    CBody.resolve, CBody.constants, CBody.comparison, CBody.boolean, Value.truth]
 
 private theorem enter_rhs (m : Solve.FMI3Model source) (heap : Heap) (p buffer : Address) :
     next (linked m) (.body (.running tailBody (locals p buffer) heap) "fmi3Status" .done) =

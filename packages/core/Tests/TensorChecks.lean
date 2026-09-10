@@ -1,5 +1,6 @@
 import ProofAudit.Audit
 import RumocaCore.Tensor.Matrix
+import RumocaCore.Tensor.Differentiation
 import RumocaCore.Driven.Lowering
 
 namespace Rumoca.TensorChecks
@@ -44,5 +45,13 @@ theorem wrong_initialization_rejected (m : Driven.DAE.Model source)
 #audit axioms matrix_storage_order
 #audit axioms empty_matrix_roundtrip
 #audit axioms wrong_initialization_rejected
+#audit axioms Rumoca.Tensor.Value.getElem_zipWith
+#audit axioms Rumoca.Tensor.BinaryOp.eval_correct
+#audit axioms Rumoca.Tensor.AD.hasFDerivAt
+#audit axioms Rumoca.Tensor.AD.jvp_correct
+#audit axioms Rumoca.Tensor.AD.vjp_correct
+#audit axioms Rumoca.Tensor.AD.square_hasFDerivAt
+#audit axioms Rumoca.Tensor.AD.square_vjp_correct
+#audit axioms Rumoca.Tensor.AD.square_jacobian_correct
 
 end Rumoca.TensorChecks

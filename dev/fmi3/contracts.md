@@ -103,6 +103,43 @@ guard-rejection theorem, not yet a complete logging/Error-return theorem.
 The comparison model includes signed zeros, infinities and unordered NaNs;
 floating exception flags and traps remain outside its observation model.
 
+`LifecycleGuard.reference` now proves the guard equivalence in the shared C
+memory/execution model, for every existing command, kind and represented mode.
+`require_run` executes the actual three-step prefix, preserving the whole heap;
+`accept` reaches the continuation and `reject_prefix` reaches the emitted
+failure call. The instance binding, fresh local and readable kind/mode fields
+are explicit. Initialization entry/exit and the event/completed-step prefix use
+this common result through exact-state block composition. The shared C and FMI
+audits passed in `build/fmi-lifecycle-guard-package.log`.
+This closes the general prefix bridge, not the failed-call/logger execution or
+the actual printed-adapter/ABI contract. No command, grammar, solver or
+numerical policy was added.
+
+## Error-state correction
+
+The 2026-09-10 standards review found a concrete mismatch: the private error
+mode prevented reads after an error, and ME getter guards excluded
+`terminated`. FMI 3.0.2 §§2.3.1 and
+[2.3.8](https://fmi-standard.org/docs/3.0.2/#state-terminated) require the error
+transition to `Terminated` and allow final-value queries there, including ME
+states, derivatives, nominals and event indicators. Values after an error are
+for debugging. The existing `allowed_correct` theorem proves agreement with
+our authored predicate; this finding shows why that alone cannot certify FMI
+conformance.
+
+The private mode is removed, the independent predicate and emitted guards
+agree on the corrected states, and `fail` now writes `terminated`.
+`LifecycleBodies.terminate_correct` covers every behavior of the successful
+termination body, including final mode and model/history preservation.
+`failure_mode_run` executes the actual error helper's mode write, leaving the
+logger and Error return in its continuation. The state and derivative getter
+proofs use the general lifecycle theorem and now cover Terminated too.
+The core/C/FMI package checks passed in `build/fmi-termination-package.log`.
+The existing ABI tests now require post-error reads and final ME queries;
+the actual combined FMU passed `lake run fmi-test` in
+`build/fmi-termination-artifact.log`, keeping thirteen test groups. Callback execution, full failed-call
+returns and actual adapter-byte binding remain separate required proofs.
+
 ## Rendering decision
 
 Use ordinary Lean functions over typed target representations, followed by

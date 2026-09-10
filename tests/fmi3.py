@@ -177,7 +177,12 @@ class FMI3Tests(unittest.TestCase):
         self.assertEqual(self.values(a), (2, -1, 1))
         self.assertEqual(self.values(b), (0, 4, 1))
         self.assertEqual(self.SetTime(a, 2), ERROR)  # ME entry point on CS
-        self.assertEqual(self.GetFloat64(a, None, 0, None, 0), ERROR)
+        # FMI 3.0.2 §2.3.8: final values remain readable after fmi3Error.
+        self.assertEqual(self.GetFloat64(a, None, 0, None, 0), OK)
+        self.assertEqual(self.values(a), (2, -1, 1))
+        self.assertEqual(self.values(b), (0, 4, 1))
+        self.assertEqual(self.step(a, 2, 1)[0], ERROR)
+        self.assertEqual(self.values(a), (2, -1, 1))
         self.assertEqual(self.Reset(a), OK)
         self.assertEqual(self.values(a), (0, 0, 1))
         self.initialize(a)
@@ -208,6 +213,19 @@ class FMI3Tests(unittest.TestCase):
         self.assertEqual(count.value, 1)
         self.assertEqual(self.GetNumberOfEventIndicators(h, C.byref(count)), OK)
         self.assertEqual(count.value, 0)
+        self.assertEqual(self.Terminate(h), OK)
+        final = (D * 1)()
+        for getter, expected in [(self.GetContinuousStates, 7),
+                                 (self.GetContinuousStateDerivatives, 1),
+                                 (self.GetNominalsOfContinuousStates, 1)]:
+            self.assertEqual(getter(h, final, 1), OK)
+            self.assertEqual(final[0], expected)
+        self.assertEqual(self.GetEventIndicators(h, None, 0), OK)
+        self.assertEqual(self.GetNumberOfContinuousStates(h, C.byref(count)), OK)
+        self.assertEqual(count.value, 1)
+        self.assertEqual(self.SetTime(h, 1), ERROR)
+        self.assertEqual(self.GetContinuousStates(h, final, 1), OK)
+        self.assertEqual(final[0], 7)
 
     def test_me_time_backtracking_and_stop(self):
         h = self.create("me")

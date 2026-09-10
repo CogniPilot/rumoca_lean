@@ -3,6 +3,7 @@ import RumocaC.Lowering
 import RumocaC.Statements
 import RumocaC.Calls
 import RumocaC.Arithmetic
+import RumocaC.BooleanProofs
 
 #audit axioms Rumoca.C.compileProgram_correct
 #audit axioms Rumoca.C.ideal_run_correct
@@ -41,7 +42,11 @@ import RumocaC.Arithmetic
 #audit axioms Rumoca.CMemory.store_unallocated
 #audit axioms Rumoca.CMemory.store_readonly
 #audit axioms Rumoca.CBody.run_reaches
+#audit axioms Rumoca.CBody.run_add
 #audit axioms Rumoca.CBody.behaviors_of_run
+#audit axioms Rumoca.CBody.BoolProofs.eval_and
+#audit axioms Rumoca.CBody.BoolProofs.eval_or
+#audit axioms Rumoca.CBody.BoolProofs.eval_not
 #audit axioms Rumoca.CCalls.finiteValue_finite
 #audit axioms Rumoca.CCalls.counterValue_counter
 #audit axioms Rumoca.CCalls.cast_counter

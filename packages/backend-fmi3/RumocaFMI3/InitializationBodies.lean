@@ -30,14 +30,23 @@ theorem exit_run (m : Solve.FMI3Model source) (sig : Signature)
       some (.returned ⟨.integer 0, exitHeap heap p kind⟩) := by
   have hmode : load heap (p.member "mode") = some (.integer 1) := by
     simp [load, hm, convert]
+  let tail := [Runtime.branch (Runtime.eqv (Runtime.field "kind") (Runtime.n 0))
+    [Runtime.setMode .event] [Runtime.setMode .step], Runtime.ok]
+  have hk' : load heap (p.member "kind") = some (.integer kind.code) := by
+    cases kind <;> exact hk
+  have hp := LifecycleGuard.accept (HistoryBodies.parameters p) heap p
+    .exitInitialization kind .initialization tail
+    (by simp [HistoryBodies.parameters]) (by simp [HistoryBodies.parameters]) hk' hmode rfl
+  have hb : Runtime.body m sig = Runtime.require .exitInitialization ++ tail := by
+    simp [Runtime.body, hsig, tail]
+  rw [hb, show 6 = 3 + 3 from rfl, run_add, hp]
   cases kind <;>
-    simp [Runtime.body, hsig, Runtime.require, Runtime.instancePrefix, Runtime.reject,
-      Runtime.allowedExpression, Runtime.any, permittedModes, Runtime.mode, Mode.code,
-      Runtime.branch, Runtime.ret, Runtime.fail, Runtime.ok, Runtime.put, Runtime.setMode,
-      Runtime.field, Runtime.eqv, Runtime.both, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
+    simp [tail, Runtime.mode, Mode.code,
+      Runtime.branch, Runtime.ret, Runtime.ok, Runtime.put, Runtime.setMode,
+      Runtime.field, Runtime.eqv, Runtime.v, Runtime.n,
       run, next, eval, lvalue, HistoryBodies.parameters, CBody.bind, resolve, constants,
-      CBody.cast, convert, comparison, boolean, Value.truth, Value.address,
-      hk, hmode, hm, store, exitHeap, kindCode, me_initialization, cs_initialization]
+      convert, comparison, boolean, Value.truth, Value.address,
+      hk, hm, store, exitHeap, kindCode, me_initialization, cs_initialization]
 
 theorem exit_mode (heap : Heap) (p : Address) (kind : Kind) :
     load (exitHeap heap p kind) (p.member "mode") =

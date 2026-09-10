@@ -137,6 +137,14 @@ def run : Nat → State → Option State
   | 0, s => some s
   | n + 1, s => do run n (← next s)
 
+/-- Compose executed blocks through the exact intermediate machine state. -/
+theorem run_add (n m : Nat) (s : State) :
+    run (n + m) s = (run n s).bind (run m) := by
+  induction n generalizing s with
+  | zero => simp [run]
+  | succ n ih =>
+    cases hs : next s <;> simp [Nat.succ_add, run, hs, ih]
+
 theorem run_reaches (h : run n s = some t) : Transition.Reaches machine.step s t := by
   induction n generalizing s with
   | zero => cases Option.some.inj h; exact .refl _

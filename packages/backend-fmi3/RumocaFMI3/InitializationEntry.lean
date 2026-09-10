@@ -70,8 +70,6 @@ def finalHeap (heap : Heap) (p : Address) (args : Arguments) : Heap :=
     (p.member "stopDefined") ⟨.boolean, true, some (boolean args.stopDefined)⟩)
     (p.member "mode") ⟨.int32, true, some (.integer 1)⟩
 
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 2000000 in
 theorem prefix_run (heap : Heap) (p : Address) (args : Arguments) (kind : Kind)
     (rest : List Stmt) (ha : args.Admissible)
     (hk : load heap (p.member "kind") = some (.integer (InitializationBodies.kindCode kind)))
@@ -79,16 +77,19 @@ theorem prefix_run (heap : Heap) (p : Address) (args : Arguments) (kind : Kind)
     run 4 (.running (Runtime.require .enterInitialization ++
       [Runtime.reject guard "Invalid initialization times or tolerance"] ++ rest)
       (parameters p args) heap) = some (.running rest (locals p args) heap) := by
+  have hk' : load heap (p.member "kind") = some (.integer kind.code) := by
+    cases kind <;> exact hk
+  have hp := LifecycleGuard.accept (parameters p args) heap p .enterInitialization kind
+    .instantiated (Runtime.reject guard "Invalid initialization times or tolerance" :: rest)
+    (by simp [parameters]) (by simp [parameters]) hk' hm rfl
   have hg := (guard_reference heap p args).mpr ha
-  unfold locals at hg
-  cases kind <;>
-    simp [Runtime.require, Runtime.instancePrefix, Runtime.reject,
-      Runtime.allowedExpression, Runtime.any, permittedModes, Runtime.mode, Mode.code,
-      Runtime.branch, Runtime.ret, Runtime.fail, Runtime.field, Runtime.eqv,
-      Runtime.both, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
-      run, next, eval, locals, parameters, CBody.bind, resolve, constants,
-      CBody.cast, convert, comparison, boolean, Value.truth, Value.address,
-      InitializationBodies.kindCode, hk, hm, hg]
+  rw [show 4 = 3 + 1 from rfl, run_add]
+  simp only [List.append_assoc, List.singleton_append] at hp ⊢
+  rw [hp]
+  simpa only [locals] using
+    (show run 1 (.running (Runtime.reject guard "Invalid initialization times or tolerance" :: rest)
+        (locals p args) heap) = some (.running rest (locals p args) heap) by
+      simp [Runtime.reject, Runtime.branch, run, next, hg, boolean, Value.truth])
 
 set_option maxRecDepth 10000 in
 theorem body_reaches (m : Solve.FMI3Model source) (sig : Signature)
