@@ -1,0 +1,71 @@
+name = "rumoca_compiler"
+version = "0.1.0"
+testDriver = "RumocaCompilerChecks"
+defaultTargets = ["Rumoca", "rumoca", "certify", "tests"]
+
+[[require]]
+name = "Cli"
+scope = "leanprover"
+git = "https://github.com/leanprover/lean4-cli"
+rev = "v4.29.0"
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.29.1"
+
+[[require]]
+name = "modelica_parser"
+path = "../modelica-parser"
+
+[[require]]
+name = "rumoca_core"
+path = "../core"
+
+[[require]]
+name = "rumoca_c"
+path = "../backend-c"
+
+[[require]]
+name = "rumoca_fmi3"
+path = "../backend-fmi3"
+
+[[require]]
+name = "rumoca_efmi"
+path = "../backend-efmi"
+
+[[lean_lib]]
+name = "Rumoca"
+globs = ["Rumoca", "Rumoca.+"]
+
+[[lean_exe]]
+name = "rumoca"
+root = "Main"
+
+[[lean_exe]]
+name = "certify"
+root = "Certify"
+
+[[lean_exe]]
+name = "tests"
+root = "Tests.Main"
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "RumocaCompilerChecks"
+roots = ["Tests.Audit", "Tests.SemanticChecks", "Tests.EFMIChecks"]
+
+[[require]]
+name = "sha1"
+path = "../sha1"
+
+[[require]]
+name = "xml"
+path = "../xml"
+
+[[require]]
+name = "galec_parser"
+path = "../galec-parser"

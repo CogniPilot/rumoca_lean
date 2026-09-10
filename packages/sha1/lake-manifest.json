@@ -1,0 +1,17 @@
+{
+  "version": "1.1.0",
+  "packagesDir": ".lake/packages",
+  "packages": [
+    {
+      "type": "path",
+      "scope": "",
+      "name": "proof_audit",
+      "manifestFile": "lake-manifest.json",
+      "inherited": false,
+      "dir": "../verification",
+      "configFile": "lakefile.toml"
+    }
+  ],
+  "name": "sha1",
+  "lakeDir": ".lake"
+}

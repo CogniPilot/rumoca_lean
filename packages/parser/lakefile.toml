@@ -1,0 +1,29 @@
+name = "parser"
+version = "0.1.0"
+testDriver = "ParserChecks"
+defaultTargets = ["Parser", "ebnfgen"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.29.1"
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "Parser"
+globs = ["Parser", "Parser.+"]
+
+[[lean_lib]]
+name = "ParserChecks"
+roots = ["Tests.ParserAudit", "Tests.LALRChecks", "Tests.LALRSafetyChecks", "Tests.LALRFirstChecks"]
+
+[[lean_exe]]
+name = "ebnfgen"
+root = "Generate"
+
+[[lean_exe]]
+name = "lalrgen"
+root = "LALRGenerate"

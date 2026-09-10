@@ -1,0 +1,91 @@
+import Rumoca.Compiler
+import Parser.EBNF
+import ModelicaParser.Driven
+import RumocaCore.Solve.IVP
+
+open _root_.Parser
+
+open Rumoca
+
+def expect (label : String) (condition : Bool) : IO Unit :=
+  if condition then pure () else throw (IO.userError s!"FAIL: {label}")
+
+def accepted (s : String) : Bool := match compile s with
+  | .ok _ => true
+  | .error _ => false
+
+def grammarAccepted (s : String) : Bool := match EBNF.compile s with
+  | .ok _ => true
+  | .error _ => false
+
+def drivenAccepted (s : String) : Bool := match Driven.parse s with
+  | .error _ => false
+  | .ok parsed => match Driven.resolve parsed.ast with
+    | .error _ => false
+    | .ok _ => true
+
+def main : IO Unit := do
+  let good := "model Integrator Real x; equation der(x) = 1; end Integrator;"
+  expect "minimal model" (accepted good)
+  let driven := "model Driven input Real u; output Real x(start=0, fixed=true); equation der(x)=u; end Driven;"
+  expect "driven parser and resolution" (drivenAccepted driven)
+  expect "driven profile not prematurely admitted by C compiler" (!accepted driven)
+  expect "attribute names are identifiers" (drivenAccepted
+    "model M input Real fixed; output Real start(start=0, fixed=true); equation der(start)=fixed; end M;")
+  for bad in [driven.replace "der(x)" "der(u)", driven.replace "=u;" "=x;",
+      driven.replace "start=0" "wrong=0", driven.replace "fixed=true" "wrong=true",
+      driven.replace "input Real u" "input Real x", driven.replace "end Driven" "end Other",
+      driven.replace "start=0" "start=1", driven.replace "fixed=true" "fixed=false"] do
+    expect "driven reference/initialization rejection" (!drivenAccepted bad)
+  let shape : Tensor.Shape := ⟨[2, 3]⟩
+  let input : Tensor.Value Nat shape := ⟨Vector.ofFn (fun i : Fin 6 => i.val + 1)⟩
+  let state := Tensor.Value.fill shape 9
+  expect "tensor derivative preserves every input element"
+    ((Solve.drivenIVP shape).rhs 0 1 state input == input)
+  expect "tensor output preserves the state"
+    ((Solve.drivenIVP shape).outputs 0 1 state input == state)
+  expect "tensor initialization fills the state"
+    ((Solve.drivenIVP shape).initial (0 : Nat) 1 == Tensor.Value.fill shape 0)
+  expect "identifiers and whitespace" (accepted
+    "\r\nmodel _M2\tReal x2; equation der (x2)=1; end _M2;\n")
+  for bad in ["", "der(x) = 1;", good ++ "garbage", good ++ ";",
+      "model M Real x; equation der(x)=2; end M;",
+      "model M Real x; equation der(y)=1; end M;",
+      "model M Real x; equation der(x)=1; end N;",
+      "model M Real x; equation der(x)=1; end M",
+      "model M Real x,y; equation der(x)=1; end M;",
+      "model M Real x; equation der(x)=1.0; end M;",
+      "modelM Real x; equation der(x)=1; end modelM;",
+      "model M Realx; equation der(x)=1; end M;",
+      "model M Real x; equation der(x)=1; endM;",
+      "model M Real x; equation der(x)=1; end M; /* unclosed",
+      "model M Real 'x'; equation der('x')=1; end M;",
+      "model M Real λ; equation der(λ)=1; end M;",
+      "// comment\n" ++ good, "/* comment */" ++ good] do
+    expect s!"reject {repr bad}" (!accepted bad)
+  for keyword in reserved do
+    expect s!"reserved identifier {keyword}" (!accepted
+      s!"model M Real {keyword}; equation der({keyword})=1; end M;")
+  for s in ["s = \"x\";", "s = [\"x\"], {\"y\" | \"z\"};",
+      "s = other; other = (\"a\" | \"b\"), IDENT;", "s = \"\";",
+      "(* comment *) s = { [ \"x\" ] }; "] do
+    expect s!"EBNF accepts {repr s}" (grammarAccepted s)
+  for s in ["s : 'a' 'b';", "s : keyword IDENT; keyword : 'model';",
+      "// reference-style grammar\ns : [ 'a' ] { 'b' | 'c' };", "s : ''; // end"] do
+    expect s!"reference EBNF accepts {repr s}" (grammarAccepted s)
+  for s in ["", "s=missing;", "s=s;", "s=t; t=s;", "s=\"a\"; s=\"b\";",
+      "s=\"a\"; unused=missing;", "s=\"a\"; unused=unused;",
+      "IDENT=\"a\";", "s=[\"a\";", "s=\"a\"", "s=\"unclosed;"] do
+    expect s!"EBNF rejects {repr s}" (!grammarAccepted s)
+  for s in ["s : 'unclosed;", "s : 'a'^;", "s : ident@name;", "s : /[a-z]+/;",
+      "s : 'a',;", "s : : 'a';", "s : missing;"] do
+    expect s!"unsupported reference EBNF rejects {repr s}" (!grammarAccepted s)
+  match compile good with
+  | .error e => throw (IO.userError (toString e))
+  | .ok a =>
+    for x in ([0.0, 0.5, -1.5, 42.25] : List Float) do
+      expect "target RHS" (C.eval x a.target.rhs == 1)
+      expect "target step" (C.eval x a.target.step == x + 1)
+    expect "binary64 tie rounds to even" (C.eval (9007199254740992.0 : Float) a.target.step == 9007199254740992.0)
+    expect "10000 steps" (C.run a.target (7.5 : Float) 10000 == 10007.5)
+  IO.println "Lean regression tests passed"

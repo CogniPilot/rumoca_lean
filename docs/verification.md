@@ -1,0 +1,893 @@
+# Exact verification contract
+
+The production end-to-end theorem covers one Modelica `Real` state and `der(state)=1`.
+The source equation is over mathematical reals. Generated C uses finite
+IEEE754 binary64 values and nearest-even addition. The host supplies `x(0)`;
+samples remain at integer times. There is no initialization syntax, variable
+time step, event handling or general solver. All compiler code, EBNF tooling,
+semantics and proofs are Lean. No Rocq dependency or cross-prover assumption
+is used.
+
+The user-authorized driven input/state profile is being developed separately.
+Its generated grammar, parser actions, tensor equation/initialization lowering
+and mathlib matrix/storage bridge are checked, but it has no completed target
+or actual-FMU certificate yet. The production compiler rejects it. The shared
+tensor types preserve rank and shape, with array-backed storage; the original
+unit-only register program remains a regression path. See the
+[IR review](../dev/ir-review.md) for exact correspondence and remaining work.
+
+`Source.Solves` is the ideal continuous reference ODE over mathematical reals,
+not a complete operational interpretation of the predefined Modelica Real
+class. MLS 3.7 §4.9.1 requires finite stored Real values; this implementation's
+stored-value contract is the separate binary64 numerical profile. Refinement
+to an unbounded ideal trajectory does not claim that such a trajectory is
+itself a sequence of valid stored Real values.
+
+For the tracked path beyond this baseline, see [the roadmap](../dev/roadmap.md).
+The newly authorized eFMI unit profile and its standards review are tracked
+in [the eFMI roadmap](../dev/efmi.md). Its DAE-derived GALEC product and tensor
+Solve algorithm are separate from the numerical IVP path. The Algorithm Code
+contract binds actual `.alg` and both EBNF files to the source/DAE and Solve
+refinement proofs. `ProductionContract` extends this with the actual complete
+C member, its object-memory execution and legal serial interaction traces.
+`ManifestContract` extends the code contract to the three actual XML documents,
+their checked identity fields, checksum/reference construction, and decoded
+mappings to C execution.
+`ArchiveContract` composes the manifest contract with the complete stored-ZIP
+byte grammar for the same five code/XML strings and all 45 pinned schema
+resources. `compile_archive_verified` proves this contract for every successful
+compiler/`Artifact.efmuArchive` result. The fixed actual-file checker constructs
+`Rumoca.CheckedEFMIFiles.source_to_archive` from the complete archive bytes,
+source and both grammars. Its full gate passed in
+`build/efmi-archive-full-gate.log`, with only the usual three axioms. These
+contracts do not certify a physical lifecycle scheduler or full eFMI standards
+conformance.
+The schema/text discrepancies in the pinned
+eFMI 1.0.0 Beta 1 draft remain explicit review items.
+The source parser and EBNF tooling live in the independent
+[parser package](../packages/parser/README.md); compiler and target proofs
+depend on its public runtime and proof modules. Shared IR and arithmetic live
+in [core](../packages/core/README.md); C generation and target contracts live
+in [backend-c](../packages/backend-c/README.md), with FMI interfaces in their
+respective backend packages. The
+[compiler package](../packages/compiler/README.md) composes their proofs.
+
+## Required gate and actual-file binding
+
+Run `nix develop .#verification --command lake test`. This checks Lean proofs,
+grammar freshness, axiom dependencies, actual source/C contracts, mutation
+rejection and native C execution. `lake build audit` alone is insufficient.
+
+For development, each package has a separate cached check library; see
+[incremental checks](development.md). The `#audit axioms` command rejects
+unapproved dependencies during Lean elaboration. Lake reuses that checked
+module only while its source and import dependency traces remain current.
+The complete gate retains all former audit roots and actual-file checks;
+reusing package proofs does not cache a certificate for different artifact bytes.
+
+The independent [SHA-1](../packages/sha1/README.md) and
+[XML](../packages/xml/README.md) packages own their implementations, proofs and
+axiom audits. They use Lean's standard library, with the local verification
+tooling for their checks. The backends own model-specific documents and the
+compiler composes actual-file certificates. Extracting these packages does
+not extend the manifest/archive contract or establish full standards compliance.
+
+Prioritize general formal theorems over accumulating example tests. Keep a
+small set of integration checks for the trusted file adapters, external format
+compatibility and native compilation. Do not add case matrices that merely
+repeat behavior already quantified over by a theorem. These boundary checks
+support the proof infrastructure; their count is not a measure of verification.
+
+To verify another source within the same grammar:
+
+```sh
+nix develop .#verification
+lake build
+bash scripts/verify-artifact.sh path/to/Model.mo build/checked-model
+```
+
+The output directory contains a source snapshot, emitted C, a fixed checking
+entry point (`Artifact.lean`), a readable producer-supplied `Candidate.lean`,
+an axiom report and a SHA-256 manifest. Hashing records files; it is not a proof.
+`Rumoca.ArtifactCheck` independently reads the actual source and C files,
+quotes them as Lean literals and constructs the fixed proposition:
+
+```lean
+Generated.source = actualEbnf ∧
+  ∃ a : Artifact source, compile source = .ok a ∧ ArtifactContract a emitted
+```
+
+The kernel checks this proposition; the adapter audits the dependencies of
+that exact theorem. It never executes producer-supplied Lean commands or
+accepts their theorem statements or audit text as authority. `Candidate.lean`
+is for inspection/export only. The small file-to-proposition adapter, file I/O
+and fixed checking entry point are explicitly trusted infrastructure. To run
+that entry point directly, set `RUMOCA_SOURCE` and `RUMOCA_C` to the actual files.
+It also reads the actual EBNF file (`packages/modelica-parser/grammar/Modelica.ebnf` by default, or
+`RUMOCA_GRAMMAR`) and kernel-checks equality to the certified grammar source.
+An early native comparison rejects a mismatched grammar; it cannot authorize
+an artifact. The successful certificate proves equality of the actual and
+embedded literals by kernel reflexivity, avoiding redundant UTF-8 evaluation.
+
+## Parser and pass contracts
+
+The new located frontend adds source-indexed UTF-8 spans without admitting
+grammar cases. `Aligned` checks exact token slices, all trivia gaps, order
+and disjointness. Generic LALR annotation preserves terminal/production
+identity, covers children including epsilon nodes, and checks leaf ranges
+against the input. `LocatedParsed.erases` retains the production parse result.
+These are successful-result guarantees; generic location-wrapper completeness
+and origin preservation through the IR/printer pipeline remain open. See
+[the provenance contract and roadmap](../dev/provenance.md).
+
+`Parallel.map_eq` proves equality to sequential mapping for every pure analysis
+function, input list and job budget, using Lean's standard logical `Task`
+semantics. Batch results retain file identity, source snapshots and input
+order. Native task scheduling and file reads are infrastructure, not a proved
+OS concurrency implementation. The CLI's file reads are currently sequential.
+The separate LSP reuses structured source diagnostics and converts their ranges
+to UTF-16 with Lean's library. Terminal context rendering, LSP transport and
+file-map conversions are tested presentation/infrastructure boundaries.
+
+The [airborne assurance plan](../dev/airborne-assurance.md) records additional
+requirements, traceability, independent review, target integration and tool
+credit work. No current theorem establishes DO-178C compliance.
+
+The independent `Lexes` relation specifies maximal-munch Modelica lexing.
+`lex_correct` proves soundness and completeness. Source length plus one is
+sufficient fuel. The token parser is sound and complete for the exact 16-token
+model form. `Parsed` binds an AST to the source characters with erased proofs.
+`compile_complete` proves successful compilation for every syntactically valid,
+resolved tiny model.
+
+The EBNF preprocessor may refuse recursive rule references or exceed its
+4096-state resource bound. Successful output carries kernel certificates for
+the embedded EBNF-to-regex computation, alphabet mapping, every transition,
+accepting bits and start state. `Alphabet.encode_reflects` proves lossless
+compression on grammar support, including arbitrary unknown input symbols.
+Generated `alphabet_checked` and `recognize_symbols_correct` certify language
+membership over the original symbols. `parsed_in_ebnf` lifts this to parsed
+source tokens. `runtime_agrees` checks the separate executable tables. The
+freshness gate compares the current grammar file to the certified embedded
+source. The EBNF reader defines our dialect; it accepts both comma/equal
+notation and the selected Rumoca/parol-style colon definitions, single quotes
+and implicit sequences. No standardized EBNF metalanguage conformance theorem
+is claimed.
+
+An in-tree LALR(1) replacement is under development in `Parser.LALR`.
+It is not used by the production compiler. Its candidate generator implements
+canonical LR(1) construction and LR(0) kernel merging. `LALR.parse_sound` proves
+that every successful checked parse tree derives the exact input in mathlib's
+CFG semantics, universally over tables and fuel. `LALR.RuntimeProofs.run_checked`
+also proves that raw execution preserves valid trees and the exact input word,
+so a returned tree cannot fail the public parser's final check.
+
+`LALR.Safety.validated_parse_safe` proves that tables passing the independent
+finite structural validator cannot produce internal table or tree errors, for
+any input and fuel. Checked edge annotations cover every actual shift and goto;
+a backwards calculation verifies reductions for every represented stack path,
+including unbounded recursive paths. The generated Lean module contains the
+actual tables, edge annotations, a kernel-checked `safety_checked` proof and its
+universal `execution_safe` consequence. Candidate generation is not assumed
+correct. Shared reduction/acceptance summaries avoid recomputing them for each
+table entry; `validate_iff` connects the implementation to its obligations.
+
+`LALR.FirstCheck.validate` independently checks nullable/FIRST closure for every
+grammar production. `FirstProofs.nullable_complete` and `first_complete` prove
+that those facts cover every empty derivation and every derivable leading
+terminal in mathlib's CFG semantics. `lookahead_complete` covers the actual
+lookahead calculation used by LR closure, including a caller's lookahead after
+an empty suffix. These results do not assume that the generator's fixed-point
+search is correct. `lalrgen` emits the actual fact array, a kernel-checked
+`first_checked` proof, and universal `nullable_coverage`/`lookahead_coverage`
+corollaries. The certificate uses Lean's proof-producing `cbv` normalizer for
+standard-library sorting equations; its terms are kernel checked and axiom
+audited. No native-reduction axiom is introduced.
+
+The facts may conservatively include extra nullable marks or terminals, so this
+is a coverage contract, not an exact FIRST-set computation theorem. Regressions
+reject missing direct/transitive predictions and nullable marks, wrong array
+sizes and EOF in the grammar's terminal sets. Another regression permits a
+conservative summary while proving that its nullable mark does not imply the
+grammar accepts the empty word. LR-item propagation and table completeness
+still need their own validation and execution proofs.
+
+This certificate permits syntax rejection or explicit fuel exhaustion. It does
+not prove that valid input is accepted: a kernel regression checks that a table
+rejecting every word is structurally safe but incomplete. Table completeness,
+a sufficient parsing bound, EBNF-to-CFG preservation and typed Modelica AST
+actions remain required before the production switch; see
+[LR01–LR07](../dev/lalr-parser.md). `lalrgen` does not yet emit the full
+`CertifiedParser` contract or bind its grammar constants to the source EBNF
+through a preservation proof.
+
+Source-indexed IRs retain their predecessors. State/register indices cannot
+refer to absent values. The public per-pass contracts in `packages/compiler/Rumoca/Lowering.lean`,
+`packages/backend-c/RumocaC/Lowering.lean` and the target semantics are:
+
+| Pass | Theorem | Meaning |
+| --- | --- | --- |
+| AST → Flat | `Flat.lower_correct` | Equivalence of the named source equation and indexed flat equation |
+| Flat → DAE | `DAE.lower_correct` | Equation holds iff its residual is zero |
+| DAE → Solve | `Solve.lower_correct` | Residual is zero iff the derivative equals the solved RHS |
+| Solve → C expressions | `C.lower_correct`, `C.lower_binary64_correct` | Ideal RHS preservation and exact rounded step preservation |
+| C program → text | `CSyntax.module_render`, `lower_correct` | Rendered text denotes the target in an independent grammar |
+| Solve → C statements | `CStatements.lower_correct`, `lower_behavior_correct` | Statement execution and all observable behaviors preserve finite Solve/source-profile semantics |
+
+`lowering_chain_correct` explicitly composes the first four contracts.
+The numerical policy and callable vocabulary live in shared `RumocaCore.Profile`;
+`Rumoca.Source` imports no backend. `Profile.AdmitsUnit` requires the complete
+derivative solution set to be `{1}` before licensing the fixed unit-step policy.
+`Profile.behavior_congr` transports this condition and relational rounding
+through equation equivalence. `Flat.behavior_correct`, `DAE.behavior_correct`
+and `Solve.behavior_correct` lift each real pass;
+`CStatements.solve_behavior_correct` supplies the target execution edge.
+`CStatements.lower_behavior_correct` composes these in the artifact and driver
+theorem. This is a policy for the frozen equation, not an arbitrary ODE solver
+or general partial-pass simulation framework.
+`Solve.lower_samples_correct` connects execution of the actual register
+program to the independent relational source sampling policy. Proof-carrying
+IR invariants are checked by the kernel; they are not added axioms.
+
+## Shared C package and header bindings
+
+`packages/backend-c` owns numerical C emission, the structured C tree,
+object-memory and call semantics, the finite-addition extension, and thin
+emission of tensor Solve algorithm instructions. It depends on core and the
+proof audit tooling, with no dependency on either FMI backend or the compiler.
+Both FMI backends depend on it and keep their respective wrappers, metadata
+and complete-output contracts.
+
+The routes remain DAE → GALEC → Solve → C for eFMI and DAE → Solve → C for
+FMI 3. GALEC text branches from the same checked GALEC IR that is refined into
+Solve. The existing tiny numerical and algorithm Solve representations are
+still distinct; a shared package is not a proof that they are interchangeable.
+The backend does not read GALEC text, redo DAE lowering or select a solver.
+
+`CInterface` supplies named constants and declared C types to `CBody`,
+`CCalls` and `CArithmetic`. Shared proofs quantify over this dictionary.
+Each adapter installs a private local instance of its concrete header bindings;
+imports install no global default. The actual compiler contracts select those
+concrete bindings. eFMI type aliases are looked up in the rendered header's
+declaration nodes. `CHeader.interface_alias` and `interface_return` prove the
+shared interpreter's alias and return conversion agree with those declarations
+for every scalar/value. These facts are fields of the actual header contract.
+The meanings of primitive C types and the physical ABI retain the existing
+reviewed platform boundary.
+
+## C syntax and statement execution
+
+`CSyntax.Denotes` specifies the emitted declarations, expressions, loop guard,
+assignment and unsigned decrement through independent lexical/token rules.
+`expression_render` is structural over arbitrary expressions; `module_render`
+proves text denotation for every module in this syntax profile. It composes
+lexical constructors directly, without executing a C reader. `denotes_unique`
+proves that the same text cannot denote two different target programs.
+The actual-file certificate still requires exact equality to the rendered
+bytes. The header is an exact prefix; preprocessing and standard headers
+remain reviewed infrastructure rather than implemented C semantics.
+
+`CStatements` is the target semantics used by the high-level theorem. It has
+statement constructors for assignment, unsigned decrement, sequencing, while
+and return, with explicit local bindings, call entry and a continuation of
+remaining statements. Each assignment, decrement and control operation takes
+a separate transition. A missing binding is stuck: `rhs(void)` has no `x`
+parameter. `lower_scoped` proves compiled bodies use only bound variables.
+`denotes_statements` relates emitted characters to the statement AST's independent
+token grammar. Expressions have no side effects, so evaluation order has no
+observable effect in this profile.
+
+The countdown is `Fin (2^64)` and unsigned decrement is modular subtraction.
+`decrement_positive` proves it equals natural subtraction when positive; the
+loop proof applies it after the nonzero guard. Every local counter is in range
+by its type. The earlier `CExecution` whole-iteration machine remains with its
+own execution proofs for existing contracts; it is no longer the final
+operational boundary. No simulation between these two machines is currently
+proved. Retiring it or proving that relation is tracked as C02.
+
+`Transition.Machine.Behaves` distinguishes returned results, infinite execution
+and stuck execution. `CStatements.behaviors_correct` proves every behavior of
+each exported function is the exact finite Solve result. `all_terminate`
+excludes infinite reductions. `all_complete` shows every reachable state can
+finish with that result. These functions have no external calls, pointers,
+volatile accesses or I/O, so observable behavior consists of termination and
+the returned encoding, without an external-event trace.
+
+## Whole-compiler theorem
+
+`compiler_semantic_preservation` quantifies over successful compilation,
+actual emitted bytes, every finite IEEE bit pattern, every uint64 count,
+every exported function and every behavior. It proves the emitted text denotes
+a scoped target whose behaviors are equivalent to the independent relational
+`Source.SampledBehavior` semantics:
+
+```text
+compile source = ok artifact → artifact.cSource = emitted →
+  ∃ targetC, Denotes emitted targetC ∧ WellScoped targetC ∧
+    ∀ function bits count behavior,
+      CBehaves targetC (call function bits count) behavior ↔
+      SourceSampledBehavior artifact.source function bits count behavior
+```
+
+Consequently every target behavior is an allowed source-profile behavior,
+and neither divergence nor stuck execution is possible. This is behavioral
+preservation at the C boundary. The proof uses deterministic finite execution
+and relational composition, not CompCert's general small-step simulation
+framework for an optimizing C-to-assembly compiler.
+
+`compile_verified` supplies the source/byte contract, behavior equivalence,
+scoped statement syntax, termination/completion of every call,
+original-symbol EBNF membership and refinement against any real source
+solution. The actual-file checker checks the whole `ArtifactContract`.
+
+Exact preservation is against the explicitly rounded numerical profile.
+It would be false to claim binary64 results always equal the mathematical
+real trajectory. Numerical refinement is a separate theorem.
+
+`compiler_preserves_property` transfers any predicate of source-profile
+observations to every behavior of the actual parsed output. It is derived
+from `compiler_semantic_preservation`; it does not require a separate
+assumption about target behavior.
+
+The initial ME-within-CS internal contract lives in
+`RumocaCore.Solve.ModelExchange`. The ME kernel owns continuous state and
+derivative evaluation; `UnitSolver` consumes it; `CoSimulation.State` contains
+the ME state and an exact count of completed unit steps. `run_model_correct`
+and `run_progress` relate repeated solver calls to finite Solve execution and
+the time grid. `ArtifactContract.model_exchange` and `co_simulation` bind the
+current scalar C exports to those internal model/solver semantics.
+They do **not** assert an FMI ABI, Float64 communication-time semantics,
+instance-memory/lifecycle correctness or an FMU package. Those proof obligations
+remain F01–F04 in the roadmap.
+
+## FMI archive and runner
+
+The unit profile now has a Lean FMU producer and a separate Lean runner
+package reusing FMPy. `rumoca MODEL.mo -o MODEL.fmu` emits model/build XML,
+the original numerical `sources/model.c`, a structured C ABI adapter in
+`sources/fmi3.c`, and a host Linux shared library exposing ME and CS. Before
+native compilation it invokes the fixed actual-file checker on the staged
+Modelica source, current EBNF and numerical kernel, then audits the result.
+ZIP and FMPy validation run before an atomic publication rename. Failure
+leaves a previously published FMU intact. Toolchain I/O and publication are
+tested infrastructure, not verified filesystem operations.
+
+`Solve.FMI3Model` carries the original Solve model, source names and a prepared
+scalar tensor IVP. Its numerical policy remains unit Euler; default start is
+zero and the unit source contract permits a finite host override. Both FMI
+interfaces use the same local state and constant derivative. A CS instance
+contains the ME model data and calls the existing numerical kernel directly;
+it never calls ME-only FMI functions on a CS handle. Positive integer
+communication steps run that many internal unit steps, with a limit of one
+million per call. Unsupported/nonprogressing steps return Discard without
+advancing; invalid arguments and calls return Error and require reset.
+
+`Rumoca.FMI3.allowed_correct` in `RumocaCore.FMI3.Lifecycle` checks the mode table against
+separately written reference predicates. `Rumoca.FMI3.guard_reference` in `RumocaFMI3.GuardProofs`
+proves the constructed C integer/Boolean guard AST accepts exactly those
+predicates for every command, interface kind and mode. The reference covers
+the selected event-free profile, not the entire FMI standard. It must still
+be reviewed against the prose and tables. These theorems **do not** establish
+the function-body, memory, printer, callback, Float64 time or lifetime bridge.
+`metadata_name` and the prepared-Solve projections are limited metadata facts,
+not an XML schema or complete correlated-metadata theorem.
+
+`RumocaC.Memory`, `Body` and `RumocaFMI3.StateProofs` add an object-level memory
+and small-step body contract. Cells have declared types, writable permissions
+and optional initialized contents. Loads reject missing, uninitialized or
+ill-typed contents; stores require a writable existing cell and a supported
+type conversion. Float64 contents are actual `BitVec 64` payloads, with finite
+values connected to the existing binary64 encoding bijection. Addresses use
+block identity, struct-member paths and array offsets; byte layout and the
+native pointer ABI are not formalized by this representation.
+
+`StateProofs.get_behaviors` proves every behavior of the actual generated
+`fmi3GetContinuousStates` body returns OK and copies the model's exact finite
+encoding to the caller buffer in each permitted ME mode. `set_behaviors`
+proves the corresponding `fmi3SetContinuousStates` body implements the shared
+ME state update in Continuous-Time Mode. Their observations include the full
+final heap. Frame theorems preserve every other address and other instance
+blocks. The caller must provide correctly typed, accessible storage; separate
+blocks justify ownership claims. `null_instance_behaviors` proves the common
+prefix returns Error without changing memory when given a null handle.
+
+These proofs evaluate the existing generated statement trees with independent
+rules for declarations, branches, loads, stores and returns. They do not
+replace FMI calls by their intended results. The pure `isfinite` intrinsic
+uses the encoding's finite-range predicate.
+
+`RumocaC.Calls` extends the memory machine with fresh parameter scopes,
+checked arity and conversions, call frames and converted returns. Successful
+memory transitions lift unchanged (`body_step`, `body_reaches`), and
+`body_behaviors` lifts the existing terminating body contracts when the
+declared return conversion succeeds. This is a successful-execution extension,
+not equivalence for old stuck states: ordinary calls can now execute.
+The linked program selects the actual `Runtime.helpers` trees and the existing
+`CStatements` numerical program. Every numerical statement executes with the
+caller heap carried unchanged; `kernel_correct` proves that bridge. Dispatch
+never supplies a numerical result merely because of a function's name.
+
+`CallProofs.model_rhs_reaches` follows the model helper into the numerical RHS.
+`model_advance_behaviors` covers every finite state and uint64 count: the helper
+loads state, calls the numerical sampler, writes its exact encoding and returns
+void. Its final heap agrees with shared `CoSimulation.run` model state; other
+addresses are unchanged by the existing frame theorem. This proves the internal
+helper, not the public `fmi3DoStep` time, status and admissibility logic.
+`DerivativeProofs.get_behaviors` covers the actual generated ME derivative getter
+in initialization, event and continuous modes. It follows both helper calls and
+returns OK with the shared ME derivative in a valid writable output cell.
+Its all-behavior conclusion excludes divergence and stuck execution and includes
+the full final heap. As with state access, entry bindings and accessible typed
+storage are explicit premises; this is not a byte-layout or public ABI theorem.
+
+`RumocaCore.Real.Comparison` classifies actual binary64 encodings as finite,
+positive/negative infinity or NaN. Finite comparisons reuse the encoding
+bijection and exact integer units. `test_finite` proves all six comparison
+results agree with mathematical real order; signed zeros compare equal.
+`decode_nan` and the unordered theorems cover every NaN payload. The C-tree
+interpreter uses these comparisons, including its existing supported conversions
+of integer zero and one. General integer-to-double conversion remains unsupported.
+Comparison results do not model floating exception flags or signaling traps.
+This distinction matters under the C floating environment; see
+[C11 draft N1570 §§7.12.14 and F.9.3](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+
+`RumocaCore.FMI3.Time.Window` independently states the ME time-history lower
+bounds from [FMI 3.0.2 §3.2.1](https://fmi-standard.org/docs/3.0.2/#fmi3SetTime):
+start time, the second-last completed step and last event-mode entry. The
+runtime's optional experiment stop adds an upper bound. `TimeProofs.guard_reference`
+proves the actual generated validation expression accepts exactly this window
+for finite inputs, assuming `timeMin` represents the maximum of those history
+bounds and the stop fields represent the optional stop. `guard_nonfinite`
+proves rejection before either bound is read. `set_behaviors` proves every
+successful generated `fmi3SetTime` body returns OK, stores the exact input
+encoding and preserves all other cells, including the shared ME model state.
+The existing call-machine lifting supplies the all-behavior result.
+
+`RumocaCore.FMI3.History` relates a positional reference history to the compact
+runtime clock. Its invariant retains the experiment/event floor separately
+from completion history; no monotonic-completion premise is introduced.
+`trace_represents` proves preservation over every admitted reference sequence
+of time updates, completions and event entries. The generated runtime now
+stores `eventTime`, initialized with `startTime`, and recomputes `timeMin`
+from that event floor and the previous `lastCompleted` at each completion.
+This drops obsolete completion bounds. The old running maximum over-rejected
+`SetTime(1.5)` after completions at `1, 2, 1, 2` even though each time query
+satisfies the reference interval. Event entry preserves both the event floor
+and the still-applicable second-last-completion bound.
+
+`HistoryProofs.initial_correct`, `event_correct` and `completed_correct`
+execute the actual generated history blocks under the independent C-tree
+small-step rules, prove their final heaps represent the corresponding
+reference updates, and preserve an arbitrary code continuation. Separate
+frame theorems preserve every cell outside each block's writes. The field
+comparison and conditional store are proved for all finite encodings, with
+typed writable storage as a premise. `stored_guard_reference` connects the
+maintained clock representation to the existing SetTime guard theorem.
+
+`HistoryBodies.event_correct` and `completed_correct` now compose the complete
+successful public `fmi3EnterEventMode` and `fmi3CompletedIntegratorStep` bodies
+with the reference history, reference lifecycle mode and shared Solve/ME state.
+The execution includes the instance and lifecycle guards, output-pointer guards,
+both Boolean output writes, the history blocks, the event-mode write and OK
+return as applicable. Every behavior terminates with the specified full heap;
+divergence and stuck behavior are excluded under the stated entry conditions.
+The call-machine lifting also accepts compositional reachability proofs through
+`body_behaviors_of_reaches`, without changing the interpreter.
+
+The instance clock fields must be finite, typed and writable; the event-mode
+cell must be writable for event entry. Completion outputs require writable
+Boolean cells and may be uninitialized or alias each other. Their storage
+blocks are separate from the instance. The frame theorems preserve every cell
+outside the actual write addresses; preserving another instance also requires
+its storage to be separate from caller output writes. The model-state
+corollaries preserve its exact Float64 encoding. These are symbolic-memory
+body contracts with supplied parameter bindings, not byte-layout or public ABI
+entry theorems.
+
+Kernel mutation controls distinguish a missing event-mode write and a changed
+output value from the correct successful bodies. They also check uninitialized,
+missing and read-only output storage. Native tests cover aliased/distinct
+outputs, both values of the unused FMU-state flag, signed-zero model state and
+instance isolation.
+
+`InitializationBodies.exit_correct` covers every behavior of the complete
+successful `fmi3ExitInitializationMode` body for both ME and CS. It proves
+termination with OK, agreement with the reference lifecycle transition, and
+preservation of the shared model state and clock history. `exit_frame`
+preserves every cell except the instance mode. The premises supply the
+instance parameter, its interface kind, and a typed writable mode cell in
+Initialization Mode. The existing event-free profile moves ME to Event Mode
+and CS to Step Mode. This is a symbolic-memory body theorem; ABI entry,
+rejected calls and printed-adapter binding remain separate obligations.
+All seven new roots passed the unchanged axiom audit with
+`lake build check-fmi3` in `build/fmi-initialization-exit-package.log`.
+The aggregate `lake build audit` also passed in
+`build/fmi-initialization-exit-audit.log`. No emitter or grammar changed in
+this proof increment; these checks do not replace the required artifact gate.
+
+`RumocaCore.FMI3.Initialization` states the current initialization admission
+profile independently of C: start is finite; an enabled tolerance is finite
+and positive; an enabled stop is finite and strictly later than start.
+Undefined tolerance/stop arguments retain arbitrary bits, including NaNs.
+`above_iff` connects the bit check to strict mathematical real order through
+the finite encoding bijection. `InitializationEntry.guard_reference` proves
+that the actual generated argument guard accepts exactly this profile for
+every finite start and arbitrary tolerance/stop encodings and flags.
+
+`InitializationEntry.correct` covers every behavior of the complete successful
+`fmi3EnterInitializationMode` body for both ME and CS. It executes the instance,
+lifecycle and argument guards, four clock writes, stop/flag writes, mode change
+and OK return. The final heap preserves the shared model state, represents the
+initial reference history, and discharges the representation premises of the
+existing `SetTime` guard theorem, including its optional stop. A full-heap frame
+preserves all cells outside these seven writes. Stop and flag storage may be
+uninitialized; the pre-existing clock cells must represent a finite writable
+clock. Supplied entry bindings, a valid kind and a writable Instantiated mode
+cell remain premises. This does not yet prove allocation establishes them.
+The package audit passed in `build/fmi-initialization-entry-package.log`.
+`then_exit` composes the complete entry and exit body contracts through the
+same intermediate heap, retaining model state, initialized history and the
+reference final mode. The aggregate audit, including this composition, passed
+in `build/fmi-initialization-entry-audit.log`. This proof-only increment changes
+no emitted code or grammar; its audits supplement the passing publication gate.
+
+The strict tolerance/stop inequalities are the existing runtime policy, not
+a claim that [FMI 3.0.2 §2.3.2](https://fmi-standard.org/docs/3.0.2/#fmi3EnterInitializationMode)
+requires those exact restrictions. Their conformance review remains open.
+Rejected initialization calls, nonfinite-start rejection through the full body,
+general cross-call lifecycle composition, logging, lifetime, CS arithmetic and
+printed adapter/ABI correspondence remain open.
+
+Ordinary calls are supported as entire assignment, declaration, return or
+discard operands; their arguments are pure expressions. Function pointers,
+array-parameter adjustment, nested effectful expressions, local writes, block
+scopes, allocation/free, callbacks, general arithmetic and remaining FMI bodies
+need additional rules and proofs. The selected generated assignments call pure
+numerical functions or the read-only RHS helper, so evaluating their lvalues
+after the call cannot observe a callee memory change. General C evaluation-order
+correspondence remains part of the target review. Unsupported operations are
+stuck. The successful-body results do not prove the non-null logging/error
+paths, connect body trees to the actual printed adapter bytes, or extend
+`ArtifactContract` to the whole FMU.
+
+The additional kernel-checked negative controls distinguish a constant-valued
+copy from the correct state copy, expose aliasing into another instance,
+and reject missing storage and unsupported calls in the base memory machine.
+Call regressions additionally detect a changed helper return and an unbound
+numerical RHS; reject bad arity, duplicate parameters and unknown symbols;
+and reject nonfinite numerical input and an out-of-range counter. Time controls
+cover signed zeros, adjacent/subnormal values, infinities, quiet/signaling NaN
+encodings, valid backtracking, absent stop storage, both interval boundaries
+and a mutated time write. These are authored-model regressions, alongside
+independent native ABI tests for the same time and state boundaries.
+
+The required gate now also validates the actual ZIP/XML with FMPy and runs
+ME/CS simulations, raw ABI lifecycle/error/time/binary64 regressions and an
+independent C source rebuild. Runner CSVs and nonzero failure propagation are
+checked. FMPy, its ME Euler solver, the native ABI adapter and packaging are
+outside the whole-compiler theorem. The included kernel audit log records a
+check performed during creation; it is not a standalone proof or signature
+authenticating all members of an arbitrary archive. Full actual-FMU binding
+and the public FMI conformance capstone remain open.
+
+## Tiny eFMI Algorithm Code
+
+`rumoca MODEL.mo -o MODEL.alg` emits the checked unit integrator's GALEC block.
+It selects zero initialization and a fixed one-second period within the
+existing host-initialized source profile. This does not add Modelica syntax.
+Names in the emitted block are canonical; the checked product retains its
+original source-indexed DAE. The authority and Beta 1 draft discrepancies are
+recorded in [the eFMI review](../dev/efmi.md).
+
+`GALEC.lower_equation_correct` checks admission of the unit DAE.
+`GALEC.lower_step_correct` compares the projected method with the existing
+finite numerical profile. The executable Algorithm Code refinement itself
+comes from `Solve.Algorithm.lower`, without reconstructing DAE or repeating
+the numerical IVP lowering. Its register references retain tensor shapes;
+`lowerExpr_correct` preserves the expression interpretation for every shape
+and arithmetic operation. `UnitProfile.lower_correct` additionally includes
+the explicit clock-initialization program, not a backend-chosen literal.
+
+`GALEC.Protocol.lower_trace_correct` transports every trace of the restricted
+lifecycle reference. Entering and completing a method are separate events;
+only idle permits output reads or another method entry. A sampling tick enters
+DoStep once, and shutdown is terminal. This proves the connection between two
+formal block interpreters under the authored protocol. It does not verify
+concurrent host scheduling, C instance memory or an ABI implementation.
+
+The independent GALEC scanner, named action checks and shared LR engine bind
+emitted characters to the admitted block. A checked profile-specific input
+bound covers the fixed token skeleton with arbitrary lexically admitted names.
+`GALEC.Generated.grammar_processed` checks processing of the actual embedded
+EBNF into its CFG. These facts do not establish general LR table completeness
+or conformance of the EBNF reader to ISO 14977.
+
+`EFMI.AlgorithmContract` combines source lexing/grammar membership, concrete
+GALEC grammar processing, parsing/denotation of the actual `.alg` bytes, DAE
+admission, binary64 methods/samples and full state/lifecycle refinement to
+Solve. `EFMIArtifactCheck` independently reads the Modelica input, both EBNFs
+and the actual `.alg` file. Its fixed proposition includes the two grammar
+equalities and successful compilation with this contract. It audits that
+theorem's dependencies before publication; producer-supplied proofs are not
+executed. File I/O, the file-to-proposition adapter and atomic publication have
+the same trusted-infrastructure status as the existing C artifact checker.
+
+Use `rumoca verify-algorithm MODEL.alg --source MODEL.mo` for a standalone
+member, or `rumoca verify-efmi INPUT --source MODEL.mo` for the prepared tiny
+directory or complete `.efmu` archive. The CLI uses the pinned `lean4-cli` dependency and passes explicit
+process arguments to fixed checking entry points. It does not generate Lean
+commands from user text. The original source remains an explicit input; the
+workspace determines the default grammar files. No eFMI input environment
+variables are needed. The adapters share one read of each code/source file
+when composing their theorems.
+
+The directory adapter fixes the current emitted layout: `__content.xml`,
+`AlgorithmCode/{manifest.xml,model.alg}` and
+`ProductionCode/{manifest.xml,production.c}`. A restricted root-header reader
+extracts candidate IDs and the generation time from the actual manifests.
+It does not authorize XML acceptance: the manifest certificate still requires
+the complete actual strings to equal the prepared trees and checks the
+independent XML output grammar. The reader proposes identity strings; a separate
+kernel decision proves their required identity profile. It is not a general
+XML parser. Directory checking covers the five code/XML files. Archive checking
+additionally binds the complete ZIP structure and all pinned resources; neither
+path imports arbitrary eFMI representation layouts.
+
+The full gate audits these roots and checks grammar/namespace reuse, source
+acceptance/rejection, and mutations of arithmetic, clock initialization and
+both actual grammars. The manifest checker composes the XML/reference/checksum
+correlation with that same code contract. The `.efmu` output path uses the pure
+`Artifact.efmuArchive` generator, checks the staged source and complete archive,
+audits the fixed theorem, and then renames the checked file into place. A checked
+`.alg` member alone does not supply this archive contract.
+
+Candidate identities come from `IO.getRandomBytes` with the UUIDv4 layout
+described in [RFC 9562 §5.4](https://www.rfc-editor.org/rfc/rfc9562.html#section-5.4).
+The timestamp comes from `Std.Time.Timestamp.now`, formatted in UTC. The existing
+manifest and actual-file contracts check whole-string identity validity, calendar
+validity and distinctness within this archive. They do not assume the producer's
+native decisions are proofs, nor establish entropy quality, global uniqueness
+or clock accuracy. No identity work is added to DAE or Solve IR. Staging in the
+destination directory permits a same-filesystem rename; file I/O, process
+execution and publication remain tested infrastructure.
+
+## Tiny eFMI Production C
+
+`Solve.Algorithm.Model` retains the GALEC product and the proof that its block
+is the actual algorithm lowering. `Production.lower` reads only that block.
+It emits a fresh C local for each fill/add instruction and stores the return
+register in the appropriate instance field. Startup explicitly executes the
+clock program as well as the state program. Unsupported non-scalar storage
+is rejected without enumerating tensor coordinates.
+
+The three generated functions use a caller-owned `Model *` with separate
+binary64 `x` and `samplePeriod` subobjects. `Production.method_correct` checks
+every behavior of each method: it returns status zero with the exact Solve result,
+preserves the clock except during Startup, and preserves unrelated memory.
+Startup also has a separate theorem for allocated but uninitialized storage.
+Typed parameter binding, initialized finite storage for subsequent calls, and
+serialized host use are explicit preconditions. The tiny API does not contain
+runtime checks for invalid pointers or host lifecycle misuse.
+
+The interface declares `EfmiReal` as `double` and `EfmiStatus` as `int32_t`.
+The structure fields use `EfmiReal`; all entry points return `EfmiStatus`.
+`CHeader.header_declares` checks the header against an independent fixed token
+grammar for these typedefs and fields. `Production.return_checked` checks the
+returned zero against the actual declared return type. This avoids the Beta 1
+prose/schema disagreement about return metadata for void functions. The status
+reports successful completion under the existing preconditions; no additional
+GALEC error modes or source cases have been introduced.
+
+`CProtocol.trace_sound` and `trace_complete` connect legal serial interactions
+of these actual C bodies to the Solve protocol, including output state and the
+number of completed sampling calls. Method execution uses the target machine,
+not a function-name lookup returning the intended value. These traces compose
+with the existing GALEC/Solve theorem; they do not prove physical scheduling.
+
+`EFMI.CSyntax.Denotes` specifies declarations, pointer-member accesses, finite
+constants, additions, assignments and function headers using an independent
+maximal-munch token grammar. `EFMI.CSyntax.program_render` proves that every
+valid program in this syntax profile renders with the same execution-tree
+denotation. Its component proofs quantify over names, expressions, statement
+lists, indentation and lexical continuations. The compiler contract composes
+this structural printer theorem with method execution and protocol preservation;
+there is no executable Production C reader. The fixed preamble is checked as a
+prefix, including the storage declaration and binary64 preprocessor guards.
+Its correspondence to object layout and preprocessing remains reviewed
+infrastructure. The separate fixed-header certificate still uses the shared scanner soundness
+theorem. These printer theorems cover the tiny numerical and straight-line
+eFMI function profiles, not the entire FMI 3 adapter or arbitrary ISO C.
+
+The required full gate passed after the printer migration with exit status zero
+in `build/c-printer-full-gate.log`. The actual source/C and combined eFMI
+contract audits are preserved in `build/c-printer-artifact-contract.log` and
+`build/c-printer-efmi-artifact-contract.log`. No new axiom or source-language
+case was introduced.
+
+`EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
+and constructs a fixed existential theorem with one compiler artifact and
+`ProductionContract` for both members. The kernel and exact-root axiom audit
+authorize acceptance. This contract includes source/DAE admission, algorithm
+refinement, actual C text denotation, typed entry, full memory effects and both trace
+directions. It does not yet cover serialized XML, checksums or ZIP structure.
+
+The contract also recovers the actual GALEC declaration names and includes
+`Metadata.Contract` for the same lowered C module. This checks exported method
+signatures, real typedefs and structure fields. `Metadata.execution_preserves`
+follows the actual C behavior: reading either logical variable through the
+described formal parameter and component observes its exact Solve tensor
+value, and the return status is zero. Mapping identifiers are proved unique.
+These are the typed mapping obligations. `ManifestContract` binds the serialized
+XML and foreign-manifest/checksum construction to the same lowered module.
+
+`EFMIManifestArtifactCheck` constructs and audits the exact
+`Rumoca.CheckedEFMIFiles.source_to_manifests` theorem from the actual source,
+both grammars, GALEC, C and all three XML files. XML rendering is certified by
+composing element character lists, checking their equality to a flat list,
+and using the standard library's string/list correspondence. Separate header
+and child certificates establish the restricted XML output grammar. SHA-1
+certificates check UTF-8 encoding, padding and each compression block. Native
+candidate generation supplies no proof authority, and no native-reduction
+axiom is used.
+
+Manifest names are supplied from `a.parsed.ast.name`. The backend receives
+this prepared metadata explicitly and performs no source name resolution.
+`Manifest.prepare_named` proves that all three root attribute lists retain
+the supplied name. `ManifestContract.source_name` connects these attributes
+to the actual XML strings through the independent `XML.Document` relation.
+The actual-file checker constructs a kernel-checked `Parsed` witness for the
+source and uses parser determinism to bind its quoted name to the artifact's
+AST. A native name comparison alone cannot establish the contract. Canonical
+GALEC block and C function identifiers remain part of the existing interface
+profile; manifest names describe the originating Modelica model.
+The full gate passed with these stronger contracts in
+`build/efmi-source-name-full-gate.log`; the exact actual-file root audit and
+stale-manifest rejection are retained in `build/efmi-source-name-artifact.log`
+and `build/efmi-source-name-rejection.log`.
+
+`ManifestContract.identity_valid` requires whole-string membership in the
+brace-delimited 8-4-4-4-12 hexadecimal UUID layout, and distinct IDs after case
+normalization. It also requires a `YYYY-MM-DDTHH:MM:SSZ` timestamp with a valid
+Gregorian date, reusing `Std.Time` for month lengths and leap years.
+`Identity.utc_fields` recovers a checked `Std.Time.PlainDate` with exactly the
+digits read from that timestamp. The emitted profile admits years 0001–9999,
+hours 00–23, and minutes/seconds 00–59. `prepare_identified` binds these facts
+to the root attributes of each actual document. This proves the selected
+lexical/calendar profile, not global UUID freshness, wall-clock accuracy, or
+acceptance of every alternate `xs:dateTime` representation.
+
+The strengthened actual manifest contract passed the kernel and exact-root
+audit in `build/efmi-identity-manifest-contract.log`. The complete required
+gate passed with exit status zero in `build/efmi-identity-full-gate.log`,
+including rejection of an impossible calendar date despite a consistent
+checksum graph. Official XSD validation and independent checksum comparisons
+are integration checks; they do not license the Lean theorem.
+General XSD semantics and the official checker/layout discrepancy remain open;
+E05/E06 are incomplete. The later archive and publication checkpoints extend
+this manifest contract. See
+[the checkpoint and remaining work](../dev/efmi.md).
+
+The production integration gate tests native Startup/Recalibrate/DoStep,
+uninitialized storage, independent instances and binary64 boundary cases.
+Actual-file negative controls alter a state reference, initialization, store
+target, the GALEC member, and append an extra C function. Host tests support
+the authored C/IEEE review; native C compilation is not a proved lowering.
+
+The eFMU transport has a separate `StoredZIP.Format` byte
+grammar. Its stored ZIP32 profile fixes local and central records, raw member
+bytes and CRCs, offsets, lengths and the final directory record. Names must be
+unique ASCII relative paths; encryption, compression, extra fields, directory
+entries and comments are excluded. `encode_sound` proves that the tail-recursive
+ByteArray writer satisfies this list-based specification. `encode_complete`
+proves generation succeeds for every admissible member sequence.
+
+`decode_sound` proves that every accepted archive matches the complete byte
+grammar. The cursor reader proposes members; an independent final validator
+checks the actual complete bytes. This is a soundness theorem, not yet a
+completeness theorem for the cursor reader. `number_value` proves numeric
+field decoding for every representable value and width. Member inclusion and
+whole-byte uniqueness keep this contract tied to the actual archive, without
+assuming checksum collision resistance. Review of the authored format against
+[PKWARE APPNOTE](https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT)
+and of CRC-32 against its specified recurrence remains part of the standards
+boundary. The compiler's `ArchiveContract` composes these transport results
+with the correlated eFMI XML graph and existing source/C execution contract.
+`archive_code_correct`, `efmu_archive_correct` and `compile_archive_verified`
+prove correctness of the pure preparation and archive-generation functions.
+The combined source-to-archive actual-file gate passed in
+`build/efmi-archive-full-gate.log`. The CLI now stages this complete product and
+requires that certificate before publication. The new public path passed the
+complete required gate in `build/efmi-publication-full-gate.log`, including
+independent extraction, schemas/checksums, native C, mutation rejection and
+failure-preserving publication. The retained product is `build/Integrator.efmu`;
+`build/efmi-publication-artifact.log` audits its four exact roots. The pinned
+official checker rejects these same bytes at its extension/layout checks,
+as recorded in `build/efmi-publication-official.log`; no official-checker
+conformance pass is claimed.
+No full eFMI conformance claim follows from the authored byte grammar alone.
+
+## Binary64 and real refinement
+
+`Binary64.Value` contains all finite encodings, including both signed zeros;
+NaNs and infinities are outside the input domain. Values decode to signed
+integers in units of `2^-1074`, divided by `2^1074` for the real interpretation.
+The encoding covers subnormal and normal values with 52 fraction bits and
+exponent fields 0 through 2046. `finiteEncodingEquiv` is a proved bijection to
+the finite subset of `BitVec 64`; both inverse laws, exponent/fraction decoding
+and signed-zero bit patterns are proved in `Real/Encoding.lean`.
+
+`RoundsNearestEven` independently specifies the nearest finite encoding,
+even parity on a distance tie, and canonical +0 on the duplicated-zero tie.
+`round` is a noncomputable finite minimum with proved existence, specification
+and uniqueness. Its kernel-checked opaque witness carries the minimality
+proof; opacity prevents accidental enumeration during proof reduction and
+introduces no axiom. This specification is never executed by the production
+compiler. No property of Lean's opaque native `Float` is assumed.
+`round_zero` proves canonical +0. The addition primitive separately retains
+-0 for -0 + -0; both signed-zero cases have checked theorems.
+
+`advance_no_overflow` proves every finite `x+1` lies strictly inside the
+nearest-rounding overflow thresholds. The compiled expression therefore
+never fails its overflow check. `advance_nearest` bounds its error against
+any finite candidate. `advance_exact` gives zero error when the exact sum is
+representable. `advance_half_spacing` bounds error by half the width of any
+representable bracket containing the sum; adjacent brackets give half an ulp.
+
+`run_exact` proves all samples through a horizon are exact whenever the ideal
+samples through that horizon are representable. `Source.solution_unique`
+proves uniqueness of the real source solution with the supplied initial value.
+`CStatements.real_refinement` bounds the result against any such solution.
+The global theorem for all finite starts and counts is:
+
+```text
+|value(run x n) - (value(x) + n)| ≤ n
+```
+
+This conservative bound includes stagnation at large magnitudes. A frozen
+sampler can satisfy this bound alone, but cannot satisfy the complete compiler
+contract, which requires the exact relational nearest-even result at every
+step. The ODE has no discretization error under exact unit increments; the
+numerical error here is rounding. The initial real value is the decoded
+binary64 input, not an arbitrary decimal string before host conversion.
+
+## Trusted boundary and coverage limits
+
+* Lean 4.29.1's kernel and the audited standard foundations `propext`,
+  `Classical.choice`, `Quot.sound`. No new axioms or proof placeholders.
+* Review of the authored Modelica grammar/semantics against MLS 3.7, the C
+  grammar/statement rules against C, and encoding/rounding against IEEE754.
+  Prose standards are not Lean theorems. This is not CompCert Clight or a
+  complete formalization of ISO C's memory model.
+* Binary64 `double`, nearest-even addition, gradual underflow, standard
+  integer/header meanings and the call ABI. The generated preprocessor checks
+  radix, precision, exponent and `FLT_EVAL_METHOD == 0`; these do not prove an
+  entire IEEE implementation. The host selects nearest rounding. NaN/Inf,
+  other rounding modes, flush-to-zero and unsafe optimizations are excluded.
+* Later native C compilation, assembler, linker and hardware. GCC execution
+  is tested; there is no composed C-to-machine-code theorem.
+* The fixed `ArtifactCheck` file-to-proposition adapter, file I/O, source
+  encoding, build orchestration, and host decimal parsing and CSV formatting.
+  `examples/driver.c` remains tested support code.
+
+The theorem has an explicit all-behavior preservation shape for this tiny
+profile. This does not claim CompCert's language coverage, established C
+formalization, optimization/linking proofs, machine-code endpoint or maturity.
+
+## Negative controls
+
+The gate reproduces both artifact attacks from the review: a compiler emitting
+`2.0` paired with a certificate containing only `True.intro`, and that same
+wrong C paired with a valid complete certificate about a separate good C
+file. Both must fail the independent actual-file checker and leave no manifest.
+The actual source and EBNF files are also checked independently of candidate
+literals and native freshness checks.
+
+Other required controls reject an altered DFA accepting bit, changed C
+arithmetic, altered embedded Modelica source and an added logical assumption.
+The obsolete executable C reader and its parser-only checks have been removed;
+structural printer and grammar uniqueness theorems supply the text connection.
+Actual-file mutation and forged-producer controls remain. A renamed Modelica
+source with mixed admitted whitespace passes. Native tests cover fractional/negative starts,
+subnormals, maximum finite values, signed zero, both even-tie directions,
+iteration and malformed inputs. Tests exercise infrastructure and examples;
+the theorems quantify over all admitted models, finite encodings and counts.

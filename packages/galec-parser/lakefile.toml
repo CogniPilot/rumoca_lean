@@ -1,0 +1,20 @@
+name = "galec_parser"
+version = "0.1.0"
+testDriver = "GALECParserChecks"
+defaultTargets = ["GALECParser"]
+
+[[require]]
+name = "parser"
+path = "../parser"
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "GALECParser"
+globs = ["GALECParser", "GALECParser.+"]
+
+[[lean_lib]]
+name = "GALECParserChecks"
+roots = ["Tests.GALECParserAudit"]

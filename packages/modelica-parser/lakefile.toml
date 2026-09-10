@@ -1,0 +1,24 @@
+name = "modelica_parser"
+version = "0.1.0"
+testDriver = "ModelicaParserChecks"
+defaultTargets = ["ModelicaParser"]
+
+[[require]]
+name = "parser"
+path = "../parser"
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "ModelicaParser"
+globs = ["ModelicaParser", "ModelicaParser.+"]
+
+[[lean_lib]]
+name = "ModelicaParserChecks"
+roots = ["Tests.ModelicaParserAudit"]
+
+[[lean_exe]]
+name = "lalr-tests"
+root = "LALRNative"

@@ -1,0 +1,23 @@
+// Authored tiny eFMI 1.0.0 Beta 1 Algorithm Code profile.
+// Standard authority: https://www.efmi-standard.org/media/home/eFMI-Standard-1.0.0-Beta-1.html
+// References: 3.2.3 (lifecycle), 3.2.4 G-2 (declarations), G-3 (expressions),
+// G-4 (statements). This is a restriction, not the full published grammar.
+// Declaration/reference names and matching end names require checked actions.
+
+block = "block", IDENT,
+    "output", "Real", IDENT, ";",
+    "protected", "constant", "Real", IDENT, ";",
+    "public", startup, recalibrate, do_step, "end", IDENT, ";";
+
+startup = "method", "Startup", "algorithm",
+    reference, ":=", "0.0", ";",
+    reference, ":=", "1.0", ";",
+    "end", "Startup", ";";
+
+recalibrate = "method", "Recalibrate", "algorithm", "end", "Recalibrate", ";";
+
+do_step = "method", "DoStep", "algorithm",
+    reference, ":=", "(", reference, "+", "1.0", ")", ";",
+    "end", "DoStep", ";";
+
+reference = "self", ".", IDENT;

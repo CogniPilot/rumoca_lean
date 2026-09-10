@@ -1,0 +1,12 @@
+name = "proof_audit"
+version = "0.1.0"
+testDriver = "ProofAuditChecks"
+defaultTargets = ["ProofAudit"]
+
+[[lean_lib]]
+name = "ProofAudit"
+globs = ["ProofAudit.+"]
+
+[[lean_lib]]
+name = "ProofAuditChecks"
+roots = ["Tests.AuditChecks"]

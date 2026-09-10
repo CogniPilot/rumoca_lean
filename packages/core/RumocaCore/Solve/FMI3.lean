@@ -1,0 +1,49 @@
+import RumocaCore.IR
+import RumocaCore.Solve.IVP
+
+/-! Prepared deployment data for the existing unit profile. Names and the
+executable kernel have one owner. Choosing the numerical policy happens here,
+before the backend serializes the model. No new source cases are admitted. -/
+namespace Rumoca.Solve
+
+inductive IntegrationPolicy where
+  | unitEuler
+  deriving Repr, BEq, DecidableEq
+
+structure FMI3Model (source : AST.Model) where
+  solve : Model source
+
+def Model.prepareFMI3 (m : Model source) : FMI3Model source := ⟨m⟩
+def FMI3Model.name (_ : FMI3Model source) : String := source.name
+def FMI3Model.stateName (_ : FMI3Model source) : String := source.state
+def FMI3Model.timeName (m : FMI3Model source) : String :=
+  if m.stateName = "time" then "_rumoca_time" else "time"
+def FMI3Model.derivativeName (m : FMI3Model source) : String := "der(" ++ m.stateName ++ ")"
+def FMI3Model.policy (_ : FMI3Model source) : IntegrationPolicy := .unitEuler
+
+/-- Tensor representation of the same unit RHS. The initialization program
+supplies the default; the unit source contract also permits a host start value. -/
+def FMI3Model.problem (_ : FMI3Model source) : IVP where
+  stateShape := Rumoca.Tensor.scalar
+  inputShape := ⟨[0]⟩
+  outputShape := Rumoca.Tensor.scalar
+  initialProgram := Tensor.fill _ .zero
+  derivative := Tensor.fill _ .one
+  output := .ret .here
+
+theorem FMI3Model.time_distinct (m : FMI3Model source) : m.timeName ≠ m.stateName := by
+  unfold timeName
+  split
+  · rename_i h
+    rw [h]
+    decide
+  · exact Ne.symm ‹m.stateName ≠ "time"›
+
+theorem FMI3Model.prepared_solve (m : Model source) : m.prepareFMI3.solve = m := rfl
+
+theorem FMI3Model.rhs_correct (m : FMI3Model source) (zero one : α)
+    (x : Rumoca.Tensor.Value α Rumoca.Tensor.scalar)
+    (u : Rumoca.Tensor.Value α ⟨[0]⟩) :
+    m.problem.rhs zero one x u = Rumoca.Tensor.Value.fill _ one := rfl
+
+end Rumoca.Solve

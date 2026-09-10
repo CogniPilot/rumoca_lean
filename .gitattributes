@@ -1,0 +1,2 @@
+# These upstream schema bytes (including CRLF) participate in certificates.
+packages/backend-efmi/vendor/efmi/schemas/** -text

@@ -1,0 +1,16 @@
+name = "sha1"
+version = "0.1.0"
+testDriver = "SHA1Checks"
+defaultTargets = ["SHA1"]
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "SHA1"
+globs = ["SHA1", "SHA1.+"]
+
+[[lean_lib]]
+name = "SHA1Checks"
+roots = ["Tests.SHA1Checks"]

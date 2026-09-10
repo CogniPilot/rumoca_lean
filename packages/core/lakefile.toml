@@ -1,0 +1,29 @@
+name = "rumoca_core"
+version = "0.1.0"
+testDriver = "RumocaCoreChecks"
+defaultTargets = ["RumocaCore"]
+
+[[require]]
+name = "mathlib"
+git = "https://github.com/leanprover-community/mathlib4.git"
+rev = "v4.29.1"
+
+[[require]]
+name = "modelica_parser"
+path = "../modelica-parser"
+
+[[lean_lib]]
+name = "RumocaCore"
+globs = ["RumocaCore", "RumocaCore.+"]
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "RumocaCoreChecks"
+roots = ["Tests.CoreAudit", "Tests.TensorChecks"]
+
+[[require]]
+name = "galec_parser"
+path = "../galec-parser"

@@ -1,0 +1,20 @@
+name = "rumoca_c"
+version = "0.1.0"
+testDriver = "RumocaCChecks"
+defaultTargets = ["RumocaC"]
+
+[[require]]
+name = "rumoca_core"
+path = "../core"
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "RumocaC"
+globs = ["RumocaC", "RumocaC.+"]
+
+[[lean_lib]]
+name = "RumocaCChecks"
+roots = ["Tests.CAudit"]

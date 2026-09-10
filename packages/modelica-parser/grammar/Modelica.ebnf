@@ -1,0 +1,115 @@
+// Selected from Rumoca's modelica.par at a1daf47556c1a6ffd7f4b203235ff09711089a85.
+// See README.md for the exact upstream path and every deliberate restriction.
+// The first production is the start symbol. Only the unit and driven profiles
+// are admitted here; attribute identifiers are checked by name resolution.
+
+stored_definition
+    : class_definition ';'
+    ;
+class_definition
+    : class_prefixes class_specifier
+    ;
+class_prefixes
+    : model
+    ;
+class_specifier
+    : long_class_specifier
+    ;
+long_class_specifier
+    : standard_class_specifier
+    ;
+standard_class_specifier
+    : ident composition end ident
+    ;
+composition
+    : unit_composition | driven_composition
+    ;
+
+// A.2.4: one unmodified Real declaration for the unit regression profile.
+unit_composition
+    : component_clause ';' equation_section
+    ;
+component_clause
+    : type_specifier component_list
+    ;
+type_specifier
+    : 'Real'
+    ;
+component_list
+    : component_declaration
+    ;
+component_declaration
+    : declaration
+    ;
+declaration
+    : ident
+    ;
+
+// A.2.6: one equation, with the two profile-specific right-hand sides kept
+// separate so the grammar does not admit mixtures of the profiles.
+equation_section
+    : equation some_equation ';'
+    ;
+some_equation
+    : simple_equation
+    ;
+simple_equation
+    : der '(' component_reference ')' '=' '1'
+    ;
+component_reference
+    : ident
+    ;
+
+// A.2.4/A.2.5: input Real u; output Real x(start=0, fixed=true);
+driven_composition
+    : input component_clause ';' output initialized_component_clause ';' driven_equation_section
+    ;
+initialized_component_clause
+    : type_specifier initialized_declaration
+    ;
+initialized_declaration
+    : ident class_modification
+    ;
+class_modification
+    : '(' argument_list ')'
+    ;
+argument_list
+    : zero_modification ',' fixed_modification
+    ;
+zero_modification
+    : ident '=' '0'
+    ;
+fixed_modification
+    : ident '=' true
+    ;
+driven_equation_section
+    : equation driven_equation ';'
+    ;
+driven_equation
+    : der '(' component_reference ')' '=' component_reference
+    ;
+
+// A.1: use the already-verified ASCII identifier lexer; no quoted identifiers.
+ident
+    : IDENT
+    ;
+
+// Keyword productions below are verbatim from the reference grammar.
+model
+    : 'model'
+    ;
+input
+    : 'input'
+    ;
+output
+    : 'output'
+    ;
+equation
+    : 'equation'
+    ;
+end : 'end'
+    ;
+der : 'der'
+    ;
+true: 'true'
+    ;

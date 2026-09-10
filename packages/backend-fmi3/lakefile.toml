@@ -1,0 +1,28 @@
+name = "rumoca_fmi3"
+version = "0.1.0"
+testDriver = "RumocaFMI3Checks"
+defaultTargets = ["RumocaFMI3"]
+
+[[require]]
+name = "rumoca_core"
+path = "../core"
+
+[[require]]
+name = "rumoca_c"
+path = "../backend-c"
+
+[[lean_lib]]
+name = "RumocaFMI3"
+globs = ["RumocaFMI3", "RumocaFMI3.+"]
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "RumocaFMI3Checks"
+roots = ["Tests.FMI3Audit", "Tests.MemoryChecks", "Tests.CallChecks", "Tests.TimeChecks", "Tests.HistoryChecks"]
+
+[[require]]
+name = "xml"
+path = "../xml"

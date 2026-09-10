@@ -1,0 +1,5 @@
+import Rumoca.EFMIArtifactCheck
+
+set_option maxRecDepth 20000
+set_option maxHeartbeats 8000000
+verify_efmi_algorithm_files

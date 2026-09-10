@@ -1,0 +1,80 @@
+import Rumoca.EFMIManifestArtifactCheck
+import Rumoca.EFMIArchiveProofs
+import RumocaEFMI.ZIPArchiveCertificateCheck
+import RumocaEFMISchemaCertificates
+
+/-! Fixed actual-eFMU adapter for the frozen two-representation profile.
+The candidate reader and early comparisons can reject input but cannot certify
+it. Complete ZIP bytes and the source/code/manifest chain are checked together
+by the kernel. This does not certify the external C compiler or full XSD/prose
+semantics, and it does not publish an archive. -/
+namespace Rumoca.EFMIArchiveArtifactCheck
+open Lean Elab Command EFMI
+
+elab "verify_efmi_archive" : command => do
+  let path ← EFMICheckOptions.required rumoca.efmi.root
+  let bytes ← IO.FS.readBinFile path
+  let items ← match StoredZIP.decodeCandidate bytes with
+    | .ok entries => pure entries
+    | .error error => throwError "{error}"
+  unless items.map (·.name) == Archive.paths do
+    throwError "eFMU member roster differs from the certified profile"
+  for resource in Resources.schemas do
+    unless Archive.lookup items resource.name == some resource.text.toUTF8 do
+      throwError "archive schema resource differs from the pinned release: {resource.name}"
+  let readMember (member : Archive.Member) : CommandElabM String := do
+    let some raw := Archive.lookup items member.name | throwError "missing {member.name}"
+    let some text := String.fromUTF8? raw | throwError "invalid UTF-8 in {member.name}"
+    return text
+  let code : Archive.Code := ⟨← readMember .algorithm, ← readMember .production,
+    ← readMember .algorithmManifest, ← readMember .productionManifest, ← readMember .content⟩
+  let files ← match Directory.snapshot code.algorithm code.production code.algorithmXML
+      code.productionXML code.contentXML with
+    | .ok files => pure files
+    | .error error => throwError "{error}"
+  let input ← EFMICheckOptions.readCode code.algorithm
+  EFMIManifestArtifactCheck.check input files
+  let mut candidates : Array StoredZIP.ArchiveCertificateCheck.Candidate := #[]
+  for (member, i) in Archive.members.zipIdx do
+    let name := `Rumoca.CheckedEFMIArchive |>.str s!"code_{i}"
+    StoredZIP.CertificateCheck.certifyCRC name (code.text member)
+    candidates := candidates.push ⟨member.name, code.text member, name⟩
+  for (resource, i) in Resources.schemas.zipIdx do
+    candidates := candidates.push ⟨resource.name, resource.text,
+      `Rumoca.EFMI.SchemaCertificates |>.str s!"resource_{i}"⟩
+  let archiveName := `Rumoca.CheckedEFMIArchive
+  StoredZIP.ArchiveCertificateCheck.certify archiveName bytes candidates
+  let algorithm := Syntax.mkStrLit code.algorithm
+  let production := Syntax.mkStrLit code.production
+  let algorithmXML := Syntax.mkStrLit code.algorithmXML
+  let productionXML := Syntax.mkStrLit code.productionXML
+  let contentXML := Syntax.mkStrLit code.contentXML
+  let codeName := mkIdent (archiveName.str "code")
+  let entries := mkIdent (archiveName.str "entries_0")
+  let archiveBytes := mkIdent (archiveName.str "bytes")
+  let transport := mkIdent (archiveName.str "conforms")
+  let entriesEq := mkIdent (archiveName.str "entries_eq")
+  elabCommand (← `(command| def $codeName:ident : Archive.Code :=
+    ⟨$algorithm, $production, $algorithmXML, $productionXML, $contentXML⟩))
+  elabCommand (← `(command| theorem $entriesEq:ident : $entries = Archive.entries $codeName := rfl))
+  let source := Syntax.mkStrLit input.source
+  let grammar := Syntax.mkStrLit input.grammar
+  let galecGrammar := Syntax.mkStrLit input.galecGrammar
+  let identity := mkIdent `Rumoca.CheckedEFMIFiles.manifest_identity
+  let manifests := mkIdent `Rumoca.CheckedEFMIFiles.source_to_manifests
+  let rootName := `Rumoca.CheckedEFMIFiles.source_to_archive
+  let root := mkIdent rootName
+  elabCommand (← `(command| theorem $root:ident :
+      Generated.source = $grammar ∧ GALEC.Generated.source = $galecGrammar ∧
+      ∃ a : Artifact $source, compile $source = .ok a ∧ ArchiveContract a $identity $archiveBytes := by
+    obtain ⟨g₁, g₂, a, compiled, contract⟩ := $manifests:ident
+    exact ⟨g₁, g₂, a, compiled, archive_correct a $identity $codeName contract
+      ($entriesEq:ident ▸ $transport:ident)⟩))
+  if (← get).messages.hasErrors then throwError "source-to-archive certificate failed"
+  let dependencies ← collectAxioms rootName
+  for dependency in dependencies do
+    unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
+      throwError "unapproved axiom in archive contract: {dependency}"
+  logInfo m!"{rootName} depends on axioms: {dependencies.toList}"
+
+end Rumoca.EFMIArchiveArtifactCheck

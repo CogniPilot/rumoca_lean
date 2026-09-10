@@ -1,0 +1,49 @@
+name = "rumoca_efmi"
+version = "0.1.0"
+testDriver = "RumocaEFMIChecks"
+defaultTargets = ["RumocaEFMI"]
+
+[[input_dir]]
+name = "efmiSchemas"
+path = "vendor/efmi/schemas"
+text = false
+
+[[lean_lib]]
+name = "RumocaEFMIResources"
+extraDepTargets = ["efmiSchemas"]
+
+[[lean_lib]]
+name = "RumocaEFMISchemaCertificates"
+moreLeanArgs = ["-s", "65536"]
+
+[[require]]
+name = "rumoca_core"
+path = "../core"
+
+[[require]]
+name = "rumoca_c"
+path = "../backend-c"
+
+[[lean_lib]]
+name = "RumocaEFMI"
+globs = ["RumocaEFMI", "RumocaEFMI.+"]
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "RumocaEFMIChecks"
+roots = ["Tests.ProductionChecks"]
+
+[[require]]
+name = "sha1"
+path = "../sha1"
+
+[[require]]
+name = "xml"
+path = "../xml"
+
+[[require]]
+name = "galec_parser"
+path = "../galec-parser"

@@ -1,0 +1,10 @@
+name = "rumoca_fmu_runner"
+version = "0.1.0"
+defaultTargets = ["FMURunner", "fmu-runner"]
+
+[[lean_lib]]
+name = "FMURunner"
+
+[[lean_exe]]
+name = "fmu-runner"
+root = "Main"

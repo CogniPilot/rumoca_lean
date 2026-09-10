@@ -1,0 +1,61 @@
+# Rumoca core IR package
+
+Target-independent Flat, DAE and Solve representations, finite Solve execution,
+binary64 specifications and generic transition/behavior proofs. This package
+does not import the compiler driver or any backend.
+
+Use `lake build check-core` from the repository root for incremental core proofs and
+axiom checks. `Tests/CoreAudit.lean` and `Tests/TensorChecks.lean` belong to the
+`RumocaCoreChecks` library, also selected by this package's `lake test`. See
+[development commands](../../docs/development.md).
+
+| Module | Contents |
+| --- | --- |
+| `RumocaCore`, `RumocaCore.IR` | Runtime IR types and lowering functions |
+| `RumocaCore.Tensor` | Shared rank/extent types and shape-preserving array-backed storage |
+| `RumocaCore.Tensor.Matrix` | Proved equivalence to mathlib matrices using mathlib's finite product indexing |
+| `RumocaCore.Solve.Tensor`, `Solve.IVP` | Compact tensor programs, independent denotation, executable evaluator and explicit IVP |
+| `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
+| `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
+| `RumocaCore.Solve.Algorithm`, `AlgorithmProofs` | Tensor register refinement of GALEC, preserving operation order and method execution |
+| `RumocaCore.GALEC.Protocol` | Restricted eFMI lifecycle reference and complete permitted-trace refinement |
+| `RumocaCore.Driven.IR`, `Driven.Lowering` | Draft driven profile's Flat/DAE/Solve equations, initialization and per-pass proofs |
+| `RumocaCore.Pass` | Generic behavior-preservation composition and property transfer |
+| `RumocaCore.SolveSemantics` | Interpretation of Solve using the admitted finite sampling policy |
+| `RumocaCore.Solve.ModelExchange` | Shared model state/derivatives, unit solver and nested CS state; internal contracts, not an FMI ABI |
+| `RumocaCore.Real.Binary64`, `Real.Encoding` | Arithmetic specification, rounding proofs and finite bit encodings |
+| `RumocaCore.Real.Comparison` | Binary64 classification and ordered/unordered comparisons, with finite comparison-to-real-order proofs |
+| `RumocaCore.FMI3.Time` | Independent ME time-history window and its lower-bound representation contract |
+| `RumocaCore.FMI3.Initialization` | Independent finite initialization admission profile, optional argument bits and mathematical order connection |
+| `RumocaCore.Transition` | Generic transitions, termination and observable behaviors |
+| `RumocaCore.Profile` | Target-independent calls and relational unit-step policy; transport through equation equivalence |
+
+The runtime IR imports only the parser's AST and its Std dependencies.
+Arithmetic and proof modules import mathlib separately. Declarations keep their
+`Rumoca` namespaces. Solve remains source indexed and carries its lowering
+evidence; no C syntax or target function enumeration appears in these IR types.
+
+```sh
+# In nix develop, from the repository root:
+lake build rumoca_core/RumocaCore
+
+# Package-only build with its own pinned dependency manifest:
+lake -d packages/core build
+```
+
+The [compiler package](../compiler/README.md) owns source semantics and the
+end-to-end composition with parsing and output artifacts. Each backend consumes
+Solve IR from this package and owns its target syntax, rendering and execution
+contracts.
+
+The eFMI branch is DAE → checked GALEC → Solve algorithm. Algorithm Code
+rendering consumes the GALEC product; Production C must consume its Solve
+refinement. This branch does not reconstruct DAE from GALEC or replace the
+numerical IVP root. The [eFMI roadmap](../../dev/efmi.md) records the remaining
+target, lifecycle-memory and actual-archive obligations.
+
+The tensor IVP is the direction for the new input/state profile. The older
+unit-only `Solve.Model` remains the production regression path until the new
+path has a target execution and actual-artifact theorem. Neither the new tensor
+types nor their mathlib bridge add Modelica arrays, matrix multiplication,
+PDEs or neural ODEs to the compiler. See [the IR review](../../dev/ir-review.md).

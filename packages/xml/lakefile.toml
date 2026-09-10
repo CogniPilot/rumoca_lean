@@ -1,0 +1,16 @@
+name = "xml"
+version = "0.1.0"
+testDriver = "XMLChecks"
+defaultTargets = ["XML"]
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "XML"
+globs = ["XML", "XML.+"]
+
+[[lean_lib]]
+name = "XMLChecks"
+roots = ["Tests.XMLChecks"]

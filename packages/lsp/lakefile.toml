@@ -1,0 +1,24 @@
+name = "rumoca_lsp"
+version = "0.1.0"
+defaultTargets = ["RumocaLSP", "rumoca-lsp"]
+testDriver = "RumocaLSPChecks"
+
+[[require]]
+name = "modelica_parser"
+path = "../modelica-parser"
+
+[[require]]
+name = "proof_audit"
+path = "../verification"
+
+[[lean_lib]]
+name = "RumocaLSP"
+globs = ["RumocaLSP", "RumocaLSP.+"]
+
+[[lean_exe]]
+name = "rumoca-lsp"
+root = "Main"
+
+[[lean_lib]]
+name = "RumocaLSPChecks"
+roots = ["Tests.LSPAudit"]
