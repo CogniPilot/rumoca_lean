@@ -162,12 +162,34 @@ All 35 added roots and the actual-file/native gate pass in
 `build/c-diagonal-gate.log`. `build/tensor-c/diagonal-contract.log` audits the
 exact file theorem. One assertion group extends the existing native AD fixture
 to its dense matrix output; no additional example model or rejection matrix
-was added. The full gate is tracked in `build/c-diagonal-full-gate.log`.
-This helper does not yet compose coefficient production and diagonal output
-into the actual whole model function. FMI storage/metadata/lifecycle binding,
+was added. The full gate passed in `build/c-diagonal-full-gate.log` and in
+[CI for 8a3b902](https://github.com/CogniPilot/rumoca_lean/actions/runs/34483284726).
+This helper checkpoint does not compose coefficient production and diagonal
+output into the actual whole model function. FMI storage/metadata/lifecycle binding,
 overflow/error policy and tensor source-to-archive certificates remain open.
 External header/linkage and valid object-storage assumptions remain explicit;
 there is no new allocation or native ABI theorem.
+
+The composed Jacobian function now has `Lowering.DiagonalArtifactContract`.
+`emitDiagonal_correct` composes the coefficient program with its prepared
+diagonal output; `diagonal_call_refines` covers every complete function-call
+behavior. The result contains the exact finite Solve matrix and preserves the
+coefficient buffer and every cell outside the combined destinations. Reserved
+matrix storage remains writable throughout coefficient execution. The printer
+supports the explicit diagonal call through independent token rules, and
+`emitDiagonal_code_count` retains one call per prepared tensor operation.
+
+`ProgramFixture.DiagonalEntry.StorageContract` discharges the generic storage
+premises for the existing square/Jacobian example, universally over shapes,
+finite inputs and backing heaps. Its complete-file contract replaces the
+coefficient-only development artifact; no new source model or grammar case is
+admitted. Ordered finite coefficient execution, a matrix count fitting `size_t`,
+supplied object storage and external helper/header bindings remain explicit.
+This proves the Jacobian function, not the complete IVP or FMI lifecycle.
+Its 23 added roots and the actual-file/native gate pass in
+`build/c-diagonal-model-gate.log`. The exact file theorem is audited in
+`build/tensor-c/program-contract.log`; the required full gate is tracked in
+`build/c-diagonal-model-full-gate.log`.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real

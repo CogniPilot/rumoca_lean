@@ -3,6 +3,7 @@ import RumocaC.TensorCallContract
 import RumocaC.TensorFillContract
 import RumocaC.TensorDiagonalContract
 import TensorCChecks.Entry
+import TensorCChecks.DiagonalEntry
 
 #audit axioms Rumoca.CArithmetic.floatMul_finite
 #audit axioms Rumoca.CLoops.increment_exact
@@ -127,3 +128,26 @@ import TensorCChecks.Entry
 #audit axioms Rumoca.CTensor.Diagonal.execution_correct
 #audit axioms Rumoca.CTensor.Diagonal.solve_correct
 #audit axioms Rumoca.CTensor.Diagonal.artifact_correct
+#audit axioms Rumoca.CTensor.Lowering.emitDiagonal_code_count
+#audit axioms Rumoca.CTensor.Lowering.fresh_push
+#audit axioms Rumoca.CTensor.Lowering.reserved_result
+#audit axioms Rumoca.CTensor.Lowering.reserved_writable
+#audit axioms Rumoca.CTensor.Lowering.emitDiagonal_correct
+#audit axioms Rumoca.CTensor.Lowering.diagonal_call_reaches
+#audit axioms Rumoca.CTensor.Lowering.diagonal_call_refines
+#audit axioms Rumoca.CTensor.Lowering.diagonal_artifact_correct
+#audit axioms Rumoca.CTensor.Lowering.Syntax.diagonal_statement_render
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.arguments_valid
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.output_writable
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.represented
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.reserved
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.named_bound
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.output_bound
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.layout_bound
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.ready
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.body_matches
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.function_tree
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.valid
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.scope
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.call_correct
+#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.artifact_correct

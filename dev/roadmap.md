@@ -74,9 +74,15 @@ All 34 added roots and the stronger actual-file/native gate pass in
 The diagonal output helper now has a complete call, matrix-value and memory-frame
 theorem, tied to the prepared Solve diagonal and its actual printed file.
 Its 35 new roots and the actual-file/native check pass in
-`build/c-diagonal-gate.log`; the full gate is tracked in `build/c-diagonal-full-gate.log`.
-Next, compose coefficient production and diagonal output in the actual model
-function, then bind storage/metadata to FMI and eFMI with overflow/error policy.
+`build/c-diagonal-gate.log`; the full gate passed in `build/c-diagonal-full-gate.log`
+and in [CI for 8a3b902](https://github.com/CogniPilot/rumoca_lean/actions/runs/34483284726).
+The complete Jacobian function now composes coefficient production and diagonal
+output, with call-entry/return, concrete symbolic storage and full memory-frame
+proofs. Its 23 added roots and the actual-file/native gate pass in
+`build/c-diagonal-model-gate.log`; the full gate is tracked in
+`build/c-diagonal-model-full-gate.log`.
+Next, bind RHS/initialization and Jacobian storage/metadata to FMI and eFMI,
+with the finite overflow/error policy and source-to-archive certificate.
 Preserve the existing diagonal representation;
 general sparsity analysis, compressed storage and coloring follow this FMU
 round, with structural-zero and execution-preservation proofs. No new grammar

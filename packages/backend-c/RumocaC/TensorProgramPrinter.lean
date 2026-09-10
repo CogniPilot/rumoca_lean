@@ -46,6 +46,27 @@ private theorem list_intercalate_cons (sep first second : List α) (rest : List 
       first ++ sep ++ List.intercalate sep (second :: rest) := by
   simp only [List.intercalate, List.intersperse_cons₂, List.flatten_cons, List.append_assoc]
 
+theorem diagonal_statement_render (coeff output count cells : String)
+    (valid : [coeff, output, count, cells].all identifier = true)
+    (depth : Nat) (rest : List Char) (ts : List Token)
+    (h : Scanner.Lexes CTensor.Syntax.config rest ts) :
+    Scanner.Lexes CTensor.Syntax.config
+      (((Stmt.eval (.call (.id "rumoca_tensor_diagonal") [.id coeff, .id output, .id count, .id cells])).render depth).toList ++ rest)
+      ((["rumoca_tensor_diagonal", "(", coeff, ",", output, ",", count, ",", cells, ")", ";"].map Token.literal) ++ ts) := by
+  simp only [List.all_cons, List.all_nil, Bool.and_true, Bool.and_eq_true] at valid
+  simp only [Stmt.render, Expr.render, List.map_cons, List.map_nil, intercalate_cons, intercalate_one,
+    String.toList_append, String.toList_ofList, List.cons_append, List.nil_append, List.append_assoc]
+  apply lex_indent
+  c_lex_fixed
+  apply lex_word coeff valid.1 ',' _ _ (by decide +kernel)
+  c_lex_fixed
+  apply lex_word output valid.2.1 ',' _ _ (by decide +kernel)
+  c_lex_fixed
+  apply lex_word count valid.2.2.1 ',' _ _ (by decide +kernel)
+  c_lex_fixed
+  apply lex_word cells valid.2.2.2 ')' _ _ (by decide +kernel)
+  c_lex_fixed
+
 theorem statement_render (s : Statement) (valid : s.names.all identifier = true)
     (depth : Nat) (rest : List Char) (ts : List Token)
     (h : Scanner.Lexes CTensor.Syntax.config rest ts) :
@@ -72,6 +93,8 @@ theorem statement_render (s : Statement) (valid : s.names.all identifier = true)
       apply lex_word right valid.2.1 ',' _ _ (by decide +kernel) <;> c_lex_fixed <;>
       apply lex_word output valid.2.2.1 ',' _ _ (by decide +kernel) <;> c_lex_fixed <;>
       apply lex_word count valid.2.2.2 ')' _ _ (by decide +kernel) <;> c_lex_fixed
+  | diagonal coefficients output count cells =>
+    exact diagonal_statement_render coefficients output count cells valid depth rest ts h
 
 theorem parameter_render (p : Parameter) (valid : identifier p.name = true)
     (c : Char) (rest : List Char) (ts : List Token) (stop : identRest c = false)

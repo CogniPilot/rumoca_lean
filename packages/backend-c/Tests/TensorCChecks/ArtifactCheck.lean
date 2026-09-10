@@ -1,4 +1,4 @@
-import TensorCChecks.Entry
+import TensorCChecks.DiagonalEntry
 import Lean
 
 /-! Fixed file-to-proposition adapter for the single development program fixture.
@@ -8,16 +8,16 @@ open Lean Elab Command
 
 elab "verify_tensor_program " path:str : command => do
   let source ← IO.FS.readFile path.getString
-  if source != code then
+  if source != DiagonalEntry.code then
     throwError "actual tensor program differs from the certified Solve emission"
   let literal := Lean.Syntax.mkStrLit source
   let theoremName := `Rumoca.CTensor.CheckedProgram.contract
   let theoremId := mkIdent theoremName
   elabCommand (← `(command|
     set_option maxRecDepth 10000 in
-    theorem $theoremId:ident : Entry.ArtifactContract $literal := by
-      apply Entry.artifact_correct
-      tensor_expand_program_fixture
+    theorem $theoremId:ident : DiagonalEntry.ArtifactContract $literal := by
+      apply DiagonalEntry.artifact_correct
+      tensor_expand_diagonal_fixture
       decide +kernel))
   let dependencies ← collectAxioms theoremName
   for dependency in dependencies do

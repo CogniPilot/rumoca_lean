@@ -481,13 +481,44 @@ passed in `build/c-diagonal-gate.log`; the exact root is audited in
 `build/tensor-c/diagonal-contract.log`. The existing native fixture materializes
 its actual AD coefficients as `[[4, 0], [0, 6]]` and checks the output boundary.
 No new source model, grammar case or negative-test matrix was added.
-The full gate for this increment is tracked in `build/c-diagonal-full-gate.log`.
+The full gate for this increment passed in `build/c-diagonal-full-gate.log`
+and in [CI for 8a3b902](https://github.com/CogniPilot/rumoca_lean/actions/runs/34483284726).
 
 Review against Rust's `typed_program/program.rs` again confirms a compact
 `Diagonal { destination, operand }` operation, with its operand and destination
 handled as typed registers. The Lean helper follows that ownership: it writes
 the prepared operation, without deriving AD rules, shapes or a solver.
-Next, compose the coefficient producer and this materializer in the actual
-model function, bind the resulting storage/metadata to FMI, and prove its
+The coefficient producer and materializer are now composed as described below.
+Next, bind the resulting storage/metadata to FMI and prove its
 numerical/error and lifecycle policy before the complete FMU/eFMU artifact gate.
 General sparsity remains after this round, as recorded above.
+
+## Complete Jacobian C function
+
+`Lowering.emitDiagonal` consumes the prepared coefficient program and explicit
+diagonal operation. Its code-size theorem counts one call per Solve operation,
+independently of tensor extents. `Reserved` separates the matrix output from
+entry registers and coefficient destinations; `reserved_result` and
+`reserved_writable` carry those obligations through coefficient execution.
+`emitDiagonal_correct` then composes the actual calls and matrix writes.
+`diagonal_call_refines` covers parameter conversion, fresh entry scope, every
+helper call and ordinary return, with all complete behaviors terminating in
+the exact Solve matrix heap. The coefficients survive materialization and the
+combined memory frame protects all other cells.
+
+The general `DiagonalArtifactContract` includes independently specified C
+tokens, a scoped signature, the exact emitted body and complete-call behavior.
+`ProgramFixture.DiagonalEntry` establishes its storage premises for the existing
+AD example: named input/scratch/matrix objects, arbitrary backing heap and
+arbitrary tensor shape. The actual-file adapter now checks this complete
+Jacobian function, including that storage theorem. The existing native fixture
+calls the same function; its separate coefficient-only entry was removed.
+
+All 23 added roots and the actual-file/native gate pass in
+`build/c-diagonal-model-gate.log` with the unchanged axiom policy. The exact file
+root is audited in `build/tensor-c/program-contract.log`; the full gate is tracked in
+`build/c-diagonal-model-full-gate.log`. This is the Jacobian function, not yet
+the complete IVP: RHS/initialization output binding, finite overflow/error
+policy, FMI storage/metadata/lifecycle and source-to-archive composition remain
+open. Initial symbolic object storage and external helper/header definitions
+remain premises; no allocator, native ABI or machine-compilation proof is added.

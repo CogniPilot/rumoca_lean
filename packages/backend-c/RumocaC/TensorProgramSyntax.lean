@@ -45,16 +45,20 @@ def binaryName : Tensor.BinaryOp → String
 inductive Statement where
   | fill (value : Literal) (output count : String)
   | binary (op : Tensor.BinaryOp) (left right output count : String)
+  | diagonal (coefficients output count cells : String)
   deriving Repr
 
 def Statement.names : Statement → List String
   | .fill _ output count => [output, count]
   | .binary _ left right output count => [left, right, output, count]
+  | .diagonal coefficients output count cells => [coefficients, output, count, cells]
 
 def Statement.scoped (params : List Parameter) : Statement → Bool
   | .fill _ output count => hasType params output .output && hasType params count .count
   | .binary _ left right output count => readable params left && readable params right &&
       hasType params output .output && hasType params count .count
+  | .diagonal coefficients output count cells => readable params coefficients &&
+      hasType params output .output && hasType params count .count && hasType params cells .count
 
 def Statement.valid (params : List Parameter) (s : Statement) : Bool :=
   s.names.all identifier && s.scoped params
@@ -66,6 +70,8 @@ def Statement.tokens : Statement → List String
         ")", ",", output, ",", count, ")", ";"]
   | .binary op left right output count =>
       [binaryName op, "(", left, ",", right, ",", output, ",", count, ")", ";"]
+  | .diagonal coefficients output count cells =>
+      ["rumoca_tensor_diagonal", "(", coefficients, ",", output, ",", count, ",", cells, ")", ";"]
 
 def Statement.tree : Statement → Stmt
   | .fill value output count =>
@@ -73,6 +79,8 @@ def Statement.tree : Statement → Stmt
         [.cast "double" (.nat (match value with | .zero => 0 | .one => 1)), .id output, .id count])
   | .binary op left right output count =>
       .eval (.call (.id (binaryName op)) [.id left, .id right, .id output, .id count])
+  | .diagonal coefficients output count cells =>
+      .eval (.call (.id "rumoca_tensor_diagonal") [.id coefficients, .id output, .id count, .id cells])
 
 structure Function where
   name : String
