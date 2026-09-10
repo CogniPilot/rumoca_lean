@@ -1,6 +1,7 @@
 import ProofAudit.Audit
 import RumocaC.TensorCallContract
 import RumocaC.TensorFillContract
+import RumocaC.TensorDiagonalContract
 import TensorCChecks.Entry
 
 #audit axioms Rumoca.CArithmetic.floatMul_finite
@@ -91,3 +92,38 @@ import TensorCChecks.Entry
 #audit axioms Rumoca.CTensor.ProgramFixture.Entry.ready
 #audit axioms Rumoca.CTensor.ProgramFixture.Entry.call_correct
 #audit axioms Rumoca.CTensor.ProgramFixture.Entry.artifact_correct
+#audit axioms Rumoca.CLoops.sizeAdd_exact
+#audit axioms Rumoca.CLoops.eval_sizeAdd
+#audit axioms Rumoca.CLoops.declare_local
+#audit axioms Rumoca.CTensor.Diagonal.matrix_get
+#audit axioms Rumoca.CTensor.Diagonal.matrix_index
+#audit axioms Rumoca.CTensor.Diagonal.position_index
+#audit axioms Rumoca.CTensor.Diagonal.position_bound
+#audit axioms Rumoca.CTensor.Diagonal.position_injective
+#audit axioms Rumoca.CTensor.Diagonal.counter_bounds
+#audit axioms Rumoca.CTensor.Diagonal.position_bounded
+#audit axioms Rumoca.CTensor.Diagonal.scatter_at
+#audit axioms Rumoca.CTensor.Diagonal.scatter_frame
+#audit axioms Rumoca.CTensor.Diagonal.scatter_store_next
+#audit axioms Rumoca.CTensor.Diagonal.zero_writable
+#audit axioms Rumoca.CTensor.Diagonal.result_reads
+#audit axioms Rumoca.CTensor.Diagonal.result_frame
+#audit axioms Rumoca.CTensor.Diagonal.input_reads
+#audit axioms Rumoca.CTensor.Diagonal.solve_matrix
+#audit axioms Rumoca.CTensor.Diagonal.bind_valid
+#audit axioms Rumoca.CTensor.Diagonal.copy_step
+#audit axioms Rumoca.CTensor.Diagonal.offset_eval
+#audit axioms Rumoca.CTensor.Diagonal.offset_step
+#audit axioms Rumoca.CTensor.Diagonal.loop_reaches
+#audit axioms Rumoca.CTensor.Diagonal.initialize_reaches
+#audit axioms Rumoca.CTensor.Diagonal.tail_reaches
+#audit axioms Rumoca.CTensor.Diagonal.bind_parameters
+#audit axioms Rumoca.CTensor.Diagonal.bind_types
+#audit axioms Rumoca.CTensor.Diagonal.function_reaches
+#audit axioms Rumoca.CTensor.Diagonal.helper_call_reaches
+#audit axioms Rumoca.CTensor.Diagonal.helper_call_correct
+#audit axioms Rumoca.CTensor.Diagonal.invoke_reaches
+#audit axioms Rumoca.CTensor.Diagonal.Syntax.render_denotes
+#audit axioms Rumoca.CTensor.Diagonal.execution_correct
+#audit axioms Rumoca.CTensor.Diagonal.solve_correct
+#audit axioms Rumoca.CTensor.Diagonal.artifact_correct

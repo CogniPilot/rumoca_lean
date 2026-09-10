@@ -19,6 +19,43 @@ theorem convert_size_nat (n : Nat) (bound : n < 2 ^ 64) :
   have h : (0 : Int) ≤ n ∧ (n : Int) < 2 ^ 64 := by constructor <;> omega
   simp only [convert, if_pos h]
 
+omit interface in
+theorem sizeAdd_exact (a b : Nat) (bound : a + b < 2 ^ 64) :
+    sizeAdd (.integer a) (.integer b) = some (.integer (a + b)) := by
+  have ha := convert_size_nat a (by omega)
+  have hb := convert_size_nat b (by omega)
+  have sumLower : (0 : Int) ≤ (a : Int) + b := by omega
+  have sumUpper : (a : Int) + b < 2 ^ 64 := by exact_mod_cast bound
+  simp only [sizeAdd, ha, hb, bind, Option.bind_some, pure, Int.emod_eq_of_lt sumLower sumUpper]
+
+theorem eval_sizeAdd (env : CBody.Locals) (types : Types) (heap : Heap)
+    (left right : String) (a b : Nat)
+    (hl : env left = some (.integer a)) (hr : env right = some (.integer b))
+    (tl : types left = some .size) (tr : types right = some .size) (bound : a + b < 2 ^ 64) :
+    eval env types heap (.bin .add (.id left) (.id right)) = some (.integer (a + b)) := by
+  have both : types left = some .size ∧ types right = some .size := ⟨tl, tr⟩
+  calc
+    _ = (if types left = some .size ∧ types right = some .size then
+      (env left).bind (fun x => (env right).bind (sizeAdd x))
+      else (CBody.eval env heap (.id left)).bind (fun x =>
+        (CBody.eval env heap (.id right)).bind (CArithmetic.floatAdd x))) := eval.eq_2 env types heap left right
+    _ = (env left).bind (fun x => (env right).bind (sizeAdd x)) := if_pos both
+    _ = (some (.integer a)).bind (fun x => (env right).bind (sizeAdd x)) :=
+      congrArg (fun v => v.bind (fun x => (env right).bind (sizeAdd x))) hl
+    _ = (env right).bind (sizeAdd (.integer a)) := Option.bind_some _ _
+    _ = (some (.integer b)).bind (sizeAdd (.integer a)) := congrArg (fun v => v.bind (sizeAdd (.integer a))) hr
+    _ = sizeAdd (.integer a) (.integer b) := Option.bind_some _ _
+    _ = _ := sizeAdd_exact a b bound
+
+theorem declare_local (env : CBody.Locals) (types : Types) (heap : Heap)
+    (type name : String) (expr : Expr) (rest : List Stmt) (declared : CType) (value converted : Value)
+    (typed : interface.types type = some declared) (fresh : env name = none)
+    (evaluated : eval env types heap expr = some value) (cast : convert declared value = some converted) :
+    next (.running (.declare type name expr :: rest) env types heap) =
+      some (.running rest (CBody.bind env name converted) (bindType types name declared) heap) := by
+  simp only [next, typed, evaluated, cast, fresh, Option.isSome_none, Bool.false_eq_true,
+    ↓reduceIte, bind, Option.bind_some, pure]
+
 theorem eval_increment (env : CBody.Locals) (types : Types) (heap : Heap)
     (counter : String) (i : Nat) (value : env counter = some (.integer i))
     (typed : types counter = some .size) (bound : i + 1 < 2 ^ 64) :

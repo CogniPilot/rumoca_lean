@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 mkdir -p build/tensor-c
 
 lake env lean --run packages/backend-c/Tests/EmitTensor.lean build/tensor-c
-for operation in add mul fill; do
+for operation in add mul fill diagonal; do
   cat > "build/tensor-c/Check-$operation.lean" <<EOF
 import RumocaC.TensorArtifactCheck
 verify_tensor_helper "build/tensor-c/$operation.c" as $operation
@@ -52,7 +52,7 @@ rg -q 'actual tensor program differs' build/tensor-c/program-rejection.log
 # Header preprocessing, native C compilation and hardware remain boundaries.
 "${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror -pedantic -fno-fast-math -ffp-contract=off \
   -Wno-unused-parameter -include packages/backend-c/Tests/tensor-native.h \
-  build/tensor-c/add.c build/tensor-c/mul.c build/tensor-c/fill.c build/tensor-c/program.c \
+  build/tensor-c/add.c build/tensor-c/mul.c build/tensor-c/fill.c build/tensor-c/diagonal.c build/tensor-c/program.c \
   packages/backend-c/Tests/tensor-native.c -lm -o build/tensor-c/native
 build/tensor-c/native
 echo 'Tensor C actual-file contracts, mutation rejection and native boundary check passed'

@@ -21,10 +21,20 @@ def increment (value : Value) : Option Value := do
   let .integer n ← convert .size value | none
   return .integer ((n + 1) % (2 ^ 64))
 
+/-- Addition of two declared unsigned size values follows C modulo arithmetic.
+The diagonal writer proves that its stride updates cannot wrap. -/
+def sizeAdd (left right : Value) : Option Value := do
+  let .integer a ← convert .size left | none
+  let .integer b ← convert .size right | none
+  return .integer ((a + b) % (2 ^ 64))
+
 def eval (env : CBody.Locals) (types : Types) (heap : Heap) : Expr → Option Value
   | .bin .add (.id name) (.nat 1) => do
       if types name = some .size then increment (← env name)
       else none
+  | .bin .add (.id left) (.id right) => do
+      if types left = some .size ∧ types right = some .size then sizeAdd (← env left) (← env right)
+      else CArithmetic.floatAdd (← CBody.eval env heap (.id left)) (← CBody.eval env heap (.id right))
   | .bin .add a b => do CArithmetic.floatAdd (← CBody.eval env heap a) (← CBody.eval env heap b)
   | .bin .mul a b => do CArithmetic.floatMul (← CBody.eval env heap a) (← CBody.eval env heap b)
   | e => CBody.eval env heap e

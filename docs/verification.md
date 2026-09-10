@@ -143,7 +143,31 @@ All 34 added call/storage roots pass the unchanged axiom audit in
 certificate, operator-mutation rejection and the existing native boundary check.
 `build/tensor-c/program-contract.log` audits the exact file theorem with only
 `propext`, `Quot.sound` and `Classical.choice`. The required full gate for this
-increment is tracked in `build/c-tensor-entry-full-gate.log`.
+increment passed in `build/c-tensor-entry-full-gate.log` and in
+[CI for 6d4ec7c](https://github.com/CogniPilot/rumoca_lean/actions/runs/34479402664).
+
+The diagonal output helper now has `CTensor.Diagonal.ArtifactContract`. It binds
+the complete actual C text to ordinary call entry, the existing zero-fill call,
+every diagonal copy and return. `ExecutionContract` requires exact coefficient
+bit patterns on the diagonal, positive zeros elsewhere, and preservation of
+every cell outside the output matrix. `SolveContract` identifies the result
+with the prepared `Solve.Tensor.DiagonalProgram` after its coefficient program
+has executed. All statements quantify over arbitrary tensor shapes, including
+empty ones, with separate readable coefficients and a writable matrix range.
+The matrix cell count must fit the authored 64-bit `size_t`; the dimension,
+stride and every unsigned update are proved to fit from that single bound.
+The unsigned-addition rule follows C11 N1570 §6.2.5's modulo semantics.
+
+All 35 added roots and the actual-file/native gate pass in
+`build/c-diagonal-gate.log`. `build/tensor-c/diagonal-contract.log` audits the
+exact file theorem. One assertion group extends the existing native AD fixture
+to its dense matrix output; no additional example model or rejection matrix
+was added. The full gate is tracked in `build/c-diagonal-full-gate.log`.
+This helper does not yet compose coefficient production and diagonal output
+into the actual whole model function. FMI storage/metadata/lifecycle binding,
+overflow/error policy and tensor source-to-archive certificates remain open.
+External header/linkage and valid object-storage assumptions remain explicit;
+there is no new allocation or native ABI theorem.
 
 `Source.Solves` is the ideal continuous reference ODE over mathematical reals,
 not a complete operational interpretation of the predefined Modelica Real

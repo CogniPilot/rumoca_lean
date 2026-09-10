@@ -1,5 +1,6 @@
 import RumocaC.TensorCallContract
 import RumocaC.TensorFillContract
+import RumocaC.TensorDiagonalContract
 import Lean
 
 /-! Trusted file-to-proposition adapter for the development tensor C
@@ -14,7 +15,8 @@ elab "verify_tensor_helper " path:str " as " operation:ident : command => do
     | `add => pure (function .add).render
     | `mul => pure (function .mul).render
     | `fill => pure Fill.function.render
-    | _ => throwError "expected tensor helper add, mul or fill"
+    | `diagonal => pure Diagonal.function.render
+    | _ => throwError "expected tensor helper add, mul, fill or diagonal"
   let source ← IO.FS.readFile path.getString
   -- Early rejection is only a convenience. Kernel-checked literal equality
   -- below is the sole authorization for applying the artifact theorem.
@@ -24,9 +26,11 @@ elab "verify_tensor_helper " path:str " as " operation:ident : command => do
   let statement ← match operation.getId with
     | `add => `(term| CallArtifactContract $literal Tensor.BinaryOp.add)
     | `mul => `(term| CallArtifactContract $literal Tensor.BinaryOp.mul)
+    | `diagonal => `(term| Diagonal.ArtifactContract $literal)
     | _ => `(term| Fill.ArtifactContract $literal)
   let proof ← match operation.getId with
     | `fill => `(tactic| (apply Fill.artifact_correct; tensor_expand_fill_printer; decide +kernel))
+    | `diagonal => `(tactic| (apply Diagonal.artifact_correct; tensor_expand_diagonal_printer; decide +kernel))
     | _ => `(tactic| (apply call_artifact_correct; tensor_expand_printer; decide +kernel))
   let theoremName := `Rumoca.CTensor.CheckedFile.contract
   let theoremId := mkIdent theoremName

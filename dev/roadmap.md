@@ -68,10 +68,16 @@ and return. The fixed file contract now also derives scratch/input invariants
 from concrete symbolic initial storage for the square coefficient program.
 Allocation, native object layout and ABI remain outside these proofs.
 All 34 added roots and the stronger actual-file/native gate pass in
-`build/c-tensor-entry-gate.log`; the required full gate is tracked in
-`build/c-tensor-entry-full-gate.log`.
-Next, bind storage/metadata to the FMI and eFMI products, including diagonal
-output and overflow/error policy. Preserve the existing diagonal representation;
+`build/c-tensor-entry-gate.log`; the required full gate passed in
+`build/c-tensor-entry-full-gate.log` and in
+[CI for 6d4ec7c](https://github.com/CogniPilot/rumoca_lean/actions/runs/34479402664).
+The diagonal output helper now has a complete call, matrix-value and memory-frame
+theorem, tied to the prepared Solve diagonal and its actual printed file.
+Its 35 new roots and the actual-file/native check pass in
+`build/c-diagonal-gate.log`; the full gate is tracked in `build/c-diagonal-full-gate.log`.
+Next, compose coefficient production and diagonal output in the actual model
+function, then bind storage/metadata to FMI and eFMI with overflow/error policy.
+Preserve the existing diagonal representation;
 general sparsity analysis, compressed storage and coloring follow this FMU
 round, with structural-zero and execution-preservation proofs. No new grammar
 case is needed for the current work.

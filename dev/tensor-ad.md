@@ -451,4 +451,43 @@ All 34 new roots pass the unchanged axiom audit in
 certificate, altered-operator rejection and the existing native boundary check;
 no new native test case was needed. The exact file root is audited in
 `build/tensor-c/program-contract.log`. The required full gate for this increment
-is tracked in `build/c-tensor-entry-full-gate.log`.
+passed in `build/c-tensor-entry-full-gate.log` and in
+[CI for 6d4ec7c](https://github.com/CogniPilot/rumoca_lean/actions/runs/34479402664).
+
+## Diagonal C output
+
+The dense-output helper consumes the prepared diagonal coefficients. It calls
+the already proved fill helper with positive zero, then copies each coefficient
+to its diagonal location. Its C code is independent of the tensor extents;
+the compiler does not enumerate coordinates. The storage proof reuses mathlib's
+matrix index equivalence and proves exact bit preservation, off-diagonal zeros
+and the full memory frame. Empty shapes are included. From a matrix cell count
+fitting the authored 64-bit `size_t`, `counter_bounds` and `position_bounded`
+derive all dimension/stride/index bounds, including the final unused offset.
+
+`CLoops.sizeAdd` specifies unsigned modulo addition for declared size values,
+and `eval_sizeAdd` proves the loop's actual expression cannot wrap under those
+bounds. This rule follows
+[C11 N1570 §6.2.5](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+`Diagonal.helper_call_correct` covers all complete call behaviors;
+`invoke_reaches` restores the caller's scope with the exact matrix heap effects.
+`Diagonal.SolveContract` identifies that buffer with the actual prepared Solve
+diagonal evaluation, given the independent finite coefficient execution.
+The fixed helper-file adapter now checks this contract plus the independently
+specified complete token grammar against `build/tensor-c/diagonal.c`.
+
+All 35 new roots pass the unchanged axiom policy. The actual-file/native gate
+passed in `build/c-diagonal-gate.log`; the exact root is audited in
+`build/tensor-c/diagonal-contract.log`. The existing native fixture materializes
+its actual AD coefficients as `[[4, 0], [0, 6]]` and checks the output boundary.
+No new source model, grammar case or negative-test matrix was added.
+The full gate for this increment is tracked in `build/c-diagonal-full-gate.log`.
+
+Review against Rust's `typed_program/program.rs` again confirms a compact
+`Diagonal { destination, operand }` operation, with its operand and destination
+handled as typed registers. The Lean helper follows that ownership: it writes
+the prepared operation, without deriving AD rules, shapes or a solver.
+Next, compose the coefficient producer and this materializer in the actual
+model function, bind the resulting storage/metadata to FMI, and prove its
+numerical/error and lifecycle policy before the complete FMU/eFMU artifact gate.
+General sparsity remains after this round, as recorded above.

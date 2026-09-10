@@ -34,5 +34,10 @@ int main(void) {
       scratch[2], scratch[3], scratch[4], output + 1, 2);
   assert(output[0] == 17.0 && output[1] == 4.0 && output[2] == 6.0 && output[3] == 19.0);
   assert(scratch[2][0] == 4.0 && scratch[2][1] == 9.0);
+  double jacobian[6] = {17.0, -1.0, -1.0, -1.0, -1.0, 19.0};
+  rumoca_tensor_diagonal(output + 1, jacobian + 1, 2, 4);
+  assert(jacobian[0] == 17.0 && jacobian[1] == 4.0 && jacobian[2] == 0.0 &&
+         !signbit(jacobian[2]) && jacobian[3] == 0.0 && !signbit(jacobian[3]) &&
+         jacobian[4] == 6.0 && jacobian[5] == 19.0);
   return 0;
 }
