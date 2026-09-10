@@ -7,6 +7,7 @@ helper or numerical body must change the observation; names alone do not
 grant a function its intended behavior. All reductions are kernel checked. -/
 noncomputable section
 namespace Rumoca.FMI3.CallChecks
+private local instance : StaticLiterals := ⟨fun _ => none⟩
 private local instance targetInterface : CInterface := cInterface
 open CTree CMemory CCalls CallProofs
 set_option maxRecDepth 10000

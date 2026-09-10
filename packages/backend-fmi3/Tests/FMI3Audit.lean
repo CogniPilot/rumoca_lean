@@ -14,6 +14,8 @@ import RumocaFMI3.GuardProofs
 import RumocaFMI3.HistoryBodies
 import RumocaFMI3.InitializationBodies
 import RumocaFMI3.InitializationEntry
+import RumocaFMI3.ErrorCalls
+
 import RumocaFMI3.LifecycleGuard
 import RumocaFMI3.LifecycleBodies
 import RumocaFMI3.BodyEmbedding
@@ -25,6 +27,13 @@ import RumocaFMI3.Metadata
 import RumocaFMI3.StateProofs
 import RumocaFMI3.StateCalls
 import RumocaFMI3.TimeProofs
+
+#audit axioms Rumoca.FMI3.ErrorCalls.failure_parameters
+#audit axioms Rumoca.FMI3.ErrorCalls.failure_reaches
+#audit axioms Rumoca.FMI3.ErrorCalls.failure_statement_reaches
+#audit axioms Rumoca.FMI3.ErrorCalls.nominal_parameters
+#audit axioms Rumoca.FMI3.ErrorCalls.nominal_reject_reaches
+#audit axioms Rumoca.FMI3.ErrorCalls.nominal_reject_correct
 
 #audit axioms Rumoca.FMI3.metadata_name
 #audit axioms Rumoca.FMI3.StateCalls.parameters_bound

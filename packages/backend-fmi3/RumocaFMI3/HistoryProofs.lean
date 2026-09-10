@@ -6,7 +6,8 @@ import RumocaCore.FMI3.History
 These contracts use typed, writable instance fields and arbitrary surrounding
 memory. Public lifecycle/error bodies and adapter text binding remain separate. -/
 namespace Rumoca.FMI3.HistoryProofs
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 open Binary64 (toBits)
 
@@ -20,26 +21,31 @@ structure Stored (heap : Heap) (p : Address) (c : Time.Clock) : Prop where
   eventTime : heap (p.member "eventTime") = some (cell c.eventTime)
   lastCompleted : heap (p.member "lastCompleted") = some (cell c.lastCompleted)
 
+omit static in
 theorem write_time (h : Stored heap p c) (v : Binary64.Value) :
     Stored (write heap p "time" v) p { c with time := v } := by
   rcases h with ⟨ht, hm, he, hl⟩
   constructor <;> simp_all [write, replace]
 
+omit static in
 theorem write_minimum (h : Stored heap p c) (v : Binary64.Value) :
     Stored (write heap p "timeMin" v) p { c with minimum := v } := by
   rcases h with ⟨ht, hm, he, hl⟩
   constructor <;> simp_all [write, replace]
 
+omit static in
 theorem write_event (h : Stored heap p c) (v : Binary64.Value) :
     Stored (write heap p "eventTime" v) p { c with eventTime := v } := by
   rcases h with ⟨ht, hm, he, hl⟩
   constructor <;> simp_all [write, replace]
 
+omit static in
 theorem write_completed (h : Stored heap p c) (v : Binary64.Value) :
     Stored (write heap p "lastCompleted" v) p { c with lastCompleted := v } := by
   rcases h with ⟨ht, hm, he, hl⟩
   constructor <;> simp_all [write, replace]
 
+omit static in
 theorem load_cell (hc : heap p = some (cell v)) : load heap p = some (.finite v) := by
   simp [load, hc, cell, convert, Value.finite]
 
@@ -87,6 +93,7 @@ theorem raise_run (env : Locals) (heap : Heap) (p : Address) (name : String)
     simp [run, next, Runtime.raiseField, Runtime.branch, Runtime.lt, eval, hl, hv,
       Value.finite, comparison, floatComparison, hb, boolean, Value.truth, h, raiseHeap]
 
+omit static in
 theorem raise_minimum (h : Stored heap p c) (v : Binary64.Value) :
     Stored (raiseHeap heap p "timeMin" c.minimum v) p
       { c with minimum := Time.maximum c.minimum v } := by
@@ -106,13 +113,16 @@ def completedHeap (heap : Heap) (p : Address) (c : Time.Clock) : Heap :=
   write (raiseHeap (write heap p "timeMin" c.eventTime) p "timeMin" c.eventTime c.lastCompleted)
     p "lastCompleted" c.time
 
+omit static in
 theorem initial_stored (h : Stored heap p c) (start : Binary64.Value) :
     Stored (initialHeap heap p start) p (Time.Clock.initial start) :=
   write_completed (write_event (write_minimum (write_time h start) start) start) start
 
+omit static in
 theorem event_stored (h : Stored heap p c) :
     Stored (eventHeap heap p c) p c.event := raise_minimum (write_event h c.time) c.time
 
+omit static in
 theorem completed_stored (h : Stored heap p c) :
     Stored (completedHeap heap p c) p c.completed :=
   write_completed (raise_minimum (write_minimum h c.eventTime) c.lastCompleted) c.time
@@ -183,9 +193,11 @@ theorem completed_correct (env : Locals) (heap : Heap) (p : Address) (c : Time.C
     Stored (completedHeap heap p c) p c.completed ∧ Time.Represents h.completed c.completed :=
   ⟨completed_reaches env heap p c rest hc hm, completed_stored hc, Time.completed_represents hr⟩
 
+omit static in
 theorem write_frame (heap : Heap) (p q : Address) (name : String) (v : Binary64.Value)
     (hn : q ≠ p.member name) : write heap p name v q = heap q := replace_other _ _ _ _ hn
 
+omit static in
 theorem raise_frame (heap : Heap) (p q : Address) (name : String) (a b : Binary64.Value)
     (hn : q ≠ p.member name) : raiseHeap heap p name a b q = heap q := by
   unfold raiseHeap
@@ -193,6 +205,7 @@ theorem raise_frame (heap : Heap) (p q : Address) (name : String) (a b : Binary6
   · exact write_frame heap p q name b hn
   · rfl
 
+omit static in
 theorem initial_frame (heap : Heap) (p q : Address) (start : Binary64.Value)
     (ht : q ≠ p.member "time") (hm : q ≠ p.member "timeMin")
     (he : q ≠ p.member "eventTime") (hl : q ≠ p.member "lastCompleted") :
@@ -200,11 +213,13 @@ theorem initial_frame (heap : Heap) (p q : Address) (start : Binary64.Value)
   simp only [initialHeap, write_frame _ _ _ _ _ hl, write_frame _ _ _ _ _ he,
     write_frame _ _ _ _ _ hm, write_frame _ _ _ _ _ ht]
 
+omit static in
 theorem event_frame (heap : Heap) (p q : Address) (c : Time.Clock)
     (he : q ≠ p.member "eventTime") (hm : q ≠ p.member "timeMin") :
     eventHeap heap p c q = heap q := by
   simp only [eventHeap, raise_frame _ _ _ _ _ _ hm, write_frame _ _ _ _ _ he]
 
+omit static in
 theorem completed_frame (heap : Heap) (p q : Address) (c : Time.Clock)
     (hl : q ≠ p.member "lastCompleted") (hm : q ≠ p.member "timeMin") :
     completedHeap heap p c q = heap q := by

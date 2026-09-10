@@ -8,9 +8,11 @@ independently authored lifecycle predicate. Instance bindings and represented
 kind/mode fields are explicit; printed bytes, ABI validity and logging remain
 separate obligations. No additional command or lifecycle state is admitted. -/
 namespace Rumoca.FMI3.LifecycleGuard
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 
+omit static in
 theorem mode_code_beq (a b : Mode) : ((a.code : Int) == (b.code : Int)) = (a == b) := by
   cases a <;> cases b <;> rfl
 

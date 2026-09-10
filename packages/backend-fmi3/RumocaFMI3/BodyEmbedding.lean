@@ -6,9 +6,11 @@ These results start at body entry, with supplied locals and memory. They do
 not establish public argument binding, callback execution or printed bytes.
 Every emitted body satisfies the nested-declaration restriction. -/
 namespace Rumoca.FMI3.BodyEmbedding
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory
 
+omit static in
 theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     (Runtime.body m sig).all CBodyEmbedding.closedBlocks = true := by
   unfold Runtime.body
@@ -21,6 +23,7 @@ theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     Runtime.put, Runtime.out, Runtime.ok, Runtime.setMode, Runtime.log]
   split <;> simp [CLoops.noDeclarations]
 
+omit static in
 theorem helpers_closed (fn : CTree.Function) (h : fn ∈ Runtime.helpers) :
     fn.body.all CBodyEmbedding.closedBlocks = true := by
   simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at h

@@ -6,6 +6,7 @@ import RumocaFMI3.StateProofs
 wrong values, writes into another instance, missing storage and unsupported
 calls. They are not an alternative definition of FMI compliance. -/
 namespace Rumoca.FMI3.MemoryChecks
+private local instance : StaticLiterals := ⟨fun _ => none⟩
 private local instance targetInterface : CInterface := cInterface
 open CTree CMemory CBody StateProofs
 set_option maxRecDepth 10000

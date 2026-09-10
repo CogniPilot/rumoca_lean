@@ -8,7 +8,8 @@ The initial model state and unrelated memory are preserved. Supplied parameter
 bindings and typed writable storage are explicit premises. Rejected calls,
 public ABI entry and actual printed-adapter binding remain open. -/
 namespace Rumoca.FMI3.InitializationEntry
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody Initialization
 open Binary64 (toBits)
 
@@ -36,6 +37,7 @@ def rejects (args : Arguments) : Bool :=
   (args.toleranceDefined && !above args.tolerance Binary64.positiveZero) ||
   (args.stopDefined && !above args.stop args.start)
 
+omit static in
 theorem rejects_iff (args : Arguments) : rejects args = false ↔ args.Admissible := by
   simp [rejects, Arguments.Admissible, ← above_iff, Bool.and_eq_false_imp]
 
@@ -134,6 +136,7 @@ theorem body_reaches (m : Solve.FMI3Model source) (sig : Signature)
   rw [hb]
   exact (run_reaches hp).trans (hh.trans (run_reaches ht))
 
+omit static in
 theorem frame (heap : Heap) (p q : Address) (args : Arguments)
     (ht : q ≠ p.member "time") (hn : q ≠ p.member "timeMin")
     (he : q ≠ p.member "eventTime") (hl : q ≠ p.member "lastCompleted")
@@ -142,11 +145,13 @@ theorem frame (heap : Heap) (p q : Address) (args : Arguments)
   simp only [finalHeap, replace_other _ _ _ _ hm, replace_other _ _ _ _ hd,
     replace_other _ _ _ _ hs, HistoryProofs.initial_frame _ _ _ _ ht hn he hl]
 
+omit static in
 theorem stored (hc : HistoryProofs.Stored heap p clock) (args : Arguments) :
     HistoryProofs.Stored (finalHeap heap p args) p (Time.Clock.initial args.start) := by
   rcases HistoryProofs.initial_stored hc args.start with ⟨ht, hn, he, hl⟩
   constructor <;> simp_all [finalHeap, replace]
 
+omit static in
 theorem model (hx : StateProofs.Represents heap p state) (args : Arguments) :
     StateProofs.Represents (finalHeap heap p args) p state := by
   have hf := frame heap p (StateProofs.stateAddress p) args
@@ -156,6 +161,7 @@ theorem model (hx : StateProofs.Represents heap p state) (args : Arguments) :
     (HistoryBodies.state_ne_field p "mode")
   simpa only [StateProofs.Represents, load, hf] using hx
 
+omit static in
 theorem mode (heap : Heap) (p : Address) (args : Arguments) (kind : Kind) :
     load (finalHeap heap p args) (p.member "mode") =
       some (.integer (nextMode .enterInitialization kind .instantiated).code) := by
@@ -164,6 +170,7 @@ theorem mode (heap : Heap) (p : Address) (args : Arguments) (kind : Kind) :
   rw [hr]
   simp [finalHeap, load, replace, convert, Mode.code]
 
+omit static in
 theorem stop (heap : Heap) (p : Address) (args : Arguments) :
     load (finalHeap heap p args) (p.member "stop") = some (.float64 args.stop) ∧
     load (finalHeap heap p args) (p.member "stopDefined") = some (boolean args.stopDefined) := by

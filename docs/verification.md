@@ -1210,9 +1210,44 @@ their existing boundary checks. There is no new unit-test suite.
 The construction establishes a possible symbolic initial heap, not native
 allocation, static lifetime or a global literal-address environment. It does
 not require separate addresses for distinct literal texts; C permits literal
-storage sharing. `CBody.eval` still uses its abstract string value: pointer
-decay, ordinary string-parameter binding, foreign callbacks and the complete
-FMI adapter/artifact contract remain open. No source case is newly admitted.
+storage sharing. That checkpoint retained abstract string expression values;
+the next increment below connects their evaluation to pointers. Neither
+checkpoint admits a new source case.
+
+`CInterface` now supplies an explicit static literal-address map. `CBody.eval`
+decays a supported literal expression to its supplied first-element pointer;
+a missing binding rejects evaluation. The abstract `CMemory.Value.string`
+constructor is removed. `CLiteral.rendered_pointer` connects the actual
+printer's bytes, evaluated pointer and typed character loads under the supplied
+storage contract, and `Valid.after_steps` preserves that contract through
+modeled calls. The selected map uses one address per literal text and allows
+compatible storage sharing; it does not model every native compiler's
+per-occurrence allocation. Resolving that representation against actual
+adapter globals and native storage remains an explicit obligation.
+
+FMI body proofs now quantify over supplied literal maps while retaining the
+same concrete header constants/types. The dictionary additionally resolves
+`const char *` and the pinned `fmi3String` pointer alias. `ErrorCalls` proves
+ordinary entry and return for the actual failure helper and supplies a shared
+theorem for every emitted `return fail(m, message)` statement with logging
+disabled. `nominal_reject_correct` composes actual public parameter binding,
+the Instantiated guard, literal evaluation, helper execution and return. Every
+behavior returns Error and changes only the instance mode to Terminated;
+supplied immutable literal storage survives. It covers either interface kind,
+all UInt64 counts and arbitrary output pointers, including null, without an
+output-dereference premise. An output address that aliases the mode cell is
+subject to the stated mode-cell exception in the frame.
+
+All twelve added roots and the existing C/FMI/eFMI/compiler package audits
+passed during isolated preparation in `build/c-literal-call-package-audit.log`.
+The required full root gate passed in `build/c-literal-call-full-gate.log`,
+including both FMI interfaces and the actual eFMU archive/mutation gate.
+The [standards review](../dev/standards-review.md#c-literal-pointer-and-rejected-call-increment-standards-impact)
+records this run's retained artifact hashes and unchanged grammar identities.
+These are function-tree and storage proofs with explicit signature/definition
+and literal-binding premises. Complete adapter bytes, static object setup and
+lifetime, enabled external callbacks and whole FMI conformance remain open.
+No native compiler/ABI proof or new unit-test suite is introduced.
 
 `EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
 and constructs a fixed existential theorem with one compiler artifact and

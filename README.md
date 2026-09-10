@@ -200,6 +200,13 @@ GCC, hardware execution, linking, file I/O and the CSV host are outside the
 proof. This is not CompCert's verified C-to-assembly pipeline. Read
 [the exact contract](docs/verification.md) before extending the core.
 
+Before each grammar expansion, complete the
+[recurring standards review](dev/standards-review.md#required-review-at-every-spiral-stage)
+for the entire admitted subset: Modelica Language Specification (MLS), FMI 3
+ME/CS, and eFMI GALEC/Production Code. Record clause-to-proof correspondence,
+actual-artifact evidence and remaining assumptions. Open compliance findings
+or missing compiler proofs block expansion, even when CI passes.
+
 ## Packages and grammar generation
 
 The repository is a workspace containing nine Lake packages:

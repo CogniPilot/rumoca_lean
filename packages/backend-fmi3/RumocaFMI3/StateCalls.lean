@@ -9,7 +9,8 @@ remain explicit. Header parsing, printed adapter bytes and native ABI/linkage
 are separate obligations. -/
 noncomputable section
 namespace Rumoca.FMI3.StateCalls
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory
 
 /-- The two declarations in fmi3FunctionTypes.h use unsized array parameters.

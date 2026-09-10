@@ -6,6 +6,7 @@ import RumocaFMI3.TimeProofs
 numerical comparison from bit equality and preserve valid backtracking.
 Rejected guards do not claim that the subsequent logging path is proved. -/
 namespace Rumoca.FMI3.TimeChecks
+private local instance : StaticLiterals := ⟨fun _ => none⟩
 private local instance targetInterface : CInterface := cInterface
 open CTree CMemory CBody
 set_option maxRecDepth 10000

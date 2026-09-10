@@ -6,6 +6,7 @@ import RumocaFMI3.HistoryBodies
 and public event/completion bodies. Universal contracts are in HistoryProofs
 and HistoryBodies; these controls exercise pointer writes and mode changes. -/
 namespace Rumoca.FMI3.HistoryChecks
+private local instance : StaticLiterals := ⟨fun _ => none⟩
 private local instance targetInterface : CInterface := cInterface
 open CTree CMemory CBody HistoryProofs
 set_option maxRecDepth 10000

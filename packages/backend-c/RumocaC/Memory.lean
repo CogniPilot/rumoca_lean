@@ -34,7 +34,6 @@ inductive Value where
   | integer (value : Int)
   | float64 (bits : BitVec 64)
   | pointer (address : Option Address)
-  | string (text : String)
   | void
   deriving DecidableEq, Repr
 

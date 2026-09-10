@@ -59,7 +59,7 @@ mutual
   def eval (env : Locals) (heap : Heap) : Expr → Option Value
     | .id name => resolve env name
     | .nat n => some (.integer n)
-    | .str s => some (.string s)
+    | .str s => (interface.literals s).map (fun p => .pointer (some p))
     | .cast type a => do cast type (← eval env heap a)
     | .not a => do return boolean (!(← (← eval env heap a).truth))
     | .bin .and a b => do

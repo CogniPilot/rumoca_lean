@@ -8,7 +8,8 @@ kernel execution, return conversion and memory writes. They are body-tree
 contracts; printed adapter text, ABI layout and external calls remain open. -/
 noncomputable section
 namespace Rumoca.FMI3.CallProofs
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CCalls
 
 def linked (m : Solve.FMI3Model source) : Program where
@@ -50,6 +51,7 @@ private def advanceLocals (p : Address) (n : CStatements.Counter) : CBody.Locals
 private def advanceContinuation (p : Address) (n : CStatements.Counter) (stack : Continuation) : Continuation :=
   .caller (.assign (.field (.id "model") "x" true)) [] (advanceLocals p n) "void" stack
 
+omit static in
 private theorem advance_definition (m : Solve.FMI3Model source) :
     (linked m).definitions "model_advance" = some (.tree Runtime.helpers[2]) := by
   simp [linked, Runtime.helpers]

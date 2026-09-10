@@ -6,7 +6,8 @@ import RumocaFMI3.LifecycleGuard
 includes the instance/lifecycle guards, caller outputs, history updates and
 mode/return writes. Invalid-call logging and the native ABI remain separate. -/
 namespace Rumoca.FMI3.HistoryBodies
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 
 def parameters (p : Address) : Locals := fun name =>
@@ -43,11 +44,13 @@ def eventHeap (heap : Heap) (p : Address) (c : Time.Clock) : Heap :=
   replace (HistoryProofs.eventHeap heap p c) (p.member "mode")
     ⟨.int32, true, some (.integer 2)⟩
 
+omit static in
 theorem event_frame (heap : Heap) (p q : Address) (c : Time.Clock)
     (he : q ≠ p.member "eventTime") (ht : q ≠ p.member "timeMin")
     (hm : q ≠ p.member "mode") : eventHeap heap p c q = heap q := by
   simp only [eventHeap, replace_other _ _ _ _ hm, HistoryProofs.event_frame _ _ _ _ he ht]
 
+omit static in
 theorem event_stored (hs : HistoryProofs.Stored heap p c) :
     HistoryProofs.Stored (eventHeap heap p c) p c.event := by
   rcases HistoryProofs.event_stored hs with ⟨ht, hn, he, hl⟩
@@ -90,11 +93,13 @@ def BoolWritable (heap : Heap) (p : Address) : Prop :=
 def zero (heap : Heap) (p : Address) : Heap :=
   replace heap p ⟨.boolean, true, some (.integer 0)⟩
 
+omit static in
 theorem zero_store (h : BoolWritable heap p) :
     store heap p (.integer 0) = some (zero heap p) := by
   obtain ⟨old, h⟩ := h
   simp [store, h, convert, Value.truth, zero]
 
+omit static in
 theorem zero_writable (h : BoolWritable heap q) (p : Address) :
     BoolWritable (zero heap p) q := by
   by_cases he : q = p
@@ -102,14 +107,17 @@ theorem zero_writable (h : BoolWritable heap q) (p : Address) :
   · obtain ⟨old, h⟩ := h
     exact ⟨old, by rw [zero, replace_other _ _ _ _ he, h]⟩
 
+omit static in
 theorem zero_frame (heap : Heap) (p q : Address) (hn : q ≠ p) :
     zero heap p q = heap q := replace_other _ _ _ _ hn
 
+omit static in
 theorem field_ne_output (p out : Address) (name : String) (hn : out.block ≠ p.block) :
     p.member name ≠ out := by
   intro h
   exact hn (congrArg Address.block h).symm
 
+omit static in
 theorem zero_stored (h : HistoryProofs.Stored heap p c) (out : Address)
     (hn : out.block ≠ p.block) : HistoryProofs.Stored (zero heap out) p c := by
   rcases h with ⟨ht, hm, he, hl⟩
@@ -136,16 +144,19 @@ theorem outputs_run (heap : Heap) (p event terminate : Address) (flag : Bool) (r
 def completedHeap (heap : Heap) (p event terminate : Address) (c : Time.Clock) : Heap :=
   HistoryProofs.completedHeap (outputsHeap heap event terminate) p c
 
+omit static in
 theorem outputs_stored (hc : HistoryProofs.Stored heap p c) (event terminate : Address)
     (he : event.block ≠ p.block) (ht : terminate.block ≠ p.block) :
     HistoryProofs.Stored (outputsHeap heap event terminate) p c :=
   zero_stored (zero_stored hc event he) terminate ht
 
+omit static in
 theorem completed_stored (hc : HistoryProofs.Stored heap p c) (event terminate : Address)
     (he : event.block ≠ p.block) (ht : terminate.block ≠ p.block) :
     HistoryProofs.Stored (completedHeap heap p event terminate c) p c.completed :=
   HistoryProofs.completed_stored (outputs_stored hc event terminate he ht)
 
+omit static in
 theorem completed_frame (heap : Heap) (p event terminate q : Address) (c : Time.Clock)
     (hl : q ≠ p.member "lastCompleted") (hm : q ≠ p.member "timeMin")
     (he : q ≠ event) (ht : q ≠ terminate) :
@@ -181,12 +192,14 @@ theorem completed_reaches (m : Solve.FMI3Model source) (sig : Signature)
   rw [hbody]
   exact (run_reaches hp).trans ((run_reaches ho).trans (hb.trans (run_reaches hr)))
 
+omit static in
 theorem event_mode (heap : Heap) (p : Address) (c : Time.Clock) :
     load (eventHeap heap p c) (p.member "mode") =
       some (.integer (nextMode .enterEvent .me .continuous).code) := by
   change load (eventHeap heap p c) (p.member "mode") = some (.integer 2)
   simp [eventHeap, load, convert]
 
+omit static in
 theorem completed_mode (heap : Heap) (p event terminate : Address) (c : Time.Clock)
     (hm : load heap (p.member "mode") = some (.integer 3))
     (he : event.block ≠ p.block) (ht : terminate.block ≠ p.block) :
@@ -196,6 +209,7 @@ theorem completed_mode (heap : Heap) (p event terminate : Address) (c : Time.Clo
     (by simp) (by simp) (field_ne_output p event "mode" he) (field_ne_output p terminate "mode" ht)
   simpa only [load, hf] using hm
 
+omit static in
 theorem completed_outputs (heap : Heap) (p event terminate : Address) (c : Time.Clock)
     (he : event.block ≠ p.block) (ht : terminate.block ≠ p.block) :
     load (completedHeap heap p event terminate c) event = some (boolean false) ∧
@@ -209,17 +223,20 @@ theorem completed_outputs (heap : Heap) (p event terminate : Address) (c : Time.
   simp only [completedHeap, load, hef, htf]
   simp [outputsHeap, zero, replace, convert, Value.truth, boolean]
 
+omit static in
 theorem state_ne_field (p : Address) (name : String) : StateProofs.stateAddress p ≠ p.member name := by
   intro h
   have hl := congrArg (fun q : Address => q.members.length) h
   simp [StateProofs.stateAddress, Address.member] at hl
 
+omit static in
 theorem event_model (h : StateProofs.Represents heap p state) (c : Time.Clock) :
     StateProofs.Represents (eventHeap heap p c) p state := by
   have hf := event_frame heap p (StateProofs.stateAddress p) c
     (state_ne_field p "eventTime") (state_ne_field p "timeMin") (state_ne_field p "mode")
   simpa only [StateProofs.Represents, load, hf] using h
 
+omit static in
 theorem completed_model (h : StateProofs.Represents heap p state) (c : Time.Clock)
     (event terminate : Address) (he : event.block ≠ p.block) (ht : terminate.block ≠ p.block) :
     StateProofs.Represents (completedHeap heap p event terminate c) p state := by

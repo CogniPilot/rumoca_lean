@@ -143,6 +143,52 @@ These identities supersede the preceding snapshot for this run. **Stage decision
 This increment does not close any existing compliance finding or authorize
 grammar growth.
 
+### C literal-pointer and rejected-call increment: standards impact
+
+The next SR04/C01/F03 increment replaces abstract C string values with an
+explicit literal-address map, typed pointer conversion and a storage/printing
+bridge. `ErrorCalls.nominal_reject_correct` covers the complete generated
+nominal-query call from Instantiated through its failure helper and ordinary
+return when logging is disabled. It returns Error, sets Terminated and frames
+every cell outside the mode field. Counts range over all UInt64 values; output
+pointers may be null because the rejection precedes their dereference.
+The declaration matches the pinned `fmi3FunctionTypes.h` signature. The added
+`fmi3String` alias follows `fmi3PlatformTypes.h`'s const-character pointer.
+
+The applicable FMI status and lifecycle clauses are the same ones reviewed in
+SR04 below. The theorem checks the corrected rejection's execution; enabled
+callbacks and binding the complete actual adapter bytes remain open. The C
+profile selects one address per literal text. Its supplied storage contract
+allows compatible sharing, but does not prove every permitted per-occurrence
+allocation or the native compiler's global setup. Do not infer those facts
+from byte preservation or a function-tree call theorem.
+
+The next callback contract must also retain FMI's logging controls:
+[`loggingOn = false` disables callbacks](https://fmi-standard.org/docs/3.0.2/#fmi3InstantiateModelExchange),
+and [§2.2.1 forbids the logger from calling back into the FMU](https://fmi-standard.org/docs/3.0.2/#general-mechanisms).
+Enabled logging still needs an explicit request/return and memory-effect
+contract; assuming that an arbitrary callback simply succeeds would not
+establish it.
+
+MLS admission, both EBNFs, initialization/numerical policy and emitted C are
+unchanged. The eFMI profile emits no string expressions and keeps its existing
+GALEC, Production C and manifest contracts. SR05–SR08 remain open. Twelve new
+roots and all affected package audits pass in
+`build/c-literal-call-package-audit.log`. The required full local gate passed in
+`build/c-literal-call-full-gate.log`, including both FMI interfaces, the complete
+actual eFMU archive certificate, independent extraction, schemas, native C and
+mutation controls. Both EBNF identities still match the unit-stage table above.
+This run retained the following artifacts:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `e1dc2271f9fa22ed5454eb5e30908e26d59bcd41d5231ccdc53bb94f85dc03c7` |
+| `build/Integrator.efmu` | `dd22dca1dac2f3af228a3f8bc79e9934ba20860f583daa5a7892654c74d6fb88` |
+
+These hashes identify this increment's local artifacts, not those from its
+preceding storage checkpoint. **Stage decision: open; grammar growth remains
+blocked.** The new function-tree proof is not a whole-adapter certificate.
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.
@@ -432,6 +478,14 @@ explicit definition-table and storage premises, not an official-header parser,
 actual adapter-byte or native ABI certificate. Remaining public signatures,
 string binding, enabled callbacks and nonempty SetFloat64-loop execution remain
 open; SR04 is not closed by this increment.
+
+**Rejected public-call follow-up:** [ErrorCalls](../packages/backend-fmi3/RumocaFMI3/ErrorCalls.lean)
+now supplies ordinary string-pointer parameter binding and composes the
+nominal-query rejection through the failure helper's return with logging
+disabled. Its all-behavior theorem includes the exact mode change and memory
+frame. The [pointer/call checkpoint](#c-literal-pointer-and-rejected-call-increment-standards-impact)
+records the full local gate and actual artifacts. Enabled callbacks, literal
+global setup and complete printed adapter binding still prevent SR04 closure.
 
 ### SR05 — P2, unresolved: initialization rejects zero-duration/tolerance cases
 

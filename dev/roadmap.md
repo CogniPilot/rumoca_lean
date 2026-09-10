@@ -247,6 +247,23 @@ of Modelica 3.7.
   Actual literal address selection, static lifetime, pointer decay, ordinary
   string-parameter binding and complete error-call/adapter composition remain
   open. This foundation neither changes production admission nor closes F03.
+  **Pointer/call bridge implemented:** abstract C string values are replaced
+  by explicit literal-address lookup and ordinary pointer conversion. The
+  existing FMI body theorems are generalized over those supplied addresses.
+  `CLiteral.rendered_pointer` binds printed bytes to pointer evaluation and
+  typed storage. `ErrorCalls.failure_statement_reaches` reuses ordinary helper
+  entry/return for all emitted failure statements with logging disabled.
+  `nominal_reject_correct` composes a complete rejected public nominal query,
+  including all parameter bindings, Error/Terminated outcome and whole-heap
+  frame, with arbitrary output pointers and UInt64 counts. Twelve added roots
+  and the affected package audits pass in `build/c-literal-call-package-audit.log`;
+  the required full root gate passed in `build/c-literal-call-full-gate.log`,
+  including both FMI interfaces and the complete actual eFMU archive. This run's
+  artifact hashes are recorded in the recurring standards review.
+  The literal pool selects one address per text; its actual-adapter/global
+  binding, per-occurrence/native allocation correspondence, static lifetime,
+  enabled logging and complete printed adapter remain open. SR04/F03 are not
+  closed by the disabled-logging call theorem.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout
   mismatch and complete independent semantic/coding-guideline release review.
   A diagnostic wrapped copy passes deeper checker checks; the actual standalone

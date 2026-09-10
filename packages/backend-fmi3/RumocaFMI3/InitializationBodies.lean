@@ -5,7 +5,8 @@ import RumocaFMI3.HistoryBodies
 preserves the model, history and unrelated memory. Public ABI entry, rejected
 calls and printed-adapter binding remain separate obligations. -/
 namespace Rumoca.FMI3.InitializationBodies
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 
 def kindCode : Kind → Int
@@ -16,6 +17,7 @@ def exitHeap (heap : Heap) (p : Address) (kind : Kind) : Heap :=
   replace heap (p.member "mode")
     ⟨.int32, true, some (.integer (nextMode .exitInitialization kind .initialization).code)⟩
 
+omit static in
 theorem exit_frame (heap : Heap) (p q : Address) (kind : Kind)
     (hq : q ≠ p.member "mode") : exitHeap heap p kind q = heap q :=
   replace_other _ _ _ _ hq
@@ -48,17 +50,20 @@ theorem exit_run (m : Solve.FMI3Model source) (sig : Signature)
       convert, comparison, boolean, Value.truth, Value.address,
       hk, hm, store, exitHeap, kindCode, me_initialization, cs_initialization]
 
+omit static in
 theorem exit_mode (heap : Heap) (p : Address) (kind : Kind) :
     load (exitHeap heap p kind) (p.member "mode") =
       some (.integer (nextMode .exitInitialization kind .initialization).code) := by
   cases kind <;> simp [exitHeap, me_initialization, cs_initialization,
     load, replace, convert, Mode.code]
 
+omit static in
 theorem exit_history (h : HistoryProofs.Stored heap p c) (kind : Kind) :
     HistoryProofs.Stored (exitHeap heap p kind) p c := by
   rcases h with ⟨ht, hn, he, hl⟩
   constructor <;> simp_all [exitHeap, replace]
 
+omit static in
 theorem exit_model (h : StateProofs.Represents heap p state) (kind : Kind) :
     StateProofs.Represents (exitHeap heap p kind) p state := by
   have hf := exit_frame heap p (StateProofs.stateAddress p) kind

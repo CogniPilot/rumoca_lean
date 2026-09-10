@@ -7,6 +7,7 @@ import RumocaC.BooleanProofs
 import RumocaC.BodyEmbedding
 import RumocaC.StringLiteral
 import RumocaC.LiteralStorage
+import RumocaC.LiteralPointers
 
 #audit axioms Rumoca.CString.denotes_unique
 #audit axioms Rumoca.CString.quote_iff
@@ -21,6 +22,12 @@ import RumocaC.LiteralStorage
 #audit axioms Rumoca.CLiteral.install_preserves
 #audit axioms Rumoca.CLiteral.rendered_memory
 #audit axioms Rumoca.CLiteral.Stored.after_steps
+#audit axioms Rumoca.CLiteral.eval_string
+#audit axioms Rumoca.CLiteral.eval_string_missing
+#audit axioms Rumoca.CLiteral.pointer_argument
+#audit axioms Rumoca.CLiteral.eval_index
+#audit axioms Rumoca.CLiteral.rendered_pointer
+#audit axioms Rumoca.CLiteral.Valid.after_steps
 
 #audit axioms Rumoca.C.compileProgram_correct
 #audit axioms Rumoca.C.ideal_run_correct

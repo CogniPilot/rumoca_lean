@@ -8,7 +8,8 @@ trial times. HistoryProofs supplies the generated history-block contracts;
 their enclosing public bodies, logging/error returns and CS arithmetic
 are distinct outstanding contracts. -/
 namespace Rumoca.FMI3.TimeProofs
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 open Binary64 (toBits)
 
@@ -26,6 +27,7 @@ def rejects (minimum : Binary64.Value) (stop : Option Binary64.Value) (time : Bi
     | none => false
     | some bound => Rumoca.Float64.test .gt (toBits time).val (toBits bound).val
 
+omit static in
 theorem rejects_iff (window : Time.Window) (minimum time : Binary64.Value)
     (hmin : window.RepresentsLower minimum) :
     rejects minimum window.stopTime time = false ↔ window.Admissible time := by
@@ -108,6 +110,7 @@ theorem set_run (m : Solve.FMI3Model source) (sig : Signature)
     CBody.cast, convert, comparison, boolean, Value.truth, Value.address,
     hk, hmode, guard, store_float64 heap (p.member "time") old _ ht, StateProofs.written]
 
+omit static in
 theorem model_frame (heap : Heap) (p : Address) (bits : BitVec 64) :
     StateProofs.written heap (p.member "time") bits (StateProofs.stateAddress p) =
       heap (StateProofs.stateAddress p) := by

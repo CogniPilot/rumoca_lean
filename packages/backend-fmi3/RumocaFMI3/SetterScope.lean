@@ -9,7 +9,8 @@ The emitted empty/null paths also terminate with unchanged memory in the typed
 C machine. Public parameter binding, nonempty value-loop correctness, enabled
 callbacks and printed adapter bytes remain separate obligations. -/
 namespace Rumoca.FMI3.SetterScope
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 
 def empty : Expr := Runtime.both
@@ -214,9 +215,11 @@ theorem null_equivalent (program : CCalls.Program) (env : Locals) (heap : Heap)
   exact (Transition.Machine.prefix_behaviors (CCalls.machine program) hb).trans
     (Transition.Machine.prefix_behaviors (CCalls.machine program) ha).symm
 end
+omit static in
 /-- The actual setter is the hoisted form of the unchanged value operations. -/
 theorem emitted : Runtime.setFloat64 = hoisted Runtime.setFloat64Values := rfl
 
+omit static in
 /-- The emitted setter satisfies the existing scope check. -/
 theorem closed :
     Runtime.setFloat64.all CBodyEmbedding.closedBlocks = true := by

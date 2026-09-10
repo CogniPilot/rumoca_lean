@@ -7,7 +7,8 @@ This composes the memory and interprocedural contracts without assuming a
 black-box derivative callback. -/
 noncomputable section
 namespace Rumoca.FMI3.DerivativeProofs
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CCalls CallProofs
 
 def parameters (p buffer : Address) : CBody.Locals := fun name =>

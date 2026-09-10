@@ -34,7 +34,7 @@ end CHeader
   else if type = "double" then some .float64
   else (CHeader.scalarNamed type CHeader.declarations).map CHeader.Scalar.memoryType
 
-abbrev cInterface : CInterface := ⟨cConstants, cTypes⟩
+abbrev cInterface : CInterface := { constants := cConstants, types := cTypes }
 
 @[simp] theorem cInterface_types (name : String) :
     @CInterface.types cInterface name = cTypes name := rfl

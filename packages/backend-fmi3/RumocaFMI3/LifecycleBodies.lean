@@ -4,16 +4,19 @@ import RumocaFMI3.HistoryBodies
 The error-helper theorem reaches its logger after entering Terminated; callback
 execution, the final error return and actual adapter bytes remain separate. -/
 namespace Rumoca.FMI3.LifecycleBodies
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 
 def writeMode (heap : Heap) (p : Address) (mode : Mode) : Heap :=
   replace heap (p.member "mode") ⟨.int32, true, some (.integer mode.code)⟩
 
+omit static in
 theorem write_frame (heap : Heap) (p q : Address) (mode : Mode)
     (hq : q ≠ p.member "mode") : writeMode heap p mode q = heap q :=
   replace_other _ _ _ _ hq
 
+omit static in
 theorem write_mode (heap : Heap) (p : Address) (mode : Mode) :
     load (writeMode heap p mode) (p.member "mode") = some (.integer mode.code) := by
   cases mode <;> simp [writeMode, load, convert, Mode.code]
@@ -28,11 +31,13 @@ theorem write_run (env : Locals) (heap : Heap) (p : Address) (mode : Mode)
     Runtime.v, Runtime.mode, Runtime.n, Mode.code, eval, lvalue, hp, Value.address,
     store, hm, convert, writeMode]
 
+omit static in
 theorem write_history (h : HistoryProofs.Stored heap p c) (mode : Mode) :
     HistoryProofs.Stored (writeMode heap p mode) p c := by
   rcases h with ⟨ht, hn, he, hl⟩
   constructor <;> simp_all [writeMode, replace]
 
+omit static in
 theorem write_model (h : StateProofs.Represents heap p state) (mode : Mode) :
     StateProofs.Represents (writeMode heap p mode) p state := by
   have hf := write_frame heap p (StateProofs.stateAddress p) mode

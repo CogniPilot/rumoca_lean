@@ -109,6 +109,12 @@ current source, grammar and emitted files; they are not cached merely because
 the checking entry point is unchanged. Package checks alone do not establish
 the complete C/FMU/eFMU contract.
 
+Before closing a spiral stage or extending the grammar, also complete the
+[MLS/FMI/eFMI review record](../dev/standards-review.md#required-review-at-every-spiral-stage)
+for the entire admitted subset. Carry forward open findings, check affected
+interactions and link evidence to the reviewed source revision and artifacts.
+The automated gate and the standards review must both be satisfied before growth.
+
 The full gate is the root package's native Lake test driver. Individual
 integration stages are Lake scripts: `lake run verify-c`,
 `lake run lalr-test`, `lake run fmi-test`, `lake run efmi-algorithm-test`, and

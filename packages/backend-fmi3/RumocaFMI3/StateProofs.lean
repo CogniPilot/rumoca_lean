@@ -8,7 +8,8 @@ supplies the official parameter bindings. Valid instance/caller storage is
 an explicit precondition; separate blocks express ownership and permit frame
 conclusions. These are body-AST theorems, not emitted-text/ABI certificates. -/
 namespace Rumoca.FMI3.StateProofs
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 
 def stateAddress (p : Address) : Address := (p.member "model").member "x"
@@ -90,6 +91,7 @@ theorem set_run (m : Solve.FMI3Model source) (sig : Signature)
 def Represents (heap : Heap) (p : Address) (state : ModelExchange.State) : Prop :=
   load heap (stateAddress p) = some (.finite state.x)
 
+omit static in
 theorem written_represents (heap : Heap) (p : Address) (state : ModelExchange.State)
     (x : Binary64.Value) :
     Represents (written heap (stateAddress p) (Binary64.toBits x).val) p
@@ -126,9 +128,11 @@ theorem set_behaviors (m : Solve.FMI3Model source) (sig : Signature)
         (Binary64.toBits (ModelExchange.setContinuousState state x).x).val⟩ :=
   behaviors_of_run (set_run m sig hsig heap p buffer x _ hk hm hi hs) b
 
+omit static in
 theorem written_frame (heap : Heap) (p q : Address) (bits : BitVec 64) (hne : q ≠ p) :
     written heap p bits q = heap q := replace_other _ _ _ _ hne
 
+omit static in
 theorem written_other_instance (heap : Heap) (p q : Address) (bits : BitVec 64)
     (hne : q.block ≠ p.block) : written heap (stateAddress p) bits q = heap q := by
   apply written_frame

@@ -5,7 +5,8 @@ has a complete body-entry result/frame theorem. Enabled logging reaches its
 correct callback request; executing that foreign callback, binding string
 arguments and certifying the printed adapter are still separate obligations. -/
 namespace Rumoca.FMI3.ErrorBodies
-private local instance targetInterface : CInterface := cInterface
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody LifecycleBodies
 
 def logCall : Stmt := .eval (.call (Runtime.field "logger")
@@ -34,17 +35,18 @@ theorem failure_dispatch_run (env : Locals) (heap : Heap) (p : Address)
 /-- The enabled request uses the actual environment, Error status, declared
 category and message. This evaluates arguments, not the foreign callback. -/
 theorem failure_log_arguments (env : Locals) (heap : Heap) (p : Address)
-    (environment : Option Address) (message : String)
+    (environment : Option Address) (category message : Address)
+    (hc : static.addresses "logStatus" = some category)
     (hp : resolve env "m" = some (.pointer (some p)))
     (hv : load heap (p.member "environment") = some (.pointer environment))
     (he : resolve env "fmi3Error" = some (.integer 3))
-    (hm : resolve env "message" = some (.string message)) :
+    (hm : resolve env "message" = some (.pointer (some message))) :
     CCalls.arguments env (writeMode heap p .terminated)
       [Runtime.field "environment", Runtime.v "fmi3Error", .str "logStatus", Runtime.v "message"] =
-        some [.pointer environment, .integer 3, .string "logStatus", .string message] := by
+        some [.pointer environment, .integer 3, .pointer (some category), .pointer (some message)] := by
   have hv' : load (writeMode heap p .terminated) (p.member "environment") = some (.pointer environment) := by
     simpa only [load, write_frame heap p (p.member "environment") .terminated (by simp)] using hv
-  simp [CCalls.arguments, Runtime.field, Runtime.v, eval, hp, Value.address, hv', he, hm]
+  simp [CCalls.arguments, Runtime.field, Runtime.v, eval, hp, Value.address, hv', he, hm, hc]
 
 /-- Execute the complete existing failure body when logging is disabled.
 No callback behavior is assumed: its branch is not taken. -/
