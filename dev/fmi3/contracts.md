@@ -6,6 +6,19 @@ same variables. A CS instance uses the shared model kernel through its internal
 solver; it does not invoke ME-only FMI entry points on a CS instance.
 The normative reference is [FMI 3.0.2](https://fmi-standard.org/docs/3.0.2/).
 
+The source-build correction for SR01 now has a separate checked obligation.
+Shared Linux/GCC recipes produce both `buildDescription.xml` and the native
+argument list. Independent decoded requirements check platform selection,
+compiler, C11/floating-point options, source files and the external math library.
+The actual-file `FMI3.SourceBuildContract` composes those XML character/recipe
+proofs with the complete existing numerical C contract. The publication gate
+checks the staged files before native compilation; the existing rebuild uses
+the XML and a separate loader process to catch unresolved symbols. Six new
+axiom roots and the targeted artifact gate pass in `build/fmi-build-package.log`
+and `build/fmi-build-artifact-gate.log`. Full-gate evidence is tracked in
+`build/fmi-build-full-gate.log`. Native compiler/linker behavior and the other
+metadata/runtime/archive obligations below remain outside this increment.
+
 These are acceptance obligations, not declarations of existing theorems.
 
 | Contract | Required statement |

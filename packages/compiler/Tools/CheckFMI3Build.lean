@@ -1,0 +1,5 @@
+import Rumoca.FMI3BuildArtifactCheck
+set_option maxRecDepth 100000
+set_option maxHeartbeats 8000000
+open Rumoca.FMI3BuildArtifactCheck
+verify_fmi3_build_files

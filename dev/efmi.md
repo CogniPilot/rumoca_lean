@@ -925,6 +925,11 @@ in `build/efmi-status-native.log` and all three official XSDs in
 `build/status-preflight/schema.log`. These checks catch output-format and ABI
 errors before the more expensive complete-archive certificate; they are not
 the archive certificate themselves.
-The required full gate is tracked in `build/efmi-status-full-gate.log`.
-SR03 is pending that artifact gate. The official-checker layout discrepancy,
+The required full gate passed in `build/efmi-status-full-gate.log`, including
+the actual archive theorem and redirected-status rejection. Its fixed theorem
+roots are recorded in `build/efmi-publication-artifact.log`. The checked archive
+has SHA-256 `712a9819677fad8fef65a672fffbbe8ca038540126a6d56fc2cd2071e63ed646`.
+[CI for feb57a9](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
+also passed.
+This closes SR03 for the unit profile. The official-checker layout discrepancy,
 release review and other SR findings remain open; this is not full eFMI compliance.

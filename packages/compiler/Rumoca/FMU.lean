@@ -21,15 +21,13 @@ def workspace : IO FilePath := do
   try findRoot (← IO.Process.getCurrentDir)
   catch _ => findRoot (← IO.appPath)
 
-/-- The fixed checker reads the staged source and kernel bytes. Producer-supplied
-proofs, native compilation and ZIP validation cannot authorize this contract. -/
-def checkKernel (workspace root : FilePath) : IO Unit := do
+/-- The fixed checker reads the staged source, kernel and build-description bytes.
+Producer-supplied proofs, native compilation and ZIP validation cannot authorize
+this contract. -/
+def checkSources (workspace root : FilePath) : IO Unit := do
   let extra := root / "extra/org.cognipilot.rumoca"
-  let log ← command "lake" #["env", "lean", "packages/compiler/Tools/CheckArtifact.lean"]
-    (some workspace) #[
-      ("RUMOCA_SOURCE", some (extra / "Source.mo").toString),
-      ("RUMOCA_C", some (root / "sources/model.c").toString),
-      ("RUMOCA_GRAMMAR", some (workspace / "packages/modelica-parser/grammar/Modelica.ebnf").toString)]
+  let log ← command "lake" #["env", "lean", s!"-Drumoca.fmi3.root={root}",
+    "packages/compiler/Tools/CheckFMI3Build.lean"] (some workspace)
   IO.FS.writeFile (extra / "kernel-audit.log") log
   let _ ← command "bash" #["scripts/audit-lean.sh", (extra / "kernel-audit.log").toString] (some workspace)
   IO.FS.writeFile (extra / "lean-toolchain") (← IO.FS.readFile (workspace / "lean-toolchain"))
@@ -48,8 +46,8 @@ def build (source : String) (artifact : Artifact source) (output : FilePath) : I
     IO.println "Preparing FMI 3 Model Exchange / Co-Simulation sources..."
     FMI3.Package.writeSources artifact.solve.prepareFMI3 root vendor
     IO.FS.writeFile (root / "extra/org.cognipilot.rumoca/Source.mo") source
-    IO.println "Checking the actual numerical C kernel in Lean..."
-    checkKernel workspace root
+    IO.println "Checking the actual numerical C and source-build description in Lean..."
+    checkSources workspace root
     IO.println "Building and validating the FMU..."
     let archive := staging / "model.fmu"
     FMI3.Package.archive root vendor archive

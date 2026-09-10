@@ -37,6 +37,27 @@ cmp build/Integrator.fmu build/preserved.fmu
 # A native build failure after the kernel check must preserve the old archive.
 task_tmp=$(mktemp -d "$PWD/build/fmi-tools.XXXXXX")
 trap 'rm -rf "$task_tmp"' EXIT
+# A missing declared dependency must fail the actual-file contract before the
+# native build. Keep this as one mutation of the existing packaged unit model.
+python - build/Integrator.fmu "$task_tmp/changed build" <<'PY'
+from pathlib import Path
+from zipfile import ZipFile
+import sys
+root = Path(sys.argv[2])
+with ZipFile(sys.argv[1]) as archive:
+    archive.extractall(root)
+path = root / 'sources/buildDescription.xml'
+text = path.read_text()
+changed = text.replace('<Library name="m" external="true"/>', '')
+assert changed != text
+path.write_text(changed)
+PY
+if lake env lean "-Drumoca.fmi3.root=$task_tmp/changed build" \
+    packages/compiler/Tools/CheckFMI3Build.lean > build/fmi-build-metadata-rejection.log 2>&1; then
+  echo 'FMI source-build certificate accepted a missing dependency' >&2; exit 1
+fi
+rg -q 'actual FMI build description differs from the required source-build profile' \
+  build/fmi-build-metadata-rejection.log
 cat > "$task_tmp/gcc" <<'SH'
 #!/usr/bin/env bash
 echo 'deliberate native compiler failure' >&2

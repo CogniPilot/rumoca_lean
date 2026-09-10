@@ -8,15 +8,18 @@ import ctypes as C
 import math
 from pathlib import Path, PurePosixPath
 import re
+import shlex
 import struct
 import subprocess
 import sys
 import tempfile
 import unittest
 import zipfile
+from xml.etree import ElementTree
 
 from fmpy import read_model_description, simulate_fmu
 from fmpy.validation import validate_fmu
+from fmpy.model_description import read_build_description
 
 
 FMU = Path(sys.argv.pop(1)).resolve()
@@ -368,11 +371,44 @@ class FMI3Tests(unittest.TestCase):
             self.assertEqual(struct.pack("d", self.values(h)[1]), struct.pack("d", expected))
 
     def test_sources_rebuild_without_lean(self):
+        # Validate the published schema, then use its actual compiler, flags,
+        # source names and dependencies. The importer supplies only FMI headers
+        # and the shared-object output convention for the selected Linux host.
+        read_build_description(self.root, validate=True)
+        build = ElementTree.parse(self.root / "sources/buildDescription.xml")
+        configs = [c for c in build.findall("BuildConfiguration")
+                   if c.get("modelIdentifier") == self.md.modelExchange.modelIdentifier
+                   and c.get("platform") == self.library.parent.name]
+        self.assertEqual(len(configs), 1)
+        sets = configs[0].findall("SourceFileSet")
+        self.assertEqual(len(sets), 1)
+        source_set = sets[0]
+        self.assertEqual(source_set.get("language"), "C11")
+        sources = [str(self.root / "sources" / s.get("name"))
+                   for s in source_set.findall("SourceFile")]
+        libraries = configs[0].findall("Library")
+        self.assertTrue(all(lib.get("external") == "true" for lib in libraries))
         rebuilt = self.root / "rebuilt.so"
-        subprocess.run(["gcc", "-std=c11", "-O2", "-fPIC", "-shared", "-fno-fast-math",
-                        "-ffp-contract=off", "-frounding-math", "-I", str(VENDOR),
-                        str(self.root / "sources/model.c"), str(self.root / "sources/fmi3.c"),
-                        "-lm", "-o", str(rebuilt)], check=True)
+        subprocess.run([source_set.get("compiler"),
+                        *shlex.split(source_set.get("compilerOptions", "")),
+                        "-fPIC", "-shared", "-I", str(VENDOR), *sources,
+                        *("-l" + lib.get("name") for lib in libraries),
+                        "-o", str(rebuilt)], check=True)
+        # Python already loads libm and can hide a missing dependency. Resolve
+        # every symbol in a fresh loader process which links only libdl.
+        loader_source = self.root / "load.c"
+        loader_source.write_text('''#include <dlfcn.h>
+#include <stdio.h>
+int main(int argc, char **argv) {
+  if (argc != 2) return 2;
+  void *library = dlopen(argv[1], RTLD_NOW | RTLD_LOCAL);
+  if (!library) { fprintf(stderr, "%s\\n", dlerror()); return 1; }
+  return dlclose(library) != 0;
+}
+''')
+        loader = self.root / "load"
+        subprocess.run(["gcc", str(loader_source), "-ldl", "-o", str(loader)], check=True)
+        subprocess.run([str(loader), str(rebuilt)], check=True)
         library = C.CDLL(str(rebuilt))
         fn = library.rumoca_sample
         fn.argtypes, fn.restype = [D, C.c_uint64], D

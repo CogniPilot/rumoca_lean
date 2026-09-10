@@ -10,13 +10,7 @@ File I/O and this small adapter belong to the explicit trusted boundary. -/
 namespace Rumoca.ArtifactCheck
 open Lean Elab Command
 
-elab "verify_artifact_files" : command => do
-  let some sourcePath ← IO.getEnv "RUMOCA_SOURCE" | throwError "RUMOCA_SOURCE is required"
-  let some cPath ← IO.getEnv "RUMOCA_C" | throwError "RUMOCA_C is required"
-  let source ← IO.FS.readFile sourcePath
-  let emitted ← IO.FS.readFile cPath
-  let grammarPath := (← IO.getEnv "RUMOCA_GRAMMAR").getD "packages/modelica-parser/grammar/Modelica.ebnf"
-  let grammar ← IO.FS.readFile grammarPath
+def check (source emitted grammar : String) : CommandElabM Unit := do
   -- This fast check can only reject. Success still requires the kernel to
   -- check equality of the independently read literal in the fixed theorem.
   if grammar != Generated.source then
@@ -56,5 +50,11 @@ elab "verify_artifact_files" : command => do
     unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
       throwError "unapproved axiom in file contract: {dependency}"
   logInfo m!"{theoremName} depends on axioms: {axioms.toList}"
+
+elab "verify_artifact_files" : command => do
+  let some sourcePath ← IO.getEnv "RUMOCA_SOURCE" | throwError "RUMOCA_SOURCE is required"
+  let some cPath ← IO.getEnv "RUMOCA_C" | throwError "RUMOCA_C is required"
+  let grammarPath := (← IO.getEnv "RUMOCA_GRAMMAR").getD "packages/modelica-parser/grammar/Modelica.ebnf"
+  check (← IO.FS.readFile sourcePath) (← IO.FS.readFile cPath) (← IO.FS.readFile grammarPath)
 
 end Rumoca.ArtifactCheck

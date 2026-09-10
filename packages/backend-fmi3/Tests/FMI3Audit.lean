@@ -5,6 +5,7 @@ import RumocaC.Lowering
 import RumocaC.Statements
 import RumocaC.Syntax
 import RumocaFMI3.CallProofs
+import RumocaFMI3.BuildDescriptionProofs
 import RumocaC.Calls
 import RumocaFMI3.DerivativeProofs
 import RumocaC.Body
@@ -21,6 +22,11 @@ import RumocaFMI3.StateProofs
 import RumocaFMI3.TimeProofs
 
 #audit axioms Rumoca.FMI3.metadata_name
+#audit axioms Rumoca.FMI3.Build.recipe_required
+#audit axioms Rumoca.FMI3.Build.decode_recipe
+#audit axioms Rumoca.FMI3.Build.invocation_required
+#audit axioms Rumoca.FMI3.Build.description_valid
+#audit axioms Rumoca.FMI3.Build.artifact_correct
 #audit axioms Rumoca.FMI3.guard_correct
 #audit axioms Rumoca.FMI3.guard_reference
 #audit axioms Rumoca.FMI3.LifecycleGuard.mode_code_beq

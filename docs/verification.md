@@ -580,10 +580,34 @@ package reusing FMPy. `rumoca MODEL.mo -o MODEL.fmu` emits model/build XML,
 the original numerical `sources/model.c`, a structured C ABI adapter in
 `sources/fmi3.c`, and a host Linux shared library exposing ME and CS. Before
 native compilation it invokes the fixed actual-file checker on the staged
-Modelica source, current EBNF and numerical kernel, then audits the result.
+Modelica source, current EBNF, numerical kernel and build description, then audits
+the result.
 ZIP and FMPy validation run before an atomic publication rename. Failure
 leaves a previously published FMU intact. Toolchain I/O and publication are
 tested infrastructure, not verified filesystem operations.
+
+`Build.recipe` supplies both the native compiler invocation and the source-build
+XML for Linux x86_64/aarch64 GCC. `Build.ArtifactContract` requires valid XML
+characters, a uniquely decoded recipe for each platform, the explicit C11 and
+floating-point options, both source members and the environment's math library.
+The independent `RequiredInvocation` also checks the producer's argument list,
+universally over its path arguments. `FMI3.SourceBuildContract` composes this
+with the unchanged numerical `ArtifactContract`. The fixed
+`CheckFMI3Build.lean` adapter reads actual files from a single supplied directory
+and reuses the XML package's compositional character certificates. A missing
+declared library is rejected before native compilation.
+
+Six new roots pass the unchanged axiom audit in `build/fmi-build-package.log`.
+The actual-file, schema, native and mutation gate passes in
+`build/fmi-build-artifact-gate.log`; the packaged `kernel-audit.log` contains
+the fixed `Rumoca.CheckedFMI3Files.source_to_build` root.
+The existing source-rebuild check validates the official build-description XSD,
+reads compiler/options/sources/libraries from that XML, and resolves the resulting
+binary in a fresh loader process. This prevents Python's already-loaded math
+library from concealing a missing dependency. These are build-recipe and file
+proofs plus a native boundary check; they do not prove GCC, linking, runtime
+floating-point settings, the actual FMI adapter/model-description XML or the
+complete FMU ZIP. The required full gate is tracked in `build/fmi-build-full-gate.log`.
 
 `Solve.FMI3Model` carries the original Solve model, source names and a prepared
 scalar tensor IVP. Its numerical policy remains unit Euler; default start is
@@ -935,7 +959,10 @@ composition with the actual XML/C members. `ArchiveContract` therefore also
 requires them. The certified C printer's independent tokens include the
 status store and return; the header contract describes all three fields.
 Nine new roots pass the unchanged axiom audit in `build/efmi-status-package.log`.
-The required complete artifact gate is tracked in `build/efmi-status-full-gate.log`.
+The required complete artifact gate passed in `build/efmi-status-full-gate.log`,
+including the actual archive theorem and redirected-status rejection.
+[CI for feb57a9](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
+also passed.
 The unit profile still has no exposed error signals. This correction neither
 adds general GALEC error handling nor establishes full eFMI standards compliance.
 

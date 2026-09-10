@@ -109,16 +109,25 @@ of Modelica 3.7.
 
 - [ ] **SR01/F03/F04:** declare the source-FMU math dependency and numerical
   compilation profile; have the existing source rebuild consume that metadata.
+  **Implemented:** shared Linux/GCC recipes drive XML and the native invocation;
+  independently decoded requirements and actual XML bytes strengthen the
+  numerical file contract. Six new audit roots pass `build/fmi-build-package.log`.
+  The existing rebuild reads the XML and uses a separate symbol-resolution
+  process; the actual-file, schema, native and mutation gate passes in
+  `build/fmi-build-artifact-gate.log`. Closure awaits `build/fmi-build-full-gate.log`.
 - [ ] **SR02/F03/F04:** give numerical symbols private or consistently namespaced
   linkage, certify the declaration change, and check two source FMUs link together.
-- [ ] **SR03/E05:** map each C status result to the Algorithm Code error anchor,
+- [x] **SR03/E05:** map each C status result to the Algorithm Code error anchor,
   prove that decoded mapping observes execution, and strengthen the actual
   manifest/archive contract. Schema validation alone previously missed this.
   **Implemented:** per-instance status storage/return, unique decoded mappings,
   complete method/printer proofs and both initialized/uninitialized status
   observations in the archive contract. Nine new roots pass the package audit
-  in `build/efmi-status-package.log`; closure awaits the complete artifact gate
-  in `build/efmi-status-full-gate.log`.
+  in `build/efmi-status-package.log`; the complete artifact gate passed in
+  `build/efmi-status-full-gate.log`, including redirected-status rejection.
+  [CI for feb57a9](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
+  also passed.
+  This closes the unit status-mapping correction; E05's broader obligations remain.
 - [ ] **SR04–SR05/F02:** correct premature nominal-state access and resolve the
   strict initialization policy from normative clauses; include rejected behavior.
 - [ ] **SR06–SR07/E06/F04:** resolve the official checker's standalone-layout

@@ -73,6 +73,18 @@ the XML rather than hard-coding the producer's missing flags. Bind the declared
 configuration to the same artifact contract. Native linking remains a tested
 boundary; do not describe compiler flags as a machine-code proof.
 
+**Repair in progress:** shared Linux/GCC recipes now drive both the XML and
+native argument list. `Build.ArtifactContract` independently decodes each
+platform's declared compiler, options, sources and math dependency and binds
+the actual XML characters. `FMI3.SourceBuildContract` retains the complete
+numerical C contract as a conjunct. Six new audit roots pass in
+`build/fmi-build-package.log`; the complete gate is tracked in
+`build/fmi-build-full-gate.log`. The existing rebuild now consumes the published
+XML and resolves symbols in a separate process, avoiding Python's ambient
+libm. The actual-file, official-schema, native and mutation checks pass in
+`build/fmi-build-artifact-gate.log`. The actual FMI adapter/model-description/archive
+capstone remains open.
+
 ### SR02 — P1: two source FMUs collide at the numerical C symbols
 
 [C.render](../packages/backend-c/RumocaC/Codegen.lean) exports `rumoca_rhs`,
@@ -129,12 +141,17 @@ existing manifest and complete-archive contracts in the same change, with one
 missing/redirected-status mutation. No new GALEC error language is needed for
 the zero-status unit profile.
 
-**Repair in progress:** the [status correction](efmi.md#error-status-mapping-correction)
+**Repaired for the unit profile:** the [status correction](efmi.md#error-status-mapping-correction)
 implements a mapped instance field and proves its agreement with each method
 result, including uninitialized Startup storage. The nine new audit roots,
-native C observations and three official schemas pass. The complete archive
-gate is running; SR03 is not yet marked closed. The reviewed snapshots above
-describe the earlier artifact that exposed the omission.
+native C observations and three official schemas pass. The required full gate
+passed in `build/efmi-status-full-gate.log`, including the actual archive
+certificate and redirected-status rejection. The checked eFMU has SHA-256
+`712a9819677fad8fef65a672fffbbe8ca038540126a6d56fc2cd2071e63ed646`.
+[CI for feb57a9](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
+also passed.
+The reviewed snapshots above describe the earlier artifact that exposed the
+omission. Broader eFMI compliance and release obligations remain open.
 
 ### SR04 — P2: nominal-state access is admitted before initialization
 

@@ -24,13 +24,17 @@ def documentation : String :=
   "at most 1000000 per call. Unsupported steps return Discard without advancing. " ++
   "There are no events, inputs, state serialization, clocks, or intermediate updates.</p>" ++
   "<p>sources/model.c has an actual-file Lean certificate of source-to-C numerical semantic " ++
-  "preservation, including all finite binary64 starts. The FMI adapter, XML, ZIP, native " ++
+  "preservation, including all finite binary64 starts. The source-build description is also " ++
+  "checked against its declared compiler, flags, sources and library requirements. " ++
+  "The FMI adapter, model-description XML, ZIP, native " ++
   "C compilation, linking, callbacks, and host solver are outside that theorem. " ++
   "Their validation is not a proof of full FMI compliance. " ++
   "See extra/org.cognipilot.rumoca for the source snapshot and kernel checking log.</p>" ++
-  "<p>The shared library targets the platform named in binaries/. To rebuild for another " ++
-  "platform use the supplied C sources and FMI 3 headers supplied by your importer. " ++
-  "Use C11, IEEE binary64, gradual underflow, round-to-nearest, no fast-math, and link libm.</p></html>\n"
+  "<p>The shared library targets the platform named in binaries/. The build description " ++
+  "declares Linux x86_64/aarch64 GCC source profiles, including the system math library. " ++
+  "Use the FMI 3 headers supplied by your importer. Other source-build platforms require " ++
+  "a separately validated build profile. Execution requires IEEE binary64, gradual " ++
+  "underflow and round-to-nearest; compiler flags do not establish these host conditions.</p></html>\n"
 
 /-- Write only data prepared by Solve, and the existing C lowering of that Solve
 program. The driver must check sources/model.c before invoking archive. -/
@@ -45,28 +49,26 @@ def writeSources (m : Solve.FMI3Model source) (root vendor : FilePath) : IO Unit
   IO.FS.writeFile (root / "sources/model.c") (C.render (C.lower m.solve))
   IO.FS.writeFile (root / "sources/fmi3.c") (Runtime.render m sigs)
   IO.FS.writeFile (root / "modelDescription.xml") (XML.document (modelDescription m))
-  IO.FS.writeFile (root / "sources/buildDescription.xml") (XML.document buildDescription)
+  IO.FS.writeFile (root / "sources/buildDescription.xml") (XML.document Build.description)
   IO.FS.writeFile (root / "documentation/index.html") documentation
   IO.FS.writeFile (root / "documentation/licenses/fmi-standard.txt")
     (← IO.FS.readFile (vendor / "LICENSE.txt"))
 
-def hostPlatform : IO String := do
+def hostPlatform : IO Build.Platform := do
   let os := (← command "uname" #["-s"]).trimAscii.toString
   let arch := (← command "uname" #["-m"]).trimAscii.toString
   if os != "Linux" || !(arch == "x86_64" || arch == "aarch64") then
     throw (IO.userError s!"FMU binary build currently supports Linux x86_64/aarch64; host is {os}/{arch}")
-  return arch ++ "-linux"
+  return if arch == "x86_64" then .x86_64Linux else .aarch64Linux
 
 /-- Compile and validate in a private staging directory. Publication is left to
 the driver so failure cannot replace an earlier successful FMU. -/
 def archive (root vendor destination : FilePath) : IO Unit := do
   let platform ← hostPlatform
-  IO.FS.createDirAll (root / "binaries" / platform)
-  let library := root / "binaries" / platform / (modelIdentifier ++ ".so")
-  let _ ← command "gcc" #["-std=c11", "-O2", "-fPIC", "-shared", "-Wall", "-Wextra", "-Werror",
-    "-Wno-unused-parameter", "-pedantic", "-fno-fast-math", "-ffp-contract=off", "-frounding-math",
-    "-I", vendor.toString, (root / "sources/model.c").toString,
-    (root / "sources/fmi3.c").toString, "-lm", "-o", library.toString]
+  IO.FS.createDirAll (root / "binaries" / platform.name)
+  let library := root / "binaries" / platform.name / (modelIdentifier ++ ".so")
+  let invocation := Build.invocation platform (root / "sources").toString vendor.toString library.toString
+  let _ ← command invocation.compiler invocation.args.toArray
   let _ ← command "zip" #["-q", "-X", "-0", "-r", destination.toString,
     "modelDescription.xml", "sources", "binaries", "documentation", "extra"] (some root)
   let _ ← command "unzip" #["-tqq", destination.toString]
