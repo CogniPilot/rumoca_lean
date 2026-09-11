@@ -1,5 +1,6 @@
 import ProofAudit.Audit
 import RumocaC.Initialization
+import RumocaC.InitializationOriginProofs
 import RumocaC.Lowering
 import RumocaC.Statements
 import RumocaC.Calls
@@ -25,6 +26,20 @@ import RumocaC.LiteralNames
 #audit axioms Rumoca.CInitialization.write_step
 #audit axioms Rumoca.CInitialization.written_frame
 #audit axioms Rumoca.CInitialization.write_behaviors
+#audit axioms Rumoca.CTree.Expr.Origins.uniform_root
+#audit axioms Rumoca.CTree.Expr.Origins.uniform_every
+#audit axioms Rumoca.CTree.Expr.Origins.uniformList_every
+#audit axioms Rumoca.CTree.Expr.Origins.every_root
+#audit axioms Rumoca.CTree.Expr.Origins.every_mono
+#audit axioms Rumoca.CTree.Expr.Origins.everyList_mono
+#audit axioms Rumoca.CProvenance.fromCore_traces_iff
+#audit axioms Rumoca.CInitialization.Emission.trace_correct
+#audit axioms Rumoca.CInitialization.emit_trace_correct
+#audit axioms Rumoca.CInitialization.Origins.initial_ancestry
+#audit axioms Rumoca.CInitialization.Origins.conversion_ancestry
+#audit axioms Rumoca.CInitialization.Origins.target_ancestry
+#audit axioms Rumoca.CInitialization.Origins.write_ancestry
+#audit axioms Rumoca.CInitialization.Emission.preserves
 #audit axioms Rumoca.CLiteral.Declaration.render_ascii
 #audit axioms Rumoca.CLiteral.Declaration.render_safe
 #audit axioms Rumoca.CLiteral.Declaration.render_preprocessed

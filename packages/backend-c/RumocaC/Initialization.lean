@@ -39,9 +39,9 @@ theorem write_step (model : Solve.Model source) (target : Expr)
     (double : interface.types "double" = some .float64)
     (located : CBody.lvalue env heap target = some address)
     (storage : heap address = some ⟨.float64, true, old⟩) (rest : List Stmt) :
-    CBody.next (.running (statement model target :: rest) env heap) =
+    CBody.next (.running ((emit model target).statement :: rest) env heap) =
       some (.running rest env (written heap address)) := by
-  simp [CBody.next, statement, value_evaluated model env heap double, located,
+  simp [CBody.next, Emission.statement, value_evaluated model env heap double, located,
     store_float64 heap address old (Binary64.toBits Binary64.positiveZero).val storage,
     Value.finite, written]
 
@@ -56,7 +56,7 @@ theorem write_behaviors (model : Solve.Model source) (target : Expr)
     (located : CBody.lvalue env heap target = some address)
     (storage : heap address = some ⟨.float64, true, old⟩) (behavior) :
     CBody.machine.Behaves
-      (.running [statement model target, .ret none] env heap) behavior ↔
+      (.running [(emit model target).statement, .ret none] env heap) behavior ↔
       behavior = .terminates ⟨.void, written heap address⟩ := by
   apply CBody.behaviors_of_run (n := 2)
   rw [CBody.run, write_step model target env heap address old double located storage]

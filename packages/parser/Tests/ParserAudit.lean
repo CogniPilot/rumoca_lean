@@ -7,6 +7,7 @@ import Parser.Automaton
 import Parser.Alphabet
 import Parser.Provenance
 import Parser.ProvenanceExtension
+import Parser.ProvenanceMapping
 import Parser.ScannerSpelling
 import Parser.ScannerRefinement
 import Parser.LocatedProofs
@@ -19,6 +20,15 @@ import ProofAudit.Audit
 #audit axioms Parser.Provenance.Table.append_extension
 #audit axioms Parser.Provenance.Table.appended_lookup
 #audit axioms Parser.Provenance.TracesTo.extend
+#audit axioms Parser.Provenance.Node.mapRule_parents
+#audit axioms Parser.Provenance.Node.mapRule_source
+#audit axioms Parser.Provenance.Table.unmap_mapRef
+#audit axioms Parser.Provenance.Table.map_unmapRef
+#audit axioms Parser.Provenance.Table.get_mapRef
+#audit axioms Parser.Provenance.Table.get_unmapRef
+#audit axioms Parser.Provenance.TracesTo.mapRule
+#audit axioms Parser.Provenance.TracesTo.unmapRule
+#audit axioms Parser.Provenance.Table.mapRule_traces_iff
 
 #audit axioms RegularExpression.rmatch_iff_matches'
 #audit axioms Parser.Source.Cursor.nextn_splits

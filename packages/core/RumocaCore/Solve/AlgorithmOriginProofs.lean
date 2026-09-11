@@ -1,4 +1,5 @@
 import RumocaCore.Solve.AlgorithmProofs
+import RumocaCore.GALEC.TraceProofs
 
 namespace Rumoca.Solve.Algorithm
 open Rumoca.Tensor
@@ -31,11 +32,13 @@ theorem Model.lowering_preserves (model : Model source) (zero one : α)
       bodyEvents model.origin.originTrace.doStep model.origin.originTrace.stateDeclaration ∧
     (model.lowered ▸ model.origins).period.events =
       expressionEvents model.origin.originTrace.periodValue ++
-        [.ret model.origin.originTrace.periodAssignment model.origin.originTrace.periodValue.root] := by
-  constructor
+        [.ret model.origin.originTrace.periodAssignment model.origin.originTrace.periodValue.root] ∧
+    model.origin.TraceCorrect := by
+  refine ⟨?_, ?_⟩
   · rw [model.lowered]
     exact lower_correct model.origin.block zero one add method state
   · rw [model.origins_lowered]
-    exact lowerOrigins_events model.origin.originTrace
+    obtain ⟨startup, recalibrate, doStep, period⟩ := lowerOrigins_events model.origin.originTrace
+    exact ⟨startup, recalibrate, doStep, period, model.origin.trace_correct⟩
 
 end Rumoca.Solve.Algorithm

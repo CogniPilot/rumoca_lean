@@ -548,6 +548,34 @@ No test suite was added. **Stage decision: open** pending development tensor
 provenance, emitted-byte maps and the remaining
 whole-adapter/compliance obligations. No grammar expansion follows this checkpoint.
 
+### Shared C initialization origins: standards impact
+
+This increment follows `59c538a`. It strengthens independent checking of the
+actual GALEC block annotations and requires origins on the shared C initializer
+consumed by FMI creation/reset. Its theorem combines exact source ancestry and
+the annotation contract with all C-body behaviors under supplied writable
+binary64 storage. It does not prove allocation or the complete public API.
+
+The preceding MLS 3.7, FMI 3.0.2 and eFMI Beta 1 clause maps and findings carry
+forward. Both EBNFs, source admission, numerical policy, rendered C expressions,
+public interfaces and archive layout remain unchanged. No additional normative
+conformance claim follows from the origin proofs.
+
+Twenty-five added roots retain every previous audit entry and the unchanged
+axiom policy. The downstream package gate passed in
+`build/literal-call-worktree/build/c-initial-provenance-package-gate.log`
+(3316 jobs). The required main-workspace artifact gate also passed in
+`build/c-initial-provenance/full-gate.log`, including both target archives and
+the existing boundary/mutation checks. All 510 inventoried inputs remained
+unchanged. This run produced:
+
+- FMU SHA-256: `0cc3e17ec9052f3738a61ab108e3699b3dd7d241370bb731fc76cee28edb96ab`.
+- eFMU SHA-256: `5c4e3af3b5768c2f06948d979b845efdcb31f3d5ae7544b58b13bb55f720820c`.
+
+No new test suite is added.
+**Stage decision: open.** Remaining byte maps, full adapter/artifact composition
+and unresolved standards findings continue to block grammar expansion.
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

@@ -84,3 +84,14 @@ plan also passed the full artifact gate in `build/fmi-provenance/full-gate.log`.
 Development tensor origins, emitted-byte maps, FMI allocation and
 host-set/lifecycle composition remain open. No binding/start/fixed grammar
 case is admitted by these changes. SR08 is not closed.
+
+The following C increment makes the shared initializer's operation origins
+mandatory. FMI creation/reset consume its checked emission;
+`CInitialization.Emission.preserves` joins exact annotation/source ancestry
+with the existing all-behavior storage contract. The complete downstream
+package gate passed in
+`build/literal-call-worktree/build/c-initial-provenance-package-gate.log`.
+Its required main-workspace artifact gate also passed in
+`build/c-initial-provenance/full-gate.log`, with unchanged inputs and both actual
+target archives checked. Allocator, host-set and whole-lifecycle/artifact
+composition remain separate SR08 obligations.

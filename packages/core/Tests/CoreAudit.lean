@@ -59,6 +59,8 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.GALEC.Model.model_ancestry
 #audit axioms Rumoca.GALEC.Model.period_ancestry
 #audit axioms Rumoca.GALEC.Model.state_access_ancestry
+#audit axioms Rumoca.GALEC.UnitOrigins.References.trace_correct
+#audit axioms Rumoca.GALEC.Model.trace_correct
 #audit axioms Rumoca.Solve.Algorithm.lowerExprOrigins_events
 #audit axioms Rumoca.Solve.Algorithm.compileExprOrigins_events
 #audit axioms Rumoca.Solve.Algorithm.compileExpr_value_and_origins

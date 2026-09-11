@@ -65,6 +65,22 @@ both actual target archives with the input inventory unchanged throughout.
 Development tensor/AD provenance, actual C/GALEC/XML byte maps and complete
 adapter/artifact composition remain open. No source grammar case is added.
 
+The next increment strengthens the actual GALEC annotation contract and adds
+required origins to shared C initialization emission. `GALEC.Model.TraceCorrect`
+inspects the annotations on the actual block; Solve Algorithm lowering now
+preserves this contract alongside its existing values and origin events.
+`CInitialization.Emission.preserves` combines the actual initializer's annotation
+contract, declaration ancestry and all terminating C-body behaviors. It assumes
+the supplied target denotes writable binary64 storage and the interface binds
+`double` accordingly. FMI creation/reset use this checked emission. Allocation,
+the enclosing public functions and emitted-byte source maps still require
+separate composition. Its 25 added audit roots and downstream package checks
+passed in `build/literal-call-worktree/build/c-initial-provenance-package-gate.log`;
+the required main-workspace artifact gate also passed in
+`build/c-initial-provenance/full-gate.log`, including both actual target archives
+and the existing boundary/mutation checks. All 510 inventoried inputs remained
+unchanged throughout the run.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

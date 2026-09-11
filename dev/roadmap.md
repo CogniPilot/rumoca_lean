@@ -362,6 +362,15 @@ contract for the actual program annotations. Its required full gate also passed
 in `build/fmi-provenance/full-gate.log`. Development tensor/AD model provenance,
 emitted maps and the whole-adapter obligations still block grammar growth.
 
+The next increment strengthens the actual GALEC block annotation contract and
+requires origins on shared C initialization emission. Its composed theorem
+retains all C-body behaviors under supplied storage and traces the write to the
+source declaration. FMI creation/reset consume that emission. All 25 added roots
+and downstream package checks pass. The required main-workspace artifact gate
+also passed in `build/c-initial-provenance/full-gate.log` with unchanged inputs,
+including both target archives and the existing boundary/mutation checks.
+See [the precise remaining scope](provenance.md#shared-c-initialization-and-actual-galec-traces).
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

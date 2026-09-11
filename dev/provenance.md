@@ -346,6 +346,34 @@ throughout the run.
 No new grammar, numerical policy or test suite is added. Development tensor/AD
 model provenance, C/GALEC/XML byte maps and whole-adapter composition remain open.
 
+### Shared C initialization and actual GALEC traces
+
+`GALEC.Model.TraceCorrect` independently checks the annotations attached to the
+actual block, including Startup's selected initialization, sampling period and
+every method/assignment/operand role. Solve Algorithm's composed lowering
+theorem now includes this contract as well as value and origin-event preservation.
+
+The generic parser graph supports changing rule vocabularies while preserving
+and reflecting source ancestry. The C backend owns its generation rules and
+embeds upstream rules through this checked mapping. `CTree.Expr.Origins` covers
+every existing expression constructor without expanding tensor coordinates.
+
+Shared C initialization returns a required `Emission` carrying the literal,
+conversion, storage-target and write origins. The actual FMI creation/reset
+bodies consume its statement projection. `Emission.TraceCorrect` checks the
+attached expressions and write parents; `Emission.preserves` combines this
+contract with declaration ancestry and all C-body behaviors under supplied
+writable binary64 storage. Other C statements/functions, emitted-byte maps and
+original-input-to-archive-member identity are still open.
+
+All previous audit roots are retained, with 25 additions. The downstream package
+gate passed in
+`build/literal-call-worktree/build/c-initial-provenance-package-gate.log`
+(3316 jobs). The required main-workspace artifact gate also passed in
+`build/c-initial-provenance/full-gate.log`, including both actual target archives
+and existing boundary/mutation checks. Its 510 inventoried inputs remained
+unchanged. No source grammar, solver policy or test suite is added.
+
 ## Generic engine ownership
 
 The parser engine now lives in `packages/parser/Parser`, without language

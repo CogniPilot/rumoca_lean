@@ -99,7 +99,7 @@ macro "fmi_literal_calls" : tactic => `(tactic|
     Runtime.out, Runtime.scalarAccessCheck, Runtime.countLoop, Runtime.pointerCheck,
     Runtime.makeInstance, Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
     Runtime.doStep, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
-    CInitialization.statement, CInitialization.value,
+    CInitialization.Emission.statement, CInitialization.value,
     Runtime.raiseField, Runtime.mode, Runtime.field, Runtime.x])
 
 theorem body_calls (m : Solve.FMI3Model source) (sig : Signature) :
