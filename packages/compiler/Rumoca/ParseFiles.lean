@@ -12,16 +12,18 @@ No IR lowering, FMU build, or kernel subprocess runs for this command. -/
 namespace Rumoca.CLI
 open Lean
 
-private def analyze (item : String × Except String String) : Json × Option String :=
+/-- Structured output is always produced. Terminal context is evaluated only
+when requested; an empty message still records failure in JSON mode. -/
+def analyze (terminal : Bool) (item : String × Except String String) : Json × Option String :=
   let (name, read) := item
-  let failure (diagnostic : Json) (message : String) :=
+  let failure (diagnostic : Json) (message : Unit → String) :=
     (Json.mkObj [("path", toJson name), ("ok", toJson false),
-      ("diagnostics", toJson #[diagnostic])], some message)
+      ("diagnostics", toJson #[diagnostic])], some (if terminal then message () else ""))
   match read with
-  | .error e => failure (Json.mkObj [("phase", "io"), ("message", toJson e)]) s!"{name}: {e}"
+  | .error e => failure (Json.mkObj [("phase", "io"), ("message", toJson e)]) (fun _ => s!"{name}: {e}")
   | .ok source =>
     let error (e : Parser.Source.Diagnostic source) :=
-      failure (Diagnostics.toJson e) (Diagnostics.render name e)
+      failure (Diagnostics.toJson e) (fun _ => Diagnostics.render name e)
     let result := Parallel.parseOne ⟨name, source⟩
     match result.parsed with
     | .error e => error e
@@ -38,7 +40,7 @@ private def runParseFiles (p : Cli.Parsed) : IO UInt32 := do
   for file in files do
     let read ← try pure (.ok (← IO.FS.readFile file)) catch e => pure (.error (toString e))
     snapshots := (file, read) :: snapshots
-  let results := Parser.Parallel.map jobs analyze snapshots.reverse
+  let results := Parser.Parallel.map jobs (analyze (!p.hasFlag "json")) snapshots.reverse
   if p.hasFlag "json" then
     IO.println (toJson (results.map (·.1))).compress
   else

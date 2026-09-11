@@ -25,6 +25,7 @@ checks cover the composed contracts. See
 | `Rumoca/Verified.lean` | Whole-compiler behavior preservation and artifact contract |
 | `Rumoca/ArtifactCheck.lean`, `Tools/CheckArtifact.lean` | Trusted actual-file checking adapter and fixed entry point |
 | `Rumoca/CLI.lean`, `Main.lean`, `Certify.lean` | Declarative CLI using lean4-cli, entry point and untrusted candidate-certificate generator |
+| `Rumoca/ParseFiles.lean`, `ParseFilesProofs.lean` | Parallel file analysis; exact JSON, terminal-output and failure-status preservation while skipping unused terminal rendering |
 | `Rumoca/EFMICheck.lean`, `EFMICheckOptions.lean` | Explicit process arguments and one snapshot of the actual eFMI source/code inputs |
 | `Tests/` | Compiler regressions, semantic counterexamples and proof-root audit |
 

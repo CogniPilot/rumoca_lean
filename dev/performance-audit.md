@@ -116,7 +116,7 @@ the stack setting. The tables above retain the original failing baseline.
 | PA06 / P1 | Generic LALR reduction builds full trees, then checks their validity and token word; located LALR performs additional decoration. Candidate generation uses list item sets and linear searches through productions/states. | Measure generation separately from runtime. Index productions and canonical states; prove emitted tables retain their meaning. Refine runtime stacks/reduction actions to avoid redundant retained trees and checks only where a theorem discharges their purpose. Array action/goto tables and immutable grammar sharing are already good foundations. |
 | PA07 / P1 | `RumocaCore/IR.lean`: DAE retains Flat, Solve retains DAE, and the artifact retains parsed tokens/AST plus Solve. Native generated constructors confirm some predecessors survive erasure. | Keep compact executable IRs and small provenance tables; express pass relations in `Prop`. Retain full stage dumps only when requested. Sharing is not deep copying, but it still prolongs object lifetimes. Source indices and proof fields erased by Lean should not be counted as resident copies. |
 | PA08 / P1 | `Solve/Tensor.lean` uses inductive `Ref.here/there` and nested environment functions; the C algorithm's name environment follows the same pattern. Old-register lookup can traverse program depth repeatedly. Reverse AD saves pullback closures and updates through these references. | Refine typed references to bounded register indices and array-backed environments, with lookup/update and execution preservation. Measure old-register-heavy DAGs before adding operators. Preserve shape indices and operation counts independent of tensor volume; do not scalarize IR lowering. |
-| PA09 / P2 | JSON failure handling constructs terminal diagnostics and then discards them. The 1 MiB error case costs 0.260 s / 218 MiB in CLI versus 0.041 s / 46 MiB in located parsing. `Diagnostics.renderAt` rebuilds file maps and physical lines. | Defer rendering to the selected output mode, share document line maps, and bound displayed context for very long lines while retaining complete structured spans. Prove byte/span conversions against the existing location contract if changed. LSP already stores a document file map. |
+| PA09 / P2 | The original JSON failure handling constructed terminal diagnostics and then discarded them. The baseline 1 MiB error case cost 0.260 s / 218 MiB in CLI versus 0.041 s / 46 MiB in located parsing. `Diagnostics.renderAt` rebuilds file maps and physical lines. | Conditional terminal rendering is implemented and proved below. Sharing document line maps and bounding displayed terminal context remain open. Keep complete structured spans; prove byte/span conversions against the existing location contract if changed. LSP already stores a document file map. |
 | PA10 / P2 | Actual artifact certificates, hashing and ZIP construction have separate materialization costs that this frontend benchmark does not measure. | Record emit, native compile, kernel certificate, hash and archive costs separately on each admitted slice. Reuse native Lake module caches; do not cache acceptance of changed external artifact bytes or weaken integrity checks. |
 
 The production Modelica parser is currently the certified **DFA**, followed by
@@ -209,7 +209,7 @@ cases. Require these measurements at the relevant future slices. Do not grow
 the grammar merely to create a benchmark, and do not claim MSL readiness from
 a whitespace proxy.
 
-After PA01's gate, the immediate order is PA02/PA09 and PA03/PA04, with package dependency
+After PA01, the immediate order is PA02/the remaining PA09 work and PA03/PA04, with package dependency
 measurement alongside them. PA06–PA08 constrain the next verified representation
 work before larger grammars/programs. Each semantic representation change needs
 its refinement proof, existing axiom audit and full actual-artifact gate. The
@@ -269,3 +269,37 @@ the eFMU has SHA-256
 The CI scheduling change passed `actionlint` in
 `build/span-attachment/ci-lint.log`; hosted execution remains separately
 visible in GitHub Actions.
+
+## PA09 increment: render only the requested output
+
+The CLI's pure `analyze` function now receives the terminal-output flag.
+Its failure helper suspends terminal rendering behind `Unit → String` and
+evaluates it only in terminal mode. JSON mode keeps the same structured
+diagnostic and failure marker without building the discarded display text.
+The generated native C branches before applying the rendering closure.
+
+`Rumoca.ParseFilesProofs` relates the complete result to the former eager
+implementation, kept as a noncomputable reference. Five audited roots prove
+exact JSON, unchanged failure status, exact terminal output, and the same
+ordered JSON array and aggregate exit flag for arbitrary parallel batch sizes,
+worker counts and file-read snapshots. No source range, coordinate conversion
+or parser/resolver decision changes. The proofs are separate from the runtime
+imports and pass the compiler package audit in
+`build/diagnostic-formatting/package-build.log`.
+
+The rebuilt root CLI passes the existing 1,005-input sequential/parallel check
+and LSP boundary checks in `build/diagnostic-formatting/frontend.log`. On the
+same 1,048,629-byte lexical-error workload, three fresh-process runs with one
+worker returned the expected diagnostic. Median wall time was 0.076 s and
+median child peak RSS was 109,500 KiB (106.9 MiB). The preceding PA01 build's
+paired baseline was 0.254 s and 225,896 KiB (220.6 MiB). Raw data and binary
+identities are in `build/diagnostic-formatting/measured/` and
+`build/pa09-preparation/before/`. These are host measurements, not proved
+resource bounds or a claim about MSL throughput.
+
+The full required `lake test` gate passed in
+`build/diagnostic-formatting/full-gate.log`, including actual FMI/eFMI artifacts
+and mutation controls. The source snapshot in
+`build/diagnostic-formatting/source.sha256` still matches the checked files.
+The remaining line-map and terminal-context work keeps PA09 open; identifier
+interning, lexer allocation and bounded batch input retention are also open.

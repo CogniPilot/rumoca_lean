@@ -7,6 +7,13 @@ import Rumoca.Source
 import Rumoca.Verified
 import Rumoca.ArrayProofs
 import Rumoca.FMI3BuildProofs
+import Rumoca.ParseFilesProofs
+
+#audit axioms Rumoca.CLI.analyze_eq_reference
+#audit axioms Rumoca.CLI.analyze_json
+#audit axioms Rumoca.CLI.analyze_failure
+#audit axioms Rumoca.CLI.analyze_terminal
+#audit axioms Rumoca.CLI.analyze_batch
 
 #audit axioms Rumoca.FMI3.sourceBuild_correct
 #audit axioms Rumoca.FMI3.lexed_name
