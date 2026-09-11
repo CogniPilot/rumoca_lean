@@ -1,4 +1,5 @@
 import RumocaFMI3.LiteralPreparation
+import RumocaFMI3.Header
 
 /-! Invariants of the existing header-signature collector. This does not
 assert that the ad-hoc header reader implements the complete C grammar. -/

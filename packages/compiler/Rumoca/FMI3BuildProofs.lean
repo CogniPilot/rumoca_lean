@@ -1,25 +1,29 @@
 import Rumoca.Verified
 import RumocaFMI3.SourceLinkageProofs
 import Rumoca.FMI3NameProofs
+import Rumoca.FMI3AdapterProofs
 
 namespace Rumoca.FMI3
 
-/-- Strengthen the existing numerical C file contract with the actual source-build
-document, its public model identifiers and its source prefix. This does not
-certify the rest of the FMI adapter/model description, native compilation/linking,
-or the containing ZIP. -/
+/-- Numerical C, build dependencies, public identifiers and the source prefix
+are joined with complete adapter byte identity and the proved reset fragment.
+This does not certify the other public bodies, whole-C preprocessing/header
+semantics, the rest of the model description, native linking or the ZIP. -/
 structure SourceBuildContract (a : Artifact source) (c description adapter metadata : String) : Prop where
   numerical : Rumoca.ArtifactContract a c .internal
   build : Build.ArtifactContract a.parsed.ast.name description
   source_prefix : SourcePrefixContract a.parsed.ast.name adapter
   model_identifiers : ModelIdentifiersContract a.parsed.ast.name metadata
+  adapter : AdapterContract a adapter
 
 theorem sourceBuild_correct (a : Artifact source) (c description adapter metadata : String)
     (numerical : Rumoca.ArtifactContract a c .internal)
     (text : XML.document (Build.description a.parsed.ast.name) = description)
     (sourcePrefix : SourcePrefixContract a.parsed.ast.name adapter)
-    (identifiers : ModelIdentifiersContract a.parsed.ast.name metadata) :
+    (identifiers : ModelIdentifiersContract a.parsed.ast.name metadata)
+    (adapterContract : AdapterContract a adapter) :
     SourceBuildContract a c description adapter metadata :=
-  ⟨numerical, text ▸ Build.artifact_correct _ (parsed_name a.parsed), sourcePrefix, identifiers⟩
+  ⟨numerical, text ▸ Build.artifact_correct _ (parsed_name a.parsed), sourcePrefix,
+    identifiers, adapterContract⟩
 
 end Rumoca.FMI3

@@ -396,6 +396,17 @@ gate also passed in `build/efmi-startup-map/full-gate.log`, with all 522 inputs
 unchanged and both actual archives checked. See
 [the concrete scope and remaining gaps](provenance.md#actual-efmi-startup-emission).
 
+The FMI reset increment now has package-checked full-call, memory-frame,
+function-syntax and source-initialization proofs, with 27 added audit roots.
+The strengthened actual-file checker requires complete adapter-byte identity
+and that same printed definition table; it passes in
+`build/fmi-reset/actual-file.log`. The required root gate also passed in
+`build/fmi-reset/full-gate.log`, with all 529 inventoried inputs unchanged and
+both actual target archives checked.
+C01/F03/SR08 remain open for whole-C context,
+other public calls, allocation/lifetime, host-set policy and the complete
+artifact contract; see [the exact reset scope](fmi3/contracts.md#reset-and-complete-adapter-bytes).
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

@@ -126,6 +126,17 @@ Startup map against the supplied input and complete C member, not a serialized
 archive map. Header/other-method maps, original-to-staged input identity and
 the remaining adapter/standards obligations are still open.
 
+The current FMI reset increment has package-checked complete-call, frame,
+independent function-syntax and source-initialization proofs. Its strengthened
+actual-file contract binds the complete adapter renderer to the file and the
+same definition table used by the reset theorem. The fixed actual-file check
+passes in `build/fmi-reset/actual-file.log` under the unchanged axiom policy;
+the required root gate also passed in `build/fmi-reset/full-gate.log`, including
+both actual target archives with all 529 inventoried inputs unchanged. This
+does not close other adapter bodies, allocation,
+whole-C/preprocessing or ABI obligations; see
+[the reset contract](../dev/fmi3/contracts.md#reset-and-complete-adapter-bytes).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

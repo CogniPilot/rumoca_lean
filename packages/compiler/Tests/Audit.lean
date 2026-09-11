@@ -36,6 +36,13 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.CLI.analyze_batch
 
 #audit axioms Rumoca.FMI3.sourceBuild_correct
+#audit axioms Rumoca.FMI3.reset_result
+#audit axioms Rumoca.FMI3.reset_source
+#audit axioms Rumoca.FMI3.compile_reset_verified
+#audit axioms Rumoca.FMI3.compile_rendered_reset_verified
+#audit axioms Rumoca.FMI3.adapter_chars
+#audit axioms Rumoca.FMI3.adapter_correct
+#audit axioms Rumoca.FMI3.adapter_reset_source
 #audit axioms Rumoca.FMI3.lexed_name
 #audit axioms Rumoca.FMI3.parsed_name
 #audit axioms Rumoca.FMI3.parsed_modelIdentifier

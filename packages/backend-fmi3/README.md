@@ -35,6 +35,7 @@ The complete printed ABI adapter and archive capstone remain open; see
 | `TimeProofs`, `HistoryProofs`, `HistoryBodies` | Binary64 time comparisons, reference history and generated history bodies |
 | `InitializationBodies` | Successful ME/CS initialization exit, reference mode, model/history preservation and memory frame |
 | `InitializationEntry` | Initialization argument validation, complete successful entry, stop/time-window representation and memory frame |
+| `Reset`, `ResetCalls`, `ResetSyntax`, `ResetContract` | Default restoration, full typed calls, independent function syntax and the reset contract over the rendered definition table |
 | `Package` | Native C compilation, FMU ZIP creation and independent validation |
 
 C implementation and general target proofs live in `packages/backend-c` under

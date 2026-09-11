@@ -660,6 +660,34 @@ maps, archive map serialization and original-to-staged input identity remain
 open. No additional test suite was created. **Stage decision: open**; existing
 adapter/artifact and compliance findings continue to block grammar expansion.
 
+### FMI reset and adapter-byte binding: standards impact
+
+The candidate on top of `a40022e` leaves both EBNFs, production admission,
+emitted C, metadata and archive contents unchanged. The header reader's
+accumulator implementation preserves its earlier behavior by theorem. MLS 3.7
+and eFMI Beta 1 clause mappings above remain applicable to this unit profile;
+there is no new source or GALEC case.
+
+| Applicable obligation | Added proof correspondence | Remaining obligation |
+| --- | --- | --- |
+| MLS §§4.9 and 8.6: stored Real values and selected initialization. | The complete reset call's returned heap supplies the finite value used by `ResetSourceResult`, with the same compiled Solve default and unique initialized source trajectory. | Reset does not add an initial source equation. Host-set/initialization composition and SR08 remain open. |
+| FMI 3.0.2 §2.3.1: reset restores defaults and Instantiated; initialization precedes a new run. [Normative reset clause](https://fmi-standard.org/docs/3.0.2/) | `Reset.correct` and `Reset.FunctionContract` cover termination, eight writes, default state, clock/stop fields and all other memory cells for both interface kinds and declared modes. | Allocation and equivalence to a freshly instantiated object, logging/callback policy and complete cross-call lifecycle composition remain open. |
+| FMI §2.2.4: error recovery and instance isolation. | Reset also covers Terminated; `other_instance` preserves every cell in other blocks. | General error/callback execution and native object layout remain outside this result. |
+| FMI C source artifact binding. | `SourceBuildContract.adapter` requires exact complete adapter bytes, unique printed definitions, the reset signature and its independently specified function/call contract. | Whole translation-unit/preprocessor meaning, official-header/ABI correspondence, all other public bodies and complete archive composition remain open. |
+| eFMI Algorithm/Production Code. | Existing DAE→GALEC→Solve, Startup and production/archive contracts are retained. | This FMI-only increment closes no eFMI finding. |
+
+The 27 new roots and existing package audits pass under the unchanged axiom
+policy. The focused printer certificate and added reset-body mutation pass.
+The complete fixed actual-file check passes in `build/fmi-reset/actual-file.log`;
+the required main-workspace gate also passed in `build/fmi-reset/full-gate.log`,
+with all 529 inventoried inputs unchanged and both target archives checked.
+The integrated checker reuses the
+existing character-join theorem and kernel-checked segment composition to
+reduce proof-checking cost without changing its proposition.
+**Stage decision: open**; SR04, SR05, SR07,
+SR08 and the remaining provenance/adapter obligations continue to block growth.
+See [the precise contract](fmi3/contracts.md#reset-and-complete-adapter-bytes).
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

@@ -1,4 +1,5 @@
 import RumocaFMI3.Runtime
+import RumocaFMI3.Header
 import RumocaC.Codegen
 
 /-! Host build orchestration. These operations are checked by independent

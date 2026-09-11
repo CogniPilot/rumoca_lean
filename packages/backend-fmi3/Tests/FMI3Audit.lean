@@ -30,6 +30,28 @@ import RumocaFMI3.Metadata
 import RumocaFMI3.StateProofs
 import RumocaFMI3.StateCalls
 import RumocaFMI3.TimeProofs
+import RumocaFMI3.ResetContract
+
+#audit axioms Rumoca.FMI3.Header.commentText_reference
+#audit axioms Rumoca.FMI3.Reset.tail_run
+#audit axioms Rumoca.FMI3.Reset.body_run
+#audit axioms Rumoca.FMI3.Reset.frame
+#audit axioms Rumoca.FMI3.Reset.state
+#audit axioms Rumoca.FMI3.Reset.history
+#audit axioms Rumoca.FMI3.Reset.lifecycle
+#audit axioms Rumoca.FMI3.Reset.stop
+#audit axioms Rumoca.FMI3.Reset.other_instance
+#audit axioms Rumoca.FMI3.Reset.retained_field
+#audit axioms Rumoca.FMI3.Reset.parameters_bound
+#audit axioms Rumoca.FMI3.Reset.call_reaches
+#audit axioms Rumoca.FMI3.Reset.call_behaviors
+#audit axioms Rumoca.FMI3.Reset.null_reaches
+#audit axioms Rumoca.FMI3.Reset.null_behaviors
+#audit axioms Rumoca.FMI3.Reset.correct
+#audit axioms Rumoca.FMI3.Reset.Syntax.printed
+#audit axioms Rumoca.FMI3.Reset.Syntax.render_denotes
+#audit axioms Rumoca.FMI3.Reset.rendered_contract
+#audit axioms Rumoca.FMI3.Reset.rendered_member
 
 #audit axioms Rumoca.FMI3.LiteralPreparation.rendered_functions
 #audit axioms Rumoca.FMI3.Header.signatures_unique

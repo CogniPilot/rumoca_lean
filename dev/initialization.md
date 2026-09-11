@@ -122,3 +122,12 @@ The downstream package gate passed with 22 new roots; the required root gate
 also passed in `build/efmi-startup-map/full-gate.log`, with all 522 inventoried
 inputs unchanged and both actual target archives checked. This does not add modifier
 syntax or close original-input identity, FMI allocation/host-set or SR08.
+
+The current FMI reset proofs derive the selected initial source solution from
+the finite value loaded after the complete call, retaining the exact memory
+frame. Complete adapter-byte binding passes the fixed actual-file check in
+`build/fmi-reset/actual-file.log`; the required root gate also passed in
+`build/fmi-reset/full-gate.log`, including both target archives with all 529
+inventoried inputs unchanged.
+Allocation, host-set/initialization composition
+and SR08 remain open. See [the reset contract](fmi3/contracts.md#reset-and-complete-adapter-bytes).

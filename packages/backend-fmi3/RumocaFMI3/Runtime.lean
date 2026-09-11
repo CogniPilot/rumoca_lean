@@ -1,6 +1,5 @@
 import RumocaCore.FMI3.Lifecycle
 import RumocaFMI3.Metadata
-import RumocaFMI3.Header
 import RumocaC.InitializationCode
 
 /-! FMI ABI construction. Numerical evaluation is delegated to the existing

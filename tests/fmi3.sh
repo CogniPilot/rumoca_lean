@@ -81,6 +81,30 @@ if lake env lean "-Drumoca.fmi3.root=$task_tmp/changed build" \
 fi
 rg -q 'actual FMI source prefix or private-kernel inclusion differs from its model identifier' \
   build/fmi-source-prefix-rejection.log
+# Preserve the numerical kernel and API prefix while changing the reset body.
+# The complete adapter contract must reject the independently read file.
+python - build/Integrator.fmu "$task_tmp/changed build" <<'PY'
+from pathlib import Path
+from zipfile import ZipFile
+import sys
+root = Path(sys.argv[2])
+with ZipFile(sys.argv[1]) as archive:
+    archive.extractall(root)
+path = root / 'sources/fmi3.c'
+text = path.read_text()
+start = text.index('fmi3Status fmi3Reset(')
+stop = text.index('\n}\n\n', start) + 4
+body = text[start:stop]
+changed = body.replace('((double)0)', '((double)2)', 1)
+assert changed != body
+path.write_text(text[:start] + changed + text[stop:])
+PY
+if lake env lean "-Drumoca.fmi3.root=$task_tmp/changed build" \
+    packages/compiler/Tools/CheckFMI3Build.lean > build/fmi-reset-body-rejection.log 2>&1; then
+  echo 'FMI adapter certificate accepted an altered reset value' >&2; exit 1
+fi
+rg -q 'actual FMI adapter differs from the complete prepared function list' \
+  build/fmi-reset-body-rejection.log
 # A native build failure after the kernel check must preserve the old archive.
 cat > "$task_tmp/gcc" <<'SH'
 #!/usr/bin/env bash

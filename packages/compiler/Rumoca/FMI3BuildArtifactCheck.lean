@@ -1,5 +1,7 @@
 import Rumoca.ArtifactCheck
 import Rumoca.FMI3BuildProofs
+import Rumoca.FMI3AdapterCertificate
+import RumocaFMI3.Header
 import XML.CertificateCheck
 
 register_option rumoca.fmi3.root : String :=
@@ -7,26 +9,7 @@ register_option rumoca.fmi3.root : String :=
 
 namespace Rumoca.FMI3BuildArtifactCheck
 open Lean Elab Command
-
-/-- Quote every independently read character, in bounded blocks. This is an
-input representation, not producer-supplied proof data: the final proposition
-uses `String.ofList` of precisely these characters. No native prefix comparison
-can establish its required decomposition. -/
-private def quoteCharacters (name : Name) (input : String) : CommandElabM Ident := do
-  let chars := input.toList.toArray
-  let count := (chars.size + 255) / 256
-  let part := fun i => mkIdent (name.str s!"part_{i}")
-  let last := part count
-  elabCommand (← `(command| def $last:ident : List Char := []))
-  for j in [:count] do
-    let i := count - 1 - j
-    let values ← (chars.toSubarray (i * 256) (min ((i + 1) * 256) chars.size)).toArray.mapM fun c => do
-      let n := Syntax.mkNumLit (toString c.toNat)
-      `(term| Char.ofNat $n)
-    let current := part i
-    let rest := part (i + 1)
-    elabCommand (← `(command| def $current:ident : List Char := [$values,*] ++ $rest))
-  return part 0
+open FMI3AdapterCertificate
 
 /-- The fixed adapter independently reads all files and checks a fixed proposition.
 Preliminary comparisons only reject; candidate data is never proof authority. -/
@@ -76,6 +59,9 @@ elab "verify_fmi3_build_files" : command => do
   let xml := Syntax.mkStrLit description
   let md := Syntax.mkStrLit metadata
   let chars ← quoteCharacters `Rumoca.CheckedFMI3Files.adapter_chars adapter
+  let header ← IO.FS.readFile "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"
+  let .ok signatures := FMI3.Header.signatures header | throwError "invalid FMI signature header"
+  let adapterContract ← FMI3AdapterCertificate.certify sourcePath.toString source adapter signatures chars
   let api ← `(term| String.ofList $chars)
   let prefixBytes := mkIdent `Rumoca.CheckedFMI3Files.source_prefix_bytes
   elabCommand (← `(command|
@@ -91,7 +77,7 @@ elab "verify_fmi3_build_files" : command => do
         compile $inputTerm = .ok a ∧ FMI3.SourceBuildContract a $out $xml $api $md := by
       obtain ⟨g, a, compiled, contract⟩ := $numerical:ident
       have hn := $sourceName:ident a.parsed
-      refine ⟨g, a, compiled, FMI3.sourceBuild_correct a $out $xml $api $md contract ?_ ?_ ?_⟩
+      refine ⟨g, a, compiled, FMI3.sourceBuild_correct a $out $xml $api $md contract ?_ ?_ ?_ ?_⟩
       · rw [hn]
         exact (congrArg XML.document $treeEq:ident).trans $bytes:ident
       · apply FMI3.sourcePrefix_of_chars _ _ (FMI3.parsed_functionPrefix a.parsed)
@@ -101,7 +87,8 @@ elab "verify_fmi3_build_files" : command => do
         · rw [← $mdBytes:ident]
           exact XML.document_correct $mdTree $mdValid:ident
         · rw [hn]
-          exact $identifiers:ident))
+          exact $identifiers:ident
+      · exact $adapterContract:ident a compiled))
   let axioms ← collectAxioms theoremName
   for dependency in axioms do
     unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do

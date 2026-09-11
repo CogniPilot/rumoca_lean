@@ -166,6 +166,54 @@ the actual combined FMU passed `lake run fmi-test` in
 `build/fmi-termination-artifact.log`, keeping thirteen test groups. Callback execution, full failed-call
 returns and actual adapter-byte binding remain separate required proofs.
 
+## Reset and complete adapter bytes
+
+The current reset increment connects the compiled model's selected initialization
+to the complete typed `fmi3Reset` call. `Reset.Storage` requires allocated,
+writable cells of the declared types; their old values may be uninitialized or
+nonfinite. For both interface kinds and every declared lifecycle mode, the call
+terminates with OK, writes the prepared positive-zero state, clears the clock
+and stop fields, and returns to Instantiated. Its frame theorem preserves all
+other cells, including other instances. A null instance returns Error without
+changing memory. The source consequence uses the value loaded from the returned
+heap and the same compiled artifact's initialization plan. Its supplied source
+start time is prospective; reset itself clears the stored clocks to zero.
+
+`Reset.Syntax` independently specifies the complete function's tokens and C
+literal. `Reset.FunctionContract` combines that syntax with all call behaviors
+in the actual rendered definition table, requiring the fixed signature and
+unique function names. `FMI3.AdapterContract` adds exact equality between the
+complete adapter file and that table's renderer. The fixed actual-file checker
+requires this contract in addition to the prior numerical, build-description
+and identifier contracts. Candidate signatures and rendered character chunks
+have no proof authority: Lean checks each function's printer equality, their
+concatenation against the independently read file, and the final axiom closure.
+
+This is a complete byte binding and a reset execution contract, not a proof of
+every function in the containing translation unit. Preprocessing, official
+header meanings, global storage, allocation/lifetime, callbacks, other public
+calls, native ABI and the complete FMI archive contract remain open. The header
+collector only proposes signatures; its new tail-recursive comment reader is
+proved equivalent to the earlier restricted reader, not to full C syntax.
+Reset provenance maps and original-to-staged source identity remain separate.
+
+The 27 added audit roots, existing package audits, focused printer certificate
+and reset-value mutation check pass. The complete fixed actual-file check also
+passes in `build/fmi-reset/actual-file.log`, including the final source-build
+contract's unchanged axiom audit. The required main-workspace `lake test` gate
+also passed in `build/fmi-reset/full-gate.log`, with all 529 inventoried inputs
+unchanged and both actual target archives checked. The broader adapter and
+standards obligations above remain open.
+The existing FMI boundary suite adds one mutation of the reset value while
+preserving the numerical file and API prefix. Character composition reuses the
+existing `CString.join_toList` theorem before kernel reduction, avoiding the
+cost of reducing complete intermediate strings in each function certificate.
+Complete-file assembly composes kernel-checked segment equalities against the
+independently quoted input, including EOF. This replaces a large recursive
+equality check that overflowed during the first required gate, while retaining
+the same proposition and axiom policy.
+No grammar, solver or emitted C behavior changes in this increment.
+
 ## Rendering decision
 
 Use ordinary Lean functions over typed target representations, followed by
