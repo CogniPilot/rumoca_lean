@@ -28,6 +28,26 @@ import RumocaCore.Initialization.DiagnosticProofs
 import RumocaCore.Provenance.Lowering
 import RumocaCore.GALEC.OriginProofs
 import RumocaCore.Solve.AlgorithmOriginProofs
+import RumocaCore.Solve.IVPOrigins
+import RumocaCore.Solve.FMI3OriginProofs
+
+#audit axioms Rumoca.Solve.FMI3Origins.Lowering.extension
+#audit axioms Rumoca.Solve.FMI3Origins.Lowering.references_correct
+#audit axioms Rumoca.Solve.FMI3Model.source_origin
+#audit axioms Rumoca.Solve.FMI3Model.origin_ancestry
+#audit axioms Rumoca.Solve.FMI3Model.trace_correct
+#audit axioms Rumoca.Solve.FMI3Model.rhs_matches_solve
+#audit axioms Rumoca.Solve.FMI3Model.initial_matches_solve
+#audit axioms Rumoca.Solve.FMI3Model.output_matches_state
+#audit axioms Rumoca.Solve.FMI3Model.preparation_preserves
+
+#audit axioms Rumoca.Flat.Model.source_origin
+#audit axioms Rumoca.DAE.Model.sourceExtension
+#audit axioms Rumoca.DAE.Model.source_origin
+#audit axioms Rumoca.Solve.Model.sourceExtension
+#audit axioms Rumoca.Solve.Model.source_origin
+#audit axioms Rumoca.Solve.Tensor.Program.Origins.extend_every
+#audit axioms Rumoca.Solve.Tensor.Program.Origins.extend_root
 
 #audit axioms Rumoca.GALEC.Expr.Origins.extend_root
 #audit axioms Rumoca.GALEC.Expr.Origins.extend_every

@@ -27,6 +27,7 @@ axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/Finit
 | `RumocaCore.Solve.Tensor.Diagonal`, `Solve.Pointwise`, `Solve.PointwiseProofs` | Prepared IVP and dense diagonal observation using mathlib matrices, with execution contracts |
 | `RumocaCore.Solve.Tensor.Finite` | Independent ordered finite execution, all-intermediate domain characterization and unique evaluator result |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
+| `RumocaCore.Solve.Tensor.Origins`, `Solve.IVPOrigins`, `Solve.FMI3OriginProofs` | Required unit FMI operation origins and a composed value/source/actual-annotation preparation contract |
 | `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
 | `RumocaCore.GALEC.Origins`, `GALEC.UnitOrigins`, `GALEC.OriginProofs` | Required operation/operand/method origins, independent rule/parent requirements and source ancestry |
 | `RumocaCore.Solve.Algorithm`, `AlgorithmOrigins`, `AlgorithmOriginProofs` | Tensor register refinement of GALEC with required traces and composed value/origin preservation |

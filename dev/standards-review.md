@@ -518,6 +518,36 @@ origin integration, actual emitted-byte maps and the earlier
 whole-adapter/compliance obligations. No grammar expansion is authorized by
 this provenance checkpoint.
 
+### Required unit FMI IVP origins: standards impact
+
+This increment follows `475f0a5` and strengthens preparation metadata for the
+existing unit profile. Canonical source-table preservation is required through
+Flat, DAE and Solve. The prepared FMI IVP requires every operation/operand
+origin, including explicit rules for the empty input channel, state observation
+and solver policy. The actual initial fill remains tied to the selected Solve
+initial plan; a generated observation does not assert a source output qualifier.
+
+The MLS 3.7 initialization/equation clause map, FMI 3.0.2 lifecycle/metadata
+findings and eFMI Beta 1 Algorithm/Production Code review carry forward.
+Neither EBNF, production source admission, numerical policy nor interface or
+archive layout changes. These proofs do not close SR04, SR05, SR07 or SR08.
+
+Nineteen added roots pass the unchanged audit, retaining every prior entry.
+The final downstream package gate passed in
+`build/literal-call-worktree/build/fmi-origins-trace-gate.log` (3305 jobs).
+The main-workspace required full gate also passed in
+`build/fmi-provenance/full-gate.log`, retaining the actual source-to-archive
+Startup contract, native ME/CS and C boundaries, extraction/schema checks and
+the existing mutation controls. Its source inventory remained unchanged. This
+run produced:
+
+- FMU SHA-256: `b8efa712c1758f1419f7ce83045983f6e3b231071498118db3cdb4152ada838c`.
+- eFMU SHA-256: `cf46fbdc479e77328358fefa964a0990c0469d5165c5a54a46fc92424fb03eb8`.
+
+No test suite was added. **Stage decision: open** pending development tensor
+provenance, emitted-byte maps and the remaining
+whole-adapter/compliance obligations. No grammar expansion follows this checkpoint.
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

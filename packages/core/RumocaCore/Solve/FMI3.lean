@@ -1,5 +1,6 @@
 import RumocaCore.IR
 import RumocaCore.Solve.IVP
+import RumocaCore.Solve.FMI3OriginLowering
 
 /-! Prepared deployment data for the existing unit profile. Names and the
 executable kernel have one owner. Choosing the numerical policy happens here,
@@ -12,8 +13,10 @@ inductive IntegrationPolicy where
 
 structure FMI3Model (source : AST.Model) where
   solve : Model source
+  origins : FMI3Origins.Data solve
 
-def Model.prepareFMI3 (m : Model source) : FMI3Model source := ⟨m⟩
+def Model.prepareFMI3 (m : Model source) : FMI3Model source :=
+  ⟨m, FMI3Origins.Lowering.lower m⟩
 def FMI3Model.name (_ : FMI3Model source) : String := source.name
 def FMI3Model.stateName (_ : FMI3Model source) : String := source.state
 def FMI3Model.timeName (m : FMI3Model source) : String :=
@@ -23,13 +26,10 @@ def FMI3Model.policy (_ : FMI3Model source) : IntegrationPolicy := .unitEuler
 
 /-- Tensor representation of the same unit RHS. The initialization program
 supplies the default; the unit source contract also permits a host start value. -/
-def FMI3Model.problem (_ : FMI3Model source) : IVP where
-  stateShape := Rumoca.Tensor.scalar
-  inputShape := ⟨[0]⟩
-  outputShape := Rumoca.Tensor.scalar
-  initialProgram := Tensor.fill _ .zero
-  derivative := Tensor.fill _ .one
-  output := .ret .here
+def FMI3Model.problem (_ : FMI3Model source) : IVP := unitIVP
+
+def FMI3Model.originTrace (m : FMI3Model source) : IVP.Origins m.origins.table m.problem :=
+  m.origins.references.trace
 
 theorem FMI3Model.time_distinct (m : FMI3Model source) : m.timeName ≠ m.stateName := by
   unfold timeName

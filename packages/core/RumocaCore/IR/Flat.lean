@@ -1,5 +1,6 @@
 import RumocaCore.Provenance.Source
 import RumocaCore.Initialization.Scalar
+import Parser.ProvenanceExtension
 
 namespace Rumoca.Flat
 open _root_.Parser.Provenance (Ref)
@@ -53,6 +54,7 @@ private theorem Expr.Origins.one_source {context : Provenance.Context source}
 
 structure Origins (context : Provenance.Context source) (lhs rhs : Expr) where
   table : Provenance.Table context
+  extension : context.origins.Extension table
   model : Ref table
   declaration : Ref table
   state : Ref table
@@ -68,6 +70,7 @@ structure Origins (context : Provenance.Context source) (lhs rhs : Expr) where
 
 def origins (context : Provenance.Context source) : Origins context (.der 0) .one where
   table := context.origins
+  extension := .refl context.origins
   model := context.ref .model
   declaration := context.ref .declaration
   state := context.ref .stateName
@@ -100,6 +103,13 @@ def lower (context : Provenance.Context source) (h : AST.Resolved source) : Mode
 when binding/start/fixed modifiers are absent. -/
 def Model.initializationOrigin (model : Model source) : Ref model.origins.table :=
   model.origins.declaration
+
+def Model.sourceOrigin (model : Model source) (field : Rumoca.Origins.Field) :
+    Ref model.origins.table := model.origins.extension.ref (model.context.ref field)
+
+theorem Model.source_origin (model : Model source) (field : Rumoca.Origins.Field) :
+    model.origins.table.get (model.sourceOrigin field) = .source (model.context.site field) :=
+  (model.origins.extension.lookup _).trans (model.context.lookup field)
 
 def Model.derivativeOrigins (model : Model source) :
     Expr.Origins model.origins.table (.der 0) := model.lhs_source ▸ model.origins.left

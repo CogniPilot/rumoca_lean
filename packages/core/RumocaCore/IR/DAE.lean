@@ -159,6 +159,17 @@ def lower (flat : Flat.Model source) : Model source :=
 def Model.initializationOrigin (model : Model source) : Ref model.origins.table :=
   model.origins.extension.ref model.flat.initializationOrigin
 
+theorem Model.sourceExtension (model : Model source) :
+    model.flat.context.origins.Extension model.origins.table :=
+  model.flat.origins.extension.trans model.origins.extension
+
+def Model.sourceOrigin (model : Model source) (field : Rumoca.Origins.Field) :
+    Ref model.origins.table := model.sourceExtension.ref (model.flat.context.ref field)
+
+theorem Model.source_origin (model : Model source) (field : Rumoca.Origins.Field) :
+    model.origins.table.get (model.sourceOrigin field) = .source (model.flat.context.site field) :=
+  (model.sourceExtension.lookup _).trans (model.flat.context.lookup field)
+
 /-- Every completed residual traces to the written equation through the actual
 origin records, even for a caller-constructed model satisfying the invariants. -/
 theorem Model.residual_ancestry (model : Model source) :

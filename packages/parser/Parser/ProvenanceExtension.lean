@@ -17,6 +17,21 @@ def Extension.ref (extension : Extension before after) (ref : Ref before) : Ref 
 theorem Extension.lookup (extension : Extension before after) (ref : Ref before) :
     after.get (extension.ref ref) = before.get ref := extension.preserved ref
 
+theorem Extension.refl (table : Table Site Rule) : Extension table table where
+  size_le := Nat.le_refl _
+  preserved := by intro ref; rfl
+
+theorem Extension.trans (first : Extension before middle) (second : Extension middle after) :
+    Extension before after where
+  size_le := Nat.le_trans first.size_le second.size_le
+  preserved := by
+    intro ref
+    exact (second.lookup (first.ref ref)).trans (first.lookup ref)
+
+theorem Extension.trans_ref (first : Extension before middle) (second : Extension middle after)
+    (ref : Ref before) :
+    (first.trans second).ref ref = second.ref (first.ref ref) := rfl
+
 def append (before : Table Site Rule) (batch : Array (Node Site Rule))
     (prior : ∀ (index : Nat) (bound : index < batch.size) (parent : Nat),
       parent ∈ batch[index].parents → parent < before.nodes.size + index) : Table Site Rule where

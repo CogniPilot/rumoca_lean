@@ -29,6 +29,16 @@ inductive Rule where
   | algorithmStateUpdate
   | algorithmPeriodInitialization
   | algorithmPeriodWrite
+  | prepareIVP
+  | emptyInputChannel
+  | stateObservation
+  | unitEulerPolicy
+  | independentTime
+  | derivativeName
+  | tensorInitial
+  | tensorDerivative
+  | tensorReturn
+  | tensorRead
   deriving Repr, DecidableEq
 
 structure Context (model : AST.Model) where

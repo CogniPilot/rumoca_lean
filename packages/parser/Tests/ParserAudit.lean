@@ -13,6 +13,9 @@ import Parser.LocatedProofs
 import ProofAudit.Audit
 
 #audit axioms Parser.Provenance.Table.Extension.lookup
+#audit axioms Parser.Provenance.Table.Extension.refl
+#audit axioms Parser.Provenance.Table.Extension.trans
+#audit axioms Parser.Provenance.Table.Extension.trans_ref
 #audit axioms Parser.Provenance.Table.append_extension
 #audit axioms Parser.Provenance.Table.appended_lookup
 #audit axioms Parser.Provenance.TracesTo.extend

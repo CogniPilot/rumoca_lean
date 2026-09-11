@@ -47,7 +47,8 @@ resolver failures point to the derivative reference or closing model name.
 AST fields and proves the resolved reference/declaration text correspondence.
 The compiler now requires this sidecar in every artifact and returns structured
 located errors directly. Scalar Flat/DAE/Solve and GALEC/Solve Algorithm models
-now require indexed origin traces; the tensor/FMI path still needs migration.
+now require indexed origin traces. The prepared unit FMI IVP also requires its
+complete operation trace; development tensor profiles still need migration.
 No IR-to-generated-C source map is currently certified.
 
 Name-resolution errors additionally retain a related declaration span in the
@@ -116,8 +117,8 @@ imply that this first LSP server schedules edits concurrently.
 | PV03 | Immutable multi-file identity and deterministic parallel results | Checked pure API; native task/file boundary integration exercised |
 | PV04 | Tiny Modelica diagnostics and navigation through an actual LSP session | Implemented, including proved resolution-error/declaration ranges; transport is tested infrastructure |
 | PV05 | AST/action field origins with exact identifier/equation meaning | Fixed Modelica field table has exact source leaves and production boundaries; use through all compiler IR occurrences and generic action API remain open |
-| PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Scalar and GALEC/Algorithm chains passed the full gate; tensor/FMI paths open |
-| PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Required in scalar and GALEC/Algorithm models and initialization notices; tensor/FMI products and artifact maps open |
+| PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Scalar, GALEC/Algorithm and prepared unit FMI chains passed the full gate; development tensor paths open |
+| PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Required in scalar, GALEC/Algorithm and prepared unit FMI models; development tensor products and artifact maps open |
 | PV08 | Certified C/GALEC printer maps tied to actual output bytes and archive members | Open |
 | PV09 | Required compiler/artifact gate, source-map mutation controls and independent review | Existing gate retained; provenance artifact obligations open |
 
@@ -159,7 +160,8 @@ ones. Arbitrary default spans and an uninformative `unknown` origin are not
 permitted. An attachment failure is an internal compiler error, never a reason
 to continue with a whole-file fallback.
 
-This policy is enforced in the scalar and GALEC/Solve Algorithm chains; it is not yet
+This policy is enforced in the scalar, GALEC/Solve Algorithm and prepared unit
+FMI chains; it is not yet
 enforced throughout all production IRs. PV05–PV09 remain open. The
 compiler/artifact migration proves that attachment succeeds for
 every accepted source and preserves the existing compiler completeness theorem
@@ -312,6 +314,37 @@ checks passed in
 the existing boundary/mutation checks. The source inventory remained unchanged
 throughout the run. No new test suite or grammar case was
 introduced. Tensor/FMI operation origins and emitted-byte maps remain open.
+
+### Prepared unit FMI IVP origins
+
+`Flat.Origins` now requires preservation of the canonical parser origin table.
+Generic extension composition carries that prefix through DAE and Solve.
+`source_origin` proves exact lookup for every original field at each stage;
+later metadata can reuse name spans without copying source records.
+
+Generic `Tensor.Program.Origins` and `IVP.Origins` describe complete typed
+operation, operand and declaration traces. `FMI3Model` requires a checked graph
+whose fourteen generated roles include the empty input channel, state
+observation, unit Euler policy, independent time, and all initial/RHS/output
+operations. The empty channel and observation have generated origins, not
+fictitious Modelica input/output qualifiers.
+
+`FMI3Model.preparation_preserves` binds the actual IVP to the stored Solve
+initial plan and derivative for arbitrary scalar interpretations. It also
+proves exact canonical source lookup, source ancestry for every generated
+role, and `TraceCorrect` for the actual attached IVP annotations. The latter
+independently checks each fill, return and read against its defining operation;
+correct entries in an otherwise unused lookup table would be insufficient.
+
+Nineteen added roots retain all prior audit entries. The final downstream
+package gate passed in
+`build/literal-call-worktree/build/fmi-origins-trace-gate.log` (3305 jobs).
+The main-workspace required full artifact gate also passed in
+`build/fmi-provenance/full-gate.log`, including both actual target archives and
+the existing boundary/mutation checks. Its source inventory remained unchanged
+throughout the run.
+No new grammar, numerical policy or test suite is added. Development tensor/AD
+model provenance, C/GALEC/XML byte maps and whole-adapter composition remain open.
 
 ## Generic engine ownership
 

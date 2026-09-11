@@ -356,8 +356,11 @@ downstream package checks pass in the isolated package gate (3296 jobs).
 The main-workspace required full artifact gate also passed in
 `build/algorithm-provenance/full-gate.log`, including both actual target archives.
 See [the exact scope](provenance.md#galec-and-solve-algorithm-origin-contracts).
-Tensor/FMI operation traces, emitted maps and the whole-adapter obligations
-still block grammar growth.
+The subsequent prepared unit FMI IVP migration is also implemented: its
+nineteen new roots and downstream package checks pass, including an independent
+contract for the actual program annotations. Its required full gate also passed
+in `build/fmi-provenance/full-gate.log`. Development tensor/AD model provenance,
+emitted maps and the whole-adapter obligations still block grammar growth.
 
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining

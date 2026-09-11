@@ -51,8 +51,19 @@ preserves both lifecycle values and every operation/operand origin event,
 without enumerating tensor elements. Sixteen added roots retain the existing
 axiom policy; the required full gate passed in
 `build/algorithm-provenance/full-gate.log`, including both target archives.
-Tensor/FMI operation origins and actual emitted-byte source maps remain open;
-this does not close the whole-adapter/compliance contract.
+At that checkpoint tensor/FMI operation origins and actual emitted-byte source
+maps remained open; this does not close the whole-adapter/compliance contract.
+
+The subsequent unit FMI preparation now requires complete indexed origins too.
+`FMI3Model.preparation_preserves` connects the actual tensor IVP's initial value,
+RHS and observation to its stored Solve model, and proves exact source lookup,
+generated-role ancestry and an independent contract for the attached operation
+annotations. Nineteen new roots and the downstream package gate pass in
+`build/literal-call-worktree/build/fmi-origins-trace-gate.log`. The required full
+main-workspace gate also passed in `build/fmi-provenance/full-gate.log`, including
+both actual target archives with the input inventory unchanged throughout.
+Development tensor/AD provenance, actual C/GALEC/XML byte maps and complete
+adapter/artifact composition remain open. No source grammar case is added.
 
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering

@@ -134,6 +134,18 @@ def Model.noticeOrigin (model : Model source) : Initialization.Notice → Ref mo
   | .fallbackUsed => model.origins.initial
   | .unfixedStartSelected => model.origins.completion
 
+theorem Model.sourceExtension (model : Model source) :
+    model.dae.flat.context.origins.Extension model.origins.table :=
+  model.dae.sourceExtension.trans model.origins.extension
+
+def Model.sourceOrigin (model : Model source) (field : Rumoca.Origins.Field) :
+    Ref model.origins.table := model.sourceExtension.ref (model.dae.flat.context.ref field)
+
+theorem Model.source_origin (model : Model source) (field : Rumoca.Origins.Field) :
+    model.origins.table.get (model.sourceOrigin field) =
+      .source (model.dae.flat.context.site field) :=
+  (model.sourceExtension.lookup _).trans (model.dae.flat.context.lookup field)
+
 theorem Model.initial_default (model : Model source) :
     model.initial = ⟨0, [.fallbackUsed, .unfixedStartSelected]⟩ := by
   have checked := model.initial_checked

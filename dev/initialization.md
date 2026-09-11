@@ -79,6 +79,8 @@ in the [standards review](standards-review.md#scoped-initialization-and-required
 
 Required scalar origins and declaration-based notices are implemented. The
 subsequent required GALEC/Algorithm origin changes passed their full artifact
-gate; tensor/FMI operation traces, emitted-byte maps, FMI allocation and
+gate. Unit FMI IVP operation origins and their relation to the actual initial
+plan also passed the full artifact gate in `build/fmi-provenance/full-gate.log`.
+Development tensor origins, emitted-byte maps, FMI allocation and
 host-set/lifecycle composition remain open. No binding/start/fixed grammar
 case is admitted by these changes. SR08 is not closed.
