@@ -69,6 +69,6 @@ macro "c_lex_fixed" : tactic => `(tactic|
   | apply _root_.Parser.Scanner.Lexes.word (by decide +kernel) (by decide +kernel)
   | apply _root_.Parser.Scanner.Lexes.number (by decide +kernel) (by decide +kernel) (by decide +kernel)
   | apply _root_.Parser.Scanner.Lexes.symbol (by decide +kernel) (by decide +kernel) (by decide +kernel)
-      (_root_.Parser.Scanner.SymbolLexes.single (by decide +kernel) (by decide +kernel))
+      (_root_.Parser.Scanner.SymbolLexes.single_unpaired (by decide +kernel) (by decide +kernel))
   | apply _root_.Parser.Scanner.Lexes.symbol (by decide +kernel) (by decide +kernel) (by decide +kernel)
       (_root_.Parser.Scanner.SymbolLexes.pair (by decide +kernel)))

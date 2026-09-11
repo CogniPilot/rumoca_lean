@@ -301,6 +301,12 @@ of Modelica 3.7.
   conditions. Its all-observation lowering theorem no longer takes those
   invariants as supplied premises. The 34 new roots and full-gate status are
   tracked in the recurring standards review.
+  The prepared nominal-query rejection now derives literal storage and helper
+  bindings from this pool/table, while retaining explicit signature membership,
+  function-name uniqueness and fresh-block assumptions. Successful header reads
+  have a universal name-uniqueness proof. Scanner overlap and canonical decimal
+  printing proofs supply the next lexical prerequisites; they do not establish
+  the complete expression grammar or native integer-type correspondence.
   **Next:** compose declarations, header text and functions into a complete
   translation-unit/file contract, connect native linkage/layout and retain
   lifetime and callback contracts. No production renderer or grammar change

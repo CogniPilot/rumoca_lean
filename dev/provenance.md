@@ -1,6 +1,6 @@
 # Source locations, editor services and parallel parsing
 
-Status: 2026-09-10. No additional Modelica or GALEC grammar case is admitted.
+Status: 2026-09-11. No additional Modelica or GALEC grammar case is admitted.
 This work addresses source provenance; it does not establish requirements
 traceability or close the airborne assurance plan in [airborne-assurance.md](airborne-assurance.md).
 
@@ -125,6 +125,43 @@ Runtime/ABI/solver-generated code needs an explicit generated origin and its
 requirements reference. A source comment or `#line` directive alone is not
 an artifact-binding theorem. Requirements-to-proof/test links remain a
 separate relation from source-to-generated-code ranges.
+
+### Mandatory provenance policy
+
+Every source AST occurrence and every compiler IR node must have required
+provenance. This is a required invariant for the initialization slice, not an
+optional diagnostics feature. A bare `Option Span` is insufficient:
+
+- Source origins identify the immutable input entry and a checked range in
+  that snapshot. Equal-content files must retain distinct input identities.
+- Derived origins name the lowering and retain nonempty parent references.
+  Combining equations retains their separate origins, including across files;
+  it must not invent one continuous range covering unrelated input.
+- Generated origins identify the generating rule or requirement and retain
+  the relevant source or IR parents. For default state initialization these
+  include the state declaration and the default-selection rule.
+
+Use compact, checked references into an immutable origin table. IR nodes do
+not duplicate source strings, file paths or entire origin trees. One tensor
+operation has one origin reference regardless of its number of elements.
+Pure mathematical values and reusable semantic definitions do not need source
+locations; compiler occurrences of those values do. Explicit EOF ranges for
+missing-token diagnostics remain valid source locations.
+
+Each lowering must prove preservation of the required origin relation alongside
+semantic preservation. At the artifact boundary the printer map must bind
+those origins to the actual emitted bytes. Types prevent absent or dangling
+origins; proofs must also establish that the supplied origins are the correct
+ones. Arbitrary default spans and an uninformative `unknown` origin are not
+permitted. An attachment failure is an internal compiler error, never a reason
+to continue with a whole-file fallback.
+
+This policy is not yet enforced throughout the production IRs. PV05–PV09 remain
+open. Migration must prove that attachment succeeds for every accepted source
+and preserve the existing compiler completeness theorem without adding an
+extra successful-attachment hypothesis. The isolated initialization diagnostics
+are being migrated to mandatory checked locations first; their partial proofs
+must not be presented as completion of the full provenance chain.
 
 PV07 also requires removing `Diagnostics.locateFailure`: the production driver
 currently reparses after failure to reconstruct a located error. Moving it to

@@ -113,6 +113,11 @@ fixed file adapter live in the separately named `TensorCChecks` library under
 `Tests/`, keeping them out of runtime imports and avoiding shared `Tests.*`
 module-path collisions. The full gate includes this artifact check.
 
+`TreeLexical` and `Decimal` prepare certification of the general structured
+printer: they prove identifier/natural token boundaries and independent numeric
+values with canonical digits. This does not certify complete adapter expression
+syntax, C integer type/range selection or a translation unit.
+
 Run `lake build check-c` at the repository root for this package's cached
 proof/audit library, or `lake test` in this package's own workspace. The full
 source/artifact gate remains `nix develop .#verification --command lake test`

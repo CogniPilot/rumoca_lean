@@ -1,8 +1,10 @@
 import GALECParser
 import GALECParser.GrammarProofs
+import GALECParser.ScannerProofs
 import ProofAudit.Audit
 
 #audit axioms Rumoca.GALEC.Syntax.decode_tokens
+#audit axioms Rumoca.GALEC.Syntax.scanner_unchanged
 #audit axioms Rumoca.GALEC.Syntax.tokens_of_decode
 #audit axioms Rumoca.GALEC.Syntax.unit_tree_checked
 #audit axioms Rumoca.GALEC.Syntax.tree_complete

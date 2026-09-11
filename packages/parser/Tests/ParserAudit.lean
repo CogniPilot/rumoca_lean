@@ -4,6 +4,7 @@ import Parser.LALR.RuntimeProofs
 import Parser.LALR.SafetyProofs
 import Parser.Automaton
 import Parser.Alphabet
+import Parser.ScannerRefinement
 import Parser.LocatedProofs
 import ProofAudit.Audit
 
@@ -47,6 +48,11 @@ import ProofAudit.Audit
 #audit axioms Parser.LALR.FirstProofs.lookahead_complete
 #audit axioms Parser.Scanner.symbol_correct
 #audit axioms Parser.Scanner.lex_correct
+#audit axioms Parser.Scanner.SymbolLexes.single_unpaired
+#audit axioms Parser.Scanner.pairMatches_iff
+#audit axioms Parser.Scanner.readSymbol_disjoint
+#audit axioms Parser.Scanner.scan_disjoint
+#audit axioms Parser.Scanner.lex_disjoint
 #audit axioms Parser.Source.Span.bounded
 #audit axioms Parser.Source.Span.cover_left
 #audit axioms Parser.Source.Span.cover_right

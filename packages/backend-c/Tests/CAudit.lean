@@ -11,6 +11,8 @@ import RumocaC.LiteralPointers
 import RumocaC.LiteralLowering
 import RumocaC.LiteralCallLowering
 import RumocaC.LiteralPoolLowering
+import RumocaC.TreeLexical
+import RumocaC.Decimal
 import RumocaC.LiteralDeclarationBlock
 import RumocaC.LiteralCollection
 import RumocaC.LiteralNames
@@ -41,6 +43,11 @@ import RumocaC.LiteralNames
 #audit axioms Rumoca.CLiteral.Pool.headerFresh_of_reserved
 
 #audit axioms Rumoca.CString.denotes_unique
+#audit axioms Rumoca.CTree.Syntax.lex_identifier
+#audit axioms Rumoca.CTree.Syntax.lex_natural
+#audit axioms Rumoca.CDecimal.digits_value
+#audit axioms Rumoca.CDecimal.render_denotes
+#audit axioms Rumoca.CDecimal.denotes_unique
 #audit axioms Rumoca.CString.quote_iff
 #audit axioms Rumoca.CString.quote_preprocessed
 #audit axioms Rumoca.CString.render_correct

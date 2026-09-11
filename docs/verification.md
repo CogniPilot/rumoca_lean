@@ -1354,6 +1354,27 @@ allocation/layout remain open. In particular, equality of observations in a
 machine with unsupported external calls includes their stuck observations;
 it is not a proof that every FMI call executes successfully or conforms.
 
+`FMI3.LiteralRejection.nominal_reject` now composes that preparation with the
+complete Instantiated nominal-query rejection, for either interface kind,
+arbitrary output pointer/count and disabled logging. It derives the message
+address, immutable bytes and helper/function bindings from the checked pool
+and renderer's table. All call observations return Error, update only the mode
+cell and preserve every literal object's bytes. Successful pool construction,
+unique function names, inclusion of the nominal signature and fresh storage
+remain explicit. `Header.signatures_unique` proves uniqueness for every
+successful header-reader result; helper/public name separation and actual
+signature membership are still separate obligations.
+
+The shared scanner now selects a matching configured pair before a single
+symbol. `Scanner.lex_disjoint` proves exact results and diagnostic preservation
+for the previous disjoint configurations; both GALEC and Production C instantiate
+it. `CTree.Syntax` proves lexical prefixes for valid names and printed naturals.
+`CDecimal.render_denotes` separately proves canonical digits and their base-10
+value, excluding leading-zero octal ambiguity. These are printer prerequisites,
+not complete C expression syntax, integer type/range or whole-file guarantees.
+The [increment's standards and gate record](../dev/standards-review.md#adapter-call-and-lexical-preparation-standards-impact)
+keeps those limitations explicit.
+
 `EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
 and constructs a fixed existential theorem with one compiler artifact and
 `ProductionContract` for both members. The kernel and exact-root axiom audit

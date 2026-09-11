@@ -333,6 +333,41 @@ mutation controls. The checked source snapshot still matches
 No new unit tests or language cases are added.
 **Stage decision: open; grammar expansion remains blocked.**
 
+### Adapter call and lexical preparation: standards impact
+
+This increment derives the instantiated nominal-query rejection from the
+actual collected literal pool and renderer's function table, with disabled
+logging. It also proves successful header reads have unique function names.
+The production renderer does not yet invoke the literal pass. Its signature
+membership, helper/public name separation, callbacks and full-file binding
+remain open.
+
+| Standard | Review of this increment |
+| --- | --- |
+| C11 N1570 §6.4 paragraph 4 and §6.4.6 | The shared scanner prefers a matching configured pair to a single symbol. Exact whole-result refinement, including errors and offsets, holds for all prior disjoint configurations. The new C configuration is a restricted lexical prerequisite, not a complete preprocessing-token grammar. |
+| C11 N1570 §6.4.4.1 | The numeric theorem uses a single zero or a nonzero leading digit and independently computes the base-10 value. It excludes leading-zero octal ambiguity. C integer type selection and representability still need their own contract. |
+| MLS 3.7 | Source EBNFs, source semantics and production admission are unchanged; P02 and SR08/S01 remain open. |
+| FMI 3.0.2 ME/CS | The rejection theorem covers either interface kind and arbitrary nominal output pointers/counts, but only the Instantiated state with logging disabled. It preserves literal bytes and all heap cells except mode. It does not close SR04/SR05/SR07 or establish complete FMI execution. |
+| eFMI 1.0.0 Beta 1 | GALEC and Production C scanner configurations have proofs of exact result/error preservation. The source profiles, manifests, methods and packaging are unchanged. SR07/SR08 remain open. |
+
+The C clauses were checked against the [official N1570 draft](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+The existing package audits include 17 new roots; no test suite or source case
+is added. The required `nix develop .#verification --command lake test` passed
+in `build/adapter-preparation/full-gate.log`. The package source snapshot in
+`build/adapter-preparation/source.sha256` was checked unchanged after the gate.
+The resulting artifact identities are:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `dbbe7b470a7cfeeb6bf11d522cd95705ad0d10bab8c40d80eeba62dbfa7b8c32` |
+| `build/Integrator.efmu` | `b9326e66377399c8228fd01a35107e01b9760f5c0239f8b2945c5caa7b1f597a` |
+
+This checks the preceding production artifacts; initialization work remains
+isolated and is not covered by this gate. The partial adapter theorems do not
+establish the remaining whole-adapter contract.
+
+**Stage decision: open; grammar expansion remains blocked.**
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

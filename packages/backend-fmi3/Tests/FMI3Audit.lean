@@ -16,6 +16,8 @@ import RumocaFMI3.InitializationBodies
 import RumocaFMI3.InitializationEntry
 import RumocaFMI3.ErrorCalls
 import RumocaFMI3.LiteralPreparation
+import RumocaFMI3.HeaderProofs
+import RumocaFMI3.LiteralRejection
 
 import RumocaFMI3.LifecycleGuard
 import RumocaFMI3.LifecycleBodies
@@ -30,6 +32,11 @@ import RumocaFMI3.StateCalls
 import RumocaFMI3.TimeProofs
 
 #audit axioms Rumoca.FMI3.LiteralPreparation.rendered_functions
+#audit axioms Rumoca.FMI3.Header.signatures_unique
+#audit axioms Rumoca.FMI3.LiteralRejection.function_bound
+#audit axioms Rumoca.FMI3.LiteralRejection.rejection_message_collected
+#audit axioms Rumoca.FMI3.LiteralRejection.rejection_message_bound
+#audit axioms Rumoca.FMI3.LiteralRejection.nominal_reject
 #audit axioms Rumoca.FMI3.LiteralPreparation.constants_covered
 #audit axioms Rumoca.FMI3.LiteralPreparation.header_fresh
 #audit axioms Rumoca.FMI3.LiteralPreparation.program_covered

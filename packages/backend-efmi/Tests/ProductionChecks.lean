@@ -28,6 +28,7 @@ theorem tensor_fill_not_scalarized :
         .error "Production C storage currently requires rank-zero tensors" := by rfl
 
 #audit axioms Solve.Algorithm.Model.block_is_unit
+#audit axioms CSyntax.scanner_unchanged
 #audit axioms Production.lower_is_unit
 #audit axioms Production.parameters_checked
 #audit axioms Production.return_checked

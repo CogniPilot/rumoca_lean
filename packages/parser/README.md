@@ -48,5 +48,9 @@ policies. They accompany the repair of the native long-token stack overflow in
 the [performance audit](../../dev/performance-audit.md#pa01-repair-exact-attachment-refinement).
 
 `ParserChecks` owns the engine's axiom audit and existing kernel regressions.
+The configurable scanner prefers a matching two-character symbol before an
+enabled single-character symbol. `ScannerRefinement.lex_disjoint` (namespace
+`Parser.Scanner`) proves exact results and errors for configurations with
+disjoint prefixes. The proof-only reference adds no runtime fallback.
 `lake test` in this package builds those checks; the root `lake test` additionally
 checks actual artifacts and all language/backend integration boundaries.

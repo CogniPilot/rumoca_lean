@@ -1,5 +1,6 @@
 import RumocaEFMI.CSyntax
 import XML.Proofs
+import Parser.ScannerRefinement
 
 open _root_.Parser
 
@@ -8,6 +9,17 @@ the independent token grammar and maximal-munch character relation in
 `CSyntax`; none of these proofs invokes the candidate C reader. -/
 namespace Rumoca.EFMI.CSyntax
 open CTree
+
+/-- The production grammar keeps exactly the same lexical results and errors
+when the shared scanner admits overlapping single/pair prefixes. -/
+theorem scanner_unchanged (source : String) :
+    Scanner.lex config source = Scanner.StrictReference.lex config source := by
+  apply Scanner.lex_disjoint
+  intro c single
+  by_cases arrow : c = '-'
+  · subst c
+    simp [config] at single
+  · simp [config, arrow]
 
 private theorem word_parts (name : String) (h : identifier name = true) :
     ∃ c cs, name.toList = c :: cs ∧ identStart c = true ∧ cs.all identRest = true :=
@@ -30,7 +42,7 @@ macro "efmi_lex_fixed" : tactic => `(tactic|
   | apply Scanner.Lexes.word (by decide +kernel) (by decide +kernel)
   | apply Scanner.Lexes.number (by decide +kernel) (by decide +kernel) (by decide +kernel)
   | apply Scanner.Lexes.symbol (by decide +kernel) (by decide +kernel) (by decide +kernel)
-      (Scanner.SymbolLexes.single (by decide +kernel) (by decide +kernel))
+      (Scanner.SymbolLexes.single_unpaired (by decide +kernel) (by decide +kernel))
   | apply Scanner.Lexes.symbol (by decide +kernel) (by decide +kernel) (by decide +kernel)
       (Scanner.SymbolLexes.pair (by decide +kernel)))
 
