@@ -435,6 +435,35 @@ unchanged and both actual target archives checked. Correct
 attachment in every production function, complete files and archive-member maps
 remain open. No grammar, numerical policy or test suite is added.
 
+### Actual eFMI Startup emission
+
+`StartupOrigins.inputs` reads the prepared Solve trace. `inputs_lowered` proves
+that those actual references retain the source-stage initialization, target,
+sampling-period and method roles. The adapter appends thirteen rule nodes in
+one batch; shared C instruction rules and eFMI status/entry rules have separate
+owners. Every Startup statement, expression, signature and parameter is
+annotated. `Inputs.TraceCorrect` inspects the attached C annotations separately
+from the builder, including literal/result occurrence indices and parent edges.
+
+`StartupMap.Emission` retains the actual lowering result. Production source and
+archive generation use its mapped renderer, whose bytes equal the existing
+module printer. The strengthened `ProductionContract.startup_map` composes
+those exact file bytes, annotation correctness, source ancestry, complete map
+membership/extraction and all Startup behaviors. Offsets include the actual C
+preamble. State-default and sampling-period ancestry remain distinct.
+
+All 105 earlier eFMI production audit roots remain, with 22 additions. The
+complete package gate passed in
+`build/literal-call-worktree/build/efmi-startup-map-package-gate.log` (3337 jobs).
+The required root artifact gate passed in
+`build/efmi-startup-map/full-gate.log`, with all 522 inventoried inputs unchanged,
+both target archives and the existing native/mutation controls checked.
+No grammar or test suite was added.
+This map is computed against the certificate's supplied input; it is not a
+serialized archive member, and the original-versus-staged input identity gap
+remains. Header and later-method mappings, an independent general occurrence
+bijection and complete FMI adapter composition still need work.
+
 ## Generic engine ownership
 
 The parser engine now lives in `packages/parser/Parser`, without language

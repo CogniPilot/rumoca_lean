@@ -11,6 +11,7 @@ import RumocaEFMI.ArchiveProofs
 import RumocaEFMI.ZIPCertificate
 import RumocaEFMI.ZIPArchiveCertificate
 import RumocaEFMISchemaCertificates
+import RumocaEFMI.StartupMapProofs
 
 namespace Rumoca.EFMI.ProductionChecks
 private local instance targetInterface : CInterface := cInterface
@@ -30,6 +31,28 @@ theorem tensor_fill_not_scalarized :
 #audit axioms Solve.Algorithm.Model.block_is_unit
 #audit axioms CSyntax.scanner_unchanged
 #audit axioms Production.lower_is_unit
+#audit axioms Production.StartupOrigins.roles_index
+#audit axioms Production.StartupOrigins.inputs_lowered
+#audit axioms Production.StartupOrigins.Inputs.expected_prior
+#audit axioms Production.StartupOrigins.Inputs.batch_prior
+#audit axioms Production.StartupOrigins.Inputs.role_correct
+#audit axioms Production.StartupOrigins.Inputs.original_correct
+#audit axioms Production.StartupOrigins.Inputs.original_traces
+#audit axioms Production.StartupOrigins.state_literal_source
+#audit axioms Production.StartupOrigins.period_literal_source
+#audit axioms Production.StartupOrigins.Inputs.trace_correct
+#audit axioms Production.StartupOrigins.Inputs.trace_every
+#audit axioms Production.StartupMap.Emission.module_eq
+#audit axioms Production.StartupMap.Emission.document_render
+#audit axioms Production.StartupMap.emit_is_unit
+#audit axioms Production.StartupMap.render_unchanged
+#audit axioms Production.StartupMap.Emission.startup_correct
+#audit axioms Production.StartupMap.Emission.startup_every
+#audit axioms Production.StartupMap.Emission.document_every
+#audit axioms Production.StartupMap.Emission.map_exact
+#audit axioms Production.StartupMap.Emission.map_allowed
+#audit axioms Production.StartupMap.Emission.startup_behaviors
+#audit axioms Production.StartupMap.correct
 #audit axioms Production.parameters_checked
 #audit axioms Production.return_checked
 #audit axioms CHeader.interface_alias

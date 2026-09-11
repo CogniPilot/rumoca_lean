@@ -389,6 +389,13 @@ unchanged and both actual target archives checked. Correct producer attachment
 for every production function and whole-file/archive map binding remain open;
 see [the shared map scope](provenance.md#shared-statement-and-function-maps).
 
+The actual eFMI Startup exporter now consumes the mapped renderer, and the
+production/artifact contract requires its origins, exact bytes and all Startup
+behaviors. Its package/audit gate passed with 22 new roots; the required root
+gate also passed in `build/efmi-startup-map/full-gate.log`, with all 522 inputs
+unchanged and both actual archives checked. See
+[the concrete scope and remaining gaps](provenance.md#actual-efmi-startup-emission).
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

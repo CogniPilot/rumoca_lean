@@ -8,9 +8,9 @@ namespace Rumoca
 
 def Artifact.archiveCode (a : Artifact source) (identity : EFMI.Manifest.Identity) :
     Except String EFMI.Archive.Code := do
-  let module ← EFMI.Production.lower a.algorithmSolve
-  let documents ← EFMI.Manifest.checked a.parsed.ast.name identity a.algorithmSource module
-  return ⟨a.algorithmSource, module.render, XML.document documents.val.algorithm,
+  let emission ← EFMI.Production.StartupMap.emit a.algorithmSolve
+  let documents ← EFMI.Manifest.checked a.parsed.ast.name identity a.algorithmSource emission.module
+  return ⟨a.algorithmSource, emission.document.render, XML.document documents.val.algorithm,
     XML.document documents.val.production, XML.document documents.val.content⟩
 
 def Artifact.efmuArchive (a : Artifact source) (identity : EFMI.Manifest.Identity) :

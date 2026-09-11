@@ -3,6 +3,7 @@ import Rumoca.EFMIProofs
 import RumocaEFMI.CSyntaxProofs
 import RumocaEFMI.CProtocol
 import RumocaEFMI.MetadataProofs
+import RumocaEFMI.StartupMapProofs
 
 noncomputable section
 namespace Rumoca.EFMI
@@ -17,6 +18,7 @@ structure ProductionContract (a : Artifact source) (algorithm c : String) : Prop
   algorithm_names : ∃ parsed, GALEC.Syntax.parse algorithm = .ok parsed ∧ parsed.ast = GALEC.Syntax.unit
   bytes : a.productionSource = .ok c
   header : CHeader.Contract c
+  startup_map : Production.StartupMap.Contract a.algorithmSolve c
   target : ∃ module : Production.Module,
     Production.lower a.algorithmSolve = .ok module ∧ module.render = c ∧
     (∃ printed, printed.tree = module ∧ CSyntax.Denotes c printed) ∧
@@ -52,7 +54,7 @@ structure ProductionContract (a : Artifact source) (algorithm c : String) : Prop
 
 theorem production_source_is_unit (a : Artifact source) :
     a.productionSource = .ok Production.unitModule.render := by
-  simp only [Artifact.productionSource, Production.lower_is_unit]
+  simp only [Artifact.productionSource, Production.StartupMap.render_unchanged, Production.lower_is_unit]
   rfl
 
 theorem production_correct (a : Artifact source) (alg : AlgorithmContract a algorithm)
@@ -62,7 +64,8 @@ theorem production_correct (a : Artifact source) (alg : AlgorithmContract a algo
   have named : ∃ parsed, GALEC.Syntax.parse algorithm = .ok parsed ∧ parsed.ast = GALEC.Syntax.unit := by
     rw [← alg.bytes]
     exact render_parses a.algorithmCode
-  refine ⟨alg, named, hc, CHeader.render_contract _, Production.unitModule, Production.lower_is_unit _, rfl,
+  refine ⟨alg, named, hc, CHeader.render_contract _, Production.StartupMap.correct _ hc,
+    Production.unitModule, Production.lower_is_unit _, rfl,
     CSyntax.print_denotes a.algorithmSolve _ (Production.lower_is_unit a.algorithmSolve),
     Production.parameters_checked,
     Production.return_checked,

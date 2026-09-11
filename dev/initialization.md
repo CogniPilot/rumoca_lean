@@ -112,3 +112,13 @@ required main-workspace artifact gate passed in
 `build/c-statement-function-map/full-gate.log`, with all 517 inventoried inputs
 unchanged and both actual target archives checked. This reuse does not close
 allocation, host-set or whole-adapter correspondence.
+
+The eFMI Startup increment now attaches mandatory origins to the actual emitted
+function and includes its computed source map in `ProductionContract`. The
+contract joins exact complete-file bytes, required annotation roles, distinct
+state/period source ancestry and every Startup behavior. Production/archive
+export uses the mapped renderer, with proved equality to the existing C text.
+The downstream package gate passed with 22 new roots; the required root gate
+also passed in `build/efmi-startup-map/full-gate.log`, with all 522 inventoried
+inputs unchanged and both actual target archives checked. This does not add modifier
+syntax or close original-input identity, FMI allocation/host-set or SR08.

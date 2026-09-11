@@ -45,6 +45,15 @@ the complete source-to-archive certificate additionally binds the ZIP bytes
 and all pinned resources. That contract passed the full archive gate.
 No full eFMI conformance or generic GALEC language coverage is claimed.
 
+`StartupOrigins` and `StartupMap` attach required origins from prepared Solve
+to the actual Startup function. Production and archive export use this mapped
+renderer. Its contract preserves existing C bytes and all Startup behaviors,
+checks each attached role and gives exact UTF-8 ranges relative to the complete
+C member. The state default and sampling-period policy have distinct source
+ancestry. Other methods/header maps, serialized archive maps and original input
+identity through staging remain separate obligations; see
+[the provenance status](../../dev/provenance.md#actual-efmi-startup-emission).
+
 The interface declares `EfmiReal` (`double`) and `EfmiStatus` (`int32_t`);
 every verified method returns status zero. The complete C contract also checks
 these declarations and the logical variable/function mappings. The manifest

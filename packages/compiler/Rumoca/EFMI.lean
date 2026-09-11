@@ -1,6 +1,6 @@
 import Rumoca.Compiler
 import RumocaEFMI.AlgorithmCode
-import RumocaEFMI.ProductionCode
+import RumocaEFMI.StartupMap
 
 namespace Rumoca
 
@@ -16,6 +16,6 @@ def Artifact.algorithmSolve (a : Artifact source) : Solve.Algorithm.Model a.pars
   Solve.Algorithm.prepare a.algorithmCode
 
 def Artifact.productionSource (a : Artifact source) : Except String String :=
-  EFMI.Production.Module.render <$> EFMI.Production.lower a.algorithmSolve
+  (fun emission => emission.document.render) <$> EFMI.Production.StartupMap.emit a.algorithmSolve
 
 end Rumoca

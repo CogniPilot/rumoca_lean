@@ -28,6 +28,7 @@ source/IR evidence and have their own composed correctness contracts.
 | `InitializationCode`, `InitializationOrigins`, `InitializationOriginProofs` | Required origins on prepared initialization emission, with a composed annotation, ancestry and C-body behavior theorem |
 | `SourceMap`, `MappedExpression`, `InitializationMap` | Indexed UTF-8 documents, exact expression-printer correspondence and initializer map/execution preservation |
 | `StatementOrigins`, `FunctionOrigins`, `MappedStatement`, `MappedFunction` | Complete C annotations and exact mapped statement/signature/function printing |
+| `AlgorithmRules` | Shared provenance rules for direct Solve instruction rendering; interface rules remain adapter-owned |
 | `StringLiteral` | Independent C literal denotation, unique UTF-8 payload decoding and preprocessing-safe string printing |
 | `Character`, `ReadOnly`, `LiteralStorage`, `LiteralPointers` | Character representation, immutable symbolic objects and literal-pointer evaluation |
 | `LiteralLowering`, `LiteralLoopLowering`, `LiteralCallLowering` | Literal-to-name transformation and all-behavior preservation through bodies, loops and calls |

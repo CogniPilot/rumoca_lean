@@ -632,6 +632,34 @@ This run produced the retained artifacts:
 - FMU SHA-256: `baf7f47847d2219d38b6a5fdd48ca0f1a073c27037537a560cf89527413db2aa`.
 - eFMU SHA-256: `619669cd9e8009a04174f26fad2b057fcb6b33b0012c371e2003cce59018106f`.
 
+### eFMI Startup maps: standards impact
+
+This increment follows `798aec4`. Production and archive export now use the
+Startup map renderer; a theorem proves that the complete C bytes remain
+unchanged. Its origins come from the prepared Solve trace, with separate shared
+C instruction and eFMI interface rules. The production contract additionally
+requires exact complete-file map ranges, independent annotation requirements,
+distinct state/period source ancestry and every Startup execution behavior.
+Existing source, numerical, metadata, interface and archive-layout contracts
+are retained. No source admission or standards-profile change occurs; the
+MLS 3.7, FMI 3.0.2 and eFMI Beta 1 clause maps/findings carry forward.
+
+All 105 earlier eFMI production audit roots remain, with 22 additions under the
+unchanged axiom policy. All downstream package checks passed in
+`build/literal-call-worktree/build/efmi-startup-map-package-gate.log` (3337 jobs).
+The required main-workspace artifact gate passed in
+`build/efmi-startup-map/full-gate.log`, with all 522 inventoried inputs unchanged.
+It checked both actual archives and the existing native, extraction, schema,
+checksum, mutation and publication controls. Retained products:
+
+- FMU: `66da9eb46b57b878f89c0b6c89627d50221614a3fc86a66ab2ee7aab3647c2aa`.
+- eFMU: `d2fb726a2387bd1608fa743674f49b54899c4232957c871f90dca975918a853a`.
+
+The computed map applies to Startup and the certificate's supplied input. Header/later-method
+maps, archive map serialization and original-to-staged input identity remain
+open. No additional test suite was created. **Stage decision: open**; existing
+adapter/artifact and compliance findings continue to block grammar expansion.
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

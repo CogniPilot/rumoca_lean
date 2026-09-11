@@ -32,6 +32,20 @@ def Module.method (module : Module) : GALEC.Method → Function
   | .recalibrate => module.recalibrate
   | .doStep => module.doStep
 
+/-- The explicit unit-profile C tree used by the independent execution contract. -/
+def unitModule : Module :=
+  ⟨function "UnitIntegrator_Startup"
+    [.declare "double" "v0" (.cast "double" (.nat 0)),
+     .assign (stateField "x") (.id "v0"),
+     .declare "double" "v1" (.cast "double" (.nat 1)),
+     .assign (stateField "samplePeriod") (.id "v1")],
+   function "UnitIntegrator_Recalibrate" [.assign (stateField "x") (stateField "x")],
+   function "UnitIntegrator_DoStep"
+    [.declare "double" "v0" (.cast "double" (.nat 1)),
+     .declare "double" "v1" (.bin .add (stateField "x") (.id "v0")),
+     .assign (stateField "x") (.id "v1")]⟩
+
+
 def lowerBlock (block : Solve.Algorithm.Block scalar) : Except String Module := do
   let (nextId, startup) ← emitProgram block.startup (initialName "x") (stateField "x") 0
   let (_, period) ← emitProgram block.startupPeriod (initialName "samplePeriod")
@@ -43,6 +57,13 @@ def lowerBlock (block : Solve.Algorithm.Block scalar) : Except String Module := 
     function "UnitIntegrator_DoStep" doStep⟩
 
 def lower (model : Solve.Algorithm.Model source) : Except String Module := lowerBlock model.block
+
+theorem lower_is_unit (model : Solve.Algorithm.Model source) :
+    lower model = .ok unitModule := by
+  unfold lower
+  rw [model.block_is_unit]
+  rfl
+
 
 /-- The fixed preamble declares the storage and finite binary64 target profile.
 Its correspondence to C preprocessing and object layout is explicitly reviewed,

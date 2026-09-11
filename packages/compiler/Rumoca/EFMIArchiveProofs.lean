@@ -26,7 +26,8 @@ theorem archive_code_correct (a : Artifact source) (identity : Manifest.Identity
     (h : a.archiveCode identity = .ok code) :
     ManifestContract a identity code.algorithm code.production
       code.algorithmXML code.productionXML code.contentXML := by
-  simp only [Artifact.archiveCode, Production.lower_is_unit, bind, Except.bind] at h
+  simp only [Artifact.archiveCode, Production.StartupMap.emit_is_unit,
+    Production.StartupMap.Emission.document_render, bind, Except.bind] at h
   cases checked : Manifest.checked a.parsed.ast.name identity a.algorithmSource Production.unitModule with
   | error error => simp [checked] at h
   | ok documents =>

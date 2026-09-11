@@ -109,6 +109,23 @@ unchanged and both actual target archives checked. These generic maps do not
 establish correct source/rule attachment in every production function, arbitrary
 C-tree validity, whole-file/archive map binding or full adapter execution.
 
+The next eFMI increment connects those maps to the actual Production C Startup
+emitter. Required annotations come from prepared Solve operations and operands;
+independent predicates inspect every Startup annotation and its generating
+rule/parents. The state default traces to the declaration, while the generated
+sampling period traces to the model policy. `ProductionContract.startup_map`
+requires the exact file bytes, complete Startup map ranges, source ancestry and
+all Startup behaviors in one witness. Both production and archive generation
+consume the mapped renderer; `StartupMap.render_unchanged` preserves the earlier
+C text and execution contracts. All package checks and 22 new audit roots pass
+in `build/literal-call-worktree/build/efmi-startup-map-package-gate.log`.
+The required main-workspace artifact gate passed in
+`build/efmi-startup-map/full-gate.log`, with all 522 inventoried inputs unchanged
+and both actual target archives checked. This certifies a computed
+Startup map against the supplied input and complete C member, not a serialized
+archive map. Header/other-method maps, original-to-staged input identity and
+the remaining adapter/standards obligations are still open.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

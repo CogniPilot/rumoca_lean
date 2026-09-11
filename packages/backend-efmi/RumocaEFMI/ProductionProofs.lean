@@ -13,23 +13,7 @@ namespace Rumoca.EFMI.Production
 private local instance targetInterface : CInterface := cInterface
 open Rumoca.CTree Rumoca.CMemory
 
-def unitModule : Module :=
-  ⟨function "UnitIntegrator_Startup"
-    [.declare "double" "v0" (.cast "double" (.nat 0)),
-     .assign (stateField "x") (.id "v0"),
-     .declare "double" "v1" (.cast "double" (.nat 1)),
-     .assign (stateField "samplePeriod") (.id "v1")],
-   function "UnitIntegrator_Recalibrate" [.assign (stateField "x") (stateField "x")],
-   function "UnitIntegrator_DoStep"
-    [.declare "double" "v0" (.cast "double" (.nat 1)),
-     .declare "double" "v1" (.bin .add (stateField "x") (.id "v0")),
-     .assign (stateField "x") (.id "v1")]⟩
 
-theorem lower_is_unit (model : Solve.Algorithm.Model source) :
-    lower model = .ok unitModule := by
-  unfold lower
-  rw [model.block_is_unit]
-  rfl
 
 def parameters (p : Address) : CBody.Locals :=
   CBody.bind (fun _ => none) "self" (.pointer (some p))
