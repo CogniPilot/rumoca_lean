@@ -60,9 +60,11 @@ Preparation is in the isolated checkout under `build/literal-call-worktree`.
 Its initialization preparation, mathematical source/uniqueness proofs,
 Flat/DAE/Solve data correspondence, and shared C write/frame/behavior proofs
 have built. They are not production support yet; actual adapter/artifact
-composition and the mandatory provenance migration remain open. Initialization
-diagnostics must require checked locations for the same actual parse; they
-must never replace a missing declaration origin with a whole-file range.
+composition and per-IR provenance propagation remain open. The compiler now
+stores a required located parse and retains its completeness theorem; the
+isolated initialization notices use those locations directly. They cannot
+replace a missing declaration origin with a whole-file range.
 
-The completed root gate under `build/adapter-preparation/` checks the preceding
-scanner/FMI proof increment, not these initialization changes.
+The completed root gate in `build/located-provenance/full-gate.log` checks the
+mandatory located frontend and unchanged production artifacts. It does not
+cover these isolated initialization changes.

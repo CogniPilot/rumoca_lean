@@ -1,4 +1,5 @@
 import Parser
+import Parser.LocatedCompleteness
 import Parser.LALR.FirstProofs
 import Parser.LALR.RuntimeProofs
 import Parser.LALR.SafetyProofs
@@ -9,6 +10,11 @@ import Parser.LocatedProofs
 import ProofAudit.Audit
 
 #audit axioms RegularExpression.rmatch_iff_matches'
+#audit axioms Parser.Source.Cursor.nextn_splits
+#audit axioms Parser.Source.Cursor.find_splits
+#audit axioms Parser.Source.Cursor.extract_between
+#audit axioms Parser.Source.Spelled.space
+#audit axioms Parser.Source.attach_complete
 #audit axioms RegularExpression.simplify_correct
 #audit axioms Parser.CertifiedDFA.run_correct
 #audit axioms Parser.Alphabet.encode_reflects

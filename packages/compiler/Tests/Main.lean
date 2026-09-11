@@ -138,7 +138,7 @@ def main : IO Unit := do
       "s : 'a',;", "s : : 'a';", "s : missing;"] do
     expect s!"unsupported reference EBNF rejects {repr s}" (!grammarAccepted s)
   match compile good with
-  | .error e => throw (IO.userError (toString e))
+  | .error e => throw (IO.userError s!"{e.phase}: {e.message}")
   | .ok a =>
     for x in ([0.0, 0.5, -1.5, 42.25] : List Float) do
       expect "target RHS" (C.eval x a.target.rhs == 1)

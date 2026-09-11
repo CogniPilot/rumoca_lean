@@ -13,7 +13,7 @@ private def runCompiler (p : Cli.Parsed) : IO UInt32 := do
   let source ← IO.FS.readFile input
   match compile source with
   | .error error =>
-    IO.eprintln (Diagnostics.render input (Diagnostics.locateFailure source error))
+    IO.eprintln (Diagnostics.render input error)
     return 1
   | .ok artifact =>
     match p.flag? "output" with

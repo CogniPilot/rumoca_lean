@@ -359,8 +359,19 @@ grammar cases. `Aligned` checks exact token slices, all trivia gaps, order
 and disjointness. Generic LALR annotation preserves terminal/production
 identity, covers children including epsilon nodes, and checks leaf ranges
 against the input. `LocatedParsed.erases` retains the production parse result.
-These are successful-result guarantees; generic location-wrapper completeness
-and origin preservation through the IR/printer pipeline remain open. See
+`Source.attach_complete` now proves completeness from an independent token
+spelling/trivia relation, using Lean's standard UTF-8 cursor and iterator
+libraries. `Rumoca.Lexes.spelled` discharges that relation for the actual
+Modelica lexer. `Parsed.parseLocated_eq` and `parseLocated_complete` identify
+the total located frontend with the same accepted source syntax. `Artifact`
+requires a located parse; the compiler's retained `compile_complete` has no
+extra location-success premise. The actual-file certificate adapters use the
+same total construction. These 14 new roots pass the existing package audits
+in `build/located-provenance/package-gate.log`; the required complete gate
+passed in `build/located-provenance/full-gate.log`, including actual C, FMU and
+eFMU certificates and existing boundary checks.
+Generic LALR annotation completeness and origin preservation through the
+IR/printer pipeline remain open. See
 [the provenance contract and roadmap](../dev/provenance.md).
 
 `Parallel.map_eq` proves equality to sequential mapping for every pure analysis
@@ -386,8 +397,9 @@ frontend checks pass in `build/diagnostic-locations-frontend.log`.
 The required full local gate passed at `df382d0` in
 `build/diagnostic-locations-full-gate.log`, including FMI ME/CS and the complete
 eFMU artifact gate. This is evidence for the unchanged authored contracts.
-Compiler failure-only reparsing and later IR/printer provenance remain open;
-these local diagnostic theorems do not close those obligations.
+Compiler failure-only reparsing has now been removed: the driver returns
+structured located diagnostics directly. Later IR/printer provenance remains
+open; these diagnostic theorems do not close those obligations.
 
 The [airborne assurance plan](../dev/airborne-assurance.md) records additional
 requirements, traceability, independent review, target integration and tool

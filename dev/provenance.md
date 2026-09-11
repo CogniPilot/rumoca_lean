@@ -35,8 +35,9 @@ It does not yet fuse location construction into the lexer or shift/reduce
 loop. Array lookup and cached node ranges avoid repeated leaf searches or
 recursive re-computation of child ranges. No speed parity with parol or ANTLR
 is claimed. The generator's existing generic completeness obligations remain
-open. Completeness of the new attachment/annotation wrappers also remains to
-be proved; the current new guarantees concern successful results.
+open. Span attachment now has a generic completeness proof under an independent
+exact-spelling/trivia contract. Completeness of the LALR tree annotation wrapper
+remains open.
 
 `Rumoca.parseLocated` provides the existing Modelica AST plus a source-bound
 location sidecar. Its `erases` theorem identifies the same actual production
@@ -44,8 +45,9 @@ parser result. Syntax errors identify the first mismatching token or EOF;
 resolver failures point to the derivative reference or closing model name.
 `LocatedProofs` additionally binds the four identifier accessors to their exact
 AST fields and proves the resolved reference/declaration text correspondence.
-The legacy compiler entry point and semantic AST layout have not yet migrated
-to this sidecar. No IR-to-generated-C source map is currently certified.
+The compiler now requires this sidecar in every artifact and returns structured
+located errors directly. The semantic IR layouts have not yet migrated to
+required origin references. No IR-to-generated-C source map is currently certified.
 
 Name-resolution errors additionally retain a related declaration span in the
 same immutable snapshot. `resolve_error_locations` proves, for every failing
@@ -108,8 +110,8 @@ imply that this first LSP server schedules edits concurrently.
 
 | ID | Requirement | Status |
 | --- | --- | --- |
-| PV01 | Valid source-indexed spans; exact token text, order and disjointness | Checked for successful located lexing |
-| PV02 | Automatic grammar-node ranges, epsilon policy and grammar erasure | Checked for successful located parsing; generic wrapper completeness open |
+| PV01 | Valid source-indexed spans; exact token text, order and disjointness | Soundness and completeness checked for the exact-spelling/trivia contract; actual Modelica lexer discharges the contract |
+| PV02 | Automatic grammar-node ranges, epsilon policy and grammar erasure | Modelica located entry point complete; generic LALR annotation-wrapper completeness remains open |
 | PV03 | Immutable multi-file identity and deterministic parallel results | Checked pure API; native task/file boundary integration exercised |
 | PV04 | Tiny Modelica diagnostics and navigation through an actual LSP session | Implemented, including proved resolution-error/declaration ranges; transport is tested infrastructure |
 | PV05 | AST/action field origins with exact identifier/equation meaning | Modelica identifier accessor/AST-field correspondence checked; equation origins and generic action API open |
@@ -157,19 +159,47 @@ permitted. An attachment failure is an internal compiler error, never a reason
 to continue with a whole-file fallback.
 
 This policy is not yet enforced throughout the production IRs. PV05–PV09 remain
-open. Migration must prove that attachment succeeds for every accepted source
-and preserve the existing compiler completeness theorem without adding an
-extra successful-attachment hypothesis. The isolated initialization diagnostics
-are being migrated to mandatory checked locations first; their partial proofs
+open. The compiler/artifact migration now proves that attachment succeeds for
+every accepted source and preserves the existing compiler completeness theorem
+without an extra successful-attachment hypothesis. Isolated initialization
+diagnostics consume the artifact's mandatory locations directly. These results
 must not be presented as completion of the full provenance chain.
 
-PV07 also requires removing `Diagnostics.locateFailure`: the production driver
-currently reparses after failure to reconstruct a located error. Moving it to
-the located entry point must preserve source-parser/compiler completeness,
-rather than introduce alignment failures as new exclusions. File I/O and
+`Diagnostics.locateFailure` has been removed: the production driver uses the
+located entry point without reparsing failures. The retained `compile_complete`
+theorem rules out alignment failures as new exclusions. File I/O and
 artifact-validation errors need their own identities and explanations, not
 invented Modelica offsets. The current related-location type deliberately
 stays within one source snapshot; cross-file resolution is still out of scope.
+
+### Attachment completeness and compiler migration
+
+`Parser.Source.Spelled` describes exact nonempty token spellings separated by
+trivia, including the suffix through EOF. It is independent of the attachment
+algorithm and the grammar. `CursorProofs` relates Lean's actual UTF-8 `find`,
+`nextn` and extraction operations to character-list prefixes, using the standard
+string-position and iterator libraries. `attach_complete` composes those lemmas
+with the existing accumulator/reference equivalence. Runtime attachment is
+unchanged, including its tail-recursive implementation.
+
+`Rumoca.Lexes.spelled` derives that contract from every constructor of the
+existing Modelica lexer relation. `Parsed.parseLocated_eq` identifies the total
+location construction with the actual public located parser. The production
+`compile` now uses that parser and located resolution; `Artifact` requires its
+checked `LocatedParsed`. `compile_eq_parsed` and the retained `compile_complete`
+prove that the required locations exclude no previously specified valid model.
+Actual-file certificate generators use the same total construction and theorem.
+The new `fieldSpan` accessor uses `Fin 16` for the current AST and therefore has
+no missing-index fallback. Its state-span theorem binds the exact declaration.
+
+The existing audits register 14 new roots, with the unchanged axiom whitelist.
+The package gate passed in `build/located-provenance/package-gate.log`, and the
+required `lake test` gate passed in `build/located-provenance/full-gate.log`.
+The package source inventory remained unchanged throughout that full gate;
+the [standards record](standards-review.md#mandatory-located-source-standards-impact)
+records the generated FMU/eFMU hashes. Initialization code, cross-file origin
+tables, per-IR origin preservation and emitted-byte source maps remain separate
+work.
 
 ## Generic engine ownership
 

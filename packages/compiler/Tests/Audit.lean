@@ -27,6 +27,7 @@ import Rumoca.ParseFilesProofs
 #audit axioms Rumoca.ArrayCompiler.prepare_correct
 
 #audit axioms Rumoca.compile_complete
+#audit axioms Rumoca.compile_eq_parsed
 #audit axioms Rumoca.flatten_correct
 #audit axioms Rumoca.dae_correct
 #audit axioms Rumoca.solve_correct

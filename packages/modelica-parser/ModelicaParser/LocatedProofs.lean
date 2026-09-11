@@ -8,6 +8,13 @@ elsewhere in the file. No proof module is imported by the editor runtime. -/
 namespace Rumoca.LocatedParsed
 variable {source : String}
 
+theorem fieldSpan_eq_tokenSpan (p : LocatedParsed source) (index : Fin 16) :
+    p.fieldSpan index = p.tokenSpan index.val := by
+  have bound : index.val < p.locations.length := by
+    rw [p.location_count]
+    exact index.isLt
+  simp [fieldSpan, tokenSpan, List.getElem?_eq_getElem bound]
+
 theorem tokenSpan_text (p : LocatedParsed source) (index : Nat) (token : Token)
     (h : p.parsed.tokens[index]? = some token) :
     (p.tokenSpan index).text = token.text := by
@@ -32,6 +39,11 @@ theorem state_text (p : LocatedParsed source) :
   apply p.tokenSpan_text 3 (.ident p.parsed.ast.state)
   rw [parseTokens_sound _ _ p.parsed.syntactic]
   rfl
+
+theorem state_field_text (p : LocatedParsed source) :
+    (p.fieldSpan 3).text = p.parsed.ast.state := by
+  rw [p.fieldSpan_eq_tokenSpan]
+  exact p.state_text
 
 theorem derivativeName_text (p : LocatedParsed source) :
     (p.tokenSpan 8).text = p.parsed.ast.derivativeName := by

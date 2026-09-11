@@ -70,13 +70,4 @@ def render (name : String) (e : Parser.Source.Diagnostic source) : String :=
   String.intercalate "\n" (renderAt name e.span s!"error[{e.phase}]: {e.message}" ::
     e.related.map fun note => renderAt name note.span s!"note: {note.message}")
 
-/-- Reconstruct locations only on a legacy compiler failure, using the same
-immutable source. Successful compilation does not pay for a second parse. -/
-def locateFailure (source : String) (fallback : Parser.Diagnostic) : Parser.Source.Diagnostic source :=
-  match Rumoca.parseLocated source with
-  | .error e => e
-  | .ok p => match p.resolve with
-    | .error e => e
-    | .ok _ => .ofCharacterOffset source fallback
-
 end Rumoca.Diagnostics

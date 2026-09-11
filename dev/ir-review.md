@@ -1,5 +1,42 @@
 # IR alignment review
 
+## Mandatory provenance direction, 2026-09-11
+
+The local Rust reference is now on `multibody-library-coverage`, HEAD
+`bc71577f85df24957e5c9ab30fdaf4ed48da4311`, with unrelated local changes including
+initialization and `rumoca-core/src/ir_primitives.rs`. It was read without
+modification. Its source identity/range types and separate Solve shape-span
+metadata remain useful design references. The current
+`rumoca-ir-solve/src/layout.rs::validate_shape_span_metadata` permits an empty
+span map, and `shape_span` then returns `None`. The local core draft also has a
+`ProvenanceSpan` constructor that rejects the dummy sentinel, consistent with
+the required-origin direction. The permissive empty-map path still does not
+meet the user's invariant for this Lean core; a checked field must carry the
+actual origin, not merely make validation available to callers.
+
+The Lean compiler now requires a checked located parse in every artifact.
+Its independent lexical specification proves total span attachment, and its
+compiler completeness theorem retains the same source assumptions. This is
+the prerequisite for required IR origins, not proof of their propagation.
+IR occurrences will use compact references into a shared immutable origin
+table; derived entries retain their parents and generating rule. The table
+must preserve input identity outside source contents, including equal-content
+files. Source ranges must not be replaced by dummy values or a whole-file span
+when an exact declaration origin is required.
+
+The source provenance meaning of an origin must remain distinct from tensor
+slice coordinates: the `origin` arrays in Rust typed slice instructions are
+index coordinates, not source spans. Adding provenance must preserve one
+operation per tensor operation and must not materialize per-element source
+graphs. Existing predecessor IR retention remains the separate memory issue
+listed below; duplicating those structures is not the provenance design.
+
+The frontend/driver checkpoint passes its package audit in
+`build/located-provenance/package-gate.log` and its required full artifact gate
+in `build/located-provenance/full-gate.log`. Per-IR
+origin-preservation theorems and actual emitted-byte maps remain open in
+[provenance.md](provenance.md). No grammar or numerical lowering changed.
+
 ## Tensor AD direction, 2026-09-10
 
 The next user-authorized slice is static arrays and the `jacobian` built-in,

@@ -368,6 +368,41 @@ establish the remaining whole-adapter contract.
 
 **Stage decision: open; grammar expansion remains blocked.**
 
+### Mandatory located source: standards impact
+
+The production artifact now requires its checked located parse. The driver
+returns source-indexed diagnostics directly, and the CLI no longer reparses
+failures. Generic exact-spelling attachment completeness is derived using
+Lean's UTF-8 cursor and iterator proofs. The actual Modelica lexer discharges
+the spelling contract, and `compile_complete` retains its original lexical
+and resolution assumptions. Invalid-source diagnostics may gain precise
+locations; the admitted source syntax and numerical behavior are unchanged.
+
+| Standard | Review of this increment |
+| --- | --- |
+| MLS 3.7 lexical and concrete-syntax profile | No EBNF production, token class or name-resolution rule changes. The completeness theorem covers the same independent lexer/AST specification, without assuming attachment success. Generic UTF-8 cursor proofs do not enlarge the admitted identifier language. SR08/S01 initialization remains open. |
+| FMI 3.0.2 ME/CS | Numerical Solve/C, adapter bodies, metadata and packaging are unchanged. Artifact certificates now construct mandatory source locations using the proved total frontend. This is source provenance, not an emitted-code map or a new FMI lifecycle guarantee. SR04/SR05/SR07 remain open. |
+| eFMI 1.0.0 Beta 1 | GALEC/Production C and manifest generation are unchanged. Their actual-file certificate generators use the located compiler theorem. GALEC IR origin propagation and actual emitted-byte source maps remain open with SR07/SR08. |
+
+Fourteen new roots are registered in the existing audits. The package gate
+passed in `build/located-provenance/package-gate.log`; the required full gate
+passed in `build/located-provenance/full-gate.log`, including actual numerical
+C and GALEC certificates, independent FMI ME/CS import, and checked eFMU
+publication, schemas, native execution and mutation controls. The unchanged
+package source snapshot was checked against
+`build/located-provenance/source.sha256` after completion. Artifact identities:
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `169c5964757a1faf7abd08e933b7efc96c700cc98bb03fed459a730fd37e0005` |
+| `build/Integrator.efmu` | `472993590dd53d9cb3f1365f746563696ca5d0fee7567786790c7f235e55124b` |
+
+Initialization preparation remains in the isolated checkout and is excluded
+from this production gate. These results do not close the remaining provenance
+or standards findings.
+
+**Stage decision: open; grammar expansion remains blocked.**
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

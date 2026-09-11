@@ -345,10 +345,15 @@ The package audits and existing frontend integration checks pass in
 `build/diagnostic-locations-audit.log` and
 `build/diagnostic-locations-frontend.log`. The full local gate also passed at
 `df382d0` in `build/diagnostic-locations-full-gate.log`, including both target
-artifact gates. Migration of the compiler entry point
-away from failure-only reparsing, wrapper completeness, and IR/output origin
-preservation remain open in PV05–PV09. This is a diagnostic improvement, not
-closure of the compiler or artifact proof gate.
+artifact gates. The compiler now requires a located parse in every artifact and
+returns located errors directly; failure-only reparsing has been removed.
+Generic exact-spelling attachment completeness and its actual Modelica lexer
+instance are proved, and `compile_complete` retains its original assumptions.
+The 14 new roots pass the existing package audits in
+`build/located-provenance/package-gate.log`; the required full gate passed in
+`build/located-provenance/full-gate.log`, including both actual target archives.
+Generic LALR annotation completeness and IR/output origin preservation remain
+open in PV05–PV09. This does not close the complete compiler/artifact proof gate.
 
 The user's airborne software assurance target is tracked in
 [airborne-assurance.md](airborne-assurance.md). It requires requirements and

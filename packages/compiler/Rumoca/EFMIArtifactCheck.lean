@@ -46,14 +46,8 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
       let model := $modelId
       let parsed := $parsedId
       have resolved : AST.Resolved model := ⟨by decide +kernel, by decide +kernel⟩
-      let a : Artifact $src := ⟨parsed, Solve.lower (DAE.lower (Flat.lower model resolved))⟩
-      have hc : compile $src = .ok a := by
-        simp only [compile, parse_eq_parsed parsed]
-        change (fun h : PLift (AST.Resolved model) =>
-          (⟨parsed, Solve.lower (DAE.lower (Flat.lower model h.down))⟩ : Artifact $src)) <$>
-            AST.resolve model = _
-        rw [AST.resolve_complete model resolved]
-        rfl
+      let a : Artifact $src := Artifact.ofParsed parsed resolved
+      have hc : compile $src = .ok a := compile_eq_parsed parsed resolved
       refine ⟨a, EFMI.compile_algorithm_verified hc ?_⟩
       change EFMI.renderAlgorithm a.algorithmCode = $out
       rw [EFMI.emission_is_unit]

@@ -14,13 +14,9 @@ def certificate (source actualC : String) (m : AST.Model) : String :=
   "  ⟨model.tokens, model, by rfl, parseTokens_complete model⟩\n\n" ++
   "theorem resolved : AST.Resolved model := ⟨by decide +kernel, by decide +kernel⟩\n\n" ++
   "def artifact : Artifact source :=\n" ++
-  "  ⟨parsed, Solve.lower (DAE.lower (Flat.lower model resolved))⟩\n\n" ++
+  "  Artifact.ofParsed parsed resolved\n\n" ++
   "theorem compilation_checked : compile source = .ok artifact := by\n" ++
-  "  simp only [compile, parse_eq_parsed parsed]\n" ++
-  "  change (fun h : PLift (AST.Resolved model) =>\n" ++
-  "    (⟨parsed, Solve.lower (DAE.lower (Flat.lower model h.down))⟩ : Artifact source)) <$>\n" ++
-  "      AST.resolve model = _\n" ++
-  "  rw [AST.resolve_complete model resolved]\n  rfl\n\n" ++
+  "  exact compile_eq_parsed parsed resolved\n\n" ++
   "theorem emitted_checked : artifact.cSource = emitted := by decide +kernel\n\n" ++
   "theorem c_grammar_checked : CSyntax.Denotes emitted\n" ++
   "    (CExecution.program artifact.solve) :=\n" ++
@@ -42,7 +38,7 @@ def main (args : List String) : IO UInt32 := do
       let source ← IO.FS.readFile sourcePath
       let actualC ← IO.FS.readFile cPath
       match compile source with
-      | .error e => IO.eprintln (toString e); return (1 : UInt32)
+      | .error e => IO.eprintln s!"{e.phase}: {e.message}"; return (1 : UInt32)
       | .ok a =>
         -- Even a mismatching C file produces a candidate whose proof must fail.
         IO.FS.writeFile proofPath (certificate source actualC a.parsed.ast)

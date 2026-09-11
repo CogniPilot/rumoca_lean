@@ -4,6 +4,7 @@ import ModelicaParser.Driven
 import ModelicaParser.Array.Located
 import ModelicaParser.ParserProofs
 import ModelicaParser.LocatedProofs
+import ModelicaParser.LocatedTotal
 import ProofAudit.Audit
 
 #audit axioms Rumoca.Generated.source_checked
@@ -41,6 +42,14 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ArrayProfile.LocatedParsed.resolve_complete
 #audit axioms Rumoca.located_lex_sound
 #audit axioms Rumoca.LocatedParsed.erases
+#audit axioms Rumoca.LocatedParsed.location_count
+#audit axioms Rumoca.LocatedParsed.fieldSpan_eq_tokenSpan
+#audit axioms Rumoca.LocatedParsed.state_field_text
+#audit axioms Rumoca.Lexes.spelled
+#audit axioms Rumoca.Parsed.locations_exist
+#audit axioms Rumoca.Parsed.located_parsed
+#audit axioms Rumoca.Parsed.parseLocated_eq
+#audit axioms Rumoca.parseLocated_complete
 #audit axioms Rumoca.LocatedParsed.lexemes
 #audit axioms Rumoca.LocatedParsed.disjoint
 #audit axioms Rumoca.Parallel.parse_eq_sequential

@@ -22,6 +22,18 @@ structure LocatedParsed (source : String) where
 namespace LocatedParsed
 variable {source : String}
 
+/-- Every admitted AST has sixteen terminals. Semantic field accessors have
+total indices into the actual tokens, without an EOF fallback. -/
+theorem location_count (p : LocatedParsed source) : p.locations.length = 16 := by
+  have h := congrArg List.length p.aligned.erases
+  simp only [List.length_map] at h
+  rw [parseTokens_sound _ _ p.parsed.syntactic] at h
+  exact h
+
+/-- Required span for an AST field; the bound is erased during compilation. -/
+def fieldSpan (p : LocatedParsed source) (index : Fin 16) : Parser.Source.Span source :=
+  (p.locations[index.val]'(by rw [p.location_count]; exact index.isLt)).span
+
 def tokenSpan (p : LocatedParsed source) (index : Nat) : Parser.Source.Span source :=
   (p.locations[index]?).map (·.span) |>.getD (.point source.endPos)
 

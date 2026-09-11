@@ -49,14 +49,8 @@ def check (source emitted grammar : String) (linkage : C.Linkage := .external) :
       let parsed : Parsed $src :=
         ⟨model.tokens, model, by rfl, parseTokens_complete model⟩
       have resolved : AST.Resolved model := ⟨by decide +kernel, by decide +kernel⟩
-      let a : Artifact $src := ⟨parsed, Solve.lower (DAE.lower (Flat.lower model resolved))⟩
-      have hc : compile $src = .ok a := by
-        simp only [compile, parse_eq_parsed parsed]
-        change (fun h : PLift (AST.Resolved model) =>
-          (⟨parsed, Solve.lower (DAE.lower (Flat.lower model h.down))⟩ : Artifact $src)) <$>
-            AST.resolve model = _
-        rw [AST.resolve_complete model resolved]
-        rfl
+      let a : Artifact $src := Artifact.ofParsed parsed resolved
+      have hc : compile $src = .ok a := compile_eq_parsed parsed resolved
       exact ⟨a, compile_verified hc
         (by rw [emitted_text_is_unit a $linkageTerm]; decide +kernel)⟩))
   let axioms ← collectAxioms theoremName
