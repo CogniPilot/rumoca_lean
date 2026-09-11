@@ -18,11 +18,31 @@ propositions; review against the prose standards is a separate obligation.
 
 The production end-to-end theorem covers one Modelica `Real` state and `der(state)=1`.
 The source equation is over mathematical reals. Generated C uses finite
-IEEE754 binary64 values and nearest-even addition. The host supplies `x(0)`;
-samples remain at integer times. There is no initialization syntax, variable
+IEEE754 binary64 values and nearest-even addition. The numerical theorem takes
+a supplied finite `x(0)`; samples remain at integer times. There is no initialization syntax, variable
 time step, event handling or general solver. All compiler code, EBNF tooling,
 semantics and proofs are Lean. No Rocq dependency or cross-prover assumption
 is used.
+
+The default IVP now has an explicit checked initialization plan. The source
+relation remains underdetermined: `der(x)=1` does not imply `x(0)=0`. Preparation
+selects the Real fallback zero and records both fallback and unfixed-start
+selection notices. Scalar Flat/DAE/Solve models require exact occurrence origins
+and preserve those settings; CLI and LSP notices identify the declaration.
+The shared C initializer proves its write and memory frame, and FMI emits it
+after allocation and on reset. Whole FMI allocation/lifecycle/host-set and
+artifact composition remain open.
+
+`EFMIInitializationProofs` derives the completed source trajectory from the
+finite state actually loaded after Production C Startup. For every admitted
+entry heap, `ArchiveStartupContract` binds the exact archive member and its
+independently denoted C tree, proves termination and characterizes all Startup
+behaviors. The actual archive checker now requires this consequence together
+with its prior contract. Entry storage, public ABI and later machine compilation
+remain explicit boundaries. The final required gate passed in
+`build/initialization-provenance/full-gate.log`, with its source inventory
+unchanged throughout the run. See
+[initialization.md](../dev/initialization.md) for remaining SR08 obligations.
 
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering

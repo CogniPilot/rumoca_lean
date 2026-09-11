@@ -29,7 +29,7 @@ private def identity : IO EFMI.Manifest.Identity := do
   let generated := now.toPlainDateTimeAssumingUTC.format "uuuu-MM-dd'T'HH:mm:ss'Z'"
   return ⟨container, algorithm, production, generated⟩
 
-def writeArchive (source : String) (artifact : Artifact source) (output : FilePath) : IO Unit := do
+def writeArchive (artifact : Artifact input) (output : FilePath) : IO Unit := do
   let workspace ← FMU.workspace
   let cwd ← IO.Process.getCurrentDir
   let destination := if output.isAbsolute then output else cwd / output
@@ -42,7 +42,7 @@ def writeArchive (source : String) (artifact : Artifact source) (output : FilePa
   try
     let sourceFile := staging / "Source.mo"
     let archiveFile := staging / "model.efmu"
-    IO.FS.writeFile sourceFile source
+    IO.FS.writeFile sourceFile input.source
     IO.FS.writeBinFile archiveFile bytes
     IO.eprintln "Checking the complete eFMU in Lean..."
     let log ← EFMICheck.run .efmi archiveFile sourceFile
@@ -54,7 +54,7 @@ def writeArchive (source : String) (artifact : Artifact source) (output : FilePa
     IO.eprintln s!"Created checked eFMU {destination}"
   finally IO.FS.removeDirAll staging
 
-def writeAlgorithm (source : String) (artifact : Artifact source) (output : FilePath) : IO Unit := do
+def writeAlgorithm (artifact : Artifact input) (output : FilePath) : IO Unit := do
   let workspace ← FMU.workspace
   let cwd ← IO.Process.getCurrentDir
   let destination := if output.isAbsolute then output else cwd / output
@@ -64,7 +64,7 @@ def writeAlgorithm (source : String) (artifact : Artifact source) (output : File
   try
     let sourceFile := staging / "Source.mo"
     let algorithmFile := staging / "model.alg"
-    IO.FS.writeFile sourceFile source
+    IO.FS.writeFile sourceFile input.source
     IO.FS.writeFile algorithmFile artifact.algorithmSource
     let log ← EFMICheck.run .algorithm algorithmFile sourceFile
     IO.FS.writeFile (staging / "kernel-audit.log") log

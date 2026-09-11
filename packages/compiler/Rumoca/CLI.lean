@@ -2,6 +2,7 @@ import Cli
 import Rumoca.EFMIExport
 import Rumoca.EFMICheck
 import Rumoca.ParseFiles
+import Rumoca.InitializationDiagnostics
 
 open _root_.Parser
 
@@ -11,18 +12,20 @@ open Cli
 private def runCompiler (p : Cli.Parsed) : IO UInt32 := do
   let input := p.positionalArg! "model" |>.as! String
   let source ← IO.FS.readFile input
-  match compile source with
+  match compile (.single input source) with
   | .error error =>
     IO.eprintln (Diagnostics.render input error)
     return 1
   | .ok artifact =>
+    for notice in artifact.initializationDiagnostics do
+      IO.eprintln (Diagnostics.renderWarning input notice)
     match p.flag? "output" with
     | none => IO.print artifact.cSource
     | some flag =>
       let path := flag.as! String
-      if path.endsWith ".fmu" then FMU.build source artifact path
-      else if path.endsWith ".alg" then EFMIExport.writeAlgorithm source artifact path
-      else if path.endsWith ".efmu" then EFMIExport.writeArchive source artifact path
+      if path.endsWith ".fmu" then FMU.build artifact path
+      else if path.endsWith ".alg" then EFMIExport.writeAlgorithm artifact path
+      else if path.endsWith ".efmu" then EFMIExport.writeArchive artifact path
       else IO.FS.writeFile path artifact.cSource
     return 0
 

@@ -8,9 +8,10 @@ namespace Rumoca
 
 namespace Flat
 /-- Name resolution and flattening preserve the written source equation. -/
-theorem lower_correct (source : AST.Model) (h : AST.Resolved source) (d : String → ℝ) :
-    Source.Equation source d ↔ (lower source h).Holds (d source.state) :=
-  flatten_correct (lower source h) d
+theorem lower_correct (context : Provenance.Context source) (h : AST.Resolved source)
+    (d : String → ℝ) :
+    Source.Equation source d ↔ (lower context h).Holds (d source.state) :=
+  flatten_correct (lower context h) d
 end Flat
 
 namespace DAE
@@ -27,10 +28,10 @@ theorem lower_correct (m : DAE.Model source) (dx : ℝ) :
 end Solve
 
 /-- Explicit composition of the public per-pass real equation contracts. -/
-theorem lowering_chain_correct (source : AST.Model) (h : AST.Resolved source)
+theorem lowering_chain_correct (context : Provenance.Context source) (h : AST.Resolved source)
     (d : String → ℝ) (x : ℝ) :
     Source.Equation source d ↔ d source.state =
-      C.eval x (C.lower (Solve.lower (DAE.lower (Flat.lower source h)))).rhs := by
-  rw [Flat.lower_correct source h, DAE.lower_correct, Solve.lower_correct, C.lower_correct]
+      C.eval x (C.lower (Solve.lower (DAE.lower (Flat.lower context h)))).rhs := by
+  rw [Flat.lower_correct context h, DAE.lower_correct, Solve.lower_correct, C.lower_correct]
 
 end Rumoca

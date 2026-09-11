@@ -6,10 +6,16 @@ import Parser.LALR.SafetyProofs
 import Parser.Automaton
 import Parser.Alphabet
 import Parser.Provenance
+import Parser.ProvenanceExtension
 import Parser.ScannerSpelling
 import Parser.ScannerRefinement
 import Parser.LocatedProofs
 import ProofAudit.Audit
+
+#audit axioms Parser.Provenance.Table.Extension.lookup
+#audit axioms Parser.Provenance.Table.append_extension
+#audit axioms Parser.Provenance.Table.appended_lookup
+#audit axioms Parser.Provenance.TracesTo.extend
 
 #audit axioms RegularExpression.rmatch_iff_matches'
 #audit axioms Parser.Source.Cursor.nextn_splits

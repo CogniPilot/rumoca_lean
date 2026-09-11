@@ -10,12 +10,13 @@ namespace Rumoca.EFMIArtifactCheck
 open Lean Elab Command
 
 def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
-  let ⟨source, emitted, grammar, algGrammar⟩ := input
+  let ⟨_, source, emitted, grammar, algGrammar⟩ := input
   if grammar != Generated.source || algGrammar != GALEC.Generated.source then
     throwError "actual EBNF differs from its certified source"
-  let .ok candidate := compile source | throwError "source compilation failed"
+  let .ok candidate := compile input.input | throwError "source compilation failed"
   let m := candidate.parsed.ast
   let src := Syntax.mkStrLit source
+  let inputTerm ← input.inputTerm
   let out := Syntax.mkStrLit emitted
   let ebnf := Syntax.mkStrLit grammar
   let algEbnf := Syntax.mkStrLit algGrammar
@@ -41,13 +42,13 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
   elabCommand (← `(command|
     theorem $theoremId:ident :
         Generated.source = $ebnf ∧ GALEC.Generated.source = $algEbnf ∧
-        ∃ a : Artifact $src, compile $src = .ok a ∧ EFMI.AlgorithmContract a $out := by
+        ∃ a : Artifact $inputTerm, compile $inputTerm = .ok a ∧ EFMI.AlgorithmContract a $out := by
       refine ⟨by rfl, by rfl, ?_⟩
       let model := $modelId
       let parsed := $parsedId
       have resolved : AST.Resolved model := ⟨by decide +kernel, by decide +kernel⟩
-      let a : Artifact $src := Artifact.ofParsed parsed resolved
-      have hc : compile $src = .ok a := compile_eq_parsed parsed resolved
+      let a : Artifact $inputTerm := Artifact.ofParsed $inputTerm parsed resolved
+      have hc : compile $inputTerm = .ok a := compile_eq_parsed $inputTerm parsed resolved
       refine ⟨a, EFMI.compile_algorithm_verified hc ?_⟩
       change EFMI.renderAlgorithm a.algorithmCode = $out
       rw [EFMI.emission_is_unit]

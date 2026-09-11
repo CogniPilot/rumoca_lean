@@ -12,7 +12,7 @@ open Rumoca
 def expect (label : String) (condition : Bool) : IO Unit :=
   if condition then pure () else throw (IO.userError s!"FAIL: {label}")
 
-def accepted (s : String) : Bool := match compile s with
+def accepted (s : String) : Bool := match compile (.single "rumoca-check:/compiler/model.mo" s) with
   | .ok _ => true
   | .error _ => false
 
@@ -137,7 +137,7 @@ def main : IO Unit := do
   for s in ["s : 'unclosed;", "s : 'a'^;", "s : ident@name;", "s : /[a-z]+/;",
       "s : 'a',;", "s : : 'a';", "s : missing;"] do
     expect s!"unsupported reference EBNF rejects {repr s}" (!grammarAccepted s)
-  match compile good with
+  match compile (.single "rumoca-check:/compiler/Integrator.mo" good) with
   | .error e => throw (IO.userError s!"{e.phase}: {e.message}")
   | .ok a =>
     for x in ([0.0, 0.5, -1.5, 42.25] : List Float) do

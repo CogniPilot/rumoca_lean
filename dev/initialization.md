@@ -20,10 +20,10 @@ The top-level-input discussion in §4.4.2.2 is not the clause for this ordinary
 state. Parameter bindings also differ from continuous-state bindings; they
 must not be introduced merely to hide an underdetermined state initialization.
 
-The first implementation step keeps the admitted source unchanged. Flat must
-retain the absence of binding/start/fixed modifiers, DAE must carry the
-initialization problem, and Solve must store a checked completion with its
-notices. The default experiment starts at zero. A supplied FMI initial value
+The first implementation keeps the admitted source unchanged. Flat retains
+the absence of binding/start/fixed modifiers, DAE carries the initialization
+settings, and Solve stores a checked completion with its notices. The default
+experiment starts at zero. A supplied FMI initial value
 must be described as an explicit experiment choice and checked against source
 constraints; the host cannot silently override a required source condition.
 
@@ -36,19 +36,19 @@ derivative equation alone.
 
 Required implementation and release evidence:
 
-- [ ] Computable initialization preparation and mathematical soundness,
+- [x] Computable initialization preparation and mathematical soundness,
   completeness, constant-binding rejection and unique completed solution.
-- [ ] Actual initialization data and per-pass correspondence through
+- [x] Actual initialization data and per-pass correspondence through
   AST/Flat/DAE/Solve; require declaration/modifier origins at each stage,
   following the [mandatory provenance policy](provenance.md#mandatory-provenance-policy).
-- [ ] Explicit C initialization from prepared Solve data, with actual write,
-  frame and printer/artifact contracts. FMI currently obtains its first zero
-  through allocation; this must be replaced by the prepared initialization.
+- [ ] Complete C initialization/artifact correspondence. The shared prepared
+  initialization store has exact write, frame and printer proofs; FMI now emits
+  it after allocation and on reset. Full allocator/adapter composition remains.
 - [ ] FMI instantiate/reset/initialization, metadata and host-set policy
   correspond to the selected source initialization. Check ME and CS together.
 - [ ] DAE→GALEC→Solve Startup and production C implement the same selected
   initialization, with actual GALEC/C/archive certificates.
-- [ ] CLI and structured LSP notices expose fallback and inferred fixing at
+- [x] CLI and structured LSP notices expose fallback and inferred fixing at
   the declaration span; successful warnings must not become fatal errors.
 - [ ] Add only the required EBNF modification/binding productions from
   `crates/rumoca-phase-parse/src/modelica.par`, with independent source semantics
@@ -56,15 +56,28 @@ Required implementation and release evidence:
 - [ ] Re-run the MLS/FMI/eFMI stage review and required full artifact gate;
   close SR08 only when all applicable parts above are evidenced.
 
-Preparation is in the isolated checkout under `build/literal-call-worktree`.
-Its initialization preparation, mathematical source/uniqueness proofs,
-Flat/DAE/Solve data correspondence, and shared C write/frame/behavior proofs
-have built. They are not production support yet; actual adapter/artifact
-composition and per-IR provenance propagation remain open. The compiler now
-stores a required located parse and retains its completeness theorem; the
-isolated initialization notices use those locations directly. They cannot
-replace a missing declaration origin with a whole-file range.
+This implementation has been integrated from `build/literal-call-worktree`.
+Its package/audit gate and required full gate passed there, in
+`build/scoped-package-gate-fixed.log` and `build/scoped-full-gate.log`.
+The latter covers the actual FMI and eFMI artifacts and retains an unchanged
+source inventory. Complete current mainline audit lists are preserved.
 
-The completed root gate in `build/located-provenance/full-gate.log` checks the
-mandatory located frontend and unchanged production artifacts. It does not
-cover these isolated initialization changes.
+The additional compiler-owned `EFMIInitializationProofs` module now derives
+source initialization and uniqueness from the finite value loaded from the
+actual Production C Startup result. `ArchiveStartupContract` additionally
+identifies that code member inside the exact ZIP bytes and characterizes every
+Startup behavior, including guaranteed termination for admitted entry storage.
+The actual archive checker now requires this consequence alongside its existing
+contract. These added roots and affected package checks passed in
+`build/literal-call-worktree/build/scoped-startup-integration.log`.
+The main-workspace package/audit gate passed in
+`build/initialization-provenance/package-gate.log` (3282 jobs). All 1108 earlier
+audit entries are retained, with 50 additions. The final integrated full gate
+passed in `build/initialization-provenance/full-gate.log`; its source inventory
+remained unchanged throughout the run. Final artifact identities are recorded
+in the [standards review](standards-review.md#scoped-initialization-and-required-ir-origins-standards-impact).
+
+Required scalar origins and declaration-based notices are implemented; the
+GALEC/Algorithm and tensor operation traces, emitted-byte maps, FMI allocation
+and host-set/lifecycle composition remain open. No binding/start/fixed grammar
+case is admitted by these changes. SR08 is not closed.

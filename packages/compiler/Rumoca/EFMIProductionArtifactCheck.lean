@@ -9,15 +9,15 @@ namespace Rumoca.EFMIProductionArtifactCheck
 open Lean Elab Command
 
 def check (input : EFMICheckOptions.Code) (c : String) : CommandElabM Unit := do
-  let ⟨source, algorithm, grammar, algGrammar⟩ := input
+  let ⟨_, _, algorithm, grammar, algGrammar⟩ := input
   -- These comparisons can reject early; only the subsequent kernel theorem
   -- can authorize acceptance of the independently read files.
-  let .ok candidate := compile source | throwError "source compilation failed"
+  let .ok candidate := compile input.input | throwError "source compilation failed"
   let .ok expected := candidate.productionSource | throwError "Production C lowering failed"
   if c != expected then throwError "actual Production C differs from the prepared Solve product"
   if algorithm != candidate.algorithmSource then throwError "actual GALEC differs from the source product"
   EFMIArtifactCheck.check input
-  let src := Syntax.mkStrLit source
+  let inputTerm ← input.inputTerm
   let alg := Syntax.mkStrLit algorithm
   let out := Syntax.mkStrLit c
   let ebnf := Syntax.mkStrLit grammar
@@ -28,7 +28,7 @@ def check (input : EFMICheckOptions.Code) (c : String) : CommandElabM Unit := do
   elabCommand (← `(command|
     theorem $theoremId:ident :
         Generated.source = $ebnf ∧ GALEC.Generated.source = $algEbnf ∧
-        ∃ a : Artifact $src, compile $src = .ok a ∧ EFMI.ProductionContract a $alg $out := by
+        ∃ a : Artifact $inputTerm, compile $inputTerm = .ok a ∧ EFMI.ProductionContract a $alg $out := by
       obtain ⟨g₁, g₂, a, compiled, algorithm⟩ := $algorithmRoot:ident
       refine ⟨g₁, g₂, a, compiled, EFMI.production_correct a algorithm ?_⟩
       simp only [EFMI.production_source_is_unit, EFMI.CSyntax.render_unit]

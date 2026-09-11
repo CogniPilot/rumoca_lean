@@ -15,8 +15,8 @@ open Lean Elab Command
 def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : CommandElabM Unit := do
   let ⟨algorithm, c, algorithmXML, productionXML, contentXML, identity⟩ := files
   let ⟨containerId, algorithmId, productionId, generated⟩ := identity
-  let ⟨source, _, grammar, algGrammar⟩ := input
-  let .ok candidate := compile source | throwError "source compilation failed"
+  let ⟨_, _, _, grammar, algGrammar⟩ := input
+  let .ok candidate := compile input.input | throwError "source compilation failed"
   let .ok module := EFMI.Production.lower candidate.algorithmSolve | throwError "Production C lowering failed"
   let documents ← match EFMI.Manifest.checked candidate.parsed.ast.name identity algorithm module with
     | .ok documents => pure documents
@@ -25,7 +25,7 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
       XML.document documents.val.production != productionXML ||
       XML.document documents.val.content != contentXML then
     throwError "actual manifest differs from the correlated code products"
-  let src := Syntax.mkStrLit source
+  let inputTerm ← input.inputTerm
   let modelName := Syntax.mkStrLit candidate.parsed.ast.name
   let alg := Syntax.mkStrLit algorithm
   let out := Syntax.mkStrLit c
@@ -99,7 +99,7 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
   elabCommand (← `(command|
     theorem $theoremId:ident :
         Generated.source = $ebnf ∧ GALEC.Generated.source = $algEbnf ∧
-        ∃ a : Artifact $src, compile $src = .ok a ∧
+        ∃ a : Artifact $inputTerm, compile $inputTerm = .ok a ∧
           EFMI.ManifestContract a ⟨$cid, $aid, $pid, $date⟩ $alg $out $ax $px $cx := by
       obtain ⟨g₁, g₂, a, compiled, code⟩ := $codeRoot:ident
       exact ⟨g₁, g₂, a, compiled,

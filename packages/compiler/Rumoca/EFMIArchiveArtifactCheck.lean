@@ -1,5 +1,5 @@
 import Rumoca.EFMIManifestArtifactCheck
-import Rumoca.EFMIArchiveProofs
+import Rumoca.EFMIInitializationProofs
 import RumocaEFMI.ZIPArchiveCertificateCheck
 import RumocaEFMISchemaCertificates
 
@@ -57,7 +57,7 @@ elab "verify_efmi_archive" : command => do
   elabCommand (← `(command| def $codeName:ident : Archive.Code :=
     ⟨$algorithm, $production, $algorithmXML, $productionXML, $contentXML⟩))
   elabCommand (← `(command| theorem $entriesEq:ident : $entries = Archive.entries $codeName := rfl))
-  let source := Syntax.mkStrLit input.source
+  let inputTerm ← input.inputTerm
   let grammar := Syntax.mkStrLit input.grammar
   let galecGrammar := Syntax.mkStrLit input.galecGrammar
   let identity := mkIdent `Rumoca.CheckedEFMIFiles.manifest_identity
@@ -66,10 +66,12 @@ elab "verify_efmi_archive" : command => do
   let root := mkIdent rootName
   elabCommand (← `(command| theorem $root:ident :
       Generated.source = $grammar ∧ GALEC.Generated.source = $galecGrammar ∧
-      ∃ a : Artifact $source, compile $source = .ok a ∧ ArchiveContract a $identity $archiveBytes := by
+      ∃ a : Artifact $inputTerm, compile $inputTerm = .ok a ∧
+        ArchiveContract a $identity $archiveBytes ∧ ArchiveStartupContract a $archiveBytes := by
     obtain ⟨g₁, g₂, a, compiled, contract⟩ := $manifests:ident
-    exact ⟨g₁, g₂, a, compiled, archive_correct a $identity $codeName contract
-      ($entriesEq:ident ▸ $transport:ident)⟩))
+    have archive := archive_correct a $identity $codeName contract
+      ($entriesEq:ident ▸ $transport:ident)
+    exact ⟨g₁, g₂, a, compiled, archive, archive.startup_source⟩))
   if (← get).messages.hasErrors then throwError "source-to-archive certificate failed"
   let dependencies ← collectAxioms rootName
   for dependency in dependencies do

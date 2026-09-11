@@ -1,6 +1,7 @@
 import ProofAudit.Audit
 import Rumoca.EFMIManifestProofs
 import Rumoca.EFMIArchiveProofs
+import Rumoca.EFMIInitializationProofs
 
 #audit axioms Rumoca.EFMI.manifests_correct
 #audit axioms Rumoca.EFMI.manifests_correct_of_documents
@@ -13,6 +14,8 @@ import Rumoca.EFMIArchiveProofs
 #audit axioms Rumoca.EFMI.archive_code_correct
 #audit axioms Rumoca.EFMI.efmu_archive_correct
 #audit axioms Rumoca.EFMI.compile_archive_verified
+#audit axioms Rumoca.EFMI.ProductionContract.startup_source
+#audit axioms Rumoca.EFMI.ArchiveContract.startup_source
 
 namespace Rumoca.EFMIChecks
 open Rumoca.Tensor

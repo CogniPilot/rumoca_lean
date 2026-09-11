@@ -1,6 +1,7 @@
 import RumocaFMI3.CInterface
 import ProofAudit.Audit
 import RumocaFMI3.DerivativeProofs
+import Tests.UnitFixture
 
 /-! Adversarial controls for interprocedural semantics. Changing a linked
 helper or numerical body must change the observation; names alone do not
@@ -13,9 +14,7 @@ open CTree CMemory CCalls CallProofs
 set_option maxRecDepth 10000
 set_option maxHeartbeats 4000000
 
-def source : AST.Model := ⟨"M", "x", "x", "M"⟩
-def prepared : Solve.FMI3Model source :=
-  (Solve.lower (DAE.lower (Flat.lower source ⟨rfl, rfl⟩))).prepareFMI3
+open UnitFixture (prepared)
 def heap : Heap := fun _ => none
 def model : Address := ⟨1, [], 0⟩
 def start : State := .calling "model_rhs" [.pointer (some model)] heap .done

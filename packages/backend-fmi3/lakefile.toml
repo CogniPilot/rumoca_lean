@@ -21,7 +21,7 @@ path = "../verification"
 
 [[lean_lib]]
 name = "RumocaFMI3Checks"
-roots = ["Tests.FMI3Audit", "Tests.MemoryChecks", "Tests.CallChecks", "Tests.TimeChecks", "Tests.HistoryChecks"]
+roots = ["Tests.FMI3Audit", "Tests.UnitFixture", "Tests.MemoryChecks", "Tests.CallChecks", "Tests.TimeChecks", "Tests.HistoryChecks"]
 
 [[require]]
 name = "xml"

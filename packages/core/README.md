@@ -11,7 +11,9 @@ axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/Finit
 
 | Module | Contents |
 | --- | --- |
-| `RumocaCore`, `RumocaCore.IR` | Runtime IR types and lowering functions |
+| `RumocaCore`, `RumocaCore.IR.Flat`, `IR.DAE`, `IR.Solve` | Scalar IR types and lowering functions with required occurrence origins and initialization data |
+| `RumocaCore.Provenance.Source`, `Provenance.Lowering` | Checked input context, closed transformation rules and source ancestry through the scalar chain |
+| `RumocaCore.Initialization.Scalar`, `Initialization.Real`, `Initialization.Diagnostics` | Computable initialization selection, source/uniqueness proofs and exact declaration-based notices |
 | `RumocaCore.Tensor` | Shared rank/extent types and shape-preserving array-backed storage |
 | `RumocaCore.Tensor.Matrix` | Proved equivalence to mathlib matrices using mathlib's finite product indexing |
 | `RumocaCore.Tensor.Operators` | Dense-array pointwise addition/multiplication and forward/reverse rules with explicit scalar arithmetic |

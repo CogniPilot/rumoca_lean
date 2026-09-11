@@ -83,7 +83,13 @@ with subprocess.Popen([str(SERVER)], stdin=subprocess.PIPE, stdout=subprocess.PI
         send(proc, "initialized", {})
         send(proc, "textDocument/didOpen", {"textDocument": {"uri": URI,
             "languageId": "modelica", "version": -1, "text": GOOD}})
-        assert diagnostics(proc, -1) == []
+        initialization = diagnostics(proc, -1)
+        assert len(initialization) == 2, initialization
+        assert all(d["severity"] == 2 and d["code"] == "initialization" and d["range"] == {
+            "start": {"line": 1, "character": 7}, "end": {"line": 1, "character": 8}}
+            for d in initialization), initialization
+        assert "fallback 0" in initialization[0]["message"], initialization
+        assert "x = 0" in initialization[1]["message"], initialization
         result = query(proc, "textDocument/definition", 3)["result"]
         assert result == {"uri": URI, "range": {"start": {"line": 1, "character": 7},
                                                   "end": {"line": 1, "character": 8}}}, result
@@ -113,7 +119,7 @@ with subprocess.Popen([str(SERVER)], stdin=subprocess.PIPE, stdout=subprocess.PI
         error = diagnostics(proc, 3)[0]
         assert error["code"] == "parse" and error["range"]["start"] == error["range"]["end"], error
         change(proc, 4, GOOD)
-        assert diagnostics(proc, 4) == []
+        assert diagnostics(proc, 4) == initialization
         send(proc, "textDocument/didChange", {"textDocument": {"uri": URI, "version": 5},
             "contentChanges": [{"range": {}, "text": "corrupt"}]})
         assert receive(proc)["method"] == "window/logMessage"

@@ -66,8 +66,14 @@ private def renderAt (name : String) (span : Parser.Source.Span source)
   return out.trimAsciiEnd.toString
 
 /-- Primary and related ranges are rendered from the same checked snapshot. -/
-def render (name : String) (e : Parser.Source.Diagnostic source) : String :=
-  String.intercalate "\n" (renderAt name e.span s!"error[{e.phase}]: {e.message}" ::
+private def renderAs (severity name : String) (e : Parser.Source.Diagnostic source) : String :=
+  String.intercalate "\n" (renderAt name e.span s!"{severity}[{e.phase}]: {e.message}" ::
     e.related.map fun note => renderAt name note.span s!"note: {note.message}")
+
+def render (name : String) (e : Parser.Source.Diagnostic source) : String :=
+  renderAs "error" name e
+
+def renderWarning (name : String) (e : Parser.Source.Diagnostic source) : String :=
+  renderAs "warning" name e
 
 end Rumoca.Diagnostics

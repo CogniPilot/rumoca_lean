@@ -1,6 +1,7 @@
 import RumocaCore.FMI3.Lifecycle
 import RumocaFMI3.Metadata
 import RumocaFMI3.Header
+import RumocaC.InitializationCode
 
 /-! FMI ABI construction. Numerical evaluation is delegated to the existing
 verified Solve/C kernel. The lifecycle table supplies guards. C memory,
@@ -76,6 +77,7 @@ def makeInstance (m : Solve.FMI3Model source) (kind : Kind) : List Stmt := [
     branch (both (v "logMessage") (v "loggingOn")) [.eval (.call (v "logMessage")
       [v "instanceEnvironment", v "fmi3Error", .str "logStatus", .str "Instance allocation failed"])],
     ret (v "NULL")],
+  CInitialization.statement m.solve x,
   put "kind" (n (if kind == .me then 0 else 1)), setMode .instantiated,
   put "environment" (v "instanceEnvironment"), put "logger" (v "logMessage"),
   put "logging" (v "loggingOn"), ret (.cast "fmi3Instance" (v "m"))]
@@ -188,7 +190,8 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
     out "nextEventTimeDefined" (n 0), out "nextEventTime" (n 0), ok]
   | "fmi3Terminate" => require .terminate ++ [setMode .terminated, ok]
   | "fmi3Reset" => require .reset ++ [
-    .assign x (n 0), put "time" (n 0), put "timeMin" (n 0), put "eventTime" (n 0), put "lastCompleted" (n 0),
+    CInitialization.statement m.solve x,
+    put "time" (n 0), put "timeMin" (n 0), put "eventTime" (n 0), put "lastCompleted" (n 0),
     put "stop" (n 0), put "stopDefined" (n 0), setMode .instantiated, ok]
   | "fmi3GetFloat64" => getFloat64
   | "fmi3SetFloat64" => setFloat64

@@ -33,7 +33,7 @@ def checkSources (workspace root : FilePath) : IO Unit := do
   IO.FS.writeFile (extra / "lean-toolchain") (← IO.FS.readFile (workspace / "lean-toolchain"))
   IO.FS.writeFile (extra / "lake-manifest.json") (← IO.FS.readFile (workspace / "lake-manifest.json"))
 
-def build (source : String) (artifact : Artifact source) (output : FilePath) : IO Unit := do
+def build (artifact : Artifact input) (output : FilePath) : IO Unit := do
   let workspace ← workspace
   let cwd ← IO.Process.getCurrentDir
   let destination := if output.isAbsolute then output else cwd / output
@@ -45,7 +45,7 @@ def build (source : String) (artifact : Artifact source) (output : FilePath) : I
     let vendor := workspace / "packages/backend-fmi3/vendor/fmi3"
     IO.println "Preparing FMI 3 Model Exchange / Co-Simulation sources..."
     FMI3.Package.writeSources artifact.solve.prepareFMI3 root vendor
-    IO.FS.writeFile (root / "extra/org.cognipilot.rumoca/Source.mo") source
+    IO.FS.writeFile (root / "extra/org.cognipilot.rumoca/Source.mo") input.source
     IO.println "Checking the numerical C, source-build recipe and FMI identities in Lean..."
     checkSources workspace root
     IO.println "Building and validating the FMU..."

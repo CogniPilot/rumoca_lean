@@ -34,13 +34,14 @@ elab "verify_fmi3_build_files" : command => do
   let directory := rumoca.fmi3.root.get (← getOptions)
   if directory.isEmpty then throwError "missing rumoca.fmi3.root"
   let root : System.FilePath := directory
-  let source ← IO.FS.readFile (root / "extra/org.cognipilot.rumoca/Source.mo")
+  let sourcePath := root / "extra/org.cognipilot.rumoca/Source.mo"
+  let source ← IO.FS.readFile sourcePath
   let c ← IO.FS.readFile (root / "sources/model.c")
   let adapter ← IO.FS.readFile (root / "sources/fmi3.c")
   let description ← IO.FS.readFile (root / "sources/buildDescription.xml")
   let metadata ← IO.FS.readFile (root / "modelDescription.xml")
   let grammar ← IO.FS.readFile "packages/modelica-parser/grammar/Modelica.ebnf"
-  let .ok candidate := compile source | throwError "source compilation failed"
+  let .ok candidate := compile (.single sourcePath.toString source) | throwError "source compilation failed"
   let modelName := candidate.parsed.ast.name
   let buildTree := FMI3.Build.description modelName
   let metadataTree := FMI3.modelDescription candidate.solve.prepareFMI3
@@ -51,7 +52,7 @@ elab "verify_fmi3_build_files" : command => do
     throwError "actual FMI model description differs from the prepared model"
   if !adapter.startsWith expectedPrefix then
     throwError "actual FMI source prefix or private-kernel inclusion differs from its model identifier"
-  ArtifactCheck.check source c grammar .internal
+  ArtifactCheck.check sourcePath.toString source c grammar .internal
   let tree := mkIdent `Rumoca.CheckedFMI3Files.build_tree
   let bytes := mkIdent `Rumoca.CheckedFMI3Files.build_bytes
   XML.CertificateCheck.certify tree.getId bytes.getId buildTree description
@@ -69,6 +70,8 @@ elab "verify_fmi3_build_files" : command => do
     theorem $identifiers:ident : FMI3.decodeModelIdentifiers $mdTree =
         some ($name, FMI3.modelIdentifier $name, FMI3.modelIdentifier $name) := by decide +kernel))
   let src := Syntax.mkStrLit source
+  let sourceFile := Syntax.mkStrLit sourcePath.toString
+  let inputTerm ← `(term| Parser.Source.InputRef.single $sourceFile $src)
   let out := Syntax.mkStrLit c
   let xml := Syntax.mkStrLit description
   let md := Syntax.mkStrLit metadata
@@ -84,8 +87,8 @@ elab "verify_fmi3_build_files" : command => do
   let theoremName := `Rumoca.CheckedFMI3Files.source_to_build
   let theoremId := mkIdent theoremName
   elabCommand (← `(command|
-    theorem $theoremId:ident : Generated.source = $ebnf ∧ ∃ a : Artifact $src,
-        compile $src = .ok a ∧ FMI3.SourceBuildContract a $out $xml $api $md := by
+    theorem $theoremId:ident : Generated.source = $ebnf ∧ ∃ a : Artifact $inputTerm,
+        compile $inputTerm = .ok a ∧ FMI3.SourceBuildContract a $out $xml $api $md := by
       obtain ⟨g, a, compiled, contract⟩ := $numerical:ident
       have hn := $sourceName:ident a.parsed
       refine ⟨g, a, compiled, FMI3.sourceBuild_correct a $out $xml $api $md contract ?_ ?_ ?_⟩

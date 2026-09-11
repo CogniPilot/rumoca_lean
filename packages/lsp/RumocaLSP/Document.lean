@@ -1,6 +1,7 @@
 import ModelicaParser.LocatedParser
 import Lean.Data.Lsp.Utf16
 import Lean.Data.Lsp.Diagnostics
+import RumocaCore.Initialization.Diagnostics
 
 open _root_.Parser
 
@@ -45,9 +46,21 @@ def Document.diagnostic (d : Document) : Option (Parser.Source.Diagnostic d.sour
     | .error e => some e
     | .ok _ => none
 
+def Document.initializationWarnings (d : Document) : List (Parser.Source.Diagnostic d.source) :=
+  match d.result with
+  | .error _ => []
+  | .ok parsed => match parsed.resolve with
+    | .error _ => []
+    | .ok resolved => Initialization.forModel (.single d.uri d.source) parsed resolved.down
+
 def Document.diagnostics (d : Document) (includeRelated : Bool := false) : Array Lsp.Diagnostic :=
   match d.diagnostic with
-  | none => #[]
+  | none => d.initializationWarnings.toArray.map fun e => {
+      range := d.range e.span
+      severity? := some .warning
+      source? := some "rumoca"
+      message := e.message
+      code? := some (.string e.phase) }
   | some e => #[{
       range := d.range e.span
       severity? := some .error

@@ -8,6 +8,21 @@ structure Input where
   name : String
   source : String
 
+/-- A selected file in a compilation-owned immutable input table. The checked
+index distinguishes duplicate names/contents and needs no global counter. -/
+structure InputRef where
+  inputs : Array Input
+  file : Fin inputs.size
+
+def InputRef.input (ref : InputRef) : Input := ref.inputs[ref.file]
+def InputRef.source (ref : InputRef) : String := ref.input.source
+def InputRef.name (ref : InputRef) : String := ref.input.name
+
+/-- Standalone compilation uses the same scoped identity as a file in a batch.
+The caller supplies the actual display name and immutable source snapshot. -/
+def InputRef.single (name source : String) : InputRef :=
+  ⟨#[⟨name, source⟩], ⟨0, by simp⟩⟩
+
 /-- A half-open UTF-8 range in one immutable source snapshot. Valid boundaries
 come from Lean's String.Pos and are indexed by source contents. File identity
 and version belong to the enclosing document, including equal-content files. -/

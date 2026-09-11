@@ -33,6 +33,12 @@ accepted; declaration/reference and model/end names must agree. This profile
 has one state, one equation and only the literal `1`. Comments, modifiers,
 initial equations and general expressions are rejected.
 
+This source leaves the initial state free. The default FMU/eFMU plan selects
+zero and reports both the Real fallback and the selected initial condition at
+the declaration. Scalar Flat/DAE/Solve models carry mandatory checked provenance
+for those decisions. See [initialization coverage](dev/initialization.md) for
+the proofs and remaining adapter obligations.
+
 The next, still incomplete path adds an input and a fixed-start output state.
 Its parser and tensor IR lowering are under verification; the production CLI
 continues to reject it until the target and artifact proofs are complete.

@@ -23,6 +23,36 @@ import RumocaCore.Solve.ModelExchange
 import RumocaCore.Solve.Tensor
 import RumocaCore.Tensor.Matrix
 import RumocaCore.Transition
+import RumocaCore.Initialization.Real
+import RumocaCore.Initialization.DiagnosticProofs
+import RumocaCore.Provenance.Lowering
+
+#audit axioms Rumoca.Provenance.Context.source_fields
+#audit axioms Rumoca.Provenance.Context.lookup
+#audit axioms Rumoca.Flat.Model.derivative_source
+#audit axioms Rumoca.Flat.Model.literal_source
+#audit axioms Rumoca.Flat.Model.initialization_origin
+#audit axioms Rumoca.DAE.Model.residual_ancestry
+#audit axioms Rumoca.DAE.Model.initialization_origin
+#audit axioms Rumoca.Solve.Model.initial_ancestry
+#audit axioms Rumoca.Solve.Model.completion_ancestry
+#audit axioms Rumoca.Solve.Model.notice_ancestry
+#audit axioms Rumoca.Solve.Model.derivative_ancestry
+#audit axioms Rumoca.Initialization.prepare_map
+#audit axioms Rumoca.Initialization.prepare_initial
+#audit axioms Rumoca.Initialization.prepare_no_binding
+#audit axioms Rumoca.Initialization.prepare_fallback_notice
+#audit axioms Rumoca.Initialization.prepare_selection_notice
+#audit axioms Rumoca.Initialization.prepare_default
+#audit axioms Rumoca.Initialization.constant_binding_inconsistent
+#audit axioms Rumoca.Initialization.prepare_sound
+#audit axioms Rumoca.Initialization.prepare_complete
+#audit axioms Rumoca.Initialization.completed_solution_unique
+#audit axioms Rumoca.Initialization.unfixed_start_is_free
+#audit axioms Rumoca.Initialization.diagnostics_notice
+#audit axioms Rumoca.Initialization.diagnostics_span
+#audit axioms Rumoca.Initialization.forModel_state
+#audit axioms Rumoca.Initialization.forModel_notices
 
 #audit axioms Rumoca.Binary64.round_spec
 #audit axioms Rumoca.Binary64.rounding_unique

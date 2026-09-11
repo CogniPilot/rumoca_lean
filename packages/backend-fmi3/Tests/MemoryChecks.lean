@@ -1,6 +1,7 @@
 import RumocaFMI3.CInterface
 import ProofAudit.Audit
 import RumocaFMI3.StateProofs
+import Tests.UnitFixture
 
 /-! Negative controls for the generated-body semantics. These witnesses expose
 wrong values, writes into another instance, missing storage and unsupported
@@ -12,9 +13,7 @@ open CTree CMemory CBody StateProofs
 set_option maxRecDepth 10000
 set_option maxHeartbeats 4000000
 
-def source : AST.Model := ⟨"M", "x", "x", "M"⟩
-def prepared : Solve.FMI3Model source :=
-  (Solve.lower (DAE.lower (Flat.lower source ⟨rfl, rfl⟩))).prepareFMI3
+open UnitFixture (prepared)
 def getter : List Stmt := Runtime.body prepared ⟨"fmi3Status", "fmi3GetContinuousStates", []⟩
 
 def model : Address := ⟨1, [], 0⟩

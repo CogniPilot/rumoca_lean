@@ -87,9 +87,9 @@ theorem CStatements.lower_behavior_correct (m : Solve.Model source) (f : Profile
 /-- Instantiation of the behavioral composition with every actual lowering
 function in the driver. This is still the frozen unit policy, not a general
 simulation theorem for arbitrary numerical methods or future IR constructors. -/
-theorem lowering_chain_behavior_correct (source : AST.Model) (h : AST.Resolved source)
+theorem lowering_chain_behavior_correct (context : Provenance.Context source) (h : AST.Resolved source)
     (f : Profile.Function) (x : Value) (n : CStatements.Counter) (b : Observation Value) :
-    (CStatements.machine (CExecution.program (Solve.lower (DAE.lower (Flat.lower source h))))).Behaves
+    (CStatements.machine (CExecution.program (Solve.lower (DAE.lower (Flat.lower context h))))).Behaves
       (.entry f x n) b ↔ Source.SampledBehavior source f x n.val b :=
   CStatements.lower_behavior_correct _ f x n b
 

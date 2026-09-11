@@ -14,11 +14,13 @@ checks cover the composed contracts. See
 | Location | Responsibility |
 | --- | --- |
 | `Rumoca/Compiler.lean` | Source-bound compilation driver and output artifact |
+| `Rumoca/Provenance.lean`, `Initialization.lean`, `InitializationDiagnosticProofs.lean` | Exact input identity, source-to-Solve initialization and declaration-based compiler/editor notices |
 | `Rumoca/ArrayCompiler.lean`, `ArrayProofs.lean` | Development array preparation, located source binding and complete Real equation/initialization preservation through stored Solve IR |
 | `Rumoca/FMU.lean` | Staged FMU build, actual-kernel checker invocation and atomic publication |
 | `Rumoca/GALEC.lean`, `EFMIProofs.lean` | DAE/GALEC/Solve algorithm composition and Algorithm Code artifact contract |
 | `Rumoca/EFMIExport.lean` | Candidate identities, staged `.alg`/`.efmu` checking and atomic publication |
 | `Rumoca/EFMIArchive.lean`, `EFMIArchiveProofs.lean` | Pure archive preparation and source-to-archive preservation theorem |
+| `Rumoca/EFMIInitializationProofs.lean` | Actual Production C Startup result, completed source initialization and exact-archive consequence |
 | `Rumoca/EFMIArtifactCheck.lean`, `EFMIArchiveArtifactCheck.lean`, `Tools/CheckEFMI*.lean` | Fixed actual-file checkers for Algorithm Code, Production Code, manifests and complete archives |
 | `Rumoca/Source.lean` | Source Real and sampled semantics, with no backend import |
 | `Rumoca/Semantics.lean`, `Lowering.lean`, `Behavioral.lean` | IR semantics, pass composition and numerical refinement |
@@ -28,6 +30,12 @@ checks cover the composed contracts. See
 | `Rumoca/ParseFiles.lean`, `ParseFilesProofs.lean` | Parallel file analysis; exact JSON, terminal-output and failure-status preservation while skipping unused terminal rendering |
 | `Rumoca/EFMICheck.lean`, `EFMICheckOptions.lean` | Explicit process arguments and one snapshot of the actual eFMI source/code inputs |
 | `Tests/` | Compiler regressions, semantic counterexamples and proof-root audit |
+
+`compile` accepts a `Parser.Source.InputRef`: a checked entry in the caller's
+immutable input table. Artifacts retain that identity through the scalar
+Flat/DAE/Solve origin chain. FMI/eFMI publication takes the artifact and output
+path, using the artifact's source snapshot. It cannot receive a second,
+potentially different source string.
 
 The C target machinery is shared by both output routes:
 DAE → GALEC → Solve → C for eFMI, and DAE → Solve → C for FMI 3.

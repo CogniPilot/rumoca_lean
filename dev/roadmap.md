@@ -4,7 +4,7 @@ The current full gate is `nix develop .#verification --command lake test`.
 Make commands in dated checkpoints below record historical runs before the
 Lake migration; see the [current commands](../docs/development.md).
 
-Status reviewed: **2026-09-10**. This file is the local, authoritative task
+Status reviewed: **2026-09-11**. This file is the local, authoritative task
 tracker. [verification.md](../docs/verification.md) records what is proved today;
 this roadmap records the work and evidence required for stronger claims.
 An open item is not a current guarantee. The active first-party review and
@@ -324,6 +324,28 @@ The [review](standards-review.md) gives reproduction evidence and closure
 conditions. These corrections add no grammar cases. Each interface increment
 must connect a cited requirement, independent predicate, execution theorem and
 actual-artifact observation so specification errors are found before expansion.
+
+## Initialization and required scalar provenance checkpoint
+
+The [initialization slice](initialization.md) now has checked preparation,
+mathematical soundness/completeness and uniqueness, required source/derived/
+generated origins through scalar Flat/DAE/Solve, and structured declaration-based
+CLI/LSP notices. FMI emits an explicit prepared initialization store; its exact
+write/frame/printer proofs do not close the whole allocator/adapter contract.
+
+The eFMI Startup consequence reads the finite value from the actual returned C
+heap and proves the completed source initialization and trajectory uniqueness.
+The archive checker now requires the matching complete Startup behavior and
+exact-member proposition. The preceding isolated snapshot passed the full gate;
+the added theorem and affected audits passed separately. The final main-workspace
+package/audit and full artifact gates also passed in
+`build/initialization-provenance/package-gate.log` and `full-gate.log`, with an
+unchanged source inventory and the stronger actual archive proposition.
+
+SR08 and PV06–PV09 remain open for FMI lifecycle/host-set composition,
+GALEC/Algorithm and tensor operation origins, emitted-byte maps and the full
+cross-standard review. The grammar is unchanged. Initialization syntax and
+tensor production admission remain blocked on the current stage obligations.
 
 ## Frontend infrastructure before further grammar growth
 

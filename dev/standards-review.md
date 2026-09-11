@@ -435,6 +435,57 @@ correctness and per-IR occurrence coverage still require their own proofs.
 
 **Stage decision: open; grammar expansion remains blocked.**
 
+### Scoped initialization and required IR origins: standards impact
+
+The unmodified Real/unit-derivative production grammar and both EBNF identities
+above are unchanged. The integrated initialization/provenance implementation
+was prepared in `build/literal-call-worktree`. Its full gate passed in
+`build/scoped-full-gate.log`, and `build/scoped-sources.sha256` remained unchanged
+throughout that run. The current mainline audit roots are all retained; older
+worktree audit lists were reviewed and restored before integration.
+
+| Normative obligation | Checked correspondence | Open boundary |
+| --- | --- | --- |
+| MLS 3.7 §§4.4.2.1, 4.9 and 8.6: bindings, start guesses, fallback and selected initial conditions. | `Initialization.Real` proves preparation soundness/completeness, constant-binding inconsistency for `der(x)=1`, and a unique completed trajectory. `Source.initializes_iff` retains the unfixed source equation. Required Flat/DAE/Solve settings select zero with both notices, whose declaration spans agree between compiler and LSP. | No binding/start/fixed syntax is admitted. General initialization systems remain outside this grammar. |
+| FMI 3.0.2 §§2.3.1–2.3.3: instantiated defaults, host changes, initialization and reset. | Prepared Solve data supplies an explicit C store after allocation and on reset. `CInitialization.write_behaviors` proves its value and heap frame; existing body/literal-call proofs cover that statement. The full isolated gate passes both ME and CS boundaries. | Allocation, public-call/artifact composition and the SR04/SR05 lifecycle and host-set policy remain open. |
+| eFMI 1.0.0 Beta 1 §3.2.3, §3 R-1: Startup determines block-variable initialization. | Existing actual Production C contracts initialize state, period and status from writable uninitialized storage. `GALEC.initialization_matches` identifies the same selected source plan. The added `ArchiveStartupContract` binds the actual C member, all terminating Startup behavior, the value read from the resulting heap, and the completed source solution. Its strengthened actual-file proposition passed the final integrated gate below. | GALEC/Solve operation origins, manifest/source-map correspondence and general coding-guideline obligations remain open. |
+
+Artifact identities for the completed **isolated preceding snapshot**, not the
+subsequent strengthened checker or the main workspace's later artifacts:
+
+| Artifact in the isolated checkout | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `c6c4b6dcddcbe0bcef6f53307c24dc3fbe7367798f3b7a09811097c46fd6901a` |
+| `build/Integrator.efmu` | `d08885b29e3c9886fc278b19de2cb22e58114888c8864d3f23fb9492c20db3fa` |
+
+The added archive-initialization roots and affected package audits pass in
+`build/literal-call-worktree/build/scoped-startup-integration.log`. Main-workspace
+package/audit checks passed in `build/initialization-provenance/package-gate.log`
+(3282 jobs), retaining all 1108 prior audit entries and adding 50. Its final
+full gate passed in `build/initialization-provenance/full-gate.log`, including
+the strengthened actual-file proposition. The main-workspace input inventory
+`build/initialization-provenance/sources.sha256` was unchanged after completion.
+Its final retained artifact identities are:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `df945b602bf305b402cc361f86c41d85fa7afa86eed6e111e5dd9c80ec482a54` |
+| `build/Integrator.efmu` | `eb403ed61b99b92d914e4a00e3ff8e98ef938469eb8d51b4ac6f794e5ccc2e2c` |
+
+Fixed source-file certificates now quote the actual checked filename and bytes
+together. `Artifact.source_identity` preserves the caller's complete input table
+and selected entry. Published checks name their staged snapshot; no certified
+map to the original filename or generated archive-member ranges is claimed.
+
+The neighboring Rust checkout was read at `bc71577f85df24957e5c9ab30fdaf4ed48da4311`
+with user changes present. Its provenance and initialization ownership informed
+the review; no Rust file was modified. Inspected file identities are retained in
+`build/literal-call-worktree/build/scoped-rust-reference.sha256`. The normative
+authorities remain the pinned standards linked above.
+
+**Stage decision: open.** SR08, PV06–PV09 and the whole-adapter obligations still
+block grammar growth. This change introduces no new test suite or axiom policy.
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

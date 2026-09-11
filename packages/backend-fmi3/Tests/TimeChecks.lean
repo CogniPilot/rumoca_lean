@@ -1,6 +1,7 @@
 import RumocaFMI3.CInterface
 import ProofAudit.Audit
 import RumocaFMI3.TimeProofs
+import Tests.UnitFixture
 
 /-! Encoding and generated-body controls for ME time. These discriminate
 numerical comparison from bit equality and preserve valid backtracking.
@@ -46,9 +47,7 @@ comparing exact integer units would silently give the wrong C result here. -/
 theorem unsupported_integer_conversion_stuck :
     comparison .eq (bits 0x4340000000000000) (.integer (2 ^ 53 + 1)) = none := by decide +kernel
 
-def source : AST.Model := ⟨"M", "x", "x", "M"⟩
-def prepared : Solve.FMI3Model source :=
-  (Solve.lower (DAE.lower (Flat.lower source ⟨rfl, rfl⟩))).prepareFMI3
+open UnitFixture (prepared)
 def setter : List Stmt := Runtime.body prepared ⟨"fmi3Status", "fmi3SetTime", []⟩
 def model : Address := ⟨1, [], 0⟩
 def heap (stop : Bool) : Heap := fun p =>

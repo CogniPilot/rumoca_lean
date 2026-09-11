@@ -1,6 +1,7 @@
 import RumocaFMI3.CInterface
 import ProofAudit.Audit
 import RumocaFMI3.HistoryBodies
+import Tests.UnitFixture
 
 /-! Concrete execution discriminators for the generated time-history blocks
 and public event/completion bodies. Universal contracts are in HistoryProofs
@@ -14,9 +15,7 @@ set_option maxHeartbeats 4000000
 
 def model : Address := ⟨1, [], 0⟩
 def output : Address := ⟨2, [], 0⟩
-def source : AST.Model := ⟨"M", "x", "x", "M"⟩
-def prepared : Solve.FMI3Model source :=
-  (Solve.lower (DAE.lower (Flat.lower source ⟨rfl, rfl⟩))).prepareFMI3
+open UnitFixture (prepared)
 
 def parameters : Locals := fun name =>
   if name = "instance" then some (.pointer (some model))

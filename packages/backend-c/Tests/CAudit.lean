@@ -1,4 +1,5 @@
 import ProofAudit.Audit
+import RumocaC.Initialization
 import RumocaC.Lowering
 import RumocaC.Statements
 import RumocaC.Calls
@@ -18,6 +19,12 @@ import RumocaC.LiteralCollection
 import RumocaC.LiteralNames
 
 #audit axioms Rumoca.CLiteral.Declaration.denotes_unique
+#audit axioms Rumoca.CInitialization.value_zero
+#audit axioms Rumoca.CInitialization.value_printed
+#audit axioms Rumoca.CInitialization.value_evaluated
+#audit axioms Rumoca.CInitialization.write_step
+#audit axioms Rumoca.CInitialization.written_frame
+#audit axioms Rumoca.CInitialization.write_behaviors
 #audit axioms Rumoca.CLiteral.Declaration.render_ascii
 #audit axioms Rumoca.CLiteral.Declaration.render_safe
 #audit axioms Rumoca.CLiteral.Declaration.render_preprocessed

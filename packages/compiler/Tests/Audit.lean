@@ -9,6 +9,21 @@ import Rumoca.ArrayProofs
 import Rumoca.FMI3BuildProofs
 import Rumoca.ParseFilesProofs
 import Rumoca.Provenance
+import Rumoca.Initialization
+import Rumoca.InitializationDiagnosticProofs
+
+#audit axioms Rumoca.Artifact.source_identity
+#audit axioms Rumoca.Artifact.initializationDiagnostics_eq_forModel
+#audit axioms Rumoca.Artifact.initializationDiagnostic_count
+#audit axioms Rumoca.Artifact.initializationDiagnostic_state
+#audit axioms Rumoca.Source.initializes_iff
+#audit axioms Rumoca.Flat.Model.initialization_matches
+#audit axioms Rumoca.DAE.Model.initialization_matches
+#audit axioms Rumoca.Solve.Model.initialization_checked_real
+#audit axioms Rumoca.Solve.Model.initialization_correct
+#audit axioms Rumoca.Solve.Model.initialized_solution_unique
+#audit axioms Rumoca.Solve.FMI3Model.initialization_matches
+#audit axioms Rumoca.GALEC.initialization_matches
 
 #audit axioms Rumoca.Artifact.source_locations
 #audit axioms Rumoca.compile_resolve_error

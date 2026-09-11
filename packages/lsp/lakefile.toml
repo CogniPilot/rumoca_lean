@@ -8,6 +8,10 @@ name = "modelica_parser"
 path = "../modelica-parser"
 
 [[require]]
+name = "rumoca_core"
+path = "../core"
+
+[[require]]
 name = "proof_audit"
 path = "../verification"
 

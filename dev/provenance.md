@@ -46,8 +46,9 @@ resolver failures point to the derivative reference or closing model name.
 `LocatedProofs` additionally binds the four identifier accessors to their exact
 AST fields and proves the resolved reference/declaration text correspondence.
 The compiler now requires this sidecar in every artifact and returns structured
-located errors directly. The semantic IR layouts have not yet migrated to
-required origin references. No IR-to-generated-C source map is currently certified.
+located errors directly. The scalar Flat/DAE/Solve layouts now require indexed
+origin traces; the GALEC/Algorithm and tensor paths still need migration.
+No IR-to-generated-C source map is currently certified.
 
 Name-resolution errors additionally retain a related declaration span in the
 same immutable snapshot. `resolve_error_locations` proves, for every failing
@@ -115,8 +116,8 @@ imply that this first LSP server schedules edits concurrently.
 | PV03 | Immutable multi-file identity and deterministic parallel results | Checked pure API; native task/file boundary integration exercised |
 | PV04 | Tiny Modelica diagnostics and navigation through an actual LSP session | Implemented, including proved resolution-error/declaration ranges; transport is tested infrastructure |
 | PV05 | AST/action field origins with exact identifier/equation meaning | Fixed Modelica field table has exact source leaves and production boundaries; use through all compiler IR occurrences and generic action API remain open |
-| PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Open |
-| PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Generic checked origin graph implemented; required use through the compiler/IR pipeline remains open |
+| PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Scalar Flat/DAE/Solve implemented and checked; GALEC/Algorithm and tensor paths open |
+| PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Required in the scalar chain and initialization notices; remaining products and artifacts open |
 | PV08 | Certified C/GALEC printer maps tied to actual output bytes and archive members | Open |
 | PV09 | Required compiler/artifact gate, source-map mutation controls and independent review | Existing gate retained; provenance artifact obligations open |
 
@@ -158,10 +159,11 @@ ones. Arbitrary default spans and an uninformative `unknown` origin are not
 permitted. An attachment failure is an internal compiler error, never a reason
 to continue with a whole-file fallback.
 
-This policy is not yet enforced throughout the production IRs. PV05–PV09 remain
-open. The compiler/artifact migration now proves that attachment succeeds for
+This policy is enforced in the scalar Flat/DAE/Solve chain; it is not yet
+enforced throughout all production IRs. PV05–PV09 remain open. The
+compiler/artifact migration proves that attachment succeeds for
 every accepted source and preserves the existing compiler completeness theorem
-without an extra successful-attachment hypothesis. Isolated initialization
+without an extra successful-attachment hypothesis. Initialization
 diagnostics consume the artifact's mandatory locations directly. These results
 must not be presented as completion of the full provenance chain.
 
@@ -249,6 +251,37 @@ committed as `ff6cc7e`; [its CI](https://github.com/CogniPilot/rumoca_lean/actio
 also passed. That evidence does not certify subsequent IR-origin or
 initialization work. No grammar, numerical lowering or target interface changes
 in this origin-table increment.
+
+### Required scalar IR origins and initialization
+
+Actual `Flat.Model`, `DAE.Model` and `Solve.Model` occurrences now require
+shape-matched origin traces. Flat checks exact parser fields, DAE names its
+coordinate/residual transformations, and Solve records derivative, return and
+initialization decisions. Source ancestry is proved from those actual graph
+records. A checked reference alone is insufficient: each owning model also
+requires its field/rule/parent correspondence proof.
+
+`Source.InputRef` selects a checked entry in the caller's immutable input table.
+`Artifact.source_identity` proves that compilation retains that exact context.
+Origin references remain compact indices; batched table extension preserves
+every older lookup and source-ancestry proof. Parse correspondence is an erased
+proposition in the IR context, so that context need not retain runtime token
+lists or a parse tree. No new native memory-complexity claim is made.
+
+Initialization notices use the actual prepared plan and source declaration.
+The CLI/editor correspondence and exact declaration-span theorems pass the
+existing audits. Fixed artifact adapters now quote a file identity and source
+bytes together. A staged input's name still differs from its original path;
+an original-input-to-archive-member map remains unproved.
+
+The isolated implementation passed its complete package and artifact gates in
+`build/literal-call-worktree/build/scoped-package-gate-fixed.log` and
+`build/literal-call-worktree/build/scoped-full-gate.log`. It is now integrated
+in the main workspace; its final required gate passed in
+`build/initialization-provenance/full-gate.log`, with the source inventory
+unchanged throughout. GALEC/Algorithm, tensor/FMI operation origins
+and actual printer maps remain open. The GALEC origin prototype is not yet a
+required invariant of its production model type.
 
 ## Generic engine ownership
 

@@ -61,7 +61,7 @@ theorem ideal_samples_refine_solution (m : Solve.Model source) (x₀ : ℝ) (n :
 Lexing, parsing, source name resolution, the ODE, and target execution are all
 related in one statement, for every successful compilation and every sample. -/
 theorem ideal_end_to_end (a : Artifact text) (x₀ : ℝ) (n : Nat) :
-    Lexes text.toList a.parsed.ast.tokens ∧
+    Lexes text.source.toList a.parsed.ast.tokens ∧
     Source.Solves a.parsed.ast (Source.trajectory x₀) ∧
     C.run a.target x₀ n = Source.trajectory x₀ (n : ℝ) :=
   ⟨parsed_lexes a.parsed, ideal_samples_refine_solution a.solve x₀ n⟩

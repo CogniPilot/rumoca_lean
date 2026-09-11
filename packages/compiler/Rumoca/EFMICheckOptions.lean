@@ -1,4 +1,5 @@
 import Lean
+import Parser.Source
 
 
 /-! Explicit arguments to the fixed Lean checking entry points. The CLI passes
@@ -16,10 +17,20 @@ namespace Rumoca.EFMICheckOptions
 open Lean Elab Command
 
 structure Code where
+  sourceName : String
   source : String
   algorithm : String
   grammar : String
   galecGrammar : String
+
+def Code.input (code : Code) : Parser.Source.InputRef := .single code.sourceName code.source
+
+/-- Quote the independently read file identity and bytes into every composed
+certificate. The name is data, never a producer-supplied Lean command. -/
+def Code.inputTerm (code : Code) : CommandElabM (TSyntax `term) := do
+  let name := Syntax.mkStrLit code.sourceName
+  let source := Syntax.mkStrLit code.source
+  `(term| Parser.Source.InputRef.single $name $source)
 
 def required (option : Lean.Option String) : CommandElabM String := do
   let value := option.get (← getOptions)
@@ -28,8 +39,9 @@ def required (option : Lean.Option String) : CommandElabM String := do
 
 def readCode (algorithm : String) : CommandElabM Code := do
   let options ← getOptions
+  let sourceName ← required rumoca.efmi.source
   return {
-    source := (← IO.FS.readFile (← required rumoca.efmi.source)), algorithm,
+    sourceName, source := (← IO.FS.readFile sourceName), algorithm,
     grammar := (← IO.FS.readFile (rumoca.efmi.grammar.get options : String)),
     galecGrammar := (← IO.FS.readFile (rumoca.efmi.galecGrammar.get options : String)) }
 
