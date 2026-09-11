@@ -1293,6 +1293,39 @@ including both target artifacts and their existing boundary checks. The
 recurring standards review records the exact artifact hashes. No production
 renderer, grammar case or test suite is added; the stage remains open.
 
+`LiteralInterface` and `LiteralInterfaceCalls` now prove that extending a
+global dictionary preserves all typed-call observations when the original
+program's identifier lookups are unchanged. `LiteralPool` constructs checked
+named-object candidates with distinct names, texts and block slots. Validation
+checks ASCII C identifiers, reserved-name exclusion and a 63-character name
+bound. `make_coverage` proves that a successful construction binds exactly the
+requested texts, including duplicate requests; name collisions can reject
+construction. This is partial correctness, not an unchecked name-generation
+totality claim.
+
+`LiteralPoolStorage.storage_valid` derives the literal-byte storage contract
+from a concrete symbolic heap construction. Fresh pool blocks preserve every
+existing cell, and `storage_after_steps` retains the literal bytes after every
+typed-call execution prefix. `LiteralPoolLowering` collects identifiers read,
+declared and written by the original code, including function and parameter
+names. Its `Pool.invocation_behaviors` composes interface extension and literal
+lowering, preserving exact return/heap, failure and divergence observations
+between the original and named interfaces. The collected names establish local
+freshness and lookup agreement; checked entries establish global bindings.
+
+Header name exclusion, the connection between the function list and definition
+table, and structural exclusion of direct string callees remain explicit.
+Both interfaces use the constructed pool's literal addresses; no equivalence
+to an arbitrary earlier literal-address assignment is claimed. This is still
+the authored symbolic C machine: native storage/layout, external calls,
+declaration printing and actual adapter binding are not established by these
+theorems. The production renderer does not yet use the transformation.
+The 27 added roots pass the unchanged C package axiom audit in
+`build/c-literal-pool-package-audit.log`. The required full local gate passed
+in `build/c-literal-pool-full-gate.log`. The recurring
+[standards record](../dev/standards-review.md#checked-literal-pool-and-interface-extension-standards-impact)
+tracks the required full gate and the unchanged MLS/FMI/eFMI obligations.
+
 `EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
 and constructs a fixed existential theorem with one compiler artifact and
 `ProductionContract` for both members. The kernel and exact-root axiom audit

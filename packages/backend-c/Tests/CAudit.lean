@@ -10,6 +10,7 @@ import RumocaC.LiteralStorage
 import RumocaC.LiteralPointers
 import RumocaC.LiteralLowering
 import RumocaC.LiteralCallLowering
+import RumocaC.LiteralPoolLowering
 
 #audit axioms Rumoca.CString.denotes_unique
 #audit axioms Rumoca.CString.quote_iff
@@ -49,6 +50,33 @@ import RumocaC.LiteralCallLowering
 #audit axioms Rumoca.CLiteral.Lowering.next_safe
 #audit axioms Rumoca.CLiteral.Lowering.call_behaviors
 #audit axioms Rumoca.CLiteral.Lowering.invocation_behaviors
+#audit axioms Rumoca.CLiteral.Interface.expression_agreement
+#audit axioms Rumoca.CLiteral.Interface.loop_expression_agreement
+#audit axioms Rumoca.CLiteral.Interface.extend_existing
+#audit axioms Rumoca.CLiteral.Interface.expression_extended
+#audit axioms Rumoca.CLiteral.Interface.next_agreement
+#audit axioms Rumoca.CLiteral.Interface.next_agrees
+#audit axioms Rumoca.CLiteral.Interface.call_behaviors
+#audit axioms Rumoca.CLiteral.Interface.invocation_behaviors
+#audit axioms Rumoca.CLiteral.Pool.entry_valid
+#audit axioms Rumoca.CLiteral.Pool.entry_fresh
+#audit axioms Rumoca.CLiteral.Pool.noIntrinsic
+#audit axioms Rumoca.CLiteral.Pool.global_binding
+#audit axioms Rumoca.CLiteral.Pool.globals_fresh
+#audit axioms Rumoca.CLiteral.Pool.make_coverage
+#audit axioms Rumoca.CLiteral.Pool.blocks_unique
+#audit axioms Rumoca.CLiteral.Pool.installed
+#audit axioms Rumoca.CLiteral.Pool.storage_valid
+#audit axioms Rumoca.CLiteral.Pool.install_existing
+#audit axioms Rumoca.CLiteral.Pool.install_preserves
+#audit axioms Rumoca.CLiteral.Pool.globalBindings
+#audit axioms Rumoca.CLiteral.Pool.reserved_agreement
+#audit axioms Rumoca.CLiteral.Pool.storage_after_steps
+#audit axioms Rumoca.CLiteral.Pool.statement_safe
+#audit axioms Rumoca.CLiteral.collected_names_cover
+#audit axioms Rumoca.CLiteral.Pool.program_agrees
+#audit axioms Rumoca.CLiteral.Pool.program_safe
+#audit axioms Rumoca.CLiteral.Pool.invocation_behaviors
 
 #audit axioms Rumoca.C.compileProgram_correct
 #audit axioms Rumoca.C.ideal_run_correct

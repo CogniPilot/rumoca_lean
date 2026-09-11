@@ -24,7 +24,7 @@ interactions across all three standards even when no grammar file changed.
 | MLS coverage | Lexical/syntactic admission, resolution, types and shapes, equation meaning, initialization, numeric interpretation and diagnostics. Keep `jacobian` explicitly identified as an extension. |
 | FMI coverage | Both advertised ME and CS interfaces: metadata, initialization, legal and rejected calls, time/solver policy, errors/logging, storage/lifetime, source builds and archive contents. |
 | eFMI coverage | GALEC semantics and methods, sample-period policy, Production C execution, logical mappings/status, correlated manifests/checksums, archive layout and coding-guideline obligations. |
-| Proof correspondence | For each applicable clause: independent specification, lowering/target theorem roots, actual-file/archive proposition and any remaining external assumptions. A theorem about an emitter's own policy does not establish that policy's conformance. |
+| Proof correspondence | For each applicable clause: independent specification, lowering/target theorem roots, actual-file/archive proposition and any remaining external assumptions. Inspect elaborated quantifiers and interface instances for accidental specialization to imported constants; an axiom audit does not establish the intended scope. A theorem about an emitter's own policy does not establish that policy's conformance. |
 | Boundary evidence | Required `lake test` outcome and artifact identities, plus existing schema/importer/native checks where tools or interfaces lie outside Lean. Record checker limitations explicitly. |
 | Decision | Carry forward every open finding with closure criteria. Close applicable findings before growth. Record a reason for each excluded clause; an unproved advertised behavior cannot be marked inapplicable. |
 
@@ -255,6 +255,46 @@ were rechecked and are unchanged. The retained artifact identities are:
 closes the conditional loop/call lowering obligation, not the actual global
 setup or complete compiler chain. SR04, SR05, SR07 and SR08 remain open; SR06's
 separate disposition resolves only the standalone packaging question.
+The [hosted run for 6be8fb6](https://github.com/CogniPilot/rumoca_lean/actions/runs/34543106088)
+also passed.
+
+### Checked literal pool and interface extension: standards impact
+
+This increment constructs a validated symbolic string pool and proves that
+adding its data bindings preserves the original program's identifier lookups.
+`CLiteral.Pool.invocation_behaviors` composes this result with the earlier
+literal lowering for every typed-call observation, including failure and
+divergence. The storage theorem constructs immutable objects; fresh blocks
+preserve existing cells. It does not emit declarations or change production C.
+
+| Standard | Review of this increment |
+| --- | --- |
+| MLS 3.7 | The frontend, both EBNFs, IR lowerings, equation/initialization meaning and numerical profile are unchanged. The existing clause map, P02 and SR08/S01 carry forward. The EBNF hashes above were rechecked; no development case enters production. |
+| FMI 3.0.2 ME/CS | Runtime C, headers, metadata, lifecycle and packaging are unchanged. This prepares explicit string storage for the adapter; it does not close logging, public-call, header/linkage or actual-adapter obligations. SR04, SR05 and SR07 remain open. |
+| eFMI 1.0.0 Beta 1 | GALEC, prepared Solve, Production C, mappings and manifests are unchanged. The official specification archive still matches the pinned hash. The eFMI resources page still lists Beta 1 as a release candidate; SR06 retains its documented checker limitation. SR07 and SR08 remain open. |
+
+The symbolic construction uses separate block slots; it makes no native C
+layout or allocation claim. A future declaration printer must establish the
+selected C storage, lifetime and array-decay rules and its complete emitted
+bytes. The existing C11 correspondence obligations remain applicable. Source
+name collection alone does not validate arbitrary header macros or typedefs.
+
+All 27 new roots pass the unchanged C package axiom audit in
+`build/c-literal-pool-package-audit.log`. Review of the elaborated signatures
+caught an implicit `reserved` identifier resolving to the imported Modelica
+keyword list. Explicit parameters now make the pool results general over
+reserved-name lists. The interrupted gate was discarded; the corrected source
+passed the required full local gate in `build/c-literal-pool-full-gate.log`,
+including the actual eFMU theorem, FMI ME/CS checks, official schemas/checksums,
+native C and mutation controls. Reviewed artifact identities are:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `457f8f5b5a59b368054923a4637ff0fd190bda65096541d29da9d0d7009156ca` |
+| `build/Integrator.efmu` | `c3fde89246c37fe7448f56bdedb757d9f8a2b6e82692a73bfa814c1106955915` |
+
+No new unit tests or source cases were added.
+**Stage decision: open; grammar expansion remains blocked.**
 
 ## Original FMI/eFMI snapshot and evidence
 
@@ -672,8 +712,9 @@ independent checks described above. None of this closes the open proof items.
 3. Resume the existing small tensor/FMI work: typed public wrappers, instance
    storage/metadata, finite failure policy and source-to-archive composition.
    Arrays remain rejected in production until that complete path is checked.
-4. Close SR06 and the SR07 release review obligations before claiming standards
-   compliance or assurance comparable to an established verified compiler.
+4. Retain SR06's documented disposition and close the SR07 release review
+   obligations before claiming standards compliance or assurance comparable
+   to an established verified compiler.
 
 For each interface change, record **normative clause → independent predicate →
 generated-body proof → actual-artifact observation** before implementing it.

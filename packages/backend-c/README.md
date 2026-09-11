@@ -25,6 +25,9 @@ source/IR evidence and have their own composed correctness contracts.
 | `Syntax`, `SyntaxProofs`, `PrinterProofs` | Independent numerical C grammar, unique denotation and structural printer proof |
 | `Tree` | Structured C expressions, declarations and functions used by both wrappers |
 | `StringLiteral` | Independent C literal denotation, unique UTF-8 payload decoding and preprocessing-safe string printing |
+| `Character`, `ReadOnly`, `LiteralStorage`, `LiteralPointers` | Character representation, immutable symbolic objects and literal-pointer evaluation |
+| `LiteralLowering`, `LiteralLoopLowering`, `LiteralCallLowering` | Literal-to-name transformation and all-behavior preservation through bodies, loops and calls |
+| `LiteralInterface`, `LiteralInterfaceCalls`, `LiteralPool*` | Global lookup preservation, checked name/text pools, symbolic storage construction and composed call preservation |
 | `Memory`, `Body`, `Calls` | Typed symbolic subobjects, small-step body execution and ordinary calls |
 | `BooleanProofs` | Composition of Boolean-valued expressions using the existing short-circuit semantics |
 | `Interface` | Explicit dictionary of header constant/type bindings |
@@ -54,6 +57,14 @@ octal escapes. The proof covers any sequence of the modeled trigraph and line
 splice rewrites under the eight-bit ASCII C profile. Its deterministic decoder
 is only a proof device. Static object storage, pointer decay, surrounding
 declarations and whole-adapter text/execution require separate contracts.
+
+The literal modules construct immutable symbolic objects and a checked named
+pool. `CLiteral.Pool.invocation_behaviors` preserves every call observation
+when the pool is added to the interface and literals are lowered to data names.
+Source-name collection establishes local freshness and unchanged old lookups;
+header exclusions and definition-table binding remain explicit. The production
+renderer does not yet use this pass: emitted static declarations, whole-adapter
+binding and native storage/layout remain open obligations.
 
 The current tensor C storage profile rejects unsupported ranks without
 scalarization. `Algorithm` emits instructions and receives register names and

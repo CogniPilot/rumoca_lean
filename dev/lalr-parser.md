@@ -377,6 +377,9 @@ The following decisions constrain the existing core; they do not add languages:
   arrays already provide this. Measure table size and cache behavior before
   adding compression. Bounded machine-index representations require a proved
   correspondence to mathematical indices and explicit size limits.
+- Intern repeated identifier spellings using the design below. Token kinds and
+  resolved variable slots already having integer IDs does not establish this
+  separate memory property.
 - Permit contiguous token/stack storage with local updates and source-buffer
   spans. The current list stack and character-list lexer favor simple proofs;
   they are not a final performance commitment. Any replacement must preserve
@@ -408,11 +411,58 @@ arbitrary task orchestrator correct. The Lean task runtime, native compilation
 and host execution must remain explicit at the execution trust boundary; do not
 introduce concurrency axioms or claim the scheduler has been verified.
 
-The worker adapter and performance comparisons are not implemented in this
-round. The next proof milestone remains completeness, progress and the
-frontend/action contract. Subsequent measured refinements must preserve those
-contracts and the required artifact gate. No separate concurrency framework or
+The worker adapter and performance comparisons were not implemented in this
+original design round. The subsequent deterministic batch implementation is
+recorded in [provenance.md](provenance.md#parallel-frontend); performance parity
+and bounded outstanding input bytes remain open. Subsequent parser refinements
+must preserve completeness, progress and the frontend/action contract and pass
+the required artifact gate. No separate concurrency framework or
 additional grammar is needed to establish this design.
+
+### Identifier interning
+
+**Current status: planned, not implemented.** `Parser.Token.ident` and the
+Modelica AST name fields contain `String`. The lexer constructs a spelling for
+each occurrence; no compiler-owned interner canonicalizes these strings.
+Resolved core references use bounded slots, while declaration/presentation data
+still retains strings. The checked `CLiteral.Pool` deduplicates C literal text
+for a proposed backend transformation; it is not a frontend identifier table
+and is not yet connected to production emission.
+
+The intended representation is a compact `StringId` plus a compilation-owned
+table of unique spellings. Keep this utility independent of Modelica and GALEC.
+Spelling identity must remain distinct from declaration identity: two names
+with the same spelling can resolve to different declarations. Every occurrence
+keeps its own source span; interning must not merge diagnostic locations.
+
+Each parser worker owns a file-local pool. Merge the completed pools in stable
+input/first-occurrence order and remap every retained ID before cross-file
+resolution. This permits parallel lexing without a shared mutable interner in
+the parsing loop. A compilation or immutable LSP snapshot owns its table;
+avoid a process-global pool retaining names from discarded edits indefinitely.
+Keep stable IDs within a table's lifetime and make table identity explicit at
+API boundaries so IDs from unrelated files cannot be accidentally compared.
+
+Reuse Lean's standard collection implementations and their available proofs
+when implementing the table; do not write a separate hash algorithm. Hashes
+may accelerate lookup, but exact spelling equality must decide identity, even
+under collisions. Any fixed-width ID requires a proved bound and explicit
+exhaustion behavior. The required Lean refinements establish:
+
+- Interning then resolving recovers the exact spelling; duplicate spelling
+  receives the same ID in the same table, and distinct spellings never alias.
+- Table extension preserves all existing IDs and their meanings.
+- Decoding interned tokens/ASTs recovers the current reference representation,
+  including rejection behavior, name resolution and source spans.
+- Merging and remapping preserve decoded results and diagnostics independently
+  of worker completion order; the composed artifact guarantee still holds.
+
+These are semantic properties, not a measured memory bound. Record peak and
+retained memory, allocations and merge overhead on batches of the current
+subset before claiming a saving. Interning does not eliminate source buffers,
+character-list lexing or retained predecessor IRs. Track implementation under
+[E03](roadmap.md#maintainability-and-efficiency); it adds no language cases and
+does not substitute for the open FMI/eFMI core obligations.
 
 ## Previous checked working snapshot
 

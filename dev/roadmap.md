@@ -284,6 +284,20 @@ of Modelica 3.7.
   storage and the complete adapter remain open. No production output changes.
   The complete local gate passed in `build/c-literal-loop-call-full-gate.log`;
   both artifact hashes are recorded in the recurring standards review.
+- [ ] **C01/F03 — Complete named literal storage and adapter binding.**
+  The checked pool now constructs symbolic character objects and global
+  bindings, with exact requested-text coverage and preservation of existing
+  cells under block freshness. Collected source identifiers establish local
+  freshness and prevent added globals from changing old lookups.
+  `CLiteral.Pool.invocation_behaviors` composes this interface extension with
+  the earlier all-behavior call-lowering theorem. Its 27 added roots pass the
+  C package audit. The required full local gate passed in
+  `build/c-literal-pool-full-gate.log`; the recurring standards review records
+  both artifact hashes. Header exclusion and definition-table correspondence
+  remain explicit. **Next:** certify static-array declarations and initialization,
+  connect the checked pool and headers to the actual adapter, and retain
+  lifetime and callback contracts. No production renderer or grammar change
+  is made by this preparation; C01/F03 and the standards stage remain open.
 - [x] **SR06:** resolve the standalone packaging question against Beta 1
   Chapter 2. The emitted root layout and `.efmu` suffix are permitted; the
   pinned checker's `.fmu`/`eFMU/` guards are a documented tool limitation.
@@ -412,7 +426,9 @@ The parser design must also support competitive parol/ANTLR throughput across
 thousands of files: immutable shared tables, pure per-file actions and bounded
 parallel workers with deterministic result association. See the
 [performance and batch contract](lalr-parser.md#performance-and-parallel-batch-design).
-Performance parity and the concurrent adapter are not yet established.
+The deterministic batch adapter is now checked; performance parity and bounded
+outstanding input memory remain open. Compiler-wide identifier interning is
+also missing and is tracked under E03 below.
 Modelica and GALEC are the design workloads: share the verified LR engine,
 but keep distinct lexical contracts and typed AST actions. Preserve standard
 grammar meaning when resolving future conflicts, and account for GALEC's nested
@@ -769,6 +785,19 @@ Do not smuggle a solver assumption into an unconstrained compiler hypothesis.
   enabled options and adversarial signed-zero/rounding cases. No optimization
   is required merely to resemble CompCert; an empty optimization set must be
   recorded explicitly if none is needed.
+- [ ] **E03 — Intern compiler identifier spellings.** Required for the user's
+  multi-file memory goal; currently unimplemented. Lexer tokens and source AST
+  names carry `String`; the C literal pool does not provide frontend interning.
+  Use compact IDs with compilation-owned spelling storage, preserving distinct
+  source spans and resolved declaration identities. Keep parsing independent
+  across workers, then merge file-local pools deterministically and remap IDs.
+  **Close with:** collision-safe lookup and stable-ID proofs, exact decoding
+  back to the current tokens/AST, parsing/resolution/diagnostic preservation,
+  deterministic parallel merge and the unchanged end-to-end artifact gate.
+  Measure retained bytes, allocations and merge peak memory on the existing
+  subset before claiming savings. This is a representation refinement, not
+  grammar expansion, and does not replace unfinished FMI/eFMI verification.
+  See the [interning design](lalr-parser.md#identifier-interning).
 - [ ] **Q01 — Release the reusable core.** Depends on G01–G05/E01/E02. **Close
   with:** a supported-feature matrix maps every grammar and IR constructor to
   source semantics, lowering contracts, target execution and numerical/artifact
