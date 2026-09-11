@@ -779,8 +779,10 @@ Do not smuggle a solver assumption into an unconstrained compiler hypothesis.
   graph stays small and does not execute mathematical enumeration. Performance
   results are not semantic proof or embedded worst-case timing guarantees.
   The [2026-09-10 performance audit](performance-audit.md) establishes native
-  CLI/stage baselines, an MSL file-size proxy and PA01–PA10. PA01 is a reproduced
-  span-attachment stack overflow; full MSL compilation, allocation counts and
+  CLI/stage baselines, an MSL file-size proxy and PA01–PA10. PA01's accumulator
+  refinement and exact equivalence proofs repair the reproduced span-attachment
+  crash; its [gate evidence](performance-audit.md#pa01-repair-exact-attachment-refinement)
+  is tracked separately. Full MSL compilation, allocation counts and
   artifact scaling remain unmeasured. E01 stays open. Independent OMC ME/CS
   [comparisons](../docs/omc-comparison.md) record separate build/run phases;
   they do not provide a compiler speed ratio or replace the formal gate.

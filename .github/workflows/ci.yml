@@ -10,7 +10,9 @@ permissions:
 
 concurrency:
   group: verification-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  # Let the active run save its checked Lake cache. Only the newest pending
+  # revision needs to run after it; newer pushes may replace that pending run.
+  cancel-in-progress: false
 
 jobs:
   tiny-core:

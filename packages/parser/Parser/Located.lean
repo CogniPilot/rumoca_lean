@@ -53,24 +53,38 @@ theorem Aligned.disjoint (h : Aligned (source := source) trivia p ts xs) :
   | nil => exact .nil
   | cons _ _ tail ih => exact .cons tail.after ih
 
-/-- Proofs are erased. Work is proportional to source and token spelling size;
-there is no search for an identifier elsewhere in the document. -/
-def attach (trivia : Char → Bool) (p : source.Pos) (ts : List Token) :
-    Option { xs : List (Located source Token) // Aligned trivia p ts xs } :=
+/-- The reversed prefix is data; its alignment continuation is a proof and is
+erased. The recursive call returns directly, without rebuilding an `Option`
+or a located-token list while unwinding the native stack. -/
+def attachLoop (trivia : Char → Bool) (origin : source.Pos) (input : List Token)
+    (p : source.Pos) (ts : List Token) (acc : List (Located source Token))
+    (hprefix : ∀ xs, Aligned trivia p ts xs →
+      Aligned trivia origin input (acc.reverse ++ xs)) :
+    Option { xs : List (Located source Token) // Aligned trivia origin input xs } :=
   match ts with
-  | [] => if h : Gap trivia p source.endPos then some ⟨[], .nil h⟩ else none
-  | t :: ts => do
+  | [] => if h : Gap trivia p source.endPos then
+      some ⟨acc.reverse, by simpa using hprefix [] (.nil h)⟩ else none
+  | t :: ts =>
     let start := p.find (fun c => !trivia c)
     let stop := start.nextn t.text.length
     if hg : Gap trivia p start then
       if ho : start ≤ stop then
         let span : Span source := ⟨start, stop, ho⟩
         if ht : span.text = t.text then
-          let tail ← attach trivia stop ts
-          some ⟨⟨t, span⟩ :: tail.val, .cons hg ht tail.property⟩
+          attachLoop trivia origin input stop ts (⟨t, span⟩ :: acc) (by
+            intro xs h
+            simpa using hprefix (⟨t, span⟩ :: xs) (.cons hg ht h))
         else none
       else none
     else none
+
+/-- Tail-recursive attachment with the same exact source alignment contract.
+Work is proportional to source and token spelling size; there is no search for
+an identifier elsewhere in the document. Exact reference equivalence, including
+failure, is proved in `Parser.LocatedProofs`. -/
+def attach (trivia : Char → Bool) (p : source.Pos) (ts : List Token) :
+    Option { xs : List (Located source Token) // Aligned trivia p ts xs } :=
+  attachLoop trivia p ts p ts [] (by intro xs h; simpa using h)
 
 /-- Additional context in the same immutable source snapshot. The enclosing
 document supplies file identity; a grammar never invents paths or offsets. -/

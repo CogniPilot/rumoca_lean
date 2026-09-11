@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Native Task + filesystem + CLI boundary; semantic equivalence is a theorem."""
 import json
+import resource
 import subprocess
 import tempfile
 import time
@@ -8,6 +9,14 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPILER = ROOT / "packages/compiler/.lake/build/bin/rumoca"
+# Bound the inherited native stack for the resource regression below. This
+# checks the host execution boundary; semantic equivalence is proved in Lean.
+_, stack_hard = resource.getrlimit(resource.RLIMIT_STACK)
+stack_limit = 8 * 1024 * 1024
+if stack_hard != resource.RLIM_INFINITY:
+    stack_limit = min(stack_limit, stack_hard)
+resource.setrlimit(resource.RLIMIT_STACK, (stack_limit, stack_hard))
+resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 (ROOT / "build").mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory(prefix="parallel parsing α ", dir=ROOT / "build") as folder:
     directory = Path(folder)
@@ -20,7 +29,10 @@ with tempfile.TemporaryDirectory(prefix="parallel parsing α ", dir=ROOT / "buil
     wrong.write_text("model Wrong Real x; equation der(y) = 1; end Wrong;")
     malformed = directory / "Malformed.mo"
     malformed.write_text("model Malformed Real x;")
-    files += [str(wrong), str(malformed), str(directory / "Missing.mo"), files[17]]
+    long_tokens = directory / "LongTokens.mo"
+    unit = "model LongTokens Real x; equation der(x) = 1; end LongTokens;\n"
+    long_tokens.write_text(unit + ";" * 65536)
+    files += [str(wrong), str(malformed), str(directory / "Missing.mo"), str(long_tokens), files[17]]
     outputs = []
     for jobs in (1, 4):
         start = time.perf_counter()
@@ -34,6 +46,11 @@ with tempfile.TemporaryDirectory(prefix="parallel parsing α ", dir=ROOT / "buil
     assert [r["path"] for r in results] == files
     assert all(r["ok"] and r["model"] == f"Model{i}" for i, r in enumerate(results[:1000]))
     assert [r["diagnostics"][0]["phase"] for r in results[1000:1003]] == ["resolve", "parse", "io"]
+    # The old recursive attachment aborted before reporting this first extra
+    # token. Keep one native resource case in the existing multi-file check.
+    long_error = results[1003]["diagnostics"][0]
+    assert not results[1003]["ok"] and long_error["phase"] == "parse"
+    assert (long_error["span"]["startByte"], long_error["span"]["endByte"]) == (len(unit), len(unit) + 1)
     assert results[-1]["ok"] and results[-1]["model"] == "Model17"
     failure = results[1000]["diagnostics"][0]
     assert wrong.read_bytes()[failure["span"]["startByte"]:failure["span"]["endByte"]] == b"y"

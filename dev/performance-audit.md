@@ -1,8 +1,9 @@
 # Compiler performance audit — 2026-09-10
 
 The current implementation is not ready for MSL-scale workloads. Identifier
-interning is necessary, but the first measured release blocker is native stack
-exhaustion in token-span attachment. The audit also finds avoidable whole-file
+interning is necessary, but the first measured release blocker was native stack
+exhaustion in token-span attachment. Its checked accumulator refinement and
+native reproduction results are recorded below. The audit also finds avoidable whole-file
 allocation, eager diagnostic rendering, unbounded batch input retention and
 representations that will become expensive as IR programs grow. No grammar or
 semantic contract has been changed to obtain these measurements.
@@ -25,8 +26,8 @@ lake run benchmark-frontend --msl '/path/to/Modelica 4.1.0' \
 ```
 
 The command builds only the native compiler and the optional frontend package
-benchmark. It is outside `lake test`. Unexpected exits, including the currently
-known stack overflow, make the command fail while retaining the evidence. Each
+benchmark. It is outside `lake test`. Unexpected exits make the command fail
+while retaining the evidence; the original PA01 reproduction failed this way. Each
 sample starts a fresh process after an unrecorded warmup; filesystem caches are
 warm. Logs, workload files, raw samples, summaries and corpus inventories stay
 under `build/`. No pass stamp or separate proof cache is introduced.
@@ -100,13 +101,14 @@ The semicolon input is only 65,588 bytes. All three measured repetitions and
 all CLI worker counts aborted with `Stack overflow detected. Aborting.`;
 1,024 and 16,384 extra tokens produced ordinary diagnostics. This is a native
 resource failure before a diagnostic, not a counterexample to an idealized Lean
-semantic theorem. It needs implementation repair, not a larger stack setting.
+semantic theorem. The repair below replaces attachment rather than increasing
+the stack setting. The tables above retain the original failing baseline.
 
 ## Findings and proof-preserving work order
 
 | ID / priority | Evidence and consequence | Required change and closure evidence |
 | --- | --- | --- |
-| PA01 / P0 | `Parser/Located.lean`, `Source.attach` recurses through the remaining tokens before constructing the result. `parseLocated` attaches spans before syntax rejection. Isolated stage runs locate the observed stack overflow here. | Refine attachment to a tail-recursive accumulator or cursor. Prove identical success/error results, token spelling and span alignment; retain a native resource-boundary reproduction. Do not cap the accepted language or merely increase stack size. |
+| PA01 / P0 | The original `Parser/Located.lean`, `Source.attach` recursed through the remaining tokens before constructing the result. `parseLocated` attaches spans before syntax rejection. Isolated stage runs located the observed stack overflow here. | Accumulator implementation and exact refinement proofs now pass; the reproduced native crash is repaired. Full-gate status is recorded below. No input cap or larger stack is used. |
 | PA02 / P1 | `ModelicaParser/Lexer.lean` expands the source into `List Char`, with additional identifier slicing; `Parser/Located.lean` scans gaps and spells tokens again. Generated native C confirms substring extraction and character-list allocation. | One UTF-8 cursor scan producing compact token IDs and exact byte ranges. Prove refinement to the lexical and location relations, including error offsets and Unicode boundaries. Stage allocation measurements must demonstrate the saving. The lexer also has non-tail per-token recursion; its larger-input limit is unmeasured, not the cause of the observed 65k crash. |
 | PA03 / P1 | Identifier tokens and AST names carry `String`; no frontend interner exists. The C literal pool is unrelated. Passing one string into several records shares it, but repeated occurrences can still allocate distinct spellings. | Add compilation-owned spelling IDs with exact equality after hashing, reverse decoding and stable extension proofs. Keep spelling identity distinct from declaration identity and source occurrence. Measure retained memory and merge peaks, not only wall time. See the interning design below and roadmap E03. |
 | PA04 / P1 | `Rumoca/ParseFiles.lean` reads every file sequentially before parsing. `Parser/Parallel.lean` partitions contiguous lists by file count, not bytes/cost. | Bound in-flight source bytes and results; overlap I/O with independent parsing. Preserve ordered outcomes, error spans and sequential equivalence. Use size-aware work distribution and explicit cancellation. A slow earliest result must not allow an unbounded reorder buffer. List partitioning allocates list spines, not copies of source bytes. |
@@ -131,6 +133,11 @@ this environment change starts a new CI cache bucket. A future key should
 identify the actual verification environment, pinned Lean and dependencies;
 do not use an unchecked fallback across incompatible toolchains. Upstream
 mathlib proof download and the mandatory `--no-build` check remain in place.
+
+A separate cancellation issue is repaired: pushes now preserve the active CI
+run so it can save its checked native Lake cache. Only the newest pending
+revision is retained. This changes workflow scheduling, not proof freshness,
+the cache compatibility key or the full artifact gate.
 
 The diagonal Jacobian development IR has a compact representation, but its
 `eval` materializes a dense matrix. Dense output necessarily costs quadratic
@@ -202,7 +209,7 @@ cases. Require these measurements at the relevant future slices. Do not grow
 the grammar merely to create a benchmark, and do not claim MSL readiness from
 a whitespace proxy.
 
-The immediate order is PA01, PA02/PA09 and PA03/PA04, with package dependency
+After PA01's gate, the immediate order is PA02/PA09 and PA03/PA04, with package dependency
 measurement alongside them. PA06–PA08 constrain the next verified representation
 work before larger grammars/programs. Each semantic representation change needs
 its refinement proof, existing axiom audit and full actual-artifact gate. The
@@ -211,8 +218,54 @@ E01 and E03 remain open; this report establishes the first baseline, not closure
 of all performance budgets. Independent numerical comparisons with OMC are
 specified in [docs/omc-comparison.md](../docs/omc-comparison.md).
 
-The required full semantic/artifact gate passed for this tooling addition in
-`build/omc-comparison-full-gate.log`. The targeted performance command still
-fails on PA01, retaining its stack-overflow evidence in
-`build/performance-audit/stack-reproduction/`. A passing proof/artifact gate
-does not close that separate native resource failure.
+The required full semantic/artifact gate passed for the initial tooling addition
+in `build/omc-comparison-full-gate.log`. At that checkpoint, the targeted
+performance command still failed on PA01; the original evidence remains in
+`build/performance-audit/stack-reproduction/`.
+
+## PA01 repair: exact attachment refinement
+
+`Parser.Source.attachLoop` builds a reversed prefix and carries its alignment
+continuation as an erased proof. It returns the recursive result directly and
+reverses the completed prefix once. The generated native C uses a loop jump for
+the token traversal; origin/input proof indices and the alignment continuation
+are absent from the inner runtime arguments.
+
+`Parser.LocatedProofs` supplies three audited theorems. `attachLoop_eq_reference`
+relates every accumulator state to the reference cursor policy;
+`attach_eq_reference` proves equality of the complete public result, including
+failure; `lexLocated_eq_reference` lifts it to every located-lexer result,
+including diagnostics. They quantify over arbitrary sources, trivia predicates,
+tokens and valid starting positions, with no Modelica-specific assumption or
+token-count bound. The direct recursive reference is noncomputable proof
+specification, not an executable fallback. All three roots pass the unchanged
+axiom whitelist in `build/span-attachment/audit.log`.
+
+The 65,536-semicolon reproduction now produces the expected parse diagnostic in
+all measured runs. Isolated located parsing took a median 0.031 s with about
+29.3 MiB post-exec peak RSS. The rebuilt CLI took about 0.066 s at 1, 4 and 8
+workers; its measured RSS was approximately 91 MiB. Raw data is retained in
+`build/span-attachment/reproduction/` and `cli-reproduction/`. This repairs the
+observed failure, not a claim that every frontend operation has a proved native
+stack or memory bound. Lexer recursion, character-list allocation and the other
+audit findings remain open.
+
+One long-token input joins the existing native parallel-parser check, with an
+inherited stack limit of at most 8 MiB. It checks the first extra token's exact
+range and the same result in sequential and parallel batches; the 1,005-input
+check passed in `build/span-attachment/native-boundary.log`. No new test suite
+or grammar case was introduced. The required full
+`nix develop .#verification --command lake test` gate passed for this repair in
+`build/span-attachment/full-gate.log`, including the complete actual eFMU
+certificate, source/C contracts, FMI ME/CS checks and mutation rejection. The
+four hashed implementation/check files still matched the gate's starting
+snapshot. PA01 is closed for the reproduced failure; the other performance
+findings and the whole-compiler verification obligations remain open.
+
+The retained FMU has SHA-256
+`e633a5254fa71978e8030c7e6333ffb145aed6ea5ddf4476509479dc6e8e90d1`;
+the eFMU has SHA-256
+`8b00f150c3185a1ed6d3a6da55e2f37f15c14b9f9386ed5ad407ba77fd1812fe`.
+The CI scheduling change passed `actionlint` in
+`build/span-attachment/ci-lint.log`; hosted execution remains separately
+visible in GitHub Actions.

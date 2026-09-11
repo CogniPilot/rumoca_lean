@@ -153,6 +153,12 @@ same required `nix develop .#verification --command lake test` gate. Logs and
 produced FMUs are retained as workflow artifacts for 14 days, including failure
 logs. Bash pipeline failure propagation prevents `tee` from hiding a failed gate.
 
+Runs on the same ref keep the active verification run and the newest pending
+revision. `cancel-in-progress: false` lets the active run reach its cache-save
+step; a later push may replace the pending run. This follows GitHub's
+[concurrency semantics](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/control-workflow-concurrency)
+and avoids repeatedly losing an unfinished cold cache to small source pushes.
+
 The workflow pins actions to commit IDs and uses read-only repository permissions.
 Nix supplies toolchains; Lake builds the source. One native cache retains
 `.lake/packages`, `.lake/build` and `packages/*/.lake/build`, including checked
@@ -202,9 +208,10 @@ compliance; the remaining obligations are tracked in `dev/`.
 ## Optional measurement and reference comparison
 
 `lake run benchmark-frontend` records native CLI/stage timings and peak RSS
-under `build/`. It reports unexpected exits as failures; the initial
-[performance audit](../dev/performance-audit.md) includes a known located-parser
-stack overflow and explains the MSL file-size proxy's limits.
+under `build/`. It reports unexpected exits as failures. The
+[performance audit](../dev/performance-audit.md) preserves the original
+located-parser stack-overflow baseline, tracks its checked repair and explains
+the MSL file-size proxy's limits.
 
 `nix develop .#comparison --command lake run compare-omc` compares the actual
 unit-profile FMU's ME/CS traces with the pinned OpenModelica reference. See

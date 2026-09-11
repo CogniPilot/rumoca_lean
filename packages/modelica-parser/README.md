@@ -28,7 +28,8 @@ The optional `modelica_parser/frontend-bench` executable measures existing
 read/lex/parse/located stages without importing artifact backends. Run it through
 `lake run benchmark-frontend`; raw measurements stay under `build/` and are
 independent of the proof gate. The [performance audit](../../dev/performance-audit.md)
-records the current native span-attachment stack limit and allocation findings.
+records the original span-attachment failure, its checked refinement and the
+remaining allocation findings.
 
 `ModelicaParserChecks` audits the source lexer, grammar, AST actions and parser
 contracts, exact identifier spans and sequential/parallel equivalence.

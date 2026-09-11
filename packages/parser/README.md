@@ -39,6 +39,14 @@ AST shape and selection of meaningful node origins remain language-owned.
 Generic located-parser completeness and location transport through every IR
 remain open; see [provenance](../../dev/provenance.md).
 
+The generic token attachment uses a tail-recursive accumulator. In
+`Parser.LocatedProofs`, `Parser.Source.attach_eq_reference` proves
+the exact public result equals its reference cursor specification;
+`Parser.Source.lexLocated_eq_reference` also preserves complete located-lexer
+results and diagnostics. The proofs apply to arbitrary token streams and trivia
+policies. They accompany the repair of the native long-token stack overflow in
+the [performance audit](../../dev/performance-audit.md#pa01-repair-exact-attachment-refinement).
+
 `ParserChecks` owns the engine's axiom audit and existing kernel regressions.
 `lake test` in this package builds those checks; the root `lake test` additionally
 checks actual artifacts and all language/backend integration boundaries.

@@ -4,6 +4,7 @@ import Parser.LALR.RuntimeProofs
 import Parser.LALR.SafetyProofs
 import Parser.Automaton
 import Parser.Alphabet
+import Parser.LocatedProofs
 import ProofAudit.Audit
 
 #audit axioms RegularExpression.rmatch_iff_matches'
@@ -52,6 +53,9 @@ import ProofAudit.Audit
 #audit axioms Parser.Source.Aligned.erases
 #audit axioms Parser.Source.Aligned.lexemes
 #audit axioms Parser.Source.Aligned.disjoint
+#audit axioms Parser.Source.attachLoop_eq_reference
+#audit axioms Parser.Source.attach_eq_reference
+#audit axioms Parser.Source.lexLocated_eq_reference
 #audit axioms Parser.LALR.decorate_erases
 #audit axioms Parser.LALR.decorate_wellSpanned
 #audit axioms Parser.LALR.LocatedTree.empty_span
