@@ -28,7 +28,8 @@ axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/Finit
 | `RumocaCore.Solve.Tensor.Finite` | Independent ordered finite execution, all-intermediate domain characterization and unique evaluator result |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
 | `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
-| `RumocaCore.Solve.Algorithm`, `AlgorithmProofs` | Tensor register refinement of GALEC, preserving operation order and method execution |
+| `RumocaCore.GALEC.Origins`, `GALEC.UnitOrigins`, `GALEC.OriginProofs` | Required operation/operand/method origins, independent rule/parent requirements and source ancestry |
+| `RumocaCore.Solve.Algorithm`, `AlgorithmOrigins`, `AlgorithmOriginProofs` | Tensor register refinement of GALEC with required traces and composed value/origin preservation |
 | `RumocaCore.GALEC.Protocol` | Restricted eFMI lifecycle reference and complete permitted-trace refinement |
 | `RumocaCore.Driven.IR`, `Driven.Lowering` | Draft driven profile's Flat/DAE/Solve equations, initialization and per-pass proofs |
 | `RumocaCore.Pass` | Generic behavior-preservation composition and property transfer |

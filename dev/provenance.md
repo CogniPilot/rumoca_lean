@@ -46,8 +46,8 @@ resolver failures point to the derivative reference or closing model name.
 `LocatedProofs` additionally binds the four identifier accessors to their exact
 AST fields and proves the resolved reference/declaration text correspondence.
 The compiler now requires this sidecar in every artifact and returns structured
-located errors directly. The scalar Flat/DAE/Solve layouts now require indexed
-origin traces; the GALEC/Algorithm and tensor paths still need migration.
+located errors directly. Scalar Flat/DAE/Solve and GALEC/Solve Algorithm models
+now require indexed origin traces; the tensor/FMI path still needs migration.
 No IR-to-generated-C source map is currently certified.
 
 Name-resolution errors additionally retain a related declaration span in the
@@ -116,8 +116,8 @@ imply that this first LSP server schedules edits concurrently.
 | PV03 | Immutable multi-file identity and deterministic parallel results | Checked pure API; native task/file boundary integration exercised |
 | PV04 | Tiny Modelica diagnostics and navigation through an actual LSP session | Implemented, including proved resolution-error/declaration ranges; transport is tested infrastructure |
 | PV05 | AST/action field origins with exact identifier/equation meaning | Fixed Modelica field table has exact source leaves and production boundaries; use through all compiler IR occurrences and generic action API remain open |
-| PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Scalar Flat/DAE/Solve implemented and checked; GALEC/Algorithm and tensor paths open |
-| PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Required in the scalar chain and initialization notices; remaining products and artifacts open |
+| PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Scalar and GALEC/Algorithm chains passed the full gate; tensor/FMI paths open |
+| PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Required in scalar and GALEC/Algorithm models and initialization notices; tensor/FMI products and artifact maps open |
 | PV08 | Certified C/GALEC printer maps tied to actual output bytes and archive members | Open |
 | PV09 | Required compiler/artifact gate, source-map mutation controls and independent review | Existing gate retained; provenance artifact obligations open |
 
@@ -159,7 +159,7 @@ ones. Arbitrary default spans and an uninformative `unknown` origin are not
 permitted. An attachment failure is an internal compiler error, never a reason
 to continue with a whole-file fallback.
 
-This policy is enforced in the scalar Flat/DAE/Solve chain; it is not yet
+This policy is enforced in the scalar and GALEC/Solve Algorithm chains; it is not yet
 enforced throughout all production IRs. PV05–PV09 remain open. The
 compiler/artifact migration proves that attachment succeeds for
 every accepted source and preserves the existing compiler completeness theorem
@@ -279,9 +279,39 @@ The isolated implementation passed its complete package and artifact gates in
 `build/literal-call-worktree/build/scoped-full-gate.log`. It is now integrated
 in the main workspace; its final required gate passed in
 `build/initialization-provenance/full-gate.log`, with the source inventory
-unchanged throughout. GALEC/Algorithm, tensor/FMI operation origins
-and actual printer maps remain open. The GALEC origin prototype is not yet a
-required invariant of its production model type.
+unchanged throughout. At that checkpoint GALEC/Algorithm, tensor/FMI operation
+origins and actual printer maps remained open. The next subsection records the
+subsequent required GALEC/Algorithm integration and its completed artifact gate.
+
+### GALEC and Solve Algorithm origin contracts
+
+`GALEC.Model` now requires a checked origin graph and a complete block trace.
+Its seventeen generated fields cover the algorithm root, default selection,
+lifecycle methods, sampling policy, state reads/writes and assignments. The
+independent `UnitOrigins.References.Correct` predicate identifies each rule and
+its actual source/IR parents by semantic role. The builder appends one batch;
+its backward-edge proof prevents missing parents and cycles. Sampling-period
+one is attributed to the generated policy, not the coincidentally equal RHS
+literal. Source-ancestry theorems identify the declaration, equation, model
+and exact state-name occurrence for the relevant fields.
+
+`Solve.Algorithm.Model` also requires its complete program trace and equality
+to the actual GALEC-origin lowering. The trace retains operand occurrences even
+when they read one register. Independent event observations specify the exact
+operation and operand origins in evaluation order. The general CPS theorem
+preserves those events for every tensor shape and continuation.
+`Model.lowering_preserves` composes this correspondence with lifecycle value
+preservation for the same prepared product, including period initialization.
+No tensor elements are enumerated during these compiler passes.
+
+Sixteen new roots pass the existing audit. All downstream package libraries and
+checks passed in
+`build/literal-call-worktree/build/galec-origins-package-gate-lean-only.log`
+(3296 jobs). The main-workspace required full gate also passed in
+`build/algorithm-provenance/full-gate.log`, including both actual archives and
+the existing boundary/mutation checks. The source inventory remained unchanged
+throughout the run. No new test suite or grammar case was
+introduced. Tensor/FMI operation origins and emitted-byte maps remain open.
 
 ## Generic engine ownership
 

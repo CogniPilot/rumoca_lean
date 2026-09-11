@@ -486,6 +486,38 @@ authorities remain the pinned standards linked above.
 **Stage decision: open.** SR08, PV06–PV09 and the whole-adapter obligations still
 block grammar growth. This change introduces no new test suite or axiom policy.
 
+### Required GALEC/Algorithm origins: standards impact
+
+This increment follows `6c842847c2c1534d146f954afaa41f46d1598bb4`. It changes
+required provenance in the existing DAE → GALEC → Solve Algorithm chain;
+source admission, equation/initialization semantics, the unit sampling policy,
+both EBNFs, and FMI/eFMI interface or archive layouts are unchanged.
+The current normative clause map and its open findings therefore still apply.
+
+The generated initialization value explicitly retains the MLS fallback and
+unfixed-start selection parents. eFMI Startup/period and DoStep occurrences
+retain separate generation rules; the sampling constant is not presented as a
+written source constant. Exact origin-event preservation composes with the
+existing GALEC-to-Solve lifecycle semantics. These are provenance guarantees,
+not a proof of the still-open FMI lifecycle or eFMI coding-guideline clauses.
+
+Sixteen new roots pass the unchanged axiom audit. The complete package gate
+passed in `build/literal-call-worktree/build/galec-origins-package-gate-lean-only.log`
+(3296 jobs), including both backend consumers and compiler contracts.
+The main-workspace required full artifact gate passed in
+`build/algorithm-provenance/full-gate.log`; its recorded source inventory
+remained unchanged throughout the run. It retains the complete eFMU Startup
+contract, independent extraction, native ME/CS and Production C checks, and
+the existing actual-file mutation controls. This run produced:
+
+- FMU SHA-256: `fcf9f72dd77e818f6f84ca1cf5201c9a80586f75fd07c9fcc4363db388e78477`.
+- eFMU SHA-256: `5197818bc34e2ae7a401b869e9b1ebeb2dd0c8bd1aef3b8074f1a5f919f71e4b`.
+
+No new test suite was added. **Stage decision: open** pending tensor/FMI
+origin integration, actual emitted-byte maps and the earlier
+whole-adapter/compliance obligations. No grammar expansion is authorized by
+this provenance checkpoint.
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

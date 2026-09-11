@@ -44,6 +44,16 @@ remain explicit boundaries. The final required gate passed in
 unchanged throughout the run. See
 [initialization.md](../dev/initialization.md) for remaining SR08 obligations.
 
+GALEC and Solve Algorithm models now also require complete origin traces.
+Independent rule/parent requirements identify initialization, sampling policy,
+methods, state accesses and assignments. The composed lowering theorem
+preserves both lifecycle values and every operation/operand origin event,
+without enumerating tensor elements. Sixteen added roots retain the existing
+axiom policy; the required full gate passed in
+`build/algorithm-provenance/full-gate.log`, including both target archives.
+Tensor/FMI operation origins and actual emitted-byte source maps remain open;
+this does not close the whole-adapter/compliance contract.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

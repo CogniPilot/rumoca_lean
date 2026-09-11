@@ -15,6 +15,20 @@ inductive Rule where
   | returnDerivative
   | realStartFallback
   | selectUnfixedStart
+  | algorithmAdmission
+  | unitSamplingPeriod
+  | samplingPeriodValue
+  | algorithmStartup
+  | algorithmStateInitialization
+  | algorithmStateWrite
+  | algorithmRecalibrate
+  | algorithmDoStep
+  | algorithmStateRead
+  | unitAlgorithmIncrement
+  | unitAlgorithmStep
+  | algorithmStateUpdate
+  | algorithmPeriodInitialization
+  | algorithmPeriodWrite
   deriving Repr, DecidableEq
 
 structure Context (model : AST.Model) where

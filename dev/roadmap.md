@@ -349,6 +349,16 @@ tensor production admission remain blocked on the current stage obligations.
 
 ## Frontend infrastructure before further grammar growth
 
+The following provenance increment now requires origin graphs in actual GALEC
+and Solve Algorithm models, with source/rule/parent correspondence and a
+composed value-and-origin preservation theorem. Its 16 new audit roots and all
+downstream package checks pass in the isolated package gate (3296 jobs).
+The main-workspace required full artifact gate also passed in
+`build/algorithm-provenance/full-gate.log`, including both actual target archives.
+See [the exact scope](provenance.md#galec-and-solve-algorithm-origin-contracts).
+Tensor/FMI operation traces, emitted maps and the whole-adapter obligations
+still block grammar growth.
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

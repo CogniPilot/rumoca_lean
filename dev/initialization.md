@@ -77,7 +77,8 @@ passed in `build/initialization-provenance/full-gate.log`; its source inventory
 remained unchanged throughout the run. Final artifact identities are recorded
 in the [standards review](standards-review.md#scoped-initialization-and-required-ir-origins-standards-impact).
 
-Required scalar origins and declaration-based notices are implemented; the
-GALEC/Algorithm and tensor operation traces, emitted-byte maps, FMI allocation
-and host-set/lifecycle composition remain open. No binding/start/fixed grammar
+Required scalar origins and declaration-based notices are implemented. The
+subsequent required GALEC/Algorithm origin changes passed their full artifact
+gate; tensor/FMI operation traces, emitted-byte maps, FMI allocation and
+host-set/lifecycle composition remain open. No binding/start/fixed grammar
 case is admitted by these changes. SR08 is not closed.

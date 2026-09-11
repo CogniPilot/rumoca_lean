@@ -26,6 +26,25 @@ import RumocaCore.Transition
 import RumocaCore.Initialization.Real
 import RumocaCore.Initialization.DiagnosticProofs
 import RumocaCore.Provenance.Lowering
+import RumocaCore.GALEC.OriginProofs
+import RumocaCore.Solve.AlgorithmOriginProofs
+
+#audit axioms Rumoca.GALEC.Expr.Origins.extend_root
+#audit axioms Rumoca.GALEC.Expr.Origins.extend_every
+#audit axioms Rumoca.GALEC.OriginLowering.extension
+#audit axioms Rumoca.GALEC.OriginLowering.references_correct
+#audit axioms Rumoca.GALEC.Model.state_origin
+#audit axioms Rumoca.GALEC.Model.initial_ancestry
+#audit axioms Rumoca.GALEC.Model.step_ancestry
+#audit axioms Rumoca.GALEC.Model.model_ancestry
+#audit axioms Rumoca.GALEC.Model.period_ancestry
+#audit axioms Rumoca.GALEC.Model.state_access_ancestry
+#audit axioms Rumoca.Solve.Algorithm.lowerExprOrigins_events
+#audit axioms Rumoca.Solve.Algorithm.compileExprOrigins_events
+#audit axioms Rumoca.Solve.Algorithm.compileExpr_value_and_origins
+#audit axioms Rumoca.Solve.Algorithm.compileBodyOrigins_events
+#audit axioms Rumoca.Solve.Algorithm.lowerOrigins_events
+#audit axioms Rumoca.Solve.Algorithm.Model.lowering_preserves
 
 #audit axioms Rumoca.Provenance.Context.source_fields
 #audit axioms Rumoca.Provenance.Context.lookup
