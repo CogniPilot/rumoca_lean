@@ -115,6 +115,16 @@ solver (FMPy Euler in these commands). CS accepts integer multiples of its
 internal step of 1, up to one million per call; it discards unsupported steps
 without advancing. `x` stays a local variable, as declared by the source.
 
+Compare both FMU interfaces side by side with OpenModelica on the same source:
+
+```sh
+nix develop .#comparison --command lake run compare-omc
+```
+
+The optional comparison shell adds pinned OMC. Reports, raw CSV traces and logs
+stay under `build/omc-comparison/`. See [comparison settings and limits](docs/omc-comparison.md).
+Numerical agreement is integration evidence, not a replacement for the proofs.
+
 `rumoca MODEL.mo -o MODEL.fmu` checks the actual numerical C file in Lean,
 builds a native Linux binary and validates the archive before publishing it.
 The FMU also contains C sources and `buildDescription.xml`. Binary compatibility

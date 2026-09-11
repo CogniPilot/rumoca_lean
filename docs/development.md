@@ -198,3 +198,16 @@ Lean workers limit memory contention without changing proof obligations.
 Passing this workflow establishes the documented tiny-core gates. It does not
 establish full Modelica/FMI/eFMI conformance, machine-code verification or DO-178C
 compliance; the remaining obligations are tracked in `dev/`.
+
+## Optional measurement and reference comparison
+
+`lake run benchmark-frontend` records native CLI/stage timings and peak RSS
+under `build/`. It reports unexpected exits as failures; the initial
+[performance audit](../dev/performance-audit.md) includes a known located-parser
+stack overflow and explains the MSL file-size proxy's limits.
+
+`nix develop .#comparison --command lake run compare-omc` compares the actual
+unit-profile FMU's ME/CS traces with the pinned OpenModelica reference. See
+[the comparison command and evidence](omc-comparison.md). This optional shell
+adds OMC without making it a dependency of the ordinary proof gate. Numerical
+agreement is external integration evidence and does not replace Lean proofs.

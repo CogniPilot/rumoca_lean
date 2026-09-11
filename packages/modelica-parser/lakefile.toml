@@ -22,3 +22,7 @@ roots = ["Tests.ModelicaParserAudit"]
 [[lean_exe]]
 name = "lalr-tests"
 root = "LALRNative"
+
+[[lean_exe]]
+name = "frontend-bench"
+root = "Bench.Main"

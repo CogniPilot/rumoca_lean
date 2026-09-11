@@ -21,6 +21,7 @@ packages/
   modelica-parser/
     grammar/                 Selected Modelica EBNF and restrictions
     ModelicaParser/          Generated tables, lexer, AST, actions and proofs
+    Bench/                   Optional native stage measurement executable
     Tests/                   Modelica parser, location and parallel-result audits
   galec-parser/
     grammar/                 Selected GALEC EBNF and restrictions
@@ -109,6 +110,8 @@ Use these commands from the repository root inside `nix develop`:
 | `lake build check-parser check-modelica-parser check-galec-parser check-core check-c check-fmi3 check-efmi check-compiler` | Check selected packages and their cached proof/audit libraries |
 | `lake build check-lsp rumoca-lsp` | Check and build the independent Modelica language server |
 | `lake run frontend-test` | Exercise native LSP and bounded multi-file parsing |
+| `lake run benchmark-frontend` | Optional native frontend measurements; report known resource failures |
+| `lake run compare-omc` | Compare actual ME/CS FMU traces with OMC in the optional comparison shell |
 | `lake build audit` | Build all cached package checks, enforcing the axiom whitelist in Lean |
 | `lake test` | Required full Lean, artifact, rejection and native C gate |
 | `lake run lalr-test` | Development LALR generation and native/actual-table checks; full proof audit is in `lake test` |

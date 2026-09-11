@@ -24,6 +24,12 @@ LALR executable also exercises this EBNF; the split does not switch the producti
 parser algorithm or expand the accepted language. See the [grammar restrictions](grammar/README.md)
 and [verification boundary](../../docs/verification.md).
 
+The optional `modelica_parser/frontend-bench` executable measures existing
+read/lex/parse/located stages without importing artifact backends. Run it through
+`lake run benchmark-frontend`; raw measurements stay under `build/` and are
+independent of the proof gate. The [performance audit](../../dev/performance-audit.md)
+records the current native span-attachment stack limit and allocation findings.
+
 `ModelicaParserChecks` audits the source lexer, grammar, AST actions and parser
 contracts, exact identifier spans and sequential/parallel equivalence.
 Name errors include the offending occurrence and a related declaration span;

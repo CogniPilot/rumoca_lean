@@ -442,6 +442,11 @@ the parsing loop. A compilation or immutable LSP snapshot owns its table;
 avoid a process-global pool retaining names from discarded edits indefinitely.
 Keep stable IDs within a table's lifetime and make table identity explicit at
 API boundaries so IDs from unrelated files cannot be accidentally compared.
+For incremental sessions, preserve the existing workspace table and append new
+spellings from changed files in a defined merge order. Re-sorting all spellings
+after each edit would renumber unchanged IDs and defeat incremental reuse.
+Own tables by reclaimable workspace epochs; any later compaction needs an
+explicit remapping proof. See the [performance audit](performance-audit.md#interning-sharing-and-incremental-sessions).
 
 Reuse Lean's standard collection implementations and their available proofs
 when implementing the table; do not write a separate hash algorithm. Hashes

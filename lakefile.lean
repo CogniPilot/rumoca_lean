@@ -172,6 +172,21 @@ private def efmiProductionTest : ScriptM Unit := do
 script «check-generated» args do noArgs args; checkGenerated; return 0
 script «lalr-test» args do noArgs args; lalrTest; return 0
 script «frontend-test» args do noArgs args; frontendTest; return 0
+
+/-- Opt-in native measurements; independent of the semantic verification gate. -/
+script «benchmark-frontend» args do
+  buildTargets ["rumoca_compiler/rumoca", "modelica_parser/frontend-bench"]
+  command "python3" (#["scripts/benchmark-frontend.py", "--compiler", compiler,
+    "--stage-compiler", "packages/modelica-parser/.lake/build/bin/frontend-bench"] ++ args.toArray)
+  return 0
+
+/-- Optional external numerical comparison, separate from the proof gate. -/
+script «compare-omc» args do
+  buildTargets ["rumoca_compiler/rumoca", "rumoca_fmu_runner/fmu-runner"]
+  command "python3" (#["tests/compare-omc.py", "--compiler", compiler,
+    "--runner", "packages/fmu-runner/.lake/build/bin/fmu-runner"] ++ args.toArray)
+  return 0
+
 script «verify-c» args do noArgs args; verifyC; return 0
 script «tensor-c-test» args do noArgs args; tensorCTest; return 0
 script «fmi-test» args do noArgs args; fmiTest; return 0

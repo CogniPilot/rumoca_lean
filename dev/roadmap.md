@@ -778,6 +778,12 @@ Do not smuggle a solver assumption into an unconstrained compiler hypothesis.
   **Close with:** reproducible reports and CI checks; the runtime dependency
   graph stays small and does not execute mathematical enumeration. Performance
   results are not semantic proof or embedded worst-case timing guarantees.
+  The [2026-09-10 performance audit](performance-audit.md) establishes native
+  CLI/stage baselines, an MSL file-size proxy and PA01–PA10. PA01 is a reproduced
+  span-attachment stack overflow; full MSL compilation, allocation counts and
+  artifact scaling remain unmeasured. E01 stays open. Independent OMC ME/CS
+  [comparisons](../docs/omc-comparison.md) record separate build/run phases;
+  they do not provide a compiler speed ratio or replace the formal gate.
 - [ ] **E02 — Verify any enabled optimization.** Depends on the relevant G
   slice and E01. Introduce optimizations only for measured needs: representation
   changes, scheduling, dead code or constant folding each need their own pass
@@ -791,6 +797,10 @@ Do not smuggle a solver assumption into an unconstrained compiler hypothesis.
   Use compact IDs with compilation-owned spelling storage, preserving distinct
   source spans and resolved declaration identities. Keep parsing independent
   across workers, then merge file-local pools deterministically and remap IDs.
+  Preserve workspace IDs across edits by appending new spellings within an
+  owned epoch; do not globally renumber unchanged files. Reclamation/compaction
+  must respect live snapshots. The [audit](performance-audit.md#interning-sharing-and-incremental-sessions)
+  refines the merge policy and its memory obligations.
   **Close with:** collision-safe lookup and stable-ID proofs, exact decoding
   back to the current tokens/AST, parsing/resolution/diagnostic preservation,
   deterministic parallel merge and the unchanged end-to-end artifact gate.

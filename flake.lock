@@ -16,9 +16,33 @@
         "type": "github"
       }
     },
+    "openmodelica": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1784624586,
+        "narHash": "sha256-x9BsyhMjfTnB+7wpwBi5ShZLUVONzU8+QcTQ16fwy8w=",
+        "ref": "refs/heads/master",
+        "rev": "a96aa1a682c463b0fd2d285b486c09a8b7fe496d",
+        "revCount": 38709,
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/jgoppert/OpenModelica"
+      },
+      "original": {
+        "rev": "a96aa1a682c463b0fd2d285b486c09a8b7fe496d",
+        "submodules": true,
+        "type": "git",
+        "url": "https://github.com/jgoppert/OpenModelica"
+      }
+    },
     "root": {
       "inputs": {
-        "nixpkgs": "nixpkgs"
+        "nixpkgs": "nixpkgs",
+        "openmodelica": "openmodelica"
       }
     }
   },
