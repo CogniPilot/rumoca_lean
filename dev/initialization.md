@@ -95,3 +95,12 @@ Its required main-workspace artifact gate also passed in
 `build/c-initial-provenance/full-gate.log`, with unchanged inputs and both actual
 target archives checked. Allocator, host-set and whole-lifecycle/artifact
 composition remain separate SR08 obligations.
+
+The next shared-fragment contract, `Emission.printed_preserves`, connects the
+same initialization write to its exact printed UTF-8 ranges and every map
+entry's source ancestry. It retains the complete C-body behavior theorem.
+Its package/audit gate and required main-workspace artifact gate passed; the
+latter is recorded in `build/c-mapped-initialization/full-gate.log`, with
+unchanged inputs and both actual target archives checked. It does not yet
+connect these fragment ranges to enclosing file or
+archive-member offsets, nor close the remaining initialization obligations.

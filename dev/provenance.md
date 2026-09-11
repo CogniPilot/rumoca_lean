@@ -49,7 +49,8 @@ The compiler now requires this sidecar in every artifact and returns structured
 located errors directly. Scalar Flat/DAE/Solve and GALEC/Solve Algorithm models
 now require indexed origin traces. The prepared unit FMI IVP also requires its
 complete operation trace; development tensor profiles still need migration.
-No IR-to-generated-C source map is currently certified.
+The shared C initialization fragment now has a checked printer map; whole-file
+and archive-member map contracts remain open.
 
 Name-resolution errors additionally retain a related declaration span in the
 same immutable snapshot. `resolve_error_locations` proves, for every failing
@@ -119,7 +120,7 @@ imply that this first LSP server schedules edits concurrently.
 | PV05 | AST/action field origins with exact identifier/equation meaning | Fixed Modelica field table has exact source leaves and production boundaries; use through all compiler IR occurrences and generic action API remain open |
 | PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Scalar, GALEC/Algorithm and prepared unit FMI chains passed the full gate; development tensor paths open |
 | PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Required in scalar, GALEC/Algorithm and prepared unit FMI models; development tensor products and artifact maps open |
-| PV08 | Certified C/GALEC printer maps tied to actual output bytes and archive members | Open |
+| PV08 | Certified C/GALEC printer maps tied to actual output bytes and archive members | Shared C initializer fragment map checked; whole-file/archive maps open |
 | PV09 | Required compiler/artifact gate, source-map mutation controls and independent review | Existing gate retained; provenance artifact obligations open |
 
 Origins should use compact references into an immutable table, preserving
@@ -373,6 +374,31 @@ gate passed in
 `build/c-initial-provenance/full-gate.log`, including both actual target archives
 and existing boundary/mutation checks. Its 510 inventoried inputs remained
 unchanged. No source grammar, solver policy or test suite is added.
+
+### Shared initializer printer map
+
+`Printed.Doc` composes text and annotations with indexed UTF-8 byte lengths.
+Its array collector preserves the reference entry order and multiplicity.
+An independent prefix/segment/suffix relation establishes complete map
+membership, bounds and exact `ByteArray.extract` results, including multibyte
+text. Map entries contain origin references and offsets, not source strings.
+
+`Expr.Origins.document_render` preserves every existing expression printer's
+bytes. `document_every` preserves and reflects arbitrary predicates on attached
+origins. The initializer's exact regions distinguish the assignment, target,
+conversion and literal. `Emission.printed_preserves` joins these map/text facts,
+every entry's source ancestry and all existing C-body behaviors for the same
+emission under supplied writable binary64 storage.
+
+The complete package gate passed in
+`build/literal-call-worktree/build/c-mapped-initialization-package-gate.log`
+(3319 jobs), with 25 additional audit roots and all 186 earlier C roots retained.
+The required main-workspace artifact gate also passed in
+`build/c-mapped-initialization/full-gate.log`, including both actual target
+archives and the existing boundary/mutation checks. All 513 inventoried inputs
+remained unchanged. The fragment map is tied
+to its actual statement printer; whole-function/file maps and maps carried in
+actual archives still need composition. No new grammar or test suite is added.
 
 ## Generic engine ownership
 

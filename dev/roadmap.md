@@ -371,6 +371,15 @@ also passed in `build/c-initial-provenance/full-gate.log` with unchanged inputs,
 including both target archives and the existing boundary/mutation checks.
 See [the precise remaining scope](provenance.md#shared-c-initialization-and-actual-galec-traces).
 
+The subsequent shared initializer printer map is integrated and package-checked.
+It preserves the C printer's bytes, every attached origin and exact UTF-8
+segment extraction, composed with the initializer's execution theorem. All 25
+new audit roots pass; its required main-workspace artifact gate also passed in
+`build/c-mapped-initialization/full-gate.log` with unchanged inputs and both
+actual target archives checked.
+Whole-file/archive map binding remains open; see
+[the map contract](provenance.md#shared-initializer-printer-map).
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

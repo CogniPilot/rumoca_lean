@@ -1,6 +1,7 @@
 import ProofAudit.Audit
 import RumocaC.Initialization
 import RumocaC.InitializationOriginProofs
+import RumocaC.InitializationMap
 import RumocaC.Lowering
 import RumocaC.Statements
 import RumocaC.Calls
@@ -20,6 +21,31 @@ import RumocaC.LiteralCollection
 import RumocaC.LiteralNames
 
 #audit axioms Rumoca.CLiteral.Declaration.denotes_unique
+#audit axioms Rumoca.Printed.Doc.render_size
+#audit axioms Rumoca.Printed.Doc.entriesInto_eq
+#audit axioms Rumoca.Printed.Region.render_eq
+#audit axioms Rumoca.Printed.Region.bytes
+#audit axioms Rumoca.Printed.Region.mem_entries
+#audit axioms Rumoca.Printed.Doc.entries_region
+#audit axioms Rumoca.Printed.Doc.map_iff
+#audit axioms Rumoca.Printed.Doc.map_bounds
+#audit axioms Rumoca.Printed.Region.origin_checked
+#audit axioms Rumoca.Printed.Doc.map_every
+#audit axioms Rumoca.CTree.Expr.Origins.document_render
+#audit axioms Rumoca.CTree.Expr.Origins.root_region
+#audit axioms Rumoca.CTree.Expr.Origins.map_exact
+#audit axioms Rumoca.CTree.Expr.Origins.document_every
+#audit axioms Rumoca.CInitialization.Emission.document_render
+#audit axioms Rumoca.CInitialization.Emission.write_region
+#audit axioms Rumoca.CInitialization.Emission.target_region
+#audit axioms Rumoca.CInitialization.Emission.value_region
+#audit axioms Rumoca.CInitialization.Emission.value_literal_region
+#audit axioms Rumoca.CInitialization.Emission.literal_region
+#audit axioms Rumoca.CInitialization.Emission.document_every
+#audit axioms Rumoca.CInitialization.Emission.map_origins
+#audit axioms Rumoca.CInitialization.Emission.map_ancestry
+#audit axioms Rumoca.CInitialization.Emission.map_exact
+#audit axioms Rumoca.CInitialization.Emission.printed_preserves
 #audit axioms Rumoca.CInitialization.value_zero
 #audit axioms Rumoca.CInitialization.value_printed
 #audit axioms Rumoca.CInitialization.value_evaluated

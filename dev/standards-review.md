@@ -576,6 +576,34 @@ No new test suite is added.
 **Stage decision: open.** Remaining byte maps, full adapter/artifact composition
 and unresolved standards findings continue to block grammar expansion.
 
+### Shared initializer printer map: standards impact
+
+This increment follows `22c44f7`. It adds exact maps for the shared C
+initialization fragment, with unchanged production printers, grammar admission,
+numerical policy, public interfaces and archive layout. The existing MLS 3.7,
+FMI 3.0.2 and eFMI Beta 1 clause maps and unresolved findings carry forward.
+
+The formal contract combines the actual statement printer's UTF-8 bytes,
+complete range collection, exact byte extraction, source ancestry and the
+existing all-behavior initialization theorem. It assumes supplied writable
+binary64 storage and the explicit `double` binding. Whole-function/file and
+archive-member map correspondence remain open; no new normative conformance
+claim follows from this fragment result.
+
+All 186 prior C audit roots are retained, with 25 additions under the same
+axiom policy. The downstream package gate passed in
+`build/literal-call-worktree/build/c-mapped-initialization-package-gate.log`
+(3319 jobs). The required main-workspace artifact gate also passed in
+`build/c-mapped-initialization/full-gate.log`, including both target archives and
+the existing boundary/mutation checks. All 513 inventoried inputs remained
+unchanged. This run produced:
+
+- FMU SHA-256: `0ef7c4543ee7481fbcafabebdc1cb8737e80cc5ea173f3b12f3da5874d792dc2`.
+- eFMU SHA-256: `caa2b6d1f7359897d77ce5a4f75fc2fa1547011f7c4a7de8c04ca034dc388fc1`.
+
+No test suite was added. **Stage decision: open.** The remaining map, adapter/artifact
+and standards obligations continue to block grammar expansion.
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

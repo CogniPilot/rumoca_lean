@@ -26,6 +26,7 @@ source/IR evidence and have their own composed correctness contracts.
 | `Tree` | Structured C expressions, declarations and functions used by both wrappers |
 | `Origins`, `OriginProofs`, `Provenance` | Complete expression annotations and C-owned rules with checked upstream source ancestry |
 | `InitializationCode`, `InitializationOrigins`, `InitializationOriginProofs` | Required origins on prepared initialization emission, with a composed annotation, ancestry and C-body behavior theorem |
+| `SourceMap`, `MappedExpression`, `InitializationMap` | Indexed UTF-8 documents, exact expression-printer correspondence and initializer map/execution preservation |
 | `StringLiteral` | Independent C literal denotation, unique UTF-8 payload decoding and preprocessing-safe string printing |
 | `Character`, `ReadOnly`, `LiteralStorage`, `LiteralPointers` | Character representation, immutable symbolic objects and literal-pointer evaluation |
 | `LiteralLowering`, `LiteralLoopLowering`, `LiteralCallLowering` | Literal-to-name transformation and all-behavior preservation through bodies, loops and calls |
@@ -55,8 +56,9 @@ Adapter body and actual-artifact contracts select the appropriate dictionary.
 
 The shared initializer now returns a checked `Emission`; FMI creation/reset
 consume its statement projection. Its preservation theorem assumes supplied
-writable binary64 storage. Complete C-function origins, printed source maps,
-allocation and enclosing public-API composition remain open.
+writable binary64 storage. Its fragment map now preserves exact printer bytes,
+source ancestry and byte extraction. Complete C-function origins, whole-file
+and archive-member maps, allocation and enclosing public-API composition remain open.
 
 `CString.render_correct` proves that every string expression emitted by `Tree`
 has exactly its UTF-8 payload bytes followed by C's terminating zero, including

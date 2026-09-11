@@ -81,6 +81,21 @@ the required main-workspace artifact gate also passed in
 and the existing boundary/mutation checks. All 510 inventoried inputs remained
 unchanged throughout the run.
 
+The following shared-initializer map increment proves exact correspondence
+between its required origins and the existing statement printer's UTF-8 bytes.
+`CInitialization.Emission.printed_preserves` combines the execution contract
+with annotation correctness, ancestry of every collected map entry, complete
+range membership and exact byte extraction. Generic expression mapping preserves
+the existing printer and every annotated origin; a single array collector uses
+cached document lengths. These 25 new audit roots and all downstream package
+checks passed in
+`build/literal-call-worktree/build/c-mapped-initialization-package-gate.log`.
+Its required main-workspace artifact gate also passed in
+`build/c-mapped-initialization/full-gate.log`, with all 513 inventoried inputs
+unchanged and both actual target archives checked. This is a fragment map:
+whole-function/file maps, original-to-staged input identities and archive-member
+map binding remain open, along with the adapter obligations above.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target
