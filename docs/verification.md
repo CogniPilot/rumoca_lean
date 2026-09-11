@@ -96,6 +96,19 @@ unchanged and both actual target archives checked. This is a fragment map:
 whole-function/file maps, original-to-staged input identities and archive-member
 map binding remain open, along with the adapter obligations above.
 
+The next increment adds complete annotations and mapped printing for the
+existing C statement, parameter, signature and function syntax. It proves exact
+printer-byte equality, range extraction and preservation/reflection of predicates
+on supplied origin references. The initializer now derives a complete statement
+trace and uses this shared mapper; its earlier map and execution contracts are
+retained. Twenty-four additional audit roots and downstream package checks pass
+in `build/literal-call-worktree/build/c-statement-function-map-package-gate.log`.
+The required main-workspace artifact gate passed in
+`build/c-statement-function-map/full-gate.log`, with all 517 inventoried inputs
+unchanged and both actual target archives checked. These generic maps do not
+establish correct source/rule attachment in every production function, arbitrary
+C-tree validity, whole-file/archive map binding or full adapter execution.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

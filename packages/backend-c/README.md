@@ -27,6 +27,7 @@ source/IR evidence and have their own composed correctness contracts.
 | `Origins`, `OriginProofs`, `Provenance` | Complete expression annotations and C-owned rules with checked upstream source ancestry |
 | `InitializationCode`, `InitializationOrigins`, `InitializationOriginProofs` | Required origins on prepared initialization emission, with a composed annotation, ancestry and C-body behavior theorem |
 | `SourceMap`, `MappedExpression`, `InitializationMap` | Indexed UTF-8 documents, exact expression-printer correspondence and initializer map/execution preservation |
+| `StatementOrigins`, `FunctionOrigins`, `MappedStatement`, `MappedFunction` | Complete C annotations and exact mapped statement/signature/function printing |
 | `StringLiteral` | Independent C literal denotation, unique UTF-8 payload decoding and preprocessing-safe string printing |
 | `Character`, `ReadOnly`, `LiteralStorage`, `LiteralPointers` | Character representation, immutable symbolic objects and literal-pointer evaluation |
 | `LiteralLowering`, `LiteralLoopLowering`, `LiteralCallLowering` | Literal-to-name transformation and all-behavior preservation through bodies, loops and calls |
@@ -59,6 +60,11 @@ consume its statement projection. Its preservation theorem assumes supplied
 writable binary64 storage. Its fragment map now preserves exact printer bytes,
 source ancestry and byte extraction. Complete C-function origins, whole-file
 and archive-member maps, allocation and enclosing public-API composition remain open.
+
+The initializer derives a complete statement trace and uses the shared statement
+mapper. Generic function maps preserve supplied annotations and exact printer
+bytes; correct source/rule attachment by each production emitter remains a
+separate requirement. They do not certify arbitrary C-tree validity or execution.
 
 `CString.render_correct` proves that every string expression emitted by `Tree`
 has exactly its UTF-8 payload bytes followed by C's terminating zero, including

@@ -2,6 +2,7 @@ import RumocaCore.IR
 import RumocaC.Tree
 import RumocaC.Origins
 import RumocaC.InitializationOrigins
+import RumocaC.StatementOrigins
 
 /-! Shared C emission consumes the already selected Solve initial value. -/
 namespace Rumoca.CInitialization
@@ -20,6 +21,10 @@ structure Emission (model : Solve.Model source) (target : Expr) where
   value_checked : valueOrigins = .cast origins.conversion origins.conversion (.nat origins.literal)
 
 def Emission.statement (_ : Emission model target) : Stmt := .assign target (value model)
+
+def Emission.statementOrigins (emission : Emission model target) :
+    Stmt.Origins emission.origins.table emission.statement :=
+  .assign emission.origins.write emission.targetOrigins emission.valueOrigins
 
 def emit (model : Solve.Model source) (target : Expr) : Emission model target :=
   let origins := OriginLowering.lower model

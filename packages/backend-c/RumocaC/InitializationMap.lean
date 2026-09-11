@@ -1,5 +1,5 @@
 import RumocaC.InitializationOriginProofs
-import RumocaC.MappedExpression
+import RumocaC.MappedStatement
 
 /-! Source maps for the actual shared initialization statement. Exact text
 and universal execution share the same required emission. Enclosing function,
@@ -11,15 +11,11 @@ local infixl:65 " <+> " => Document.append
 
 def Emission.document (emission : Emission model target) (depth : Nat := 1) :
     Document (Origin emission.origins.table) :=
-  mark emission.origins.write
-    (text (String.ofList (List.replicate (2 * depth) ' ')) <+>
-      emission.targetOrigins.document <+> text " = " <+>
-      emission.valueOrigins.document <+> text ";\n")
+  emission.statementOrigins.document depth
 
 theorem Emission.document_render (emission : Emission model target) (depth : Nat) :
-    (emission.document depth).render = emission.statement.render depth := by
-  simp only [document, Document.render_mark, Document.render_append, Document.render_text,
-    Expr.Origins.document_render, Emission.statement, Stmt.render]
+    (emission.document depth).render = emission.statement.render depth :=
+  emission.statementOrigins.document_render depth
 
 theorem Emission.write_region (emission : Emission model target) (depth : Nat) :
     Region (emission.document depth).body emission.origins.write ""
@@ -88,8 +84,8 @@ theorem Emission.document_every (emission : Emission model target) (depth : Nat)
     rw [emission.value_checked]
     simp only [value, Expr.Origins.Every]
     exact ⟨conversion, conversion, literal⟩
-  simp only [document, Document.mark, Document.append, Document.text, Doc.EveryOrigin,
-    Expr.Origins.document_every, and_true, true_and]
+  apply (emission.statementOrigins.document_every depth check).mpr
+  simp only [statementOrigins, statement, Stmt.Origins.Every]
   exact ⟨write, targetCheck, valueCheck⟩
 
 /-- Every mapped origin is one of the initializer's checked semantic roles,
@@ -127,18 +123,8 @@ theorem Emission.map_exact (emission : Emission model target) (depth : Nat)
       entry.start = beforeText.utf8ByteSize ∧
       entry.stop = entry.start + segment.utf8ByteSize ∧
       (emission.statement.render depth).toByteArray.extract entry.start entry.stop =
-        segment.toByteArray := by
-  constructor
-  · intro member
-    obtain ⟨beforeText, segment, suffix, region, first, last⟩ :=
-      ((emission.document depth).body.map_iff entry).mp member
-    refine ⟨beforeText, segment, suffix, region,
-      (emission.document_render depth).symm.trans region.render_eq, first, last, ?_⟩
-    rw [← emission.document_render depth, last, first]
-    exact region.bytes
-  · rintro ⟨beforeText, segment, suffix, region, _, first, last, _⟩
-    exact ((emission.document depth).body.map_iff entry).mpr
-      ⟨beforeText, segment, suffix, region, first, last⟩
+        segment.toByteArray :=
+  emission.statementOrigins.map_exact depth entry
 
 variable [interface : CInterface]
 

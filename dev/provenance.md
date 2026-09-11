@@ -400,6 +400,41 @@ remained unchanged. The fragment map is tied
 to its actual statement printer; whole-function/file maps and maps carried in
 actual archives still need composition. No new grammar or test suite is added.
 
+### Shared statement and function maps
+
+The C backend now has complete `Stmt.Origins`, `Parameter.Origins`,
+`Signature.Origins` and `Function.Origins` types. Declarations, operands, nested
+branches/loops, parameters and return statements require annotations. List
+containers introduce no fictitious source node. Function and parameter roots
+also explain their storage-class and scalar/array declaration forms.
+
+The shared mappers preserve the existing printers' exact UTF-8 bytes. Their
+contracts connect collected ranges to text decomposition and byte extraction,
+and preserve/reflect arbitrary predicates on the supplied origin references.
+These predicates do not themselves justify a producer's choice of origins;
+independent source/rule/parent requirements remain necessary. Statement lists
+use a reverse accumulator and Std's tail-recursive fold to construct documents
+whose range collector can tail-call through sibling statements.
+
+Predicate equivalence concerns origin references. The collector's order and
+multiplicity theorem concerns its document reference; an independent bijection
+between AST occurrences and their mapped regions is a stronger obligation when
+composing production emitter maps. These results do not close that obligation.
+
+The actual initializer now derives `statementOrigins` from its required fields
+and consumes the shared statement mapper. Its previous exact regions, source
+ancestry and all-behavior execution contracts remain checked. There is no
+separate initializer formatting implementation.
+
+All 211 earlier C audit roots are retained, with 24 additions. The complete
+package gate passed in
+`build/literal-call-worktree/build/c-statement-function-map-package-gate.log`
+(3324 jobs). The required main-workspace artifact gate passed in
+`build/c-statement-function-map/full-gate.log`, with all 517 inventoried inputs
+unchanged and both actual target archives checked. Correct
+attachment in every production function, complete files and archive-member maps
+remain open. No grammar, numerical policy or test suite is added.
+
 ## Generic engine ownership
 
 The parser engine now lives in `packages/parser/Parser`, without language

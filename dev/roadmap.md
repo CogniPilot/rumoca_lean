@@ -380,6 +380,15 @@ actual target archives checked.
 Whole-file/archive map binding remains open; see
 [the map contract](provenance.md#shared-initializer-printer-map).
 
+Shared C statement/function annotations and mapped printers are now integrated
+and package-checked, with 24 additional audit roots. The initializer uses the
+generic statement path and retains its prior map/execution contract. The
+required main-workspace artifact gate passed in
+`build/c-statement-function-map/full-gate.log`, with all 517 inventoried inputs
+unchanged and both actual target archives checked. Correct producer attachment
+for every production function and whole-file/archive map binding remain open;
+see [the shared map scope](provenance.md#shared-statement-and-function-maps).
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

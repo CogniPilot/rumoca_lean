@@ -104,3 +104,11 @@ latter is recorded in `build/c-mapped-initialization/full-gate.log`, with
 unchanged inputs and both actual target archives checked. It does not yet
 connect these fragment ranges to enclosing file or
 archive-member offsets, nor close the remaining initialization obligations.
+
+The initializer now exposes its complete `statementOrigins` and uses the shared
+C statement mapper. All earlier map and execution theorems are retained. The
+statement/function mapping package gate passed with 24 additional roots; its
+required main-workspace artifact gate passed in
+`build/c-statement-function-map/full-gate.log`, with all 517 inventoried inputs
+unchanged and both actual target archives checked. This reuse does not close
+allocation, host-set or whole-adapter correspondence.

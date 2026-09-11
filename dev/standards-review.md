@@ -604,6 +604,34 @@ unchanged. This run produced:
 No test suite was added. **Stage decision: open.** The remaining map, adapter/artifact
 and standards obligations continue to block grammar expansion.
 
+### Shared statement/function maps: standards impact
+
+This increment follows `f13710e`. It adds required annotations and mapped
+printers for existing C syntax and migrates the shared initializer to that
+statement path. Exact output bytes and all prior initializer execution/map
+contracts are preserved. No source admission, numerical policy, public
+interface or archive layout changes. The MLS 3.7, FMI 3.0.2 and eFMI Beta 1
+clause maps and unresolved findings carry forward.
+
+The generic map contracts preserve supplied origin predicates and exact UTF-8
+segments. They do not prove that every production function has received the
+correct source/rule attachments, nor certify arbitrary C syntax or establish
+whole-file/archive maps. No new normative conformance claim follows.
+
+All 211 earlier C audit roots are retained, with 24 additions under the same
+axiom policy. The downstream package gate passed in
+`build/literal-call-worktree/build/c-statement-function-map-package-gate.log`
+(3324 jobs). The required main-workspace artifact gate passed in
+`build/c-statement-function-map/full-gate.log`, with all 517 inventoried inputs
+unchanged and both actual target archives checked. No new test
+suite is added. **Stage decision: open** pending the remaining producer/map,
+adapter/artifact and standards obligations; grammar expansion remains blocked.
+
+This run produced the retained artifacts:
+
+- FMU SHA-256: `baf7f47847d2219d38b6a5fdd48ca0f1a073c27037537a560cf89527413db2aa`.
+- eFMU SHA-256: `619669cd9e8009a04174f26fad2b057fcb6b33b0012c371e2003cce59018106f`.
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.
