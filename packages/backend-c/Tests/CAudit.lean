@@ -11,6 +11,34 @@ import RumocaC.LiteralPointers
 import RumocaC.LiteralLowering
 import RumocaC.LiteralCallLowering
 import RumocaC.LiteralPoolLowering
+import RumocaC.LiteralDeclarationBlock
+import RumocaC.LiteralCollection
+import RumocaC.LiteralNames
+
+#audit axioms Rumoca.CLiteral.Declaration.denotes_unique
+#audit axioms Rumoca.CLiteral.Declaration.render_ascii
+#audit axioms Rumoca.CLiteral.Declaration.render_safe
+#audit axioms Rumoca.CLiteral.Declaration.render_preprocessed
+#audit axioms Rumoca.CLiteral.Declaration.render_denotes
+#audit axioms Rumoca.CLiteral.Declaration.render_correct
+#audit axioms Rumoca.CLiteral.Declaration.render_storage
+#audit axioms Rumoca.CLiteral.Declaration.block_unique
+#audit axioms Rumoca.CLiteral.Declaration.renderBlock_chars
+#audit axioms Rumoca.CLiteral.Declaration.renderBlock_denotes
+#audit axioms Rumoca.CLiteral.Declaration.splice_append
+#audit axioms Rumoca.CLiteral.Declaration.renderBlock_safe
+#audit axioms Rumoca.CLiteral.Declaration.renderBlock_preprocessed
+#audit axioms Rumoca.CLiteral.Declaration.renderBlock_correct
+#audit axioms Rumoca.CLiteral.Declaration.renderBlock_storage
+#audit axioms Rumoca.CLiteral.expressionTexts_lowered
+#audit axioms Rumoca.CLiteral.statementTexts_lowered
+#audit axioms Rumoca.CLiteral.functionTexts_lowered
+#audit axioms Rumoca.CLiteral.Pool.forFunctions_coverage
+#audit axioms Rumoca.CLiteral.Pool.forFunctions_complete
+#audit axioms Rumoca.CLiteral.Pool.forFunctions_behaviors
+#audit axioms Rumoca.CLiteral.Pool.make_spelling
+#audit axioms Rumoca.CLiteral.Pool.make_name_conditions
+#audit axioms Rumoca.CLiteral.Pool.headerFresh_of_reserved
 
 #audit axioms Rumoca.CString.denotes_unique
 #audit axioms Rumoca.CString.quote_iff

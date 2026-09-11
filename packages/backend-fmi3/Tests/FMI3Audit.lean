@@ -15,6 +15,7 @@ import RumocaFMI3.HistoryBodies
 import RumocaFMI3.InitializationBodies
 import RumocaFMI3.InitializationEntry
 import RumocaFMI3.ErrorCalls
+import RumocaFMI3.LiteralPreparation
 
 import RumocaFMI3.LifecycleGuard
 import RumocaFMI3.LifecycleBodies
@@ -27,6 +28,17 @@ import RumocaFMI3.Metadata
 import RumocaFMI3.StateProofs
 import RumocaFMI3.StateCalls
 import RumocaFMI3.TimeProofs
+
+#audit axioms Rumoca.FMI3.LiteralPreparation.rendered_functions
+#audit axioms Rumoca.FMI3.LiteralPreparation.constants_covered
+#audit axioms Rumoca.FMI3.LiteralPreparation.header_fresh
+#audit axioms Rumoca.FMI3.LiteralPreparation.program_covered
+#audit axioms Rumoca.FMI3.LiteralPreparation.helpers_bound
+#audit axioms Rumoca.FMI3.LiteralPreparation.pool_complete
+#audit axioms Rumoca.FMI3.LiteralPreparation.declarations_correct
+#audit axioms Rumoca.FMI3.LiteralPreparation.body_calls
+#audit axioms Rumoca.FMI3.LiteralPreparation.functions_calls
+#audit axioms Rumoca.FMI3.LiteralPreparation.lowering_behaviors
 
 #audit axioms Rumoca.FMI3.ErrorCalls.failure_parameters
 #audit axioms Rumoca.FMI3.ErrorCalls.failure_reaches

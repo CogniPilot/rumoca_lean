@@ -23,6 +23,7 @@ The complete printed ABI adapter and archive capstone remain open; see
 | --- | --- |
 | `Runtime`, `Header` | Structured FMI C bodies and signatures from the pinned official headers |
 | `CInterface` | FMI-specific constant and type bindings for shared C execution |
+| `LiteralPreparation` | Literal collection and constructed definition table for the actual rendered function list; checked declaration block and all-observation pass preservation |
 | `Metadata` | Model-description XML projected from the prepared Solve model |
 | `Identifier`, `IdentifierProofs` | Valid C identifiers, injective for distinct parsed model names |
 | `BuildDescription`, `BuildDescriptionProofs` | Named single-translation-unit recipes, independent XML decoding and native argument requirements |
@@ -40,6 +41,13 @@ C implementation and general target proofs live in `packages/backend-c` under
 `RumocaC.*`; no compatibility copies remain here. XML syntax/rendering proofs
 live in the independent XML package. Neither this package nor the shared C
 backend imports the compiler driver or actual-file checker.
+
+`LiteralPreparation.lowering_behaviors` derives collection, definition-table
+coverage, structural call conditions and authored constant freshness from the
+renderer's function list. It relates the original and named-literal versions
+in the authored C machine, including stuck execution. The production renderer
+does not yet use this pass. This theorem does not supply missing external-call,
+callback, allocation, complete-header or whole-adapter byte semantics.
 
 From the root inside `nix develop`, use `lake build check-fmi3` for cached
 adapter proofs/audits and `lake build check-c` for shared C proofs/audits.

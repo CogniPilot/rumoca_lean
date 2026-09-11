@@ -293,9 +293,16 @@ of Modelica 3.7.
   the earlier all-behavior call-lowering theorem. Its 27 added roots pass the
   C package audit. The required full local gate passed in
   `build/c-literal-pool-full-gate.log`; the recurring standards review records
-  both artifact hashes. Header exclusion and definition-table correspondence
-  remain explicit. **Next:** certify static-array declarations and initialization,
-  connect the checked pool and headers to the actual adapter, and retain
+  both artifact hashes. The next increment adds independent single/list
+  declaration syntax, exact initializer-to-symbolic-storage proofs, complete
+  literal collection, and checked-constructor name facts. FMI preparation now
+  constructs its definition table from the actual rendered function list and
+  derives helper bindings, authored constant freshness and structural call
+  conditions. Its all-observation lowering theorem no longer takes those
+  invariants as supplied premises. The 34 new roots and full-gate status are
+  tracked in the recurring standards review.
+  **Next:** compose declarations, header text and functions into a complete
+  translation-unit/file contract, connect native linkage/layout and retain
   lifetime and callback contracts. No production renderer or grammar change
   is made by this preparation; C01/F03 and the standards stage remain open.
 - [x] **SR06:** resolve the standalone packaging question against Beta 1

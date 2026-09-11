@@ -296,6 +296,43 @@ native C and mutation controls. Reviewed artifact identities are:
 No new unit tests or source cases were added.
 **Stage decision: open; grammar expansion remains blocked.**
 
+### Literal declarations and FMI function binding: standards impact
+
+This increment supplies an independent declaration-list grammar and proves
+exact ordered names and initializer bytes, then connects them to the checked
+pool's constructed symbolic storage. It collects literals from every tree
+constructor and applies the pass to the actual FMI renderer's function list.
+The constructed definition table derives helper bindings and tree coverage;
+the authored constant exclusions and structural call conditions are proved.
+The complete observation-equivalence theorem includes returns, failure and
+divergence. The production C emitter, metadata and package layout are unchanged
+by this preparation.
+
+| Standard | Review of this increment |
+| --- | --- |
+| C11 N1570 §§5.1.1.2, 6.7.9 paragraphs 14/22 | Independent syntax models static character arrays with bounds supplied by their literal initializers, including the terminator. The complete-block proof excludes trigraph/splice changes across physical declaration lines. Macro expansion, the surrounding translation unit and native allocation/layout are separate. |
+| C11 N1570 §§5.2.4.1, 7.1.3 | Actual `Pool.make` names start with `rumoca_literal_`, satisfy the checked 63-character bound and exclude supplied names. This does not validate all implementation macros/types or arbitrary `Pool.check` inputs. |
+| MLS 3.7 | EBNFs, frontend, IR lowering, source equations and numerical admission are unchanged. P02 and SR08/S01 remain open. |
+| FMI 3.0.2 ME/CS | The proof now uses the actual rendered function list, but is not a complete adapter-file or public-call certificate. Unsupported external calls still have stuck observations in the authored machine. Enabled callbacks, header/ABI and allocation remain open; SR04, SR05 and SR07 are not closed. |
+| eFMI 1.0.0 Beta 1 | Shared C preparation is available to either backend; GALEC, Production C and packaging are unchanged. SR06's standalone-layout disposition and SR07/SR08 remain as recorded. |
+
+The C clause review uses the [official N1570 draft](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+All 34 new shared C/FMI roots passed with the unchanged axiom whitelist in
+`build/c-literal-declarations/package-audit.log`. The full required
+`nix develop .#verification --command lake test` gate passed in
+`build/c-literal-declarations/full-gate.log`, including both FMI interfaces,
+the actual eFMU theorem, extraction, official schemas/checksums, native C and
+mutation controls. The checked source snapshot still matches
+`build/c-literal-declarations/source.sha256`. Artifact identities are:
+
+| Actual artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `30e39977357de58364f4a2a6d1a3dbf4813b4b1ea950c46cf4197c6b7dc47d29` |
+| `build/Integrator.efmu` | `22b0750229afa80eb3986e3076587ba3965cd40d37fbcd4cdc1c04dc4c92004d` |
+
+No new unit tests or language cases are added.
+**Stage decision: open; grammar expansion remains blocked.**
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

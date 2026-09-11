@@ -1326,6 +1326,34 @@ in `build/c-literal-pool-full-gate.log`. The recurring
 [standards record](../dev/standards-review.md#checked-literal-pool-and-interface-extension-standards-impact)
 tracks the required full gate and the unchanged MLS/FMI/eFMI obligations.
 
+`LiteralDeclaration` and `LiteralDeclarationBlock` add independent syntax for
+static character-array declarations. The printer theorem characterizes the
+complete ordered sequence of names and initializer bytes, including null
+terminators, after every modeled trigraph/splice rewrite. The sequence theorem
+also checks physical line boundaries; it does not formalize macro expansion.
+`renderBlock_storage` connects independently interpreted declarations to named
+lookup and every byte of the constructed immutable symbolic arrays.
+`LiteralNames` proves that successful `Pool.make` names use the fixed lowercase
+prefix and satisfy the checked identifier/63-character conditions. This is
+not a claim about arbitrary unchecked candidates or all native header names.
+
+`LiteralCollection` visits every expression/statement constructor and proves
+complete removal of registered string nodes. `FMI3.LiteralPreparation` applies
+it to the actual renderer's function list. Its definition table uses that same
+list and the prepared numerical kernel, with no supplied tree definitions.
+It derives the authored constant-dictionary freshness, helper bindings and
+structural call conditions. `lowering_behaviors` then preserves and reflects
+every authored-machine observation for successful pool construction, any entry,
+arguments and heap. Both sides use the same constructed literal addresses.
+
+These 34 roots extend the package audits; the gate record is in
+[the standards review](../dev/standards-review.md#literal-declarations-and-fmi-function-binding-standards-impact).
+The renderer still emits its existing C. Full translation-unit syntax,
+header/ABI correspondence, actual adapter-byte binding, callbacks and native
+allocation/layout remain open. In particular, equality of observations in a
+machine with unsupported external calls includes their stuck observations;
+it is not a proof that every FMI call executes successfully or conforms.
+
 `EFMIProductionArtifactCheck` reads the source, both EBNFs, GALEC and C files
 and constructs a fixed existential theorem with one compiler artifact and
 `ProductionContract` for both members. The kernel and exact-root axiom audit
