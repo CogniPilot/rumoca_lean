@@ -2,6 +2,12 @@ import Std
 
 namespace Parser.Source
 
+/-- An immutable input snapshot. A compilation assigns identities by checked
+indices in its input array; names and contents need not be unique. -/
+structure Input where
+  name : String
+  source : String
+
 /-- A half-open UTF-8 range in one immutable source snapshot. Valid boundaries
 come from Lean's String.Pos and are indexed by source contents. File identity
 and version belong to the enclosing document, including equal-content files. -/

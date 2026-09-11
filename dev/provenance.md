@@ -110,13 +110,13 @@ imply that this first LSP server schedules edits concurrently.
 
 | ID | Requirement | Status |
 | --- | --- | --- |
-| PV01 | Valid source-indexed spans; exact token text, order and disjointness | Soundness and completeness checked for the exact-spelling/trivia contract; actual Modelica lexer discharges the contract |
+| PV01 | Valid source-indexed spans; exact token text, order and disjointness | Soundness and completeness checked for the exact-spelling/trivia contract; actual Modelica and GALEC lexers discharge the contract |
 | PV02 | Automatic grammar-node ranges, epsilon policy and grammar erasure | Modelica located entry point complete; generic LALR annotation-wrapper completeness remains open |
 | PV03 | Immutable multi-file identity and deterministic parallel results | Checked pure API; native task/file boundary integration exercised |
 | PV04 | Tiny Modelica diagnostics and navigation through an actual LSP session | Implemented, including proved resolution-error/declaration ranges; transport is tested infrastructure |
-| PV05 | AST/action field origins with exact identifier/equation meaning | Modelica identifier accessor/AST-field correspondence checked; equation origins and generic action API open |
+| PV05 | AST/action field origins with exact identifier/equation meaning | Fixed Modelica field table has exact source leaves and production boundaries; use through all compiler IR occurrences and generic action API remain open |
 | PV06 | Flat → DAE → GALEC/Solve origin preservation for every lowering | Open |
-| PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Open for the compiler/IR pipeline; located frontend has explicit EOF/error ranges |
+| PV07 | Distinguish source, derived and generated origins; no dummy offset fallback in semantic diagnostics | Generic checked origin graph implemented; required use through the compiler/IR pipeline remains open |
 | PV08 | Certified C/GALEC printer maps tied to actual output bytes and archive members | Open |
 | PV09 | Required compiler/artifact gate, source-map mutation controls and independent review | Existing gate retained; provenance artifact obligations open |
 
@@ -200,6 +200,55 @@ the [standards record](standards-review.md#mandatory-located-source-standards-im
 records the generated FMU/eFMU hashes. Initialization code, cross-file origin
 tables, per-IR origin preservation and emitted-byte source maps remain separate
 work.
+
+### Shared origin tables and source occurrences
+
+`Parser.Source.Input` is the shared immutable snapshot type; the parallel
+frontend now uses it directly. `Parser.Provenance.SourceRef` contains a checked
+index into an input array and a span in that exact entry. Names and contents
+need not be unique. The array belongs to the compilation; indices do not claim
+global identity across unrelated compilation contexts.
+
+`Parser.Provenance.Table` stores an array of source, derived and generated
+records. Derived/generated records require a first parent and a rule supplied
+by the owning compiler. Every parent must precede the new record, excluding
+dangling references and cycles. Checked references retain their table in their
+type; append preserves old lookups. `traces_source` proves that every record
+reaches a source leaf, and the ancestry lemmas preserve source traces across
+append and derivation. These are proof relations, not a runtime ancestor-list
+builder. Source strings and origin trees are not copied into each reference.
+Array ownership and native allocation costs still require performance review;
+there is no new benchmark or amortized-complexity theorem.
+
+`ModelicaParser.Origins` instantiates this generic table for the nine semantic
+occurrences of the fixed AST. `OriginProofs.lookup` identifies the exact file
+and occurrence for each field; `leaf_text` binds names and the literal RHS to
+the actual parsed fields. `production_ranges` and `production_boundaries`
+prove containment and exact terminal boundaries for the model, declaration,
+equation and derivative expression. A whole-model fallback would violate the
+declaration/operand boundary contract. This does not yet require these tables
+in Flat/DAE/GALEC/Solve or bind them to emitted bytes.
+
+`Parser.Scanner.lex_locations` extends attachment completeness to every
+spelling-preserving configurable scanner. The actual GALEC scanner discharges
+that premise; `GALEC.Syntax.Parsed.locations_exist` supplies exact locations
+for every checked GALEC parse. The GALEC production driver and IRs still need
+their required-origin integration. `Artifact.source_locations` and the two
+compiler error-correspondence theorems additionally expose exact current
+Modelica source fields and structured resolution failures.
+
+This increment adds 23 roots to the existing package audits. The package gate
+passed in `build/origin-tables/package-gate.log`; the required full artifact
+gate passed in `build/origin-tables/full-gate.log`, including actual numerical
+C, both FMI interfaces, GALEC and checked eFMU publication. The package inventory
+in `build/origin-tables/source.sha256` remained unchanged throughout the gate.
+The [standards record](standards-review.md#shared-source-origins-standards-impact)
+records the final FMU/eFMU identities.
+The preceding located-driver checkpoint passed the complete gate before being
+committed as `ff6cc7e`; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34612287910)
+also passed. That evidence does not certify subsequent IR-origin or
+initialization work. No grammar, numerical lowering or target interface changes
+in this origin-table increment.
 
 ## Generic engine ownership
 

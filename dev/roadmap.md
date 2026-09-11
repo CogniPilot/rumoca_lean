@@ -355,6 +355,16 @@ The 14 new roots pass the existing package audits in
 Generic LALR annotation completeness and IR/output origin preservation remain
 open in PV05–PV09. This does not close the complete compiler/artifact proof gate.
 
+The next increment implements the generic origin graph and exact source fields:
+shared input snapshots, checked file/table references, required parent/rule
+records, source-ancestry preservation, and exact Modelica production ranges.
+The generic scanner attachment theorem also covers the actual GALEC instance.
+Twenty-three roots pass the existing package audits in
+`build/origin-tables/package-gate.log`; the required full gate passed in
+`build/origin-tables/full-gate.log`. Required per-IR use and actual emitted-byte
+maps are the next provenance obligations. This foundation does not complete initialization
+or authorize additional source syntax.
+
 The user's airborne software assurance target is tracked in
 [airborne-assurance.md](airborne-assurance.md). It requires requirements and
 verification traceability in addition to source ranges; no DO-178C compliance

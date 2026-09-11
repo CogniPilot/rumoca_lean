@@ -37,6 +37,18 @@ in `build/located-provenance/full-gate.log`. Per-IR
 origin-preservation theorems and actual emitted-byte maps remain open in
 [provenance.md](provenance.md). No grammar or numerical lowering changed.
 
+The next origin-table foundation makes the representation concrete:
+`Parser.Provenance` uses checked references into shared arrays, mandatory
+parent/rule records and proved ancestry preservation. The Modelica instance
+maps exact AST occurrences into that table, including separate declaration
+and equation ranges. It has no tensor-element traversal or solver policy.
+The table is not yet a required field of every production IR; a type-safe graph
+alone does not establish correct origins for a lowering. The implementation
+must also avoid keeping successively copied prefix tables alive while building
+a large model. The package gate passed in `build/origin-tables/package-gate.log`;
+the required artifact gate passed in `build/origin-tables/full-gate.log`,
+including both FMI interfaces and the checked complete eFMU.
+
 ## Tensor AD direction, 2026-09-10
 
 The next user-authorized slice is static arrays and the `jacobian` built-in,

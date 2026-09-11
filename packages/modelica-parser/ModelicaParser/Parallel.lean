@@ -5,11 +5,7 @@ open _root_.Parser
 
 namespace Rumoca.Parallel
 
-/-- A snapshot keeps file identity outside local byte ranges. Two files with
-identical text remain distinct entries. No hash uniqueness assumption is used. -/
-structure Input where
-  name : String
-  source : String
+open _root_.Parser.Source (Input)
 
 structure Result where
   input : Input

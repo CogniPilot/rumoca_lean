@@ -403,6 +403,38 @@ or standards findings.
 
 **Stage decision: open; grammar expansion remains blocked.**
 
+### Shared source origins: standards impact
+
+The generic engine now provides checked source/derived/generated origin tables,
+with mandatory parent/rule records and ancestry preservation. The Modelica
+frontend supplies exact field and production ranges for its existing AST; the
+GALEC lexer supplies the generic attachment-completeness contract. The parallel
+frontend reuses the shared immutable input record without changing scheduling
+or analysis results.
+
+| Standard | Review of this increment |
+| --- | --- |
+| MLS 3.7 | The same fixed lexical/AST profile is admitted. Token-indexed production boundaries and literal/name text are proved for the actual parse. No declaration, binding, modifier, initialization, tensor or AD syntax is added. SR08/S01 remains open. |
+| FMI 3.0.2 ME/CS | Solve, C, adapter bodies and FMI metadata are unchanged. Source-origin tables are not a lifecycle theorem or a printer map. SR04/SR05/SR07 remain open. |
+| eFMI 1.0.0 Beta 1 | Exact source attachment is proved for the current GALEC scanner. Required GALEC IR origins, generated-member maps, and initialization correspondence remain open. Algorithm/Production Code emission is unchanged. |
+
+Twenty-three new roots pass the existing package audits in
+`build/origin-tables/package-gate.log`; the required full artifact gate passed
+in `build/origin-tables/full-gate.log`. It includes actual numerical C and GALEC
+certificates, independent FMI ME/CS import, and checked eFMU publication,
+schemas, native execution and mutation controls. The package inventory in
+`build/origin-tables/source.sha256` was checked unchanged after completion.
+
+| Artifact | SHA-256 |
+| --- | --- |
+| `build/Integrator.fmu` | `4f967951f8e730aa11826d230c906237d96209d56cec0c8214a7bfa8b6c15b05` |
+| `build/Integrator.efmu` | `c84a3797dc25ab9a754c631b92488209f09701f9f13b500021952f6df167031e` |
+
+The checked graph prevents absent/dangling parents, but compiler-specific rule
+correctness and per-IR occurrence coverage still require their own proofs.
+
+**Stage decision: open; grammar expansion remains blocked.**
+
 ## Original FMI/eFMI snapshot and evidence
 
 Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.

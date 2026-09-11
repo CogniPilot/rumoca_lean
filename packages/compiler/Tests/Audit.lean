@@ -8,6 +8,11 @@ import Rumoca.Verified
 import Rumoca.ArrayProofs
 import Rumoca.FMI3BuildProofs
 import Rumoca.ParseFilesProofs
+import Rumoca.Provenance
+
+#audit axioms Rumoca.Artifact.source_locations
+#audit axioms Rumoca.compile_resolve_error
+#audit axioms Rumoca.compile_error_after_parse
 
 #audit axioms Rumoca.CLI.analyze_eq_reference
 #audit axioms Rumoca.CLI.analyze_json

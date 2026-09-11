@@ -2,6 +2,11 @@ import GALECParser
 import GALECParser.GrammarProofs
 import GALECParser.ScannerProofs
 import ProofAudit.Audit
+import GALECParser.LocatedCompleteness
+
+#audit axioms Rumoca.GALEC.Syntax.scanner_preserves_text
+#audit axioms Rumoca.GALEC.Syntax.scanner_locations
+#audit axioms Rumoca.GALEC.Syntax.Parsed.locations_exist
 
 #audit axioms Rumoca.GALEC.Syntax.decode_tokens
 #audit axioms Rumoca.GALEC.Syntax.scanner_unchanged

@@ -374,6 +374,16 @@ Generic LALR annotation completeness and origin preservation through the
 IR/printer pipeline remain open. See
 [the provenance contract and roadmap](../dev/provenance.md).
 
+The next provenance foundation adds a generic checked origin array, mandatory
+nonempty parent records and a proof that every origin reaches a source leaf.
+The fixed Modelica field table has exact file/AST-field lookup and production
+boundary proofs; configurable-scanner attachment completeness is instantiated
+for GALEC as well. These 23 new roots pass the package audit in
+`build/origin-tables/package-gate.log`; the required full gate passed in
+`build/origin-tables/full-gate.log`, including both actual target archives.
+The source table is not yet required in every semantic IR, and no emitted-byte
+origin map is certified by this increment.
+
 `Parallel.map_eq` proves equality to sequential mapping for every pure analysis
 function, input list and job budget, using Lean's standard logical `Task`
 semantics. Batch results retain file identity, source snapshots and input

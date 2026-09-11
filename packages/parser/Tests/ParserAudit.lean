@@ -5,6 +5,8 @@ import Parser.LALR.RuntimeProofs
 import Parser.LALR.SafetyProofs
 import Parser.Automaton
 import Parser.Alphabet
+import Parser.Provenance
+import Parser.ScannerSpelling
 import Parser.ScannerRefinement
 import Parser.LocatedProofs
 import ProofAudit.Audit
@@ -73,3 +75,14 @@ import ProofAudit.Audit
 #audit axioms Parser.LALR.LocatedTree.empty_span
 #audit axioms Parser.LALR.LocatedParse.sound
 #audit axioms Parser.Parallel.map_eq
+#audit axioms Parser.Scanner.Lexes.spelled
+#audit axioms Parser.Scanner.lex_locations
+#audit axioms Parser.Provenance.Table.get_lift
+#audit axioms Parser.Provenance.Table.get_last
+#audit axioms Parser.Provenance.Table.source_lookup
+#audit axioms Parser.Provenance.Table.derived_lookup
+#audit axioms Parser.Provenance.Table.generated_lookup
+#audit axioms Parser.Provenance.traces_source
+#audit axioms Parser.Provenance.TracesTo.lift
+#audit axioms Parser.Provenance.TracesTo.derive
+#audit axioms Parser.Provenance.TracesTo.generate

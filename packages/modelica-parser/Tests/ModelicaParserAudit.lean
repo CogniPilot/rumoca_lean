@@ -4,6 +4,7 @@ import ModelicaParser.Driven
 import ModelicaParser.Array.Located
 import ModelicaParser.ParserProofs
 import ModelicaParser.LocatedProofs
+import ModelicaParser.OriginProofs
 import ModelicaParser.LocatedTotal
 import ProofAudit.Audit
 
@@ -63,3 +64,9 @@ import ProofAudit.Audit
 #audit axioms Rumoca.LocatedParsed.resolved_references
 #audit axioms Rumoca.LocatedParsed.resolve_complete
 #audit axioms Rumoca.LocatedParsed.resolve_error_locations
+#audit axioms Rumoca.LocatedParsed.field_range_contains
+#audit axioms Rumoca.Origins.lookup
+#audit axioms Rumoca.Origins.source_ancestry
+#audit axioms Rumoca.Origins.leaf_text
+#audit axioms Rumoca.Origins.production_ranges
+#audit axioms Rumoca.Origins.production_boundaries
