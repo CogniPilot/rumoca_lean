@@ -285,3 +285,13 @@ import RumocaFMI3.VersionMetadata
 
 #audit axioms Rumoca.FMI3.LiteralPreparation.event_lowering_behaviors
 #audit axioms Rumoca.FMI3.LiteralPreparation.event_contract
+
+#audit axioms Rumoca.FMI3.Logging.failure_dispatch_reaches
+#audit axioms Rumoca.FMI3.Logging.failure_resume_reaches
+#audit axioms Rumoca.FMI3.Logging.failure_all_behaviors
+#audit axioms Rumoca.FMI3.Logging.failure_silent_behaviors
+#audit axioms Rumoca.FMI3.Logging.all_execution_correct
+#audit axioms Rumoca.FMI3.Logging.all_prepared_correct
+#audit axioms Rumoca.FMI3.Logging.AllExecutionContract.determined
+#audit axioms Rumoca.FMI3.Logging.AllPreparedContract.determined
+#audit axioms Rumoca.FMI3.Logging.silent_prepared_correct

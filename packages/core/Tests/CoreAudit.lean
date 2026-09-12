@@ -1,3 +1,4 @@
+import RumocaCore.Transition.Events.Choices
 import RumocaCore.Transition.Events.Simulation
 import RumocaCore.GALEC.Protocol
 import RumocaCore.GALEC.UnitProfile
@@ -227,3 +228,9 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.Transition.Events.accumulate_prefix
 #audit axioms Rumoca.Transition.Events.accumulate_get
 #audit axioms Rumoca.Transition.Events.records_exists
+
+#audit axioms Rumoca.Transition.Events.accumulate_drop_silent
+#audit axioms Rumoca.Transition.Events.records_drop_silent
+#audit axioms Rumoca.Transition.Events.no_infinite_of_acc
+#audit axioms Rumoca.Transition.Events.Machine.silent_step_behaviors
+#audit axioms Rumoca.Transition.Events.Machine.terminal_choices_behaviors

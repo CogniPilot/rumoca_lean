@@ -122,4 +122,28 @@ theorem records_exists (chunks : Nat → List E) : ∃ history, Records chunks h
       rw [← takeAccum n, Stream'.take_take, Nat.min_eq_right contained.length_le] at takeEq
       exact takeEq
 
+theorem accumulate_drop_silent {chunks : Nat → List E} (silent : chunks 0 = []) (n : Nat) :
+    accumulate (fun n => chunks (n + 1)) n = accumulate chunks (n + 1) := by
+  induction n with
+  | zero => simp [accumulate, silent]
+  | succ n ih => simp only [accumulate, ih]
+
+theorem records_drop_silent {chunks : Nat → List E} (silent : chunks 0 = []) :
+    Records (fun n => chunks (n + 1)) history ↔ Records chunks history := by
+  have same (segment : List E) :
+      (∃ n, segment <+: accumulate (fun n => chunks (n + 1)) n) ↔
+        ∃ n, segment <+: accumulate chunks n := by
+    constructor
+    · rintro ⟨n, contained⟩
+      exact ⟨n + 1, (accumulate_drop_silent silent n) ▸ contained⟩
+    · rintro ⟨n, contained⟩
+      cases n with
+      | zero => exact ⟨0, contained⟩
+      | succ n => exact ⟨n, (accumulate_drop_silent silent n).symm ▸ contained⟩
+  constructor
+  · intro recorded segment
+    exact (recorded segment).trans (same segment)
+  · intro recorded segment
+    exact (recorded segment).trans (same segment).symm
+
 end Rumoca.Transition.Events

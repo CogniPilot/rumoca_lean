@@ -63,6 +63,28 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### All failure-helper outcomes: standards impact
+
+This increment follows `7004a3e`; it changes proofs and mandatory artifact
+contracts. The admitted subset, generated code and boundary checks are unchanged.
+
+| Obligation | Coverage and boundary |
+| --- | --- |
+| FMI 3.0.2 [§2.3.1, logging](https://fmi-standard.org/docs/3.0.2/#fmi3LogMessageCallback) | Every represented returning host choice emits the evaluated environment/Error/category/message invocation, returns Error and preserves immutable strings. Disabled logging has empty events in the same machine. Existence and uniqueness of host outcomes are no longer premises of the mandatory helper contract. |
+| FMI 3.0.2 [§2.2.1, callback restrictions](https://fmi-standard.org/docs/3.0.2/) | Log callbacks must not call back into the FMU. The atomic external relation does not model nested native execution; an admissible-host and native correspondence contract remains required. No-outcome stuck behavior is a property of this machine, not a claim about a native callback that never returns. |
+| FMI 3.0.2 [§2.4.5, categories](https://fmi-standard.org/docs/3.0.2/#log-categories) | The same successful pool and actual XML category witness remain mandatory. Category selection through SetDebugLogging and all public-entry/lifecycle composition remain open. Writable host effects remain explicit, so private-instance framing still requires a host ownership contract. |
+| MLS 3.7 and eFMI 1.0.0 Beta 1 | No changes to grammar, initialization, tensor/IR semantics, numeric policy or renderers. Existing clause maps and S01/SR07/SR08 findings carry forward; this does not expand the eFMI execution contract. |
+
+Compiler composition passes in `build/c-logging-choices/promotion-v2.log`.
+The 21 new roots retain every earlier audit root and axiom whitelist; affected
+package checks pass in `build/c-logging-choices/package-audit.log`.
+The required full artifact gate passed in
+`build/c-logging-choices/full-gate.log`, with all 654 inputs unchanged and both
+actual archives checked. Archives and hashes are retained in
+`build/c-logging-choices/artifacts/`; their C, header and GALEC members match
+`7004a3e` (`artifact-retention.log`). **Stage decision: open;
+grammar growth remains blocked.**
+
 ### Eventful literal lowering: standards impact
 
 This proof increment follows `d529b5d`. The admitted grammars, source/IR

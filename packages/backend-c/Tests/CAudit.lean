@@ -1,3 +1,5 @@
+import RumocaC.CallEventChoices
+import RumocaC.BodyEvents
 import RumocaC.LiteralEventPool
 import RumocaC.ObservedCalls
 import ProofAudit.Audit
@@ -528,3 +530,11 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CLiteral.Interface.Events.behaviors
 #audit axioms Rumoca.CLiteral.Interface.Events.invocation_behaviors
 #audit axioms Rumoca.CLiteral.Pool.event_invocation_behaviors
+
+#audit axioms Rumoca.CCalls.Events.internal_prefix_behaviors
+#audit axioms Rumoca.CCalls.Events.external_step_iff
+#audit axioms Rumoca.CCalls.Events.external_choices_behaviors
+#audit axioms Rumoca.CCalls.Events.observed_choices
+#audit axioms Rumoca.CCalls.Events.body_call_reaches
+#audit axioms Rumoca.CCalls.Events.body_call_prefix
+#audit axioms Rumoca.CCalls.Events.body_call_behaviors

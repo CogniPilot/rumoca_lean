@@ -413,6 +413,41 @@ and both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
 
+### All failure-helper outcomes
+
+`Logging.FunctionContract` now also requires `AllPreparedContract` and
+`SilentPreparedContract`. The enabled contract quantifies over every outcome
+in the importer effect relation without requiring existence or uniqueness.
+Each returning outcome records the actual invocation, returns Error and retains
+the host's resulting heap. If there is no outcome, the atomic external machine
+is stuck; this case is included explicitly. The disabled contract proves empty
+events, Error and exactly the mode write with arbitrary unused foreign bindings.
+`logging_source` requires these guarantees for the same actual helper fragment,
+internal table and constructed literal pool as its existing grammar, XML and
+eventful literal-lowering contracts.
+
+Generic silent-prefix equivalence preserves faults and finite/infinite divergent
+histories. Shared C characterizes all external choices with a proved return
+continuation. FMI proves the helper's dispatch and resume paths; the earlier
+determined-result proofs reuse these paths and follow from the new contract.
+Immutable category/message storage survives every returning effect. The formal
+model still does not execute inside host calls or establish native ABI,
+allocation or complete public-entry composition. FMI prohibits log callbacks
+from calling back into the FMU; this admissible-host restriction still needs to
+be connected to the native boundary, rather than treated as required FMU support
+for reentrant logging. See [FMI 3.0.2 §2.2.1](https://fmi-standard.org/docs/3.0.2/).
+
+The implementation and compiler composition build in
+`build/c-logging-choices/promotion-v2.log`. All 21 additional audit roots and
+affected package checks pass in `build/c-logging-choices/package-audit.log`;
+every earlier audit root is retained. The required full artifact gate passed in
+`build/c-logging-choices/full-gate.log`, with all 654 source inputs unchanged
+throughout the run and both actual archives checked. Retained archives and
+hashes are in `build/c-logging-choices/artifacts/`; their C, header and GALEC
+members match `7004a3e` (`artifact-retention.log`).
+No grammar, emitted code or test suite changes.
+F02/F03 remain open.
+
 ### Eventful literal lowering
 
 `LiteralPreparation.EventContract` is mandatory for the same actual adapter

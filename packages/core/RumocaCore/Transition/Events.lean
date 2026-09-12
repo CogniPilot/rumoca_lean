@@ -139,6 +139,15 @@ inductive Forced (m : Machine S E R) : S → List E → R → Prop where
       (∀ events u, m.step s events u → events = first ∧ u = t) →
       Forced m t rest r → Forced m s (first ++ rest) r
 
+/-- Accessibility excludes infinite execution without assuming determinacy. -/
+theorem no_infinite_of_acc {step : S → S → Prop} (accessible : Acc (fun t s => step s t) s) :
+    ¬ ∃ states : Nat → S, states 0 = s ∧ ∀ n, step (states n) (states (n + 1)) := by
+  induction accessible with
+  | intro s hs ih =>
+      rintro ⟨states, initial, steps⟩
+      apply ih (states 1) (initial ▸ steps 0)
+      exact ⟨fun n => states (n + 1), rfl, fun n => steps (n + 1)⟩
+
 namespace Forced
 variable {m : Machine S E R}
 
@@ -179,14 +188,6 @@ theorem terminal_matches (forced : Forced m s events r)
           obtain ⟨same, done⟩ := ih tail stuck
           exact ⟨congrArg (_ ++ ·) same, done⟩
 
-private theorem no_infinite {step : S → S → Prop} (accessible : Acc (fun t s => step s t) s) :
-    ¬ ∃ states : Nat → S, states 0 = s ∧ ∀ n, step (states n) (states (n + 1)) := by
-  induction accessible with
-  | intro s hs ih =>
-      rintro ⟨states, initial, steps⟩
-      apply ih (states 1) (initial ▸ steps 0)
-      exact ⟨fun n => states (n + 1), rfl, fun n => steps (n + 1)⟩
-
 /-- Local determinacy suffices for a complete all-behavior theorem, with the
 exact event trace. This does not assume an arbitrary foreign callback returns. -/
 theorem behaviors (forced : Forced m s events r) (observation : Observation E R) :
@@ -203,7 +204,7 @@ theorem behaviors (forced : Forced m s events r) (observation : Observation E R)
         rw [failed] at done
         contradiction
     | diverges states chunks initial steps history =>
-        exact False.elim (no_infinite forced.accessible
+        exact False.elim (no_infinite_of_acc forced.accessible
           ⟨states, initial, fun n => ⟨chunks n, steps n⟩⟩)
   · rintro rfl
     obtain ⟨t, path, done⟩ := forced.reaches

@@ -531,9 +531,22 @@ and eventful arguments. See [the contract](fmi3/contracts.md#eventful-literal-lo
 All 37 new roots and affected package checks pass; the required full gate passed
 in `build/c-literal-events/full-gate.log`, with all 651 inputs unchanged and both
 archives checked. Their C, header and GALEC members match `d529b5d`.
-Next: compose disabled/enabled logging in
-the same eventful machine through public-call contracts, then discharge the
-remaining allocation, ABI and complete adapter obligations. F02/F03 remain open.
+The next increment now makes both disabled logging and all represented enabled
+callback outcomes mandatory for the actual helper. The all-choice contract has
+no supplied-success or determinacy premise and retains the missing-outcome
+case of the atomic external machine. Earlier helper guarantees follow from the
+stronger proofs; `logging_source` uses the same actual function/table/pool/XML
+witness. Compiler composition builds in
+`build/c-logging-choices/promotion-v2.log`; all 21 new roots and affected
+package checks pass in `build/c-logging-choices/package-audit.log`.
+The required full artifact gate passed in
+`build/c-logging-choices/full-gate.log`, with all 654 inputs unchanged and both
+actual archives checked. Their C, header and GALEC members match `7004a3e`.
+See
+[the exact scope](fmi3/contracts.md#all-failure-helper-outcomes).
+Next: compose these guarantees through public-call contracts, then discharge
+allocation, ABI, admissible-host ownership and complete adapter obligations.
+F02/F03 remain open.
 
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining

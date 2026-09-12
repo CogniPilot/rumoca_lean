@@ -40,4 +40,23 @@ theorem observed_unique (effect : ReturningEffect signature)
   intro events value out performed
   exact ⟨performed.1, unique value out performed.2⟩
 
+theorem observed_choices (effect : ReturningEffect sig) (args : List Value) (heap : Heap)
+    (resultOf : Value → Heap → CBody.Result) (behavior : Transition.Events.Observation Invocation CBody.Result) :
+    ((∃ events value after, (External.observed sig effect).execute args heap events value after ∧
+      behavior = .terminates events (resultOf value after)) ∨
+      ((∀ events value after, ¬ (External.observed sig effect).execute args heap events value after) ∧
+        behavior = .wrong [])) ↔
+    ((∃ value after, effect.execute args heap value after ∧
+      behavior = .terminates [⟨sig.name, args⟩] (resultOf value after)) ∨
+      ((∀ value after, ¬ effect.execute args heap value after) ∧ behavior = .wrong [])) := by
+  have absent : (∀ events value after, ¬ (External.observed sig effect).execute args heap events value after) ↔
+      (∀ value after, ¬ effect.execute args heap value after) := by
+    constructor
+    · intro missing value after executed
+      exact missing [⟨sig.name, args⟩] value after ⟨rfl, executed⟩
+    · intro missing events value after executed
+      exact missing value after executed.2
+  rw [absent]
+  simp [External.observed]
+
 end Rumoca.CCalls.Events

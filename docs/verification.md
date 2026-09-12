@@ -297,6 +297,29 @@ directory; their C, header and GALEC members match `d529b5d`
 (`code-member-comparison.log`). See
 [the pass contract](../dev/fmi3/contracts.md#eventful-literal-lowering).
 
+The all-outcome helper increment strengthens the mandatory logging contract
+with both `AllPreparedContract` and `SilentPreparedContract`. Enabled logging
+characterizes every represented returning host effect without a supplied
+successful outcome or determinacy premise; absence is explicitly stuck in the
+atomic external machine. Disabled logging proves no callback events and exactly
+the mode write. The same actual-file/table/pool/XML witnesses and eventful
+literal-lowering contract remain required. Shared silent-prefix and external
+choice theorems support the actual helper's dispatch and return continuation;
+earlier determined guarantees are retained as consequences.
+
+Compiler composition builds in `build/c-logging-choices/promotion-v2.log`.
+All 21 new roots and affected package checks pass in
+`build/c-logging-choices/package-audit.log`; every earlier audit root is retained.
+The required full artifact gate passed in
+`build/c-logging-choices/full-gate.log`, with all 654 inputs unchanged and both
+actual archives checked. Retained archives and hashes are in
+`build/c-logging-choices/artifacts/`; their C, header and GALEC members match
+`7004a3e` (`artifact-retention.log`). This does not prove execution
+inside host calls, native ABI, allocation, host ownership or all public entries.
+FMI's prohibition on log-callback reentry is an admissible-host obligation at
+that boundary. See [the exact contract](../dev/fmi3/contracts.md#all-failure-helper-outcomes).
+Grammar and generated artifacts are unchanged; the stage remains open.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target
