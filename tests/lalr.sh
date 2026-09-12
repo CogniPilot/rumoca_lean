@@ -15,12 +15,21 @@ cat >> "$task_tmp/Modelica.lean" <<'LEAN'
 #print axioms Parser.LALRGenerated.first_checked
 #print axioms Parser.LALRGenerated.nullable_coverage
 #print axioms Parser.LALRGenerated.lookahead_coverage
+#print axioms Parser.LALRGenerated.items_checked
+#print axioms Parser.LALRGenerated.accepts_iff_parse
+#print axioms Parser.LALRGenerated.budget_checked
+#print axioms Parser.LALRGenerated.progress_checked
+#print axioms Parser.LALRGenerated.fuel_eq
+#print axioms Parser.LALRGenerated.accepts_iff_parse_bounded
+#print axioms Parser.LALRGenerated.parse_terminates
+#print axioms Parser.LALRGenerated.parse_correct
+#print axioms Parser.LALRGenerated.parsed_tree
 LEAN
 lake env lean "$task_tmp/Modelica.lean" > "$task_tmp/modelica-audit.txt"
 bash scripts/audit-lean.sh "$task_tmp/modelica-audit.txt"
 
 # Readable recursive EBNF, emitted Lean tables, and kernel execution of those
-# actual tables. This does not assert the missing universal completeness proof.
+# actual tables. The emitted completeness consequence quantifies over all words.
 printf '%s\n' "s : '(' s ')' s | '';" > "$task_tmp/recursive.ebnf"
 "$generator" "$task_tmp/recursive.ebnf" "$task_tmp/Recursive.lean"
 cat >> "$task_tmp/Recursive.lean" <<'LEAN'
@@ -34,6 +43,15 @@ cat >> "$task_tmp/Recursive.lean" <<'LEAN'
 #print axioms Parser.LALRGenerated.first_checked
 #print axioms Parser.LALRGenerated.nullable_coverage
 #print axioms Parser.LALRGenerated.lookahead_coverage
+#print axioms Parser.LALRGenerated.items_checked
+#print axioms Parser.LALRGenerated.accepts_iff_parse
+#print axioms Parser.LALRGenerated.budget_checked
+#print axioms Parser.LALRGenerated.progress_checked
+#print axioms Parser.LALRGenerated.fuel_eq
+#print axioms Parser.LALRGenerated.accepts_iff_parse_bounded
+#print axioms Parser.LALRGenerated.parse_terminates
+#print axioms Parser.LALRGenerated.parse_correct
+#print axioms Parser.LALRGenerated.parsed_tree
 LEAN
 lake env lean "$task_tmp/Recursive.lean" > "$task_tmp/recursive-audit.txt"
 bash scripts/audit-lean.sh "$task_tmp/recursive-audit.txt"
@@ -63,6 +81,24 @@ fi
 rg -q '^⊢ false = true$' "$task_tmp/missing-first.log"
 rg -q 'first_checked.*sorryAx' "$task_tmp/missing-first.log"
 
+# Completeness must depend on the actual item annotations, including the start.
+sed 's/^noncomputable def itemStates : Array LALR.ItemSet := .*/noncomputable def itemStates : Array LALR.ItemSet := #[]/' \
+  "$task_tmp/Recursive.lean" > "$task_tmp/MissingItems.lean"
+if lake env lean "$task_tmp/MissingItems.lean" > "$task_tmp/missing-items.log" 2>&1; then
+  echo 'omitted LR items passed their completeness certificate' >&2; exit 1
+fi
+rg -q 'items_checked.*sorryAx' "$task_tmp/missing-items.log"
+rg -q 'accepts_iff_parse.*sorryAx' "$task_tmp/missing-items.log"
+
+# The runtime coefficients must agree with the independently checked budget.
+sed 's/^def fuel (input : List Nat) : Nat := .*/def fuel (input : List Nat) : Nat := 0/' \
+  "$task_tmp/Recursive.lean" > "$task_tmp/BadFuel.lean"
+if lake env lean "$task_tmp/BadFuel.lean" > "$task_tmp/bad-fuel.log" 2>&1; then
+  echo 'changed runtime fuel passed its budget certificate' >&2; exit 1
+fi
+rg -q 'fuel_eq.*sorryAx' "$task_tmp/bad-fuel.log"
+rg -q 'accepts_iff_parse_bounded.*sorryAx' "$task_tmp/bad-fuel.log"
+
 # A conflict or undefined reference must not replace an existing output.
 cp "$task_tmp/Recursive.lean" "$task_tmp/preserved.lean"
 printf '%s\n' "s : s '+' s | 'id';" > "$task_tmp/conflict.ebnf"
@@ -77,4 +113,4 @@ if "$generator" "$task_tmp/undefined.ebnf" "$task_tmp/Recursive.lean" > "$task_t
 fi
 rg -q 'undefined rule undefined' "$task_tmp/undefined.log"
 cmp "$task_tmp/Recursive.lean" "$task_tmp/preserved.lean"
-echo 'LALR safety/FIRST certificates, recursive execution, mutation and conflict checks passed'
+echo 'LALR safety/FIRST/completeness certificates, recursive execution, mutation and conflict checks passed'

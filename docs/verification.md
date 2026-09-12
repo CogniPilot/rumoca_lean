@@ -550,7 +550,8 @@ and implicit sequences. No standardized EBNF metalanguage conformance theorem
 is claimed.
 
 An in-tree LALR(1) replacement is under development in `Parser.LALR`.
-It is not used by the production compiler. Its candidate generator implements
+GALEC uses this engine; production Modelica still uses the DFA pending the
+proved cutover. Its candidate generator implements
 canonical LR(1) construction and LR(0) kernel merging. `LALR.parse_sound` proves
 that every successful checked parse tree derives the exact input in mathlib's
 CFG semantics, universally over tables and fuel. `LALR.RuntimeProofs.run_checked`
@@ -590,13 +591,37 @@ is a coverage contract, not an exact FIRST-set computation theorem. Regressions
 reject missing direct/transitive predictions and nullable marks, wrong array
 sizes and EOF in the grammar's terminal sets. Another regression permits a
 conservative summary while proving that its nullable mark does not imply the
-grammar accepts the empty word. LR-item propagation and table completeness
-still need their own validation and execution proofs.
+grammar accepts the empty word.
 
-This certificate permits syntax rejection or explicit fuel exhaustion. It does
-not prove that valid input is accepted: a kernel regression checks that a table
-rejecting every word is structurally safe but incomplete. Table completeness,
-a sufficient parsing bound, EBNF-to-CFG preservation and typed Modelica AST
+`LALR.ItemCheck` now checks the initial augmented item, closure, advances through
+actual shifts/gotos, completed reductions and EOF acceptance. For every grammar
+and table instance satisfying that validator, `Completeness.accepts_iff_parse`
+proves CFG acceptance iff the actual parser accepts at some finite fuel.
+`Grammar.accepts_tree` constructs the existential derivation tree from mathlib's
+semantics; `Completeness.parse_tree` follows it with exactly one interpreter
+transition per tree constructor plus EOF acceptance. These are universal
+theorems, independent of the generator and frontend. The package proof/audit
+gate passes in `build/lalr-cutover/build/completeness-audit.log`.
+
+`LALR.Fuel` and `LALR.Progress` additionally validate grammar/state credits and
+prove a strict potential decrease on every interpreter transition. Their
+linear input-size bound guarantees that every word finishes with either a
+correct tree or syntax rejection. Grammar membership is equivalent to success
+at that same bound, and malformed inputs cannot cause internal errors or
+exhaustion. The complete parser package audit passes in
+`build/lalr-production/progress-audit.log`, under the unchanged axiom policy.
+Both emitted grammar instances and the existing recursive/mutation controls
+pass in `build/lalr-production/resource-integration.log`.
+The generated entry-point and exact returned-tree contracts also pass the GALEC
+audit in `build/lalr-production/entry-contract.log`. The required full root
+artifact gate passed in `build/lalr-production/full-gate.log`, including both
+actual target archives and the existing rejection/native controls. All 578
+inventoried inputs remained unchanged throughout the run. State/item credit
+arrays are proof-only; runtime fuel uses two scalar coefficients. These results
+do not prove candidate-search convergence for every conflict-free LR grammar,
+or wall-clock/heap performance.
+
+EBNF-to-CFG preservation and typed Modelica AST
 actions remain required before the production switch; see
 [LR01–LR07](../dev/lalr-parser.md). `lalrgen` does not yet emit the full
 `CertifiedParser` contract or bind its grammar constants to the source EBNF

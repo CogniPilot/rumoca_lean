@@ -1,6 +1,12 @@
 import Parser
 import Parser.LocatedCompleteness
 import Parser.LALR.FirstProofs
+import Parser.LALR.ItemCheck
+import Parser.LALR.Execution
+import Parser.LALR.DerivationTrees
+import Parser.LALR.Completeness
+import Parser.LALR.Fuel
+import Parser.LALR.Progress
 import Parser.LALR.RuntimeProofs
 import Parser.LALR.SafetyProofs
 import Parser.Automaton
@@ -73,6 +79,47 @@ import ProofAudit.Audit
 #audit axioms Parser.LALR.FirstProofs.first_complete
 #audit axioms Parser.LALR.FirstProofs.mem_lookaheads
 #audit axioms Parser.LALR.FirstProofs.lookahead_complete
+#audit axioms Parser.LALR.ItemCheck.validate_iff
+#audit axioms Parser.LALR.ItemCheck.initial
+#audit axioms Parser.LALR.ItemCheck.entry
+#audit axioms Parser.LALR.ItemCheck.state_bound
+#audit axioms Parser.LALR.ItemCheck.entry_at
+#audit axioms Parser.LALR.ItemCheck.closure_lookahead
+#audit axioms Parser.LALR.Execution.Steps.trans
+#audit axioms Parser.LALR.Execution.Steps.run
+#audit axioms Parser.LALR.Execution.action_row
+#audit axioms Parser.LALR.Execution.shift
+#audit axioms Parser.LALR.Execution.reduce
+#audit axioms Parser.LALR.Execution.accept
+#audit axioms Parser.LALR.Grammar.produces_valid
+#audit axioms Parser.LALR.Grammar.derives_valid
+#audit axioms Parser.LALR.Grammar.produces_forest
+#audit axioms Parser.LALR.Grammar.derives_forest
+#audit axioms Parser.LALR.Grammar.accepts_tree
+#audit axioms Parser.LALR.Completeness.forest_derives
+#audit axioms Parser.LALR.Completeness.word_valid
+#audit axioms Parser.LALR.Completeness.tree_runs
+#audit axioms Parser.LALR.Completeness.parse_tree
+#audit axioms Parser.LALR.Completeness.parse_complete
+#audit axioms Parser.LALR.Completeness.accepts_iff_parse
+#audit axioms Parser.LALR.Fuel.validate_iff
+#audit axioms Parser.LALR.Fuel.tree_bound
+#audit axioms Parser.LALR.Fuel.sufficient
+#audit axioms Parser.LALR.parse_more_fuel
+#audit axioms Parser.LALR.Fuel.parse_complete
+#audit axioms Parser.LALR.Fuel.accepts_iff_parse
+#audit axioms Parser.LALR.Progress.validate_iff
+#audit axioms Parser.LALR.Progress.vertex_bound
+#audit axioms Parser.LALR.Progress.path_weight
+#audit axioms Parser.LALR.Progress.potential_nonnegative
+#audit axioms Parser.LALR.Progress.effect_decreases
+#audit axioms Parser.LALR.Progress.run_not_exhausted
+#audit axioms Parser.LALR.Progress.initial_not_exhausted
+#audit axioms Parser.LALR.parse_eq_run
+#audit axioms Parser.LALR.run_more_completed
+#audit axioms Parser.LALR.Progress.parse_not_exhausted
+#audit axioms Parser.LALR.Progress.parse_terminates
+#audit axioms Parser.LALR.Progress.accepts_iff_parse
 #audit axioms Parser.Scanner.symbol_correct
 #audit axioms Parser.Scanner.lex_correct
 #audit axioms Parser.Scanner.SymbolLexes.single_unpaired

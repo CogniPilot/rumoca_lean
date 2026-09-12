@@ -2,6 +2,13 @@
 
 Grow the small compiler core one formally checked slice at a time.
 
+- Each slice must use mechanisms intended to persist as the compiler grows.
+  Tiny language coverage is appropriate; a knowingly temporary architecture is
+  not. The production parser is to use the reusable in-tree LALR engine for
+  both Modelica and GALEC. Retire the DFA parser path after the proved cutover;
+  do not replace it with hardcoded token-pattern recognition. Grammar-specific
+  certificates must instantiate reusable correctness theorems rather than
+  substitute successful examples for parser completeness.
 - The user has authorized the minimal input/state initialization profile for
   FMI 3 alongside the unit-derivative regression profile, and now requests
   arrays, the `jacobian` built-in, tensor-native operators, and proved

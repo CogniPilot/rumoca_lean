@@ -1,10 +1,13 @@
 import Parser.LALR.Generator
 import Parser.LALR.EBNF
 import Parser.LALR.Safety
+import Parser.LALR.ItemCheck
+import Parser.LALR.Resources
 
 /-! Experimental table emitter. All implementation is Lean and lives in the
-parser package. It does not publish a `CertifiedParser`: the general EBNF and
-table completeness proofs must be finished before production can use it. -/
+parser package. It does not publish the complete source `CertifiedParser`:
+EBNF preservation and frontend actions still need their own contracts. The
+generated token parser has checked safety, completeness and resource bounds. -/
 open Parser.LALR
 
 namespace LALRGenerator
@@ -29,6 +32,67 @@ private def edge (e : Edge) : String := s!"⟨{e.source}, {atom e.symbol}, {e.ta
 
 private def firstFact (f : First) : String :=
   s!"⟨{f.nullable}, [" ++ String.intercalate ", " (f.terminals.map toString) ++ "]⟩"
+
+private def item (i : Item) : String := s!"⟨{i.production}, {i.dot}, {i.lookahead}⟩"
+
+/-- Each state gets a small kernel obligation; the final theorem composes all
+rows against the unchanged grammar-parametric item validator. -/
+private def itemCertificates (states : Array ItemSet) : String := Id.run do
+  let options := "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n"
+  let mut text := "noncomputable def itemStates : Array LALR.ItemSet := " ++
+    array (states.map fun state => "[" ++ String.intercalate ", " (state.map item) ++ "]") ++ "\n\n"
+  let mut cases := ""
+  for q in [:states.size] do
+    let row := s!"(LALR.ItemCheck.items itemStates {q})"
+    text := text ++ options ++ s!"private theorem items_{q}_checked :\n" ++
+      s!"    ∀ i ∈ {row}, LALR.ItemCheck.Valid grammar i ∧\n" ++
+      s!"      LALR.ItemCheck.Closed grammar firstFacts {row} i ∧\n" ++
+      s!"      LALR.ItemCheck.Advances grammar tables itemStates {q} i := by decide +kernel\n\n"
+    cases := cases ++ s!"    | {q} => exact items_{q}_checked\n"
+  return text ++ options ++ "theorem items_checked :\n" ++
+    "    LALR.ItemCheck.validate grammar tables firstFacts itemStates = true := by\n" ++
+    "  apply LALR.ItemCheck.validate_iff.mpr\n" ++
+    "  refine ⟨by decide +kernel, by decide +kernel, first_checked, by decide +kernel, ?_⟩\n" ++
+    "  intro q\n" ++
+    "  rcases q with ⟨q, bound⟩\n" ++
+    s!"  change q < {states.size} at bound\n" ++
+    "  match q with\n" ++ cases ++ s!"    | n+{states.size} => omega\n\n"
+
+/-- Only the two scalar budget coefficients are used by runtime parsing.
+The complete per-production credit witness remains proof-only metadata. -/
+private def budgetCertificates (budget : Fuel.Budget) (credits : Progress.Credits) : String :=
+  "noncomputable def fuelBudget : LALR.Fuel.Budget := ⟨" ++
+    toString budget.perToken ++ ", " ++ reprStr budget.nonterminals ++ "⟩\n\n" ++
+  "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
+  "theorem budget_checked : LALR.Fuel.validate grammar fuelBudget = true := by decide +kernel\n\n" ++
+  "noncomputable def progressCredits : LALR.Progress.Credits := ⟨" ++
+    reprStr credits.states ++ ", " ++ toString credits.ceiling ++ "⟩\n\n" ++
+  "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
+  "theorem progress_checked : LALR.Progress.validate tables edges fuelBudget progressCredits = true :=\n" ++
+  "  by decide +kernel\n\n" ++
+  "def fuel (input : List Nat) : Nat := " ++ toString budget.perToken ++
+    " * input.length + " ++ toString credits.ceiling ++ " + 1\n\n" ++
+  "theorem fuel_eq (input : List Nat) :\n" ++
+  "    fuel input = LALR.Progress.bound fuelBudget progressCredits input := by rfl\n\n" ++
+  "theorem accepts_iff_parse_bounded (word : List Nat) :\n" ++
+  "    grammar.Accepts word ↔ ∃ tree, LALR.parse grammar tables (fuel word) word = .ok tree := by\n" ++
+  "  rw [fuel_eq]\n" ++
+  "  exact LALR.Progress.accepts_iff_parse items_checked budget_checked safety_checked progress_checked word\n\n" ++
+  "theorem parse_terminates (word : List Nat) :\n" ++
+  "    (∃ tree, LALR.parse grammar tables (fuel word) word = .ok tree) ∨\n" ++
+  "      LALR.parse grammar tables (fuel word) word = .error .rejected := by\n" ++
+  "  rw [fuel_eq]\n" ++
+  "  exact LALR.Progress.parse_terminates budget_checked safety_checked progress_checked word\n\n" ++
+  "def parse (input : List Nat) : Except LALR.Failure LALR.Tree :=\n" ++
+  "  LALR.parse grammar tables (fuel input) input\n\n" ++
+  "theorem parse_correct (word : List Nat) :\n" ++
+  "    (grammar.Accepts word ↔ ∃ tree, parse word = .ok tree) ∧\n" ++
+  "    ((∃ tree, parse word = .ok tree) ∨ parse word = .error .rejected) :=\n" ++
+  "  ⟨accepts_iff_parse_bounded word, parse_terminates word⟩\n\n" ++
+  "theorem parsed_tree (word : List Nat) (tree : LALR.Tree) (parsed : parse word = .ok tree) :\n" ++
+  "    LALR.checkTree grammar word tree = true :=\n" ++
+  "  LALR.RuntimeProofs.run_checked (LALR.RuntimeProofs.initial grammar word)\n" ++
+  "    (by simpa only [parse, LALR.parse_eq_run] using parsed)\n\n"
 
 /-- Check each reduction summary separately, then substitute the proved
 equalities into the unchanged validator. Separate declarations avoid one
@@ -77,10 +141,17 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
     throw "candidate failed nullable/FIRST validation"
   if !Safety.validate g c.tables c.collection.edges.toList then
     throw "candidate failed structural safety validation"
+  if !ItemCheck.validate g c.tables facts c.collection.states then
+    throw "candidate failed LR item coverage validation"
+  let resources ← Resources.generate g c.tables c.collection.edges.toList
+  let budget := resources.budget
+  if !Fuel.validate g budget then throw "candidate failed linear fuel validation"
+  if !Progress.validate c.tables c.collection.edges.toList budget resources.credits then
+    throw "candidate failed total parsing progress validation"
   return "-- Experimental LALR(1) candidate tables. Not a production certificate.\n" ++
     "-- Generated by the in-tree Lean lalrgen; do not edit.\n" ++
     s!"-- {c.canonicalStates} canonical states; {c.collection.states.size} LALR states.\n" ++
-    "import Parser.LALR.SafetyProofs\nimport Parser.LALR.FirstProofs\n" ++
+    "import Parser.LALR.SafetyProofs\nimport Parser.LALR.FirstProofs\nimport Parser.LALR.Progress\n" ++
     "import Parser.Token\nimport Parser.LALR.Located\n\nopen Parser\n\n" ++
     s!"namespace {moduleNamespace}\n\n" ++
     s!"def source : String := {repr source}\n\n" ++
@@ -97,6 +168,10 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
     "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
     "set_option cbv.warning false in\n" ++
     "theorem first_checked : LALR.FirstCheck.validate grammar firstFacts = true := by cbv\n\n" ++
+    itemCertificates c.collection.states ++
+    "theorem accepts_iff_parse (word : List Nat) :\n" ++
+    "    grammar.Accepts word ↔ ∃ fuel tree, LALR.parse grammar tables fuel word = .ok tree :=\n" ++
+    "  LALR.Completeness.accepts_iff_parse items_checked\n\n" ++
     "theorem nullable_coverage (symbols : List LALR.Atom)\n" ++
     "    (h : grammar.semantics.Derives symbols []) :\n" ++
     "    (LALR.firstSequence firstFacts symbols).nullable = true :=\n" ++
@@ -105,8 +180,9 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
     "    (h : grammar.semantics.Derives symbols (word.map _root_.Symbol.terminal)) :\n" ++
     "    word.headD following ∈ LALR.lookaheads firstFacts symbols following :=\n" ++
     "  LALR.FirstProofs.lookahead_complete first_checked h\n\n" ++
-    "-- Structural safety only; completeness, frontend correctness and progress remain open.\n" ++
+    "-- EBNF/frontend correctness remains a separate obligation.\n" ++
     safetyCertificates g c.tables c.collection.edges.toList ++
+    budgetCertificates budget resources.credits ++
     "theorem execution_safe (fuel : Nat) (input : List Nat) (error : LALR.Failure)\n" ++
     "    (h : LALR.parse grammar tables fuel input = .error error) :\n" ++
     "    error = .exhausted ∨ error = .rejected :=\n" ++

@@ -24,14 +24,33 @@ lake exe lalrgen --namespace Example.Generated example.ebnf Example.lean
 `ebnfgen` compiles the regular, acyclic EBNF profile through regex derivatives.
 Its optional `--runtime` mode emits execution tables; the language instance owns
 the equality proof against the certified tables. `lalrgen` accepts recursive
-productions and emits LALR candidate tables with structural safety and FIRST
-certificates. Both generators accept an explicit namespace; neither hardcodes
+productions and emits LALR candidate tables with structural safety, FIRST and
+LR-item certificates. Both generators accept an explicit namespace; neither hardcodes
 Modelica or GALEC.
 
-The LALR engine proves accepted trees derive their token sequences and validates
-table/stack safety. It does **not** yet prove universal generator completeness
-or that every supplied grammar is LALR(1). Conflicts and resource-limit failures
-are reported during preprocessing. See [remaining parser proofs](../../dev/lalr-parser.md).
+`LALR.Completeness.accepts_iff_parse` proves that a grammar accepts a word exactly
+when the checked tables' interpreter accepts it with some finite fuel. This is
+universal over grammars and words. `parse_tree` gives the exact sufficient count:
+one shift per terminal, one reduction per production node, and EOF acceptance.
+The tree exists by a separate theorem about mathlib's CFG derivations; it is
+not an assumption supplied by the caller. Structural safety excludes internal
+table/tree errors for any input and fuel.
+
+`LALR.Progress.accepts_iff_parse` and `parse_terminates` give a checked linear
+input-size bound for all words: valid words are accepted; invalid words reject
+without internal errors or fuel exhaustion. Production and state credits are
+checked against every rule and actual automaton edge. The generator emits
+their proofs and a `parse_correct` contract tied to its actual `parse` entry
+point, with a separate `parsed_tree` guarantee. Only two scalar budget
+coefficients are used at runtime; credit arrays are proof-only metadata.
+
+EBNF desugaring preservation and the frontend action/source contract still
+block production replacement. Successful candidate generation
+for every supported conflict-free grammar is also a separate obligation.
+Conflicts and preprocessing limits remain explicit errors. We do not claim
+every supplied grammar is LALR(1). The required direction is one reusable LALR
+engine for both languages, followed by removal of the DFA path; see
+[remaining parser proofs](../../dev/lalr-parser.md).
 
 Generated LALR instances expose `parseLocated`. UTF-8 spans and terminal spellings
 are checked against source contents; parent ranges cover their descendants.

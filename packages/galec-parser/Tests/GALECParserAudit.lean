@@ -19,3 +19,12 @@ import GALECParser.LocatedCompleteness
 #audit axioms Rumoca.GALEC.Generated.first_checked
 #audit axioms Rumoca.GALEC.Generated.nullable_coverage
 #audit axioms Rumoca.GALEC.Generated.lookahead_coverage
+#audit axioms Rumoca.GALEC.Generated.items_checked
+#audit axioms Rumoca.GALEC.Generated.accepts_iff_parse
+#audit axioms Rumoca.GALEC.Generated.budget_checked
+#audit axioms Rumoca.GALEC.Generated.progress_checked
+#audit axioms Rumoca.GALEC.Generated.fuel_eq
+#audit axioms Rumoca.GALEC.Generated.accepts_iff_parse_bounded
+#audit axioms Rumoca.GALEC.Generated.parse_terminates
+#audit axioms Rumoca.GALEC.Generated.parse_correct
+#audit axioms Rumoca.GALEC.Generated.parsed_tree

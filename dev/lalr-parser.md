@@ -4,11 +4,19 @@ The current full gate is `nix develop .#verification --command lake test`.
 Make commands in dated checkpoints below record historical runs before the
 Lake migration; see the [current commands](../docs/development.md).
 
-Status: **2026-09-09, active and incomplete**. This work follows the user's
+Status: **2026-09-11, active and incomplete**. This work follows the user's
 request for our own LALR(1) parser in Lean, with no assumed-correct parser
 generator. It changes parser infrastructure, not the admitted Modelica language.
 The existing DFA/action parser remains the production path until the replacement
 has its complete contract. The FMI wrapper obligations remain open as well.
+
+The user has explicitly required removal of the DFA production path and
+rejected temporary architectures that cannot grow with the compiler. The
+cutover must therefore complete the reusable LALR contracts below. A fixed
+token-pattern acceptance proof, a second recognizer, or a fallback to the DFA
+is not a substitute. Keep source admission small while making the mechanism
+grammar-parametric. Both Modelica and GALEC must consume the same engine and
+certificate interface; AST ownership and lexical policies remain frontend-owned.
 
 The later [GALEC Algorithm Code checkpoint](efmi.md#algorithm-code-checkpoint-evidence)
 now passes the full gate using a second EBNF and this same LR engine. Its
@@ -124,7 +132,7 @@ token encoding; it is not yet the intended grammar-generic LR action interface.
   every raw shift/reduce execution preserves tree validity and the complete
   input word, so the final tree check cannot fail. This is not the full parser
   contract.
-- [ ] **LR04: full table validation.** Prove the finite validator's safety and
+- [x] **LR04: full table validation.** Prove the finite validator's safety and
   completeness implications, including stack invariants, item propagation,
   nullable/FIRST facts, EOF and absence of invalid reductions/gotos. Add a
   progress/termination certificate; do not turn fuel exhaustion into rejection.
@@ -153,8 +161,9 @@ token encoding; it is not yet the intended grammar-generic LR action interface.
   complete LALR certificate/mutation gate passed in
   `build/tensor-sharded-lalr-gate.log`. Mutation checks identify failure of the
   public safety root after rewriting, rather than matching its earlier goal text.
-  **Next:** checked LR-item propagation facts that imply completeness, then a
-  justified parsing bound. A reject-all table can satisfy
+  **Next:** the required full repository gate for the checked table increment,
+  followed by EBNF/frontend composition. LR-item completeness and input-size
+  progress are now proved as described below. A reject-all table can satisfy
   structural safety; its counterexample is included in the kernel regressions.
   **Nullable/FIRST increment:** `FirstCheck.validate` checks grammar-equation
   closure independently of the search. `FirstProofs.derives_below` proves
@@ -190,13 +199,59 @@ reductions and augmented-rule acceptance. Our whole-input runtime uses only
 the dedicated EOF lookahead at the start and accepts only after consuming all
 input; do not silently adopt a prefix-parser contract from the design reference.
 
-Then prove that execution follows any valid derivation tree, with explicit fuel
-for its shifts/reductions, and connect existence of such a tree back to mathlib
-CFG derivability. The concrete tree is a proof device, not an oracle supplied
-by the user. Combine with structural safety to remove internal-error alternatives.
-A separate progress argument is still needed for malformed inputs and for a
-practical bound expressed in terms of input size. Keep all these obligations
-under LR04; the new FIRST certificate alone closes none of them.
+The active cutover work adds `LALR.ItemCheck`: a finite check of precisely those
+item obligations, independent of candidate construction. The shared `Item`
+module now owns item identities and augmentation. `closure_lookahead` derives
+closure coverage from an actual suffix derivation using the existing universal
+FIRST theorem. Both current EBNFs pass native validation and their emitted item
+certificates pass kernel checking. Item arrays are proof-only definitions;
+each state has a separate kernel obligation. No frontend has switched and no
+DFA code has yet been removed.
+
+`DerivationTrees` proves that every accepted word in mathlib's CFG semantics has
+a valid tree with exactly that yield, including empty productions. `Completeness`
+then proves execution of the existing interpreter for every such tree.
+`parse_tree` uses exactly `tree.steps + 1` fuel: one shift per terminal, one
+reduction per production node, then EOF acceptance. `accepts_iff_parse` composes
+tree existence, counted execution and soundness into a grammar-parametric
+equivalence with acceptance at some finite fuel. No oracle tree, frontend token
+skeleton or assumed-correct generator appears in the public theorem.
+The generator instantiates this theorem from its checked item annotations.
+The package gate passed in `build/lalr-cutover/build/completeness-audit.log`
+(775 jobs), retaining the unchanged axiom whitelist. This is a package proof
+checkpoint; the required full gate for these parser changes has not yet run.
+
+`Fuel` now checks finite production-credit inequalities and proves a linear
+bound on every valid derivation tree. `Progress` adds state credits, proves a
+lower bound on every concrete stack path and a strict decrease at every actual
+shift/reduction. Its `parse_terminates` and `accepts_iff_parse` theorems cover
+all input words at `perToken * input.length + ceiling + 1` fuel, including
+malformed words. With the checked safety/item/resource conditions, the result
+is a correct tree or syntax rejection, never exhaustion or an internal error.
+These are grammar-parametric proofs, not execution checks of token patterns.
+
+The main package audit passed in `build/lalr-production/progress-audit.log`
+(777 jobs), with 41 added roots across this increment and the unchanged axiom
+whitelist. The generator's bounded resource search remains an untrusted
+candidate calculation; it can fail explicitly. Both actual EBNFs' generated
+certificates and the existing recursive/mutation suite passed in
+`build/lalr-production/resource-integration.log`. The checked bounds are
+`length + 70` for Modelica and `length + 9` for GALEC; the recursive nullable
+boundary grammar uses `4 * length + 3`. These are bounds on interpreter
+iterations, not wall-clock or heap measurements.
+
+The subsequent generated `parse_correct` theorem names the actual `parse`
+wrapper, and `parsed_tree` binds every returned tree to the exact input and
+grammar. Those entry contracts pass the GALEC package audit in
+`build/lalr-production/entry-contract.log`. The required full root artifact gate
+also passed in `build/lalr-production/full-gate.log`, including both actual target
+archives and the existing rejection/native controls. All 578 inventoried inputs
+remained unchanged throughout that run. LR04 is complete for the validator's
+stated contract; candidate-search convergence remains a separate obligation.
+LR05/LR06 still block replacing production Modelica and deleting the DFA path;
+preserve source binding, typed ASTs, automatic spans and structured diagnostics
+through that cutover. Do not use another fixed-pattern recognizer to fill the
+remaining EBNF/action proof obligations.
 
 ## Regression evidence required
 

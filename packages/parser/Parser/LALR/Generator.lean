@@ -1,5 +1,6 @@
-import Parser.LALR.Runtime
+import Parser.LALR.Item
 import Parser.LALR.First
+import Parser.LALR.Fuel
 
 /-! Candidate LALR(1) construction in Lean: nullable/FIRST fixed point,
 canonical LR(1) closure and goto, then union of lookaheads for identical LR(0)
@@ -12,14 +13,6 @@ structure Limits where
   states : Nat := 4096
   items : Nat := 65536
   deriving Repr
-
-structure Item where
-  production : Nat
-  dot : Nat
-  lookahead : Nat
-  deriving Repr, DecidableEq, BEq
-
-abbrev ItemSet := List Item
 
 private def itemLE (a b : Item) : Bool :=
   a.production < b.production || (a.production == b.production &&
@@ -42,10 +35,6 @@ private def firstLoop (g : Grammar) : Nat → Array First → Except String (Arr
 
 def firstSets (g : Grammar) : Except String (Array First) :=
   firstLoop g (g.nonterminals * (g.terminals + 1) + 1) (Array.replicate g.nonterminals {})
-
-def nextSymbol (g : Grammar) (item : Item) : Option Atom := do
-  let p ← g.productions[item.production]?
-  p.output[item.dot]?
 
 def closurePass (g : Grammar) (facts : Array First) (items : ItemSet) : ItemSet := Id.run do
   let mut result := items
@@ -101,12 +90,6 @@ private def collect (g : Grammar) (facts : Array First) (limits : Limits) :
         if index == result.states.size then result := { result with states := result.states.push target }
         result := { result with edges := result.edges.push ⟨cursor, symbol, index⟩ }
     collect g facts limits fuel (cursor + 1) result
-
-/-- The augmented rule is the last rule and is never reduced by the runtime. -/
-def augment (g : Grammar) : Grammar :=
-  { g with
-    nonterminals := g.nonterminals + 1
-    productions := g.productions.push ⟨g.nonterminals, [.nonterminal g.start]⟩ }
 
 def canonical (g : Grammar) (limits : Limits := {}) : Except String Collection := do
   if !g.wellFormed then throw "ill-formed context-free grammar"
@@ -196,5 +179,23 @@ def generate (g : Grammar) (limits : Limits := {}) : Except String Candidate := 
   let lr ← canonical g limits
   let lalr ← merge g.productions.size lr
   return ⟨lr.states.size, lalr, ← buildTables g lalr⟩
+
+/-- Propose nonterminal credits for a linear valid-word fuel budget. The
+bounded monotone search can fail; acceptance still requires `Fuel.validate`
+and its independent kernel certificate. No language-specific cases occur. -/
+def generateBudget (g : Grammar) (attempts : Nat := 20) : Except String Fuel.Budget := do
+  if !g.wellFormed then throw "ill-formed grammar for fuel budget"
+  let mut perToken := 1
+  for _ in [:attempts] do
+    let mut budget : Fuel.Budget := ⟨perToken, Array.replicate g.nonterminals 0⟩
+    for _ in [:g.nonterminals + 1] do
+      for p in g.productions do
+        let required := (1 - (p.output.map budget.weight).sum).toNat
+        let old := budget.nonterminals[p.input]?.getD 0
+        budget := { budget with nonterminals :=
+          budget.nonterminals.setIfInBounds p.input (max old required) }
+      if Fuel.validate g budget then return budget
+    perToken := perToken * 2
+  throw "linear parsing budget search exhausted its bound"
 
 end Parser.LALR
