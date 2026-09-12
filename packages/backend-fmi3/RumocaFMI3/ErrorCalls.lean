@@ -66,6 +66,39 @@ theorem failure_statement_reaches (program : CCalls.Program) (env : Locals)
   · exact .next (by simp [CCalls.Typed.machine, CCalls.Typed.next, CCalls.Typed.resume,
       saved, CCalls.returnCast, CBody.cast, convert]) (.refl _)
 
+/-- Shared public-call plumbing for a prefix reaching the ordinary failure
+helper. Each API proves its own prefix; this theorem supplies fresh entry,
+typed execution, helper dispatch and return under any saved caller. -/
+theorem failure_after_prefix (m : Solve.FMI3Model source) (sig : Signature)
+    (status : sig.result = "fmi3Status") (program : CCalls.Program)
+    (args : List Value) (env env' : Locals) (heap heap' : Heap) (n : Nat)
+    (p message : Address) (text : String) (tail : List Stmt) (old : Option Value)
+    (logger : Option Address) (stack : CCalls.Typed.Continuation)
+    (defined : program.definitions sig.name = some (.tree (Runtime.function m sig)))
+    (bound : CCalls.parameters sig.parameters args = some env)
+    (executed : run n (.running (Runtime.body m sig) env heap) =
+      some (.running (Runtime.fail text :: tail) env' heap'))
+    (helper : program.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (unshadowed : env' "fail" = none)
+    (instanceBound : resolve env' "m" = some (.pointer (some p)))
+    (literal : static.addresses text = some message)
+    (hm : heap' (p.member "mode") = some ⟨.int32, true, old⟩)
+    (hl : load heap' (p.member "logger") = some (.pointer logger))
+    (hg : load heap' (p.member "logging") = some (.integer 0)) :
+    Transition.Reaches (CCalls.Typed.machine program).step
+      (.calling sig.name args heap stack)
+      (.returning (.integer 3) (LifecycleBodies.writeMode heap' p .terminated) stack) := by
+  obtain ⟨types, typeBindings, _⟩ := CCalls.Parameters.parameters_typed _ _ _ bound
+  obtain ⟨types', typed, _⟩ := CBodyEmbedding.run_refines n
+    (.running (Runtime.body m sig) env heap) _ types (BodyEmbedding.body_closed m sig) executed
+  have entry := CCalls.Typed.tree_entry program sig.name args heap stack
+    (Runtime.function m sig) env types defined bound typeBindings
+  have reached := CCalls.Typed.body_reaches program (CLoops.run_reaches typed) sig.result stack
+  have steps := Transition.Reaches.next (step := (CCalls.Typed.machine program).step) entry reached
+  rw [status] at steps
+  exact steps.trans (ErrorCalls.failure_statement_reaches program env' types' heap' p message
+    text tail old logger stack helper unshadowed instanceBound literal hm hl hg)
+
 def nominalSignature : Signature :=
   ⟨"fmi3Status", "fmi3GetNominalsOfContinuousStates",
     [⟨"fmi3Instance", "instance", false⟩,

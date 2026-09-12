@@ -44,20 +44,4 @@ theorem rendered_contract (m : Solve.FMI3Model source) :
     exact null_behaviors m (LiteralPreparation.program m sigs) heap
       (LiteralPreparation.function_bound m sigs unique signature member) behavior
 
-omit static in
-/-- The full renderer places the certified fragment at a function-list slot.
-This decomposition alone is not a translation-unit or preprocessing theorem. -/
-theorem rendered_member (m : Solve.FMI3Model source) (sigs : List Signature)
-    (member : signature ∈ sigs) :
-    ∃ before after : String,
-      Runtime.render m sigs = before ++ (Runtime.function m signature).render ++ after := by
-  obtain ⟨left, right, rfl⟩ := List.mem_iff_append.mp member
-  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarations ++
-      String.join (Runtime.helpers.map Function.render) ++
-      String.join (left.map fun sig => (Runtime.function m sig).render),
-    String.join (right.map fun sig => (Runtime.function m sig).render), ?_⟩
-  apply String.toList_injective
-  simp [Runtime.render, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
-
 end Rumoca.FMI3.Reset

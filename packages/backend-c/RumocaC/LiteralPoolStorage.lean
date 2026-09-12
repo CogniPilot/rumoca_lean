@@ -58,6 +58,19 @@ theorem Pool.install_existing (pool : Pool reserved)
   rw [fresh entry member address same] at present
   contradiction
 
+/-- Installing fresh literal blocks preserves every existing typed load. -/
+theorem Pool.install_load (pool : Pool reserved)
+    (before : Heap) (firstBlock : Nat) (signed : Bool)
+    (fresh : ∀ entry ∈ pool.entries, ∀ address,
+      address.block = firstBlock + entry.slot → before address = none)
+    (address : Address) (value : Value) (loaded : load before address = some value) :
+    load (pool.install before firstBlock signed) address = some value := by
+  cases found : before address with
+  | none => simp [load, found] at loaded
+  | some object =>
+      have kept := pool.install_existing (signed := signed) fresh found
+      simpa only [load, kept, found] using loaded
+
 theorem Pool.install_preserves (pool : Pool reserved)
     (fresh : ∀ entry ∈ pool.entries, ∀ address,
       address.block = firstBlock + entry.slot → before address = none) :

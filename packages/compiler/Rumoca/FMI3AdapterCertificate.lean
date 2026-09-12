@@ -111,8 +111,14 @@ private def quoteSignature (sig : CTree.Signature) : CommandElabM (TSyntax `term
     `(term| (⟨$type, $name, $array⟩ : CTree.Parameter))
   `(term| (⟨$result, $name, [$params,*]⟩ : CTree.Signature))
 
+/-- Names of kernel-checked declarations, shared with the metadata checker. -/
+structure Certificate where
+  contract : Ident
+  artifact : Ident
+  compiled : Ident
+
 def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
-    (actualChars : Ident) : CommandElabM Ident := do
+    (actualChars : Ident) : CommandElabM Certificate := do
   let .ok candidate := compile (.single sourceFile source) | throwError "source compilation failed"
   let prepared := candidate.solve.prepareFMI3
   if FMI3.Runtime.render prepared sigs != adapter then
@@ -167,6 +173,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
   let functions := (FMI3.LiteralPreparation.functions prepared sigs).toArray
   let mut chunks : Array Ident := #[]
   let mut equations : Array Ident := #[]
+  let mut trees : Array Ident := #[]
+  let mut treeEquations : Array Ident := #[]
   for i in [:functions.size] do
     let fn := fnTerms[i]!
     let some function := functions[i]? | throwError "missing prepared adapter function"
@@ -206,8 +214,39 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
     for dependency in axioms do
       unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
         throwError "invalid printer certificate for {function.signature.name}: {dependency}"
+    trees := trees.push tree
+    treeEquations := treeEquations.push treeEq
     chunks := chunks.push chars
     equations := equations.push checked
+  let treesId := mkIdent (base.str "function_trees")
+  elabCommand (← `(command| def $treesId:ident : List CTree.Function := [$trees,*]))
+  let treesEq := mkIdent (base.str "function_trees_eq")
+  let mut treeProof ← `(term| Eq.refl ([] : List CTree.Function))
+  for i in [:treeEquations.size] do
+    let equation := treeEquations[treeEquations.size - 1 - i]!
+    treeProof ← `(term| congrArg₂ List.cons $equation $treeProof)
+  elabCommand (← `(command| theorem $treesEq:ident :
+    FMI3.LiteralPreparation.functions $m $signatures = $treesId := $treeProof))
+  let poolReady := mkIdent (base.str "literal_pool_ready")
+  let treeUnfolds ← trees.mapM fun tree => `(Lean.Parser.Tactic.simpLemma| $tree:ident)
+  -- Reuse the individually checked tree equalities before reducing collection.
+  -- Native candidate trees have no authority over the original function list.
+  elabCommand (← `(command| theorem $poolReady:ident :
+      (FMI3.LiteralPreparation.prepare $m $signatures).isSome = true := by
+    unfold FMI3.LiteralPreparation.prepare
+    rw [$treesEq:ident]
+    unfold CLiteral.Pool.forFunctions CLiteral.Pool.make CLiteral.Pool.check
+    split
+    · rfl
+    · rename_i invalid
+      apply False.elim
+      apply invalid
+      simp only [$treesId:ident, $treeUnfolds,*, CLiteral.PoolValid,
+        CLiteral.functionNames, CLiteral.statementNames, CLiteral.Interface.names,
+        CLiteral.functionTexts, CLiteral.statementTexts, CLiteral.expressionTexts,
+        List.flatMap_cons, List.flatMap_nil, List.map_cons, List.map_nil,
+        List.nil_append, List.cons_append, List.append_nil]
+      decide +kernel))
   let chunkList ← `(term| [$chunks,*])
   let matched := mkIdent (base.str "functions_matched")
   let mut pairProof ← `(term| List.Forall₂.nil)
@@ -241,7 +280,11 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         decide +kernel
       · exact $printable
       · exact $ready
+      · intro events
+        cases events <;> change FMI3.CountQueries.signature _ ∈ [$sigTerms,*]
+        all_goals simp [FMI3.CountQueries.signature, FMI3.CountQueries.outputName]
+      · exact $poolReady
       · exact $rendered))
-  return theoremId
+  return ⟨theoremId, artifact, compiled⟩
 
 end Rumoca.FMI3AdapterCertificate

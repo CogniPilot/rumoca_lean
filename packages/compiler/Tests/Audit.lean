@@ -6,7 +6,7 @@ import Rumoca.Semantics
 import Rumoca.Source
 import Rumoca.Verified
 import Rumoca.ArrayProofs
-import Rumoca.FMI3BuildProofs
+import Rumoca.FMI3CountProofs
 import Rumoca.ParseFilesProofs
 import Rumoca.Provenance
 import Rumoca.Initialization
@@ -35,6 +35,8 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.CLI.analyze_terminal
 #audit axioms Rumoca.CLI.analyze_batch
 
+#audit axioms Rumoca.FMI3.counts_source
+#audit axioms Rumoca.FMI3.counts_failure_source
 #audit axioms Rumoca.FMI3.sourceBuild_correct
 #audit axioms Rumoca.FMI3.reset_result
 #audit axioms Rumoca.FMI3.reset_source

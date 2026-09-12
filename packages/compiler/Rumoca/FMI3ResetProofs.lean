@@ -88,7 +88,7 @@ theorem compile_rendered_reset_verified (compiled : compile input = .ok a)
         (.calling "fmi3Reset" [.pointer (some p)] heap .done) behavior ↔
         behavior = .terminates result) ∧ ResetSourceResult a p result t₀ :=
   ⟨compiled, Reset.rendered_contract a.solve.prepareFMI3,
-    Reset.rendered_member a.solve.prepareFMI3 sigs member,
+    LiteralPreparation.rendered_member a.solve.prepareFMI3 sigs Reset.signature member,
     reset_source a (LiteralPreparation.program a.solve.prepareFMI3 sigs) heap p kind mode t₀
       (LiteralPreparation.function_bound a.solve.prepareFMI3 sigs unique Reset.signature member)
       storage hk hm⟩

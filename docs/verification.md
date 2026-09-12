@@ -224,6 +224,26 @@ both actual archives checked. Exact archives and hashes are retained in
 `build/fmi-types/artifacts/`; their C and GALEC members match `fe4ebef`. No source
 grammar or runtime emitter changes.
 
+The next count-query increment requires complete calls for both existing ME
+count getters in `AdapterContract`, together with successful literal-pool
+construction. The actual `SourceBuildContract` now binds the complete metadata
+tree through `XML.Document`, in addition to its prior identifier contract.
+`counts_source` joins actual C grammar, complete successful-call behavior,
+returned counts, Solve state volume and an independent scalar-reference count
+relation for the actual XML. Null instances are covered too. Invalid lifecycle
+and missing-output calls have complete Error/Terminated results with logging
+disabled; `counts_failure_source` constructs their collected literal addresses
+and immutable objects and proves their heap frame. Enabled callbacks, native
+allocation/header/ABI meanings, other public calls and full FMI conformance
+remain open. No source grammar or emitted C/GALEC changes. All 28 added roots
+and affected package checks pass
+`build/fmi-counts/package-audit-v2.log`. The strengthened actual-file checker
+passes in `build/fmi-counts/actual-fmi-v2.log`. The required full gate passed in
+`build/fmi-counts/full-gate.log`, with all 634
+inventoried inputs unchanged and both actual target archives checked. Exact
+archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
+GALEC members match `d147774` (`code-member-comparison.log`).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

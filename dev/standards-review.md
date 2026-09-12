@@ -63,6 +63,40 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### ME count queries and complete metadata binding: standards impact
+
+This increment follows `d147774`. The source EBNFs, LALR admission, IR lowering,
+initialization, numerical policy, runtime C, metadata renderer and archive
+layouts are unchanged. Two existing count getters instantiate reusable typed
+call, lifecycle, printer, definition lookup and literal-pool proofs. No new
+example suite or source case is introduced.
+
+| Baseline | Correspondence and remaining obligations |
+| --- | --- |
+| FMI 3.0.2 [§2.3.2](https://fmi-standard.org/docs/3.0.2/#fmi3GetNumberOfContinuousStates) and §2.4.8 | Both count getters are ME-only; their initial counts sum the sizes of ModelStructure references. `CountMetadata.ScalarCounts` independently resolves each selected reference uniquely to a continuous scalar Float64, excludes dimensions and duplicate references, and counts those scalars. The current counts are one state and zero indicators. Structural parameters/array sizes are outside this admitted profile; extending the relation must interpret tensor volumes. This is a cardinality relation, not full XML/FMI conformance or a derivative/state graph proof. |
+| FMI 3.0.2 §§2.3.1–2.3.2 and §2.3.8 | `CountQueries.FunctionContract` requires all terminating-call behaviors for success and null instances, plus lifecycle rejection and missing output with logging disabled. Rejected calls return Error and write Terminated. `counts_source` joins returned counts, Solve volume and actual metadata; `counts_failure_source` constructs the literal pool for the actual function list and preserves immutable bytes and the remaining heap. Enabled logger callbacks, allocation, ABI and other public calls remain open. |
+| Actual metadata boundary | The earlier checker rejected a metadata mismatch natively, but its final theorem bound only public identifiers. `SourceBuildContract.metadata` now requires the full independent `XML.Document` relation on the same compiled artifact's prepared model. Candidate tree equality and actual bytes are kernel checked. The adapter contract additionally requires both count signatures/contracts and successful literal-pool construction; these are mandatory evidence, not optional helper theorems. |
+| MLS 3.7 | Unit syntax, equations over Real, default initialization selection and source provenance are unchanged. The existing clause map and S01/SR08 findings carry forward. |
+| eFMI 1.0.0 Beta 1 | The generic literal-install/load theorem is shared C infrastructure. Algorithm/Production Code, lowering and archive contracts are unchanged. Existing coding-guideline and SR07/SR08 findings carry forward; the downstream artifact gate remains required. |
+
+The authored C dictionary, readable/writable instance cells, fresh symbolic
+literal blocks and native preprocessing/header meanings remain explicit
+boundaries. Success covers all allowed lifecycle modes; this is not a claim
+of full public-API coverage. All 28 new roots and affected packages pass
+`build/fmi-counts/package-audit-v2.log`. Elaborated quantifiers and interface
+instances were inspected in `scope-review.log`; the constructed-pool theorem
+has no supplied literal-address instance. The initial actual-file check stopped
+at closed reduction of pool readiness. The candidate builder now composes
+checked function-tree equalities and collection equations before kernel-checking
+the explicit pool validity conditions (`pool-certificate-v13.log`). The required
+proposition and axiom whitelist are unchanged. The strengthened actual-file
+checker passes on the retained FMU in `actual-fmi-v2.log`. The required full gate
+passed in `build/fmi-counts/full-gate.log`, with all 634
+inventoried inputs unchanged and both actual target archives checked. Exact
+archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
+GALEC members match `d147774` (`code-member-comparison.log`). **Stage decision:
+open; grammar growth remains blocked.**
+
 ### Complete FMI function-section grammar: standards impact
 
 This increment follows `9751823`. Both source EBNFs, LALR admission, IR

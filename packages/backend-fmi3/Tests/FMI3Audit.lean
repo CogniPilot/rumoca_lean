@@ -36,6 +36,37 @@ import RumocaFMI3.TimeProofs
 import RumocaFMI3.ResetContract
 import RumocaFMI3.CallTypes
 
+import RumocaFMI3.CountQueries
+import RumocaFMI3.CountContract
+import RumocaFMI3.CountPool
+import RumocaFMI3.CountMetadata
+
+#audit axioms Rumoca.FMI3.CountQueries.body_eq
+#audit axioms Rumoca.FMI3.CountQueries.parameters_bound
+#audit axioms Rumoca.FMI3.CountQueries.body_run
+#audit axioms Rumoca.FMI3.CountQueries.call_reaches
+#audit axioms Rumoca.FMI3.CountQueries.call_behaviors
+#audit axioms Rumoca.FMI3.CountQueries.frame
+#audit axioms Rumoca.FMI3.CountQueries.stored_count
+#audit axioms Rumoca.FMI3.CountQueries.null_run
+#audit axioms Rumoca.FMI3.CountQueries.null_reaches
+#audit axioms Rumoca.FMI3.CountQueries.null_behaviors
+#audit axioms Rumoca.FMI3.CountQueries.continuous_count_matches_solve
+#audit axioms Rumoca.FMI3.CountQueries.rejected_reaches
+#audit axioms Rumoca.FMI3.CountQueries.rejected_behaviors
+#audit axioms Rumoca.FMI3.CountQueries.missing_run
+#audit axioms Rumoca.FMI3.CountQueries.missing_reaches
+#audit axioms Rumoca.FMI3.CountQueries.missing_behaviors
+#audit axioms Rumoca.FMI3.CountQueries.function_tokenization
+#audit axioms Rumoca.FMI3.CountQueries.rendered_contract
+#audit axioms Rumoca.FMI3.CountQueries.message_collected
+#audit axioms Rumoca.FMI3.CountQueries.failure_reaches
+#audit axioms Rumoca.FMI3.CountQueries.prepared_failure
+#audit axioms Rumoca.FMI3.CountMetadata.described_counts
+#audit axioms Rumoca.FMI3.CountMetadata.artifact_counts
+#audit axioms Rumoca.FMI3.ErrorCalls.failure_after_prefix
+#audit axioms Rumoca.FMI3.LiteralPreparation.message_bound
+
 #audit axioms Rumoca.FMI3.CallTypes.helpers_ready
 #audit axioms Rumoca.FMI3.CallTypes.functions_ready
 #audit axioms Rumoca.FMI3.CallTypes.value_reference_conversion
@@ -72,7 +103,7 @@ import RumocaFMI3.CallTypes
 #audit axioms Rumoca.FMI3.RuntimePrinter.helpers_printable
 #audit axioms Rumoca.FMI3.AdapterPrinter.functions_printable
 #audit axioms Rumoca.FMI3.AdapterPrinter.rendered_contract
-#audit axioms Rumoca.FMI3.Reset.rendered_member
+#audit axioms Rumoca.FMI3.LiteralPreparation.rendered_member
 
 #audit axioms Rumoca.FMI3.LiteralPreparation.rendered_functions
 #audit axioms Rumoca.FMI3.Header.signatures_unique

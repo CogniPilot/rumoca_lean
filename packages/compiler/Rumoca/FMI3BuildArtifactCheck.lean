@@ -1,5 +1,5 @@
 import Rumoca.ArtifactCheck
-import Rumoca.FMI3BuildProofs
+import Rumoca.FMI3CountProofs
 import Rumoca.FMI3AdapterCertificate
 import RumocaFMI3.Header
 import XML.CertificateCheck
@@ -61,7 +61,13 @@ elab "verify_fmi3_build_files" : command => do
   let chars ← quoteCharacters `Rumoca.CheckedFMI3Files.adapter_chars adapter
   let header ← IO.FS.readFile "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"
   let .ok signatures := FMI3.Header.signatures header | throwError "invalid FMI signature header"
-  let adapterContract ← FMI3AdapterCertificate.certify sourcePath.toString source adapter signatures chars
+  let adapterCertificate ← FMI3AdapterCertificate.certify sourcePath.toString source adapter signatures chars
+  let adapterContract := adapterCertificate.contract
+  let artifact := adapterCertificate.artifact
+  let compiled := adapterCertificate.compiled
+  let mdTreeEq := mkIdent `Rumoca.CheckedFMI3Files.prepared_metadata
+  elabCommand (← `(command|
+    theorem $mdTreeEq:ident : FMI3.modelDescription ($artifact).solve.prepareFMI3 = $mdTree := by rfl))
   let api ← `(term| String.ofList $chars)
   let prefixBytes := mkIdent `Rumoca.CheckedFMI3Files.source_prefix_bytes
   elabCommand (← `(command|
@@ -77,7 +83,7 @@ elab "verify_fmi3_build_files" : command => do
         compile $inputTerm = .ok a ∧ FMI3.SourceBuildContract a $out $xml $api $md := by
       obtain ⟨g, a, compiled, contract⟩ := $numerical:ident
       have hn := $sourceName:ident a.parsed
-      refine ⟨g, a, compiled, FMI3.sourceBuild_correct a $out $xml $api $md contract ?_ ?_ ?_ ?_⟩
+      refine ⟨g, a, compiled, FMI3.sourceBuild_correct a $out $xml $api $md contract ?_ ?_ ?_ ?_ ?_⟩
       · rw [hn]
         exact (congrArg XML.document $treeEq:ident).trans $bytes:ident
       · apply FMI3.sourcePrefix_of_chars _ _ (FMI3.parsed_functionPrefix a.parsed)
@@ -88,7 +94,11 @@ elab "verify_fmi3_build_files" : command => do
           exact XML.document_correct $mdTree $mdValid:ident
         · rw [hn]
           exact $identifiers:ident
-      · exact $adapterContract:ident a compiled))
+      · exact $adapterContract:ident a compiled
+      · have same : a = $artifact := Except.ok.inj (compiled.symm.trans $compiled:ident)
+        subst a
+        rw [$mdTreeEq:ident, ← $mdBytes:ident]
+        exact XML.document_correct $mdTree $mdValid:ident))
   let axioms ← collectAxioms theoremName
   for dependency in axioms do
     unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do

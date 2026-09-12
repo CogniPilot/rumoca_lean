@@ -475,6 +475,27 @@ C and GALEC members are unchanged from `fe4ebef`.
 This does not close F03: complete public-call behavior, header meanings, pointer
 storage/layouts, callbacks and allocation still need composition.
 
+The count-query follow-on strengthens the mandatory actual-file contract with
+both complete ME count calls and successful literal-pool construction. The
+source-build contract also binds the complete actual XML tree to the same
+Solve preparation. `counts_source` connects the returned state/indicator
+counts to Solve volume and an independent metadata reference relation;
+`counts_failure_source` covers lifecycle rejection/missing output with disabled
+logging, constructed literal storage, Error/Terminated behavior and a heap
+frame. Generic failure-prefix, rendered-member and literal-install/load proofs
+are shared. No source or runtime expansion is made. Twenty-eight new audit
+roots pass with the affected packages in
+`build/fmi-counts/package-audit-v2.log`. The strengthened actual-file checker
+passes in `build/fmi-counts/actual-fmi-v2.log`; the required full gate passed in
+`build/fmi-counts/full-gate.log`, with all 634
+inventoried inputs unchanged and both actual target archives checked. Exact
+archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
+GALEC members match `d147774` (`code-member-comparison.log`). Enabled
+callbacks, allocation, native headers/ABI, other public calls and full metadata
+conformance remain open under F02/F03/SR07. The metadata count relation admits
+only uniquely referenced continuous scalar Float64 values; a tensor extension
+will need a dimension-volume interpretation.
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

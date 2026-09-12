@@ -325,3 +325,37 @@ in `build/fmi-types/full-gate.log`, with all 629 inventoried inputs unchanged an
 both actual archives checked. Exact artifacts and hashes are retained in
 `build/fmi-types/artifacts/`. The C and GALEC members match `fe4ebef`; only the
 authored target semantics and mandatory proof contract are strengthened.
+
+### Count calls and correlated metadata
+
+`CountQueries.FunctionContract` covers complete typed entry and every behavior
+of both existing ME count functions. Success returns OK and writes one
+continuous state or zero indicators, preserving every other cell. Null
+instances return Error with unchanged memory. Invalid lifecycle calls and
+missing output pointers return Error and enter Terminated when logging is
+disabled. `CountQueries.prepared_failure`
+constructs the message addresses and immutable storage from the exact rendered
+function list. Native allocation and enabled callbacks remain open.
+
+The actual `AdapterContract` now requires both count contracts and a successful
+literal-pool construction in addition to all its earlier obligations.
+`SourceBuildContract.metadata` binds the complete actual XML document to the
+same compiled Solve preparation; previously only its public identifiers were
+in that final proposition. The independent scalar count relation resolves
+ModelStructure references to unique continuous Float64 declarations with no
+Dimension children, and rules out duplicate selected references. Future arrays
+must supply a volume interpretation; counting array declarations is insufficient.
+
+`counts_source` joins actual-file function grammar, all success behaviors,
+returned storage, Solve state volume and the actual metadata count relation.
+`counts_failure_source` retains the same artifact/table witness while
+constructing static storage and characterizing both failure paths. The exact
+C/IEEE dictionary and symbolic memory premises remain visible. This does not
+close the whole-adapter, header/ABI, allocation, callback or standards contract.
+All 28 added roots and affected package checks pass
+`build/fmi-counts/package-audit-v2.log`. The strengthened actual-file checker
+passes in `build/fmi-counts/actual-fmi-v2.log`. The required full gate passed in
+`build/fmi-counts/full-gate.log`, with all 634
+inventoried inputs unchanged and both actual target archives checked. Exact
+archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
+GALEC members match `d147774` (`code-member-comparison.log`).
