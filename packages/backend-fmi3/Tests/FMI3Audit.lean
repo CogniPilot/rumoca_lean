@@ -1,3 +1,4 @@
+import RumocaFMI3.LoggingContract
 import ProofAudit.Audit
 import RumocaC.Codegen
 import RumocaC.Execution
@@ -269,3 +270,14 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Version.rendered_contract
 #audit axioms Rumoca.FMI3.Build.decode_version
 #audit axioms Rumoca.FMI3.Version.metadata_correct
+
+#audit axioms Rumoca.FMI3.Logging.arguments_converted
+#audit axioms Rumoca.FMI3.Logging.failure_prefix
+#audit axioms Rumoca.FMI3.Logging.failure_behaviors
+#audit axioms Rumoca.FMI3.Logging.execution_correct
+#audit axioms Rumoca.FMI3.Logging.category_collected
+#audit axioms Rumoca.FMI3.Logging.prepared_correct
+#audit axioms Rumoca.FMI3.Logging.rendered_contract
+#audit axioms Rumoca.FMI3.Logging.metadata_correct
+#audit axioms Rumoca.FMI3.LiteralPreparation.rendered_helper
+#audit axioms Rumoca.FMI3.LiteralPreparation.text_bound

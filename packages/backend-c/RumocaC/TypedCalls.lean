@@ -57,14 +57,17 @@ def resume (value : Value) (heap : Heap) : Continuation → Option State
     | .discard => some (.body (.running rest env types heap) resultType outer)
     | .ret => do return .returning (← returnCast resultType value) heap outer
 
-def next (p : Program) : State → Option State
+/-- Shared scheduler. Only call-site resolution varies; bodies, parameter
+conversion, numerical kernels and return continuations use the same rules. -/
+def nextWith (enter : CLoops.State → String → Continuation → Option State)
+    (p : Program) : State → Option State
   | .halted _ => none
   | .body (.returned r) resultType stack => do
       return .returning (← returnCast resultType r.value) r.heap stack
   | .body s resultType stack =>
       match CLoops.next s with
       | some t => some (.body t resultType stack)
-      | none => enterCall s resultType stack
+      | none => enter s resultType stack
   | .calling name args heap stack => do
       match ← p.definitions name with
       | .tree fn =>
@@ -76,10 +79,12 @@ def next (p : Program) : State → Option State
   | .kernel s heap stack => do return .kernel (← CStatements.next p.kernel s) heap stack
   | .returning value heap stack => resume value heap stack
 
+def next (p : Program) : State → Option State := nextWith enterCall p
+
 def machine (p : Program) : Transition.Machine State CBody.Result where
   step s t := next p s = some t
   final | .halted result => some result | _ => none
   deterministic ha hb := Option.some.inj (ha.symm.trans hb)
-  final_stuck := by intro s result hs t; cases s <;> simp_all [next]
+  final_stuck := by intro s result hs t; cases s <;> simp_all [next, nextWith]
 
 end Rumoca.CCalls.Typed

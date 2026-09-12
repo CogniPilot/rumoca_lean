@@ -37,6 +37,19 @@ theorem rendered_member (m : Solve.FMI3Model source) (sigs : List Signature) (si
   simp [Runtime.render, String.toList_append, CString.join_toList,
     List.flatMap_map, List.append_assoc]
 
+/-- Every helper is a concrete fragment of the same emitted function list. -/
+theorem rendered_helper (m : Solve.FMI3Model source) (sigs : List Signature)
+    (fn : Function) (member : fn ∈ Runtime.helpers) :
+    ∃ before after : String, Runtime.render m sigs = before ++ fn.render ++ after := by
+  obtain ⟨left, right, same⟩ := List.mem_iff_append.mp member
+  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarations ++
+    String.join (left.map Function.render),
+    String.join (right.map Function.render) ++
+      String.join (sigs.map fun sig => (Runtime.function m sig).render), ?_⟩
+  apply String.toList_injective
+  simp [Runtime.render, same, String.toList_append, CString.join_toList,
+    List.flatMap_map, List.append_assoc]
+
 /-- Constants interpreted by the authored FMI C interface. This is not the
 complete macro/typedef namespace of an implementation's standard headers. -/
 def excluded : List String :=
@@ -125,17 +138,25 @@ theorem helpers_bound (m : Solve.FMI3Model source) (signatures : List Signature)
 
 /-- Every collected occurrence has a constructed address; callers need not
 supply a successful literal lookup as an extra premise. -/
-theorem message_bound (m : Solve.FMI3Model source) (signatures : List Signature)
+theorem text_bound (m : Solve.FMI3Model source) (signatures : List Signature)
     {pool : Pool (excluded ++ (functions m signatures).flatMap functionNames)}
-    (made : prepare m signatures = some pool) (sig : Signature) (member : sig ∈ signatures)
-    (text : String) (occurs : text ∈ functionTexts (Runtime.function m sig)) (firstBlock : Nat) :
+    (made : prepare m signatures = some pool) (fn : Function)
+    (member : fn ∈ functions m signatures) (text : String)
+    (occurs : text ∈ functionTexts fn) (firstBlock : Nat) :
     ∃ address, pool.addresses firstBlock text = some address := by
-  have occurrence : ∃ fn ∈ functions m signatures, text ∈ functionTexts fn :=
-    ⟨Runtime.function m sig, List.mem_append_right _ (List.mem_map.mpr ⟨_, member, rfl⟩), occurs⟩
+  have occurrence : ∃ fn ∈ functions m signatures, text ∈ functionTexts fn := ⟨fn, member, occurs⟩
   obtain ⟨name, named⟩ := (Pool.forFunctions_coverage made).mpr occurrence
   simp only [Pool.symbols, Option.map_eq_some_iff] at named
   obtain ⟨entry, found, rfl⟩ := named
   exact ⟨entry.address firstBlock, by simp [Pool.addresses, found]⟩
+
+theorem message_bound (m : Solve.FMI3Model source) (signatures : List Signature)
+    {pool : Pool (excluded ++ (functions m signatures).flatMap functionNames)}
+    (made : prepare m signatures = some pool) (sig : Signature) (member : sig ∈ signatures)
+    (text : String) (occurs : text ∈ functionTexts (Runtime.function m sig)) (firstBlock : Nat) :
+    ∃ address, pool.addresses firstBlock text = some address :=
+  text_bound m signatures made (Runtime.function m sig)
+    (List.mem_append_right _ (List.mem_map.mpr ⟨sig, member, rfl⟩)) text occurs firstBlock
 
 theorem pool_complete (m : Solve.FMI3Model source) (signatures : List Signature)
     {pool : Pool (excluded ++ (functions m signatures).flatMap functionNames)}

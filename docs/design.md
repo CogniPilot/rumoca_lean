@@ -63,10 +63,10 @@ remain outside this milestone.
 The survey found no ready-to-use verified EBNF-file-to-Lean generator matching
 this task. This is a search result, not a claim that none exists.
 
-* [mathlib regular expressions](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/RegularExpressions.html)
-  already supplies the language semantics, Brzozowski derivative, alphabet
-  mapping, and recognition theorem. These are reused directly, together with
-  mathlib real analysis. The initial duplicate regex foundation was removed.
+* [mathlib context-free grammars](https://leanprover-community.github.io/mathlib4_docs/Mathlib/Computability/ContextFreeGrammar.html)
+  supply the language semantics used by the shared LALR grammar contract.
+  The in-tree EBNF relation and its lowering proofs connect the source grammar
+  to those semantics. Numerical proofs also reuse mathlib real analysis.
 * [fgdorais/lean4-parser](https://github.com/fgdorais/lean4-parser) is a reusable
   parser-combinator library, not an EBNF generator with the required language
   correctness certificate. Its main branch used Lean 4.34.0-rc2 at inspection.
@@ -80,11 +80,13 @@ this task. This is a search result, not a claim that none exists.
   C expression core. Its README's broader verification claims were not adopted
   as evidence for this project.
 * [parol](https://github.com/jsinger67/parol) inspires the separate grammar file,
-  preprocessing, and separate semantic actions. Production still uses a regular
-  grammar and certified DFA. The new in-tree Lean LALR(1) implementation is a
-  development replacement, with general checked-tree soundness and structural
-  table safety. Completeness, parsing bounds and EBNF/AST certification remain
-  open; see [the parser plan](../dev/lalr-parser.md).
+  preprocessing, and separate semantic actions. Production Modelica and GALEC
+  both use the reusable in-tree Lean LALR(1) engine. Generated certificates
+  establish source-EBNF correspondence, soundness, completeness, table safety
+  and an input-size execution bound; frontend-owned actions supply the AST
+  relation. Generator success for the supported class of grammars, generation
+  cost and richer LR diagnostics remain open; see
+  [the parser plan](../dev/lalr-parser.md).
 * [CompCert](https://compcert.org/man/manual001.html) inspires composing pass
   semantics and proving all-execution properties. It is a reference only. The
   target grammar and operational semantics are authored in Lean; their

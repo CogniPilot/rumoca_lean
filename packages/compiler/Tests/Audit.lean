@@ -1,3 +1,4 @@
+import Rumoca.FMI3LoggingProofs
 import ProofAudit.Audit
 import Rumoca.Behavioral
 import Rumoca.Compiler
@@ -92,3 +93,5 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.compiler_preserves_property
 #audit axioms Rumoca.CStatements.model_exchange_correct
 #audit axioms Rumoca.CStatements.co_simulation_correct
+
+#audit axioms Rumoca.FMI3.logging_source

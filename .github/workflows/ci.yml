@@ -42,13 +42,13 @@ jobs:
         with:
           # Keep dependencies and project artifacts together so newly imported
           # mathlib modules are retained too. Lake checks all freshness traces.
+          # This cache epoch excludes retired parser builds and old root modules.
           path: |
             .lake/packages
-            .lake/build
             packages/*/.lake/build
-          key: lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'flake.nix', 'lean-toolchain', 'lake-manifest.json') }}-${{ github.sha }}
+          key: lake-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'flake.nix', 'lean-toolchain', 'lake-manifest.json') }}-${{ github.sha }}
           restore-keys: |
-            lake-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'flake.nix', 'lean-toolchain', 'lake-manifest.json') }}-
+            lake-v2-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('flake.lock', 'flake.nix', 'lean-toolchain', 'lake-manifest.json') }}-
       - name: Reuse pinned mathlib proofs without rebuilding
         run: |
           mkdir -p build
@@ -77,7 +77,6 @@ jobs:
         with:
           path: |
             .lake/packages
-            .lake/build
             packages/*/.lake/build
           key: ${{ steps.lake.outputs.cache-primary-key }}
       - name: Preserve verification evidence

@@ -91,14 +91,24 @@ theorem resume_preserves (step : CCalls.Typed.resume value heap stack = some t) 
       (add safe apply Preserves.refl)
       (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff, loopHeap, typedHeap])
 
-theorem typed_next (step : CCalls.Typed.next program s = some t) :
+/-- Read-only preservation of the shared scheduler depends only on the same
+property of its call-entry handler. Foreign effects are checked separately. -/
+theorem typed_nextWith
+    (enter : CLoops.State → String → CCalls.Typed.Continuation → Option CCalls.Typed.State)
+    (preserved : ∀ s resultType stack t, enter s resultType stack = some t →
+      Preserves (loopHeap s) (typedHeap t))
+    (step : CCalls.Typed.nextWith enter program s = some t) :
     Preserves (typedHeap s) (typedHeap t) := by
-  unfold CCalls.Typed.next at step
+  unfold CCalls.Typed.nextWith at step
   split at step
   all_goals
-    aesop (add safe forward [loop_next, enter_preserves, resume_preserves])
+    aesop (add safe forward [loop_next, preserved, resume_preserves])
       (add safe apply Preserves.refl)
       (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff, loopHeap, typedHeap])
+
+theorem typed_next (step : CCalls.Typed.next program s = some t) :
+    Preserves (typedHeap s) (typedHeap t) :=
+  typed_nextWith CCalls.Typed.enterCall (fun _ _ _ _ next => enter_preserves next) step
 
 theorem typed_reaches (steps : Transition.Reaches (CCalls.Typed.machine program).step s t) :
     Preserves (typedHeap s) (typedHeap t) := by

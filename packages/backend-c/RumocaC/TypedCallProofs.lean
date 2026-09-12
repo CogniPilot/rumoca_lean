@@ -57,18 +57,18 @@ theorem loop_step (p : Program) (definitions : CLoops.Calls.Definitions) (linked
       by_cases void : result.value = .void
       · rw [if_pos void] at h
         cases h
-        simp only [loopState, next, returnCast, ↓reduceIte, void, bind, Option.bind_some, pure]
+        simp only [loopState, next, returnCast, ↓reduceIte, void, bind, Option.bind_some, pure, nextWith]
       · rw [if_neg void] at h
         cases h
     | running code locals types heap =>
       cases hn : CLoops.next (.running code locals types heap) with
       | none =>
         simp only [CLoops.Calls.next, hn] at h
-        simpa only [loopState, next, hn] using enter_loop_call _ stack t h
+        simpa only [loopState, next, hn, nextWith] using enter_loop_call _ stack t h
       | some following =>
         simp only [CLoops.Calls.next, hn, Option.some.injEq] at h
         subst t
-        simp only [loopState, next, hn]
+        simp only [loopState, next, hn, nextWith]
   | calling name args heap stack =>
     cases hd : definitions name with
     | none => simp [CLoops.Calls.next, hd] at h
@@ -85,7 +85,7 @@ theorem loop_step (p : Program) (definitions : CLoops.Calls.Definitions) (linked
           | some types =>
             simp only [ha, ht, Option.bind_some, pure] at h
             cases h
-            simp only [loopState, next, hp, ha, ht, void, bind, Option.bind_some, pure]
+            simp only [loopState, next, hp, ha, ht, void, bind, Option.bind_some, pure, nextWith]
       · rw [if_pos void] at h
         cases h
 
@@ -168,47 +168,47 @@ theorem append_step (p : Program) (s t : State) (outer : Continuation) (h : next
   | calling name args heap stack =>
     apply Transition.Reaches.next (t := t.append outer) ?_ (.refl _)
     cases hd : p.definitions name with
-    | none => simp [next, hd] at h
+    | none => simp [next, hd, nextWith] at h
     | some d => cases d with
       | kernel fn =>
-        cases he : kernelEntry fn args <;> simp [next, hd, he] at h
+        cases he : kernelEntry fn args <;> simp [next, hd, he, nextWith] at h
         cases h
-        simp [machine, State.append, next, hd, he]
+        simp [machine, State.append, next, hd, he, nextWith]
       | tree fn =>
         cases ha : parameters fn.signature.parameters args with
-        | none => simp [next, hd, ha] at h
+        | none => simp [next, hd, ha, nextWith] at h
         | some env =>
-          cases ht : CLoops.Calls.parameterTypes fn.signature.parameters <;> simp [next, hd, ha, ht] at h
+          cases ht : CLoops.Calls.parameterTypes fn.signature.parameters <;> simp [next, hd, ha, ht, nextWith] at h
           cases h
-          simp [machine, State.append, next, hd, ha, ht]
+          simp [machine, State.append, next, hd, ha, ht, nextWith]
   | kernel state heap stack =>
     apply Transition.Reaches.next (t := t.append outer) ?_ (.refl _)
     cases state with
     | returned x => cases h; rfl
     | entry fn x n =>
-      cases he : CStatements.next p.kernel (.entry fn x n) <;> simp [next, he] at h
+      cases he : CStatements.next p.kernel (.entry fn x n) <;> simp [next, he, nextWith] at h
       cases h
-      simp [machine, State.append, next, he]
+      simp [machine, State.append, next, he, nextWith]
     | running code locals =>
-      cases he : CStatements.next p.kernel (.running code locals) <;> simp [next, he] at h
+      cases he : CStatements.next p.kernel (.running code locals) <;> simp [next, he, nextWith] at h
       cases h
-      simp [machine, State.append, next, he]
+      simp [machine, State.append, next, he, nextWith]
   | body state resultType stack =>
     apply Transition.Reaches.next (t := t.append outer) ?_ (.refl _)
     cases state with
     | returned result =>
-      cases hc : returnCast resultType result.value <;> simp [next, hc] at h
+      cases hc : returnCast resultType result.value <;> simp [next, hc, nextWith] at h
       cases h
-      simp [machine, State.append, next, hc]
+      simp [machine, State.append, next, hc, nextWith]
     | running code env types heap =>
       cases hn : CLoops.next (.running code env types heap) with
       | none =>
-        simp only [next, hn] at h
-        simp only [machine, State.append, next, hn, enter_append, h, Option.map_some]
+        simp only [next, hn, nextWith] at h
+        simp only [machine, State.append, next, hn, enter_append, h, Option.map_some, nextWith]
       | some following =>
-        simp only [next, hn, Option.some.injEq] at h
+        simp only [next, hn, Option.some.injEq, nextWith] at h
         subst t
-        simp only [machine, State.append, next, hn]
+        simp only [machine, State.append, next, hn, nextWith]
 
 theorem append_reaches (p : Program) (h : Transition.Reaches (machine p).step s t) (outer : Continuation) :
     Transition.Reaches (machine p).step (s.append outer) (t.append outer) := by
@@ -228,7 +228,7 @@ theorem body_step (p : Program) (h : CLoops.next s = some t) (type stack) :
     next p (.body s type stack) = some (.body t type stack) := by
   cases s with
   | returned => simp [CLoops.next] at h
-  | running => simp [next, h]
+  | running => simp [next, h, nextWith]
 
 theorem body_reaches (p : Program)
     (h : Transition.Reaches CLoops.machine.step s t) (type stack) :
@@ -239,7 +239,7 @@ theorem body_reaches (p : Program)
 
 theorem kernel_step (p : Program) (h : CStatements.next p.kernel s = some t) (heap stack) :
     next p (.kernel s heap stack) = some (.kernel t heap stack) := by
-  cases s <;> simp_all [CStatements.next, next]
+  cases s <;> simp_all [CStatements.next, next, nextWith]
 
 theorem kernel_reaches (p : Program) (h : CStatements.Reaches p.kernel s t) (heap stack) :
     Transition.Reaches (machine p).step (.kernel s heap stack) (.kernel t heap stack) := by
@@ -253,7 +253,7 @@ theorem tree_entry (p : Program) (name args heap stack fn env types)
     (ht : CLoops.Calls.parameterTypes fn.signature.parameters = some types) :
     next p (.calling name args heap stack) =
       some (.body (.running fn.body env types heap) fn.signature.result stack) := by
-  simp [next, hd, hp, ht]
+  simp [next, hd, hp, ht, nextWith]
 
 theorem loop_terminates_reaches (p : Program) (definitions : CLoops.Calls.Definitions)
     (linked : Extends definitions p)
@@ -298,7 +298,7 @@ theorem invoke_step (p : Program) (name : String) (args : List Expr) (values : L
     simp [CBody.eval, ordinary]
   simp only [next, CLoops.next, CLoops.eval, pureCall, bind, Option.bind_none,
     enterCall, callOperand, Option.bind_some, unshadowed, Option.isSome_none,
-    Bool.false_or, decide_eq_true_eq, if_neg ordinary, evaluated, pure]
+    Bool.false_or, decide_eq_true_eq, if_neg ordinary, evaluated, pure, nextWith]
 
 theorem invoke_reaches (p : Program) (h : CallResult p name values heap finalHeap)
     (args : List Expr) (rest : List Stmt) (env : CBody.Locals) (types : Types)
@@ -323,7 +323,7 @@ theorem invoke_return_reaches (p : Program) (h : CallResult p name values heap f
     ordinary unshadowed evaluated).trans
   refine .next (t := .body (.returned ⟨statusValue, finalHeap⟩) type stack) ?_ ?_
   · exact body_step p (by simp [CLoops.next, statusEval]) type stack
-  · exact .next (by simp [machine, next, converted]) (.refl _)
+  · exact .next (by simp [machine, next, converted, nextWith]) (.refl _)
 
 
 end Rumoca.CCalls.Typed

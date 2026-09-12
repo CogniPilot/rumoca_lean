@@ -509,6 +509,20 @@ inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
 GALEC members match `f9702f9` (`code-member-comparison.log`).
 
+The callback increment now attaches enabled failure-helper execution to the
+actual adapter contract. It shares the existing typed scheduler, records
+observable importer invocations and preserves immutable category/message bytes
+while retaining permitted writable host effects. The actual XML category and
+constructed function/literal bindings are composed in `logging_source`.
+Returning-host assumptions and the remaining ABI, allocation, eventful literal
+transformation and complete public-entry obligations are explicit in
+[FMI contracts](fmi3/contracts.md#observable-enabled-logging). All 58 new audit roots and affected packages pass
+`build/c-events/package-audit-v1.log`. The required full gate passed in
+`build/c-events/full-gate.log`, with all 646 inventoried inputs unchanged and
+both actual archives checked. Retained archives and hashes are in
+`build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
+(`code-member-comparison.log`). F02/F03 and grammar growth remain open.
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

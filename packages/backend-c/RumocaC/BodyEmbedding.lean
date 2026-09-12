@@ -191,7 +191,7 @@ theorem typed_return_reaches (program : CCalls.Program) (state : CBody.State)
       (.body (lift state types) returnType stack) (.returning returned result.heap stack) := by
   obtain ⟨types', execution, _⟩ := run_refines n state (.returned result) types hs h
   have reach := CCalls.Typed.body_reaches program (CLoops.run_reaches execution) returnType stack
-  exact reach.trans (.next (by simp [CCalls.Typed.machine, CCalls.Typed.next, lift, cast]) (.refl _))
+  exact reach.trans (.next (by simp [CCalls.Typed.machine, CCalls.Typed.next, lift, cast, CCalls.Typed.nextWith]) (.refl _))
 
 /-- Every behavior of the typed target equals the checked body's converted
 result. In particular, the new machine cannot add a stuck or divergent outcome. -/

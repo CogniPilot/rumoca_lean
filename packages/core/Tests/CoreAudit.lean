@@ -1,3 +1,4 @@
+import RumocaCore.Transition.Events.Simulation
 import RumocaCore.GALEC.Protocol
 import RumocaCore.GALEC.UnitProfile
 import RumocaCore.Solve.AlgorithmProofs
@@ -198,3 +199,31 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.GALEC.Protocol.stopped_terminal
 
 #audit axioms Rumoca.GALEC.Protocol.lower_trace_correct
+
+#audit axioms Rumoca.Transition.Events.Reaches.trans
+#audit axioms Rumoca.Transition.Events.Reaches.invariant
+#audit axioms Rumoca.Transition.Events.Reaches.erases
+#audit axioms Rumoca.Transition.Events.quiet_reaches
+#audit axioms Rumoca.Transition.Events.quiet_reflects
+#audit axioms Rumoca.Transition.Events.accumulate_silent
+#audit axioms Rumoca.Transition.Events.records_silent
+#audit axioms Rumoca.Transition.Events.quiet_behaviors
+
+#audit axioms Rumoca.Transition.Events.History.ext
+#audit axioms Rumoca.Transition.Events.records_unique
+#audit axioms Rumoca.Transition.Events.quiet_all
+
+#audit axioms Rumoca.Transition.Events.Forced.reaches
+#audit axioms Rumoca.Transition.Events.Forced.accessible
+#audit axioms Rumoca.Transition.Events.Forced.terminal_matches
+#audit axioms Rumoca.Transition.Events.Forced.behaviors
+
+#audit axioms Rumoca.Transition.Events.FunctionalBisimulation.reaches
+#audit axioms Rumoca.Transition.Events.FunctionalBisimulation.reflect_reaches
+#audit axioms Rumoca.Transition.Events.FunctionalBisimulation.preserves
+#audit axioms Rumoca.Transition.Events.FunctionalBisimulation.reflects
+#audit axioms Rumoca.Transition.Events.FunctionalBisimulation.behaviors
+
+#audit axioms Rumoca.Transition.Events.accumulate_prefix
+#audit axioms Rumoca.Transition.Events.accumulate_get
+#audit axioms Rumoca.Transition.Events.records_exists

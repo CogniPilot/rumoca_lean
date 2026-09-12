@@ -257,6 +257,28 @@ inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
 GALEC members match `f9702f9` (`code-member-comparison.log`).
 
+The callback increment uses a shared `Typed.nextWith` scheduler and labeled
+execution with finite/infinite histories. Existing internal-call, literal and
+read-only proofs remain required. The actual adapter contract now also requires
+`Logging.FunctionContract`: `logging_source` binds the emitted failure helper,
+its prepared function table, constructed `logStatus` bytes and actual XML
+category. Enabled calls emit the importer symbol and converted environment,
+Error status, category and message pointers, then return Error with the host's
+permitted writable effects. Immutable category/message storage survives.
+
+This is conditional on the explicit symbolic callback binding, the pinned
+prototype and an invocation-local returning host effect. It does not establish
+arbitrary callback termination, native function-pointer ABI, allocation,
+reentrancy or complete public-call/FMI conformance. Named-literal lowering still
+has its existing internal-machine contract; its extension to eventful execution
+is separate from execution of the unchanged emitted helper. No source grammar,
+renderer or boundary test suite is added. All 58 new audit roots and affected
+packages pass `build/c-events/package-audit-v1.log`. The required full gate
+passed in `build/c-events/full-gate.log`, with all 646 inventoried inputs
+unchanged and both actual target archives checked. Exact archives and hashes
+are retained in `build/c-events/artifacts/`; their C, header and GALEC members
+match `c522107` (`code-member-comparison.log`).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

@@ -1,3 +1,4 @@
+import RumocaC.ObservedCalls
 import ProofAudit.Audit
 import RumocaC.TreePreprocessing
 import RumocaC.Punctuator
@@ -466,3 +467,28 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CTree.Printer.FunctionDenotes.tokenization
 #audit axioms Rumoca.CTree.Printer.function_sequence_renders
 #audit axioms Rumoca.CTree.Printer.function_sequence_tokenization
+
+#audit axioms Rumoca.CReadOnly.typed_nextWith
+#audit axioms Rumoca.CCalls.Indirect.value_pointer_iff
+#audit axioms Rumoca.CCalls.Indirect.local_pointer
+#audit axioms Rumoca.CCalls.Indirect.local_null
+#audit axioms Rumoca.CCalls.Indirect.named_iff
+#audit axioms Rumoca.CCalls.Indirect.field_pointer
+#audit axioms Rumoca.CCalls.Events.enter_preserves
+#audit axioms Rumoca.CCalls.Events.internal_preserves
+#audit axioms Rumoca.CCalls.Events.step_preserves
+#audit axioms Rumoca.CCalls.Events.reaches_preserves
+#audit axioms Rumoca.CCalls.Events.termination_preserves
+#audit axioms Rumoca.CCalls.Events.external_entry_exclusive
+#audit axioms Rumoca.CCalls.Events.external_reaches
+#audit axioms Rumoca.CCalls.Events.internal_unique
+#audit axioms Rumoca.CCalls.Events.body_step
+#audit axioms Rumoca.CCalls.Events.body_reaches
+#audit axioms Rumoca.CCalls.Events.internal_prefix
+#audit axioms Rumoca.CCalls.Events.tree_entry
+#audit axioms Rumoca.CCalls.Events.external_prefix
+#audit axioms Rumoca.CCalls.Events.return_forced
+#audit axioms Rumoca.CCalls.Events.external_behaviors
+#audit axioms Rumoca.CCalls.Events.observed_outcome
+#audit axioms Rumoca.CCalls.Events.observed_unique
+#audit axioms Rumoca.CCalls.Indirect.resolved_supported

@@ -31,7 +31,7 @@ theorem version_source (compiled : compile input = .ok a)
         Stored signed (pool.install before firstBlock signed) base "3.0" ∧
         (∀ index byte, (bytes "3.0")[index]? = some byte →
           readByte (pool.install before firstBlock signed) (base.index index) = some byte) := by
-  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, version⟩ := contract.adapter
+  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, version, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member _ sigs _ version.member
   refine ⟨compiled, Version.metadata_correct _ contract.metadata contract.build,

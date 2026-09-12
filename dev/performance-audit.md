@@ -32,6 +32,9 @@ sample starts a fresh process after an unrecorded warmup; filesystem caches are
 warm. Logs, workload files, raw samples, summaries and corpus inventories stay
 under `build/`. No pass stamp or separate proof cache is introduced.
 
+The recorded baseline predates the LALR source cutover; its timings must not
+be attributed to the current production parser.
+
 Baseline identity:
 
 - Compiler revision: `c2dd147d93f329a7a341a35da82176e19d706ae5`; no compiler
@@ -119,11 +122,14 @@ the stack setting. The tables above retain the original failing baseline.
 | PA09 / P2 | The original JSON failure handling constructed terminal diagnostics and then discarded them. The baseline 1 MiB error case cost 0.260 s / 218 MiB in CLI versus 0.041 s / 46 MiB in located parsing. `Diagnostics.renderAt` rebuilds file maps and physical lines. | Conditional terminal rendering is implemented and proved below. Sharing document line maps and bounding displayed terminal context remain open. Keep complete structured spans; prove byte/span conversions against the existing location contract if changed. LSP already stores a document file map. |
 | PA10 / P2 | Actual artifact certificates, hashing and ZIP construction have separate materialization costs that this frontend benchmark does not measure. | Record emit, native compile, kernel certificate, hash and archive costs separately on each admitted slice. Reuse native Lake module caches; do not cache acceptance of changed external artifact bytes or weaken integrity checks. |
 
-The production Modelica parser is currently the certified **DFA**, followed by
-AST decoding, not the development generic LALR engine. Its current alphabet is
-small (21 symbols plus the fallback encoding), with 91 states; encoding uses a
-linear alphabet search. Do not present the measured DFA throughput as a LALR,
-parol or ANTLR comparison. DFA grammar generation is also separate from parsing.
+The measurements above predate the LALR source cutover and describe the
+retired parser at revision `c2dd147d93f329a7a341a35da82176e19d706ae5`.
+They are historical evidence for the listed allocation and span-attachment
+findings, not throughput measurements of the current parser. Production
+Modelica and GALEC now both use the shared LALR engine; see
+[the cutover evidence](lalr-parser.md#source-cutover-and-reusable-contracts).
+Measure that implementation afresh before making a LALR, parol or ANTLR
+performance comparison, and measure grammar generation separately from parsing.
 
 One PA10 cache-selection issue is visible in `.github/workflows/ci.yml`: its
 restore prefix hashes the entire root flake and lock file. Adding an optional

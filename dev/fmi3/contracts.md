@@ -380,3 +380,35 @@ All 11 new audit roots and affected packages pass
 inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
 GALEC members match `f9702f9` (`code-member-comparison.log`).
+
+### Observable enabled logging
+
+`Logging.FunctionContract` is mandatory in `AdapterContract`. The composed
+`logging_source` theorem identifies the actual failure-helper fragment, its
+function grammar and prepared internal table, the constructed category string,
+and the matching category in the independently denoted model XML.
+`ExecutionContract` proves the complete enabled helper call for explicit,
+returning importer effects: mode is written before dispatch, all four callback
+arguments are evaluated from the actual fields/strings, the invocation is
+recorded, and ordinary return produces Error and the host's resulting heap.
+Read-only cells, including the category and supplied immutable message, survive.
+It does not replace foreign writes with an unchanged-heap assumption.
+
+The reusable event machinery lives in core; C call/return scheduling, symbolic
+callee resolution and external effects live in backend-c. FMI supplies the
+callback prototype and actual-body theorem. Identifier, field and array
+callee accesses are admitted; ambiguous function-designator dereference and
+casts are rejected until C function types are modeled. Existing numerical,
+loop, literal-lowering and internal-call proofs remain required.
+
+The host effect relation describes completed calls. Its invocation-local return
+and uniqueness premises do not guarantee arbitrary importer termination.
+Native callback ABI/layout, reentrant hosts, allocation/free, generalized
+external expressions, eventful named-literal lowering, and composition through
+all public FMI entry points remain open. Source and generated code are unchanged.
+All 58 added audit roots and affected packages pass in
+`build/c-events/package-audit-v1.log`. The required full artifact gate passed
+in `build/c-events/full-gate.log`, with all 646 inventoried inputs unchanged
+and both actual archives checked. Retained archives and hashes are in
+`build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
+(`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.

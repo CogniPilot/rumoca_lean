@@ -63,6 +63,28 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### Enabled failure-helper callback: standards impact
+
+This increment follows `c522107`. MLS 3.7 and eFMI 1.0.0 Beta 1 syntax,
+initialization, tensor/IR products, numerical policy and emitted C/GALEC/XML
+are unchanged. Existing S01/SR07/SR08 findings continue to block grammar growth.
+
+| Obligation | Formal coverage and boundary |
+| --- | --- |
+| FMI 3.0.2 [§2.3.1, logMessage](https://fmi-standard.org/docs/3.0.2/#fmi3LogMessageCallback) | The actual enabled failure helper evaluates the stored environment and logger, passes Error/category/message, records the callback invocation and returns Error after the supplied host effect. Disabled logging retains the earlier proof. Arbitrary callback termination, reentrant hosts and full public-entry composition are not established. |
+| FMI 3.0.2 [§2.4.5, log categories](https://fmi-standard.org/docs/3.0.2/#log-categories) | `logging_source` relates the constructed `logStatus` storage to the category in the actual model XML. Category and supplied immutable message bytes survive the call. Other SetDebugLogging/public lifecycle obligations remain separate. |
+| C call and environment boundary | The scheduler, loop bodies, parameter conversion and continuations are shared. Symbolic function addresses and the callback prototype are explicit. Returning host effects must preserve read-only cells; their writable effects are retained. Identifier/field/index callee accesses are supported; function-designator dereference/casts, native ABI, allocation and nested external expressions are outside this increment. |
+| Architecture and reuse | Generic labeled execution, finite/infinite histories, quiet embedding and label-preserving bisimulation live in core. backend-c owns callback dispatch and external semantics; backend-fmi3 owns the emitted helper contract. Existing literal-lowering/internal-call proofs are retained; eventful named-literal transformation remains an open bridge. No new example suite or grammar case is added. |
+
+The actual adapter checker now requires `Logging.FunctionContract` in addition
+to every earlier field. All 58 new audit roots and affected packages pass
+`build/c-events/package-audit-v1.log`. The required full artifact gate passed
+in `build/c-events/full-gate.log`, with all 646 inventoried inputs unchanged
+and both actual archives checked. Retained artifacts and hashes are in
+`build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
+(`code-member-comparison.log`). **Stage decision: open; grammar growth remains
+blocked.**
+
 ### Version call and XML agreement: standards impact
 
 This increment follows `f9702f9`. Source syntax, initialization, lowering,
