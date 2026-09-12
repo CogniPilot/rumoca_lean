@@ -269,15 +269,33 @@ permitted writable effects. Immutable category/message storage survives.
 This is conditional on the explicit symbolic callback binding, the pinned
 prototype and an invocation-local returning host effect. It does not establish
 arbitrary callback termination, native function-pointer ABI, allocation,
-reentrancy or complete public-call/FMI conformance. Named-literal lowering still
-has its existing internal-machine contract; its extension to eventful execution
-is separate from execution of the unchanged emitted helper. No source grammar,
+reentrancy or complete public-call/FMI conformance. At this checkpoint,
+named-literal lowering retained its internal-machine contract; the eventful
+extension was still separate from the emitted-helper proof. No source grammar,
 renderer or boundary test suite is added. All 58 new audit roots and affected
 packages pass `build/c-events/package-audit-v1.log`. The required full gate
 passed in `build/c-events/full-gate.log`, with all 646 inventoried inputs
 unchanged and both actual target archives checked. Exact archives and hashes
 are retained in `build/c-events/artifacts/`; their C, header and GALEC members
 match `c522107` (`code-member-comparison.log`).
+
+The subsequent eventful literal pass preserves and reflects every authored C
+behavior, including callback arguments/effects, faults and finite or infinite
+event histories during divergence. Both interface extension and syntax lowering
+instantiate labeled bisimulation; ordinary and eventful calls share scheduler
+proofs. `AdapterContract` now requires `LiteralPreparation.EventContract` for
+its actual function table and separately requires successful pool preparation.
+`literal_events_source` and the strengthened `logging_source` retain the actual
+file/table/pool witnesses. Foreign relations are unchanged; the pass adds no
+callback determinacy or successful-return premise. This does not model execution
+inside a nonreturning foreign call or establish native header/ABI correspondence.
+All 37 new audit roots and affected package checks pass in
+`build/c-events/literal-package-audit-v1.log`. The required full artifact gate
+passed in `build/c-literal-events/full-gate.log`, with all 651 inputs unchanged
+throughout the run. Both target archives are retained in its `artifacts/`
+directory; their C, header and GALEC members match `d529b5d`
+(`code-member-comparison.log`). See
+[the pass contract](../dev/fmi3/contracts.md#eventful-literal-lowering).
 
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering

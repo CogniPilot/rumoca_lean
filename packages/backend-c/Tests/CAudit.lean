@@ -1,3 +1,4 @@
+import RumocaC.LiteralEventPool
 import RumocaC.ObservedCalls
 import ProofAudit.Audit
 import RumocaC.TreePreprocessing
@@ -492,3 +493,38 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CCalls.Events.observed_outcome
 #audit axioms Rumoca.CCalls.Events.observed_unique
 #audit axioms Rumoca.CCalls.Indirect.resolved_supported
+
+#audit axioms Rumoca.CLiteral.Lowering.Events.target_lowered
+#audit axioms Rumoca.CLiteral.Lowering.Events.resolve_lowered
+#audit axioms Rumoca.CLiteral.Lowering.Events.operand_lowered
+#audit axioms Rumoca.CLiteral.Lowering.Events.operand_head_safe
+#audit axioms Rumoca.CLiteral.Lowering.Events.enter_lowered
+#audit axioms Rumoca.CLiteral.Lowering.nextWith_lowered
+#audit axioms Rumoca.CLiteral.Lowering.nextWith_safe
+#audit axioms Rumoca.CLiteral.Lowering.Events.operand_fresh
+#audit axioms Rumoca.CLiteral.Lowering.Events.enter_safe
+#audit axioms Rumoca.CLiteral.Lowering.Events.internal_lowered
+#audit axioms Rumoca.CLiteral.Lowering.Events.internal_safe
+#audit axioms Rumoca.CLiteral.Lowering.Events.step_safe
+#audit axioms Rumoca.CLiteral.Lowering.Events.step_lowered
+#audit axioms Rumoca.CLiteral.Lowering.Events.internal_reflected
+#audit axioms Rumoca.CLiteral.Lowering.Events.step_reflected
+#audit axioms Rumoca.CLiteral.Lowering.Events.behaviors
+#audit axioms Rumoca.CLiteral.Lowering.Events.invocation_behaviors
+#audit axioms Rumoca.CLiteral.Interface.nextWith_agreement
+#audit axioms Rumoca.CLiteral.Interface.nextWith_agrees
+#audit axioms Rumoca.CLiteral.Interface.Events.target_agreement
+#audit axioms Rumoca.CLiteral.Interface.Events.resolve_agreement
+#audit axioms Rumoca.CLiteral.Interface.Events.callee_agreement
+#audit axioms Rumoca.CLiteral.Interface.Events.operand_agreement
+#audit axioms Rumoca.CLiteral.Interface.Events.enter_agreement
+#audit axioms Rumoca.CLiteral.Interface.Events.enter_agrees_next
+#audit axioms Rumoca.CLiteral.Interface.Events.internal_agreement
+#audit axioms Rumoca.CLiteral.Interface.Events.internal_agrees
+#audit axioms Rumoca.CLiteral.Interface.Events.converted_agreement
+#audit axioms Rumoca.CLiteral.Interface.Events.step_agrees
+#audit axioms Rumoca.CLiteral.Interface.Events.step_forward
+#audit axioms Rumoca.CLiteral.Interface.Events.step_backward
+#audit axioms Rumoca.CLiteral.Interface.Events.behaviors
+#audit axioms Rumoca.CLiteral.Interface.Events.invocation_behaviors
+#audit axioms Rumoca.CLiteral.Pool.event_invocation_behaviors

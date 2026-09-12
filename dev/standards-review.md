@@ -63,6 +63,25 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### Eventful literal lowering: standards impact
+
+This proof increment follows `d529b5d`. The admitted grammars, source/IR
+semantics, renderers and tests are unchanged.
+
+| Obligation | Coverage and boundary |
+| --- | --- |
+| FMI 3.0.2 [§2.3.1, callbacks](https://fmi-standard.org/docs/3.0.2/#fmi3LogMessageCallback) | Rechecked environment forwarding, callback parameters and string lifetime. The literal pass preserves all event labels, converted arguments and heaps; `logging_source` now carries this contract for its actual helper table. Native function-pointer correspondence and full public-call composition remain open. |
+| Shared C transformation | Interface extension and literal replacement each have forward/reflected labeled simulations. Complete-call preservation derives structural premises from the actual function collection. Foreign effect relations are retained without a successful-outcome premise; execution inside a nonreturning foreign call is outside this machine. |
+| MLS 3.7 and eFMI 1.0.0 Beta 1 | No grammar, initialization, numeric policy, DAE/GALEC/Solve or emitted-member change. The existing clause maps and S01/SR07/SR08 findings carry forward. This does not extend the eFMI execution contract. |
+
+The actual checker requires the pass contract and successful pool preparation
+alongside every earlier field. All 37 added audit roots and affected package
+checks pass in `build/c-events/literal-package-audit-v1.log`. The required full
+artifact gate passed in `build/c-literal-events/full-gate.log`, with all 651
+inputs unchanged and both target archives checked. Their C, header and GALEC
+members match `d529b5d`; artifacts and comparison evidence are retained in
+`build/c-literal-events/`. **Stage decision: open; grammar growth remains blocked.**
+
 ### Enabled failure-helper callback: standards impact
 
 This increment follows `c522107`. MLS 3.7 and eFMI 1.0.0 Beta 1 syntax,
@@ -74,7 +93,7 @@ are unchanged. Existing S01/SR07/SR08 findings continue to block grammar growth.
 | FMI 3.0.2 [§2.3.1, logMessage](https://fmi-standard.org/docs/3.0.2/#fmi3LogMessageCallback) | The actual enabled failure helper evaluates the stored environment and logger, passes Error/category/message, records the callback invocation and returns Error after the supplied host effect. Disabled logging retains the earlier proof. Arbitrary callback termination, reentrant hosts and full public-entry composition are not established. |
 | FMI 3.0.2 [§2.4.5, log categories](https://fmi-standard.org/docs/3.0.2/#log-categories) | `logging_source` relates the constructed `logStatus` storage to the category in the actual model XML. Category and supplied immutable message bytes survive the call. Other SetDebugLogging/public lifecycle obligations remain separate. |
 | C call and environment boundary | The scheduler, loop bodies, parameter conversion and continuations are shared. Symbolic function addresses and the callback prototype are explicit. Returning host effects must preserve read-only cells; their writable effects are retained. Identifier/field/index callee accesses are supported; function-designator dereference/casts, native ABI, allocation and nested external expressions are outside this increment. |
-| Architecture and reuse | Generic labeled execution, finite/infinite histories, quiet embedding and label-preserving bisimulation live in core. backend-c owns callback dispatch and external semantics; backend-fmi3 owns the emitted helper contract. Existing literal-lowering/internal-call proofs are retained; eventful named-literal transformation remains an open bridge. No new example suite or grammar case is added. |
+| Architecture and reuse | Generic labeled execution, finite/infinite histories, quiet embedding and label-preserving bisimulation live in core. backend-c owns callback dispatch and external semantics; backend-fmi3 owns the emitted helper contract. Existing literal-lowering/internal-call proofs are retained; eventful named-literal transformation was still an open bridge at this checkpoint. No new example suite or grammar case is added. |
 
 The actual adapter checker now requires `Logging.FunctionContract` in addition
 to every earlier field. All 58 new audit roots and affected packages pass

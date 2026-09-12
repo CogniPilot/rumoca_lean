@@ -1,3 +1,4 @@
+import RumocaFMI3.LiteralEvents
 import RumocaFMI3.LoggingContract
 import ProofAudit.Audit
 import RumocaC.Codegen
@@ -281,3 +282,6 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Logging.metadata_correct
 #audit axioms Rumoca.FMI3.LiteralPreparation.rendered_helper
 #audit axioms Rumoca.FMI3.LiteralPreparation.text_bound
+
+#audit axioms Rumoca.FMI3.LiteralPreparation.event_lowering_behaviors
+#audit axioms Rumoca.FMI3.LiteralPreparation.event_contract

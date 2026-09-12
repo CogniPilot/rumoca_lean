@@ -404,7 +404,7 @@ loop, literal-lowering and internal-call proofs remain required.
 The host effect relation describes completed calls. Its invocation-local return
 and uniqueness premises do not guarantee arbitrary importer termination.
 Native callback ABI/layout, reentrant hosts, allocation/free, generalized
-external expressions, eventful named-literal lowering, and composition through
+external expressions and composition through
 all public FMI entry points remain open. Source and generated code are unchanged.
 All 58 added audit roots and affected packages pass in
 `build/c-events/package-audit-v1.log`. The required full artifact gate passed
@@ -412,3 +412,25 @@ in `build/c-events/full-gate.log`, with all 646 inventoried inputs unchanged
 and both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
+
+### Eventful literal lowering
+
+`LiteralPreparation.EventContract` is mandatory for the same actual adapter
+function table. Successful preparation supplies `EventPreparedContract`: all
+string syntax is replaced, and all complete-call behaviors agree before and
+after the pass. Symbolic function addresses, foreign relations, converted
+arguments, heaps and event labels are preserved. Divergence and faults are
+included; foreign determinacy and successful execution are not premises.
+
+Shared C owns the two bisimulations and pool composition. FMI derives their
+name/shape-of-call premises from the actual collected functions. Existing
+ordinary-call proofs specialize the shared scheduler lemmas. The compiler's
+`literal_events_source` and `logging_source` bind these guarantees to the
+independently read adapter and its successfully constructed pool. Emitted C
+bytes are unchanged. Native static linking, header/ABI interpretation and the
+public-entry/foreign-execution gaps above remain separate. All 37 new roots
+and affected package checks pass in `build/c-events/literal-package-audit-v1.log`.
+The required full gate passed in `build/c-literal-events/full-gate.log`, with
+all 651 inputs unchanged and both target archives checked. Their C, header
+and GALEC members match `d529b5d`; artifacts and comparison evidence are retained
+in `build/c-literal-events/`. This does not close F02/F03.

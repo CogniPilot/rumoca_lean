@@ -4,7 +4,7 @@ The current full gate is `nix develop .#verification --command lake test`.
 Make commands in dated checkpoints below record historical runs before the
 Lake migration; see the [current commands](../docs/development.md).
 
-Status reviewed: **2026-09-11**. This file is the local, authoritative task
+Status reviewed: **2026-09-12**. This file is the local, authoritative task
 tracker. [verification.md](../docs/verification.md) records what is proved today;
 this roadmap records the work and evidence required for stronger claims.
 An open item is not a current guarantee. The active first-party review and
@@ -514,14 +514,26 @@ actual adapter contract. It shares the existing typed scheduler, records
 observable importer invocations and preserves immutable category/message bytes
 while retaining permitted writable host effects. The actual XML category and
 constructed function/literal bindings are composed in `logging_source`.
-Returning-host assumptions and the remaining ABI, allocation, eventful literal
-transformation and complete public-entry obligations are explicit in
+Returning-host assumptions and the remaining ABI, allocation and
+complete public-entry obligations are explicit in
 [FMI contracts](fmi3/contracts.md#observable-enabled-logging). All 58 new audit roots and affected packages pass
 `build/c-events/package-audit-v1.log`. The required full gate passed in
 `build/c-events/full-gate.log`, with all 646 inventoried inputs unchanged and
 both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). F02/F03 and grammar growth remain open.
+
+The following increment closes the eventful literal-transformation bridge.
+Both directions of behavior preservation are now mandatory for the actual
+adapter table and its constructed pool, including observable foreign effects,
+faults and divergence. The shared scheduler proofs replace duplicated ordinary
+and eventful arguments. See [the contract](fmi3/contracts.md#eventful-literal-lowering).
+All 37 new roots and affected package checks pass; the required full gate passed
+in `build/c-literal-events/full-gate.log`, with all 651 inputs unchanged and both
+archives checked. Their C, header and GALEC members match `d529b5d`.
+Next: compose disabled/enabled logging in
+the same eventful machine through public-call contracts, then discharge the
+remaining allocation, ABI and complete adapter obligations. F02/F03 remain open.
 
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining

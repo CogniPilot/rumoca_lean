@@ -1,4 +1,5 @@
 import Rumoca.FMI3LoggingProofs
+import Rumoca.FMI3LiteralProofs
 import ProofAudit.Audit
 import Rumoca.Behavioral
 import Rumoca.Compiler
@@ -40,6 +41,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.counts_source
 #audit axioms Rumoca.FMI3.counts_failure_source
 #audit axioms Rumoca.FMI3.version_source
+#audit axioms Rumoca.FMI3.literal_events_source
 #audit axioms Rumoca.FMI3.sourceBuild_correct
 #audit axioms Rumoca.FMI3.reset_result
 #audit axioms Rumoca.FMI3.reset_source

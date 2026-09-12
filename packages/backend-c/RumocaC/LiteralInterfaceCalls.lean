@@ -246,72 +246,93 @@ theorem resume_agrees_next (valid : StackAgrees before after stack)
               obtain ⟨address, addressEq, newHeap, stored, rfl⟩ := step
               exact ⟨codeAgrees, outerAgrees⟩
 
-theorem next_agreement (before after : CInterface)
+theorem nextWith_agreement (before after : CInterface)
     (types : before.types = after.types) (literals : before.literals = after.literals)
-    (program : CCalls.Program) (s : CCalls.Typed.State) (valid : StateAgrees before after s) :
-    @CCalls.Typed.next before program s = @CCalls.Typed.next after program s := by
+    (program : CCalls.Program)
+    (enterBefore enterAfter : CLoops.State → String → CCalls.Typed.Continuation → Option CCalls.Typed.State)
+    (entry : ∀ state, LoopAgrees before after state → ∀ resultType stack,
+      enterBefore state resultType stack = enterAfter state resultType stack)
+    (s : CCalls.Typed.State) (valid : StateAgrees before after s) :
+    @CCalls.Typed.nextWith before enterBefore program s = @CCalls.Typed.nextWith after enterAfter program s := by
   cases s with
   | halted result => rfl
   | returning value heap stack => exact resume_agreement before after types literals value heap stack valid
   | calling name args heap stack =>
       cases defined : program.definitions name with
-      | none => simp [CCalls.Typed.next, defined, CCalls.Typed.nextWith]
+      | none => simp [defined, CCalls.Typed.nextWith]
       | some fn =>
-          cases fn <;> simp [CCalls.Typed.next, defined, parameters_agreement before after types,
+          cases fn <;> simp [defined, parameters_agreement before after types,
             parameterTypes_agreement before after types, CCalls.Typed.nextWith]
   | kernel state heap stack => cases state <;> rfl
   | body state resultType stack =>
       cases state with
-      | returned result => simp [CCalls.Typed.next, returnCast_agreement before after types, CCalls.Typed.nextWith]
+      | returned result => simp [returnCast_agreement before after types, CCalls.Typed.nextWith]
       | running code env locals heap =>
           have same := loop_next_agreement before after types literals (.running code env locals heap) valid.1
-          have calls := enterCall_agreement before after types literals (.running code env locals heap)
+          have calls := entry (.running code env locals heap)
             valid.1 resultType stack
-          simp only [CCalls.Typed.next, same, calls, CCalls.Typed.nextWith]
+          simp only [same, calls, CCalls.Typed.nextWith]
 
-theorem next_agrees (checked : ProgramAgrees before after program)
-    (valid : StateAgrees before after s) (step : @CCalls.Typed.next before program s = some t) :
+theorem nextWith_agrees (checked : ProgramAgrees before after program)
+    (enterBefore : CLoops.State → String → CCalls.Typed.Continuation → Option CCalls.Typed.State)
+    (entry : ∀ {state resultType stack target}, LoopAgrees before after state →
+      StackAgrees before after stack → enterBefore state resultType stack = some target →
+        StateAgrees before after target)
+    (valid : StateAgrees before after s) (step : @CCalls.Typed.nextWith before enterBefore program s = some t) :
     StateAgrees before after t := by
   cases s with
-  | halted result => simp [CCalls.Typed.next, CCalls.Typed.nextWith] at step
+  | halted result => simp [CCalls.Typed.nextWith] at step
   | returning value heap stack => exact resume_agrees_next valid step
   | calling name args heap stack =>
       cases defined : program.definitions name with
-      | none => simp [CCalls.Typed.next, defined, CCalls.Typed.nextWith] at step
+      | none => simp [defined, CCalls.Typed.nextWith] at step
       | some fn =>
           cases fn with
           | kernel fn =>
-              simp only [CCalls.Typed.next, defined, Option.bind_eq_bind, Option.bind_some,
+              simp only [defined, Option.bind_eq_bind, Option.bind_some,
                 Option.pure_def, Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith] at step
               obtain ⟨state, entered, rfl⟩ := step
               exact valid
           | tree fn =>
-              simp only [CCalls.Typed.next, defined, Option.bind_eq_bind, Option.bind_some,
+              simp only [defined, Option.bind_eq_bind, Option.bind_some,
                 Option.pure_def, Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith] at step
               obtain ⟨env, parameters, locals, parameterTypes, rfl⟩ := step
               exact ⟨checked name fn defined, valid⟩
   | kernel state heap stack =>
       cases state <;>
-        simp only [CCalls.Typed.next, Option.bind_eq_bind, Option.pure_def,
+        simp only [Option.bind_eq_bind, Option.pure_def,
           Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith] at step
       all_goals aesop (add simp StateAgrees)
   | body state resultType stack =>
       cases state with
       | returned result =>
-          simp only [CCalls.Typed.next, Option.bind_eq_bind, Option.pure_def,
+          simp only [Option.bind_eq_bind, Option.pure_def,
             Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith] at step
           obtain ⟨converted, conversion, rfl⟩ := step
           exact valid.2
       | running code env locals heap =>
           cases next : @CLoops.next before (.running code env locals heap) with
           | none =>
-              exact enterCall_agrees_next valid.1 valid.2
-                (by simpa only [CCalls.Typed.next, next, CCalls.Typed.nextWith] using step)
+              exact entry valid.1 valid.2
+                (by simpa only [next, CCalls.Typed.nextWith] using step)
           | some state =>
               have result : CCalls.Typed.State.body state resultType stack = t :=
-                Option.some.inj (by simpa only [CCalls.Typed.next, next, CCalls.Typed.nextWith] using step)
+                Option.some.inj (by simpa only [next, CCalls.Typed.nextWith] using step)
               cases result
               exact ⟨loop_agrees_next valid.1 next, valid.2⟩
+
+theorem next_agreement (before after : CInterface)
+    (types : before.types = after.types) (literals : before.literals = after.literals)
+    (program : CCalls.Program) (s : CCalls.Typed.State) (valid : StateAgrees before after s) :
+    @CCalls.Typed.next before program s = @CCalls.Typed.next after program s :=
+  nextWith_agreement before after types literals program
+    (@CCalls.Typed.enterCall before) (@CCalls.Typed.enterCall after)
+    (enterCall_agreement before after types literals) s valid
+
+theorem next_agrees (checked : ProgramAgrees before after program)
+    (valid : StateAgrees before after s) (step : @CCalls.Typed.next before program s = some t) :
+    StateAgrees before after t :=
+  nextWith_agrees checked (@CCalls.Typed.enterCall before) enterCall_agrees_next valid step
 
 def callBisimulation (before after : CInterface)
     (types : before.types = after.types) (literals : before.literals = after.literals)

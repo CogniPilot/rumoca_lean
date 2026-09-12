@@ -1,4 +1,5 @@
 import Rumoca.FMI3LoggingProofs
+import Rumoca.FMI3LiteralProofs
 import Rumoca.ArtifactCheck
 import Rumoca.FMI3CountProofs
 import Rumoca.FMI3VersionProofs

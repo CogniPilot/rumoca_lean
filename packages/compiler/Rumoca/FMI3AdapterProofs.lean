@@ -6,6 +6,7 @@ import RumocaFMI3.CallTypes
 import RumocaFMI3.CountContract
 import RumocaFMI3.Version
 import RumocaFMI3.LoggingContract
+import RumocaFMI3.LiteralEvents
 
 /-! Complete adapter byte identity, independent function-section grammar and
 typed public/helper call entry, together with the reset execution/source consequence. Other function execution,
@@ -55,7 +56,8 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true ∧
     Version.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 Version.signature).render ∧
-    Logging.FunctionContract a.solve.prepareFMI3 sigs Runtime.helpers[0].render
+    Logging.FunctionContract a.solve.prepareFMI3 sigs Runtime.helpers[0].render ∧
+    LiteralPreparation.EventContract a.solve.prepareFMI3 sigs
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -75,7 +77,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     CallTypes.functions_ready a.solve.prepareFMI3 sigs ready _,
     (fun _ => Reset.rendered_contract _),
     (fun _ events => CountQueries.rendered_contract _ sigs events unique (counts events)), pool,
-    Version.rendered_contract _ sigs unique version, Logging.rendered_contract _ sigs⟩
+    Version.rendered_contract _ sigs unique version, Logging.rendered_contract _ sigs,
+    LiteralPreparation.event_contract _ sigs⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
 Macro expansion and included-header interpretation remain separate. -/
