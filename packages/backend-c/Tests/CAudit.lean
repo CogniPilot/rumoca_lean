@@ -10,6 +10,7 @@ import RumocaC.ExpressionPrinter
 import RumocaC.FunctionPrinter
 import RumocaC.TreeConcatenation
 import RumocaC.TreeTokenization
+import RumocaC.FunctionSequence
 import RumocaC.TokenStarts
 import RumocaC.Initialization
 import RumocaC.InitializationOriginProofs
@@ -441,3 +442,5 @@ import RumocaC.LiteralNames
 #audit axioms Rumoca.CTokens.Prefix.normal
 #audit axioms Rumoca.CTokens.Lexes.normal
 #audit axioms Rumoca.CTree.Printer.FunctionDenotes.tokenization
+#audit axioms Rumoca.CTree.Printer.function_sequence_renders
+#audit axioms Rumoca.CTree.Printer.function_sequence_tokenization

@@ -34,6 +34,8 @@ source/IR evidence and have their own composed correctness contracts.
 | `Tokens`, `TokenCandidates`, `TokenStarts`, `TokenPunctuation`, `TokenMaximal`, `Tokenization` | Independent normal-context token spellings, cross-category longest matching and comment exclusion, with actual continuations |
 | `ExpressionSyntax`, `StatementSyntax`, `FunctionSyntax`, `ExpressionPrinter`, `StatementPrinter`, `FunctionPrinter` | Shared precedence and phrase grammars with structural rendering proofs and explicit typedef/name premises |
 | `TokenConcatenation`, `TreeConcatenation`, `TreeTokenization` | Ordinary-literal separation and one function witness combining maximal tokenization, phrase grammar and concatenation stability |
+| `FunctionSequence` | Arbitrary complete function lists with one lexical/grammar/concatenation contract across actual boundaries |
+| `PrinterCertificate` | Untrusted Lean candidate construction for kernel-checked signature spellings; caller supplies typedef context and actual signatures |
 | `Character`, `ReadOnly`, `LiteralStorage`, `LiteralPointers` | Character representation, immutable symbolic objects and literal-pointer evaluation |
 | `LiteralLowering`, `LiteralLoopLowering`, `LiteralCallLowering` | Literal-to-name transformation and all-behavior preservation through bodies, loops and calls |
 | `LiteralInterface`, `LiteralInterfaceCalls`, `LiteralPool*` | Global lookup preservation, checked name/text pools, symbolic storage construction and composed call preservation |
@@ -141,8 +143,10 @@ concatenate. Competing encoded/character literals and implementation extensions
 are conservative envelopes, not accepted output forms. This contract covers
 ordinary code under the stated name/type premises; preprocessing directives,
 macros, actual header declarations, integer type/range selection, scopes and
-whole translation units retain their separate obligations. The FMI reset
-artifact contract instantiates it; the other adapter functions remain open.
+whole translation units retain their separate obligations. `FunctionSequence`
+composes this grammar for arbitrary definition lists, and the actual FMI
+adapter contract instantiates it for its complete function section. The other
+public functions still need their execution contracts.
 
 Run `lake build check-c` at the repository root for this package's cached
 proof/audit library, or `lake test` in this package's own workspace. The full

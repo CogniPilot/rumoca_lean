@@ -24,6 +24,7 @@ import RumocaFMI3.LifecycleBodies
 import RumocaFMI3.BodyEmbedding
 import RumocaFMI3.RuntimePreprocessing
 import RumocaFMI3.AdapterPreprocessing
+import RumocaFMI3.AdapterPrinter
 import RumocaFMI3.ErrorBodies
 import RumocaFMI3.SetterScope
 import RumocaFMI3.HistoryProofs
@@ -56,6 +57,12 @@ import RumocaFMI3.ResetContract
 #audit axioms Rumoca.FMI3.Reset.Printer.function_printable
 #audit axioms Rumoca.FMI3.Reset.Printer.function_renders
 #audit axioms Rumoca.FMI3.Reset.Printer.render_denotes
+#audit axioms Rumoca.FMI3.RuntimePrinter.body_printable
+#audit axioms Rumoca.FMI3.RuntimePrinter.function_printable
+#audit axioms Rumoca.FMI3.RuntimePrinter.function_tokenization
+#audit axioms Rumoca.FMI3.RuntimePrinter.helpers_printable
+#audit axioms Rumoca.FMI3.AdapterPrinter.functions_printable
+#audit axioms Rumoca.FMI3.AdapterPrinter.rendered_contract
 #audit axioms Rumoca.FMI3.Reset.rendered_member
 
 #audit axioms Rumoca.FMI3.LiteralPreparation.rendered_functions

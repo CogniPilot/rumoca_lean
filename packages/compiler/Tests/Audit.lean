@@ -45,6 +45,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_preprocessed
 #audit axioms Rumoca.FMI3.adapter_reset_syntax
 #audit axioms Rumoca.FMI3.adapter_reset_tokenization
+#audit axioms Rumoca.FMI3.adapter_functions_tokenization
 #audit axioms Rumoca.FMI3.adapter_reset_source
 #audit axioms Rumoca.FMI3.lexed_name
 #audit axioms Rumoca.FMI3.parsed_name

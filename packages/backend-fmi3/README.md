@@ -22,6 +22,7 @@ The complete printed ABI adapter and archive capstone remain open; see
 | Modules | Responsibility |
 | --- | --- |
 | `Runtime`, `Header` | Structured FMI C bodies and signatures from the pinned official headers |
+| `RuntimePrinter`, `AdapterPrinter` | Shared C grammar instantiation for every runtime body/helper and exact function-section binding with explicit typedef-name context |
 | `CInterface` | FMI-specific constant and type bindings for shared C execution |
 | `LiteralPreparation` | Literal collection and constructed definition table for the actual rendered function list; checked declaration block and all-observation pass preservation |
 | `Metadata` | Model-description XML projected from the prepared Solve model |

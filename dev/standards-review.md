@@ -37,6 +37,35 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Complete FMI function-section grammar: standards impact
+
+This increment follows `9751823`. Both source EBNFs, LALR admission, IR
+lowering, initialization, runtime emission, metadata and archive layouts are
+unchanged. The shared extension is a list-parametric C printer theorem and a
+caller-parametric Lean candidate builder for signature spelling proofs. No new
+runtime parser or example-based test suite is introduced.
+
+| Baseline | Correspondence and remaining obligations |
+| --- | --- |
+| C11 [N1570](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf), §§6.4–6.9.1 | `function_sequence_tokenization` composes independent function grammars, longest ordinary-code tokens and unchanged ordinary-string concatenation across actual function boundaries. Every existing FMI body and helper instantiates that theorem. Typedef spellings use an explicit name context; actual declarations, scope/type constraints and header/macro interpretation remain separate. The prior lexical/grammar clause review is reused without changes to those rules. |
+| MLS 3.7 | All admitted/rejected forms, source equations, initialization selection, Real refinement and source spans are unchanged. The existing unit clause map and S01/SR08 findings carry forward. |
+| FMI 3.0.2 ME/CS, [§§2.2.1–2.2.3](https://fmi-standard.org/docs/3.0.2/#header-files-and-naming-of-functions) | The actual `AdapterContract` requires the entire function-section grammar after its exact fixed preamble. The fixed checker kernel-checks spelling proofs for the header collector's 75 signatures. `adapter_reset_source` retains grammar and reset execution for the same definition list. The three official headers still define the API, types and prefix macros; the name-context grammar does not establish those meanings. Other public-call execution, allocation, callbacks and SR04/SR05/SR07 remain open. |
+| eFMI 1.0.0 Beta 1 | No Algorithm/Production Code member, manifest, archive contract or method changes. The generic C theorem is reusable, but its composition with the actual eFMI C members is still required. Coding-guideline and SR07/SR08 findings carry forward. |
+
+All nine new roots and affected packages pass
+`build/fmi-functions/package-audit-v2.log`. The fixed actual-file checker passes
+in `build/fmi-functions/actual-fmi.log`. The required full gate passed in
+`build/fmi-functions/full-gate.log`, with all 625 inventoried inputs unchanged
+and both actual archives checked. Exact archives and hashes are retained in
+`build/fmi-functions/artifacts/`; their C/header/GALEC members match `9751823`.
+The type-coverage review found 57 of 75 collected signatures with an adjusted
+parameter spelling absent from `FMI3.cTypes` (43 spellings). The universal
+count-getter result confirms a concrete entry failure in the authored typed
+machine, while native C checks pass. This sharpens the existing F03/SR07
+proof-coverage finding; it is not a new native standards failure. See
+`build/fmi-functions/signature-types.log` and `unmapped-call-v2.log`.
+**Stage decision: open; grammar growth remains blocked.**
+
 ### C maximal tokenization and concatenation: standards impact
 
 This increment follows `3497310` and changes proof relations and the required

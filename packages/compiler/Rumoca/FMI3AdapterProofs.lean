@@ -1,10 +1,11 @@
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
+import RumocaFMI3.AdapterPrinter
 
-/-! Complete adapter byte identity, together with the current independently
-denoted reset function and its source consequence. Other function execution,
-whole-C syntax/preprocessing, official-header meanings and native ABI remain
+/-! Complete adapter byte identity and independent function-section grammar,
+together with the reset execution/source consequence. Other function execution,
+whole-C preprocessing, scope/types, official-header meanings and native ABI remain
 separate obligations. Exact renderer identity is not their substitute. -/
 namespace Rumoca.FMI3
 
@@ -38,6 +39,7 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     Reset.signature ∈ sigs ∧
     Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
     CTree.Preprocessing.Stable adapter.toList ∧
+    AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
     ∀ static : StaticLiterals,
       @Reset.FunctionContract static a.parsed.ast a.solve.prepareFMI3
         (Runtime.function a.solve.prepareFMI3 Reset.signature).render
@@ -47,10 +49,12 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
       (fun fn => fn.signature.name)).Nodup)
     (member : Reset.signature ∈ sigs)
     (spellings : ∀ sig ∈ sigs, CTree.Preprocessing.SignatureInputs sig)
+    (grammar : ∀ sig ∈ sigs, CTree.Printer.SignaturePrintable RuntimePrinter.typedefs sig)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
     printed ▸ AdapterPreprocessing.render_stable a.solve.prepareFMI3 sigs
       (AdapterPreprocessing.name_plain (parsed_name a.parsed)) spellings,
+    printed ▸ AdapterPrinter.rendered_contract a.solve.prepareFMI3 sigs grammar,
     fun _ => Reset.rendered_contract _⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
@@ -69,7 +73,7 @@ theorem adapter_reset_syntax (contract : AdapterContract a adapter) :
       adapter = before ++ text ++ after ∧
       CTree.Printer.FunctionDenotes Reset.Printer.typedefs text
         (Runtime.function a.solve.prepareFMI3 Reset.signature) := by
-  obtain ⟨sigs, unique, member, printed, stable, reset⟩ := contract
+  obtain ⟨sigs, unique, member, printed, stable, functions, reset⟩ := contract
   obtain ⟨before, after, located⟩ := Reset.rendered_member a.solve.prepareFMI3 sigs member
   refine ⟨before, (Runtime.function a.solve.prepareFMI3 Reset.signature).render, after,
     printed ▸ located, ?_⟩
@@ -87,6 +91,16 @@ theorem adapter_reset_tokenization (contract : AdapterContract a adapter) :
   obtain ⟨before, text, after, located, grammar⟩ := adapter_reset_syntax contract
   exact ⟨before, text, after, located, grammar.tokenization⟩
 
+/-- The actual file's complete function section denotes the same definition
+table retained by the execution contract. Maximal tokenization and ordinary
+literal concatenation share its per-function grammar witnesses. The preamble's
+headers, directives and declarations still require separate interpretation. -/
+theorem adapter_functions_tokenization (contract : AdapterContract a adapter) :
+    ∃ sigs, Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
+      AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter := by
+  obtain ⟨sigs, _, _, printed, _, functions, _⟩ := contract
+  exact ⟨sigs, printed, functions⟩
+
 noncomputable section
 variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses
@@ -103,15 +117,16 @@ theorem adapter_reset_source (compiled : compile input = .ok a)
     (hm : load heap (p.member "mode") = some (.integer mode.code)) :
     compile input = .ok a ∧ ∃ sigs result,
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
+      AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
       (∀ behavior, (CCalls.Typed.machine (LiteralPreparation.program a.solve.prepareFMI3 sigs)).Behaves
         (.calling "fmi3Reset" [.pointer (some p)] heap .done) behavior ↔
         behavior = .terminates result) ∧ ResetSourceResult a p result t₀ := by
-  obtain ⟨sigs, unique, member, printed, _⟩ := contract
+  obtain ⟨sigs, unique, member, printed, _, functions, _⟩ := contract
   obtain ⟨result, behavior, initialized⟩ := reset_source a
     (LiteralPreparation.program a.solve.prepareFMI3 sigs) heap p kind mode t₀
       (LiteralRejection.function_bound a.solve.prepareFMI3 sigs unique Reset.signature member)
       storage hk hm
-  exact ⟨compiled, sigs, result, printed, behavior, initialized⟩
+  exact ⟨compiled, sigs, result, printed, functions, behavior, initialized⟩
 
 end
 end Rumoca.FMI3

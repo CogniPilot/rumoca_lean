@@ -5,10 +5,10 @@ adds no Modelica or GALEC production and changes no emitted C bytes. The whole
 compiler and FMI/eFMI conformance contracts remain open.
 
 The numerical and tensor printers already connect their emitted fragments to
-independent C grammars. The FMI reset certificate now also instantiates the
-shared function grammar and lexical contract while retaining its original
-execution guarantees. Further adapter functions should instantiate these
-reusable theorems.
+independent C grammars. The FMI adapter certificate now instantiates the shared
+function grammar and lexical contract for its complete function section while
+retaining its original reset execution guarantees. This does not establish
+execution of every function.
 
 ## Current increment
 
@@ -172,11 +172,59 @@ also compare byte-for-byte with the previous checkpoint.
   validity separate from mere syntactic acceptance.
   Expression, statement and function derivations compose with the independent
   normal-context tokenization and ordinary-literal concatenation results.
-- [ ] Replace function-specific printer premises with the generic theorem,
+- [x] Require the generic printer theorem for the complete FMI function section,
   preserving every existing numerical, memory, call and actual-byte contract.
+  The package audit, actual-file check and required full gate pass.
+- [ ] Compose the corresponding shared grammar contract for the eFMI C members
+  and the remaining declarations, headers and preprocessing contexts.
 - [ ] Complete the public adapter call proofs and compose the actual artifacts.
   Allocation, callbacks, lifecycle error behavior and header/ABI assumptions
   must retain their own reviewed contracts.
 
 These steps are prerequisites for the existing frozen grammar's assurance
 closure, not permission to grow the source language.
+
+## Complete FMI function section
+
+`CTree.Printer.function_sequence_tokenization`, in `RumocaC.FunctionSequence`,
+composes arbitrary lists of printable functions. One list of
+token chunks supplies the per-function grammar, longest tokenization of the
+entire joined text and stability under ordinary-string concatenation. The
+proof retains actual continuations across function boundaries.
+
+`RuntimePrinter.body_printable` covers every branch of the existing FMI body
+emitter for every prepared model and signature. Helpers use the same shared
+grammar constructors. `AdapterPrinter.FunctionsContract` binds the resulting
+complete definition list to the actual adapter suffix after its exact fixed
+preamble. The 32-name typedef context is explicit; declaring those names,
+checking their meanings and establishing scope/type constraints are separate.
+
+The reusable `RumocaC.PrinterCertificate` proposes signature proofs from actual
+signature data and a caller-supplied typedef context. It performs no file I/O
+and assumes no parsing result. Every proposed type/name judgment is checked by
+the kernel. The fixed FMI file checker uses it on the pinned header collector's
+75 signatures, then certifies the same actual function list used by execution.
+The collector still does not prove correspondence with all official headers.
+
+`AdapterContract` now requires this function-section contract in addition to
+all previous fields. `adapter_reset_source` retains the new grammar witness
+and the reset execution/source result for the same signature list. This closes
+the function-section printer composition, not the remaining function execution,
+header/macro, declaration or whole-translation-unit obligations.
+
+Nine additional audit roots and the affected packages pass
+`build/fmi-functions/package-audit-v2.log`. The fixed actual-file checker passes
+on the retained FMU in `build/fmi-functions/actual-fmi.log`. The required full
+gate passed in `build/fmi-functions/full-gate.log`, with all 625 inventoried
+inputs unchanged throughout. Exact archives and SHA-256 identities are retained
+in `build/fmi-functions/artifacts/`. All C, header and GALEC members compare
+byte-for-byte with `9751823` (`code-member-comparison.log`). No source grammar,
+runtime emitter or example-based suite is added.
+
+The review also made the next execution gap concrete: 57 of the pinned
+collector's 75 signatures have at least one adjusted parameter spelling absent
+from `FMI3.cTypes` (43 distinct spellings). `size_t *` and `fmi3Boolean *` are
+examples. This limits entry into the authored typed-call machine; it is not a
+native C failure. Complete the reviewed parameter conversions and header/type
+correspondence before extending the whole-call claim. See
+[the F03 evidence](fmi3/contracts.md#reset-and-complete-adapter-bytes).

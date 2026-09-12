@@ -26,11 +26,13 @@ internal-linkage printer and single compiled adapter translation unit. Its
 source/build/ME/CS identities derive from the same parsed model name, with a
 validity proof and injectivity for distinct names. The actual-file proposition
 additionally observes the two model-description identities and exact adapter
-prefix/include fragment. Its remainder is unconstrained, so preprocessing,
-linker behavior and the complete printed adapter still need their own bridges.
+prefix/include fragment. At that checkpoint its remainder was unconstrained;
+the complete-adapter contract below now binds those bytes too. Preprocessing
+and linker behavior still require their separate bridges.
 Thirteen new roots pass `build/fmi-linkage-package.log`. The actual-file,
 importer, two-source-link, mutation and failure-preservation gate passes in
-`build/fmi-linkage-artifact-gate.log`; the required full gate remains pending.
+`build/fmi-linkage-artifact-gate.log`. These checks also pass in the current
+required full gate, `build/fmi-functions/full-gate.log`.
 
 These are acceptance obligations, not declarations of existing theorems.
 
@@ -212,8 +214,37 @@ both actual archives checked. Exact artifacts are retained in its `artifacts/`
 directory. Header-name/directive contexts, macro expansion, type/scope
 constraints and the other functions still need their own composition.
 
-This is a complete byte binding and a reset execution contract, not a proof of
-every function in the containing translation unit. Preprocessing, official
+The complete-function-section increment now requires that composition for
+every runtime function and helper. `AdapterPrinter.FunctionsContract` locates
+the entire section after the exact fixed adapter preamble. The shared list
+theorem retains function boundaries, maximal tokens and ordinary-literal
+concatenation in one grammar witness. The actual checker kernel-checks the
+collected signature spellings using the reusable C certificate builder.
+`AdapterContract` retains all previous fields; `adapter_reset_source` composes
+the new section grammar with the reset behavior/source result for the same
+definition table. Nine new roots and affected packages pass
+`build/fmi-functions/package-audit-v2.log`. The fixed actual-file checker passes
+in `build/fmi-functions/actual-fmi.log`. The required full gate passed in
+`build/fmi-functions/full-gate.log`, with all 625 inventoried inputs unchanged
+and both actual archives checked. Exact artifacts and hashes are retained in
+`build/fmi-functions/artifacts/`.
+The supplied typedef-name context does not establish
+actual declarations or type meanings, and the other public calls still need
+their execution contracts.
+
+The same review inspected adjusted parameter spellings from the actual pinned
+header. Of its 75 collected signatures, 57 have an unmapped parameter in
+`FMI3.cTypes`, spanning 43 spellings (`build/fmi-functions/signature-types.log`).
+These include `size_t *`, `fmi3Boolean *`, value-reference pointers and callback
+aliases. The isolated universal result in `unmapped-call-v2.log` confirms that
+the current typed machine cannot enter `fmi3GetNumberOfContinuousStates` with
+its intended pointer arguments because `size_t *` is absent. This is an open
+F03 execution-model obligation, not a generated native C failure; the existing
+native FMI checks pass. The next contract work must cover those conversions
+and their header/type correspondence without weakening the current guarantees.
+
+This is a complete byte binding and a reset execution contract, not an execution
+proof of every function in the containing translation unit. Preprocessing, official
 header meanings, global storage, allocation/lifetime, callbacks, other public
 calls, native ABI and the complete FMI archive contract remain open. The header
 collector only proposes signatures; its new tail-recursive comment reader is

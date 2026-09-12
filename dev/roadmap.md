@@ -436,10 +436,31 @@ requires their composition on the same text/tree witness. All 67 additional
 roots and affected packages pass `build/c-lexical/composed-audit.log`; the
 required full gate passed in `build/c-lexical/full-gate.log`, including both
 actual archives with all 621 inputs unchanged. Exact archives and hashes are
-retained in `build/c-lexical/artifacts/`. Next, instantiate the shared contract
-on the complete actual FMI function list and retain separate header/macro,
-type/scope, public-call and whole-artifact obligations. C01/F03 and the
+retained in `build/c-lexical/artifacts/`. The following increment instantiates
+the shared contract on the complete actual FMI function list, retaining
+separate header/macro, type/scope, public-call and whole-artifact obligations. C01/F03 and the
 standards stage remain open. Source grammar and generated C are unchanged.
+
+That function-list composition now passes the affected-package audit with nine
+additional roots in `build/fmi-functions/package-audit-v2.log`. The shared C
+proof is list-parametric; the FMI proof covers all existing runtime bodies and
+helpers. A reusable Lean candidate builder supplies kernel-checked type/name
+proofs for the actual signatures. The stronger `AdapterContract` and
+`adapter_reset_source` connect the complete function-section grammar and reset
+execution to the same actual bytes and definition list. The actual-file check
+passes in `build/fmi-functions/actual-fmi.log`. The required full gate passed in
+`build/fmi-functions/full-gate.log`, with all 625 inventoried inputs unchanged
+and both actual archives checked. Exact archives and hashes are retained in
+`build/fmi-functions/artifacts/`.
+Next are the remaining header/macro/declaration contracts and public-call
+execution composition, plus the corresponding eFMI printer composition. The
+parameter review found 57 of 75 collected APIs with an adjusted parameter type
+missing from `FMI3.cTypes` (43 spellings, including `size_t *`). Complete those
+reviewed type/conversion bindings before claiming complete public-call entry;
+native C passing does not fill this formal-model gap. Evidence is in
+`build/fmi-functions/signature-types.log` and the universal count-getter result
+in `unmapped-call-v2.log`. C01/F03 and the standards stage remain open; no new
+grammar case is authorized.
 
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining

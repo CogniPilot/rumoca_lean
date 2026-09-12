@@ -186,6 +186,27 @@ No C bytes or grammar cases change. This is an ordinary-code contract;
 header-name/directive contexts, macro expansion, actual typedef meanings,
 scope/type constraints and remaining public-call behavior stay open.
 
+The following increment requires the independent shared grammar for the
+complete actual FMI function section. `function_sequence_tokenization`
+composes arbitrary lists with their real lexical continuations, and
+`RuntimePrinter` instantiates it for all runtime bodies and helpers.
+`AdapterContract` retains every prior field and additionally binds that section
+to the exact adapter bytes and prepared definition table. The fixed checker
+kernel-checks type/name proofs for its collected signatures; it does not assume
+the header collector is correct. `adapter_reset_source` now retains this
+grammar witness alongside the reset execution/source consequence for the same
+table. Nine new roots and the affected packages pass
+`build/fmi-functions/package-audit-v2.log`. The fixed actual-file checker passes
+in `build/fmi-functions/actual-fmi.log`. The required full gate passed in
+`build/fmi-functions/full-gate.log`, with all 625 inventoried inputs unchanged
+and both actual archives checked. Exact archives and hashes are retained in
+`build/fmi-functions/artifacts/`. Typedef meanings, headers/macros, declarations,
+scope/type constraints and other public-call execution remain open. No runtime
+or source grammar changes. In particular, 57 of the 75 collected API signatures
+contain an adjusted parameter type absent from the current execution dictionary;
+the new grammar contract does not supply those missing conversions. See the
+[concrete F03 review](../dev/fmi3/contracts.md#reset-and-complete-adapter-bytes).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

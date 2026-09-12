@@ -1,4 +1,5 @@
 import Rumoca.FMI3AdapterProofs
+import RumocaC.PrinterCertificate
 import Lean
 
 /-! Kernel certificates for complete adapter bytes. Candidate signatures and
@@ -138,6 +139,13 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
   let sigTerms ← sigs.toArray.mapM quoteSignature
   let signatures := mkIdent (base.str "signatures")
   elabCommand (← `(command| def $signatures:ident : List CTree.Signature := [$sigTerms,*]))
+  let printable := mkIdent (base.str "signatures_printable")
+  let signatureProof ← CTree.Printer.Certificate.signaturesProof
+    (← `(term| FMI3.RuntimePrinter.typedefs)) sigs
+  elabCommand (← `(command| set_option maxRecDepth 20000 in
+    set_option maxHeartbeats 4000000 in
+    theorem $printable:ident :
+      ∀ sig ∈ $signatures, CTree.Printer.SignaturePrintable FMI3.RuntimePrinter.typedefs sig := $signatureProof))
   let m ← `(term| ($artifact).solve.prepareFMI3)
   let preamble ← `(term| FMI3.functionPrefix ($m).name ++ "#include \"model.c\"\n" ++ FMI3.Runtime.declarations)
   let preambleText := FMI3.functionPrefix prepared.name ++ "#include \"model.c\"\n" ++ FMI3.Runtime.declarations
@@ -226,6 +234,7 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         simp [FMI3.Reset.signature]
       · change ∀ sig ∈ [$sigTerms,*], CTree.Preprocessing.SignatureInputs sig
         decide +kernel
+      · exact $printable
       · exact $rendered))
   return theoremId
 
