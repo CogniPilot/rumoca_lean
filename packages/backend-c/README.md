@@ -30,6 +30,7 @@ source/IR evidence and have their own composed correctness contracts.
 | `StatementOrigins`, `FunctionOrigins`, `MappedStatement`, `MappedFunction` | Complete C annotations and exact mapped statement/signature/function printing |
 | `AlgorithmRules` | Shared provenance rules for direct Solve instruction rendering; interface rules remain adapter-owned |
 | `StringLiteral` | Independent C literal denotation, unique UTF-8 payload decoding and preprocessing-safe string printing |
+| `TreePreprocessing` | Compositional trigraph/splice stability for every CTree constructor; separate from tokenization, headers and execution |
 | `Character`, `ReadOnly`, `LiteralStorage`, `LiteralPointers` | Character representation, immutable symbolic objects and literal-pointer evaluation |
 | `LiteralLowering`, `LiteralLoopLowering`, `LiteralCallLowering` | Literal-to-name transformation and all-behavior preservation through bodies, loops and calls |
 | `LiteralInterface`, `LiteralInterfaceCalls`, `LiteralPool*` | Global lookup preservation, checked name/text pools, symbolic storage construction and composed call preservation |

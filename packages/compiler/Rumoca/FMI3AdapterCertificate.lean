@@ -224,6 +224,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
       · decide +kernel
       · change FMI3.Reset.signature ∈ [$sigTerms,*]
         simp [FMI3.Reset.signature]
+      · change ∀ sig ∈ [$sigTerms,*], CTree.Preprocessing.SignatureInputs sig
+        decide +kernel
       · exact $rendered))
   return theoremId
 

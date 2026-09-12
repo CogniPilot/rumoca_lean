@@ -137,6 +137,21 @@ does not close other adapter bodies, allocation,
 whole-C/preprocessing or ABI obligations; see
 [the reset contract](../dev/fmi3/contracts.md#reset-and-complete-adapter-bytes).
 
+The shared CTree printer now proves character stability under trigraph
+replacement and line splicing for every expression, statement and function.
+Its FMI instantiation covers the complete adapter renderer. The strengthened
+`FMI3.AdapterContract` requires this guarantee for the actual file, deriving
+model-name safety from source lexing and checking signature spellings in the
+kernel. All 35 new roots and affected package audits pass in
+`build/source-cutover/build/c-printer/composed-package-audit.log`; the fixed
+checker also passes on the retained FMU files in its `actual-fmi.log`.
+The required main artifact gate passed in `build/c-printer/full-gate.log`, with
+all 596 inventoried inputs unchanged and both actual archives checked. Exact
+archives and hashes are retained in `build/c-printer/artifacts/`.
+This does not establish C tokenization, macro/header interpretation, remaining
+public-call behavior or whole FMI/eFMI compliance. See
+[the printer roadmap](../dev/c-printer.md).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

@@ -107,6 +107,27 @@ the remaining core, adapter and standards obligations still block growth.
 Earlier checkpoint entries below describe P02 as open at those checkpoints.
 The reader increment above closes it; their other standards findings remain open.
 
+### Generic C character-preservation increment: standards impact
+
+The admitted Modelica/GALEC productions, Solve programs, generated C and
+FMI/eFMI artifacts are unchanged. This increment strengthens the actual FMI
+adapter contract with a reusable theorem about character rewrites.
+
+| Standard | Coverage and remaining boundary |
+| --- | --- |
+| [C11 N1570](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf), §§5.1.1.2 and 5.2.1.1 | Generic CTree fragments and the complete FMI adapter are stable under trigraph replacement and physical newline splicing. Raw name/type conditions are explicit and checked. Encoding, preprocessing tokens, macros, headers, typing and execution are separate. |
+| MLS 3.7 | Source-name safety follows from the existing lexical theorem. Grammar admission, equations and initialization are unchanged; S01/SR08 remain open. |
+| FMI 3.0.2 ME/CS | The actual-file contract includes the new character property while retaining its byte identity and reset behavior. Other public-call, allocation/callback, header/ABI and full artifact obligations remain open. |
+| eFMI 1.0.0 Beta 1 | Shared CTree theorems are available to the backend. GALEC/Production Code methods, manifests and packaging are unchanged. No new eFMI conformance claim is made. |
+
+All 35 new roots pass the unchanged axiom policy and affected-package audits
+in `build/source-cutover/build/c-printer/composed-package-audit.log`. The fixed
+checker passed on the retained FMU files in `actual-fmi.log` in that directory.
+The required main artifact gate passed in `build/c-printer/full-gate.log`, with
+all 596 inventoried inputs unchanged and both actual archives checked. Exact
+archives and hashes are retained in `build/c-printer/artifacts/`.
+This is partial assurance progress; the remaining findings still block growth.
+
 ### C literal-printer increment: standards impact
 
 The subsequent shared-printer correction is tracked under C01/F03 in

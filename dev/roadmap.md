@@ -407,6 +407,17 @@ C01/F03/SR08 remain open for whole-C context,
 other public calls, allocation/lifetime, host-set policy and the complete
 artifact contract; see [the exact reset scope](fmi3/contracts.md#reset-and-complete-adapter-bytes).
 
+The shared C printer now has generic character-rewrite proofs for all CTree
+constructors and the complete FMI adapter renderer. `AdapterContract` requires
+stability of the actual file under trigraph replacement and line splicing;
+source-name safety comes from the lexer, and the kernel checks signature
+spellings. All 35 new roots pass the affected-package audit, and the strengthened
+checker passes on the retained FMU's files. The required main artifact gate
+passed in `build/c-printer/full-gate.log`, with all 596 inputs unchanged and both
+actual archives checked. C01/F03 remain open for token grammar,
+macro/header interpretation and full adapter execution. See
+[the generic printer roadmap](c-printer.md) for the precise scope and next work.
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

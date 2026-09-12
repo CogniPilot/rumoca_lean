@@ -21,6 +21,14 @@ import Parser.ScannerSpelling
 import Parser.ScannerRefinement
 import Parser.LocatedProofs
 import ProofAudit.Audit
+import Parser.Scanner.Prefix
+
+#audit axioms Parser.Scanner.Prefix.append
+#audit axioms Parser.Scanner.Prefix.finish
+#audit axioms Parser.Scanner.Prefix.of_lexes
+#audit axioms Parser.Scanner.Prefix.complete_iff
+#audit axioms Parser.Scanner.Prefix.suffix
+#audit axioms Parser.Scanner.Prefix.remaining_length
 
 #audit axioms Parser.EBNF.Metalanguage.Primary.nonempty
 #audit axioms Parser.EBNF.Metalanguage.Sequence.nonempty

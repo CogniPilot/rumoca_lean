@@ -208,6 +208,20 @@ The existing FMI boundary suite adds one mutation of the reset value while
 preserving the numerical file and API prefix. Character composition reuses the
 existing `CString.join_toList` theorem before kernel reduction, avoiding the
 cost of reducing complete intermediate strings in each function certificate.
+
+The subsequent shared printer increment strengthens `AdapterContract` with
+character stability of the complete actual adapter file. The generic CTree
+theorem composes every expression, statement and function; its FMI instance
+also covers the prefix, declarations and helpers. Source lexical rules establish
+model-name safety, while the kernel checks the quoted signature spellings.
+`adapter_preprocessed` exposes stability under the modeled trigraph and splice
+rewrites. This does not interpret macros, included headers or other public calls.
+All 35 new roots and the affected packages pass in
+`build/source-cutover/build/c-printer/composed-package-audit.log`. The fixed
+checker passes on the retained FMU files in that directory's `actual-fmi.log`.
+The required main artifact gate passed in `build/c-printer/full-gate.log`, with
+all 596 inventoried inputs unchanged and both actual archives checked;
+see [the generic printer roadmap](../c-printer.md).
 Complete-file assembly composes kernel-checked segment equalities against the
 independently quoted input, including EOF. This replaces a large recursive
 equality check that overflowed during the first required gate, while retaining

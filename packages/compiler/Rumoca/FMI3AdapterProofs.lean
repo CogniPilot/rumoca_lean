@@ -1,4 +1,6 @@
 import Rumoca.FMI3ResetProofs
+import Rumoca.FMI3NameProofs
+import RumocaFMI3.AdapterPreprocessing
 
 /-! Complete adapter byte identity, together with the current independently
 denoted reset function and its source consequence. Other function execution,
@@ -35,6 +37,7 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
       (fun fn => fn.signature.name)).Nodup ∧
     Reset.signature ∈ sigs ∧
     Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
+    CTree.Preprocessing.Stable adapter.toList ∧
     ∀ static : StaticLiterals,
       @Reset.FunctionContract static a.parsed.ast a.solve.prepareFMI3
         (Runtime.function a.solve.prepareFMI3 Reset.signature).render
@@ -43,8 +46,19 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
       (fun fn => fn.signature.name)).Nodup)
     (member : Reset.signature ∈ sigs)
+    (spellings : ∀ sig ∈ sigs, CTree.Preprocessing.SignatureInputs sig)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
-  ⟨sigs, unique, member, printed, fun _ => Reset.rendered_contract _⟩
+  ⟨sigs, unique, member, printed,
+    printed ▸ AdapterPreprocessing.render_stable a.solve.prepareFMI3 sigs
+      (AdapterPreprocessing.name_plain (parsed_name a.parsed)) spellings,
+    fun _ => Reset.rendered_contract _⟩
+
+/-- Extract character-rewrite stability from the contract on the actual file.
+Macro expansion and included-header interpretation remain separate. -/
+theorem adapter_preprocessed (contract : AdapterContract a adapter)
+    (steps : Relation.ReflTransGen CString.Rewrite adapter.toList out) : out = adapter.toList := by
+  obtain ⟨_, _, _, _, characters, _⟩ := contract
+  exact characters.preprocessed steps
 
 noncomputable section
 variable [static : StaticLiterals]

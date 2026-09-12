@@ -22,6 +22,8 @@ import RumocaFMI3.LiteralRejection
 import RumocaFMI3.LifecycleGuard
 import RumocaFMI3.LifecycleBodies
 import RumocaFMI3.BodyEmbedding
+import RumocaFMI3.RuntimePreprocessing
+import RumocaFMI3.AdapterPreprocessing
 import RumocaFMI3.ErrorBodies
 import RumocaFMI3.SetterScope
 import RumocaFMI3.HistoryProofs
@@ -115,6 +117,15 @@ import RumocaFMI3.ResetContract
 #audit axioms Rumoca.FMI3.LifecycleBodies.terminate_run
 #audit axioms Rumoca.FMI3.LifecycleBodies.terminate_correct
 #audit axioms Rumoca.FMI3.BodyEmbedding.body_closed
+#audit axioms Rumoca.FMI3.RuntimePreprocessing.body_inputs
+#audit axioms Rumoca.FMI3.RuntimePreprocessing.function_inputs
+#audit axioms Rumoca.FMI3.RuntimePreprocessing.function_preprocessed
+#audit axioms Rumoca.FMI3.AdapterPreprocessing.helpers_inputs
+#audit axioms Rumoca.FMI3.AdapterPreprocessing.name_plain
+#audit axioms Rumoca.FMI3.AdapterPreprocessing.declarations_stable
+#audit axioms Rumoca.FMI3.AdapterPreprocessing.prefix_stable
+#audit axioms Rumoca.FMI3.AdapterPreprocessing.render_stable
+#audit axioms Rumoca.FMI3.AdapterPreprocessing.render_preprocessed
 #audit axioms Rumoca.FMI3.BodyEmbedding.helpers_closed
 #audit axioms Rumoca.FMI3.BodyEmbedding.runtime_behaviors
 #audit axioms Rumoca.FMI3.BodyEmbedding.terminate_behaviors

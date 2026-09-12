@@ -82,6 +82,12 @@ passed in `build/ebnf-reader/full-gate.log`, with all 591 inventoried inputs
 unchanged and both target archives checked.
 
 Richer LR rejection diagnostics remain open.
+
+`Scanner.Prefix` provides compositional scanning judgments with the actual
+unconsumed suffix present. Its composition and full-input equivalence proofs
+preserve the existing scanner's word, number and symbol boundaries. It is a
+proof interface and adds no parser algorithm or language policy.
+
 Successful candidate generation for every supported conflict-free grammar is
 also a separate obligation. Conflicts and preprocessing limits remain explicit
 errors; no claim says every supplied grammar is LALR(1). See
