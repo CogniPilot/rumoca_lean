@@ -28,16 +28,24 @@ include their empty children, so a nullable boundary can include adjacent
 trivia. The public `parseLocated` checks that the complete sequence of leaves,
 including their ranges, is the supplied input. Its result retains the original
 LALR parse certificate and mathlib CFG soundness. The EBNF generator emits this
-API automatically for every grammar, including the GALEC instance.
+API automatically for every grammar, including the GALEC instance. It now
+selects the certified input-size bound without caller-supplied fuel.
 
 This implementation uses cursor attachment and a separate linear tree pass.
 It does not yet fuse location construction into the lexer or shift/reduce
 loop. Array lookup and cached node ranges avoid repeated leaf searches or
 recursive re-computation of child ranges. No speed parity with parol or ANTLR
-is claimed. The generator's existing generic completeness obligations remain
-open. Span attachment now has a generic completeness proof under an independent
-exact-spelling/trivia contract. Completeness of the LALR tree annotation wrapper
-remains open.
+is claimed. Span attachment has a generic completeness proof under an independent
+exact-spelling/trivia contract. `LALR.LocatedCompleteness` additionally proves
+that tree annotation consumes exactly the supplied token spans and cannot reject
+a successful LR parse. Its exact result/erasure theorem includes every error.
+Generated entries compose EBNF acceptance and total success/rejection at the
+existing bound. Fourteen generic/language audit roots and existing recursive
+and mutation checks pass in `build/source-cutover/build/lalr-locations/`;
+this increment's required main artifact gate passed in
+`build/lalr-located/full-gate.log`, with all 582 inventoried inputs unchanged
+and both actual target archives checked. Independent EBNF
+reader conformance remains open.
 
 `Rumoca.parseLocated` provides the existing Modelica AST plus a source-bound
 location sidecar. Its `erases` theorem identifies the same actual production
@@ -114,7 +122,7 @@ imply that this first LSP server schedules edits concurrently.
 | ID | Requirement | Status |
 | --- | --- | --- |
 | PV01 | Valid source-indexed spans; exact token text, order and disjointness | Soundness and completeness checked for the exact-spelling/trivia contract; actual Modelica and GALEC lexers discharge the contract |
-| PV02 | Automatic grammar-node ranges, epsilon policy and grammar erasure | Modelica located entry point complete; generic LALR annotation-wrapper completeness remains open |
+| PV02 | Automatic grammar-node ranges, epsilon policy and grammar erasure | Generic annotation completeness, exact API erasure and generated bounded entries checked; required artifact gate passed |
 | PV03 | Immutable multi-file identity and deterministic parallel results | Checked pure API; native task/file boundary integration exercised |
 | PV04 | Tiny Modelica diagnostics and navigation through an actual LSP session | Implemented, including proved resolution-error/declaration ranges; transport is tested infrastructure |
 | PV05 | AST/action field origins with exact identifier/equation meaning | Fixed Modelica field table has exact source leaves and production boundaries; use through all compiler IR occurrences and generic action API remain open |

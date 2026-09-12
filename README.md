@@ -270,8 +270,11 @@ and original tokens while allowing user-defined ASTs. Existing profiles prove
 membership by EBNF derivation; changing the grammar alone does not extend the
 compiler's semantic language. Source lexing, spans and lowering contracts remain
 separate obligations composed by the compiler. See the
-[LALR proof plan](dev/lalr-parser.md) for remaining metalanguage, generic located
-tree, diagnostic and generator cost/convergence work.
+[LALR proof plan](dev/lalr-parser.md) for remaining metalanguage, diagnostic and
+generator cost/convergence work. Generated located parsing now has exact
+result agreement with ordinary parsing and uses the same certified bound.
+The span increment passed the full local proof and actual-artifact gate;
+independent verification of the EBNF text reader remains open.
 
 Reused foundations are Lean's standard library and mathlib's CFG languages,
 finite sets, integer arithmetic and real analysis. See

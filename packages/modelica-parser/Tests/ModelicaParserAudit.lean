@@ -82,3 +82,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Generated.fuel_eq
 #audit axioms Rumoca.Generated.accepts_iff_parse_bounded
 #audit axioms Rumoca.Generated.parse_terminates
+#audit axioms Rumoca.Generated.located_fuel
+#audit axioms Rumoca.Generated.source_parseLocated_correct
+#audit axioms Rumoca.Generated.parseLocated_erases

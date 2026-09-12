@@ -432,8 +432,10 @@ instance are proved, and `compile_complete` retains its original assumptions.
 The 14 new roots pass the existing package audits in
 `build/located-provenance/package-gate.log`; the required full gate passed in
 `build/located-provenance/full-gate.log`, including both actual target archives.
-Generic LALR annotation completeness and IR/output origin preservation remain
-open in PV05–PV09. This does not close the complete compiler/artifact proof gate.
+Generic LALR annotation completeness now passes the package gate recorded in
+[PV02](provenance.md#remaining-gates-before-grammar-growth). IR/output origin
+preservation remains open in PV05–PV09. This does not close the complete
+compiler/artifact proof gate.
 
 The next increment implements the generic origin graph and exact source fields:
 shared input snapshots, checked file/table references, required parent/rule
@@ -757,7 +759,11 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   Modelica and GALEC derive their AST token membership in source EBNF semantics,
   with grammar-parametric LR completeness supplying execution. Current source
   spans and diagnostics are retained. Generated per-production child actions,
-  generic located-CST completeness, richer LR errors and P02 remain open.
+  richer LR errors and P02 remain open. Generic located-CST completeness and
+  generated bounded entries now pass package and recursive/mutation checks;
+  that increment's required main artifact gate passed in
+  `build/lalr-located/full-gate.log`, including both target archives with all
+  582 inventoried inputs unchanged.
 - [ ] **P04 — Certify the in-tree LALR(1) replacement.** Active, owned by Codex.
   Depends on P02/P03. Candidate construction, structural safety, nullable/FIRST
   coverage, LR-item completeness and bounded termination now have generic Lean
@@ -766,8 +772,8 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   and GALEC now use the same generated LALR engine and input-size bounds;
   the DFA implementation and generator have been removed. Typed AST/source
   contracts and actual-artifact grammar binding follow the new source path.
-  **Remaining:** independent metalanguage-reader conformance, generic located
-  completeness and diagnostics, and preprocessing success/cost. **Close with:**
+  **Remaining:** independent metalanguage-reader conformance, richer diagnostics,
+  and preprocessing success/cost. **Close with:**
   the actual grammar-to-parser product carries the full contract; both current
   profiles instantiate it; the production source/IR/artifact chain and complete
   gate pass. A few accepted trees or native recursion tests cannot close P04.

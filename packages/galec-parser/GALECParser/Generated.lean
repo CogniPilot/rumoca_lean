@@ -5,7 +5,7 @@ import Parser.LALR.SafetyProofs
 import Parser.LALR.FirstProofs
 import Parser.LALR.Progress
 import Parser.Token
-import Parser.LALR.Located
+import Parser.LALR.LocatedCompleteness
 import Parser.LALR.EBNFEncoding
 import Parser.EBNF.Rules
 import Parser.LALR.Actions
@@ -1353,7 +1353,9 @@ set_option maxHeartbeats 8000000 in
 theorem progress_checked : LALR.Progress.validate tables edges fuelBudget progressCredits = true :=
   by decide +kernel
 
-def fuel (input : List Nat) : Nat := 1 * input.length + 8 + 1
+def fuelForLength (count : Nat) : Nat := 1 * count + 8 + 1
+
+def fuel (input : List Nat) : Nat := fuelForLength input.length
 
 theorem fuel_eq (input : List Nat) :
     fuel input = LALR.Progress.bound fuelBudget progressCredits input := by rfl
@@ -1405,10 +1407,40 @@ theorem execution_safe (fuel : Nat) (input : List Nat) (error : LALR.Failure)
     error = .exhausted ∨ error = .rejected :=
   LALR.Safety.validated_parse_safe safety_checked h
 
--- Every grammar gets the same automatic production/terminal span API.
-def parseLocated (source : String) (fuel : Nat)
-    (tokens : List (Parser.Source.Located source Token)) :=
-  LALR.parseLocated grammar tables fuel (tokens.map fun t =>
-    ⟨(alphabet.findIdx? (· == t.value.symbol)).getD (alphabet.size + 1), t.span⟩)
+-- Every grammar gets the same bounded production/terminal span API.
+def encodeLocatedTokens {text : String} (tokens : List (Source.Located text Token)) :
+    List (Source.Located text Nat) :=
+  tokens.map fun token => ⟨encode token.value.symbol, token.span⟩
+
+def parseLocated (text : String) (tokens : List (Source.Located text Token)) :=
+  LALR.parseLocated grammar tables (fuelForLength tokens.length) (encodeLocatedTokens tokens)
+
+theorem located_fuel {text : String} (tokens : List (Source.Located text Token)) :
+    fuelForLength tokens.length =
+      LALR.Progress.bound fuelBudget progressCredits ((encodeLocatedTokens tokens).map (·.value)) := by
+  simpa only [fuel, encodeLocatedTokens, List.length_map] using
+    fuel_eq ((encodeLocatedTokens tokens).map (·.value))
+
+theorem source_parseLocated_correct (text : String) (tokens : List (Source.Located text Token)) :
+    Parser.EBNF.parse source = .ok sourceGrammar ∧
+    (Parser.EBNF.Accepts sourceGrammar (tokens.map (fun token => token.value.symbol)) ↔
+      ∃ result, parseLocated text tokens = .ok result) ∧
+    ((∃ result, parseLocated text tokens = .ok result) ∨
+      parseLocated text tokens = .error .rejected) := by
+  have checked := LALR.parseLocated_correct items_checked budget_checked safety_checked
+    progress_checked (encodeLocatedTokens tokens)
+  rw [← located_fuel tokens] at checked
+  refine ⟨source_read_checked, ?_, checked.2⟩
+  exact (ebnf_correct (tokens.map (fun token => token.value.symbol))).trans
+    (by simpa only [encodeLocatedTokens, List.map_map, Function.comp_def, parseLocated]
+      using checked.1)
+
+theorem parseLocated_erases (text : String) (tokens : List (Source.Located text Token)) :
+    (parseLocated text tokens).map (·.tree) =
+      parseSymbols (tokens.map (fun token => token.value.symbol)) := by
+  have erased := LALR.parseLocated_erases grammar tables
+    (fuelForLength tokens.length) (encodeLocatedTokens tokens)
+  simpa only [parseLocated, parseSymbols, parse, fuel,
+    encodeLocatedTokens, List.map_map, List.length_map, Function.comp_def] using erased
 
 end Rumoca.GALEC.Generated

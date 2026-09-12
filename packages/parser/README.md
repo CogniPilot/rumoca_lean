@@ -64,18 +64,29 @@ executable LR parser. Generated one-step named-rule equations support source
 AST derivations; recursive equations are not automatically unfolded by `simp`.
 Modelica and GALEC now use this engine and its generated input-size bounds.
 
-The independent EBNF metalanguage-reader conformance proof remains open, as do
-generic located-tree completeness and richer LR rejection diagnostics.
+The independent EBNF metalanguage-reader conformance proof and richer LR
+rejection diagnostics remain open.
 Successful candidate generation for every supported conflict-free grammar is
 also a separate obligation. Conflicts and preprocessing limits remain explicit
 errors; no claim says every supplied grammar is LALR(1). See
 [remaining parser proofs](../../dev/lalr-parser.md).
 
-Generated LALR instances expose `parseLocated`. UTF-8 spans and terminal spellings
-are checked against source contents; parent ranges cover their descendants.
-AST shape and selection of meaningful node origins remain language-owned.
-Generic located-parser completeness and location transport through every IR
-remain open; see [provenance](../../dev/provenance.md).
+Generated LALR instances expose `parseLocated text tokens` with the certified
+input-size bound chosen automatically. The frontend lexer supplies token values
+and ranges with its spelling/trivia contract. Tree annotation preserves those
+values and ranges; parent ranges cover their descendants.
+`LALR.parseLocated_erases` proves exact agreement with unlocated parsing,
+including errors. `parseLocated_correct` proves complete acceptance and total
+success/rejection at the same bound, without additional location premises.
+Generated `source_parseLocated_correct` composes that with the EBNF contract.
+The shared `fuelForLength` avoids mapping a list just to calculate its length.
+Eight generic and six generated language roots pass package checks, and the
+existing recursive/mutation gate passes, in
+`build/source-cutover/build/lalr-locations/`. This span increment's required
+main artifact gate passed in `build/lalr-located/full-gate.log`, with all 582
+inventoried inputs unchanged and both target archives checked.
+AST field origins and location transport through
+every IR remain separate obligations; see [provenance](../../dev/provenance.md).
 
 The generic token attachment uses a tail-recursive accumulator. In
 `Parser.LocatedProofs`, `Parser.Source.attach_eq_reference` proves

@@ -28,6 +28,9 @@ cat >> "$task_tmp/Recursive.lean" <<'LEAN'
 #print axioms Parser.LALRGenerated.lowering_checked
 #print axioms Parser.LALRGenerated.ebnf_correct
 #print axioms Parser.LALRGenerated.source_parse_correct
+#print axioms Parser.LALRGenerated.located_fuel
+#print axioms Parser.LALRGenerated.source_parseLocated_correct
+#print axioms Parser.LALRGenerated.parseLocated_erases
 #print axioms Parser.LALRGenerated.safety_checked
 #print axioms Parser.LALRGenerated.execution_safe
 #print axioms Parser.LALRGenerated.first_checked

@@ -483,8 +483,8 @@ same total construction. These 14 new roots pass the existing package audits
 in `build/located-provenance/package-gate.log`; the required complete gate
 passed in `build/located-provenance/full-gate.log`, including actual C, FMU and
 eFMU certificates and existing boundary checks.
-Generic LALR annotation completeness and origin preservation through the
-IR/printer pipeline remain open. See
+The subsequent generic LALR annotation completeness proof is described below;
+origin preservation through the complete IR/printer pipeline remains open. See
 [the provenance contract and roadmap](../dev/provenance.md).
 
 The next provenance foundation adds a generic checked origin array, mandatory
@@ -668,9 +668,27 @@ all 581 recorded inputs unchanged throughout the run. Actual FMU/eFMU archives
 and their hashes are retained in its `artifacts/` directory. This covers the
 existing actual-source/C, FMI ME/CS, GALEC, complete eFMU and rejection/native
 boundaries. These are implementation checkpoints, not a completed compiler
-or FMI/eFMI compliance claim. Generic located-CST completeness, richer LR
-rejection reporting, P02 and generator success/cost proofs remain open;
+or FMI/eFMI compliance claim. Richer LR rejection reporting, P02 and generator
+success/cost proofs remain open;
 see [LR01–LR07](../dev/lalr-parser.md).
+
+`LALR.LocatedCompleteness` now proves exact token/span preservation for arbitrary
+tree fragments, including nullable nodes. Every successful raw parse has a
+located result for the same tree. `parseLocated_erases` preserves the exact
+success/error result; `parseLocated_correct` composes table and progress
+certificates into complete located parsing at the same bound. Generated entries
+choose that bound automatically and compose EBNF membership and reader-result
+binding. A shared scalar `fuelForLength` avoids mapping a list solely for its
+length. Spelling/trivia remains the frontend lexer's responsibility.
+Eight generic and six emitted Modelica/GALEC roots pass the unchanged axiom
+policy in `build/source-cutover/build/lalr-locations/language-packages-v2.log`.
+Freshness and existing recursive/mutation checks pass in its `integration.log`.
+The required main artifact gate for this span increment passed in
+`build/lalr-located/full-gate.log`, with all 582 inventoried inputs unchanged.
+Both actual target archives and their hashes are retained in
+`build/lalr-located/artifacts/`; the existing C, FMI ME/CS, GALEC and eFMU
+boundary and mutation checks passed.
+No grammar or numerical behavior is added.
 
 Source-indexed IRs retain their predecessors. State/register indices cannot
 refer to absent values. The public per-pass contracts in `packages/compiler/Rumoca/Lowering.lean`,

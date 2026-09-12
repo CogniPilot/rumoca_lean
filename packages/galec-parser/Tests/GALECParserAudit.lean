@@ -2,6 +2,7 @@ import GALECParser
 import GALECParser.GrammarProofs
 import GALECParser.ScannerProofs
 import ProofAudit.Audit
+
 import GALECParser.LocatedCompleteness
 
 #audit axioms Rumoca.GALEC.Syntax.scanner_preserves_text
@@ -33,3 +34,7 @@ import GALECParser.LocatedCompleteness
 #audit axioms Rumoca.GALEC.Generated.lowering_checked
 #audit axioms Rumoca.GALEC.Generated.ebnf_correct
 #audit axioms Rumoca.GALEC.Generated.source_parse_correct
+
+#audit axioms Rumoca.GALEC.Generated.located_fuel
+#audit axioms Rumoca.GALEC.Generated.source_parseLocated_correct
+#audit axioms Rumoca.GALEC.Generated.parseLocated_erases

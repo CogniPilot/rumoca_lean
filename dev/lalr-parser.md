@@ -65,8 +65,8 @@ LSP/parallel parsing, native compiler regressions and C execution pass in
 passed in `build/lalr-source-cutover/full-gate.log`, with all 581 recorded inputs
 unchanged throughout the run. Actual FMU/eFMU archives and hashes are retained
 in `build/lalr-source-cutover/artifacts/`. This includes the actual source/C,
-FMI ME/CS, GALEC, eFMU and existing rejection/native boundaries. Independent EBNF reader conformance, generic
-located-CST completeness, LR error reporting and generator cost/success remain
+FMI ME/CS, GALEC, eFMU and existing rejection/native boundaries. Independent EBNF
+reader conformance, LR error reporting and generator cost/success remain
 explicit open items. Historical sections below describe earlier checkpoints.
 
 ## Required contract
@@ -236,8 +236,10 @@ builder support other AST representations without changing the LR engine.
   and both language package checks pass, as do downstream audits and native
   boundaries. The required full actual-artifact gate after DFA deletion passes
   in `build/lalr-source-cutover/full-gate.log`. The compiler still admits
-  only the unit profile. Generic located-CST completeness and richer LR syntax
-  diagnostics remain open, separately from the preserved current source spans.
+  only the unit profile. Generic located-CST completeness and bounded generated
+  entries now pass the package checks below and their required artifact gate.
+  Richer LR diagnostics and generated per-production child actions
+  remain open.
 - [ ] **LR07: preprocessing success and cost.** Prove fixed-point convergence,
   LR construction/merging invariants and success under documented limits. Review
   canonical-state growth before larger grammars: canonical LR(1)-then-merge is
@@ -347,6 +349,26 @@ The required full artifact gate for this EBNF increment passed in
 `build/ebnf-preservation/full-gate.log`, with all 584 recorded inputs unchanged.
 The subsequent source cutover deletes the DFA path; its separate evidence is
 recorded above. Neither increment adds a grammar case.
+
+## Located-CST completeness increment
+
+`LALR.LocatedCompleteness` proves that tree annotation preserves every supplied
+token value/span, including empty-node boundaries. Located parsing has exact
+success/error erasure to raw parsing. The same checked resource bound ensures
+complete acceptance and ordinary rejection for all input words. Generated
+`parseLocated text tokens` selects that bound automatically; its source contract
+composes EBNF membership, reader-result binding and termination. The frontend
+lexer owns spelling/trivia correspondence; AST field origins remain separate.
+
+Eight generic and six emitted language roots pass the package audit in
+`build/source-cutover/build/lalr-locations/language-packages-v2.log` (820 jobs).
+The preceding run caught an audit import-order error, now fixed; it is not
+counted as a pass. Generated-file freshness and existing recursive/mutation
+checks pass in its `integration.log`. The required main artifact gate passed in
+`build/lalr-located/full-gate.log`, with all 582 inventoried inputs unchanged.
+Both actual target archives and their hashes are retained under
+`build/lalr-located/artifacts/`.
+No new grammar case or test suite is added.
 
 ## Regression evidence required
 

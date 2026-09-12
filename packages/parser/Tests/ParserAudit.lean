@@ -1,5 +1,6 @@
 import Parser
 import Parser.LocatedCompleteness
+import Parser.LALR.LocatedCompleteness
 import Parser.LALR.EBNF
 import Parser.EBNF.Rules
 import Parser.LALR.Actions
@@ -156,6 +157,14 @@ import ProofAudit.Audit
 #audit axioms Parser.LALR.decorate_wellSpanned
 #audit axioms Parser.LALR.LocatedTree.empty_span
 #audit axioms Parser.LALR.LocatedParse.sound
+#audit axioms Parser.LALR.decorate_fragment
+#audit axioms Parser.LALR.decorate_complete
+#audit axioms Parser.LALR.parseLocated_complete
+#audit axioms Parser.LALR.parseLocated_of_error
+#audit axioms Parser.LALR.parseLocated_erases
+#audit axioms Parser.LALR.parseLocated_success_iff
+#audit axioms Parser.LALR.parseLocated_error_iff
+#audit axioms Parser.LALR.parseLocated_correct
 #audit axioms Parser.Parallel.map_eq
 #audit axioms Parser.Scanner.Lexes.spelled
 #audit axioms Parser.Scanner.lex_locations
