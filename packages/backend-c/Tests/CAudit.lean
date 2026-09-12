@@ -33,6 +33,27 @@ import RumocaC.Decimal
 import RumocaC.LiteralDeclarationBlock
 import RumocaC.LiteralCollection
 import RumocaC.LiteralNames
+import RumocaC.UnsignedMemory
+import RumocaC.CallSignature
+
+#audit axioms Rumoca.CUnsigned.modulus_pos
+#audit axioms Rumoca.CUnsigned.value_correct
+#audit axioms Rumoca.CUnsigned.value_unique
+#audit axioms Rumoca.CUnsigned.value_in_range
+#audit axioms Rumoca.CUnsigned.value_idempotent
+#audit axioms Rumoca.CUnsigned.value_bits
+#audit axioms Rumoca.CMemory.convert_unsigned_iff
+#audit axioms Rumoca.CMemory.convert_unsigned_bits
+#audit axioms Rumoca.CMemory.convert_unsigned_in_range
+#audit axioms Rumoca.CMemory.store_unsigned
+#audit axioms Rumoca.CMemory.load_unsigned_written
+#audit axioms Rumoca.CCalls.Signature.Arguments.length
+#audit axioms Rumoca.CCalls.Signature.locals_cons
+#audit axioms Rumoca.CCalls.Signature.locals_missing
+#audit axioms Rumoca.CCalls.Signature.parameters_bound
+#audit axioms Rumoca.CCalls.Signature.call_entry
+#audit axioms Rumoca.CCalls.Signature.witness_valid
+#audit axioms Rumoca.CCalls.Signature.arguments_exist
 
 #audit axioms Rumoca.CTree.Preprocessing.unspliced_append
 #audit axioms Rumoca.CTree.Preprocessing.Stable.append

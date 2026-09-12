@@ -90,7 +90,7 @@ theorem compile_rendered_reset_verified (compiled : compile input = .ok a)
   ⟨compiled, Reset.rendered_contract a.solve.prepareFMI3,
     Reset.rendered_member a.solve.prepareFMI3 sigs member,
     reset_source a (LiteralPreparation.program a.solve.prepareFMI3 sigs) heap p kind mode t₀
-      (LiteralRejection.function_bound a.solve.prepareFMI3 sigs unique Reset.signature member)
+      (LiteralPreparation.function_bound a.solve.prepareFMI3 sigs unique Reset.signature member)
       storage hk hm⟩
 
 end Rumoca.FMI3

@@ -34,6 +34,15 @@ import RumocaFMI3.StateProofs
 import RumocaFMI3.StateCalls
 import RumocaFMI3.TimeProofs
 import RumocaFMI3.ResetContract
+import RumocaFMI3.CallTypes
+
+#audit axioms Rumoca.FMI3.CallTypes.helpers_ready
+#audit axioms Rumoca.FMI3.CallTypes.functions_ready
+#audit axioms Rumoca.FMI3.CallTypes.value_reference_conversion
+#audit axioms Rumoca.FMI3.CallTypes.value_reference_bits
+#audit axioms Rumoca.FMI3.CallTypes.entry
+#audit axioms Rumoca.FMI3.CallTypes.arguments_exist
+#audit axioms Rumoca.FMI3.LiteralPreparation.definition_bound
 
 #audit axioms Rumoca.FMI3.Header.commentText_reference
 #audit axioms Rumoca.FMI3.Reset.tail_run
@@ -67,7 +76,7 @@ import RumocaFMI3.ResetContract
 
 #audit axioms Rumoca.FMI3.LiteralPreparation.rendered_functions
 #audit axioms Rumoca.FMI3.Header.signatures_unique
-#audit axioms Rumoca.FMI3.LiteralRejection.function_bound
+#audit axioms Rumoca.FMI3.LiteralPreparation.function_bound
 #audit axioms Rumoca.FMI3.LiteralRejection.rejection_message_collected
 #audit axioms Rumoca.FMI3.LiteralRejection.rejection_message_bound
 #audit axioms Rumoca.FMI3.LiteralRejection.nominal_reject

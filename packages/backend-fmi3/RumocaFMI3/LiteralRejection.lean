@@ -9,31 +9,6 @@ open CTree CMemory CLiteral LiteralPreparation
 set_option autoImplicit false
 variable {source : AST.Model}
 
-private theorem find_function (functions : List Function) (fn : Function)
-    (unique : (functions.map (fun f => f.signature.name)).Nodup)
-    (member : fn ∈ functions) :
-    functions.find? (fun f => f.signature.name == fn.signature.name) = some fn := by
-  induction functions with
-  | nil => contradiction
-  | cons head rest ih =>
-      simp only [List.map_cons, List.nodup_cons] at unique
-      rcases List.mem_cons.mp member with rfl | member
-      · simp
-      · have different : head.signature.name ≠ fn.signature.name := by
-          intro same
-          exact unique.1 (List.mem_map.mpr ⟨fn, member, same.symm⟩)
-        simpa [different] using ih unique.2 member
-
-theorem function_bound (m : Solve.FMI3Model source) (signatures : List Signature)
-    (unique : ((functions m signatures).map (fun fn => fn.signature.name)).Nodup)
-    (sig : Signature) (member : sig ∈ signatures) :
-    (program m signatures).definitions sig.name = some (.tree (Runtime.function m sig)) := by
-  have found := find_function (functions m signatures) (Runtime.function m sig) unique
-    (List.mem_append_right _ (List.mem_map.mpr ⟨sig, member, rfl⟩))
-  change (functions m signatures).find? (fun fn => fn.signature.name == sig.name) =
-    some (Runtime.function m sig) at found
-  simp only [program, found]
-
 theorem rejection_message_collected (m : Solve.FMI3Model source) :
     ErrorCalls.rejectionMessage ∈ functionTexts (Runtime.function m ErrorCalls.nominalSignature) := by
   simp [Runtime.function, Runtime.body, ErrorCalls.nominalSignature,

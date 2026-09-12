@@ -2,9 +2,10 @@ import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
 import RumocaFMI3.AdapterPrinter
+import RumocaFMI3.CallTypes
 
-/-! Complete adapter byte identity and independent function-section grammar,
-together with the reset execution/source consequence. Other function execution,
+/-! Complete adapter byte identity, independent function-section grammar and
+typed public/helper call entry, together with the reset execution/source consequence. Other function execution,
 whole-C preprocessing, scope/types, official-header meanings and native ABI remain
 separate obligations. Exact renderer identity is not their substitute. -/
 namespace Rumoca.FMI3
@@ -40,6 +41,8 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
     CTree.Preprocessing.Stable adapter.toList ∧
     AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
+    (∀ fn ∈ LiteralPreparation.functions a.solve.prepareFMI3 sigs,
+      @CCalls.Signature.Ready cInterface fn.signature) ∧
     ∀ static : StaticLiterals,
       @Reset.FunctionContract static a.parsed.ast a.solve.prepareFMI3
         (Runtime.function a.solve.prepareFMI3 Reset.signature).render
@@ -50,11 +53,13 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (member : Reset.signature ∈ sigs)
     (spellings : ∀ sig ∈ sigs, CTree.Preprocessing.SignatureInputs sig)
     (grammar : ∀ sig ∈ sigs, CTree.Printer.SignaturePrintable RuntimePrinter.typedefs sig)
+    (ready : ∀ sig ∈ sigs, @CCalls.Signature.Ready cInterface sig)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
     printed ▸ AdapterPreprocessing.render_stable a.solve.prepareFMI3 sigs
       (AdapterPreprocessing.name_plain (parsed_name a.parsed)) spellings,
     printed ▸ AdapterPrinter.rendered_contract a.solve.prepareFMI3 sigs grammar,
+    CallTypes.functions_ready a.solve.prepareFMI3 sigs ready _,
     fun _ => Reset.rendered_contract _⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
@@ -73,7 +78,7 @@ theorem adapter_reset_syntax (contract : AdapterContract a adapter) :
       adapter = before ++ text ++ after ∧
       CTree.Printer.FunctionDenotes Reset.Printer.typedefs text
         (Runtime.function a.solve.prepareFMI3 Reset.signature) := by
-  obtain ⟨sigs, unique, member, printed, stable, functions, reset⟩ := contract
+  obtain ⟨sigs, unique, member, printed, stable, functions, _, reset⟩ := contract
   obtain ⟨before, after, located⟩ := Reset.rendered_member a.solve.prepareFMI3 sigs member
   refine ⟨before, (Runtime.function a.solve.prepareFMI3 Reset.signature).render, after,
     printed ▸ located, ?_⟩
@@ -106,6 +111,34 @@ variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses
 open CMemory
 
+/-- Every function in the actual adapter has at least one convertible argument
+list. All convertible lists enter its exact body with a fresh coherent scope,
+the caller's unchanged heap and continuation. This is entry, not a claim about
+termination, effects of the body, pointer storage, callbacks or native ABI. -/
+theorem adapter_call_entry (contract : AdapterContract a adapter) :
+    ∃ sigs,
+      Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
+      AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
+      (∀ fn ∈ LiteralPreparation.functions a.solve.prepareFMI3 sigs,
+        ∃ values, CCalls.Signature.Arguments fn.signature.parameters values values) ∧
+      ∀ fn ∈ LiteralPreparation.functions a.solve.prepareFMI3 sigs,
+        ∀ inputs outputs heap stack,
+          CCalls.Signature.Arguments fn.signature.parameters inputs outputs →
+          ∃ types,
+            CCalls.Typed.next (LiteralPreparation.program a.solve.prepareFMI3 sigs)
+              (.calling fn.signature.name inputs heap stack) =
+              some (.body (.running fn.body
+                (CCalls.Signature.locals fn.signature.parameters outputs) types heap)
+                fn.signature.result stack) ∧
+            CCalls.Parameters.Coherent
+              (CCalls.Signature.locals fn.signature.parameters outputs) types := by
+  obtain ⟨sigs, unique, _, printed, _, functions, ready, _⟩ := contract
+  refine ⟨sigs, printed, functions, ?_, ?_⟩
+  · exact CallTypes.arguments_exist a.solve.prepareFMI3 sigs ready static.addresses
+  · intro fn member inputs outputs heap stack arguments
+    exact CallTypes.entry a.solve.prepareFMI3 sigs unique ready static.addresses
+      fn member arguments heap stack
+
 /-- Recover the source initialization guarantee from a certificate for the
 complete adapter bytes. Calls execute the table printed by those same bytes;
 header meanings, native preprocessing and allocated storage remain explicit. -/
@@ -124,7 +157,7 @@ theorem adapter_reset_source (compiled : compile input = .ok a)
   obtain ⟨sigs, unique, member, printed, _, functions, _⟩ := contract
   obtain ⟨result, behavior, initialized⟩ := reset_source a
     (LiteralPreparation.program a.solve.prepareFMI3 sigs) heap p kind mode t₀
-      (LiteralRejection.function_bound a.solve.prepareFMI3 sigs unique Reset.signature member)
+      (LiteralPreparation.function_bound a.solve.prepareFMI3 sigs unique Reset.signature member)
       storage hk hm
   exact ⟨compiled, sigs, result, printed, functions, behavior, initialized⟩
 

@@ -37,6 +37,32 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### FMI parameter types and typed call entry: standards impact
+
+This increment follows `fe4ebef`. Both EBNFs, LALR admission, IR lowering,
+initialization and emitted C/GALEC/XML remain unchanged. The reusable mechanisms
+are width-parametric unsigned conversion and parameter-list-parametric typed
+call entry. The FMI dictionary adds the missing adjusted pointer spellings and
+unsigned 32-bit value references; it does not add general source integer syntax.
+
+| Baseline | Correspondence and remaining obligations |
+| --- | --- |
+| C11 [N1570](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf), §6.3.1.3p1–2 | `CUnsigned.Converts` specifies the in-range integer congruent modulo one more than the maximum value. Uniqueness, identity for in-range values, BitVec correspondence and target conversion/store/load proofs cover arbitrary widths and integer inputs. Actual C widths and typedef meanings remain adapter assumptions. Signed overflow, floating-to-integer and pointer-to-integer conversions are outside this increment. |
+| N1570 §§6.7.6.3p7 and 6.9.1p10 | The call theorem uses the existing array-parameter adjustment, derives fresh named value/type environments and preserves the caller's heap/continuation at entry. It quantifies over convertible arguments and proves those lists exist. Whole body behavior, pointee types/layouts and external declarations remain separate. |
+| FMI 3.0.2 ME/CS, [§§2.2.1–2.2.3](https://fmi-standard.org/docs/3.0.2/#platform-dependent-definitions) | The pinned header specifies `fmi3ValueReference` as `uint32_t`; pointer aliases and callback parameters are opaque symbolic addresses in the authored machine. The actual-file checker now kernel-checks readiness of every collected signature; the contract includes every helper too. It retains all previous grammar/reset fields. Header interpretation, callback execution, allocation, remaining public-call behavior and SR04/SR05/SR07 stay open. |
+| MLS 3.7 | No admission, source equations, initialization selection, Real refinement or provenance changes. The existing unit clause map and S01/SR08 findings carry forward. |
+| eFMI 1.0.0 Beta 1 | The shared target adds an unsigned conversion constructor; eFMI selects its existing dictionary. No Production/Algorithm Code member, manifest, lowering or archive contract changes. Existing coding-guideline and SR07/SR08 findings carry forward; downstream proofs and artifact checks must pass. |
+
+All 26 new roots and affected packages pass
+`build/fmi-types/package-audit-v2.log`. The signature review now reports zero
+missing parameter types among the 75 APIs. The strengthened actual-file checker
+passes in `build/fmi-types/actual-fmi.log`. The required full gate passed in
+`build/fmi-types/full-gate.log`, with all 629 inventoried inputs unchanged and
+both actual archives checked. Exact archives and hashes are retained in
+`build/fmi-types/artifacts/`; C and GALEC members match `fe4ebef`
+(`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
+grammar growth remains blocked.**
+
 ### Complete FMI function-section grammar: standards impact
 
 This increment follows `9751823`. Both source EBNFs, LALR admission, IR

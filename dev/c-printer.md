@@ -222,9 +222,15 @@ byte-for-byte with `9751823` (`code-member-comparison.log`). No source grammar,
 runtime emitter or example-based suite is added.
 
 The review also made the next execution gap concrete: 57 of the pinned
-collector's 75 signatures have at least one adjusted parameter spelling absent
+collector's 75 signatures had at least one adjusted parameter spelling absent
 from `FMI3.cTypes` (43 distinct spellings). `size_t *` and `fmi3Boolean *` are
 examples. This limits entry into the authored typed-call machine; it is not a
 native C failure. Complete the reviewed parameter conversions and header/type
 correspondence before extending the whole-call claim. See
 [the F03 evidence](fmi3/contracts.md#reset-and-complete-adapter-bytes).
+
+
+The subsequent `CallTypes` increment adds those bindings and generic typed-call
+entry proofs. The actual function-section contract now also requires complete
+signature type coverage; see [the current scope and verification status](fmi3/contracts.md#parameter-coverage-and-actual-call-entry).
+Header/type interpretation and complete body behavior are still separate.

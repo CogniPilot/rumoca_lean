@@ -1,5 +1,6 @@
 import RumocaCore.Real.Encoding
 import RumocaC.Character
+import RumocaC.Unsigned
 
 /-! Typed cells at symbolic C subobject addresses. Addresses distinguish live
 blocks, struct member paths and array offsets. This is an object-level C
@@ -60,6 +61,7 @@ def Value.isFinite : Value → Option Bool
 inductive CType where
   | float64 | int32 | size | boolean | pointer
   | character (signed : Bool)
+  | unsigned (width : Nat)
   deriving DecidableEq, Repr
 
 /-- Partial C conversions for the implemented fragment. Unsupported arithmetic
@@ -71,6 +73,7 @@ def convert : CType → Value → Option Value
     else if n = 1 then some (.finite Binary64.one) else none
   | .int32, .integer n => if -(2^31 : Int) ≤ n ∧ n < 2^31 then some (.integer n) else none
   | .size, .integer n => if 0 ≤ n ∧ n < 2^64 then some (.integer n) else none
+  | .unsigned width, .integer n => some (.integer (CUnsigned.value width n))
   | .character signed, .integer n =>
     if CCharacter.inRange signed n then some (.integer n) else none
   | .boolean, v => do return .integer (if ← v.truth then 1 else 0)

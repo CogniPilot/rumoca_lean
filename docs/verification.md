@@ -202,10 +202,27 @@ in `build/fmi-functions/actual-fmi.log`. The required full gate passed in
 and both actual archives checked. Exact archives and hashes are retained in
 `build/fmi-functions/artifacts/`. Typedef meanings, headers/macros, declarations,
 scope/type constraints and other public-call execution remain open. No runtime
-or source grammar changes. In particular, 57 of the 75 collected API signatures
-contain an adjusted parameter type absent from the current execution dictionary;
+or source grammar changes. At that checkpoint, 57 of the 75 collected API signatures
+contained an adjusted parameter type absent from its execution dictionary;
 the new grammar contract does not supply those missing conversions. See the
 [concrete F03 review](../dev/fmi3/contracts.md#reset-and-complete-adapter-bytes).
+
+The current call-entry increment addresses those missing parameter bindings.
+`CallSignature.call_entry` derives a fresh coherent scope from per-parameter
+conversion, while `arguments_exist` establishes a nonempty argument domain.
+`CUnsigned` proves modular integer conversion, uniqueness and BitVec agreement;
+FMI selects 32 bits for value references. `AdapterContract` retains its previous
+fields and requires known parameter/return types and unique parameter names for
+every actual helper/API function. `adapter_call_entry` binds their entry theorem
+to the same actual bytes and grammar witness. This does not establish body
+termination/effects, pointee storage, callback execution or native header/ABI
+correspondence. All 26 new roots and affected packages pass
+`build/fmi-types/package-audit-v2.log`. The strengthened actual-file checker
+passes in `build/fmi-types/actual-fmi.log`. The required full gate passed in
+`build/fmi-types/full-gate.log`, with all 629 inventoried inputs unchanged and
+both actual archives checked. Exact archives and hashes are retained in
+`build/fmi-types/artifacts/`; their C and GALEC members match `fe4ebef`. No source
+grammar or runtime emitter changes.
 
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering

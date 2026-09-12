@@ -57,6 +57,35 @@ noncomputable def program (m : Solve.FMI3Model source) (signatures : List Signat
       | _ => none
   kernel := CSyntax.fromTarget (C.lower m.solve)
 
+private theorem find_function (functions : List Function) (fn : Function)
+    (unique : (functions.map (fun f => f.signature.name)).Nodup)
+    (member : fn ∈ functions) :
+    functions.find? (fun f => f.signature.name == fn.signature.name) = some fn := by
+  induction functions with
+  | nil => contradiction
+  | cons head rest ih =>
+      simp only [List.map_cons, List.nodup_cons] at unique
+      rcases List.mem_cons.mp member with rfl | member
+      · simp
+      · have different : head.signature.name ≠ fn.signature.name := by
+          intro same
+          exact unique.1 (List.mem_map.mpr ⟨fn, member, same.symm⟩)
+        simpa [different] using ih unique.2 member
+
+theorem definition_bound (m : Solve.FMI3Model source) (signatures : List Signature)
+    (unique : ((functions m signatures).map (fun fn => fn.signature.name)).Nodup)
+    (fn : Function) (member : fn ∈ functions m signatures) :
+    (program m signatures).definitions fn.signature.name = some (.tree fn) := by
+  have found := find_function (functions m signatures) fn unique member
+  simp only [program, found]
+
+theorem function_bound (m : Solve.FMI3Model source) (signatures : List Signature)
+    (unique : ((functions m signatures).map (fun fn => fn.signature.name)).Nodup)
+    (sig : Signature) (member : sig ∈ signatures) :
+    (program m signatures).definitions sig.name = some (.tree (Runtime.function m sig)) :=
+  definition_bound m signatures unique (Runtime.function m sig)
+    (List.mem_append_right _ (List.mem_map.mpr ⟨sig, member, rfl⟩))
+
 theorem program_covered (m : Solve.FMI3Model source) (signatures : List Signature)
     (name : String) (fn : Function)
     (defined : (program m signatures).definitions name = some (.tree fn)) :

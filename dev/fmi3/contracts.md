@@ -233,12 +233,12 @@ actual declarations or type meanings, and the other public calls still need
 their execution contracts.
 
 The same review inspected adjusted parameter spellings from the actual pinned
-header. Of its 75 collected signatures, 57 have an unmapped parameter in
+header. At `fe4ebef`, 57 of its 75 collected signatures had an unmapped parameter in
 `FMI3.cTypes`, spanning 43 spellings (`build/fmi-functions/signature-types.log`).
 These include `size_t *`, `fmi3Boolean *`, value-reference pointers and callback
 aliases. The isolated universal result in `unmapped-call-v2.log` confirms that
-the current typed machine cannot enter `fmi3GetNumberOfContinuousStates` with
-its intended pointer arguments because `size_t *` is absent. This is an open
+that revision's typed machine could not enter `fmi3GetNumberOfContinuousStates`
+with its intended pointer arguments because `size_t *` was absent. This is an open
 F03 execution-model obligation, not a generated native C failure; the existing
 native FMI checks pass. The next contract work must cover those conversions
 and their header/type correspondence without weakening the current guarantees.
@@ -294,3 +294,34 @@ A later Rust/MiniJinja producer could remain untrusted and submit its actual
 output to the independent Lean checker. It would still need a target semantics
 and artifact contract; textual substitution alone cannot inherit correctness.
 That extension is deferred and must not complicate the current FMI milestone.
+
+
+### Parameter coverage and actual call entry
+
+The follow-on increment adds all adjusted pointer spellings missing in the
+57-signature review, plus unsigned 32-bit `fmi3ValueReference` conversion. Shared
+`CallSignature` proves fresh scope construction and coherent typed entry for
+arbitrary parameter lists and convertible arguments; it also supplies argument
+witnesses for every known type. `CallTypes` instantiates this for the exact
+runtime helper/API list and the renderer's definition lookup.
+
+`AdapterContract` now requires every listed function's parameter names to be
+unique and all parameter/return types to be known (with `void` returns allowed).
+The fixed checker proves readiness of the collected signatures in Lean's kernel.
+`adapter_call_entry` retains actual-byte identity and independent function grammar
+while deriving entry for every member and convertible argument list. The heap
+and saved continuation are unchanged at entry. All prior reset, grammar and
+preprocessing fields remain required.
+
+Pointer aliases and callback parameters have opaque address values here; this
+is not a proof of pointee types/layouts, callback execution or native ABI. The
+unsigned relation proves the chosen dictionary's conversion semantics, not the
+meaning of parsed official headers. Complete body behaviors, allocation and
+whole-translation-unit interpretation remain open. All 26 new roots and affected
+packages pass `build/fmi-types/package-audit-v2.log`. The signature review reports
+zero missing parameter types among 75 APIs. The strengthened actual-file checker
+passes in `build/fmi-types/actual-fmi.log`. The required full artifact gate passed
+in `build/fmi-types/full-gate.log`, with all 629 inventoried inputs unchanged and
+both actual archives checked. Exact artifacts and hashes are retained in
+`build/fmi-types/artifacts/`. The C and GALEC members match `fe4ebef`; only the
+authored target semantics and mandatory proof contract are strengthened.

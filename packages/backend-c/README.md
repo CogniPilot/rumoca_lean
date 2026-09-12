@@ -36,6 +36,8 @@ source/IR evidence and have their own composed correctness contracts.
 | `TokenConcatenation`, `TreeConcatenation`, `TreeTokenization` | Ordinary-literal separation and one function witness combining maximal tokenization, phrase grammar and concatenation stability |
 | `FunctionSequence` | Arbitrary complete function lists with one lexical/grammar/concatenation contract across actual boundaries |
 | `PrinterCertificate` | Untrusted Lean candidate construction for kernel-checked signature spellings; caller supplies typedef context and actual signatures |
+| `Unsigned`, `UnsignedMemory` | Width-parametric modular integer conversion, BitVec representation and typed object-store proofs |
+| `CallSignature` | Generic convertible arguments, fresh named scope, coherent typed call entry and existence of argument witnesses |
 | `Character`, `ReadOnly`, `LiteralStorage`, `LiteralPointers` | Character representation, immutable symbolic objects and literal-pointer evaluation |
 | `LiteralLowering`, `LiteralLoopLowering`, `LiteralCallLowering` | Literal-to-name transformation and all-behavior preservation through bodies, loops and calls |
 | `LiteralInterface`, `LiteralInterfaceCalls`, `LiteralPool*` | Global lookup preservation, checked name/text pools, symbolic storage construction and composed call preservation |

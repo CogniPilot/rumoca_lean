@@ -1,7 +1,7 @@
 import RumocaFMI3.ResetSyntax
 import RumocaFMI3.ResetPrinter
 import RumocaC.TreeTokenization
-import RumocaFMI3.LiteralRejection
+import RumocaFMI3.LiteralPreparation
 
 /-! Reset's function-text and execution contract over the actual rendered
 definition list. This is a fragment contract; it does not establish that a
@@ -38,11 +38,11 @@ theorem rendered_contract (m : Solve.FMI3Model source) :
     (Printer.render_denotes m).tokenization, ?_, ?_⟩
   · intro sigs member unique heap p kind mode storage hk hm behavior
     exact call_behaviors m (LiteralPreparation.program m sigs) heap p kind mode
-      (LiteralRejection.function_bound m sigs unique signature member)
+      (LiteralPreparation.function_bound m sigs unique signature member)
       storage hk hm behavior
   · intro sigs member unique heap behavior
     exact null_behaviors m (LiteralPreparation.program m sigs) heap
-      (LiteralRejection.function_bound m sigs unique signature member) behavior
+      (LiteralPreparation.function_bound m sigs unique signature member) behavior
 
 omit static in
 /-- The full renderer places the certified fragment at a function-list slot.

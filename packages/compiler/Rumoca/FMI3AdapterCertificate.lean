@@ -139,6 +139,11 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
   let sigTerms ← sigs.toArray.mapM quoteSignature
   let signatures := mkIdent (base.str "signatures")
   elabCommand (← `(command| def $signatures:ident : List CTree.Signature := [$sigTerms,*]))
+  let ready := mkIdent (base.str "signatures_ready")
+  elabCommand (← `(command| theorem $ready:ident :
+    ∀ sig ∈ $signatures, @CCalls.Signature.Ready FMI3.cInterface sig := by
+      change ∀ sig ∈ [$sigTerms,*], @CCalls.Signature.Ready FMI3.cInterface sig
+      decide +kernel))
   let printable := mkIdent (base.str "signatures_printable")
   let signatureProof ← CTree.Printer.Certificate.signaturesProof
     (← `(term| FMI3.RuntimePrinter.typedefs)) sigs
@@ -235,6 +240,7 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
       · change ∀ sig ∈ [$sigTerms,*], CTree.Preprocessing.SignatureInputs sig
         decide +kernel
       · exact $printable
+      · exact $ready
       · exact $rendered))
   return theoremId
 

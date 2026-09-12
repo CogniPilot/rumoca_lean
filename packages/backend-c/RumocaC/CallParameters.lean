@@ -34,6 +34,10 @@ theorem convert_stable (type : CType) (value result : Value)
     cases value <;> simp [convert] at h
     rcases h with ⟨bounds, rfl⟩
     simpa [convert] using bounds
+  | unsigned width =>
+    cases value <;> simp [convert] at h
+    subst result
+    simp [convert, CUnsigned.value_idempotent]
   | pointer => cases value <;> simp [convert] at h; cases h; rfl
   | boolean =>
     cases ht : value.truth <;> simp [convert, ht] at h

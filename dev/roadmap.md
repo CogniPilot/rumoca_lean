@@ -462,6 +462,19 @@ native C passing does not fill this formal-model gap. Evidence is in
 in `unmapped-call-v2.log`. C01/F03 and the standards stage remain open; no new
 grammar case is authorized.
 
+The following call-entry increment addresses that concrete gap using generic
+unsigned conversion and fresh-scope proofs, with mandatory actual-signature
+readiness in `AdapterContract`. `adapter_call_entry` derives entry for every
+rendered helper/API and every convertible argument list, plus existence of such
+lists. All 26 new roots and affected packages pass
+`build/fmi-types/package-audit-v2.log`. The strengthened actual-file checker
+passes in `build/fmi-types/actual-fmi.log`. The required full gate passed in
+`build/fmi-types/full-gate.log`, with all 629 inputs unchanged and both actual
+archives checked. Exact artifacts and hashes are in `build/fmi-types/artifacts/`;
+C and GALEC members are unchanged from `fe4ebef`.
+This does not close F03: complete public-call behavior, header meanings, pointer
+storage/layouts, callbacks and allocation still need composition.
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).
