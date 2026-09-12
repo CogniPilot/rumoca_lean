@@ -735,16 +735,26 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   composition and property transfer. The driven equation and initialization
   chains compose each actual lowering. The production driver still needs to
   instantiate the generic operational contract at the complete new boundary.
-- [ ] **P02 — Specify the EBNF metalanguage independently.** Depends on S01.
+- [x] **P02 — Specify the EBNF metalanguage independently.** Depends on S01.
   State the supported dialect as a declarative relation, including
   grouping, alternatives, optional/repeated forms, empty terminals, comments
   and error/resource cases. **Close with:** EBNF-reader soundness and the
   promised completeness theorem against that relation, connected to existing
   LALR/original-alphabet proofs and AST actions. Independent recursive EBNF
   expression semantics and certified EBNF-to-CFG preservation are now proved
-  in both directions. The generated source contract also checks the actual
-  EBNF reader result. That does not prove the text reader conforms to an
-  independently specified metalanguage; this remains the P02 gap. See
+  in both directions. Independent character/token notation now supplies the
+  text-reader specification. `EBNF.parse_iff` proves soundness and completeness
+  at the actual public budgets; `parse_rejected_iff` covers rejection. Forty
+  generic roots pass the unchanged parser axiom audit in
+  `build/source-cutover/build/ebnf-reader/parser-package.log`. Generated ordinary
+  and located source contracts, and `Frontend.compile_correct`, now include
+  independent notation. Both language package audits and the existing integration
+  checks pass in that directory's `language-packages.log` and `integration.log`.
+  The required main artifact gate passed in `build/ebnf-reader/full-gate.log`,
+  with all 591 inventoried inputs unchanged and both actual target archives
+  retained under its `artifacts/` directory. P02 is closed for this dialect;
+  the broader S01 standards review and other parser obligations remain open.
+  The dialect is not all ISO 14977 notation. See
   [the LALR plan](lalr-parser.md), LR01–LR07.
 - [ ] **P03 — Make parser/AST actions an extensible contract.** Depends on
   P01/P02. Keep the parser package independent of compiler IRs. Specify the
@@ -759,7 +769,7 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   Modelica and GALEC derive their AST token membership in source EBNF semantics,
   with grammar-parametric LR completeness supplying execution. Current source
   spans and diagnostics are retained. Generated per-production child actions,
-  richer LR errors and P02 remain open. Generic located-CST completeness and
+  richer LR errors remain open. Generic located-CST completeness and
   generated bounded entries now pass package and recursive/mutation checks;
   that increment's required main artifact gate passed in
   `build/lalr-located/full-gate.log`, including both target archives with all
@@ -772,7 +782,7 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   and GALEC now use the same generated LALR engine and input-size bounds;
   the DFA implementation and generator have been removed. Typed AST/source
   contracts and actual-artifact grammar binding follow the new source path.
-  **Remaining:** independent metalanguage-reader conformance, richer diagnostics,
+  **Remaining:** richer diagnostics,
   and preprocessing success/cost. **Close with:**
   the actual grammar-to-parser product carries the full contract; both current
   profiles instantiate it; the production source/IR/artifact chain and complete
@@ -800,7 +810,7 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   native boundary and direct actual-C checks pass in
   `build/source-cutover/build/`; its required main full artifact gate passed
   in `build/lalr-source-cutover/full-gate.log`, with all 581 recorded inputs
-  unchanged and both actual archives retained. P02 and the other open items above
+  unchanged and both actual archives retained. The other open items above
   remain blockers; these checkpoints do not close the entire compiler roadmap.
 
 ### Arithmetic and the target boundary

@@ -544,8 +544,19 @@ which encode outside the terminal range and distinctly from EOF.
 The EBNF reader accepts comma/equal and selected Rumoca/parol-style colon
 notation, single/double quoted literals and implicit sequences. The embedded
 reader result is kernel checked and actual grammar files must match the embedded
-source. Independent conformance of this reader to an EBNF metalanguage (P02)
-remains open; no ISO 14977 theorem is claimed.
+source. Independent character and token relations now specify this dialect;
+`EBNF.parse_iff` proves exact agreement with the public text reader, including
+its actual input-size budgets. `parse_rejected_iff` characterizes all rejected
+source strings. Forty added generic roots pass the parser package audit in
+`build/source-cutover/build/ebnf-reader/parser-package.log`. The generated
+ordinary and located parser contracts now include independent source notation.
+`Frontend.compile_correct` also composes that notation with CFG preservation.
+Both language package audits and existing integration checks pass in the same
+directory's `language-packages.log` and `integration.log`. The required main
+artifact gate for P02 passed in `build/ebnf-reader/full-gate.log`, with all 591
+inventoried inputs unchanged. Both actual target archives and their hashes are
+retained in `build/ebnf-reader/artifacts/`. No full ISO 14977 theorem or exact
+error-message contract is claimed.
 
 The in-tree `Parser.LALR` candidate generator implements
 canonical LR(1) construction and LR(0) kernel merging. `LALR.parse_sound` proves
@@ -668,7 +679,7 @@ all 581 recorded inputs unchanged throughout the run. Actual FMU/eFMU archives
 and their hashes are retained in its `artifacts/` directory. This covers the
 existing actual-source/C, FMI ME/CS, GALEC, complete eFMU and rejection/native
 boundaries. These are implementation checkpoints, not a completed compiler
-or FMI/eFMI compliance claim. Richer LR rejection reporting, P02 and generator
+or FMI/eFMI compliance claim. Richer LR rejection reporting and generator
 success/cost proofs remain open;
 see [LR01–LR07](../dev/lalr-parser.md).
 

@@ -1,11 +1,12 @@
+import Parser.EBNF.ReaderCorrectness
 import Parser.LALR.EBNFEncoding
 
 /-! Certified context-free desugaring from the EBNF reader's expression tree.
 Sequences remain inline and references remain nonterminals, including recursive
 references. Alternatives, optionals and repetition use fresh helpers. Candidate
 construction must pass the independent finite structural witness checker before
-its grammar is returned. The EBNF text reader's metalanguage contract remains
-separate from expression-to-CFG language preservation. -/
+its grammar is returned. The public text-to-CFG theorem composes independent
+notation syntax with expression-to-CFG language preservation. -/
 namespace Parser.LALR.Frontend
 
 private def atoms : EBNF.Expr → List Parser.Symbol
@@ -110,16 +111,16 @@ theorem lower_correct (result : lower source = .ok prepared) (word : List Parser
     cases Except.ok.inj result
     exact certificate.accepts_iff word
 
-/-- Bind preservation to the actual reader result without claiming that the
-reader already implements an independently specified EBNF metalanguage. -/
+/-- The actual text-to-CFG entry preserves the language of the independently
+denoted EBNF grammar. Candidate validation may still reject unsupported inputs. -/
 theorem compile_correct (result : compile text = .ok prepared) :
-    ∃ source, EBNF.parse text = .ok source ∧
+    ∃ source, EBNF.Metalanguage.Denotes text source ∧
       ∀ word, EBNF.Accepts source word ↔ prepared.grammar.Accepts (word.map prepared.encode) := by
   unfold compile at result
   cases h : EBNF.parse text with
   | error error => simp only [h] at result; contradiction
   | ok source =>
     rw [h] at result
-    exact ⟨source, rfl, lower_correct result⟩
+    exact ⟨source, EBNF.parse_sound h, lower_correct result⟩
 
 end Parser.LALR.Frontend

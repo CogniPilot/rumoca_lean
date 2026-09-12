@@ -45,7 +45,7 @@ coefficients are used at runtime; credit arrays are proof-only metadata.
 structural witness accounts for every source branch and every actual CFG rule;
 `Frontend.lower_correct` and `compile_correct` prove language preservation for
 the public preprocessing functions. Generated `source_parse_correct` binds the
-embedded EBNF reader result to its CFG and the actual `parseSymbols` entry point,
+embedded EBNF notation to its CFG and the actual `parseSymbols` entry point,
 with exact acceptance equivalence and all-input termination. The expression
 and lowering witness constants are proof-only. Generic and actual Modelica/GALEC/
 recursive certificates pass the package and existing integration gates in
@@ -64,8 +64,24 @@ executable LR parser. Generated one-step named-rule equations support source
 AST derivations; recursive equations are not automatically unfolded by `simp`.
 Modelica and GALEC now use this engine and its generated input-size bounds.
 
-The independent EBNF metalanguage-reader conformance proof and richer LR
-rejection diagnostics remain open.
+`EBNF.Metalanguage.Denotes` specifies the supported character/token notation
+without invoking the reader. `EBNF.parse_iff` proves the actual text reader
+succeeds exactly for that notation; `parse_rejected_iff` characterizes rejection.
+The normal character-count and token-count budgets suffice for every valid
+input. The proof covers ASCII names and maximal munch, whitespace, non-nested
+block comments, line comments, unescaped quoted literals (including empty ones),
+precedence, groups, alternatives, sequences, optionals and repetitions, unique
+rule names and the reserved `IDENT` lexical category. Undefined references remain
+lowering errors. This is the documented dialect, not all ISO 14977 notation.
+Forty new generic roots pass `build/source-cutover/build/ebnf-reader/parser-package.log`.
+Generated ordinary and located contracts now include independent source notation;
+the public text-to-CFG `Frontend.compile_correct` theorem does too. Both language
+package audits and the existing integration checks pass in that directory's
+`language-packages.log` and `integration.log`. The required main artifact gate
+passed in `build/ebnf-reader/full-gate.log`, with all 591 inventoried inputs
+unchanged and both target archives checked.
+
+Richer LR rejection diagnostics remain open.
 Successful candidate generation for every supported conflict-free grammar is
 also a separate obligation. Conflicts and preprocessing limits remain explicit
 errors; no claim says every supplied grammar is LALR(1). See

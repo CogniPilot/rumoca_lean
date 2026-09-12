@@ -1,4 +1,4 @@
-import Parser.Token
+import Parser.EBNF.Syntax
 
 /-! A small, total EBNF reader. Recursive expression semantics and checked
 EBNF-to-CFG lowering are separate modules; there is no regular-rule expander.
@@ -8,13 +8,9 @@ alternatives |, groups (), optionals [], repetitions {}, (* comments *) and
 line comments are supported. Parol action annotations and regexes are not. -/
 namespace Parser.EBNF
 
-inductive Lexeme where
-  | name (s : String)
-  | text (s : String)
-  | punct (c : Char)
-  deriving Repr, BEq, DecidableEq
+namespace Reader
 
-private def quoted (delimiter : Char) : List Char → Except String (String × List Char)
+def quoted (delimiter : Char) : List Char → Except String (String × List Char)
   | [] => .error "unterminated quoted terminal"
   | '\\' :: _ => .error "escapes in EBNF terminals are not supported"
   | c :: cs => do
@@ -22,12 +18,12 @@ private def quoted (delimiter : Char) : List Char → Except String (String × L
     let (s, tail) ← quoted delimiter cs
     return (String.singleton c ++ s, tail)
 
-private def comment : List Char → Except String (List Char)
+def comment : List Char → Except String (List Char)
   | [] => .error "unterminated EBNF comment"
   | '*' :: ')' :: cs => .ok cs
   | _ :: cs => comment cs
 
-private def tokenize : Nat → List Char → Except String (List Lexeme)
+def tokenize : Nat → List Char → Except String (List Lexeme)
   | 0, _ => .error "EBNF input limit exceeded"
   | _ + 1, [] => .ok []
   | fuel + 1, cs@(c :: tail) => do
@@ -44,26 +40,17 @@ private def tokenize : Nat → List Char → Except String (List Lexeme)
       return .punct c :: (← tokenize fuel tail)
     else .error s!"unexpected EBNF character {repr c}"
 
-inductive Expr where
-  | terminal (s : Symbol)
-  | ref (name : String)
-  | seq (a b : Expr)
-  | alt (a b : Expr)
-  | optional (a : Expr)
-  | many (a : Expr)
-  deriving Repr, BEq, DecidableEq, ReflBEq, LawfulBEq
-
-private def expect (c : Char) : List Lexeme → Except String (List Lexeme)
+def expect (c : Char) : List Lexeme → Except String (List Lexeme)
   | .punct d :: tail => if c == d then .ok tail else .error s!"expected '{c}'"
   | _ => .error s!"expected '{c}'"
 
-private def startsPrimary : List Lexeme → Bool
+def startsPrimary : List Lexeme → Bool
   | .name _ :: _ | .text _ :: _ => true
   | .punct '(' :: _ | .punct '[' :: _ | .punct '{' :: _ => true
   | _ => false
 
 mutual
-  private def expression : Nat → List Lexeme → Except String (Expr × List Lexeme)
+  def expression : Nat → List Lexeme → Except String (Expr × List Lexeme)
     | 0, _ => .error "EBNF nesting limit exceeded"
     | fuel + 1, input => do
       let (a, rest) ← sequence fuel input
@@ -72,8 +59,9 @@ mutual
         let (b, tail) ← expression fuel tail
         return (.alt a b, tail)
       | _ => return (a, rest)
+    termination_by structural fuel _ => fuel
 
-  private def sequence : Nat → List Lexeme → Except String (Expr × List Lexeme)
+  def sequence : Nat → List Lexeme → Except String (Expr × List Lexeme)
     | 0, _ => .error "EBNF nesting limit exceeded"
     | fuel + 1, input => do
       let (a, rest) ← primary fuel input
@@ -86,8 +74,9 @@ mutual
           let (b, tail) ← sequence fuel rest
           return (.seq a b, tail)
         else return (a, rest)
+    termination_by structural fuel _ => fuel
 
-  private def primary : Nat → List Lexeme → Except String (Expr × List Lexeme)
+  def primary : Nat → List Lexeme → Except String (Expr × List Lexeme)
     | 0, _ => .error "EBNF nesting limit exceeded"
     | _ + 1, .name "IDENT" :: tail => .ok (.terminal .ident, tail)
     | _ + 1, .name s :: tail => .ok (.ref s, tail)
@@ -102,11 +91,10 @@ mutual
       let (e, tail) ← expression fuel tail
       return (.many e, ← expect '}' tail)
     | _, _ => .error "expected terminal, rule name, or group"
+    termination_by structural fuel _ => fuel
 end
 
-abbrev Grammar := List (String × Expr)
-
-private def rules : Nat → List Lexeme → Except String Grammar
+def rules : Nat → List Lexeme → Except String Grammar
   | 0, _ => .error "EBNF rule limit exceeded"
   | _ + 1, [] => .ok []
   | fuel + 1, .name name :: .punct separator :: input => do
@@ -118,11 +106,13 @@ private def rules : Nat → List Lexeme → Except String Grammar
     return (name, body) :: rest
   | _, _ => .error "expected rule = expression ;"
 
+end Reader
+
 def lex (source : String) : Except String (List Lexeme) :=
-  tokenize (source.toList.length + 1) source.toList
+  Reader.tokenize (source.toList.length + 1) source.toList
 
 def parseTokens (ts : List Lexeme) : Except String Grammar := do
-  let g ← rules (ts.length + 1) ts
+  let g ← Reader.rules (ts.length + 1) ts
   if g.isEmpty then throw "empty grammar"
   return g
 

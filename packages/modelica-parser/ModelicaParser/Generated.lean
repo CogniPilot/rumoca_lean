@@ -7,6 +7,7 @@ import Parser.LALR.Progress
 import Parser.Token
 import Parser.LALR.LocatedCompleteness
 import Parser.LALR.EBNFEncoding
+import Parser.EBNF.ReaderCorrectness
 import Parser.EBNF.Rules
 import Parser.LALR.Actions
 
@@ -1435,6 +1436,9 @@ private theorem parsing_checked : Parser.EBNF.parseTokens sourceTokens = .ok sou
 
 theorem source_read_checked : Parser.EBNF.parse source = .ok sourceGrammar :=
   (Parser.EBNF.parse_of_lex lexing_checked).trans parsing_checked
+
+theorem source_notation_checked : Parser.EBNF.Metalanguage.Denotes source sourceGrammar :=
+  Parser.EBNF.parse_sound source_read_checked
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -3866,10 +3870,10 @@ def parseSymbols (word : List Parser.Symbol) : Except LALR.Failure LALR.Tree :=
   parse (word.map encode)
 
 theorem source_parse_correct (word : List Parser.Symbol) :
-    Parser.EBNF.parse source = .ok sourceGrammar ∧
+    Parser.EBNF.Metalanguage.Denotes source sourceGrammar ∧
     (Parser.EBNF.Accepts sourceGrammar word ↔ ∃ tree, parseSymbols word = .ok tree) ∧
     ((∃ tree, parseSymbols word = .ok tree) ∨ parseSymbols word = .error .rejected) :=
-  ⟨source_read_checked, (ebnf_correct word).trans (parse_correct (word.map encode)).1,
+  ⟨source_notation_checked, (ebnf_correct word).trans (parse_correct (word.map encode)).1,
     (parse_correct (word.map encode)).2⟩
 
 def tokenParser : LALR.TokenParser Parser.Symbol where
@@ -3900,7 +3904,7 @@ theorem located_fuel {text : String} (tokens : List (Source.Located text Token))
     fuel_eq ((encodeLocatedTokens tokens).map (·.value))
 
 theorem source_parseLocated_correct (text : String) (tokens : List (Source.Located text Token)) :
-    Parser.EBNF.parse source = .ok sourceGrammar ∧
+    Parser.EBNF.Metalanguage.Denotes source sourceGrammar ∧
     (Parser.EBNF.Accepts sourceGrammar (tokens.map (fun token => token.value.symbol)) ↔
       ∃ result, parseLocated text tokens = .ok result) ∧
     ((∃ result, parseLocated text tokens = .ok result) ∨
@@ -3908,7 +3912,7 @@ theorem source_parseLocated_correct (text : String) (tokens : List (Source.Locat
   have checked := LALR.parseLocated_correct items_checked budget_checked safety_checked
     progress_checked (encodeLocatedTokens tokens)
   rw [← located_fuel tokens] at checked
-  refine ⟨source_read_checked, ?_, checked.2⟩
+  refine ⟨source_notation_checked, ?_, checked.2⟩
   exact (ebnf_correct (tokens.map (fun token => token.value.symbol))).trans
     (by simpa only [encodeLocatedTokens, List.map_map, Function.comp_def, parseLocated]
       using checked.1)

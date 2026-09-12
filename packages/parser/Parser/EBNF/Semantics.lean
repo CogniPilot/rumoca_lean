@@ -1,4 +1,4 @@
-import Parser.EBNF
+import Parser.EBNF.Syntax
 
 /-! Independent language semantics for the supported EBNF expression syntax.
 References use finite derivations, including mutually recursive rules. Neither

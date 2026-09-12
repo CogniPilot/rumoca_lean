@@ -44,8 +44,12 @@ existing bound. Fourteen generic/language audit roots and existing recursive
 and mutation checks pass in `build/source-cutover/build/lalr-locations/`;
 this increment's required main artifact gate passed in
 `build/lalr-located/full-gate.log`, with all 582 inventoried inputs unchanged
-and both actual target archives checked. Independent EBNF
-reader conformance remains open.
+and both actual target archives checked. Independent EBNF reader soundness and
+completeness now pass the parser and language package audits and existing
+integration checks. Their required artifact gate passed in
+`build/ebnf-reader/full-gate.log`, with all 591 inventoried inputs unchanged and
+both target archives checked. The reader proof adds no source-language case or
+origin annotation.
 
 `Rumoca.parseLocated` provides the existing Modelica AST plus a source-bound
 location sidecar. Its `erases` theorem identifies the same actual production

@@ -25,6 +25,7 @@ example : (Parser.LALR.parse Parser.LALRGenerated.grammar
 LEAN
 cat >> "$task_tmp/Recursive.lean" <<'LEAN'
 #print axioms Parser.LALRGenerated.source_read_checked
+#print axioms Parser.LALRGenerated.source_notation_checked
 #print axioms Parser.LALRGenerated.lowering_checked
 #print axioms Parser.LALRGenerated.ebnf_correct
 #print axioms Parser.LALRGenerated.source_parse_correct

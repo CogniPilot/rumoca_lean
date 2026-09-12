@@ -60,7 +60,7 @@ input are different findings.
 | Applicable obligation | Implementation/proof correspondence | Review result or remaining obligation |
 | --- | --- | --- |
 | MLS §§2.1–2.4 and A.1: ordinary identifiers, keywords, whitespace and the integer literal `1`. [Lexical clauses](https://specification.modelica.org/maint/3.7/lexical-structure.html) | [Lexer](../packages/modelica-parser/ModelicaParser/Lexer.lean): `lex_correct` characterizes maximal-munch scanning; `reserved` includes the keywords and four protected predefined type names. | Reviewed for the ASCII restriction. Comments, quoted identifiers and other literal forms remain excluded; the theorem is about the authored lexical rules. |
-| MLS A.2.1, A.2.2, A.2.4, A.2.6–A.2.7: one model, declaration and equality equation. [Concrete syntax](https://specification.modelica.org/maint/3.7/modelica-concrete-syntax.html) | [ParserProofs](../packages/modelica-parser/ModelicaParser/ParserProofs.lean): `parsed_in_ebnf`; [Compiler](../packages/compiler/Rumoca/Compiler.lean): `compile_complete` for the resolved unit token shape. | Generated-grammar membership is proved. Independent metalanguage/grammar correspondence remains P02; there is no full MLS parser-completeness claim. |
+| MLS A.2.1, A.2.2, A.2.4, A.2.6–A.2.7: one model, declaration and equality equation. [Concrete syntax](https://specification.modelica.org/maint/3.7/modelica-concrete-syntax.html) | [ParserProofs](../packages/modelica-parser/ModelicaParser/ParserProofs.lean): `parsed_in_ebnf`; [Compiler](../packages/compiler/Rumoca/Compiler.lean): `compile_complete` for the resolved unit token shape. | Generated-grammar membership and independent metalanguage correspondence are proved for the admitted dialect (P02). S01 retains correspondence with MLS; there is no full MLS parser-completeness claim. |
 | MLS §§8.2–8.3.1: equation lookup and compatible equality operands. [Equation clauses](https://specification.modelica.org/maint/3.7/equations.html) | [AST](../packages/modelica-parser/ModelicaParser/AST.lean): `Resolved`; [LocatedProofs](../packages/modelica-parser/ModelicaParser/LocatedProofs.lean): `resolved_references`, `resolve_error_locations`. | The derivative must name the one declared state; failed resolution has exact occurrence/declaration spans. General scopes are excluded. Record the literal-Integer-to-Real interpretation explicitly in S01. |
 | MLS Operator 3.12: `der` is the time derivative of the continuous Real operand. [Operator clause](https://specification.modelica.org/maint/3.7/operators-and-expressions.html) | [Source](../packages/compiler/Rumoca/Source.lean): `Solves`, `trajectory_derivative`; [Behavioral](../packages/compiler/Rumoca/Behavioral.lean): `lowering_chain_behavior_correct`. | The ideal `x₀ + t` trajectory and unit derivative are proved. This does not give finite storage semantics or choose an initial value. |
 | MLS §4.9.1: finite stored Real values. [Real type](https://specification.modelica.org/maint/3.7/class-predefined-types-and-declarations.html) | [Encoding](../packages/core/RumocaCore/Real/Encoding.lean): `finiteEncodingEquiv`; [Verified](../packages/compiler/Rumoca/Verified.lean): `compiler_semantic_preservation` and `ArtifactContract.real_solution_refinement`. | Binary64 profile and rounding refinement are proved under the documented C/IEEE assumptions. S01/N01 still require reviewed correspondence; unbounded mathematical trajectories are not stored Real values. |
@@ -80,6 +80,32 @@ Both gates retain their successful archives; reviewed SHA-256 identities are:
 
 The [hosted run for this revision](https://github.com/CogniPilot/rumoca_lean/actions/runs/34524473640)
 also passed. **Stage decision: open; grammar growth is blocked.**
+
+### Independent EBNF reader: standards impact
+
+This candidate follows `e9f41c7`. The Modelica and GALEC EBNF hashes still match
+the unit-stage table above. No source production, lexer policy, initialization,
+IR lowering, numerical behavior, interface or archive layout changes.
+
+| Baseline | Change and claim boundary |
+| --- | --- |
+| MLS 3.7 §§2 and A.2 | Independent character/token relations now specify the existing EBNF dialect. The public reader is sound and complete at its normal budgets; generated Modelica source contracts compose this notation with EBNF-to-CFG preservation and LALR acceptance. This closes a reader-proof gap after integration; it does not assert full MLS grammar coverage or settle S01/SR08. |
+| FMI 3.0.2 ME/CS | The existing source profile, Solve preparation, emitted C and interface contracts are unchanged. The same complete artifact gate remains required. Open adapter/lifecycle and standards findings carry forward. |
+| eFMI 1.0.0 Beta 1 | The same independent notation theorem is emitted for GALEC. The admitted GALEC block, Production C path and archive contract are unchanged. A proof of this documented EBNF dialect is not a full ISO 14977 or eFMI conformance claim. |
+
+Forty generic roots pass the parser package audit in
+`build/source-cutover/build/ebnf-reader/parser-package.log`; both grammars were
+regenerated. Both language package audits and the existing integration checks
+pass in that directory's `language-packages.log` and `integration.log`.
+The required main artifact gate passed in `build/ebnf-reader/full-gate.log`,
+with all 591 inventoried inputs unchanged and both actual target archives
+retained under its `artifacts/` directory. This closes P02 for the documented
+notation; it does not complete correspondence with the prose standards.
+No new test suite or grammar case is introduced. Stage decision stays open:
+the remaining core, adapter and standards obligations still block growth.
+
+Earlier checkpoint entries below describe P02 as open at those checkpoints.
+The reader increment above closes it; their other standards findings remain open.
 
 ### C literal-printer increment: standards impact
 

@@ -3,6 +3,7 @@ import Parser.LocatedCompleteness
 import Parser.LALR.LocatedCompleteness
 import Parser.LALR.EBNF
 import Parser.EBNF.Rules
+import Parser.EBNF.ReaderCorrectness
 import Parser.LALR.Actions
 import Parser.LALR.FirstProofs
 import Parser.LALR.ItemCheck
@@ -20,6 +21,47 @@ import Parser.ScannerSpelling
 import Parser.ScannerRefinement
 import Parser.LocatedProofs
 import ProofAudit.Audit
+
+#audit axioms Parser.EBNF.Metalanguage.Primary.nonempty
+#audit axioms Parser.EBNF.Metalanguage.Sequence.nonempty
+#audit axioms Parser.EBNF.Metalanguage.Expression.nonempty
+#audit axioms Parser.EBNF.Metalanguage.namesValid_nil
+#audit axioms Parser.EBNF.Metalanguage.namesValid_cons
+#audit axioms Parser.EBNF.Metalanguage.commentBody_nil
+#audit axioms Parser.EBNF.Metalanguage.commentBody_cons
+#audit axioms Parser.EBNF.Reader.expect_iff
+#audit axioms Parser.EBNF.Reader.primary_starts
+#audit axioms Parser.EBNF.Reader.sequence_starts
+#audit axioms Parser.EBNF.Reader.expression_starts
+#audit axioms Parser.EBNF.Reader.expression_sound
+#audit axioms Parser.EBNF.Reader.sequence_sound
+#audit axioms Parser.EBNF.Reader.primary_sound
+#audit axioms Parser.EBNF.Reader.rules_sound
+#audit axioms Parser.EBNF.Reader.expression_complete
+#audit axioms Parser.EBNF.Reader.rules_complete
+#audit axioms Parser.EBNF.Reader.quoted_complete
+#audit axioms Parser.EBNF.Reader.quoted_sound
+#audit axioms Parser.EBNF.Reader.quoted_iff
+#audit axioms Parser.EBNF.Reader.comment_complete
+#audit axioms Parser.EBNF.Reader.comment_sound
+#audit axioms Parser.EBNF.Reader.comment_iff
+#audit axioms Parser.EBNF.Reader.takeWhile_exact
+#audit axioms Parser.EBNF.Reader.dropWhile_exact
+#audit axioms Parser.EBNF.Reader.name_complete
+#audit axioms Parser.EBNF.Reader.line_complete
+#audit axioms Parser.EBNF.Reader.tokenize_complete
+#audit axioms Parser.EBNF.Reader.tokenize_sound
+#audit axioms Parser.EBNF.parseTokens_sound
+#audit axioms Parser.EBNF.parse_syntax_sound
+#audit axioms Parser.EBNF.parseTokens_complete
+#audit axioms Parser.EBNF.parseTokens_iff
+#audit axioms Parser.EBNF.lex_complete
+#audit axioms Parser.EBNF.lex_sound
+#audit axioms Parser.EBNF.lex_iff
+#audit axioms Parser.EBNF.parse_sound
+#audit axioms Parser.EBNF.parse_complete
+#audit axioms Parser.EBNF.parse_iff
+#audit axioms Parser.EBNF.parse_rejected_iff
 
 #audit axioms Parser.Provenance.Table.Extension.lookup
 #audit axioms Parser.Provenance.Table.Extension.refl

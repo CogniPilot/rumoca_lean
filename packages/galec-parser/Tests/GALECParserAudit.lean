@@ -31,6 +31,7 @@ import GALECParser.LocatedCompleteness
 #audit axioms Rumoca.GALEC.Generated.parsed_tree
 
 #audit axioms Rumoca.GALEC.Generated.source_read_checked
+#audit axioms Rumoca.GALEC.Generated.source_notation_checked
 #audit axioms Rumoca.GALEC.Generated.lowering_checked
 #audit axioms Rumoca.GALEC.Generated.ebnf_correct
 #audit axioms Rumoca.GALEC.Generated.source_parse_correct

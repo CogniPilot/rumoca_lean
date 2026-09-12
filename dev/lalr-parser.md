@@ -4,13 +4,15 @@ The current full gate is `nix develop .#verification --command lake test`.
 Make commands in dated checkpoints below record historical runs before the
 Lake migration; see the [current commands](../docs/development.md).
 
-Status: **2026-09-11, active and incomplete**. This work follows the user's
+Status: **2026-09-12, active and incomplete**. This work follows the user's
 request for our own LALR(1) parser in Lean, with no assumed-correct parser
 generator. It changes parser infrastructure, not the admitted Modelica language.
 The source cutover now uses the generated LALR engine for Modelica and GALEC;
 the old DFA path is deleted. Package checks and the required full artifact gate
-pass. Independent EBNF reader conformance, the remaining parser work below and
-the FMI wrapper obligations remain open.
+pass. Independent EBNF reader soundness and completeness now pass the package
+and language audits and existing integration checks; their required artifact
+gate remains pending.
+The remaining parser work below and FMI wrapper obligations remain open.
 
 The user has explicitly required removal of the DFA production path and
 rejected temporary architectures that cannot grow with the compiler. The
@@ -65,9 +67,9 @@ LSP/parallel parsing, native compiler regressions and C execution pass in
 passed in `build/lalr-source-cutover/full-gate.log`, with all 581 recorded inputs
 unchanged throughout the run. Actual FMU/eFMU archives and hashes are retained
 in `build/lalr-source-cutover/artifacts/`. This includes the actual source/C,
-FMI ME/CS, GALEC, eFMU and existing rejection/native boundaries. Independent EBNF
-reader conformance, LR error reporting and generator cost/success remain
-explicit open items. Historical sections below describe earlier checkpoints.
+FMI ME/CS, GALEC, eFMU and existing rejection/native boundaries. The subsequent
+independent EBNF reader proof is described below. LR error reporting and generator
+cost/success remain open. Historical sections below describe earlier checkpoints.
 
 ## Required contract
 
@@ -119,7 +121,8 @@ have added a restricted unit-block EBNF, a configurable scanner with its own
 lexical contract, and a named action profile using the same LR runtime and
 generic proofs. Its source token membership now follows by EBNF derivation,
 with runtime completeness and termination supplied by the shared engine.
-Independent ISO EBNF metalanguage conformance is still open.
+The independently specified reader dialect covers the notation used by this
+grammar; a full ISO 14977 implementation is outside the current scope.
 The [eFMI roadmap](efmi.md) records the standard authority, DAE-to-GALEC-to-Solve
 pipeline and unfinished Production Code/archive gates. Parser reuse alone does
 not prove another language's typing, execution or lowering semantics.
@@ -219,7 +222,7 @@ builder support other AST representations without changing the LR engine.
   suffix and leading-token facts needed by LR closure. Actual emitted fact
   arrays carry kernel certificates. These facts may be conservative; they are
   not a proof of exact FIRST sets or a substitute for LR-item validation.
-- [ ] **LR05: verified EBNF frontend.** Expression-to-CFG preservation now has
+- [x] **LR05: verified EBNF frontend.** Expression-to-CFG preservation now has
   grammar-parametric proofs in both directions. `EBNF.Derives` independently
   specifies named recursion, sequence, alternatives, optionals, repetition and
   epsilon. A finite structural witness checks all source branches and every
@@ -227,8 +230,10 @@ builder support other AST representations without changing the LR engine.
   `compile_correct` binds it to the actual EBNF reader result. References stay
   nonterminals and sequences stay inline. The generated `source_parse_correct`
   composes expression preservation with actual bounded LR execution and a
-  kernel-checked reader result. Proving the reader against an independent
-  metalanguage relation (P02) remains open. The source cutover below composes
+  independent source-notation certificate. Independent text-reader correctness
+  (P02) passed its package, integration and required full artifact gate in
+  `build/ebnf-reader/full-gate.log`. This closes the frontend contract for the
+  documented dialect; generator success/cost remains separate. The source cutover below composes
   current AST/source contracts; its required full artifact gate has passed.
 - [ ] **LR06: typed AST actions and production replacement.** The generic
   relation-based action interface, independent source grammar derivations and
@@ -305,8 +310,8 @@ archives and the existing rejection/native controls. All 578 inventoried inputs
 remained unchanged throughout that run. LR04 is complete for the validator's
 stated contract; candidate-search convergence remains a separate obligation.
 The subsequent source cutover preserves source binding, typed ASTs, automatic
-source spans and structured diagnostics while deleting the DFA path. Independent
-EBNF reader conformance and the remaining location/action work stay explicit;
+source spans and structured diagnostics while deleting the DFA path. The later
+independent EBNF reader proof and remaining location/action work stay explicit;
 fixed-pattern recognition cannot replace the generic EBNF/LR proofs.
 
 ## EBNF preservation increment
@@ -369,6 +374,38 @@ checks pass in its `integration.log`. The required main artifact gate passed in
 Both actual target archives and their hashes are retained under
 `build/lalr-located/artifacts/`.
 No new grammar case or test suite is added.
+
+## Independent EBNF text-reader correctness
+
+`EBNF.Syntax` separates expression/token types from the implementation.
+`EBNF.Lexical` and `EBNF.Metalanguage` give character-level lexical rules and
+complete token-level notation judgments. Neither calls the reader or mentions
+execution fuel. The syntax fixes precedence and right association, quoted text,
+comments, maximal-munch names, rule separators, uniqueness and reserved names.
+It describes the existing dialect; no Modelica or GALEC production changes.
+
+`ReaderSoundness` and `ReaderCompleteness` prove exact token-reader agreement.
+`LexicalProofs`, `LexerCompleteness` and `LexerSoundness` cover the character
+reader, including the first comment terminator and unescaped literal contents.
+`Parser.EBNF.parse_iff` in `ReaderCorrectness` composes these into
+soundness/completeness for the actual text entry with its normal budgets.
+`parse_rejected_iff` proves a rejected source has no denotation in this dialect;
+it makes no promise about error wording. Undefined rule references are later
+lowering errors, not notation errors.
+
+All 40 added generic roots pass the unchanged axiom policy in
+`build/source-cutover/build/ebnf-reader/parser-package.log` (791 jobs).
+The generator emits `source_notation_checked`; ordinary and located source
+contracts now compose that independent notation with EBNF-to-CFG preservation
+and bounded LALR acceptance. `Frontend.compile_correct` also composes the actual
+text reader with independent notation and CFG preservation. Both actual grammars
+were regenerated; their package gate passes in `language-packages.log` (816 jobs).
+The existing freshness, native/recursive, mutation and publication checks pass
+in `integration.log`. The required main artifact gate passed in
+`build/ebnf-reader/full-gate.log`, with all 591 inventoried inputs unchanged and
+both actual target archives retained in `build/ebnf-reader/artifacts/`. This
+closes P02 for the documented dialect. LR diagnostics, generator convergence/cost
+and whole-adapter obligations remain open.
 
 ## Regression evidence required
 

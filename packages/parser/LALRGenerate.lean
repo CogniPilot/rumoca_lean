@@ -74,6 +74,8 @@ private def ebnfCertificates (tokens : List Parser.EBNF.Lexeme)
     "  by decide +kernel\n\n" ++
   "theorem source_read_checked : Parser.EBNF.parse source = .ok sourceGrammar :=\n" ++
     "  (Parser.EBNF.parse_of_lex lexing_checked).trans parsing_checked\n\n" ++
+  "theorem source_notation_checked : Parser.EBNF.Metalanguage.Denotes source sourceGrammar :=\n" ++
+    "  Parser.EBNF.parse_sound source_read_checked\n\n" ++
   options ++ "theorem lowering_checked : loweringWitness.validate sourceGrammar prepared = true :=\n" ++
     "  by decide +kernel\n\n" ++
   "def encode (symbol : Parser.Symbol) : Nat :=\n" ++
@@ -87,10 +89,10 @@ private def sourceParserContract : String :=
   "def parseSymbols (word : List Parser.Symbol) : Except LALR.Failure LALR.Tree :=\n" ++
     "  parse (word.map encode)\n\n" ++
   "theorem source_parse_correct (word : List Parser.Symbol) :\n" ++
-    "    Parser.EBNF.parse source = .ok sourceGrammar ∧\n" ++
+    "    Parser.EBNF.Metalanguage.Denotes source sourceGrammar ∧\n" ++
     "    (Parser.EBNF.Accepts sourceGrammar word ↔ ∃ tree, parseSymbols word = .ok tree) ∧\n" ++
     "    ((∃ tree, parseSymbols word = .ok tree) ∨ parseSymbols word = .error .rejected) :=\n" ++
-    "  ⟨source_read_checked, (ebnf_correct word).trans (parse_correct (word.map encode)).1,\n" ++
+    "  ⟨source_notation_checked, (ebnf_correct word).trans (parse_correct (word.map encode)).1,\n" ++
     "    (parse_correct (word.map encode)).2⟩\n\n" ++
   "def tokenParser : LALR.TokenParser Parser.Symbol where\n" ++
     "  grammar := grammar\n  encode := encode\n  run := parseSymbols\n" ++
@@ -114,7 +116,7 @@ private def locatedParserContract : String :=
   "    fuel_eq ((encodeLocatedTokens tokens).map (·.value))\n" ++
   "\n" ++
   "theorem source_parseLocated_correct (text : String) (tokens : List (Source.Located text Token)) :\n" ++
-  "    Parser.EBNF.parse source = .ok sourceGrammar ∧\n" ++
+  "    Parser.EBNF.Metalanguage.Denotes source sourceGrammar ∧\n" ++
   "    (Parser.EBNF.Accepts sourceGrammar (tokens.map (fun token => token.value.symbol)) ↔\n" ++
   "      ∃ result, parseLocated text tokens = .ok result) ∧\n" ++
   "    ((∃ result, parseLocated text tokens = .ok result) ∨\n" ++
@@ -122,7 +124,7 @@ private def locatedParserContract : String :=
   "  have checked := LALR.parseLocated_correct items_checked budget_checked safety_checked\n" ++
   "    progress_checked (encodeLocatedTokens tokens)\n" ++
   "  rw [← located_fuel tokens] at checked\n" ++
-  "  refine ⟨source_read_checked, ?_, checked.2⟩\n" ++
+  "  refine ⟨source_notation_checked, ?_, checked.2⟩\n" ++
   "  exact (ebnf_correct (tokens.map (fun token => token.value.symbol))).trans\n" ++
   "    (by simpa only [encodeLocatedTokens, List.map_map, Function.comp_def, parseLocated]\n" ++
   "      using checked.1)\n" ++
@@ -259,7 +261,7 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
     s!"-- {c.canonicalStates} canonical states; {c.collection.states.size} LALR states.\n" ++
     "import Parser.LALR.SafetyProofs\nimport Parser.LALR.FirstProofs\nimport Parser.LALR.Progress\n" ++
     "import Parser.Token\nimport Parser.LALR.LocatedCompleteness\nimport Parser.LALR.EBNFEncoding\n" ++
-    "import Parser.EBNF.Rules\nimport Parser.LALR.Actions\n\nopen Parser\n\n" ++
+    "import Parser.EBNF.ReaderCorrectness\nimport Parser.EBNF.Rules\nimport Parser.LALR.Actions\n\nopen Parser\n\n" ++
     s!"namespace {moduleNamespace}\n\n" ++
     "set_option maxRecDepth 10000\nset_option maxHeartbeats 8000000\n\n" ++
     Parser.EBNF.Emission.sourceCertificate source ++
