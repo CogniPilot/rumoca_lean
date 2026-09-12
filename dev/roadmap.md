@@ -418,6 +418,17 @@ actual archives checked. C01/F03 remain open for token grammar,
 macro/header interpretation and full adapter execution. See
 [the generic printer roadmap](c-printer.md) for the precise scope and next work.
 
+The next increment proves reusable token/phrase printer theorems for all
+admissible CTree expressions, statements and complete functions. The actual
+reset contract now requires that grammar judgment for the same text/tree used
+by its execution contract; `adapter_reset_syntax` locates it in the actual file.
+All 85 added roots and affected packages pass
+`build/c-token/final-package-audit.log`. The required artifact gate passed in
+`build/c-token/full-gate.log`, with all 613 inventoried inputs unchanged and
+both actual archives checked. C01/F03 remain open for full lexical
+correspondence, headers/macros, the other public functions and complete
+artifact/compliance composition. Source grammar and emitted C are unchanged.
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

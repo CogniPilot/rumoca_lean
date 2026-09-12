@@ -1,5 +1,13 @@
 import ProofAudit.Audit
 import RumocaC.TreePreprocessing
+import RumocaC.Punctuator
+import RumocaC.StringBoundary
+import RumocaC.TreeBoundary
+import RumocaC.PreprocessingNumber
+import RumocaC.IdentifierToken
+import RumocaC.ExpressionSyntax
+import RumocaC.ExpressionPrinter
+import RumocaC.FunctionPrinter
 import RumocaC.Initialization
 import RumocaC.InitializationOriginProofs
 import RumocaC.InitializationMap
@@ -280,3 +288,84 @@ import RumocaC.LiteralNames
 #audit axioms Rumoca.CCalls.Parameters.parameters_unknown
 #audit axioms Rumoca.CBodyEmbedding.typed_call_reaches
 #audit axioms Rumoca.CBodyEmbedding.typed_call_behaviors
+
+#audit axioms Rumoca.CPunctuator.consumes_unique
+#audit axioms Rumoca.CPunctuator.consumes_space
+#audit axioms Rumoca.CPunctuator.consumes_boundary
+#audit axioms Rumoca.CPunctuator.consumes_before_word
+#audit axioms Rumoca.CPunctuator.consumes_before_operand
+#audit axioms Rumoca.CPunctuator.consumes_unextendable
+#audit axioms Rumoca.CPunctuator.consumes_separator
+#audit axioms Rumoca.CPunctuator.binop_consumes
+#audit axioms Rumoca.CString.Fragments.boundary_unique
+#audit axioms Rumoca.CString.literal_boundary_unique
+#audit axioms Rumoca.CString.literal_prefix_free
+#audit axioms Rumoca.CString.quote_boundary
+#audit axioms Rumoca.CTree.Syntax.OperandStart.append
+#audit axioms Rumoca.CTree.Syntax.expression_start
+#audit axioms Rumoca.CTree.Syntax.punctuator_before_expression
+#audit axioms Rumoca.CLexical.Nondigit.characters
+#audit axioms Rumoca.CPPNumber.Spells.characters
+#audit axioms Rumoca.CPPNumber.Spells.append_digits
+#audit axioms Rumoca.CPPNumber.natural_spells
+#audit axioms Rumoca.CPPNumber.natural_consumes
+#audit axioms Rumoca.CPPNumber.consumes_unique
+#audit axioms Rumoca.CIdentifierToken.Spells.characters
+#audit axioms Rumoca.CIdentifierToken.Spells.append_ascii
+#audit axioms Rumoca.CIdentifierToken.word_spells
+#audit axioms Rumoca.CIdentifierToken.word_consumes
+#audit axioms Rumoca.CIdentifierToken.identifier_consumes
+#audit axioms Rumoca.CIdentifierToken.consumes_unique
+#audit axioms Rumoca.CString.QuoteBody.append
+#audit axioms Rumoca.CString.QuoteBody.boundary_unique
+#audit axioms Rumoca.CString.Fragments.envelope
+#audit axioms Rumoca.CString.denotes_quoted
+#audit axioms Rumoca.CString.Quoted.boundary_unique
+#audit axioms Rumoca.CString.quote_maximal
+#audit axioms Rumoca.CTokens.Prefix.append
+#audit axioms Rumoca.CTokens.Prefix.finish
+#audit axioms Rumoca.CTokens.word_prefix
+#audit axioms Rumoca.CTokens.natural_prefix
+#audit axioms Rumoca.CTokens.string_prefix
+#audit axioms Rumoca.CTokens.punctuator_prefix
+#audit axioms Rumoca.CTree.Syntax.TypeSpecifier.word_parts
+#audit axioms Rumoca.CTree.Syntax.TypeSpelling.named
+#audit axioms Rumoca.CTree.Syntax.TypeSpelling.const
+#audit axioms Rumoca.CTree.Syntax.TypeSpelling.pointer
+#audit axioms Rumoca.CTree.Syntax.binary_render_syntax
+#audit axioms Rumoca.CTree.Syntax.Expression.binary_grouped
+#audit axioms Rumoca.CLexical.identStart_not_digit
+#audit axioms Rumoca.CTree.Syntax.Expression.identifier_inputs
+#audit axioms Rumoca.CText.intercalate_one
+#audit axioms Rumoca.CText.intercalate_cons
+#audit axioms Rumoca.CTree.Printer.tail_safe_separator
+#audit axioms Rumoca.CTree.Printer.identifier_renders
+#audit axioms Rumoca.CTree.Printer.natural_renders
+#audit axioms Rumoca.CTree.Printer.string_renders
+#audit axioms Rumoca.CTree.Printer.binary_renders
+#audit axioms Rumoca.CTree.Printer.unary_renders
+#audit axioms Rumoca.CTree.Printer.cast_renders
+#audit axioms Rumoca.CTree.Printer.sizeof_renders
+#audit axioms Rumoca.CTree.Printer.index_renders
+#audit axioms Rumoca.CTree.Printer.field_renders
+#audit axioms Rumoca.CTree.Printer.arguments_render
+#audit axioms Rumoca.CTree.Printer.call_renders
+#audit axioms Rumoca.CTree.Printer.expression_renders
+#audit axioms Rumoca.CTokens.separator_prefix
+#audit axioms Rumoca.CTokens.Prefix.whitespaces
+#audit axioms Rumoca.CTokens.Prefix.indent
+#audit axioms Rumoca.CTree.Printer.declare_renders
+#audit axioms Rumoca.CTree.Printer.assign_renders
+#audit axioms Rumoca.CTree.Printer.eval_renders
+#audit axioms Rumoca.CTree.Printer.return_void_renders
+#audit axioms Rumoca.CTree.Printer.return_value_renders
+#audit axioms Rumoca.CTree.Printer.items_render
+#audit axioms Rumoca.CTree.Printer.while_renders
+#audit axioms Rumoca.CTree.Printer.if_then_renders
+#audit axioms Rumoca.CTree.Printer.if_else_renders
+#audit axioms Rumoca.CTree.Printer.statement_renders
+#audit axioms Rumoca.CTree.Printer.parameter_renders
+#audit axioms Rumoca.CTree.Printer.parameters_render
+#audit axioms Rumoca.CTree.Printer.signature_renders
+#audit axioms Rumoca.CTree.Printer.function_renders
+#audit axioms Rumoca.CTree.Printer.function_denotes

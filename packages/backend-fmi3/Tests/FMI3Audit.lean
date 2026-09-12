@@ -53,6 +53,9 @@ import RumocaFMI3.ResetContract
 #audit axioms Rumoca.FMI3.Reset.Syntax.printed
 #audit axioms Rumoca.FMI3.Reset.Syntax.render_denotes
 #audit axioms Rumoca.FMI3.Reset.rendered_contract
+#audit axioms Rumoca.FMI3.Reset.Printer.function_printable
+#audit axioms Rumoca.FMI3.Reset.Printer.function_renders
+#audit axioms Rumoca.FMI3.Reset.Printer.render_denotes
 #audit axioms Rumoca.FMI3.Reset.rendered_member
 
 #audit axioms Rumoca.FMI3.LiteralPreparation.rendered_functions

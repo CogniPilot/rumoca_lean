@@ -189,6 +189,17 @@ and identifier contracts. Candidate signatures and rendered character chunks
 have no proof authority: Lean checks each function's printer equality, their
 concatenation against the independently read file, and the final axiom closure.
 
+The follow-on `Reset.Printer` certificate instantiates the shared expression,
+statement and function grammar directly on the emitted CTree. The strengthened
+`FunctionContract.genericSyntax` requires that judgment for the certified text,
+alongside the previous contracts. `adapter_reset_syntax` identifies its exact
+fragment in the actual adapter file. The typedef context names the three types
+used by reset; it does not prove their header declarations or ABI meanings.
+Cross-category longest tokens, adjacent-string concatenation and the remaining
+translation-unit obligations stay open. All 85 new roots and the affected
+packages pass, and the required full gate passed in `build/c-token/full-gate.log`
+with all 613 inputs unchanged. [c-printer.md](../c-printer.md) records its evidence.
+
 This is a complete byte binding and a reset execution contract, not a proof of
 every function in the containing translation unit. Preprocessing, official
 header meanings, global storage, allocation/lifetime, callbacks, other public

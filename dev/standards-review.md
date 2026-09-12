@@ -37,6 +37,30 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Shared C token and function grammar: standards impact
+
+This increment follows `95cb4bc` and keeps the production subset and both EBNF
+files unchanged. It adds shared proof rules and strengthens the actual reset
+artifact contract; it changes no IR semantics, initialization, generated C,
+FMI metadata, GALEC or archive layout.
+
+| Baseline | Correspondence and remaining obligations |
+| --- | --- |
+| C11 [N1570](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf), §§5.2.1 and 6.4.2–6.4.8 | Independent identifier, preprocessing-number, ordinary-string and all-punctuator candidate rules support actual-suffix lexical composition. Word rules include universal-name syntax and conservative nonbasic extensions. Cross-category longest matching, valid implementation extensions and phase-six string concatenation remain open. |
+| N1570 §§6.5, 6.7, 6.8 and 6.9.1 | Shared printer theorems preserve the intended expression precedence, initializer/assignment categories, compound control bodies, parameter lists and static/external definitions. Raw type strings require explicit `TypeDenotation`. C type constraints, scope, macros, header declarations and ABI interpretation are separate. |
+| MLS 3.7 | Admission, equation and initialization semantics, Real refinement and diagnostics are unchanged. S01/SR08 remain open as recorded in the unit review below. |
+| FMI 3.0.2 ME/CS | `Reset.FunctionContract` adds the shared text/tree judgment while retaining all existing call and memory guarantees. `adapter_reset_syntax` binds it to the actual adapter fragment. Other calls, whole-file interpretation and SR04/SR05/SR07 remain open. |
+| eFMI 1.0.0 Beta 1 | Shared C proof infrastructure is available to Production Code; no eFMI printer or artifact proposition is changed by this increment. Existing GALEC, Production Code, manifest and coding-guideline findings carry forward. |
+
+All 85 new roots and affected packages pass
+`build/c-token/final-package-audit.log`. The required full `lake test` artifact
+gate passed in `build/c-token/full-gate.log`, with all 613 inventoried inputs
+unchanged. Exact checked FMU/eFMU archives and their SHA-256 identities are
+retained in `build/c-token/artifacts/`. No new example-based suite is added.
+**Stage decision: open; grammar growth remains blocked.**
+
+### Prior unit-stage baseline
+
 Reviewed implementation: `df382d05287449d2c987f7414482b4edb562c28f`.
 The normative baselines are [MLS 3.7](https://specification.modelica.org/maint/3.7/MLS.html),
 [FMI 3.0.2](https://fmi-standard.org/docs/3.0.2/) and the pinned

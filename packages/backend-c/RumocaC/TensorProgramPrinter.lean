@@ -1,10 +1,11 @@
 import RumocaC.TensorProgramSyntax
+import RumocaC.TextLemmas
 
 /-! Structural printer certificate for complete prepared tensor-call functions.
 The grammar checks target identifiers, parameter scope and pointer mutability;
 the proof is independent of the number of instructions and tensor extents. -/
 namespace Rumoca.CTensor.Lowering.Syntax
-open CTree _root_.Parser
+open CTree CText _root_.Parser
 
 private theorem lex_word (name : String) (valid : identifier name = true)
     (c : Char) (rest : List Char) (ts : List Token)
@@ -19,24 +20,6 @@ private theorem lex_indent (n : Nat) (rest : List Char) (ts : List Token)
   induction n with
   | zero => exact h
   | succ n ih => exact Scanner.Lexes.space (by decide +kernel) ih
-
-private theorem intercalate_one (separator value : String) :
-    String.intercalate separator [value] = value := rfl
-private theorem intercalate_cons (separator first second : String) (rest : List String) :
-    String.intercalate separator (first :: second :: rest) =
-      first ++ separator ++ String.intercalate separator (second :: rest) := by
-  have go : ∀ rest : List String, ∀ lead acc : String,
-      String.intercalate separator ((lead ++ acc) :: rest) =
-        lead ++ String.intercalate separator (acc :: rest) := by
-    intro rest
-    induction rest with
-    | nil => intros; rfl
-    | cons s ss ih =>
-      intro lead acc
-      change String.intercalate separator (((lead ++ acc) ++ separator ++ s) :: ss) =
-        lead ++ String.intercalate separator ((acc ++ separator ++ s) :: ss)
-      simpa only [String.append_assoc] using ih lead (acc ++ separator ++ s)
-  exact go rest (first ++ separator) second
 
 private theorem list_intercalate_one (sep value : List α) : List.intercalate sep [value] = value := by
   simp [List.intercalate]

@@ -240,3 +240,4 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.TokenParser.parseWith_complete
 #audit axioms Parser.LALR.TokenParser.parseWith_iff
 #audit axioms Parser.LALR.TokenParser.parseWith_grammar
+#audit axioms Parser.Scanner.prefix_before_delimiter

@@ -152,6 +152,22 @@ This does not establish C tokenization, macro/header interpretation, remaining
 public-call behavior or whole FMI/eFMI compliance. See
 [the printer roadmap](../dev/c-printer.md).
 
+The follow-on shared printer now derives the independent token/precedence
+grammar of every admissible CTree expression, block item and complete function.
+Names, typedef spellings and postfix restrictions are explicit premises;
+indentation, nested statements and call/parameter lists are universally
+quantified. The actual reset contract additionally requires this generic
+text/tree judgment, and `adapter_reset_syntax` binds its fragment to the complete
+adapter file. Existing execution, memory and character-rewrite contracts remain
+required. This is not a full C tokenization theorem: cross-category maximality,
+adjacent-string concatenation, macros/headers and other public calls remain
+open. All 85 added roots and affected packages pass
+`build/c-token/final-package-audit.log`. The required actual-artifact gate passed
+in `build/c-token/full-gate.log`, with all 613 inputs unchanged and both actual
+archives checked. Exact artifacts and hashes are retained in
+`build/c-token/artifacts/`. No grammar or emitted
+C bytes change. See [the exact scope](../dev/c-printer.md).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

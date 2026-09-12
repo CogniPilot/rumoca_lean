@@ -60,6 +60,21 @@ theorem adapter_preprocessed (contract : AdapterContract a adapter)
   obtain ⟨_, _, _, _, characters, _⟩ := contract
   exact characters.preprocessed steps
 
+/-- The actual adapter contains reset text with the shared C function grammar.
+This keeps its position in the independently read file and the tree used by the
+execution contract together. Whole-file preprocessing and header interpretation
+are still separate obligations. -/
+theorem adapter_reset_syntax (contract : AdapterContract a adapter) :
+    ∃ before text after : String,
+      adapter = before ++ text ++ after ∧
+      CTree.Printer.FunctionDenotes Reset.Printer.typedefs text
+        (Runtime.function a.solve.prepareFMI3 Reset.signature) := by
+  obtain ⟨sigs, unique, member, printed, stable, reset⟩ := contract
+  obtain ⟨before, after, located⟩ := Reset.rendered_member a.solve.prepareFMI3 sigs member
+  refine ⟨before, (Runtime.function a.solve.prepareFMI3 Reset.signature).render, after,
+    printed ▸ located, ?_⟩
+  exact Reset.Printer.render_denotes a.solve.prepareFMI3
+
 noncomputable section
 variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses

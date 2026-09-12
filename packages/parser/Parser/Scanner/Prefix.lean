@@ -77,4 +77,19 @@ theorem remaining_length (read : Prefix cfg input ts rest) : rest.length ≤ inp
   simp
 
 end Prefix
+
+/-- A token excluding a delimiter cannot consume across that delimiter, even
+with an arbitrary continuation. No scanner or alphabet assumption is needed. -/
+theorem prefix_before_delimiter {α : Type u} {token before rest : List α} {marker : α}
+    (starts : token <+: before ++ marker :: rest) (absent : marker ∉ token) :
+    token.length ≤ before.length := by
+  by_cases longer : token.length ≤ before.length
+  · exact longer
+  apply False.elim
+  have boundary : before ++ [marker] <+: token :=
+    List.prefix_of_prefix_length_le
+      (show before ++ [marker] <+: before ++ marker :: rest from
+        ⟨rest, by simp⟩) starts (by simp only [List.length_append, List.length_singleton]; omega)
+  exact absent (boundary.subset (by simp))
+
 end Parser.Scanner

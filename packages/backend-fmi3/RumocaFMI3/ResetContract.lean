@@ -1,4 +1,5 @@
 import RumocaFMI3.ResetSyntax
+import RumocaFMI3.ResetPrinter
 import RumocaFMI3.LiteralRejection
 
 /-! Reset's function-text and execution contract over the actual rendered
@@ -14,6 +15,7 @@ private local instance targetInterface : CInterface := cInterface static.address
 structure FunctionContract (m : Solve.FMI3Model source) (text : String) : Prop where
   printed : text = (Runtime.function m signature).render
   denoted : Syntax.Denotes text
+  genericSyntax : CTree.Printer.FunctionDenotes Printer.typedefs text (Runtime.function m signature)
   successful : ∀ (sigs : List Signature), signature ∈ sigs →
     ((LiteralPreparation.functions m sigs).map (fun fn => fn.signature.name)).Nodup →
     ∀ (heap : Heap) (p : Address) (kind : Kind) (mode : Mode), Storage heap p →
@@ -30,7 +32,7 @@ structure FunctionContract (m : Solve.FMI3Model source) (text : String) : Prop w
 
 theorem rendered_contract (m : Solve.FMI3Model source) :
     FunctionContract m (Runtime.function m signature).render := by
-  refine ⟨rfl, Syntax.render_denotes m, ?_, ?_⟩
+  refine ⟨rfl, Syntax.render_denotes m, Printer.render_denotes m, ?_, ?_⟩
   · intro sigs member unique heap p kind mode storage hk hm behavior
     exact call_behaviors m (LiteralPreparation.program m sigs) heap p kind mode
       (LiteralRejection.function_bound m sigs unique signature member)
