@@ -9,9 +9,9 @@ request for our own LALR(1) parser in Lean, with no assumed-correct parser
 generator. It changes parser infrastructure, not the admitted Modelica language.
 The source cutover now uses the generated LALR engine for Modelica and GALEC;
 the old DFA path is deleted. Package checks and the required full artifact gate
-pass. Independent EBNF reader soundness and completeness now pass the package
-and language audits and existing integration checks; their required artifact
-gate remains pending.
+pass. Independent EBNF reader soundness and completeness also pass the package
+and language audits, existing integration checks and the required artifact
+gate (`build/ebnf-reader/full-gate.log`).
 The remaining parser work below and FMI wrapper obligations remain open.
 
 The user has explicitly required removal of the DFA production path and

@@ -5,9 +5,10 @@ adds no Modelica or GALEC production and changes no emitted C bytes. The whole
 compiler and FMI/eFMI conformance contracts remain open.
 
 The numerical and tensor printers already connect their emitted fragments to
-independent C grammars. The FMI reset certificate also covers a complete
-function, but its syntax relation spells out that particular function. Further
-adapter functions should instantiate shared syntax and printer theorems.
+independent C grammars. The FMI reset certificate now also instantiates the
+shared function grammar and lexical contract while retaining its original
+execution guarantees. Further adapter functions should instantiate these
+reusable theorems.
 
 ## Current increment
 
@@ -97,7 +98,8 @@ skeleton in the new proof and no change to the emitted function.
 
 The generic token/phrase contract is integrated into the actual reset file
 certificate; it does not yet cover every adapter function or whole files.
-Cross-category maximality and phase-six concatenation remain to be composed.
+At that checkpoint cross-category maximality and phase-six concatenation
+remained to be composed; the following increment supplies that composition.
 Actual typedef/header interpretation, scopes and execution contracts remain
 open. Kernel checking of the
 candidate grammars is distinct from review of their coverage against C prose.
@@ -113,19 +115,63 @@ Sections 5.1.1.2 and 5.2.1.1 describe the character rewrites modeled here.
 Source/execution encodings, preprocessing directives and header meanings are
 separate obligations; character stability does not establish them.
 
+## Normal-context tokenization and literal concatenation
+
+`CTokens.Normal.Candidate` independently describes competing preprocessing
+tokens. Its identifier/number rules include universal-name syntax and a
+conservative envelope of nonbasic characters. Encoded and character literals
+are overapproximated by their prefixes; they are competitors, not forms accepted
+by the printer. The residual single-character class is included. Header-name
+recognition is excluded from this ordinary-code context (§6.4p4); directives
+and implementation-defined pragma contexts require separate interpretation.
+
+`Consumes.normal` proves that every existing compositional token judgment has
+an independent spelling and value, is longest across all candidate classes,
+and cannot start `/*` or `//` (§6.4.9). It preserves the actual input and
+continuation. In particular a dot may compete with a preprocessing number,
+and a word immediately adjoining a quote may compete with an encoded literal.
+Comments are checked at token boundaries, preserving literal payloads that
+contain slash/star characters. `Prefix.normal` lifts this result to complete
+token sequences. These are declarative proof relations, with no new executable
+C lexer or parser.
+
+`CTokens.PhaseSix` specifies adjacent ordinary-string concatenation (§6.4.5).
+Tokens already retain the literal's object bytes including its final zero, so
+the relation removes that intermediate terminator when joining payloads.
+`FunctionPhrase.concatenation_unchanged` proves that the independent shared
+grammar separates literals: no such rewrite can occur. This is conditional on
+the supplied tokens; earlier macro expansion remains a separate obligation.
+
+`FunctionDenotes.tokenization` combines maximal tokenization, the intended
+function tree and concatenation stability using one token witness.
+`Reset.FunctionContract.tokenization` requires it alongside the older contracts,
+and `adapter_reset_tokenization` locates that fragment in the independently
+read complete adapter file. This does not certify every adapter body, header
+or translation unit. No emitted C bytes, grammar cases or numerical semantics
+change. There is no new example-based suite.
+
+All 67 additional audit roots and the affected C/FMI/eFMI/compiler packages
+pass `build/c-lexical/composed-audit.log` (2460 jobs), with the unchanged axiom
+policy. The required full `lake test` gate passed in
+`build/c-lexical/full-gate.log`, with all 621 inventoried inputs unchanged
+throughout the run. It checks both actual target archives and the existing
+native/mutation/publication boundaries. Exact FMU/eFMU archives and SHA-256
+identities are retained in `build/c-lexical/artifacts/`. The FMI C members
+also compare byte-for-byte with the previous checkpoint.
+
 - [x] Complete the required artifact gate for the shared character theorem's
   binding to the actual adapter, prefixes and declarations. The strengthened
   actual-file contract, package audits and full gate pass as recorded above.
-- [ ] Define a reusable independent token grammar for the existing C tree.
+- [x] Define a reusable independent normal-context token grammar for the existing C tree.
   Review longest preprocessing-token matching (§6.4p4), encoding prefixes and
   adjacent string concatenation (§6.4.5), all relevant longer punctuators
-  (§6.4.6) and preprocessing numbers (§6.4.8). The current restricted scanner
-  configuration alone does not establish full C tokenization.
-- [ ] Prove each admissible CTree renders into that grammar. Express raw type
+  (§6.4.6) and preprocessing numbers (§6.4.8). Header-name/directive contexts
+  and macros remain separate; this is not a full C preprocessor.
+- [x] Prove each admissible CTree function renders into that grammar. Express raw type
   spellings and typedef contexts explicitly. Keep scope, type and object/call
   validity separate from mere syntactic acceptance.
-  Expression, statement and function derivations are now proved for the
-  authored token rules; full C lexical correspondence remains open.
+  Expression, statement and function derivations compose with the independent
+  normal-context tokenization and ordinary-literal concatenation results.
 - [ ] Replace function-specific printer premises with the generic theorem,
   preserving every existing numerical, memory, call and actual-byte contract.
 - [ ] Complete the public adapter call proofs and compose the actual artifacts.

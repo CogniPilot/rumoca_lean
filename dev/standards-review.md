@@ -37,6 +37,31 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### C maximal tokenization and concatenation: standards impact
+
+This increment follows `3497310` and changes proof relations and the required
+reset artifact contract. Both source EBNFs, parser/lowering behavior, emitted
+C bytes, numeric initialization, metadata and archive layouts are unchanged.
+The shared mechanism is a suffix-parametric refinement of token judgments,
+followed by grammar induction. It adds no runtime scanning or parsing pass.
+
+| Baseline | Correspondence and remaining obligations |
+| --- | --- |
+| C11 [N1570](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf), §6.4p4 and §§6.4.2–6.4.8 | `CTokens.Normal.Candidate` covers the ordinary-code competing token classes, including conservative universal-name/nonbasic extensions and encoded/character literal prefixes. `Consumes.normal` proves longest matching across those classes with the actual continuation. Header names belong to include/implementation-defined pragma contexts, which remain excluded. The enlarged candidate envelopes are not output acceptance rules or a claim that every candidate is valid on a host. |
+| N1570 §6.4.9 | Per-class no-comment theorems exclude both comment openers at actual token starts. Literal payload slash/star characters are preserved inside independently decoded strings. This is a comment-free printed subset, not a general comment reader. |
+| N1570 §§5.1.1.2 and 6.4.5p5–6 | Shared expression/statement/function grammar proofs separate ordinary literal tokens. `FunctionDenotes.tokenization` uses one witness for maximal lexing, the intended function tree and stability under concatenation. Tokens retain object bytes, anticipating the phase-seven terminator; joining removes the intermediate terminator. Prior macro expansion, source/execution encodings and header interpretation remain separate. |
+| MLS 3.7 | No source admission, equation, initialization, Real refinement or diagnostic change. The existing clause map and S01/SR08 findings carry forward. |
+| FMI 3.0.2 ME/CS | `Reset.FunctionContract.tokenization` is now required by the actual adapter certificate alongside all earlier fields. `adapter_reset_tokenization` locates its exact fragment. Other functions, headers, allocation, callbacks and SR04/SR05/SR07 remain open. |
+| eFMI 1.0.0 Beta 1 | The reusable C theorem is available to Production Code. This increment does not change the eFMI file/archive proposition, GALEC, manifests or methods, and does not close coding-guideline or SR07/SR08 obligations. |
+
+All 67 new roots and affected packages pass
+`build/c-lexical/composed-audit.log` (2460 jobs), with the existing axiom
+whitelist. The required full `lake test` gate passed in
+`build/c-lexical/full-gate.log`, with all 621 inventoried inputs unchanged and
+both actual archives checked. Exact artifacts and SHA-256 identities are in
+`build/c-lexical/artifacts/`. No new example-based suite was added.
+**Stage decision: open; grammar growth remains blocked.**
+
 ### Shared C token and function grammar: standards impact
 
 This increment follows `95cb4bc` and keeps the production subset and both EBNF

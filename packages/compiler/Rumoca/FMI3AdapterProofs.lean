@@ -75,6 +75,18 @@ theorem adapter_reset_syntax (contract : AdapterContract a adapter) :
     printed ▸ located, ?_⟩
   exact Reset.Printer.render_denotes a.solve.prepareFMI3
 
+/-- Normal-context maximal tokenization and ordinary-string concatenation use
+the same grammar witness for the reset fragment located in the actual file.
+This retains the containing adapter's prior byte, character and call contract;
+preprocessing directives, headers and the other public functions remain open. -/
+theorem adapter_reset_tokenization (contract : AdapterContract a adapter) :
+    ∃ before text after : String,
+      adapter = before ++ text ++ after ∧
+      CTree.Printer.FunctionTokenization Reset.Printer.typedefs text
+        (Runtime.function a.solve.prepareFMI3 Reset.signature) := by
+  obtain ⟨before, text, after, located, grammar⟩ := adapter_reset_syntax contract
+  exact ⟨before, text, after, located, grammar.tokenization⟩
+
 noncomputable section
 variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses

@@ -8,6 +8,9 @@ import RumocaC.IdentifierToken
 import RumocaC.ExpressionSyntax
 import RumocaC.ExpressionPrinter
 import RumocaC.FunctionPrinter
+import RumocaC.TreeConcatenation
+import RumocaC.TreeTokenization
+import RumocaC.TokenStarts
 import RumocaC.Initialization
 import RumocaC.InitializationOriginProofs
 import RumocaC.InitializationMap
@@ -369,3 +372,72 @@ import RumocaC.LiteralNames
 #audit axioms Rumoca.CTree.Printer.signature_renders
 #audit axioms Rumoca.CTree.Printer.function_renders
 #audit axioms Rumoca.CTree.Printer.function_denotes
+
+#audit axioms Rumoca.CTokens.PhaseSix.Separated.no_rewrite
+#audit axioms Rumoca.CTokens.PhaseSix.Separated.unchanged
+#audit axioms Rumoca.CTokens.PhaseSix.Separated.empty
+#audit axioms Rumoca.CTokens.PhaseSix.Separated.single
+#audit axioms Rumoca.CTokens.PhaseSix.Separated.prepend
+#audit axioms Rumoca.CTokens.PhaseSix.Separated.append_separator
+#audit axioms Rumoca.CTokens.PhaseSix.Separated.all_nonstring
+#audit axioms Rumoca.CTokens.PhaseSix.Closed.separated
+#audit axioms Rumoca.CTokens.PhaseSix.Closed.empty
+#audit axioms Rumoca.CTokens.PhaseSix.Closed.append
+#audit axioms Rumoca.CTokens.PhaseSix.Closed.prepend
+#audit axioms Rumoca.CTokens.PhaseSix.Closed.seal
+#audit axioms Rumoca.CTokens.PhaseSix.Closed.between
+#audit axioms Rumoca.CTokens.PhaseSix.Closed.all_nonstring
+#audit axioms Rumoca.CTree.Syntax.TypeTokens.nonstring
+#audit axioms Rumoca.CTree.Syntax.Expression.separated
+#audit axioms Rumoca.CTree.Syntax.BlockItem.closed
+#audit axioms Rumoca.CTree.Syntax.BlockItems.closed
+#audit axioms Rumoca.CTree.Syntax.ParameterPhrase.nonstring
+#audit axioms Rumoca.CTree.Syntax.ParametersPhrase.nonstring
+#audit axioms Rumoca.CTree.Syntax.SignaturePhrase.nonstring
+#audit axioms Rumoca.CTree.Syntax.FunctionPhrase.closed
+#audit axioms Rumoca.CTree.Syntax.FunctionPhrase.concatenation_unchanged
+#audit axioms Rumoca.CTree.Printer.FunctionDenotes.phase_six
+
+#audit axioms Rumoca.CTokens.Competition.Starts.append
+#audit axioms Rumoca.CTokens.Competition.Starts.prefix
+#audit axioms Rumoca.CTokens.Competition.Starts.head
+#audit axioms Rumoca.CTokens.Competition.nondigit_starts
+#audit axioms Rumoca.CTokens.Competition.identifier_starts
+#audit axioms Rumoca.CTokens.Competition.IdentifierStart.not_digit
+#audit axioms Rumoca.CTokens.Competition.NumberStart.append
+#audit axioms Rumoca.CTokens.Competition.NumberStart.prefix
+#audit axioms Rumoca.CTokens.Competition.number_starts
+#audit axioms Rumoca.CTokens.Competition.identifier_no_quote
+#audit axioms Rumoca.CTokens.Competition.word_not_encoded
+#audit axioms Rumoca.CTokens.Competition.NumberStart.not_identifier
+#audit axioms Rumoca.CTokens.Competition.word_not_number
+
+#audit axioms Rumoca.CTokens.Competition.Starts.disjoint
+#audit axioms Rumoca.CTokens.Competition.Starts.positive
+#audit axioms Rumoca.CTokens.Competition.IdentifierStart.character
+#audit axioms Rumoca.CTokens.Competition.NumberStart.first
+#audit axioms Rumoca.CTokens.Competition.encoded_starts
+#audit axioms Rumoca.CTokens.Competition.word_starts
+#audit axioms Rumoca.CTokens.Competition.number_start_not_identifier
+#audit axioms Rumoca.CTokens.Competition.number_input_starts
+#audit axioms Rumoca.CTokens.Competition.quoted_starts
+#audit axioms Rumoca.CTokens.Competition.string_input_starts
+#audit axioms Rumoca.CTokens.Competition.punctuator_starts
+#audit axioms Rumoca.CTokens.Competition.punctuator_input_starts
+#audit axioms Rumoca.CTokens.Competition.punctuator_before_number
+#audit axioms Rumoca.CTokens.Competition.punctuator_not_number
+#audit axioms Rumoca.CTokens.Normal.Spelling.candidate
+#audit axioms Rumoca.CTokens.Normal.Spelling.positive
+#audit axioms Rumoca.CTokens.Competition.word_longest
+#audit axioms Rumoca.CTokens.Competition.number_longest
+#audit axioms Rumoca.CTokens.Competition.string_longest
+#audit axioms Rumoca.CTokens.Competition.punctuator_longest
+#audit axioms Rumoca.CTokens.Normal.CommentStart.head
+#audit axioms Rumoca.CTokens.word_no_comment
+#audit axioms Rumoca.CTokens.number_no_comment
+#audit axioms Rumoca.CTokens.string_no_comment
+#audit axioms Rumoca.CTokens.punctuator_no_comment
+#audit axioms Rumoca.CTokens.Consumes.normal
+#audit axioms Rumoca.CTokens.Prefix.normal
+#audit axioms Rumoca.CTokens.Lexes.normal
+#audit axioms Rumoca.CTree.Printer.FunctionDenotes.tokenization

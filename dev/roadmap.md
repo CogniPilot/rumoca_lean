@@ -429,6 +429,18 @@ both actual archives checked. C01/F03 remain open for full lexical
 correspondence, headers/macros, the other public functions and complete
 artifact/compliance composition. Source grammar and emitted C are unchanged.
 
+The subsequent lexical increment proves normal-context cross-category longest
+tokens, excludes comment openers and establishes ordinary-string concatenation
+stability for the shared function grammar. The actual reset contract now
+requires their composition on the same text/tree witness. All 67 additional
+roots and affected packages pass `build/c-lexical/composed-audit.log`; the
+required full gate passed in `build/c-lexical/full-gate.log`, including both
+actual archives with all 621 inputs unchanged. Exact archives and hashes are
+retained in `build/c-lexical/artifacts/`. Next, instantiate the shared contract
+on the complete actual FMI function list and retain separate header/macro,
+type/scope, public-call and whole-artifact obligations. C01/F03 and the
+standards stage remain open. Source grammar and generated C are unchanged.
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

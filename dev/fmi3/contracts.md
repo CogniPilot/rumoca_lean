@@ -195,10 +195,22 @@ statement and function grammar directly on the emitted CTree. The strengthened
 alongside the previous contracts. `adapter_reset_syntax` identifies its exact
 fragment in the actual adapter file. The typedef context names the three types
 used by reset; it does not prove their header declarations or ABI meanings.
-Cross-category longest tokens, adjacent-string concatenation and the remaining
-translation-unit obligations stay open. All 85 new roots and the affected
-packages pass, and the required full gate passed in `build/c-token/full-gate.log`
+At that checkpoint cross-category longest tokens, adjacent-string concatenation
+and the remaining translation-unit obligations stayed open. All 85 new roots
+and the affected packages pass, and the required full gate passed in `build/c-token/full-gate.log`
 with all 613 inputs unchanged. [c-printer.md](../c-printer.md) records its evidence.
+
+The next increment adds `FunctionContract.tokenization`. It requires the
+normal-context longest-token and ordinary-literal concatenation consequences
+on the same function grammar witness, while retaining all previous fields.
+`adapter_reset_tokenization` exposes the certified fragment's position in the
+actual file. The cross-category and comment-boundary proofs are reusable
+across all admissible shared CTree functions. All 67 new roots and affected
+packages pass `build/c-lexical/composed-audit.log`. The required full gate
+passed in `build/c-lexical/full-gate.log`, with all 621 inputs unchanged and
+both actual archives checked. Exact artifacts are retained in its `artifacts/`
+directory. Header-name/directive contexts, macro expansion, type/scope
+constraints and the other functions still need their own composition.
 
 This is a complete byte binding and a reset execution contract, not a proof of
 every function in the containing translation unit. Preprocessing, official

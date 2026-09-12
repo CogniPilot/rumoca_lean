@@ -168,6 +168,24 @@ archives checked. Exact artifacts and hashes are retained in
 `build/c-token/artifacts/`. No grammar or emitted
 C bytes change. See [the exact scope](../dev/c-printer.md).
 
+The next lexical increment now proves cross-category maximality for the
+compositional token judgments against an independent normal-context candidate
+envelope. It checks identifier/number competition, literal encoding prefixes,
+all punctuators and comment openers against the actual continuation. The
+independent function grammar separates ordinary literals, so no phase-six
+concatenation changes its tokens. `FunctionDenotes.tokenization` composes these
+results using one token witness, and the actual reset contract now requires
+this consequence alongside its prior syntax, call and memory contracts.
+`adapter_reset_tokenization` locates that certified fragment in the complete
+adapter file. All 67 added audit roots and affected packages pass
+`build/c-lexical/composed-audit.log`. The required full gate passed in
+`build/c-lexical/full-gate.log`, with all 621 inputs unchanged and both actual
+archives checked. Exact archives and hashes are retained in
+`build/c-lexical/artifacts/`.
+No C bytes or grammar cases change. This is an ordinary-code contract;
+header-name/directive contexts, macro expansion, actual typedef meanings,
+scope/type constraints and remaining public-call behavior stay open.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

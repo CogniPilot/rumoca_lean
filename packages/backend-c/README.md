@@ -31,6 +31,9 @@ source/IR evidence and have their own composed correctness contracts.
 | `AlgorithmRules` | Shared provenance rules for direct Solve instruction rendering; interface rules remain adapter-owned |
 | `StringLiteral` | Independent C literal denotation, unique UTF-8 payload decoding and preprocessing-safe string printing |
 | `TreePreprocessing` | Compositional trigraph/splice stability for every CTree constructor; separate from tokenization, headers and execution |
+| `Tokens`, `TokenCandidates`, `TokenStarts`, `TokenPunctuation`, `TokenMaximal`, `Tokenization` | Independent normal-context token spellings, cross-category longest matching and comment exclusion, with actual continuations |
+| `ExpressionSyntax`, `StatementSyntax`, `FunctionSyntax`, `ExpressionPrinter`, `StatementPrinter`, `FunctionPrinter` | Shared precedence and phrase grammars with structural rendering proofs and explicit typedef/name premises |
+| `TokenConcatenation`, `TreeConcatenation`, `TreeTokenization` | Ordinary-literal separation and one function witness combining maximal tokenization, phrase grammar and concatenation stability |
 | `Character`, `ReadOnly`, `LiteralStorage`, `LiteralPointers` | Character representation, immutable symbolic objects and literal-pointer evaluation |
 | `LiteralLowering`, `LiteralLoopLowering`, `LiteralCallLowering` | Literal-to-name transformation and all-behavior preservation through bodies, loops and calls |
 | `LiteralInterface`, `LiteralInterfaceCalls`, `LiteralPool*` | Global lookup preservation, checked name/text pools, symbolic storage construction and composed call preservation |
@@ -130,10 +133,16 @@ fixed file adapter live in the separately named `TensorCChecks` library under
 `Tests/`, keeping them out of runtime imports and avoiding shared `Tests.*`
 module-path collisions. The full gate includes this artifact check.
 
-`TreeLexical` and `Decimal` prepare certification of the general structured
-printer: they prove identifier/natural token boundaries and independent numeric
-values with canonical digits. This does not certify complete adapter expression
-syntax, C integer type/range selection or a translation unit.
+`TreeLexical` and `Decimal` prove identifier/natural token boundaries and
+independent numeric values with canonical digits. The shared function printer
+now also derives `FunctionTokenization`: the same token sequence has independent
+maximal spellings, the intended phrase grammar and no adjacent literals to
+concatenate. Competing encoded/character literals and implementation extensions
+are conservative envelopes, not accepted output forms. This contract covers
+ordinary code under the stated name/type premises; preprocessing directives,
+macros, actual header declarations, integer type/range selection, scopes and
+whole translation units retain their separate obligations. The FMI reset
+artifact contract instantiates it; the other adapter functions remain open.
 
 Run `lake build check-c` at the repository root for this package's cached
 proof/audit library, or `lake test` in this package's own workspace. The full
