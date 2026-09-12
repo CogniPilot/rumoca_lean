@@ -244,6 +244,19 @@ inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
 GALEC members match `d147774` (`code-member-comparison.log`).
 
+The version-query increment now requires the actual `fmi3GetVersion` function's
+grammar, constructed static storage and complete behavior in `AdapterContract`.
+`version_source` connects its immutable, zero-terminated `3.0` result and
+unchanged heap to the version fields of both actual XML documents. No instance
+or lifecycle premise is needed. This uses the authored C interface; native
+header/ABI interpretation and the remaining public functions stay open.
+All 11 new audit roots and affected packages pass
+`build/fmi-version/package-audit.log`. The required full gate passed in
+`build/fmi-version/full-gate.log`, with all 637
+inventoried inputs unchanged and both actual target archives checked. Exact
+archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
+GALEC members match `f9702f9` (`code-member-comparison.log`).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

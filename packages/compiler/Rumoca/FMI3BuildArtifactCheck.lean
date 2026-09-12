@@ -1,5 +1,6 @@
 import Rumoca.ArtifactCheck
 import Rumoca.FMI3CountProofs
+import Rumoca.FMI3VersionProofs
 import Rumoca.FMI3AdapterCertificate
 import RumocaFMI3.Header
 import XML.CertificateCheck

@@ -359,3 +359,24 @@ passes in `build/fmi-counts/actual-fmi-v2.log`. The required full gate passed in
 inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
 GALEC members match `d147774` (`code-member-comparison.log`).
+
+### Version call and metadata agreement
+
+The required `Version.FunctionContract` connects the actual `fmi3GetVersion`
+function's tokenization and complete typed calls to a constructed literal pool.
+`Version.PreparedContract` requires termination at the returned character
+address, unchanged memory, immutable storage and readable UTF-8 bytes including
+the zero terminator. It has no instance, mode, logger or caller-supplied literal
+address premise. The pool describes symbolic static storage, not native linking.
+
+`version_source` composes that mandatory contract with the actual adapter file
+and independently denoted model/build XML documents. Both root version
+attributes equal the returned `3.0` string. The pinned header declares this same
+version, but macro/header interpretation and the native ABI still need their
+own bridge. This closes one public-call obligation, not the whole FMI adapter.
+All 11 new audit roots and affected packages pass
+`build/fmi-version/package-audit.log`. The required full gate passed in
+`build/fmi-version/full-gate.log`, with all 637
+inventoried inputs unchanged and both actual target archives checked. Exact
+archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
+GALEC members match `f9702f9` (`code-member-comparison.log`).

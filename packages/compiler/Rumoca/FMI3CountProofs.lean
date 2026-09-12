@@ -35,7 +35,7 @@ theorem counts_source (compiled : compile input = .ok a)
       load (CountQueries.written events heap buffer) buffer =
         some (.integer (if events then 0 else a.solve.prepareFMI3.problem.stateShape.volume)) ∧
       (∀ q, q ≠ buffer → CountQueries.written events heap buffer q = heap q) := by
-  obtain ⟨sigs, unique, _, printed, _, grammar, _, _, queries, _⟩ := contract.adapter
+  obtain ⟨sigs, unique, _, printed, _, grammar, _, _, queries, _, _⟩ := contract.adapter
   have query := queries static events
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member _ sigs _ query.member
   refine ⟨compiled, CountMetadata.artifact_counts _ _ contract.metadata, sigs, printed, grammar,
@@ -75,7 +75,7 @@ theorem counts_failure_source (compiled : compile input = .ok a)
               pool.install before firstBlock signed q) ∧
           Valid (pool.addresses firstBlock) signed
             (LifecycleBodies.writeMode (pool.install before firstBlock signed) p .terminated) := by
-  obtain ⟨sigs, unique, _, printed, _, grammar, _, _, queries, ready⟩ := contract.adapter
+  obtain ⟨sigs, unique, _, printed, _, grammar, _, _, queries, ready, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   refine ⟨compiled, CountMetadata.artifact_counts _ _ contract.metadata, sigs, pool,
     printed, grammar, made, ?_⟩

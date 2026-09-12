@@ -283,6 +283,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
       · intro events
         cases events <;> change FMI3.CountQueries.signature _ ∈ [$sigTerms,*]
         all_goals simp [FMI3.CountQueries.signature, FMI3.CountQueries.outputName]
+      · change FMI3.Version.signature ∈ [$sigTerms,*]
+        simp [FMI3.Version.signature]
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩

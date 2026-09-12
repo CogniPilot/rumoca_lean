@@ -63,6 +63,25 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### Version call and XML agreement: standards impact
+
+This increment follows `f9702f9`. Source syntax, initialization, lowering,
+numerical policy, generated C/GALEC and XML renderers are unchanged.
+
+| Baseline | Correspondence and remaining obligations |
+| --- | --- |
+| FMI 3.0.2 [§2.2.5](https://fmi-standard.org/docs/3.0.2/#fmi3GetVersion) | The version getter is permitted without an instance and in every interface state. The actual signature returns `const char *`. The mandatory function contract proves complete typed calls returning immutable, zero-terminated `3.0` storage from the collected pool, with an unchanged heap and no lifecycle/logging premise. The pinned header's `fmi3Version` macro is `3.0`; formal native macro/header and ABI interpretation remain open. |
+| FMI 3.0.2 §§2.4.1, 2.4.10.1 | `version_source` relates that string to the version attributes in both actual XML documents. The model document is bound to prepared Solve; independent successful build decoding implies the required root/version fields. This is version agreement, not complete XML/FMI conformance. |
+| MLS 3.7 and eFMI 1.0.0 Beta 1 | The admitted Modelica and GALEC grammars, equation semantics, initialization, IRs and emitted products are unchanged. Existing S01/SR07/SR08 findings and the full downstream gate remain applicable. |
+
+No new example suite is added. All 11 new audit roots and affected packages pass
+`build/fmi-version/package-audit.log`. The required full gate passed in
+`build/fmi-version/full-gate.log`, with all 637
+inventoried inputs unchanged and both actual target archives checked. Exact
+archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
+GALEC members match `f9702f9` (`code-member-comparison.log`). **Stage decision:
+open; grammar growth remains blocked.**
+
 ### ME count queries and complete metadata binding: standards impact
 
 This increment follows `d147774`. The source EBNFs, LALR admission, IR lowering,

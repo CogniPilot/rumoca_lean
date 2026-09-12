@@ -44,6 +44,16 @@ def Recipe.decoded (r : Recipe) : Decoded :=
   ⟨r.identifier, r.platform, r.language, r.compiler, String.intercalate " " r.options,
     r.sources, r.externalLibraries⟩
 
+/-- Successful independent decoding requires the build-document tag and version. -/
+theorem decode_version (decoded : decode root identifier platform = some result) :
+    root.name = "fmiBuildDescription" ∧
+      root.attributes.lookup "fmiVersion" = some "3.0" := by
+  by_cases name : root.name = "fmiBuildDescription"
+  · by_cases version : root.attributes.lookup "fmiVersion" = some "3.0"
+    · exact ⟨name, version⟩
+    · simp [decode, name, version, guard, failure] at decoded
+  · simp [decode, name, guard, failure] at decoded
+
 /-- Independently stated obligations of the current Linux/GCC binary64 C profile.
 These are build requirements, not a proof about GCC or its output machine code. -/
 def Required (modelName : String) (p : Platform) (r : Decoded) : Prop :=

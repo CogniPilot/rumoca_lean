@@ -496,6 +496,19 @@ conformance remain open under F02/F03/SR07. The metadata count relation admits
 only uniquely referenced continuous scalar Float64 values; a tensor extension
 will need a dimension-volume interpretation.
 
+The next F03 increment requires the version getter's complete-call and static
+storage guarantee in the actual adapter contract. `version_source` connects
+the returned immutable string to both model/build XML version attributes,
+with no instance/lifecycle or supplied literal-address premise. It reuses the
+generic call, printer, literal-pool and XML proofs. Header interpretation,
+native ABI, callbacks, allocation and other public-call obligations remain
+open. All 11 new audit roots and affected packages pass
+`build/fmi-version/package-audit.log`. The required full gate passed in
+`build/fmi-version/full-gate.log`, with all 637
+inventoried inputs unchanged and both actual target archives checked. Exact
+archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
+GALEC members match `f9702f9` (`code-member-comparison.log`).
+
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
 IR/printer provenance obligations are tracked in [provenance.md](provenance.md).

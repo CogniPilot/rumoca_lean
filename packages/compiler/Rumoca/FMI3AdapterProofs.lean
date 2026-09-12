@@ -4,6 +4,7 @@ import RumocaFMI3.AdapterPreprocessing
 import RumocaFMI3.AdapterPrinter
 import RumocaFMI3.CallTypes
 import RumocaFMI3.CountContract
+import RumocaFMI3.Version
 
 /-! Complete adapter byte identity, independent function-section grammar and
 typed public/helper call entry, together with the reset execution/source consequence. Other function execution,
@@ -50,7 +51,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     (∀ (static : StaticLiterals) (events : Bool),
       @CountQueries.FunctionContract static a.parsed.ast a.solve.prepareFMI3 sigs events
         (Runtime.function a.solve.prepareFMI3 (CountQueries.signature events)).render) ∧
-    (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true
+    (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true ∧
+    Version.FunctionContract a.solve.prepareFMI3 sigs
+      (Runtime.function a.solve.prepareFMI3 Version.signature).render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -60,6 +63,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (grammar : ∀ sig ∈ sigs, CTree.Printer.SignaturePrintable RuntimePrinter.typedefs sig)
     (ready : ∀ sig ∈ sigs, @CCalls.Signature.Ready cInterface sig)
     (counts : ∀ events, CountQueries.signature events ∈ sigs)
+    (version : Version.signature ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -68,7 +72,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     printed ▸ AdapterPrinter.rendered_contract a.solve.prepareFMI3 sigs grammar,
     CallTypes.functions_ready a.solve.prepareFMI3 sigs ready _,
     (fun _ => Reset.rendered_contract _),
-    (fun _ events => CountQueries.rendered_contract _ sigs events unique (counts events)), pool⟩
+    (fun _ events => CountQueries.rendered_contract _ sigs events unique (counts events)), pool,
+    Version.rendered_contract _ sigs unique version⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
 Macro expansion and included-header interpretation remain separate. -/
@@ -86,7 +91,7 @@ theorem adapter_reset_syntax (contract : AdapterContract a adapter) :
       adapter = before ++ text ++ after ∧
       CTree.Printer.FunctionDenotes Reset.Printer.typedefs text
         (Runtime.function a.solve.prepareFMI3 Reset.signature) := by
-  obtain ⟨sigs, unique, member, printed, stable, functions, _, reset, _, _⟩ := contract
+  obtain ⟨sigs, unique, member, printed, stable, functions, _, reset, _, _, _⟩ := contract
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 sigs Reset.signature member
   refine ⟨before, (Runtime.function a.solve.prepareFMI3 Reset.signature).render, after,
     printed ▸ located, ?_⟩
