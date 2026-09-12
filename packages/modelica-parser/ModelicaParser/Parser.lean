@@ -1,31 +1,22 @@
-import ModelicaParser.GeneratedRuntime
+import ModelicaParser.Actions
+import ModelicaParser.Grammar
 import ModelicaParser.AST
 
 open _root_.Parser
 
 namespace Rumoca
 
+private def unitActions : ParserActions.Actions AST.Model :=
+  ⟨AST.Model.tokens, AST.decode, AST.decode_sound, AST.decode_complete, Grammar.unit_in_grammar⟩
+
 def parseTokens (ts : List Token) : Option AST.Model :=
-  if RuntimeGenerated.recognize (ts.map (RuntimeGenerated.encode ∘ Token.symbol)) then AST.decode ts else none
+  ParserActions.parseTokens unitActions ts
 
 theorem parseTokens_sound (ts : List Token) (m : AST.Model) (h : parseTokens ts = some m) :
-    ts = m.tokens := by
-  unfold parseTokens at h
-  split at h
-  · exact AST.decode_sound ts m h
-  · contradiction
+    ts = m.tokens := ParserActions.parseTokens_sound unitActions h
 
-def tokenPattern : List RuntimeGenerated.Letter :=
-  (AST.Model.mk "" "" "" "").tokens.map (RuntimeGenerated.encode ∘ Token.symbol)
-
-theorem tokens_encode (m : AST.Model) :
-    m.tokens.map (RuntimeGenerated.encode ∘ Token.symbol) = tokenPattern := rfl
-
-set_option maxRecDepth 10000 in
-theorem pattern_checked : RuntimeGenerated.recognize tokenPattern = true := by decide +kernel
-
-theorem parseTokens_complete (m : AST.Model) : parseTokens m.tokens = some m := by
-  simp only [parseTokens, tokens_encode, pattern_checked, ↓reduceIte, AST.decode_complete]
+theorem parseTokens_complete (m : AST.Model) : parseTokens m.tokens = some m :=
+  ParserActions.parseTokens_complete unitActions m
 
 theorem parseTokens_iff (ts : List Token) (m : AST.Model) :
     parseTokens ts = some m ↔ ts = m.tokens :=

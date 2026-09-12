@@ -8,12 +8,19 @@ import ModelicaParser.OriginProofs
 import ModelicaParser.LocatedTotal
 import ProofAudit.Audit
 
-#audit axioms Rumoca.Generated.source_checked
-#audit axioms Rumoca.Generated.encoding_checked
-#audit axioms Rumoca.Generated.transitions_checked
-#audit axioms Rumoca.Generated.recognize_correct
-#audit axioms Rumoca.runtime_agrees
-#audit axioms Rumoca.runtime_recognize_correct
+#audit axioms Rumoca.Generated.source_read_checked
+#audit axioms Rumoca.Generated.lowering_checked
+#audit axioms Rumoca.Generated.ebnf_correct
+#audit axioms Rumoca.Generated.source_parse_correct
+#audit axioms Rumoca.Generated.items_checked
+#audit axioms Rumoca.Generated.safety_checked
+#audit axioms Rumoca.Generated.budget_checked
+#audit axioms Rumoca.Generated.progress_checked
+#audit axioms Rumoca.Generated.parse_correct
+#audit axioms Rumoca.Generated.parsed_tree
+#audit axioms Rumoca.parsed_tree
+#audit axioms Rumoca.Grammar.unit_in_grammar
+#audit axioms Rumoca.Driven.in_grammar
 #audit axioms Rumoca.AST.decode_sound
 #audit axioms Rumoca.lex_correct
 #audit axioms Rumoca.parseTokens_sound
@@ -21,9 +28,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.parse_complete
 #audit axioms Rumoca.parse_eq_parsed
 #audit axioms Rumoca.parsed_source
-#audit axioms Rumoca.Generated.alphabet_checked
-#audit axioms Rumoca.Generated.recognize_symbols_correct
-#audit axioms Rumoca.runtime_symbols_correct
 #audit axioms Rumoca.parsed_in_ebnf
 #audit axioms Rumoca.ParserActions.parseTokens_sound
 #audit axioms Rumoca.ParserActions.parseTokens_complete
@@ -34,7 +38,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ArrayProfile.Call.jacobian_iff
 #audit axioms Rumoca.ArrayProfile.decode_sound
 #audit axioms Rumoca.ArrayProfile.decode_complete
-#audit axioms Rumoca.ArrayProfile.recognized
+#audit axioms Rumoca.ArrayProfile.in_grammar
 #audit axioms Rumoca.ParserActions.LocatedParsed.erases
 #audit axioms Rumoca.ParserActions.LocatedParsed.tokenSpan_text
 #audit axioms Rumoca.ParserActions.LocatedParsed.disjoint
@@ -70,3 +74,11 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Origins.leaf_text
 #audit axioms Rumoca.Origins.production_ranges
 #audit axioms Rumoca.Origins.production_boundaries
+#audit axioms Rumoca.Generated.first_checked
+#audit axioms Rumoca.Generated.execution_safe
+#audit axioms Rumoca.Generated.nullable_coverage
+#audit axioms Rumoca.Generated.lookahead_coverage
+#audit axioms Rumoca.Generated.accepts_iff_parse
+#audit axioms Rumoca.Generated.fuel_eq
+#audit axioms Rumoca.Generated.accepts_iff_parse_bounded
+#audit axioms Rumoca.Generated.parse_terminates

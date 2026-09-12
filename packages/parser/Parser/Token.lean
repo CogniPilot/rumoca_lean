@@ -5,7 +5,7 @@ namespace Parser
 inductive Symbol where
   | ident
   | literal (text : String)
-  deriving Repr, BEq, DecidableEq
+  deriving Repr, BEq, DecidableEq, ReflBEq, LawfulBEq
 
 inductive Token where
   | ident (name : String)

@@ -11,7 +11,7 @@ import GALECParser.LocatedCompleteness
 #audit axioms Rumoca.GALEC.Syntax.decode_tokens
 #audit axioms Rumoca.GALEC.Syntax.scanner_unchanged
 #audit axioms Rumoca.GALEC.Syntax.tokens_of_decode
-#audit axioms Rumoca.GALEC.Syntax.unit_tree_checked
+#audit axioms Rumoca.GALEC.Syntax.in_grammar
 #audit axioms Rumoca.GALEC.Syntax.tree_complete
 #audit axioms Rumoca.GALEC.Syntax.parse_complete
 #audit axioms Rumoca.GALEC.Generated.safety_checked
@@ -28,3 +28,8 @@ import GALECParser.LocatedCompleteness
 #audit axioms Rumoca.GALEC.Generated.parse_terminates
 #audit axioms Rumoca.GALEC.Generated.parse_correct
 #audit axioms Rumoca.GALEC.Generated.parsed_tree
+
+#audit axioms Rumoca.GALEC.Generated.source_read_checked
+#audit axioms Rumoca.GALEC.Generated.lowering_checked
+#audit axioms Rumoca.GALEC.Generated.ebnf_correct
+#audit axioms Rumoca.GALEC.Generated.source_parse_correct

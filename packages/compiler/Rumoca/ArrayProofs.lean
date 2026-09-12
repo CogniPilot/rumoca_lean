@@ -11,7 +11,7 @@ open ArrayProfile Tensor _root_.Parser
 
 theorem Prepared.source_correct (a : Prepared source) :
     Lexes source.toList a.parsed.parsed.ast.tokens ∧
-      Generated.rawGrammar.Accepts (a.parsed.parsed.tokens.map Token.symbol) :=
+      EBNF.Accepts Generated.sourceGrammar (a.parsed.parsed.tokens.map Token.symbol) :=
   ⟨ParserActions.parsed_lexes actions a.parsed.parsed,
     ParserActions.parsed_in_ebnf a.parsed.parsed⟩
 
@@ -38,7 +38,7 @@ theorem prepare_correct (_checked : prepare source = .ok a)
     (values derivatives : String → Value ℝ stateShape) (matrices : String → Jacobian stateShape) :
     ArrayProfile.parse source = .ok a.parsed.parsed ∧
       Lexes source.toList a.parsed.parsed.ast.tokens ∧
-      Generated.rawGrammar.Accepts (a.parsed.parsed.tokens.map Token.symbol) ∧
+      EBNF.Accepts Generated.sourceGrammar (a.parsed.parsed.tokens.map Token.symbol) ∧
       (a.parsed.parsed.ast.Equation (fun name i => (values name)[i])
         (fun name i => (derivatives name)[i]) matrices ↔
         a.kernel.Equation (values a.parsed.parsed.ast.header.state)

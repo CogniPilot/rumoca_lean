@@ -43,7 +43,7 @@ structure ArtifactContract (a : Artifact source) (emitted : String)
     (linkage : C.Linkage := .external) : Prop where
   bytes : a.cSource linkage = emitted
   source_lexes : Lexes source.source.toList a.parsed.ast.tokens
-  source_ebnf : Generated.rawGrammar.Accepts (a.parsed.tokens.map Token.symbol)
+  source_ebnf : EBNF.Accepts Generated.sourceGrammar (a.parsed.tokens.map Token.symbol)
   c_grammar : CSyntax.Denotes emitted (CExecution.program a.solve) linkage
   rhs_preserved : ∀ d input, Source.Equation a.parsed.ast d ↔
     d a.parsed.ast.state = C.eval (input : ℝ) a.target.rhs

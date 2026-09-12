@@ -36,7 +36,7 @@ theorem references_unique :
     (([CHeader.Scalar.real64, .status32].flatMap fun scalar =>
         [targetTypeId scalar, scalarTypeId scalar]) ++ [modelTypeId] ++
       [errorSignalId, statusComponentId] ++
-      variables.flatMap (fun var => [var.id, var.componentId]) ++
+      modelVariables.flatMap (fun var => [var.id, var.componentId]) ++
       methods.flatMap (fun method =>
         [algorithmMethodId method, functionId method, parameterId method, returnId method])).Nodup := by
   decide +kernel

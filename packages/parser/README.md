@@ -1,14 +1,14 @@
 # Generic EBNF parser engine
 
 This independently buildable Lake package owns `Parser.*`: the EBNF reader,
-DFA and LALR generators, table runtimes, configurable scanner, source ranges,
+LALR generator and runtime, typed semantic actions, configurable scanner, source ranges,
 located concrete syntax trees, bounded parallel mapping, and their proofs.
 It depends on Std/mathlib and the separate proof audit tooling. It imports no
 language frontend, compiler IR, or backend.
 
 Language definitions live in sibling packages:
 
-- [Modelica](../modelica-parser/README.md): its EBNF, generated DFA tables,
+- [Modelica](../modelica-parser/README.md): its EBNF, generated LALR tables,
   lexer policy, AST actions, resolution and located/parallel entry points.
 - [GALEC](../galec-parser/README.md): its EBNF, generated LALR tables, scanner
   configuration, syntax and semantic actions.
@@ -16,17 +16,14 @@ Language definitions live in sibling packages:
 From the root workspace, inside `nix develop`:
 
 ```sh
-lake build check-parser parser/ebnfgen parser/lalrgen
-lake exe ebnfgen --namespace Example.Generated example.ebnf Example.lean
+lake build check-parser parser/lalrgen
 lake exe lalrgen --namespace Example.Generated example.ebnf Example.lean
 ```
 
-`ebnfgen` compiles the regular, acyclic EBNF profile through regex derivatives.
-Its optional `--runtime` mode emits execution tables; the language instance owns
-the equality proof against the certified tables. `lalrgen` accepts recursive
-productions and emits LALR candidate tables with structural safety, FIRST and
-LR-item certificates. Both generators accept an explicit namespace; neither hardcodes
-Modelica or GALEC.
+`lalrgen` accepts recursive productions and emits LALR candidate tables with
+structural safety, FIRST, LR-item, EBNF preservation and execution-bound
+certificates. It accepts an explicit namespace and imports neither Modelica
+nor GALEC. There is no DFA generator or runtime fallback.
 
 `LALR.Completeness.accepts_iff_parse` proves that a grammar accepts a word exactly
 when the checked tables' interpreter accepts it with some finite fuel. This is
@@ -44,12 +41,34 @@ their proofs and a `parse_correct` contract tied to its actual `parse` entry
 point, with a separate `parsed_tree` guarantee. Only two scalar budget
 coefficients are used at runtime; credit arrays are proof-only metadata.
 
-EBNF desugaring preservation and the frontend action/source contract still
-block production replacement. Successful candidate generation
-for every supported conflict-free grammar is also a separate obligation.
-Conflicts and preprocessing limits remain explicit errors. We do not claim
-every supplied grammar is LALR(1). The required direction is one reusable LALR
-engine for both languages, followed by removal of the DFA path; see
+`EBNF.Derives` gives independent recursive expression semantics. A finite
+structural witness accounts for every source branch and every actual CFG rule;
+`Frontend.lower_correct` and `compile_correct` prove language preservation for
+the public preprocessing functions. Generated `source_parse_correct` binds the
+embedded EBNF reader result to its CFG and the actual `parseSymbols` entry point,
+with exact acceptance equivalence and all-input termination. The expression
+and lowering witness constants are proof-only. Generic and actual Modelica/GALEC/
+recursive certificates pass the package and existing integration gates in
+`build/ebnf-stage/build/ebnf-package-staged.log` and `ebnf-integration-staged.log`.
+The preceding EBNF main full artifact gate passed in
+`build/ebnf-preservation/full-gate.log`, with all 584 recorded inputs unchanged.
+The subsequent source cutover also passes its required complete artifact gate
+in `build/lalr-source-cutover/full-gate.log`, with all 581 recorded inputs
+unchanged and both actual target archives checked and retained.
+
+`LALR.TokenParser.Actions` supplies a reusable interface for user-defined ASTs.
+Builders receive the actual CST and original token payloads. Frontends define
+an independent AST relation and prove action soundness/completeness and source
+grammar membership. `parseWith_iff` composes these obligations with the same
+executable LR parser. Generated one-step named-rule equations support source
+AST derivations; recursive equations are not automatically unfolded by `simp`.
+Modelica and GALEC now use this engine and its generated input-size bounds.
+
+The independent EBNF metalanguage-reader conformance proof remains open, as do
+generic located-tree completeness and richer LR rejection diagnostics.
+Successful candidate generation for every supported conflict-free grammar is
+also a separate obligation. Conflicts and preprocessing limits remain explicit
+errors; no claim says every supplied grammar is LALR(1). See
 [remaining parser proofs](../../dev/lalr-parser.md).
 
 Generated LALR instances expose `parseLocated`. UTF-8 spans and terminal spellings

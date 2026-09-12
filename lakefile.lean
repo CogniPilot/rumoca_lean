@@ -95,36 +95,33 @@ private def noArgs (args : List String) : ScriptM Unit := do
 private def buildDir : ScriptM Unit := do
   IO.FS.createDirAll ((← getRootPackage).dir / "build")
 
-private def ebnfgen := "packages/parser/.lake/build/bin/ebnfgen"
 private def lalrgen := "packages/parser/.lake/build/bin/lalrgen"
 private def compiler := "packages/compiler/.lake/build/bin/rumoca"
 private def modelicaGrammar := "packages/modelica-parser/grammar/Modelica.ebnf"
 private def galecGrammar := "packages/galec-parser/grammar/GALEC.ebnf"
 private def generatedGrammar := "packages/modelica-parser/ModelicaParser/Generated.lean"
-private def generatedRuntime := "packages/modelica-parser/ModelicaParser/GeneratedRuntime.lean"
 private def generatedGALEC := "packages/galec-parser/GALECParser/Generated.lean"
 
 /-- Regenerate the checked-in Modelica and GALEC candidate tables. -/
 script generate args do
   noArgs args
-  buildTargets ["parser/ebnfgen", "parser/lalrgen"]
-  command ebnfgen #["--namespace", "Rumoca.Generated", modelicaGrammar, generatedGrammar]
-  command ebnfgen #["--namespace", "Rumoca.RuntimeGenerated", "--runtime", modelicaGrammar, generatedRuntime]
+  buildTargets ["parser/lalrgen"]
+  command lalrgen #["--namespace", "Rumoca.Generated", modelicaGrammar, generatedGrammar]
   command lalrgen #["--namespace", "Rumoca.GALEC.Generated", galecGrammar, generatedGALEC]
   return 0
 
 private def checkGenerated : ScriptM Unit := do
   IO.println "Checking generated grammars"
-  buildTargets ["parser/ebnfgen", "parser/lalrgen"]
-  command ebnfgen #["--namespace", "Rumoca.Generated", "--check", modelicaGrammar, generatedGrammar]
-  command ebnfgen #["--namespace", "Rumoca.RuntimeGenerated", "--check-runtime", modelicaGrammar, generatedRuntime]
+  buildTargets ["parser/lalrgen"]
   buildDir
+  command lalrgen #["--namespace", "Rumoca.Generated", modelicaGrammar, "build/ModelicaGenerated.check.lean"]
+  command "cmp" #["build/ModelicaGenerated.check.lean", generatedGrammar]
   command lalrgen #["--namespace", "Rumoca.GALEC.Generated", galecGrammar, "build/GALECGenerated.check.lean"]
   command "cmp" #["build/GALECGenerated.check.lean", generatedGALEC]
 
 private def lalrTest : ScriptM Unit := do
   IO.println "Checking LALR artifacts and execution"
-  buildTargets ["parser/lalrgen", "modelica_parser/lalr-tests"]
+  buildTargets ["parser/lalrgen", "modelica_parser/lalr-tests", "check-modelica-parser"]
   command "bash" #["tests/lalr.sh"]
 
 private def frontendTest : ScriptM Unit := do

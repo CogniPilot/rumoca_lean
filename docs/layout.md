@@ -14,8 +14,7 @@ packages/
     XML/                      Independent XML renderer, syntax and proofs
     Tests/                    XML proof audits
   parser/
-    Parser/                  Generic EBNF, scanner, DFA/LALR runtime, spans and proofs
-    Generate.lean            Grammar-parametric DFA generator
+    Parser/                  Generic EBNF, scanner, LALR runtime, typed actions, spans and proofs
     LALRGenerate.lean        Grammar-parametric LALR candidate generator
     Tests/                   Engine-only proof audits and kernel regressions
   modelica-parser/
@@ -94,7 +93,7 @@ must supply its own target contract before its output gains a formal guarantee.
 
 Each language frontend owns its EBNF and generated Lean tables together. The
 generic engine owns preprocessing and supplies namespace-parameterized generators.
-`lake run generate` regenerates both proof and runtime tables; `lake run check-generated`
+`lake run generate` regenerates the tables and their proof certificates; `lake run check-generated`
 detects drift. Relocating the grammar does not enlarge the admitted language.
 
 Use these commands from the repository root inside `nix develop`:

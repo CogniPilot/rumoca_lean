@@ -6,11 +6,25 @@ open _root_.Parser
 
 namespace Rumoca.GALEC.Syntax
 
-def encode (token : Token) : Nat :=
-  (Generated.alphabet.findIdx? (· == token.symbol)).getD (Generated.alphabet.size + 1)
+def encode (token : Token) : Nat := Generated.encode token.symbol
 
 def parseTree (tokens : List Token) : Except LALR.Failure LALR.Tree :=
-  LALR.parse Generated.grammar Generated.tables (8 * (tokens.length + 1)) (tokens.map encode)
+  Generated.parseSymbols (tokens.map Token.symbol)
+
+theorem in_grammar (b : Block) :
+    EBNF.Accepts Generated.sourceGrammar (b.tokens.map Token.symbol) := by
+  simp [Generated.start_rule, Generated.rule_block, Generated.rule_startup,
+    Generated.rule_recalibrate, Generated.rule_do_step, Generated.rule_reference,
+    EBNF.Derives.seq_iff, EBNF.Derives.terminal_iff, Block.tokens, Token.symbol]
+
+theorem tree_complete (b : Block) : ∃ tree, parseTree b.tokens = .ok tree :=
+  (Generated.source_parse_correct _).2.1.mp (in_grammar b)
+
+private theorem tree_language (parsed : parseTree tokens = .ok tree) :
+    Generated.grammar.Accepts (tokens.map encode) := by
+  have accepted := (Generated.parse_correct
+    ((tokens.map Token.symbol).map Generated.encode)).1.mpr ⟨tree, parsed⟩
+  simpa only [List.map_map, Function.comp_def, encode] using accepted
 
 structure Parsed (source : String) where
   ast : Block
@@ -28,33 +42,15 @@ def parse (source : String) : Except Diagnostic (Parsed source) :=
       | some ast =>
         if hr : Resolved ast then
           .ok ⟨ast, tokens_of_decode ha ▸ (Scanner.lex_correct scanner source tokens).mp hl,
-            tokens_of_decode ha ▸ (LALR.parse_sound _ _ _ _ _ ht).2.2, hr⟩
+            tokens_of_decode ha ▸ tree_language ht, hr⟩
         else .error ⟨"GALEC resolve", 0, "mismatched block/state/clock name"⟩
-
-theorem encoded_tokens (b : Block) : b.tokens.map encode = unit.tokens.map encode := rfl
-theorem token_count (b : Block) : b.tokens.length = unit.tokens.length := rfl
-
-set_option maxRecDepth 20000 in
-set_option maxHeartbeats 8000000 in
-theorem unit_tree_checked : (parseTree unit.tokens).isOk = true := by decide +kernel
-
-/-- The actual shared LALR machine accepts every named instance of this token
-profile. This is a profile-specific bound, not generic LR completeness. -/
-theorem tree_complete (b : Block) : ∃ tree, parseTree b.tokens = .ok tree := by
-  have h := unit_tree_checked
-  have he : parseTree b.tokens = parseTree unit.tokens := by
-    simp only [parseTree, encoded_tokens, token_count]
-  rw [← he] at h
-  cases ht : parseTree b.tokens with
-  | error e => simp [ht, Except.isOk, Except.toBool] at h
-  | ok tree => exact ⟨tree, rfl⟩
 
 theorem parse_complete (source : String) (b : Block)
     (lexical : Scanner.Lexes scanner source.toList b.tokens) (resolved : Resolved b) :
     ∃ p : Parsed source, parse source = .ok p ∧ p.ast = b := by
   obtain ⟨tree, ht⟩ := tree_complete b
   have hl := (Scanner.lex_correct scanner source b.tokens).mpr lexical
-  refine ⟨⟨b, lexical, (LALR.parse_sound _ _ _ _ _ ht).2.2, resolved⟩, ?_, rfl⟩
+  refine ⟨⟨b, lexical, tree_language ht, resolved⟩, ?_, rfl⟩
   unfold parse
   split
   · rename_i e he

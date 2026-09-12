@@ -40,7 +40,7 @@ and [§7.2.5](https://specification.modelica.org/maint/3.7/inheritance-modificat
 Only the small forms above are implemented; the full standard also permits
 other dimensions and expressions.
 
-The generated DFA recognizes these selected syntactic profiles. The production
+The generated LALR parser recognizes these selected syntactic profiles. The production
 compiler and actual-C certificate currently admit only the unit profile.
 The driven and array development APIs are checked separately and must acquire
 their target execution and actual-artifact contracts before becoming FMU paths.

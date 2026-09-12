@@ -13,7 +13,7 @@ Production Code member, XML, checksums, ZIP, or the host lifecycle scheduler. -/
 structure AlgorithmContract (a : Artifact source) (emitted : String) : Prop where
   bytes : a.algorithmSource = emitted
   source_lexes : Lexes source.source.toList a.parsed.ast.tokens
-  source_ebnf : Generated.rawGrammar.Accepts (a.parsed.tokens.map Token.symbol)
+  source_ebnf : EBNF.Accepts Generated.sourceGrammar (a.parsed.tokens.map Token.symbol)
   grammar_processed :
     (LALR.Frontend.compile GALEC.Generated.source).map (·.grammar) = .ok GALEC.Generated.grammar
   parsed : ∃ p, GALEC.Syntax.parse emitted = .ok p ∧ Denotes p.ast a.algorithmCode.block

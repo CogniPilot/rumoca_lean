@@ -1,4 +1,4 @@
-import ModelicaParser.GeneratedRuntime
+import ModelicaParser.Generated
 import ModelicaParser.Lexer
 
 open _root_.Parser
@@ -8,28 +8,41 @@ Recognition and AST construction are separate: an action may select a smaller
 syntactic profile, while soundness still binds its AST to the original text. -/
 namespace Rumoca.ParserActions
 
+/-- The same generated LR parser consumes every Modelica token profile. -/
+def tokenParser : LALR.TokenParser Token :=
+  Generated.tokenParser.contramap Token.symbol
+
+/-- This frontend's exact-token AST relation. The reusable LR action API also
+supports CST-dependent builders and more general source-to-AST relations. -/
 structure Actions (α : Type) where
   tokens : α → List Token
   decode : List Token → Option α
   decode_sound : ∀ ts a, decode ts = some a → ts = tokens a
   decode_complete : ∀ a, decode (tokens a) = some a
-  recognized : ∀ a, RuntimeGenerated.recognize
-    ((tokens a).map (RuntimeGenerated.encode ∘ Token.symbol)) = true
+  in_grammar : ∀ a, EBNF.Accepts Generated.sourceGrammar ((tokens a).map Token.symbol)
+
+def Actions.lalr (actions : Actions α) : tokenParser.Actions α where
+  Denotes ts ast := ts = actions.tokens ast
+  build _tree ts := actions.decode ts
+  language ts ast denotes := by
+    subst ts
+    simpa only [tokenParser, LALR.TokenParser.contramap, List.map_map] using
+      (Generated.ebnf_correct _).mp (actions.in_grammar ast)
+  sound _tree ts ast _checked decoded := actions.decode_sound ts ast decoded
+  complete _tree ts ast _checked denotes := by
+    subst ts
+    exact actions.decode_complete ast
 
 variable (actions : Actions α)
 
 def parseTokens (ts : List Token) : Option α :=
-  if RuntimeGenerated.recognize (ts.map (RuntimeGenerated.encode ∘ Token.symbol))
-    then actions.decode ts else none
+  tokenParser.parseWith actions.lalr ts
 
-theorem parseTokens_sound (h : parseTokens actions ts = some a) : ts = actions.tokens a := by
-  unfold parseTokens at h
-  split at h
-  · exact actions.decode_sound _ _ h
-  · contradiction
+theorem parseTokens_sound (h : parseTokens actions ts = some a) : ts = actions.tokens a :=
+  tokenParser.parseWith_sound actions.lalr h
 
-theorem parseTokens_complete (a : α) : parseTokens actions (actions.tokens a) = some a := by
-  simp only [parseTokens, actions.recognized, if_true, actions.decode_complete]
+theorem parseTokens_complete (a : α) : parseTokens actions (actions.tokens a) = some a :=
+  tokenParser.parseWith_complete actions.lalr rfl
 
 structure Parsed (source : String) where
   tokens : List Token

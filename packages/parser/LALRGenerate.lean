@@ -1,13 +1,14 @@
 import Parser.LALR.Generator
 import Parser.LALR.EBNF
+import Parser.EBNF.SourceText
 import Parser.LALR.Safety
 import Parser.LALR.ItemCheck
 import Parser.LALR.Resources
 
-/-! Experimental table emitter. All implementation is Lean and lives in the
+/-! Grammar-parametric table emitter. All implementation is Lean and lives in the
 parser package. It does not publish the complete source `CertifiedParser`:
-EBNF preservation and frontend actions still need their own contracts. The
-generated token parser has checked safety, completeness and resource bounds. -/
+Frontend actions still need their own contracts. The generated token parser
+has checked EBNF preservation, safety, completeness and resource bounds. -/
 open Parser.LALR
 
 namespace LALRGenerator
@@ -34,6 +35,68 @@ private def firstFact (f : First) : String :=
   s!"⟨{f.nullable}, [" ++ String.intercalate ", " (f.terminals.map toString) ++ "]⟩"
 
 private def item (i : Item) : String := s!"⟨{i.production}, {i.dot}, {i.lookahead}⟩"
+
+/-- One-step source equations support language-owned AST proofs, including
+inductive proofs for recursive grammars. They are deliberately not global simp
+rules: a recursive rule must only unfold when its frontend requests it. -/
+private def ruleCertificates (grammar : Parser.EBNF.Grammar) : String := Id.run do
+  let mut text := ""
+  for (name, body) in grammar do
+    text := text ++ s!"theorem «rule_{name}» (word : List Parser.Symbol) :\n" ++
+      s!"    Parser.EBNF.Derives sourceGrammar (.ref {reprStr name}) word ↔\n" ++
+      s!"      Parser.EBNF.Derives sourceGrammar ({reprStr body}) word :=\n" ++
+      "  Parser.EBNF.Derives.ref_iff_of_filter (by decide +kernel) word\n\n"
+  if let (name, body) :: _ := grammar then
+    text := text ++ "theorem start_rule (word : List Parser.Symbol) :\n" ++
+      "    Parser.EBNF.Accepts sourceGrammar word ↔\n" ++
+      s!"      Parser.EBNF.Derives sourceGrammar (.ref {reprStr name}) word :=\n" ++
+      s!"  Parser.EBNF.accepts_iff_of_head (body := {reprStr body}) (by decide +kernel) word\n\n"
+  return text
+
+/-- Bind the actual grammar text and generated CFG through a finite structural
+witness. These constants are proof-only; the runtime retains its token alphabet
+and the ordinary LR tables. -/
+private def ebnfCertificates (tokens : List Parser.EBNF.Lexeme)
+    (sourceGrammar : Parser.EBNF.Grammar)
+    (certificate : Frontend.Certified sourceGrammar) : String :=
+  let options := "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n"
+  "noncomputable def sourceGrammar : Parser.EBNF.Grammar := " ++ reprStr sourceGrammar ++ "\n\n" ++
+  "private noncomputable def prepared : LALR.Frontend.Prepared := ⟨alphabet, " ++
+    reprStr certificate.prepared.names ++ ", grammar⟩\n\n" ++
+  "private noncomputable def loweringWitness : LALR.Frontend.Witness := ⟨" ++
+    reprStr certificate.witness.meanings ++ ",\n" ++
+    reprStr certificate.witness.roots ++ ",\n" ++
+    reprStr certificate.witness.rules ++ "⟩\n\n" ++
+  "private noncomputable def sourceTokens : List Parser.EBNF.Lexeme := " ++ reprStr tokens ++ "\n\n" ++
+  options ++ "private theorem lexing_checked : Parser.EBNF.lex source = .ok sourceTokens := by\n" ++
+    "  unfold Parser.EBNF.lex\n  rw [source_toList]\n  decide +kernel\n\n" ++
+  options ++ "private theorem parsing_checked : Parser.EBNF.parseTokens sourceTokens = .ok sourceGrammar :=\n" ++
+    "  by decide +kernel\n\n" ++
+  "theorem source_read_checked : Parser.EBNF.parse source = .ok sourceGrammar :=\n" ++
+    "  (Parser.EBNF.parse_of_lex lexing_checked).trans parsing_checked\n\n" ++
+  options ++ "theorem lowering_checked : loweringWitness.validate sourceGrammar prepared = true :=\n" ++
+    "  by decide +kernel\n\n" ++
+  "def encode (symbol : Parser.Symbol) : Nat :=\n" ++
+    "  (alphabet.findIdx? (· == symbol)).getD (alphabet.size + 1)\n\n" ++
+  "theorem ebnf_correct (word : List Parser.Symbol) :\n" ++
+    "    Parser.EBNF.Accepts sourceGrammar word ↔ grammar.Accepts (word.map encode) :=\n" ++
+    "  loweringWitness.accepts_iff (LALR.Frontend.Witness.validate_iff.mp lowering_checked)\n" ++
+    "    (by decide +kernel) word\n\n"
+
+private def sourceParserContract : String :=
+  "def parseSymbols (word : List Parser.Symbol) : Except LALR.Failure LALR.Tree :=\n" ++
+    "  parse (word.map encode)\n\n" ++
+  "theorem source_parse_correct (word : List Parser.Symbol) :\n" ++
+    "    Parser.EBNF.parse source = .ok sourceGrammar ∧\n" ++
+    "    (Parser.EBNF.Accepts sourceGrammar word ↔ ∃ tree, parseSymbols word = .ok tree) ∧\n" ++
+    "    ((∃ tree, parseSymbols word = .ok tree) ∨ parseSymbols word = .error .rejected) :=\n" ++
+    "  ⟨source_read_checked, (ebnf_correct word).trans (parse_correct (word.map encode)).1,\n" ++
+    "    (parse_correct (word.map encode)).2⟩\n\n" ++
+  "def tokenParser : LALR.TokenParser Parser.Symbol where\n" ++
+    "  grammar := grammar\n  encode := encode\n  run := parseSymbols\n" ++
+    "  accepts_iff word := (parse_correct (word.map encode)).1\n" ++
+    "  checked word tree parsed := parsed_tree (word.map encode) tree parsed\n" ++
+    "  terminates word := (parse_correct (word.map encode)).2\n\n"
 
 /-- Each state gets a small kernel obligation; the final theorem composes all
 rows against the unchanged grammar-parametric item validator. -/
@@ -133,7 +196,10 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
       !part.isEmpty && part.toList.all (fun c => Parser.identRest c) &&
         (part.toList.head?).any Parser.identStart) then
     throw "invalid generated namespace"
-  let p ← Frontend.compile source
+  let sourceTokens ← Parser.EBNF.lex source
+  let sourceGrammar ← Parser.EBNF.parseTokens sourceTokens
+  let lowering ← Frontend.lowerWithWitness sourceGrammar
+  let p := lowering.prepared
   let c ← generate p.grammar
   let g := p.grammar
   let facts ← firstSets g
@@ -148,16 +214,20 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
   if !Fuel.validate g budget then throw "candidate failed linear fuel validation"
   if !Progress.validate c.tables c.collection.edges.toList budget resources.credits then
     throw "candidate failed total parsing progress validation"
-  return "-- Experimental LALR(1) candidate tables. Not a production certificate.\n" ++
+  return "-- LALR(1) tables with checked token-language and execution contracts.\n" ++
     "-- Generated by the in-tree Lean lalrgen; do not edit.\n" ++
     s!"-- {c.canonicalStates} canonical states; {c.collection.states.size} LALR states.\n" ++
     "import Parser.LALR.SafetyProofs\nimport Parser.LALR.FirstProofs\nimport Parser.LALR.Progress\n" ++
-    "import Parser.Token\nimport Parser.LALR.Located\n\nopen Parser\n\n" ++
+    "import Parser.Token\nimport Parser.LALR.Located\nimport Parser.LALR.EBNFEncoding\n" ++
+    "import Parser.EBNF.Rules\nimport Parser.LALR.Actions\n\nopen Parser\n\n" ++
     s!"namespace {moduleNamespace}\n\n" ++
-    s!"def source : String := {repr source}\n\n" ++
+    "set_option maxRecDepth 10000\nset_option maxHeartbeats 8000000\n\n" ++
+    Parser.EBNF.Emission.sourceCertificate source ++
     s!"def alphabet : Array Parser.Symbol := {repr p.alphabet}\n\n" ++
     s!"def grammar : LALR.Grammar := ⟨{g.terminals}, {g.nonterminals}, {g.start}, " ++
     array (g.productions.map production) ++ "⟩\n\n" ++
+    ebnfCertificates sourceTokens sourceGrammar lowering ++
+    ruleCertificates sourceGrammar ++
     "def tables : LALR.Tables := ⟨" ++ array (c.tables.actions.map fun row => array (row.map action)) ++
     ", " ++ array (c.tables.gotos.map fun row => array (row.map fun n =>
       n.map (fun n => s!"some {n}") |>.getD "none")) ++ "⟩\n\n" ++
@@ -180,9 +250,10 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
     "    (h : grammar.semantics.Derives symbols (word.map _root_.Symbol.terminal)) :\n" ++
     "    word.headD following ∈ LALR.lookaheads firstFacts symbols following :=\n" ++
     "  LALR.FirstProofs.lookahead_complete first_checked h\n\n" ++
-    "-- EBNF/frontend correctness remains a separate obligation.\n" ++
+    "-- Typed frontend actions remain a separate obligation.\n" ++
     safetyCertificates g c.tables c.collection.edges.toList ++
     budgetCertificates budget resources.credits ++
+    sourceParserContract ++
     "theorem execution_safe (fuel : Nat) (input : List Nat) (error : LALR.Failure)\n" ++
     "    (h : LALR.parse grammar tables fuel input = .error error) :\n" ++
     "    error = .exhausted ∨ error = .rejected :=\n" ++
@@ -209,5 +280,5 @@ def main (args : List String) : IO UInt32 := do
       | .ok text => IO.FS.writeFile output text; return (0 : UInt32)
     catch e => IO.eprintln (toString e); return (1 : UInt32)
   | _ =>
-    IO.eprintln "usage: lalrgen [--namespace Name] grammar.ebnf Candidate.lean (experimental; no production certificate)"
+    IO.eprintln "usage: lalrgen [--namespace Name] grammar.ebnf Candidate.lean"
     return (2 : UInt32)

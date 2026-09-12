@@ -19,7 +19,7 @@ theorem decode_function (module : Production.Module) (method : GALEC.Method) :
 
 theorem data_nodes (modelName : String) (identity : Identity) (algorithmXML : String) (module : Production.Module) :
     dataNodes (production modelName identity algorithmXML module) =
-      methods.flatMap (fun method => variables.map (dataMapping method)) ++
+      methods.flatMap (fun method => modelVariables.map (dataMapping method)) ++
         methods.map statusMapping := rfl
 
 theorem function_nodes (modelName : String) (identity : Identity) (algorithmXML : String) (module : Production.Module) :
@@ -29,7 +29,7 @@ theorem data_present (modelName : String) (identity : Identity) (algorithmXML : 
     (method : GALEC.Method) (var : Variable) :
     dataMapping method var ∈ dataNodes (production modelName identity algorithmXML module) := by
   rw [data_nodes]
-  cases method <;> cases var <;> simp [methods, Metadata.variables]
+  cases method <;> cases var <;> simp [methods, Metadata.modelVariables]
 
 theorem function_present (modelName : String) (identity : Identity) (algorithmXML : String) (module : Production.Module)
     (method : GALEC.Method) :
@@ -39,7 +39,7 @@ theorem function_present (modelName : String) (identity : Identity) (algorithmXM
 
 theorem algorithm_variables (modelName : String) (identity : Identity) (source : String) :
     select (algorithm modelName identity source) ["Variables", "RealVariable"] =
-      variables.map algorithmVariable := rfl
+      modelVariables.map algorithmVariable := rfl
 
 theorem variable_declared (modelName : String) (identity : Identity) (source : String) (var : Variable) :
     algorithmVariable var ∈ select (algorithm modelName identity source) ["Variables", "RealVariable"] ∧
@@ -47,7 +47,7 @@ theorem variable_declared (modelName : String) (identity : Identity) (source : S
     (algorithmVariable var).attributes.lookup "name" = some var.name ∧
     var.shape = Tensor.scalar := by
   rw [algorithm_variables]
-  cases var <;> exact ⟨by simp [Metadata.variables], rfl, rfl, rfl⟩
+  cases var <;> exact ⟨by simp [Metadata.modelVariables], rfl, rfl, rfl⟩
 
 def MappedResult (model : Solve.Algorithm.Model source) (module : Production.Module) (root : Element)
     (method : GALEC.Method) (var : Variable) (p : Address)

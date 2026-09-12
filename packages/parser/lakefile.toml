@@ -1,7 +1,7 @@
 name = "parser"
 version = "0.1.0"
 testDriver = "ParserChecks"
-defaultTargets = ["Parser", "ebnfgen"]
+defaultTargets = ["Parser", "lalrgen"]
 
 [[require]]
 name = "mathlib"
@@ -19,10 +19,6 @@ globs = ["Parser", "Parser.+"]
 [[lean_lib]]
 name = "ParserChecks"
 roots = ["Tests.ParserAudit", "Tests.LALRChecks", "Tests.LALRSafetyChecks", "Tests.LALRFirstChecks"]
-
-[[lean_exe]]
-name = "ebnfgen"
-root = "Generate"
 
 [[lean_exe]]
 name = "lalrgen"

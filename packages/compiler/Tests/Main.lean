@@ -1,5 +1,5 @@
 import Rumoca.Compiler
-import Parser.EBNF
+import Parser.LALR.EBNF
 import ModelicaParser.Driven
 import Rumoca.ArrayCompiler
 import RumocaCore.Solve.IVP
@@ -16,7 +16,7 @@ def accepted (s : String) : Bool := match compile (.single "rumoca-check:/compil
   | .ok _ => true
   | .error _ => false
 
-def grammarAccepted (s : String) : Bool := match EBNF.compile s with
+def grammarLowered (s : String) : Bool := match LALR.Frontend.compile s with
   | .ok _ => true
   | .error _ => false
 
@@ -126,17 +126,17 @@ def main : IO Unit := do
   for s in ["s = \"x\";", "s = [\"x\"], {\"y\" | \"z\"};",
       "s = other; other = (\"a\" | \"b\"), IDENT;", "s = \"\";",
       "(* comment *) s = { [ \"x\" ] }; "] do
-    expect s!"EBNF accepts {repr s}" (grammarAccepted s)
+    expect s!"EBNF accepts {repr s}" (grammarLowered s)
   for s in ["s : 'a' 'b';", "s : keyword IDENT; keyword : 'model';",
-      "// reference-style grammar\ns : [ 'a' ] { 'b' | 'c' };", "s : ''; // end"] do
-    expect s!"reference EBNF accepts {repr s}" (grammarAccepted s)
-  for s in ["", "s=missing;", "s=s;", "s=t; t=s;", "s=\"a\"; s=\"b\";",
-      "s=\"a\"; unused=missing;", "s=\"a\"; unused=unused;",
+      "// reference-style grammar\ns : [ 'a' ] { 'b' | 'c' };", "s : ''; // end", "s : '(' s ')' | '';"] do
+    expect s!"reference EBNF accepts {repr s}" (grammarLowered s)
+  for s in ["", "s=missing;", "s=\"a\"; s=\"b\";",
+      "s=\"a\"; unused=missing;",
       "IDENT=\"a\";", "s=[\"a\";", "s=\"a\"", "s=\"unclosed;"] do
-    expect s!"EBNF rejects {repr s}" (!grammarAccepted s)
+    expect s!"EBNF rejects {repr s}" (!grammarLowered s)
   for s in ["s : 'unclosed;", "s : 'a'^;", "s : ident@name;", "s : /[a-z]+/;",
       "s : 'a',;", "s : : 'a';", "s : missing;"] do
-    expect s!"unsupported reference EBNF rejects {repr s}" (!grammarAccepted s)
+    expect s!"unsupported reference EBNF rejects {repr s}" (!grammarLowered s)
   match compile (.single "rumoca-check:/compiler/Integrator.mo" good) with
   | .error e => throw (IO.userError s!"{e.phase}: {e.message}")
   | .ok a =>

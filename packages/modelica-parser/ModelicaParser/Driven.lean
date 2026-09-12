@@ -1,4 +1,5 @@
 import ModelicaParser.Actions
+import ModelicaParser.Grammar
 
 open _root_.Parser
 
@@ -55,17 +56,25 @@ theorem decode_complete (m : Model) : decode m.tokens = some m := by
   cases m
   simp [decode, identifiers, Model.tokens]
 
-def pattern : List RuntimeGenerated.Letter :=
-  (Model.mk "" "" "" "" "" "" "" "").tokens.map (RuntimeGenerated.encode ∘ Token.symbol)
-
-set_option maxRecDepth 10000 in
-theorem recognized (m : Model) :
-    RuntimeGenerated.recognize (m.tokens.map (RuntimeGenerated.encode ∘ Token.symbol)) = true := by
-  change RuntimeGenerated.recognize pattern = true
-  decide +kernel
+theorem in_grammar (m : Model) :
+    EBNF.Accepts Generated.sourceGrammar (m.tokens.map Token.symbol) := by
+  apply Grammar.accepts_composition
+    ((m.tokens.drop 2).take (m.tokens.length - 5) |>.map Token.symbol)
+  simp [Generated.rule_composition, Generated.rule_driven_composition,
+    Generated.rule_input, Generated.rule_output, Generated.rule_component_clause,
+    Generated.rule_type_specifier, Generated.rule_component_list,
+    Generated.rule_component_declaration, Generated.rule_declaration,
+    Generated.rule_initialized_component_clause, Generated.rule_initialized_declaration,
+    Generated.rule_class_modification, Generated.rule_argument_list,
+    Generated.rule_zero_modification, Generated.rule_fixed_modification,
+    Generated.rule_true, Generated.rule_driven_equation_section,
+    Generated.rule_driven_equation, Generated.rule_component_reference,
+    Generated.rule_equation, Generated.rule_der, Generated.rule_ident,
+    EBNF.Derives.seq_iff, EBNF.Derives.alt_iff, EBNF.Derives.terminal_iff,
+    Model.tokens, Token.symbol]
 
 def actions : ParserActions.Actions Model :=
-  ⟨Model.tokens, decode, decode_sound, decode_complete, recognized⟩
+  ⟨Model.tokens, decode, decode_sound, decode_complete, in_grammar⟩
 
 abbrev Parsed := ParserActions.Parsed actions
 def parse := ParserActions.parse actions

@@ -1,4 +1,5 @@
 import ModelicaParser.Actions
+import ModelicaParser.Grammar
 import ModelicaParser.Array.Syntax
 
 open _root_.Parser
@@ -38,29 +39,35 @@ theorem decode_complete (m : Model) : decode m.tokens = some m := by
   | mk header body endName =>
     cases body <;> simp [decode, candidate, Model.tokens, Header.tokens, Body.tokens, Product.tokens, Call.tokens]
 
-private def drivenPattern : List RuntimeGenerated.Letter :=
-  (Model.mk ⟨"", "", "", "", ""⟩ (.driven "" "") "").tokens.map
-    (RuntimeGenerated.encode ∘ Token.symbol)
-
-private def jacobianPattern : List RuntimeGenerated.Letter :=
-  (Model.mk ⟨"", "", "", "", ""⟩ (.jacobian "" "" ⟨"", ""⟩ "" ⟨"", ⟨"", ""⟩, ""⟩) "").tokens.map
-    (RuntimeGenerated.encode ∘ Token.symbol)
-
-set_option maxRecDepth 10000 in
-theorem recognized (m : Model) :
-    RuntimeGenerated.recognize (m.tokens.map (RuntimeGenerated.encode ∘ Token.symbol)) = true := by
+theorem in_grammar (m : Model) :
+    EBNF.Accepts Generated.sourceGrammar (m.tokens.map Token.symbol) := by
+  have layout : m.tokens.map Token.symbol =
+      [.literal "model", .ident] ++
+        ((m.tokens.drop 2).take (m.tokens.length - 5) |>.map Token.symbol) ++
+          [.literal "end", .ident, .literal ";"] := by
+    cases m with
+    | mk header body endName => cases body <;> rfl
+  rw [layout]
+  apply Grammar.accepts_composition
   cases m with
   | mk header body endName =>
-    cases body with
-    | driven =>
-      change RuntimeGenerated.recognize drivenPattern = true
-      decide +kernel
-    | jacobian =>
-      change RuntimeGenerated.recognize jacobianPattern = true
-      decide +kernel
+    cases body <;>
+      simp [Generated.rule_composition, Generated.rule_array_composition,
+        Generated.rule_input, Generated.rule_output, Generated.rule_array_component_clause,
+        Generated.rule_type_specifier, Generated.rule_array_subscripts, Generated.rule_subscript,
+        Generated.rule_initialized_array_clause, Generated.rule_each,
+        Generated.rule_zero_modification, Generated.rule_fixed_modification,
+        Generated.rule_true, Generated.rule_array_body, Generated.rule_driven_equation_section,
+        Generated.rule_driven_equation, Generated.rule_jacobian_body,
+        Generated.rule_term, Generated.rule_factor, Generated.rule_mul_operator,
+        Generated.rule_function_call_args, Generated.rule_function_arguments,
+        Generated.rule_component_reference, Generated.rule_equation,
+        Generated.rule_der, Generated.rule_ident,
+        EBNF.Derives.seq_iff, EBNF.Derives.alt_iff, EBNF.Derives.terminal_iff,
+        Model.tokens, Header.tokens, Body.tokens, Product.tokens, Call.tokens, Token.symbol]
 
 def actions : ParserActions.Actions Model :=
-  ⟨Model.tokens, decode, decode_sound, decode_complete, recognized⟩
+  ⟨Model.tokens, decode, decode_sound, decode_complete, in_grammar⟩
 
 abbrev Parsed := ParserActions.Parsed actions
 def parse := ParserActions.parse actions

@@ -1,5 +1,8 @@
 import Parser
 import Parser.LocatedCompleteness
+import Parser.LALR.EBNF
+import Parser.EBNF.Rules
+import Parser.LALR.Actions
 import Parser.LALR.FirstProofs
 import Parser.LALR.ItemCheck
 import Parser.LALR.Execution
@@ -9,8 +12,6 @@ import Parser.LALR.Fuel
 import Parser.LALR.Progress
 import Parser.LALR.RuntimeProofs
 import Parser.LALR.SafetyProofs
-import Parser.Automaton
-import Parser.Alphabet
 import Parser.Provenance
 import Parser.ProvenanceExtension
 import Parser.ProvenanceMapping
@@ -36,15 +37,30 @@ import ProofAudit.Audit
 #audit axioms Parser.Provenance.TracesTo.unmapRule
 #audit axioms Parser.Provenance.Table.mapRule_traces_iff
 
-#audit axioms RegularExpression.rmatch_iff_matches'
 #audit axioms Parser.Source.Cursor.nextn_splits
 #audit axioms Parser.Source.Cursor.find_splits
 #audit axioms Parser.Source.Cursor.extract_between
 #audit axioms Parser.Source.Spelled.space
 #audit axioms Parser.Source.attach_complete
-#audit axioms RegularExpression.simplify_correct
-#audit axioms Parser.CertifiedDFA.run_correct
-#audit axioms Parser.Alphabet.encode_reflects
+#audit axioms Parser.EBNF.Derives.mono
+#audit axioms Parser.EBNF.Derives.nonempty_tokens
+#audit axioms Parser.LALR.Frontend.Witness.validate_iff
+#audit axioms Parser.LALR.Frontend.Fragment.yields
+#audit axioms Parser.LALR.Frontend.AnnotatedRule.yields
+#audit axioms Parser.LALR.Frontend.Witness.production_yields
+#audit axioms Parser.LALR.Frontend.Witness.produces_yields
+#audit axioms Parser.LALR.Frontend.Witness.derives_yields
+#audit axioms Parser.LALR.Frontend.Witness.accepts_decoded
+#audit axioms Parser.LALR.Frontend.Witness.reference
+#audit axioms Parser.LALR.Frontend.Witness.fragment_complete
+#audit axioms Parser.LALR.Frontend.Witness.accepts_encoded
+#audit axioms Parser.LALR.Frontend.Prepared.decode_encode
+#audit axioms Parser.LALR.Frontend.accepted_tokens_valid
+#audit axioms Parser.LALR.Frontend.Witness.accepts_iff
+#audit axioms Parser.LALR.Frontend.Certified.accepts_iff
+#audit axioms Parser.LALR.Frontend.lower_correct
+#audit axioms Parser.LALR.Frontend.compile_of_parse
+#audit axioms Parser.LALR.Frontend.compile_correct
 #audit axioms Parser.LALR.Tree.prependWord_eq
 #audit axioms Parser.LALR.Tree.valid_derives
 #audit axioms Parser.LALR.checkTree_sound
@@ -152,3 +168,16 @@ import ProofAudit.Audit
 #audit axioms Parser.Provenance.TracesTo.lift
 #audit axioms Parser.Provenance.TracesTo.derive
 #audit axioms Parser.Provenance.TracesTo.generate
+
+#audit axioms Parser.EBNF.Derives.terminal_iff
+#audit axioms Parser.EBNF.Derives.empty_iff
+#audit axioms Parser.EBNF.Derives.seq_iff
+#audit axioms Parser.EBNF.Derives.alt_iff
+#audit axioms Parser.EBNF.Derives.optional_iff
+#audit axioms Parser.EBNF.Derives.ref_iff_of_filter
+#audit axioms Parser.EBNF.accepts_iff_of_head
+#audit axioms Parser.LALR.TokenParser.parseWith_execution
+#audit axioms Parser.LALR.TokenParser.parseWith_sound
+#audit axioms Parser.LALR.TokenParser.parseWith_complete
+#audit axioms Parser.LALR.TokenParser.parseWith_iff
+#audit axioms Parser.LALR.TokenParser.parseWith_grammar

@@ -20,6 +20,7 @@ interactions across all three standards even when no grammar file changed.
 | Required record | Evidence needed to close the stage |
 | --- | --- |
 | Scope and identity | Source revision, production entry points, exact source/GALEC EBNFs, admitted and rejected forms, deliberate extensions, and the actual artifacts reviewed. |
+| Architecture continuity | Identify the reusable mechanism exercised by the slice, its extension point and its cost model. Small syntax coverage must use the intended compiler architecture. Grammar-specific derivations instantiate general parser/lowering theorems; fixed examples or temporary recognizers cannot replace them. |
 | Normative baseline | MLS, FMI and eFMI versions; relevant clauses; pinned header/schema identities. Upstream Rumoca and compliance tools are references, not normative authorities. |
 | MLS coverage | Lexical/syntactic admission, resolution, types and shapes, equation meaning, initialization, numeric interpretation and diagnostics. Keep `jacobian` explicitly identified as an extension. |
 | FMI coverage | Both advertised ME and CS interfaces: metadata, initialization, legal and rejected calls, time/solver policy, errors/logging, storage/lifetime, source builds and archive contents. |

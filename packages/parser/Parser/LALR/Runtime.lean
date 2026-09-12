@@ -4,7 +4,7 @@ import Parser.LALR.Grammar
 and malformed-table failures are distinct. Candidate trees are checked against
 the grammar and exact input. This establishes soundness independently of table
 construction; a separate table certificate is still required for completeness
-and absence of internal errors. This module is not the production parser yet. -/
+and absence of internal errors. Source frontends compose their lexer and AST contracts with this engine. -/
 namespace Parser.LALR
 
 inductive Action where

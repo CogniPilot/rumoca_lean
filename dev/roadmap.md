@@ -738,9 +738,12 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   grouping, alternatives, optional/repeated forms, empty terminals, comments
   and error/resource cases. **Close with:** EBNF-reader soundness and the
   promised completeness theorem against that relation, connected to existing
-  DFA/original-alphabet proofs and AST actions. The user now requests an in-tree
-  LALR(1) parser before grammar growth. The recursive EBNF-to-CFG edge must also
-  preserve this relation; see [the LALR plan](lalr-parser.md), LR01–LR07.
+  LALR/original-alphabet proofs and AST actions. Independent recursive EBNF
+  expression semantics and certified EBNF-to-CFG preservation are now proved
+  in both directions. The generated source contract also checks the actual
+  EBNF reader result. That does not prove the text reader conforms to an
+  independently specified metalanguage; this remains the P02 gap. See
+  [the LALR plan](lalr-parser.md), LR01–LR07.
 - [ ] **P03 — Make parser/AST actions an extensible contract.** Depends on
   P01/P02. Keep the parser package independent of compiler IRs. Specify the
   AST-action relation separately from the generated recognizer, with token
@@ -748,21 +751,23 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   promised completeness domain. **Close with:** current parser instantiation
   proves the contract; package-only builds and compiler builds both pass;
   generated-file freshness and actual-grammar binding remain mandatory.
-  **Progress:** `ModelicaParser.Actions`/`ActionsProofs` provide reusable action
-  soundness/completeness, source binding and original-symbol EBNF membership;
-  `Driven` instantiates them. The legacy parser has not yet been consolidated
-  onto this interface. EBNF notation now follows the selected reference grammar;
-  the independent metalanguage specification remains P02.
+  **Progress:** generic `LALR.TokenParser.Actions` now composes an independent
+  token-to-AST relation with the actual reusable parser. Its builder receives
+  the CST and original payloads. All Modelica profiles use this interface;
+  Modelica and GALEC derive their AST token membership in source EBNF semantics,
+  with grammar-parametric LR completeness supplying execution. Current source
+  spans and diagnostics are retained. Generated per-production child actions,
+  generic located-CST completeness, richer LR errors and P02 remain open.
 - [ ] **P04 — Certify the in-tree LALR(1) replacement.** Active, owned by Codex.
-  Depends on P02/P03. Candidate construction and a generic checked-tree
-  soundness theorem now exist in Lean, using mathlib CFG semantics. A finite
-  structural validator now implies freedom from internal table/tree errors for
-  every input and fuel, with kernel certificates for the actual emitted tables.
-  The production parser remains the existing DFA/action implementation.
-  Nullable/FIRST coverage is now proved against every CFG derivation and
-  instantiated for actual emitted fact arrays. **Next:** LR-item validation
-  with universal completeness, termination/resource
-  certificates, verified EBNF desugaring and typed AST actions. **Close with:**
+  Depends on P02/P03. Candidate construction, structural safety, nullable/FIRST
+  coverage, LR-item completeness and bounded termination now have generic Lean
+  theorems using mathlib CFG semantics, instantiated for actual emitted tables.
+  Independent EBNF-to-CFG preservation composes with those proofs. Modelica
+  and GALEC now use the same generated LALR engine and input-size bounds;
+  the DFA implementation and generator have been removed. Typed AST/source
+  contracts and actual-artifact grammar binding follow the new source path.
+  **Remaining:** independent metalanguage-reader conformance, generic located
+  completeness and diagnostics, and preprocessing success/cost. **Close with:**
   the actual grammar-to-parser product carries the full contract; both current
   profiles instantiate it; the production source/IR/artifact chain and complete
   gate pass. A few accepted trees or native recursion tests cannot close P04.
@@ -773,7 +778,7 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   axiom audited; corrupted shifts/edge annotations failed. Recursive parsing
   through depth 500, all existing artifact controls and thirteen native FMI
   groups passed. Working inventory: `build/lalr-safety-snapshot.sha256`.
-  P04 remains open for the contracts listed above. The earlier LR foundation
+  This historical gate covered structural safety. The earlier LR foundation
   evidence remains in `build/lalr-gate.log` and `build/lalr-snapshot.sha256`.
   **FIRST coverage evidence (2026-09-09):** `build/lalr-first-gate.log` records
   the complete passing gate with 352 audited roots: fourteen new generic
@@ -782,7 +787,15 @@ scope limitations, not counterexamples to the checked tiny-core theorems.
   corollaries were kernel checked and audited; a missing emitted array failed
   certification. All existing artifact controls and thirteen native FMI groups
   passed, and ME/CS traces agree. Inventory: `build/lalr-first-snapshot.sha256`.
-  This proves coverage, not exact FIRST sets or LR-item/table completeness.
+  That historical increment proved coverage, not exact FIRST sets. Subsequent
+  LR-item completeness and all-input bounded termination passed the required
+  full gate in `build/lalr-production/full-gate.log`; EBNF preservation passed
+  in `build/ebnf-preservation/full-gate.log`. The production cutover's package,
+  native boundary and direct actual-C checks pass in
+  `build/source-cutover/build/`; its required main full artifact gate passed
+  in `build/lalr-source-cutover/full-gate.log`, with all 581 recorded inputs
+  unchanged and both actual archives retained. P02 and the other open items above
+  remain blockers; these checkpoints do not close the entire compiler roadmap.
 
 ### Arithmetic and the target boundary
 

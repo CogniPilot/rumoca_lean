@@ -63,13 +63,6 @@ if packages/compiler/.lake/build/bin/rumoca "$task_tmp/bad.mo" -o "$task_tmp/bad
 fi
 test ! -e "$task_tmp/bad.c"
 
-printf '%s\n' 's = ["a"], { "b" | "c" };' > "$task_tmp/sample.ebnf"
-packages/parser/.lake/build/bin/ebnfgen "$task_tmp/sample.ebnf" "$task_tmp/Sample.lean"
-lake env lean "$task_tmp/Sample.lean"
-sed 's/def accepting : Array Bool := #\[false/def accepting : Array Bool := #[true/' \
-  packages/modelica-parser/ModelicaParser/Generated.lean > "$task_tmp/Corrupt.lean"
-if lake env lean "$task_tmp/Corrupt.lean" > "$task_tmp/corrupt.log" 2>&1; then
-  echo 'corrupted accepting table passed its certificate' >&2; exit 1
-fi
-rg -q 'finalState' "$task_tmp/corrupt.log"
-echo 'Binary64 C execution, rejection, EBNF generation and certificate mutation tests passed'
+# Generic EBNF generation and table/source mutation controls run once in
+# tests/lalr.sh, against the same engine used by production Modelica and GALEC.
+echo 'Binary64 C execution and source rejection tests passed'

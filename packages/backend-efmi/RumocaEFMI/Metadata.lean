@@ -10,7 +10,7 @@ inductive Variable where
   | state | clock
   deriving Repr, BEq, DecidableEq
 
-def variables : List Variable := [.state, .clock]
+def modelVariables : List Variable := [.state, .clock]
 def methods : List GALEC.Method := [.startup, .recalibrate, .doStep]
 
 def Variable.name : Variable → String

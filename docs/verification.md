@@ -535,23 +535,19 @@ model form. `Parsed` binds an AST to the source characters with erased proofs.
 `compile_complete` proves successful compilation for every syntactically valid,
 resolved tiny model.
 
-The EBNF preprocessor may refuse recursive rule references or exceed its
-4096-state resource bound. Successful output carries kernel certificates for
-the embedded EBNF-to-regex computation, alphabet mapping, every transition,
-accepting bits and start state. `Alphabet.encode_reflects` proves lossless
-compression on grammar support, including arbitrary unknown input symbols.
-Generated `alphabet_checked` and `recognize_symbols_correct` certify language
-membership over the original symbols. `parsed_in_ebnf` lifts this to parsed
-source tokens. `runtime_agrees` checks the separate executable tables. The
-freshness gate compares the current grammar file to the certified embedded
-source. The EBNF reader defines our dialect; it accepts both comma/equal
-notation and the selected Rumoca/parol-style colon definitions, single quotes
-and implicit sequences. No standardized EBNF metalanguage conformance theorem
-is claimed.
+The source frontends now use the same generated LALR parser. The old DFA
+runtime, regular-expression expander, duplicated runtime tables and generator
+have been removed. Successful source EBNF lowering is checked against independent
+recursive expression semantics. Alphabet reflection includes unknown symbols,
+which encode outside the terminal range and distinctly from EOF.
 
-An in-tree LALR(1) replacement is under development in `Parser.LALR`.
-GALEC uses this engine; production Modelica still uses the DFA pending the
-proved cutover. Its candidate generator implements
+The EBNF reader accepts comma/equal and selected Rumoca/parol-style colon
+notation, single/double quoted literals and implicit sequences. The embedded
+reader result is kernel checked and actual grammar files must match the embedded
+source. Independent conformance of this reader to an EBNF metalanguage (P02)
+remains open; no ISO 14977 theorem is claimed.
+
+The in-tree `Parser.LALR` candidate generator implements
 canonical LR(1) construction and LR(0) kernel merging. `LALR.parse_sound` proves
 that every successful checked parse tree derives the exact input in mathlib's
 CFG semantics, universally over tables and fuel. `LALR.RuntimeProofs.run_checked`
@@ -621,11 +617,60 @@ arrays are proof-only; runtime fuel uses two scalar coefficients. These results
 do not prove candidate-search convergence for every conflict-free LR grammar,
 or wall-clock/heap performance.
 
-EBNF-to-CFG preservation and typed Modelica AST
-actions remain required before the production switch; see
-[LR01–LR07](../dev/lalr-parser.md). `lalrgen` does not yet emit the full
-`CertifiedParser` contract or bind its grammar constants to the source EBNF
-through a preservation proof.
+The EBNF preservation increment adds independent recursive expression
+semantics and a finite structural lowering certificate. Universal soundness
+and completeness connect those semantics to mathlib CFG derivations, including
+empty forms, named recursion and finite alphabet reflection. The public
+`Frontend.lower_correct` and `compile_correct` cover successful preprocessing;
+the latter binds the exact reader result. Generated `source_parse_correct`
+combines a kernel-checked read of the embedded EBNF text, its expression-to-CFG
+witness, acceptance equivalence and all-input bounded LR termination. The
+proof-only witness is not retained by runtime token parsing.
+
+The 19 added generic audit roots and parser packages pass in
+`build/ebnf-stage/build/ebnf-package-staged.log` (796 jobs). Actual Modelica,
+GALEC and recursive certificates and the existing mutation controls pass in
+`build/ebnf-stage/build/ebnf-integration-staged.log`. Source-reader checking
+reuses the exact character-view certificate and separately checks lexing and
+expression parsing. The EBNF increment's required main artifact gate passed in
+`build/ebnf-preservation/full-gate.log`, with all 584 recorded inputs unchanged
+and both actual target archives retained under its `artifacts/` directory.
+
+The subsequent source cutover supplies `LALR.TokenParser.Actions`: builders
+receive the actual concrete tree and original token payloads, and specify an
+independent relation between tokens and their chosen AST. The generic
+`parseWith_iff` proves soundness and completeness for that relation;
+`parseWith_execution` retains the actual LR result and checked tree. It neither
+requires a grammar-shaped AST nor requires every AST to reconstruct a unique
+token spelling. The current language-owned exact-token decoders instantiate
+this interface without becoming the generic parser.
+
+Generated one-step named-rule equations let Modelica and GALEC prove AST token
+membership directly in EBNF semantics. Unit, driven and array cases use these
+derivations, not execution of empty-name token patterns. GALEC also uses the
+certified generated bound instead of its former fixed fuel expression. Modelica's
+`parseTokens_iff`, character binding, located-source and compiler completeness
+contracts are retained. Actual-artifact source membership now names independent
+`EBNF.Accepts sourceGrammar`; all numerical and emitted-file fields remain.
+
+The initial Modelica parser/action modules pass in
+`build/source-cutover/build/modelica-actions.log` (770 jobs), and the GALEC package
+passes in `build/source-cutover/build/galec-cutover.log` (780 jobs). The final parser package gate passed in
+`build/source-cutover/build/parser-cutover-gate.log` (1525 generic/generator jobs,
+806 language jobs). The downstream package audits, freshness, LALR corruption
+controls, native compiler/C execution and LSP/parallel boundaries passed in
+`build/source-cutover/build/downstream-cutover-v2.log`. This also fixes an
+import-related Lean keyword collision by renaming an internal eFMI metadata
+list; emitted manifest values are unchanged. The direct actual-source/C contract also passed in
+`build/source-cutover/build/actual-c-cutover.log`. The required complete
+actual-artifact gate passed in `build/lalr-source-cutover/full-gate.log`, with
+all 581 recorded inputs unchanged throughout the run. Actual FMU/eFMU archives
+and their hashes are retained in its `artifacts/` directory. This covers the
+existing actual-source/C, FMI ME/CS, GALEC, complete eFMU and rejection/native
+boundaries. These are implementation checkpoints, not a completed compiler
+or FMI/eFMI compliance claim. Generic located-CST completeness, richer LR
+rejection reporting, P02 and generator success/cost proofs remain open;
+see [LR01–LR07](../dev/lalr-parser.md).
 
 Source-indexed IRs retain their predecessors. State/register indices cannot
 refer to absent values. The public per-pass contracts in `packages/compiler/Rumoca/Lowering.lean`,
@@ -1742,7 +1787,7 @@ file. Both must fail the independent actual-file checker and leave no manifest.
 The actual source and EBNF files are also checked independently of candidate
 literals and native freshness checks.
 
-Other required controls reject an altered DFA accepting bit, changed C
+Other required controls reject corrupted LR tables/source witnesses, changed C
 arithmetic, altered embedded Modelica source and an added logical assumption.
 The obsolete executable C reader and its parser-only checks have been removed;
 structural printer and grammar uniqueness theorems supply the text connection.

@@ -111,12 +111,29 @@ theorem malformed_table_status :
 theorem recursive_ebnf :
     (do
       let p ← Frontend.compile "s : '(' s ')' s | '';"
-      observe p.grammar [0, 0, 1, 1]) = .ok [0, 0, 1, 1] := by cbv
+      observe p.grammar [0, 0, 1, 1]) = .ok [0, 0, 1, 1] := by
+  -- Check preprocessing once; leave candidate-table search to its equation
+  -- evaluator. Unfolding both under `cbv` duplicates the structural checks.
+  have prepared : Frontend.compile "s : '(' s ')' s | '';" = .ok
+      ⟨#[.literal "(", .literal ")"], #["s"], ⟨2, 2, 0,
+        #[⟨1, [t 0, n 0, t 1, n 0]⟩, ⟨1, []⟩, ⟨0, [n 1]⟩]⟩⟩ := by decide +kernel
+  rw [prepared]
+  clear prepared
+  change observe _ [0, 0, 1, 1] = .ok [0, 0, 1, 1]
+  cbv
 
 theorem optional_many :
     (do
       let p ← Frontend.compile "s : ['a'] {'b'};"
-      observe p.grammar [0, 1, 1]) = .ok [0, 1, 1] := by cbv
+      observe p.grammar [0, 1, 1]) = .ok [0, 1, 1] := by
+  have prepared : Frontend.compile "s : ['a'] {'b'};" = .ok
+      ⟨#[.literal "a", .literal "b"], #["s"], ⟨2, 3, 0,
+        #[⟨1, []⟩, ⟨1, [t 0]⟩, ⟨2, []⟩, ⟨2, [t 1, n 2]⟩, ⟨0, [n 1, n 2]⟩]⟩⟩ :=
+    by decide +kernel
+  rw [prepared]
+  clear prepared
+  change observe _ [0, 1, 1] = .ok [0, 1, 1]
+  cbv
 
 theorem undefined_rule : (Frontend.compile "s : missing;").isOk = false := by decide +kernel
 

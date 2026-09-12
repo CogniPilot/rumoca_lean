@@ -7,8 +7,10 @@ Lake migration; see the [current commands](../docs/development.md).
 Status: **2026-09-11, active and incomplete**. This work follows the user's
 request for our own LALR(1) parser in Lean, with no assumed-correct parser
 generator. It changes parser infrastructure, not the admitted Modelica language.
-The existing DFA/action parser remains the production path until the replacement
-has its complete contract. The FMI wrapper obligations remain open as well.
+The source cutover now uses the generated LALR engine for Modelica and GALEC;
+the old DFA path is deleted. Package checks and the required full artifact gate
+pass. Independent EBNF reader conformance, the remaining parser work below and
+the FMI wrapper obligations remain open.
 
 The user has explicitly required removal of the DFA production path and
 rejected temporary architectures that cannot grow with the compiler. The
@@ -18,11 +20,54 @@ is not a substitute. Keep source admission small while making the mechanism
 grammar-parametric. Both Modelica and GALEC must consume the same engine and
 certificate interface; AST ownership and lexical policies remain frontend-owned.
 
-The later [GALEC Algorithm Code checkpoint](efmi.md#algorithm-code-checkpoint-evidence)
-now passes the full gate using a second EBNF and this same LR engine. Its
-profile-specific acceptance and actual-file contract do not close LR04–LR07.
-This authorization supersedes the GALEC deferrals recorded in historical round
-evidence below.
+The earlier [GALEC Algorithm Code checkpoint](efmi.md#algorithm-code-checkpoint-evidence)
+passed the full gate using a second EBNF and this same LR engine. That checkpoint
+did not establish the generic completeness and progress theorems added since.
+GALEC authorization supersedes the deferrals recorded in historical round
+evidence below; the remaining obligations are listed individually here.
+
+## Source cutover and reusable contracts
+
+`Parser.EBNF.Rules` proves one-step equations for independent source derivations.
+The generator emits equations named after source rules, without declaring recursive
+rules as global simplifications. A future recursive AST case can use induction;
+it does not need a new parsing mechanism or bounded source-rule expansion.
+
+`LALR.TokenParser` describes the actual executable entry, complete token language,
+checked CST and all-input termination. `TokenParser.Actions` receives that CST
+and the original token payloads, with a frontend-owned AST relation. Its universal
+soundness/completeness theorem composes with the engine. The existing tiny AST
+decoders remain language-owned actions; their token-pattern execution proofs
+have been replaced by source EBNF derivations. No new Modelica grammar is added.
+
+| Retired DFA obligation | Replacement in the actual source path |
+| --- | --- |
+| Regex expansion result | Exact EBNF reader result plus independent recursive EBNF/CFG equivalence |
+| Compressed regular-language membership | `ebnf_correct` over original symbols, including unknowns |
+| Transition and accepting-bit certificates | Checked LR items, table safety, completeness and progress credits |
+| Duplicate runtime table agreement | One shared actual table and `parsed_tree`/`parseWith_execution` |
+| Fixed-profile parser execution checks | AST EBNF derivations plus generic `parseWith_iff` |
+
+The axiom whitelist and numerical/artifact contracts are unchanged. Retired
+DFA-only audit roots disappear with their implementation; their language/source
+obligations are covered by the roots above. Existing recursive LALR mutation
+controls replace the removed duplicate DFA corruption check. The production
+Modelica generated file is compared byte-for-byte with newly generated output;
+Lake reuses its already checked/audited module instead of re-elaborating that
+same large theorem set under a second namespace on every test invocation.
+
+Initial evidence: `build/source-cutover/build/modelica-actions.log` (770 jobs)
+and `galec-cutover.log` (780 jobs). Final parser package checks passed in
+`build/source-cutover/build/parser-cutover-gate.log` (1525 generic/generator jobs,
+806 language jobs). Downstream audits, freshness, LALR mutation controls,
+LSP/parallel parsing, native compiler regressions and C execution pass in
+`build/source-cutover/build/downstream-cutover-v2.log`. The required full gate
+passed in `build/lalr-source-cutover/full-gate.log`, with all 581 recorded inputs
+unchanged throughout the run. Actual FMU/eFMU archives and hashes are retained
+in `build/lalr-source-cutover/artifacts/`. This includes the actual source/C,
+FMI ME/CS, GALEC, eFMU and existing rejection/native boundaries. Independent EBNF reader conformance, generic
+located-CST completeness, LR error reporting and generator cost/success remain
+explicit open items. Historical sections below describe earlier checkpoints.
 
 ## Required contract
 
@@ -63,16 +108,18 @@ The engine is now the independent `parser` package (`Parser.*`). Modelica and
 GALEC live in sibling `modelica-parser` and `galec-parser` packages, including
 their EBNFs, generated tables, lexical policies, AST actions and concrete
 certificates. Both depend on the engine; the engine imports neither language.
-All prior audit roots remain checked across the three packages, with no
-compatibility modules or duplicated proofs. This adds no grammar cases.
+Source, lexical and grammar obligations remain checked across the three
+packages; retired DFA roots are accounted for in the cutover table above.
+There are no compatibility modules or duplicated proofs. This adds no grammar cases.
 
 GALEC is now the user's authorized tiny reuse case. Its
 [published specification](https://www.efmi-standard.org/media/home/eFMI-Standard-1.0.0-Beta-1.html)
 uses ISO/IEC 14977 EBNF together with separate lexical and semantic rules. We
 have added a restricted unit-block EBNF, a configurable scanner with its own
 lexical contract, and a named action profile using the same LR runtime and
-generic proofs. A profile-specific acceptance theorem covers its fixed token
-skeleton; it does not close generic LR completeness or ISO EBNF preservation.
+generic proofs. Its source token membership now follows by EBNF derivation,
+with runtime completeness and termination supplied by the shared engine.
+Independent ISO EBNF metalanguage conformance is still open.
 The [eFMI roadmap](efmi.md) records the standard authority, DAE-to-GALEC-to-Solve
 pipeline and unfinished Production Code/archive gates. Parser reuse alone does
 not prove another language's typing, execution or lowering semantics.
@@ -90,7 +137,7 @@ The generic parser owns grammar derivations; the language owns the AST. A
 grammar-shaped syntax tree is a useful default representation, but users should
 not have to expose EBNF helper productions in their compiler AST.
 
-For LR06, give each source production an action whose arguments are the typed
+The next action extension should give each source production an action whose arguments are the typed
 values of that production's children and whose result has the nonterminal's
 declared value type. The EBNF-to-CFG proof must account for helper actions for
 sequences, alternatives, options and repetition. Helpers should not require
@@ -109,8 +156,9 @@ Keep original tokens and eventual source locations separate from the chosen AST
 representation. Multiple syntactic forms may intentionally map to one AST, so
 the generic action contract should use a relation rather than require the AST
 to reconstruct one exact token sequence. The existing `ParserActions.Actions`
-contract suffices for the frozen profiles but is tied to their DFA and exact
-token encoding; it is not yet the intended grammar-generic LR action interface.
+contract describes the frozen profiles' exact-token relation. It now instantiates
+`LALR.TokenParser.Actions`, whose arbitrary `Denotes` relation and CST/payload
+builder support other AST representations without changing the LR engine.
 
 ## Implementation and proof sequence
 
@@ -161,9 +209,8 @@ token encoding; it is not yet the intended grammar-generic LR action interface.
   complete LALR certificate/mutation gate passed in
   `build/tensor-sharded-lalr-gate.log`. Mutation checks identify failure of the
   public safety root after rewriting, rather than matching its earlier goal text.
-  **Next:** the required full repository gate for the checked table increment,
-  followed by EBNF/frontend composition. LR-item completeness and input-size
-  progress are now proved as described below. A reject-all table can satisfy
+  **Completed follow-up:** LR-item completeness and input-size progress are
+  proved, and their required full gate passed as described below. A reject-all table can satisfy
   structural safety; its counterexample is included in the kernel regressions.
   **Nullable/FIRST increment:** `FirstCheck.validate` checks grammar-equation
   closure independently of the search. `FirstProofs.derives_below` proves
@@ -172,41 +219,48 @@ token encoding; it is not yet the intended grammar-generic LR action interface.
   suffix and leading-token facts needed by LR closure. Actual emitted fact
   arrays carry kernel certificates. These facts may be conservative; they are
   not a proof of exact FIRST sets or a substitute for LR-item validation.
-- [ ] **LR05: verified EBNF frontend.** `LALR.EBNF` currently prepares candidates
-  using the existing reader. References stay nonterminals; sequences remain
-  sequences; alternatives, optional forms and repetition use fresh helper
-  nonterminals. Recursive references are supported. Prove the reader against
-  an independent metalanguage relation (P02), and prove language preservation
-  of desugaring in both directions, including helper freshness and empty forms.
-- [ ] **LR06: typed AST actions and production replacement.** Connect actions
-  and original token payloads to the grammar relation; instantiate the complete
-  contract for both current profiles; preserve character/source binding,
-  freshness and artifact checks. Only then replace the current production
-  parser and retire redundant runtime recognition. Keep the production compiler
-  restricted to the unit profile until the driven FMI path is fully verified.
-  Use the [AST ownership boundary](#ast-ownership-and-action-boundary) above;
-  a configurable AST derivation framework is not a prerequisite for this slice.
+- [ ] **LR05: verified EBNF frontend.** Expression-to-CFG preservation now has
+  grammar-parametric proofs in both directions. `EBNF.Derives` independently
+  specifies named recursion, sequence, alternatives, optionals, repetition and
+  epsilon. A finite structural witness checks all source branches and every
+  actual production. `Frontend.lower_correct` covers the public lowering;
+  `compile_correct` binds it to the actual EBNF reader result. References stay
+  nonterminals and sequences stay inline. The generated `source_parse_correct`
+  composes expression preservation with actual bounded LR execution and a
+  kernel-checked reader result. Proving the reader against an independent
+  metalanguage relation (P02) remains open. The source cutover below composes
+  current AST/source contracts; its required full artifact gate has passed.
+- [ ] **LR06: typed AST actions and production replacement.** The generic
+  relation-based action interface, independent source grammar derivations and
+  current Modelica/GALEC entry cutover are implemented. Modelica action proofs
+  and both language package checks pass, as do downstream audits and native
+  boundaries. The required full actual-artifact gate after DFA deletion passes
+  in `build/lalr-source-cutover/full-gate.log`. The compiler still admits
+  only the unit profile. Generic located-CST completeness and richer LR syntax
+  diagnostics remain open, separately from the preserved current source spans.
 - [ ] **LR07: preprocessing success and cost.** Prove fixed-point convergence,
   LR construction/merging invariants and success under documented limits. Review
   canonical-state growth before larger grammars: canonical LR(1)-then-merge is
   an understandable first implementation, not a claimed optimal LALR algorithm.
   Improve construction only with unchanged certificates and measured evidence.
 
-The next LR04 increment must connect checked item annotations to the actual
-table entries. Check the initial augmented item, closure using the certified
+### LR04 completeness and progress evidence
+
+The LR04 increment connects checked item annotations to the actual
+table entries: the initial augmented item, closure using the certified
 `lookaheads` function, dot advancement through shifts/gotos, completed-rule
 reductions and augmented-rule acceptance. Our whole-input runtime uses only
 the dedicated EOF lookahead at the start and accepts only after consuming all
 input; do not silently adopt a prefix-parser contract from the design reference.
 
-The active cutover work adds `LALR.ItemCheck`: a finite check of precisely those
+`LALR.ItemCheck` supplies a finite check of precisely those
 item obligations, independent of candidate construction. The shared `Item`
 module now owns item identities and augmentation. `closure_lookahead` derives
 closure coverage from an actual suffix derivation using the existing universal
 FIRST theorem. Both current EBNFs pass native validation and their emitted item
 certificates pass kernel checking. Item arrays are proof-only definitions;
-each state has a separate kernel obligation. No frontend has switched and no
-DFA code has yet been removed.
+each state has a separate kernel obligation. This checkpoint preceded the
+source cutover described at the top of this document.
 
 `DerivationTrees` proves that every accepted word in mathlib's CFG semantics has
 a valid tree with exactly that yield, including empty productions. `Completeness`
@@ -218,8 +272,8 @@ equivalence with acceptance at some finite fuel. No oracle tree, frontend token
 skeleton or assumed-correct generator appears in the public theorem.
 The generator instantiates this theorem from its checked item annotations.
 The package gate passed in `build/lalr-cutover/build/completeness-audit.log`
-(775 jobs), retaining the unchanged axiom whitelist. This is a package proof
-checkpoint; the required full gate for these parser changes has not yet run.
+(775 jobs), retaining the unchanged axiom whitelist. The later required full
+gate is recorded below.
 
 `Fuel` now checks finite production-credit inequalities and proves a linear
 bound on every valid derivation tree. `Progress` adds state credits, proves a
@@ -248,10 +302,51 @@ also passed in `build/lalr-production/full-gate.log`, including both actual targ
 archives and the existing rejection/native controls. All 578 inventoried inputs
 remained unchanged throughout that run. LR04 is complete for the validator's
 stated contract; candidate-search convergence remains a separate obligation.
-LR05/LR06 still block replacing production Modelica and deleting the DFA path;
-preserve source binding, typed ASTs, automatic spans and structured diagnostics
-through that cutover. Do not use another fixed-pattern recognizer to fill the
-remaining EBNF/action proof obligations.
+The subsequent source cutover preserves source binding, typed ASTs, automatic
+source spans and structured diagnostics while deleting the DFA path. Independent
+EBNF reader conformance and the remaining location/action work stay explicit;
+fixed-pattern recognition cannot replace the generic EBNF/LR proofs.
+
+## EBNF preservation increment
+
+The new structural witness describes each inlined fragment and the meaning of
+each nonterminal. Named, alternative, optional and repetition productions have
+separate local justifications. Exact equality to the actual production array
+excludes additional unaccounted rules; coverage of each source expression
+excludes dropped alternatives. These are finite syntax checks, not assumed
+semantic-equivalence fields. The actual lowering only returns a grammar after
+the witness and CFG well-formedness checks succeed.
+
+`EBNFSoundness` reflects arbitrary contextual CFG rewrites into independent
+EBNF derivations. `EBNFCompleteness` simulates arbitrary source derivations in
+the other direction, including recursive references and nullable forms.
+`EBNFEncoding` proves exact reflection through the finite terminal alphabet;
+unknown symbols cannot alias a grammar terminal or EOF. No acyclic expansion,
+token-pattern recognizer or grammar-specific execution proof supplies those
+properties. Candidate construction may still fail; there is no assertion that
+every EBNF grammar is LALR(1).
+
+Witnesses and source-expression trees are emitted as proof-only constants.
+Runtime parsing uses the alphabet, tables and scalar fuel coefficients.
+`source_parse_correct` names the generated `parseSymbols` entry point and
+combines exact reader-result binding, source-language acceptance equivalence,
+and termination with either a tree or ordinary syntax rejection. It does not
+supply typed AST actions, source-character lexing or diagnostic/span composition,
+or an independent conformance proof for the EBNF text reader.
+
+The 19 added generic roots and both parser packages pass in
+`build/ebnf-stage/build/ebnf-package-staged.log` (796 jobs). Actual Modelica,
+GALEC and recursive instances are kernel checked. The existing integration
+suite, including corrupted source text and nonterminal-meaning witnesses,
+passes in `build/ebnf-stage/build/ebnf-integration-staged.log`. The reader
+certificate reuses the shared exact character-view emitter, then composes
+separate lexer and expression-reader checks; it avoids repeatedly unfolding
+UTF-8 text during later proofs. No native-reduction proof axiom is used.
+
+The required full artifact gate for this EBNF increment passed in
+`build/ebnf-preservation/full-gate.log`, with all 584 recorded inputs unchanged.
+The subsequent source cutover deletes the DFA path; its separate evidence is
+recorded above. Neither increment adds a grammar case.
 
 ## Regression evidence required
 
@@ -302,9 +397,10 @@ depth 500. The required overall gate remains
 
 The generator constructs canonical LR(1) states and merges equal LR(0) kernels.
 It rejects conflicts instead of silently choosing an action. This is standard
-LALR construction, not a proof that every grammar is LALR(1). The current safety
-certificate does not classify a grammar as LALR(1) or prove completeness; those
-need the remaining LR04/LR07 obligations.
+LALR construction, not a proof that every grammar is LALR(1). Structural safety
+alone does not prove completeness. The additional checked item and progress
+certificates now establish complete, bounded parsing for each certified instance.
+Generator success for a characterized grammar class remains LR07.
 
 The present choice is provisional for the full language. Modelica 3.7 explicitly
 notes that its equation/procedure productions need left-factoring and extra
@@ -318,8 +414,9 @@ not a commitment to implement multiple generators now.
 At runtime, dense action/goto arrays provide direct lookup without backtracking.
 Reduction work is proportional to the selected rule length, with a final tree
 validation and accumulator-based yield traversal. For a fixed grammar with a
-linear bound on reductions, this supports linear parsing work. That bound is
-not yet proved for our accepted candidate domain. Proof terms are erased;
+linear bound on reductions, this supports linear parsing work. The checked
+progress certificate now supplies that interpreter-transition bound. A formal
+wall-clock/heap cost model and competitive benchmarks remain open. Proof terms are erased;
 the finite table validator runs during preprocessing, not on each input.
 
 Generation currently uses repeated closure scans, list sorting/deduplication and

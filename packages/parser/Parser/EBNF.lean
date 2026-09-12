@@ -1,8 +1,7 @@
-import Parser.Regex
 import Parser.Token
 
-/-! A small, total EBNF reader and acyclic rule expander. The reader is a
-preprocessing tool; generated transition certificates do not trust its search.
+/-! A small, total EBNF reader. Recursive expression semantics and checked
+EBNF-to-CFG lowering are separate modules; there is no regular-rule expander.
 Syntax: name = expression ; or the reference grammar's name : expression ;.
 Single/double quoted terminals, IDENT, comma or whitespace sequences,
 alternatives |, groups (), optionals [], repetitions {}, (* comments *) and
@@ -52,7 +51,7 @@ inductive Expr where
   | alt (a b : Expr)
   | optional (a : Expr)
   | many (a : Expr)
-  deriving Repr, BEq, DecidableEq
+  deriving Repr, BEq, DecidableEq, ReflBEq, LawfulBEq
 
 private def expect (c : Char) : List Lexeme → Except String (List Lexeme)
   | .punct d :: tail => if c == d then .ok tail else .error s!"expected '{c}'"
@@ -130,52 +129,8 @@ def parseTokens (ts : List Lexeme) : Except String Grammar := do
 def parse (source : String) : Except String Grammar := do
   parseTokens (← lex source)
 
-private def expand (g : Grammar) : Nat → List String → Expr → Except String (RE Symbol)
-  | 0, _, _ => .error "EBNF expansion limit exceeded"
-  | _ + 1, _, .terminal (.literal "") => .ok .epsilon
-  | _ + 1, _, .terminal s => .ok (.char s)
-  | fuel + 1, seen, .ref name => do
-    if seen.contains name then throw s!"recursive rule {name}: this milestone supports regular EBNF with acyclic references"
-    match g.find? (fun r => r.1 == name) with
-    | none => throw s!"undefined rule {name}"
-    | some (_, body) => expand g fuel (name :: seen) body
-  | fuel + 1, seen, .seq a b => return .comp (← expand g fuel seen a) (← expand g fuel seen b)
-  | fuel + 1, seen, .alt a b => return .plus (← expand g fuel seen a) (← expand g fuel seen b)
-  | fuel + 1, seen, .optional a => return .plus .epsilon (← expand g fuel seen a)
-  | fuel + 1, seen, .many a => return .star (← expand g fuel seen a)
-
-/-- Staged so certificates can share checked lexing/parsing/expansion facts
-instead of repeatedly reducing the complete source inside each later phase. -/
-def expandGrammar (fuel : Nat) (g : Grammar) : Except String (RE Symbol) := do
-  for (name, body) in g do
-    let _ ← expand g fuel [name] body
-  match g with
-  | [] => throw "empty grammar"
-  | (name, body) :: _ => expand g fuel [name] body
-
-def expansionFuel (source : String) (g : Grammar) : Nat :=
-  source.toList.length * (g.length + 1) + 1
-
-/-- Share the symbolic calculation before specializing it to a source file.
-Unfolding the complete closed calculation during kernel type comparison can
-otherwise repeat UTF-8 decoding despite a previously checked length fact. -/
-theorem expansionFuel_of_lengths {source : String} {g : Grammar} {n r : Nat}
-    (hs : source.toList.length = n) (hg : g.length = r) :
-    expansionFuel source g = n * (r + 1) + 1 := by
-  simp only [expansionFuel, hs, hg]
-
-def compile (source : String) : Except String (RE Symbol) := do
-  let g ← parse source
-  expandGrammar (expansionFuel source g) g
-
 theorem parse_of_lex (h : lex source = .ok ts) : parse source = parseTokens ts := by
   unfold parse
-  rw [h]
-  rfl
-
-theorem compile_of_parse (h : parse source = .ok g) :
-    compile source = expandGrammar (expansionFuel source g) g := by
-  unfold compile
   rw [h]
   rfl
 

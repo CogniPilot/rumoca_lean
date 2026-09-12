@@ -1,7 +1,7 @@
 # Tiny Modelica frontend
 
 This Lake package instantiates the generic [parser engine](../parser/README.md).
-It owns the selected [Modelica EBNF](grammar/Modelica.ebnf), generated DFA tables,
+It owns the selected [Modelica EBNF](grammar/Modelica.ebnf), generated LALR tables,
 Modelica lexical policy, AST and actions, resolution, source locations and
 bounded parsing of independent files. The semantic API remains in `Rumoca`;
 its implementation modules are `ModelicaParser.*`.
@@ -14,15 +14,19 @@ lake run generate
 lake run check-generated
 ```
 
-The coordinating generation command runs the engine's EBNF tools with explicit
-language namespaces. Generated and runtime tables remain connected by the
-existing kernel-checked equality and grammar-preservation proofs. Language
-ASTs and resolution never become dependencies of the engine.
+The coordinating generation command runs `lalrgen` with explicit language
+namespaces. Modelica and GALEC use the same reusable engine, EBNF lowering and
+checked input-size bound. Language ASTs and resolution never become dependencies
+of the engine. The old DFA generator and runtime have been removed.
 
-The production unit profile still uses the certified DFA. The development
-LALR executable also exercises this EBNF; the split does not switch the production
-parser algorithm or expand the accepted language. See the [grammar restrictions](grammar/README.md)
-and [verification boundary](../../docs/verification.md).
+`Grammar.lean` and the development profile modules derive AST token membership
+from the source EBNF equations. `Actions.lean` instantiates the generic
+`LALR.TokenParser.Actions` contract; frontends may consume the CST and original
+token payloads while defining their own AST relation. The parser/action
+soundness and completeness theorems apply to that relation, rather than relying
+on execution of a fixed token pattern. This cutover adds no grammar case;
+see the [grammar restrictions](grammar/README.md) and
+[verification boundary](../../docs/verification.md).
 
 The optional `modelica_parser/frontend-bench` executable measures existing
 read/lex/parse/located stages without importing artifact backends. Run it through

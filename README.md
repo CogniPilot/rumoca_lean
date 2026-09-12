@@ -169,8 +169,8 @@ schema validation, independent ME/CS importer runs and raw ABI regressions.
 | Layer | Lean guarantee |
 | --- | --- |
 | Modelica lexer/parser | Soundness and completeness for the authored tiny source grammar |
-| EBNF generation | Embedded grammar computation and every DFA transition/accepting bit checked by the kernel |
-| Generic DFA | Table recognition iff regular-language membership over original symbols, including unknown inputs |
+| EBNF generation | Exact embedded reader result and recursive expression-to-CFG language preservation |
+| Generic LALR | Grammar membership iff parser success, with checked bounds and rejection for every input |
 | AST → Flat → DAE → Solve | Name resolution and equation/derivative preservation |
 | Solve → C AST | RHS preservation and exact rounded-step preservation |
 | Emitted C | Exact output bytes checked; structural printer proofs establish denotation in the independent admitted C grammar |
@@ -234,8 +234,8 @@ The repository is a workspace containing nine Lake packages:
 | [verification](packages/verification/README.md) / `ProofAudit.*` | Shared Lean axiom audit command used by cached package checks |
 | [sha1](packages/sha1/README.md) / `SHA1.*` | Independent SHA-1 implementation, proofs and checksum certificates |
 | [xml](packages/xml/README.md) / `XML.*` | Independent XML renderer, restricted syntax and correctness proofs |
-| [parser](packages/parser/README.md) / `Parser.*` | Generic EBNF tools, DFA/LALR runtimes, scanner, source spans and proofs |
-| [modelica-parser](packages/modelica-parser/README.md) / `ModelicaParser.*` | Modelica EBNF, generated DFA, AST actions and instance proofs |
+| [parser](packages/parser/README.md) / `Parser.*` | Generic EBNF tools, LALR runtime and typed actions, scanner, source spans and proofs |
+| [modelica-parser](packages/modelica-parser/README.md) / `ModelicaParser.*` | Modelica EBNF, generated LALR tables, AST actions and instance proofs |
 | [galec-parser](packages/galec-parser/README.md) / `GALECParser.*` | GALEC EBNF, generated LALR tables, syntax actions and instance proofs |
 | [core](packages/core/README.md) / `RumocaCore.*` | Shared Flat/DAE/Solve IR, finite arithmetic and transition semantics |
 | [backend-c](packages/backend-c/README.md) / `RumocaC.*` | Shared Solve → C emission, certified printers and execution proofs |
@@ -258,26 +258,24 @@ contains the development editor and its integration check. See the
 [repository layout guide](docs/layout.md) for ownership and common commands.
 
 [packages/modelica-parser/grammar/Modelica.ebnf](packages/modelica-parser/grammar/Modelica.ebnf) is compiled by `lake run generate`.
-The Lean generator accepts terminals, `IDENT`, comma sequences, `|`, `(...)`,
-`[...]`, `{...}`, empty terminals and acyclic rule references. Recursive rules
-are rejected. The Modelica AST actions have separate proofs; changing the EBNF
-alone does not extend the compiler's semantic language.
+The Lean generator accepts terminals, `IDENT`, comma or implicit sequences,
+`|`, `(...)`, `[...]`, `{...}`, empty terminals and recursive named rules.
+Modelica and GALEC use one in-tree LALR engine. Independent EBNF semantics,
+checked lowering witnesses and table certificates establish acceptance
+preservation, completeness and an input-size execution bound. The old DFA
+path has been removed.
 
-The production runtime uses a generated DFA with a separate, certified runtime table.
-It imports the standard library, not mathlib or the numerical proof modules.
-Proofs are erased, and lexing/table execution are linear for this fixed grammar.
+The reusable typed-action interface gives frontends the concrete syntax tree
+and original tokens while allowing user-defined ASTs. Existing profiles prove
+membership by EBNF derivation; changing the grammar alone does not extend the
+compiler's semantic language. Source lexing, spans and lowering contracts remain
+separate obligations composed by the compiler. See the
+[LALR proof plan](dev/lalr-parser.md) for remaining metalanguage, generic located
+tree, diagnostic and generator cost/convergence work.
 
-An in-tree Lean LALR(1) replacement is being developed in the parser package.
-It supports recursive grammar candidates, universal checked-tree soundness
-against mathlib's CFG semantics, and kernel-certified structural table safety.
-Completeness, sufficient fuel bounds, EBNF and AST certification are still
-required before production use; see
-[the LALR proof plan](dev/lalr-parser.md) and `lake run lalr-test`.
-
-Reused foundations are Lean's standard library and mathlib's regex/CFG languages,
-recognition, finite sets, integer arithmetic and real analysis. See
+Reused foundations are Lean's standard library and mathlib's CFG languages,
+finite sets, integer arithmetic and real analysis. See
 [design and references](docs/design.md) for the package survey and Rumoca specs.
-eFMU packaging, target plugins and machine backends remain deferred.
 
 Track assurance gaps, pass contracts, release gates and verified language
 expansion in the [compiler roadmap](dev/roadmap.md). Completed baseline proofs

@@ -49,7 +49,7 @@ def algorithm (modelName : String) (identity : Identity) (source : String) : Ele
       node "Clock" [("id", "CLOCK_Period"), ("variableRefId", Variable.clock.id)],
       node "BlockMethods" [] (methods.map blockMethod),
       node "ErrorSignalStatus" [("id", errorSignalId)],
-      node "Units", node "Variables" [] (variables.map algorithmVariable)]
+      node "Units", node "Variables" [] (modelVariables.map algorithmVariable)]
 
 def targetType (scalar : CHeader.Scalar) : Element :=
   node "TargetType" [("id", targetTypeId scalar), ("kind", targetKind scalar),
@@ -69,7 +69,7 @@ def statusComponent : Element :=
 
 def modelType : Element :=
   node "Typedef" [("id", modelTypeId), ("name", "Model")]
-    [node "Components" [] (variables.map component ++ [statusComponent])]
+    [node "Components" [] (modelVariables.map component ++ [statusComponent])]
 
 def formalParameter (description : FunctionDescription) : Element :=
   node "FormalParameter" [("id", description.parameterId), ("name", description.parameterName),
@@ -109,7 +109,7 @@ def codeFile (module : Production.Module) : Element :=
       node "Functions" [] (methods.map (function module))]
 
 def logicalData : Element := node "LogicalData" [] [
-  node "DataReferences" [] ((methods.flatMap fun method => variables.map (dataMapping method)) ++
+  node "DataReferences" [] ((methods.flatMap fun method => modelVariables.map (dataMapping method)) ++
     methods.map statusMapping),
   node "FunctionReferences" [] (methods.map functionMapping)]
 
