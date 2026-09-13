@@ -1,3 +1,13 @@
+import RumocaFMI3.MEHistory
+import RumocaFMI3.EventEntryCalls
+import RumocaFMI3.EventEntryContract
+import RumocaFMI3.EventEntryHistory
+import RumocaFMI3.CompletedCalls
+import RumocaFMI3.CompletedContract
+import RumocaFMI3.CompletedHistory
+import RumocaFMI3.DiscreteCalls
+import RumocaFMI3.DiscreteContract
+import RumocaFMI3.DiscreteHistory
 import RumocaFMI3.TimeContract
 import RumocaFMI3.TimeHistory
 import RumocaFMI3.TerminationRelease
@@ -893,3 +903,82 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.TimeCalls.frame
 #audit axioms Rumoca.FMI3.TimeCalls.bounds_after
 #audit axioms Rumoca.FMI3.TimeCalls.history_call
+
+#audit axioms Rumoca.FMI3.CompletedCalls.body
+#audit axioms Rumoca.FMI3.CompletedCalls.body_agrees
+#audit axioms Rumoca.FMI3.CompletedCalls.bounds_stored
+#audit axioms Rumoca.FMI3.CompletedCalls.call_behaviors
+#audit axioms Rumoca.FMI3.CompletedCalls.failure_prefix
+#audit axioms Rumoca.FMI3.CompletedCalls.failure_unique
+#audit axioms Rumoca.FMI3.CompletedCalls.history_call
+#audit axioms Rumoca.FMI3.CompletedCalls.lifecycle_prefix
+#audit axioms Rumoca.FMI3.CompletedCalls.logged_correct
+#audit axioms Rumoca.FMI3.CompletedCalls.message_collected
+#audit axioms Rumoca.FMI3.CompletedCalls.null_behaviors
+#audit axioms Rumoca.FMI3.CompletedCalls.output_prefix
+#audit axioms Rumoca.FMI3.CompletedCalls.parameters_bound
+#audit axioms Rumoca.FMI3.CompletedCalls.prepared_correct
+#audit axioms Rumoca.FMI3.CompletedCalls.query_cases
+#audit axioms Rumoca.FMI3.CompletedCalls.quiet_correct
+#audit axioms Rumoca.FMI3.CompletedCalls.rendered_contract
+#audit axioms Rumoca.FMI3.CompletedCalls.suppressed_correct
+#audit axioms Rumoca.FMI3.DiscreteCalls.body
+#audit axioms Rumoca.FMI3.DiscreteCalls.body_agrees
+#audit axioms Rumoca.FMI3.DiscreteCalls.body_run
+#audit axioms Rumoca.FMI3.DiscreteCalls.call_behaviors
+#audit axioms Rumoca.FMI3.DiscreteCalls.failure_prefix
+#audit axioms Rumoca.FMI3.DiscreteCalls.failure_unique
+#audit axioms Rumoca.FMI3.DiscreteCalls.frame
+#audit axioms Rumoca.FMI3.DiscreteCalls.history_call
+#audit axioms Rumoca.FMI3.DiscreteCalls.instance_frame
+#audit axioms Rumoca.FMI3.DiscreteCalls.lifecycle_prefix
+#audit axioms Rumoca.FMI3.DiscreteCalls.logged_correct
+#audit axioms Rumoca.FMI3.DiscreteCalls.message_collected
+#audit axioms Rumoca.FMI3.DiscreteCalls.nonnull_arguments
+#audit axioms Rumoca.FMI3.DiscreteCalls.null_behaviors
+#audit axioms Rumoca.FMI3.DiscreteCalls.output_bound
+#audit axioms Rumoca.FMI3.DiscreteCalls.output_prefix
+#audit axioms Rumoca.FMI3.DiscreteCalls.outputs_compatible
+#audit axioms Rumoca.FMI3.DiscreteCalls.outputs_ready
+#audit axioms Rumoca.FMI3.DiscreteCalls.parameters_bound
+#audit axioms Rumoca.FMI3.DiscreteCalls.prepared_correct
+#audit axioms Rumoca.FMI3.DiscreteCalls.query_cases
+#audit axioms Rumoca.FMI3.DiscreteCalls.quiet_correct
+#audit axioms Rumoca.FMI3.DiscreteCalls.rendered_contract
+#audit axioms Rumoca.FMI3.DiscreteCalls.returned_outputs
+#audit axioms Rumoca.FMI3.DiscreteCalls.suppressed_correct
+#audit axioms Rumoca.FMI3.DiscreteCalls.tail_outputs
+#audit axioms Rumoca.FMI3.EventEntry.allowed
+#audit axioms Rumoca.FMI3.EventEntry.body
+#audit axioms Rumoca.FMI3.EventEntry.body_agrees
+#audit axioms Rumoca.FMI3.EventEntry.bounds_stored
+#audit axioms Rumoca.FMI3.EventEntry.call_behaviors
+#audit axioms Rumoca.FMI3.EventEntry.continuous_run
+#audit axioms Rumoca.FMI3.EventEntry.failure_prefix
+#audit axioms Rumoca.FMI3.EventEntry.frame
+#audit axioms Rumoca.FMI3.EventEntry.history_call
+#audit axioms Rumoca.FMI3.EventEntry.logged_correct
+#audit axioms Rumoca.FMI3.EventEntry.message_collected
+#audit axioms Rumoca.FMI3.EventEntry.mode_stored
+#audit axioms Rumoca.FMI3.EventEntry.model_stored
+#audit axioms Rumoca.FMI3.EventEntry.null_behaviors
+#audit axioms Rumoca.FMI3.EventEntry.prepared_correct
+#audit axioms Rumoca.FMI3.EventEntry.query_cases
+#audit axioms Rumoca.FMI3.EventEntry.quiet_correct
+#audit axioms Rumoca.FMI3.EventEntry.rendered_contract
+#audit axioms Rumoca.FMI3.EventEntry.represents
+#audit axioms Rumoca.FMI3.EventEntry.stored
+#audit axioms Rumoca.FMI3.EventEntry.suppressed_correct
+
+#audit axioms Rumoca.FMI3.MEHistory.Buffers.writable
+#audit axioms Rumoca.FMI3.MEHistory.Buffers.transport
+#audit axioms Rumoca.FMI3.MEHistory.Buffers.Outside.field
+#audit axioms Rumoca.FMI3.MEHistory.Buffers.zero
+#audit axioms Rumoca.FMI3.MEHistory.Buffers.completed
+#audit axioms Rumoca.FMI3.MEHistory.Buffers.discrete
+#audit axioms Rumoca.FMI3.MEHistory.step
+#audit axioms Rumoca.FMI3.MEHistory.trace
+#audit axioms Rumoca.FMI3.MEHistory.continuous_requires_iteration
+#audit axioms Rumoca.FMI3.MEHistory.initial_requires_iteration
+#audit axioms Rumoca.FMI3.MEHistory.action_frame
+#audit axioms Rumoca.FMI3.MEHistory.trace_frame

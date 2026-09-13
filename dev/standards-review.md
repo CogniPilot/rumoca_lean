@@ -37,6 +37,38 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Mandatory ME control histories: 2026-09-13
+
+This checkpoint follows `afb93ac`. It retains all earlier mandatory contracts
+and adds event/continuous entry, completed integrator steps and discrete-state
+updates with exact signatures, independent tokenization and complete represented
+success/null/rejection/logging cases. The compiler consequence ties the calls
+and their finite control histories to the actual adapter's pool and definition
+table. The 92 added roots passed the C/FMI/compiler package audit in
+`build/c-factory/me-package-gate-v5.log`, with all 829 inputs unchanged. The
+full required gate passed in `build/c-factory/me-full-gate-v1.log` for the
+same unchanged snapshot. Both checked archives are retained under
+`build/c-factory/me-artifacts-v1/`, with exact member comparisons beside them.
+C/header/GALEC and FMI XML match the time checkpoint; the three eFMI manifests
+change only generation identities and their dependent references/checksums.
+Only these three status documents changed after the full gate.
+
+| Applicable obligation | Proof and remaining boundary |
+| --- | --- |
+| [FMI 3.0.2 §2.3.5](https://fmi-standard.org/docs/3.0.2/), discrete iteration | The unit profile's discrete update returns all five Boolean flags false and writes positive binary64 zero to the next-time buffer. That numeric value is not a scheduled event when its defined flag is false. `MEHistory` requires a completed iteration before continuous entry and retains the actual returned values at each call. State setters, clocks and general event equations are not added. |
+| FMI §§2.2.1/2.2.4, arguments and errors | All six output pointers are required; an undefined next-time result does not make its pointer optional. Complete null/lifecycle/missing-output cases follow the existing guards. Suppressed logging covers absent loggers; supplied logging retains every modeled returning effect and immutable diagnostics. Callback reentry/divergence and native private-memory frames remain open. |
+| FMI §3.2.1, continuous mode and completion | Both completion flag inputs and the two false outputs are covered. Time/history updates retain positional completions and the last event, without an added monotonic-completion premise. Importer acceptance of state/input values and numerical integration must still be composed with this control-history result. |
+| Memory and actual C | Reusable backend-c assignment/guard lemmas permit uninitialized output storage and compatible aliases. The trace derives writable storage after each call from one initial buffer bank outside the instance block. Public bytes, definitions and literal storage share the actual certificate. Native object layout, whole translation-unit correspondence and transitive no-heap/MISRA policy remain open. |
+| MLS 3.7 and eFMI Beta 1 | Source equations, default initialization, DAE→GALEC→Solve and DAE→Solve ownership remain unchanged. No grammar, emitted C/GALEC/XML or numerical solver changes; no MLS/eFMI finding is closed by these proofs. |
+
+The official FMI clauses were rechecked. The earlier draft's time/mode-only
+projection was replaced before publication by the composed control history;
+it is not evidence for all legal FMI host sequences. The source consequence
+preserves initialization, not a claim that a time setter integrates the state.
+No example-based proof substitute, new test suite or axiom-policy change was
+introduced. K02–K05 and this spiral stage remain open; grammar expansion remains
+blocked.
+
 ### Mandatory ME trial time: 2026-09-13
 
 This checkpoint follows `c9cc627`. It adds the exact `fmi3SetTime` signature,

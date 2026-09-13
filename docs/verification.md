@@ -116,8 +116,39 @@ references/checksums. Exact archive/member hashes are recorded beside the
 archives. Only these three status documents changed after the full gate;
 all code and audit inputs retain its exact checked bytes. No emitter, grammar,
 numerical semantics, native test or axiom policy changed.
-Valid prior instance/history storage is explicit; event/completion composition
-and arbitrary host histories remain open.
+Valid prior instance/history storage is explicit; arbitrary host histories
+remain open.
+
+The ME control checkpoint also requires exact signatures, tokenization
+and complete static-interface contracts for event entry, continuous entry,
+completed integrator steps and discrete-state updates. Success, null, lifecycle
+rejection, missing output buffers and both logging paths are covered. The
+generic C output-assignment and pointer-guard proofs live in backend-c; FMI
+history and protocol proofs live in backend-fmi3. No emitted code changed.
+
+`MEHistory.trace_frame` composes finite quiescent time/control histories with
+every intermediate heap and output value. A discrete update must establish
+event-iteration readiness before continuous entry. The trace starts from valid
+instance/history storage and a reusable caller buffer bank outside the instance
+block; it derives their continued validity, including compatible aliases.
+`adapter_me_history` obtains the call contracts from the actual adapter and
+retains the source initialization relation and other memory cells. This is a
+control-history theorem: state setters, derivative queries, importer integration,
+creation-to-operation composition, errors between successful calls and concurrent
+hosts still require composition. An unchanged state is not claimed to solve
+the ODE at a new trial time.
+
+The 92 added roots passed the C/FMI/compiler package audit in
+`build/c-factory/me-package-gate-v5.log`, with all 829 inputs unchanged. The
+strengthened actual-artifact contract passed the full required gate in
+`build/c-factory/me-full-gate-v1.log`, also with all 829 inputs unchanged.
+Both checked archives are retained in `build/c-factory/me-artifacts-v1/`.
+C/header/GALEC and FMI XML bytes match the time checkpoint; the three eFMI
+manifests differ only in fresh generation identities and their dependent
+references/checksums. Exact archive/member hashes are recorded beside the
+archives. Only these three status documents changed after the full gate.
+No earlier contract/audit root, grammar, numerical semantics, native check or
+axiom policy was removed or weakened; no test suite was added.
 
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback

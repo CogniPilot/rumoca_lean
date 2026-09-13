@@ -1,4 +1,5 @@
 import Rumoca.FMI3TimeProofs
+import Rumoca.FMI3MEHistory
 import Rumoca.FMI3TerminationRelease
 import Rumoca.FMI3TerminationProofs
 import Rumoca.FMI3StaticReset
@@ -36,6 +37,9 @@ import Rumoca.Initialization
 import Rumoca.InitializationDiagnosticProofs
 
 #audit axioms Rumoca.Artifact.source_identity
+#audit axioms Rumoca.FMI3.adapter_me_calls
+#audit axioms Rumoca.FMI3.MEHistory.source_frame
+#audit axioms Rumoca.FMI3.adapter_me_history
 #audit axioms Rumoca.Artifact.initializationDiagnostics_eq_forModel
 #audit axioms Rumoca.Artifact.initializationDiagnostic_count
 #audit axioms Rumoca.Artifact.initializationDiagnostic_state

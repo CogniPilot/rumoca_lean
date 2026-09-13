@@ -1,3 +1,6 @@
+import RumocaC.BodyReachability
+import RumocaC.OutputAssignments
+import RumocaC.PointerConditions
 import RumocaC.Storage
 import RumocaC.LiteralInterfaceBody
 import RumocaC.ObjectDeclaration
@@ -719,3 +722,16 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CLiteral.Interface.body_run_agreement
 #audit axioms Rumoca.CLiteral.Interface.body_bisimulation
 #audit axioms Rumoca.CLiteral.Interface.body_behaviors
+
+#audit axioms Rumoca.CBody.run_of_reaches
+#audit axioms Rumoca.COutputAssignments.after_preserves_stored
+#audit axioms Rumoca.COutputAssignments.frame
+#audit axioms Rumoca.COutputAssignments.outputs_stored
+#audit axioms Rumoca.COutputAssignments.ready_preserved
+#audit axioms Rumoca.COutputAssignments.run_all
+#audit axioms Rumoca.COutputAssignments.run_one
+#audit axioms Rumoca.COutputAssignments.writable_preserved
+#audit axioms Rumoca.COutputAssignments.write_frame
+#audit axioms Rumoca.COutputAssignments.write_preserves_stored
+#audit axioms Rumoca.CPointerConditions.missing_eval
+#audit axioms Rumoca.CPointerConditions.missing_iff

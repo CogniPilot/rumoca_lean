@@ -17,7 +17,7 @@ theorem adapter_time (contract : AdapterContract a adapter) :
         (Runtime.function a.solve.prepareFMI3 TimeCalls.signature).render ∧
       TimeCalls.PreparedContract a.solve.prepareFMI3 signatures pool := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, time⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, _, _, time, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 signatures
     TimeCalls.signature time.member
@@ -68,7 +68,7 @@ theorem adapter_time_history (contract : AdapterContract a adapter) :
         (∀ start trajectory, InitializationCalls.SourceInitialized a.parsed.ast heap p start trajectory →
           InitializationCalls.SourceInitialized a.parsed.ast after p start trajectory) := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, timeContract⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, _, _, timeContract, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock
