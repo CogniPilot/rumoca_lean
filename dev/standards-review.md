@@ -63,6 +63,44 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### Float64 setter: standards impact
+
+This increment follows `636264f` and changes proofs and mandatory actual-file
+contracts. The source EBNFs, admitted unit profile, IRs, initialization policy,
+C/GALEC/XML emitters and archive layout are unchanged. Pinned FMI 3.0.2 clauses
+and its schema were reviewed for the state setter.
+
+| Obligation | Coverage and remaining boundary |
+| --- | --- |
+| FMI §§2.2.7.1–2.2.7.2, type and serialization | Complete validation precedes all state writes. Accepted requests select only reference 1 and retain finite payload bits, including signed zeroes. Request buffers reuse the tensor-memory relation; nValues=nValueReferences remains specific to scalar variables. Repeated requests leave the final value. No duplicate-setting prohibition was found in this section; the separate prohibition for InitialUnknown entries does not apply to API buffers. |
+| FMI §§2.3.2–2.3.3, setting start values | XML identifies the selected variable as local, continuous and initial=exact. Instantiated/Initialization writes implement the semantic state update and preserve every other cell. Allocation and the complete initialization history still require composition; this does not close S01/SR08. |
+| FMI §§2.3.5 and 3.2.1, ME state writes | Event Mode permits continuous states with reinit=false; Continuous-Time Mode permits setting continuous states. The XML judgment follows ModelStructure to the same declaration selected by numeric reference, without assuming unique names. It checks the exact/local attributes and interprets omitted reinit as false under the pinned [FMI 3.0.2 schema](https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3AttributeGroups.xsd). |
+| FMI §§2.2.4 and 2.3.1, errors and logging | Null instances return Error defensively; empty requests permit null arrays. Lifecycle/array/first-entry failures reach the actual helper before state writes. Unknown references do not require a value load. All represented returning logger outcomes/absence and disabled logging are covered. Actual host storage, callback effects/reentry, ownership and native ABI remain explicit boundaries. |
+| MLS 3.7 | No source grammar or initialization syntax is added. The setter supplies a finite state to the existing mathematical Real equation; the same Flat/DAE/Solve numerical consequence is retained. Complete source/initialization histories remain open. |
+| eFMI 1.0.0 Beta 1 | The reusable memory overwrite lemma and FMI adapter proofs add no eFMI behavior. Prior GALEC/Production C/XML/archive contracts remain required. The full gate passes and actual C/header/GALEC members match `636264f`. |
+
+The setter uses the state-specific permissions despite the broader
+local-variable restriction in §2.4.7.1. This cross-clause interpretation remains
+part of the prose review; Lean proves the authored contract.
+
+Enabled logging requires a represented callable logger. FMI §2.3.1 permits
+null callback pointers for unsupported functionality and leaves use of that
+functionality undefined. This contract covers enabled logging with the supplied
+callback and disabled logging with either pointer value; it does not claim a
+logging guarantee for an enabled but missing callback.
+
+Architecture was checked again against Rust Rumoca `bc71577f`, particularly
+`crates/rumoca-ir-solve/src/model.rs`: Solve owns derivative programs,
+initialization programs and layouts. The setter consumes prepared state
+storage and performs no resolution, shape inference, solver selection or
+per-element IR lowering. All 51 new roots and affected packages pass in
+`build/c-float64-set/package-v1.log`. The required full artifact gate passed in
+`build/c-float64-set/full-gate.log`, with all 694 source inputs unchanged and
+both actual archives checked. Retained artifacts are in its `artifacts/`
+directory; all C/header/GALEC members match `636264f`.
+No new test suite is added.
+**Stage decision: open; grammar growth remains blocked.**
+
 ### Float64 getter: standards impact
 
 This integration follows `8346cad`. The source EBNFs, admitted unit profile,

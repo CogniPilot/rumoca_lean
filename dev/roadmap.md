@@ -594,6 +594,19 @@ Both actual archives are retained; all C/H/ALG members match `8346cad`. No gramm
 emitter change is made. See
 [the Float64 getter contract](fmi3/contracts.md#complete-float64-getter).
 
+The Float64-setter increment adds the complete public-call contract to the
+same actual adapter certificate. It validates every entry before state writes,
+characterizes all error/logger outcomes and proves exact finite-bit state
+updates with a frame for every other cell. Independent XML interpretation
+identifies the same local continuous state through ModelStructure and its
+derivative reference, including exact-start and reinit attributes. No compiler
+lowering or emitted code changes. All 51 added roots and affected package checks
+pass in `build/c-float64-set/package-v1.log`. The required full artifact gate
+passed in `build/c-float64-set/full-gate.log`, with all 694 inputs unchanged
+and both actual archives checked. Retained artifacts are in its `artifacts/`
+directory; all C/header/GALEC members match `636264f`. See
+[the setter contract](fmi3/contracts.md#complete-float64-setter).
+
 Next: complete remaining public APIs, allocation, ABI, admissible-host ownership
 and adapter composition. F02/F03 remain open.
 

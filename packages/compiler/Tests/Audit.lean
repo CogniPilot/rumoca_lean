@@ -1,3 +1,4 @@
+import Rumoca.FMI3Float64SetProofs
 import Rumoca.FMI3Float64Proofs
 import Rumoca.FMI3DerivativeProofs
 import Rumoca.FMI3StateProofs
@@ -111,3 +112,5 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.derivative_source
 
 #audit axioms Rumoca.FMI3.float64_source
+
+#audit axioms Rumoca.FMI3.float64_set_source

@@ -1,3 +1,9 @@
+import RumocaFMI3.Float64SetEntry
+import RumocaFMI3.Float64SetValidation
+import RumocaFMI3.Float64SetWrite
+import RumocaFMI3.Float64SetFailures
+import RumocaFMI3.Float64SetMetadata
+import RumocaFMI3.Float64SetContract
 import RumocaFMI3.ArrayAccess
 import RumocaFMI3.FailureSites
 import RumocaFMI3.Float64Calls
@@ -473,3 +479,53 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Float64Calls.rendered_contract
 #audit axioms Rumoca.FMI3.Float64Calls.QuietExecutionContract.get_refines
 #audit axioms Rumoca.FMI3.Float64Calls.metadata_selection
+
+#audit axioms Rumoca.FMI3.Float64Set.body_eq
+#audit axioms Rumoca.FMI3.Float64Set.values_eq
+#audit axioms Rumoca.FMI3.Float64Set.validation_closed
+#audit axioms Rumoca.FMI3.Float64Set.write_closed
+#audit axioms Rumoca.FMI3.Float64Set.entry_run
+#audit axioms Rumoca.FMI3.Float64Set.guard_run
+#audit axioms Rumoca.FMI3.Float64Set.empty_behaviors
+#audit axioms Rumoca.FMI3.Float64Set.null_behaviors
+#audit axioms Rumoca.FMI3.Float64Set.valid_entry_iff
+#audit axioms Rumoca.FMI3.Float64Set.wrong_reference_step
+#audit axioms Rumoca.FMI3.Float64Set.finite_check_step
+#audit axioms Rumoca.FMI3.Float64Set.validation_step
+#audit axioms Rumoca.FMI3.Float64Set.counter_value_eval
+#audit axioms Rumoca.FMI3.Float64Set.validation_prefix
+#audit axioms Rumoca.FMI3.Float64Set.validation_reaches
+#audit axioms Rumoca.FMI3.Float64Set.validation_rejects
+#audit axioms Rumoca.FMI3.Float64Set.assigned_frame
+#audit axioms Rumoca.FMI3.Float64Set.assigned_writable
+#audit axioms Rumoca.FMI3.Float64Set.assigned_next
+#audit axioms Rumoca.FMI3.Float64Set.assigned_reads
+#audit axioms Rumoca.FMI3.Float64Set.write_step
+#audit axioms Rumoca.FMI3.Float64Set.write_reaches
+#audit axioms Rumoca.FMI3.Float64Set.bitsAt_inside
+#audit axioms Rumoca.FMI3.Float64Set.snapshot_readable
+#audit axioms Rumoca.FMI3.Float64Set.snapshot_valid
+#audit axioms Rumoca.FMI3.Float64Set.set_reaches
+#audit axioms Rumoca.FMI3.Float64Set.set_behaviors
+#audit axioms Rumoca.FMI3.Float64Set.accepted_snapshot
+#audit axioms Rumoca.FMI3.Float64Set.assigned_represents
+#audit axioms Rumoca.FMI3.Float64Set.entry_cases
+#audit axioms Rumoca.FMI3.Float64Set.query_cases
+#audit axioms Rumoca.FMI3.Float64Set.failure_unique
+#audit axioms Rumoca.FMI3.Float64Set.lifecycle_site
+#audit axioms Rumoca.FMI3.Float64Set.array_site
+#audit axioms Rumoca.FMI3.Float64Set.entry_site
+#audit axioms Rumoca.FMI3.Float64Set.failure_site
+#audit axioms Rumoca.FMI3.Float64SetMetadata.Writable.lookup
+#audit axioms Rumoca.FMI3.Float64SetMetadata.Writable.unique
+#audit axioms Rumoca.FMI3.Float64SetMetadata.described_state
+#audit axioms Rumoca.FMI3.Float64SetMetadata.described_reference
+#audit axioms Rumoca.FMI3.Float64SetMetadata.artifact_state
+#audit axioms Rumoca.FMI3.Float64Set.failure_execution_correct
+#audit axioms Rumoca.FMI3.Float64Set.silent_execution_correct
+#audit axioms Rumoca.FMI3.Float64Set.quiet_execution_correct
+#audit axioms Rumoca.FMI3.Float64Set.QuietExecutionContract.set_refines
+#audit axioms Rumoca.FMI3.Float64Set.failure_message_collected
+#audit axioms Rumoca.FMI3.Float64Set.prepared_correct
+#audit axioms Rumoca.FMI3.Float64Set.rendered_contract
+#audit axioms Rumoca.FMI3.Float64Set.metadata_selection

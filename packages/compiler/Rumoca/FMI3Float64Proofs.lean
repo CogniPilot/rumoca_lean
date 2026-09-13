@@ -28,7 +28,7 @@ theorem float64_source (compiled : compile input = .ok a)
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
       Float64Calls.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       LiteralPreparation.EventPreparedContract a.solve.prepareFMI3 sigs pool := by
-  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, _, _, events, _, _, _, float64⟩ := contract.adapter
+  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, _, _, events, _, _, _, float64, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 sigs
     (Float64Calls.signature false) float64.member

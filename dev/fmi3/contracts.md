@@ -413,6 +413,51 @@ and both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
 
+### Complete Float64 setter
+
+`Float64Set.FunctionContract` is mandatory in `AdapterContract` for the actual
+`fmi3SetFloat64` fragment. The fixed checker establishes membership of its exact
+five-parameter signature, including both const array parameters. The contract
+uses one actual function table and installed literal pool and retains every
+earlier numerical, printer, public-call and artifact obligation. All 51 added
+roots and affected package checks pass in `build/c-float64-set/package-v1.log`;
+the required full artifact gate passed in `build/c-float64-set/full-gate.log`.
+All 694 source inputs remained unchanged throughout the run. Both actual
+archives are retained in `build/c-float64-set/artifacts/`; their C, header and
+GALEC members match the published `636264f` outputs. No source grammar or
+emitted code changes accompany this proof increment.
+
+Independent argument classification covers null instances, empty requests,
+lifecycle rejection, invalid lengths/pointers and the first invalid entry.
+Validation checks every selected state value for finite binary64 representation
+before any state write. Wrong references short-circuit before a value load.
+All represented returning logger outcomes, absence of a returning outcome and
+disabled logging are characterized by the actual failure helper contracts.
+
+Successful calls preserve accepted payload bits, including signed zeroes.
+The ordered writes leave the final request's state value and preserve every
+other memory cell. `QuietExecutionContract.set_refines` constructs the finite
+input snapshot from accepted raw bits and relates the final heap to
+`ModelExchange.setContinuousState`. Its premises describe original storage and
+non-aliasing, not a supplied intermediate execution or loop invariant. The
+tensor-memory snapshot describes the API buffer; no source array or per-element
+IR lowering is introduced.
+
+`Float64SetMetadata.Writable` independently follows a ModelStructure derivative
+entry, its numeric reference and the derivative attribute to the same unique
+declaration selected by the setter. It requires a scalar continuous local
+Float64 state with `initial="exact"` and `reinit=false`, including the pinned
+schema's false default when that attribute is omitted. The actual XML permits
+precisely reference 1, with the source state name; name uniqueness is not an
+assumption. `float64_set_source` binds that XML, the actual printed fragment,
+complete calls and event-preserving literal preparation to the same source and
+Solve model. The existing numerical source-equation consequence is retained.
+
+This does not establish complete allocation/initialization histories, caller
+ownership, native ABI or all remaining public functions. Those obligations and
+the complete standards review still block grammar expansion. No source grammar,
+runtime, emitter, solver policy or boundary test suite changes in this increment.
+
 ### Complete Float64 getter
 
 `Float64Calls.FunctionContract` is now mandatory in `AdapterContract` for the

@@ -378,6 +378,24 @@ all C/H/ALG members match `8346cad`. Current state/time representation, complete
 native ABI and remaining public APIs retain their existing open boundaries. See
 [the Float64 getter contract](../dev/fmi3/contracts.md#complete-float64-getter).
 
+The Float64 setter increment requires complete nonempty, empty and null calls,
+all validation/lifecycle failures and represented logger outcomes. Every input
+is validated before state writes; accepted binary64 payload bits are retained
+exactly. A finite snapshot derived from original input storage connects the
+last request to the semantic ME state update and a full memory frame.
+Independent XML reference interpretation follows ModelStructure and the
+derivative attribute to the same scalar local continuous state, with
+initial=exact and reinit=false metadata. The fixed actual-file checker now
+requires the printed setter and its one-table/pool contract alongside all
+prior fields. All 51 new roots and affected package checks pass in
+`build/c-float64-set/package-v1.log`. The required full artifact gate passed in
+`build/c-float64-set/full-gate.log`, with all 694 source inputs unchanged.
+Both actual archives are retained in `build/c-float64-set/artifacts/`; all C,
+header and GALEC members match the published `636264f` outputs.
+Initialization histories, native ABI,
+ownership and remaining APIs keep the whole-stage claim open. See
+[the setter contract](../dev/fmi3/contracts.md#complete-float64-setter).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target
