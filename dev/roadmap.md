@@ -15,23 +15,29 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete derivative and Float64 getter/setter contracts are published through `d519438`; earlier reset, nominal/count/version and error-helper contracts remain required. | Remaining public calls, complete histories, static instance ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete termination and time-call contracts are now mandatory and artifact-checked; earlier derivative, Float64 getter/setter, reset, nominal/count/version and error-helper contracts remain required. | Remaining public calls, complete histories, static instance ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
 Latest completed main-workspace gate:
-`build/c-factory/termination-full-gate-v1.log`, passed with all 809
-integration inputs unchanged. It checks the strengthened termination contract, static runtime, both
+`build/c-factory/time-full-gate-v1.log`, passed with all 815
+integration inputs unchanged. It checks the strengthened time-call contract, static runtime, both
 actual FMU interfaces and the eFMU, including the existing native and rejection
 controls. Retained artifacts and member comparisons are under
-`build/c-factory/termination-artifacts-v1/` and adjacent review files.
+`build/c-factory/time-artifacts-v1/` and adjacent review files.
 Compared with `2628f35`, the FMI adapter replaces `calloc`/`free` with 32
 permanent ME/CS slots; numerical C, FMI metadata, GALEC and eFMI Production C
-are unchanged. Compared with the preceding static-runtime artifacts, the
+are unchanged. Compared with the preceding termination artifacts, the
 eFMI manifests change only their generation identities and dependent checksums.
 The derived termination/release proofs have separate passing FMI/compiler
 package evidence for 811 unchanged inputs. No new grammar case is admitted.
+
+The actual adapter certificate now requires the complete `fmi3SetTime`
+contract. Its 25 added roots passed the owning-package and full artifact gates
+with 815 unchanged inputs. The history theorem connects each admitted trial-time update to the
+reference window while preserving model state and the source initialization
+relation. This is no claim that the setter integrates the model.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -253,7 +259,10 @@ simulation or concurrent host histories.
 - [x] Require complete termination calls and their represented errors/logging
   in the actual adapter contract; compose initialization→termination and
   termination→release with the same definitions, heaps and ownership.
-- [ ] Finish ME time, event/completion and their rejected
+- [x] Accept the mandatory complete ME time-call contract through the full
+  artifact gate. Its 25 added audit roots and full 815-input gate have passed;
+  successful/null/rejected calls and both logging paths use the static interface.
+- [ ] Finish ME event/completion and their rejected
   paths as complete calls. Compose them through actual intermediate heaps.
   Reset's successful/null calls and reset→initialization composition now use
   the static object interface; arbitrary surrounding histories remain open.

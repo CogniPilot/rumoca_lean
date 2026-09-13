@@ -19,7 +19,7 @@ theorem adapter_termination_release (contract : AdapterContract a adapter) :
         program.externals "atomic_store" = some (CAtomicBoolean.Calls.writeExternal tag) →
         Termination.ReleaseContract objects program tag := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, runtime, termination⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, runtime, termination, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock

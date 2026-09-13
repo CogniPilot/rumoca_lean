@@ -37,6 +37,35 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Mandatory ME trial time: 2026-09-13
+
+This checkpoint follows `c9cc627`. It adds the exact `fmi3SetTime` signature,
+independent tokenization and complete represented call cases to the mandatory
+actual-adapter contract. Every prior conjunct and audit root is retained.
+The 25 new roots passed the FMI/compiler package gate in
+`build/c-factory/time-package-gate-v1.log` with 815 unchanged inputs. The
+strengthened actual-artifact contract then passed the full required gate in
+`build/c-factory/time-full-gate-v1.log`, again with all 815 inputs unchanged.
+Checked FMU/eFMU archives are retained in `build/c-factory/time-artifacts-v1/`.
+Their C/header/GALEC and FMI XML bytes match the termination checkpoint; exact
+eFMI manifest comparisons permit only fresh identities and dependent
+references/checksums. The source reconciliation after this gate changes only
+these three status documents. Grammar, emission, numerical semantics, audit
+policy and native checks are unchanged.
+
+| Applicable obligation | Added proof and remaining boundary |
+| --- | --- |
+| [FMI 3.0.2 §3.2.1](https://fmi-standard.org/docs/3.0.2/), ME trial time | `TimeCalls.history_call` and `adapter_time_history` implement the independent history transition. Admission retains start time, second-last completion and last event entry as lower bounds. Retreating trial times remain allowed within that window; no monotonic-time premise is added. Prior history/storage and later event/completion composition remain explicit. |
+| FMI §2.3.2, experiment stop | The optional stop remains inclusive. Finite out-of-window arguments take the actual error path. The authored finite-value/nonfinite-rejection policy is explicit; it is not presented as a new quotation from the standard. |
+| FMI §§2.3.1/2.3.8, lifecycle and errors | Complete null, invalid-lifecycle, nonfinite and finite-window failures are proved. Suppressed logging includes a missing logger; supplied logging retains every modeled returning outcome and immutable diagnostic bytes. Callback reentry, divergence and private-storage frames remain open. |
+| Actual C and source relation | `TimeCalls.FunctionContract` binds the public calls to the prepared pool/table; `adapter_time` locates the actual fragment. Updating time preserves the source initialization relation and model state. It does not prove that the unchanged state is the integrated solution at the new time. Native ABI and whole translation-unit correspondence remain open. |
+| MLS 3.7 and eFMI Beta 1 | Source equations, initialization policy, DAE→GALEC→Solve and eFMI artifacts are unchanged. No new source case or MLS/eFMI finding is closed. |
+
+The official FMI 3.0.2 clauses were rechecked for this checkpoint. The stage
+remains open under K02–K05; neither the full artifact gate nor this standards review
+authorize grammar expansion. No unit-test suite or axiom-policy change was
+introduced.
+
 ### Mandatory termination and release: 2026-09-13
 
 This increment follows `e0658fa`. It retains every previous adapter-contract

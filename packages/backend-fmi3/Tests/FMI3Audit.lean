@@ -1,3 +1,5 @@
+import RumocaFMI3.TimeContract
+import RumocaFMI3.TimeHistory
 import RumocaFMI3.TerminationRelease
 import RumocaFMI3.TerminationContract
 import RumocaFMI3.StaticReset
@@ -868,3 +870,26 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Termination.lease_metadata
 #audit axioms Rumoca.FMI3.Termination.lease_owners
 #audit axioms Rumoca.FMI3.Termination.terminate_release
+
+#audit axioms Rumoca.FMI3.TimeCalls.body_agrees
+#audit axioms Rumoca.FMI3.TimeCalls.parameters_bound
+#audit axioms Rumoca.FMI3.TimeCalls.bit_cases
+#audit axioms Rumoca.FMI3.TimeCalls.query_cases
+#audit axioms Rumoca.FMI3.TimeCalls.failure_unique
+#audit axioms Rumoca.FMI3.TimeCalls.call_behaviors
+#audit axioms Rumoca.FMI3.TimeCalls.null_behaviors
+#audit axioms Rumoca.FMI3.TimeCalls.lifecycle_prefix
+#audit axioms Rumoca.FMI3.TimeCalls.nonfinite_prefix
+#audit axioms Rumoca.FMI3.TimeCalls.window_rejected_eval
+#audit axioms Rumoca.FMI3.TimeCalls.failure_prefix
+#audit axioms Rumoca.FMI3.TimeCalls.quiet_correct
+#audit axioms Rumoca.FMI3.TimeCalls.suppressed_correct
+#audit axioms Rumoca.FMI3.TimeCalls.logged_correct
+#audit axioms Rumoca.FMI3.TimeCalls.message_collected
+#audit axioms Rumoca.FMI3.TimeCalls.prepared_correct
+#audit axioms Rumoca.FMI3.TimeCalls.rendered_contract
+#audit axioms Rumoca.FMI3.TimeCalls.admitted_finite
+#audit axioms Rumoca.FMI3.TimeCalls.failure_excludes_success
+#audit axioms Rumoca.FMI3.TimeCalls.frame
+#audit axioms Rumoca.FMI3.TimeCalls.bounds_after
+#audit axioms Rumoca.FMI3.TimeCalls.history_call

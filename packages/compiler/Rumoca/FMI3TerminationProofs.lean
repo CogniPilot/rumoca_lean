@@ -17,7 +17,7 @@ theorem adapter_termination (contract : AdapterContract a adapter) :
         (Runtime.function a.solve.prepareFMI3 Termination.signature).render ∧
       Termination.PreparedContract a.solve.prepareFMI3 signatures pool := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, _, termination⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, _, termination, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 signatures
     Termination.signature termination.member
@@ -71,7 +71,7 @@ theorem adapter_initialize_terminate (contract : AdapterContract a adapter) :
           trajectory = Initialization.trajectory (Binary64.value args.start) (Binary64.value state.x)) ∧
         (∀ query, ¬ p.InRecord query → final query = heap query) := by
   obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, _, termination⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, _, termination, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock

@@ -8,6 +8,7 @@ import RumocaFMI3.IdentityContract
 import RumocaFMI3.FactoryAdmissionContract
 import RumocaFMI3.StaticRuntimeContract
 import RumocaFMI3.TerminationContract
+import RumocaFMI3.TimeContract
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
@@ -87,7 +88,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     StaticRuntime.FunctionContract a.solve.prepareFMI3 sigs
       (StaticStorage.render StaticStorage.deploymentCapacity) ∧
     Termination.FunctionContract a.solve.prepareFMI3 sigs
-      (Runtime.function a.solve.prepareFMI3 Termination.signature).render
+      (Runtime.function a.solve.prepareFMI3 Termination.signature).render ∧
+    TimeCalls.FunctionContract a.solve.prepareFMI3 sigs
+      (Runtime.function a.solve.prepareFMI3 TimeCalls.signature).render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -111,6 +114,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (release : StaticRelease.function.signature ∈ sigs)
     (externals : StaticRuntime.ExternalNamesFresh sigs)
     (termination : Termination.signature ∈ sigs)
+    (time : TimeCalls.signature ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -131,7 +135,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     FactoryAdmission.rendered_contract _ sigs unique factories
       (fun kind => grammar _ (factories kind)),
     StaticRuntime.rendered_contract _ sigs unique factories release externals,
-    Termination.rendered_contract _ sigs unique termination⟩
+    Termination.rendered_contract _ sigs unique termination,
+    TimeCalls.rendered_contract _ sigs unique time⟩
 
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table

@@ -94,6 +94,31 @@ all 811 inputs unchanged. This follow-up changes no emitter or mandatory
 contract and retains the preceding full artifact evidence. Released handles
 are not declared valid for subsequent FMI calls. No new test suite was added.
 
+The time-call checkpoint also makes `TimeCalls.FunctionContract`
+mandatory in the actual adapter certificate, retaining every earlier conjunct.
+Twenty-five added audit roots cover the exact `fmi3SetTime` signature and
+tokenization, complete successful/null/rejected calls in the static interface,
+and suppressed or supplied logging. Admission is defined independently over
+finite binary64 values and the reference history window; all raw argument bits
+and declared lifecycle modes are classified. The history consequence preserves
+model state, bounds, other cells and the source initialization relation. It
+does not assert that an unchanged state solves the ODE at a new trial time:
+ME integration belongs to the importer.
+
+The FMI/compiler package checks passed in
+`build/c-factory/time-package-gate-v1.log` with all 815 inputs unchanged.
+The strengthened actual-artifact contract passed the full required gate in
+`build/c-factory/time-full-gate-v1.log`, with all 815 inputs unchanged.
+Both checked archives are retained in `build/c-factory/time-artifacts-v1/`.
+C/header/GALEC and FMI XML bytes match the termination checkpoint; the three
+eFMI manifests differ only in fresh generation identities and their dependent
+references/checksums. Exact archive/member hashes are recorded beside the
+archives. Only these three status documents changed after the full gate;
+all code and audit inputs retain its exact checked bytes. No emitter, grammar,
+numerical semantics, native test or axiom policy changed.
+Valid prior instance/history storage is explicit; event/completion composition
+and arbitrary host histories remain open.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

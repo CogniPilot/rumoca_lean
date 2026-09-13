@@ -1,3 +1,4 @@
+import Rumoca.FMI3TimeProofs
 import Rumoca.FMI3TerminationRelease
 import Rumoca.FMI3TerminationProofs
 import Rumoca.FMI3StaticReset
@@ -168,3 +169,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_initialize_terminate
 
 #audit axioms Rumoca.FMI3.adapter_termination_release
+
+#audit axioms Rumoca.FMI3.adapter_time
+#audit axioms Rumoca.FMI3.TimeCalls.source_frame
+#audit axioms Rumoca.FMI3.adapter_time_history
