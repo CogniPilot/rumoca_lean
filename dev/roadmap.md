@@ -567,6 +567,20 @@ header and GALEC members match `ca178d0`.
 Allocation, complete initialization, native ABI/host correspondence and remaining
 public calls still block the stage. See
 [the state contract](fmi3/contracts.md#continuous-state-getter-and-setter).
+The derivative-query increment now requires both actual public/helper fragments,
+the same numerical C contract and independent XML derivative order. Complete
+success/null/error calls execute the prepared Solve RHS through the existing
+C statements, preserving output frames and all represented logger outcomes.
+The source consequence composes Flat/DAE/Solve preservation to the Real
+derivative, and the fixed checker proves actual signature membership and
+numerical-name freshness. All 41 new roots and affected package checks pass in
+`build/c-derivatives/package-v1.log`; the required full artifact gate passed in
+`build/c-derivatives/full-gate.log`, with all 675 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-derivatives/artifacts/`; their C,
+header and GALEC members match `035ad1d`.
+No grammar, emitter or solver-policy change. See
+[the derivative contract](fmi3/contracts.md#complete-continuous-state-derivative-query).
+
 Next: complete remaining public APIs, allocation, ABI, admissible-host ownership
 and adapter composition. F02/F03 remain open.
 

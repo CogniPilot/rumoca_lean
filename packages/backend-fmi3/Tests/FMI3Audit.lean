@@ -1,3 +1,9 @@
+import RumocaFMI3.NumericalBindings
+import RumocaFMI3.ModelRhs
+import RumocaFMI3.DerivativeCalls
+import RumocaFMI3.DerivativeFailures
+import RumocaFMI3.DerivativeContract
+import RumocaFMI3.DerivativeMetadata
 import RumocaFMI3.StateContract
 import RumocaFMI3.StateMetadata
 import RumocaFMI3.NominalContract
@@ -368,3 +374,38 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StateMetadata.artifact_states
 #audit axioms Rumoca.FMI3.StateCalls.QuietExecutionContract.get_refines
 #audit axioms Rumoca.FMI3.StateCalls.QuietExecutionContract.set_refines
+
+#audit axioms Rumoca.FMI3.LiteralPreparation.numerical_bound
+#audit axioms Rumoca.FMI3.LiteralPreparation.numerical_program
+#audit axioms Rumoca.FMI3.ModelRhs.parameters_bound
+#audit axioms Rumoca.FMI3.ModelRhs.types_bound
+#audit axioms Rumoca.FMI3.ModelRhs.call_numerical
+#audit axioms Rumoca.FMI3.ModelRhs.reaches
+#audit axioms Rumoca.FMI3.ModelRhs.behaviors
+#audit axioms Rumoca.FMI3.ModelRhs.rendered_contract
+#audit axioms Rumoca.FMI3.DerivativeCalls.parameters_bound
+#audit axioms Rumoca.FMI3.DerivativeCalls.body_eq
+#audit axioms Rumoca.FMI3.DerivativeCalls.accepted_run
+#audit axioms Rumoca.FMI3.DerivativeCalls.enter_rhs
+#audit axioms Rumoca.FMI3.DerivativeCalls.return_rhs
+#audit axioms Rumoca.FMI3.DerivativeCalls.finish
+#audit axioms Rumoca.FMI3.DerivativeCalls.reaches
+#audit axioms Rumoca.FMI3.DerivativeCalls.behaviors
+#audit axioms Rumoca.FMI3.DerivativeCalls.query_cases
+#audit axioms Rumoca.FMI3.DerivativeCalls.failure_unique
+#audit axioms Rumoca.FMI3.DerivativeCalls.null_behaviors
+#audit axioms Rumoca.FMI3.DerivativeCalls.invalid_run
+#audit axioms Rumoca.FMI3.DerivativeCalls.failure_prefix
+#audit axioms Rumoca.FMI3.DerivativeCalls.failure_execution_correct
+#audit axioms Rumoca.FMI3.DerivativeCalls.silent_execution_correct
+#audit axioms Rumoca.FMI3.DerivativeCalls.quiet_execution_correct
+#audit axioms Rumoca.FMI3.DerivativeCalls.failure_message_collected
+#audit axioms Rumoca.FMI3.DerivativeCalls.prepared_correct
+#audit axioms Rumoca.FMI3.DerivativeCalls.rendered_contract
+#audit axioms Rumoca.FMI3.DerivativeCalls.QuietExecutionContract.get_refines
+#audit axioms Rumoca.FMI3.DerivativeMetadata.EntryName.unique
+#audit axioms Rumoca.FMI3.DerivativeMetadata.DerivativeReference.unique
+#audit axioms Rumoca.FMI3.DerivativeMetadata.OrderedDerivatives.unique
+#audit axioms Rumoca.FMI3.DerivativeMetadata.OrderedDerivatives.states
+#audit axioms Rumoca.FMI3.DerivativeMetadata.described_derivatives
+#audit axioms Rumoca.FMI3.DerivativeMetadata.artifact_derivatives

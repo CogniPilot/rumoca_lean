@@ -347,6 +347,22 @@ C, header and GALEC members match `ca178d0`. Native storage/ABI, initialization
 and remaining adapter obligations are still open. See
 [the state contract](../dev/fmi3/contracts.md#continuous-state-getter-and-setter).
 
+The derivative getter increment now requires its actual public and `model_rhs`
+helper fragments, complete call contracts and independent XML derivative order.
+The helper executes the existing numerical C statements of the same Solve model;
+no derivative callback is assumed. `derivative_value_source` composes the existing
+Flat/DAE/Solve relations to the exact Real derivative, and `derivative_source`
+retains the actual numerical C contract alongside the adapter and literal pool.
+Success, null handles, lifecycle/count/buffer errors and represented logging
+outcomes are covered. The fixed checker proves numerical-name freshness for its
+actual header candidates. All 41 added roots and affected packages pass in
+`build/c-derivatives/package-v1.log`; the required full artifact gate passed in
+`build/c-derivatives/full-gate.log`, with all 675 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-derivatives/artifacts/`; their C,
+header and GALEC members match `035ad1d`.
+No grammar, emitter or solver policy changes. See
+[the derivative contract](../dev/fmi3/contracts.md#complete-continuous-state-derivative-query).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

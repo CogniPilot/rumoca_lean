@@ -413,6 +413,48 @@ and both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
 
+### Complete continuous-state derivative query
+
+`DerivativeCalls.FunctionContract` is mandatory in `AdapterContract`, retaining
+every earlier obligation. It binds both the actual public getter fragment and
+`model_rhs`, their independent tokenizations and complete calls to the same
+prepared Solve model. The fixed actual-file checker proves getter membership
+and freshness of all numerical kernel names among the quoted header candidates.
+This prevents an arbitrary public signature from shadowing the numerical calls.
+Header collection, typedef meanings and native ABI remain separate obligations.
+
+The success proof enters the actual public body, passes the lifecycle and
+scalar-access guards, calls `model_rhs`, executes `rumoca_rhs` using the existing
+verified C statements and writes the returned finite derivative into caller
+storage. It preserves every other cell. Preserving model-state storage requires
+the ordinary non-aliasing premise between state and caller output; this is not
+silently assumed in the general frame theorem. No solver step or time advance
+occurs in this getter.
+
+The same contract characterizes defensive null handles, every rejected declared
+lifecycle state, wrong UInt64 counts and null buffers. Error prefixes reach the
+actual failure helper before output access or numerical evaluation. Enabled
+logging includes every represented returning callback effect and absent outcome;
+disabled logging is silent and permits a null logger. Valid caller/instance
+storage and native host realization retain their explicit boundaries.
+
+`DerivativeMetadata` independently resolves the XML's ordered derivative entries
+to unique derivative and scalar continuous state declarations. Its state
+projection agrees with `StateMetadata.OrderedStates`. `derivative_source`
+requires that actual XML order, both adapter fragments, the numerical C contract
+and eventful literal preservation for the same constructed pool. The separate
+`derivative_call_source` theorem connects the public output to the Real source
+equation using existing Flat/DAE/Solve preservation.
+
+All 41 added roots and affected package checks pass in
+`build/c-derivatives/package-v1.log`. The required full artifact gate passed in
+`build/c-derivatives/full-gate.log`, with all 675 inventoried inputs unchanged.
+Both actual archives and hashes are retained in `build/c-derivatives/artifacts/`;
+their C, header and GALEC members match `035ad1d` (`artifacts.log`).
+No source, renderer, metadata or initialization policy changes; no new test suite
+is added. Native headers/ABI, ownership/allocation, complete initialization and
+remaining public APIs still block the whole-adapter claim and grammar growth.
+
 ### Continuous-state getter and setter
 
 The next increment requires `StateCalls.FunctionsContract` in `AdapterContract`

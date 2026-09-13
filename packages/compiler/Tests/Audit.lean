@@ -1,3 +1,4 @@
+import Rumoca.FMI3DerivativeProofs
 import Rumoca.FMI3StateProofs
 import Rumoca.FMI3NominalProofs
 import Rumoca.FMI3LoggingProofs
@@ -103,3 +104,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.nominals_source
 
 #audit axioms Rumoca.FMI3.state_access_source
+
+#audit axioms Rumoca.FMI3.derivative_value_source
+#audit axioms Rumoca.FMI3.derivative_call_source
+#audit axioms Rumoca.FMI3.derivative_source

@@ -63,6 +63,32 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### Continuous-state derivative query: standards impact
+
+This proof integration follows `035ad1d`. The EBNFs, production admission,
+IRs, initialization, emitters and archive layout are unchanged. Pinned FMI 3.0.2
+§§3.2.1 and 2.4.7 were reviewed directly for the getter and derivative order.
+
+| Obligation | Coverage and remaining boundary |
+| --- | --- |
+| FMI §3.2.1, first-order derivative query | The actual public call follows `model_rhs` into the verified numerical C statements and writes the prepared Solve derivative. The output frame is explicit; no solver/time update occurs. The admitted constant RHS is provably finite, so this slice has no numerical-failure case. The bracketed Discard advice is not claimed as a generalized failure policy. |
+| FMI §2.4.7, ModelStructure order | Independent XML lookup resolves ordered ContinuousStateDerivative entries through unique derivative/state declarations. The derivative list's state projection agrees with the state-access order. Array serialization is outside this scalar judgment. |
+| FMI lifecycle, §§2.2.4 and 2.3.1 | The independent ME relation governs legal modes; wrong kinds/modes, wrong counts and null buffers reach the actual Error/log helper. Null handles are covered defensively. Enabled callback execution requires callable binding; disabled execution permits a null logger. Native effects, reentry and ownership remain boundaries. |
+| MLS 3.7 | Existing Flat/DAE/Solve theorems relate the exposed derivative's Real value exactly to the source equation. No grammar, Real-domain or initialization change; S01/SR08 remain open. |
+| eFMI 1.0.0 Beta 1 | The shared C increment only lifts existing numerical statement executions into the event scheduler. GALEC, Production Code, manifest and archive contracts remain required. Their downstream gate and byte comparison remain separate evidence. |
+| Actual artifact and header boundary | Both actual adapter fragments, numerical C contract, XML order and eventful literal preservation are mandatory for the same Solve/table/pool. The fixed checker proves membership and numerical-name freshness for its quoted candidates; this does not verify header parsing, typedef/layout or ABI correspondence. |
+
+Architecture review against Rust Rumoca `bc71577f`: `SolveProblem` owns the
+continuous derivative program and initialization data. The Lean backend still
+consumes prepared Solve; it adds no DAE resolution, source lookup, shape inference
+or per-element lowering. Generic C scheduler and public-call prefix proofs are
+reused. All 41 additional roots and affected packages pass in
+`build/c-derivatives/package-v1.log`; the required full artifact gate passed in
+`build/c-derivatives/full-gate.log`, with all 675 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-derivatives/artifacts/`; their C,
+header and GALEC members match `035ad1d` (`artifacts.log`).
+No new test suite is added. **Stage decision: open; grammar growth remains blocked.**
+
 ### Continuous-state access: standards impact
 
 This proof increment follows `ca178d0`. Production grammar, source semantics,

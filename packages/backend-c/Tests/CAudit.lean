@@ -1,3 +1,4 @@
+import RumocaC.KernelEvents
 import RumocaC.FiniteValue
 import RumocaC.CallEventChoices
 import RumocaC.BodyEvents
@@ -544,3 +545,8 @@ import RumocaC.CallSignature
 
 #audit axioms Rumoca.CMemory.Value.isFinite_true_iff
 #audit axioms Rumoca.CMemory.Value.float64_cases
+
+#audit axioms Rumoca.CCalls.Events.kernel_step
+#audit axioms Rumoca.CCalls.Events.kernel_reaches
+#audit axioms Rumoca.CCalls.Events.kernel_correct
+#audit axioms Rumoca.CCalls.Events.kernel_behaviors

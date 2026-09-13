@@ -290,6 +290,14 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
       · intro write
         cases write <;> change FMI3.StateCalls.signature _ ∈ [$sigTerms,*]
         all_goals simp [FMI3.StateCalls.signature]
+      · change FMI3.DerivativeCalls.signature ∈ [$sigTerms,*]
+        simp [FMI3.DerivativeCalls.signature]
+      · change ∀ sig ∈ [$sigTerms,*], ∀ function,
+          sig.name ≠ FMI3.LiteralPreparation.kernelName function
+        intro sig member function
+        cases function
+        all_goals revert sig
+        all_goals decide +kernel
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩
