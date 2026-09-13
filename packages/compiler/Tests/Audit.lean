@@ -1,3 +1,4 @@
+import Rumoca.FMI3NominalProofs
 import Rumoca.FMI3LoggingProofs
 import Rumoca.FMI3LiteralProofs
 import ProofAudit.Audit
@@ -97,3 +98,5 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.CStatements.co_simulation_correct
 
 #audit axioms Rumoca.FMI3.logging_source
+
+#audit axioms Rumoca.FMI3.nominals_source

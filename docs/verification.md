@@ -320,6 +320,20 @@ FMI's prohibition on log-callback reentry is an admissible-host obligation at
 that boundary. See [the exact contract](../dev/fmi3/contracts.md#all-failure-helper-outcomes).
 Grammar and generated artifacts are unchanged; the stage remains open.
 
+The next nominal-query integration adds a mandatory complete public-call
+contract for the actual emitted fragment/table/pool, alongside every earlier
+adapter field and eventful literal-lowering guarantee. Successful storage and
+the independently interpreted ordered XML state agree on the positive decoded
+default 1; null, rejected lifecycle and invalid access cases include both
+logging settings. The fixed checker kernel-proves actual signature membership.
+All 33 new audit roots and affected packages pass in
+`build/c-nominals/package-v2.log`; the required full `lake test` gate passed in
+`build/c-nominals/full-gate.log`, with all 660 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-nominals/artifacts/`; their C,
+header and GALEC members match `54618eb`. Valid memory, host
+bindings, native ABI, allocation and remaining public-call obligations remain
+explicit. See [the exact scope](../dev/fmi3/contracts.md#complete-nominal-queries).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

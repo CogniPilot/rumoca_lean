@@ -17,7 +17,7 @@ theorem literal_events_source (compiled : compile input = .ok a)
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
       LiteralPreparation.EventPreparedContract a.solve.prepareFMI3 sigs pool := by
-  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, _, _, events⟩ := contract.adapter
+  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, _, _, events, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   exact ⟨compiled, sigs, pool, printed, grammar, made, events pool made⟩
 

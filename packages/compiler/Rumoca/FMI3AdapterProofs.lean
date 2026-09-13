@@ -1,3 +1,4 @@
+import RumocaFMI3.NominalContract
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
@@ -57,7 +58,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     Version.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 Version.signature).render ∧
     Logging.FunctionContract a.solve.prepareFMI3 sigs Runtime.helpers[0].render ∧
-    LiteralPreparation.EventContract a.solve.prepareFMI3 sigs
+    LiteralPreparation.EventContract a.solve.prepareFMI3 sigs ∧
+    Nominals.FunctionContract a.solve.prepareFMI3 sigs
+      (Runtime.function a.solve.prepareFMI3 ErrorCalls.nominalSignature).render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -68,6 +71,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (ready : ∀ sig ∈ sigs, @CCalls.Signature.Ready cInterface sig)
     (counts : ∀ events, CountQueries.signature events ∈ sigs)
     (version : Version.signature ∈ sigs)
+    (nominals : ErrorCalls.nominalSignature ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -78,7 +82,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (fun _ => Reset.rendered_contract _),
     (fun _ events => CountQueries.rendered_contract _ sigs events unique (counts events)), pool,
     Version.rendered_contract _ sigs unique version, Logging.rendered_contract _ sigs,
-    LiteralPreparation.event_contract _ sigs⟩
+    LiteralPreparation.event_contract _ sigs, Nominals.rendered_contract _ sigs unique nominals⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
 Macro expansion and included-header interpretation remain separate. -/

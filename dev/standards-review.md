@@ -63,6 +63,30 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### Nominal queries: standards impact
+
+This proof integration follows `54618eb`. Both EBNFs, LALR admission, source
+and Solve semantics, initialization policy and emitted members are unchanged.
+The generic C partial-body theorem and failure-statement contracts are reused
+for public-call composition. The pinned FMI 3.0.2 clauses below were checked
+directly against the published specification for this increment.
+
+| Obligation | Coverage and boundary |
+| --- | --- |
+| FMI 3.0.2 [§2.3.3, nominal query](https://fmi-standard.org/docs/3.0.2/#fmi3GetNominalsOfContinuousStates) | Allowed ME calls return OK and store the positive decoded default 1. The independent lifecycle guard, exact count, null buffer, rejected modes and defensive null-instance cases have complete call proofs. Valid caller storage and declared instance fields remain premises. |
+| FMI 3.0.2 [§3.2.1, continuous-state order](https://fmi-standard.org/docs/3.0.2/#fmi3SetContinuousStates) and §2.4.4, nominal defaults | Independent XML interpretation follows the ordered derivative entries to unique scalar continuous Float64 states, excluding dimensions, explicit nominal and declaredType. The actual metadata yields the compiled state and the same binary64 value as the output write. Arrays and inherited types require extensions of this judgment. |
+| FMI 3.0.2 [§2.3.1, logging](https://fmi-standard.org/docs/3.0.2/#fmi3LogMessageCallback) | Both error messages and category storage are constructed from the actual table. Enabled execution retains every represented returning host effect or absent outcome; disabled execution is silent. Callback reentry, native divergence and writable host ownership retain the boundaries recorded below. |
+| Actual C and header boundary | `AdapterContract` requires the complete nominal function contract; the fixed checker kernel-proves signature membership for the actual collected candidates. This does not prove header parsing, typedef/layout correspondence, ABI or native callback execution. |
+| MLS 3.7 and eFMI 1.0.0 Beta 1 | No lexical, grammar, source initialization, GALEC/Solve, numerical or renderer changes. Existing clause maps and S01/SR07/SR08 findings carry forward. No additional production source case is admitted. |
+
+All 33 added audit roots and affected packages pass in
+`build/c-nominals/package-v2.log`. The required full `lake test` gate passed in
+`build/c-nominals/full-gate.log`, including both actual archives and the existing
+native, extraction and mutation checks. All 660 inventoried inputs remained
+unchanged. Retained archives and hashes are in `build/c-nominals/artifacts/`
+and `artifacts.log`; all C, header and GALEC members match `54618eb`.
+No test suite is added. **Stage decision: open; grammar growth remains blocked.**
+
 ### All failure-helper outcomes: standards impact
 
 This increment follows `7004a3e`; it changes proofs and mandatory artifact

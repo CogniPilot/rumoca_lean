@@ -53,4 +53,22 @@ theorem body_call_behaviors (program : Program E) (fn : Function)
   (body_call_prefix program fn args env heap result returned .done n defined bound closed executed cast
     (return_forced program returned result.heap)).behaviors behavior
 
+/-- Shared entry and partial-body execution, retaining the continuation and
+all suffix observations rather than committing to a particular failure result. -/
+theorem body_prefix_reaches (program : Program E) (fn : Function)
+    (args : List Value) (env afterEnv : CBody.Locals) (heap afterHeap : Heap)
+    (code : List Stmt) (stack : Typed.Continuation) (n : Nat)
+    (defined : program.internal.definitions fn.signature.name = some (.tree fn))
+    (bound : parameters fn.signature.parameters args = some env)
+    (closed : fn.body.all CBodyEmbedding.closedBlocks = true)
+    (executed : CBody.run n (.running fn.body env heap) = some (.running code afterEnv afterHeap)) :
+    ∃ types, Transition.Reaches (fun s t => internalNext program s = some t)
+      (.calling fn.signature.name args heap stack)
+      (.body (.running code afterEnv types afterHeap) fn.signature.result stack) := by
+  obtain ⟨types, boundTypes, _⟩ := Parameters.parameters_typed _ _ _ bound
+  obtain ⟨afterTypes, after, _⟩ := CBodyEmbedding.run_refines n
+    (.running fn.body env heap) (.running code afterEnv afterHeap) types closed executed
+  exact ⟨afterTypes, .next (tree_entry program fn.signature.name args heap stack fn env types defined bound boundTypes)
+    (body_reaches program (CLoops.run_reaches after) fn.signature.result stack)⟩
+
 end Rumoca.CCalls.Events

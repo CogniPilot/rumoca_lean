@@ -413,6 +413,40 @@ and both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
 
+### Complete nominal queries
+
+`Nominals.FunctionContract` is now mandatory in `AdapterContract`, retaining
+all earlier fields. The actual-file checker kernel-checks the nominal signature's
+membership in the collected header candidates. `nominals_source` binds the
+same actual function fragment, definition table, constructed literal pool and
+eventful literal-lowering contract to the compiled Solve model and actual XML.
+
+The complete-call proofs cover allowed queries, null instances, rejected
+lifecycle states, wrong counts and null output buffers. Successful calls write
+exactly binary64 one and frame every other cell. `stored_default` decodes this
+as the positive real value 1. Rejected calls use both actual failure strings and
+the same enabled/disabled logging machine; all represented callback outcomes
+and absent outcomes are retained. `query_cases` exhausts the argument/lifecycle
+cases under the corresponding memory and host premises.
+
+`NominalMetadata.OrderedNominals` independently follows ordered
+ContinuousStateDerivative entries through unique derivative/state references.
+It checks scalar continuous Float64 variables with neither explicit nor
+inherited nominal information. Its actual-XML contract identifies the compiled
+source state and the same decoded value 1. This is a scalar nominal/order
+judgment, not whole-schema compliance; arrays require their own volume and
+serialization interpretation. No source syntax or emitted bytes change.
+
+All 33 new audit roots and affected packages pass in
+`build/c-nominals/package-v2.log`. The required full `lake test` gate passed in
+`build/c-nominals/full-gate.log`, with all 660 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-nominals/artifacts/`; their C,
+header and GALEC members are unchanged from `54618eb`. Writable output
+storage, well-formed instance fields, admissible logger bindings and atomic host
+effects remain explicit premises. Native header/ABI correspondence, allocation,
+host ownership and remaining public APIs still block F02/F03 and grammar growth.
+See [the standards review](../standards-review.md#nominal-queries-standards-impact).
+
 ### All failure-helper outcomes
 
 `Logging.FunctionContract` now also requires `AllPreparedContract` and

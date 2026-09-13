@@ -1,3 +1,5 @@
+import RumocaFMI3.NominalContract
+import RumocaFMI3.NominalMetadata
 import RumocaFMI3.LiteralEvents
 import RumocaFMI3.LoggingContract
 import ProofAudit.Audit
@@ -295,3 +297,35 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Logging.AllExecutionContract.determined
 #audit axioms Rumoca.FMI3.Logging.AllPreparedContract.determined
 #audit axioms Rumoca.FMI3.Logging.silent_prepared_correct
+
+#audit axioms Rumoca.FMI3.Logging.failure_statement_entry
+#audit axioms Rumoca.FMI3.Logging.failure_statement_all_behaviors
+#audit axioms Rumoca.FMI3.Nominals.reject_dispatch
+#audit axioms Rumoca.FMI3.Nominals.reject_all_behaviors
+#audit axioms Rumoca.FMI3.Logging.failure_statement_silent_behaviors
+#audit axioms Rumoca.FMI3.Nominals.reject_silent_behaviors
+#audit axioms Rumoca.FMI3.Nominals.body_run
+#audit axioms Rumoca.FMI3.Nominals.call_behaviors
+#audit axioms Rumoca.FMI3.Nominals.frame
+#audit axioms Rumoca.FMI3.Nominals.stored
+#audit axioms Rumoca.FMI3.Nominals.null_parameters
+#audit axioms Rumoca.FMI3.Nominals.null_body
+#audit axioms Rumoca.FMI3.Nominals.null_behaviors
+#audit axioms Rumoca.FMI3.Nominals.invalid_body
+#audit axioms Rumoca.FMI3.Nominals.invalid_dispatch
+#audit axioms Rumoca.FMI3.Nominals.invalid_all_behaviors
+#audit axioms Rumoca.FMI3.Nominals.invalid_silent_behaviors
+#audit axioms Rumoca.FMI3.NominalMetadata.described_nominals
+#audit axioms Rumoca.FMI3.NominalMetadata.default_positive
+#audit axioms Rumoca.FMI3.NominalMetadata.artifact_nominals
+#audit axioms Rumoca.FMI3.Nominals.failure_message_collected
+#audit axioms Rumoca.FMI3.Nominals.failure_all_behaviors
+#audit axioms Rumoca.FMI3.Nominals.failure_silent_behaviors
+#audit axioms Rumoca.FMI3.Nominals.failure_execution_correct
+#audit axioms Rumoca.FMI3.Nominals.quiet_execution_correct
+#audit axioms Rumoca.FMI3.Nominals.silent_execution_correct
+#audit axioms Rumoca.FMI3.Nominals.prepared_correct
+#audit axioms Rumoca.FMI3.Nominals.rendered_contract
+#audit axioms Rumoca.FMI3.Nominals.query_cases
+#audit axioms Rumoca.FMI3.Nominals.failure_cases_disjoint
+#audit axioms Rumoca.FMI3.Nominals.stored_default

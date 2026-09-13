@@ -544,9 +544,18 @@ The required full artifact gate passed in
 actual archives checked. Their C, header and GALEC members match `7004a3e`.
 See
 [the exact scope](fmi3/contracts.md#all-failure-helper-outcomes).
-Next: compose these guarantees through public-call contracts, then discharge
-allocation, ABI, admissible-host ownership and complete adapter obligations.
-F02/F03 remain open.
+The nominal-query integration now composes these guarantees through its public
+entry. Required contracts cover successful output/frame, null instances, both
+failure reasons, all callback outcomes, and the actual XML's ordered default
+nominal. The fixed checker requires the actual signature and prepared function
+contract. All 33 new roots and affected packages pass in
+`build/c-nominals/package-v2.log`; the required full artifact gate passed in
+`build/c-nominals/full-gate.log` with all 660 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-nominals/artifacts/`, with C,
+header and GALEC members unchanged from `54618eb`. See
+[the nominal contract](fmi3/contracts.md#complete-nominal-queries).
+Next: complete remaining public APIs, allocation, ABI, admissible-host ownership
+and adapter composition. F02/F03 remain open.
 
 The user has prioritized automatic source spans, a small Lean LSP and parallel
 multi-file parsing. Their checked foundation, exact limits and remaining
