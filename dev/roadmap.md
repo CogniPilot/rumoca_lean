@@ -21,14 +21,17 @@ percentage of semantic coverage.
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
 Latest completed main-workspace gate:
-`build/c-factory/static-integration-full-gate-v1.log`, passed with all 801
-integration inputs unchanged. It checks the emitted static runtime, both
+`build/c-factory/termination-full-gate-v1.log`, passed with all 809
+integration inputs unchanged. It checks the strengthened termination contract, static runtime, both
 actual FMU interfaces and the eFMU, including the existing native and rejection
 controls. Retained artifacts and member comparisons are under
-`build/c-factory/static-integration-artifacts-v1/` and adjacent review files.
+`build/c-factory/termination-artifacts-v1/` and adjacent review files.
 Compared with `2628f35`, the FMI adapter replaces `calloc`/`free` with 32
 permanent ME/CS slots; numerical C, FMI metadata, GALEC and eFMI Production C
-are unchanged. No new grammar case is admitted.
+are unchanged. Compared with the preceding static-runtime artifacts, the
+eFMI manifests change only their generation identities and dependent checksums.
+The derived termination/release proofs have separate passing FMI/compiler
+package evidence for 811 unchanged inputs. No new grammar case is admitted.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -138,10 +141,16 @@ package gate passed with 806 unchanged inputs in
 `build/c-factory/static-reset-package-gate-v1.log`; this is another derived-proof
 follow-up with unchanged emission and mandatory artifact contracts.
 
-Next, compose later operation/termination/release calls and actual
+Termination's complete contract is now required by the actual adapter and its
+809-input full gate passed. A further four derived roots compose termination
+and release, deriving the later metadata/flag premises from the original lease.
+The FMI/compiler package audit passed with 811 unchanged inputs; no emitter or
+mandatory contract changed in that follow-up.
+
+Next, compose the remaining operation/release histories and actual
 concurrent ownership histories. Close callback frames, the no-heap/acyclic call graph and native
-profile/layout. The required main gate passed on the 801-input integration
-source set; this closes the integration check, not these remaining proofs.
+profile/layout. The required main gate passed on the 809-input termination
+source set; these remaining proofs are still open.
 The combined exit items below remain open until all their obligations are met;
 no broader item is closed by a sequential initialization prefix.
 **Existing IDs:** C01, C02, F02, F03, S03; new no-heap/RTOS requirement.
@@ -227,10 +236,24 @@ next task. Any reusable storage/frame draft is only a prerequisite.
 **State:** partial; substantial body and helper proofs can be reused.
 **Existing IDs:** F01, F02, N01, N02.
 
+Termination now has a mandatory actual-adapter function
+contract, including all represented success/null/rejection/logging cases in
+the static interface. Its source consequence composes initialization through
+termination and preserves the model/clock and neighboring records. Its 15 new
+roots and the full artifact gate passed in
+`build/c-factory/termination-full-gate-v1.log`. Four later roots compose
+termination/release with exact heaps, lease discharge and a combined frame;
+their owning-package audit passed with 811 unchanged inputs. The emitter is
+unchanged. These finite call sequences do not cover arbitrary intervening
+simulation or concurrent host histories.
+
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.
-- [ ] Finish ME time, event/completion, termination and their rejected
+- [x] Require complete termination calls and their represented errors/logging
+  in the actual adapter contract; compose initialization→termination and
+  termination→release with the same definitions, heaps and ownership.
+- [ ] Finish ME time, event/completion and their rejected
   paths as complete calls. Compose them through actual intermediate heaps.
   Reset's successful/null calls and reset→initialization composition now use
   the static object interface; arbitrary surrounding histories remain open.

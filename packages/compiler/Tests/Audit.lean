@@ -1,3 +1,5 @@
+import Rumoca.FMI3TerminationRelease
+import Rumoca.FMI3TerminationProofs
 import Rumoca.FMI3StaticReset
 import Rumoca.FMI3StaticInitializationErrors
 import Rumoca.FMI3InitializationSemantics
@@ -160,3 +162,9 @@ import Rumoca.InitializationDiagnosticProofs
 
 #audit axioms Rumoca.FMI3.adapter_static_reset
 #audit axioms Rumoca.FMI3.adapter_static_reset_initialize
+
+#audit axioms Rumoca.FMI3.adapter_termination
+#audit axioms Rumoca.FMI3.Termination.source_frame
+#audit axioms Rumoca.FMI3.adapter_initialize_terminate
+
+#audit axioms Rumoca.FMI3.adapter_termination_release

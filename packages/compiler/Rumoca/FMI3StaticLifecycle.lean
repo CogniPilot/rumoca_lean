@@ -84,7 +84,7 @@ theorem adapter_static_create_release (contract : AdapterContract a adapter) :
           (∀ behavior, (CCalls.Events.machine program).Behaves
             (.calling StaticRelease.function.signature.name [.pointer (some (storage.instances.index slot.val))] live .done) behavior ↔
             behavior = .terminates [tag (.write (AtomicSlots.address storage.flagsBlock slot) false)] ⟨.void, freed⟩) := by
-  obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady, _, _, _, _, _, _, _, _, _, _, factories, runtime⟩ := contract
+  obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady, _, _, _, _, _, _, _, _, _, _, factories, runtime, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E instances flags separate before firstBlock signed

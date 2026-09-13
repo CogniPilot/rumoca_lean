@@ -37,6 +37,40 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Mandatory termination and release: 2026-09-13
+
+This increment follows `e0658fa`. It retains every previous adapter-contract
+conjunct and requires the actual termination signature, printed tokenization
+and complete represented call cases in the static object interface. No grammar,
+emitter, numerical semantics, native check or axiom policy changes. The 15
+new roots and strengthened artifact contract passed the full required gate in
+`build/c-factory/termination-full-gate-v1.log`, with 809 unchanged inputs.
+The actual archives are retained in `build/c-factory/termination-artifacts-v1/`.
+C/header/GALEC and FMI XML bytes are unchanged; exact eFMI manifest comparisons
+allow only fresh generation UUIDs/timestamps and their dependent references
+and checksums. These generation differences do not indicate a new model or
+production-code policy.
+
+| Applicable obligation | Added proof and remaining boundary |
+| --- | --- |
+| [FMI 3.0.2 §2.3.4](https://fmi-standard.org/docs/3.0.2/), termination from Initialized | `Termination.call_behaviors` uses the independent `Reference.Allowed` predicate: ME Event/Continuous or the admitted CS Step mode. `adapter_initialize_terminate` derives acceptance after initialization and retains exact heaps, model and clock. No source termination equations are admitted. |
+| FMI §§2.2.4/2.3.8, error and final state | Null returns and invalid lifecycle calls are covered. Suppressed logging includes a missing logger; supplied logging retains every modeled returning outcome, trace, diagnostic bytes and the stuck case. Native callback behavior/private-storage frames and broader public histories remain open. |
+| Actual C source and FMI signature | `AdapterContract` and its fixed Lean certificate generator now require `Termination.FunctionContract`; `adapter_termination` locates the exact fragment and obtains the same prepared pool/table. Header/layout/ABI and complete translation-unit correspondence remain open. |
+| FMI §2.3.1, freeing a terminated instance; K02 ownership | `adapter_termination_release` obtains both public definitions from the same actual table. Termination preserves metadata and flags, then release discharges the original host lease. The combined frame excludes only the selected mode and atomic reservation flag. Native atomic-store refinement, host ownership and concurrent histories remain separate. |
+| MLS 3.7 and eFMI Beta 1 | Source initialization policy and DAE→GALEC→Solve are retained. The new source theorem preserves the IVP selected by existing finite storage; it introduces no initialization/termination syntax. No MLS/eFMI open finding is closed. |
+
+The four derived release roots passed the FMI/compiler package audit in
+`build/c-factory/termination-release-package-gate-v1.log` with 811 unchanged
+inputs. This follow-up retains every preceding emitter, mandatory contract and
+audit root; its unchanged artifacts use the earlier 809-input full-gate evidence.
+Released handles are not admitted for subsequent FMI operations. No new test
+suite was introduced.
+
+This increment does not close K02–K05 or authorize grammar growth. In
+particular, successful termination's frame is not asserted for arbitrary
+external logger effects, and its three-call composition is not a theorem
+about arbitrary intervening simulation histories.
+
 ### Reset in the static runtime: 2026-09-13
 
 On top of `5fc250c`, fifteen derived proof roots connect the actual adapter's

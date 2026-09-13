@@ -97,7 +97,7 @@ theorem adapter_static_create_initialize (contract : AdapterContract a adapter) 
             (.calling InitializationExit.signature.name
               (InitializationExit.arguments (some (storage.instances.index slot.val))) initialized .done) behavior ↔
             behavior = .terminates [] ⟨.integer 0, exited⟩) := by
-  obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady, _, _, _, _, _, _, _, _, initialization, _, factories, runtime⟩ := contract
+  obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady, _, _, _, _, _, _, _, _, initialization, _, factories, runtime, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E instances flags separate before firstBlock signed

@@ -69,6 +69,31 @@ emitters, mandatory artifact contracts and audit roots are retained. The
 previous full artifact gate still supplies the unchanged C/archive evidence;
 it was not rerun for these derived consequences. No new test suite was added.
 
+Termination's complete call contract is now mandatory in
+`AdapterContract`. It retains every previous conjunct and adds the exact public
+signature, independent tokenization, successful/null behavior, suppressed and
+logged errors, and prepared diagnostic storage in the static object interface.
+Fifteen new roots also compose initialization through termination with exact
+heaps, unchanged finite state/clock, the source IVP and outside-record frames.
+The strengthened actual-artifact contract passed the full required gate in
+`build/c-factory/termination-full-gate-v1.log`, with all 809 inputs unchanged.
+Both checked archives are retained in `build/c-factory/termination-artifacts-v1/`.
+C, headers, GALEC and FMI XML are byte-identical to the preceding static-runtime
+artifacts. The three eFMI manifests differ only in fresh generation identities
+and their dependent references/checksums; exact comparisons and hashes are
+recorded beside the archives.
+
+Four further derived roots compose termination with the actual public release
+call. Termination preserves slot metadata and ownership flags, supplying the
+later release premises from the original host lease. The result discharges
+that lease and changes only the selected mode and reservation flag. Both calls
+use the same actual definition table and object interface; atomic-store
+semantics and valid host ownership remain explicit. The FMI/compiler package
+audit passed in `build/c-factory/termination-release-package-gate-v1.log` with
+all 811 inputs unchanged. This follow-up changes no emitter or mandatory
+contract and retains the preceding full artifact evidence. Released handles
+are not declared valid for subsequent FMI calls. No new test suite was added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

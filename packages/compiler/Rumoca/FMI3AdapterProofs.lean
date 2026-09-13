@@ -7,6 +7,7 @@ import RumocaFMI3.InitializationContract
 import RumocaFMI3.IdentityContract
 import RumocaFMI3.FactoryAdmissionContract
 import RumocaFMI3.StaticRuntimeContract
+import RumocaFMI3.TerminationContract
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
@@ -84,7 +85,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     FactoryAdmission.FunctionContract a.solve.prepareFMI3 sigs
       (fun kind => (Runtime.function a.solve.prepareFMI3 (FactoryArguments.signature kind)).render) ∧
     StaticRuntime.FunctionContract a.solve.prepareFMI3 sigs
-      (StaticStorage.render StaticStorage.deploymentCapacity)
+      (StaticStorage.render StaticStorage.deploymentCapacity) ∧
+    Termination.FunctionContract a.solve.prepareFMI3 sigs
+      (Runtime.function a.solve.prepareFMI3 Termination.signature).render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -107,6 +110,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (factories : ∀ kind, FactoryArguments.signature kind ∈ sigs)
     (release : StaticRelease.function.signature ∈ sigs)
     (externals : StaticRuntime.ExternalNamesFresh sigs)
+    (termination : Termination.signature ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -126,7 +130,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     Identity.rendered_contract _ sigs library,
     FactoryAdmission.rendered_contract _ sigs unique factories
       (fun kind => grammar _ (factories kind)),
-    StaticRuntime.rendered_contract _ sigs unique factories release externals⟩
+    StaticRuntime.rendered_contract _ sigs unique factories release externals,
+    Termination.rendered_contract _ sigs unique termination⟩
 
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table
@@ -164,7 +169,7 @@ theorem adapter_static_runtime (contract : AdapterContract a adapter) :
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
       adapter = before ++ text ++ after ∧
       StaticRuntime.FunctionContract a.solve.prepareFMI3 sigs text := by
-  obtain ⟨sigs, _, _, printed, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, storage⟩ := contract
+  obtain ⟨sigs, _, _, printed, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, storage, _⟩ := contract
   obtain ⟨before, after, located⟩ := storage.located
   exact ⟨sigs, StaticStorage.render StaticStorage.deploymentCapacity, before, after,
     printed, printed ▸ located, storage⟩
@@ -180,7 +185,7 @@ theorem adapter_static_definitions (contract : AdapterContract a adapter) :
           some (.tree (StaticFactory.function a.solve.prepareFMI3 kind))) ∧
       (LiteralPreparation.program a.solve.prepareFMI3 signatures).definitions
         StaticRelease.function.signature.name = some (.tree StaticRelease.function) := by
-  obtain ⟨signatures, unique, _, printed, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, factories, storage⟩ := contract
+  obtain ⟨signatures, unique, _, printed, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, factories, storage, _⟩ := contract
   exact ⟨signatures, printed,
     fun kind => StaticRuntime.factory_bound _ signatures unique kind (factories.member kind),
     storage.release_defined⟩

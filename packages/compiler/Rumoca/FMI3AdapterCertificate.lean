@@ -315,6 +315,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         simp [FMI3.StaticRelease.function]
       · change ∀ sig ∈ [$sigTerms,*], sig.name ∉ FMI3.StaticRuntime.routineNames
         decide +kernel
+      · change FMI3.Termination.signature ∈ [$sigTerms,*]
+        simp [FMI3.Termination.signature]
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩

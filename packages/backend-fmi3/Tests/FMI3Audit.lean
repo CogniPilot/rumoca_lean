@@ -1,3 +1,5 @@
+import RumocaFMI3.TerminationRelease
+import RumocaFMI3.TerminationContract
 import RumocaFMI3.StaticReset
 import RumocaFMI3.StaticErrorCalls
 import RumocaFMI3.StaticInitializationErrors
@@ -849,3 +851,20 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StaticReset.restarted_other_instance
 #audit axioms Rumoca.FMI3.StaticReset.restarted_owners
 #audit axioms Rumoca.FMI3.StaticReset.execution_correct
+
+#audit axioms Rumoca.FMI3.Termination.body
+#audit axioms Rumoca.FMI3.Termination.closed
+#audit axioms Rumoca.FMI3.Termination.body_agrees
+#audit axioms Rumoca.FMI3.Termination.call_behaviors
+#audit axioms Rumoca.FMI3.Termination.null_behaviors
+#audit axioms Rumoca.FMI3.Termination.failure_prefix
+#audit axioms Rumoca.FMI3.Termination.quiet_correct
+#audit axioms Rumoca.FMI3.Termination.suppressed_correct
+#audit axioms Rumoca.FMI3.Termination.logged_correct
+#audit axioms Rumoca.FMI3.Termination.message_collected
+#audit axioms Rumoca.FMI3.Termination.prepared_correct
+#audit axioms Rumoca.FMI3.Termination.rendered_contract
+
+#audit axioms Rumoca.FMI3.Termination.lease_metadata
+#audit axioms Rumoca.FMI3.Termination.lease_owners
+#audit axioms Rumoca.FMI3.Termination.terminate_release
