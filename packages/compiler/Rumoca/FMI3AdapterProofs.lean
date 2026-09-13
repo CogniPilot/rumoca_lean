@@ -1,4 +1,5 @@
 import RumocaFMI3.NominalContract
+import RumocaFMI3.StateContract
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
@@ -60,7 +61,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     Logging.FunctionContract a.solve.prepareFMI3 sigs Runtime.helpers[0].render ∧
     LiteralPreparation.EventContract a.solve.prepareFMI3 sigs ∧
     Nominals.FunctionContract a.solve.prepareFMI3 sigs
-      (Runtime.function a.solve.prepareFMI3 ErrorCalls.nominalSignature).render
+      (Runtime.function a.solve.prepareFMI3 ErrorCalls.nominalSignature).render ∧
+    StateCalls.FunctionsContract a.solve.prepareFMI3 sigs
+      (fun write => (Runtime.function a.solve.prepareFMI3 (StateCalls.signature write)).render)
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -72,6 +75,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (counts : ∀ events, CountQueries.signature events ∈ sigs)
     (version : Version.signature ∈ sigs)
     (nominals : ErrorCalls.nominalSignature ∈ sigs)
+    (states : ∀ write, StateCalls.signature write ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -82,7 +86,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (fun _ => Reset.rendered_contract _),
     (fun _ events => CountQueries.rendered_contract _ sigs events unique (counts events)), pool,
     Version.rendered_contract _ sigs unique version, Logging.rendered_contract _ sigs,
-    LiteralPreparation.event_contract _ sigs, Nominals.rendered_contract _ sigs unique nominals⟩
+    LiteralPreparation.event_contract _ sigs, Nominals.rendered_contract _ sigs unique nominals,
+    StateCalls.rendered_contract _ sigs unique states⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
 Macro expansion and included-header interpretation remain separate. -/

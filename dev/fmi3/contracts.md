@@ -413,6 +413,49 @@ and both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
 
+### Continuous-state getter and setter
+
+The next increment requires `StateCalls.FunctionsContract` in `AdapterContract`
+for both actual state accessor fragments. All earlier fields are retained.
+The fixed checker must prove both signatures occur among the actual header
+candidates. `state_access_source` connects their bytes, independent function
+tokenization, definition table, literal pool and XML state order to the same
+compiled source and prepared Solve model.
+
+The contract covers successful getter/setter calls and defensive null handles,
+every rejected declared lifecycle state, incorrect counts, null buffers and
+non-finite setter inputs. Enabled errors retain all represented returning
+callback effects and absent outcomes; disabled logging is silent. Reusable
+guard and scalar-access proofs derive these paths from independent argument
+conditions. No caller supplies a selected successful body execution as a premise.
+Enabled logging requires a bound callable logger; disabled logging permits a
+null logger. FMI §2.3.1 permits null callbacks but leaves use of the unavailable
+functionality undefined. Native callback realization remains outside this proof.
+
+Successful reads preserve the finite state's exact bits, including signed zero,
+and its represented Model Exchange state. Successful writes implement
+`ModelExchange.setContinuousState`; both have frames for every other cell.
+Valid storage and the existing finite state invariant remain explicit premises.
+These functions expose/update state; they do not choose a solver or prove that
+arbitrary importer-selected values form a solution trajectory.
+
+`StateMetadata` independently follows ordered derivative references to unique
+scalar continuous Float64 state declarations. Both reference resolution and
+the resulting ordered list are functional. State identity is independent of
+nominal values and initialization attributes. Array serialization is outside
+this scalar judgment and will need its own verified mapping.
+
+All 39 new roots and affected package checks pass in
+`build/c-state-calls/package-v1.log`, including the composed source theorem.
+The required full artifact gate passed in `build/c-state-calls/full-gate.log`,
+with all 667 inventoried inputs unchanged and both actual archives checked.
+Retained archives and hashes are in `build/c-state-calls/artifacts/` and
+`artifacts.log`; every C, header and GALEC member matches `ca178d0`.
+Native header/ABI correspondence, allocation,
+complete initialization, callback realization and the remaining public APIs
+still block the whole-adapter claim and grammar growth. See the
+[standards review](../standards-review.md#continuous-state-access-standards-impact).
+
 ### Complete nominal queries
 
 `Nominals.FunctionContract` is now mandatory in `AdapterContract`, retaining

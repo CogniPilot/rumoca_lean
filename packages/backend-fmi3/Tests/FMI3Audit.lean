@@ -1,3 +1,5 @@
+import RumocaFMI3.StateContract
+import RumocaFMI3.StateMetadata
 import RumocaFMI3.NominalContract
 import RumocaFMI3.NominalMetadata
 import RumocaFMI3.LiteralEvents
@@ -329,3 +331,40 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Nominals.query_cases
 #audit axioms Rumoca.FMI3.Nominals.failure_cases_disjoint
 #audit axioms Rumoca.FMI3.Nominals.stored_default
+
+#audit axioms Rumoca.FMI3.GuardedCalls.rejected_prefix
+#audit axioms Rumoca.FMI3.GuardedCalls.rejected_all_behaviors
+#audit axioms Rumoca.FMI3.GuardedCalls.rejected_silent_behaviors
+#audit axioms Rumoca.FMI3.GuardedCalls.null_body
+#audit axioms Rumoca.FMI3.GuardedCalls.null_behaviors
+#audit axioms Rumoca.FMI3.ScalarAccess.invalid_run
+#audit axioms Rumoca.FMI3.ScalarAccess.valid_run
+#audit axioms Rumoca.FMI3.StateCalls.Events.get_behaviors
+#audit axioms Rumoca.FMI3.StateCalls.Events.set_behaviors
+#audit axioms Rumoca.FMI3.StateCalls.Entry.parameters_bound
+#audit axioms Rumoca.FMI3.StateCalls.Entry.parameters_valid
+#audit axioms Rumoca.FMI3.StateCalls.Entry.body_eq
+#audit axioms Rumoca.FMI3.StateCalls.Entry.null_behaviors
+#audit axioms Rumoca.FMI3.StateCalls.Entry.rejected_all_behaviors
+#audit axioms Rumoca.FMI3.StateCalls.Entry.rejected_silent_behaviors
+#audit axioms Rumoca.FMI3.GuardedCalls.FailurePrefix.all_behaviors
+#audit axioms Rumoca.FMI3.GuardedCalls.FailurePrefix.silent_behaviors
+#audit axioms Rumoca.FMI3.StateCalls.Entry.invalid_run
+#audit axioms Rumoca.FMI3.StateCalls.Entry.invalid_prefix
+#audit axioms Rumoca.FMI3.StateCalls.Entry.nonfinite_run
+#audit axioms Rumoca.FMI3.StateCalls.Entry.nonfinite_prefix
+#audit axioms Rumoca.FMI3.StateCalls.Entry.query_cases
+#audit axioms Rumoca.FMI3.StateCalls.Entry.failure_unique
+#audit axioms Rumoca.FMI3.StateCalls.Entry.failure_prefix
+#audit axioms Rumoca.FMI3.StateCalls.failure_execution_correct
+#audit axioms Rumoca.FMI3.StateCalls.silent_execution_correct
+#audit axioms Rumoca.FMI3.StateCalls.quiet_execution_correct
+#audit axioms Rumoca.FMI3.StateCalls.failure_message_collected
+#audit axioms Rumoca.FMI3.StateCalls.prepared_correct
+#audit axioms Rumoca.FMI3.StateCalls.rendered_contract
+#audit axioms Rumoca.FMI3.StateMetadata.StateReference.unique
+#audit axioms Rumoca.FMI3.StateMetadata.OrderedStates.unique
+#audit axioms Rumoca.FMI3.StateMetadata.described_states
+#audit axioms Rumoca.FMI3.StateMetadata.artifact_states
+#audit axioms Rumoca.FMI3.StateCalls.QuietExecutionContract.get_refines
+#audit axioms Rumoca.FMI3.StateCalls.QuietExecutionContract.set_refines

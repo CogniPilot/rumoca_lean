@@ -554,6 +554,19 @@ contract. All 33 new roots and affected packages pass in
 Both actual archives are retained in `build/c-nominals/artifacts/`, with C,
 header and GALEC members unchanged from `54618eb`. See
 [the nominal contract](fmi3/contracts.md#complete-nominal-queries).
+
+The following state-access increment adds mandatory contracts for both getter
+and setter, exact Model Exchange state/memory refinement, all admitted error
+paths and independent unique XML state ordering. Reusable call-prefix proofs
+and binary64-domain classification support later public APIs. All prior
+contracts remain required. All 39 new roots and affected package checks pass
+in `build/c-state-calls/package-v1.log`; the required full artifact gate passed
+in `build/c-state-calls/full-gate.log`, with all 667 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-state-calls/artifacts/`; their C,
+header and GALEC members match `ca178d0`.
+Allocation, complete initialization, native ABI/host correspondence and remaining
+public calls still block the stage. See
+[the state contract](fmi3/contracts.md#continuous-state-getter-and-setter).
 Next: complete remaining public APIs, allocation, ABI, admissible-host ownership
 and adapter composition. F02/F03 remain open.
 

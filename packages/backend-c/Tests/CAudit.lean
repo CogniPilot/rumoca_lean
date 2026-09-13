@@ -1,3 +1,4 @@
+import RumocaC.FiniteValue
 import RumocaC.CallEventChoices
 import RumocaC.BodyEvents
 import RumocaC.LiteralEventPool
@@ -540,3 +541,6 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CCalls.Events.body_call_behaviors
 
 #audit axioms Rumoca.CCalls.Events.body_prefix_reaches
+
+#audit axioms Rumoca.CMemory.Value.isFinite_true_iff
+#audit axioms Rumoca.CMemory.Value.float64_cases

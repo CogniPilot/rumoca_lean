@@ -63,6 +63,31 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### Continuous-state access: standards impact
+
+This proof increment follows `ca178d0`. Production grammar, source semantics,
+IR lowering, C/GALEC emitters, metadata and archive layout are unchanged.
+
+| Baseline | Correspondence and remaining obligations |
+| --- | --- |
+| [MLS 3.7 §4.9.1](https://specification.modelica.org/maint/3.7/class-predefined-types-and-declarations.html#real-type) | Stored Real values must be finite. The setter accepts every finite binary64 value, preserving signed zeros, and rejects non-finite encodings. Ideal continuous trajectories remain a separate reference; source initialization findings S01/SR08 remain open. |
+| FMI 3.0.2 [§3.2.1](https://fmi-standard.org/docs/3.0.2/#fmi3SetContinuousStates) and §2.4.7 | State calls obey the independent ME lifecycle relation and the XML derivative/state reference order. Count/pointer and non-finite checks precede state writes. `StateMetadata` resolves that order uniquely for scalar continuous Float64 declarations; array serialization is excluded. |
+| FMI §§2.2.4, 2.2.7.3 and 2.4.4 | Illegal calls use Error. Domain failures may use Error or Discard; the bracketed setter guidance recommends Discard for rejected values. Our reviewed policy is fail-stop Error for non-finite Modelica state values, not a claim that FMI mandates that choice. The helper changes mode and respects logging; it does not implement Discard. |
+| Actual adapter boundary | Both printed function contracts, same-table literal preparation and all represented error callback outcomes become mandatory. Caller storage, finite internal state, atomic host effects, header meaning and native ABI remain explicit assumptions or open obligations. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code or artifact contract changes. Existing clause maps and SR07/SR08 findings carry forward, with the full downstream gate still required. |
+
+Architecture review against `~/git/rumoca` at `bc71577f`: its SolveProblem owns
+prepared continuous and initialization data, with no DAE evaluation in Solve
+consumers. This increment keeps the Lean backend on prepared Solve and uses
+shared public-call proofs; it introduces no solver selection, source resolution,
+shape inference or per-element lowering in the backend.
+
+All 39 additional roots and affected package checks pass in
+`build/c-state-calls/package-v1.log`; the required full artifact gate passed
+in `build/c-state-calls/full-gate.log`, with all 667 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-state-calls/artifacts/`; their C,
+header and GALEC members match `ca178d0`. No new test suite is added. **Stage decision: open; grammar growth remains blocked.**
+
 ### Nominal queries: standards impact
 
 This proof integration follows `54618eb`. Both EBNFs, LALR admission, source

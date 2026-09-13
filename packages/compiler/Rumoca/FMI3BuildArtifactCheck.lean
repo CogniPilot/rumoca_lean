@@ -1,3 +1,4 @@
+import Rumoca.FMI3StateProofs
 import Rumoca.FMI3NominalProofs
 import Rumoca.FMI3LoggingProofs
 import Rumoca.FMI3LiteralProofs

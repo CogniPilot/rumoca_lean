@@ -334,6 +334,19 @@ header and GALEC members match `54618eb`. Valid memory, host
 bindings, native ABI, allocation and remaining public-call obligations remain
 explicit. See [the exact scope](../dev/fmi3/contracts.md#complete-nominal-queries).
 
+The next state-access increment requires both actual getter/setter fragments,
+their complete call behaviors and independent XML state ordering for the same
+compiled Solve model and literal pool. It proves exact finite read/write values,
+Model Exchange state refinement and memory frames, including all represented
+error callback outcomes. Shared prefix and finite-domain lemmas support later
+API proofs. All 39 additional roots and affected packages pass in
+`build/c-state-calls/package-v1.log`; the required full artifact gate passed in
+`build/c-state-calls/full-gate.log`, with all 667 inventoried inputs unchanged.
+Both actual archives are retained in `build/c-state-calls/artifacts/`; their
+C, header and GALEC members match `ca178d0`. Native storage/ABI, initialization
+and remaining adapter obligations are still open. See
+[the state contract](../dev/fmi3/contracts.md#continuous-state-getter-and-setter).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target
