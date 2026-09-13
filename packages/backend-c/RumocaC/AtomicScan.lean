@@ -1,6 +1,7 @@
 import RumocaC.AtomicScanCode
 import RumocaC.AtomicCalls
 import RumocaC.LoopEvents
+import RumocaC.CallCasts
 
 /-! Execution of the fixed-storage reservation C helper. This uses the shared
 typed call scheduler and the specified C11 sequentially consistent exchange.
@@ -118,20 +119,9 @@ theorem advance_step (flags : Address) (count k : Nat) (busy : Bool) (heap : Hea
     (CLoops.convert_size_nat (k + 1) bound)
   simpa only [advance, shadow] using step
 
-private theorem named_cast (spelling : String) (type : CType) (value result : Value)
-    (typed : interface.types spelling = some type) (converted : convert type value = some result) :
-    CBody.cast spelling value = some result := by
-  simp only [CBody.cast, typed, bind, Option.bind_some, converted]
-
-private theorem value_return_cast (spelling : String) (value result : Value)
-    (nonvoid : spelling ≠ "void") (converted : CBody.cast spelling value = some result) :
-    CCalls.returnCast spelling value = some result := by
-  simp only [CCalls.returnCast, if_neg nonvoid, converted]
-
 theorem size_cast (n : Nat) (size : interface.types "size_t" = some .size) (bound : n < 2 ^ 64) :
     CCalls.returnCast "size_t" (.integer n) = some (.integer n) :=
-  value_return_cast "size_t" (.integer n) (.integer n) (by decide +kernel)
-    (named_cast "size_t" .size (.integer n) (.integer n) size (CLoops.convert_size_nat n bound))
+  CCalls.Casts.sizeReturn size n bound
 
 theorem size_returned (program : CCalls.Events.Program E) (heap : Heap) (n : Nat)
     (stack : CCalls.Typed.Continuation)

@@ -4,6 +4,7 @@ import RumocaFMI3.DerivativeContract
 import RumocaFMI3.Float64Contract
 import RumocaFMI3.Float64SetContract
 import RumocaFMI3.InitializationContract
+import RumocaFMI3.IdentityContract
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
@@ -76,7 +77,8 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
       (Runtime.function a.solve.prepareFMI3 (Float64Calls.signature true)).render ∧
     InitializationCalls.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 InitializationCalls.signature).render
-      (Runtime.function a.solve.prepareFMI3 InitializationExit.signature).render
+      (Runtime.function a.solve.prepareFMI3 InitializationExit.signature).render ∧
+    Identity.FunctionContract a.solve.prepareFMI3 sigs Identity.function.render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -95,6 +97,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (initializationEntry : InitializationCalls.signature ∈ sigs)
     (initializationExit : InitializationExit.signature ∈ sigs)
     (numerical : LiteralPreparation.KernelNamesFresh sigs)
+    (library : Identity.LibraryNamesFresh sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -110,7 +113,21 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     DerivativeCalls.rendered_contract _ sigs unique derivative numerical,
     Float64Calls.rendered_contract _ sigs unique float64 numerical,
     Float64Set.rendered_contract _ sigs unique setter,
-    InitializationCalls.rendered_contract _ sigs unique initializationEntry initializationExit⟩
+    InitializationCalls.rendered_contract _ sigs unique initializationEntry initializationExit,
+    Identity.rendered_contract _ sigs library⟩
+
+/-- Extract the exact identity-helper fragment and its complete call contract
+from the certificate for the independently read adapter. The definition table
+is the one rendered into those same bytes. This does not prove creation or
+the implementation of native library routines. -/
+theorem adapter_identity (contract : AdapterContract a adapter) :
+    ∃ sigs text before after,
+      Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
+      adapter = before ++ text ++ after ∧
+      Identity.FunctionContract a.solve.prepareFMI3 sigs text := by
+  obtain ⟨sigs, _, _, printed, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, identity⟩ := contract
+  obtain ⟨before, after, located⟩ := identity.located
+  exact ⟨sigs, Identity.function.render, before, after, printed, printed ▸ located, identity⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
 Macro expansion and included-header interpretation remain separate. -/

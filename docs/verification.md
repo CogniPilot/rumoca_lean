@@ -491,6 +491,34 @@ initialization and complete factory/artifact composition remain open. These
 proofs do not claim a globally full snapshot after a concurrent failed scan
 or bounded native atomic latency. No source grammar or numerical IR changes.
 
+The following identity increment replaces the factory's nested string-call
+condition with an explicitly sequenced private helper. Null pointers reject
+before any string access. With valid null-terminated buffers and the selected
+library bindings, every helper call preserves memory and returns the independent
+nonblank-name/token-equality predicate. The proof preserves arbitrary caller
+observations and every sign-correct `strcmp` result. Its mandatory
+`Identity.FunctionContract` binds the exact printed fragment, independent
+tokenization and execution to the adapter's actual definition table. The fixed
+checker also proves library-name freshness, and a consistent library environment
+is constructed rather than assumed to exist. All earlier adapter fields remain
+required. All affected package checks pass in
+`build/c-factory/identity-packages-v1.log`, with 60 added audit roots and the
+unchanged axiom policy. The required full artifact gate passed in
+`build/c-factory/identity-full-gate.log`, including both actual archives and
+the existing mutation/native boundary checks, with all 743 inputs unchanged.
+The retained code-member comparison under `build/c-factory/identity-artifacts/`
+shows only the new helper and its two factory call sites in FMI `sources/fmi3.c`;
+numerical C and eFMI C/GALEC are unchanged from `00de05b`.
+
+This increment also includes checked storage-frame and interleaving foundations
+for the planned static instance slots. These describe the authored C scheduler
+and an explicit ownership protocol; they do not establish a native scheduler,
+weak-memory model or complete factory/history refinement. Production still
+uses `calloc`/`free`. Native headers, libc implementation and hidden allocation,
+caller-buffer validity, storage declarations, reuse initialization and the
+complete creation/release calls remain open. No source grammar or numerical
+IR case is added, and no whole MISRA/FMI/eFMI compliance claim is made.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

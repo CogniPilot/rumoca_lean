@@ -1,6 +1,7 @@
 import RumocaCore.FMI3.Lifecycle
 import RumocaFMI3.Metadata
 import RumocaC.InitializationCode
+import RumocaFMI3.IdentityCode
 
 /-! FMI ABI construction. Numerical evaluation is delegated to the existing
 verified Solve/C kernel. The lifecycle table supplies guards. C memory,
@@ -63,11 +64,9 @@ def pointerCheck (names : List String) : Stmt :=
   reject (any (names.map fun p => negate (v p))) "Missing output pointer"
 
 def makeInstance (m : Solve.FMI3Model source) (kind : Kind) : List Stmt := [
-  branch (any [negate (v "instanceName"),
-    both (v "instanceName") (eqv (call "strspn" [v "instanceName", .str " \t\n\r\u000c\u000b"])
-      (call "strlen" [v "instanceName"])),
-    negate (v "instantiationToken"),
-    both (v "instantiationToken") (nev (call "strcmp" [v "instantiationToken", .str (token m)]) (n 0))])
+  .declare "fmi3Boolean" "validIdentity" (call "rumoca_valid_identity"
+    [v "instanceName", v "instantiationToken", .str (token m), .str " \t\n\r\u000c\u000b"]),
+  branch (negate (v "validIdentity"))
     [branch (both (v "logMessage") (v "loggingOn")) [.eval (.call (v "logMessage")
       [v "instanceEnvironment", v "fmi3Error", .str "logStatus", .str "Invalid name or instantiation token"])],
       ret (v "NULL")],
@@ -230,7 +229,8 @@ def helpers : List CTree.Function := [
     [setMode .terminated, log "fmi3Error" (v "message"), ret (v "fmi3Error")], true⟩,
   ⟨⟨"double", "model_rhs", [⟨"const Model *", "model", false⟩]⟩, [ret (call "rumoca_rhs")], true⟩,
   ⟨⟨"void", "model_advance", [⟨"Model *", "model", false⟩, ⟨"uint64_t", "count", false⟩]⟩,
-    [.assign (.field (v "model") "x" true) (call "rumoca_sample" [.field (v "model") "x" true, v "count"])], true⟩]
+    [.assign (.field (v "model") "x" true) (call "rumoca_sample" [.field (v "model") "x" true, v "count"])], true⟩,
+  Identity.function]
 
 def declarations : String :=
   "/* FMI 3 ABI adapter generated in Lean. See documentation/index.html for the proof boundary. */\n" ++

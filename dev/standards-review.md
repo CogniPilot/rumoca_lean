@@ -222,6 +222,45 @@ prove operation latency, implementation correctness or whole-program no-heap
 behavior. The modeled `size_t` remains 64-bit; native width/ABI interpretation
 requires its existing K04 evidence. No MLS/FMI/eFMI expansion is authorized.
 
+### Identity validator and storage foundations: standards impact
+
+This increment follows `00de05b`. It retains the existing name/token acceptance
+condition and moves its string calls into an explicitly sequenced private
+helper. C11 7.24.6.3 specifies length before the terminating null character;
+7.24.5.6 specifies the maximal accepted prefix; 7.24.4 and 7.24.4.2 specify
+unsigned-character ordering and the sign of a comparison result. The modeled
+`strcmp` permits every representable result with that sign, not only -1/0/1.
+The selected target remains eight-bit characters, 32-bit `int` and 64-bit
+`size_t`; native-library/header correspondence is an explicit boundary.
+See the [WG14 C11 draft](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+
+The complete helper proof covers parameter/local initialization, explicit
+null rejection, all three library calls, unchanged memory and arbitrary caller
+observations. The independently defined acceptance predicate requires a byte
+outside the supplied whitespace set and equality to the supplied expected
+token. The actual factory supplies its prepared token and existing six-byte
+whitespace literal. The mandatory adapter certificate binds the helper's
+printed fragment, definition table and complete execution contract. Its
+library-name check and environment-construction theorem rule out a vacuous
+linkage premise. Native buffer validity and the enclosing factory still need
+their separate contracts. The helper's explicit null comparisons advance MC09;
+remaining logger/instance pointer guards and whole-product essential types are
+open. No no-heap guarantee follows from modeled library purity.
+
+The accompanying shared-memory/interleaving proofs preserve private atomic
+flags through ordinary C steps and relate an explicit slot-ownership protocol
+to those steps. They do not prove that all production histories satisfy that
+protocol, or that native C11/RTOS execution refines this scheduler. MC02,
+MC05/MC06 and K02 remain open, including actual `calloc`/`free` removal.
+All affected package checks pass in `build/c-factory/identity-packages-v1.log`,
+with 60 added roots, no removed roots and unchanged axiom auditing. The required
+full artifact gate passed in `build/c-factory/identity-full-gate.log`, including
+both actual archives, with all 743 source inputs unchanged. The retained
+code-member comparison under `build/c-factory/identity-artifacts/` shows only
+the identity helper and its two factory call sites changed in FMI C; numerical
+C and eFMI C/GALEC are unchanged from `00de05b`. No source grammar, numerical behavior or
+FMI/eFMI capability is expanded; the recurring standards gate remains closed.
+
 ### Hierarchical subobject correction: standards impact
 
 This increment follows `b478606`. Each `Address.member` preserves its containing

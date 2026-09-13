@@ -1,5 +1,7 @@
 import RumocaFMI3.StaticSlots
 import RumocaFMI3.AtomicSlots
+import RumocaFMI3.SlotExecution
+import RumocaFMI3.IdentityContract
 import RumocaFMI3.InitializationArguments
 import RumocaFMI3.InitializationContract
 import RumocaFMI3.InitializationCalls
@@ -595,6 +597,18 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StaticSlots.release_frame
 #audit axioms Rumoca.FMI3.StaticSlots.release_after_reserve
 #audit axioms Rumoca.FMI3.StaticSlots.reusable
+#audit axioms Rumoca.FMI3.SlotOwners.reserve_refines
+#audit axioms Rumoca.FMI3.SlotOwners.release_refines
+#audit axioms Rumoca.FMI3.SlotOwners.only_owner_releases
+#audit axioms Rumoca.FMI3.SlotOwners.reserved_excludes
+#audit axioms Rumoca.FMI3.SlotOwners.initialized
+#audit axioms Rumoca.FMI3.SlotOwners.exchange_reserves
+#audit axioms Rumoca.FMI3.SlotOwners.exchange_busy
+#audit axioms Rumoca.FMI3.SlotOwners.write_releases
+#audit axioms Rumoca.FMI3.SlotOwners.internal_preserves
+#audit axioms Rumoca.FMI3.SlotExecution.internal
+#audit axioms Rumoca.FMI3.SlotExecution.reaches_preserves
+#audit axioms Rumoca.FMI3.SlotExecution.reaches_executes
 #audit axioms Rumoca.FMI3.StaticSlots.update_commutes
 #audit axioms Rumoca.FMI3.StaticSlots.findFree_sound
 #audit axioms Rumoca.FMI3.StaticSlots.findFree_none_iff
@@ -608,3 +622,24 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.AtomicSlots.scan_ready
 #audit axioms Rumoca.FMI3.AtomicSlots.scan_reserves
 #audit axioms Rumoca.FMI3.AtomicSlots.scan_exhausted
+
+#audit axioms Rumoca.FMI3.Identity.parameters_bound
+#audit axioms Rumoca.FMI3.Identity.initialization
+#audit axioms Rumoca.FMI3.Identity.measure_equivalence
+#audit axioms Rumoca.FMI3.Identity.prefix_equivalence
+#audit axioms Rumoca.FMI3.Identity.comparison_equivalence
+#audit axioms Rumoca.FMI3.Identity.accepted_iff
+#audit axioms Rumoca.FMI3.Identity.accepted_span
+#audit axioms Rumoca.FMI3.Identity.call_equivalence
+#audit axioms Rumoca.FMI3.Identity.call_correct
+#audit axioms Rumoca.FMI3.Identity.guards_reaches
+#audit axioms Rumoca.FMI3.Identity.null_call_equivalence
+#audit axioms Rumoca.FMI3.Identity.null_call_correct
+#audit axioms Rumoca.FMI3.Identity.Printer.function_printable_in
+#audit axioms Rumoca.FMI3.Identity.Printer.function_denotes
+#audit axioms Rumoca.FMI3.Identity.Printer.function_tokenization
+#audit axioms Rumoca.FMI3.Identity.library_undefined
+#audit axioms Rumoca.FMI3.Identity.helper_defined
+#audit axioms Rumoca.FMI3.Identity.bindings_exist
+#audit axioms Rumoca.FMI3.Identity.execution_correct
+#audit axioms Rumoca.FMI3.Identity.rendered_contract

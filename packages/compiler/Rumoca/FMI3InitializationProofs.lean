@@ -32,7 +32,7 @@ theorem initialization_source (compiled : compile input = .ok a)
         @CCalls.Events.Program.internal (cInterface (pool.addresses firstBlock)) E program =
           LiteralPreparation.program a.solve.prepareFMI3 sigs →
         @InitializationCalls.SourceExecutionContract (cInterface (pool.addresses firstBlock)) E a.parsed.ast program) := by
-  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, _, _, events, _, _, _, _, _, initialization⟩ := contract.adapter
+  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, _, _, events, _, _, _, _, _, initialization, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   obtain ⟨enterBefore, enterAfter, enterLocated⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 sigs
     InitializationCalls.signature initialization.enterMember

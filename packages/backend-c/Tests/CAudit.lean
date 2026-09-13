@@ -1,4 +1,10 @@
 import RumocaC.Storage
+import RumocaC.AtomicFrame
+import RumocaC.ConcurrentCalls
+import RumocaC.StringCallProofs
+import RumocaC.StringBindings
+import RumocaC.SilentCallChoices
+import RumocaC.NamedCallSites
 import RumocaC.AtomicScanCalls
 import RumocaC.AtomicScanPrinter
 import RumocaC.Subobjects
@@ -632,4 +638,31 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CAtomicScan.Printer.function_printable
 #audit axioms Rumoca.CAtomicScan.Printer.function_denotes
 #audit axioms Rumoca.CAtomicScan.Printer.function_tokenization
+
+#audit axioms Rumoca.CStoreInvariant.internal_next
+#audit axioms Rumoca.CAtomicBoolean.ordinary_store_preserves
+#audit axioms Rumoca.CAtomicBoolean.internal_preserves
+#audit axioms Rumoca.CCalls.Concurrent.resumes_result
+#audit axioms Rumoca.CCalls.Concurrent.other_thread
+#audit axioms Rumoca.CCalls.Concurrent.reaches_readonly
+
+#audit axioms Rumoca.CCalls.Casts.sizeReturn
+#audit axioms Rumoca.CCalls.Casts.intReturn
+#audit axioms Rumoca.CStringMemory.Contents.unique
+#audit axioms Rumoca.CStringMemory.Contents.nonzero
+#audit axioms Rumoca.CStringMemory.of_indexed
+#audit axioms Rumoca.CStringMemory.of_literal
+#audit axioms Rumoca.CStringOperations.span_le_length
+#audit axioms Rumoca.CStringOperations.span_eq_length
+#audit axioms Rumoca.CStringOperations.comparison_zero
+#audit axioms Rumoca.CStringOperations.comparison_exists
+#audit axioms Rumoca.CStringCalls.length_behaviors
+#audit axioms Rumoca.CStringCalls.span_behaviors
+#audit axioms Rumoca.CStringCalls.compare_behaviors
+#audit axioms Rumoca.CStringCalls.compare_zero
 #audit axioms Rumoca.CTree.Syntax.TypeSpelling.volatile
+#audit axioms Rumoca.CStringCalls.library_name
+#audit axioms Rumoca.CCalls.Events.external_silent_equivalence
+#audit axioms Rumoca.CCalls.Events.named_assign_entry
+#audit axioms Rumoca.CCalls.Events.assign_result
+#audit axioms Rumoca.CCalls.Events.expression_return

@@ -14,7 +14,7 @@ theorem helpers_ready (literals : CLiteralAddresses) (fn : Function)
     (member : fn ∈ Runtime.helpers) : @CCalls.Signature.Ready (cInterface literals) fn.signature := by
   change @CCalls.Signature.Ready cInterface fn.signature
   simp [Runtime.helpers] at member
-  rcases member with rfl | rfl | rfl <;> decide +kernel
+  rcases member with rfl | rfl | rfl | rfl <;> decide +kernel
 
 theorem functions_ready (m : Solve.FMI3Model source) (sigs : List Signature)
     (known : ∀ sig ∈ sigs, @CCalls.Signature.Ready cInterface sig)

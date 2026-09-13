@@ -2,6 +2,7 @@ import RumocaC.TreeTokenization
 import RumocaC.NullPointerPrinter
 import RumocaC.Initialization
 import RumocaFMI3.Runtime
+import RumocaFMI3.IdentityPrinter
 
 /-! Instantiate the shared C printer contract for every existing FMI runtime
 body and helper. Typedef spellings are explicit surrounding-context premises;
@@ -39,6 +40,9 @@ private theorem double_type : TypeSpelling typedefs "double" :=
   TypeSpelling.named (.primitive (by decide +kernel))
 
 private theorem status_type : TypeSpelling typedefs "fmi3Status" :=
+  TypeSpelling.named (.typedefName (by decide +kernel) (by decide +kernel))
+
+private theorem boolean_type : TypeSpelling typedefs "fmi3Boolean" :=
   TypeSpelling.named (.typedefName (by decide +kernel) (by decide +kernel))
 
 private theorem model_pointer_type : TypeSpelling typedefs "Model *" :=
@@ -134,6 +138,7 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
       | exact size_type
       | exact count_type
       | exact double_type
+      | exact boolean_type
       | apply And.intro
       | apply ItemPrintable.declare
       | apply ItemPrintable.assign
@@ -170,11 +175,17 @@ theorem function_tokenization (model : Solve.FMI3Model source) (signature : Sign
   (CTree.Printer.function_denotes (function_printable model signature valid)).tokenization
 
 theorem helpers_printable : ∀ fn ∈ Runtime.helpers, FunctionPrintable typedefs fn := by
-  simp only [Runtime.helpers, FunctionPrintable, SignaturePrintable, ParameterPrintable,
+  intro fn member
+  simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl | rfl | rfl
+  all_goals first
+    | exact Identity.Printer.function_printable_in typedefs (by decide) (by decide) (by decide)
+    | skip
+  all_goals simp only [FunctionPrintable, SignaturePrintable, ParameterPrintable,
     Runtime.setMode, Runtime.put, Runtime.mode, Runtime.log, Runtime.branch,
     Runtime.both, Runtime.field, Runtime.v, Runtime.n, Runtime.ret, Runtime.call,
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
-  repeat first
+  all_goals repeat first
     | exact instance_type
     | exact status_type
     | exact model_pointer_type

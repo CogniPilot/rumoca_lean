@@ -20,10 +20,12 @@ theorem name_plain (parts : NameParts name) : Plain name.toList := by
 theorem helpers_inputs (fn : CTree.Function) (member : fn ∈ Runtime.helpers) :
     FunctionInputs fn := by
   simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl | rfl <;>
+  rcases member with rfl | rfl | rfl | rfl <;>
     simp [FunctionInputs, SignatureInputs, ParameterInputs, StmtInputs, ExprInputs,
       Runtime.setMode, Runtime.put, Runtime.mode, Runtime.n, Runtime.v, Runtime.field,
-      Runtime.log, Runtime.branch, Runtime.both, Runtime.ret, Runtime.call, Plain]
+      Runtime.log, Runtime.branch, Runtime.both, Runtime.ret, Runtime.call, Plain,
+      Identity.function, Identity.nullCheck, Identity.falseReturn, Identity.measure, Identity.measurePrefix,
+      Identity.blank, Identity.compareToken, Identity.comparisonReturn, CTree.Expr.nullPointer]
 
 set_option maxRecDepth 4096 in
 theorem declarations_stable : Stable Runtime.declarations.toList := by

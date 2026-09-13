@@ -20,14 +20,20 @@ percentage of semantic coverage.
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
-Latest completed local gate: `build/c-atomics/full-gate.log`, passed
-with 720 unchanged inputs. Both actual artifacts and their code-member
-comparison are retained under `build/c-atomics/`. Every C/header/GALEC
-member is unchanged from published `a1ceae5`; the new reservation helper
+Latest completed local gate: `build/c-factory/identity-full-gate.log`, passed
+with 743 unchanged inputs. Both actual artifacts and their code-member
+comparison are retained under `build/c-factory/identity-artifacts/`. Only
+`sources/fmi3.c` changes from `00de05b`: the identity helper and its two factory
+call sites. Numerical C and eFMI C/GALEC are unchanged. The reservation helper
 is proved but is not yet emitted by the production factory.
 Exact theorem/evidence history is in [verification.md](../docs/verification.md),
 [FMI contracts](fmi3/contracts.md), [standards review](standards-review.md) and
 Git history; this roadmap intentionally records current obligations once.
+
+The identity-validator increment passes all affected package checks in
+`build/c-factory/identity-packages-v1.log` (60 added audit roots, none removed).
+Its strengthened actual-adapter contract passes the required full artifact gate.
+Production still uses `calloc`/`free`.
 
 ## Design constraints
 
@@ -133,6 +139,15 @@ with 710 unchanged source inputs. This does not close any K02 exit item.
   Specify concurrency/ownership semantics for shared bookkeeping. Prove bounds,
   unique live ownership, instance isolation, full reset on reuse and failure
   preservation. Model caller misuse and callback assumptions explicitly.
+- [x] Complete actual-artifact verification of the identity-validation helper.
+  The generated factory now calls a private helper with explicit string calls
+  and null checks. Complete execution, unchanged memory and certified printing
+  are proved. The mandatory adapter contract locates its exact fragment in the
+  rendered file, uses that same definition table, and constructs a consistent
+  library environment. All sign-correct `strcmp` results are covered. Package
+  checks and the full artifact gate pass with 743 unchanged inputs. Native string-library and
+  header correspondence, caller-buffer validity and the enclosing factory's
+  execution remain separate obligations.
 - [ ] Prove the actual C creation/release functions, including name/token
   validation and logging. Establish the storage premises of every downstream
   public-call theorem from creation. No successful C execution may be supplied

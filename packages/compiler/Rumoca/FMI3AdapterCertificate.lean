@@ -306,6 +306,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         cases function
         all_goals revert sig
         all_goals decide +kernel
+      · change ∀ sig ∈ [$sigTerms,*], sig.name ∉ CStringCalls.routineNames
+        decide +kernel
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩

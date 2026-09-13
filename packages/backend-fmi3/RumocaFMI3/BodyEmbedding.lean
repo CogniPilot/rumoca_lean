@@ -28,9 +28,11 @@ omit static in
 theorem helpers_closed (fn : CTree.Function) (h : fn ∈ Runtime.helpers) :
     fn.body.all CBodyEmbedding.closedBlocks = true := by
   simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with rfl | rfl | rfl <;>
+  rcases h with rfl | rfl | rfl | rfl <;>
     simp [CBodyEmbedding.closedBlocks, CLoops.noDeclarations, Runtime.setMode,
-      Runtime.put, Runtime.log, Runtime.branch, Runtime.ret]
+      Runtime.put, Runtime.log, Runtime.branch, Runtime.ret, Identity.function,
+      Identity.nullCheck, Identity.falseReturn, Identity.measure, Identity.measurePrefix,
+      Identity.blank, Identity.compareToken, Identity.comparisonReturn]
 
 noncomputable section
 /-- Any terminating run of an admitted runtime body has exactly the same
