@@ -5,6 +5,8 @@ import RumocaC.StringCallProofs
 import RumocaC.StringBindings
 import RumocaC.SilentCallChoices
 import RumocaC.NamedCallSites
+import RumocaC.NamedDeclarations
+import RumocaC.StringASCII
 import RumocaC.AtomicScanCalls
 import RumocaC.AtomicScanPrinter
 import RumocaC.Subobjects
@@ -666,3 +668,9 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CCalls.Events.named_assign_entry
 #audit axioms Rumoca.CCalls.Events.assign_result
 #audit axioms Rumoca.CCalls.Events.expression_return
+#audit axioms Rumoca.CStringMemory.literal_contents
+#audit axioms Rumoca.CStringMemory.content_eq
+#audit axioms Rumoca.CStringMemory.NonzeroASCII.bytes
+#audit axioms Rumoca.CStringMemory.NonzeroASCII.content
+#audit axioms Rumoca.CCalls.Events.named_declare_entry
+#audit axioms Rumoca.CCalls.Events.declare_result

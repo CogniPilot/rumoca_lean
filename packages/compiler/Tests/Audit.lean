@@ -9,6 +9,8 @@ import Rumoca.FMI3NominalProofs
 import Rumoca.FMI3LoggingProofs
 import Rumoca.FMI3LiteralProofs
 import ProofAudit.Audit
+import Rumoca.FMI3FactoryValidation
+import Rumoca.FMI3FactoryAdmission
 import Rumoca.Behavioral
 import Rumoca.Compiler
 import Rumoca.Lowering
@@ -58,6 +60,10 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_chars
 #audit axioms Rumoca.FMI3.adapter_correct
 #audit axioms Rumoca.FMI3.adapter_identity
+#audit axioms Rumoca.FMI3.parsed_state_name
+#audit axioms Rumoca.FMI3.compiled_token_ascii
+#audit axioms Rumoca.FMI3.compiled_token_content
+#audit axioms Rumoca.FMI3.Identity.prepared_factory_validation
 #audit axioms Rumoca.FMI3.adapter_preprocessed
 #audit axioms Rumoca.FMI3.adapter_reset_syntax
 #audit axioms Rumoca.FMI3.adapter_reset_tokenization
@@ -125,3 +131,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.InitializationCalls.QuietExecutionContract.source
 #audit axioms Rumoca.FMI3.InitializationCalls.QuietExecutionContract.source_contract
 #audit axioms Rumoca.FMI3.initialization_source
+
+#audit axioms Rumoca.FMI3.adapter_factory_admission
+#audit axioms Rumoca.FMI3.FactoryValidation.prepared_public_admission
+#audit axioms Rumoca.FMI3.FactoryValidation.actual_adapter_admission

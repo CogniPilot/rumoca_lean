@@ -261,6 +261,44 @@ the identity helper and its two factory call sites changed in FMI C; numerical
 C and eFMI C/GALEC are unchanged from `00de05b`. No source grammar, numerical behavior or
 FMI/eFMI capability is expanded; the recurring standards gate remains closed.
 
+### Public factory admission: standards impact
+
+This increment follows `13fb2a6` and changes proofs/certification without changing
+the emitter. ME and CS retain the pinned header signatures. The shared typed-call
+semantics performs fresh parameter binding; CS's unsupported-capability guard
+precedes identity validation. The name/token predicate, diagnostics and public
+capabilities are unchanged. C11 parameter adjustment/conversion, null-pointer,
+string-library and readonly-object assumptions remain as previously recorded.
+
+The mandatory actual-adapter contract now binds both public function fragments
+to their execution table and installed literal pool. All null/nonnull identity
+decisions and the rejected CS capability path have complete logging/silent
+proofs. Represented callback memory effects and missing outcomes are retained.
+Prepared diagnostic bytes are protected by readonly storage; this does not
+establish a frame for private writable instance fields. Native callback
+reentrancy/divergence and header/ABI correspondence remain explicit boundaries.
+
+C/FMI/eFMI/compiler package checks pass in
+`build/c-factory/factory-contract-packages-v1.log`, with 50 added roots, none
+removed and unchanged axiom auditing. The required full artifact gate passed
+in `build/c-factory/factory-full-gate-v2.log`, with all 760 inputs unchanged.
+The retained FMU and eFMU under `build/c-factory/factory-artifacts/` have identical
+C/header/GALEC members to `13fb2a6`. An earlier generated membership-proof error
+was rejected by the audit and corrected before this successful gate.
+
+FMI 3.0.2 [§2.3.1](https://fmi-standard.org/docs/3.0.2/#fmi3InstantiateModelExchange)
+requires diagnostics on failed instantiation subject to the explicit prohibition
+on callbacks when logging is disabled. Null callbacks denote missing support.
+The [§2.2.1](https://fmi-standard.org/docs/3.0.2/#requirements-for-implementations-of-the-c-api)
+restriction on log-callback reentry is a host obligation. These clauses were
+rechecked for the admission contract; native callback correspondence remains
+open. The six-byte whitespace predicate is proved as the emitted policy;
+its correspondence to the prose name requirement remains part of K05 review.
+K02, MC02 and the whole-product MISRA/FMI/eFMI findings remain open: successful
+creation/release, typed static storage and `calloc`/`free` removal are unfinished.
+There is no MLS grammar, numerical or capability expansion; the recurring
+standards gate remains closed.
+
 ### Hierarchical subobject correction: standards impact
 
 This increment follows `b478606`. Each `Address.member` preserves its containing

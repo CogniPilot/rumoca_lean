@@ -5,6 +5,7 @@ import RumocaFMI3.Float64Contract
 import RumocaFMI3.Float64SetContract
 import RumocaFMI3.InitializationContract
 import RumocaFMI3.IdentityContract
+import RumocaFMI3.FactoryAdmissionContract
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
@@ -78,7 +79,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     InitializationCalls.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 InitializationCalls.signature).render
       (Runtime.function a.solve.prepareFMI3 InitializationExit.signature).render ∧
-    Identity.FunctionContract a.solve.prepareFMI3 sigs Identity.function.render
+    Identity.FunctionContract a.solve.prepareFMI3 sigs Identity.function.render ∧
+    FactoryAdmission.FunctionContract a.solve.prepareFMI3 sigs
+      (fun kind => (Runtime.function a.solve.prepareFMI3 (FactoryArguments.signature kind)).render)
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -98,6 +101,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (initializationExit : InitializationExit.signature ∈ sigs)
     (numerical : LiteralPreparation.KernelNamesFresh sigs)
     (library : Identity.LibraryNamesFresh sigs)
+    (factories : ∀ kind, FactoryArguments.signature kind ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -114,7 +118,9 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     Float64Calls.rendered_contract _ sigs unique float64 numerical,
     Float64Set.rendered_contract _ sigs unique setter,
     InitializationCalls.rendered_contract _ sigs unique initializationEntry initializationExit,
-    Identity.rendered_contract _ sigs library⟩
+    Identity.rendered_contract _ sigs library,
+    FactoryAdmission.rendered_contract _ sigs unique factories
+      (fun kind => grammar _ (factories kind))⟩
 
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table
@@ -125,9 +131,23 @@ theorem adapter_identity (contract : AdapterContract a adapter) :
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
       adapter = before ++ text ++ after ∧
       Identity.FunctionContract a.solve.prepareFMI3 sigs text := by
-  obtain ⟨sigs, _, _, printed, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, identity⟩ := contract
+  obtain ⟨sigs, _, _, printed, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, identity, _⟩ := contract
   obtain ⟨before, after, located⟩ := identity.located
   exact ⟨sigs, Identity.function.render, before, after, printed, printed ▸ located, identity⟩
+
+/-- The actual-file certificate supplies both public factory fragments and a
+constructed pool satisfying their admission/rejection contract. The successful
+creation suffix and native ABI remain separate obligations. -/
+theorem adapter_factory_admission (contract : AdapterContract a adapter) :
+    ∃ sigs pool,
+      LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
+      Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
+      FactoryAdmission.FunctionContract a.solve.prepareFMI3 sigs
+        (fun kind => (Runtime.function a.solve.prepareFMI3 (FactoryArguments.signature kind)).render) ∧
+      FactoryAdmission.PreparedContract a.solve.prepareFMI3 sigs pool := by
+  obtain ⟨sigs, _, _, printed, _, _, _, _, _, ready, _, _, _, _, _, _, _, _, _, _, factories⟩ := contract
+  obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
+  exact ⟨sigs, pool, made, printed, factories, factories.prepared pool made⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
 Macro expansion and included-header interpretation remain separate. -/

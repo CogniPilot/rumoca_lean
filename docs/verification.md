@@ -519,6 +519,36 @@ caller-buffer validity, storage declarations, reuse initialization and the
 complete creation/release calls remain open. No source grammar or numerical
 IR case is added, and no whole MISRA/FMI/eFMI compliance claim is made.
 
+The next factory-admission contract covers both public ME/CS entry points.
+Parameter conversion constructs a fresh coherent environment; CS's unsupported
+event/intermediate-variable guard runs before identity validation. Null identity
+pointers need no string-storage/library premise. For valid caller buffers, the
+independent nonblank-name/token-equality predicate selects the actual rejection
+or creation suffix with unchanged memory and arbitrary later observations.
+Rejection logging retains every represented foreign result, trace and writable
+effect, including the no-outcome stuck case; disabled logging returns null with
+the heap unchanged. The actual pool constructs all five identity/diagnostic
+strings, whose readonly storage survives represented callback writes.
+
+`FactoryAdmission.FunctionContract` is now mandatory in `AdapterContract`.
+It binds both exact public signatures, independent function tokenization,
+located fragments and prepared execution to the same emitted definition table.
+The fixed checker kernel-proves signature membership. The actual-file source
+consequence derives complete expected-token bytes from parsed identifiers,
+without assuming a successful factory execution or a supplied local environment.
+The C/FMI/eFMI/compiler package checks pass in
+`build/c-factory/factory-contract-packages-v1.log`, with 50 added roots and no
+removed roots or axiom-policy changes. The required full artifact gate passed
+in `build/c-factory/factory-full-gate-v2.log`, with all 760 source inputs and the
+complete file set unchanged. Both archives are retained under
+`build/c-factory/factory-artifacts/`; their C/header/GALEC members match `13fb2a6`.
+The first gate attempt rejected a failed signature-membership elaboration;
+structural membership proofs fixed it without changing the contract or audit.
+No emitter, source grammar, numerical IR or capability changes. Successful
+creation, static-slot lifetime/reuse/release, private writable-cell callback
+frames, native reentrancy/divergence, headers/ABI and MISRA closure remain open;
+production still uses `calloc`/`free`.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

@@ -2,6 +2,10 @@ import RumocaFMI3.StaticSlots
 import RumocaFMI3.AtomicSlots
 import RumocaFMI3.SlotExecution
 import RumocaFMI3.IdentityContract
+import RumocaFMI3.IdentityFactoryEntry
+import RumocaFMI3.IdentityNames
+import RumocaFMI3.FactoryNull
+import RumocaFMI3.FactoryAdmissionContract
 import RumocaFMI3.InitializationArguments
 import RumocaFMI3.InitializationContract
 import RumocaFMI3.InitializationCalls
@@ -643,3 +647,41 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Identity.bindings_exist
 #audit axioms Rumoca.FMI3.Identity.execution_correct
 #audit axioms Rumoca.FMI3.Identity.rendered_contract
+#audit axioms Rumoca.FMI3.Identity.constants_collected
+#audit axioms Rumoca.FMI3.Identity.constants_ready
+#audit axioms Rumoca.FMI3.Identity.prepared_equivalence
+#audit axioms Rumoca.FMI3.Identity.factory_enters
+#audit axioms Rumoca.FMI3.Identity.factory_resumes
+#audit axioms Rumoca.FMI3.Identity.factory_validates
+#audit axioms Rumoca.FMI3.Identity.factory_null
+#audit axioms Rumoca.FMI3.NameParts.nonzero_ascii
+#audit axioms Rumoca.FMI3.Identity.token_content
+
+#audit axioms Rumoca.FMI3.FactoryRejection.identity_guard
+#audit axioms Rumoca.FMI3.FactoryRejection.dispatch
+#audit axioms Rumoca.FMI3.FactoryRejection.return_null
+#audit axioms Rumoca.FMI3.FactoryRejection.callback_entry
+#audit axioms Rumoca.FMI3.FactoryRejection.silent_equivalence
+#audit axioms Rumoca.FMI3.FactoryRejection.all_behaviors
+#audit axioms Rumoca.FMI3.FactoryArguments.scope
+#audit axioms Rumoca.FMI3.FactoryArguments.ready
+#audit axioms Rumoca.FMI3.FactoryArguments.arguments_converted
+#audit axioms Rumoca.FMI3.FactoryArguments.parameters_bound
+#audit axioms Rumoca.FMI3.FactoryArguments.call_entry
+#audit axioms Rumoca.FMI3.FactoryEntry.coSimulation_guard
+#audit axioms Rumoca.FMI3.FactoryEntry.validation_entry
+#audit axioms Rumoca.FMI3.FactoryNull.reaches_rejection
+#audit axioms Rumoca.FMI3.FactoryNull.silent_behaviors
+#audit axioms Rumoca.FMI3.FactoryNull.logged_behaviors
+#audit axioms Rumoca.FMI3.FactoryValidation.admission_equivalence
+#audit axioms Rumoca.FMI3.FactoryValidation.rejected_silent
+#audit axioms Rumoca.FMI3.FactoryValidation.rejected_logged
+#audit axioms Rumoca.FMI3.FactoryUnsupported.rejection_entry
+#audit axioms Rumoca.FMI3.FactoryUnsupported.silent_behaviors
+#audit axioms Rumoca.FMI3.FactoryUnsupported.logged_behaviors
+#audit axioms Rumoca.FMI3.FactoryLiterals.collected
+#audit axioms Rumoca.FMI3.FactoryLiterals.prepared
+#audit axioms Rumoca.FMI3.FactoryLiterals.preserved
+#audit axioms Rumoca.FMI3.FactoryAdmission.execution_correct
+#audit axioms Rumoca.FMI3.FactoryAdmission.prepared_correct
+#audit axioms Rumoca.FMI3.FactoryAdmission.rendered_contract

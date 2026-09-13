@@ -308,6 +308,9 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         all_goals decide +kernel
       · change ∀ sig ∈ [$sigTerms,*], sig.name ∉ CStringCalls.routineNames
         decide +kernel
+      · intro kind
+        cases kind <;> change FMI3.FactoryArguments.signature _ ∈ [$sigTerms,*]
+        all_goals simp [FMI3.FactoryArguments.signature, FMI3.Identity.factoryName]
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩
