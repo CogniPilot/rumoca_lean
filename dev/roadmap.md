@@ -65,6 +65,18 @@ frame covers the complete creation-to-release chain. The FMI/compiler audit
 passed in `build/c-factory/me-creation-package-gate-v1.log` with all 838 inputs
 unchanged. Importer state/numerical interactions remain open.
 
+The C conversion checkpoint replaces integer `0`/`1` special cases with a
+proved exact encoder for magnitudes below `2^53`, and adds checked finite
+Float64→unsigned-size truncation. The 32 core/C roots include actual expression
+evaluation. The core/C/FMI/eFMI/compiler audit passed in
+`build/c-factory/c-integer-package-gate-v3.log` with all 840 inputs unchanged.
+The renewed full artifact gate passed in `build/c-factory/c-integer-full-gate-v1.log`
+with the same 840 inputs unchanged. Both checked archives are retained under
+`build/c-factory/c-integer-artifacts-v1/`; C/header/GALEC and FMI XML match the
+ME checkpoint, with only fresh eFMI generation identities and dependent checksums.
+The emitted code, grammar and mandatory contracts are unchanged. CS library
+calls, overflow/status paths and repeated-step refinement remain open.
+
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
 logging, rejection/exhaustion, reusable ownership and both successful and

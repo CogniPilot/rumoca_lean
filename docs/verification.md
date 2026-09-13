@@ -180,6 +180,23 @@ package snapshot recorded separately. The history still
 omits importer state/numerical interactions, interspersed failures, reset and
 concurrent hosts; this does not assert validity of a released handle.
 
+The C conversion checkpoint replaces the special cases for integer `0`/`1`
+with exact binary64 conversion for every integer of magnitude below `2^53`.
+Finite binary64-to-size conversion now truncates toward zero and checks the
+selected 64-bit unsigned range, rejecting nonfinite/out-of-range inputs without
+modulo. Core proofs connect the computed encodings and integer-unit division
+to real values and mathlib's floor/ceiling; shared C proofs cover conversion and
+actual cast-expression evaluation. Its 32 new roots passed the core/C/FMI/eFMI/compiler
+audit in `build/c-factory/c-integer-package-gate-v3.log`, with all 840 inputs
+unchanged. The renewed full artifact gate passed in
+`build/c-factory/c-integer-full-gate-v1.log`, also with all 840 inputs unchanged.
+Both checked archives are retained under `build/c-factory/c-integer-artifacts-v1/`.
+C/header/GALEC and FMI XML bytes match the ME checkpoint; the three eFMI
+manifests differ only in fresh generation identities and dependent references/checksums.
+Only these three status documents changed after the full gate. Emitted code,
+grammar and mandatory contracts are unchanged. This is a prerequisite for
+complete CS stepping, not a complete `fmi3DoStep` or native-cast guarantee.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

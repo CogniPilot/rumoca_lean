@@ -1,4 +1,5 @@
-import RumocaCore.Real.Encoding
+import RumocaCore.Real.Comparison
+import RumocaCore.Real.IntegerConversion
 import RumocaC.Character
 import RumocaC.Unsigned
 
@@ -69,15 +70,21 @@ inductive CType where
   | unsigned (width : Nat)
   deriving DecidableEq, Repr
 
-/-- Partial C conversions for the implemented fragment. Unsupported arithmetic
-and casts fail; they never silently become identities or real arithmetic. -/
+/-- Partial C conversions for the implemented fragment. Integer-to-binary64
+conversion is exact for magnitudes below 2^53. Finite binary64-to-size conversion
+truncates toward zero and checks the 64-bit range; it never applies unsigned
+integer wraparound to floating inputs. Other unsupported casts fail. -/
 def convert : CType → Value → Option Value
   | .float64, .float64 b => some (.float64 b)
-  | .float64, .integer n =>
-    if n = 0 then some (.finite Binary64.positiveZero)
-    else if n = 1 then some (.finite Binary64.one) else none
+  | .float64, .integer n => (Binary64.exactInteger? n).map Value.finite
   | .int32, .integer n => if -(2^31 : Int) ≤ n ∧ n < 2^31 then some (.integer n) else none
   | .size, .integer n => if 0 ≤ n ∧ n < 2^64 then some (.integer n) else none
+  | .size, .float64 bits =>
+    match Float64.decode bits with
+    | .finite x =>
+      let n := Binary64.truncateInteger x
+      if 0 ≤ n ∧ n < 2^64 then some (.integer n) else none
+    | _ => none
   | .unsigned width, .integer n => some (.integer (CUnsigned.value width n))
   | .character signed, .integer n =>
     if CCharacter.inRange signed n then some (.integer n) else none

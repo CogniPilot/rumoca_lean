@@ -11,15 +11,11 @@ variable [interface : CInterface]
 
 omit interface in
 private theorem add_comparison_none (a b : Value) : CBody.comparison .add a b = none := by
-  cases a <;> cases b <;> simp [CBody.comparison, CBody.floatComparison, convert]
-  all_goals split <;> simp_all
-  all_goals split <;> simp_all
+  cases a <;> cases b <;> simp [CBody.comparison, CBody.floatComparison, convert, Value.finite]
 
 omit interface in
 private theorem mul_comparison_none (a b : Value) : CBody.comparison .mul a b = none := by
-  cases a <;> cases b <;> simp [CBody.comparison, CBody.floatComparison, convert]
-  all_goals split <;> simp_all
-  all_goals split <;> simp_all
+  cases a <;> cases b <;> simp [CBody.comparison, CBody.floatComparison, convert, Value.finite]
 
 theorem eval_refines (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
     (e : Expr) (value : Value) (h : CBody.eval env heap e = some value) :

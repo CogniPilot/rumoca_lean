@@ -37,6 +37,34 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Exact integer and Float64 conversions: 2026-09-13
+
+This C-semantic checkpoint follows `cb94270`. It replaces integer `0`/`1`
+special cases with an exact binary64 encoder for magnitudes below `2^53`, and
+adds finite Float64→unsigned-size conversion with truncation and range checks.
+The 32 core/C roots connect encoding fields, mathematical values, mathlib
+floor/ceiling, nonfinite rejection and actual cast-expression evaluation.
+The core/C/FMI/eFMI/compiler audit passed in
+`build/c-factory/c-integer-package-gate-v3.log` with all 840 inputs unchanged.
+The renewed full artifact gate passed in `build/c-factory/c-integer-full-gate-v1.log`,
+also with all 840 inputs unchanged. Both checked archives are retained under
+`build/c-factory/c-integer-artifacts-v1/`, with archive/member hashes and exact
+comparisons beside them. C/header/GALEC and FMI XML match the ME checkpoint;
+only the three eFMI generation identities and dependent references/checksums
+changed. Only these three status documents changed after the full gate. All earlier
+mandatory contracts and audit roots are retained; emitted C and grammar
+are unchanged. Complete CS step execution is still open.
+
+| Applicable obligation | Correspondence and boundary |
+| --- | --- |
+| [C11 N1570 §6.3.1.4](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf), integer/real conversion | Exact integer encodings preserve the mathematical value throughout the stated range. Floating-to-size conversion uses truncation toward zero and representability; it does not use integer modulo for floating inputs. Other integer magnitudes remain outside this exact-conversion fragment. |
+| C11 §§7.6.3.1/7.12.9.2, rounding environment and floor | The clauses were rechecked. The bounded-floor proof constructs a representable mathematical result; actual `fegetround`/`floor` calls and native bindings still require their contracts. The current CS body computes a sum before its step-cap rejection, so accepted-case arithmetic alone cannot cover all outcomes. |
+| FMI 3.0.2 ME/CS | No interface, capability, initialization or numerical-step policy changes. Every earlier public-call proposition must remain valid under the extended conversion semantics. Repeated CS calls still require a relation between reported binary64 time, cumulative solver duration and source observations. |
+| MLS 3.7, eFMI Beta 1 and MISRA C:2025 | No source/GALEC case, IR lowering, solver choice or generated member changes. This does not close initialization, essential-type, variable floating-comparison, ABI or whole-product findings. Proving an individual numeric cast is not a MISRA compliance decision. |
+
+Floating exception flags/traps and later native compilation retain their
+existing explicit boundaries. **Stage decision: open; no grammar expansion.**
+
 ### Creation through ME release: 2026-09-13
 
 This five-root derived-proof checkpoint follows `8dc9e46`. The actual public

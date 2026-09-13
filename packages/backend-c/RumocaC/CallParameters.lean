@@ -16,11 +16,8 @@ theorem convert_stable (type : CType) (value result : Value)
   cases type with
   | float64 =>
     cases value <;> simp [convert] at h
-    · split at h
-      · rw [← Option.some.inj h]; rfl
-      · split at h
-        · rw [← Option.some.inj h]; rfl
-        · contradiction
+    · obtain ⟨encoded, _, rfl⟩ := h
+      rfl
     · cases h; rfl
   | int32 =>
     cases value <;> simp [convert] at h
@@ -28,8 +25,14 @@ theorem convert_stable (type : CType) (value result : Value)
     simpa [convert] using bounds
   | size =>
     cases value <;> simp [convert] at h
-    rcases h with ⟨bounds, rfl⟩
-    simpa [convert] using bounds
+    · rcases h with ⟨bounds, rfl⟩
+      simpa [convert] using bounds
+    · split at h
+      · split at h
+        · cases Option.some.inj h
+          exact if_pos ‹_›
+        · contradiction
+      · contradiction
   | character signed =>
     cases value <;> simp [convert] at h
     rcases h with ⟨bounds, rfl⟩
