@@ -87,8 +87,9 @@ library's implementation to follow its coding rules.
 | MC05 — initialization and lifetime proof gap | Mandatory Rule 9.1 concerns automatic objects before reads; Rule 9.7 separately concerns atomics. Required Rule 18.6 and Dir 4.1 address escaped automatic storage and runtime failures. Existing typed loads/stores and frames do not yet establish complete creation/lifetime and native layout correspondence. | Bind actual storage declarations and initialization to complete calls. Initialize all reused fields and any synchronization objects correctly, including Rule 22.14 where applicable. Record RTOS startup guarantees. No Mandatory-rule deviation is possible. |
 | MC06 — effects, recursion and concurrency | Required Rules 13.2/13.5 concern evaluation order and conditional effects; 17.2 excludes recursive call chains. Required Dir 5.1–5.3 address races, deadlocks and dynamic thread creation; 21.25 requires sequentially consistent synchronization. | Prove order independence where C leaves order open, effect constraints and an acyclic generated call graph. Prove safe shared activation/release, including the chosen atomic semantics and implementation. Keep synchronization outside numerical stepping and avoid hidden library locks. No generated threads are planned; host callbacks/reentry and native RTOS primitives need explicit boundaries. |
 | MC07 — identifiers, pointers and provenance | Rules 5.1–5.10, 11.1–11.6/11.8–11.11 and 18.1–18.10 require profile-specific namespace/type/pointer evidence. Required Dir 3.1 also requires documented requirement traceability. Source spans alone do not identify every generated policy requirement. | Connect existing name, conversion, bounds and origin proofs to the exact rules and actual preprocessed interfaces. Preserve generated-rule ancestry. Symbolic pointer cells and a 63-character name check alone cannot close the whole-product obligations. |
-| MC09 — implicit pointer guards | Required Rule 11.11 prohibits implicit comparison of pointers with null. Runtime uses `!m`, `!instanceName`, and pointer-valued callback guards in logical expressions. | Emit explicit, correctly typed null comparisons through a shared proved expression treatment. Preserve short-circuiting, logger behavior and all existing function contracts; a textual replacement without semantic preservation is insufficient. |
+| MC09 — implicit pointer guards | Required Rule 11.11 prohibits implicit comparison of pointers with null. The shared `instancePrefix` now emits `m == ((void *)0)` with null-value, printer and branch-preservation proofs. Other instance/name/callback pointer guards remain implicit. | Partial progress only. Complete the remaining explicit comparisons and essential-type review. Preserve short-circuiting, logger behavior and all existing function contracts; a textual replacement without semantic preservation is insufficient. |
 | MC08 — eFMI references and generator process | eFMI 1.0.0 Beta 1 §5.2 references MISRA AC AGC for generated code; its GALEC rules also name MISRA C:2012. MISRA C:2025 §1.5.2 and Appendix E impose additional compliance/generator documentation. | Map the separate normative references and review their applicable text. The 2025 book does not silently replace eFMI's references or close SR07. Complete the generator and product compliance documentation and independent review. |
+| MC10 — nested aggregate address scope | The current symbolic `CMemory.Address` records member names and a single accumulated array offset. It cannot distinguish an outer instance-array index from an inner member-array index. The scalar unit profile does not use this nesting; permanently typed instance storage must permit later tensor fields. | Repair hierarchical subobject addressing and prove separation before implementing an array of instances with array members. Retain existing frame/call proofs under the refinement. Do not infer native layout or pointer validity from the current flat keys. |
 
 The initial enforcement plan is below. Each group must become a separate entry
 for every applicable directive/rule before claiming compliance, with its
@@ -141,6 +142,43 @@ RTOS numerical kernel must use supplied storage, have explicit operation and
 storage bounds, and avoid OS services, heap calls, hidden locks and incidental
 I/O. Bounded object activation/release and its concurrency proof remain K02 in
 [the roadmap](roadmap.md#k02--replace-heap-allocation-with-proved-static-instance-storage).
+
+### Explicit null comparison and storage prerequisites
+
+This increment follows `784f45b`. It changes only the shared FMI instance guard
+from `!m` to `m == ((void *)0)`. Rule 11.9 permits the explicitly cast zero
+constant; a `NULL` macro is not required for this spelling. The independent
+C expression grammar and null-value proof bind the printed expression to the
+authored C semantics. The shared branch theorem preserves execution for every
+represented pointer value; the existing complete-call contracts remain required
+for the changed actual adapter. Literal pooling and interface extension preserve
+the syntactic constant distinction: a variable containing integer zero is not
+accepted as a null pointer constant. C11 6.3.2.3p3–4 and 6.5.9p6 supply the
+reviewed null-pointer meaning. Equality between two non-null symbolic pointers
+and broader integer constant expressions remain outside this expression slice.
+
+`CStorage` proves that internal modeled execution preserves the supplied cell
+domain, types and permissions. This does not prove termination of unsupported
+allocation calls or constrain foreign effects; it is not a no-heap certificate.
+`StaticSlots` proves bounded serial search, exclusion and release/reuse of fixed
+slots. C atomics, concurrent scan behavior, caller ownership and actual instance
+storage still need refinement proofs. In particular, serial exhaustion cannot
+be inferred from a scan interleaved with other callers releasing slots.
+
+The current address representation's nested-index collision has a universal
+Lean review witness in `build/c-static-storage/AddressScope.lean`; this records
+MC10 without introducing a new admitted source case. The shared C, FMI and
+compiler package checks pass in `build/c-static-storage/package-v3.log`, with
+44 added audit roots and all earlier roots and the axiom policy retained.
+The required actual-artifact gate passed in
+`build/c-static-storage/full-gate.log`, including all 13 existing native FMI
+groups and the eFMU checks. All 710 source inputs and the file set remained
+unchanged throughout the gate. Both archives are retained under
+`build/c-static-storage/artifacts/`. Compared with `784f45b`, only the
+70 shared instance guards in `sources/fmi3.c` changed; all other C, header
+and GALEC bytes are identical (`build/c-static-storage/artifacts.log`).
+No MISRA finding other than the named shared guard is
+closed, no grammar is added, and no full compliance claim follows.
 
 ### Complete initialization calls: standards impact
 

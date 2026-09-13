@@ -48,7 +48,7 @@ def allowedExpression (cmd : Command) : Expr :=
 
 def instancePrefix : List Stmt := [
   .declare "Instance *" "m" (.cast "Instance *" (v "instance")),
-  branch (negate (v "m")) [ret (v "fmi3Error")]]
+  branch (.bin .eq (v "m") Expr.nullPointer) [ret (v "fmi3Error")]]
 
 @[simp] def modeGuard (c : Command) : Stmt :=
   reject (negate (allowedExpression c)) "Call is not allowed in the current FMI state"

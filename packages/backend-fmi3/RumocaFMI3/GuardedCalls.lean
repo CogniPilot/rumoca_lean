@@ -101,7 +101,7 @@ theorem null_body (env : Locals) (heap : Heap) (rest : List Stmt)
     (error : env "fmi3Error" = none) :
     run 3 (.running (Runtime.instancePrefix ++ rest) env heap) = some (.returned ⟨.integer 3, heap⟩) := by
   simp [run, next, eval, Runtime.instancePrefix, Runtime.branch, Runtime.ret,
-    Runtime.negate, Runtime.v, CBody.bind, resolve, constants, CBody.cast,
+    Runtime.v, CBody.bind, resolve, constants, CBody.cast,
     convert, Value.truth, boolean, hi, hn, error]
 
 theorem null_behaviors (program : CCalls.Events.Program E) (fn : Function)

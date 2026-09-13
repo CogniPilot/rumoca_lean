@@ -1,3 +1,4 @@
+import RumocaFMI3.StaticSlots
 import RumocaFMI3.InitializationArguments
 import RumocaFMI3.InitializationContract
 import RumocaFMI3.InitializationCalls
@@ -581,3 +582,20 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationCalls.PreparedContract.quiet
 #audit axioms Rumoca.FMI3.InitializationCalls.prepared_correct
 #audit axioms Rumoca.FMI3.InitializationCalls.rendered_contract
+
+#audit axioms Rumoca.FMI3.StaticSlots.reserve_iff
+#audit axioms Rumoca.FMI3.StaticSlots.reserve_busy
+#audit axioms Rumoca.FMI3.StaticSlots.reserve_frame
+#audit axioms Rumoca.FMI3.StaticSlots.cannot_reserve_twice
+#audit axioms Rumoca.FMI3.StaticSlots.consecutive_distinct
+#audit axioms Rumoca.FMI3.StaticSlots.full_iff
+#audit axioms Rumoca.FMI3.StaticSlots.release_iff
+#audit axioms Rumoca.FMI3.StaticSlots.release_vacant
+#audit axioms Rumoca.FMI3.StaticSlots.release_frame
+#audit axioms Rumoca.FMI3.StaticSlots.release_after_reserve
+#audit axioms Rumoca.FMI3.StaticSlots.reusable
+#audit axioms Rumoca.FMI3.StaticSlots.update_commutes
+#audit axioms Rumoca.FMI3.StaticSlots.findFree_sound
+#audit axioms Rumoca.FMI3.StaticSlots.findFree_none_iff
+#audit axioms Rumoca.FMI3.StaticSlots.findFree_exhausted
+#audit axioms Rumoca.FMI3.StaticSlots.findFree_reserves

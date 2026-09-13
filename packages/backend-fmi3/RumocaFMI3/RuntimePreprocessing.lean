@@ -27,13 +27,13 @@ private theorem require_inputs (command : Command) :
     ∀ stmt ∈ Runtime.require command, StmtInputs stmt := by
   simp [Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
     Runtime.branch, Runtime.negate, Runtime.fail, Runtime.ret, Runtime.call,
-    Runtime.v, StmtInputs, ExprInputs, plain_iff_all, allowed_inputs]
+    Runtime.v, Expr.nullPointer, StmtInputs, ExprInputs, plain_iff_all, allowed_inputs]
 
 set_option maxHeartbeats 1000000 in
 theorem body_inputs (model : Solve.FMI3Model source) (signature : Signature) :
     ∀ stmt ∈ Runtime.body model signature, StmtInputs stmt := by
   unfold Runtime.body
-  split <;> simp [StmtInputs, ExprInputs, plain_iff_all, or_imp, forall_and,
+  split <;> simp [StmtInputs, ExprInputs, Expr.nullPointer, plain_iff_all, or_imp, forall_and,
     Runtime.makeInstance, Runtime.instancePrefix, Runtime.countLoop,
     Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
     Runtime.scalarAccessCheck, Runtime.pointerCheck,

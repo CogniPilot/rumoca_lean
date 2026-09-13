@@ -91,6 +91,23 @@ actual artifacts. Initialization success does not close lifetime or all of F02.
 **State:** design correction required; production still uses `calloc`/`free`.
 **Existing IDs:** C01, C02, F02, F03, S03; new no-heap/RTOS requirement.
 
+The shared C machine now has cell-domain/type/permission preservation proofs,
+and `StaticSlots` supplies a bounded serial reservation reference with exclusion,
+frame and reuse proofs. These are prerequisites, not a completed native storage
+implementation: ownership by a particular caller and concurrent C refinement
+remain open. A failed serial scan proves exhaustion only for its fixed snapshot.
+The shared explicit-null guard and these prerequisites have 44 added roots
+and a passing full artifact gate in `build/c-static-storage/full-gate.log`,
+with 710 unchanged source inputs. This does not close any K02 exit item.
+
+- [ ] Repair nested aggregate addressing before representing the static
+  instance array. `CMemory.Address` currently flattens array offsets across
+  member selection: `instances[1].x[0]` and `instances[0].x[1]` can share a
+  symbolic address. Preserve the order of subobject selections and prove
+  separation of distinct instance/member elements. The current scalar unit
+  profile does not require this combination; the storage design must support
+  future tensor fields without an address workaround. Native layout remains
+  a separate K04 obligation.
 - [ ] Define the storage contract and generation-time instance capacity.
   Preserve multiple independent ME/CS instances. Check capacity exhaustion,
   initialization failure and reuse against FMI; do not add an unstated

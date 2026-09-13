@@ -37,6 +37,16 @@ def statement (symbols : Symbols) : Stmt → Stmt
 def function (symbols : Symbols) (fn : Function) : Function :=
   { fn with body := fn.body.map (statement symbols) }
 
+/-- Literal pooling cannot change whether a cast operand is the integer
+literal zero. In particular a named string object cannot become a null pointer
+constant merely by having a particular address or runtime payload. -/
+@[simp] theorem expression_zeroLiteral (symbols : Symbols) (expr : Expr) :
+    CBody.zeroLiteral (expression symbols expr) = CBody.zeroLiteral expr := by
+  cases expr <;> simp only [expression]
+  all_goals try rfl
+  rename_i text
+  cases symbols text <;> rfl
+
 variable [interface : CInterface]
 
 /-- A generated reference resolves to the same pointer as its source literal.
@@ -93,7 +103,12 @@ theorem expression_correct (bound : Bound symbols env) (safe : NoIntrinsic symbo
   | address a ha => simp [expression, CBody.eval, CBody.lvalue, ha.2]
   | field a name pointer ha => simp [expression, CBody.eval, CBody.lvalue, ha.1, ha.2]
   | index a i ha hi => simp [expression, CBody.eval, CBody.lvalue, ha.1, hi.1]
-  | cast type a ha => simp [expression, CBody.eval, CBody.lvalue, ha.1]
+  | cast type a ha =>
+      have casts (value : Value) :
+          CBody.expressionCast type (expression symbols a) value = CBody.expressionCast type a value := by
+        unfold CBody.expressionCast
+        rw [expression_zeroLiteral]
+      simp only [expression, CBody.eval, CBody.lvalue, ha.1, casts, and_self]
   | sizeof type => simp [expression]
   | call fn args hfn hargs =>
       refine ⟨?_, by simp [expression, CBody.lvalue]⟩

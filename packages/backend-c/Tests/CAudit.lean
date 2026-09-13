@@ -1,3 +1,5 @@
+import RumocaC.Storage
+import RumocaC.NullPointerPrinter
 import RumocaC.MemoryUpdates
 import RumocaC.LoopEvents
 import RumocaC.KernelEvents
@@ -558,3 +560,32 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CLoops.counter_reset
 
 #audit axioms Rumoca.CMemory.replace_overwrite
+
+#audit axioms Rumoca.CStorage.store_preserves
+#audit axioms Rumoca.CStorage.Preserves.absent
+#audit axioms Rumoca.CStorage.body_next
+#audit axioms Rumoca.CStorage.loop_next
+#audit axioms Rumoca.CStorage.resume_preserves
+#audit axioms Rumoca.CStorage.typed_nextWith
+#audit axioms Rumoca.CStorage.event_enter_preserves
+#audit axioms Rumoca.CStorage.internal_next
+#audit axioms Rumoca.CStorage.internal_reaches
+#audit axioms Rumoca.CStorage.internal_no_new_cells
+#audit axioms Rumoca.CNull.Compared.iff
+#audit axioms Rumoca.CNull.comparison_iff
+#audit axioms Rumoca.CNull.equal_right
+#audit axioms Rumoca.CNull.unequal_right
+#audit axioms Rumoca.CNull.equal_left
+#audit axioms Rumoca.CNull.unequal_left
+#audit axioms Rumoca.CNull.nonnull_unsupported
+#audit axioms Rumoca.CNull.literal_eval
+#audit axioms Rumoca.CNull.zero_variable_not_constant
+#audit axioms Rumoca.CNull.equal_eval
+#audit axioms Rumoca.CNull.unequal_truth
+#audit axioms Rumoca.CNull.branch_preserved
+#audit axioms Rumoca.CNull.literal_printable
+#audit axioms Rumoca.CNull.literal_renders
+#audit axioms Rumoca.CNull.literal_contract
+#audit axioms Rumoca.CBody.zeroLiteral_true
+#audit axioms Rumoca.CBody.zeroLiteral_false
+#audit axioms Rumoca.CLiteral.Lowering.expression_zeroLiteral

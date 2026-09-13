@@ -30,6 +30,40 @@ omit interface in
 def cast (type : String) (v : Value) : Option Value := do
   convert (← interface.types type) v
 
+/-- The supported integer null-constant syntax. This is intentionally a
+syntax judgment: a variable whose runtime value is zero is not such a constant. -/
+def zeroLiteral : Expr → Bool
+  | .nat 0 => true
+  | _ => false
+
+omit interface in
+@[simp] theorem zeroLiteral_true (operand : Expr) :
+    zeroLiteral operand = true ↔ operand = .nat 0 := by
+  cases operand <;> simp [zeroLiteral]
+  split <;> simp_all
+
+omit interface in
+@[simp] theorem zeroLiteral_false (operand : Expr) :
+    zeroLiteral operand = false ↔ operand ≠ .nat 0 := by
+  rw [Bool.eq_false_iff]
+  exact not_congr (zeroLiteral_true operand)
+
+/-- A literal zero converted to a pointer has the null value. All other
+supported casts retain ordinary typed conversion. Broader C integer constant
+expressions and implementation-defined integer-to-pointer casts are separate. -/
+def expressionCast (type : String) (operand : Expr) (value : Value) : Option Value :=
+  if zeroLiteral operand && decide (interface.types type = some .pointer) then
+    some (.pointer none)
+  else cast type value
+
+@[simp] theorem expressionCast_ordinary (ordinary : zeroLiteral operand = false) :
+    expressionCast type operand value = cast type value := by
+  simp only [expressionCast, ordinary, Bool.false_and, Bool.false_eq_true, ↓reduceIte]
+
+@[simp] theorem expressionCast_nonpointer (other : interface.types type ≠ some .pointer) :
+    expressionCast type operand value = cast type value := by
+  simp [expressionCast, other]
+
 def floatComparison (op : BinOp) (a b : BitVec 64) : Option Value :=
   let compare := fun r => some (boolean (Rumoca.Float64.test r a b))
   match op with
@@ -46,6 +80,11 @@ def comparison (op : BinOp) (a b : Value) : Option Value :=
     | .lt => some (boolean (x < y)) | .le => some (boolean (x ≤ y))
     | .gt => some (boolean (x > y)) | .ge => some (boolean (x ≥ y))
     | _ => none
+  | .pointer p, .pointer q =>
+    match op with
+    | .eq => if p.isNone || q.isNone then some (boolean (p.isNone && q.isNone)) else none
+    | .ne => if p.isNone || q.isNone then some (boolean (p.isSome || q.isSome)) else none
+    | _ => none
   | .float64 x, .float64 y => floatComparison op x y
   | .float64 x, y => do
     let .float64 bits ← convert .float64 y | none
@@ -60,7 +99,7 @@ mutual
     | .id name => resolve env name
     | .nat n => some (.integer n)
     | .str s => (interface.literals s).map (fun p => .pointer (some p))
-    | .cast type a => do cast type (← eval env heap a)
+    | .cast type a => do expressionCast type a (← eval env heap a)
     | .not a => do return boolean (!(← (← eval env heap a).truth))
     | .bin .and a b => do
       if !(← (← eval env heap a).truth) then return boolean false

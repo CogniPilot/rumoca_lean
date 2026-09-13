@@ -25,7 +25,7 @@ theorem instance_run (env : Locals) (heap : Heap) (p : Address) (rest : List Stm
     (hi : env "instance" = some (.pointer (some p))) (hn : env "m" = none) :
     run 2 (.running (Runtime.instancePrefix ++ rest) env heap) =
       some (.running rest (CBody.bind env "m" (.pointer (some p))) heap) := by
-  simp [Runtime.instancePrefix, Runtime.branch, Runtime.negate, Runtime.v,
+  simp [Runtime.instancePrefix, Runtime.branch, Runtime.v,
     run, next, eval, CBody.bind, resolve, constants, CBody.cast, convert,
     boolean, Value.truth, hi, hn]
 
@@ -144,7 +144,7 @@ theorem instance_null_run (env : Locals) (heap : Heap) (rest : List Stmt)
     (he : env "fmi3Error" = none) :
     run 3 (.running (Runtime.instancePrefix ++ rest) env heap) =
       some (.returned ⟨.integer 3, heap⟩) := by
-  simp [Runtime.instancePrefix, Runtime.branch, Runtime.negate, Runtime.v, Runtime.ret,
+  simp [Runtime.instancePrefix, Runtime.branch, Runtime.v, Runtime.ret,
     run, next, eval, CBody.bind, resolve, constants, CBody.cast, convert,
     boolean, Value.truth, hi, hn, he]
 

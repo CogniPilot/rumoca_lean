@@ -428,6 +428,29 @@ No MISRA compliance or approved deviations are claimed.
 See [the rule review](../dev/standards-review.md#misra-c2025-and-static-storage-review)
 and [K02–K05](../dev/roadmap.md#closure-checklist-before-grammar-growth).
 
+The explicit-null increment supplies shared C null equality/inequality semantics
+and independently checked printing for `((void *)0)`. It changes the actual
+shared FMI instance guard and proves equivalence to its former implicit test
+for every represented pointer. Literal-pool and interface-extension proofs
+retain the distinction between a zero literal and an integer variable holding
+zero. Comparisons between two non-null symbolic pointers remain unsupported.
+Existing actual-function and artifact contracts remain required. The 44 new
+roots retain every earlier root and the unchanged axiom policy. The required
+full gate passed in `build/c-static-storage/full-gate.log`, including both
+actual target archives with all 710 inventoried inputs unchanged. Only the
+70 shared instance guards in the FMI adapter differ from `784f45b`; every
+other C/header/GALEC byte is unchanged. Exact archives are retained in
+`build/c-static-storage/artifacts/`. Other implicit pointer tests and whole
+MISRA/adapter compliance remain open.
+
+Its storage prerequisites prove preservation of supplied cell domains, types
+and permissions through internal C execution, and bounded serial reservation,
+exclusion and reuse of fixed slots. They do not establish a no-heap generated
+product, native atomics, caller ownership or layout. Nested array/member
+addressing also requires a structural correction before the planned static
+instance array can support tensor fields; see MC10 in the
+[standards review](../dev/standards-review.md#misra-c2025-and-static-storage-review).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

@@ -1,4 +1,5 @@
 import RumocaC.Interface
+import RumocaC.NullComparison
 
 /-! Constants and typedef spellings supplied by the FMI 3 C interface. These
 are explicit inputs to shared C semantics, not global C language builtins. -/
@@ -22,7 +23,7 @@ class StaticLiterals where
 runtime bodies. Pointer values are opaque symbolic addresses here: this does
 not establish pointee layouts, callback execution or the native ABI. -/
 @[simp] def cTypes (type : String) : Option CMemory.CType :=
-  if ["Instance *", "Model *", "const Model *", "fmi3Instance",
+  if ["void *", "Instance *", "Model *", "const Model *", "fmi3Instance",
       "fmi3Float64 *", "const fmi3Float64 *", "const char *", "fmi3String",
       "fmi3InstanceEnvironment", "fmi3FMUState", "fmi3LogMessageCallback",
       "fmi3ClockUpdateCallback", "fmi3IntermediateUpdateCallback",

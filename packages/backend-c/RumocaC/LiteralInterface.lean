@@ -52,7 +52,11 @@ theorem expression_agreement (before after : CInterface)
   | cast type a ha =>
       intro agree
       have same := ha (by simpa only [names] using agree)
-      simp [CBody.eval, CBody.lvalue, CBody.cast, types, same.1]
+      have casts (value : Value) :
+          @CBody.expressionCast before type a value = @CBody.expressionCast after type a value := by
+        unfold CBody.expressionCast CBody.cast
+        rw [types]
+      simp only [CBody.eval, CBody.lvalue, same.1, casts, and_self]
   | call fn args hfn hargs =>
       intro agree
       refine ⟨?_, by simp [CBody.lvalue]⟩

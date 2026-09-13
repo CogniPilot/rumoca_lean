@@ -30,7 +30,7 @@ theorem null_instance_run (heap : Heap) (rest : List Stmt) :
     run 3 (.running (Runtime.instancePrefix ++ rest) nullParameters heap) =
       some (.returned ⟨.integer 3, heap⟩) := by
   simp [run, next, eval, Runtime.instancePrefix, Runtime.branch, Runtime.ret,
-    Runtime.negate, Runtime.v, nullParameters, CBody.bind, resolve, constants,
+    Runtime.v, nullParameters, CBody.bind, resolve, constants,
     CBody.cast, convert, Value.truth, boolean]
 
 theorem null_instance_behaviors (heap : Heap) (rest : List Stmt) (b) :

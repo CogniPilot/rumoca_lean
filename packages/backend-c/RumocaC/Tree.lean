@@ -26,6 +26,10 @@ inductive Expr where
   | sizeof (type : String)
   deriving Repr
 
+/-- A typed null pointer constant, independent of macro expansion or local
+identifier bindings. C11 6.3.2.3p3; MISRA C:2025 Rule 11.9 permits this form. -/
+def Expr.nullPointer : Expr := .cast "void *" (.nat 0)
+
 /-- Three-digit octal escapes cannot absorb the next byte's digit. Escaping
 question marks also prevents C11 trigraph replacement before tokenization. -/
 def quoteByte (b : UInt8) : String :=

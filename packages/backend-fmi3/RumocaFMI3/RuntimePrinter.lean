@@ -1,4 +1,5 @@
 import RumocaC.TreeTokenization
+import RumocaC.NullPointerPrinter
 import RumocaC.Initialization
 import RumocaFMI3.Runtime
 
@@ -83,6 +84,7 @@ private theorem require_printable (command : Command) :
     Runtime.v, List.mem_append, List.mem_cons, List.not_mem_nil, or_false,
     or_imp, forall_and, forall_eq]
   repeat first
+    | exact CNull.literal_printable _
     | exact instance_type
     | exact allowed_printable command
     | apply And.intro
@@ -90,6 +92,7 @@ private theorem require_printable (command : Command) :
     | apply ItemPrintable.branch
     | apply ItemPrintable.returnValue
     | apply Printable.cast
+    | apply Printable.binary
     | apply Printable.not
     | apply Printable.call
     | exact Printable.string
@@ -122,6 +125,7 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
       List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq]
     repeat first
+      | exact CNull.literal_printable _
       | exact require_printable _
       | exact mode_guard_printable _
       | exact instance_type

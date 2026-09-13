@@ -1,4 +1,5 @@
 import RumocaC.FunctionPrinter
+import RumocaC.NullPointerPrinter
 import RumocaFMI3.ResetCalls
 
 /-! Instantiate the shared function-printer theorem on the actual reset CTree.
@@ -46,6 +47,7 @@ theorem function_printable (m : Solve.FMI3Model source) :
       List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq]
     repeat first
+      | exact CNull.literal_printable _
       | exact instance_type
       | exact double_type
       | apply And.intro

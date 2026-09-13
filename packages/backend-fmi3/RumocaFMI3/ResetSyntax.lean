@@ -21,7 +21,8 @@ private def kindTokens (kind : String) : List String :=
 def openingTokens : List Token :=
   (["fmi3Status", "fmi3Reset", "(", "fmi3Instance", "instance", ")", "{",
     "Instance", "*", "m", "=", "(", "(", "Instance", "*", ")", "instance", ")", ";",
-    "if", "(", "(", "!", "m", ")", ")", "{", "return", "fmi3Error", ";", "}",
+    "if", "(", "(", "m", "==", "(", "(", "void", "*", ")", "0", ")", ")", ")",
+    "{", "return", "fmi3Error", ";", "}",
     "if", "(", "(", "!", "("] ++ kindTokens "0" ++ ["||"] ++ kindTokens "1" ++
     [")", ")", ")", "{", "return", "fail", "(", "m", ","]).map Token.literal
 
@@ -47,7 +48,7 @@ def Denotes (text : String) : Prop :=
 private def opening : String :=
   "fmi3Status fmi3Reset(fmi3Instance instance) {\n" ++
   "  Instance * m = ((Instance *)instance);\n" ++
-  "  if ((!m)) {\n" ++
+  "  if ((m == ((void *)0))) {\n" ++
   "    return fmi3Error;\n" ++
   "  }\n" ++
   "  if ((!((((m->kind) == 0) && (((m->mode) == 0) || (((m->mode) == 1) || (((m->mode) == 2) || (((m->mode) == 3) || (((m->mode) == 4) || (((m->mode) == 5) || 0))))))) || (((m->kind) == 1) && (((m->mode) == 0) || (((m->mode) == 1) || (((m->mode) == 2) || (((m->mode) == 3) || (((m->mode) == 4) || (((m->mode) == 5) || 0)))))))))) {\n" ++
@@ -95,7 +96,7 @@ theorem printed (m : Solve.FMI3Model source) :
     Runtime.mode, permittedModes, Mode.code, Runtime.fail, Runtime.call,
     Runtime.ret, Runtime.v, Runtime.n, Runtime.x, Runtime.put, Runtime.setMode,
     Runtime.ok, CInitialization.Emission.statement, CInitialization.value_zero,
-    Stmt.render, Expr.render, BinOp.render, opening, closing, message]
+    Stmt.render, Expr.nullPointer, Expr.render, BinOp.render, opening, closing, message]
   decide +kernel
 
 theorem render_denotes (m : Solve.FMI3Model source) :
