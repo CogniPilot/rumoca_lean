@@ -1,3 +1,4 @@
+import RumocaFMI3.ModelAdvance
 import RumocaFMI3.StaticFactoryAcquisition
 import RumocaFMI3.MELifecycle
 import RumocaFMI3.MEInitialization
@@ -1006,3 +1007,10 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.SlotOwners.release_reserved_restore
 #audit axioms Rumoca.FMI3.MEHistory.Buffers.storage_preserved
 #audit axioms Rumoca.FMI3.MEHistory.initialize_release
+
+#audit axioms Rumoca.FMI3.ModelAdvance.advance_parameters
+#audit axioms Rumoca.FMI3.ModelAdvance.advance_reaches
+#audit axioms Rumoca.FMI3.ModelAdvance.advance_behaviors
+#audit axioms Rumoca.FMI3.ModelAdvance.static_types
+#audit axioms Rumoca.FMI3.ModelAdvance.prepared_behaviors
+#audit axioms Rumoca.FMI3.ModelAdvance.written_frame

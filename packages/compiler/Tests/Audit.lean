@@ -1,3 +1,4 @@
+import Rumoca.FMI3ModelAdvance
 import Rumoca.FMI3MELifecycle
 import Rumoca.FMI3MEInitialization
 import Rumoca.FMI3MERelease
@@ -186,3 +187,6 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_initialize_me_release
 
 #audit axioms Rumoca.FMI3.adapter_create_me_release
+
+#audit axioms Rumoca.FMI3.ModelAdvance.source_error
+#audit axioms Rumoca.FMI3.adapter_model_advance

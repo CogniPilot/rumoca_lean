@@ -197,6 +197,25 @@ Only these three status documents changed after the full gate. Emitted code,
 grammar and mandatory contracts are unchanged. This is a prerequisite for
 complete CS stepping, not a complete `fmi3DoStep` or native-cast guarantee.
 
+A derived stepping prerequisite now adds computed floor for all finite
+binary64 encodings, including negative zero, and ordinary typed external-call
+contracts for finite `floor` and a supplied int32 `fegetround` observation.
+The latter is not a proof that the host uses nearest rounding; native library,
+fenv/header correspondence and floating exception flags remain explicit
+boundaries. The actual `model_advance` helper executes through the shared
+event scheduler, deriving its nested kernel call, return and single state write
+without a successful-execution premise. The adapter consequence retains its
+actual fragment, tokenization, function bindings, memory frame and source error.
+Solve composition and reported-time lemmas keep cumulative solver duration
+separate from the communication clock. They do not establish the clock trace.
+The 27 added roots are integrated into five owning modules. The core/C/FMI/eFMI/compiler
+audit passed in `build/c-factory/cs-prerequisites-package-gate-v1.log`, with all
+845 inputs unchanged. Previous semantic definitions, emitters and mandatory
+contracts are unchanged, so the preceding full gate retains the actual-artifact
+evidence; it was not rerun for these derived proofs. Only the three status
+documents changed after package acceptance. No new test suite was added.
+Complete public `fmi3DoStep` remains open.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

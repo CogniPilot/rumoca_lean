@@ -37,6 +37,32 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### CS math calls and numerical helper: 2026-09-13
+
+This derived-proof increment follows `2051db5`. Five owning core/C/FMI/compiler
+modules integrate finite floor, ordinary math-library call contracts, actual
+`model_advance` execution and Solve duration/reported-time consequences.
+The 27 new audit roots passed the core/C/FMI/eFMI/compiler package audit in
+`build/c-factory/cs-prerequisites-package-gate-v1.log`, with all 845 inputs
+unchanged. Earlier semantic definitions, emitters, mandatory
+artifact contracts and audit roots are unchanged. The preceding 840-input
+full gate remains the evidence for those unchanged artifacts; it was not
+rerun for these derived proofs. Only these three status documents changed
+after package acceptance. No new test suite was added.
+
+The existing C11 §§7.6.3.1/7.12.9.2 mapping now has a computed result for every
+finite floor argument and complete ordinary-call behaviors for the authored
+library bindings. `fegetround` observes a supplied int32 mode; the native
+library, target-header macro and fenv correspondence are still external.
+FMI 3.0.2 stepping still needs guarded call integration, every status/output
+path and communication-clock refinement. The helper theorem supplies actual
+execution and its state frame, without assuming successful execution. The
+source error at reported time includes the clock mismatch explicitly.
+
+No MLS 3.7/eFMI Beta 1 syntax, initialization, lowering, solver policy or
+generated member changes. No MISRA or other standards finding is closed.
+**Stage decision: open; no grammar expansion.**
+
 ### Exact integer and Float64 conversions: 2026-09-13
 
 This C-semantic checkpoint follows `cb94270`. It replaces integer `0`/`1`

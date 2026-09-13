@@ -1,3 +1,4 @@
+import RumocaC.MathCalls
 import RumocaC.IntegerConversions
 import RumocaC.OutputAtomicFrame
 import RumocaC.BodyReachability
@@ -752,3 +753,12 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CIntegerConversions.cast_size
 #audit axioms Rumoca.CIntegerConversions.eval_integer_cast
 #audit axioms Rumoca.CIntegerConversions.eval_size_cast
+
+#audit axioms Rumoca.CMathCalls.finite_injective
+#audit axioms Rumoca.CMathCalls.floor_arguments
+#audit axioms Rumoca.CMathCalls.rounding_arguments
+#audit axioms Rumoca.CMathCalls.floor_effect
+#audit axioms Rumoca.CMathCalls.floor_mathematical
+#audit axioms Rumoca.CMathCalls.floor_behaviors
+#audit axioms Rumoca.CMathCalls.rounding_effect
+#audit axioms Rumoca.CMathCalls.rounding_behaviors

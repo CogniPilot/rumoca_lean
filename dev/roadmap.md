@@ -21,11 +21,11 @@ percentage of semantic coverage.
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
 Latest completed main-workspace gate:
-`build/c-factory/me-full-gate-v1.log`, passed with all 829
-integration inputs unchanged. It checks the strengthened ME control contracts, static runtime, both
+`build/c-factory/c-integer-full-gate-v1.log`, passed with all 840
+integration inputs unchanged. It checks the C conversions, ME control contracts, static runtime, both
 actual FMU interfaces and the eFMU, including the existing native and rejection
 controls. Retained artifacts and member comparisons are under
-`build/c-factory/me-artifacts-v1/` and adjacent review files.
+`build/c-factory/c-integer-artifacts-v1/` and adjacent review files.
 Compared with `2628f35`, the FMI adapter replaces `calloc`/`free` with 32
 permanent ME/CS slots; numerical C, FMI metadata, GALEC and eFMI Production C
 are unchanged. Compared with the preceding time artifacts, the
@@ -76,6 +76,17 @@ with the same 840 inputs unchanged. Both checked archives are retained under
 ME checkpoint, with only fresh eFMI generation identities and dependent checksums.
 The emitted code, grammar and mandatory contracts are unchanged. CS library
 calls, overflow/status paths and repeated-step refinement remain open.
+
+The next derived-proof increment integrates finite binary64 floor, ordinary
+math-library call contracts, the actual `model_advance` helper and source error
+at a separately reported time. Repeated Solve calls compose over an unbounded
+mathematical duration while each C count remains bounded. These 27 roots are
+in their owning core/C/FMI/compiler packages. The package audit passed in
+`build/c-factory/cs-prerequisites-package-gate-v1.log` with all 845 inputs
+unchanged. Earlier semantic definitions, emitters and mandatory contracts are
+unchanged, retaining the preceding full artifact evidence; the full gate was
+not rerun for these derived proofs. These prerequisites do not establish the
+public `fmi3DoStep` call.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -319,10 +330,12 @@ simulation or concurrent host histories.
   writes, rollback and repeated-step refinement. Prove progress or rejection
   when binary64 time would stop advancing (including the `2^53` boundary).
   An internal natural-number step counter is insufficient.
-  The current body also needs reusable semantics for nested `fegetround`/`floor`
-  calls, integer→Float64 and Float64→`uint64_t` conversions, and the sum computed
-  before the unit-grid cap rejects a large step. Proving only accepted bounded
-  additions would leave the complete rejection path uncovered.
+  Integer→Float64 and Float64→`uint64_t` conversion proofs are accepted.
+  The accepted package increment supplies ordinary finite `floor`/`fegetround`
+  contracts and actual helper execution. Connect these to public guarded
+  evaluation and an explicit target-header rounding-mode binding. The sum is
+  still computed before the unit-grid cap rejects a large step. Proving only
+  accepted bounded additions would leave the complete rejection path uncovered.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.

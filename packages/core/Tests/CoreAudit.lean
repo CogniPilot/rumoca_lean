@@ -1,3 +1,5 @@
+import RumocaCore.Real.Floor
+import RumocaCore.Solve.Run
 import RumocaCore.Real.IntegerConversion
 import RumocaCore.Transition.Events.Choices
 import RumocaCore.Transition.Events.Prefix
@@ -271,3 +273,15 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.Binary64.truncateInteger_bounded
 #audit axioms Rumoca.Binary64.exactInteger_truncate
 #audit axioms Rumoca.Binary64.bounded_floor_representable
+
+#audit axioms Rumoca.Binary64.small_exponent_units_bounds
+#audit axioms Rumoca.Binary64.small_exponent_value_bounds
+#audit axioms Rumoca.Binary64.small_floor_fits
+#audit axioms Rumoca.Binary64.large_exponent_integral
+#audit axioms Rumoca.Binary64.floorValue_correct
+#audit axioms Rumoca.Binary64.floorValue_negative_zero
+#audit axioms Rumoca.Binary64.floorValue_bounds
+#audit axioms Rumoca.Binary64.floorValue_fixed_iff
+#audit axioms Rumoca.Solve.Model.run_error_at_time
+#audit axioms Rumoca.Solve.Model.run_exact_at_time
+#audit axioms Rumoca.Solve.Model.run_add
