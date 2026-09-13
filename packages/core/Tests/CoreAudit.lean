@@ -1,4 +1,5 @@
 import RumocaCore.Transition.Events.Choices
+import RumocaCore.Transition.Events.Prefix
 import RumocaCore.Transition.Events.SilentChoices
 import RumocaCore.Transition.Events.Simulation
 import RumocaCore.GALEC.Protocol
@@ -240,3 +241,9 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.Transition.Events.Machine.terminal_choices_behaviors
 #audit axioms Rumoca.Transition.Events.Machine.prepend_silent
 #audit axioms Rumoca.Transition.Events.Machine.silent_choices_behaviors
+#audit axioms Rumoca.Transition.Events.Prefix.trans
+#audit axioms Rumoca.Transition.Events.Prefix.forced
+#audit axioms Rumoca.Transition.Events.Prefix.terminates_iff
+#audit axioms Rumoca.Transition.Events.Prefix.wrong_iff
+#audit axioms Rumoca.Transition.Events.Prefix.no_divergence
+#audit axioms Rumoca.Transition.Events.Prefix.finite_behaviors

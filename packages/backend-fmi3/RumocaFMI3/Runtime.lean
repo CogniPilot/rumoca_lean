@@ -2,6 +2,9 @@ import RumocaCore.FMI3.Lifecycle
 import RumocaFMI3.Metadata
 import RumocaC.InitializationCode
 import RumocaFMI3.IdentityCode
+import RumocaFMI3.StaticFactoryCode
+import RumocaFMI3.StaticReleaseCode
+import RumocaFMI3.StaticStorageCode
 
 /-! FMI ABI construction. Numerical evaluation is delegated to the existing
 verified Solve/C kernel. The lifecycle table supplies guards. C memory,
@@ -63,22 +66,8 @@ def countLoop (count : Expr) (body : List Stmt) : List Stmt := [
 def pointerCheck (names : List String) : Stmt :=
   reject (any (names.map fun p => negate (v p))) "Missing output pointer"
 
-def makeInstance (m : Solve.FMI3Model source) (kind : Kind) : List Stmt := [
-  .declare "fmi3Boolean" "validIdentity" (call "rumoca_valid_identity"
-    [v "instanceName", v "instantiationToken", .str (token m), .str " \t\n\r\u000c\u000b"]),
-  branch (negate (v "validIdentity"))
-    [branch (both (v "logMessage") (v "loggingOn")) [.eval (.call (v "logMessage")
-      [v "instanceEnvironment", v "fmi3Error", .str "logStatus", .str "Invalid name or instantiation token"])],
-      ret (v "NULL")],
-  .declare "Instance *" "m" (.cast "Instance *" (call "calloc" [n 1, .sizeof "Instance"])),
-  branch (negate (v "m")) [
-    branch (both (v "logMessage") (v "loggingOn")) [.eval (.call (v "logMessage")
-      [v "instanceEnvironment", v "fmi3Error", .str "logStatus", .str "Instance allocation failed"])],
-    ret (v "NULL")],
-  (CInitialization.emit m.solve x).statement,
-  put "kind" (n (if kind == .me then 0 else 1)), setMode .instantiated,
-  put "environment" (v "instanceEnvironment"), put "logger" (v "logMessage"),
-  put "logging" (v "loggingOn"), ret (.cast "fmi3Instance" (v "m"))]
+def makeInstance (m : Solve.FMI3Model source) (kind : Kind) : List Stmt :=
+  FactoryPrefix.validation m :: FactoryPrefix.identityGuard :: StaticFactory.code m.solve kind
 
 def scalarAccessCheck (array count : String) : List Stmt := [
   reject (either (nev (v count) (n 1)) (negate (v array))) "Expected one continuous state"]
@@ -154,14 +143,11 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
   | "fmi3GetVersion" => [ret (.str "3.0")]
   | "fmi3InstantiateModelExchange" => makeInstance m .me
   | "fmi3InstantiateCoSimulation" =>
-    [branch (either (v "eventModeUsed") (nev (v "nRequiredIntermediateVariables") (n 0)))
-      [branch (both (v "logMessage") (v "loggingOn")) [.eval (.call (v "logMessage")
-        [v "instanceEnvironment", v "fmi3Error", .str "logStatus", .str "Events and intermediate updates are unsupported"])],
-        ret (v "NULL")]] ++ makeInstance m .cs
+    FactoryPrefix.capabilityGuard :: makeInstance m .cs
   | "fmi3InstantiateScheduledExecution" => [
     branch (both (v "logMessage") (v "loggingOn")) [.eval (.call (v "logMessage")
       [v "instanceEnvironment", v "fmi3Error", .str "logStatus", .str "Scheduled Execution is unsupported"])], ret (v "NULL")]
-  | "fmi3FreeInstance" => [.eval (call "free" [v "instance"])]
+  | "fmi3FreeInstance" => StaticRelease.function.body
   | "fmi3SetDebugLogging" => require .logging ++ [
     reject (both (v "nCategories") (negate (v "categories"))) "Missing log categories"] ++
     countLoop (v "nCategories") [
@@ -230,14 +216,16 @@ def helpers : List CTree.Function := [
   ⟨⟨"double", "model_rhs", [⟨"const Model *", "model", false⟩]⟩, [ret (call "rumoca_rhs")], true⟩,
   ⟨⟨"void", "model_advance", [⟨"Model *", "model", false⟩, ⟨"uint64_t", "count", false⟩]⟩,
     [.assign (.field (v "model") "x" true) (call "rumoca_sample" [.field (v "model") "x" true, v "count"])], true⟩,
-  Identity.function]
+  Identity.function,
+  CAtomicScan.function]
+
+def declarationPrefix : String :=
+  "/* FMI 3 ABI adapter generated in Lean. See documentation/index.html for the proof boundary. */\n" ++
+  "#include <fmi3Functions.h>\n#include <math.h>\n#include <string.h>\n#include <stdint.h>\n#include <fenv.h>\n#include <stdatomic.h>\n\n" ++
+  "_Static_assert(ATOMIC_BOOL_LOCK_FREE == 2, \"Always-lock-free atomic Boolean storage is required\");\n\n"
 
 def declarations : String :=
-  "/* FMI 3 ABI adapter generated in Lean. See documentation/index.html for the proof boundary. */\n" ++
-  "#include <fmi3Functions.h>\n#include <math.h>\n#include <stdlib.h>\n#include <string.h>\n#include <stdint.h>\n#include <fenv.h>\n\n" ++
-  "typedef struct { double x; } Model;\n" ++
-  "typedef struct {\n  Model model;\n  double time, stop, timeMin, eventTime, lastCompleted;\n  int kind, mode;\n" ++
-  "  fmi3Boolean stopDefined, logging;\n  fmi3InstanceEnvironment environment;\n  fmi3LogMessageCallback logger;\n} Instance;\n\n"
+  declarationPrefix ++ StaticStorage.render StaticStorage.deploymentCapacity ++ "\n"
 
 def function (m : Solve.FMI3Model source) (sig : Signature) : CTree.Function :=
   ⟨sig, body m sig, false⟩

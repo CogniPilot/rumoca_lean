@@ -34,7 +34,7 @@ theorem prepared_public_admission (artifact : Artifact input) (sigs : List Signa
               (pool.install before firstBlock signed) stack) behavior ↔
           (@CCalls.Events.machine E (cInterface (pool.addresses firstBlock)) program).Behaves
             (.body (.running
-              (remaining artifact.solve.prepareFMI3 kind (Identity.accepted nameBytes
+              (remaining ((Runtime.makeInstance artifact.solve.prepareFMI3 kind).drop 2) (Identity.accepted nameBytes
                 (content " \t\n\r\u000c\u000b") tokenBytes (token artifact.solve.prepareFMI3).toUTF8.data.toList))
               (locals kind args (Identity.accepted nameBytes
                 (content " \t\n\r\u000c\u000b") tokenBytes (token artifact.solve.prepareFMI3).toUTF8.data.toList))
@@ -54,10 +54,12 @@ theorem prepared_public_admission (artifact : Artifact input) (sigs : List Signa
   have helper : program.internal.definitions Identity.function.signature.name = some (.tree Identity.function) := by
     rw [same]
     exact Identity.helper_defined artifact.solve.prepareFMI3 sigs
-  exact admission_equivalence program bindings artifact.solve.prepareFMI3 kind args
+  exact admission_equivalence program bindings artifact.solve.prepareFMI3 kind
+    ((Runtime.makeInstance artifact.solve.prepareFMI3 kind).drop 2) args
     (pool.install before firstBlock signed) stack name suppliedToken expected whitespace
     nameBytes tokenBytes (token artifact.solve.prepareFMI3).toUTF8.data.toList (content " \t\n\r\u000c\u000b")
-    defined helper supported nameBound tokenBound expectedBound whitespaceBound
+    (by cases kind <;> exact defined) helper (FactoryArguments.base_types (pool.addresses firstBlock)) rfl
+    supported nameBound tokenBound expectedBound whitespaceBound
     nameStored tokenStored expectedStored whitespaceStored fits
 
 /-- The mandatory certificate for the independently read adapter yields the
@@ -85,7 +87,7 @@ theorem actual_adapter_admission (artifact : Artifact input) (adapter : String)
                 (pool.install before firstBlock signed) stack) behavior ↔
             (@CCalls.Events.machine E (cInterface (pool.addresses firstBlock)) program).Behaves
               (.body (.running
-                (remaining artifact.solve.prepareFMI3 kind (Identity.accepted nameBytes
+                (remaining ((Runtime.makeInstance artifact.solve.prepareFMI3 kind).drop 2) (Identity.accepted nameBytes
                   (content " \t\n\r\u000c\u000b") tokenBytes (token artifact.solve.prepareFMI3).toUTF8.data.toList))
                 (locals kind args (Identity.accepted nameBytes
                   (content " \t\n\r\u000c\u000b") tokenBytes (token artifact.solve.prepareFMI3).toUTF8.data.toList))

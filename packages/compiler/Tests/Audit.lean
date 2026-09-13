@@ -1,3 +1,4 @@
+import Rumoca.FMI3StaticInitializationErrors
 import Rumoca.FMI3InitializationSemantics
 import Rumoca.FMI3InitializationCalls
 import Rumoca.FMI3InitializationProofs
@@ -11,6 +12,11 @@ import Rumoca.FMI3LiteralProofs
 import ProofAudit.Audit
 import Rumoca.FMI3FactoryValidation
 import Rumoca.FMI3FactoryAdmission
+import Rumoca.FMI3StaticCreation
+import Rumoca.FMI3StaticLogging
+import Rumoca.FMI3StaticRejection
+import Rumoca.FMI3StaticLifecycle
+import Rumoca.FMI3StaticInitialization
 import Rumoca.Behavioral
 import Rumoca.Compiler
 import Rumoca.Lowering
@@ -133,5 +139,20 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.initialization_source
 
 #audit axioms Rumoca.FMI3.adapter_factory_admission
+#audit axioms Rumoca.FMI3.adapter_static_runtime
+#audit axioms Rumoca.FMI3.adapter_static_definitions
+#audit axioms Rumoca.FMI3.prepared_static_identity
+#audit axioms Rumoca.FMI3.adapter_quiet_static_creation
+#audit axioms Rumoca.FMI3.adapter_logged_static_creation
+#audit axioms Rumoca.FMI3.prepared_static_rejection
+#audit axioms Rumoca.FMI3.adapter_quiet_static_rejection
+#audit axioms Rumoca.FMI3.adapter_logged_static_rejection
+#audit axioms Rumoca.FMI3.StaticFactory.Created.source_default
+#audit axioms Rumoca.FMI3.adapter_static_create_release
+#audit axioms Rumoca.FMI3.adapter_static_null_release
+#audit axioms Rumoca.FMI3.adapter_static_initialization
+#audit axioms Rumoca.FMI3.adapter_static_create_initialize
 #audit axioms Rumoca.FMI3.FactoryValidation.prepared_public_admission
 #audit axioms Rumoca.FMI3.FactoryValidation.actual_adapter_admission
+
+#audit axioms Rumoca.FMI3.adapter_static_initialization_complete

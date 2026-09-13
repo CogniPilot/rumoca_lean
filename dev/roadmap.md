@@ -16,33 +16,31 @@ percentage of semantic coverage.
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
 | FMI 3 ME/CS | Both interfaces share Solve. Complete derivative and Float64 getter/setter contracts are published through `d519438`; earlier reset, nominal/count/version and error-helper contracts remain required. | Remaining public calls, complete histories, static instance ownership, translation-unit and ABI correspondence. |
-| Initialization | Complete entry/exit, errors/logging and source-IVP composition; 51 added roots; full artifact gate passed with 706 unchanged inputs. | Cross-standard correspondence remains in K05; creation/lifetime remain in K02. |
+| Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
-Latest completed local gate: `build/c-factory/factory-full-gate-v2.log`, passed
-with 760 unchanged inputs. Both actual artifacts and their code-member
-comparison are retained under `build/c-factory/factory-artifacts/`. Every
-C/header/GALEC member is unchanged from `13fb2a6`. The reservation helper
-is proved but is not yet emitted by the production factory.
+Latest completed main-workspace gate:
+`build/c-factory/static-integration-full-gate-v1.log`, passed with all 801
+integration inputs unchanged. It checks the emitted static runtime, both
+actual FMU interfaces and the eFMU, including the existing native and rejection
+controls. Retained artifacts and member comparisons are under
+`build/c-factory/static-integration-artifacts-v1/` and adjacent review files.
+Compared with `2628f35`, the FMI adapter replaces `calloc`/`free` with 32
+permanent ME/CS slots; numerical C, FMI metadata, GALEC and eFMI Production C
+are unchanged. No new grammar case is admitted.
+
+The required adapter certificate includes the static declarations and initial
+creation/release contract. Derived theorems connect source identity, optional
+logging, rejection/exhaustion, reusable ownership and both successful and
+rejected initialization to the same actual function table. They retain exact intermediate heaps,
+clock, lifecycle mode and the Solve/source initial value. Complete public
+histories, callback frames, concurrent execution, transitive allocation policy,
+native ABI and MISRA correspondence remain open.
+
 Exact theorem/evidence history is in [verification.md](../docs/verification.md),
 [FMI contracts](fmi3/contracts.md), [standards review](standards-review.md) and
-Git history; this roadmap intentionally records current obligations once.
-
-The identity-validator increment passes all affected package checks in
-`build/c-factory/identity-packages-v1.log` (60 added audit roots, none removed).
-Its strengthened actual-adapter contract passes the required full artifact gate.
-Production still uses `calloc`/`free`.
-
-The factory-admission increment passes C/FMI/eFMI/compiler package checks
-in `build/c-factory/factory-contract-packages-v1.log` (50 added roots, none
-removed). Its mandatory actual-adapter contract covers public ME/CS entry,
-identity decisions, null/unsupported rejection and complete rejection logging.
-Source identifiers and prepared storage supply the expected token and messages.
-The required full artifact gate passed. Its first attempt caught a generated
-signature-membership proof error; structural membership proofs corrected it,
-and the unchanged axiom audit and actual-artifact checker accepted the fix.
-Successful creation/release and the no-heap correction remain open.
+Git history.
 
 ## Design constraints
 
@@ -50,8 +48,8 @@ Successful creation/release and the no-heap correction remain open.
   before execution. The shared Solve/C kernel and eFMI entry points consume
   supplied storage. FMI uses bounded preallocated instance storage without
   changing its standard ABI or reducing the project to a single-instance model.
-  The current FMI emitter still calls `calloc`/`free`: this is an open defect
-  against the user's requirement, not an accepted implementation boundary.
+  The current FMI emitter uses 32 permanent slots. Complete execution,
+  concurrent ownership and a transitive allocation policy remain required.
 - **Suitable for RTOS integration.** The numerical path has no OS services,
   heap calls, hidden locks or incidental I/O. Prove operation/storage bounds;
   record target timing, stack use and integration assumptions separately.
@@ -103,7 +101,41 @@ actual artifacts. Initialization success does not close lifetime or all of F02.
 
 ### K02 — Replace heap allocation with proved static instance storage
 
-**State:** design correction required; production still uses `calloc`/`free`.
+**State:** static runtime integrated and artifact-checked in the main
+workspace; complete runtime/history and no-heap/MISRA closure remain open.
+
+The runtime emits 32 permanent ME/CS slots. Its mandatory declaration and
+initial creation/release contract passed the full artifact gate with 793
+unchanged inputs. Thirteen later derived roots have focused package evidence,
+including the 798-input public-factory audit: actual-source/literal linkage,
+quiet/logged exhaustion, all input rejection causes, immediate creation/release,
+reusable ownership and the stored Solve/source initialization value. The
+renderer and earlier contract definitions are unchanged by those follow-ups.
+The earlier published `2628f35` used the allocating emitter. See
+`build/c-factory/static-runtime-review-v1.md` for exact evidence and boundaries.
+
+Creation now supplies the premises of Enter/ExitInitialization in the same
+object-aware program. Seventeen added audit roots include a shared local-body
+bisimulation, complete successful/null public initialization calls and a
+source-to-creation/initialization consequence retaining exact heaps, clock,
+lifecycle mode, lease metadata and ownership. The C/FMI/compiler audit passed
+with 801 unchanged inputs; a focused compiler audit passed the strengthened
+postconditions. See `build/c-factory/static-initialization-packages-v1.log` and
+`static-initialization-packages-v2.log`. No old contract or emitter changed.
+
+Rejected initialization and its callback paths now have the same object
+interface and actual function table. The 22 additional audit roots also cover an
+enabled logging flag with a missing logger, and proves the complete logging
+case split. Its focused FMI/compiler audit passed with 804 unchanged draft
+inputs; the earlier main artifact gate remains the 801-input checkpoint.
+No emitter or mandatory contract changed in this derived-proof follow-up.
+
+Next, compose later operation/reset/termination/release calls and actual
+concurrent ownership histories. Close callback frames, the no-heap/acyclic call graph and native
+profile/layout. The required main gate passed on the 801-input integration
+source set; this closes the integration check, not these remaining proofs.
+The combined exit items below remain open until all their obligations are met;
+no broader item is closed by a sequential initialization prefix.
 **Existing IDs:** C01, C02, F02, F03, S03; new no-heap/RTOS requirement.
 
 The shared C machine now has cell-domain/type/permission preservation proofs,

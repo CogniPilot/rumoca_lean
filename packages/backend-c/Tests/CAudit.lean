@@ -1,4 +1,10 @@
 import RumocaC.Storage
+import RumocaC.LiteralInterfaceBody
+import RumocaC.ObjectDeclaration
+import RumocaC.ObjectDeclarationSemantics
+import RumocaC.TypedMemory
+import RumocaC.CallEventPrefix
+import RumocaC.StorageTransfer
 import RumocaC.AtomicFrame
 import RumocaC.ConcurrentCalls
 import RumocaC.StringCallProofs
@@ -574,6 +580,7 @@ import RumocaC.CallSignature
 
 #audit axioms Rumoca.CStorage.store_preserves
 #audit axioms Rumoca.CStorage.Preserves.absent
+#audit axioms Rumoca.CStorage.Preserves.cell
 #audit axioms Rumoca.CStorage.body_next
 #audit axioms Rumoca.CStorage.loop_next
 #audit axioms Rumoca.CStorage.resume_preserves
@@ -638,6 +645,7 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CAtomicScan.call_prefix
 #audit axioms Rumoca.CAtomicScan.call_correct
 #audit axioms Rumoca.CAtomicScan.Printer.function_printable
+#audit axioms Rumoca.CAtomicScan.Printer.function_printable_in
 #audit axioms Rumoca.CAtomicScan.Printer.function_denotes
 #audit axioms Rumoca.CAtomicScan.Printer.function_tokenization
 
@@ -674,3 +682,40 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CStringMemory.NonzeroASCII.content
 #audit axioms Rumoca.CCalls.Events.named_declare_entry
 #audit axioms Rumoca.CCalls.Events.declare_result
+#audit axioms Rumoca.CCalls.Events.internal_path
+#audit axioms Rumoca.CCalls.Events.external_path
+#audit axioms Rumoca.CAtomicScan.attempt_path
+#audit axioms Rumoca.CAtomicScan.return_path
+#audit axioms Rumoca.CAtomicScan.scan_path
+#audit axioms Rumoca.CAtomicScan.call_path
+#audit axioms Rumoca.CMemory.store_converted
+#audit axioms Rumoca.CMemory.load_converted
+
+#audit axioms Rumoca.CObject.field_renders
+#audit axioms Rumoca.CObject.fields_render
+#audit axioms Rumoca.CObject.record_renders
+#audit axioms Rumoca.CObject.array_renders
+#audit axioms Rumoca.CObject.constant_renders
+#audit axioms Rumoca.CObject.Shape.leaf_scalar
+#audit axioms Rumoca.CObject.Shape.leaf_member
+#audit axioms Rumoca.CObject.zero_converts
+#audit axioms Rumoca.CObject.zero_load
+#audit axioms Rumoca.CObject.zero_atomic
+#audit axioms Rumoca.CObject.cellType_block
+#audit axioms Rumoca.CObject.initial_at
+#audit axioms Rumoca.CObject.initial_frame
+#audit axioms Rumoca.CObject.initial_other_block
+#audit axioms Rumoca.CObject.initial_scalar
+#audit axioms Rumoca.CObject.initial_member
+#audit axioms Rumoca.CObject.initial_readonly
+#audit axioms Rumoca.CObject.initial_atomic
+#audit axioms Rumoca.CObject.resolveFields_iff
+#audit axioms Rumoca.CObject.record_resolves
+#audit axioms Rumoca.CObject.FieldsMean.names
+#audit axioms Rumoca.CObject.array_initializes
+#audit axioms Rumoca.CObject.array_printed_initializes
+#audit axioms Rumoca.CLiteral.Interface.body_next_agrees
+#audit axioms Rumoca.CLiteral.Interface.body_next_agreement
+#audit axioms Rumoca.CLiteral.Interface.body_run_agreement
+#audit axioms Rumoca.CLiteral.Interface.body_bisimulation
+#audit axioms Rumoca.CLiteral.Interface.body_behaviors

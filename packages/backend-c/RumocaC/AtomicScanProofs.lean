@@ -98,6 +98,44 @@ theorem outcome_storage (outcome : Outcome flags count i before trace result aft
 variable [interface : CInterface]
 set_option maxRecDepth 10000
 
+theorem scan_path (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
+    (boolean : interface.types "_Bool" = some .boolean)
+    (pointer : interface.types "volatile atomic_bool *" = some .pointer)
+    (size : interface.types "size_t" = some .size)
+    (named : interface.constants "atomic_exchange" = none)
+    (bound : program.externals "atomic_exchange" = some (CAtomicBoolean.Calls.exchangeExternal tag boolean))
+    (bounded : count < 2 ^ 64)
+    (outcome : Outcome flags count i before trace result after) (previous : Bool)
+    (stack : CCalls.Typed.Continuation) :
+    Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running [scan, .ret (some (.id "count"))] (locals flags count i previous) types before)
+        "size_t" stack) (trace.map tag) (.returning (.integer result) after stack) := by
+  induction outcome generalizing previous with
+  | exhausted heap =>
+    apply (CCalls.Events.internal_path program
+      (.next (CCalls.Events.body_step program (scan_stop flags count previous heap _) "size_t" stack) (.refl _))).trans
+    exact return_path program _ heap "count" count [] stack size
+      (by simp [locals, CBody.bind]) bounded
+  | @reserved i heap inside vacant =>
+    apply (CCalls.Events.internal_path program
+      (.next (CCalls.Events.body_step program (scan_enter flags count i previous heap _ inside) "size_t" stack) (.refl _))).trans
+    change Transition.Events.Prefix _ _ ([tag (.exchange (flags.index i) false true)] ++ []) _
+    apply (attempt_path program tag boolean pointer named bound
+      (CAtomicBoolean.exchange_iff.mpr ⟨vacant, rfl⟩)).trans
+    apply (CCalls.Events.internal_path program
+      (.next (CCalls.Events.body_step program (selected_step flags count i false _ _) "size_t" stack) (.refl _))).trans
+    exact return_path program _ _ "k" i _ stack size (by simp [locals, CBody.bind]) (by omega)
+  | @busy i heap trace result after inside occupied rest ih =>
+    apply (CCalls.Events.internal_path program
+      (.next (CCalls.Events.body_step program (scan_enter flags count i previous heap _ inside) "size_t" stack) (.refl _))).trans
+    change Transition.Events.Prefix _ _ ([tag (.exchange (flags.index i) true true)] ++ trace.map tag) _
+    apply (attempt_path program tag boolean pointer named bound (CAtomicBoolean.exchange_same occupied)).trans
+    apply (CCalls.Events.internal_path program
+      (.next (CCalls.Events.body_step program (selected_step flags count i true heap _) "size_t" stack)
+        (.next (CCalls.Events.body_step program (advance_step flags count i true heap _ (by omega)) "size_t" stack)
+          (.refl _)))).trans
+    exact ih true
+
 theorem scan_prefix (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
     (boolean : interface.types "_Bool" = some .boolean)
     (pointer : interface.types "volatile atomic_bool *" = some .pointer)
@@ -111,29 +149,7 @@ theorem scan_prefix (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Ca
       (.returning (.integer result) after stack) continuationTrace final) :
     Transition.Events.Forced (CCalls.Events.machine program)
       (.body (.running [scan, .ret (some (.id "count"))] (locals flags count i previous) types before)
-        "size_t" stack) (trace.map tag ++ continuationTrace) final := by
-  induction outcome generalizing previous with
-  | exhausted heap =>
-    apply CCalls.Events.internal_prefix program
-      (.next (CCalls.Events.body_step program (scan_stop flags count previous heap _) "size_t" stack) (.refl _))
-    exact return_prefix program _ heap "count" count [] stack size
-      (by simp [locals, CBody.bind]) bounded continued
-  | @reserved i heap inside vacant =>
-    apply CCalls.Events.internal_prefix program
-      (.next (CCalls.Events.body_step program (scan_enter flags count i previous heap _ inside) "size_t" stack) (.refl _))
-    apply attempt_prefix program tag boolean pointer named bound
-      (CAtomicBoolean.exchange_iff.mpr ⟨vacant, rfl⟩)
-    apply CCalls.Events.internal_prefix program
-      (.next (CCalls.Events.body_step program (selected_step flags count i false _ _) "size_t" stack) (.refl _))
-    exact return_prefix program _ _ "k" i _ stack size (by simp [locals, CBody.bind]) (by omega) continued
-  | @busy i heap trace result after inside occupied rest ih =>
-    apply CCalls.Events.internal_prefix program
-      (.next (CCalls.Events.body_step program (scan_enter flags count i previous heap _ inside) "size_t" stack) (.refl _))
-    apply attempt_prefix program tag boolean pointer named bound (CAtomicBoolean.exchange_same occupied)
-    apply CCalls.Events.internal_prefix program
-      (.next (CCalls.Events.body_step program (selected_step flags count i true heap _) "size_t" stack)
-        (.next (CCalls.Events.body_step program (advance_step flags count i true heap _ (by omega)) "size_t" stack)
-          (.refl _)))
-    exact ih true continued
+        "size_t" stack) (trace.map tag ++ continuationTrace) final :=
+  (scan_path program tag boolean pointer size named bound bounded outcome previous stack).forced continued
 
 end Rumoca.CAtomicScan

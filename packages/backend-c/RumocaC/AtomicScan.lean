@@ -2,6 +2,7 @@ import RumocaC.AtomicScanCode
 import RumocaC.AtomicCalls
 import RumocaC.LoopEvents
 import RumocaC.CallCasts
+import RumocaC.CallEventPrefix
 
 /-! Execution of the fixed-storage reservation C helper. This uses the shared
 typed call scheduler and the specified C11 sequentially consistent exchange.
@@ -56,6 +57,27 @@ theorem attempt_resume (program : CCalls.Events.Program E) (flags : Address) (co
       types, CLoops.bindType, locals, CBody.bind, convert, Value.truth, CAtomicBoolean.value] at shadow ⊢
   all_goals exact shadow
 
+theorem attempt_path (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
+    (boolean : interface.types "_Bool" = some .boolean)
+    (pointer : interface.types "volatile atomic_bool *" = some .pointer)
+    (named : interface.constants "atomic_exchange" = none)
+    (bound : program.externals "atomic_exchange" = some (CAtomicBoolean.Calls.exchangeExternal tag boolean))
+    (operation : CAtomicBoolean.exchange before (flags.index k) true = some (observed, after)) :
+    Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running (attempt :: tail) (locals flags count k previous) types before) resultType stack)
+      [tag (.exchange (flags.index k) observed true)]
+      (.body (.running tail (locals flags count k observed) types after) resultType stack) := by
+  have entered := CCalls.Events.internal_path program
+    (.next (attempt_enter program flags count k previous before tail resultType stack boolean named) (.refl _))
+  have called := CCalls.Events.external_path program bound
+    (CAtomicBoolean.Calls.arguments_converted boolean pointer (flags.index k) true)
+    (CAtomicBoolean.Calls.exchange_executes tag boolean operation)
+    (fun _ _ _ executed => CAtomicBoolean.Calls.exchange_unique tag boolean operation executed)
+    (.caller (.assign (.id "busy")) tail (locals flags count k previous) types resultType stack)
+  have resumed := CCalls.Events.internal_path program
+    (.next (attempt_resume program flags count k previous observed after tail resultType stack) (.refl _))
+  simpa only [List.nil_append, List.append_nil] using entered.trans (called.trans resumed)
+
 theorem attempt_prefix (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
     (boolean : interface.types "_Bool" = some .boolean)
     (pointer : interface.types "volatile atomic_bool *" = some .pointer)
@@ -67,14 +89,7 @@ theorem attempt_prefix (program : CCalls.Events.Program E) (tag : CAtomicBoolean
     Transition.Events.Forced (CCalls.Events.machine program)
       (.body (.running (attempt :: tail) (locals flags count k previous) types before) resultType stack)
       (tag (.exchange (flags.index k) observed true) :: trace) result := by
-  apply CCalls.Events.internal_prefix program
-    (.next (attempt_enter program flags count k previous before tail resultType stack boolean named) (.refl _))
-  apply CCalls.Events.external_prefix program bound
-    (CAtomicBoolean.Calls.arguments_converted boolean pointer (flags.index k) true)
-    (CAtomicBoolean.Calls.exchange_executes tag boolean operation)
-    (fun _ _ _ executed => CAtomicBoolean.Calls.exchange_unique tag boolean operation executed)
-  exact CCalls.Events.internal_prefix program
-    (.next (attempt_resume program flags count k previous observed after tail resultType stack) (.refl _)) rest
+  exact (attempt_path program tag boolean pointer named bound operation).forced rest
 
 theorem scan_enter (flags : Address) (count k : Nat) (busy : Bool) (heap : Heap) (rest : List Stmt)
     (less : k < count) :
@@ -139,6 +154,17 @@ theorem return_body (env : CBody.Locals) (heap : Heap) (name : String) (n : Nat)
       some (.returned ⟨.integer n, heap⟩) := by
   simp [CLoops.next, CLoops.eval, CBody.eval, CBody.resolve, found]
 
+theorem return_path (program : CCalls.Events.Program E) (env : CBody.Locals) (heap : Heap)
+    (name : String) (n : Nat) (rest : List Stmt) (stack : CCalls.Typed.Continuation)
+    (size : interface.types "size_t" = some .size)
+    (found : env name = some (.integer n)) (bound : n < 2 ^ 64) :
+    Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running (.ret (some (.id name)) :: rest) env types heap) "size_t" stack)
+      [] (.returning (.integer n) heap stack) := by
+  exact CCalls.Events.internal_path program
+    (.next (CCalls.Events.body_step program (return_body env heap name n rest found) "size_t" stack)
+      (.next (size_returned program heap n stack size bound) (.refl _)))
+
 theorem return_prefix (program : CCalls.Events.Program E) (env : CBody.Locals) (heap : Heap)
     (name : String) (n : Nat) (rest : List Stmt) (stack : CCalls.Typed.Continuation)
     (size : interface.types "size_t" = some .size)
@@ -147,9 +173,7 @@ theorem return_prefix (program : CCalls.Events.Program E) (env : CBody.Locals) (
       (.returning (.integer n) heap stack) trace result) :
     Transition.Events.Forced (CCalls.Events.machine program)
       (.body (.running (.ret (some (.id name)) :: rest) env types heap) "size_t" stack)
-      trace result := by
-  exact CCalls.Events.internal_prefix program
-    (.next (CCalls.Events.body_step program (return_body env heap name n rest found) "size_t" stack)
-      (.next (size_returned program heap n stack size bound) (.refl _))) continued
+      trace result :=
+  (return_path program env heap name n rest stack size found bound).forced continued
 
 end Rumoca.CAtomicScan

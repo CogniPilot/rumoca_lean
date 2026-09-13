@@ -24,7 +24,7 @@ theorem library_undefined (model : Solve.FMI3Model source) (signatures : List Si
     rcases belongs with helper | ⟨sig, belongs, rfl⟩
     · simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at helper
       simp only [CStringCalls.routineNames, List.mem_cons, List.not_mem_nil, or_false] at member
-      rcases helper with rfl | rfl | rfl | rfl <;>
+      rcases helper with rfl | rfl | rfl | rfl | rfl <;>
         rcases member with rfl | rfl | rfl <;> decide +kernel
     · have different : sig.name ≠ name := fun same => fresh sig belongs (same ▸ member)
       simpa only [Runtime.function, beq_iff_eq] using different

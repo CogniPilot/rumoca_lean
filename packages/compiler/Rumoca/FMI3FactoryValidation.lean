@@ -52,7 +52,8 @@ theorem prepared_factory_validation (artifact : Artifact input) (sigs : List Sig
       function.signature.name = some (.tree function) := by
     rw [same]
     exact helper_defined artifact.solve.prepareFMI3 sigs
-  exact factory_validates program bindings defined artifact.solve.prepareFMI3 kind env types
+  exact factory_validates program bindings defined artifact.solve.prepareFMI3
+    (Runtime.makeInstance artifact.solve.prepareFMI3 kind).tail env types
     (pool.install before firstBlock signed) resultType stack name suppliedToken expected whitespace
     nameBytes tokenBytes (token artifact.solve.prepareFMI3).toUTF8.data.toList (content " \t\n\r\u000c\u000b")
     fresh unshadowed rfl nameBound tokenBound expectedBound whitespaceBound

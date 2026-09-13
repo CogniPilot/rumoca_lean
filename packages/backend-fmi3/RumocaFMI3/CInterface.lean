@@ -37,11 +37,12 @@ not establish pointee layouts, callback execution or the native ABI. -/
       "const fmi3Int64 *", "const fmi3UInt64 *", "const fmi3Boolean *",
       "const size_t *", "const fmi3Binary *", "const fmi3Clock *",
       "fmi3ValueReference *", "fmi3DependencyKind *", "fmi3FMUState *",
-      "fmi3Byte *", "const fmi3Byte *", "fmi3IntervalQualifier *"].contains type then some .pointer
+      "fmi3Byte *", "const fmi3Byte *", "fmi3IntervalQualifier *",
+      "volatile atomic_bool *"].contains type then some .pointer
   else if type = "double" || type = "fmi3Float64" then some .float64
-  else if type = "size_t" || type = "uint64_t" then some .size
+  else if type = "size_t" || type = "uint64_t" || type = "const size_t" then some .size
   else if type = "int" || type = "fmi3Status" then some .int32
-  else if type = "fmi3Boolean" then some .boolean
+  else if type = "fmi3Boolean" || type = "_Bool" then some .boolean
   else if type = "fmi3ValueReference" then some (.unsigned 32)
   else none
 

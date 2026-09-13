@@ -71,6 +71,27 @@ theorem initialization (flags : Address) (count : Nat) (heap : Heap)
   simp only [CLoops.run, first, second, third, bind, Option.bind_some, busyDecl]
   rfl
 
+theorem call_path (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
+    (boolean : interface.types "_Bool" = some .boolean)
+    (pointer : interface.types "volatile atomic_bool *" = some .pointer)
+    (size : interface.types "size_t" = some .size)
+    (constantSize : interface.types "const size_t" = some .size)
+    (named : interface.constants "atomic_exchange" = none)
+    (bound : program.externals "atomic_exchange" = some (CAtomicBoolean.Calls.exchangeExternal tag boolean))
+    (defined : program.internal.definitions function.signature.name = some (.tree function))
+    (bounded : count < 2 ^ 64)
+    (outcome : Outcome flags count 0 before trace result after) (stack : CCalls.Typed.Continuation) :
+    Transition.Events.Prefix (CCalls.Events.machine program)
+      (.calling function.signature.name [.pointer (some flags), .integer count] before stack)
+      (trace.map tag) (.returning (.integer result) after stack) := by
+  apply (CCalls.Events.internal_path program
+    (.next (CCalls.Events.tree_entry program _ _ before stack function _ _ defined
+      (parameters_bound flags count pointer size bounded) (parameter_types pointer size)) (.refl _))).trans
+  apply (CCalls.Events.internal_path program
+    (CCalls.Events.body_reaches program (CLoops.run_reaches (initialization flags count before boolean size constantSize))
+      "size_t" stack)).trans
+  exact scan_path program tag boolean pointer size named bound bounded outcome false stack
+
 theorem call_prefix (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
     (boolean : interface.types "_Bool" = some .boolean)
     (pointer : interface.types "volatile atomic_bool *" = some .pointer)
@@ -85,14 +106,8 @@ theorem call_prefix (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Ca
       (.returning (.integer result) after stack) continuationTrace final) :
     Transition.Events.Forced (CCalls.Events.machine program)
       (.calling function.signature.name [.pointer (some flags), .integer count] before stack)
-      (trace.map tag ++ continuationTrace) final := by
-  apply CCalls.Events.internal_prefix program
-    (.next (CCalls.Events.tree_entry program _ _ before stack function _ _ defined
-      (parameters_bound flags count pointer size bounded) (parameter_types pointer size)) (.refl _))
-  apply CCalls.Events.internal_prefix program
-    (CCalls.Events.body_reaches program (CLoops.run_reaches (initialization flags count before boolean size constantSize))
-      "size_t" stack)
-  exact scan_prefix program tag boolean pointer size named bound bounded outcome false stack continued
+      (trace.map tag ++ continuationTrace) final :=
+  (call_path program tag boolean pointer size constantSize named bound defined bounded outcome stack).forced continued
 
 /-- Total behavior classification for every admitted flag array and extent.
 The result includes the checked bound on work, not an assumed terminating run. -/

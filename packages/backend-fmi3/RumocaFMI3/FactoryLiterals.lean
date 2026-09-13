@@ -27,6 +27,8 @@ theorem collected (model : Solve.FMI3Model source) (field : Field) :
   cases field <;>
     simp [text, Runtime.function, Runtime.body, signature, Identity.factoryName,
       Runtime.makeInstance, FactoryUnsupported.message,
+      FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
+      FactoryRejection.code, FactoryRejection.logCall,
       functionTexts, statementTexts, expressionTexts, Runtime.call, Runtime.v, Runtime.branch, Runtime.ret]
 
 theorem prepared (model : Solve.FMI3Model source) (sigs : List Signature)

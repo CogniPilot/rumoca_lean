@@ -25,7 +25,7 @@ theorem numerical_bound (model : Solve.FMI3Model source) (signatures : List Sign
     simp only [functions, List.mem_append, List.mem_map] at member
     rcases member with helper | ⟨sig, member, rfl⟩
     · simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at helper
-      rcases helper with rfl | rfl | rfl | rfl <;> cases function <;> decide +kernel
+      rcases helper with rfl | rfl | rfl | rfl | rfl <;> cases function <;> decide +kernel
     · simpa only [Runtime.function, beq_iff_eq] using fresh sig member function
   simp only [program, missing]
   cases function <;> rfl

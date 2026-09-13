@@ -13,22 +13,24 @@ def typedefs : List String := ["size_t", "atomic_bool"]
 private theorem size_type : TypeSpelling typedefs "size_t" :=
   .named (.typedefName (by decide +kernel) (by decide +kernel))
 
-private theorem boolean_type : TypeSpelling typedefs "_Bool" :=
-  .named (.primitive (by decide +kernel))
-
 private theorem flag_pointer : TypeSpelling typedefs "volatile atomic_bool *" :=
   TypeSpelling.pointer (text := "volatile atomic_bool")
     (TypeSpelling.volatile (text := "atomic_bool")
       (.named (.typedefName (by decide +kernel) (by decide +kernel))))
 
-theorem function_printable : FunctionPrintable typedefs function := by
+theorem function_printable_in (names : List String)
+    (size_type : TypeSpelling names "size_t")
+    (flag_pointer : TypeSpelling names "volatile atomic_bool *")
+    (identifiers : ∀ name ∈ ["rumoca_reserve_slot", "flags", "count", "k", "one", "busy", "atomic_exchange"],
+      CIdentifier.valid names name = true) : FunctionPrintable names function := by
+  have boolean_type : TypeSpelling names "_Bool" := .named (.primitive (by decide +kernel))
   constructor
-  · refine ⟨size_type, by decide +kernel, ?_⟩
+  · refine ⟨size_type, identifiers "rumoca_reserve_slot" (by simp), ?_⟩
     intro parameter member
     simp only [function, List.mem_cons, List.not_mem_nil, or_false] at member
     rcases member with rfl | rfl
-    · exact ⟨flag_pointer, by decide +kernel⟩
-    · exact ⟨size_type, by decide +kernel⟩
+    · exact ⟨flag_pointer, identifiers _ (by simp)⟩
+    · exact ⟨size_type, identifiers _ (by simp)⟩
   · simp only [function, scan, attempt, selected, advance, List.mem_cons,
       List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     repeat first
@@ -50,9 +52,16 @@ theorem function_printable : FunctionPrintable typedefs function := by
       | exact Printable.natural
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible
+      | exact identifiers _ (by simp)
       | decide +kernel
       | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
           Postfix]
+
+theorem function_printable : FunctionPrintable typedefs function :=
+  function_printable_in typedefs size_type flag_pointer (by
+    intro name member
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel)
 
 theorem function_denotes : FunctionDenotes typedefs function.render function :=
   CTree.Printer.function_denotes function_printable

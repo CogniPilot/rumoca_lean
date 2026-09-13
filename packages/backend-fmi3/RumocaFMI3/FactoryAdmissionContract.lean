@@ -21,7 +21,7 @@ structure ExecutionContract (model : Solve.FMI3Model source) (program : CCalls.E
     ∀ stack, ∃ types, ∀ behavior,
       (CCalls.Events.machine program).Behaves (.calling (signature kind).name (arguments kind args) heap stack) behavior ↔
       (CCalls.Events.machine program).Behaves
-        (.body (.running (FactoryValidation.remaining model kind
+        (.body (.running (FactoryValidation.remaining ((Runtime.makeInstance model kind).drop 2)
           (Identity.accepted nameBytes (content (text model .whitespace)) tokenBytes (content (token model))))
           (FactoryValidation.locals kind args
             (Identity.accepted nameBytes (content (text model .whitespace)) tokenBytes (content (token model))))
@@ -75,25 +75,31 @@ theorem execution_correct (model : Solve.FMI3Model source) (program : CCalls.Eve
   constructor
   · intro bindings kind args name suppliedToken nameBytes tokenBytes supported nameBound tokenBound
       nameStored tokenStored fits stack
-    exact FactoryValidation.admission_equivalence program bindings model kind args heap stack
+    exact FactoryValidation.admission_equivalence program bindings model kind
+      ((Runtime.makeInstance model kind).drop 2) args heap stack
       name suppliedToken (addresses .expected) (addresses .whitespace) nameBytes tokenBytes
-      (content (token model)) (content (text model .whitespace)) (definitions kind) helper supported
+      (content (token model)) (content (text model .whitespace))
+      (by cases kind <;> exact definitions _) helper (FactoryArguments.base_types static.addresses) rfl supported
       nameBound tokenBound (bound .expected) (bound .whitespace)
       nameStored tokenStored (literal_contents (stored .expected)) (literal_contents (stored .whitespace)) fits
   · intro kind args supported missing stack
-    exact FactoryNull.reaches_rejection program model kind args heap stack (addresses .expected) (addresses .whitespace)
-      (definitions kind) helper supported missing (bound .expected) (bound .whitespace)
+    exact FactoryNull.reaches_rejection program model kind ((Runtime.makeInstance model kind).drop 2)
+      args heap stack (addresses .expected) (addresses .whitespace)
+      (by cases kind <;> exact definitions _) helper (FactoryArguments.base_types static.addresses)
+      rfl rfl rfl rfl supported missing (bound .expected) (bound .whitespace)
   · intro args unsupported stack
-    exact FactoryUnsupported.rejection_entry program model args heap stack (definitions .cs) unsupported
+    exact FactoryUnsupported.rejection_entry program (Runtime.makeInstance model .cs)
+      args heap stack (FactoryArguments.base_types static.addresses) (definitions .cs) unsupported
   · intro field env types rest logger logging loggerBound loggingBound nullBound quiet behavior
     rw [FactoryRejection.silent_equivalence program (text model field) env types heap rest .done
-      logger logging loggerBound loggingBound nullBound quiet behavior]
+      logger logging loggerBound loggingBound nullBound rfl quiet behavior]
     exact (CCalls.Events.return_forced program (.pointer none) heap).behaviors behavior
   · intro field env types rest logger environment name foreign loggerBound loggingBound
       environmentBound errorBound nullBound address external prototype behavior
     refine ⟨FactoryRejection.all_behaviors program (text model field) env types heap rest
       logger (addresses .category) (addresses field) environment name foreign loggerBound loggingBound
-      environmentBound errorBound nullBound (bound .category) (bound field) address external prototype behavior, ?_⟩
+      environmentBound errorBound nullBound (bound .category) (bound field) address external prototype rfl
+      (Logging.arguments_converted name environment (addresses .category) (addresses field)) behavior, ?_⟩
     intro events value after executed item
     exact (FactoryLiterals.preserved model addresses heap after signed stored
       (foreign.readonly _ _ _ _ _ executed) item).2

@@ -1866,3 +1866,118 @@ does not close a missing contract.
 The unchanged required gate remains
 `nix develop .#verification --command lake test`; reuse cached package proofs
 during local development. Review probes are not a substitute for that gate.
+
+
+## Static runtime and public factory composition checkpoint — 2026-09-13
+
+This incremental review records progress within the frozen stage. It is not a
+completed recurring stage checklist, a grammar expansion, or a MISRA declaration.
+
+- **FMI 3.0.2 §§2.2.1, 2.3.1:** the emitter uses 32 permanent shared ME/CS
+  objects and bounded atomic reservation/release. The derived public-call
+  theorems cover supported creation, sequential exhaustion, unsupported CS
+  requests, missing/invalid identities, exact diagnostics, optional logging,
+  immediate release/reuse and null release. Logging disabled implies no logger
+  invocation; enabled logging retains all represented callback outcomes and
+  effects. The initial value is tied to the compiled Solve plan. Full host
+  histories, other-instance callback frames, native concurrency and subsequent
+  initialization/operation composition remain open. Normative reference:
+  [FMI 3.0.2](https://fmi-standard.org/docs/3.0.2/).
+- **MLS 3.7:** source grammar, parser, lowering and numerical Solve semantics
+  are unchanged. The unit derivative does not itself specify an initial value;
+  the checked fallback plan selects zero and retains its existing notices.
+  The creation theorem proves the stored binary64 value agrees with this plan
+  and selects the unique completed source trajectory.
+- **eFMI 1.0.0 Beta 1 Algorithm/Production Code:** the full static-runtime gate
+  passed actual eFMU archive/source/native/mutation controls. Algorithm Code and
+  Production C members are byte-identical to the published checkpoint. Their
+  existing normative findings and correlated-product obligations remain open.
+- **MISRA C:2025/C11:** generated factory/release code no longer calls dynamic
+  allocation. Static declarations and selected atomic calls have authored
+  semantics and printer contracts. The existing native checks passed pool
+  exhaustion, isolation/reuse and allocator/out-of-line-atomic import checks.
+  These do not prove a transitive no-heap policy or native atomic semantics.
+  Essential types, remaining pointer guards, floating comparisons, native
+  size/alignment/profile and the guideline matrix still block conformance.
+- **Architecture:** Rust SPEC_0007 at
+  `b102b3f710eb232880728d4e474292cfb07d5ce0` was rechecked. Numerical
+  initialization stays in Solve, with DAE → GALEC → Solve for eFMI and
+  DAE → Solve for FMI. These changes add no name resolution, shape inference,
+  equation lowering or solver selection to a backend.
+
+Evidence: `build/c-factory/static-runtime-full-gate-v1.log/.exit` passed for
+793 unchanged inputs and both actual target archives. Thirteen later roots
+passed two focused package audits, the last with 798 unchanged draft inputs and
+all 760 published inputs unchanged. Earlier semantic/emitter/mandatory-contract
+definitions and every audit root were retained. The current seven-root increment
+adds three compiler proof modules and audit entries, with no new test suite.
+These later package checks are not a new full artifact gate. The detailed
+record is `build/c-factory/static-runtime-review-v1.md`.
+
+**Decision:** stage remains open; do not expand the grammar or claim whole
+FMI/eFMI, MISRA, native machine-code or aircraft assurance completion.
+
+### Static creation through initialization — 2026-09-13
+
+Seventeen additional audit roots connect creation, EnterInitialization and
+ExitInitialization in one actual object-aware program. The generic C body
+bisimulation proves local binding changes preserve returned values/heaps,
+failure and divergence. The FMI instance proves syntax lookup and type
+agreement, complete successful/null calls, and the storage premises derived
+from creation. The compiler consequence retains the exact intermediate heaps,
+clock, lifecycle mode, reservation flags, slot metadata and the actual finite
+value's agreement with the Solve plan and completed source solution.
+
+[FMI 3.0.2 §§2.3.2–2.3.3](https://fmi-standard.org/docs/3.0.2/) were rechecked:
+initialization uses the supplied start time; exit activates ME event equations
+and, with CS event mode unused in this profile, CS stepping. The theorem uses
+the existing admissible finite-time profile and makes no new tolerance,
+variable-step or event capability claim. Host setters and invalid subsequent
+calls still need composition in this same interface. MLS/GALEC grammars,
+numerical semantics and eFMI members are unchanged. Rust SPEC_0007 at
+`c89fde703f82afc323d9f38bdf1e8f316452d723` retains the same DAE/GALEC/Solve
+ownership boundaries; the backend reuses prepared Solve initialization.
+
+The C/FMI/compiler package audit passed for 801 unchanged inputs in
+`build/c-factory/static-initialization-packages-v1.log`; the strengthened
+compiler consequence passed `static-initialization-packages-v2.log`. No prior
+emitter, semantics, mandatory contract or audit root was removed or weakened.
+No test suite was added. The required main-workspace integration gate then
+passed with all 801 source inputs unchanged in
+`build/c-factory/static-integration-full-gate-v1.log`. Its FMU/eFMU archives
+and member comparisons are retained under `build/c-factory/`; only the FMI
+adapter C differs from the preceding allocating artifact. Numerical C,
+FMI metadata, GALEC and eFMI Production C are unchanged. Subsequent
+current-status documentation cleanup changes no code or audit input.
+Concurrent histories, callback frames, remaining API behavior, native ABI,
+no-heap policy and MISRA obligations keep this stage open.
+
+### Static initialization error coverage — 2026-09-13
+
+The derived source/adapter consequence now covers successful/null calls and
+initialization rejection with disabled, missing or enabled supplied logging.
+The preceding initialization error contract omitted the missing-logger/enabled
+flag case; the emitted guard already suppressed it. The new contracts prove
+that behavior and the exhaustive nullable-pointer/Boolean case split. The
+actual definitions and immutable diagnostics come from the same prepared
+artifact on heaps that can include writes by earlier calls.
+
+[FMI 3.0.2 §§2.2.1 and 2.3.1](https://fmi-standard.org/docs/3.0.2/) permit
+null callbacks to identify unavailable functionality and restrict its use;
+SetDebugLogging with a missing logger, for example, has undefined standard
+behavior. These proofs describe the existing defensive error path; they do
+not authorize arbitrary use of missing callback support. Disabled logging
+causes no callback. Supplied loggers receive the Error status/category/message,
+with all modeled effects retained. Native callback execution, private-storage
+frames and non-reentry correspondence remain open.
+
+The 22 new roots passed the focused FMI/compiler package audits in
+`build/c-factory/static-error-package-gate-v2.log`, with 804 unchanged draft
+inputs and the 801 main gate inputs unchanged. The latter full artifact gate
+and its retained FMU/eFMU cover the same emitters and mandatory contracts.
+No previous definition or audit root was weakened and no test suite was added.
+MLS 3.7 and eFMI 1.0.0 Beta 1 language/output profiles are unchanged. Rust
+SPEC_0007 at `5d0f62d147caa94e04befb9532f437b0b16cb9de` retains the reviewed
+DAE/GALEC/Solve ownership. This is an incremental review within the frozen
+stage; whole host histories, remaining APIs, native ABI, no-heap/MISRA and
+the other recurring checklist findings remain open.

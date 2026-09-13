@@ -195,6 +195,37 @@ class FMI3Tests(unittest.TestCase):
         self.assertEqual(self.Reset(a), OK)
         self.assertEqual(self.step(a, 0, 1)[0], ERROR)  # before initialization
 
+        # Native boundary for the proved static-storage replacement: ME and CS
+        # share capacity, exhaustion preserves live instances, and reuse starts
+        # with fresh state/lifecycle fields. The Lean contracts quantify over
+        # storage and calls; this checks the compiled object layout and ABI.
+        for handle in self.handles:
+            self.FreeInstance(handle)
+        self.handles.clear()
+        declaration = re.search(r"static const size_t rumoca_instance_capacity = (\d+);",
+                                (self.root / "sources/fmi3.c").read_text())
+        self.assertIsNotNone(declaration)
+        capacity = int(declaration[1])
+        self.assertEqual(capacity, 32)  # Current deployment profile.
+        for index in range(capacity):
+            kind = "me" if index % 2 == 0 else "cs"
+            handle = self.create(kind)
+            self.assertTrue(handle)
+            self.initialize(handle, kind, start=index + 0.5, stop=10)
+        self.assertEqual(len(set(self.handles)), capacity)
+        self.assertFalse(self.create("me", logging=True))
+        self.assertFalse(self.create("cs", logging=True))
+        self.assertEqual(self.messages[-1][:3], (123, ERROR, b"logStatus"))
+        for index, handle in enumerate(self.handles):
+            self.assertEqual(self.values(handle), (0, index + 0.5, 1))
+        self.FreeInstance(self.handles.pop(0))
+        reused = self.create("cs")
+        self.assertTrue(reused)
+        self.assertEqual(self.values(reused), (0, 0, 1))
+        self.initialize(reused, stop=None)
+        self.assertEqual(self.step(reused, 0, 11), (OK, (False, False, False), 11))
+        self.assertFalse(self.create("me"))
+
     def test_me_initialization_event_and_state_access(self):
         # FMI 3.0.2 §2.3.2 excludes nominals in Instantiated. Rejection must
         # preserve the caller's output, enter Terminated, and respect loggingOn.
@@ -445,6 +476,13 @@ class FMI3Tests(unittest.TestCase):
         subprocess.run([compiler, *options, "-fPIC", "-shared",
                         "-DFMI3_OVERRIDE_FUNCTION_PREFIX", "-I", str(VENDOR), *sources, *libraries,
                         "-o", str(rebuilt)], check=True)
+        # Check actual host linkage as well as the source-level contracts. This
+        # does not certify the internals of libc or user-supplied callbacks.
+        for binary in (self.library, rebuilt):
+            undefined = subprocess.check_output(["nm", "-u", str(binary)], text=True)
+            symbols = {line.split()[-1].split("@")[0] for line in undefined.splitlines()}
+            self.assertFalse(symbols & {"malloc", "calloc", "realloc", "free", "aligned_alloc"})
+            self.assertFalse(any(symbol.startswith("__atomic_") for symbol in symbols))
         # Python already loads libm and can hide a missing dependency. Resolve
         # every symbol in a fresh loader process which links only libdl.
         loader_source = self.root / "load.c"

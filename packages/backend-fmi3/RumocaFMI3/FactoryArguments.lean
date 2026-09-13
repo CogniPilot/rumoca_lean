@@ -1,5 +1,5 @@
 import RumocaFMI3.IdentityFactoryEntry
-import RumocaFMI3.CallTypes
+import RumocaC.CallSignature
 
 /-! Fresh public ME/CS factory entry with every parameter from the pinned
 prototype. Unused pointers are opaque and may be null. Size values have the
@@ -21,22 +21,6 @@ structure Raw where
   intermediateVariables : Option Address
   intermediateCount : Fin (2^64)
   intermediateUpdate : Option Address
-
-def signature (kind : Kind) : Signature :=
-  ⟨"fmi3Instance", Identity.factoryName kind,
-    [⟨"fmi3String", "instanceName", false⟩,
-     ⟨"fmi3String", "instantiationToken", false⟩,
-     ⟨"fmi3String", "resourcePath", false⟩,
-     ⟨"fmi3Boolean", "visible", false⟩,
-     ⟨"fmi3Boolean", "loggingOn", false⟩] ++
-    (match kind with | .me => [] | .cs => [
-      ⟨"fmi3Boolean", "eventModeUsed", false⟩,
-      ⟨"fmi3Boolean", "earlyReturnAllowed", false⟩,
-      ⟨"const fmi3ValueReference", "requiredIntermediateVariables", true⟩,
-      ⟨"size_t", "nRequiredIntermediateVariables", false⟩]) ++
-    [⟨"fmi3InstanceEnvironment", "instanceEnvironment", false⟩,
-     ⟨"fmi3LogMessageCallback", "logMessage", false⟩] ++
-    (match kind with | .me => [] | .cs => [⟨"fmi3IntermediateUpdateCallback", "intermediateUpdate", false⟩])⟩
 
 def arguments (kind : Kind) (args : Raw) : List Value :=
   [.pointer args.name, .pointer args.token, .pointer args.resource,
@@ -68,18 +52,35 @@ theorem scope (kind : Kind) (args : Raw) : Scope args (parameters kind args) := 
       Identity.factoryName, List.lookup]
 
 section
-variable [static : StaticLiterals]
-private local instance targetInterface : CInterface := cInterface static.addresses
+variable [interface : CInterface]
 
-theorem ready (kind : Kind) : CCalls.Signature.Ready (signature kind) := by
-  change @CCalls.Signature.Ready cInterface (signature kind)
-  cases kind <;> decide +kernel
+/-- Exactly the header meanings needed to bind both public factory signatures.
+Other types and global object symbols may be supplied by the same interface. -/
+structure Types : Prop where
+  string : interface.types "fmi3String" = some .pointer
+  boolean : interface.types "fmi3Boolean" = some .boolean
+  references : interface.types "const fmi3ValueReference *" = some .pointer
+  size : interface.types "size_t" = some .size
+  environment : interface.types "fmi3InstanceEnvironment" = some .pointer
+  logger : interface.types "fmi3LogMessageCallback" = some .pointer
+  update : interface.types "fmi3IntermediateUpdateCallback" = some .pointer
+  handle : interface.types "fmi3Instance" = some .pointer
 
-omit static in
+omit interface in
+theorem base_types (literals : CLiteralAddresses) : @Types (cInterface literals) := by
+  letI : CInterface := cInterface literals
+  exact ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem ready (kind : Kind) (bindings : Types) : CCalls.Signature.Ready (signature kind) := by
+  cases kind <;> simp [CCalls.Signature.Ready, signature, CCalls.parameterType,
+    bindings.string, bindings.boolean, bindings.references, bindings.size,
+    bindings.environment, bindings.logger, bindings.update, bindings.handle]
+
+omit interface in
 private theorem converted_boolean (flag : Bool) :
     convert .boolean (boolean flag) = some (boolean flag) := by cases flag <;> rfl
 
-theorem arguments_converted (kind : Kind) (args : Raw) :
+theorem arguments_converted (kind : Kind) (args : Raw) (bindings : Types) :
     CCalls.Signature.Arguments (signature kind).parameters (arguments kind args) (arguments kind args) := by
   have count : convert .size (.integer args.intermediateCount.val) =
       some (.integer args.intermediateCount.val) := by
@@ -88,29 +89,32 @@ theorem arguments_converted (kind : Kind) (args : Raw) :
   all_goals
     repeat' first
       | exact CCalls.Signature.Arguments.nil
-      | refine CCalls.Signature.Arguments.cons (type := .pointer) (by rfl) (by rfl) ?_
-      | refine CCalls.Signature.Arguments.cons (type := .boolean) (by rfl) (converted_boolean _) ?_
-      | refine CCalls.Signature.Arguments.cons (type := .size) (by rfl) count ?_
+      | refine CCalls.Signature.Arguments.cons (type := .pointer)
+          (by first | exact bindings.string | exact bindings.references | exact bindings.environment |
+              exact bindings.logger | exact bindings.update) (by rfl) ?_
+      | refine CCalls.Signature.Arguments.cons (type := .boolean) bindings.boolean (converted_boolean _) ?_
+      | refine CCalls.Signature.Arguments.cons (type := .size) bindings.size count ?_
 
-theorem parameters_bound (kind : Kind) (args : Raw) :
+theorem parameters_bound (kind : Kind) (args : Raw) (bindings : Types) :
     CCalls.parameters (signature kind).parameters (arguments kind args) = some (parameters kind args) :=
-  CCalls.Signature.parameters_bound (arguments_converted kind args) (ready kind).1
+  CCalls.Signature.parameters_bound (arguments_converted kind args bindings) (ready kind bindings).1
 
 /-- The actual call creates the entire local/type environment. No successful
 execution or caller-supplied parameter environment is assumed. -/
-theorem call_entry (program : CCalls.Events.Program E) (model : Solve.FMI3Model source)
+theorem call_entry (program : CCalls.Events.Program E) (body : List Stmt)
     (kind : Kind) (args : Raw) (heap : Heap) (stack : CCalls.Typed.Continuation)
+    (bindings : Types)
     (defined : program.internal.definitions (signature kind).name =
-      some (.tree (Runtime.function model (signature kind)))) :
+      some (.tree ⟨signature kind, body, false⟩)) :
     ∃ types,
       CCalls.Events.internalNext program
         (.calling (signature kind).name (arguments kind args) heap stack) =
-        some (.body (.running (Runtime.body model (signature kind)) (parameters kind args) types heap)
+        some (.body (.running body (parameters kind args) types heap)
           "fmi3Instance" stack) ∧
       CCalls.Parameters.Coherent (parameters kind args) types ∧ Scope args (parameters kind args) := by
-  obtain ⟨types, boundTypes, coherent⟩ := CCalls.Parameters.parameters_typed _ _ _ (parameters_bound kind args)
+  obtain ⟨types, boundTypes, coherent⟩ := CCalls.Parameters.parameters_typed _ _ _ (parameters_bound kind args bindings)
   exact ⟨types, CCalls.Events.tree_entry program _ _ heap stack
-    (Runtime.function model (signature kind)) _ types defined (parameters_bound kind args) boundTypes,
+    ⟨signature kind, body, false⟩ _ types defined (parameters_bound kind args bindings) boundTypes,
     coherent, scope kind args⟩
 
 end

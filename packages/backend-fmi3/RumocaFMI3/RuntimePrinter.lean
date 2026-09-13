@@ -3,6 +3,8 @@ import RumocaC.NullPointerPrinter
 import RumocaC.Initialization
 import RumocaFMI3.Runtime
 import RumocaFMI3.IdentityPrinter
+import RumocaFMI3.StaticFactoryPrinter
+import RumocaC.AtomicScanPrinter
 
 /-! Instantiate the shared C printer contract for every existing FMI runtime
 body and helper. Typedef spellings are explicit surrounding-context premises;
@@ -10,15 +12,6 @@ their actual declarations, type constraints and public-call behavior require
 separate contracts. No function-specific token skeleton is used. -/
 namespace Rumoca.FMI3.RuntimePrinter
 open CTree CTree.Printer CTree.Syntax
-
-def typedefs : List String :=
-  ["Instance", "Model", "size_t", "uint64_t", "fmi3Instance", "fmi3InstanceEnvironment",
-    "fmi3FMUState", "fmi3ValueReference", "fmi3Float32", "fmi3Float64",
-    "fmi3Int8", "fmi3UInt8", "fmi3Int16", "fmi3UInt16", "fmi3Int32", "fmi3UInt32",
-    "fmi3Int64", "fmi3UInt64", "fmi3Boolean", "fmi3Char", "fmi3String", "fmi3Byte",
-    "fmi3Binary", "fmi3Clock", "fmi3Status", "fmi3DependencyKind", "fmi3IntervalQualifier",
-    "fmi3LogMessageCallback", "fmi3ClockUpdateCallback", "fmi3IntermediateUpdateCallback",
-    "fmi3LockPreemptionCallback", "fmi3UnlockPreemptionCallback"]
 
 private theorem instance_type : TypeSpelling typedefs "Instance *" :=
   TypeSpelling.pointer (text := "Instance")
@@ -114,6 +107,11 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
     ∀ stmt ∈ Runtime.body model signature, ItemPrintable typedefs stmt := by
   unfold Runtime.body
   split <;> (try split)
+  all_goals first
+    | exact (StaticFactory.Printer.factory_printable model .me).2
+    | exact (StaticFactory.Printer.factory_printable model .cs).2
+    | exact StaticFactory.Printer.release_printable.2
+    | skip
   all_goals
     simp only [Runtime.makeInstance, Runtime.instancePrefix, Runtime.countLoop,
       Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
@@ -174,16 +172,27 @@ theorem function_tokenization (model : Solve.FMI3Model source) (signature : Sign
       (Runtime.function model signature) :=
   (CTree.Printer.function_denotes (function_printable model signature valid)).tokenization
 
+private theorem reserve_printable : FunctionPrintable typedefs CAtomicScan.function :=
+  CAtomicScan.Printer.function_printable_in typedefs size_type
+    (TypeSpelling.pointer (text := "volatile atomic_bool")
+      (TypeSpelling.volatile (text := "atomic_bool")
+        (.named (.typedefName (by decide +kernel) (by decide +kernel))))) (by
+      intro name member
+      simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+      rcases member with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;> decide +kernel)
+
 theorem helpers_printable : ∀ fn ∈ Runtime.helpers, FunctionPrintable typedefs fn := by
   intro fn member
   simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl | rfl | rfl
+  rcases member with rfl | rfl | rfl | rfl | rfl
   all_goals first
     | exact Identity.Printer.function_printable_in typedefs (by decide) (by decide) (by decide)
+    | exact reserve_printable
     | skip
   all_goals simp only [FunctionPrintable, SignaturePrintable, ParameterPrintable,
     Runtime.setMode, Runtime.put, Runtime.mode, Runtime.log, Runtime.branch,
     Runtime.both, Runtime.field, Runtime.v, Runtime.n, Runtime.ret, Runtime.call,
+    CAtomicScan.function, CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   all_goals repeat first
     | exact instance_type
@@ -196,10 +205,16 @@ theorem helpers_printable : ∀ fn ∈ Runtime.helpers, FunctionPrintable typede
     | exact void_type
     | apply And.intro
     | apply ItemPrintable.assign
+    | apply ItemPrintable.declare
+    | apply ItemPrintable.whileLoop
     | apply ItemPrintable.branch
     | apply ItemPrintable.eval
     | apply ItemPrintable.returnValue
     | apply Printable.binary
+    | apply Printable.cast
+    | apply Printable.not
+    | apply Printable.address
+    | apply Printable.index
     | apply Printable.call
     | apply Printable.field
     | exact Printable.natural

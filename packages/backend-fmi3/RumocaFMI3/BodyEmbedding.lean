@@ -15,6 +15,15 @@ theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     (Runtime.body m sig).all CBodyEmbedding.closedBlocks = true := by
   unfold Runtime.body
   split <;> simp_all [CBodyEmbedding.closedBlocks, CLoops.noDeclarations,
+    FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
+    FactoryRejection.code, FactoryRejection.logCall,
+    StaticFactory.code, StaticFactory.reserve, StaticFactory.guard, StaticFactory.exhausted,
+    StaticFactory.initializeInstance, StaticFactory.selectInstance,
+    StaticRelease.function, StaticRelease.guard, StaticRelease.clear,
+    InstanceSlot.code, InstanceSlot.statement, InstanceInitialization.code,
+    InstanceInitialization.put, InstanceInitialization.field, InstanceInitialization.state,
+    InstanceInitialization.returnHandle, CAtomicScan.function,
+    CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
     Runtime.makeInstance, Runtime.require, Runtime.instancePrefix, Runtime.countLoop,
     Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
     Runtime.scalarAccessCheck, Runtime.pointerCheck,
@@ -28,11 +37,12 @@ omit static in
 theorem helpers_closed (fn : CTree.Function) (h : fn ∈ Runtime.helpers) :
     fn.body.all CBodyEmbedding.closedBlocks = true := by
   simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at h
-  rcases h with rfl | rfl | rfl | rfl <;>
+  rcases h with rfl | rfl | rfl | rfl | rfl <;>
     simp [CBodyEmbedding.closedBlocks, CLoops.noDeclarations, Runtime.setMode,
       Runtime.put, Runtime.log, Runtime.branch, Runtime.ret, Identity.function,
       Identity.nullCheck, Identity.falseReturn, Identity.measure, Identity.measurePrefix,
-      Identity.blank, Identity.compareToken, Identity.comparisonReturn]
+      Identity.blank, Identity.compareToken, Identity.comparisonReturn,
+      CAtomicScan.function, CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance]
 
 noncomputable section
 /-- Any terminating run of an admitted runtime body has exactly the same

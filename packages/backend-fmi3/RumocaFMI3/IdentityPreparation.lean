@@ -1,4 +1,5 @@
 import RumocaFMI3.IdentityContract
+import RumocaFMI3.FactoryPrefixCode
 import RumocaC.StringLiteralContents
 
 /-! Construct the validator's constant buffers from the literal pool collected
@@ -8,16 +9,14 @@ noncomputable section
 namespace Rumoca.FMI3.Identity
 open CTree CMemory CLiteral CStringMemory
 
-def factoryName : Kind → String
-  | .me => "fmi3InstantiateModelExchange"
-  | .cs => "fmi3InstantiateCoSimulation"
-
 theorem constants_collected (model : Solve.FMI3Model source) (sig : Signature) (kind : Kind)
     (named : sig.name = factoryName kind) :
     token model ∈ functionTexts (Runtime.function model sig) ∧
       " \t\n\r\u000c\u000b" ∈ functionTexts (Runtime.function model sig) := by
   cases kind <;> simp only [factoryName] at named
   all_goals simp [Runtime.function, Runtime.body, named, Runtime.makeInstance,
+    FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
+    FactoryRejection.code, FactoryRejection.logCall,
     functionTexts, statementTexts, expressionTexts, Runtime.call, Runtime.v]
 
 theorem constants_ready (model : Solve.FMI3Model source) (sigs : List Signature)

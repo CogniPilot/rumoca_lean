@@ -134,7 +134,7 @@ theorem helpers_bound (m : Solve.FMI3Model source) (signatures : List Signature)
     (fn : Function) (member : fn ∈ Runtime.helpers) :
     (program m signatures).definitions fn.signature.name = some (.tree fn) := by
   simp [Runtime.helpers] at member
-  rcases member with rfl | rfl | rfl | rfl <;> rfl
+  rcases member with rfl | rfl | rfl | rfl | rfl <;> rfl
 
 /-- Every collected occurrence has a constructed address; callers need not
 supply a successful literal lookup as an extra premise. -/
@@ -176,6 +176,15 @@ macro "fmi_literal_calls" : tactic => `(tactic|
     Runtime.fail, Runtime.branch, Runtime.ret, Runtime.v, Runtime.n,
     Runtime.call, Runtime.log, Runtime.ok, Runtime.put, Runtime.setMode,
     Runtime.out, Runtime.scalarAccessCheck, Runtime.countLoop, Runtime.pointerCheck,
+    FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
+    FactoryRejection.code, FactoryRejection.logCall,
+    StaticFactory.code, StaticFactory.reserve, StaticFactory.guard, StaticFactory.exhausted,
+    StaticFactory.initializeInstance, StaticFactory.selectInstance,
+    StaticRelease.function, StaticRelease.guard, StaticRelease.clear,
+    InstanceSlot.code, InstanceSlot.statement, InstanceInitialization.code,
+    InstanceInitialization.put, InstanceInitialization.field, InstanceInitialization.state,
+    InstanceInitialization.returnHandle, CAtomicScan.function,
+    CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
     Runtime.makeInstance, Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
     Runtime.doStep, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
     CInitialization.Emission.statement, CInitialization.value,
@@ -195,7 +204,7 @@ theorem functions_calls (m : Solve.FMI3Model source) (signatures : List Signatur
   intro fn member
   rcases List.mem_append.mp member with helper | exported
   · simp [Runtime.helpers] at helper
-    rcases helper with rfl | rfl | rfl | rfl <;> fmi_literal_calls
+    rcases helper with rfl | rfl | rfl | rfl | rfl <;> fmi_literal_calls
   · obtain ⟨sig, member, rfl⟩ := List.mem_map.mp exported
     exact body_calls m sig
 

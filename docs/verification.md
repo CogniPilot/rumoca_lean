@@ -1,5 +1,69 @@
 # Exact verification contract
 
+**Latest storage checkpoint (2026-09-13):** this working source emits 32
+permanent, shared ME/CS instance slots with bounded atomic reservation and
+release. Its mandatory adapter contract now includes declaration syntax,
+record interpretation, capacity bounds, initial creation/release execution
+and consistent foreign bindings. The full artifact gate passed for the
+793-input static-runtime snapshot in `build/c-factory/static-runtime-full-gate-v1.log`.
+The retained FMU/eFMU and source/member comparisons are under
+`build/c-factory/static-runtime-artifacts-v1/` and the adjacent review files.
+
+Thirteen subsequent derived theorems connect the actual source token, literal
+pool and function table to creation, exhaustion, input rejection, optional
+logging, immediate release/reuse and the stored Solve/source initial value.
+Their package audits passed in `static-creation-consequences-packages-v1.log`
+and `static-public-consequences-packages-v1.log` under `build/c-factory/`.
+The latter check covered 798 unchanged inputs; the full artifact gate was not
+rerun for these proof-only additions. Every earlier emitter, semantic
+definition and mandatory contract field was retained. The earlier published
+`2628f35` checkpoint used the allocating emitter.
+
+Seventeen further audit roots now connect creation to both complete public
+initialization calls in the same execution interface. A shared body
+bisimulation proves that changing unused global bindings preserves all body
+behaviors; it does not assume agreement for unrelated factory definitions.
+The actual adapter supplies function membership and definitions. Creation
+supplies writable storage, initial mode and the finite Solve default; the
+composed theorem retains the exact intermediate heaps, initialized clock,
+ME Event/CS Step mode, slot metadata and ownership, and the unique completed
+source solution. Successful and null initialization calls are covered;
+invalid subsequent calls and arbitrary host histories remain open.
+`static-initialization-packages-v1.log` passed C/FMI/compiler checks for 801
+unchanged inputs, and `static-initialization-packages-v2.log` passed the
+strengthened compiler consequence. These logs are under `build/c-factory/`.
+No earlier emitter, semantic definition, mandatory contract or audit root
+changed. The full main-workspace gate then passed in
+`build/c-factory/static-integration-full-gate-v1.log`, with all 801
+integration inputs unchanged. Both actual FMU interfaces and the eFMU
+passed their existing artifact/native/rejection checks. The adjacent
+`static-integration-artifacts-v1/` retains the checked archives; member
+comparisons confirm unchanged numerical C, FMI metadata, GALEC and eFMI
+Production C. The status-document reconciliation after this gate changes
+only these three documentation files; code and audit inputs are identical.
+
+Twenty-two subsequent derived audit roots connect complete initialization
+error paths to the same static object environment and actual function table.
+They preserve all represented callback outcomes, immutable diagnostic bytes,
+and the path with no returning callback outcome. A review found an omitted
+case in the earlier error contract: logging enabled with no logger. The new
+suppressed contracts cover a missing logger or disabled logging; a theorem
+proves that these cases and an enabled supplied logger exhaust the represented
+domain. The generated C already handled this case, so no emission changed.
+`build/c-factory/static-error-package-gate-v2.log` passed the FMI/compiler
+package audits with all 804 draft inputs and all 801 main gate inputs unchanged.
+The full artifact result belongs to the preceding 801-input snapshot; these
+new derived consequences have separate package evidence. Existing emitters,
+semantics, mandatory artifact contracts and audit roots were retained. No new
+test suite was added. See `build/c-factory/static-error-review-v1.md`.
+
+This does not close K02–K05. Remaining public calls must be composed in the same
+object-aware execution interface; actual concurrent histories, callback
+frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA
+correspondence remain open. The production grammar is unchanged. Earlier
+paragraphs below record historical checkpoints, including the former
+allocating implementation; they do not supersede this storage status.
+
 **Current claim boundary:** the numerical source-to-C core is formally
 checked. The whole FMI/eFMI compiler is not yet fully verified, even for the
 unit grammar subset, because the adapter/artifact/compliance obligations
@@ -30,7 +94,7 @@ selects the Real fallback zero and records both fallback and unfixed-start
 selection notices. Scalar Flat/DAE/Solve models require exact occurrence origins
 and preserve those settings; CLI and LSP notices identify the declaration.
 The shared C initializer proves its write and memory frame, and FMI emits it
-after allocation and on reset. Whole FMI allocation/lifecycle/host-set and
+on instance activation and reset. Whole FMI storage/lifecycle/host-set and
 artifact composition remain open.
 
 `EFMIInitializationProofs` derives the completed source trajectory from the
@@ -416,11 +480,11 @@ axiom whitelist are retained. No source grammar is added. Allocation, arbitrary
 host/lifecycle histories, remaining APIs and complete standards/ABI coverage
 keep the stage open. See [the initialization contract](../dev/fmi3/contracts.md#complete-initialization-calls).
 
-Generated C now has an explicit no-heap/RTOS requirement. The current FMI
-emitter still uses `calloc`/`free`; bounded static multi-instance storage and
-its complete execution/ownership contract remain to be implemented. Neither
-the existing initialization theorem nor internal heap-frame invariants prove
-this new requirement. MISRA C:2025 with the C11 profile has been
+At the initial no-heap/RTOS review, the FMI emitter still used `calloc`/`free`.
+The static-runtime checkpoint at the top of this document supersedes that
+implementation: permanent multi-instance storage is now emitted. Complete
+execution/ownership and transitive allocation contracts remain open; neither
+initialization alone nor internal heap-frame invariants close them. MISRA C:2025 with the C11 profile has been
 reviewed for initial findings; the 223-entry enforcement matrix is open.
 Essential types, pointer guards, allocation and concurrency require
 further proof and artifact coverage. Rule 15.5 is Disapplied; C11 is supported.

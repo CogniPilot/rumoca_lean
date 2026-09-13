@@ -34,6 +34,15 @@ theorem body_inputs (model : Solve.FMI3Model source) (signature : Signature) :
     ∀ stmt ∈ Runtime.body model signature, StmtInputs stmt := by
   unfold Runtime.body
   split <;> simp [StmtInputs, ExprInputs, Expr.nullPointer, plain_iff_all, or_imp, forall_and,
+    Identity.function, FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
+    FactoryRejection.code, FactoryRejection.logCall,
+    StaticFactory.code, StaticFactory.reserve, StaticFactory.guard, StaticFactory.exhausted,
+    StaticFactory.initializeInstance, StaticFactory.selectInstance,
+    StaticRelease.function, StaticRelease.guard, StaticRelease.clear,
+    InstanceSlot.code, InstanceSlot.statement, InstanceInitialization.code,
+    InstanceInitialization.put, InstanceInitialization.field, InstanceInitialization.state,
+    InstanceInitialization.returnHandle, CAtomicScan.function,
+    CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
     Runtime.makeInstance, Runtime.instancePrefix, Runtime.countLoop,
     Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
     Runtime.scalarAccessCheck, Runtime.pointerCheck,
