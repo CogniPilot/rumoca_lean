@@ -1,3 +1,5 @@
+import RumocaFMI3.StaticFactoryAcquisition
+import RumocaFMI3.MELifecycle
 import RumocaFMI3.MEInitialization
 import RumocaFMI3.MEAtomicFrames
 import RumocaFMI3.MERelease
@@ -999,3 +1001,8 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEHistory.ReferenceState.Live.terminate
 #audit axioms Rumoca.FMI3.MEHistory.slot_outside
 #audit axioms Rumoca.FMI3.MEHistory.release_correct
+
+#audit axioms Rumoca.FMI3.StaticFactory.public_create_owned
+#audit axioms Rumoca.FMI3.SlotOwners.release_reserved_restore
+#audit axioms Rumoca.FMI3.MEHistory.Buffers.storage_preserved
+#audit axioms Rumoca.FMI3.MEHistory.initialize_release

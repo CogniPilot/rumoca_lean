@@ -166,6 +166,20 @@ and audit roots are unchanged, so the preceding full gate remains the
 actual-artifact evidence. The full gate was not rerun for these derived proofs;
 their package snapshot is recorded separately. No test suite was added.
 
+The next derived consequence connects that lifecycle to the actual public
+factory. From an available slot, it derives the created handle, initialized
+source value, caller-buffer validity and original lease. The same program then
+executes initialization, the admitted ME controls, termination and release,
+restoring the original owners and preserving cells outside the instance,
+outputs and selected reservation. The five new roots are integrated into
+three owning modules. The FMI/compiler audit passed in
+`build/c-factory/me-creation-package-gate-v1.log` with all 838 inputs unchanged.
+Existing emitters, semantics, mandatory contracts and audit roots are unchanged;
+the preceding full gate supplies artifact evidence, with this derived-proof
+package snapshot recorded separately. The history still
+omits importer state/numerical interactions, interspersed failures, reset and
+concurrent hosts; this does not assert validity of a released handle.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

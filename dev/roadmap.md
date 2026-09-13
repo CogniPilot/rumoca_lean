@@ -58,7 +58,12 @@ new roots passed the C/FMI/compiler package audit with 835 unchanged inputs in
 `build/c-factory/me-lifecycle-package-gate-v1.log`. This leaves emitted code
 and mandatory artifact contracts unchanged; the preceding full gate supplies
 their artifact evidence, with the derived-proof snapshot recorded separately.
-Creation and importer state/numerical interactions still need composition.
+The next five-root checkpoint connects this lifecycle to actual public creation,
+deriving the selected handle, source default and caller-buffer validity from
+available initial storage. Release restores the original owners and the final
+frame covers the complete creation-to-release chain. The FMI/compiler audit
+passed in `build/c-factory/me-creation-package-gate-v1.log` with all 838 inputs
+unchanged. Importer state/numerical interactions remain open.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -293,14 +298,19 @@ simulation or concurrent host histories.
   queries and creation/initialization. Retain the numerical/source guarantee
   alongside all public observations and caller-protocol obligations.
   Initialization→controls→termination→release now has a composed actual-adapter
-  theorem deriving the surviving lease from its original ownership; creation
-  and the importer interactions still need composition.
+  theorem deriving the surviving lease from its original ownership. Actual
+  creation now supplies that lease, the handle, source default and storage;
+  importer state/numerical interactions still need composition.
   Reset's successful/null calls and reset→initialization composition now use
   the static object interface; arbitrary surrounding histories remain open.
 - [ ] Finish public CS communication-time/step arithmetic, status/output
   writes, rollback and repeated-step refinement. Prove progress or rejection
   when binary64 time would stop advancing (including the `2^53` boundary).
   An internal natural-number step counter is insufficient.
+  The current body also needs reusable semantics for nested `fegetround`/`floor`
+  calls, integer→Float64 and Float64→`uint64_t` conversions, and the sum computed
+  before the unit-grid cap rejects a large step. Proving only accepted bounded
+  additions would leave the complete rejection path uncovered.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.
