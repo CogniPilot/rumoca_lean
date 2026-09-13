@@ -100,14 +100,17 @@ The shared explicit-null guard and these prerequisites have 44 added roots
 and a passing full artifact gate in `build/c-static-storage/full-gate.log`,
 with 710 unchanged source inputs. This does not close any K02 exit item.
 
-- [ ] Repair nested aggregate addressing before representing the static
-  instance array. `CMemory.Address` currently flattens array offsets across
-  member selection: `instances[1].x[0]` and `instances[0].x[1]` can share a
-  symbolic address. Preserve the order of subobject selections and prove
-  separation of distinct instance/member elements. The current scalar unit
-  profile does not require this combination; the storage design must support
-  future tensor fields without an address workaround. Native layout remains
-  a separate K04 obligation.
+- [x] Complete artifact verification of the nested aggregate address correction.
+  `CMemory.Address` now retains the outer index at each member selection.
+  Ten added roots prove exact index/member recovery, tensor-region frames,
+  arbitrary member-depth separation and preservation of another record by
+  the actual cell store. All affected packages pass in
+  `build/c-static-storage/address-package-v3.log`. The required main artifact
+  gate passed in `build/c-subobjects/full-gate.log`, including both target
+  archives with all 711 source inputs unchanged. Every generated C/header/GALEC
+  byte is unchanged from `b478606`. This repairs the prior collision between
+  `instances[1].x[0]` and `instances[0].x[1]` in the authored model; valid bounds,
+  leaf types and native layout remain separate K04 obligations.
 - [ ] Define the storage contract and generation-time instance capacity.
   Preserve multiple independent ME/CS instances. Check capacity exhaustion,
   initialization failure and reuse against FMI; do not add an unstated

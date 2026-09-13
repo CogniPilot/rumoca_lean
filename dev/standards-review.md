@@ -89,7 +89,7 @@ library's implementation to follow its coding rules.
 | MC07 — identifiers, pointers and provenance | Rules 5.1–5.10, 11.1–11.6/11.8–11.11 and 18.1–18.10 require profile-specific namespace/type/pointer evidence. Required Dir 3.1 also requires documented requirement traceability. Source spans alone do not identify every generated policy requirement. | Connect existing name, conversion, bounds and origin proofs to the exact rules and actual preprocessed interfaces. Preserve generated-rule ancestry. Symbolic pointer cells and a 63-character name check alone cannot close the whole-product obligations. |
 | MC09 — implicit pointer guards | Required Rule 11.11 prohibits implicit comparison of pointers with null. The shared `instancePrefix` now emits `m == ((void *)0)` with null-value, printer and branch-preservation proofs. Other instance/name/callback pointer guards remain implicit. | Partial progress only. Complete the remaining explicit comparisons and essential-type review. Preserve short-circuiting, logger behavior and all existing function contracts; a textual replacement without semantic preservation is insufficient. |
 | MC08 — eFMI references and generator process | eFMI 1.0.0 Beta 1 §5.2 references MISRA AC AGC for generated code; its GALEC rules also name MISRA C:2012. MISRA C:2025 §1.5.2 and Appendix E impose additional compliance/generator documentation. | Map the separate normative references and review their applicable text. The 2025 book does not silently replace eFMI's references or close SR07. Complete the generator and product compliance documentation and independent review. |
-| MC10 — nested aggregate address scope | The current symbolic `CMemory.Address` records member names and a single accumulated array offset. It cannot distinguish an outer instance-array index from an inner member-array index. The scalar unit profile does not use this nesting; permanently typed instance storage must permit later tensor fields. | Repair hierarchical subobject addressing and prove separation before implementing an array of instances with array members. Retain existing frame/call proofs under the refinement. Do not infer native layout or pointer validity from the current flat keys. |
+| MC10 — nested aggregate address scope | The former `CMemory.Address` flattened indices across member selection. It now records the containing element's offset at each selection and starts the selected member's local offset at zero. Ten new roots, all affected packages and the required main artifact gate pass. | The modeled address correction is complete; both checked archives retain identical C/header/GALEC bytes. Keep bounds, valid native objects, leaf types and layout separate. Arbitrary-depth descendant and store-frame proofs establish structural isolation for the planned static array; they do not implement its native storage or concurrency. |
 
 The initial enforcement plan is below. Each group must become a separate entry
 for every applicable directive/rule before claiming compliance, with its
@@ -179,6 +179,40 @@ unchanged throughout the gate. Both archives are retained under
 and GALEC bytes are identical (`build/c-static-storage/artifacts.log`).
 No MISRA finding other than the named shared guard is
 closed, no grammar is added, and no full compliance claim follows.
+
+### Hierarchical subobject correction: standards impact
+
+This increment follows `b478606`. Each `Address.member` preserves its containing
+element's index in the member path. The next array offset is local to that
+member, so it cannot be confused with an outer instance index.
+`member_index_eq_iff` recovers both indices and the member name; `InRecord`
+supports arbitrary member depth and local array offsets. `store_other_record`
+uses the actual typed store and proves preservation of another enclosing
+record's descendants, including nested model fields and tensor cells.
+Tensor-region preparation and view separation use the same representation.
+
+The reviewed C rules are array selection (C11 6.5.2.1p2), member selection
+(6.5.2.3p3–4), and bounded pointer displacement (6.5.6p8).
+See the [WG14 C11 draft](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+The authored model still requires valid objects, bounds, leaf types and
+lifetimes from a separate layout interpretation. It does not infer unequal
+native pointer values from every pair of distinct symbolic paths: aggregate
+and initial-member pointers, non-null pointer comparisons and general nested
+C array decay have separate obligations. This change addresses array indices
+across named member selection, without adding a new source grammar case.
+
+All ten added roots and existing C/FMI/eFMI/compiler checks pass in
+`build/c-static-storage/address-package-v3.log`. The exact five changed
+implementation/audit files are recorded in `address-promote.json` in the same
+directory. The required main artifact gate passed in
+`build/c-subobjects/full-gate.log`, including the existing native FMI and
+eFMU checks. All 711 source inputs and the complete file set remained
+unchanged throughout the gate. Exact archives are retained in
+`build/c-subobjects/artifacts/`; all C/header/GALEC members are byte-identical
+to `b478606` (`build/c-subobjects/artifacts.log`). Numerical operations,
+IR lowering, emitters and metadata are unchanged. Actual static declarations,
+creation/release, concurrency, native layout and whole-stage compliance remain
+open; no dynamic-allocation removal is claimed.
 
 ### Complete initialization calls: standards impact
 

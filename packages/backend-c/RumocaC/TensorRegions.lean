@@ -1,4 +1,5 @@
 import RumocaC.TensorMemory
+import RumocaC.Subobjects
 
 /-! Initial object-memory regions for supplied tensor storage. This specifies
 valid C call-entry memory; it does not execute a native allocator. -/
@@ -66,11 +67,8 @@ theorem place_reads (heap : Heap) (base : Address) (values : Values shape) (writ
     ↓reduceIte, pure]
 
 theorem member_separate (base : Address) (a b : String) (different : a ≠ b) (i j : Nat) :
-    (base.member a).index i ≠ (base.member b).index j := by
-  intro eq
-  have members := congrArg Address.members eq
-  simp only [Address.index, Address.member] at members
-  exact different (List.singleton_inj.mp (List.append_cancel_left members))
+    (base.member a).index i ≠ (base.member b).index j :=
+  base.fields_separate a b different i j
 
 /-- Distinct fields remain separate for arbitrary ranks, counts and offsets. -/
 theorem place_other_member (heap : Heap) (base : Address) (a b : String) (shape : Rumoca.Tensor.Shape)
@@ -79,6 +77,21 @@ theorem place_other_member (heap : Heap) (base : Address) (a b : String) (shape 
       heap ((base.member b).index i) :=
   place_frame heap (base.member a) shape writable initial _
     (fun j _ => member_separate base b a different i j)
+
+/-- Preparing an instance's tensor storage preserves every member element of
+another instance, even when both instances are in the same outer array. -/
+theorem place_other_instance (heap : Heap) (base : Address) (i j : Nat) (a b : String)
+    (shape : Rumoca.Tensor.Shape) (writable : Bool) (initial : Option (Values shape))
+    (different : j ≠ i) (k : Nat) :
+    place heap ((base.index i).member a) shape writable initial (((base.index j).member b).index k) =
+      heap (((base.index j).member b).index k) :=
+  place_frame heap ((base.index i).member a) shape writable initial _
+    (fun l _ => base.instances_separate j i different b a k l)
+
+theorem separate_instances (base : Address) (i j : Nat) (different : i ≠ j)
+    (a b : String) (count : Nat) :
+    Separate ((base.index i).member a) ((base.index j).member b) count :=
+  fun k _ l _ => base.instances_separate i j different a b k l
 
 def scratch (heap : Heap) (base : Address) (shape : Rumoca.Tensor.Shape) : List String → Heap
   | [] => heap

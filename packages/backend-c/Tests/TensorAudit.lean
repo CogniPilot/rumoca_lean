@@ -81,6 +81,8 @@ import TensorCChecks.IVPEntry
 #audit axioms Rumoca.CMemory.TensorRegion.place_reads
 #audit axioms Rumoca.CMemory.TensorRegion.member_separate
 #audit axioms Rumoca.CMemory.TensorRegion.place_other_member
+#audit axioms Rumoca.CMemory.TensorRegion.place_other_instance
+#audit axioms Rumoca.CMemory.TensorRegion.separate_instances
 #audit axioms Rumoca.CMemory.TensorRegion.scratch_other
 #audit axioms Rumoca.CMemory.TensorRegion.scratch_at
 #audit axioms Rumoca.CMemory.TensorRegion.scratch_writable

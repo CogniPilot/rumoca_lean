@@ -1,4 +1,5 @@
 import RumocaC.Storage
+import RumocaC.Subobjects
 import RumocaC.NullPointerPrinter
 import RumocaC.MemoryUpdates
 import RumocaC.LoopEvents
@@ -589,3 +590,12 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CBody.zeroLiteral_true
 #audit axioms Rumoca.CBody.zeroLiteral_false
 #audit axioms Rumoca.CLiteral.Lowering.expression_zeroLiteral
+
+#audit axioms Rumoca.CMemory.Address.member_index_eq_iff
+#audit axioms Rumoca.CMemory.Address.instances_separate
+#audit axioms Rumoca.CMemory.Address.fields_separate
+#audit axioms Rumoca.CMemory.Address.member_in_record
+#audit axioms Rumoca.CMemory.Address.InRecord.member
+#audit axioms Rumoca.CMemory.Address.InRecord.index
+#audit axioms Rumoca.CMemory.Address.records_separate
+#audit axioms Rumoca.CMemory.store_other_record

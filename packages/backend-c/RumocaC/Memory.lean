@@ -2,8 +2,10 @@ import RumocaCore.Real.Encoding
 import RumocaC.Character
 import RumocaC.Unsigned
 
-/-! Typed cells at symbolic C subobject addresses. Addresses distinguish live
-blocks, struct member paths and array offsets. This is an object-level C
+/-! Typed cells at symbolic C subobject addresses. Each member selection keeps
+the enclosing array offset; the final offset is relative to the selected
+member. Thus outer array indices cannot alias indices inside a member array.
+This is an object-level C
 memory profile, not a byte-layout/ABI theorem. The current fragment has no
 unions, pointer-to-integer casts, allocation, free, or pointer arithmetic
 across subobjects. Absent and uninitialized cells cannot be read; writes need
@@ -13,12 +15,12 @@ namespace Rumoca.CMemory
 
 structure Address where
   block : Nat
-  members : List String := []
+  members : List (Nat × String) := []
   offset : Nat := 0
   deriving DecidableEq, Repr
 
 def Address.member (p : Address) (name : String) : Address :=
-  { p with members := p.members ++ [name] }
+  { p with members := p.members ++ [(p.offset, name)], offset := 0 }
 def Address.index (p : Address) (n : Nat) : Address := { p with offset := p.offset + n }
 
 @[simp] theorem Address.index_zero (p : Address) : p.index 0 = p := by cases p; rfl
@@ -28,7 +30,7 @@ def Address.index (p : Address) (n : Nat) : Address := { p with offset := p.offs
   constructor
   · intro h
     have hm := List.append_cancel_left (congrArg Address.members h)
-    exact List.singleton_inj.mp hm
+    exact congrArg Prod.snd (List.singleton_inj.mp hm)
   · intro h; cases h; rfl
 
 inductive Value where

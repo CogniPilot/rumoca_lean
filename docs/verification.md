@@ -446,10 +446,27 @@ MISRA/adapter compliance remain open.
 Its storage prerequisites prove preservation of supplied cell domains, types
 and permissions through internal C execution, and bounded serial reservation,
 exclusion and reuse of fixed slots. They do not establish a no-heap generated
-product, native atomics, caller ownership or layout. Nested array/member
-addressing also requires a structural correction before the planned static
-instance array can support tensor fields; see MC10 in the
+product, native atomics, caller ownership or layout. At that checkpoint,
+nested array/member addressing also required a structural correction before
+the planned static instance array could support tensor fields; see MC10 in the
 [standards review](../dev/standards-review.md#misra-c2025-and-static-storage-review).
+
+The following subobject correction retains the containing array index at each
+member selection and resets the selected member's local offset. Ten added
+roots prove exact recovery of both index levels and the field name, tensor
+region separation, arbitrary member-depth isolation and the actual typed
+store's frame for a different record. All existing memory/call contracts and
+affected C/FMI/eFMI/compiler package checks pass in
+`build/c-static-storage/address-package-v3.log`. The required main artifact
+gate passed in `build/c-subobjects/full-gate.log`, including both actual
+target archives with all 711 inventoried inputs unchanged. Every C/header/GALEC
+member is byte-identical to `b478606`; exact archives are retained in
+`build/c-subobjects/artifacts/`. The ten new roots retain all earlier roots
+and the unchanged axiom policy. No source grammar or Solve operation changes.
+These are structural cell facts; native bounds, layout, effective types,
+lifetimes and concurrent ownership require separate contracts. In particular,
+they do not establish native pointer inequality for all different paths or
+implement the planned static instance storage.
 
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
