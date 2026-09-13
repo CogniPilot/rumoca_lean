@@ -12,6 +12,7 @@ theorem TypeTokens.nonstring (type : TypeTokens typedefs tokens) :
   induction type with
   | named named => simp [NonString]
   | const type ih => simpa [NonString] using ih
+  | volatile type ih => simpa [NonString] using ih
   | pointer type ih =>
       intro token member
       simp only [List.mem_append, List.mem_singleton] at member
@@ -158,4 +159,3 @@ theorem FunctionDenotes.phase_six (contract : FunctionDenotes typedefs text func
   exact ⟨tokens, lexical, grammar, fun _ steps => grammar.concatenation_unchanged steps⟩
 
 end Rumoca.CTree.Printer
-

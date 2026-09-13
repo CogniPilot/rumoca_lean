@@ -180,6 +180,48 @@ and GALEC bytes are identical (`build/c-static-storage/artifacts.log`).
 No MISRA finding other than the named shared guard is
 closed, no grammar is added, and no full compliance claim follows.
 
+### Atomic reservation helper: standards impact
+
+This increment follows `a1ceae5` and leaves source grammars, numerical IRs and
+production emitters unchanged. C11 7.17.1p5, 7.17.7.1 and 7.17.7.3 supply the
+selected non-explicit store/exchange value and ordering contracts; 7.17.3p6/p12
+specify their SC ordering and preceding modification. Static atomic Boolean
+initialization and the always-lock-free macro value are reviewed against
+7.17.2.1p2 and 7.17.5p1. Native declarations and bindings are still required.
+See the [WG14 C11 draft](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf).
+
+MISRA C:2025 Rule 21.25 requires the selected sequentially consistent order.
+The new helper uses two declared unsigned operands for counter addition
+(10.4), representable integer constants for size initializers (10.3), and
+explicit Boolean casts of zero/one under 10.5's exception. It performs at most
+one exchange per slot and contains no recursive C call. This is a scoped
+review, not a whole-product essential-type or MISRA compliance certificate.
+
+The helper's actual CTree executes through the shared typed call scheduler,
+including fresh parameter binding, local initialization, the bounded loop and
+an arbitrary caller continuation. Admitted flag cells yield termination and
+an exact sequential trace/result, with frame and storage-preservation proofs.
+The shared printer binds the actual function text to its independent token
+grammar. The new `_Bool` and `volatile` productions retain all prior cases.
+The independent FMI slot reference is refined by the atomic operations and
+the complete sequential scan. All C/FMI/eFMI/compiler package checks pass in
+`build/c-atomics/package-check.log`; 38 roots are added and none removed.
+The required main artifact gate passed in `build/c-atomics/full-gate.log`,
+including the existing native FMI and eFMU checks. All 720 source inputs
+and the complete file set remained unchanged throughout the run. Both
+archives are retained in `build/c-atomics/artifacts/`; every C/header/GALEC
+member is byte-identical to `a1ceae5` (`build/c-atomics/artifacts.log`).
+
+MC05/MC06 and K02 remain open: production uses `calloc`/`free`, and this helper
+is not yet emitted by its factory. Complete native object declarations,
+stdatomic macro/header binding, concurrent ownership, full initialization on
+reuse and creation/release must be composed with actual artifacts. A failed
+concurrent scan need not observe one globally full snapshot. Requiring
+`ATOMIC_BOOL_LOCK_FREE == 2` in the eventual native profile will not by itself
+prove operation latency, implementation correctness or whole-program no-heap
+behavior. The modeled `size_t` remains 64-bit; native width/ABI interpretation
+requires its existing K04 evidence. No MLS/FMI/eFMI expansion is authorized.
+
 ### Hierarchical subobject correction: standards impact
 
 This increment follows `b478606`. Each `Address.member` preserves its containing

@@ -20,11 +20,11 @@ percentage of semantic coverage.
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
-Latest completed local gate: `build/c-initialization/full-gate.log`, passed
-with 706 unchanged inputs. Both actual artifacts and their code-member
-comparison are retained under `build/c-initialization/`; hashes are recorded
-in [FMI contracts](fmi3/contracts.md#complete-initialization-calls). Only the
-initialization-entry C body changes from published `d519438`.
+Latest completed local gate: `build/c-atomics/full-gate.log`, passed
+with 720 unchanged inputs. Both actual artifacts and their code-member
+comparison are retained under `build/c-atomics/`. Every C/header/GALEC
+member is unchanged from published `a1ceae5`; the new reservation helper
+is proved but is not yet emitted by the production factory.
 Exact theorem/evidence history is in [verification.md](../docs/verification.md),
 [FMI contracts](fmi3/contracts.md), [standards review](standards-review.md) and
 Git history; this roadmap intentionally records current obligations once.
@@ -115,6 +115,18 @@ with 710 unchanged source inputs. This does not close any K02 exit item.
   Preserve multiple independent ME/CS instances. Check capacity exhaustion,
   initialization failure and reuse against FMI; do not add an unstated
   serialization restriction or silently change capability flags.
+- [x] Prove the fixed-storage reservation helper in the authored C machine.
+  Atomic Boolean exchange/store now have typed call contracts. The actual
+  bounded helper has fresh-parameter, initialization, caller-continuation,
+  termination, exact sequential-result, frame and certified-printer proofs;
+  its result refines the independent slot reference. All affected package
+  checks pass in `build/c-atomics/package-check.log`, with 38 added audit roots
+  and none removed. The required main artifact gate passed in
+  `build/c-atomics/full-gate.log`, with all 720 inputs unchanged and both
+  actual target archives checked. Their C/header/GALEC members are unchanged
+  from `a1ceae5`. The helper is
+  not yet used by the production factory. Shared native execution, ownership,
+  declarations and creation/release composition remain exit requirements.
 - [ ] Implement activate/initialize/deactivate over a fixed array of fully
   typed instance objects whose storage exists throughout execution. A custom
   allocator over a static byte arena is not a workaround for Dir 4.12.

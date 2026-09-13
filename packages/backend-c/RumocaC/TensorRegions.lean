@@ -64,7 +64,7 @@ theorem place_reads (heap : Heap) (base : Address) (values : Values shape) (writ
     Reads (place heap base shape writable (some values)) base values := by
   intro i
   simp only [load, place_at, Option.map_some, bind, Option.bind_some, convert, Value.finite,
-    ↓reduceIte, pure]
+    show (CType.float64 = CType.atomicBoolean) = False from by decide +kernel, ↓reduceIte, pure]
 
 theorem member_separate (base : Address) (a b : String) (different : a ≠ b) (i j : Nat) :
     (base.member a).index i ≠ (base.member b).index j :=

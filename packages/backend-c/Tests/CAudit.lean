@@ -1,4 +1,6 @@
 import RumocaC.Storage
+import RumocaC.AtomicScanCalls
+import RumocaC.AtomicScanPrinter
 import RumocaC.Subobjects
 import RumocaC.NullPointerPrinter
 import RumocaC.MemoryUpdates
@@ -599,3 +601,35 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CMemory.Address.InRecord.index
 #audit axioms Rumoca.CMemory.Address.records_separate
 #audit axioms Rumoca.CMemory.store_other_record
+
+#audit axioms Rumoca.CAtomicBoolean.read_iff
+#audit axioms Rumoca.CAtomicBoolean.exchange_iff
+#audit axioms Rumoca.CAtomicBoolean.write_iff
+#audit axioms Rumoca.CAtomicBoolean.exchange_same
+#audit axioms Rumoca.CAtomicBoolean.ordinary_load_unsupported
+#audit axioms Rumoca.CAtomicBoolean.ordinary_store_unsupported
+#audit axioms Rumoca.CAtomicBoolean.exchange_storage
+#audit axioms Rumoca.CAtomicBoolean.exchange_readonly
+#audit axioms Rumoca.CAtomicBoolean.write_storage
+#audit axioms Rumoca.CAtomicBoolean.write_readonly
+#audit axioms Rumoca.CAtomicBoolean.initial_read
+#audit axioms Rumoca.CAtomicBoolean.initial_frame
+#audit axioms Rumoca.CAtomicBoolean.initial_readonly
+#audit axioms Rumoca.CAtomicBoolean.Calls.exchange_behaviors
+#audit axioms Rumoca.CAtomicBoolean.Calls.write_behaviors
+#audit axioms Rumoca.CAtomicScan.outcome_exists
+#audit axioms Rumoca.CAtomicScan.outcome_bounds
+#audit axioms Rumoca.CAtomicScan.outcome_reserved
+#audit axioms Rumoca.CAtomicScan.outcome_exhausted
+#audit axioms Rumoca.CAtomicScan.outcome_frame
+#audit axioms Rumoca.CAtomicScan.outcome_storage
+#audit axioms Rumoca.CAtomicScan.scan_prefix
+#audit axioms Rumoca.CAtomicScan.parameters_bound
+#audit axioms Rumoca.CAtomicScan.parameter_types
+#audit axioms Rumoca.CAtomicScan.initialization
+#audit axioms Rumoca.CAtomicScan.call_prefix
+#audit axioms Rumoca.CAtomicScan.call_correct
+#audit axioms Rumoca.CAtomicScan.Printer.function_printable
+#audit axioms Rumoca.CAtomicScan.Printer.function_denotes
+#audit axioms Rumoca.CAtomicScan.Printer.function_tokenization
+#audit axioms Rumoca.CTree.Syntax.TypeSpelling.volatile

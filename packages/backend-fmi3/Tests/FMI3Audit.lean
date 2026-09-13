@@ -1,4 +1,5 @@
 import RumocaFMI3.StaticSlots
+import RumocaFMI3.AtomicSlots
 import RumocaFMI3.InitializationArguments
 import RumocaFMI3.InitializationContract
 import RumocaFMI3.InitializationCalls
@@ -599,3 +600,11 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StaticSlots.findFree_none_iff
 #audit axioms Rumoca.FMI3.StaticSlots.findFree_exhausted
 #audit axioms Rumoca.FMI3.StaticSlots.findFree_reserves
+
+#audit axioms Rumoca.FMI3.AtomicSlots.initialized
+#audit axioms Rumoca.FMI3.AtomicSlots.exchange_exists
+#audit axioms Rumoca.FMI3.AtomicSlots.reserve_corresponds
+#audit axioms Rumoca.FMI3.AtomicSlots.release_exists
+#audit axioms Rumoca.FMI3.AtomicSlots.scan_ready
+#audit axioms Rumoca.FMI3.AtomicSlots.scan_reserves
+#audit axioms Rumoca.FMI3.AtomicSlots.scan_exhausted

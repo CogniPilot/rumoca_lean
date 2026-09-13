@@ -468,6 +468,29 @@ lifetimes and concurrent ownership require separate contracts. In particular,
 they do not establish native pointer inequality for all different paths or
 implement the planned static instance storage.
 
+The next storage increment adds atomic Boolean cells whose ordinary heap
+loads/stores are rejected. Their value conversion uses the existing Boolean
+semantics; selected sequentially consistent exchange/store calls supply their
+indivisible access rules. The bounded C reservation helper now has complete
+fresh-parameter, initialization, loop, return and caller-continuation proofs.
+Admitted entry cells imply termination and an exact sequential trace/result,
+with bounded exchanges, memory frames and storage preservation. Its printed
+function has the shared independent token/tree contract, including `_Bool`
+and `volatile` type syntax. Successful scans refine the independent FMI slot
+reservation; sequential exhaustion characterizes the supplied snapshot.
+All affected packages and 38 added audit roots pass in
+`build/c-atomics/package-check.log`; all earlier roots and the axiom policy are
+retained. The required main artifact gate passed in
+`build/c-atomics/full-gate.log`, with all 720 source inputs unchanged,
+both actual target archives checked and every C/header/GALEC member
+unchanged from `a1ceae5`. Exact archives and the comparison evidence are
+retained under `build/c-atomics/`. Production still uses
+`calloc`/`free`: the helper is not yet emitted into the FMI adapter. Native
+atomic/header bindings, declarations, overlapping calls, ownership, reuse
+initialization and complete factory/artifact composition remain open. These
+proofs do not claim a globally full snapshot after a concurrent failed scan
+or bounded native atomic latency. No source grammar or numerical IR changes.
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

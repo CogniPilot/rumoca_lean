@@ -39,7 +39,7 @@ theorem convert_stable (type : CType) (value result : Value)
     subst result
     simp [convert, CUnsigned.value_idempotent]
   | pointer => cases value <;> simp [convert] at h; cases h; rfl
-  | boolean =>
+  | boolean | atomicBoolean =>
     cases ht : value.truth <;> simp [convert, ht] at h
     rename_i b
     cases b <;> simp only [Bool.false_eq_true, ↓reduceIte] at h

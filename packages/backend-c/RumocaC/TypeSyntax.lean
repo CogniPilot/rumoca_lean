@@ -9,13 +9,14 @@ namespace Rumoca.CTree.Syntax
 open CTokens
 
 inductive TypeSpecifier (typedefs : List String) : String → Prop where
-  | primitive : name ∈ ["void", "char", "int", "double"] → TypeSpecifier typedefs name
+  | primitive : name ∈ ["void", "char", "int", "double", "_Bool"] → TypeSpecifier typedefs name
   | typedefName : name ∈ typedefs → CIdentifier.valid [] name = true → TypeSpecifier typedefs name
 
 /-- Selected specifier/qualifier and abstract-pointer productions. -/
 inductive TypeTokens (typedefs : List String) : List CTokens.Token → Prop where
   | named : TypeSpecifier typedefs name → TypeTokens typedefs [.word name]
   | const : TypeTokens typedefs tokens → TypeTokens typedefs (.word "const" :: tokens)
+  | volatile : TypeTokens typedefs tokens → TypeTokens typedefs (.word "volatile" :: tokens)
   | pointer : TypeTokens typedefs tokens →
       TypeTokens typedefs (tokens ++ [.punctuator "*"])
 
@@ -36,7 +37,7 @@ theorem TypeSpecifier.word_parts (specifier : TypeSpecifier typedefs name) :
   cases specifier with
   | primitive member =>
       simp only [List.mem_cons, List.not_mem_nil, or_false] at member
-      rcases member with rfl | rfl | rfl | rfl <;>
+      rcases member with rfl | rfl | rfl | rfl | rfl <;>
         exact ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
   | typedefName member valid => exact CIdentifier.word_parts [] name valid
 
@@ -58,6 +59,19 @@ theorem TypeSpelling.const (type : TypeSpelling typedefs text) :
   intro marker member rest
   have first := CTokens.word_prefix (name := "const")
     (show CIdentifierToken.WordParts "const" from ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩)
+    (marker := ' ') (by decide +kernel) (by decide +kernel) (by decide +kernel)
+    (text.toList ++ marker :: rest)
+  have after : CTokens.Prefix (' ' :: (text.toList ++ marker :: rest)) tokens (marker :: rest) :=
+    .space (by decide +kernel) (lexed marker member rest)
+  simpa only [String.toList_append, List.cons_append, List.nil_append] using first.append after
+
+theorem TypeSpelling.volatile (type : TypeSpelling typedefs text) :
+    TypeSpelling typedefs ("volatile " ++ text) := by
+  obtain ⟨tokens, phrase, lexed⟩ := type
+  refine ⟨.word "volatile" :: tokens, .volatile phrase, ?_⟩
+  intro marker member rest
+  have first := CTokens.word_prefix (name := "volatile")
+    (show CIdentifierToken.WordParts "volatile" from ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩)
     (marker := ' ') (by decide +kernel) (by decide +kernel) (by decide +kernel)
     (text.toList ++ marker :: rest)
   have after : CTokens.Prefix (' ' :: (text.toList ++ marker :: rest)) tokens (marker :: rest) :=

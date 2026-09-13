@@ -129,7 +129,7 @@ theorem result_reads (heap : Heap) (base : Address) (values : Values shape) :
     have cell := scatter_at (zeroHeap heap base shape) base values shape.volume (by omega) i
     rw [if_pos i.isLt, position_index] at cell
     simp only [resultHeap, load, cell, bind, Option.bind_some, convert, Value.finite,
-      ↓reduceIte, pure]
+      show (CType.float64 = CType.atomicBoolean) = False from by decide +kernel, ↓reduceIte, pure]
   · have outside : ∀ k < shape.volume,
         base.index (matrixIndex (i, j)).val ≠ base.index (position shape k) := by
       intro k hk same

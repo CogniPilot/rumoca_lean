@@ -62,6 +62,9 @@ def Value.isFinite : Value → Option Bool
 
 inductive CType where
   | float64 | int32 | size | boolean | pointer
+  /-- Accessed through the selected C11 atomic operations, never an ordinary
+  load/store rule. Native representation and alignment are separate. -/
+  | atomicBoolean
   | character (signed : Bool)
   | unsigned (width : Nat)
   deriving DecidableEq, Repr
@@ -79,6 +82,7 @@ def convert : CType → Value → Option Value
   | .character signed, .integer n =>
     if CCharacter.inRange signed n then some (.integer n) else none
   | .boolean, v => do return .integer (if ← v.truth then 1 else 0)
+  | .atomicBoolean, v => do return .integer (if ← v.truth then 1 else 0)
   | .pointer, .pointer p => some (.pointer p)
   | _, _ => none
 
@@ -92,15 +96,16 @@ abbrev Heap := Address → Option Cell
 
 def load (h : Heap) (p : Address) : Option Value := do
   let c ← h p
-  let value ← c.value
-  let checked ← convert c.type value
-  if checked = value then some value else none
+  if c.type = .atomicBoolean then none else do
+    let value ← c.value
+    let checked ← convert c.type value
+    if checked = value then some value else none
 
 def replace (h : Heap) (p : Address) (c : Cell) : Heap := fun q => if q = p then some c else h q
 
 def store (h : Heap) (p : Address) (v : Value) : Option Heap := do
   let c ← h p
-  if !c.writable then none else do
+  if c.type == .atomicBoolean || !c.writable then none else do
     let converted ← convert c.type v
     return replace h p { c with value := some converted }
 

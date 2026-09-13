@@ -34,7 +34,8 @@ theorem reads_input (backing : Heap) (base : Address) (state input : Values shap
     rw [initialHeap, TensorRegion.scratch_other _ _ _ _ _ (by decide +kernel), inputHeap,
       TensorRegion.place_at]
     rfl
-  simp only [load, atInput, bind, Option.bind_some, convert, Value.finite, ↓reduceIte, pure]
+  simp only [load, atInput, bind, Option.bind_some, convert, Value.finite,
+    show (CType.float64 = CType.atomicBoolean) = False from by decide +kernel, ↓reduceIte, pure]
 
 theorem reads_state (backing : Heap) (base : Address) (state input : Values shape) :
     Reads (initialHeap backing base state input) (base.member "x") state := by
@@ -44,7 +45,8 @@ theorem reads_state (backing : Heap) (base : Address) (state input : Values shap
     rw [initialHeap, TensorRegion.scratch_other _ _ _ _ _ (by decide +kernel), inputHeap,
       TensorRegion.place_other_member _ _ _ _ _ _ _ (by decide +kernel), TensorRegion.place_at]
     rfl
-  simp only [load, atState, bind, Option.bind_some, convert, Value.finite, ↓reduceIte, pure]
+  simp only [load, atState, bind, Option.bind_some, convert, Value.finite,
+    show (CType.float64 = CType.atomicBoolean) = False from by decide +kernel, ↓reduceIte, pure]
 
 theorem writable (backing : Heap) (base : Address) (state input : Values shape)
     (name : String) (member : name ∈ scratchNames) :
