@@ -37,6 +37,30 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Initialization, ME controls and release: 2026-09-13
+
+This derived-proof checkpoint follows `d054449`. One actual adapter witness
+connects initialization, finite ME control histories, termination and release.
+Initialization supplies the control invariant; ordinary typed writes preserve
+atomic reservations, so the original lease supplies the later release without
+an extra surviving-ownership premise. Exact calls, outputs, source initialization
+and the final frame are retained. The 19 roots are integrated into the owning
+C, FMI and compiler packages. Their audit passed in
+`build/c-factory/me-lifecycle-package-gate-v1.log` with all 835 inputs unchanged.
+Earlier emitters, semantics, mandatory contracts and audit roots are unchanged;
+the full artifact gate was not rerun for these derived proofs. Their package
+snapshot is recorded separately from the preceding actual-artifact evidence.
+
+The preceding FMI 3.0.2 clause mapping remains applicable. This strengthens
+the composition of the already checked initialization, event-iteration and
+lifetime behavior; it adds no advertised capability or source case. Initial
+ownership, native atomic bindings and valid instance storage remain explicit.
+Creation, state setters/queries, importer integration, interspersed errors and
+concurrent histories remain open. Released handles gain no subsequent-call
+validity. MLS 3.7 and eFMI Beta 1 semantics and emitted artifacts are unchanged;
+no cross-standard or MISRA finding is closed. The preceding full gate supplies
+the unchanged artifact evidence. **Stage decision: open.**
+
 ### Mandatory ME control histories: 2026-09-13
 
 This checkpoint follows `afb93ac`. It retains all earlier mandatory contracts

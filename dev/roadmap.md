@@ -50,6 +50,16 @@ snapshot; only these three status documents changed afterward. Integration
 with importer state updates, numerical queries, creation, errors and concurrent
 histories remains open.
 
+The derived lifecycle follow-up connects both initialization calls, admitted
+ME control histories, termination and release with the original host lease.
+It derives the continued ownership and caller-buffer invariants, retaining
+source initialization, exact calls/outputs and the final memory frame. Its 19
+new roots passed the C/FMI/compiler package audit with 835 unchanged inputs in
+`build/c-factory/me-lifecycle-package-gate-v1.log`. This leaves emitted code
+and mandatory artifact contracts unchanged; the preceding full gate supplies
+their artifact evidence, with the derived-proof snapshot recorded separately.
+Creation and importer state/numerical interactions still need composition.
+
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
 logging, rejection/exhaustion, reusable ownership and both successful and
@@ -282,6 +292,9 @@ simulation or concurrent host histories.
 - [ ] Compose ME control histories with importer state updates, derivative
   queries and creation/initialization. Retain the numerical/source guarantee
   alongside all public observations and caller-protocol obligations.
+  Initialization→controls→termination→release now has a composed actual-adapter
+  theorem deriving the surviving lease from its original ownership; creation
+  and the importer interactions still need composition.
   Reset's successful/null calls and reset→initialization composition now use
   the static object interface; arbitrary surrounding histories remain open.
 - [ ] Finish public CS communication-time/step arithmetic, status/output

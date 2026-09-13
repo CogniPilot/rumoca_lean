@@ -150,6 +150,22 @@ archives. Only these three status documents changed after the full gate.
 No earlier contract/audit root, grammar, numerical semantics, native check or
 axiom policy was removed or weakened; no test suite was added.
 
+A derived lifecycle follow-up now composes both initialization calls, finite
+ME control histories, termination and release in one actual adapter interface.
+Initialization marks the first event iteration incomplete and establishes the
+caller-buffer invariant. Typed ordinary writes preserve every existing atomic reservation;
+the trace derives the surviving lease instead of requiring it again at release.
+The compiler consequence retains the selected source IVP and its uniqueness,
+all intermediate calls and outputs, the discharged lease and the final memory
+frame. Creation, importer integration, interspersed failures and concurrent
+hosts remain outside this history. Released handles gain no future-call validity.
+The 19 added roots are integrated into six owning modules. The C/FMI/compiler
+package audit passed in `build/c-factory/me-lifecycle-package-gate-v1.log`,
+with all 835 inputs unchanged. Earlier emitters, semantics, mandatory contracts
+and audit roots are unchanged, so the preceding full gate remains the
+actual-artifact evidence. The full gate was not rerun for these derived proofs;
+their package snapshot is recorded separately. No test suite was added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

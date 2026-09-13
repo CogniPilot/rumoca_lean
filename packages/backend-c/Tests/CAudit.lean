@@ -1,3 +1,4 @@
+import RumocaC.OutputAtomicFrame
 import RumocaC.BodyReachability
 import RumocaC.OutputAssignments
 import RumocaC.PointerConditions
@@ -735,3 +736,7 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.COutputAssignments.write_preserves_stored
 #audit axioms Rumoca.CPointerConditions.missing_eval
 #audit axioms Rumoca.CPointerConditions.missing_iff
+
+#audit axioms Rumoca.CAtomicBoolean.replace_nonatomic
+#audit axioms Rumoca.COutputAssignments.write_atomic
+#audit axioms Rumoca.COutputAssignments.after_atomic

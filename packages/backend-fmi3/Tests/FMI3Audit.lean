@@ -1,3 +1,6 @@
+import RumocaFMI3.MEInitialization
+import RumocaFMI3.MEAtomicFrames
+import RumocaFMI3.MERelease
 import RumocaFMI3.MEHistory
 import RumocaFMI3.EventEntryCalls
 import RumocaFMI3.EventEntryContract
@@ -982,3 +985,17 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEHistory.initial_requires_iteration
 #audit axioms Rumoca.FMI3.MEHistory.action_frame
 #audit axioms Rumoca.FMI3.MEHistory.trace_frame
+
+#audit axioms Rumoca.FMI3.MEHistory.initialized_stored
+#audit axioms Rumoca.FMI3.MEHistory.initialize_trace
+#audit axioms Rumoca.FMI3.HistoryProofs.write_atomic
+#audit axioms Rumoca.FMI3.HistoryProofs.raise_atomic
+#audit axioms Rumoca.FMI3.HistoryProofs.event_atomic
+#audit axioms Rumoca.FMI3.HistoryProofs.completed_atomic
+#audit axioms Rumoca.FMI3.MEHistory.action_atomic
+#audit axioms Rumoca.FMI3.MEHistory.trace_atomic_frame
+#audit axioms Rumoca.FMI3.MEHistory.Action.next_live
+#audit axioms Rumoca.FMI3.MEHistory.ReferenceTrace.live
+#audit axioms Rumoca.FMI3.MEHistory.ReferenceState.Live.terminate
+#audit axioms Rumoca.FMI3.MEHistory.slot_outside
+#audit axioms Rumoca.FMI3.MEHistory.release_correct

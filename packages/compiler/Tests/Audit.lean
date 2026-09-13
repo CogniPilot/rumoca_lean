@@ -1,3 +1,5 @@
+import Rumoca.FMI3MEInitialization
+import Rumoca.FMI3MERelease
 import Rumoca.FMI3TimeProofs
 import Rumoca.FMI3MEHistory
 import Rumoca.FMI3TerminationRelease
@@ -177,3 +179,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_time
 #audit axioms Rumoca.FMI3.TimeCalls.source_frame
 #audit axioms Rumoca.FMI3.adapter_time_history
+
+#audit axioms Rumoca.FMI3.adapter_initialize_me_history
+#audit axioms Rumoca.FMI3.adapter_me_release
+#audit axioms Rumoca.FMI3.adapter_initialize_me_release
