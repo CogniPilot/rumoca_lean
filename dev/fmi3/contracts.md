@@ -413,6 +413,48 @@ and both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
 
+### Complete Float64 getter
+
+`Float64Calls.FunctionContract` is now mandatory in `AdapterContract` for the
+actual `fmi3GetFloat64` fragment and the shared RHS helper. The fixed checker
+proves the getter's exact five-parameter signature occurs in its quoted header
+candidates. Earlier public-call, numerical C, printer and literal contracts
+remain required. All 58 added roots and affected package checks pass in
+`build/c-float64-get/package-v2.log`. The required full artifact gate passed in
+`build/c-float64-get/full-gate.log`, with all 686 source inputs and the complete
+file set unchanged. Both actual archives are retained in its `artifacts/`
+directory; all C/H/ALG members match the published `8346cad` checkpoint.
+
+The proof executes both counted loops, including nested numerical C calls, for
+arbitrary UInt64 request sizes within the authored size_t semantics. Independent
+argument classification covers empty queries with nullable arrays, defensive
+null instances, mismatched counts, nonempty null arrays, and the first unknown
+reference. The validation loop performs no output writes. Enabled logging
+retains every represented returning callback outcome and absent outcome;
+disabled logging is silent. Readable reference storage is required only when
+validation actually reads it.
+
+Successful queries preserve reference order and duplicates. Each reference
+selects the represented time, continuous state or prepared Solve derivative.
+The output range uses the existing tensor-memory view; all other cells are
+preserved, including model state/time under explicit non-aliasing conditions.
+This is an API request buffer of scalar variables, not admission of Modelica
+array variables. Tensor-variable serialization will require its own extension.
+
+`Float64Metadata` independently resolves numeric references to unique scalar
+continuous Float64 declarations in the actual XML. Its nonempty ASCII decimal
+judgment admits leading zeroes; it does not claim the whole XML Schema numeric
+lexical space. `metadata_selection` binds C reference selection to those names.
+`float64_source` requires that XML, both printed C fragments, the numerical
+artifact contract and complete calls for one Solve model, table and literal
+pool. Its derivative consequence retains the Real source equation.
+
+The getter theorem assumes represented current state and time. It does not
+complete the separate allocation, initialization/start-value or trajectory
+invariant. SetFloat64, remaining APIs, native ABI/ownership and complete
+adapter composition remain open and block grammar expansion. No runtime,
+metadata emitter or source grammar change is made; no test suite is added.
+
 ### Complete continuous-state derivative query
 
 `DerivativeCalls.FunctionContract` is mandatory in `AdapterContract`, retaining

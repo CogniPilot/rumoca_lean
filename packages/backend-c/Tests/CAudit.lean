@@ -1,3 +1,4 @@
+import RumocaC.LoopEvents
 import RumocaC.KernelEvents
 import RumocaC.FiniteValue
 import RumocaC.CallEventChoices
@@ -550,3 +551,7 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CCalls.Events.kernel_reaches
 #audit axioms Rumoca.CCalls.Events.kernel_correct
 #audit axioms Rumoca.CCalls.Events.kernel_behaviors
+
+#audit axioms Rumoca.CCalls.Events.loop_prefix
+#audit axioms Rumoca.CCalls.Events.loop_reaches
+#audit axioms Rumoca.CLoops.counter_reset

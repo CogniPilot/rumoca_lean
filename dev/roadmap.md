@@ -581,6 +581,19 @@ header and GALEC members match `035ad1d`.
 No grammar, emitter or solver-policy change. See
 [the derivative contract](fmi3/contracts.md#complete-continuous-state-derivative-query).
 
+The next Float64-getter increment adds a mandatory contract for the actual
+five-parameter function, its two counted loops and nested Solve RHS calls.
+Arbitrary request lengths, order and duplicates, empty/null cases, validation
+errors, complete represented logger outcomes and output memory frames are
+covered. Independent XML numeric-reference lookup binds each output selection
+to the same prepared model. Generic event-loop composition reuses the existing
+tensor-memory view. All 58 additional audit roots and affected package checks
+pass in `build/c-float64-get/package-v2.log`. The required full artifact gate
+passed in `build/c-float64-get/full-gate.log`, with all 686 inputs unchanged.
+Both actual archives are retained; all C/H/ALG members match `8346cad`. No grammar or
+emitter change is made. See
+[the Float64 getter contract](fmi3/contracts.md#complete-float64-getter).
+
 Next: complete remaining public APIs, allocation, ABI, admissible-host ownership
 and adapter composition. F02/F03 remain open.
 

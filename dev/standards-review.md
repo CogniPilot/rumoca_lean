@@ -63,6 +63,32 @@ both actual archives checked. Exact archives and hashes are retained in
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
+### Float64 getter: standards impact
+
+This integration follows `8346cad`. The source EBNFs, admitted unit profile,
+IRs, initialization policy, C/GALEC/XML emitters and archive layout are unchanged.
+The pinned FMI 3.0.2 text was reviewed for the applicable getter obligations.
+
+| Obligation | Coverage and remaining boundary |
+| --- | --- |
+| FMI §§2.2.7.1–2.2.7.2, retrieval and serialization | The complete public call validates all numeric references before writing concatenated results in request order, preserving duplicates. All three declared variables are scalar; only for this profile does nValues equal nValueReferences. Reusing the tensor-memory buffer judgment does not license tensor-variable serialization. |
+| FMI §2.2.7.2, type and identity | Independent XML lookup resolves a unique continuous scalar Float64 declaration by decimal reference, and agrees with C selection of time/state/derivative. Names come from the prepared Solve model, including its time-name collision rule. The decimal judgment covers nonempty ASCII digits including leading zeroes; complete XSD lexical/schema conformance remains separate. |
+| FMI §§2.3.2–2.3.3, start values and initialization | The getter returns represented time/state and evaluates the constant RHS. This does not prove those stored values satisfy the lifecycle's start/current-value invariants. Allocation, host setters and complete initialization composition remain open; the getter proof does not close S01/SR08. |
+| FMI §§2.2.4 and 2.3.1, errors and logging | Empty arrays may be null. Invalid length/pointer and first invalid reference reach the real failure helper before any output write. All represented enabled logger outcomes/absence and disabled logging are characterized. Actual caller storage, callable bindings, native effects/reentry and ownership remain explicit boundaries. |
+| MLS 3.7 | The source remains one Real state with unit derivative. The same Flat/DAE/Solve chain supplies the derivative's exact Real meaning. No declaration, initialization syntax or mathematical/IEEE domain expansion occurs. |
+| eFMI 1.0.0 Beta 1 | Generic event-loop composition adds no emitter behavior. Existing GALEC, Production C, manifest and actual archive contracts remain required. The downstream full gate passed; every C/H/ALG member matches the prior checkpoint. This does not close the remaining prose-standard obligations. |
+
+Architecture review against local Rust Rumoca `bc71577f`: `SolveProblem` owns
+continuous derivative and initialization programs together with their layouts.
+This Lean increment consumes prepared Solve and reuses generic C loops and
+tensor-memory frames; it performs no source resolution, shape inference,
+per-element IR lowering or solver selection. All 58 added roots and affected
+packages pass in `build/c-float64-get/package-v2.log`. The required full gate
+passed in `build/c-float64-get/full-gate.log`, with all 686 inputs unchanged.
+Both actual archives are retained in its `artifacts/` directory, and all
+C/H/ALG members match `8346cad`. No new test suite is added. **Stage decision: open;
+grammar growth remains blocked.**
+
 ### Continuous-state derivative query: standards impact
 
 This proof integration follows `035ad1d`. The EBNFs, production admission,

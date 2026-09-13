@@ -24,7 +24,7 @@ theorem state_access_source (compiled : compile input = .ok a)
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
       StateCalls.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       LiteralPreparation.EventPreparedContract a.solve.prepareFMI3 sigs pool := by
-  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, _, _, events, _, states, _⟩ := contract.adapter
+  obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready, _, _, events, _, states, _, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   refine ⟨compiled, StateMetadata.artifact_states _ _ contract.metadata,
     sigs, pool, printed, grammar, ?_, states, made, states.prepared pool made, events pool made⟩

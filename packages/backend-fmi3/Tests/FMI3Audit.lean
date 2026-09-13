@@ -1,3 +1,12 @@
+import RumocaFMI3.ArrayAccess
+import RumocaFMI3.FailureSites
+import RumocaFMI3.Float64Calls
+import RumocaFMI3.Float64Validation
+import RumocaFMI3.Float64Read
+import RumocaFMI3.Float64Get
+import RumocaFMI3.Float64Failures
+import RumocaFMI3.Float64Metadata
+import RumocaFMI3.Float64Contract
 import RumocaFMI3.NumericalBindings
 import RumocaFMI3.ModelRhs
 import RumocaFMI3.DerivativeCalls
@@ -409,3 +418,58 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.DerivativeMetadata.OrderedDerivatives.states
 #audit axioms Rumoca.FMI3.DerivativeMetadata.described_derivatives
 #audit axioms Rumoca.FMI3.DerivativeMetadata.artifact_derivatives
+
+#audit axioms Rumoca.FMI3.ArrayAccess.getter_guard
+#audit axioms Rumoca.FMI3.ArrayAccess.setter_guard
+#audit axioms Rumoca.FMI3.ArrayAccess.run_guard
+#audit axioms Rumoca.FMI3.GuardedCalls.FailureSite.all_behaviors
+#audit axioms Rumoca.FMI3.GuardedCalls.FailureSite.silent_behaviors
+#audit axioms Rumoca.FMI3.Float64Calls.getter_body
+#audit axioms Rumoca.FMI3.Float64Calls.validation_closed
+#audit axioms Rumoca.FMI3.Float64Calls.read_closed
+#audit axioms Rumoca.FMI3.Float64Calls.parameters_bound
+#audit axioms Rumoca.FMI3.Float64Calls.get_guard_run
+#audit axioms Rumoca.FMI3.Float64Calls.reference_eval
+#audit axioms Rumoca.FMI3.Float64Calls.validation_step
+#audit axioms Rumoca.FMI3.Float64Calls.counter_reference_eval
+#audit axioms Rumoca.FMI3.Float64Calls.validation_prefix
+#audit axioms Rumoca.FMI3.Float64Calls.validation_reaches
+#audit axioms Rumoca.FMI3.Float64Calls.validation_rejects
+#audit axioms Rumoca.FMI3.Float64Calls.reference_cases
+#audit axioms Rumoca.FMI3.Float64Calls.variable_code_unique
+#audit axioms Rumoca.FMI3.Float64Calls.variable_of_valid
+#audit axioms Rumoca.FMI3.Float64Calls.read_dispatch
+#audit axioms Rumoca.FMI3.Float64Calls.output_address
+#audit axioms Rumoca.FMI3.Float64Calls.derivative_call
+#audit axioms Rumoca.FMI3.Float64Calls.output_return
+#audit axioms Rumoca.FMI3.Float64Calls.read_iteration
+#audit axioms Rumoca.FMI3.Float64Calls.outputValues_at
+#audit axioms Rumoca.FMI3.Float64Calls.pending_output
+#audit axioms Rumoca.FMI3.Float64Calls.write_next_output
+#audit axioms Rumoca.FMI3.Float64Calls.references_written
+#audit axioms Rumoca.FMI3.Float64Calls.state_written
+#audit axioms Rumoca.FMI3.Float64Calls.time_written
+#audit axioms Rumoca.FMI3.Float64Calls.selectReference_correct
+#audit axioms Rumoca.FMI3.Float64Calls.read_reaches
+#audit axioms Rumoca.FMI3.Float64Calls.get_reaches
+#audit axioms Rumoca.FMI3.Float64Calls.get_behaviors
+#audit axioms Rumoca.FMI3.Float64Calls.empty_get_reaches
+#audit axioms Rumoca.FMI3.Float64Calls.empty_get_behaviors
+#audit axioms Rumoca.FMI3.Float64Calls.null_get_behaviors
+#audit axioms Rumoca.FMI3.Float64Calls.get_array_error_site
+#audit axioms Rumoca.FMI3.Float64Calls.get_reference_error_site
+#audit axioms Rumoca.FMI3.Float64Calls.query_cases
+#audit axioms Rumoca.FMI3.Float64Calls.failure_unique
+#audit axioms Rumoca.FMI3.Float64Calls.failure_site
+#audit axioms Rumoca.FMI3.Float64Metadata.Lookup.unique
+#audit axioms Rumoca.FMI3.Float64Metadata.described_variable
+#audit axioms Rumoca.FMI3.Float64Metadata.described_reference
+#audit axioms Rumoca.FMI3.Float64Metadata.artifact_variables
+#audit axioms Rumoca.FMI3.Float64Calls.failure_execution_correct
+#audit axioms Rumoca.FMI3.Float64Calls.silent_execution_correct
+#audit axioms Rumoca.FMI3.Float64Calls.quiet_execution_correct
+#audit axioms Rumoca.FMI3.Float64Calls.failure_message_collected
+#audit axioms Rumoca.FMI3.Float64Calls.prepared_correct
+#audit axioms Rumoca.FMI3.Float64Calls.rendered_contract
+#audit axioms Rumoca.FMI3.Float64Calls.QuietExecutionContract.get_refines
+#audit axioms Rumoca.FMI3.Float64Calls.metadata_selection

@@ -292,6 +292,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         all_goals simp [FMI3.StateCalls.signature]
       · change FMI3.DerivativeCalls.signature ∈ [$sigTerms,*]
         simp [FMI3.DerivativeCalls.signature]
+      · change FMI3.Float64Calls.signature false ∈ [$sigTerms,*]
+        simp [FMI3.Float64Calls.signature]
       · change ∀ sig ∈ [$sigTerms,*], ∀ function,
           sig.name ≠ FMI3.LiteralPreparation.kernelName function
         intro sig member function

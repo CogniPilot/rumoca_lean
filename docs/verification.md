@@ -363,6 +363,21 @@ header and GALEC members match `035ad1d`.
 No grammar, emitter or solver policy changes. See
 [the derivative contract](../dev/fmi3/contracts.md#complete-continuous-state-derivative-query).
 
+The Float64 getter increment requires the actual public fragment and helper,
+independent XML numeric-reference lookup and complete prepared-call contracts.
+The two counted loops validate all references before output writes and preserve
+request order and duplicates. Nested derivative queries execute the same Solve
+numerical C statements. Empty calls permit null arrays; invalid lengths/pointers
+and references reach the actual error/log helper. Output and model-memory frames
+are explicit. The request buffer reuses the tensor-memory specification without
+adding array variables to the production grammar. All 58 added roots and affected
+package checks pass in `build/c-float64-get/package-v2.log`. The required full
+artifact gate passed in `build/c-float64-get/full-gate.log`, with all 686 inputs
+unchanged. Both actual archives are retained in its `artifacts/` directory;
+all C/H/ALG members match `8346cad`. Current state/time representation, complete initialization,
+native ABI and remaining public APIs retain their existing open boundaries. See
+[the Float64 getter contract](../dev/fmi3/contracts.md#complete-float64-getter).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target

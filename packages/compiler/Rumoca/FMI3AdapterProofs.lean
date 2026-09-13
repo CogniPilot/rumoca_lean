@@ -1,6 +1,7 @@
 import RumocaFMI3.NominalContract
 import RumocaFMI3.StateContract
 import RumocaFMI3.DerivativeContract
+import RumocaFMI3.Float64Contract
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
@@ -66,7 +67,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     StateCalls.FunctionsContract a.solve.prepareFMI3 sigs
       (fun write => (Runtime.function a.solve.prepareFMI3 (StateCalls.signature write)).render) ∧
     DerivativeCalls.FunctionContract a.solve.prepareFMI3 sigs
-      (Runtime.function a.solve.prepareFMI3 DerivativeCalls.signature).render Runtime.helpers[1].render
+      (Runtime.function a.solve.prepareFMI3 DerivativeCalls.signature).render Runtime.helpers[1].render ∧
+    Float64Calls.FunctionContract a.solve.prepareFMI3 sigs
+      (Runtime.function a.solve.prepareFMI3 (Float64Calls.signature false)).render Runtime.helpers[1].render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -80,6 +83,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (nominals : ErrorCalls.nominalSignature ∈ sigs)
     (states : ∀ write, StateCalls.signature write ∈ sigs)
     (derivative : DerivativeCalls.signature ∈ sigs)
+    (float64 : Float64Calls.signature false ∈ sigs)
     (numerical : LiteralPreparation.KernelNamesFresh sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
@@ -93,7 +97,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     Version.rendered_contract _ sigs unique version, Logging.rendered_contract _ sigs,
     LiteralPreparation.event_contract _ sigs, Nominals.rendered_contract _ sigs unique nominals,
     StateCalls.rendered_contract _ sigs unique states,
-    DerivativeCalls.rendered_contract _ sigs unique derivative numerical⟩
+    DerivativeCalls.rendered_contract _ sigs unique derivative numerical,
+    Float64Calls.rendered_contract _ sigs unique float64 numerical⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
 Macro expansion and included-header interpretation remain separate. -/
