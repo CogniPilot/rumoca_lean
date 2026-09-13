@@ -396,6 +396,38 @@ Initialization histories, native ABI,
 ownership and remaining APIs keep the whole-stage claim open. See
 [the setter contract](../dev/fmi3/contracts.md#complete-float64-setter).
 
+The initialization increment changes the reviewed unit admission policy to a
+finite start and an optional finite inclusive stop. Tolerance is unused by this
+profile. The mandatory `InitializationCalls.FunctionContract` binds both actual
+entry/exit fragments, typed complete-call behaviors, all represented failure
+logging outcomes and their shared table/literal pool. Successful entry needs
+writable clock storage, not initialized old clock values. The source consequence
+uses the finite model value actually stored by default initialization or a host
+setter and proves the unique Real trajectory at the supplied time origin.
+Composition builds in `build/c-initialization/composition-v2.log`; all 51 added
+roots and affected package checks pass in `build/c-initialization/package-v1.log`.
+The required full artifact gate passed in `build/c-initialization/full-gate.log`,
+with all 706 inventoried source inputs and the complete file set unchanged.
+Both actual archives are retained in `build/c-initialization/artifacts/`.
+Compared with `d519438`, only the initialization-entry body in `sources/fmi3.c`
+changed; every other C/header/GALEC member is identical. The inclusive `atLeast_iff`
+replaces the retired strict-order policy root; every other earlier root and the
+axiom whitelist are retained. No source grammar is added. Allocation, arbitrary
+host/lifecycle histories, remaining APIs and complete standards/ABI coverage
+keep the stage open. See [the initialization contract](../dev/fmi3/contracts.md#complete-initialization-calls).
+
+Generated C now has an explicit no-heap/RTOS requirement. The current FMI
+emitter still uses `calloc`/`free`; bounded static multi-instance storage and
+its complete execution/ownership contract remain to be implemented. Neither
+the existing initialization theorem nor internal heap-frame invariants prove
+this new requirement. MISRA C:2025 with the C11 profile has been
+reviewed for initial findings; the 223-entry enforcement matrix is open.
+Essential types, pointer guards, allocation and concurrency require
+further proof and artifact coverage. Rule 15.5 is Disapplied; C11 is supported.
+No MISRA compliance or approved deviations are claimed.
+See [the rule review](../dev/standards-review.md#misra-c2025-and-static-storage-review)
+and [K02–K05](../dev/roadmap.md#closure-checklist-before-grammar-growth).
+
 The user-authorized driven input/state profile is being developed separately.
 Its generated grammar, parser actions, tensor equation/initialization lowering
 and mathlib matrix/storage bridge are checked, but it has no completed target
@@ -1351,14 +1383,13 @@ The aggregate `lake build audit` also passed in
 `build/fmi-initialization-exit-audit.log`. No emitter or grammar changed in
 this proof increment; these checks do not replace the required artifact gate.
 
-`RumocaCore.FMI3.Initialization` states the current initialization admission
-profile independently of C: start is finite; an enabled tolerance is finite
-and positive; an enabled stop is finite and strictly later than start.
-Undefined tolerance/stop arguments retain arbitrary bits, including NaNs.
-`above_iff` connects the bit check to strict mathematical real order through
-the finite encoding bijection. `InitializationEntry.guard_reference` proves
-that the actual generated argument guard accepts exactly this profile for
-every finite start and arbitrary tolerance/stop encodings and flags.
+`RumocaCore.FMI3.Initialization` now states the corrected unit admission profile
+independently of C: start is finite and an enabled stop is finite and no earlier
+than start. The unused tolerance and undefined stop retain arbitrary bits,
+including NaNs. `atLeast_iff` connects its executable bit comparison to inclusive
+Real order through the finite encoding bijection. The earlier finite-start body
+proofs remain checked under this policy; the complete raw-argument classification
+also covers nonfinite starts and rejection before any clock/state write.
 
 `InitializationEntry.correct` covers every behavior of the complete successful
 `fmi3EnterInitializationMode` body for both ME and CS. It executes the instance,
@@ -1377,12 +1408,17 @@ reference final mode. The aggregate audit, including this composition, passed
 in `build/fmi-initialization-entry-audit.log`. This proof-only increment changes
 no emitted code or grammar; its audits supplement the passing publication gate.
 
-The strict tolerance/stop inequalities are the existing runtime policy, not
-a claim that [FMI 3.0.2 §2.3.2](https://fmi-standard.org/docs/3.0.2/#fmi3EnterInitializationMode)
-requires those exact restrictions. Their conformance review remains open.
-Rejected initialization calls, nonfinite-start rejection through the full body,
-general cross-call lifecycle composition, logging, lifetime, CS arithmetic and
-printed adapter/ABI correspondence remain open.
+Those earlier body-only checkpoints used the strict policy at their recorded
+revisions. The new `InitializationCalls`/`InitializationExit` contracts cover
+ordinary typed public entry and return, null calls, lifecycle and raw-argument
+failures, disabled logging and all represented returning logger outcomes. The
+mandatory actual-file contract includes both printed fragments and their exact
+function table. `QuietExecutionContract.initialize` composes entry/exit through
+one intermediate heap without assuming a finite old clock; its source contract
+derives the unique IVP from actual finite state storage. The corresponding
+required artifact gate passed in `build/c-initialization/full-gate.log`.
+General host/lifecycle histories, instance storage,
+lifetime, complete CS execution and native ABI correspondence remain open.
 
 The SR04 correction removes nominal-state queries from Instantiated after
 independent review of FMI 3.0.2 §2.3.2. `ErrorBodies.nominals_reject_run` proves

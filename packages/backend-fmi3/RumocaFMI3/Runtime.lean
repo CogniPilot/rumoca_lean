@@ -171,9 +171,8 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
     [put "logging" (v "loggingOn"), ok]
   | "fmi3EnterInitializationMode" => require .enterInitialization ++ [
     reject (any [negate (finite (v "startTime")),
-      both (v "toleranceDefined") (either (negate (finite (v "tolerance"))) (le (v "tolerance") (n 0))),
-      both (v "stopTimeDefined") (either (negate (finite (v "stopTime"))) (le (v "stopTime") (v "startTime")))])
-      "Invalid initialization times or tolerance"] ++ initialTime ++ [
+      both (v "stopTimeDefined") (either (negate (finite (v "stopTime"))) (lt (v "stopTime") (v "startTime")))])
+      "Invalid initialization time interval"] ++ initialTime ++ [
     put "stop" (v "stopTime"), put "stopDefined" (v "stopTimeDefined"),
     setMode .initialization, ok]
   | "fmi3ExitInitializationMode" => require .exitInitialization ++ [

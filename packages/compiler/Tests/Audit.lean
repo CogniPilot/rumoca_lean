@@ -1,3 +1,6 @@
+import Rumoca.FMI3InitializationSemantics
+import Rumoca.FMI3InitializationCalls
+import Rumoca.FMI3InitializationProofs
 import Rumoca.FMI3Float64SetProofs
 import Rumoca.FMI3Float64Proofs
 import Rumoca.FMI3DerivativeProofs
@@ -114,3 +117,10 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.float64_source
 
 #audit axioms Rumoca.FMI3.float64_set_source
+
+#audit axioms Rumoca.FMI3.InitializationCalls.model_source_initialized
+#audit axioms Rumoca.FMI3.InitializationCalls.source_initialized_unique
+#audit axioms Rumoca.FMI3.InitializationCalls.exited_source_initialized
+#audit axioms Rumoca.FMI3.InitializationCalls.QuietExecutionContract.source
+#audit axioms Rumoca.FMI3.InitializationCalls.QuietExecutionContract.source_contract
+#audit axioms Rumoca.FMI3.initialization_source

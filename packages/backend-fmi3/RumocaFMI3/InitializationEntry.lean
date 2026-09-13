@@ -26,20 +26,16 @@ def locals (p : Address) (args : Arguments) : Locals :=
   bind (parameters p args) "m" (.pointer (some p))
 
 def guard : Expr := Runtime.any [Runtime.negate (Runtime.finite (Runtime.v "startTime")),
-  Runtime.both (Runtime.v "toleranceDefined")
-    (Runtime.either (Runtime.negate (Runtime.finite (Runtime.v "tolerance")))
-      (Runtime.le (Runtime.v "tolerance") (Runtime.n 0))),
   Runtime.both (Runtime.v "stopTimeDefined")
     (Runtime.either (Runtime.negate (Runtime.finite (Runtime.v "stopTime")))
-      (Runtime.le (Runtime.v "stopTime") (Runtime.v "startTime")))]
+      (Runtime.lt (Runtime.v "stopTime") (Runtime.v "startTime")))]
 
 def rejects (args : Arguments) : Bool :=
-  (args.toleranceDefined && !above args.tolerance Binary64.positiveZero) ||
-  (args.stopDefined && !above args.stop args.start)
+  args.stopDefined && !atLeast args.stop args.start
 
 omit static in
 theorem rejects_iff (args : Arguments) : rejects args = false ↔ args.Admissible := by
-  simp [rejects, Arguments.Admissible, ← above_iff, Bool.and_eq_false_imp]
+  simp [rejects, Arguments.Admissible, ← atLeast_iff, Bool.and_eq_false_imp]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 2000000 in
@@ -47,17 +43,14 @@ theorem guard_eval (heap : Heap) (p : Address) (args : Arguments) :
     eval (locals p args) heap guard = some (boolean (rejects args)) := by
   have hf := Value.isFinite_finite args.start
   change Value.isFinite (.float64 (toBits args.start).val) = some true at hf
-  have htol : Value.isFinite (.float64 args.tolerance) = some (finiteBits args.tolerance) := rfl
   have hstop : Value.isFinite (.float64 args.stop) = some (finiteBits args.stop) := rfl
   simp [guard, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
-    Runtime.finite, Runtime.call, Runtime.le, Runtime.v, Runtime.n, eval,
+    Runtime.finite, Runtime.call, Runtime.lt, Runtime.v, Runtime.n, eval,
     locals, parameters, CBody.bind, resolve, constants, comparison, floatComparison,
-    convert, Value.finite, hf, htol, hstop, rejects, above]
+    convert, Value.finite, hf, hstop, rejects, atLeast]
   all_goals
-    cases htd : args.toleranceDefined <;> cases hsd : args.stopDefined <;>
-      cases htf : finiteBits args.tolerance <;> cases hsf : finiteBits args.stop <;>
-      cases htc : Rumoca.Float64.test .le args.tolerance (toBits Binary64.positiveZero).val <;>
-      cases hsc : Rumoca.Float64.test .le args.stop (toBits args.start).val <;>
+    cases hsd : args.stopDefined <;> cases hsf : finiteBits args.stop <;>
+      cases hsc : Rumoca.Float64.test .lt args.stop (toBits args.start).val <;>
       simp_all [boolean, Value.truth]
 
 theorem guard_reference (heap : Heap) (p : Address) (args : Arguments) :
@@ -77,19 +70,19 @@ theorem prefix_run (heap : Heap) (p : Address) (args : Arguments) (kind : Kind)
     (hk : load heap (p.member "kind") = some (.integer (InitializationBodies.kindCode kind)))
     (hm : load heap (p.member "mode") = some (.integer 0)) :
     run 4 (.running (Runtime.require .enterInitialization ++
-      [Runtime.reject guard "Invalid initialization times or tolerance"] ++ rest)
+      [Runtime.reject guard "Invalid initialization time interval"] ++ rest)
       (parameters p args) heap) = some (.running rest (locals p args) heap) := by
   have hk' : load heap (p.member "kind") = some (.integer kind.code) := by
     cases kind <;> exact hk
   have hp := LifecycleGuard.accept (parameters p args) heap p .enterInitialization kind
-    .instantiated (Runtime.reject guard "Invalid initialization times or tolerance" :: rest)
+    .instantiated (Runtime.reject guard "Invalid initialization time interval" :: rest)
     (by simp [parameters]) (by simp [parameters]) hk' hm rfl
   have hg := (guard_reference heap p args).mpr ha
   rw [show 4 = 3 + 1 from rfl, run_add]
   simp only [List.append_assoc, List.singleton_append] at hp ⊢
   rw [hp]
   simpa only [locals] using
-    (show run 1 (.running (Runtime.reject guard "Invalid initialization times or tolerance" :: rest)
+    (show run 1 (.running (Runtime.reject guard "Invalid initialization time interval" :: rest)
         (locals p args) heap) = some (.running rest (locals p args) heap) by
       simp [Runtime.reject, Runtime.branch, run, next, hg, boolean, Value.truth])
 
@@ -130,7 +123,7 @@ theorem body_reaches (m : Solve.FMI3Model source) (sig : Signature)
         locals, parameters, CBody.bind, resolve, constants, Value.address, boolean, Value.truth,
         store, hs', hd', hm', convert, finalHeap, replace, hflag]
   have hb : Runtime.body m sig = Runtime.require .enterInitialization ++
-      [Runtime.reject guard "Invalid initialization times or tolerance"] ++
+      [Runtime.reject guard "Invalid initialization time interval"] ++
         (Runtime.initialTime ++ tail) := by
     simp [Runtime.body, hsig, guard, tail, List.append_assoc]
   rw [hb]

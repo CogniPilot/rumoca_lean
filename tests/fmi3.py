@@ -348,6 +348,29 @@ class FMI3Tests(unittest.TestCase):
         self.assertEqual(self.values(h)[1], 0.5)
 
     def test_invalid_arguments_and_output_atomicity(self):
+        # Native ABI boundary for the proved unit-profile initialization policy.
+        self.assertEqual(self.EnterInitializationMode(None, True, math.nan, math.nan, True, math.nan), ERROR)
+        for kind in ["me", "cs"]:
+            initialized = self.create(kind, logging=True)
+            for arguments in [(True, 0.0, 2.0, True, 2.0),
+                              (True, math.nan, -0.0, False, math.nan)]:
+                self.assertEqual(self.Reset(initialized), OK)
+                self.assertEqual(self.SetFloat64(initialized, (VR * 1)(1), 1, (D * 1)(-0.0), 1), OK)
+                self.assertEqual(self.EnterInitializationMode(initialized, *arguments), OK)
+                self.assertEqual(self.ExitInitializationMode(initialized), OK)
+                time, state, derivative = self.values(initialized)
+                self.assertEqual(struct.pack("d", time), struct.pack("d", arguments[2]))
+                self.assertEqual(struct.pack("d", state), struct.pack("d", -0.0))
+                self.assertEqual(derivative, 1.0)
+            for start, defined, stop in [(math.nan, False, 0.0), (math.inf, False, 0.0),
+                                         (2.0, True, 1.0), (0.0, True, math.nan)]:
+                self.assertEqual(self.Reset(initialized), OK)
+                before = len(self.messages)
+                self.assertEqual(self.EnterInitializationMode(initialized, False, 0.0, start, defined, stop), ERROR)
+                self.assertEqual(self.messages[before:],
+                                 [(123, ERROR, b"logStatus", b"Invalid initialization time interval")])
+                self.assertEqual(self.values(initialized), (0.0, 0.0, 1.0))
+                self.assertEqual(self.ExitInitializationMode(initialized), ERROR)
         self.assertEqual(self.SetFloat64(None, None, 0, None, 0), ERROR)
         self.assertEqual(self.SetFloat64(None, None, 1, None, 1), ERROR)
         h = self.create()

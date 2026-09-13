@@ -413,6 +413,60 @@ and both actual archives checked. Retained archives and hashes are in
 `build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
 
+### Complete initialization calls
+
+`InitializationCalls.FunctionContract` is mandatory in `AdapterContract` for
+both `fmi3EnterInitializationMode` and `fmi3ExitInitializationMode`. The fixed
+actual-file checker proves both exact signatures are in the same collected
+table; their printed fragments carry the existing independent tokenization
+judgment. The prepared contract covers successful/null calls and every specified
+lifecycle/argument failure, with silent and represented returning logger
+outcomes. It retains the prior contracts, including literal lowering.
+
+The independent unit policy admits any finite start and an optional finite
+stop no earlier than start. The profile has no internal tolerance-controlled
+algorithm, so tolerance is unused. `rejects_iff` classifies all raw binary64
+arguments; accepted inputs yield a finite argument witness and invalid inputs
+reach the helper before time/state writes. Both signed zeros are retained.
+The strict `above_iff` policy root is replaced by inclusive `atLeast_iff`, with
+all other earlier audit roots and the same axiom whitelist retained.
+
+Successful entry writes the four clock fields, stop/flag and lifecycle mode.
+Their old payloads may be uninitialized; only typed writable storage and a
+represented kind/Instantiated mode are required. The final heap preserves the
+model state and all cells outside those seven writes. Exit changes only the
+mode, to Event for ME or Step for this CS profile. Quiet contracts quantify over
+heaps, allowing entry/exit composition through the actual intermediate heap.
+The resulting clock establishes the existing SetTime reference window.
+
+`initialization_source` retains the numerical source-to-C contract and requires
+these same actual fragments, table and literal pool. `SourceExecutionContract`
+derives the unique Real source IVP from finite instance storage at the supplied
+time origin. It does not assume the source fixes zero; a host setter may choose
+the initial state. No initial source equation or new source syntax is invented.
+
+Composition builds in `build/c-initialization/composition-v2.log`; all 51 added
+roots and affected package checks pass in `build/c-initialization/package-v1.log`.
+The required full artifact gate passed in `build/c-initialization/full-gate.log`,
+with all 706 source inputs and the complete file set unchanged. All 13 existing
+native FMI groups pass, including the extended argument/atomicity group;
+no new test suite was added. Both actual archives are retained in
+`build/c-initialization/artifacts/`. Only the FMI initialization-entry body
+changes relative to `d519438`; all other C/header/GALEC members match.
+
+| Retained artifact | SHA-256 |
+| --- | --- |
+| `Integrator.fmu` | `3dc8fbbc535f280afb8d82700d0a5385df2408f6c4fcc5d77b3b6965b0f7402e` |
+| `Integrator.efmu` | `6248577590d287e9ad8424329a007e154549b7fe33bc55f3047c586dc22507fc` |
+
+The no-heap requirement changes the remaining creation work to bounded static
+instance storage, with complete field initialization and safe slot reuse.
+Current generated `calloc`/`free` calls are an open defect (MISRA Dir 4.12/Rule 21.3);
+this increment does not remove them. Static creation must establish every
+downstream storage/default-state premise. Arbitrary host
+ownership/reentry, lifetime, remaining APIs and whole standards/ABI composition
+remain open. The symbolic public-call theorem is not a native ABI proof.
+
 ### Complete Float64 setter
 
 `Float64Set.FunctionContract` is mandatory in `AdapterContract` for the actual

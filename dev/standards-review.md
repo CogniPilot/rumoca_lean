@@ -37,6 +37,147 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### MISRA C:2025 and static storage review
+
+Reviewed 2026-09-13 against the user-supplied **MISRA C:2025, March 2025** PDF,
+SHA-256
+`42d1f700d83506566964131c6b618f4eba14782ea8fa7b7355924bb7c4b882aa`.
+This is the primary MISRA baseline. The earlier supplied MISRA-C:2004 with
+Technical Corrigendum 1 (July 2008 reprint), SHA-256
+`f5325b58af9355bdab6a2c26495650715171bdcdb76b267d1255ff6c3f590fcd`,
+is a historical reference. Neither PDF nor its extracted text is redistributed
+or required by a repository build.
+
+The 2025 Appendix A.1 inventory has **223 entries: 22 directives and 201 rules**.
+There are 22 Mandatory, 154 Required, 46 Advisory and one Disapplied entry
+(Rule 15.5). The IDs and categories were cross-checked against the main text.
+Appendix A.2 separately records five withdrawn/renumbered rules. Inventory is
+not enforcement: **MISRA compliance remains open and blocks the stage**.
+
+Use the existing **C11** generation profile. Section 1.4 supports it, so the
+2004-only C90 mismatch does not apply to this primary baseline. Rule 15.5 is
+Disapplied in 2025; multiple returns need no deviation for that rule. Keep
+proofs of every error/return path. The earlier floating equality concern
+remains applicable under the 2025 essential-type Rule 10.1, with its stated
+exceptions; it must not be carried forward under an obsolete rule number.
+
+Section 1.5.2 requires MISRA Compliance:2020; §1.5.3 and Appendix E also apply
+to code generators. Record implementation choices, essential-type strategy,
+runtime failure handling and the user integration interface. Retain default
+categories; no optional automatic-code recategorization or deviations have
+been approved. Mandatory rules cannot be deviated (§3.4.1). The optional
+[official recategorization plan](https://github.com/The-MISRA-Consortium/GRPs/)
+is a separate reviewed decision. Deterministic compiler output and authored
+adapter implementation must be scoped correctly; using a generator or having
+Lean proofs alone does not establish qualification or an automatic exemption.
+
+The compliance boundary includes generated C, adopted FMI/eFMI headers,
+external interfaces and platform assumptions. Standard Library internals and
+standard headers have the specific treatment in §1.5.4; FMI headers are not
+C Standard Library headers. The project no-allocation requirement still needs
+transitive library/callback evidence, even where MISRA does not require a
+library's implementation to follow its coding rules.
+
+| Finding | Guideline and observed evidence | Required disposition |
+| --- | --- | --- |
+| MC01 — C11/profile evidence | Required Rule 1.1 permits the chosen C11 edition. Current [build options](../packages/backend-fmi3/RumocaFMI3/BuildDescription.lean), [FMI types](../packages/backend-fmi3/vendor/fmi3/fmi3PlatformTypes.h) and shared C rely on binary64, integer widths and floating environment features. | Pin actual syntax, constraints, translation limits, types/ABI and compiler options; document implementation choices under Dir 1.1. C11 itself is no longer a mismatch. Compiler acceptance alone does not establish all these obligations. |
+| MC02 — allocation | Required Dir 4.12 covers all dynamic allocation packages. Required Rule 21.3 specifically excludes allocator identifiers/macros. [Runtime.makeInstance/body](../packages/backend-fmi3/RumocaFMI3/Runtime.lean) emit `calloc`/`free`. | Remove them; no allocation waiver is proposed. Use a fixed array of fully typed, permanently existing instance objects, with bounded activation/deactivation and explicit field initialization. Prove ownership, exhaustion, isolation and reuse; review Dir 4.12 for the actual implementation. A custom allocator over a static byte arena is not an acceptable workaround. |
+| MC03 — return structure, disposition | Rule 15.5 is Disapplied; the runtime uses early guard returns. | No single-exit rewrite or deviation is required by the 2025 baseline. Preserve all-path semantic proofs. Any older eFMI-referenced guideline has a separate disposition under MC08. |
+| MC04 — essential types and floating comparison | Required Rule 10.1's operator table restricts floating `==`/`!=`, with exceptions for zero and positive/negative infinity. `Runtime.doStep` compares two variable floating values for the exact communication point and integer time grid. Integer literals are also used in some Boolean and floating expressions. | Review actual expression types under Rules 10.1–10.8. Preserve exact FMI time and solver behavior; an epsilon comparison is not an equivalent repair. Use typed emission for routine fixes and prepare an explicit numerical/deviation argument for any necessary remaining comparison. The exceptions do not cover arbitrary variable-to-variable comparisons. |
+| MC05 — initialization and lifetime proof gap | Mandatory Rule 9.1 concerns automatic objects before reads; Rule 9.7 separately concerns atomics. Required Rule 18.6 and Dir 4.1 address escaped automatic storage and runtime failures. Existing typed loads/stores and frames do not yet establish complete creation/lifetime and native layout correspondence. | Bind actual storage declarations and initialization to complete calls. Initialize all reused fields and any synchronization objects correctly, including Rule 22.14 where applicable. Record RTOS startup guarantees. No Mandatory-rule deviation is possible. |
+| MC06 — effects, recursion and concurrency | Required Rules 13.2/13.5 concern evaluation order and conditional effects; 17.2 excludes recursive call chains. Required Dir 5.1–5.3 address races, deadlocks and dynamic thread creation; 21.25 requires sequentially consistent synchronization. | Prove order independence where C leaves order open, effect constraints and an acyclic generated call graph. Prove safe shared activation/release, including the chosen atomic semantics and implementation. Keep synchronization outside numerical stepping and avoid hidden library locks. No generated threads are planned; host callbacks/reentry and native RTOS primitives need explicit boundaries. |
+| MC07 — identifiers, pointers and provenance | Rules 5.1–5.10, 11.1–11.6/11.8–11.11 and 18.1–18.10 require profile-specific namespace/type/pointer evidence. Required Dir 3.1 also requires documented requirement traceability. Source spans alone do not identify every generated policy requirement. | Connect existing name, conversion, bounds and origin proofs to the exact rules and actual preprocessed interfaces. Preserve generated-rule ancestry. Symbolic pointer cells and a 63-character name check alone cannot close the whole-product obligations. |
+| MC09 — implicit pointer guards | Required Rule 11.11 prohibits implicit comparison of pointers with null. Runtime uses `!m`, `!instanceName`, and pointer-valued callback guards in logical expressions. | Emit explicit, correctly typed null comparisons through a shared proved expression treatment. Preserve short-circuiting, logger behavior and all existing function contracts; a textual replacement without semantic preservation is insufficient. |
+| MC08 — eFMI references and generator process | eFMI 1.0.0 Beta 1 §5.2 references MISRA AC AGC for generated code; its GALEC rules also name MISRA C:2012. MISRA C:2025 §1.5.2 and Appendix E impose additional compliance/generator documentation. | Map the separate normative references and review their applicable text. The 2025 book does not silently replace eFMI's references or close SR07. Complete the generator and product compliance documentation and independent review. |
+
+The initial enforcement plan is below. Each group must become a separate entry
+for every applicable directive/rule before claiming compliance, with its
+category, language applicability, analysis scope, independent predicate,
+evidence, actual-file coverage, reviewer and any approved deviation. **All
+groups retain open work; Rule 15.5's Disapplied disposition is explicit.**
+“Formal” describes the intended evidence, not an existing MISRA theorem.
+
+| Guideline inventory | Planned enforcement and boundary |
+| --- | --- |
+| Dir 1.1–1.2 | Implementation choices and language-extension documentation. |
+| Dir 2.1 | Actual build diagnostics and pinned toolchain/options. |
+| Dir 3.1 | Source and generated-policy requirement traceability through actual outputs. |
+| Dir 4.1–4.15 | Runtime-failure argument, external inputs, library calls, coding policy and whole-call-graph no-allocation evidence. |
+| Dir 5.1–5.3 | Race/deadlock freedom and no dynamic thread creation; host integration assumptions. |
+| Rule 1.1, 1.3–1.5 | C11 syntax, constraints, behavior and permitted feature profile. |
+| Rule 2.1–2.8 | Reachability, statement purpose and unused declarations. |
+| Rule 3.1–3.2 | Actual-source comment/line-splicing policy. |
+| Rule 4.1–4.2 | Proved literal escapes and preprocessor-sensitive source checks. |
+| Rule 5.1–5.10 | Namespace, scope, significance, uniqueness and reserved-name checks. |
+| Rule 6.1–6.3 | Bit-field type, width and union restrictions. |
+| Rule 7.1–7.6 | Literal spelling, integer suffixes and string literal treatment. |
+| Rule 8.1–8.19 | Declarations, prototypes, linkage, qualification, atomic/alignment usage and header evidence. |
+| Rule 9.1–9.7 | Definite initialization, initializer shape and atomic initialization. |
+| Rule 10.1–10.8 | Independent essential-type/operator/conversion model and emitter preservation. |
+| Rule 11.1–11.6, 11.8–11.11 | Pointer/cast permissions and actual typedef/layout correspondence. |
+| Rule 12.1–12.6 | Operator grouping, shifts, unsigned arithmetic and permitted object access. |
+| Rule 13.1–13.6 | Expression effects, evaluation order and discarded computations. |
+| Rule 14.1–14.4 | Loop and Boolean controlling-expression policy. |
+| Rule 15.1–15.7 | Branch/jump/block structure; 15.5 is Disapplied. |
+| Rule 16.1–16.7 | Switch grammar, labels, termination and discriminant constraints. |
+| Rule 17.1–17.5, 17.7–17.13 | Call graph, prototypes, arguments, results and restricted function features. |
+| Rule 18.1–18.10 | Pointer/array operations, nesting and object lifetime. |
+| Rule 19.1–19.3 | Aggregate assignment overlap and union representation/initialization. |
+| Rule 20.1–20.15 | Actual preprocessing, macros, conditional definitions and reserved library names. |
+| Rule 21.3–21.26 | Library facilities/arguments, allocation prohibition and synchronization semantics. |
+| Rule 22.1–22.20 | Resource lifecycle, error indicators and thread/synchronization objects. |
+| Rule 23.1–23.8 | Generic selection/type-generic macro policy. |
+
+Appendix A.2's withdrawn IDs are tracked rather than assigned invented current
+requirements: Rule 1.2 → Dir 1.2; 11.7 → 11.4; 17.6 → 17.5;
+21.1 → 20.15; 21.2 → 5.10. The grouped inventory covers each of the 223 current
+IDs exactly once; this is bookkeeping evidence, not a compliance percentage.
+
+Prefer independent Lean predicates with sound checkers and universal emitter
+preservation proofs, made mandatory in the actual-artifact contract. Existing
+parser/printer and execution proofs may supply premises after exact mapping.
+Analyzer/manual/platform evidence fills boundaries not yet formalized. The
+RTOS numerical kernel must use supplied storage, have explicit operation and
+storage bounds, and avoid OS services, heap calls, hidden locks and incidental
+I/O. Bounded object activation/release and its concurrency proof remain K02 in
+[the roadmap](roadmap.md#k02--replace-heap-allocation-with-proved-static-instance-storage).
+
+### Complete initialization calls: standards impact
+
+This correction follows `d519438`. Source/GALEC grammars, indexed IRs, numerical
+Solve programs and eFMI emitters are unchanged. The FMI unit adapter now admits
+equal start/stop and ignores unused tolerance. Its full-call and source
+contracts become mandatory in the actual-file certificate; this is not a
+grammar expansion or a whole-stage conformance claim.
+
+| Obligation | Coverage and remaining boundary |
+| --- | --- |
+| [FMI 3.0.2 §2.3.2](https://fmi-standard.org/docs/3.0.2/#fmi3EnterInitializationMode), arguments | Finite start, optional finite inclusive stop, and exact raw-bit admission/rejection are proved. CS may ignore tolerance; the ME rationale is the absence of an internal tolerance-controlled algorithm in this unit model. This does not assert universal permission for other solvers or a requirement to accept arbitrary inputs. |
+| FMI §§2.3.2–2.3.3, initialization | Complete typed entry/exit establish clock/history and the reference ME/CS mode while preserving the actual model state. Old clock payloads may be uninitialized. Allocation must still establish storage and the default state. |
+| [FMI §§2.2.4](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions) and [2.3.1](https://fmi-standard.org/docs/3.0.2/#FMUStateSettable), failures | Illegal arguments/lifecycle calls reach Error and the Terminated write. Disabled logging and all represented returning logger outcomes are characterized. Null handles return Error defensively. Callback ownership/reentry and native ABI remain outside this call model. |
+| FMI §3.2.1, time | The initialized heap discharges the existing SetTime guard's reference window, including its inclusive stop. Complete subsequent public-call histories remain separate. |
+| MLS 3.7 §§4.4.2.1 and 8.6 | The unmodified declaration leaves its initial state free. The compiler default is zero; a finite host override is preserved. The source contract ties the stored value to its unique Real trajectory at the supplied time origin. No binding/modifier syntax is added; S01/SR08 are not closed. |
+| eFMI 1.0.0 Beta 1 | Algorithm/Production Code, initialization program, manifests and archive layout do not change. Their prior actual-artifact contracts remain required by the full gate. |
+
+Architecture was checked against Rust Rumoca `bc71577f`, including
+`crates/rumoca-ir-solve/src/model.rs`: the executable model and initialization
+plan remain Solve responsibilities. These calls own FMI time/lifecycle state
+and do no source resolution, shape inference, scalarization, DAE lowering or
+solver selection. The reusable LALR parser remains unchanged.
+
+Composition builds in `build/c-initialization/composition-v2.log`. All 51 added
+roots and affected package checks pass in `build/c-initialization/package-v1.log`.
+The required full artifact gate passed in `build/c-initialization/full-gate.log`
+with all 706 inputs and the complete file set unchanged. Both archives are
+retained in `build/c-initialization/artifacts/`; their hashes are recorded in
+[the FMI contracts](fmi3/contracts.md#complete-initialization-calls). Compared
+with `d519438`, only the FMI initialization-entry body changed; every other
+C/header/GALEC member is identical. All 13 native FMI groups pass, including
+the extended argument/atomicity group, with no new suite.
+The strict `above_iff` policy root is replaced by the inclusive proof; all other
+earlier roots and the axiom whitelist are retained. **Stage decision: open;
+grammar growth remains blocked.**
+
 ### FMI parameter types and typed call entry: standards impact
 
 This increment follows `fe4ebef`. Both EBNFs, LALR admission, IR lowering,
@@ -1393,13 +1534,13 @@ frame. The [pointer/call checkpoint](#c-literal-pointer-and-rejected-call-increm
 records the full local gate and actual artifacts. Enabled callbacks, literal
 global setup and complete printed adapter binding still prevent SR04 closure.
 
-### SR05 — P2, unresolved: initialization rejects zero-duration/tolerance cases
+### SR05 — resolved for the unit initialization policy
 
-[Runtime.body](../packages/backend-fmi3/RumocaFMI3/Runtime.lean) rejects enabled
+At `d519438`, [Runtime.body](../packages/backend-fmi3/RumocaFMI3/Runtime.lean) rejected enabled
 `stopTime <= startTime` and `tolerance <= 0` for both interfaces. On the actual
 binary, zero-duration and zero-tolerance initialization each return Error;
-ordinary initialization returns OK. The existing initialization theorem
-correctly proves this authored policy.
+ordinary initialization returned OK. The theorem at that revision correctly
+proved the authored strict policy.
 
 The reviewed initialization clause does not specify those exact strict
 inequalities and permits CS to ignore tolerance. This is an unresolved
@@ -1412,6 +1553,14 @@ normative call contract, or relax it and update both reference and execution
 proofs. Separate tolerance handling from stop-time validity. Review the entire
 rejected-call behavior, including the resulting lifecycle state; do not infer
 conformance just from `guard_reference`.
+
+The [initialization correction](#complete-initialization-calls-standards-impact)
+implements and proves the inclusive-stop/unused-tolerance policy together with
+complete failure, logging and source-IVP contracts. Its actual-file requirement
+is integrated and the required full gate passed with 706 unchanged inputs.
+This resolves the scoped admission-policy finding. Cross-standard
+initialization correspondence (SR08), instance lifetime, other public calls,
+native ABI and MISRA findings remain open; no whole-stage closure follows.
 
 ### SR06 — resolved packaging question: documented checker limitation
 

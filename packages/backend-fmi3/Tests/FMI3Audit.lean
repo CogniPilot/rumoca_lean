@@ -1,3 +1,12 @@
+import RumocaFMI3.InitializationArguments
+import RumocaFMI3.InitializationContract
+import RumocaFMI3.InitializationCalls
+import RumocaFMI3.InitializationFailures
+import RumocaFMI3.InitializationErrors
+import RumocaFMI3.InitializationExit
+import RumocaFMI3.InitializationComposition
+import RumocaFMI3.InitializationExitErrors
+import RumocaFMI3.InitializationQuiet
 import RumocaFMI3.Float64SetEntry
 import RumocaFMI3.Float64SetValidation
 import RumocaFMI3.Float64SetWrite
@@ -529,3 +538,46 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Float64Set.prepared_correct
 #audit axioms Rumoca.FMI3.Float64Set.rendered_contract
 #audit axioms Rumoca.FMI3.Float64Set.metadata_selection
+
+#audit axioms Rumoca.FMI3.InitializationCalls.rejects_finite
+#audit axioms Rumoca.FMI3.InitializationCalls.finite_admissible
+#audit axioms Rumoca.FMI3.InitializationCalls.rejects_iff
+#audit axioms Rumoca.FMI3.InitializationCalls.parameters_bound
+#audit axioms Rumoca.FMI3.InitializationCalls.finite_parameters
+#audit axioms Rumoca.FMI3.InitializationCalls.guard_eval
+#audit axioms Rumoca.FMI3.InitializationCalls.closed
+#audit axioms Rumoca.FMI3.InitializationCalls.function_eq
+#audit axioms Rumoca.FMI3.InitializationCalls.guard_run
+#audit axioms Rumoca.FMI3.InitializationCalls.tail_run
+#audit axioms Rumoca.FMI3.InitializationCalls.body_run
+#audit axioms Rumoca.FMI3.InitializationCalls.call_behaviors
+#audit axioms Rumoca.FMI3.InitializationCalls.stored
+#audit axioms Rumoca.FMI3.InitializationCalls.query_cases
+#audit axioms Rumoca.FMI3.InitializationCalls.failure_unique
+#audit axioms Rumoca.FMI3.InitializationCalls.null_behaviors
+#audit axioms Rumoca.FMI3.InitializationCalls.lifecycle_prefix
+#audit axioms Rumoca.FMI3.InitializationCalls.arguments_prefix
+#audit axioms Rumoca.FMI3.InitializationCalls.failure_prefix
+#audit axioms Rumoca.FMI3.InitializationCalls.failure_execution_correct
+#audit axioms Rumoca.FMI3.InitializationCalls.silent_execution_correct
+#audit axioms Rumoca.FMI3.InitializationCalls.time_guard
+#audit axioms Rumoca.FMI3.InitializationExit.body
+#audit axioms Rumoca.FMI3.InitializationExit.closed
+#audit axioms Rumoca.FMI3.InitializationExit.finite_parameters
+#audit axioms Rumoca.FMI3.InitializationExit.parameters_bound
+#audit axioms Rumoca.FMI3.InitializationExit.call_behaviors
+#audit axioms Rumoca.FMI3.InitializationExit.null_behaviors
+#audit axioms Rumoca.FMI3.InitializationExit.failure_prefix
+#audit axioms Rumoca.FMI3.InitializationCalls.entered_kind
+#audit axioms Rumoca.FMI3.InitializationCalls.entered_mode
+#audit axioms Rumoca.FMI3.InitializationCalls.exited_frame
+#audit axioms Rumoca.FMI3.InitializationCalls.exited_time_guard
+#audit axioms Rumoca.FMI3.InitializationExit.failure_execution_correct
+#audit axioms Rumoca.FMI3.InitializationExit.silent_execution_correct
+#audit axioms Rumoca.FMI3.InitializationCalls.quiet_execution_correct
+#audit axioms Rumoca.FMI3.InitializationCalls.QuietExecutionContract.initialize
+
+#audit axioms Rumoca.FMI3.InitializationCalls.failure_message_collected
+#audit axioms Rumoca.FMI3.InitializationCalls.PreparedContract.quiet
+#audit axioms Rumoca.FMI3.InitializationCalls.prepared_correct
+#audit axioms Rumoca.FMI3.InitializationCalls.rendered_contract

@@ -3,6 +3,7 @@ import RumocaFMI3.StateContract
 import RumocaFMI3.DerivativeContract
 import RumocaFMI3.Float64Contract
 import RumocaFMI3.Float64SetContract
+import RumocaFMI3.InitializationContract
 import Rumoca.FMI3ResetProofs
 import Rumoca.FMI3NameProofs
 import RumocaFMI3.AdapterPreprocessing
@@ -72,7 +73,10 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     Float64Calls.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 (Float64Calls.signature false)).render Runtime.helpers[1].render ∧
     Float64Set.FunctionContract a.solve.prepareFMI3 sigs
-      (Runtime.function a.solve.prepareFMI3 (Float64Calls.signature true)).render
+      (Runtime.function a.solve.prepareFMI3 (Float64Calls.signature true)).render ∧
+    InitializationCalls.FunctionContract a.solve.prepareFMI3 sigs
+      (Runtime.function a.solve.prepareFMI3 InitializationCalls.signature).render
+      (Runtime.function a.solve.prepareFMI3 InitializationExit.signature).render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -88,6 +92,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (derivative : DerivativeCalls.signature ∈ sigs)
     (float64 : Float64Calls.signature false ∈ sigs)
     (setter : Float64Calls.signature true ∈ sigs)
+    (initializationEntry : InitializationCalls.signature ∈ sigs)
+    (initializationExit : InitializationExit.signature ∈ sigs)
     (numerical : LiteralPreparation.KernelNamesFresh sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
@@ -103,7 +109,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     StateCalls.rendered_contract _ sigs unique states,
     DerivativeCalls.rendered_contract _ sigs unique derivative numerical,
     Float64Calls.rendered_contract _ sigs unique float64 numerical,
-    Float64Set.rendered_contract _ sigs unique setter⟩
+    Float64Set.rendered_contract _ sigs unique setter,
+    InitializationCalls.rendered_contract _ sigs unique initializationEntry initializationExit⟩
 
 /-- Extract character-rewrite stability from the contract on the actual file.
 Macro expansion and included-header interpretation remain separate. -/

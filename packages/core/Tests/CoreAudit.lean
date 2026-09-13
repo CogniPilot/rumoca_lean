@@ -175,7 +175,10 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.FMI3.Time.event_represents
 #audit axioms Rumoca.FMI3.Time.step_represents
 #audit axioms Rumoca.FMI3.Time.trace_represents
-#audit axioms Rumoca.FMI3.Initialization.above_iff
+#audit axioms Rumoca.FMI3.Initialization.atLeast_iff
+#audit axioms Rumoca.FMI3.Initialization.equal_stop_admissible
+#audit axioms Rumoca.FMI3.Initialization.undefined_stop_admissible
+#audit axioms Rumoca.FMI3.Initialization.tolerance_irrelevant
 #audit axioms Rumoca.FMI3.Initialization.stopTime_defined
 #audit axioms Rumoca.FMI3.Initialization.stopTime_bits
 
