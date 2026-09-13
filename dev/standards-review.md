@@ -37,6 +37,26 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Reset in the static runtime: 2026-09-13
+
+On top of `5fc250c`, fifteen derived proof roots connect the actual adapter's
+reset definition to the static object interface and then to both initialization
+calls. The FMI/compiler package gate passed with 806 unchanged inputs in
+`build/c-factory/static-reset-package-gate-v1.log`. The prior full artifact gate
+supplies unchanged emitter/contract evidence; no grammar, emitted member,
+mandatory contract or native check changes in this follow-up.
+
+| Applicable obligation | Added evidence and remaining boundary |
+| --- | --- |
+| [FMI 3.0.2 §2.3.1, reset](https://fmi-standard.org/docs/3.0.2/) | `adapter_static_reset_initialize` restores the Solve default, supplies writable initialization cells, and composes three complete calls through exact heaps to the source IVP. This covers model/lifecycle effects; equivalence of all host configuration to fresh instantiation, including logging policy, remains open. |
+| FMI instance isolation and K02 ownership | `StaticReset.record_frame`, `restarted_other_instance` and `restarted_owners` preserve nested cells in other slots of the same array, metadata and reservation flags. Native layout, valid host ownership and concurrent execution remain separate. |
+| MLS 3.7 §§4.9/8.6 | The stored finite default and unique completed real trajectory use the unchanged source/Solve initialization policy. No source equation is added; SR08 remains open. |
+| eFMI Algorithm/Production Code | DAE→GALEC→Solve and its production/archive contracts are unchanged. No eFMI finding is closed by this FMI proof increment. |
+
+All earlier audited roots remain required. Callback frames, other public calls,
+complete host histories, whole-output provenance and MISRA/profile obligations
+remain open, so grammar expansion remains blocked by the stage gate.
+
 ### MISRA C:2025 and static storage review
 
 Reviewed 2026-09-13 against the user-supplied **MISRA C:2025, March 2025** PDF,

@@ -1,3 +1,4 @@
+import RumocaFMI3.StaticReset
 import RumocaFMI3.StaticErrorCalls
 import RumocaFMI3.StaticInitializationErrors
 import RumocaFMI3.StaticSlots
@@ -834,3 +835,17 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StaticErrors.failure_suppressed_behaviors
 #audit axioms Rumoca.FMI3.StaticInitialization.enter_suppressed_correct
 #audit axioms Rumoca.FMI3.StaticInitialization.exit_suppressed_correct
+
+#audit axioms Rumoca.FMI3.StaticReset.body_agrees
+#audit axioms Rumoca.FMI3.StaticReset.call_behaviors
+#audit axioms Rumoca.FMI3.StaticReset.null_behaviors
+#audit axioms Rumoca.FMI3.StaticReset.entry_storage
+#audit axioms Rumoca.FMI3.StaticReset.kind_value
+#audit axioms Rumoca.FMI3.StaticReset.metadata
+#audit axioms Rumoca.FMI3.StaticReset.record_frame
+#audit axioms Rumoca.FMI3.StaticReset.other_instance
+#audit axioms Rumoca.FMI3.StaticReset.owners
+#audit axioms Rumoca.FMI3.StaticReset.restarted_frame
+#audit axioms Rumoca.FMI3.StaticReset.restarted_other_instance
+#audit axioms Rumoca.FMI3.StaticReset.restarted_owners
+#audit axioms Rumoca.FMI3.StaticReset.execution_correct

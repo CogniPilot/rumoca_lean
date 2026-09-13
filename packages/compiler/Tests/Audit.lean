@@ -1,3 +1,4 @@
+import Rumoca.FMI3StaticReset
 import Rumoca.FMI3StaticInitializationErrors
 import Rumoca.FMI3InitializationSemantics
 import Rumoca.FMI3InitializationCalls
@@ -156,3 +157,6 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.FactoryValidation.actual_adapter_admission
 
 #audit axioms Rumoca.FMI3.adapter_static_initialization_complete
+
+#audit axioms Rumoca.FMI3.adapter_static_reset
+#audit axioms Rumoca.FMI3.adapter_static_reset_initialize

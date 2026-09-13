@@ -130,7 +130,15 @@ case split. Its focused FMI/compiler audit passed with 804 unchanged draft
 inputs; the earlier main artifact gate remains the 801-input checkpoint.
 No emitter or mandatory contract changed in this derived-proof follow-up.
 
-Next, compose later operation/reset/termination/release calls and actual
+Reset's complete successful/null calls and reset followed by both initialization
+calls now share this object interface. The 15 added audit roots preserve exact
+heaps, the Solve/source default, slot metadata, ownership flags and nested
+fields in every other element of the same instance array. The FMI/compiler
+package gate passed with 806 unchanged inputs in
+`build/c-factory/static-reset-package-gate-v1.log`; this is another derived-proof
+follow-up with unchanged emission and mandatory artifact contracts.
+
+Next, compose later operation/termination/release calls and actual
 concurrent ownership histories. Close callback frames, the no-heap/acyclic call graph and native
 profile/layout. The required main gate passed on the 801-input integration
 source set; this closes the integration check, not these remaining proofs.
@@ -222,8 +230,10 @@ next task. Any reusable storage/frame draft is only a prerequisite.
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.
-- [ ] Finish ME time, event/completion, termination/reset and their rejected
+- [ ] Finish ME time, event/completion, termination and their rejected
   paths as complete calls. Compose them through actual intermediate heaps.
+  Reset's successful/null calls and reset→initialization composition now use
+  the static object interface; arbitrary surrounding histories remain open.
 - [ ] Finish public CS communication-time/step arithmetic, status/output
   writes, rollback and repeated-step refinement. Prove progress or rejection
   when binary64 time would stop advancing (including the `2^53` boundary).

@@ -57,6 +57,18 @@ new derived consequences have separate package evidence. Existing emitters,
 semantics, mandatory artifact contracts and audit roots were retained. No new
 test suite was added. See `build/c-factory/static-error-review-v1.md`.
 
+Reset now uses this same object interface too. Fifteen further derived audit
+roots cover complete successful/null calls and reset followed by both public
+initialization calls. Every intermediate heap is explicit; reset supplies the
+new initialization storage, restores the Solve default and establishes the
+corresponding source IVP. Frame proofs preserve lease flags, slot metadata and
+arbitrary nested fields of other instances in the same array. The FMI/compiler
+package audits passed in `build/c-factory/static-reset-package-gate-v1.log`
+with all 806 inputs unchanged. This adds proofs only: earlier semantics,
+emitters, mandatory artifact contracts and audit roots are retained. The
+previous full artifact gate still supplies the unchanged C/archive evidence;
+it was not rerun for these derived consequences. No new test suite was added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA
