@@ -1,4 +1,4 @@
-import RumocaFMI3.MECountExecution
+import RumocaFMI3.MENominalExecution
 
 noncomputable section
 namespace Rumoca.FMI3.MEMixedRun
@@ -8,6 +8,7 @@ inductive Action where
   | run (action : MENumericalRun.Action)
   | reject (request : MEFailure.Request) (input : Option (BitVec 64))
   | counts (request : CountAccess.Request)
+  | nominals (request : NominalAccess.Request)
 
 def Action.next (action : Action) (reference : MENumericalHistory.ReferenceState) : MENumericalHistory.ReferenceState :=
   match action with
@@ -15,6 +16,7 @@ def Action.next (action : Action) (reference : MENumericalHistory.ReferenceState
   | .run (.restart args) => .restart args
   | .reject _ _ => reference.failed
   | .counts request => MECountCalls.next request reference
+  | .nominals request => MENominalCalls.next request reference
 
 def Action.clock (action : Action) (clock : Time.Clock) : Time.Clock :=
   match action with
@@ -22,6 +24,7 @@ def Action.clock (action : Action) (clock : Time.Clock) : Time.Clock :=
   | .run (.restart args) => .initial args.start
   | .reject _ _ => clock
   | .counts _ => clock
+  | .nominals _ => clock
 
 def Action.Allowed (action : Action) (buffer : Address) (clock : Time.Clock)
     (reference : MENumericalHistory.ReferenceState) : Prop :=
@@ -30,22 +33,26 @@ def Action.Allowed (action : Action) (buffer : Address) (clock : Time.Clock)
   | .run (.restart args) => args.Admissible
   | .reject request input => request.Selected input buffer clock reference
   | .counts request => request.Allowed .me reference.control.mode
+  | .nominals request => request.Allowed .me reference.control.mode
 
 def Action.Rejection : Action → Prop
   | .run _ => False
   | .reject _ _ => True
   | .counts request => request.failed = true
+  | .nominals request => request.failed = true
 
 /-- Additional caller cells needed by a particular action. Existing numerical
 actions keep their previous buffer contract. -/
 def Action.CallerRegion : Action → Address → Prop
   | .counts (.get _ output) => fun q => q = output
+  | .nominals (.get output) => fun q => q = output
   | _ => fun _ => False
 
 def Action.Prepared (action : Action) (objects : Objects) (heap : Heap)
     (addresses : String → Address) (buffer : Address) : Prop :=
   match action with
   | .counts request => request.OutputStorage heap ∧ MECountCalls.Separate request objects addresses buffer
+  | .nominals request => request.OutputStorage heap ∧ MENominalCalls.Separate request objects
   | _ => True
 
 theorem Action.Prepared.preserved (action : Action)
@@ -60,6 +67,12 @@ theorem Action.Prepared.preserved (action : Action)
       obtain ⟨⟨old, found⟩, separate⟩ := prepared
       exact ⟨preserved.cell rfl found, separate⟩
     | reject _ _ _ => exact prepared
+  | nominals request =>
+    cases request with
+    | get output =>
+      obtain ⟨⟨old, found⟩, separate⟩ := prepared
+      exact ⟨preserved.cell rfl found, separate⟩
+    | reject _ _ _ => exact prepared
 
 /-- Expected statuses/readbacks are postconditions, never restrictions on
 the raw target execution relation. Failed-call outputs have no numerical claim. -/
@@ -69,6 +82,8 @@ def Action.Observed (action : Action) (model : Solve.FMI3Model source)
   | .run command => observed = (MENumericalRun.observations model reference [command]).map MENumericalHistory.Observation.ok
   | .reject _ _ => ∃ events, observed = [⟨events, .integer 3, none⟩]
   | .counts request => if request.failed then ∃ events, observed = [⟨events, .integer 3, none⟩]
+      else observed = [MENumericalHistory.Observation.ok (request.expected model 0)]
+  | .nominals request => if request.failed then ∃ events, observed = [⟨events, .integer 3, none⟩]
       else observed = [MENumericalHistory.Observation.ok (request.expected model 0)]
 
 inductive ReferenceTrace (buffer : Address) : MENumericalHistory.ReferenceState → Time.Clock →
@@ -92,6 +107,10 @@ inductive Performed [CInterface] (program : Program Invocation) (p : Address)
   | counts : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done)
         (.terminates events ⟨status, after⟩) →
       Performed program p addresses buffer heap (.counts request)
+        [⟨events, status, request.readback after 0⟩] after []
+  | nominals : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done)
+        (.terminates events ⟨status, after⟩) →
+      Performed program p addresses buffer heap (.nominals request)
         [⟨events, status, request.readback after 0⟩] after []
 
 inductive Completed [CInterface] (program : Program Invocation) (p : Address)
@@ -131,6 +150,12 @@ inductive ActionContract [CInterface] (program : Program Invocation) (p : Addres
         (fun observed next checkpoints => ∃ events status,
           observed = [⟨events, status, request.readback next 0⟩] ∧ checkpoints = [] ∧ outcomes events status next)
         blocked
+  | nominals (contract : MENominalCalls.Contract model program objects owners config heap p addresses buffer
+      clock reference request outcomes blocked) :
+      ActionContract program p addresses buffer heap (.nominals request)
+        (fun observed next checkpoints => ∃ events status,
+          observed = [⟨events, status, request.readback next 0⟩] ∧ checkpoints = [] ∧ outcomes events status next)
+        blocked
 
 theorem ActionContract.returned [CInterface] {program : Program Invocation}
     (certified : ActionContract program p addresses buffer heap action returns blocked)
@@ -161,6 +186,13 @@ theorem ActionContract.returned [CInterface] {program : Program Invocation}
       · cases same
         exact ⟨_, _, rfl, rfl, outcome⟩
       · cases impossible
+  | nominals executed =>
+    cases certified with
+    | nominals contract =>
+      rcases (contract.behaviors _).mp executed with ⟨events, status, next, outcome, same⟩ | ⟨_, impossible⟩
+      · cases same
+        exact ⟨_, _, rfl, rfl, outcome⟩
+      · cases impossible
 
 /-- Each certified returning alternative is realized by actual target calls;
 this direction prevents the branching certificate from inventing outcomes. -/
@@ -181,6 +213,9 @@ theorem ActionContract.realizes [CInterface] {program : Program Invocation}
   | counts contract =>
     obtain ⟨events, status, rfl, rfl, returned⟩ := outcome
     exact .counts ((contract.behaviors _).mpr (Or.inl ⟨events, status, after, returned, rfl⟩))
+  | nominals contract =>
+    obtain ⟨events, status, rfl, rfl, returned⟩ := outcome
+    exact .nominals ((contract.behaviors _).mpr (Or.inl ⟨events, status, after, returned, rfl⟩))
 
 structure Returned [CInterface] (model : Solve.FMI3Model source) (objects : Objects)
     (owners : SlotOwners.State objects.capacity) (config : Configuration)

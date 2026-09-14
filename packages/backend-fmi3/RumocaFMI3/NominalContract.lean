@@ -1,4 +1,4 @@
-import RumocaFMI3.NominalFailures
+import RumocaFMI3.NominalEnvironment
 import RumocaFMI3.LoggingContract
 
 /-! One required contract for the emitted nominal query, its actual internal
@@ -7,30 +7,6 @@ noncomputable section
 namespace Rumoca.FMI3.Nominals
 open CTree CMemory CLiteral CCalls.Events
 
-def FailureExecutionContract [interface : CInterface]
-    (access : Bool) (program : CCalls.Events.Program Invocation) (category message : Address)
-    (heap : Heap) (signed : Bool) : Prop :=
-  ∀ (p logger : Address) (environment buffer : Option Address) (count : UInt64)
-    (kind : Kind) (mode : Mode) (name : String) (effect : ReturningEffect (Logging.signature name)),
-    program.addresses logger = some name →
-    program.externals name = some (External.observed (Logging.signature name) effect) →
-    load heap (p.member "kind") = some (.integer kind.code) →
-    heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
-    load heap (p.member "logger") = some (.pointer (some logger)) →
-    load heap (p.member "logging") = some (.integer 1) →
-    load heap (p.member "environment") = some (.pointer environment) →
-    FailureCondition access kind mode buffer count →
-    (∀ behavior, (CCalls.Events.machine program).Behaves
-      (.calling ErrorCalls.nominalSignature.name (ErrorCalls.nominalArguments p buffer count) heap .done)
-      behavior ↔
-      (∃ value after, effect.execute (Logging.arguments environment category message)
-        (LifecycleBodies.writeMode heap p .terminated) value after ∧
-        behavior = .terminates [⟨name, Logging.arguments environment category message⟩] ⟨.integer 3, after⟩) ∨
-      ((∀ value after, ¬ effect.execute (Logging.arguments environment category message)
-        (LifecycleBodies.writeMode heap p .terminated) value after) ∧ behavior = .wrong [])) ∧
-    (∀ value after, effect.execute (Logging.arguments environment category message)
-      (LifecycleBodies.writeMode heap p .terminated) value after →
-      Stored signed after category "logStatus" ∧ Stored signed after message (failureMessage access))
 
 section
 variable [static : StaticLiterals]
@@ -61,18 +37,6 @@ theorem failure_execution_correct (model : Solve.FMI3Model source) (access : Boo
 
 end
 
-structure QuietExecutionContract [interface : CInterface] (program : CCalls.Events.Program E) (heap : Heap) : Prop where
-  successful : ∀ p buffer kind mode old,
-    load heap (p.member "kind") = some (.integer kind.code) →
-    load heap (p.member "mode") = some (.integer mode.code) →
-    Reference.Allowed .getNominals kind mode →
-    heap buffer = some ⟨.float64, true, old⟩ →
-    ∀ behavior, (CCalls.Events.machine program).Behaves
-      (.calling ErrorCalls.nominalSignature.name (ErrorCalls.nominalArguments p (some buffer) 1) heap .done)
-      behavior ↔ behavior = .terminates [] ⟨.integer 0, written heap buffer⟩
-  null : ∀ buffer (count : UInt64) behavior, (CCalls.Events.machine program).Behaves
-    (.calling ErrorCalls.nominalSignature.name [.pointer none, .pointer buffer, .integer count.toNat] heap .done)
-    behavior ↔ behavior = .terminates [] ⟨.integer 3, heap⟩
 
 def SilentExecutionContract [interface : CInterface] (access : Bool) (program : CCalls.Events.Program E)
     (heap : Heap) : Prop :=
@@ -177,12 +141,15 @@ structure FunctionContract (model : Solve.FMI3Model source) (sigs : List Signatu
   tokenization : Printer.FunctionTokenization RuntimePrinter.typedefs text
     (Runtime.function model ErrorCalls.nominalSignature)
   prepared : ∀ pool, LiteralPreparation.prepare model sigs = some pool → PreparedContract model sigs pool
+  runtime : ∀ pool, LiteralPreparation.prepare model sigs = some pool →
+    NominalEnvironment.PreparedContract model sigs pool
 
 theorem rendered_contract (model : Solve.FMI3Model source) (sigs : List Signature)
     (unique : ((LiteralPreparation.functions model sigs).map (fun fn => fn.signature.name)).Nodup)
     (member : ErrorCalls.nominalSignature ∈ sigs) :
     FunctionContract model sigs (Runtime.function model ErrorCalls.nominalSignature).render := by
-  refine ⟨member, rfl, ?_, fun _ made => prepared_correct model sigs unique member made⟩
+  refine ⟨member, rfl, ?_, fun _ made => prepared_correct model sigs unique member made,
+    fun _ made => NominalEnvironment.prepared_correct model sigs unique member made⟩
   apply RuntimePrinter.function_tokenization
   refine ⟨Syntax.TypeSpelling.named (.typedefName (by decide +kernel) (by decide +kernel)),
     by decide +kernel, ?_⟩

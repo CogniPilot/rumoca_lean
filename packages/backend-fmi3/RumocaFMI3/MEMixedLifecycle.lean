@@ -16,6 +16,10 @@ theorem Action.can_finish (action : Action)
     cases request with
     | get _ _ => exact ready
     | reject _ _ _ => exact Or.inr rfl
+  | nominals request =>
+    cases request with
+    | get _ => exact ready
+    | reject _ _ _ => exact Or.inr rfl
   | run command =>
     cases command with
     | restart _ => exact Or.inl (by simp [Action.next, MENumericalHistory.ReferenceState.restart,

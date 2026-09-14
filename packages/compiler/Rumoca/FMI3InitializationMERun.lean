@@ -43,6 +43,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
     (lifecycle : LifecycleEnvironment.PreparedContract model.prepareFMI3 sigs)
     (prepared : MEEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (counts : ∀ events, CountEnvironment.PreparedContract model.prepareFMI3 sigs events pool)
+    (nominals : NominalEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) (slot : Fin objects.capacity)
     (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -94,7 +95,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
     intro action member
     exact MEMixedRun.Action.Prepared.preserved action (requests action member)
       ((liveStorage.trans initialized.storage).on action.CallerRegion)
-  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts baseHeap firstBlock signed
+  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals baseHeap firstBlock signed
     program config actual reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
       (SlotOwners.update owners slot (some owner)) valid configured rfl ownership (literals.trans readonly)
       stored resetStorage admitted current policies
@@ -142,6 +143,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
     Float64SetMetadata.Contract a.parsed.ast metadata ∧
     DerivativeMetadata.Contract a.parsed.ast metadata ∧
     CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
+    NominalMetadata.Contract a.parsed.ast metadata ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
         (LiteralPreparation.functions a.solve.prepareFMI3 sigs).flatMap CLiteral.functionNames),
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
@@ -150,6 +152,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
       LifecycleEnvironment.PreparedContract a.solve.prepareFMI3 sigs ∧
       MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       (∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool) ∧
+      NominalEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -212,11 +215,11 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
               MEContinuation a.solve objects program tag slot owners owner heap
                 (InitializationBodies.exitHeap atExit p .me) buffers addresses buffer (meReference ⟨initial⟩ args before during)
                 final (Time.Clock.initial args.start) finalClock actions config := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, create⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, nominals, create⟩ :=
     runtime_create_release compiled build
   refine ⟨compiled, numerical, metadataVariables, writable, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
-    CountMetadata.artifact_counts _ _ build.metadata,
-    sigs, pool, made, printed, functions, csPrepared.toPreparedContract, prepared, counts, ?_⟩
+    CountMetadata.artifact_counts _ _ build.metadata, NominalMetadata.artifact_nominals _ _ build.metadata,
+    sigs, pool, made, printed, functions, csPrepared.toPreparedContract, prepared, counts, nominals, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -236,7 +239,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
   obtain ⟨_, initialized, uniqueSource⟩ := certified.completed_source executed
   refine ⟨beforeEntry, atExit, certified, executed, initialized, uniqueSource, fun _ _ => certified.execution_iff, ?_⟩
   intro addresses buffer config actions final finalClock outputs matching valid admitted requests policies
-  exact certified.me_continuation a.solve header objects sigs pool csPrepared.toPreparedContract prepared counts
+  exact certified.me_continuation a.solve header objects sigs pool csPrepared.toPreparedContract prepared counts nominals
     baseHeap firstBlock signed slot buffers addresses buffer program tag actual write heap live beforeEntry atExit ⟨initial⟩ args
       before during factoryArgs owners owner created.initialized literalFrame
       (termination_preserves ((creation _).mpr rfl)) preserved createdFrame admissible (outputs.at_index slot.val)

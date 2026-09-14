@@ -40,6 +40,7 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
     (lifecycle : LifecycleEnvironment.PreparedContract model.prepareFMI3 sigs)
     (prepared : MEEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (counts : ∀ events, CountEnvironment.PreparedContract model.prepareFMI3 sigs events pool)
+    (nominals : NominalEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation),
@@ -87,7 +88,7 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
     intro action member
     exact MEMixedRun.Action.Prepared.preserved action (requests action member)
       (fun q inside => invariant.caller q (regions action member q inside))
-  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts baseHeap firstBlock signed
+  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals baseHeap firstBlock signed
     program config actual reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
       (SlotOwners.update owners slot (some owner)) valid configured rfl invariant.ownership invariant.readonly
       stored invariant.stored.reset admitted current policies

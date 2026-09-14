@@ -1,3 +1,4 @@
+import RumocaFMI3.MEStorageFrame
 import RumocaFMI3.MEInitialization
 import RumocaFMI3.MERelease
 import RumocaFMI3.StaticInitialization
@@ -5,12 +6,6 @@ import RumocaFMI3.StaticInitialization
 noncomputable section
 namespace Rumoca.FMI3.MEHistory
 open CTree CMemory StaticFactory
-
-theorem Buffers.storage_preserved (buffers : Buffers before addresses)
-    (preserved : CStorage.Preserves before after) : Buffers after addresses := by
-  intro layout member
-  obtain ⟨old, found⟩ := buffers layout member
-  exact preserved.cell found
 
 /-- The same program executes initialization, controls, termination and
 release. Initialization supplies every later invariant and the original lease

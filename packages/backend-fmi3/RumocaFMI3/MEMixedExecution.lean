@@ -46,6 +46,7 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : MEEnvironment.PreparedContract model sigs pool)
     (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
+    (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (literalBase : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (config : Configuration),
@@ -91,6 +92,25 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
     | reject which missing output =>
       exact ⟨events, by simp only [CountAccess.Request.readback, observation.1,
         CountAccess.Request.failed, ↓reduceIte]⟩
+  | nominals request =>
+    obtain ⟨outcomes, blocked, contract⟩ := MENominalCalls.execution header objects model sigs pool nominals
+      literalBase firstBlock signed program config actual heap p clock reference addresses buffer request owners
+      valid configured inPool represented literals stored storage ready.1 ready.2 allowed
+    refine ⟨_, blocked, .nominals contract, ?_⟩
+    rintro observed after epochs ⟨events, status, rfl, rfl, returned⟩
+    obtain ⟨observation, memory⟩ := contract.returned events status after returned
+    refine ⟨memory.stored, memory.reset, memory.configuration, memory.ownership, ?_, memory.readonly,
+      fun q guarded outside => memory.frame q guarded outside, memory.storage⟩
+    cases request with
+    | get output =>
+      obtain ⟨statusEq, quiet, readback⟩ := observation
+      have empty := quiet rfl
+      have readbackAt := congrFun readback 0
+      simp only [Action.Observed, statusEq, empty, readbackAt, NominalAccess.Request.failed,
+        Bool.false_eq_true, ↓reduceIte, MENumericalHistory.Observation.ok]
+    | reject access output count =>
+      exact ⟨events, by simp only [NominalAccess.Request.readback, observation.1,
+        NominalAccess.Request.failed, ↓reduceIte]⟩
   | run command =>
     obtain ⟨after, epochs, called, nextStored, nextReset, readonly, atomic, keptStorage, frame⟩ :=
       run_correct header objects (pool.addresses firstBlock) model program
@@ -153,6 +173,7 @@ theorem trace_correct (header : CFenv.Header) (objects : Objects) (model : Solve
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : MEEnvironment.PreparedContract model sigs pool)
     (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
+    (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (literalBase : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (config : Configuration),
@@ -175,7 +196,7 @@ theorem trace_correct (header : CFenv.Header) (objects : Objects) (model : Solve
   induction admitted generalizing heap with
   | nil => exact .nil stored storage configured represented
   | cons accepted _ ih =>
-    obtain ⟨returns, blocked, called, returned⟩ := action_correct header objects model sigs pool prepared counts literalBase firstBlock signed
+    obtain ⟨returns, blocked, called, returned⟩ := action_correct header objects model sigs pool prepared counts nominals literalBase firstBlock signed
       program config actual reset enterDefined exitDefined heap p _ _ addresses buffer _ owners valid configured
       inPool represented literals stored storage accepted (ready _ (by simp))
     refine .cons called returned ?_

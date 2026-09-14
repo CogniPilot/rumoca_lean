@@ -75,6 +75,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     compile input = .ok a ∧ Rumoca.ArtifactContract a c .internal ∧
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧ Float64SetMetadata.Contract a.parsed.ast metadata ∧
     CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
+    NominalMetadata.Contract a.parsed.ast metadata ∧
     (∀ state d, Source.Equation a.parsed.ast d ↔
       d a.parsed.ast.state = Binary64.value (ModelExchange.derivative a.solve state)) ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
@@ -121,7 +122,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               (∀ action ∈ actions, action.Prepared objects retained heap p buffers) →
               CreatedSourceContract a.solve.prepareFMI3 program objects tag retained owners slot owner heap
                 (pool.install baseHeap firstBlock signed) live buffers kind actions final := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, _, states, derivative, getter, setter,
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominals, states, derivative, getter, setter,
     initialization, _, factories, runtime, termination, time, entries, completed, discrete, step⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
@@ -129,6 +130,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have countPrepared : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
+  have nominalPrepared := nominals.runtime pool made
   have runPrepared : CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨⟨LiteralPreparation.function_bound _ sigs unique _ resetMember,
       by rw [← InitializationCalls.function_eq a.solve.prepareFMI3]; exact LiteralPreparation.function_bound _ sigs unique _ initialization.enterMember,
@@ -143,8 +145,9 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
     Float64SetMetadata.artifact_state _ _ build.metadata, CountMetadata.artifact_counts _ _ build.metadata,
+    NominalMetadata.artifact_nominals _ _ build.metadata,
     derivative_value_source a.solve,
-    sigs, pool, made, printed, functions, ⟨getPrepared, setPrepared, countPrepared, runPrepared, mePrepared⟩, ?_⟩
+    sigs, pool, made, printed, functions, ⟨getPrepared, setPrepared, countPrepared, nominalPrepared, runPrepared, mePrepared⟩, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -172,7 +175,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   intro retained buffers actions final resources logging reference prepared
   exact after_creation objects tag owners slot owner created reserved preserved (termination_preserves ((creation _).mpr rfl))
     literalFrame createdFrame logging
-    (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared runPrepared.toPreparedContract
+    (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared runPrepared.toPreparedContract
       baseHeap firstBlock signed program actual retained (SlotOwners.update owners slot (some owner)) heap _ buffers kind resources)
     reference prepared finish releaseBindings rfl
 

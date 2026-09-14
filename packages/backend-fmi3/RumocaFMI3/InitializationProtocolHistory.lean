@@ -1,4 +1,5 @@
 import RumocaFMI3.InitializationProtocolCounts
+import RumocaFMI3.InitializationProtocolNominals
 import RumocaFMI3.LifecycleEnvironment
 
 noncomputable section
@@ -20,6 +21,9 @@ def Action.Prepared (action : Action) (objects : Objects) (retained : Address �
   | .reject request => request.TransferStorage original ∧ RequestGuarded request objects retained ∧
       ∀ q, p.InRecord q → request.Outside q
   | .counts request => request.OutputStorage original ∧
+      request.Guarded (Float64Rejection.Protected objects retained) ∧
+      ∀ q, p.InRecord q → request.Outside q
+  | .nominals request => request.OutputStorage original ∧
       request.Guarded (Float64Rejection.Protected objects retained) ∧
       ∀ q, p.InRecord q → request.Outside q
   | _ => True
@@ -64,6 +68,7 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
     (getter : Float64Environment.PreparedContract model sigs pool)
     (setter : Float64SetEnvironment.PreparedContract model sigs pool)
     (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
+    (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -103,6 +108,20 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
         (fun inside => separate buffer inside rfl) allowed
     | reject events missing buffer =>
       exact count_rejection_call events missing buffer header objects model sigs pool (counts events)
+        baseHeap firstBlock signed program actual heap p buffers kind state owners retained
+        invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging
+  | nominals request =>
+    obtain ⟨inputs, guarded, separate⟩ := prepared
+    have later := NominalAccess.Request.OutputStorage.preserved request inputs invariant.caller guarded
+    cases request with
+    | get buffer =>
+      obtain ⟨old, storage⟩ := later
+      exact nominal_get_call model program
+        (nominals.quiet header Invocation objects firstBlock program actual)
+        invariant.stored invariant.ownership buffer old storage
+        (fun inside => separate buffer inside rfl) allowed
+    | reject access buffer count =>
+      exact nominal_rejection_call access buffer count header objects model sigs pool nominals
         baseHeap firstBlock signed program actual heap p buffers kind state owners retained
         invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging
   | enter args => exact enter_call model program initialization invariant.stored invariant.ownership args allowed

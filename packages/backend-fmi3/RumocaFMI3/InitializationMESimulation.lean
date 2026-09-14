@@ -46,6 +46,7 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : MEEnvironment.PreparedContract model sigs pool)
     (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
+    (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -71,7 +72,7 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
     exact MEMixedRun.Action.Prepared.preserved action (requests action member)
       (fun q inside => persistent.caller q (regions action member q inside))
   have policies := fun action member => policy.mono (regions action member)
-  have certified := MEMixedRun.trace_correct header objects model sigs pool prepared counts baseHeap firstBlock signed program config
+  have certified := MEMixedRun.trace_correct header objects model sigs pool prepared counts nominals baseHeap firstBlock signed program config
     actual reset enterDefined exitDefined heap p clock before final finalClock addresses buffer actions owners valid configured
     inPool persistent.ownership persistent.readonly stored resetStorage admitted current policies
   refine ⟨⟨config, certified⟩, certified.progress, ?_, ?_⟩

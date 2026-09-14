@@ -11,6 +11,27 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Nominal runtime and histories (full gate passed):**
+The final ignored draft passed across 80 modules and 56 selected roots. The
+owning FMI/compiler changes now connect actual nominal C calls, original
+storage, compatible caller-buffer aliases, initialization/restart and mixed ME
+histories to source/XML observations. Returning and blocked logger outcomes
+remain explicit. Seven new FMI modules and 25 new audit roots are integrated.
+The owning-package gate passed at 22:10:56 UTC on 1022 unchanged inputs in
+`build/c-factory/nominal-history-package-v2.log`, covering all 56 required roots
+without unexpected axioms or changed-module warnings. The required full
+`lake test` gate then passed at 22:56:23 UTC on 1022 unchanged inputs,
+with all 56 required roots. Its log and JSON record are
+`build/c-factory/nominal-history-full-gate-v1.*`. Only the three evidence
+documents change after the frozen full gate. The mandatory nominal function
+contract is stronger, and this gate accepts that extension.
+
+Retained FMU members, including the native library, are unchanged. The eFMU
+changes only three manifests' generation identities and dependent
+references/checksums; see `build/c-factory/nominal-history-artifacts-v1/` and
+comparison records. Next, complete logging configuration and remaining
+public-call coverage. K02–K05 still block grammar growth.
+
 **ME count interleavings (full gate passed):** the checked
 draft is now integrated into the FMI/compiler packages. It extends the existing
 mixed ME execution, source observations, stopped prefixes and recurring

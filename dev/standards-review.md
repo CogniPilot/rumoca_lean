@@ -37,6 +37,48 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Nominal queries through initialization and ME histories: 2026-09-14
+
+The [pinned FMI 3.0.2 specification](https://fmi-standard.org/docs/3.0.2/)
+§§2.2.4, 2.3.1–2.3.4, 2.3.8 and 3.2.1 supply the nominal/error-state review:
+ME-only positive nominals, default 1.0 when unspecified, ordered with the
+continuous-state vector; Initialization, Initialized and Terminated permit the
+query, while Instantiated excludes it. Error transitions enter Terminated;
+post-error final-value reads are for debugging, not continued simulation.
+
+The source contract binds the actual XML ordering/default to the same prepared
+Solve model and printed C runtime. Universal proofs cover nominal successes,
+rejections, original storage, compatible public-buffer aliases and all modeled
+returning/blocked logger alternatives through initialization and ME histories.
+The mandatory nominal function contract is stronger. The 80-module/56-root
+draft passes. The owning-package gate subsequently passed at 22:10:56 UTC on
+1022 unchanged inputs in `build/c-factory/nominal-history-package-v2.log`, with
+all 56 required roots, no unexpected axioms and no changed-module warnings.
+The first package attempt's missing direct import is fixed; its log is retained.
+The required full `nix develop .#verification --command lake test` then
+passed at 22:56:23 UTC on 1022 unchanged inputs, with all 56 required roots,
+no unexpected axioms and no changed-module warnings. Evidence is in
+`build/c-factory/nominal-history-full-gate-v1.log` and its JSON record. Only
+the three evidence documents change after this frozen full gate.
+
+The retained FMU has identical members, including the native library, to the
+ME-count artifact. The eFMU changes only fresh generation identities and their
+dependent references/checksums in three manifests. Numerical C, GALEC and eFMI
+Production C are unchanged. See `build/c-factory/nominal-history-artifacts-v1/`
+and adjacent comparison records. The detailed source review remains in
+`build/c-factory/nominal-initialization-source-draft-review-v6.json` and
+`build/c-factory/nominal-history-standards-review-v1.json`.
+This acceptance does not close the remaining public-call, logging-configuration,
+native/ABI, MISRA or K02–K05 obligations.
+
+Upstream Rumoca `23111592` retains the SPEC_0007 and draft SPEC_0048 ownership
+boundaries. Its new SPEC_0043 prepared-Jacobian owner rule reinforces the same
+prepared-product/source-identity discipline; no optimization is imported here.
+MLS 3.7 and eFMI 1.0.0 Beta 1 evidence carries forward with no source grammar,
+numerical semantics or eFMI emitter changes. Shared initialization, native/ABI,
+MISRA and remaining standards/release findings stay open.
+**Stage decision: open; no grammar expansion.**
+
 ### Count interleavings in ME simulation: 2026-09-14
 
 This increment uses the existing SR09 count policy: FMI 3.0.2 §§2.3.2 and

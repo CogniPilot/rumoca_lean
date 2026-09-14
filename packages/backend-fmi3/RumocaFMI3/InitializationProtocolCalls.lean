@@ -11,6 +11,7 @@ def Action.Outside (action : Action) (q : Address) : Prop :=
   match action with
   | .reject request => request.Outside q
   | .counts request => request.Outside q
+  | .nominals request => request.Outside q
   | _ => True
 
 structure Result (objects : Objects) (retained : Address → Prop)

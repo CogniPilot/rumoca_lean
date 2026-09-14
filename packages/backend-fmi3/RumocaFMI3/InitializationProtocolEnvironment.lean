@@ -14,6 +14,7 @@ structure PreparedContract (model : Solve.FMI3Model source) (sigs : List Signatu
   getter : Float64Environment.PreparedContract model sigs pool
   setter : Float64SetEnvironment.PreparedContract model sigs pool
   counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool
+  nominals : NominalEnvironment.PreparedContract model sigs pool
   cs : CSRunEnvironment.PreparedContract model sigs pool
   me : MEEnvironment.PreparedContract model sigs pool
 

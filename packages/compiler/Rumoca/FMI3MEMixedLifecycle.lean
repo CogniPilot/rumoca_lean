@@ -18,6 +18,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     compile input = .ok a ∧ Rumoca.ArtifactContract a c .internal ∧
     DerivativeMetadata.Contract a.parsed.ast metadata ∧
     CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
+    NominalMetadata.Contract a.parsed.ast metadata ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
         (LiteralPreparation.functions a.solve.prepareFMI3 sigs).flatMap functionNames),
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
@@ -25,6 +26,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
       MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       (∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool) ∧
+      NominalEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (before : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -99,12 +101,13 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (∀ name ∈ DiscreteCalls.names, q ≠ addresses name) → q ≠ buffer →
                 q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot final.control.mode q = heap q))) := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, _, states, derivative,
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative,
     _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
+  have nominals := nominalContract.runtime pool made
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
       DerivativeEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique derivative.member derivative.numerical.fresh made,
@@ -114,7 +117,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
       MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
   refine ⟨compiled, build.numerical, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
-    CountMetadata.artifact_counts _ _ build.metadata, sigs, pool, made, printed, functions, prepared, counts, ?_⟩
+    CountMetadata.artifact_counts _ _ build.metadata, NominalMetadata.artifact_nominals _ _ build.metadata, sigs, pool, made, printed, functions, prepared, counts, nominals, ?_⟩
   intro header instances flags separate before firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -176,7 +179,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     intro action member
     exact Action.Prepared.preserved action (requests action member)
       ((preserved.trans (enteredStorage.trans exitedStorage)).on action.CallerRegion)
-  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts before firstBlock signed
+  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals before firstBlock signed
     program config actual reset enterDefined exitDefined initializedHeap p _ _ final finalClock addresses buffer actions
     (SlotOwners.update owners slot (some owner)) valid initialConfig rfl initialOwners
     (literalFrame.trans prefixReadonly) initialStored initialReset admitted current policies

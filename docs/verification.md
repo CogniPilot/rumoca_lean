@@ -1,5 +1,41 @@
 # Exact verification contract
 
+**Nominal observations in complete histories (2026-09-14, full gate passed):**
+The nominal function contract now supplies the actual shared runtime on later
+literal-preserving heaps, including suppressed logging and all modeled logger
+outcomes. Original typed caller storage supports nominal reads throughout
+initialization, ME simulation/control histories and resets. Compatible public
+Float64 output buffers may alias; private instance and flag storage remains
+separate. Expected statuses and values are derived from raw C executions.
+
+Source-bound creation, restart, recurring ME/CS initialization and recurring
+ME simulation/release retain the same XML nominal ordering and positive
+default-one witness. The existing C machine and emitters are unchanged.
+`Nominals.FunctionContract.runtime` strengthens the mandatory actual adapter
+proposition; this increment requires its own full artifact acceptance.
+
+The final 80-module draft and 56 selected roots passed ordinary Lean checking
+in `build/c-factory/nominal-initialization-source-draft-v6.log`, with no unexpected
+axioms or Lean warnings. The owning FMI/compiler package gate then passed at
+22:10:56 UTC on 1022 unchanged inputs in
+`build/c-factory/nominal-history-package-v2.log`: 25 new and 31 affected roots,
+with no unexpected axioms or changed-module warnings. The first package attempt
+exposed a missing direct import; its failed log is retained and the import is
+fixed without changing a proof statement. The required
+`nix develop .#verification --command lake test` then passed at 22:56:23 UTC
+on 1022 unchanged inputs, with all 56 required roots and no unexpected axioms
+or changed-module warnings. Evidence is in
+`build/c-factory/nominal-history-full-gate-v1.log` and its JSON record. Only the
+three evidence documents change after that frozen full gate.
+
+Retained artifacts and comparisons are in
+`build/c-factory/nominal-history-artifacts-v1/` and adjacent JSON records. Every
+FMU member, including its native library, is unchanged from the preceding
+ME-count artifact. The eFMU changes only generation identities and dependent
+references/checksums in three manifests. Numerical C, GALEC and eFMI Production
+C remain unchanged. Logging configuration, remaining public calls, native/ABI
+correspondence and K02–K05 still block grammar expansion.
+
 **Counts in ME simulation histories (2026-09-14, full gate passed):**
 The mixed ME relation now includes successful and rejected count calls between
 simulation/control actions and resets. Raw execution admits arbitrary returned

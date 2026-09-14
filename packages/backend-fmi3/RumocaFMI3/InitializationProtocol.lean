@@ -1,5 +1,6 @@
 import RumocaFMI3.Float64RejectionExecution
 import RumocaFMI3.CountRequests
+import RumocaFMI3.NominalRequests
 
 /-! Initialization is a protocol, not an indivisible reset/enter/exit macro.
 Its reference transitions are independent of the target heaps and statuses.
@@ -31,6 +32,7 @@ inductive Action where
   | access (request : Float64Access.Request)
   | reject (request : Float64Rejection.Request)
   | counts (request : CountAccess.Request)
+  | nominals (request : NominalAccess.Request)
   | enter (args : Initialization.Arguments)
   | exit
   | reset
@@ -40,6 +42,7 @@ def Action.next (action : Action) (state : State) : State :=
   | .access request => { state with value := request.next state.value }
   | .reject _ => { state with phase := .failed }
   | .counts request => if request.failed then { state with phase := .failed } else state
+  | .nominals request => if request.failed then { state with phase := .failed } else state
   | .enter args => { state with phase := .initializing args, time := args.start }
   | .exit => match state.phase with
     | .initializing args => { state with phase := .initialized args }
@@ -58,6 +61,7 @@ def Action.Allowed (action : Action) (kind : Kind) (state : State) : Prop :=
     | _ => False
   | .reject request => request.Condition kind (state.phase.mode kind)
   | .counts request => request.Allowed kind (state.phase.mode kind)
+  | .nominals request => request.Allowed kind (state.phase.mode kind)
   | .enter args => state.phase = .instantiated ∧ args.Admissible
   | .exit => ∃ args, state.phase = .initializing args
   | .reset => True
@@ -73,6 +77,7 @@ def Action.call (action : Action) (p : Address) (buffers : Float64Buffers.Layout
   | .access request => request.call p buffers
   | .reject request => request.call p
   | .counts request => request.call p
+  | .nominals request => request.call p
   | .enter args => (InitializationCalls.signature.name,
       InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args))
   | .exit => (InitializationExit.signature.name, InitializationExit.arguments (some p))
@@ -89,6 +94,7 @@ def Action.readback (action : Action) (heap : Heap) (buffers : Float64Buffers.La
   match action with
   | .access request => request.readback heap buffers
   | .counts request => request.readback heap
+  | .nominals request => request.readback heap
   | _ => fun _ => none
 
 def Action.Observed (action : Action) (model : Solve.FMI3Model source) (state : State)
@@ -97,6 +103,9 @@ def Action.Observed (action : Action) (model : Solve.FMI3Model source) (state : 
   | .access request => observed = .ok (request.expected model state.value state.time)
   | .reject _ => observed.status = .integer 3 ∧ observed.values = fun _ => none
   | .counts request => if request.failed then
+      observed.status = .integer 3 ∧ observed.values = fun _ => none
+    else observed = .ok (request.expected model)
+  | .nominals request => if request.failed then
       observed.status = .integer 3 ∧ observed.values = fun _ => none
     else observed = .ok (request.expected model)
   | _ => observed = .ok (fun _ => none)
