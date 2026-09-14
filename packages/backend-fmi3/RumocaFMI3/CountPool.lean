@@ -6,21 +6,6 @@ native allocation, header interpretation and enabled callbacks remain open. -/
 namespace Rumoca.FMI3.CountQueries
 open CTree CMemory CLiteral LiteralPreparation
 
-def failureMessage (missing : Bool) : String :=
-  if missing then "Missing output pointer" else "Call is not allowed in the current FMI state"
-
-def FailureCondition (missing : Bool) (kind : Kind) (mode : Mode) (buffer : Option Address) : Prop :=
-  if missing then buffer = none ∧ Reference.Allowed .getCounts kind mode
-  else ¬ Reference.Allowed .getCounts kind mode
-
-theorem message_collected (m : Solve.FMI3Model source) (events missing : Bool) :
-    failureMessage missing ∈ functionTexts (Runtime.function m (signature events)) := by
-  cases events <;> cases missing <;>
-    simp [Runtime.function, Runtime.body, signature, outputName, failureMessage,
-      functionTexts, statementTexts, expressionTexts, Runtime.require,
-      Runtime.instancePrefix, Runtime.pointerCheck, Runtime.reject, Runtime.branch,
-      Runtime.fail, Runtime.ret, Runtime.call, Runtime.v]
-
 noncomputable section
 variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses

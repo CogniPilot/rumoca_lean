@@ -157,6 +157,7 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.Transition.Machine.step_behaviors
 #audit axioms Rumoca.Transition.Machine.prefix_behaviors
 #audit axioms Rumoca.FMI3.nominals_reject_instantiated
+#audit axioms Rumoca.FMI3.counts_reject_computation_and_termination
 #audit axioms Rumoca.FMI3.invalid_call_error
 #audit axioms Rumoca.FMI3.invalid_call_final_values
 #audit axioms Rumoca.FMI3.terminated_me_queries

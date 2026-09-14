@@ -3,8 +3,9 @@ import RumocaFMI3.CountMetadata
 import RumocaFMI3.CountPool
 
 /-! Source/Solve, actual adapter functions and actual XML share the count
-contract. Native headers, layout, enabled callbacks and machine compilation
-remain outside these authored typed-C execution guarantees. -/
+contract. The shared-runtime theorem includes modeled logger outcomes and
+blocking; native callback behavior, headers, layout and machine compilation
+remain outside these authored C execution guarantees. -/
 noncomputable section
 namespace Rumoca.FMI3
 open CMemory CTree CLiteral
@@ -84,5 +85,33 @@ theorem counts_failure_source (compiled : compile input = .ok a)
     (CountQueries.FunctionContract.member (static := ⟨fun _ => none⟩)
       (queries ⟨fun _ => none⟩ events)) before firstBlock signed fresh p buffer kind mode logger
     hk hm hl hg condition
+
+omit static in
+/-- The actual numerical C, XML and printed/prepared adapter supply both count
+contracts in the creation/lifecycle interface, including every modeled logger
+outcome. The contracts apply on arbitrary later literal-preserving heaps. -/
+theorem counts_runtime_source (compiled : compile input = .ok a)
+    (contract : SourceBuildContract a c description adapter metadata) :
+    compile input = .ok a ∧ Rumoca.ArtifactContract a c .internal ∧
+    CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
+    ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
+        (LiteralPreparation.functions a.solve.prepareFMI3 sigs).flatMap functionNames),
+      Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
+      AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
+      LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
+      ∀ events,
+        (∃ before text after : String, adapter = before ++ text ++ after ∧
+          Printer.FunctionTokenization RuntimePrinter.typedefs text
+            (Runtime.function a.solve.prepareFMI3 (CountQueries.signature events))) ∧
+        CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
+  letI : StaticLiterals := ⟨fun _ => none⟩
+  obtain ⟨sigs, _, _, printed, _, grammar, _, _, queries, ready, _⟩ := contract.adapter
+  obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
+  refine ⟨compiled, contract.numerical, CountMetadata.artifact_counts _ _ contract.metadata,
+    sigs, pool, printed, grammar, made, ?_⟩
+  intro events
+  have query := queries inferInstance events
+  obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member _ sigs _ query.member
+  exact ⟨⟨before, _, after, printed ▸ located, query.tokenization⟩, query.prepared pool made⟩
 
 end Rumoca.FMI3

@@ -1,8 +1,8 @@
-import RumocaFMI3.CountQueries
+import RumocaFMI3.CountEnvironment
 
 /-! Required contracts for the two existing ME count functions, on the same
-definition table that is printed into the adapter. Error paths here cover
-disabled logging; enabled callback execution is a separate obligation. -/
+definition table that is printed into the adapter. The prepared field includes
+suppressed and enabled logging in the shared creation/lifecycle interface. -/
 noncomputable section
 namespace Rumoca.FMI3.CountQueries
 variable [static : StaticLiterals]
@@ -48,13 +48,16 @@ structure FunctionContract (m : Solve.FMI3Model source) (sigs : List Signature)
       (.calling (signature events).name (arguments (some p) none) heap .done) behavior ↔
       behavior = .terminates ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩
 
+  prepared : ∀ pool, LiteralPreparation.prepare m sigs = some pool →
+    CountEnvironment.PreparedContract m sigs events pool
+
 theorem rendered_contract (m : Solve.FMI3Model source) (sigs : List Signature) (events : Bool)
     (unique : ((LiteralPreparation.functions m sigs).map (fun fn => fn.signature.name)).Nodup)
     (member : signature events ∈ sigs) :
     FunctionContract m sigs events (Runtime.function m (signature events)).render := by
   have defined := LiteralPreparation.function_bound m sigs unique _ member
   have helper := LiteralPreparation.helpers_bound m sigs Runtime.helpers[0] (by simp [Runtime.helpers])
-  refine ⟨member, rfl, function_tokenization m events, ?_, ?_, ?_, ?_⟩
+  refine ⟨member, rfl, function_tokenization m events, ?_, ?_, ?_, ?_, ?_⟩
   · intro heap p buffer kind mode old hk hm allowed storage behavior
     exact call_behaviors m events _ heap p buffer kind mode old defined hk hm allowed storage behavior
   · intro heap buffer behavior
@@ -65,5 +68,7 @@ theorem rendered_contract (m : Solve.FMI3Model source) (sigs : List Signature) (
   · intro heap p message kind mode logger literal hk hm hl hg allowed behavior
     exact missing_behaviors m events _ heap p message kind mode logger
       defined helper literal hk hm hl hg allowed behavior
+  · intro pool made
+    exact CountEnvironment.prepared_correct m sigs events unique member made
 
 end Rumoca.FMI3.CountQueries

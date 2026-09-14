@@ -219,6 +219,13 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CountQueries.message_collected
 #audit axioms Rumoca.FMI3.CountQueries.failure_reaches
 #audit axioms Rumoca.FMI3.CountQueries.prepared_failure
+#audit axioms Rumoca.FMI3.CountQueries.failure_prefix
+#audit axioms Rumoca.FMI3.CountEnvironment.body_agrees
+#audit axioms Rumoca.FMI3.CountEnvironment.quiet_correct
+#audit axioms Rumoca.FMI3.CountEnvironment.QuietContract.returned
+#audit axioms Rumoca.FMI3.CountEnvironment.suppressed_correct
+#audit axioms Rumoca.FMI3.CountEnvironment.logged_correct
+#audit axioms Rumoca.FMI3.CountEnvironment.prepared_correct
 #audit axioms Rumoca.FMI3.CountMetadata.described_counts
 #audit axioms Rumoca.FMI3.CountMetadata.artifact_counts
 #audit axioms Rumoca.FMI3.ErrorCalls.failure_after_prefix

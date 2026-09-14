@@ -11,6 +11,20 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Current work — count queries (full gate passed):** the shared-runtime
+success, null, suppressed-logging and arbitrary modeled logger-outcome
+contracts are implemented and required by the actual adapter proposition.
+Source binding retains the same numerical C, XML, function table and literal
+pool. Standards review found that the old count policy also admitted
+Initialization, Continuous-Time and Terminated. The policy and reference
+predicate now allow only ME Instantiated/Event Mode, with a core rejection
+theorem and corrected existing native checks. The required full artifact gate
+passed on 1009 unchanged inputs at 19:55:08 UTC, accepting the changed guards
+and stronger adapter contract. Next, integrate count observations into recurring
+histories, then address nominal-query runtime/history coverage, logging
+configuration and metadata-matched optional/type-access paths. K02–K05 remain
+open and no new grammar case is admitted.
+
 | Area | Current evidence | What remains |
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
@@ -31,16 +45,27 @@ restores original ownership. Importer-selected ME trials carry no claim of
 following the exact source IVP. The generic initialization-prefix proof is now
 shared by ME and CS without changing the CS theorem's statement.
 
-Next, close the remaining public API inventory and integrate those observations
-into the source-bound histories. Start with the count queries' shared-runtime
-and enabled-logging cases, then nominal queries, logging configuration and the
-metadata-matched optional/type-access paths. K02–K05 remain open. Only three
-documents change after the frozen gate; no new source case is admitted.
-The earlier `fc02a22` revision passed the full
-[GitHub gate 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
-at 18:15:01 UTC. This increment still needs its own full-artifact acceptance.
+The count-query work described above follows this ME checkpoint. Close the
+remaining public API inventory and integrate those observations into the
+source-bound histories. K02–K05 remain open. The ME checkpoint `ddebdc3`
+passed the full [GitHub gate 34882266695](https://github.com/CogniPilot/rumoca_lean/actions/runs/34882266695)
+at 19:48:16 UTC. The local count-query gate below also checks its dependencies.
+No new source case is admitted.
 
 Latest completed main-workspace gate:
+`build/c-factory/count-runtime-full-gate-v1.log`, passed at 19:55:08 UTC with
+all 1009 integration inputs unchanged. Nine new and ten affected audit roots
+passed without unexpected axioms or changed-module warnings. The mandatory
+actual-artifact checks, both FMU interfaces and eFMU checks passed. Only the
+three verification/roadmap documents change after that frozen gate. Retained
+archives and member comparisons are under
+`build/c-factory/count-runtime-artifacts-v1/` and adjacent JSON records. The
+FMU changes only the two count-query C guards and rebuilt shared library from
+the previous CS artifacts; the eFMU changes only generation identities and
+dependent references/checksums in three manifests. Numerical C, GALEC and eFMI
+Production C are unchanged.
+
+Earlier main-workspace gate:
 `build/c-factory/cs-contract-full-gate-v1.log`, passed with all 869
 integration inputs unchanged. It checks the mandatory complete CS call contract,
 earlier contracts, both actual FMU interfaces and the eFMU, including the existing

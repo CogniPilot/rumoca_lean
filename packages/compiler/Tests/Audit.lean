@@ -100,6 +100,7 @@ import Rumoca.InitializationDiagnosticProofs
 
 #audit axioms Rumoca.FMI3.counts_source
 #audit axioms Rumoca.FMI3.counts_failure_source
+#audit axioms Rumoca.FMI3.counts_runtime_source
 #audit axioms Rumoca.FMI3.version_source
 #audit axioms Rumoca.FMI3.literal_events_source
 #audit axioms Rumoca.FMI3.sourceBuild_correct

@@ -41,7 +41,7 @@ def permittedModes : Command → Kind → List Mode
   | .getStates, .me => [.initialization, .event, .continuous, .terminated]
   | .getDerivatives, .me => [.initialization, .event, .continuous, .terminated]
   | .getNominals, .me => [.initialization, .event, .continuous, .terminated]
-  | .getCounts, .me => [.instantiated, .initialization, .event, .continuous, .terminated]
+  | .getCounts, .me => [.instantiated, .event]
   | .completedStep, .me => [.continuous]
   | .doStep, .cs => [.step]
   | _, _ => []
@@ -64,8 +64,7 @@ def Allowed (c : Command) (k : Kind) (m : Mode) : Prop :=
   | .getStates | .getDerivatives | .getNominals => k = .me ∧
       (m = .initialization ∨ m = .event ∨ m = .continuous ∨ m = .terminated)
   | .setTime | .setStates | .completedStep => k = .me ∧ m = .continuous
-  | .getCounts => k = .me ∧
-      (m = .instantiated ∨ m = .initialization ∨ m = .event ∨ m = .continuous ∨ m = .terminated)
+  | .getCounts => k = .me ∧ (m = .instantiated ∨ m = .event)
   | .doStep => k = .cs ∧ m = .step
 end Reference
 
@@ -80,6 +79,14 @@ The prose-to-predicate correspondence still requires standards review. -/
 theorem nominals_reject_instantiated (k : Kind) :
     ¬ Reference.Allowed .getNominals k .instantiated := by
   simp [Reference.Allowed]
+
+/-- FMI 3.0.2 lists count queries in Instantiated (§2.3.2) and Event Mode
+(§2.3.5), not Initialization, Continuous-Time or Terminated. They are distinct
+from the final-value accessors allowed by §2.3.8. -/
+theorem counts_reject_computation_and_termination (k : Kind) (m : Mode)
+    (outside : m ∈ [.initialization, .continuous, .terminated]) :
+    ¬ Reference.Allowed .getCounts k m := by
+  cases k <;> cases m <;> simp_all [Reference.Allowed]
 
 def nextMode (c : Command) (k : Kind) (m : Mode) : Mode :=
   if allowed c k m then
@@ -105,9 +112,10 @@ theorem invalid_call_final_values (h : ¬ Reference.Allowed c k m) :
   rw [invalid_call_error h]
   cases k <;> decide
 
-/-- ME final-state queries remain available after normal or erroneous termination. -/
+/-- ME final-state value queries remain available after normal or erroneous
+termination. Count queries are only allowed in Instantiated and Event Mode. -/
 theorem terminated_me_queries (c : Command)
-    (h : c ∈ [.getStates, .getDerivatives, .getNominals, .getCounts]) :
+    (h : c ∈ [.getStates, .getDerivatives, .getNominals]) :
     allowed c .me .terminated = true := by
   cases c <;> simp_all [allowed, permittedModes] <;> decide
 

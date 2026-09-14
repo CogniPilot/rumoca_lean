@@ -37,6 +37,60 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Count-query call states and shared runtime: 2026-09-14
+
+**Finding SR09 — call-state repair accepted:** the count-query policy
+accepted Initialization, Continuous-Time and Terminated as well as Instantiated
+and Event Mode. The independently authored `Reference.Allowed` repeated that
+extra admission, so `allowed_correct` did not detect it. The earlier
+`terminated_me_queries` theorem and native test also treated counts as final
+variable values. The pinned [FMI 3.0.2 call tables](https://fmi-standard.org/docs/3.0.2/#common-state-machine)
+list both count queries in §§2.3.2 and 2.3.5. They are absent from §2.3.3,
+§2.3.8 and §3.2.1's Continuous-Time list, and from the enclosing super-state's
+common calls. The policy and reference predicate now admit only ME Instantiated
+and Event Mode. The corrected theorem retains final-value accessors and a new
+universal lemma rejects counts in the three excluded modes. The existing ABI
+check now queries counts in the two permitted modes and checks termination
+rejection. The required full artifact gate accepted this repair at 19:55:08 UTC.
+
+The mandatory count-function proposition additionally requires the complete
+shared-runtime prepared contract. Existing interface transport and failure-helper
+proofs cover success/null, disabled or absent logging, all represented returning
+logger outcomes and the modeled blocked alternative. Literal addresses and
+contents are supplied by the actual pool, including on later preserving heaps.
+The source theorem joins the actual numerical C, count fragments and XML;
+successful observations retain the Solve volume or zero event indicators.
+Counts are sums of referenced variable sizes (§2.3.2); the admitted metadata
+has one scalar state and no events or structural parameters. Array metadata
+continues to require a future volume interpretation.
+
+This increment changes the two generated lifecycle guards and strengthens the
+actual artifact proposition. It does not change source/GALEC grammars or the
+numerical core. Pinned MLS 3.7/eFMI 1.0.0 Beta 1 evidence and open shared
+initialization, coding-guideline and MISRA findings carry forward. Callback
+termination, native/ABI correspondence and recurring count histories are not
+claimed.
+
+`nix develop .#verification --command lake test` passed on 1009 unchanged
+inputs in `build/c-factory/count-runtime-full-gate-v1.log`. Nine new and ten
+affected roots passed without unexpected axioms or changed-module warnings.
+The existing actual-artifact, importer, ABI, native and mutation checks passed.
+Only three documentation files change after the frozen gate. Retained archives
+and full member comparisons are in `build/c-factory/count-runtime-artifacts-v1/`
+and adjacent JSON records. The FMU changes only the two count-query guards and
+rebuilt shared library relative to the previous CS artifacts. eFMU changes are
+limited to generation identities and dependent references/checksums in three
+manifests; numerical C, GALEC and Production C are unchanged.
+
+Local upstream Rumoca at `1464e99c0e95587c20afe190cc0f0b30a632376d` retains
+the reviewed `SPEC_0007` and draft `SPEC_0048` contents. The focused comparison
+in `build/c-factory/count-runtime-upstream-review-v1.json` confirms that Solve
+still owns the executable model and lifecycle composition consumes prepared
+products. These remain architecture references, not normative authorities.
+**Stage decision: SR09's call-state defect is repaired and artifact-checked;
+remaining public-call histories, K02–K05 and other open compliance findings
+still block grammar expansion.**
+
 ### Recurring ME initialization/simulation/release: 2026-09-14
 
 The admitted Modelica/GALEC grammars, source/Solve/C machine semantics,

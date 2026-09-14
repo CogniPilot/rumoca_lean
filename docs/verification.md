@@ -1,5 +1,43 @@
 # Exact verification contract
 
+**Count-query repair and shared runtime (2026-09-14, full gate passed):**
+The count queries now use the FMI 3.0.2 call-table restriction to ME
+Instantiated and Event Mode. The earlier predicate and emitted guard also
+accepted Initialization, Continuous-Time and Terminated; the old
+`terminated_me_queries` theorem incorrectly grouped counts with final-value
+accessors. Both the reference predicate and generated policy are corrected,
+with an explicit rejection theorem and an update to the existing native check.
+This is a standards-driven behavior correction, not a grammar expansion.
+
+`CountQueries.FunctionContract.prepared` strengthens the mandatory adapter
+proposition with success/null and suppressed/enabled logging contracts in the
+shared creation/lifecycle interface. It uses the existing C machine, interface
+transport and failure-helper proofs. The actual function table and pool supply
+the contract for every later literal-preserving heap. Returning logger effects
+may branch; no returning outcome is modeled as a blocked call, without assuming
+native callback termination. `QuietContract.returned` derives the status,
+Solve state volume or zero event count, and output-only frame from an arbitrary
+returned execution. `counts_runtime_source` binds these contracts to actual
+numerical C, adapter fragments and XML metadata.
+
+The required `nix develop .#verification --command lake test` passed at
+19:55:08 UTC on 1009 unchanged inputs, including the actual FMU/eFMU contracts
+and existing importer, ABI, native and rejection checks. Nine new and ten
+affected audit roots passed with no unexpected axioms or changed-module
+warnings. Evidence is in `build/c-factory/count-runtime-full-gate-v1.log` and
+its JSON record. Only the three verification/roadmap documents change after
+that frozen gate.
+
+Retained archives and comparisons are in
+`build/c-factory/count-runtime-artifacts-v1/` and adjacent JSON records. Relative
+to the previous retained CS artifacts, the FMU changes only the two count guards
+in `sources/fmi3.c` and the rebuilt shared library. The eFMU changes only fresh
+generation identities and their dependent references/checksums in three
+manifests. Numerical C, GALEC and eFMI Production C are unchanged. Count
+observations still need integration into the recurring source-bound histories.
+Remaining public calls, native/ABI correspondence and K02–K05 keep expansion
+blocked.
+
 **Source-bound recurring ME protocols (2026-09-14):**
 `MEProtocol.runtime_create_release` now composes actual creation, repeated
 initialization/simulation/reset segments and final release in one source-bound
