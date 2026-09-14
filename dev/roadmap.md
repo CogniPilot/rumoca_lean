@@ -15,7 +15,7 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Created CS and ME mixed histories now compose initialization, represented successful/rejected operations, modeled logging, reset/reinitialization and release. The ME theorem derives raw statuses, source derivative observations and initialization checkpoints, restoring original owners under the universal callback frame. | Compose repeated simulation/initialization segments through final release; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Source-bound CS creation now composes recurring initialization/simulation/reset segments through release, preserving raw statuses, explicit initialization checkpoints and segment-final source samples. Existing ME mixed histories retain derivative observations, initialized epochs and ownership. | Complete recurring ME composition and intermediate/stopped source traces; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
@@ -45,6 +45,16 @@ reuses the extracted backend composition. Emission, semantics, mandatory
 contracts and existing tests are unchanged; their full artifact evidence
 remains the 869-input gate. No new full-gate pass is claimed for this follow-up.
 
+`CSProtocol.runtime_create_release` now composes actual source-bound creation,
+arbitrary finite initialization/CS simulation/reset segments and final release.
+It derives each handoff from original resources and restores the original
+owner map. The source trace keeps explicit initialization checkpoints and
+segment-final source IVPs/samples/error bounds; raw status lists and reset
+results are conclusions. Fourteen new and three affected roots passed the
+990-input FMI/compiler package gate. Publication changes only documentation
+and a clarifying docstring after the frozen gate. ME's repeated composition,
+all intermediate source observations/stopped prefixes and K02–K05 remain open.
+
 The CS raw restart relation now admits arbitrary returned codes; the complete
 call contracts prove that reset, entry and exit succeed. This repairs an
 accidental success premise in that raw relation. Returning and blocked action
@@ -62,9 +72,9 @@ regions retain object descriptions under universal logger storage policies;
 typed output buffers may alias compatibly. The source-bound reset theorem
 retains actual statuses, returning/blocked alternatives and exit/source-IVP
 checkpoints. Thirty-three roots passed the 984-input C/FMI/compiler package
-gate in `build/c-factory/simulation-restart-package-v1.log`. The next step is
-one theorem composing repeated simulation/initialization segments and final
-release, carrying the original resources through every handoff. Earlier
+gate in `build/c-factory/simulation-restart-package-v1.log`. The subsequent
+990-input checkpoint supplies that recurring CS composition through release;
+the corresponding ME composition remains open. Earlier
 simulation relations retain their contiguous restart constructor alongside
 these new composition lemmas; no new simulation semantics was introduced.
 
@@ -796,12 +806,20 @@ simulation or concurrent host histories.
   blocked actions and prove finite CS history progress without callback
   totality. Expose progress and derived raw statuses in the adapter/source
   theorem. Six new and seven affected roots passed the 985-input package gate.
-- [ ] Compose repeated simulation/initialization segments through final release
-  in one source-bound history theorem. Generalize the existing simulation
-  handoff to every initialized segment, preserve all actual source checkpoints
-  and returning/blocked alternatives, and restore original ownership. Reuse
-  existing raw relations and action contracts; do not introduce another
-  simulation semantics or assume future storage at the handoffs.
+- [x] Compose repeated CS initialization/simulation segments through final
+  release in one source-bound history theorem. Derive creation/defaults,
+  original caller storage, actual handoffs, raw statuses and source checkpoints
+  for explicit initialization protocols; retain segment-final source samples
+  and restore original ownership. Progress retains real blocked prefixes.
+  Fourteen new roots passed the 990-input package gate. Existing raw relations
+  and action contracts are reused; no future storage or call success is assumed.
+- [ ] Complete the corresponding ME recurring initialization/simulation/release
+  theorem. Reuse the persistent resource invariant and derived ME logger policy;
+  carry trial-state/clock semantics and source checkpoints across each cycle.
+- [ ] Lift every intermediate simulation output and internal restart checkpoint
+  into the unified source trace, and prove source correspondence for all actual
+  stopped prefixes. The current recurring CS trace records simulation status
+  lists and segment-final samples, not every per-action numerical observation.
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.

@@ -1,4 +1,5 @@
 import Rumoca.FMI3InitializationProtocol
+import Rumoca.FMI3CSProtocolRuntime
 import Rumoca.FMI3CreatedInitializationProtocol
 import Rumoca.FMI3InitializationProtocolME
 import Rumoca.FMI3InitializationProtocolCS
@@ -312,3 +313,12 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_me
 #audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_cs_logged
 #audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_cs_suppressed
+#audit axioms Rumoca.FMI3.CSProtocol.Ready.initialization
+#audit axioms Rumoca.FMI3.CSProtocol.Ready.simulation
+#audit axioms Rumoca.FMI3.CSProtocol.CycleContract.completed
+#audit axioms Rumoca.FMI3.CSProtocol.cycle_contract
+#audit axioms Rumoca.FMI3.CSProtocol.CycleContract.progress
+#audit axioms Rumoca.FMI3.CSProtocol.CycleContract.restarted
+#audit axioms Rumoca.FMI3.CSProtocol.correct
+#audit axioms Rumoca.FMI3.CSProtocol.Contract.released
+#audit axioms Rumoca.FMI3.CSProtocol.runtime_create_release

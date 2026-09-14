@@ -1,4 +1,7 @@
 import RumocaFMI3.InitializationProtocol
+import RumocaFMI3.InitializationProtocolEnvironment
+import RumocaFMI3.InitializationSimulation
+import RumocaFMI3.CSInitializationProtocol
 import RumocaFMI3.InitializationProtocolCreation
 import RumocaFMI3.InitializationProtocolHandoff
 import RumocaFMI3.InitializationProtocolRunFrames
@@ -1595,6 +1598,11 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSRun.Calls.retains
 #audit axioms Rumoca.FMI3.CSRun.Calls.readonly
 #audit axioms Rumoca.FMI3.CSRun.Calls.stored
+#audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.persistent
+#audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.cs
+#audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.me
+#audit axioms Rumoca.FMI3.InitializationProtocol.cs_execution
+#audit axioms Rumoca.FMI3.CSProtocol.Plan.Outside.not_record
 #audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.fields
 #audit axioms Rumoca.FMI3.InitializationProtocol.Stored.reset_from
 #audit axioms Rumoca.FMI3.InitializationProtocol.reset_invariant

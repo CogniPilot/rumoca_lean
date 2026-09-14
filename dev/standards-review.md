@@ -37,6 +37,41 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Source-bound recurring CS protocols: 2026-09-14
+
+The admitted Modelica/GALEC grammars and generated FMI/eFMI members are unchanged.
+This increment composes existing initialization and CS raw relations, with
+actual reset calls, across finite recurring histories. One source-bound
+factory theorem derives the handle/default/storage; the shared prepared
+environment supplies each later call. Completed histories discharge the
+original reservation through complete termination/free contracts.
+
+The focused [FMI 3.0.2 review](https://fmi-standard.org/docs/3.0.2/) rechecked
+§2.2.4 (Error/Discard outputs and recovery), §2.2.6 (CS time advancement),
+§2.3.1 (reset defaults and disposal), §2.3.3 (initialization access and exit),
+and §2.3.4 (termination). The existing supported CS profile exits initialization
+into Step Mode. Failed output buffers are not treated as source observations.
+The segment sample theorem concerns the stored model state, with the existing
+numerical/clock error bound. Reset restores defaults before new accesses choose
+the next IVP. The frozen MLS 3.7 and eFMI 1.0.0 Beta 1 evidence, initialization
+restrictions and MISRA findings carry forward; no normative policy changed.
+
+The new source trace preserves explicit initialization-protocol checkpoints
+and segment-final numerical samples. Lifting every intermediate simulation
+output/internal restart checkpoint, and source observations of stopped
+prefixes, into the top-level trace is still required. Progress proves a raw
+completed or blocked prefix without assuming a callback return; native
+callback termination and concurrent execution remain outside that result.
+ME's recurring composition and the remaining public-call inventory are open.
+
+Fourteen new and three affected roots passed the FMI/compiler package gate on
+990 unchanged inputs in `build/c-factory/repeated-cs-cycles-package-v1.log`.
+No new tests or axioms were added. Publication adds documentation and one
+clarifying docstring after that frozen gate. GitHub run `34862816363` passed
+the full gate for `0ef4820` at 16:38:40 UTC, a distinct revision. The current
+change has no new full-artifact acceptance yet. K02–K05 remain open.
+**Stage decision: no grammar expansion.**
+
 ### CS restart return codes and progress: 2026-09-14
 
 The review found a proof-scope restriction: the CS raw restart constructor

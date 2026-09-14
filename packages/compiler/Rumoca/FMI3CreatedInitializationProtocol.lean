@@ -1,6 +1,7 @@
 import Rumoca.FMI3InitializationProtocol
 import Rumoca.FMI3StaticLifecycle
 import RumocaFMI3.InitializationProtocolCreation
+import RumocaFMI3.InitializationProtocolEnvironment
 import RumocaFMI3.FactoryEnvironment
 import RumocaFMI3.CSRunEnvironment
 import RumocaFMI3.MEEnvironment
@@ -80,8 +81,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
-      CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
-      MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
+      PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -139,7 +139,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
     Float64SetMetadata.artifact_state _ _ build.metadata, derivative_value_source a.solve,
-    sigs, pool, made, printed, functions, runPrepared, mePrepared, ?_⟩
+    sigs, pool, made, printed, functions, ⟨getPrepared, setPrepared, runPrepared, mePrepared⟩, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock

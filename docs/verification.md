@@ -1,5 +1,43 @@
 # Exact verification contract
 
+**Source-bound recurring CS protocols and release (2026-09-14):**
+`CSProtocol.runtime_create_release` now composes actual source-bound static
+creation, arbitrarily many admitted initialization/simulation/reset segments,
+and final release in one theorem. Creation derives the handle, Solve default,
+typed storage and reservation. The same prepared table and pool supply the
+accessors, lifecycle and simulation contracts throughout. Original caller
+storage and the universal external-effect policy suffice; no later heap,
+successful call or callback return is supplied by the host.
+
+`CSProtocol.Completed` sequences the existing raw initialization and CS
+relations with actual reset calls. Its return values are unrestricted by
+expected statuses. `correct` derives the status lists, reset outcomes,
+persistent resource invariant, ownership and memory frames. Its progress
+result constructs a completed history or a real blocked prefix. Completed
+histories have complete termination/free call contracts, and release restores
+the original owner map and frames protected memory through creation and every
+cycle. The old factory theorem exposes one prepared-environment bundle,
+including the already-derived getter/setter and ME/CS contracts.
+
+The source trace preserves explicit initialization-protocol exit checkpoints
+and each simulation segment's final Real IVP/sample/error bound across later
+resets. It is not yet a source observation record for every intermediate
+DoStep result or restart inside a CS simulation segment. Raw stopped prefixes
+are retained, but a unified source-prefix theorem for them remains separate.
+Existing per-action contracts remain in force. ME's repeated-cycle composition,
+remaining public calls, native/concurrent correspondence and K02–K05 remain
+open. This is a stronger CS composition theorem, not full CompCert-level
+coverage or permission to expand the grammar.
+
+Fourteen new roots and three affected roots passed the existing FMI/compiler
+package gate on 990 unchanged inputs in
+`build/c-factory/repeated-cs-cycles-package-v1.log`, with no unexpected axioms
+or warnings in the new/changed modules. Publication subsequently changes only
+documentation and a scope-clarifying Lean docstring. Source/Solve/C machine
+semantics, emitters, mandatory artifact propositions and boundary tests are
+unchanged. GitHub run `34862816363` passed the full gate for `0ef4820` at
+16:38:40 UTC; that is evidence for an earlier revision, not this package pass.
+
 **CS raw restart outcomes and history progress (2026-09-14):**
 Review found that `CSRun.Performed.restart` required all three return codes
 to be zero. Earlier claims that raw CS histories derive arbitrary returned
