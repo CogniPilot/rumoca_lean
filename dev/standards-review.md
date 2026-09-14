@@ -37,6 +37,41 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Created mixed ME lifetime: 2026-09-14
+
+This derived follow-up to `d2f8e9f` connects original static creation storage
+and ownership to initialization, the existing mixed ME success/error/reset
+history and release. The actual factory chooses the handle, compiler-selected
+finite Solve default and lease before the importer chooses its history. Initial caller buffers
+come from the pre-creation heap, and logger configuration matches factory arguments.
+Every completed branch derives later storage, slot metadata and owners.
+
+The focused FMI 3.0.2 [§2.3.1](https://fmi-standard.org/docs/3.0.2/)
+review rechecked reset/reinitialization and instance disposal against the existing
+Error-to-Terminated policy. `LifecycleRelease.finish_correct` terminates an active
+instance before releasing it, and releases an already Terminated instance directly.
+The source-bound theorem restores the original owner map and preserves protected
+other-instance/reservation memory. It does not authorize later calls on the freed
+handle. No generated lifecycle or allocation policy changed.
+
+The complete branching history retains every modeled callback alternative under
+the universal external frame; a return or completed final heap is not presumed.
+Arbitrary actual statuses, derivative queries and initialization checkpoints retain
+the source consequences. Initial and restarted IVPs are stated at their actual
+initialization checkpoints, separately from later importer trial-state writes.
+Native callback execution, concurrent callers and complete ABI correspondence
+remain external/open obligations.
+
+All seven roots passed the FMI/compiler package gate on 930 unchanged inputs in
+`build/c-factory/me-mixed-lifetime-package-v2.log`. The first attempt found a
+missing direct import for an existing storage theorem; the corrected dependency
+requires no proof-body change. Only the three status documents changed afterward.
+Earlier semantics, emission, mandatory contracts and tests retain the separate
+869-input full gate and unchanged archive hashes. MLS 3.7, CS/eFMI and MISRA
+records carry forward. No new full-gate pass, grammar feature, test suite or full
+standards closure is claimed. Float64 initialization interactions, remaining
+public APIs and K02–K05 remain open.
+
 ### Mixed ME error/recovery histories: 2026-09-14
 
 This derived follow-up to `1fc7fb5` composes admitted numerical/control calls,

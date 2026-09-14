@@ -1,3 +1,4 @@
+import RumocaFMI3.MEMixedLifecycle
 import RumocaFMI3.MEMixedExecution
 import RumocaFMI3.MEFailureRecovery
 import RumocaFMI3.MEFailureContracts
@@ -1370,3 +1371,10 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEMixedRun.run_correct
 #audit axioms Rumoca.FMI3.MEMixedRun.action_correct
 #audit axioms Rumoca.FMI3.MEMixedRun.trace_correct
+
+#audit axioms Rumoca.FMI3.LifecycleRelease.finish_correct
+#audit axioms Rumoca.FMI3.MEMixedRun.Action.can_finish
+#audit axioms Rumoca.FMI3.MEMixedRun.ReferenceTrace.can_finish
+#audit axioms Rumoca.FMI3.MEMixedRun.Configuration.created
+#audit axioms Rumoca.FMI3.MEMixedRun.Configuration.initialized
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.slot

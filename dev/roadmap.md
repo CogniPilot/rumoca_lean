@@ -15,7 +15,7 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Mixed accepted/rejected CS step and reset histories compose with creation, initialization and release, including modeled logging outcomes. Accepted ME numerical/reset histories also compose from creation through release. Mixed ME success/error/reset histories now derive actual caller writes, statuses, callbacks, source derivative observations and initialization checkpoints under the universal callback frame. | Compose these mixed ME histories with creation/release; cover intervening initialization accesses, remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Created CS and ME mixed histories now compose initialization, represented successful/rejected operations, modeled logging, reset/reinitialization and release. The ME theorem derives raw statuses, source derivative observations and initialization checkpoints, restoring original owners under the universal callback frame. | Cover Float64 access during initialization, remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
@@ -47,25 +47,35 @@ remains the 869-input gate. No new full-gate pass is claimed for this follow-up.
 
 **Distance to expansion:** K01 is closed for its scoped initialization profile;
 K02–K05 remain partial or open. Actual creation now composes with initialization,
-accepted mixed ME control/state/derivative histories, repeated reset/reinitialization,
-termination and release. Every restart records the actual initialized heap and
-its source IVP; later trial-state writes remain separate from that trajectory.
-The corresponding CS lifetime also covers mixed accepted/rejected steps,
-reset/reinitialization and modeled logging outcomes. Both retain source
-observations and restore original ownership within their stated contracts.
+represented ME numerical/control successes and errors, modeled logging, repeated
+reset/reinitialization and mode-appropriate release. Every restart records the
+actual initialized heap and its source IVP; later trial-state writes remain
+separate from that trajectory. The corresponding CS lifetime covers mixed
+accepted/rejected steps, reset/reinitialization and modeled logging outcomes.
+Both restore original ownership within their stated contracts.
 
-Mixed ME success/error/reset histories now compose the represented state,
-derivative, time and control requests, including modeled logging outcomes.
-Actual caller writes, raw statuses and source initialization are derived without
-assuming later storage or a returning callback. The next proof work is composing
-these mixed histories with creation and mode-appropriate release, then covering
-intervening initialization accesses and remaining public calls.
+The next proof work is Float64 getter/setter integration into the shared runtime
+and initialization histories, then the remaining public calls. Existing
+`Float64Contract.lean` and `Float64SetContract.lean` provide individual contracts;
+their interface/history composition must derive the selected IVP from the actual
+state at initialization exit, including intervening host writes. No later heap
+or successful call may substitute for that proof.
 Concurrent instance ownership and the transitive no-heap
 policy, complete source-to-artifact/provenance and C-profile correspondence,
 and standards/MISRA closure remain required. The final release also requires
 independent review and the complete artifact gate at that revision. These are
 substantial obligations; there is no defensible coverage percentage or short
 completion estimate from the number of audited roots.
+
+The created mixed ME lifetime passed `lake build check-fmi3 check-compiler`
+in `build/c-factory/me-mixed-lifetime-package-v2.log` on 930 unchanged inputs.
+Its seven added roots derive configuration and release metadata from the actual
+factory and history, restore the original owners, and retain all source/raw
+observation guarantees. A common lifecycle suffix handles active and already
+Terminated instances. The first package attempt needed an explicit import for
+an existing storage lemma. Earlier semantics, emission, mandatory contracts and
+tests retain the separate 869-input full artifact gate and unchanged archives;
+no new full-gate pass or grammar admission is claimed.
 
 The mixed ME history follow-up passed `lake build check-fmi3 check-compiler`
 in `build/c-factory/me-mixed-run-package-v1.log` on 927 unchanged inputs.
@@ -471,12 +481,13 @@ and release, deriving the later metadata/flag premises from the original lease.
 The FMI/compiler package audit passed with 811 unchanged inputs; no emitter or
 mandatory contract changed in that follow-up.
 
-Actual CS creation now supplies the lease for initialization, accepted stepping,
-termination and release, restoring the original owner map. Its derived package
-gate passed on 881 inputs; the mandatory-contract full gate passed on 869.
-Next, compose the remaining operation/release histories and prove actual
-concurrent ownership histories. Callback frames, the transitive no-heap and
-acyclic call graph, and native profile/layout remain open.
+Actual CS and ME creation now supplies the lease for their covered mixed
+success/error/reset lifetimes and release, restoring the original owner map.
+The latest ME derived package gate passed on 930 inputs; the mandatory-contract
+full gate passed on 869. Remaining public and initialization interactions and
+actual concurrent ownership histories still need composition. Native callback
+correspondence, the transitive no-heap and acyclic call graph, and native
+profile/layout remain open.
 The combined exit items below remain open until all their obligations are met;
 no broader item is closed by a sequential initialization prefix.
 **Existing IDs:** C01, C02, F02, F03, S03; new no-heap/RTOS requirement.
@@ -560,12 +571,11 @@ next task. Any reusable storage/frame draft is only a prerequisite.
 ### K03 — Complete public FMI execution and histories
 
 The accepted mixed ME numerical/reset lifetime passed the 919-input FMI/compiler
-gate. The rejection/recovery follow-up passed on 923 inputs, and the composed
-mixed success/error/reset histories passed on 927. One actual table/pool supplies
-the numerical, rejection, logging and recovery calls. Mixed error/callback
-creation/release lifetimes, intervening initialization accesses and remaining
-public interactions still need composition. No emitter or mandatory contract
-changed, and no new full-gate pass is claimed.
+gate, followed by rejection/recovery on 923, mixed histories on 927 and their
+actual creation/release composition on 930 inputs. One actual table/pool supplies
+the numerical, rejection, logging and recovery calls. Float64 access during
+initialization and remaining public interactions still need composition.
+No emitter or mandatory contract changed, and no new full-gate pass is claimed.
 
 **State:** partial; substantial body and helper proofs can be reused.
 **Existing IDs:** F01, F02, N01, N02.
@@ -624,9 +634,8 @@ simulation or concurrent host histories.
   derive the statuses of reset and both initialization calls, and prove source
   initialization and uniqueness at every actual restart checkpoint. The 17 roots
   passed the 919-input package gate; all three restart calls are contiguous.
-- [ ] Extend the created ME numerical/reset lifetime to rejected calls and all
-  modeled logging outcomes, including recovery after errors. Cover intervening
-  initialization accesses and remaining public interactions. Retain the
+- [ ] Extend the created mixed ME/CS lifetimes to intervening initialization
+  accesses and remaining public interactions. Retain the
   numerical/source guarantee alongside every public observation and the explicit
   caller-protocol obligations.
 - [x] Derive a common actual-source-bound rejection/recovery contract for
@@ -642,8 +651,15 @@ simulation or concurrent host histories.
   restart checkpoint, preserving all modeled callback outcomes and original
   owners. Prove actual/certified returning actions in both directions. The 15
   roots passed the 927-input package gate. These histories still start from
-  typed existing instance/caller storage; creation/release composition remains
-  open, along with intervening initialization accesses and other public calls.
+  typed existing instance/caller storage; the following item composes creation
+  and release. Intervening initialization accesses and other public calls remain open.
+- [x] Compose actual creation, initialization and mode-appropriate release
+  around the mixed ME success/error/reset histories, with all modeled logger
+  outcomes. Derive the handle/default/lease before the importer selects its
+  history, carry original caller storage and configuration, derive actual source
+  observations/checkpoints and restore the original owner map on release.
+  Seven roots passed the 930-input package gate. This does not close the remaining
+  public-interaction or concurrent-host obligations.
 - [x] Require the complete public CS step contract in the actual artifact
   checker. All raw inputs are classified; successful/null/error/discard calls,
   exact output writes and represented logging outcomes share the prepared

@@ -1,5 +1,37 @@
 # Exact verification contract
 
+**Created mixed ME lifetime (2026-09-14):**
+`MEMixedRun.runtime_create_release` derives actual creation, initialization,
+mixed numerical/control/error/reset histories and final release from original
+static storage and owners. The factory supplies the handle, finite Solve default
+and lease before the importer selects its history. Caller buffers belong to the
+pre-creation heap; logger configuration follows the original factory arguments.
+Subsequent storage, configuration, slot metadata and ownership are derived.
+
+Every completed actual history retains source derivative observations and the
+source initialization/uniqueness of every actual restart checkpoint. The initial
+checkpoint also satisfies source initialization with the created finite default.
+The full branching certificate retains suppressed, missing and enabled logger
+paths, every modeled returning effect and the no-return alternative. The
+universal external frame remains explicit, with no presumed callback return.
+
+`LifecycleRelease.finish_correct` supplies a common interface-level suffix:
+active states terminate before release; an Error/Terminated state releases
+directly. The actual release restores the original owner map and preserves
+protected unrelated memory. It grants no future validity to the released handle.
+The source, numerical C, function-section tokenization and derivative/state
+metadata remain bound to the same compiled artifact.
+
+All seven added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-mixed-lifetime-package-v2.log` on 930 unchanged inputs.
+The first package attempt exposed a missing direct import of an existing storage
+lemma; the import was corrected without changing a proof body. Only the three
+status documents changed after acceptance. Earlier semantics, emission, mandatory
+contracts and tests retain the separate 869-input full artifact gate and unchanged
+archives; no new full-gate pass is claimed. Intervening initialization accesses,
+remaining public APIs, concurrent ownership, complete artifact/native correspondence
+and standards/MISRA closure keep K02–K05 open. No grammar or test suite was added.
+
 **Mixed ME rejection/recovery histories (2026-09-14):**
 `MEMixedRun.runtime_history` derives a branching certificate for finite admitted
 mixtures of numerical/control calls, rejected requests and reset/reinitialization.
