@@ -1,3 +1,4 @@
+import Rumoca.FMI3MENumericalHistory
 import Rumoca.FMI3MENumericalEnvironment
 import Rumoca.FMI3StateEnvironment
 import Rumoca.FMI3CSLoggedLifecycle
@@ -234,3 +235,7 @@ import Rumoca.InitializationDiagnosticProofs
 
 #audit axioms Rumoca.FMI3.adapter_me_numerical_environment
 #audit axioms Rumoca.FMI3.runtime_derivative_source
+
+#audit axioms Rumoca.FMI3.adapter_me_environment
+#audit axioms Rumoca.FMI3.MENumericalHistory.observations_source
+#audit axioms Rumoca.FMI3.runtime_me_numerical_history

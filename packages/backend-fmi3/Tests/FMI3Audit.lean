@@ -1,3 +1,4 @@
+import RumocaFMI3.MENumericalHistory
 import RumocaFMI3.MEControlEnvironment
 import RumocaFMI3.DerivativeEnvironment
 import RumocaFMI3.StateEnvironment
@@ -1290,3 +1291,25 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEControlEnvironment.DiscreteControl.logged_correct
 #audit axioms Rumoca.FMI3.MEControlEnvironment.TimeControl.suppressed_correct
 #audit axioms Rumoca.FMI3.MEControlEnvironment.TimeControl.logged_correct
+
+#audit axioms Rumoca.FMI3.MEControlEnvironment.EntryControl.prepared_correct
+#audit axioms Rumoca.FMI3.MEControlEnvironment.CompletedControl.prepared_correct
+#audit axioms Rumoca.FMI3.MEControlEnvironment.DiscreteControl.prepared_correct
+#audit axioms Rumoca.FMI3.MEControlEnvironment.TimeControl.prepared_correct
+#audit axioms Rumoca.FMI3.MEEnvironment.PreparedContract.quiet
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.field_ne_buffer
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.state_ne_buffer
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.changed
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.write_buffer
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.prepare_buffer
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.write_state
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.control_frame
+#audit axioms Rumoca.FMI3.MENumericalHistory.Action.prepare_correct
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.mode_loaded
+#audit axioms Rumoca.FMI3.MENumericalHistory.Action.frame
+#audit axioms Rumoca.FMI3.MENumericalHistory.step
+#audit axioms Rumoca.FMI3.MENumericalHistory.Action.Prepares.unique
+#audit axioms Rumoca.FMI3.MENumericalHistory.Action.Observes.unique
+#audit axioms Rumoca.FMI3.MENumericalHistory.trace
+#audit axioms Rumoca.FMI3.MENumericalHistory.Calls.executes
+#audit axioms Rumoca.FMI3.MENumericalHistory.Calls.determines

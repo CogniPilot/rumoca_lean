@@ -1,5 +1,31 @@
 # Exact verification contract
 
+**Mixed ME numerical histories (2026-09-14):** `adapter_me_environment`
+supplies control, state and derivative contracts from one compiled table and
+literal pool, retaining independent function-section tokenization and the full
+prepared failure/logging contracts. `MENumericalHistory` composes every finite
+admitted interleaving of ME controls, importer state updates, state readback and
+derivative queries. Caller input stores, later writable storage, control outputs,
+intermediate states, read-only diagnostics and memory frames are derived.
+
+The target `Executed` relation records arbitrary statuses, events and raw query
+values. It requires neither expected control flags nor finite/correct results.
+`Calls.determines` derives the observed list and final heap. The compiler theorem
+`runtime_me_numerical_history` retains source compilation, numerical C and
+derivative/state metadata and proves source Real equation agreement for every
+returned derivative query. Importer trial states are not asserted to lie on an
+original-IVP trajectory.
+
+All 24 added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-numerical-history-package-v1.log` on 910 unchanged inputs.
+Only the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests retain the separate 869-input full artifact gate
+and unchanged archives; no new full-gate pass is claimed. Valid initial instance
+storage and separate typed caller buffers remain premises. Creation,
+initialization, reset, rejected histories, callbacks and release still need
+composition around these mixed histories. K02–K05 and grammar expansion remain
+open and blocked, respectively.
+
 **ME control runtime bridge (2026-09-14):** `MEControlEnvironment`
 derives complete event/continuous entry, integrator-completion and discrete-update
 calls in the explicit header/object/literal runtime used by state and derivative

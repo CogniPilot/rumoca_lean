@@ -52,9 +52,11 @@ now compose with actual creation, initialization and mode-appropriate release
 under suppressed logging. Enabled-logging mixed histories now have a branching
 contract from actual creation/initialization through release for every completed
 C script, including proved observed-status agreement. State access and
-derivative queries now share one runtime, actual table and literal pool;
-the returned derivative is connected to the source Real equation. ME
-numerical/control history composition is next; the complete stage remains open.
+derivative queries now share one runtime, actual table and literal pool.
+Finite mixed ME control/state/derivative histories derive caller writes, every
+observed status and raw query value, continued storage and source equation
+agreement. Creation, reset, rejection and release composition for these mixed
+histories is next; the complete stage remains open.
 Concurrent storage, whole-artifact correspondence and the standards/MISRA review
 remain required.
 These are substantial obligations, not a final build or a parser-only change.
@@ -570,13 +572,19 @@ simulation or concurrent host histories.
   Supply state and derivative contracts from one actual table/pool and connect
   the observed finite derivative to Solve, source equations and artifact
   metadata. The eleven roots passed the 903-input FMI/compiler package gate.
+- [x] Compose finite admitted control/state/derivative histories in the shared
+  compiled environment. Derive actual caller buffer writes, statuses, raw query
+  outputs, intermediate typed storage, diagnostic preservation and memory
+  frames. The actual execution relation assumes no expected outputs; every
+  returned derivative agrees with the source Real equation. The 24 roots passed
+  the 910-input FMI/compiler package gate. Initial storage remains a premise.
 - [ ] Compose ME control histories with importer state updates, derivative
   queries and creation/initialization. Retain the numerical/source guarantee
   alongside all public observations and caller-protocol obligations.
   Initialization→controls→termination→release now has a composed actual-adapter
   theorem deriving the surviving lease from its original ownership. Actual
   creation now supplies that lease, the handle, source default and storage;
-  importer state/numerical interactions still need composition.
+  the new mixed numerical histories still need this creation/lifetime composition.
   Reset's successful/null calls and reset→initialization composition now use
   the static object interface; arbitrary surrounding histories remain open.
 - [x] Require the complete public CS step contract in the actual artifact

@@ -37,6 +37,44 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Mixed ME control and numerical histories: 2026-09-14
+
+This derived follow-up to `ac3b5b5` uses one actual function table/pool for
+controls, continuous-state access and derivative queries. The history derives
+typed importer buffer writes, subsequent storage, control outputs and read-only
+diagnostic preservation. The actual execution relation records arbitrary
+statuses, events and raw query values; expected control flags and finite/correct
+query results occur only in the derived certificate and its consequences.
+
+The focused review rechecked pinned FMI 3.0.2
+[§3.2.1](https://fmi-standard.org/docs/3.0.2/#state-continuous-time-mode) for
+time/state updates, ordered state/derivative access and integrator completion,
+and retains the [§2.3.5](https://fmi-standard.org/docs/3.0.2/#state-event-mode)
+event-iteration and [§2.4.8](https://fmi-standard.org/docs/3.0.2/#model-structure)
+metadata records. Setters supply trial states; queries describe the prepared
+equations. The proof does not certify the importer's integration algorithm or
+identify arbitrary trial states with the source IVP solution. The unit RHS
+remains finite and independent of time/state; existing failure policy is unchanged.
+
+`runtime_me_numerical_history` binds source compilation, numerical C, function
+tokenization and derivative/state metadata to the history. Observed statuses,
+raw query results and final memory are derived for every completed actual script;
+every derivative result corresponds to the source Real equation. Complete
+single-call failures/logging remain in the prepared contracts. Initial typed
+instance storage, a separate reusable float buffer and the control output bank
+remain premises. Creation/reset/rejection/release composition, external callback
+frames and native ABI/header correspondence remain open.
+
+All 24 roots passed the FMI/compiler package gate on 910 unchanged inputs in
+`build/c-factory/me-numerical-history-package-v1.log`. Only the three status
+documents changed afterward. Earlier semantics, emission, mandatory contracts
+and tests retain the separate 869-input full gate and unchanged archives;
+their source hashes and retained archive hashes were rechecked. MLS 3.7 source
+and initialization policy, CS/eFMI execution and generated C/GALEC/XML are
+unchanged. Their clause records and all MISRA findings carry forward. No new
+full-gate pass, grammar feature, test suite or conformance closure is claimed.
+K02–K05 and the grammar gate remain open.
+
 ### ME control runtime bridge: 2026-09-14
 
 This derived follow-up to `fedf3dd` transports the existing ME control contracts
