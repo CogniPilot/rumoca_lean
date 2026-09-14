@@ -140,13 +140,13 @@ theorem trace_framed (header : CFenv.Header) (objects : Objects)
   induction trace generalizing heap with
   | nil => exact ⟨heap, .nil, stored, fun _ _ => rfl, .refl _, .refl _, fun _ _ => rfl⟩
   | cons changed _ ih =>
-    obtain ⟨next, called, nextStored, observed, retained, atomic⟩ := change_correct header objects model signatures pool prepared literalBase firstBlock
+    obtain ⟨next, called, nextStored, observed, retained, atomic, storage⟩ := change_correct header objects model signatures pool prepared literalBase firstBlock
       signed p buffers program range actual rounding floorBound reset enterDefined exitDefined heap _ _ _ _ literals stored quiet changed
     have frame := executed_frame header objects model signatures pool prepared literalBase firstBlock signed p buffers
       program range actual rounding floorBound heap next _ _ _ _ literals stored quiet changed called
     obtain ⟨after, calls, finalStored, retainedAfter, readonly, atomicAfter, laterFrame⟩ := ih next (literals.trans called.readonly)
       nextStored (retained.suppressed quiet)
-    exact ⟨after, .cons called nextStored observed calls, finalStored, retained.trans retainedAfter,
+    exact ⟨after, .cons called nextStored observed ⟨storage, atomic, retained⟩ calls, finalStored, retained.trans retainedAfter,
       called.readonly.trans readonly, atomic.trans atomicAfter,
       fun query outside => (laterFrame query outside).trans (frame query outside)⟩
 

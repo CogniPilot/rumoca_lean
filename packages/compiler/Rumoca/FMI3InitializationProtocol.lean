@@ -77,6 +77,7 @@ theorem runtime_source (compiled : compile input = .ok a)
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
+      LifecycleEnvironment.PreparedContract a.solve.prepareFMI3 sigs ∧
       ∀ (header : CFenv.Header) (objects : Objects) (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
         ∀ (program : Program Invocation), program.internal = LiteralPreparation.program a.solve.prepareFMI3 sigs →
@@ -101,7 +102,7 @@ theorem runtime_source (compiled : compile input = .ok a)
       LiteralPreparation.function_bound _ sigs unique _ termination.member, runtime.release_defined⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
     Float64SetMetadata.artifact_state _ _ build.metadata, derivative_value_source a.solve,
-    sigs, pool, made, printed, functions, ?_⟩
+    sigs, pool, made, printed, functions, lifecycle, ?_⟩
   intro header objects baseHeap firstBlock signed
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program actual retained owners original heap p buffers kind state final actions resources invariant reference prepared

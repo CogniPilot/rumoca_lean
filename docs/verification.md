@@ -1,5 +1,51 @@
 # Exact verification contract
 
+**Simulation storage and source-bound restart protocols (2026-09-14):**
+`InitializationProtocol.runtime_restart_source` binds actual reset and the
+existing initialization protocol to compiled source, numerical C, XML metadata
+and one printed/prepared adapter table and pool. Reset obtains the Solve default
+and initialization invariant from the current writable runtime storage and
+represented kind/mode; no future finite payload or valid initialization heap
+is assumed. The original source theorem now exposes its already-proved
+lifecycle environment for reuse.
+
+`RestartSourceContract.progress` and `.completed` reuse `Completed`/`Stopped`
+with a leading reset action. They derive the raw reset status/events, subsequent
+accepted/rejected access observations, actual exit/source-IVP checkpoints,
+ownership, caller storage and memory frames. The protocol can reset and fail
+again. A non-returning logger retains a real blocked-call prefix.
+
+ME and CS simulation certificates now retain arbitrary caller object regions
+under a universal logger storage policy. This preserves domains, types and
+permissions, so initialization reference/value buffers can survive simulation.
+The existing callback frame still protects instance values and public outputs;
+the additional policy assumes neither return nor determinism. Suppressed CS
+call certificates also retain their already-derived storage, atomic and field
+frames. Typed output-list updates permit compatible aliases, and both
+interfaces reuse one reset/entry/exit storage proof.
+
+`restart_after_me`, `restart_after_cs_logged` and
+`restart_after_cs_suppressed` derive reset/reinitialization premises from actual
+completed simulation histories and original resources. Their initialization
+compiler argument is the universal source contract supplied by `runtime_source`;
+it is not a host assertion about a selected future heap or successful call.
+The existing numerical/source/status guarantees remain in the same histories.
+
+All 33 new roots and affected existing roots passed
+`lake build check-c check-fmi3 check-compiler` on 984 unchanged inputs in
+`build/c-factory/simulation-restart-package-v1.log`. No new-module warnings or
+unexpected axioms were reported. Source/runtime semantics, emitters, mandatory
+artifact propositions and boundary tests are unchanged; derived certificates
+were strengthened. The package gate is distinct from the retained 869-input
+local full gate. GitHub run `34856771664` passed the complete gate for `b0eb94e`
+at 15:47:48 UTC; that is a separate revision, not full acceptance of this change.
+
+A single source-bound theorem still needs to compose repeated simulation and
+initialization segments through final release, using the existing handoffs and
+raw relations. Other public calls, native/concurrent correspondence, complete
+artifacts/provenance and standards/MISRA closure remain open. K02–K05 are not
+closed and grammar expansion remains blocked.
+
 **Created initialization protocols through ME/CS simulation (2026-09-14):**
 `InitializationProtocol.runtime_create_release` now derives the reusable
 initialization protocol from actual source-bound static creation. The factory

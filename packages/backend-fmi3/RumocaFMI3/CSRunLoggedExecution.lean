@@ -48,7 +48,8 @@ theorem change_logged_correct (header : CFenv.Header) (objects : Objects)
     exact ⟨stored.advance mode _, retained.logger logging,
       SlotOwners.ordinary_preserves represented (advance_atomic stored mode _), fun _ => outputs,
       retained, Events.termination_preserves ((called _).mpr rfl),
-      fun query _ outside => CSHistory.written_frame model.solve before.seed heap p buffers before.current _ query outside.cs⟩
+      (fun query _ outside => CSHistory.written_frame model.solve before.seed heap p buffers before.current _ query outside.cs),
+      fun region _ => (advance_storage stored advanced).on region⟩
   | rejected reason selection selected =>
     rename_i request outputs
     obtain ⟨category, messages, _, _, _, _, _, logged⟩ := prepared.rejections _ literalBase firstBlock signed objects heap literals
@@ -67,8 +68,10 @@ theorem change_logged_correct (header : CFenv.Header) (objects : Objects)
     exact ⟨preStored.framed (kept.run inPool), controls.logger logging, kept.owners preOwners,
       (by intro zero; cases reason <;> simp [StepRejections.status] at zero), controls,
       Events.termination_preserves ((called _).mpr (Or.inl ⟨value, after, performed, rfl⟩)),
-      fun query isProtected outside => (kept query isProtected).trans
-        (rejection_frame reason _ heap p buffers selection selected query outside)⟩
+      (fun query isProtected outside => (kept query isProtected).trans
+        (rejection_frame reason _ heap p buffers selection selected query outside)),
+      fun region preserve => ((StepRejections.after_storage reason _ heap p reads selected stored.reset).on region).trans
+        (preserve _ _ _ _ performed)⟩
   | restart admissible =>
     rename_i args
     obtain ⟨entered, exited⟩ := InitializationEnvironment.calls header objects (pool.addresses firstBlock) model
@@ -82,7 +85,9 @@ theorem change_logged_correct (header : CFenv.Header) (objects : Objects)
     rintro events after ⟨rfl, rfl⟩
     exact ⟨stored.restart _ admissible, retained.logger logging,
       SlotOwners.ordinary_preserves represented (restart_atomic stored.reset _), True.intro,
-      retained, executed.readonly, fun query _ outside => StaticReset.restarted_frame heap p query _ .cs outside.1⟩
+      retained, executed.readonly, (fun query _ outside => StaticReset.restarted_frame heap p query _ .cs outside.1),
+      fun region _ => (InitializationStorage.restarted model heap p .cs before.mode stored.reset
+        stored.kind stored.mode args admissible).on region⟩
 
 /-- An arbitrary finite mixed reference history has a complete branching call
 certificate under the universal logger frame. Every returned callback branch

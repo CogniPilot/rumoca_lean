@@ -37,6 +37,42 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Simulation storage and restart protocols: 2026-09-14
+
+This increment changes derived memory/history certificates and source-bound
+composition. The frozen unit EBNFs, source admission, generated runtime,
+metadata, mandatory artifact propositions and boundary tests are unchanged.
+The MLS 3.7 and eFMI 1.0.0 Beta 1 evidence and open findings carry forward.
+
+The focused review rechecked [FMI 3.0.2 §2.2.4 and §§2.3.1–2.3.2](https://fmi-standard.org/docs/3.0.2/):
+failed outputs are undefined, Error can recover through reset, reset restores
+defaults, and initialization precedes a new simulation run. The new proof
+retains those distinctions. Reset starts from the Solve default; later finite
+accesses determine the source IVP at actual exit. The existing guards and
+non-finite rejection policy are unchanged. An unsuccessful call's buffers are
+not source observations merely because their storage survives.
+
+Universal ME/CS logger storage policies preserve the original caller bank's
+cell domains, types and permissions while permitting effects outside the
+protected region. Existing instance/flag/output value frames remain required.
+There is no callback return or determinism premise. Raw reset and later access
+statuses, returning alternatives and blocked prefixes reuse the existing C
+machine and initialization relations. Simulation supplies the next reset's
+storage and ownership; no later valid buffer or selected successful call is a
+host premise.
+
+Thirty-three new roots and affected existing roots passed the C/FMI/compiler
+package gate on 984 unchanged inputs in
+`build/c-factory/simulation-restart-package-v1.log`; the axiom whitelist is
+unchanged. No new tests were added. The retained local 869-input full gate and
+successful GitHub run `34856771664` for `b0eb94e` remain distinct evidence for
+earlier revisions. The latter's complete gate ended at 15:47:48 UTC.
+
+One source-bound repeating simulation/initialization/release theorem, remaining
+public calls, native ABI/concurrency, whole artifacts/provenance and existing
+MLS/eFMI/MISRA findings remain open. No whole-standard conformance or new
+full-artifact pass is claimed. **Stage decision: no grammar expansion.**
+
 ### Created initialization protocols through ME/CS simulation: 2026-09-14
 
 This derived-proof increment retains the frozen unit-state EBNFs, source

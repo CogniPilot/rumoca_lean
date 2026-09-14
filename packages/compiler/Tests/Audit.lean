@@ -2,6 +2,8 @@ import Rumoca.FMI3InitializationProtocol
 import Rumoca.FMI3CreatedInitializationProtocol
 import Rumoca.FMI3InitializationProtocolME
 import Rumoca.FMI3InitializationProtocolCS
+import Rumoca.FMI3InitializationRestart
+import Rumoca.FMI3SimulationRestart
 import Rumoca.FMI3Float64Rejection
 import Rumoca.FMI3InitializationMERun
 import Rumoca.FMI3InitializationCSRun
@@ -302,3 +304,11 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.InitializationProtocol.runtime_create_release
 #audit axioms Rumoca.FMI3.InitializationProtocol.CreatedSourceContract.me_continuation
 #audit axioms Rumoca.FMI3.InitializationProtocol.CreatedSourceContract.cs_continuation
+
+#audit axioms Rumoca.FMI3.InitializationProtocol.RestartSourceContract.progress
+#audit axioms Rumoca.FMI3.InitializationProtocol.RestartSourceContract.completed
+#audit axioms Rumoca.FMI3.InitializationProtocol.restart_source
+#audit axioms Rumoca.FMI3.InitializationProtocol.runtime_restart_source
+#audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_me
+#audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_cs_logged
+#audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_cs_suppressed

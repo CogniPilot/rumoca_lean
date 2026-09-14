@@ -1,5 +1,6 @@
 import RumocaFMI3.MERejectedInput
 import RumocaFMI3.MEFailureRecovery
+import RumocaFMI3.MESimulationStorage
 
 noncomputable section
 namespace Rumoca.FMI3.MEMixedRun
@@ -27,6 +28,14 @@ def Configuration.Valid [CInterface] (config : Configuration) (program : Program
   | .logged logger _ name effect => program.addresses logger = some name ∧
       program.externals name = some (External.observed (Logging.signature name) effect) ∧
       MEFailure.Respects effect objects addresses buffer
+
+/-- Extra caller regions survive a logger whose every returning effect
+preserves their object descriptions. No callback return is required. -/
+def Configuration.StoragePolicy [CInterface] (config : Configuration) (region : Address → Prop) : Prop :=
+  match config with
+  | .quiet _ _ => True
+  | .logged _ _ _ effect =>
+      ∀ args before value after, effect.execute args before value after → CStorage.PreservesOn region before after
 
 theorem Configuration.Stored.framed [CInterface] {config : Configuration}
     (stored : config.Stored heap p)
@@ -185,6 +194,7 @@ structure Returned [CInterface] (model : Solve.FMI3Model source) (objects : Obje
   observation : action.Observed model reference observed
   readonly : CReadOnly.Preserves heap after
   frame : ∀ q, MEFailure.Protected objects addresses buffer q → MENumericalRun.Outside p addresses buffer q → after q = heap q
+  storage : ∀ region, config.StoragePolicy region → CStorage.PreservesOn region heap after
 
 /-- The finite history certificate branches over all returning outcomes. A
 non-returning callback retains its contract and has no invented continuation. -/
@@ -223,6 +233,21 @@ theorem Trace.completed [CInterface] {program : Program Invocation} {model : Sol
       obtain ⟨stored, reset, config, ownership, readonly, frame⟩ := ih (following _ _ _ outcome)
       exact ⟨stored, reset, config, ownership, next.readonly.trans readonly,
         fun q guarded outside => (frame q guarded outside).trans (next.frame q guarded outside)⟩
+
+/-- Original caller object descriptions survive every completed history
+under the independently supplied universal logger storage policy. -/
+theorem Trace.storage [CInterface] {program : Program Invocation} {model : Solve.FMI3Model source}
+    {objects : Objects} {owners : SlotOwners.State objects.capacity} {config : Configuration}
+    (certified : Trace model objects owners config program p addresses buffer heap reference clock actions final finalClock)
+    (completed : Completed program p addresses buffer heap actions observed after epochs)
+    (policy : config.StoragePolicy region) : CStorage.PreservesOn region heap after := by
+  induction completed generalizing reference clock final finalClock with
+  | nil => exact .refl _ _
+  | cons performed _ ih =>
+    cases certified with
+    | cons called returned following =>
+      have outcome := called.returned performed
+      exact ((returned _ _ _ outcome).storage region policy).trans (ih (following _ _ _ outcome))
 
 end Rumoca.FMI3.MEMixedRun
 end

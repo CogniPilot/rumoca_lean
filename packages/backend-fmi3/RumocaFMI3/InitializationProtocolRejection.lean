@@ -19,11 +19,12 @@ def LogPolicy [CInterface] (program : Program Invocation) (objects : Objects) (r
     program.externals name = some (External.observed (Logging.signature name) effect) ∧
     Float64Rejection.Respects effect objects retained)
 
-theorem LogPolicy.framed [CInterface] {program : Program Invocation}
-    (policy : LogPolicy program objects retained heap p) (frame : Retains p heap after) :
+theorem LogPolicy.fields [CInterface] {program : Program Invocation}
+    (policy : LogPolicy program objects retained heap p)
+    (frame : ∀ name ∈ ["logger", "logging", "environment"], after (p.member name) = heap (p.member name)) :
     LogPolicy program objects retained after p := by
-  have field (name : String) (outside : name ∉ InitializationAccess.writtenFields) :
-      load after (p.member name) = load heap (p.member name) := by simp only [load, frame name outside]
+  have field (name : String) (member : name ∈ ["logger", "logging", "environment"]) :
+      load after (p.member name) = load heap (p.member name) := by simp only [load, frame name member]
   rcases policy with ⟨logger, logging, loggerValue, loggingValue, quiet⟩ |
     ⟨logger, environment, name, effect, loggerValue, loggingValue, environmentValue, address, external, respects⟩
   · exact Or.inl ⟨logger, logging, (field "logger" (by decide)).trans loggerValue,
@@ -31,6 +32,15 @@ theorem LogPolicy.framed [CInterface] {program : Program Invocation}
   · exact Or.inr ⟨logger, environment, name, effect, (field "logger" (by decide)).trans loggerValue,
       (field "logging" (by decide)).trans loggingValue, (field "environment" (by decide)).trans environmentValue,
       address, external, respects⟩
+
+theorem LogPolicy.framed [CInterface] {program : Program Invocation}
+    (policy : LogPolicy program objects retained heap p) (frame : Retains p heap after) :
+    LogPolicy program objects retained after p := by
+  apply policy.fields
+  intro name member
+  apply frame
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl | rfl <;> decide
 
 variable {objects : Objects} {owners : SlotOwners.State objects.capacity}
 

@@ -19,6 +19,7 @@ theorem run_correct (header : CFenv.Header) (objects : Objects) (literals : CLit
         (MENumericalRun.observations model reference [action]) after epochs ∧
         MENumericalHistory.Stored after p ((Action.run action).clock clock) ((Action.run action).next reference) addresses buffer ∧
         Reset.Storage after p ∧ CReadOnly.Preserves heap after ∧ CAtomicBoolean.Preserves heap after ∧
+        CStorage.Preserves heap after ∧
         (∀ q, MENumericalRun.Outside p addresses buffer q → after q = heap q) := by
   letI : CInterface := RuntimeEnvironment.interface header objects literals
   intro program quiet reset enterDefined exitDefined heap p clock reference addresses buffer action stored storage allowed
@@ -28,11 +29,13 @@ theorem run_correct (header : CFenv.Header) (objects : Objects) (literals : CLit
       MENumericalHistory.step program quiet stored command allowed
     exact ⟨_, [], .numerical (.cons prepared called output controls .nil) .nil, nextStored,
       MENumericalHistory.step_reset_storage model command stored nextStored storage, readonly,
-      MENumericalHistory.action_atomic model stored command, fun q outside => frame q outside.1⟩
+      MENumericalHistory.action_atomic model stored command,
+      MENumericalHistory.action_storage model stored command, fun q outside => frame q outside.1⟩
   | restart args =>
     have recovery := MEFailure.Recovery.correct header objects literals model program reset enterDefined exitDefined
       heap p clock reference addresses buffer args stored storage allowed
     exact ⟨_, _, recovery.calls, recovery.stored, recovery.resetStorage, recovery.readonly, recovery.atomic,
+      MENumericalHistory.restart_storage model stored storage args allowed,
       fun q outside => MENumericalRun.restart_frame heap p args outside⟩
 
 /-- Every admitted action supplies the full target contract and invariants
@@ -69,17 +72,19 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
     exact frame _ (Or.inl inPool) (configuration_outside stored name (by simpa using List.mem_append_left ["slot"] member))
   cases action with
   | run command =>
-    obtain ⟨after, epochs, called, nextStored, nextReset, readonly, atomic, frame⟩ :=
+    obtain ⟨after, epochs, called, nextStored, nextReset, readonly, atomic, keptStorage, frame⟩ :=
       run_correct header objects (pool.addresses firstBlock) model program
         (prepared.quiet header Invocation objects firstBlock program actual) reset enterDefined exitDefined
         heap p clock reference addresses buffer command stored storage allowed
     refine ⟨_, False, .run called, ?_⟩
     rintro observed next checkpoints ⟨rfl, rfl, rfl⟩
     exact ⟨nextStored, nextReset, configuration _ (fun q _ outside => frame q outside),
-      SlotOwners.ordinary_preserves represented atomic, rfl, readonly, fun q _ outside => frame q outside⟩
+      SlotOwners.ordinary_preserves represented atomic, rfl, readonly, (fun q _ outside => frame q outside),
+      fun region _ => keptStorage.on region⟩
   | reject request input =>
     obtain ⟨preparation, readyStored, readyReset, readyReadonly, readyAtomic⟩ := MEFailure.prepare_correct input stored storage
     let ready := MEFailure.prepare input heap buffer
+    have readyStorage := preparation.storage
     have condition := MEFailure.Request.Selected.condition allowed readyStored
     obtain ⟨category, message, _, _, _, _, silent, logged⟩ :=
       request.prepared prepared header literalBase firstBlock signed objects ready (literals.trans readyReadonly)
@@ -102,7 +107,9 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
       rintro observed after epochs ⟨rfl, rfl, rfl⟩
       exact ⟨readyStored.failed, readyStored.failed_reset readyReset, configuration _ frame,
         SlotOwners.ordinary_preserves readyOwners readyStored.failed_atomic, ⟨[], rfl⟩,
-        readyReadonly.trans (termination_preserves ((called _).mpr rfl)), frame⟩
+        readyReadonly.trans (termination_preserves ((called _).mpr rfl)), frame,
+        fun region _ => (readyStorage.trans (CStorage.replace_typed readyStored.control.mode
+          ⟨.int32, true, some (.integer Mode.terminated.code)⟩ rfl rfl)).on region⟩
     | logged logger environment name effect =>
       obtain ⟨address, external, policy⟩ := valid
       have called := (logged program actual p logger environment .me reference.control.mode name effect address external
@@ -112,7 +119,11 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
       obtain ⟨nextStored, nextReset, nextOwners, preserved⟩ := policy.returned readyStored readyReset inPool readyOwners outcome
       have frame := finishFrame after preserved
       exact ⟨nextStored, nextReset, configuration after frame, nextOwners, ⟨_, rfl⟩,
-        readyReadonly.trans (termination_preserves ((called _).mpr (Or.inl ⟨value, after, outcome, rfl⟩))), frame⟩
+        readyReadonly.trans (termination_preserves ((called _).mpr (Or.inl ⟨value, after, outcome, rfl⟩))), frame,
+        fun region preserve =>
+          ((readyStorage.trans (CStorage.replace_typed readyStored.control.mode
+            ⟨.int32, true, some (.integer Mode.terminated.code)⟩ rfl rfl)).on region).trans
+            (preserve _ _ _ _ outcome)⟩
 
 /-- Arbitrarily long finite mixtures retain all modeled callback outcomes.
 No later heap, expected status or returning callback is supplied as a premise. -/

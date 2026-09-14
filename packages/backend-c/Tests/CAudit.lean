@@ -19,6 +19,7 @@ import RumocaC.TypedMemory
 import RumocaC.CallEventPrefix
 import RumocaC.StorageTransfer
 import RumocaC.StorageRegion
+import RumocaC.StorageWrites
 import RumocaC.AtomicFrame
 import RumocaC.ConcurrentCalls
 import RumocaC.StringCallProofs
@@ -812,3 +813,7 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CStorage.PreservesOn.of_frame
 #audit axioms Rumoca.CStorage.PreservesOn.cell
 #audit axioms Rumoca.CStorage.PreservesOn.array
+
+#audit axioms Rumoca.CStorage.replace_typed
+#audit axioms Rumoca.COutputAssignments.write_storage
+#audit axioms Rumoca.COutputAssignments.after_storage

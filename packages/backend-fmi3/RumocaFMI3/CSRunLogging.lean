@@ -1,4 +1,5 @@
 import RumocaFMI3.CSRunFrames
+import RumocaFMI3.CSSimulationStorage
 
 noncomputable section
 namespace Rumoca.FMI3.CSRun
@@ -33,6 +34,9 @@ outcome. It requires neither determinism nor the existence of a return. -/
 def Logger.Respects [CInterface] (logger : Logger) (objects : Objects) (buffers : StepEntry.Buffers) : Prop :=
   ∀ args before result after, logger.effect.execute args before result after →
     ProtectedFrame objects buffers before after
+
+def Logger.StoragePolicy [CInterface] (logger : Logger) (region : Address → Prop) : Prop :=
+  ∀ args before value after, logger.effect.execute args before value after → CStorage.PreservesOn region before after
 
 theorem Retains.logger [CInterface] {logger : Logger} (kept : Retains p before after) (stored : Logger.Stored logger before p) :
     Logger.Stored logger after p := by
@@ -109,6 +113,7 @@ structure Returned [CInterface] (objects : Objects) (logger : Logger) (owners : 
   retained : Retains p before after
   readonly : CReadOnly.Preserves before after
   framed : ∀ query, Protected objects buffers query → Outside p buffers query → after query = before query
+  storage : ∀ region, logger.StoragePolicy region → CStorage.PreservesOn region before after
 
 /-- A finite reference history induces a branching proof for all returning
 callback outcomes. If a callback has no modeled return, ActionContract keeps
@@ -210,6 +215,21 @@ theorem LoggedTrace.completed [CInterface] {program : Events.Program Events.Invo
       obtain ⟨stored, logging, ownership, retained, readonly, framed⟩ := ih (following _ _ outcome)
       exact ⟨stored, logging, ownership, post.retained.trans retained, post.readonly.trans readonly,
         fun query isProtected outside => (framed query isProtected outside).trans (post.framed query isProtected outside)⟩
+
+/-- Retain arbitrary caller object regions across all actual returning
+branches, including successful steps, errors, discards and restarts. -/
+theorem LoggedTrace.storage [CInterface] {program : Events.Program Events.Invocation}
+    {objects : Objects} {logger : Logger} {owners : SlotOwners.State objects.capacity}
+    (certified : LoggedTrace objects logger owners model program p buffers heap before actions final statuses)
+    (completed : Completed program p heap actions statuses events after)
+    (policy : logger.StoragePolicy region) : CStorage.PreservesOn region heap after := by
+  induction completed generalizing before final with
+  | nil => exact .refl _ _
+  | cons performed _ ih =>
+    cases certified with
+    | cons called returned following =>
+      have outcome := called.returned performed
+      exact ((returned _ _ outcome).storage region policy).trans (ih (following _ _ outcome))
 
 end Rumoca.FMI3.CSRun
 end

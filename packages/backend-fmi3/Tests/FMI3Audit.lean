@@ -2,6 +2,10 @@ import RumocaFMI3.InitializationProtocol
 import RumocaFMI3.InitializationProtocolCreation
 import RumocaFMI3.InitializationProtocolHandoff
 import RumocaFMI3.InitializationProtocolRunFrames
+import RumocaFMI3.InitializationProtocolRestart
+import RumocaFMI3.MESimulationStorage
+import RumocaFMI3.CSSimulationStorage
+import RumocaFMI3.RestartStorage
 import RumocaFMI3.InitializationProtocolCalls
 import RumocaFMI3.InitializationProtocolHistory
 import RumocaFMI3.InitializationProtocolLifetime
@@ -1563,3 +1567,27 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.CSOutputsGuarded.protects
 #audit axioms Rumoca.FMI3.InitializationProtocol.Retains.me_configuration
 #audit axioms Rumoca.FMI3.InitializationProtocol.Retains.cs
+
+#audit axioms Rumoca.FMI3.InitializationStorage.restarted
+#audit axioms Rumoca.FMI3.HistoryProofs.write_storage
+#audit axioms Rumoca.FMI3.HistoryProofs.raise_storage
+#audit axioms Rumoca.FMI3.HistoryProofs.event_storage
+#audit axioms Rumoca.FMI3.HistoryProofs.completed_storage
+#audit axioms Rumoca.FMI3.MEHistory.action_storage
+#audit axioms Rumoca.FMI3.MENumericalHistory.action_storage
+#audit axioms Rumoca.FMI3.MENumericalHistory.restart_storage
+#audit axioms Rumoca.FMI3.MEFailure.Prepares.storage
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.storage
+#audit axioms Rumoca.FMI3.StepEntry.output_storage
+#audit axioms Rumoca.FMI3.StepAdvance.written_storage
+#audit axioms Rumoca.FMI3.CSRun.advance_storage
+#audit axioms Rumoca.FMI3.StepRejections.after_storage
+#audit axioms Rumoca.FMI3.CSRun.LoggedTrace.storage
+#audit axioms Rumoca.FMI3.CSRun.Calls.storage
+#audit axioms Rumoca.FMI3.CSRun.Calls.atomic
+#audit axioms Rumoca.FMI3.CSRun.Calls.retains
+#audit axioms Rumoca.FMI3.CSRun.Calls.readonly
+#audit axioms Rumoca.FMI3.CSRun.Calls.stored
+#audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.fields
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.reset_from
+#audit axioms Rumoca.FMI3.InitializationProtocol.reset_invariant
