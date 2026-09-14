@@ -1,5 +1,36 @@
 # Exact verification contract
 
+**ME rejection and recovery (2026-09-14):** `MEFailure.Request.prepared`
+unifies the existing rejection contracts for state/derivative access, time,
+event/continuous entry, integrator completion and discrete updates. The request
+retains actual arguments and the corresponding admission predicate. Window
+rejections require bounds represented by the instance's memory. The same compiled
+table and literal pool provide suppressed and enabled-logging contracts.
+
+`MEFailure.runtime_recovery` binds these contracts to source compilation,
+numerical C, function-section tokenization and derivative/state metadata. For
+every completed covered error call on a valid non-null instance, it derives the
+Error status, callback arguments, retained storage, diagnostic preservation and
+ownership. The enabled case retains all modeled returning effects and the
+no-return alternative. A universal external frame protects the instance pool,
+reservation storage and caller buffers while permitting private logger effects.
+Native callback execution remains an external boundary.
+
+Each returned branch supplies complete reset/entry/exit calls and source
+initialization at the new requested time. `Recovery.executed_source` derives all
+three raw statuses and source validity at the actual initialization checkpoint.
+Retained storage gives no numerical meaning to the failed call's output arguments.
+Original typed instance/caller storage, recovery permissions and represented
+owners remain premises. Arbitrary mixed accepted/rejected histories and their
+creation/release composition remain open.
+
+All 15 added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-failure-recovery-package-v1.log` on 923 unchanged inputs.
+Only the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests retain the separate 869-input full artifact gate
+and unchanged archives; no new full-gate pass is claimed. No grammar case or
+test suite was added. K02–K05 still block grammar expansion.
+
 **Created ME numerical/reset lifetime (2026-09-14):**
 `runtime_create_me_run_release` derives actual creation, initialization, finite
 interleavings of accepted ME control/state/derivative operations and repeated

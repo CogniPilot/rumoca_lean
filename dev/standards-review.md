@@ -37,6 +37,48 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### ME rejection and recovery contracts: 2026-09-14
+
+This derived follow-up to `1608ad8` gives the existing state/derivative, time,
+event/continuous entry, completion and discrete-update rejection contracts one
+request interface. It retains actual public arguments, guard priorities,
+memory-bound time windows and diagnostics from one compiled table/pool. Both
+suppressed and enabled-logging contracts retain their complete behavior clauses.
+No generated failure policy changed.
+
+The focused review rechecked pinned FMI 3.0.2
+[§2.2.4](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions) and
+[§2.3.1](https://fmi-standard.org/docs/3.0.2/). An Error leaves output arguments
+undefined and ends the current simulation; illegal arguments/state-machine calls
+require Error, and other instances remain unaffected. Reset can start recovery.
+The existing emitter's transition to Terminated agrees with the specified Error
+transition. This proof does not assign numerical validity to failed outputs or
+authorize continued simulation before recovery.
+
+`MEFailure.runtime_recovery` retains source compilation, numerical C,
+function-section tokenization and derivative/state metadata. Arbitrary completed
+target calls determine the Error status and callback invocation. A universal
+external frame preserves FMU instance/reservation storage and caller buffers,
+while allowing private callback effects. No callback return is presumed. The
+existing modeled no-return alternative remains; native callback execution and
+its correspondence to that model are separate boundaries.
+
+Every returned branch derives continued writable storage and ownership, and
+supplies complete reset/entry/exit calls. `Recovery.executed_source` connects the
+three raw observed call results to source initialization and uniqueness at the
+actual new checkpoint. Valid original non-null instance/caller storage, reset
+permissions, represented owners and the selected rejection predicate remain
+premises. Arbitrary mixed histories, their creation/release composition and
+intervening initialization accesses are still open.
+
+All 15 roots passed the FMI/compiler package gate on 923 unchanged inputs in
+`build/c-factory/me-failure-recovery-package-v1.log`. Only the three status
+documents changed afterward. Earlier semantics, emission, mandatory contracts
+and tests retain the separate 869-input full gate and unchanged archives;
+their source/archive hashes were rechecked. MLS 3.7, CS/eFMI and MISRA records
+carry forward unchanged. No grammar feature, test suite, new full-gate pass or
+standards closure is claimed. K02–K05 and the grammar gate remain open/blocked.
+
 ### Mixed ME numerical/reset lifetime: 2026-09-14
 
 This derived follow-up to `2f035d4` composes accepted ME operations and repeated

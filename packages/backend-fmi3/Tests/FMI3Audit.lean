@@ -1,3 +1,5 @@
+import RumocaFMI3.MEFailureRecovery
+import RumocaFMI3.MEFailureContracts
 import RumocaFMI3.MENumericalRunLifecycle
 import RumocaFMI3.MENumericalLifecycle
 import RumocaFMI3.MENumericalHistory
@@ -1341,3 +1343,16 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MENumericalRun.trace
 #audit axioms Rumoca.FMI3.MENumericalRun.ReferenceTrace.live
 #audit axioms Rumoca.FMI3.MENumericalRun.initialize_release
+
+#audit axioms Rumoca.FMI3.MEFailure.Request.prepared
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.failed
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.failed_reset
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.failed_atomic
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.framed
+#audit axioms Rumoca.FMI3.MENumericalHistory.Frame.reset_storage
+#audit axioms Rumoca.FMI3.MEFailure.ProtectedFrame.numerical
+#audit axioms Rumoca.FMI3.MEFailure.ProtectedFrame.owners
+#audit axioms Rumoca.FMI3.MEFailure.Respects.returned
+#audit axioms Rumoca.FMI3.MEFailure.Recovery.correct
+#audit axioms Rumoca.FMI3.MEFailure.Recovery.determines
+#audit axioms Rumoca.FMI3.MEFailure.Recovery.owners
