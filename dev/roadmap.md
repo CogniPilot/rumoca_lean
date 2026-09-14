@@ -522,6 +522,14 @@ next task. Any reusable storage/frame draft is only a prerequisite.
 
 ### K03 — Complete public FMI execution and histories
 
+The ME control runtime bridge now passes the 904-input FMI/compiler
+package gate. It retains complete event/continuous-entry, completion and
+discrete-update calls and time rejection/logging in the same explicit runtime
+as state/derivative access. The 21 roots reuse earlier body and failure-prefix
+proofs. No emitter or mandatory contract changed, and no new full-gate pass is
+claimed. Prepared-pool composition with numerical calls and mixed histories
+remain open; this does not close a K03 exit item.
+
 **State:** partial; substantial body and helper proofs can be reused.
 **Existing IDs:** F01, F02, N01, N02.
 

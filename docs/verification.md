@@ -1,5 +1,22 @@
 # Exact verification contract
 
+**ME control runtime bridge (2026-09-14):** `MEControlEnvironment`
+derives complete event/continuous entry, integrator-completion and discrete-update
+calls in the explicit header/object/literal runtime used by state and derivative
+access. Time-call rejection/logging also uses this runtime; its quiet-call
+contract was already available. Existing body execution and failure-prefix
+proofs supply the result. Null, rejected, suppressed-logger and all modeled
+enabled-callback outcomes retain the existing contract types.
+
+The 21 added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-controls-environment-package-v1.log` on 904 unchanged inputs.
+Only the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests retain the separate 869-input full artifact gate
+and unchanged archives; no new full-gate pass is claimed. This bridge still
+requires actual definitions, typed storage and diagnostic bindings. Supplying
+all control/numerical contracts from one compiled table/pool and composing mixed
+ME histories remain next. K02–K05 and grammar expansion remain open/blocked.
+
 **ME derivative runtime and source correspondence (2026-09-14):**
 `adapter_me_numerical_environment` supplies state getter/setter and derivative
 getter contracts from one actual table and literal pool. Their actual accessor

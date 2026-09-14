@@ -37,6 +37,32 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### ME control runtime bridge: 2026-09-14
+
+This derived follow-up to `fedf3dd` transports the existing ME control contracts
+to the explicit header/object/literal interface. The reviewed policy and actual
+function bodies are unchanged. Reuse the clause/evidence records under
+"Mandatory ME control histories" and "ME derivative queries and source
+equations" below. MLS 3.7, FMI 3.0.2, eFMI Beta 1 and MISRA C:2025 findings
+carry forward; no standard or initialization policy is reinterpreted here.
+
+Successful/null event entry, continuous entry, completion and discrete update,
+their rejected calls, and time rejection retain the existing contracts.
+Suppressed logging includes absent loggers. Enabled callbacks retain every
+modeled returning outcome and the no-return alternative, with immutable
+diagnostics. Native callback behavior, ABI/header correspondence, caller storage
+and ownership remain explicit boundaries. These individual calls do not prove
+mixed importer state/control/derivative histories or a source IVP trajectory.
+
+All 21 added roots passed the FMI/compiler package gate on 904 unchanged inputs
+in `build/c-factory/me-controls-environment-package-v1.log`. Only the three
+status documents changed afterward. Earlier semantics, emitters, mandatory
+contracts and tests retain the separate 869-input full gate and archives;
+their source hashes and both retained archive hashes were rechecked. No new
+full-gate pass, source feature, test suite or compliance closure is claimed.
+Prepared-pool and numerical-history composition remain next. K02–K05 and
+the grammar gate remain open.
+
 ### ME derivative queries and source equations: 2026-09-14
 
 This derived follow-up to `896ed51` supplies state-access and derivative-access
