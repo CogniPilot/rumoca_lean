@@ -435,6 +435,32 @@ these derived proofs. Discard calls, mandatory public-CS artifact composition,
 repeated histories and native floating-environment correspondence remain open.
 No grammar, test suite or axiom-policy change is introduced.
 
+`StepDiscard` now supplies complete public discard behavior after valid input
+and nearest-rounding admission. The optional stop guard runs first. A rounded
+clock that cannot advance reaches discard without calling `floor`; otherwise
+the duration guard can reject after the ordinary floor call. Both routes avoid
+the solver. Suppressed logging returns Discard with the exact initialized caller
+outputs and every instance cell unchanged. Logged execution retains all foreign
+outcomes and the no-outcome case; preservation after a foreign callback requires
+its frame, rather than following from the FMU's own absence of writes.
+
+`StepCases.partition` proves exhaustive, unique classification for every raw
+request across null, lifecycle, output, input, rounding, stop, discard and
+accepted cases. The reusable `Float64.finite_encoding` theorem preserves the
+original finite bits, including signed zero. Accepted cases derive finite
+values, duration admission, a progressing rounded clock and the inclusive stop
+bound. This reference partition does not itself prove execution or conformance;
+the mandatory artifact contract must compose it with all public call proofs.
+
+Sixteen added roots passed the core/C/FMI/eFMI/compiler package audit in
+`build/c-factory/cs-cases-package-v1.log`, with all 863 inputs unchanged.
+The preceding discard-only FMI/compiler audit passed with 861 unchanged inputs.
+Only three status documents changed after final package acceptance. Every
+earlier declaration, emitter, mandatory contract and test is retained. The
+855-input full artifact evidence therefore remains applicable to those unchanged
+components; the full gate was not rerun for these derived-proof additions.
+No grammar, test suite or axiom-policy change is introduced.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

@@ -1,6 +1,6 @@
 # Roadmap to a verified Modelica compiler core
 
-Reviewed **2026-09-13**. **Grammar expansion is blocked.** The numerical
+Reviewed **2026-09-14**. **Grammar expansion is blocked.** The numerical
 source-to-C core is formally checked; complete FMI/eFMI compiler verification
 is unfinished. [Verification contract](../docs/verification.md) defines the
 current guarantee. This file tracks the work needed to strengthen it.
@@ -188,6 +188,17 @@ passed the core/C/FMI/eFMI/compiler package audit in
 Every earlier declaration, emitter and mandatory artifact contract is retained;
 the preceding full artifact evidence still applies. Discard, the mandatory
 complete CS contract and repeated histories remain open.
+
+The discard/input-partition increment closes both complete public discard paths
+and proves that every raw request belongs to exactly one admission case.
+Suppressed discard preserves the instance and initializes caller outputs;
+logged discard retains all represented callback outcomes. Accepted cases derive
+exact finite encodings, duration admission, clock progress and the stop bound.
+Sixteen added roots passed the core/C/FMI/eFMI/compiler package audit in
+`build/c-factory/cs-cases-package-v1.log` with all 863 inputs unchanged. Earlier
+declarations, emitters and mandatory artifact contracts are unchanged, retaining
+the preceding full artifact evidence. Make these public cases mandatory in the
+artifact contract and compose repeated histories; K02–K05 remain open.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -446,9 +457,12 @@ simulation or concurrent host histories.
   and raw-input rejection calls now pass the package audit too, retaining the
   exact output writes and every represented callback outcome. Rounding and
   stop-limit failures now have complete call proofs too, including the rounded
-  sum and its overflow cases. Finish discard calls, make the complete contract
-  mandatory in the artifact checker, and compose repeated calls with source/clock
-  histories.
+  sum and its overflow cases. Both complete discard paths and an exhaustive,
+  disjoint raw-input partition now pass package acceptance too. Accepted cases
+  derive the finite encoding and numerical premises of successful execution.
+  Make the complete contract mandatory in the artifact checker, and compose
+  repeated calls with source/clock histories. Callback frame assumptions remain
+  explicit when deriving instance preservation across logged calls.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.

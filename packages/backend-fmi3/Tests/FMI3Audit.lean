@@ -1,3 +1,5 @@
+import RumocaFMI3.StepCases
+import RumocaFMI3.StepDiscard
 import RumocaFMI3.StepFailures
 import RumocaFMI3.StepArguments
 import RumocaFMI3.ErrorContext
@@ -1103,3 +1105,20 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StepFailures.rounding_logged
 #audit axioms Rumoca.FMI3.StepFailures.stop_suppressed
 #audit axioms Rumoca.FMI3.StepFailures.stop_logged
+
+#audit axioms Rumoca.FMI3.StepDiscard.arguments_converted
+#audit axioms Rumoca.FMI3.StepDiscard.resume_reaches
+#audit axioms Rumoca.FMI3.StepDiscard.suppressed_reaches
+#audit axioms Rumoca.FMI3.StepDiscard.dispatch_reaches
+#audit axioms Rumoca.FMI3.StepDiscard.suppressed_behaviors
+#audit axioms Rumoca.FMI3.StepDiscard.all_behaviors
+#audit axioms Rumoca.FMI3.StepDiscard.public_prefix
+#audit axioms Rumoca.FMI3.StepDiscard.call_suppressed
+#audit axioms Rumoca.FMI3.StepDiscard.call_logged
+
+#audit axioms Rumoca.FMI3.StepCases.input_values
+#audit axioms Rumoca.FMI3.StepCases.complete
+#audit axioms Rumoca.FMI3.StepCases.unique
+#audit axioms Rumoca.FMI3.StepCases.partition
+#audit axioms Rumoca.FMI3.StepCases.ready_values
+#audit axioms Rumoca.FMI3.StepCases.accepted_values

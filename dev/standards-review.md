@@ -37,6 +37,35 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Complete CS discard calls and raw-input partition: 2026-09-14
+
+This derived-proof increment follows `f1113bb`. Sixteen added roots cover
+complete public discard calls and exhaustive, disjoint raw-input admission.
+The core/C/FMI/eFMI/compiler package audit passed in
+`build/c-factory/cs-cases-package-v1.log` with all 863 inputs unchanged. The
+preceding discard-only package audit passed with 861 unchanged inputs. Only
+three status documents changed afterward. Earlier declarations, emission,
+mandatory artifact contracts and tests are unchanged; the preceding 855-input
+full artifact gate remains their evidence. No new full-gate pass is claimed.
+
+[FMI 3.0.2, `fmi3DoStep`](https://fmi-standard.org/docs/3.0.2/#fmi3DoStep)
+permits Discard with the FMU's previous state retained and leaves the output
+arguments undefined. The checked implementation initializes those arguments
+while preserving all instance cells before any logger call. Suppressed logging
+therefore returns Discard with the prior instance intact. The logged theorem
+represents every foreign callback outcome; deriving the same preservation
+after logging requires the external callback's frame. It does not verify native
+callback internals or reentry. Both discard paths follow the stop check, and
+neither invokes the solver. No numerical-progress or output-value promise is
+assigned to an importer after Discard.
+
+Raw admission covers all bit patterns and preserves signed-zero encodings.
+This supplies a coverage prerequisite for the mandatory public-CS contract;
+it does not independently establish the policy's conformance. That contract,
+repeated histories, shared initialization, native header/ABI correspondence and
+existing MLS/eFMI/MISRA findings remain open. **Stage decision: open; no grammar
+expansion.**
+
 ### Complete CS rounding and stop-limit errors: 2026-09-13
 
 This derived-proof increment follows `095323c`. Eleven new roots compose
