@@ -37,6 +37,35 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Float64 getter and common accessor runtime: 2026-09-14
+
+This derived follow-up to `9a5d98d` preserves the existing getter behavior in
+the shared static runtime. `float64_runtime_source` supplies both accessor
+contracts from one source/numerical C/metadata/table/pool. No source grammar,
+GALEC lowering, numerical semantics, runtime policy or emitted member changes.
+
+| Focused FMI 3.0.2 clauses | Reviewed consequence and remaining boundary |
+| --- | --- |
+| [§2.2.7.2](https://fmi-standard.org/docs/3.0.2/), variable access | Existing scalar references justify matching counts. The proof retains arbitrary represented query batches and mixed/repeated time, state and derivative selections in request order. |
+| [§§2.3.2–2.3.3](https://fmi-standard.org/docs/3.0.2/), initialization | Instantiated reads concern start values; initialization reads may evaluate equations. This bridge proves the existing access/value policy under represented storage. Full histories must establish phase-specific admissibility and actual initialized-state correspondence. |
+| [§2.3.8](https://fmi-standard.org/docs/3.0.2/), termination | Queries after Error have debugging use. Returned derivative/state values do not establish continuation of the original source trajectory. |
+| [§§2.2.4 and 2.4.7](https://fmi-standard.org/docs/3.0.2/), status and metadata | The same source-bound reference map, complete existing array/reference rejection paths and actual logging callbacks are retained. An axiom audit of these contracts does not establish whole-standard conformance. |
+
+The helper calls are transported with the actual numerical kernel, type and
+symbol bindings unchanged. Failure/empty prefixes omit the helper definitions,
+so no new numerical execution/storage premise narrows the prior rejection
+contract. Suppressed logging includes a missing logger. Enabled logging retains
+every modeled return and the no-return alternative; protected instance/caller
+frames and native callback behavior remain separate obligations.
+
+Nine roots passed the FMI/compiler package gate on 935 unchanged inputs in
+`build/c-factory/float64-environment-package-v1.log`. All earlier audit roots and
+the whitelist are unchanged. The prior 869-input full gate and unchanged archive
+hashes retain the earlier semantics/emission/mandatory-contract/test evidence;
+no full-gate pass on this follow-up is claimed. MLS 3.7, eFMI Beta 1 and MISRA
+findings carry forward. The initialization-history, remaining-API and K02–K05
+obligations remain open. **Stage decision: open; no grammar expansion.**
+
 ### Float64 setter runtime bridge: 2026-09-14
 
 This derived follow-up to `bc575bf` reuses the existing batched setter proofs in

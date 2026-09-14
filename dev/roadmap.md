@@ -54,20 +54,28 @@ separate from that trajectory. The corresponding CS lifetime covers mixed
 accepted/rejected steps, reset/reinitialization and modeled logging outcomes.
 Both restore original ownership within their stated contracts.
 
-The Float64 setter now has an artifact-bound shared-runtime contract for its
-existing batched success, empty/null, rejection and modeled logging behavior.
-The next proof work is the Float64 getter bridge, then initialization histories
-and remaining public calls. `Float64Contract.lean` supplies the existing getter
-proofs; the generic C prefix-transfer theorem can preserve their loop/helper
-execution in the larger runtime. History composition must derive the selected
-IVP from the actual state at initialization exit, including intervening host
-writes. No later heap or successful call may substitute for that proof.
+Both Float64 accessors now have artifact-bound contracts in the same runtime,
+retaining represented batches, mixed/repeated read references, exact finite
+readback/state writes, empty/null calls, rejection and modeled logging behavior.
+The next proof work is initialization-history composition, then remaining public
+calls. Derive the source IVP from the actual state at initialization exit,
+including intervening host writes and queries; separate pre-entry start-value
+reads from initialization equation evaluation. Initialization exit must apply
+to the derived current heap after these accesses, not only the old contiguous
+entry/exit prefix. No later heap or successful call may substitute for that proof.
 Concurrent instance ownership and the transitive no-heap
 policy, complete source-to-artifact/provenance and C-profile correspondence,
 and standards/MISRA closure remain required. The final release also requires
 independent review and the complete artifact gate at that revision. These are
 substantial obligations; there is no defensible coverage percentage or short
 completion estimate from the number of audited roots.
+
+The nine added getter/runtime roots passed `lake build check-fmi3 check-compiler`
+on 935 unchanged inputs in `build/c-factory/float64-environment-package-v1.log`.
+The common compiler theorem binds both accessors, their numerical helper and
+metadata to the same source/table/pool. The separate 869-input full gate and
+unchanged archives retain the earlier semantics/emission/mandatory-contract/test
+evidence; no new full-gate pass or grammar admission is claimed.
 
 The ten added Float64 setter/runtime roots passed
 `lake build check-c check-fmi3 check-compiler` on 933 unchanged inputs in
@@ -607,6 +615,12 @@ simulation or concurrent host histories.
   logging and every modeled callback outcome. The ten added roots passed the
   933-input C/FMI/compiler package gate; getter and initialization-history
   composition remain open.
+- [x] Bind the complete existing Float64 getter and numerical RHS helper to
+  the shared runtime, then combine both accessors with one actual source,
+  metadata document, function table and pool. Preserve mixed/repeated queries,
+  output frames, empty/null calls, existing rejections and modeled logging.
+  The nine roots passed the 935-input FMI/compiler package gate; initialization
+  histories still need their actual post-access exit and source IVP proof.
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.

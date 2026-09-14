@@ -1,5 +1,37 @@
 # Exact verification contract
 
+**Float64 reads and writes share the runtime (2026-09-14):**
+`float64_runtime_source` binds both actual accessors and the RHS helper to one
+compiled source, numerical C program, XML reference/writable-state metadata,
+function-section tokenization and prepared table/pool. It derives the getter's
+new `Float64Environment.PreparedContract` alongside the existing setter runtime
+contract, for the same header/object/literal environment and later heaps.
+
+The getter retains arbitrary represented batch lengths, mixed/repeated numeric
+references, validation before output writes and exact time/state/derivative
+readback in request order. Original input/output storage, finite state/time and
+the existing separation conditions are explicit. Derivative queries execute
+`model_rhs` and the actual numerical RHS without advancing the solver. The
+existing `get_refines` consequence preserves state/time and frames every cell
+outside the output range.
+
+Empty and failure prefixes use only the accessor definition. They do not acquire
+numerical/helper bindings, finite-state or writable-output premises merely to
+transport their proofs. Null calls and existing array/reference rejections are
+retained. Disabled/missing logging and all modeled enabled-callback outcomes,
+including no return, use the actual runtime error helper. Callback read-only
+preservation is explicit; protected-instance ownership frames belong to history
+composition.
+
+All nine roots passed `lake build check-fmi3 check-compiler` on 935 unchanged
+inputs in `build/c-factory/float64-environment-package-v1.log`. Only the three
+status documents changed afterward. Earlier semantics, emission, mandatory
+contracts and tests retain the separate 869-input full artifact gate and
+unchanged archives; no new full-gate pass is claimed. Initialization histories
+must still derive the selected source IVP from the actual state at exit and
+distinguish start-value reads from initialization evaluation. K02–K05 and grammar
+expansion remain open/blocked. No source case or test suite was added.
+
 **Float64 setter in the shared runtime (2026-09-14):**
 `float64_set_runtime_source` connects actual source compilation, numerical C,
 writable-state metadata, function-section tokenization and the emitted setter
