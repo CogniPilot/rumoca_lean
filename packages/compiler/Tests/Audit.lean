@@ -1,3 +1,4 @@
+import Rumoca.FMI3CSLifecycle
 import Rumoca.FMI3CSRelease
 import Rumoca.FMI3StepProofs
 import Rumoca.FMI3RuntimeEnvironment
@@ -203,3 +204,5 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_cs_history
 #audit axioms Rumoca.FMI3.adapter_initialize_cs_history
 #audit axioms Rumoca.FMI3.adapter_initialize_cs_release
+
+#audit axioms Rumoca.FMI3.adapter_create_cs_release

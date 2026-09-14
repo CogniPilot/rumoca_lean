@@ -37,6 +37,36 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Actual creation through accepted CS lifetime: 2026-09-14
+
+This derived-proof follow-up to `0979ebd` adds nine audit roots. The actual
+CS factory, source identity validation, initialization, accepted numerical
+history, termination and release now share one prepared program and explicit
+header/object/literal interface. Available static storage supplies the handle,
+finite Solve default, writable state/caller cells and lease. Release restores
+the original owner map. The initialized source solution, numerical/clock error,
+bounded reservation trace and memory frames are retained. The former
+initialized-lifetime theorem keeps its statement and reuses the shared backend
+composition. No created or initialized heap is an input premise.
+
+The FMI/compiler package gate passed in
+`build/c-factory/cs-created-lifetime-package-v1.log` with all 881 inputs
+unchanged. Only the three status documents changed after acceptance. Earlier
+semantic definitions, emitted products, mandatory artifact contracts and
+existing tests are unchanged; the preceding 869-input full gate and archives
+under `build/c-factory/cs-contract-artifacts-v1/` remain their evidence. No new
+full-gate pass or test suite is claimed.
+
+This strengthens the proof correspondence for the already reviewed FMI
+instantiation, initialization, Step Mode, termination and release profile.
+It changes no admission policy, capability or emitted lifecycle transition.
+The pinned baselines and existing MLS/FMI/eFMI/MISRA findings are retained.
+Mixed error/discard/logging/reset histories, ME numerical interactions,
+callback effects/reentry, concurrent ownership, native header/layout and
+cross-standard initialization/coding-guideline correspondence remain open.
+Neither this composed theorem nor the earlier artifact checks establish
+whole-standard conformance. **Stage decision: open; no grammar expansion.**
+
 ### Mandatory CS calls and initialized CS lifetimes: 2026-09-14
 
 This increment follows `9f85945`. Eighteen added roots make the complete CS

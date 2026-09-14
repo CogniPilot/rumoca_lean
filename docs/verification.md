@@ -31,11 +31,38 @@ so the 869-input full artifact evidence is retained for those components;
 the full gate was not rerun for the derived additions. No grammar, existing
 test or axiom-policy change is introduced. Original valid storage/ownership,
 the explicit target header, ordinary library calls and atomic external
-semantics remain premises. Creation, mixed error/discard/logging/reset
-histories, concurrent hosts and native ABI/profile correspondence remain open.
+semantics remain premises. At that checkpoint, creation, mixed
+error/discard/logging/reset histories, concurrent hosts and native ABI/profile
+correspondence remained open.
 Released handles are not promised valid for subsequent calls. K02–K05 remain
 open, and this checkpoint does not authorize grammar expansion. The following
 chronological records retain their original scope and acceptance snapshots.
+
+**CS creation follow-up (2026-09-14):** `adapter_create_cs_release` now composes
+the actual source-bound factory with initialization, accepted CS stepping,
+termination and release. It starts from available static storage, readable
+identity buffers, supported capabilities and the original owner map. The actual
+bounded reservation and initializer derive the handle, finite Solve default,
+typed writable state/caller storage and lease. No created or initialized heap
+is an input premise. The result retains the source IVP and numerical/clock error
+bound, all represented call behaviors, bounded reservation trace, memory frame
+and restoration of the original owner map after release.
+
+`FactoryEnvironment` instantiates the existing factory proofs in the same
+explicit header/object/literal interface used by stepping. The reusable backend
+`CSHistory.initialize_release` supplies the shared lifetime composition;
+`adapter_initialize_cs_release` retains its exact theorem statement and now
+uses that result. Nine new roots passed the FMI/compiler package audit in
+`build/c-factory/cs-created-lifetime-package-v1.log`, with all 881 inputs
+unchanged. Only the three status documents changed afterward. Earlier semantic
+definitions, emission, mandatory artifact contracts and existing tests are
+unchanged, retaining the 869-input full artifact gate and its actual archives;
+no additional full-gate pass is claimed for this derived-proof follow-up.
+Mixed error/discard/logging/reset histories, ME numerical interactions,
+concurrent hosts and native profile/layout remain open. This is a sequential
+created-instance lifetime, not a whole FMI/eFMI conformance claim or permission
+to grow the grammar. The explicit external library/header/atomic boundaries
+are retained; the theorem grants no future-call validity to released handles.
 
 **Static storage foundation (2026-09-13):** this working source emits 32
 permanent, shared ME/CS instance slots with bounded atomic reservation and

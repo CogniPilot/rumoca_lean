@@ -1,3 +1,6 @@
+import RumocaFMI3.FactoryEnvironment
+import RumocaFMI3.CSCreationStorage
+import RumocaFMI3.CSLifecycle
 import RumocaFMI3.CSInitialization
 import RumocaFMI3.InitializationEnvironment
 import RumocaFMI3.CSRelease
@@ -1166,3 +1169,12 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSHistory.Stored.atomic_outside
 #audit axioms Rumoca.FMI3.CSHistory.trace_atomic_frame
 #audit axioms Rumoca.FMI3.CSHistory.release_history
+
+#audit axioms Rumoca.FMI3.FactoryEnvironment.types
+#audit axioms Rumoca.FMI3.FactoryEnvironment.scope
+#audit axioms Rumoca.FMI3.FactoryEnvironment.admission
+#audit axioms Rumoca.FMI3.FactoryEnvironment.create_owned
+#audit axioms Rumoca.FMI3.StepArguments.Storage.storage_preserved
+#audit axioms Rumoca.FMI3.StepArguments.Storage.at_index
+#audit axioms Rumoca.FMI3.InstanceInitialization.Initialized.state_cell
+#audit axioms Rumoca.FMI3.CSHistory.initialize_release

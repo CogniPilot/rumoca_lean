@@ -15,7 +15,7 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Derived CS proofs compose initialization, finite accepted-step histories, termination and release with the source solution and original lease. Earlier mandatory contracts remain required. | Remaining public calls, creation and mixed success/error/reset histories, concurrent instance ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Derived CS proofs now compose actual creation, initialization, finite accepted-step histories, termination and release from available storage, retaining the source solution and restoring original ownership. Earlier mandatory contracts remain required. | Remaining public calls and mixed success/error/reset histories, ME numerical interactions, concurrent instance ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
@@ -37,10 +37,19 @@ This follow-up adds derived proofs and audit roots only; it retains the
 869-input full-gate evidence for unchanged emission, semantics and mandatory
 contracts. The two acceptance snapshots are distinct. No grammar case is added.
 
+The creation follow-up passed the same FMI/compiler package command in
+`build/c-factory/cs-created-lifetime-package-v1.log`, with all 881 inputs
+unchanged. Nine new audit roots connect the actual source-bound factory to
+that CS lifetime. The previous lifetime theorem retains its statement and
+reuses the extracted backend composition. Emission, semantics, mandatory
+contracts and existing tests are unchanged; their full artifact evidence
+remains the 869-input gate. No new full-gate pass is claimed for this follow-up.
+
 **Distance to expansion:** K01 is closed for its scoped initialization profile;
-K02–K05 remain partial or open. The next concrete proof is creation composed
-with the accepted CS lifetime. Mixed error/reset histories, concurrent storage,
-whole-artifact correspondence and the standards/MISRA review still follow.
+K02–K05 remain partial or open. Actual creation now composes with the accepted
+CS lifetime. Mixed error/reset histories and ME numerical interactions are next;
+concurrent storage, whole-artifact correspondence and the standards/MISRA review
+remain required.
 These are substantial obligations, not a final build or a parser-only change.
 
 The actual adapter certificate now requires the complete `fmi3SetTime`
@@ -218,9 +227,13 @@ any finite accepted CS request history, termination and atomic release. Initial
 storage and ownership supply every later heap/lease premise. The result retains
 exact Solve state, rounded clock/output writes, the original source IVP and a
 bound separating numerical error from clock drift. Those derived roots passed
-the 877-input package gate. Creation, interspersed rejected/logged/reset calls,
-concurrent hosts and native header/layout correspondence remain open; K02–K05
-are not closed by this accepted sequential lifetime.
+the 877-input package gate. At that checkpoint, composing creation remained
+open. The subsequent nine-root, 881-input package gate closes that composition:
+the actual factory supplies the handle, finite Solve default, typed storage
+and reservation, and release restores the original owner map. Both lifetime
+theorems reuse the same backend composition. Interspersed rejected/logged/reset
+calls, concurrent hosts and native header/layout correspondence remain open;
+K02–K05 are not closed by this accepted sequential lifetime.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -336,12 +349,12 @@ and release, deriving the later metadata/flag premises from the original lease.
 The FMI/compiler package audit passed with 811 unchanged inputs; no emitter or
 mandatory contract changed in that follow-up.
 
-Accepted CS stepping now preserves the original atomic lease through
-termination and release, with initialization included. Its derived package gate
-passed on 877 inputs; the preceding mandatory-contract full gate passed on 869.
-Next, compose creation and the remaining operation/release histories and prove
-actual concurrent ownership histories. Callback frames, the transitive no-heap
-and acyclic call graph, and native profile/layout remain open.
+Actual CS creation now supplies the lease for initialization, accepted stepping,
+termination and release, restoring the original owner map. Its derived package
+gate passed on 881 inputs; the mandatory-contract full gate passed on 869.
+Next, compose the remaining operation/release histories and prove actual
+concurrent ownership histories. Callback frames, the transitive no-heap and
+acyclic call graph, and native profile/layout remain open.
 The combined exit items below remain open until all their obligations are met;
 no broader item is closed by a sequential initialization prefix.
 **Existing IDs:** C01, C02, F02, F03, S03; new no-heap/RTOS requirement.
@@ -473,8 +486,13 @@ simulation or concurrent host histories.
   Solve state, rounded clock/output values, source-solution error and memory
   frames without assuming later successful executions or ownership. The
   24 derived roots passed the 877-input FMI/compiler package gate.
-- [ ] Extend that CS lifetime to actual creation and histories containing
-  rejected/discarded calls, logging and reset. Keep callback effects and frames
+- [x] Compose actual source-bound creation with that accepted CS lifetime.
+  Available static storage supplies the handle, finite Solve default, writable
+  caller/instance cells and lease. Release restores the original owner map.
+  The nine added audit roots passed the 881-input FMI/compiler package gate;
+  no created or initialized heap is assumed by the composed theorem.
+- [ ] Extend the CS lifetime to histories containing rejected/discarded calls,
+  logging and reset. Keep callback effects and frames
   explicit; prove the required preservation across each interaction. Native
   header and floating-environment correspondence remain separate obligations.
 - [ ] Prove ME/CS trace refinement from creation through initialization,

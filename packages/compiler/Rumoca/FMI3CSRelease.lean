@@ -1,5 +1,5 @@
 import Rumoca.FMI3CSInitialization
-import RumocaFMI3.CSRelease
+import RumocaFMI3.CSLifecycle
 import RumocaFMI3.TerminationEnvironment
 
 noncomputable section
@@ -81,8 +81,6 @@ theorem adapter_initialize_cs_release (contract : AdapterContract a adapter) :
       some (.tree (Runtime.function a.solve.prepareFMI3 InitializationExit.signature)) := by
     rw [actual]
     exact LiteralPreparation.function_bound _ signatures unique _ initialization.exitMember
-  obtain ⟨entered, exited⟩ := InitializationEnvironment.calls header objects literals a.solve.prepareFMI3
-    program heap p args .cs enterDefined exitDefined admissible storage kind
   have initialStored := CSHistory.initialized_stored a.solve seed heap p args buffers admissible kind state outputs
   have initialValue : StateProofs.Represents heap p ⟨seed⟩ := by
     simp [p, StateProofs.Represents, load, state, convert, Value.finite]
@@ -95,29 +93,18 @@ theorem adapter_initialize_cs_release (contract : AdapterContract a adapter) :
     rw [actual]
     exact LiteralPreparation.function_bound _ signatures unique _ termination.member
   have finish := TerminationEnvironment.release_correct header objects literals program tag terminateQuiet bindings
-  obtain ⟨after, calls, finalStored, atomic, frame⟩ := CSHistory.trace_atomic_frame header objects literals
-    a.solve.prepareFMI3 signatures seed p buffers args.stopTime
-    (fun reference request => ((step.prepared pool made).quiet
-      (request.query header p buffers reference args.stopTime) objects firstBlock).2)
-    program range actual rounding floorBound (InitializationCalls.exitedHeap heap p args .cs)
-      ⟨args.start, 0⟩ final requests initialStored admitted
-  have mode : InitializationCalls.exitedHeap heap p args .cs (p.member "mode") =
-      some ⟨.int32, true, some (.integer 4)⟩ := by
-    simp [InitializationCalls.exitedHeap, InitializationBodies.exitHeap, cs_initialization, Mode.code]
-  obtain ⟨_, terminated, discharged, ownersAfter, freed, releasedFrame⟩ := CSHistory.release_history
-    objects program tag finish a.solve seed (InitializationCalls.exitedHeap heap p args .cs) after
-    slot buffers ⟨args.start, 0⟩ final args.stopTime requests owners owner initialStored mode calls finalStored atomic frame
-    (StaticInitialization.exited_owners objects heap slot args .cs owners represented) owned
-    ((StaticInitialization.exited_metadata heap p args .cs).trans metadata)
+  obtain ⟨entered, exited, after, calls, finalStored, terminated, discharged, ownersAfter, freed, framed⟩ :=
+    CSHistory.initialize_release header objects literals a.solve.prepareFMI3 signatures seed slot buffers args
+      (fun reference request => ((step.prepared pool made).quiet
+        (request.query header p buffers reference args.stopTime) objects firstBlock).2)
+      program tag range actual rounding floorBound enterDefined exitDefined finish
+      heap requests final owners owner admissible storage kind state outputs admitted represented owned metadata
   refine ⟨entered, exited, initialized,
     fun _ given => InitializationCalls.source_initialized_unique given uniqueInitial,
     after, calls, finalStored,
     CSHistory.source_error a.solve seed args.start (InitializationCalls.exitedHeap heap p args .cs)
       p buffers args.stopTime initialized initialStored final,
-    terminated, discharged, ownersAfter, freed, ?_⟩
-  intro query outside outsideMode minimum event completed stop stopDefined flag
-  exact (releasedFrame query outside outsideMode flag).trans
-    (InitializationCalls.exited_frame heap p query args .cs outside.2.1 minimum event completed stop stopDefined outsideMode)
+    terminated, discharged, ownersAfter, freed, framed⟩
 
 end Rumoca.FMI3
 end
