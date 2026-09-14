@@ -2,6 +2,7 @@ import RumocaFMI3.InitializationProtocol
 import RumocaFMI3.InitializationProtocolEnvironment
 import RumocaFMI3.InitializationSimulation
 import RumocaFMI3.CSInitializationProtocol
+import RumocaFMI3.CSProtocolInterrupted
 import RumocaFMI3.InitializationProtocolCreation
 import RumocaFMI3.InitializationProtocolHandoff
 import RumocaFMI3.InitializationProtocolRunFrames
@@ -1295,6 +1296,7 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSRun.ActionContract.performed_iff
 #audit axioms Rumoca.FMI3.CSRun.ActionContract.faulted_iff
 #audit axioms Rumoca.FMI3.CSRun.ActionContract.progress
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.faulted_step
 #audit axioms Rumoca.FMI3.CSRun.LoggedTrace.progress
 #audit axioms Rumoca.FMI3.CSRun.LoggedTrace.completed
 
@@ -1614,6 +1616,19 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.me
 #audit axioms Rumoca.FMI3.InitializationProtocol.cs_execution
 #audit axioms Rumoca.FMI3.CSProtocol.Plan.Outside.not_record
+#audit axioms Rumoca.FMI3.CSRun.Recorded.stopped
+#audit axioms Rumoca.FMI3.CSRun.Interrupted.stopped
+#audit axioms Rumoca.FMI3.CSRun.Stopped.interrupted
+#audit axioms Rumoca.FMI3.CSRun.interrupted_iff
+#audit axioms Rumoca.FMI3.CSRun.ReferenceTrace.split
+#audit axioms Rumoca.FMI3.InitializationProtocol.Completed.stopped
+#audit axioms Rumoca.FMI3.InitializationProtocol.Interrupted.stopped
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stopped.interrupted
+#audit axioms Rumoca.FMI3.InitializationProtocol.interrupted_iff
+#audit axioms Rumoca.FMI3.InitializationProtocol.ReferenceTrace.split
+#audit axioms Rumoca.FMI3.CSProtocol.Interrupted.stopped
+#audit axioms Rumoca.FMI3.CSProtocol.Stopped.interrupted
+#audit axioms Rumoca.FMI3.CSProtocol.interrupted_iff
 #audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.fields
 #audit axioms Rumoca.FMI3.InitializationProtocol.Stored.reset_from
 #audit axioms Rumoca.FMI3.InitializationProtocol.reset_invariant

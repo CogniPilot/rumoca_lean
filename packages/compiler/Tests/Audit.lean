@@ -324,5 +324,10 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.CSProtocol.CycleContract.progress
 #audit axioms Rumoca.FMI3.CSProtocol.CycleContract.restarted
 #audit axioms Rumoca.FMI3.CSProtocol.correct
+#audit axioms Rumoca.FMI3.CSProtocol.InitializationCompiler.interrupted
+#audit axioms Rumoca.FMI3.CSProtocol.SimulationCompiler.interrupted
+#audit axioms Rumoca.FMI3.CSProtocol.interrupted_correct
+#audit axioms Rumoca.FMI3.CSProtocol.Contract.stopped_source
+#audit axioms Rumoca.FMI3.CSProtocol.Contract.progress_source
 #audit axioms Rumoca.FMI3.CSProtocol.Contract.released
 #audit axioms Rumoca.FMI3.CSProtocol.runtime_create_release

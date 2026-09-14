@@ -71,6 +71,8 @@ structure CSExecution [CInterface] (model : Solve.FMI3Model source) (header : CF
     (∀ q, CSRun.Protected objects buffers q → CSRun.Outside p buffers q → after q = heap q)
   semantic : ∀ observed events after records, CSRun.Recorded program p heap actions observed events after records →
     CSRun.SemanticTrace model.solve header p buffers heap before actions observed records after final
+  faulted : ∀ action rest, actions = action :: rest → CSRun.Faulted program p heap action →
+    ∃ request outputs, action = .step request outputs
 
 theorem cs_execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI3Model source)
     (sigs : List Signature)
@@ -99,26 +101,34 @@ theorem cs_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
   · obtain ⟨after, calls, finalStored, keeps, readonly, atomic, frame, semantic⟩ :=
       CSRun.trace_framed header objects model sigs pool prepared.step baseHeap firstBlock signed p buffers program range
         actual rounding floorBound reset enterDefined exitDefined heap before final actions statuses persistent.readonly stored quiet admitted
-    refine ⟨Or.inl ⟨[], after, calls.executes⟩, ?_, semantic⟩
-    intro observed events actualAfter completed
-    obtain ⟨sameStatuses, _, sameHeap⟩ := calls.determines completed
-    subst actualAfter
-    exact ⟨sameStatuses, finalStored,
-      ⟨SlotOwners.ordinary_preserves persistent.ownership atomic,
-        persistent.caller.trans (CallerStorage.ordinary calls.storage), persistent.readonly.trans readonly,
-        persistent.logging.framed (fun name outside => keeps name outside)⟩,
-      keeps, readonly, fun q _ outside => frame q outside⟩
+    refine ⟨Or.inl ⟨[], after, calls.executes⟩, ?_, semantic, ?_⟩
+    · intro observed events actualAfter completed
+      obtain ⟨sameStatuses, _, sameHeap⟩ := calls.determines completed
+      subst actualAfter
+      exact ⟨sameStatuses, finalStored,
+        ⟨SlotOwners.ordinary_preserves persistent.ownership atomic,
+          persistent.caller.trans (CallerStorage.ordinary calls.storage), persistent.readonly.trans readonly,
+          persistent.logging.framed (fun name outside => keeps name outside)⟩,
+        keeps, readonly, fun q _ outside => frame q outside⟩
+    · intro action rest same actual
+      cases same
+      cases calls with
+      | cons called _ _ _ _ => exact (CSRun.ActionContract.silent called).faulted_step actual
   · obtain ⟨certified, semantic⟩ := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
       p buffers inPool program range logger actual rounding floorBound bound policy reset enterDefined exitDefined
       heap before final actions statuses owners persistent.readonly stored logging persistent.ownership admitted
-    refine ⟨certified.progress, ?_, semantic⟩
-    intro observed events after completed
-    have same := certified.statuses_eq completed
-    subst observed
-    obtain ⟨finalStored, _, ownership, keeps, readonly, frame⟩ := certified.completed completed
-    exact ⟨rfl, finalStored, ⟨ownership, persistent.caller.trans (certified.storage completed storagePolicy),
-      persistent.readonly.trans readonly, persistent.logging.framed (fun name outside => keeps name outside)⟩,
-      keeps, readonly, frame⟩
+    refine ⟨certified.progress, ?_, semantic, ?_⟩
+    · intro observed events after completed
+      have same := certified.statuses_eq completed
+      subst observed
+      obtain ⟨finalStored, _, ownership, keeps, readonly, frame⟩ := certified.completed completed
+      exact ⟨rfl, finalStored, ⟨ownership, persistent.caller.trans (certified.storage completed storagePolicy),
+        persistent.readonly.trans readonly, persistent.logging.framed (fun name outside => keeps name outside)⟩,
+        keeps, readonly, frame⟩
+    · intro action rest same actual
+      cases same
+      cases certified with
+      | cons called _ _ => exact called.faulted_step actual
 
 end Rumoca.FMI3.InitializationProtocol
 end

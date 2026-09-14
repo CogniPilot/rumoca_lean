@@ -37,7 +37,7 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
-### Completed CS call observations: 2026-09-14
+### Completed and stopped CS observations: 2026-09-14
 
 The admitted Modelica/GALEC grammars, generated FMI/eFMI members and mandatory
 artifact propositions are unchanged. This increment strengthens the recurring
@@ -59,14 +59,24 @@ callback totality is not assumed. The pinned MLS 3.7 and eFMI 1.0.0 Beta 1
 evidence, shared initialization restrictions and MISRA findings carry forward.
 There is no new normative policy or admitted language case.
 
-The completed CS intermediate-observation gap from the 990-input recurring
-protocol checkpoint is closed. Source correspondence for stopped prefixes,
-recurring ME composition and the remaining public-call inventory are open.
-Native callback termination, concurrent execution and full translation-unit/ABI
-correspondence are outside this increment.
+The stopped-prefix follow-up also rechecked §2.3.1's logging callback interface
+alongside §2.2.4's returned-status/output policy. The existing C/effect model's
+blocked alternative is not an FMI return status. No return, output or exit
+checkpoint is invented for that action. Its recorded heap precedes the pending
+action. Prefix splitting reuses completed-history source theorems and retains
+an explicit decomposition of the original script; raw stopped/interrupted
+relations are equivalent at initialization, CS and recurring-plan levels.
+Complete restart/reset call contracts exclude blocking partway through an
+internal restart or at a between-cycle reset. This adds no callback-totality
+assumption and makes no native callback-termination or native-hang claim.
 
-Fifteen new and eleven affected roots passed the existing FMI/compiler package
-gate on 994 unchanged inputs in `build/c-factory/cs-call-records-package-v1.log`.
+Completed and modeled stopped CS observations now compose through all admitted
+cycles. Recurring ME composition and its stopped observations, the remaining
+public-call inventory, native/concurrent execution and translation-unit/ABI
+correspondence remain open. The original MLS/eFMI restrictions remain in force.
+
+Nineteen new and eight affected roots passed the existing FMI/compiler package
+gate on 998 unchanged inputs in `build/c-factory/stopped-source-package-v1.log`.
 The axiom whitelist and existing tests are unchanged. Publication changes only
 three documentation files after that frozen gate.
 [GitHub run 34868166166](https://github.com/CogniPilot/rumoca_lean/actions/runs/34868166166)

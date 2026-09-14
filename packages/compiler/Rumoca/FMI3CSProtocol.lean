@@ -1,6 +1,6 @@
-import RumocaFMI3.CSInitializationProtocol
+import RumocaFMI3.CSProtocolInterrupted
 import Rumoca.FMI3InitializationProtocol
-import Rumoca.FMI3CSRunRecords
+import Rumoca.FMI3CSProtocolPrefixes
 
 noncomputable section
 namespace Rumoca.FMI3.CSProtocol
@@ -47,6 +47,30 @@ inductive SourceTrace (model : Solve.FMI3Model source) (header : CFenv.Header) (
         (.initialization initial checkpoints exited :: .simulation statuses events calls simulated ::
           .reset [] (.integer 0) (Reset.finalHeap simulated p) :: records)
 
+/-- Completed observations survive a blocked initialization or simulation
+call, including all earlier cycles. No result is attributed to the pending call. -/
+inductive SourceInterrupted (model : Solve.FMI3Model source) (header : CFenv.Header) (p : Address)
+    (buffers : StepEntry.Buffers) : Plan → List Record → StopRecord → Prop where
+  | finish : InitializationProtocol.SourcePrefix model p .cs .reset actions stop →
+      SourceInterrupted model header p buffers (.finish actions state) [] (.initialization stop)
+  | lastInitialization : InitializationProtocol.SourcePrefix model p .cs .reset cycle.initialization stop →
+      SourceInterrupted model header p buffers (.last cycle) [] (.initialization stop)
+  | nextInitialization : InitializationProtocol.SourcePrefix model p .cs .reset cycle.initialization stop →
+      SourceInterrupted model header p buffers (.next cycle following) [] (.initialization stop)
+  | lastSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
+      CSRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
+      SourceInterrupted model header p buffers (.last cycle)
+        [.initialization initial checkpoints exited] (.simulation stop)
+  | nextSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
+      CSRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
+      SourceInterrupted model header p buffers (.next cycle following)
+        [.initialization initial checkpoints exited] (.simulation stop)
+  | later : CycleEvidence model header p buffers cycle initial checkpoints exited statuses calls simulated →
+      SourceInterrupted model header p buffers following records stop →
+      SourceInterrupted model header p buffers (.next cycle following)
+        (.initialization initial checkpoints exited :: .simulation statuses events calls simulated ::
+          .reset [] (.integer 0) (Reset.finalHeap simulated p) :: records) stop
+
 structure Ready [CInterface] (program : Program Invocation) (objects : Objects) (retained : Address → Prop)
     (owners : SlotOwners.State objects.capacity) (original literals heap : Heap) (p : Address) (mode : Mode) : Prop where
   kindValue : load heap (p.member "kind") = some (.integer Kind.cs.code)
@@ -79,6 +103,12 @@ structure CycleContract (model : Solve.FMI3Model source) (header : CFenv.Header)
     InitializationProtocol.Completed program p access heap cycle.initialization observed exited checkpoints →
     CSExecution model header program objects retained owners original literals exited p buffers
       (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation cycle.final cycle.statuses
+  initializationStopped : ∀ stop, InitializationProtocol.Interrupted program p access heap cycle.initialization stop →
+    InitializationProtocol.SourcePrefix model p .cs .reset cycle.initialization stop
+  simulationStopped : ∀ observed exited checkpoints,
+    InitializationProtocol.Completed program p access heap cycle.initialization observed exited checkpoints →
+    ∀ stop, CSRun.Interrupted program p exited cycle.simulation stop →
+      CSRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop
 
 theorem CycleContract.completed
     (certified : CycleContract model header program objects retained owners original literals heap p access buffers cycle)
@@ -100,22 +130,6 @@ theorem CycleContract.completed
     (fun name outside => (runKeeps name outside).trans (keeps name outside)),
     fun q inside untouched outside => (runFrame q inside outside).trans (frame q (guarded.protects inside) untouched)⟩
 
-def InitializationCompiler (model : Solve.FMI3Model source) (program : Program Invocation) (objects : Objects)
-    (retained : Address → Prop) (owners : SlotOwners.State objects.capacity) (original literals : Heap)
-    (p : Address) (access : Float64Buffers.Layout) : Prop :=
-  ∀ heap actions state, Invariant program objects retained owners original literals heap p .cs .reset →
-    InitializationProtocol.ReferenceTrace .cs .reset actions state →
-    (∀ action ∈ actions, action.Prepared objects retained original p access) →
-    SourceContract model program objects retained owners original literals heap p access .cs .reset state actions
-
-def SimulationCompiler (model : Solve.FMI3Model source) (program : Program Invocation) (header : CFenv.Header)
-    (objects : Objects) (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
-    (original literals : Heap) (p : Address) (buffers : StepEntry.Buffers) : Prop :=
-  ∀ heap before final actions statuses,
-    Persistent program objects retained owners original literals heap p →
-    CSRun.Stored model.solve heap p buffers before → CSRun.ReferenceTrace header p buffers before actions final statuses →
-    CSExecution model header program objects retained owners original literals heap p buffers before actions final statuses
-
 theorem cycle_contract
     (initialization : InitializationCompiler model program objects retained owners original literals p access)
     (simulation : SimulationCompiler model program header objects retained owners original literals p buffers)
@@ -125,11 +139,17 @@ theorem cycle_contract
     (invariant : Invariant program objects retained owners original literals heap p .cs .reset) :
     CycleContract model header program objects retained owners original literals heap p access buffers cycle := by
   have certified := initialization heap cycle.initialization cycle.state invariant admitted.1 admitted.2.1
-  refine ⟨certified, ?_⟩
-  intro observed exited checkpoints executed
-  have ready := (certified.completed _ _ _ executed).2.2.1
-  exact simulation exited _ cycle.final cycle.simulation cycle.statuses ready.persistent
-    (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2
+  refine ⟨certified, ?_, ?_, ?_⟩
+  · intro observed exited checkpoints executed
+    have ready := (certified.completed _ _ _ executed).2.2.1
+    exact simulation exited _ cycle.final cycle.simulation cycle.statuses ready.persistent
+      (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2
+  · intro stop interrupted
+    exact initialization.interrupted invariant admitted.1 admitted.2.1 interrupted
+  · intro observed exited checkpoints executed stop interrupted
+    have ready := (certified.completed _ _ _ executed).2.2.1
+    exact simulation.interrupted ready.persistent
+      (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2 interrupted
 
 structure Contract (model : Solve.FMI3Model source) (header : CFenv.Header) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
@@ -139,6 +159,8 @@ structure Contract (model : Solve.FMI3Model source) (header : CFenv.Header) (pro
     SourceTrace model header p buffers plan records ∧ Ready program objects retained owners original literals after p plan.mode ∧
     CReadOnly.Preserves heap after ∧ InitializationProtocol.Retains p heap after ∧
     (∀ q, CSRun.Protected objects buffers q → plan.Outside p access buffers q → after q = heap q)
+  interrupted : ∀ records stop, Interrupted program p access heap plan records stop →
+    SourceInterrupted model header p buffers plan records stop
 
 theorem CycleContract.progress
     (certified : CycleContract model header program objects retained owners original literals heap p access buffers cycle) :
@@ -179,6 +201,44 @@ theorem CycleContract.restarted
     fun q inside untouched outside => (StaticReset.record_frame after p q untouched.1).trans
       (frame q inside untouched outside)⟩
 
+/-- Source correspondence for every actual interrupted history, including
+prefixes in later cycles. The reset contract excludes a blocked reset outcome. -/
+theorem interrupted_correct
+    (initialization : InitializationCompiler model program objects retained owners original literals p access)
+    (simulation : SimulationCompiler model program header objects retained owners original literals p buffers)
+    (reset : StaticReset.ExecutionContract program)
+    (outputs : StepArguments.Storage original p buffers)
+    (guarded : InitializationProtocol.CSOutputsGuarded objects retained buffers)
+    (admitted : Admitted header objects retained original p access buffers plan)
+    (invariant : Invariant program objects retained owners original literals heap p .cs .reset)
+    (actual : Interrupted program p access heap plan records stop) :
+    SourceInterrupted model header p buffers plan records stop := by
+  induction admitted generalizing heap records stop with
+  | finish reference prepared _ =>
+    cases actual with
+    | finish interrupted => exact .finish (initialization.interrupted invariant reference prepared interrupted)
+  | last admitted =>
+    have certified := cycle_contract initialization simulation outputs guarded admitted invariant
+    cases actual with
+    | lastInitialization interrupted => exact .lastInitialization (certified.initializationStopped _ interrupted)
+    | lastSimulation initialized interrupted =>
+      obtain ⟨observations, checkpoints, _, _, _, _⟩ := certified.initialization.completed _ _ _ initialized
+      exact .lastSimulation ⟨observations, checkpoints⟩ (certified.simulationStopped _ _ _ initialized _ interrupted)
+  | next admitted _ ih =>
+    have certified := cycle_contract initialization simulation outputs guarded admitted invariant
+    cases actual with
+    | nextInitialization interrupted => exact .nextInitialization (certified.initializationStopped _ interrupted)
+    | nextSimulation initialized interrupted =>
+      obtain ⟨observations, checkpoints, _, _, _, _⟩ := certified.initialization.completed _ _ _ initialized
+      exact .nextSimulation ⟨observations, checkpoints⟩ (certified.simulationStopped _ _ _ initialized _ interrupted)
+    | reset initialized simulated blocked =>
+      obtain ⟨_, resetCall, _, _, _, _⟩ := certified.restarted reset guarded initialized simulated
+      cases (resetCall _).mp blocked
+    | later initialized simulated resetActual interrupted =>
+      obtain ⟨evidence, resetCall, resetInvariant, _, _, _⟩ := certified.restarted reset guarded initialized simulated
+      cases (resetCall _).mp resetActual
+      exact .later evidence (ih resetInvariant interrupted)
+
 /-- Induction over whole initialization/simulation cycles. All intermediate
 heaps, statuses, resource invariants and source observations are derived from
 actual executions, including every returning external-effect branch. -/
@@ -204,6 +264,8 @@ theorem correct
         obtain ⟨observations, ivps, ready, readonly, keeps, frame⟩ := certified.completed _ _ _ called
         exact ⟨.finish ⟨observations, ivps⟩, Ready.initialization ready finished, readonly, keeps,
           fun q inside outside => frame q (guarded.protects inside) outside⟩
+    · intro records stop interrupted
+      exact interrupted_correct initialization simulation reset outputs guarded (.finish reference prepared finished) invariant interrupted
   | last admitted =>
     have certified := cycle_contract initialization simulation outputs guarded admitted invariant
     constructor
@@ -218,7 +280,9 @@ theorem correct
         obtain ⟨evidence, stored, persistent, readonly, keeps, frame⟩ := certified.completed initialized simulated guarded
         exact ⟨.last evidence, Ready.simulation stored persistent (admitted.2.2.2.can_finish (Or.inl rfl)),
           readonly, keeps, fun q inside outside => frame q inside outside.1 outside.2⟩
-  | next admitted _ ih =>
+    · intro records stop interrupted
+      exact interrupted_correct initialization simulation reset outputs guarded (.last admitted) invariant interrupted
+  | next admitted following ih =>
     have certified := cycle_contract initialization simulation outputs guarded admitted invariant
     constructor
     · rcases certified.progress with ⟨initial, exited, checkpoints, statuses, events, after, calls, initialized, simulated⟩ |
@@ -239,6 +303,27 @@ theorem correct
         exact ⟨.next evidence sourceTrace, ready, readonly.trans laterReadonly,
           (fun name outside => (laterKeeps name outside).trans (keeps name outside)),
           fun q inside outside => (laterFrame q inside outside.2.2).trans (frame q inside outside.1 outside.2.1)⟩
+    · intro records stop interrupted
+      exact interrupted_correct initialization simulation reset outputs guarded (.next admitted following) invariant interrupted
+
+theorem Contract.stopped_source
+    (certified : Contract model header program objects retained owners original literals heap p access buffers plan)
+    (actual : Stopped program p access heap plan) :
+    ∃ records stop, Interrupted program p access heap plan records stop ∧
+      SourceInterrupted model header p buffers plan records stop := by
+  obtain ⟨records, stop, interrupted⟩ := actual.interrupted
+  exact ⟨records, stop, interrupted, certified.interrupted _ _ interrupted⟩
+
+/-- Progress carries source evidence for either outcome; blocking never
+turns a pending call into a successful numerical or initialization observation. -/
+theorem Contract.progress_source
+    (certified : Contract model header program objects retained owners original literals heap p access buffers plan) :
+    (∃ records after, Completed program p access heap plan records after ∧ SourceTrace model header p buffers plan records) ∨
+    (∃ records stop, Interrupted program p access heap plan records stop ∧
+      SourceInterrupted model header p buffers plan records stop) := by
+  rcases certified.progress with ⟨records, after, completed⟩ | stopped
+  · exact Or.inl ⟨records, after, completed, (certified.completed _ _ completed).1⟩
+  · exact Or.inr (certified.stopped_source stopped)
 
 /-- Every completed recurring history can terminate and release the original
 slot. The suffix has complete actual call contracts, not assumed successes. -/

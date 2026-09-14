@@ -76,6 +76,16 @@ theorem ActionContract.progress (certified : ActionContract program p heap actio
   · exact Or.inl ⟨events, after, outcome, certified.realizes outcome⟩
   · exact Or.inr ⟨blocked, certified.faulted_iff.mpr blocked⟩
 
+/-- A certified blocked action is a DoStep callback path. Complete restart
+contracts exclude stopping after only part of the three-call restart. -/
+theorem ActionContract.faulted_step
+    (certified : ActionContract program p heap action status returns blocked)
+    (actual : Faulted program p heap action) : ∃ request outputs, action = .step request outputs := by
+  have blocked := certified.faulted_iff.mp actual
+  cases certified with
+  | silent _ => exact False.elim blocked
+  | logged _ _ _ _ => exact ⟨_, _, rfl⟩
+
 /-- Every finite certified script has a completed execution or a prefix
 ending at a real blocked call. No callback totality assumption is needed. -/
 theorem LoggedTrace.progress

@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Source-bound CS call observations (2026-09-14):**
+**Source-bound CS completed and stopped observations (2026-09-14):**
 `CSProtocol.runtime_create_release` connects actual source-bound static creation,
 recurring initialization/simulation/reset segments and final release. Its
 completed source trace now retains every intermediate DoStep record and every
@@ -28,14 +28,31 @@ all three successful statuses and its initialization-exit source checkpoint.
 theorem carry these stronger conclusions with their original ownership,
 caller-storage and memory-frame guarantees.
 
-Raw stopped prefixes remain represented, but their unified source-prefix
-theorem is still open. ME's recurring composition, remaining public calls,
-native/concurrent correspondence and K02–K05 remain unfinished. This does not
-establish full CompCert-level coverage or permit grammar expansion.
+`CSProtocol.interrupted_correct` now proves source correspondence for every
+modeled stopped prefix of an admitted CS plan. Raw `Interrupted` views for
+initialization, simulation and recurring plans are equivalent to their existing
+`Stopped` relations. They retain actual completed observations and the pending
+call, with an explicit decomposition of the original script. Completed-prefix
+certificates supply initialization readbacks/checkpoints and each CS step's
+source sample, error bound and successful outputs. Earlier cycles retain their
+complete evidence. No later execution or callback return is assumed.
 
-Fifteen new and eleven affected roots passed the existing FMI/compiler package
-gate on 994 unchanged inputs in
-`build/c-factory/cs-call-records-package-v1.log`, with no unexpected axioms or
+The stop record's heap precedes the pending action; it is not a returned heap.
+No returned status, numerical output, exit checkpoint or release is attributed
+to that blocked action. `ActionContract.faulted_step` excludes partially
+completed internal restarts, and the reset call contract excludes a blocked
+between-cycle reset. These are conclusions about the existing C/effect model,
+not native callback termination or a native hang trace. The source-bound
+creation theorem now supplies this stronger `Contract`; `stopped_source` and
+`progress_source` expose its stopped and completed source alternatives.
+
+ME's recurring composition and stopped-source correspondence, remaining public
+calls, native/concurrent correspondence and K02–K05 remain unfinished. This
+does not establish full CompCert-level coverage or permit grammar expansion.
+
+Nineteen new and eight affected roots passed the existing FMI/compiler package
+gate on 998 unchanged inputs in
+`build/c-factory/stopped-source-package-v1.log`, with no unexpected axioms or
 warnings in new/changed modules. Publication subsequently changes only the
 three verification/roadmap documents. The admitted grammars, source/Solve/C
 machine semantics, emitters, mandatory artifact propositions and boundary tests
