@@ -1,3 +1,4 @@
+import RumocaFMI3.DerivativeEnvironment
 import RumocaFMI3.StateEnvironment
 import RumocaFMI3.CSRunStatus
 import RumocaFMI3.CSRunLoggedExecution
@@ -1256,3 +1257,13 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StateEnvironment.suppressed_correct
 #audit axioms Rumoca.FMI3.StateEnvironment.logged_correct
 #audit axioms Rumoca.FMI3.StateEnvironment.prepared_correct
+
+#audit axioms Rumoca.FMI3.ModelRhsRuntime.parameters_bound
+#audit axioms Rumoca.FMI3.ModelRhsRuntime.reaches
+#audit axioms Rumoca.FMI3.ModelRhsRuntime.behaviors
+#audit axioms Rumoca.FMI3.DerivativeEnvironment.body_agrees
+#audit axioms Rumoca.FMI3.DerivativeEnvironment.get_reaches
+#audit axioms Rumoca.FMI3.DerivativeEnvironment.quiet_correct
+#audit axioms Rumoca.FMI3.DerivativeEnvironment.suppressed_correct
+#audit axioms Rumoca.FMI3.DerivativeEnvironment.logged_correct
+#audit axioms Rumoca.FMI3.DerivativeEnvironment.prepared_correct

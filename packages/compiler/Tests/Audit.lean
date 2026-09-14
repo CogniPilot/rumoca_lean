@@ -1,3 +1,4 @@
+import Rumoca.FMI3MENumericalEnvironment
 import Rumoca.FMI3StateEnvironment
 import Rumoca.FMI3CSLoggedLifecycle
 import Rumoca.FMI3CSRunLogging
@@ -230,3 +231,6 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_create_logged_cs_release
 
 #audit axioms Rumoca.FMI3.adapter_state_environment
+
+#audit axioms Rumoca.FMI3.adapter_me_numerical_environment
+#audit axioms Rumoca.FMI3.runtime_derivative_source

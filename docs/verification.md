@@ -1,5 +1,33 @@
 # Exact verification contract
 
+**ME derivative runtime and source correspondence (2026-09-14):**
+`adapter_me_numerical_environment` supplies state getter/setter and derivative
+getter contracts from one actual table and literal pool. Their actual accessor
+and helper fragments and existing mandatory contracts are retained.
+`ModelRhsRuntime` proves the helper under explicit type/symbol bindings;
+`DerivativeEnvironment` follows public entry through `model_rhs`, the numerical
+C kernel, the caller output write and the returned status in the shared runtime.
+
+`runtime_derivative_source` connects actual source compilation, numerical C and
+derivative/state metadata to this call. It derives the returned finite value's
+equality to Solve's derivative, its equivalence to the source Real equation
+through the existing lowering theorems, and the output memory frame. No getter
+execution or post-call heap is an input premise. The current unit RHS is state
+independent; arbitrary host trial states do not establish an IVP trajectory.
+
+Null, lifecycle/access rejection and disabled, missing or enabled logger cases
+are retained. Later failures require preserved read-only diagnostics. The full
+enabled callback contract includes every modeled returning effect and its
+no-return alternative; native callback behavior is still an external boundary.
+
+All eleven added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-derivative-environment-package-v1.log` on 903 unchanged inputs.
+Only the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests retain the separate 869-input full artifact gate
+and archives; no new full-gate pass is claimed. ME control/state/derivative
+histories, creation/release composition for those histories and K02–K05 remain
+open. Grammar expansion is still blocked.
+
 **ME state-access runtime bridge (2026-09-14):**
 `adapter_state_environment` derives getter/setter contracts in the same explicit
 header/object/literal interface as creation and lifecycle histories. Both actual

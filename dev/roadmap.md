@@ -51,12 +51,23 @@ CS lifetime. Mixed accepted/rejected step and reset/reinitialization histories
 now compose with actual creation, initialization and mode-appropriate release
 under suppressed logging. Enabled-logging mixed histories now have a branching
 contract from actual creation/initialization through release for every completed
-C script, including proved observed-status agreement. State getter/setter contracts now also apply in the shared runtime on later
-literal-preserving heaps. Derivative query transport and ME numerical/history
-composition are next; the complete stage remains open.
+C script, including proved observed-status agreement. State access and
+derivative queries now share one runtime, actual table and literal pool;
+the returned derivative is connected to the source Real equation. ME
+numerical/control history composition is next; the complete stage remains open.
 Concurrent storage, whole-artifact correspondence and the standards/MISRA review
 remain required.
 These are substantial obligations, not a final build or a parser-only change.
+
+The ME derivative follow-up passed `lake build check-fmi3 check-compiler`
+in `build/c-factory/me-derivative-environment-package-v1.log` on 903 unchanged
+inputs. Eleven added roots compose actual helper/kernel execution with the
+public output/status, retain null/rejection/logging cases on later heaps, and
+connect the observed derivative to Solve and the source Real equation. One
+actual table and pool now supply both state-access and derivative-access
+contracts. Numerical C and derivative/state metadata remain bound to the same
+source artifact. Earlier semantics, emission, mandatory contracts and tests
+retain the separate 869-input full artifact gate; mixed ME histories remain open.
 
 The ME state-access follow-up passed `lake build check-fmi3 check-compiler`
 in `build/c-factory/me-state-environment-package-v1.log` with all 900 inputs
@@ -546,6 +557,11 @@ simulation or concurrent host histories.
   both actual fragments and pool to the original source/Solve product. The six
   added roots passed the 900-input FMI/compiler package gate; derivative query
   transport and history composition are separate remaining obligations.
+- [x] Derive the complete derivative getter in the shared runtime, including
+  actual helper/numerical C execution and all null/rejection/logging cases.
+  Supply state and derivative contracts from one actual table/pool and connect
+  the observed finite derivative to Solve, source equations and artifact
+  metadata. The eleven roots passed the 903-input FMI/compiler package gate.
 - [ ] Compose ME control histories with importer state updates, derivative
   queries and creation/initialization. Retain the numerical/source guarantee
   alongside all public observations and caller-protocol obligations.

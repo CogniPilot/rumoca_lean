@@ -37,6 +37,50 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### ME derivative queries and source equations: 2026-09-14
+
+This derived follow-up to `896ed51` supplies state-access and derivative-access
+contracts from one actual function table and literal pool. The public derivative
+getter follows the existing guard, actual `model_rhs`, numerical C kernel,
+output write and status return in the header/object/literal runtime used by
+creation and CS. The compiler consequence retains actual source compilation,
+numerical C and derivative/state metadata, and derives exact finite Solve
+agreement and the source Real equation through the existing IR theorems.
+
+Applicable pinned FMI 3.0.2 clauses remain
+[§2.3.3](https://fmi-standard.org/docs/3.0.2/#state-initialization-mode),
+[§2.3.5](https://fmi-standard.org/docs/3.0.2/#state-event-mode),
+[§2.3.8](https://fmi-standard.org/docs/3.0.2/#state-terminated),
+[§3.2.1](https://fmi-standard.org/docs/3.0.2/#fmi3GetContinuousStateDerivatives), and
+[§2.4.8](https://fmi-standard.org/docs/3.0.2/#model-structure).
+The immediately preceding focused review and the earlier derivative/state
+clause records are reused for unchanged policy. The getter returns the ordered
+continuous-state derivative; it does not advance a solver. The admitted unit
+RHS is finite and state independent, so no numerical failure branch is added.
+The bracketed Discard advice is not claimed as a generalized failure policy.
+Retrieval following Error remains diagnostic, and arbitrary importer trial
+states are not identified with a solution of the original IVP.
+
+Null and both independently classified rejection reasons retain their existing
+complete calls. Logging suppression covers a disabled flag or missing callback;
+enabled logging retains every modeled returning effect and the no-return case.
+Diagnostics on later heaps require the established read-only pool frame.
+Native callbacks, caller storage/ownership and header/ABI correspondence remain
+explicit boundaries. These call proofs do not close mixed ME histories.
+
+The shared helper proof reuses the existing numerical scheduler with explicit
+type and symbol bindings. No new source resolution, solver selection, shape
+inference, scalarization or DAE work enters the backend. Production grammar,
+source/initialization semantics, emitted C/GALEC/XML and archive behavior are
+unchanged. The pinned MLS/eFMI/MISRA baselines and open findings carry forward.
+
+The eleven new roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-derivative-environment-package-v1.log` on 903 unchanged inputs.
+Only the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests retain the separate 869-input full gate and
+archives in `build/c-factory/cs-contract-artifacts-v1/`. No new test suite or
+full-gate pass is claimed. **Stage decision: open; no grammar expansion.**
+
 ### ME state access in the shared runtime: 2026-09-14
 
 This derived follow-up to `a8e4d95` connects the existing complete state-access
