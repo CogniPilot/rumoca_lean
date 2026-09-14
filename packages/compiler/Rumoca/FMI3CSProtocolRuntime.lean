@@ -12,6 +12,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     (build : SourceBuildContract a c description adapter metadata) :
     compile input = .ok a ∧ Rumoca.ArtifactContract a c .internal ∧
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧ Float64SetMetadata.Contract a.parsed.ast metadata ∧
+    CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     (∀ state d, Source.Equation a.parsed.ast d ↔
       d a.parsed.ast.state = Binary64.value (ModelExchange.derivative a.solve state)) ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
@@ -67,9 +68,9 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (∀ q, CSRun.Protected objects buffers q → plan.Outside p access buffers q →
                   q ≠ AtomicSlots.address objects.flagsBlock slot →
                   LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q) := by
-  obtain ⟨compiled, numerical, numericMetadata, writableMetadata, equation, sigs, pool, made, printed, functions,
+  obtain ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, equation, sigs, pool, made, printed, functions,
     prepared, create⟩ := InitializationProtocol.runtime_create_release compiled build
-  refine ⟨compiled, numerical, numericMetadata, writableMetadata, equation, sigs, pool, made, printed, functions, ?_⟩
+  refine ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, equation, sigs, pool, made, printed, functions, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -87,7 +88,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have creationReadonly := termination_preserves ((creation _).mpr rfl)
   have invariant := InitializationProtocol.Invariant.created objects created preserved (literalFrame.trans creationReadonly) logging
   have initializeCalls := InitializationProtocol.execution_contract header objects a.solve.prepareFMI3 sigs pool
-    prepared.getter prepared.setter prepared.cs.toPreparedContract baseHeap firstBlock signed program actual retained
+    prepared.getter prepared.setter prepared.counts prepared.cs.toPreparedContract baseHeap firstBlock signed program actual retained
     (SlotOwners.update owners slot (some owner)) heap p access .cs resources
   have initialization : InitializationCompiler a.solve.prepareFMI3 program objects retained
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p access := by

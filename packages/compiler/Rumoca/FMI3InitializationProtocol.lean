@@ -1,5 +1,6 @@
 import RumocaFMI3.InitializationProtocolHistory
 import Rumoca.FMI3InitializationAccess
+import RumocaFMI3.CountMetadata
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
@@ -70,6 +71,7 @@ theorem runtime_source (compiled : compile input = .ok a)
     compile input = .ok a ∧ Rumoca.ArtifactContract a c .internal ∧
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧
     Float64SetMetadata.Contract a.parsed.ast metadata ∧
+    CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     (∀ state d, Source.Equation a.parsed.ast d ↔
       d a.parsed.ast.state = Binary64.value (ModelExchange.derivative a.solve state)) ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
@@ -90,23 +92,27 @@ theorem runtime_source (compiled : compile input = .ok a)
           (∀ action ∈ actions, action.Prepared objects retained original p buffers) →
           SourceContract a.solve.prepareFMI3 program objects retained owners original
             (pool.install baseHeap firstBlock signed) heap p buffers kind state final actions := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, _, _, getter, setter,
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, _, _, _, getter, setter,
     initialization, _, _, runtime, termination, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made
+  have countPrepared : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
+    letI : StaticLiterals := ⟨fun _ => none⟩
+    exact fun events => (queries inferInstance events).prepared pool made
   have lifecycle : LifecycleEnvironment.PreparedContract a.solve.prepareFMI3 sigs :=
     ⟨LiteralPreparation.function_bound _ sigs unique _ resetMember,
       by rw [← InitializationCalls.function_eq a.solve.prepareFMI3]; exact LiteralPreparation.function_bound _ sigs unique _ initialization.enterMember,
       LiteralPreparation.function_bound _ sigs unique _ initialization.exitMember,
       LiteralPreparation.function_bound _ sigs unique _ termination.member, runtime.release_defined⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
-    Float64SetMetadata.artifact_state _ _ build.metadata, derivative_value_source a.solve,
+    Float64SetMetadata.artifact_state _ _ build.metadata, CountMetadata.artifact_counts _ _ build.metadata,
+    derivative_value_source a.solve,
     sigs, pool, made, printed, functions, lifecycle, ?_⟩
   intro header objects baseHeap firstBlock signed
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program actual retained owners original heap p buffers kind state final actions resources invariant reference prepared
-  exact source_contract (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared lifecycle
+  exact source_contract (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared lifecycle
     baseHeap firstBlock signed program actual retained owners original p buffers kind resources) reference prepared invariant
 
 end Rumoca.FMI3.InitializationProtocol

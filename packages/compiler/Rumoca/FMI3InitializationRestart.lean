@@ -76,6 +76,7 @@ theorem runtime_restart_source (compiled : compile input = .ok a)
     (build : SourceBuildContract a c description adapter metadata) :
     compile input = .ok a ∧ Rumoca.ArtifactContract a c .internal ∧
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧ Float64SetMetadata.Contract a.parsed.ast metadata ∧
+    CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     (∀ state d, Source.Equation a.parsed.ast d ↔
       d a.parsed.ast.state = Binary64.value (ModelExchange.derivative a.solve state)) ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
@@ -98,9 +99,9 @@ theorem runtime_restart_source (compiled : compile input = .ok a)
           (∀ action ∈ actions, action.Prepared objects retained original p buffers) →
           RestartSourceContract a.solve.prepareFMI3 program objects retained owners original
             (pool.install baseHeap firstBlock signed) heap p buffers kind final actions := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, equation, sigs, pool, made, printed, functions, lifecycle, certify⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, counts, equation, sigs, pool, made, printed, functions, lifecycle, certify⟩ :=
     runtime_source compiled build
-  refine ⟨compiled, numerical, metadataVariables, writable, equation, sigs, pool, made, printed, functions, ?_⟩
+  refine ⟨compiled, numerical, metadataVariables, writable, counts, equation, sigs, pool, made, printed, functions, ?_⟩
   intro header objects baseHeap firstBlock signed
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program actual retained owners original heap p buffers kind mode final actions resources storage

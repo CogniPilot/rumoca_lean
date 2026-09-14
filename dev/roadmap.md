@@ -11,7 +11,22 @@ percentage of semantic coverage.
 
 ## Current position
 
-**Current work — count queries (full gate passed):** the shared-runtime
+**Count-initialization checkpoint (full gate passed):** both count queries
+are now actions in the existing initialization protocol. Original caller
+`size_t` storage supports later calls without future-heap assumptions.
+Successful and rejected call proofs preserve the model, reservation map,
+logger configuration and storage needed for recovery. The composed
+initialization, creation/release and recurring ME/CS source theorems compile
+with these observations and an explicit actual-XML count contract. The full
+gate passed at 21:05:03 UTC on 1012 unchanged inputs, including eight new and
+twelve affected roots. The ME simulation/control extension separately passes
+standalone Lean checking across 24 draft modules and 14 selected audit roots;
+package integration and its own artifact acceptance remain pending. Next,
+complete that integration, nominal-query coverage, logging configuration and
+metadata-matched optional/type-access paths.
+K02–K05 remain open; no new grammar case is admitted.
+
+**Previous count-query checkpoint (full gate passed):** the shared-runtime
 success, null, suppressed-logging and arbitrary modeled logger-outcome
 contracts are implemented and required by the actual adapter proposition.
 Source binding retains the same numerical C, XML, function table and literal
@@ -20,10 +35,8 @@ Initialization, Continuous-Time and Terminated. The policy and reference
 predicate now allow only ME Instantiated/Event Mode, with a core rejection
 theorem and corrected existing native checks. The required full artifact gate
 passed on 1009 unchanged inputs at 19:55:08 UTC, accepting the changed guards
-and stronger adapter contract. Next, integrate count observations into recurring
-histories, then address nominal-query runtime/history coverage, logging
-configuration and metadata-matched optional/type-access paths. K02–K05 remain
-open and no new grammar case is admitted.
+and stronger adapter contract. The history work above extends that checkpoint;
+the new history gate also checks the earlier repair and its dependencies.
 
 | Area | Current evidence | What remains |
 | --- | --- | --- |
@@ -53,17 +66,16 @@ at 19:48:16 UTC. The local count-query gate below also checks its dependencies.
 No new source case is admitted.
 
 Latest completed main-workspace gate:
-`build/c-factory/count-runtime-full-gate-v1.log`, passed at 19:55:08 UTC with
-all 1009 integration inputs unchanged. Nine new and ten affected audit roots
+`build/c-factory/count-history-full-gate-v2.log`, passed at 21:05:03 UTC with
+all 1012 integration inputs unchanged. Eight new and twelve affected audit roots
 passed without unexpected axioms or changed-module warnings. The mandatory
 actual-artifact checks, both FMU interfaces and eFMU checks passed. Only the
 three verification/roadmap documents change after that frozen gate. Retained
 archives and member comparisons are under
-`build/c-factory/count-runtime-artifacts-v1/` and adjacent JSON records. The
-FMU changes only the two count-query C guards and rebuilt shared library from
-the previous CS artifacts; the eFMU changes only generation identities and
-dependent references/checksums in three manifests. Numerical C, GALEC and eFMI
-Production C are unchanged.
+`build/c-factory/count-history-artifacts-v1/` and adjacent JSON records. Every
+FMU member is unchanged from the preceding count-runtime artifact; the eFMU
+changes only generation identities and dependent references/checksums in three
+manifests. Numerical C, GALEC and eFMI Production C are unchanged.
 
 Earlier main-workspace gate:
 `build/c-factory/cs-contract-full-gate-v1.log`, passed with all 869

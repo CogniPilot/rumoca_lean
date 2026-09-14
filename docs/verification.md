@@ -1,5 +1,44 @@
 # Exact verification contract
 
+**Count observations in initialization histories (2026-09-14, full gate passed):**
+The existing initialization protocol now includes both count queries. Successful
+observations report the prepared Solve state volume or zero event indicators;
+rejections use the existing mode/pointer priority, Error transition and logger
+contracts. The raw execution still admits arbitrary returned statuses, events
+and heaps. The call proofs derive the expected observations and recovery state.
+
+Caller `size_t` cells are supplied once in the original heap. Storage
+preservation carries their types and permissions through preceding calls,
+callbacks and resets. Successful writes preserve the model, initialization
+configuration and reservation map; rejected calls preserve the protected
+caller/instance region under the existing universal logger policy. Callback
+return and a valid future heap are not assumptions.
+
+The composed initialization, creation/release and recurring ME/CS source
+theorems now retain these initialization observations and explicitly bind the
+same Solve counts to actual XML metadata. This includes ME Instantiated and
+post-exit Event Mode observations, and rejected attempts in the other phases
+represented by initialization. The numerical C and both interfaces' runtime
+emitters are unchanged. The required
+`nix develop .#verification --command lake test` passed at 21:05:03 UTC on
+1012 unchanged inputs. Eight new and twelve affected audit roots passed with
+no unexpected axioms or changed-module warnings. Evidence is in
+`build/c-factory/count-history-full-gate-v2.log` and its JSON record; the earlier
+failed attempt is retained separately. Only the three verification/roadmap
+documents change after this frozen gate.
+
+Retained archives and comparisons are in
+`build/c-factory/count-history-artifacts-v1/` and adjacent JSON records. Every
+FMU member, including the native library, is unchanged from the prior retained
+count-runtime artifact. The eFMU changes only generation identities and their
+dependent references/checksums in three manifests. Numerical C, GALEC and
+eFMI Production C are unchanged.
+
+Counts interleaved with later ME simulation/control calls remain outside these
+histories. Nominal queries, logging configuration, remaining public calls,
+native/ABI correspondence and K02–K05 also remain open. Grammar expansion is
+blocked.
+
 **Count-query repair and shared runtime (2026-09-14, full gate passed):**
 The count queries now use the FMI 3.0.2 call-table restriction to ME
 Instantiated and Event Mode. The earlier predicate and emitted guard also

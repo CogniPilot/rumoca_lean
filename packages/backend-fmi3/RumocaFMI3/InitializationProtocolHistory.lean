@@ -1,4 +1,4 @@
-import RumocaFMI3.InitializationProtocolRejection
+import RumocaFMI3.InitializationProtocolCounts
 import RumocaFMI3.LifecycleEnvironment
 
 noncomputable section
@@ -18,6 +18,9 @@ def Action.Prepared (action : Action) (objects : Objects) (retained : Address �
   match action with
   | .access request => request.Fits buffers
   | .reject request => request.TransferStorage original ∧ RequestGuarded request objects retained ∧
+      ∀ q, p.InRecord q → request.Outside q
+  | .counts request => request.OutputStorage original ∧
+      request.Guarded (Float64Rejection.Protected objects retained) ∧
       ∀ q, p.InRecord q → request.Outside q
   | _ => True
 
@@ -60,6 +63,7 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
     (pool : Pool (LiteralPreparation.excluded ++ (LiteralPreparation.functions model sigs).flatMap functionNames))
     (getter : Float64Environment.PreparedContract model sigs pool)
     (setter : Float64SetEnvironment.PreparedContract model sigs pool)
+    (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -87,6 +91,20 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
     exact rejection_call request header objects model sigs pool getter setter baseHeap firstBlock signed
       program actual heap p buffers kind state owners retained invariant.readonly invariant.stored
       (invariant.caller.request request inputs guarded) separate allowed resources.inPool invariant.ownership invariant.logging
+  | counts request =>
+    obtain ⟨inputs, guarded, separate⟩ := prepared
+    have later := CountAccess.Request.OutputStorage.preserved request inputs invariant.caller guarded
+    cases request with
+    | get events buffer =>
+      obtain ⟨old, storage⟩ := later
+      exact count_get_call model program events
+        ((counts events).quiet header Invocation objects firstBlock program actual)
+        invariant.stored invariant.ownership buffer old storage
+        (fun inside => separate buffer inside rfl) allowed
+    | reject events missing buffer =>
+      exact count_rejection_call events missing buffer header objects model sigs pool (counts events)
+        baseHeap firstBlock signed program actual heap p buffers kind state owners retained
+        invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging
   | enter args => exact enter_call model program initialization invariant.stored invariant.ownership args allowed
   | exit => exact exit_call model program initialization invariant.stored invariant.ownership allowed
   | reset => exact reset_call model program reset invariant.stored invariant.ownership

@@ -37,6 +37,45 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Count observations through initialization/recovery: 2026-09-14
+
+This follow-up reuses the SR09 call-state repair below. FMI 3.0.2 §§2.3.2 and
+2.3.5 permit ME count queries in Instantiated and Event Mode, including the
+mode reached by initialization exit. Other represented phases and CS reject
+them. The history uses the reviewed §2.3.1 Error/termination/reset and logging
+policy. A missing output is rejected only after the lifecycle guard permits
+the call. Failed outputs contribute no count observation.
+
+The new actions extend the existing raw initialization relation and source
+theorems; they do not introduce another C execution model. Count outputs are
+caller `size_t` cells, distinct from numerical buffers. Original storage and
+the existing protected-region logger policy supply every later storage
+precondition. Complete prepared count contracts derive successful outputs,
+Error states, returning logger branches and the modeled blocked alternative.
+Recurring completed and stopped initialization observations survive later
+resets. The same source-bound creation/release and recurring ME/CS theorems
+now include the actual XML count contract. Solve remains the owner of counts;
+the FMI layer performs no source/DAE lowering or shape inference.
+
+The source/GALEC grammars, numerical semantics, C machine, emitted functions,
+metadata and mandatory artifact propositions are unchanged. Pinned MLS 3.7
+and eFMI 1.0.0 Beta 1 evidence and open shared-initialization/coding-guideline
+findings carry forward. The required full gate passed at 21:05:03 UTC on 1012
+unchanged inputs in `build/c-factory/count-history-full-gate-v2.log`, including
+eight new and twelve affected audit roots without unexpected axioms or
+changed-module warnings. Retained FMU/eFMU archives and comparisons are in
+`build/c-factory/count-history-artifacts-v1/` and adjacent JSON records. Every
+FMU member is unchanged; eFMU differences are confined to generation identities
+and dependent references/checksums in three manifests. Only the three
+verification/roadmap documents change after the frozen gate.
+
+Interleaving counts with later ME control/simulation calls has independently
+checked drafts, but is not yet accepted by its owning packages and artifact
+gate. Native callback behavior, ABI/concurrency correspondence and the remaining
+public-call inventory are not established.
+**Stage decision: initialization-count extension accepted; K02–K05 and other
+open compliance findings continue to block grammar expansion.**
+
 ### Count-query call states and shared runtime: 2026-09-14
 
 **Finding SR09 — call-state repair accepted:** the count-query policy

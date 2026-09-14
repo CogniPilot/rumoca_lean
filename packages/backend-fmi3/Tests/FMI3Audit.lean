@@ -226,6 +226,11 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CountEnvironment.suppressed_correct
 #audit axioms Rumoca.FMI3.CountEnvironment.logged_correct
 #audit axioms Rumoca.FMI3.CountEnvironment.prepared_correct
+#audit axioms Rumoca.FMI3.CountQueries.written_store
+#audit axioms Rumoca.FMI3.CountQueries.written_memory
+#audit axioms Rumoca.FMI3.CountQueries.failed_memory
+#audit axioms Rumoca.FMI3.CountAccess.Request.OutputStorage.preserved
+#audit axioms Rumoca.FMI3.CountAccess.request_coverage
 #audit axioms Rumoca.FMI3.CountMetadata.described_counts
 #audit axioms Rumoca.FMI3.CountMetadata.artifact_counts
 #audit axioms Rumoca.FMI3.ErrorCalls.failure_after_prefix
@@ -1577,6 +1582,9 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.framed
 #audit axioms Rumoca.FMI3.InitializationProtocol.Result.rejection
 #audit axioms Rumoca.FMI3.InitializationProtocol.rejection_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.count_get_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.Result.count_rejected
+#audit axioms Rumoca.FMI3.InitializationProtocol.count_rejection_call
 #audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.initial
 #audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.advance
 #audit axioms Rumoca.FMI3.InitializationProtocol.execution_contract
