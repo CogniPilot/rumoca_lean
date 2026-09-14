@@ -1,5 +1,38 @@
 # Exact verification contract
 
+**Accepted initialization access histories (2026-09-14):**
+`InitializationAccess.runtime_source` binds accepted batched Float64 histories
+to actual source compilation, numerical C, XML reference/writable-state metadata,
+function-section tokenization and one prepared runtime table/pool. Both ME and CS
+are covered. Original typed instance/caller storage, disjoint buffer blocks,
+representable request counts and admissible initialization arguments are explicit.
+
+Before initialization entry, histories admit state start-value reads and finite
+state writes. During initialization, queries may mix/repeat time, state and
+derivative references. Typed host stores construct each reference/value buffer;
+later contents or successful target executions are not premises. Empty batches
+are included. Shapes describe host access batches without admitting tensor source
+models or enumerating source operations during lowering.
+
+`Float64Access.Calls.execution_iff` and
+`InitializationAccess.Certificate.execution_iff` prove existence and uniqueness
+of the completed raw script, including every returned event, status and bounded
+readback. Each constituent call also retains its all-behavior contract.
+`Certificate.completed_source` proves that the actual exit state selects a unique
+source Real IVP. Finite writes before and during initialization determine that
+state; the proof does not reuse the earlier contiguous entry/exit heap. Clock
+storage, caller storage, read-only diagnostics and memory outside the written
+ranges/fields persist. The certificate retains exact named fields before entry
+and at exit, including stop-time and instance-metadata evidence for later histories.
+
+All 41 roots passed `lake build check-fmi3 check-compiler` on 942 unchanged
+inputs in `build/c-factory/initialization-access-package-v2.log`. Only the three
+status documents changed afterward. Existing semantics, emission, mandatory
+contracts and tests retain the separate 869-input full artifact gate; no new
+full-gate pass is claimed. Actual creation, rejected accesses/logging/recovery,
+later simulation/release and K02–K05 still need composition/closure. No grammar
+case or test suite was added, and grammar expansion remains blocked.
+
 **Initialization-history prerequisites (2026-09-14):**
 `InitializationEnvironment.quiet_correct` supplies the existing successful/null
 entry and exit contract in the shared runtime. Exit applies independently to

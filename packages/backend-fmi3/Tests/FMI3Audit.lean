@@ -1,3 +1,4 @@
+import RumocaFMI3.InitializationAccess
 import RumocaFMI3.InitializationRuntime
 import RumocaFMI3.Float64Environment
 import RumocaFMI3.Float64SetEnvironment
@@ -1400,3 +1401,42 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Float64Environment.prepared_correct
 
 #audit axioms Rumoca.FMI3.InitializationEnvironment.quiet_correct
+
+#audit axioms Rumoca.FMI3.Float64Buffers.Stored.preserved
+#audit axioms Rumoca.FMI3.Float64Buffers.different_blocks
+#audit axioms Rumoca.FMI3.Float64Buffers.reference_converts
+#audit axioms Rumoca.FMI3.Float64Buffers.references_run
+#audit axioms Rumoca.FMI3.Float64Buffers.references_read
+#audit axioms Rumoca.FMI3.Float64Buffers.references_frame
+#audit axioms Rumoca.FMI3.Float64Buffers.references_preserve
+#audit axioms Rumoca.FMI3.Float64Buffers.finite_written
+#audit axioms Rumoca.FMI3.Float64Buffers.values_run
+#audit axioms Rumoca.FMI3.Float64Buffers.values_preserve
+#audit axioms Rumoca.FMI3.Float64Access.Instance.mode_loaded
+#audit axioms Rumoca.FMI3.Float64Access.Instance.represented
+#audit axioms Rumoca.FMI3.Float64Access.instance_outside
+#audit axioms Rumoca.FMI3.Float64Access.Instance.changed
+#audit axioms Rumoca.FMI3.Float64Access.Request.prepare_frame
+#audit axioms Rumoca.FMI3.Float64Access.Request.prepare_correct
+#audit axioms Rumoca.FMI3.Float64Access.Request.prepared_instance
+#audit axioms Rumoca.FMI3.Float64Access.Request.prepared_references
+#audit axioms Rumoca.FMI3.Float64Access.Request.volume
+#audit axioms Rumoca.FMI3.Float64Access.Request.after_frame
+#audit axioms Rumoca.FMI3.Float64Access.assigned_final
+#audit axioms Rumoca.FMI3.Float64Access.assigned_correct
+#audit axioms Rumoca.FMI3.Float64Access.step
+#audit axioms Rumoca.FMI3.Float64Access.Request.readback_correct
+#audit axioms Rumoca.FMI3.Float64Access.trace
+#audit axioms Rumoca.FMI3.Float64Access.Calls.executes
+#audit axioms Rumoca.FMI3.Float64Access.Calls.determines
+#audit axioms Rumoca.FMI3.Float64Access.Calls.execution_iff
+#audit axioms Rumoca.FMI3.InitializationAccess.start_allowed
+#audit axioms Rumoca.FMI3.InitializationAccess.entry_storage
+#audit axioms Rumoca.FMI3.InitializationAccess.entered_instance
+#audit axioms Rumoca.FMI3.InitializationAccess.entered_buffers
+#audit axioms Rumoca.FMI3.InitializationAccess.exited_instance
+#audit axioms Rumoca.FMI3.InitializationAccess.exited_buffers
+#audit axioms Rumoca.FMI3.InitializationAccess.initialization_history
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.executes
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.determines
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.execution_iff

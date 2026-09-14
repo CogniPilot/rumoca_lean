@@ -37,6 +37,37 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Accepted initialization access histories: 2026-09-14
+
+This derived-proof increment preserves source admission, runtime policy, emitted
+members and mandatory artifact propositions. It composes existing Float64 and
+initialization behavior in the same actual compiled adapter/table/pool and binds
+the selected source IVP to the actual state at exit for both ME and CS.
+
+| Focused FMI 3.0.2 clauses | Evidence and remaining boundary |
+| --- | --- |
+| [§2.2.7.2](https://fmi-standard.org/docs/3.0.2/), variable access | Arbitrary represented scalar-reference batches, including empty/mixed/repeated reads and ordered finite state writes, use typed original caller storage. Shapes belong to access batches; no array source profile is admitted. |
+| [§§2.3.2–2.3.3](https://fmi-standard.org/docs/3.0.2/), initialization | Before entry, reads select the state start value; time/equation queries are admitted during initialization. Intervening writes determine the finite state used at actual exit. Entry/exit and all intermediate access calls are constructed, with a unique source Real IVP and retained clock storage. |
+| [§§2.2.4 and 2.4.7](https://fmi-standard.org/docs/3.0.2/), status and metadata | Actual raw events/statuses/readback are determined by the certificate, rather than assumed in the execution relation. Numeric references and writable-state metadata remain tied to the compiled source. Rejected accesses and their logging/recovery composition remain open. |
+
+The history theorem begins with an original valid instance and disjoint caller
+buffers. Creation must establish these premises before the next composed lifetime
+claim. The proof frames other cells outside the precise buffer ranges and changed
+initialization/state fields, but does not establish native layout, pointer/ABI,
+concurrency or whole-standard correspondence. Later simulation and release must
+use the newly selected IVP rather than the pre-override seed.
+
+The final certificate also retains exact named-field equality before entry
+and at exit. This carries stop-time settings and instance metadata into later
+simulation/lifetime proofs without assuming their values in a future heap.
+
+All 41 roots passed the FMI/compiler package gate on 942 unchanged inputs in
+`build/c-factory/initialization-access-package-v2.log`; the axiom whitelist and
+earlier roots are unchanged. The separate 869-input full gate retains evidence
+for unchanged semantics, emission, mandatory contracts and tests. No new full-gate
+pass is claimed. MLS 3.7, eFMI Beta 1, MISRA and K02–K05 findings carry forward.
+**Stage decision: open; no grammar expansion.**
+
 ### Initialization exit and caller-buffer preparation: 2026-09-14
 
 This derived-proof increment changes no source admission, runtime policy,

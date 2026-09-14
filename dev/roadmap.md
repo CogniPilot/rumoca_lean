@@ -15,7 +15,7 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Created CS and ME mixed histories now compose initialization, represented successful/rejected operations, modeled logging, reset/reinitialization and release. The ME theorem derives raw statuses, source derivative observations and initialization checkpoints, restoring original owners under the universal callback frame. | Cover Float64 access during initialization, remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Created CS and ME mixed histories now compose initialization, represented successful/rejected operations, modeled logging, reset/reinitialization and release. The ME theorem derives raw statuses, source derivative observations and initialization checkpoints, restoring original owners under the universal callback frame. | Compose creation, errors/recovery and later simulation with the accepted Float64 initialization histories; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
@@ -57,20 +57,30 @@ Both restore original ownership within their stated contracts.
 Both Float64 accessors now have artifact-bound contracts in the same runtime,
 retaining represented batches, mixed/repeated read references, exact finite
 readback/state writes, empty/null calls, rejection and modeled logging behavior.
-The next proof work is initialization-history composition, then remaining public
-calls. Derive the source IVP from the actual state at initialization exit,
-including intervening host writes and queries; separate pre-entry start-value
-reads from initialization equation evaluation. The shared runtime now has an
-independent initialization-exit contract, and generic typed caller-buffer writes
-have exact-readback and storage-preservation proofs. Compose these prerequisites
-with the accessors to derive the current heap and source IVP at exit. No later
-heap or successful call may substitute for that proof.
+Accepted Float64 histories now compose with initialization entry and exit.
+Original typed storage supplies every later request buffer and heap. Pre-entry
+queries concern state start values; initialization queries evaluate time/state/
+derivative values. Actual script observations and the unique source IVP at exit
+are derived, including intervening writes. The next work is to compose this
+history with actual creation, then rejected accesses/logging/recovery and the
+existing simulation/release histories. Remaining public calls still need coverage.
+No later heap or successful call may substitute for those composition proofs.
 Concurrent instance ownership and the transitive no-heap
 policy, complete source-to-artifact/provenance and C-profile correspondence,
 and standards/MISRA closure remain required. The final release also requires
 independent review and the complete artifact gate at that revision. These are
 substantial obligations; there is no defensible coverage percentage or short
 completion estimate from the number of audited roots.
+
+The 41 accepted initialization-access roots passed
+`lake build check-fmi3 check-compiler` on 942 unchanged inputs in
+`build/c-factory/initialization-access-package-v2.log`. The source theorem binds
+both accessors and initialization to the same actual table/pool and metadata,
+constructs execution, and determines every completed script's observations and
+source IVP. Original valid instance/storage remain premises. This derived-proof
+checkpoint retains the separate 869-input full-gate evidence for unchanged
+semantics, emission, mandatory contracts and tests; no new full-gate pass or
+K02–K05 closure is claimed.
 
 The six initialization/buffer prerequisite roots passed
 `lake build check-c check-fmi3 check-compiler` on 937 unchanged inputs in
@@ -600,8 +610,10 @@ next task. Any reusable storage/frame draft is only a prerequisite.
 The accepted mixed ME numerical/reset lifetime passed the 919-input FMI/compiler
 gate, followed by rejection/recovery on 923, mixed histories on 927 and their
 actual creation/release composition on 930 inputs. One actual table/pool supplies
-the numerical, rejection, logging and recovery calls. Float64 access during
-initialization and remaining public interactions still need composition.
+the numerical, rejection, logging and recovery calls. Accepted Float64 initialization
+histories now have separate source-bound composition from original valid
+instance/storage. Their creation, rejection/recovery and later simulation/release
+composition, plus remaining public interactions, are still required.
 No emitter or mandatory contract changed, and no new full-gate pass is claimed.
 
 **State:** partial; substantial body and helper proofs can be reused.
@@ -630,6 +642,14 @@ simulation or concurrent host histories.
   output frames, empty/null calls, existing rejections and modeled logging.
   The nine roots passed the 935-input FMI/compiler package gate; initialization
   histories still need their actual post-access exit and source IVP proof.
+- [x] Compose accepted batched Float64 reads/writes before and during
+  initialization, deriving original-to-current buffers, complete calls,
+  readback and the unique source IVP at actual exit. The 41 roots passed the
+  942-input FMI/compiler package gate. Exact compiled source/numerical C/XML/
+  adapter table/pool supply the contracts; raw script execution is constructed
+  and every completed script has the expected observations. This still assumes
+  original valid instance/caller storage. Compose actual creation and rejected
+  accesses/logging/recovery with these histories before closing K03.
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.
