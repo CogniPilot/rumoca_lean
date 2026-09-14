@@ -37,6 +37,39 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Initialization access followed by mixed CS execution: 2026-09-14
+
+This derived-proof increment retains the same EBNF, source profile, runtime
+policy, metadata, emitted members and mandatory artifact propositions. The
+existing MLS 3.7 initialization/Solve semantics and eFMI Beta 1 evidence are
+unchanged; their open cross-standard findings remain open.
+
+The FMI 3.0.2 correspondence now connects accepted initialization accesses
+(§2.2.7.2 and §§2.3.2–2.3.3) to the existing CS step/reset/error histories.
+The selected post-write state becomes the run seed. The prior status, callback
+and reset/release review (§§2.2.1, 2.2.4 and 2.3.1) applies to unchanged policy.
+Suppressed and callback-enabled histories share the actual source, prepared
+table/pool and original storage. Completed scripts derive status equality,
+source samples with the existing numerical/clock error bound, and release of
+the original ownership. Successful per-call outputs remain in the reused trace
+certificates. A callback return is not assumed; the universal external frame
+and modeled blocked alternative remain explicit.
+
+Later reset/reinitialization still uses the existing contiguous three-call
+protocol and Solve default. Initialization-access rejection/recovery, ME
+continuation, accesses during later restarts and other public interactions
+remain open. No native callback/ABI, concurrent ownership, whole FMI/eFMI or
+MISRA conclusion follows from this composition.
+
+The ten new roots and strengthened creation root passed the FMI/compiler
+package gate on 951 unchanged inputs in
+`build/c-factory/initialization-cs-run-package-v1.log`. The axiom whitelist is
+unchanged. Existing semantics, emission, mandatory artifact propositions and
+boundary tests retain the earlier 869-input local full gate. GitHub run
+`34842923078` passed the full gate for `9186829`; it is a distinct revision.
+No new full-gate pass is claimed for these additions. K02–K05 remain open.
+**Stage decision: no grammar expansion.**
+
 ### Creation, initialization accesses and release: 2026-09-14
 
 This is a derived-proof continuation of the same unit-stage profile. No EBNF,

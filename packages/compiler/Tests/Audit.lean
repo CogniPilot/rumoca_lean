@@ -1,3 +1,4 @@
+import Rumoca.FMI3InitializationCSRun
 import Rumoca.FMI3CreatedInitializationAccess
 import Rumoca.FMI3InitializationAccess
 import Rumoca.FMI3Float64Environment
@@ -274,3 +275,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.InitializationAccess.runtime_source
 
 #audit axioms Rumoca.FMI3.InitializationAccess.runtime_create_release
+
+#audit axioms Rumoca.FMI3.InitializationAccess.RunOutcome.restored
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.cs_continuation
+#audit axioms Rumoca.FMI3.InitializationAccess.runtime_create_cs_histories

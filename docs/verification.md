@@ -1,5 +1,42 @@
 # Exact verification contract
 
+**Initialization access through mixed CS execution (2026-09-14):**
+`InitializationAccess.runtime_create_cs_histories` connects actual source-bound
+creation and accepted initialization accesses to the existing mixed CS histories.
+Both suppressed logging (disabled or missing logger) and callback-enabled
+histories are covered. The source theorem retains numerical C, XML reference and
+writable-state metadata, function printing, one prepared table/pool and original
+storage/ownership. The earlier creation theorem now also exposes its storage
+frame and common prepared stepping/lifecycle context for reuse.
+
+The actual initialized state supplies the initial run seed. Recovery storage,
+logger configuration, clock, stop bound, literals and ownership are derived at
+the handoff. Successful/rejected steps and reset/reinitialization then reuse
+`CSRun.ReferenceTrace`, `Calls`, `LoggedTrace` and `Completed`; no parallel
+simulation relation or new runtime policy was introduced. Later reset still
+selects the Solve default and performs contiguous reset/enter/exit calls.
+
+For suppressed logging the theorem constructs a completed script and proves
+its raw status list, empty event list and final heap. For enabled callbacks it
+retains every modeled returning branch and the existing blocked alternative;
+no callback return is presumed. Every completed history retains a readable
+finite numerical sample, the source epoch and existing numerical/clock error
+bound. Mode-appropriate release and `RunOutcome.restored` restore the original
+owner map. The combined frame reaches the pre-creation heap for protected
+cells outside the instance, initialization-access ranges and step outputs.
+Private logger memory is governed by the explicit external frame contract.
+
+Ten new roots and the strengthened creation root passed
+`lake build check-fmi3 check-compiler` on 951 unchanged inputs in
+`build/c-factory/initialization-cs-run-package-v1.log`. Existing semantics,
+emission, mandatory artifact contracts and boundary tests are unchanged;
+their separate 869-input local full gate is retained. GitHub run `34842923078`
+also passed the full gate for `9186829`, a distinct earlier revision. Neither
+result is a new full-gate pass for these additions. No grammar or test suite
+was added. Rejected initialization accesses, ME continuation, interleaved
+accesses at later restarts and other public interactions remain open, alongside
+K02–K05 and native/concurrent/standards correspondence. Grammar remains frozen.
+
 **Creation through initialization access and release (2026-09-14):**
 `InitializationAccess.runtime_create_release` now derives the original handle,
 finite Solve default and access-history storage from the actual source-bound

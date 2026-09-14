@@ -2,6 +2,7 @@ import Rumoca.FMI3InitializationAccess
 import Rumoca.FMI3StaticLifecycle
 import RumocaFMI3.FactoryEnvironment
 import RumocaFMI3.InitializationAccessStorage
+import RumocaFMI3.CSRunEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationAccess
@@ -22,6 +23,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
+      CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (E : Type) (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -52,6 +54,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
             slot owner kind factoryArgs.environment factoryArgs.logger factoryArgs.logging ∧
           load live (StateProofs.stateAddress p) = some (.finite initial) ∧
           Binary64.value initial = (a.solve.initial.initial : ℝ) ∧
+          CStorage.Preserves heap live ∧
+          (∀ q, ¬ p.InRecord q → q ≠ AtomicSlots.address objects.flagsBlock slot → live q = heap q) ∧
           (∀ behavior, (machine program).Behaves
             (.calling (FactoryArguments.signature kind).name (FactoryArguments.arguments kind factoryArgs) heap .done) behavior ↔
             behavior = .terminates (trace.map tag) ⟨.pointer (some p), live⟩) ∧
@@ -80,13 +84,18 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization)) owners ∧
               (∀ q, ¬ p.InRecord q → Outside buffers q → q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization) q = heap q) := by
-  obtain ⟨sigs, unique, _, printed, _, functions, _, _, _, ready, _, _, _, _, _, _, getter, setter,
-    initialization, _, factories, runtime, termination, _⟩ := build.adapter
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, _, _, getter, setter,
+    initialization, _, factories, runtime, termination, _, _, _, _, step⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made
+  have runPrepared : CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
+    ⟨step.prepared pool made, LiteralPreparation.function_bound _ sigs unique _ resetMember,
+      by rw [← InitializationCalls.function_eq a.solve.prepareFMI3]; exact LiteralPreparation.function_bound _ sigs unique _ initialization.enterMember,
+      LiteralPreparation.function_bound _ sigs unique _ initialization.exitMember,
+      LiteralPreparation.function_bound _ sigs unique _ termination.member, runtime.release_defined⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
-    Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, ?_⟩
+    Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, runPrepared, ?_⟩
   intro E header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -120,7 +129,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     exact LiteralPreparation.function_bound _ sigs unique _ termination.member
   have finish := TerminationEnvironment.release_correct header objects literals program tag terminateQuiet releaseBindings
   obtain ⟨initial, loaded, agreement, _, _⟩ := created.source_default a 0
-  refine ⟨trace, slot, live, initial, work, reserved, created, loaded, agreement, creation, ?_⟩
+  refine ⟨trace, slot, live, initial, work, reserved, created, loaded, agreement, preserved, createdFrame, creation, ?_⟩
   intro buffers args before during buffersStored buffersSeparate admissible beforeFits beforeAllowed duringFits duringAllowed
   obtain ⟨beforeEntry, atExit, certified⟩ := initialization_history program
     (InitializationEnvironment.quiet_correct header objects literals a.solve.prepareFMI3 program enterDefined exitDefined)
