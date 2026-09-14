@@ -1495,6 +1495,17 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.retains
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.cs_run_storage
 #audit axioms Rumoca.FMI3.CSRun.Executed.performed
+#audit axioms Rumoca.FMI3.CSRun.RecordedAction.performed
+#audit axioms Rumoca.FMI3.CSRun.Performed.records
+#audit axioms Rumoca.FMI3.CSRun.Recorded.completed
+#audit axioms Rumoca.FMI3.CSRun.Completed.records
+#audit axioms Rumoca.FMI3.CSRun.recorded_iff
+#audit axioms Rumoca.FMI3.CSRun.RecordedAction.length
+#audit axioms Rumoca.FMI3.CSRun.Recorded.length
+#audit axioms Rumoca.FMI3.CSRun.SemanticAction.change
+#audit axioms Rumoca.FMI3.CSRun.SemanticTrace.reference
+#audit axioms Rumoca.FMI3.CSRun.Executed.recorded_correct
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.recorded_correct
 #audit axioms Rumoca.FMI3.CSRun.Calls.executes
 #audit axioms Rumoca.FMI3.CSRun.Calls.determines
 

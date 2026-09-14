@@ -150,7 +150,7 @@ theorem adapter_create_logged_cs_release (contract : AdapterContract a adapter) 
         (CCalls.Events.termination_preserves ((exited _).mpr rfl))))
   have actualTrace := admitted.rehandle p
   have ownersAfterInit := StaticInitialization.exited_owners objects live slot initArgs .cs _ created.represented
-  have certified := CSRun.logged_trace_correct header objects a.solve.prepareFMI3 signatures pool
+  obtain ⟨certified, _⟩ := CSRun.logged_trace_correct header objects a.solve.prepareFMI3 signatures pool
     (step.prepared pool made) before firstBlock signed p buffers rfl program range logger actual rounding floorBound
       callbackBound policy reset enterDefined exitDefined initialHeap _ final actions statuses
       (SlotOwners.update owners slot (some owner)) initialLiterals initialStored initialLogging ownersAfterInit actualTrace

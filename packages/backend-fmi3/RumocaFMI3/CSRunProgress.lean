@@ -4,40 +4,6 @@ noncomputable section
 namespace Rumoca.FMI3.CSRun
 open CMemory StaticFactory CCalls.Events
 
-/-- An actual blocked call, retaining any completed calls within a restart.
-No reference status, heap invariant or callback-return premise occurs here. -/
-inductive Faulted [CInterface] (program : Program Invocation) (p : Address) : Heap → Action → Prop where
-  | step : (machine program).Behaves
-      (.calling StepEntry.signature.name
-        (StepEntry.arguments (some p) request.point request.step request.flag outputs) heap .done) (.wrong []) →
-      Faulted program p heap (.step request outputs)
-  | reset : (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] heap .done) (.wrong []) →
-      Faulted program p heap (.restart args)
-  | enter :
-      (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] heap .done)
-        (.terminates events ⟨status, resetHeap⟩) →
-      (machine program).Behaves
-        (.calling InitializationCalls.signature.name
-          (InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args)) resetHeap .done) (.wrong []) →
-      Faulted program p heap (.restart args)
-  | exit :
-      (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] heap .done)
-        (.terminates resetEvents ⟨resetStatus, resetHeap⟩) →
-      (machine program).Behaves
-        (.calling InitializationCalls.signature.name
-          (InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args)) resetHeap .done)
-        (.terminates enterEvents ⟨enterStatus, enteredHeap⟩) →
-      (machine program).Behaves
-        (.calling InitializationExit.signature.name (InitializationExit.arguments (some p)) enteredHeap .done) (.wrong []) →
-      Faulted program p heap (.restart args)
-
-/-- A finite host script can stop at a real call after an actual returned
-prefix. This relation does not assume that an external logger returns. -/
-inductive Stopped [CInterface] (program : Program Invocation) (p : Address) : Heap → List Action → Prop where
-  | here : Faulted program p heap action → Stopped program p heap (action :: rest)
-  | later : Performed program p heap action status events middle →
-      Stopped program p middle rest → Stopped program p heap (action :: rest)
-
 variable [CInterface] {program : Program Invocation}
 
 theorem ActionContract.realizes (certified : ActionContract program p heap action status returns blocked)

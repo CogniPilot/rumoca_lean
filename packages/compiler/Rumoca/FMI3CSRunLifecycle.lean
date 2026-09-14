@@ -143,7 +143,7 @@ theorem adapter_create_cs_run_release (contract : AdapterContract a adapter) :
       ((CCalls.Events.termination_preserves ((entered _).mpr rfl)).trans
         (CCalls.Events.termination_preserves ((exited _).mpr rfl))))
   have actualTrace := admitted.rehandle p
-  obtain ⟨after, calls, finalStored, retained, _, atomic, runFrame⟩ := CSRun.trace_framed header objects a.solve.prepareFMI3 signatures pool
+  obtain ⟨after, calls, finalStored, retained, _, atomic, runFrame, _⟩ := CSRun.trace_framed header objects a.solve.prepareFMI3 signatures pool
     (step.prepared pool made) before firstBlock signed p buffers program range actual rounding floorBound reset
       enterDefined exitDefined initialHeap _ final actions statuses initialLiterals initialStored initialQuiet actualTrace
   have ownersAfterInit := StaticInitialization.exited_owners objects live slot initArgs .cs _ created.represented

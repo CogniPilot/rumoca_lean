@@ -241,6 +241,10 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.CSRun.SourceEpoch.unique
 #audit axioms Rumoca.FMI3.CSRun.source_epoch
 #audit axioms Rumoca.FMI3.CSRun.Stored.source_observation
+#audit axioms Rumoca.FMI3.CSRun.Stored.source_sample
+#audit axioms Rumoca.FMI3.CSRun.Stored.restart_source_checkpoint
+#audit axioms Rumoca.FMI3.CSRun.SemanticAction.source_observations
+#audit axioms Rumoca.FMI3.CSRun.SemanticTrace.source_observations
 #audit axioms Rumoca.FMI3.adapter_cs_run_history
 
 #audit axioms Rumoca.FMI3.adapter_create_cs_run_release

@@ -58,10 +58,10 @@ theorem LogPolicy.me [CInterface] {program : Program Invocation}
 
 /-- A simulation segment retains the resources needed for the next
 initialization, for every raw completed execution and every logger outcome. -/
-structure CSExecution [CInterface] (model : Solve.FMI3Model source) (program : Program Invocation)
+structure CSExecution [CInterface] (model : Solve.FMI3Model source) (header : CFenv.Header) (program : Program Invocation)
     (objects : Objects) (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
     (original literals heap : Heap) (p : Address) (buffers : StepEntry.Buffers)
-    (actions : List CSRun.Action) (final : CSRun.Reference) (statuses : List Int) : Prop where
+    (before : CSRun.Reference) (actions : List CSRun.Action) (final : CSRun.Reference) (statuses : List Int) : Prop where
   progress : (∃ events after, CSRun.Completed program p heap actions statuses events after) ∨
     CSRun.Stopped program p heap actions
   completed : ∀ observed events after, CSRun.Completed program p heap actions observed events after →
@@ -69,6 +69,8 @@ structure CSExecution [CInterface] (model : Solve.FMI3Model source) (program : P
     Persistent program objects retained owners original literals after p ∧
     CSRun.Retains p heap after ∧ CReadOnly.Preserves heap after ∧
     (∀ q, CSRun.Protected objects buffers q → CSRun.Outside p buffers q → after q = heap q)
+  semantic : ∀ observed events after records, CSRun.Recorded program p heap actions observed events after records →
+    CSRun.SemanticTrace model.solve header p buffers heap before actions observed records after final
 
 theorem cs_execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI3Model source)
     (sigs : List Signature)
@@ -87,17 +89,17 @@ theorem cs_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
       Persistent program objects retained owners original (pool.install baseHeap firstBlock signed) heap p →
       p.block = objects.instances.block → CSOutputsGuarded objects retained buffers →
       CSRun.Stored model.solve heap p buffers before → CSRun.ReferenceTrace header p buffers before actions final statuses →
-      CSExecution model program objects retained owners original (pool.install baseHeap firstBlock signed)
-        heap p buffers actions final statuses := by
+      CSExecution model header program objects retained owners original (pool.install baseHeap firstBlock signed)
+        heap p buffers before actions final statuses := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program range actual rounding floorBound retained owners original heap p buffers before final actions statuses
     persistent inPool guarded stored admitted
   obtain ⟨reset, enterDefined, exitDefined, _, _⟩ := prepared.execution header objects firstBlock program actual
   rcases persistent.logging.cs guarded with quiet | ⟨logger, logging, bound, policy, storagePolicy⟩
-  · obtain ⟨after, calls, finalStored, keeps, readonly, atomic, frame⟩ :=
+  · obtain ⟨after, calls, finalStored, keeps, readonly, atomic, frame, semantic⟩ :=
       CSRun.trace_framed header objects model sigs pool prepared.step baseHeap firstBlock signed p buffers program range
         actual rounding floorBound reset enterDefined exitDefined heap before final actions statuses persistent.readonly stored quiet admitted
-    refine ⟨Or.inl ⟨[], after, calls.executes⟩, ?_⟩
+    refine ⟨Or.inl ⟨[], after, calls.executes⟩, ?_, semantic⟩
     intro observed events actualAfter completed
     obtain ⟨sameStatuses, _, sameHeap⟩ := calls.determines completed
     subst actualAfter
@@ -106,10 +108,10 @@ theorem cs_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
         persistent.caller.trans (CallerStorage.ordinary calls.storage), persistent.readonly.trans readonly,
         persistent.logging.framed (fun name outside => keeps name outside)⟩,
       keeps, readonly, fun q _ outside => frame q outside⟩
-  · have certified := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
+  · obtain ⟨certified, semantic⟩ := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
       p buffers inPool program range logger actual rounding floorBound bound policy reset enterDefined exitDefined
       heap before final actions statuses owners persistent.readonly stored logging persistent.ownership admitted
-    refine ⟨certified.progress, ?_⟩
+    refine ⟨certified.progress, ?_, semantic⟩
     intro observed events after completed
     have same := certified.statuses_eq completed
     subst observed

@@ -60,13 +60,6 @@ theorem change_correct (header : CFenv.Header) (objects : Objects)
       entered exited, stored.restart _ admissible, True.intro, restart_retains heap p _, restart_atomic stored.reset _,
       InitializationStorage.restarted model heap p .cs before.mode stored.reset stored.kind stored.mode _ admissible⟩
 
-inductive ReferenceTrace (header : CFenv.Header) (p : Address) (buffers : StepEntry.Buffers) :
-    Reference → List Action → Reference → List Int → Prop where
-  | nil : ReferenceTrace header p buffers reference [] reference []
-  | cons {before next final : Reference} {action : Action} {rest : List Action} {status : Int} {statuses : List Int} :
-      Change header p buffers before action next status → ReferenceTrace header p buffers next rest final statuses →
-      ReferenceTrace header p buffers before (action :: rest) final (status :: statuses)
-
 /-- Each intermediate run state retains its exact Solve value, time, mode,
 stop policy and writable recovery storage, together with the actual call. -/
 inductive Calls [CInterface] (model : Solve.Model source) (program : Events.Program E)

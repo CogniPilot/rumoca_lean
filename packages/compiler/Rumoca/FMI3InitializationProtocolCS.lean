@@ -128,7 +128,7 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
   · intro suppressed
     have quiet : CSRun.Suppressed live p :=
       ⟨factoryArgs.logger, factoryArgs.logging, created.initialized.loggerValue, created.initialized.loggingValue, suppressed⟩
-    obtain ⟨after, calls, finalStored, retains, runReadonly, atomic, frame⟩ :=
+    obtain ⟨after, calls, finalStored, retains, runReadonly, atomic, frame, _⟩ :=
       CSRun.trace_framed header objects model sigs pool prepared.step baseHeap firstBlock signed p buffers
         program range actual rounding floorBound reset enterDefined exitDefined exited _ final actions statuses
         invariant.readonly stored (keeps.cs.suppressed quiet) admitted
@@ -143,7 +143,7 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
       ⟨by simpa only [loggerArg] using created.initialized.loggerValue,
         by simpa only [loggingArg, CBody.boolean] using created.initialized.loggingValue,
         by simpa only [environmentArg] using created.initialized.environmentValue⟩
-    have trace := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
+    obtain ⟨trace, _⟩ := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
       p buffers rfl program range logger actual rounding floorBound bound policy reset enterDefined exitDefined
       exited _ final actions statuses (SlotOwners.update owners slot (some owner)) invariant.readonly stored
       (keeps.cs.logger logging) invariant.ownership admitted

@@ -57,10 +57,10 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               InitializationProtocol.CSOutputsGuarded objects retained buffers →
               InitializationProtocol.FactoryLogPolicy program objects retained factoryArgs →
               Admitted header objects retained heap p access buffers plan →
-              Contract a.solve.prepareFMI3 program objects retained (SlotOwners.update owners slot (some owner)) heap
+              Contract a.solve.prepareFMI3 header program objects retained (SlotOwners.update owners slot (some owner)) heap
                 (pool.install baseHeap firstBlock signed) live p access buffers plan ∧
               ∀ records after, Completed program p access live plan records after →
-                SourceTrace a.solve.prepareFMI3 p plan records ∧ CReadOnly.Preserves heap after ∧
+                SourceTrace a.solve.prepareFMI3 header p buffers plan records ∧ CReadOnly.Preserves heap after ∧
                 LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .cs plan.mode ∧
                 SlotOwners.release (SlotOwners.update owners slot (some owner)) slot owner = some owners ∧
                 SlotOwners.Represents objects.flagsBlock (LifecycleRelease.releasedHeap after objects slot plan.mode) owners ∧

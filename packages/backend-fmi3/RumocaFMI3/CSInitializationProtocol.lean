@@ -51,7 +51,7 @@ inductive Admitted (header : CFenv.Header) (objects : Objects) (retained : Addre
 erase the source initialization checkpoints or earlier numerical samples. -/
 inductive Record where
   | initialization (observed : List (Float64Access.Observation Invocation)) (checkpoints : List Heap) (heap : Heap)
-  | simulation (statuses : List Int) (events : List Invocation) (heap : Heap)
+  | simulation (statuses : List Int) (events : List Invocation) (calls : List (CSRun.CallRecord Invocation)) (heap : Heap)
   | reset (events : List Invocation) (status : Value) (heap : Heap)
 
 /-- This is sequencing of the existing raw relations, not another numerical
@@ -61,16 +61,16 @@ inductive Completed [CInterface] (program : Program Invocation) (p : Address) (a
   | finish : InitializationProtocol.Completed program p access heap actions observed after checkpoints →
       Completed program p access heap (.finish actions state) [.initialization observed checkpoints after] after
   | last : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Completed program p exited cycle.simulation statuses events after →
+      CSRun.Recorded program p exited cycle.simulation statuses events after calls →
       Completed program p access heap (.last cycle)
-        [.initialization initial checkpoints exited, .simulation statuses events after] after
+        [.initialization initial checkpoints exited, .simulation statuses events calls after] after
   | next : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Completed program p exited cycle.simulation statuses events simulated →
+      CSRun.Recorded program p exited cycle.simulation statuses events simulated calls →
       (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] simulated .done)
         (.terminates resetEvents ⟨resetStatus, resetHeap⟩) →
       Completed program p access resetHeap following records after →
       Completed program p access heap (.next cycle following)
-        (.initialization initial checkpoints exited :: .simulation statuses events simulated ::
+        (.initialization initial checkpoints exited :: .simulation statuses events calls simulated ::
           .reset resetEvents resetStatus resetHeap :: records) after
 
 inductive Stopped [CInterface] (program : Program Invocation) (p : Address) (access : Float64Buffers.Layout) :
@@ -85,11 +85,11 @@ inductive Stopped [CInterface] (program : Program Invocation) (p : Address) (acc
   | nextSimulation : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
       CSRun.Stopped program p exited cycle.simulation → Stopped program p access heap (.next cycle following)
   | reset : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Completed program p exited cycle.simulation statuses events simulated →
+      CSRun.Recorded program p exited cycle.simulation statuses events simulated calls →
       (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] simulated .done) (.wrong []) →
       Stopped program p access heap (.next cycle following)
   | later : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Completed program p exited cycle.simulation statuses events simulated →
+      CSRun.Recorded program p exited cycle.simulation statuses events simulated calls →
       (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] simulated .done)
         (.terminates resetEvents ⟨resetStatus, resetHeap⟩) →
       Stopped program p access resetHeap following → Stopped program p access heap (.next cycle following)

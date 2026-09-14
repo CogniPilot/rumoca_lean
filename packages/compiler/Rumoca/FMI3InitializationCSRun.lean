@@ -135,7 +135,7 @@ theorem Certificate.cs_continuation (header : CFenv.Header) (objects : Objects)
   · intro suppressed
     have quiet : CSRun.Suppressed live p :=
       ⟨factoryArgs.logger, factoryArgs.logging, initialized.loggerValue, initialized.loggingValue, suppressed⟩
-    obtain ⟨after, calls, finalStored, retained, runReadonly, atomic, frame⟩ :=
+    obtain ⟨after, calls, finalStored, retained, runReadonly, atomic, frame, _⟩ :=
       CSRun.trace_framed header objects model sigs pool prepared.step baseHeap firstBlock signed p buffers
         program range actual rounding floorBound reset enterDefined exitDefined exited _ final actions statuses
         poolFrame stored (certified.retains.suppressed quiet) admitted
@@ -150,7 +150,7 @@ theorem Certificate.cs_continuation (header : CFenv.Header) (objects : Objects)
       ⟨by simpa only [loggerArg] using initialized.loggerValue,
         by simpa only [loggingArg, CBody.boolean] using initialized.loggingValue,
         by simpa only [environmentArg] using initialized.environmentValue⟩
-    have trace := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
+    obtain ⟨trace, _⟩ := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
       p buffers rfl program range logger actual rounding floorBound bound policy reset enterDefined exitDefined
       exited _ final actions statuses owners poolFrame stored (certified.retains.logger logging) ownership admitted
     refine ⟨trace, ?_⟩

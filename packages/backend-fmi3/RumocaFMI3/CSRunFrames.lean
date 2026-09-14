@@ -1,4 +1,5 @@
 import RumocaFMI3.CSRunExecution
+import RumocaFMI3.CSRunRecordSemantics
 
 noncomputable section
 namespace Rumoca.FMI3.CSRun
@@ -133,22 +134,34 @@ theorem trace_framed (header : CFenv.Header) (objects : Objects)
     ∃ after, Calls model.solve program p buffers heap before actions after final statuses ∧
       Stored model.solve after p buffers final ∧ Retains p heap after ∧ CReadOnly.Preserves heap after ∧
       CAtomicBoolean.Preserves heap after ∧
-      (∀ query, Outside p buffers query → after query = heap query) := by
+      (∀ query, Outside p buffers query → after query = heap query) ∧
+      (∀ observed events actualAfter records, Recorded program p heap actions observed events actualAfter records →
+        SemanticTrace model.solve header p buffers heap before actions observed records actualAfter final) := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program range actual rounding floorBound reset enterDefined exitDefined heap before final actions statuses
     literals stored quiet trace
   induction trace generalizing heap with
-  | nil => exact ⟨heap, .nil, stored, fun _ _ => rfl, .refl _, .refl _, fun _ _ => rfl⟩
+  | nil =>
+    refine ⟨heap, .nil, stored, fun _ _ => rfl, .refl _, .refl _, fun _ _ => rfl, ?_⟩
+    intro observed events actualAfter records actual
+    cases actual
+    exact .nil
   | cons changed _ ih =>
     obtain ⟨next, called, nextStored, observed, retained, atomic, storage⟩ := change_correct header objects model signatures pool prepared literalBase firstBlock
       signed p buffers program range actual rounding floorBound reset enterDefined exitDefined heap _ _ _ _ literals stored quiet changed
     have frame := executed_frame header objects model signatures pool prepared literalBase firstBlock signed p buffers
       program range actual rounding floorBound heap next _ _ _ _ literals stored quiet changed called
-    obtain ⟨after, calls, finalStored, retainedAfter, readonly, atomicAfter, laterFrame⟩ := ih next (literals.trans called.readonly)
+    obtain ⟨after, calls, finalStored, retainedAfter, readonly, atomicAfter, laterFrame, laterRecords⟩ := ih next (literals.trans called.readonly)
       nextStored (retained.suppressed quiet)
-    exact ⟨after, .cons called nextStored observed ⟨storage, atomic, retained⟩ calls, finalStored, retained.trans retainedAfter,
+    refine ⟨after, .cons called nextStored observed ⟨storage, atomic, retained⟩ calls, finalStored, retained.trans retainedAfter,
       called.readonly.trans readonly, atomic.trans atomicAfter,
-      fun query outside => (laterFrame query outside).trans (frame query outside)⟩
+      (fun query outside => (laterFrame query outside).trans (frame query outside)), ?_⟩
+    intro observedStatuses events actualAfter records actual
+    cases actual with
+    | cons head tail =>
+      obtain ⟨_, _, sameHeap, headSemantic⟩ := called.recorded_correct changed nextStored observed head
+      cases sameHeap
+      exact .cons headSemantic (laterRecords _ _ _ _ tail)
 
 end Rumoca.FMI3.CSRun
 end

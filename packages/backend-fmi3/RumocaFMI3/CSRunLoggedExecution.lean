@@ -1,4 +1,5 @@
 import RumocaFMI3.CSRunLogging
+import RumocaFMI3.CSRunStatus
 
 noncomputable section
 namespace Rumoca.FMI3.CSRun
@@ -89,6 +90,26 @@ theorem change_logged_correct (header : CFenv.Header) (objects : Objects)
       fun region _ => (InitializationStorage.restarted model heap p .cs before.mode stored.reset
         stored.kind stored.mode args admissible).on region⟩
 
+theorem ActionContract.recorded_correct [CInterface] {program : Events.Program Events.Invocation}
+    {before next : Reference}
+    (certified : ActionContract program p heap action status returns blocked)
+    (changed : Change header p buffers before action next status)
+    (returned : ∀ events after, returns events after →
+      Stored model after p buffers next ∧ Observation buffers next action status after)
+    (actual : RecordedAction program p heap action observed events after records) :
+    SemanticAction model header p buffers heap before action observed records after next := by
+  cases actual with
+  | step performed =>
+    obtain ⟨same, outcome⟩ := certified.performed_status performed
+    have post := returned _ _ outcome
+    exact .step (record := (⟨observed, events, after⟩ : CallRecord Events.Invocation))
+      (by simpa only [same] using changed) post.1 (by simpa only [same] using post.2)
+  | restart resetCall enterCall exitCall =>
+    cases certified with
+    | silent executed =>
+      have post := returned [] _ ⟨rfl, rfl⟩
+      exact (executed.recorded_correct changed post.1 post.2 (.restart resetCall enterCall exitCall)).2.2.2
+
 /-- An arbitrary finite mixed reference history has a complete branching call
 certificate under the universal logger frame. Every returned callback branch
 retains its source/Solve state, public successful outputs, ownership and the
@@ -116,20 +137,35 @@ theorem logged_trace_correct (header : CFenv.Header) (objects : Objects)
     Stored model.solve heap p buffers before → logger.Stored heap p →
     SlotOwners.Represents objects.flagsBlock heap owners →
     ReferenceTrace header p buffers before actions final statuses →
-    LoggedTrace objects logger owners model.solve program p buffers heap before actions final statuses := by
+    LoggedTrace objects logger owners model.solve program p buffers heap before actions final statuses ∧
+    (∀ observed events after records, Recorded program p heap actions observed events after records →
+      SemanticTrace model.solve header p buffers heap before actions observed records after final) := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program range logger actual rounding floorBound bound policy reset enterDefined exitDefined
     heap before final actions statuses owners literals stored logging represented trace
   induction trace generalizing heap with
-  | nil => exact .nil stored logging represented
+  | nil =>
+    refine ⟨.nil stored logging represented, ?_⟩
+    intro observed events after records actual
+    cases actual
+    exact .nil
   | cons changed _ ih =>
     obtain ⟨returns, blocked, certified, returned⟩ := change_logged_correct header objects model signatures pool prepared literalBase firstBlock
       signed p buffers inPool program range logger actual rounding floorBound bound policy reset enterDefined exitDefined
       heap _ _ _ _ owners literals stored logging represented changed
-    refine .cons certified returned ?_
-    intro events after outcome
-    have next := returned events after outcome
-    exact ih after (literals.trans next.readonly) next.stored next.logging next.ownership
+    constructor
+    · refine .cons certified returned ?_
+      intro events after outcome
+      have next := returned events after outcome
+      exact (ih after (literals.trans next.readonly) next.stored next.logging next.ownership).1
+    · intro observed events after records actual
+      cases actual with
+      | cons head tail =>
+        have outcome := (certified.performed_status head.performed).2
+        have next := returned _ _ outcome
+        have headSemantic := certified.recorded_correct changed
+          (fun events after outcome => ⟨(returned events after outcome).stored, (returned events after outcome).observed⟩) head
+        exact .cons headSemantic ((ih _ (literals.trans next.readonly) next.stored next.logging next.ownership).2 _ _ _ _ tail)
 
 end Rumoca.FMI3.CSRun
 end

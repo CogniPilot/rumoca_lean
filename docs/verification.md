@@ -1,42 +1,48 @@
 # Exact verification contract
 
-**Source-bound recurring CS protocols and release (2026-09-14):**
-`CSProtocol.runtime_create_release` now composes actual source-bound static
-creation, arbitrarily many admitted initialization/simulation/reset segments,
-and final release in one theorem. Creation derives the handle, Solve default,
-typed storage and reservation. The same prepared table and pool supply the
-accessors, lifecycle and simulation contracts throughout. Original caller
-storage and the universal external-effect policy suffice; no later heap,
-successful call or callback return is supplied by the host.
+**Source-bound CS call observations (2026-09-14):**
+`CSProtocol.runtime_create_release` connects actual source-bound static creation,
+recurring initialization/simulation/reset segments and final release. Its
+completed source trace now retains every intermediate DoStep record and every
+internal restart's three public call records, alongside explicit initialization
+checkpoints and segment-final samples. Later resets do not erase earlier
+observations. Original storage and the universal external-effect policy supply
+every handoff; no later valid heap, successful call or callback return is a
+host premise.
 
-`CSProtocol.Completed` sequences the existing raw initialization and CS
-relations with actual reset calls. Its return values are unrestricted by
-expected statuses. `correct` derives the status lists, reset outcomes,
-persistent resource invariant, ownership and memory frames. Its progress
-result constructs a completed history or a real blocked prefix. Completed
-histories have complete termination/free call contracts, and release restores
-the original owner map and frames protected memory through creation and every
-cycle. The old factory theorem exposes one prepared-environment bundle,
-including the already-derived getter/setter and ME/CS contracts.
+`CSRun.Recorded` exposes actual return statuses, events and heaps.
+`recorded_iff` proves that adding these records neither adds nor excludes an
+existing raw completed execution. Raw statuses remain unrestricted by expected
+outcomes. `SemanticTrace` annotates those exact records with the existing
+reference transitions under the same fixed floating-environment header.
+Both quiet and branching logger contracts derive this annotation universally.
+The raw definitions moved to an independent module and now support arbitrary
+event types; no second C or numerical execution semantics was introduced.
 
-The source trace preserves explicit initialization-protocol exit checkpoints
-and each simulation segment's final Real IVP/sample/error bound across later
-resets. It is not yet a source observation record for every intermediate
-DoStep result or restart inside a CS simulation segment. Raw stopped prefixes
-are retained, but a unified source-prefix theorem for them remains separate.
-Existing per-action contracts remain in force. ME's repeated-cycle composition,
-remaining public calls, native/concurrent correspondence and K02–K05 remain
-open. This is a stronger CS composition theorem, not full CompCert-level
-coverage or permission to expand the grammar.
+`SemanticTrace.source_observations` supplies a unique source Real IVP and the
+existing numerical/clock error bound at every completed step's stored state.
+Successful steps retain all four public outputs. Failed output buffers are not
+claimed to contain valid source observations. Each internal restart derives
+all three successful statuses and its initialization-exit source checkpoint.
+`CSExecution`, recurring cycle evidence and the actual-source-bound release
+theorem carry these stronger conclusions with their original ownership,
+caller-storage and memory-frame guarantees.
 
-Fourteen new roots and three affected roots passed the existing FMI/compiler
-package gate on 990 unchanged inputs in
-`build/c-factory/repeated-cs-cycles-package-v1.log`, with no unexpected axioms
-or warnings in the new/changed modules. Publication subsequently changes only
-documentation and a scope-clarifying Lean docstring. Source/Solve/C machine
-semantics, emitters, mandatory artifact propositions and boundary tests are
-unchanged. GitHub run `34862816363` passed the full gate for `0ef4820` at
-16:38:40 UTC; that is evidence for an earlier revision, not this package pass.
+Raw stopped prefixes remain represented, but their unified source-prefix
+theorem is still open. ME's recurring composition, remaining public calls,
+native/concurrent correspondence and K02–K05 remain unfinished. This does not
+establish full CompCert-level coverage or permit grammar expansion.
+
+Fifteen new and eleven affected roots passed the existing FMI/compiler package
+gate on 994 unchanged inputs in
+`build/c-factory/cs-call-records-package-v1.log`, with no unexpected axioms or
+warnings in new/changed modules. Publication subsequently changes only the
+three verification/roadmap documents. The admitted grammars, source/Solve/C
+machine semantics, emitters, mandatory artifact propositions and boundary tests
+are unchanged. [GitHub run 34868166166](https://github.com/CogniPilot/rumoca_lean/actions/runs/34868166166)
+passed `nix develop .#verification --command lake test` for `baeb7bd` at
+17:24:44 UTC. That full artifact result belongs to an earlier revision; this
+package pass is not a new full-artifact acceptance.
 
 **CS raw restart outcomes and history progress (2026-09-14):**
 Review found that `CSRun.Performed.restart` required all three return codes

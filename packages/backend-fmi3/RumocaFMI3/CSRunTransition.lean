@@ -23,6 +23,13 @@ inductive Change (header : CFenv.Header) (p : Address) (buffers : StepEntry.Buff
   | restart {before : Reference} {args : Initialization.Arguments} : args.Admissible →
       Change header p buffers before (.restart args) (Reference.restart args) 0
 
+inductive ReferenceTrace (header : CFenv.Header) (p : Address) (buffers : StepEntry.Buffers) :
+    Reference → List Action → Reference → List Int → Prop where
+  | nil : ReferenceTrace header p buffers reference [] reference []
+  | cons {before next final : Reference} {action : Action} {rest : List Action} {status : Int} {statuses : List Int} :
+      Change header p buffers before action next status → ReferenceTrace header p buffers next rest final statuses →
+      ReferenceTrace header p buffers before (action :: rest) final (status :: statuses)
+
 /-- Successful DoStep exposes all four outputs to the importer. FMI leaves
 error/discard outputs undefined; restart has no corresponding output buffers. -/
 def Observation (buffers : StepEntry.Buffers) (reference : Reference) (action : Action)

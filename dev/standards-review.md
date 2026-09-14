@@ -37,39 +37,42 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
-### Source-bound recurring CS protocols: 2026-09-14
+### Completed CS call observations: 2026-09-14
 
-The admitted Modelica/GALEC grammars and generated FMI/eFMI members are unchanged.
-This increment composes existing initialization and CS raw relations, with
-actual reset calls, across finite recurring histories. One source-bound
-factory theorem derives the handle/default/storage; the shared prepared
-environment supplies each later call. Completed histories discharge the
-original reservation through complete termination/free contracts.
+The admitted Modelica/GALEC grammars, generated FMI/eFMI members and mandatory
+artifact propositions are unchanged. This increment strengthens the recurring
+CS creation/initialization/simulation/reset/release theorem with every returned
+simulation call's status, events and heap. An erasure/recovery equivalence
+proves that the observation view covers exactly the existing completed raw
+executions. The same fixed header, prepared table and literal pool supply every
+reference transition and actual call contract.
 
 The focused [FMI 3.0.2 review](https://fmi-standard.org/docs/3.0.2/) rechecked
-§2.2.4 (Error/Discard outputs and recovery), §2.2.6 (CS time advancement),
-§2.3.1 (reset defaults and disposal), §2.3.3 (initialization access and exit),
-and §2.3.4 (termination). The existing supported CS profile exits initialization
-into Step Mode. Failed output buffers are not treated as source observations.
-The segment sample theorem concerns the stored model state, with the existing
-numerical/clock error bound. Reset restores defaults before new accesses choose
-the next IVP. The frozen MLS 3.7 and eFMI 1.0.0 Beta 1 evidence, initialization
-restrictions and MISRA findings carry forward; no normative policy changed.
+§2.2.4 (defined successful outputs; undefined Error/Discard outputs), §2.2.6
+(CS time advancement) and §2.3.1 (reset defaults before a new initialization).
+The existing §2.3.3 initialization and §2.3.4 termination mapping is retained.
+Each completed step's stored model state has the existing source-IVP sample
+and numerical/clock error bound. Only successful steps promise public outputs.
+An internal restart retains all three actual returns and the source checkpoint
+at initialization exit. Both suppressed and modeled logging paths are covered;
+callback totality is not assumed. The pinned MLS 3.7 and eFMI 1.0.0 Beta 1
+evidence, shared initialization restrictions and MISRA findings carry forward.
+There is no new normative policy or admitted language case.
 
-The new source trace preserves explicit initialization-protocol checkpoints
-and segment-final numerical samples. Lifting every intermediate simulation
-output/internal restart checkpoint, and source observations of stopped
-prefixes, into the top-level trace is still required. Progress proves a raw
-completed or blocked prefix without assuming a callback return; native
-callback termination and concurrent execution remain outside that result.
-ME's recurring composition and the remaining public-call inventory are open.
+The completed CS intermediate-observation gap from the 990-input recurring
+protocol checkpoint is closed. Source correspondence for stopped prefixes,
+recurring ME composition and the remaining public-call inventory are open.
+Native callback termination, concurrent execution and full translation-unit/ABI
+correspondence are outside this increment.
 
-Fourteen new and three affected roots passed the FMI/compiler package gate on
-990 unchanged inputs in `build/c-factory/repeated-cs-cycles-package-v1.log`.
-No new tests or axioms were added. Publication adds documentation and one
-clarifying docstring after that frozen gate. GitHub run `34862816363` passed
-the full gate for `0ef4820` at 16:38:40 UTC, a distinct revision. The current
-change has no new full-artifact acceptance yet. K02–K05 remain open.
+Fifteen new and eleven affected roots passed the existing FMI/compiler package
+gate on 994 unchanged inputs in `build/c-factory/cs-call-records-package-v1.log`.
+The axiom whitelist and existing tests are unchanged. Publication changes only
+three documentation files after that frozen gate.
+[GitHub run 34868166166](https://github.com/CogniPilot/rumoca_lean/actions/runs/34868166166)
+passed the full gate for `baeb7bd` at 17:24:44 UTC, a distinct earlier revision;
+its log includes the actual ME/CS and eFMU boundary checks. The current change
+still needs its own full-artifact acceptance. K02–K05 remain open.
 **Stage decision: no grammar expansion.**
 
 ### CS restart return codes and progress: 2026-09-14

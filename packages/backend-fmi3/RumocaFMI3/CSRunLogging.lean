@@ -1,4 +1,5 @@
 import RumocaFMI3.CSRunFrames
+import RumocaFMI3.CSRunRaw
 import RumocaFMI3.CSSimulationStorage
 
 noncomputable section
@@ -139,28 +140,6 @@ end Rumoca.FMI3.CSRun
 namespace Rumoca.FMI3.CSRun
 open CTree CMemory CBody StaticFactory CCalls
 
-/-- Returned public actions, specified solely by the actual C machine.
-Reset/reinitialization retains all three calls and their intermediate heaps.
-All return codes are arbitrary here; the action contract establishes success.
-The script's restart result is the final exit-initialization return code. -/
-inductive Performed [CInterface] (program : Events.Program Events.Invocation) (p : Address) :
-    Heap → Action → Int → List Events.Invocation → Heap → Prop where
-  | step : (Events.machine program).Behaves
-      (.calling StepEntry.signature.name (StepEntry.arguments (some p) request.point request.step request.flag outputs) heap .done)
-      (.terminates events ⟨.integer status, after⟩) →
-      Performed program p heap (.step request outputs) status events after
-  | restart {heap resetHeap enteredHeap after : Heap} {args : Initialization.Arguments} :
-      (Events.machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] heap .done)
-        (.terminates resetEvents ⟨.integer resetStatus, resetHeap⟩) →
-      (Events.machine program).Behaves
-        (.calling InitializationCalls.signature.name
-          (InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args)) resetHeap .done)
-        (.terminates enterEvents ⟨.integer enterStatus, enteredHeap⟩) →
-      (Events.machine program).Behaves
-        (.calling InitializationExit.signature.name (InitializationExit.arguments (some p)) enteredHeap .done)
-        (.terminates exitEvents ⟨.integer exitStatus, after⟩) →
-      Performed program p heap (.restart args) exitStatus (resetEvents ++ enterEvents ++ exitEvents) after
-
 /-- All three restart return codes follow from the complete C call
 contracts, including the intermediate calls hidden by the script's result. -/
 theorem ActionContract.restart_returned [CInterface] {program : Events.Program Events.Invocation}
@@ -199,15 +178,6 @@ theorem ActionContract.returned [CInterface] {program : Events.Program Events.In
     · cases impossible
   | restart resetCall enterCall exitCall =>
     exact (certified.restart_returned resetCall enterCall exitCall).2.2.2.2
-
-/-- A completed host script records actual target calls, statuses and callback
-invocations. Its definition contains no source/Solve invariant or certificate. -/
-inductive Completed [CInterface] (program : Events.Program Events.Invocation) (p : Address) :
-    Heap → List Action → List Int → List Events.Invocation → Heap → Prop where
-  | nil : Completed program p heap [] [] [] heap
-  | cons : Performed program p heap action status events middle →
-      Completed program p middle rest statuses later after →
-      Completed program p heap (action :: rest) (status :: statuses) (events ++ later) after
 
 /-- Every completed actual script admitted by the branching certificate
 retains the final Solve/source state, original owners and protected frame.

@@ -78,7 +78,7 @@ theorem adapter_logged_cs_run_history (contract : AdapterContract a adapter) :
       some (.tree (Runtime.function a.solve.prepareFMI3 InitializationExit.signature)) := by
     rw [actual]
     exact LiteralPreparation.function_bound _ signatures unique _ initialization.exitMember
-  have certified := CSRun.logged_trace_correct header objects a.solve.prepareFMI3 signatures pool
+  obtain ⟨certified, _⟩ := CSRun.logged_trace_correct header objects a.solve.prepareFMI3 signatures pool
     (step.prepared pool made) literalBase firstBlock signed p buffers inPool program range logger actual rounding floorBound
     bound policy reset enterDefined exitDefined heap before final actions statuses owners literalFrame stored logging represented trace
   refine ⟨certified, certified.progress, ?_⟩
