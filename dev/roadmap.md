@@ -51,11 +51,23 @@ CS lifetime. Mixed accepted/rejected step and reset/reinitialization histories
 now compose with actual creation, initialization and mode-appropriate release
 under suppressed logging. Enabled-logging mixed histories now have a branching
 contract from actual creation/initialization through release for every completed
-C script, including proved observed-status agreement. Remaining public
-interactions and ME numerical histories are next; the complete stage remains open.
+C script, including proved observed-status agreement. State getter/setter contracts now also apply in the shared runtime on later
+literal-preserving heaps. Derivative query transport and ME numerical/history
+composition are next; the complete stage remains open.
 Concurrent storage, whole-artifact correspondence and the standards/MISRA review
 remain required.
 These are substantial obligations, not a final build or a parser-only change.
+
+The ME state-access follow-up passed `lake build check-fmi3 check-compiler`
+in `build/c-factory/me-state-environment-package-v1.log` with all 900 inputs
+unchanged. Six added roots derive complete getter/setter calls in the same
+header/object/literal interface as creation and lifecycle histories, including
+all existing rejection reasons and disabled, missing or enabled logger paths.
+The actual source-bound accessor fragments and mandatory contracts are retained;
+later failures require preserved diagnostic literals. A supplied trial state
+does not establish an original-IVP solution. Earlier semantics, emission,
+mandatory contracts and tests retain the separate 869-input full artifact gate.
+Derivative queries and complete ME numerical histories remain open.
 
 The recovery follow-up passed `lake build check-fmi3 check-compiler` in
 `build/c-factory/cs-recovery-package-v1.log`, with all 885 inputs unchanged.
@@ -528,6 +540,12 @@ simulation or concurrent host histories.
   control histories with explicit event-iteration readiness and reusable
   caller buffers. Package and full artifact acceptance passed with 829
   unchanged inputs; both checked archives are retained.
+- [x] Derive complete actual continuous-state getter/setter contracts in the
+  shared header/object/literal environment on later heaps. Retain success/null,
+  lifecycle/access/non-finite failure and every modeled logging outcome. Bind
+  both actual fragments and pool to the original source/Solve product. The six
+  added roots passed the 900-input FMI/compiler package gate; derivative query
+  transport and history composition are separate remaining obligations.
 - [ ] Compose ME control histories with importer state updates, derivative
   queries and creation/initialization. Retain the numerical/source guarantee
   alongside all public observations and caller-protocol obligations.

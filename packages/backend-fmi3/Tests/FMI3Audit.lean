@@ -1,3 +1,4 @@
+import RumocaFMI3.StateEnvironment
 import RumocaFMI3.CSRunStatus
 import RumocaFMI3.CSRunLoggedExecution
 import RumocaFMI3.CSRunFinish
@@ -1249,3 +1250,9 @@ import RumocaFMI3.VersionMetadata
 
 #audit axioms Rumoca.FMI3.CSRun.ActionContract.performed_status
 #audit axioms Rumoca.FMI3.CSRun.LoggedTrace.statuses_eq
+
+#audit axioms Rumoca.FMI3.StateEnvironment.body_agrees
+#audit axioms Rumoca.FMI3.StateEnvironment.quiet_correct
+#audit axioms Rumoca.FMI3.StateEnvironment.suppressed_correct
+#audit axioms Rumoca.FMI3.StateEnvironment.logged_correct
+#audit axioms Rumoca.FMI3.StateEnvironment.prepared_correct

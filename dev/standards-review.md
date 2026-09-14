@@ -37,6 +37,44 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### ME state access in the shared runtime: 2026-09-14
+
+This derived follow-up to `a8e4d95` connects the existing complete state-access
+contracts to the same header/object/literal interface used by actual creation
+and lifecycle calls. The actual source-bound accessor fragments and pool are
+retained. Arbitrary later heaps may be used: valid typed caller/instance storage
+is explicit, and failures require the read-only diagnostic pool to survive.
+Suppression covers both a disabled flag and a missing callback. Enabled logging
+retains every modeled returning effect and its no-return alternative.
+
+The focused review rechecked FMI 3.0.2
+[§2.3.3](https://fmi-standard.org/docs/3.0.2/#state-initialization-mode),
+[§2.3.5](https://fmi-standard.org/docs/3.0.2/#state-event-mode),
+[§2.3.8](https://fmi-standard.org/docs/3.0.2/#state-terminated), and
+[§3.2.1](https://fmi-standard.org/docs/3.0.2/#fmi3SetContinuousStates).
+The ME getter remains available in Initialization, Event, Continuous-Time and
+Terminated modes; the setter supplies new states in Continuous-Time mode.
+State ordering retains the existing XML/state metadata contract. A trial-state
+setter copies the supplied value; it does not integrate or establish accuracy
+of the importer's trajectory. Final retrieval after Error remains diagnostic.
+The earlier finite-Real/fail-stop policy and its Error-versus-Discard review are
+unchanged; this increment does not attribute that policy to new standard text.
+
+Shared body-interface and complete failure-helper proofs are reused. No source
+resolution, shape inference, scalarization, solver selection or DAE work is added
+to the backend. Grammar, source/initialization semantics, emitted C, GALEC, XML
+and packaging are unchanged. The pinned MLS/eFMI/MISRA baselines and all open
+findings carry forward; native callback/ABI and concurrent-host obligations
+remain separate. Complete ME state/derivative/control histories are still open.
+
+All six added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-state-environment-package-v1.log` on 900 unchanged inputs.
+Only the three status documents changed afterward. The unchanged earlier
+semantics, emission, mandatory contracts and tests retain the separate 869-input
+full gate and archives in `build/c-factory/cs-contract-artifacts-v1/`.
+No new test suite or full-gate pass is claimed.
+**Stage decision: open; no grammar expansion.**
+
 ### Created callback-enabled CS lifetime and observed statuses: 2026-09-14
 
 This derived follow-up to `0afdea3` connects the actual factory and initialization

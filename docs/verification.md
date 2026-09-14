@@ -1,5 +1,28 @@
 # Exact verification contract
 
+**ME state-access runtime bridge (2026-09-14):**
+`adapter_state_environment` derives getter/setter contracts in the same explicit
+header/object/literal interface as creation and lifecycle histories. Both actual
+accessor fragments, their existing mandatory contracts and the prepared literal
+pool belong to the same compiled source and Solve product. Successful and null
+calls work on arbitrary heaps satisfying their typed storage premises. Rejected
+calls work on every later heap preserving the pool's read-only cells.
+
+`StateEnvironment` retains lifecycle, pointer/count and non-finite rejection,
+both disabled and missing logger paths, and the existing complete enabled-callback
+contract. Every modeled returning effect and the no-return alternative remain.
+No future successful call or callback execution is supplied as a premise. The
+existing getter/setter refinement theorems now apply in this shared environment;
+a host trial-state write does not establish an original-IVP trajectory.
+
+The six added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-state-environment-package-v1.log`, with all 900 inputs unchanged.
+Only the three status documents changed afterward. Earlier semantics, emitters,
+mandatory contracts and tests are unchanged, retaining the separate 869-input
+full artifact gate and its archives. No new full-gate pass is claimed. Derivative
+query transport, ME numerical/history composition, remaining public interactions
+and K02–K05 remain open; this does not authorize grammar expansion.
+
 **Created callback-enabled CS lifetime (2026-09-14):**
 `adapter_create_logged_cs_release` now derives actual source-bound creation,
 initialization and the branching mixed step/rejection/reset history from
