@@ -37,6 +37,42 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Mixed CS steps and recovery with logging suppressed: 2026-09-14
+
+This derived-proof follow-up to `4d0d79e` adds 25 audit roots. An independent
+reference relation tracks lifecycle mode, source initial value/time origin,
+rounded communication time and cumulative solver duration within each run.
+The actual-adapter theorem composes finite accepted/rejected step histories
+and repeated reset/reinitialization. It derives later writable state/caller
+storage, retains all four successful step outputs and preserves read-only
+diagnostics, logger configuration, slot metadata and atomic reservations.
+Each stored sample retains the source IVP and numerical/clock error bound.
+
+Applicable FMI 3.0.2 clauses remain
+[§2.2.4, status returns](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions),
+[§2.3.1, reset](https://fmi-standard.org/docs/3.0.2/#fmi3Reset) and
+[§4.2.1, Step Mode](https://fmi-standard.org/docs/3.0.2/#step-mode).
+The observation relation specifies successful outputs explicitly. Error and
+discard outputs have no standards-level value requirement; reset restores
+defaults before reinitialization. Review strengthened the initial history draft
+to make successful outputs explicit before accepting this checkpoint.
+No emitted behavior, capability or admission policy changed.
+
+The final package gate passed in `build/c-factory/cs-run-package-v2.log` with
+all 890 inputs unchanged. Only the three status documents changed afterward.
+The earlier 869-input full gate and retained archives under
+`build/c-factory/cs-contract-artifacts-v1/` remain evidence for unchanged
+semantics, emission, mandatory contracts and existing tests. No new full-gate
+pass or test suite is claimed for this derived increment.
+
+This trace uses suppressed logging, an explicit nearest-rounding library
+profile and a fixed typed output-buffer bank or omitted pointers. The broader
+single-call contracts are retained. Callback-enabled mixed histories,
+creation/release composition, ME numerical interactions, concurrency and native
+profile/layout remain open. Existing MLS/eFMI/MISRA findings and pinned baselines
+are carried forward; this scoped FMI follow-up is not a repeated full review.
+**Stage decision: open; no grammar expansion.**
+
 ### CS rejection, reset and reinitialization: 2026-09-14
 
 This derived-proof follow-up to `d331349` adds 16 audit roots. The actual

@@ -1,5 +1,35 @@
 # Exact verification contract
 
+**Mixed CS run follow-up (2026-09-14):** `adapter_cs_run_history` now derives
+arbitrary finite interleavings of accepted steps, rejected calls and repeated
+reset/reinitialization from the actual adapter certificate, original valid
+storage and suppressed logger configuration. `CSRun.Change` and
+`CSRun.ReferenceTrace` specify lifecycle and source-epoch progression without
+C execution. Every subsequent heap and writable caller/instance premise is
+derived. `CSRun.Calls` retains each actual call, intermediate finite state and
+explicit successful outputs, including `lastSuccessfulTime`. Error/discard
+outputs are not assigned a standards-level value by the observation relation.
+
+The persistent invariant includes the reset-only writable cells, so a rejected
+call does not lose the storage needed for recovery. Reset selects the Solve
+default and a new source time origin. `SourceEpoch` states the source IVP and
+selected initial value; its unique Real solution and the existing
+numerical/clock error bound apply to the actual readable sample. The source
+observation explicitly uses the same AST index as Solve. Control fields,
+read-only diagnostics and all existing atomic reservations are retained.
+
+The 25 added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/cs-run-package-v2.log`, with all 890 inputs unchanged. Only
+the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests are unchanged, retaining the 869-input full
+artifact gate and archives below; no new full-gate pass is claimed. These
+histories use a fixed typed caller-buffer bank or omitted output pointers,
+the explicit nearest-rounding/floor library profile, and logging suppressed
+by a missing logger or disabled configuration. Callback-enabled mixed traces,
+creation/release composition for this new trace, ME numerical interactions,
+concurrency and native correspondence remain open. K02–K05 and the grammar
+expansion gate remain open. Earlier records retain their original scopes.
+
 **CS recovery follow-up (2026-09-14):** `adapter_suppressed_recovery` and
 `adapter_logged_recovery` connect the mandatory CS rejection contract to actual
 reset and both initialization calls in the same header/object/literal interface.

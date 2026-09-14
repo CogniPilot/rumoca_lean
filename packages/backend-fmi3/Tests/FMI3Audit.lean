@@ -1,3 +1,4 @@
+import RumocaFMI3.CSRunExecution
 import RumocaFMI3.StepRecovery
 import RumocaFMI3.FactoryEnvironment
 import RumocaFMI3.CSCreationStorage
@@ -1193,3 +1194,25 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StepRejections.after_atomic
 #audit axioms Rumoca.FMI3.StepRejections.restarted_owners
 #audit axioms Rumoca.FMI3.StepRejections.restarted_metadata
+
+#audit axioms Rumoca.FMI3.CSRun.Stored.step_mode
+#audit axioms Rumoca.FMI3.CSRun.Stored.advance
+#audit axioms Rumoca.FMI3.CSRun.Stored.rejection_reads
+#audit axioms Rumoca.FMI3.CSRun.rejection_buffers
+#audit axioms Rumoca.FMI3.CSRun.Stored.reject
+#audit axioms Rumoca.FMI3.CSRun.restart_storage
+#audit axioms Rumoca.FMI3.CSRun.restart_buffers
+#audit axioms Rumoca.FMI3.CSRun.Stored.restart
+#audit axioms Rumoca.FMI3.CSRun.Stored.framed
+#audit axioms Rumoca.FMI3.CSRun.change_step_total
+#audit axioms Rumoca.FMI3.CSRun.Retains.trans
+#audit axioms Rumoca.FMI3.CSRun.Retains.suppressed
+#audit axioms Rumoca.FMI3.CSRun.advance_retains
+#audit axioms Rumoca.FMI3.CSRun.reject_retains
+#audit axioms Rumoca.FMI3.CSRun.restart_retains
+#audit axioms Rumoca.FMI3.CSRun.Executed.readonly
+#audit axioms Rumoca.FMI3.CSRun.restart_atomic
+#audit axioms Rumoca.FMI3.CSRun.advance_atomic
+#audit axioms Rumoca.FMI3.CSRun.Stored.initialized
+#audit axioms Rumoca.FMI3.CSRun.change_correct
+#audit axioms Rumoca.FMI3.CSRun.trace_correct
