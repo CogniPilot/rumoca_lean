@@ -1,5 +1,54 @@
 # Exact verification contract
 
+**Rejected Float64 calls and recovery initialization (2026-09-14):**
+`Float64Rejection.runtime_source` supplies the new rejection/runtime and
+recovery consequences from actual source compilation, numerical C, XML
+numeric/writable-state metadata, accessor function contracts and one prepared
+table/pool. It retains the source Real derivative equation. No source case,
+runtime policy, emitter or mandatory artifact proposition changes.
+
+`Request.prepare_correct` constructs raw input snapshots through existing
+typed caller stores. Arbitrary IEEE encodings include non-finite rejected
+writes. Lifecycle/array guard failures need no array transfers or readability
+premises; entry checks retain the existing short-circuit read conditions.
+Transfer permissions, typed storage, read-only cells and atomic reservations
+are preserved. Independent guard predicates still determine the rejection.
+
+`Request.RuntimeContract` combines those transfers with the actual accessor
+machine. Suppressed or missing logging has a unique Error result. Enabled
+logging retains every modeled returning effect and the blocked alternative.
+Each completed raw call determines its actual status/events and establishes
+`Returned`: finite instance state/time, recovery storage, ownership, read-only
+memory, protected caller storage and the precise memory frame. Original valid
+instance/reset storage is explicit; no future heap or successful call is a
+premise. The callback contract always protects all instance slots and flags,
+and quantifies the additional caller region needed by later operations.
+
+`InitializationAccess.Recovery` reuses reset and the existing accepted
+initialization-access certificate. Both ME and CS can perform finite writes
+and batched queries before entry and during the new initialization. Raw reset
+and access statuses/readbacks are derived; completed recovery determines the
+unique source Real IVP at actual exit. `Returned.source_recovery` obtains its
+caller storage from the original heap, including buffers reused by the rejected
+request. Failed-call output values are not treated as valid model observations.
+Reset starts from the Solve default; later finite writes select the new IVP.
+The common reset record-frame lemma moved to `ResetStorage` without changing
+its statement, and shared reset/mode-write preservation is proved.
+
+The 31 new roots and existing affected roots passed
+`lake build check-fmi3 check-compiler` on 963 unchanged inputs in
+`build/c-factory/float64-rejection-package-v2.log`; the axiom whitelist is
+unchanged. Existing semantics, emission, mandatory artifact propositions and
+boundary tests retain the separate 869-input local full gate. GitHub run
+`34848939187` passed the full gate for `9ad935e`, a distinct revision. Neither
+is a new full-gate result for these additions. No tests were added.
+
+The new rejection/recovery operations still need integration into the created
+initialization and repeating mixed ME/CS histories, including further rejected
+accesses during recovery and final release. Other public interactions,
+concurrent/native correspondence, complete artifacts/provenance and K02–K05
+standards/MISRA closure remain open. Grammar expansion remains blocked.
+
 **Initialization access through mixed ME execution (2026-09-14):**
 `InitializationAccess.runtime_create_me_histories` connects actual source-bound
 creation and accepted initialization accesses to the existing mixed ME history

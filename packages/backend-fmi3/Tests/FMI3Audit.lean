@@ -1,3 +1,10 @@
+import RumocaFMI3.Float64RawBuffers
+import RumocaFMI3.Float64Rejection
+import RumocaFMI3.Float64RejectionPreparation
+import RumocaFMI3.LifecycleStorage
+import RumocaFMI3.Float64RejectionMemory
+import RumocaFMI3.InitializationAccessReset
+import RumocaFMI3.Float64RejectionExecution
 import RumocaFMI3.LifecycleEnvironment
 import RumocaFMI3.ResetStorage
 import RumocaFMI3.InitializationMERun
@@ -1472,3 +1479,32 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.field
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.me_storage
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.configuration
+
+#audit axioms Rumoca.FMI3.Float64Buffers.raw_values_run
+#audit axioms Rumoca.FMI3.Float64Buffers.raw_values_read
+#audit axioms Rumoca.FMI3.Float64Buffers.raw_values_frame
+#audit axioms Rumoca.FMI3.Float64Buffers.raw_values_preserve
+#audit axioms Rumoca.FMI3.Float64Rejection.Request.prepared
+#audit axioms Rumoca.FMI3.Float64Rejection.input_run
+#audit axioms Rumoca.FMI3.Float64Rejection.input_read
+#audit axioms Rumoca.FMI3.Float64Rejection.Request.prepare_frame
+#audit axioms Rumoca.FMI3.Float64Rejection.Request.prepare_correct
+#audit axioms Rumoca.FMI3.Float64Rejection.Request.prepared_instance
+#audit axioms Rumoca.FMI3.LifecycleBodies.write_store
+#audit axioms Rumoca.FMI3.LifecycleBodies.write_storage
+#audit axioms Rumoca.FMI3.Float64Access.Instance.failed
+#audit axioms Rumoca.FMI3.Float64Access.Instance.record_preserved
+#audit axioms Rumoca.FMI3.Float64Rejection.Frame.record
+#audit axioms Rumoca.FMI3.Float64Rejection.Frame.owners
+#audit axioms Rumoca.FMI3.Float64Rejection.Frame.writable
+#audit axioms Rumoca.FMI3.Reset.preserves
+#audit axioms Rumoca.FMI3.Float64Access.Instance.reset
+#audit axioms Rumoca.FMI3.InitializationAccess.Recovery.correct
+#audit axioms Rumoca.FMI3.InitializationAccess.Recovery.executes
+#audit axioms Rumoca.FMI3.InitializationAccess.Recovery.determines
+#audit axioms Rumoca.FMI3.InitializationAccess.Recovery.execution_iff
+#audit axioms Rumoca.FMI3.Float64Rejection.Request.behaves_iff
+#audit axioms Rumoca.FMI3.Float64Rejection.Request.returned
+#audit axioms Rumoca.FMI3.Float64Rejection.Returned.buffers
+#audit axioms Rumoca.FMI3.Float64Rejection.Returned.recover
+#audit axioms Rumoca.FMI3.Float64Rejection.Request.execution

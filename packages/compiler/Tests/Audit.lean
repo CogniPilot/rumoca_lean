@@ -1,3 +1,4 @@
+import Rumoca.FMI3Float64Rejection
 import Rumoca.FMI3InitializationMERun
 import Rumoca.FMI3InitializationCSRun
 import Rumoca.FMI3CreatedInitializationAccess
@@ -283,3 +284,7 @@ import Rumoca.InitializationDiagnosticProofs
 
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.me_continuation
 #audit axioms Rumoca.FMI3.InitializationAccess.runtime_create_me_histories
+
+#audit axioms Rumoca.FMI3.InitializationAccess.Recovery.completed_source
+#audit axioms Rumoca.FMI3.Float64Rejection.Returned.source_recovery
+#audit axioms Rumoca.FMI3.Float64Rejection.runtime_source

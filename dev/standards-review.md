@@ -37,6 +37,45 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Rejected Float64 calls and recovery initialization: 2026-09-14
+
+This derived-proof increment retains the same EBNF, admitted source profile,
+runtime policy, emitted members, metadata and mandatory artifact propositions.
+The existing MLS 3.7 initialization interpretation and eFMI Beta 1
+Algorithm/Production Code evidence remain unchanged, including open findings.
+
+The focused review rechecked [FMI 3.0.2 §2.2.4 and §2.3.1](https://fmi-standard.org/docs/3.0.2/):
+Error outputs are undefined, ordinary simulation cannot continue after Error,
+reset is a permitted recovery path, and other instances must remain unaffected.
+Reset restores model defaults before a new initialization. The new proofs
+follow that policy: rejected accessor outputs are not source observations,
+the error-mode write precedes logging, and modeled returning branches preserve
+other instances/reservations under the explicit universal callback frame.
+
+Raw typed transfers include every IEEE input encoding. Early lifecycle/array
+guards add no input-read premise. The existing validation predicates and
+non-finite rejection policy are reused, not inferred from the new host data.
+Reset then supplies defaults and recovery storage; subsequent accepted writes
+and queries before/during initialization determine a new unique source IVP.
+Source-bound accessor function contracts and one table/pool supply execution.
+The recovery continuation consumes the invariant proved for each actual
+completed rejection, not caller-supplied future buffers or successful results.
+
+Thirty-one new roots and affected existing roots passed the FMI/compiler
+package gate on 963 unchanged inputs in
+`build/c-factory/float64-rejection-package-v2.log`. The axiom whitelist is
+unchanged. The separate 869-input local full gate retains unchanged semantics,
+emission, mandatory contracts and boundary-test evidence. GitHub run
+`34848939187` passed the full gate for `9ad935e`, a distinct earlier revision;
+no full-gate pass for this increment is claimed.
+
+Created initialization and repeating mixed histories still need these new
+operations composed with further recovery failures, simulation and release.
+Original valid instance/reset storage, native pointers/ABI, concurrent ownership
+and whole-artifact/provenance correspondence remain explicit or open boundaries.
+Existing MLS/eFMI/MISRA findings and K02–K05 carry forward.
+**Stage decision: no grammar expansion.**
+
 ### Initialization access followed by mixed ME execution: 2026-09-14
 
 This derived-proof increment changes no EBNF, admitted source profile, runtime

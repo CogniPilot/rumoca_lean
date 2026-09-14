@@ -15,7 +15,7 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Created CS and ME mixed histories now compose initialization, represented successful/rejected operations, modeled logging, reset/reinitialization and release. The ME theorem derives raw statuses, source derivative observations and initialization checkpoints, restoring original owners under the universal callback frame. | Compose rejected initialization accesses and accesses during later restarts; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Created CS and ME mixed histories now compose initialization, represented successful/rejected operations, modeled logging, reset/reinitialization and release. The ME theorem derives raw statuses, source derivative observations and initialization checkpoints, restoring original owners under the universal callback frame. | Integrate the new rejected-access/recovery operations into created initialization and repeating ME/CS histories; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
@@ -77,8 +77,15 @@ Existing mixed histories retain source derivative observations and reset
 initialization checkpoints through release restoring the original owners.
 Common lifecycle and reset-storage proofs are shared with CS. The six new
 roots do not close a whole K02–K05 item or constitute a new full artifact gate.
-The next work is rejected initialization accesses and accesses during later
-restarts. Remaining public calls still need coverage.
+Rejected Float64 calls now have an actual-source-bound runtime contract:
+typed raw caller preparation, independent guard conditions, exact status/events
+and recovery storage under both logging policies. Shared reset/reinitialization
+now permits accepted access interleavings and derives the new source IVP.
+The 31 new roots passed the 963-input FMI/compiler package gate in
+`build/c-factory/float64-rejection-package-v2.log`. The next work is to integrate
+these rejection/recovery operations into created initialization and repeating
+mixed ME/CS histories, including further failures during recovery and release.
+Remaining public calls still need coverage.
 No later heap or successful call may substitute for those composition proofs.
 Concurrent instance ownership and the transitive no-heap
 policy, complete source-to-artifact/provenance and C-profile correspondence,
@@ -642,8 +649,11 @@ accepted access histories on 947 checked inputs. Their mixed CS continuation
 now passes on 951 inputs, including rejected steps, reset/reinitialization and
 both logging policies. Their mixed ME continuation now passes on 955 inputs,
 including actual source observations, reset checkpoints, retained caller/configuration
-storage and release to the original owners. Rejected initialization accesses,
-accesses at later restarts and remaining public interactions are still required.
+storage and release to the original owners. Rejected Float64 calls and shared
+reset with initialization accesses now pass on 963 inputs. Their actual caller
+transfers, raw statuses, callback frames, retained recovery buffers and source
+IVP are proved. Integration into created/repeating mixed histories, further
+failures during recovery and remaining public interactions are still required.
 No emitter or mandatory contract changed, and no new full-gate pass is claimed.
 
 **State:** partial; substantial body and helper proofs can be reused.
@@ -702,6 +712,14 @@ simulation or concurrent host histories.
   roots and affected CS roots passed the 955-input FMI/compiler package gate.
   Later restart access interleavings and rejected initialization accesses remain
   open; no additional source trajectory claim applies to importer trial states.
+- [x] Prove source-bound rejected Float64 calls and a shared reset operation
+  with accepted initialization-access interleavings. Derive typed raw caller
+  transfers, complete error/logging behavior, status/events, protected recovery
+  buffers and ownership. Reuse the existing initialization certificate to prove
+  actual reset/access observations and the unique source IVP at recovery exit.
+  Thirty-one roots passed the 963-input FMI/compiler package gate. Original
+  instance/reset storage and the universal callback frame remain explicit;
+  composition into created/repeating histories and later release is still open.
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.

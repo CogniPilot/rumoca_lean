@@ -1,3 +1,4 @@
+import RumocaFMI3.ResetStorage
 import RumocaFMI3.ResetEnvironment
 import RumocaFMI3.StepContract
 
@@ -72,23 +73,6 @@ theorem reset_after [CInterface] (program : CCalls.Events.Program E)
 
 end Rumoca.FMI3.StepRejections
 
-namespace Rumoca.FMI3
-open CTree CMemory CBody StaticFactory
-
-theorem Reset.Storage.record_preserved (storage : Reset.Storage before p)
-    (frame : ∀ query, p.InRecord query → after query = before query) : Reset.Storage after p := by
-  have field (name : String) (type : CType) (stored : Reset.Writable before (p.member name) type) :
-      Reset.Writable after (p.member name) type := by
-    obtain ⟨value, found⟩ := stored
-    exact ⟨value, (frame _ (p.member_in_record name)).trans found⟩
-  refine ⟨?_, field "time" _ storage.time, field "timeMin" _ storage.minimum,
-    field "eventTime" _ storage.event, field "lastCompleted" _ storage.completed,
-    field "stop" _ storage.stop, field "stopDefined" _ storage.stopDefined, field "mode" _ storage.mode⟩
-  obtain ⟨value, found⟩ := storage.state
-  exact ⟨value, (frame _ ((p.member_in_record "model").member "x")).trans found⟩
-
-
-end Rumoca.FMI3
 
 namespace Rumoca.FMI3.StepRejections
 open CTree CMemory StaticFactory
