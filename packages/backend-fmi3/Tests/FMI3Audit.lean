@@ -1,3 +1,4 @@
+import RumocaFMI3.StepRecovery
 import RumocaFMI3.FactoryEnvironment
 import RumocaFMI3.CSCreationStorage
 import RumocaFMI3.CSLifecycle
@@ -1178,3 +1179,17 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StepArguments.Storage.at_index
 #audit axioms Rumoca.FMI3.InstanceInitialization.Initialized.state_cell
 #audit axioms Rumoca.FMI3.CSHistory.initialize_release
+
+#audit axioms Rumoca.FMI3.ResetEnvironment.body_agrees
+#audit axioms Rumoca.FMI3.ResetEnvironment.call_behaviors
+#audit axioms Rumoca.FMI3.ResetEnvironment.null_behaviors
+#audit axioms Rumoca.FMI3.ResetEnvironment.execution_correct
+#audit axioms Rumoca.FMI3.StepRejections.after_frame
+#audit axioms Rumoca.FMI3.StepRejections.after_kind
+#audit axioms Rumoca.FMI3.StepRejections.after_mode
+#audit axioms Rumoca.FMI3.StepRejections.after_reset_storage
+#audit axioms Rumoca.FMI3.StepRejections.reset_after
+#audit axioms Rumoca.FMI3.Reset.Storage.record_preserved
+#audit axioms Rumoca.FMI3.StepRejections.after_atomic
+#audit axioms Rumoca.FMI3.StepRejections.restarted_owners
+#audit axioms Rumoca.FMI3.StepRejections.restarted_metadata

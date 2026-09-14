@@ -1,5 +1,30 @@
 # Exact verification contract
 
+**CS recovery follow-up (2026-09-14):** `adapter_suppressed_recovery` and
+`adapter_logged_recovery` connect the mandatory CS rejection contract to actual
+reset and both initialization calls in the same header/object/literal interface.
+They derive the later writable storage from the original heap. `Restarted`
+records complete call behaviors, each intermediate heap, the Solve default and
+the unique source IVP at the new requested start time. Reset selects positive
+zero for this admitted profile; the previous simulation's initial condition
+is not carried into the new source trajectory.
+
+The suppressed path preserves atomic reservations, the original owner map
+and slot metadata. The logged theorem retains every modeled returning callback
+outcome and the case with no returning outcome. It derives recovery for each
+returning outcome that preserves the entire instance record. This is an
+explicit external frame premise, not a proof of native callback behavior or
+global lease preservation by callbacks. Mixed simulation/recovery/release
+histories, callback reentry and concurrent hosts remain open.
+
+The 16 new audit roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/cs-recovery-package-v1.log`, with all 885 inputs unchanged.
+Only the three status documents changed afterward. Earlier semantic
+definitions, emission, mandatory contracts and tests are unchanged, retaining
+the 869-input full artifact gate and archives described below. No new full-gate
+pass is claimed for these derived proofs. K02–K05 remain open; grammar expansion
+is still blocked. The following records retain their original evidence scope.
+
 **Latest CS checkpoint (2026-09-14):** the actual adapter certificate now
 requires `StepCalls.FunctionContract`, composing exhaustive raw-input admission
 with complete successful, null, error and discard calls and optional logging.

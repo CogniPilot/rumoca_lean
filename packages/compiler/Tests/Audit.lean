@@ -1,3 +1,4 @@
+import Rumoca.FMI3Recovery
 import Rumoca.FMI3CSLifecycle
 import Rumoca.FMI3CSRelease
 import Rumoca.FMI3StepProofs
@@ -206,3 +207,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_initialize_cs_release
 
 #audit axioms Rumoca.FMI3.adapter_create_cs_release
+
+#audit axioms Rumoca.FMI3.restart_correct
+#audit axioms Rumoca.FMI3.adapter_suppressed_recovery
+#audit axioms Rumoca.FMI3.adapter_logged_recovery

@@ -37,6 +37,40 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### CS rejection, reset and reinitialization: 2026-09-14
+
+This derived-proof follow-up to `d331349` adds 16 audit roots. The actual
+required CS rejection contract now composes with reset and both initialization
+calls in one header/object/literal environment. Original writable storage
+supplies the later storage; the result retains the Solve default and a new
+source IVP at the requested start time. Suppressed logging preserves atomic
+reservations, original ownership and slot metadata. Enabled logging retains
+all modeled outcomes; each returning callback permits the recovery consequence
+only if it preserves the instance record. Global callback lease frames and
+reentry are not discharged by that premise.
+
+Applicable clauses are FMI 3.0.2
+[§2.2.4, status returns](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions)
+and [§2.3.1, reset](https://fmi-standard.org/docs/3.0.2/#fmi3Reset).
+Error permits recovery by reset; discard preserves the FMU state. Reset restores
+defaults and requires initialization before another run. The new proofs
+strengthen correspondence for these existing policies. They change no emitted
+transition, logging policy, source admission, capability or initialization
+choice, and do not close whole-standard correspondence.
+
+The FMI/compiler package gate passed in
+`build/c-factory/cs-recovery-package-v1.log` with all 885 inputs unchanged.
+Only the three status documents changed after acceptance. Earlier semantics,
+emission, mandatory contracts and existing tests are unchanged; the 869-input
+full gate and archives under `build/c-factory/cs-contract-artifacts-v1/` retain
+their original scope. No new full-gate pass or test suite is claimed.
+
+The pinned MLS/eFMI/MISRA baselines and findings remain open where previously
+open; this is a scoped FMI recovery follow-up, not a repeated full review.
+Complete mixed simulation histories, ME numerical interactions, callbacks,
+concurrent ownership, native profile/layout, cross-standard initialization and
+coding-guideline correspondence still block expansion. **Stage decision: open.**
+
 ### Actual creation through accepted CS lifetime: 2026-09-14
 
 This derived-proof follow-up to `0979ebd` adds nine audit roots. The actual
