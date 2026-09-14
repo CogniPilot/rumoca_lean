@@ -1,5 +1,43 @@
 # Exact verification contract
 
+**Repeated initialization protocols (2026-09-14):**
+`InitializationProtocol.runtime_source` binds a reusable initialization
+subprotocol to actual source compilation, numerical C, XML state/reference
+metadata and one printed/prepared adapter table and pool. Accepted Float64
+accesses, rejected accesses, initialization entry/exit and reset are individual
+actions. Failed attempts can reset, accept further accesses and fail again;
+the history is no longer limited to one contiguous recovery macro.
+
+`Completed.correct` derives successful statuses/readbacks, rejected statuses,
+finite instance state, initialization clock/stop configuration, ownership,
+read-only memory and protected caller storage from the original invariant.
+Every request uses actual typed host stores and the existing C call machine.
+Rejection retains arbitrary raw IEEE inputs and the original guard predicates.
+The logger policy admits suppressed/missing logging or a bound external effect
+with a universal frame; it assumes neither a return nor determinism. `progress`
+constructs a completed script or an actual prefix ending at a blocked call.
+Detailed callback event alternatives remain in the reused accessor contracts;
+the combined observation relation proves statuses and successful readbacks.
+
+Each initialization exit records its actual heap. `Checkpoints.source_ivps`
+proves its unique source Real IVP, preserving earlier checkpoints across later
+resets. Failed outputs have no numerical observation. `Stored.created` obtains
+the initial invariant from the existing factory's initialized-object result;
+`Completed.release` derives mode-appropriate release from completed histories
+ending initialized or failed. The new source theorem still starts with a valid
+instance and caller/logger resources. Composition with the actual source-bound
+factory, later ME/CS simulation and repeated simulation restarts remains open.
+
+All 35 new roots passed `lake build check-fmi3 check-compiler` on 970 unchanged
+inputs in `build/c-factory/initialization-protocol-package-v1.log`. Its review
+record corrects the wrapper's expectation of quoted audit names; the existing
+Lean audit reports bare names and checks every required root. No Lean rerun or
+axiom-policy change was needed. Only derived proofs/audit imports were added;
+semantics, emission, mandatory artifact propositions and boundary tests retain
+the distinct 869-input local full gate. GitHub run `34853259941` passed the full
+gate for `83b725c`, a distinct revision. This is not a new full-artifact result.
+K02–K05 and the remaining standards/MISRA findings still block grammar growth.
+
 **Rejected Float64 calls and recovery initialization (2026-09-14):**
 `Float64Rejection.runtime_source` supplies the new rejection/runtime and
 recovery consequences from actual source compilation, numerical C, XML

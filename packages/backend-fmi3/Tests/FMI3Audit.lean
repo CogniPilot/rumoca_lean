@@ -1,3 +1,9 @@
+import RumocaFMI3.InitializationProtocol
+import RumocaFMI3.InitializationProtocolCalls
+import RumocaFMI3.InitializationProtocolHistory
+import RumocaFMI3.InitializationProtocolLifetime
+import RumocaFMI3.InitializationProtocolRejection
+import RumocaFMI3.InitializationProtocolStorage
 import RumocaFMI3.Float64RawBuffers
 import RumocaFMI3.Float64Rejection
 import RumocaFMI3.Float64RejectionPreparation
@@ -1508,3 +1514,35 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.Float64Rejection.Returned.buffers
 #audit axioms Rumoca.FMI3.Float64Rejection.Returned.recover
 #audit axioms Rumoca.FMI3.Float64Rejection.Request.execution
+
+#audit axioms Rumoca.FMI3.InitializationProtocol.Setup.entered
+#audit axioms Rumoca.FMI3.InitializationProtocol.Setup.framed
+#audit axioms Rumoca.FMI3.InitializationProtocol.Phase.Configured.framed
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.entry
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.access
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.entered
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.exited
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.reset_done
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.rejected
+#audit axioms Rumoca.FMI3.InitializationProtocol.CallerStorage.refl
+#audit axioms Rumoca.FMI3.InitializationProtocol.CallerStorage.trans
+#audit axioms Rumoca.FMI3.InitializationProtocol.CallerStorage.ordinary
+#audit axioms Rumoca.FMI3.InitializationProtocol.CallerStorage.request
+#audit axioms Rumoca.FMI3.InitializationProtocol.CallContract.quiet
+#audit axioms Rumoca.FMI3.InitializationProtocol.Result.ordinary
+#audit axioms Rumoca.FMI3.InitializationProtocol.access_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.enter_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.exit_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.reset_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.framed
+#audit axioms Rumoca.FMI3.InitializationProtocol.Result.rejection
+#audit axioms Rumoca.FMI3.InitializationProtocol.rejection_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.initial
+#audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.advance
+#audit axioms Rumoca.FMI3.InitializationProtocol.execution_contract
+#audit axioms Rumoca.FMI3.InitializationProtocol.Checkpoints.stored
+#audit axioms Rumoca.FMI3.InitializationProtocol.Completed.correct
+#audit axioms Rumoca.FMI3.InitializationProtocol.progress
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.created
+#audit axioms Rumoca.FMI3.InitializationProtocol.Phase.can_finish
+#audit axioms Rumoca.FMI3.InitializationProtocol.Completed.release

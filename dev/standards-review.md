@@ -37,6 +37,37 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Repeated initialization protocols: 2026-09-14
+
+The new reference trace composes accepted/rejected Float64 accesses, entry,
+exit and reset without adding source syntax or changing the emitted runtime.
+The focused review rechecked [FMI 3.0.2 §§2.2.4, 2.3.1 and 2.3.2](https://fmi-standard.org/docs/3.0.2/):
+rejected outputs are undefined, error stops ordinary simulation, reset restores
+defaults before reinitialization, and pre-entry queries concern start values.
+The protocol follows those distinctions and retains the existing guards.
+
+Each actual exit heap determines a unique source Real IVP; repeated failed
+attempts and returning logger effects retain the storage needed to try again.
+The logger's universal frame protects instances, reservations and selected
+caller storage. The progress theorem also retains an actual blocked-call
+prefix when the modeled logger has no return. This is a finite initialization
+subprotocol, not the complete FMI state machine or an all-public-call theorem.
+The scalar reference state does not admit array source models; buffer counts
+describe batched host transfers only.
+
+MLS 3.7 source admission, Real/default initialization and diagnostics are
+unchanged. The eFMI Beta 1 GALEC, Production C, mappings and artifact contracts
+are unchanged. Cross-standard initialization, complete artifacts/provenance,
+native C/ABI correspondence and MISRA findings remain open.
+
+Thirty-five roots passed the FMI/compiler package gate on 970 unchanged inputs
+in `build/c-factory/initialization-protocol-package-v1.log`; the accompanying
+review records all roots from the existing unquoted ProofAudit output. The
+axiom whitelist is unchanged. Earlier full-artifact evidence remains distinct:
+the local 869-input gate and successful GitHub run `34853259941` for `83b725c`.
+The new source-bound factory/protocol/simulation/release composition is still
+required. **Stage decision: no grammar expansion.**
+
 ### Rejected Float64 calls and recovery initialization: 2026-09-14
 
 This derived-proof increment retains the same EBNF, admitted source profile,
