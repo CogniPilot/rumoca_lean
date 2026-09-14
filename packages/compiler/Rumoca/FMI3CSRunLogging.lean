@@ -1,5 +1,6 @@
 import Rumoca.FMI3CSRun
 import RumocaFMI3.CSRunLoggedExecution
+import RumocaFMI3.CSRunProgress
 
 noncomputable section
 namespace Rumoca.FMI3
@@ -10,13 +11,15 @@ branching history. It does not presume that a foreign logger returns. -/
 theorem CSRun.LoggedTrace.source_observation [CInterface] {program : CCalls.Events.Program CCalls.Events.Invocation}
     {logger : CSRun.Logger} {owners : SlotOwners.State objects.capacity} {model : Solve.Model source}
     (certified : CSRun.LoggedTrace objects logger owners model program p buffers heap before actions final statuses)
-    (completed : CSRun.Completed program p heap actions statuses events after) :
+    (completed : CSRun.Completed program p heap actions observed events after) :
     (∃! trajectory, CSRun.SourceEpoch source final trajectory) ∧
     (∀ trajectory, CSRun.SourceEpoch source final trajectory →
       ∃ value : Binary64.Value, load after (StateProofs.stateAddress p) = some (.finite value) ∧
         |Binary64.value value - trajectory (Binary64.value final.current.time)| ≤
           (final.current.elapsed : ℝ) +
             |Binary64.value final.current.time - (Binary64.value final.start + (final.current.elapsed : ℝ))|) := by
+  have same := certified.statuses_eq completed
+  subst observed
   have stored := (certified.completed completed).1
   exact ⟨CSRun.source_epoch model final, fun _ epoch => stored.source_observation epoch⟩
 
@@ -44,7 +47,10 @@ theorem adapter_logged_cs_run_history (contract : AdapterContract a adapter) :
       SlotOwners.Represents objects.flagsBlock heap owners →
       CSRun.ReferenceTrace header p buffers before actions final statuses →
       CSRun.LoggedTrace objects logger owners a.solve program p buffers heap before actions final statuses ∧
-      (∀ events after, CSRun.Completed program p heap actions statuses events after →
+      ((∃ events after, CSRun.Completed program p heap actions statuses events after) ∨
+        CSRun.Stopped program p heap actions) ∧
+      (∀ observed events after, CSRun.Completed program p heap actions observed events after →
+        observed = statuses ∧
         CSRun.Stored a.solve after p buffers final ∧
         SlotOwners.Represents objects.flagsBlock after owners ∧
         (∃! trajectory, CSRun.SourceEpoch a.parsed.ast final trajectory) ∧
@@ -75,10 +81,12 @@ theorem adapter_logged_cs_run_history (contract : AdapterContract a adapter) :
   have certified := CSRun.logged_trace_correct header objects a.solve.prepareFMI3 signatures pool
     (step.prepared pool made) literalBase firstBlock signed p buffers inPool program range logger actual rounding floorBound
     bound policy reset enterDefined exitDefined heap before final actions statuses owners literalFrame stored logging represented trace
-  refine ⟨certified, ?_⟩
-  intro events after completed
+  refine ⟨certified, certified.progress, ?_⟩
+  intro observed events after completed
+  have same := certified.statuses_eq completed
+  subst observed
   have post := certified.completed completed
-  exact ⟨post.1, post.2.2.1, certified.source_observation completed⟩
+  exact ⟨rfl, post.1, post.2.2.1, certified.source_observation completed⟩
 
 end Rumoca.FMI3
 end

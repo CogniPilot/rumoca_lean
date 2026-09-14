@@ -17,9 +17,8 @@ theorem ActionContract.performed_status [CInterface] {program : Events.Program E
       · cases same
         rfl
       · cases impossible
-    | restart _ _ _ =>
-      cases certified with
-      | silent executed => cases executed; rfl
+    | restart resetCall enterCall exitCall =>
+      exact (certified.restart_returned resetCall enterCall exitCall).2.2.2.1
   refine ⟨same, ?_⟩
   subst observedStatus
   exact certified.returned performed

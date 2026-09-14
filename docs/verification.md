@@ -1,5 +1,37 @@
 # Exact verification contract
 
+**CS raw restart outcomes and history progress (2026-09-14):**
+Review found that `CSRun.Performed.restart` required all three return codes
+to be zero. Earlier claims that raw CS histories derive arbitrary returned
+statuses were therefore too broad for that macro. The raw relation now admits
+arbitrary integer codes for reset, initialization entry and initialization
+exit. `ActionContract.restart_returned` proves that each is zero from the
+complete C call contracts, and the existing history/status/source theorems
+retain their conclusions for the enlarged relation.
+
+`CSRun.ActionContract.performed_iff` and `.faulted_iff` characterize both the
+returning and blocked alternatives. `Faulted` retains intermediate calls when
+a restart stops; `Stopped` retains the actually executed script prefix.
+`LoggedTrace.progress` proves that every finite certified script has a
+completed execution or an actual blocked prefix. It assumes neither callback
+return nor determinism. Blocking is in the existing external-effect/C machine
+model; this is not a theorem about native callback termination.
+
+`adapter_logged_cs_run_history` now exposes that progress result and accepts
+arbitrary observed status lists, deriving their equality to the reference
+list alongside the source Real IVP and numerical error bound. Its original
+storage, ownership, bindings and universal callback frame remain explicit.
+
+Six new roots and seven affected roots passed the existing FMI/compiler
+package gate on 985 unchanged inputs in
+`build/c-factory/cs-raw-progress-package-v1.log`; all required audit roots were
+present, with no unexpected axioms or warnings in the changed modules.
+Source/Solve and C machine semantics, emitters, mandatory artifact propositions
+and boundary tests are unchanged. The raw CS history relation is broader.
+This package pass is distinct from the retained full-artifact results.
+Repeated initialization/simulation/release composition and K02–K05 remain
+open; grammar expansion is still blocked.
+
 **Simulation storage and source-bound restart protocols (2026-09-14):**
 `InitializationProtocol.runtime_restart_source` binds actual reset and the
 existing initialization protocol to compiled source, numerical C, XML metadata

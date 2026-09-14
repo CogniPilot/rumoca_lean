@@ -24,6 +24,7 @@ import RumocaFMI3.InitializationMERun
 import RumocaFMI3.CSRunEnvironment
 import RumocaFMI3.InitializationCSRun
 import RumocaFMI3.CSRunCompleted
+import RumocaFMI3.CSRunProgress
 import RumocaFMI3.InitializationAccessStorage
 import RumocaFMI3.InitializationAccess
 import RumocaFMI3.InitializationRuntime
@@ -1286,6 +1287,12 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSRun.change_logged_correct
 #audit axioms Rumoca.FMI3.CSRun.logged_trace_correct
 #audit axioms Rumoca.FMI3.CSRun.ActionContract.returned
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.restart_returned
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.realizes
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.performed_iff
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.faulted_iff
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.progress
+#audit axioms Rumoca.FMI3.CSRun.LoggedTrace.progress
 #audit axioms Rumoca.FMI3.CSRun.LoggedTrace.completed
 
 #audit axioms Rumoca.FMI3.CSRun.ActionContract.performed_status

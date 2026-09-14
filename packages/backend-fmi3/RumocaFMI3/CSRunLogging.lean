@@ -140,7 +140,9 @@ namespace Rumoca.FMI3.CSRun
 open CTree CMemory CBody StaticFactory CCalls
 
 /-- Returned public actions, specified solely by the actual C machine.
-Reset/reinitialization retains all three calls and their intermediate heaps. -/
+Reset/reinitialization retains all three calls and their intermediate heaps.
+All return codes are arbitrary here; the action contract establishes success.
+The script's restart result is the final exit-initialization return code. -/
 inductive Performed [CInterface] (program : Events.Program Events.Invocation) (p : Address) :
     Heap → Action → Int → List Events.Invocation → Heap → Prop where
   | step : (Events.machine program).Behaves
@@ -149,15 +151,40 @@ inductive Performed [CInterface] (program : Events.Program Events.Invocation) (p
       Performed program p heap (.step request outputs) status events after
   | restart {heap resetHeap enteredHeap after : Heap} {args : Initialization.Arguments} :
       (Events.machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] heap .done)
-        (.terminates resetEvents ⟨.integer 0, resetHeap⟩) →
+        (.terminates resetEvents ⟨.integer resetStatus, resetHeap⟩) →
       (Events.machine program).Behaves
         (.calling InitializationCalls.signature.name
           (InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args)) resetHeap .done)
-        (.terminates enterEvents ⟨.integer 0, enteredHeap⟩) →
+        (.terminates enterEvents ⟨.integer enterStatus, enteredHeap⟩) →
       (Events.machine program).Behaves
         (.calling InitializationExit.signature.name (InitializationExit.arguments (some p)) enteredHeap .done)
-        (.terminates exitEvents ⟨.integer 0, after⟩) →
-      Performed program p heap (.restart args) 0 (resetEvents ++ enterEvents ++ exitEvents) after
+        (.terminates exitEvents ⟨.integer exitStatus, after⟩) →
+      Performed program p heap (.restart args) exitStatus (resetEvents ++ enterEvents ++ exitEvents) after
+
+/-- All three restart return codes follow from the complete C call
+contracts, including the intermediate calls hidden by the script's result. -/
+theorem ActionContract.restart_returned [CInterface] {program : Events.Program Events.Invocation}
+    (certified : ActionContract program p heap (.restart args) status returns blocked)
+    (resetCall : (Events.machine program).Behaves
+      (.calling Reset.signature.name [.pointer (some p)] heap .done)
+      (.terminates resetEvents ⟨.integer resetStatus, resetHeap⟩))
+    (enterCall : (Events.machine program).Behaves
+      (.calling InitializationCalls.signature.name
+        (InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args)) resetHeap .done)
+      (.terminates enterEvents ⟨.integer enterStatus, enteredHeap⟩))
+    (exitCall : (Events.machine program).Behaves
+      (.calling InitializationExit.signature.name (InitializationExit.arguments (some p)) enteredHeap .done)
+      (.terminates exitEvents ⟨.integer exitStatus, after⟩)) :
+    resetStatus = 0 ∧ enterStatus = 0 ∧ exitStatus = 0 ∧ exitStatus = status ∧
+      returns (resetEvents ++ enterEvents ++ exitEvents) after := by
+  cases certified with
+  | silent executed =>
+    cases executed with
+    | restart reset enter leave =>
+      cases (reset _).mp resetCall
+      cases (enter _).mp enterCall
+      cases (leave _).mp exitCall
+      exact ⟨rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- Complete action contracts cover every actually returning action, not
 just a selected callback branch. -/
@@ -171,17 +198,7 @@ theorem ActionContract.returned [CInterface] {program : Events.Program Events.In
       exact returned
     · cases impossible
   | restart resetCall enterCall exitCall =>
-    cases certified with
-    | silent executed =>
-      cases executed with
-      | restart reset enter leave =>
-        have first := (reset _).mp resetCall
-        cases first
-        have second := (enter _).mp enterCall
-        cases second
-        have third := (leave _).mp exitCall
-        cases third
-        exact ⟨rfl, rfl⟩
+    exact (certified.restart_returned resetCall enterCall exitCall).2.2.2.2
 
 /-- A completed host script records actual target calls, statuses and callback
 invocations. Its definition contains no source/Solve invariant or certificate. -/

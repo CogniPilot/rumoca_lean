@@ -37,6 +37,35 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### CS restart return codes and progress: 2026-09-14
+
+The review found a proof-scope restriction: the CS raw restart constructor
+already required successful reset/entry/exit codes. It has been broadened to
+arbitrary integer codes. The new `ActionContract.restart_returned` derives all
+three successful codes from the existing complete C contracts. This corrects
+the earlier raw-status claim without changing generated behavior.
+
+Returning and blocked action relations now have equivalence theorems against
+their certificates. A finite certified CS history has a completed execution
+or a real blocked-call prefix, including the calls within a restart. The
+adapter/source theorem exposes progress and derives the observed status list.
+The blocked alternative belongs to the existing callback-effect model; it
+does not establish native termination, concurrency or callback totality.
+
+The prior FMI 3.0.2 §§2.2.4 and 2.3.1 clause mapping is retained: failed outputs
+are not source observations, and reset/initialization precedes a new run.
+There is no new normative policy or grammar case. The pinned MLS 3.7 and
+eFMI 1.0.0 Beta 1 evidence, initialization restrictions and MISRA findings
+carry forward. Source/Solve/C machine semantics and generated artifacts are
+unchanged; the raw CS observation relation is deliberately broader.
+
+Six new and seven affected audit roots passed the existing FMI/compiler gate
+on 985 unchanged inputs in `build/c-factory/cs-raw-progress-package-v1.log`,
+with the axiom whitelist unchanged and no changed-module warnings. No tests
+were added. This is package proof evidence, not a new full `lake test` result.
+The repeated whole-history theorem, remaining public APIs, native/artifact
+correspondence and K02–K05 remain open. **No grammar expansion.**
+
 ### Simulation storage and restart protocols: 2026-09-14
 
 This increment changes derived memory/history certificates and source-bound

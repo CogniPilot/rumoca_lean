@@ -45,6 +45,16 @@ reuses the extracted backend composition. Emission, semantics, mandatory
 contracts and existing tests are unchanged; their full artifact evidence
 remains the 869-input gate. No new full-gate pass is claimed for this follow-up.
 
+The CS raw restart relation now admits arbitrary returned codes; the complete
+call contracts prove that reset, entry and exit succeed. This repairs an
+accidental success premise in that raw relation. Returning and blocked action
+equivalences and finite-history progress now feed the adapter/source theorem,
+which derives arbitrary observed status lists and preserves its source IVP
+and error bound. Six new and seven affected roots passed the 985-input
+FMI/compiler package gate in `build/c-factory/cs-raw-progress-package-v1.log`.
+This is a prerequisite repair for repeated-history composition, not closure
+of that task or a new full-artifact gate.
+
 Completed ME, logged CS and suppressed CS histories now supply the
 original caller storage, ownership and logger state needed for actual reset
 followed by the reusable initialization protocol. Arbitrary selected caller
@@ -781,6 +791,11 @@ simulation or concurrent host histories.
   Thirty-three roots passed the 984-input C/FMI/compiler package gate. The
   source/artifact environment supplies the universal initialization contract;
   no future valid buffers or successful call are supplied by the host.
+- [x] Remove successful return-code premises from the raw CS restart relation.
+  Derive all three codes from actual C contracts; characterize returning and
+  blocked actions and prove finite CS history progress without callback
+  totality. Expose progress and derived raw statuses in the adapter/source
+  theorem. Six new and seven affected roots passed the 985-input package gate.
 - [ ] Compose repeated simulation/initialization segments through final release
   in one source-bound history theorem. Generalize the existing simulation
   handoff to every initialized segment, preserve all actual source checkpoints
