@@ -45,6 +45,7 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
     (pool : CLiteral.Pool (LiteralPreparation.excluded ++
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : MEEnvironment.PreparedContract model sigs pool)
+    (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
     (literalBase : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (config : Configuration),
@@ -58,12 +59,13 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
       CReadOnly.Preserves (pool.install literalBase firstBlock signed) heap →
       MENumericalHistory.Stored heap p clock reference addresses buffer → Reset.Storage heap p →
       action.Allowed buffer clock reference →
+      action.Prepared objects heap addresses buffer →
       ∃ returns blocked, ActionContract program p addresses buffer heap action returns blocked ∧
         ∀ observed after epochs, returns observed after epochs →
           Returned model objects owners config p addresses buffer heap after reference clock action observed := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program config actual reset enterDefined exitDefined heap p clock reference addresses buffer action owners
-    valid configured inPool represented literals stored storage allowed
+    valid configured inPool represented literals stored storage allowed ready
   have configuration (after : Heap)
       (frame : ∀ q, MEFailure.Protected objects addresses buffer q → MENumericalRun.Outside p addresses buffer q → after q = heap q) :
       config.Stored after p := by
@@ -71,6 +73,24 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
     intro name member
     exact frame _ (Or.inl inPool) (configuration_outside stored name (by simpa using List.mem_append_left ["slot"] member))
   cases action with
+  | counts request =>
+    obtain ⟨outcomes, blocked, contract⟩ := MECountCalls.execution header objects model sigs pool counts
+      literalBase firstBlock signed program config actual heap p clock reference addresses buffer request owners
+      valid configured inPool represented literals stored storage ready.1 ready.2 allowed
+    refine ⟨_, blocked, .counts contract, ?_⟩
+    rintro observed after epochs ⟨events, status, rfl, rfl, returned⟩
+    obtain ⟨observation, memory⟩ := contract.returned events status after returned
+    refine ⟨memory.stored, memory.reset, memory.configuration, memory.ownership, ?_, memory.readonly,
+      fun q guarded outside => memory.frame q guarded outside.1.1.2.1, memory.storage⟩
+    cases request with
+    | get which output =>
+      obtain ⟨statusEq, quiet, readback⟩ := observation
+      have empty := quiet rfl
+      simp only [Action.Observed, statusEq, empty, readback, CountAccess.Request.failed,
+        Bool.false_eq_true, ↓reduceIte, MENumericalHistory.Observation.ok]
+    | reject which missing output =>
+      exact ⟨events, by simp only [CountAccess.Request.readback, observation.1,
+        CountAccess.Request.failed, ↓reduceIte]⟩
   | run command =>
     obtain ⟨after, epochs, called, nextStored, nextReset, readonly, atomic, keptStorage, frame⟩ :=
       run_correct header objects (pool.addresses firstBlock) model program
@@ -132,6 +152,7 @@ theorem trace_correct (header : CFenv.Header) (objects : Objects) (model : Solve
     (pool : CLiteral.Pool (LiteralPreparation.excluded ++
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : MEEnvironment.PreparedContract model sigs pool)
+    (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
     (literalBase : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (config : Configuration),
@@ -145,20 +166,27 @@ theorem trace_correct (header : CFenv.Header) (objects : Objects) (model : Solve
       CReadOnly.Preserves (pool.install literalBase firstBlock signed) heap →
       MENumericalHistory.Stored heap p clock reference addresses buffer → Reset.Storage heap p →
       ReferenceTrace buffer reference clock actions final finalClock →
+      (∀ action ∈ actions, action.Prepared objects heap addresses buffer) →
+      (∀ action ∈ actions, config.StoragePolicy action.CallerRegion) →
       Trace model objects owners config program p addresses buffer heap reference clock actions final finalClock := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program config actual reset enterDefined exitDefined heap p clock reference final finalClock addresses buffer actions owners
-    valid configured inPool represented literals stored storage admitted
+    valid configured inPool represented literals stored storage admitted ready policies
   induction admitted generalizing heap with
   | nil => exact .nil stored storage configured represented
   | cons accepted _ ih =>
-    obtain ⟨returns, blocked, called, returned⟩ := action_correct header objects model sigs pool prepared literalBase firstBlock signed
+    obtain ⟨returns, blocked, called, returned⟩ := action_correct header objects model sigs pool prepared counts literalBase firstBlock signed
       program config actual reset enterDefined exitDefined heap p _ _ addresses buffer _ owners valid configured
-      inPool represented literals stored storage accepted
+      inPool represented literals stored storage accepted (ready _ (by simp))
     refine .cons called returned ?_
     intro observed after epochs outcome
     have next := returned observed after epochs outcome
-    exact ih after next.configuration next.ownership (literals.trans next.readonly) next.stored next.resetStorage
+    apply ih after next.configuration next.ownership (literals.trans next.readonly) next.stored next.resetStorage
+    · intro action member
+      exact (ready action (List.mem_cons_of_mem _ member)).preserved action
+        (next.storage action.CallerRegion (policies action (List.mem_cons_of_mem _ member)))
+    · intro action member
+      exact policies action (List.mem_cons_of_mem _ member)
 
 end Rumoca.FMI3.MEMixedRun
 end

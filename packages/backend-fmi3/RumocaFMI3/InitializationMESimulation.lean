@@ -38,13 +38,14 @@ structure MEExecution [CInterface] (model : Solve.FMI3Model source) (program : P
     Retains p heap after ∧ CReadOnly.Preserves heap after ∧
     (∀ q, MEFailure.Protected objects addresses buffer q → MENumericalRun.Outside p addresses buffer q → after q = heap q)
   faulted : ∀ action rest, actions = action :: rest → MEMixedRun.Faulted program p addresses buffer heap action →
-    ∃ request input, action = .reject request input
+    action.Rejection
 
 theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI3Model source)
     (sigs : List Signature)
     (pool : CLiteral.Pool (LiteralPreparation.excluded ++
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : MEEnvironment.PreparedContract model sigs pool)
+    (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -56,16 +57,23 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
       p.block = objects.instances.block → MEOutputsGuarded objects retained addresses buffer →
       MENumericalHistory.Stored heap p clock before addresses buffer → Reset.Storage heap p →
       MEMixedRun.ReferenceTrace buffer before clock actions final finalClock →
+      (∀ action ∈ actions, action.Prepared objects original addresses buffer) →
+      (∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q) →
       MEExecution model program objects retained owners original (pool.install baseHeap firstBlock signed)
         heap p addresses buffer before clock actions final finalClock := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program actual retained owners original heap p addresses buffer before final clock finalClock actions
-    persistent inPool guarded stored resetStorage admitted
+    persistent inPool guarded stored resetStorage admitted requests regions
   obtain ⟨config, configured, valid, policy⟩ := persistent.logging.me guarded
   obtain ⟨reset, enterDefined, exitDefined, _, _⟩ := lifecycle.execution header objects (pool.addresses firstBlock) program actual
-  have certified := MEMixedRun.trace_correct header objects model sigs pool prepared baseHeap firstBlock signed program config
+  have current : ∀ action ∈ actions, action.Prepared objects heap addresses buffer := by
+    intro action member
+    exact MEMixedRun.Action.Prepared.preserved action (requests action member)
+      (fun q inside => persistent.caller q (regions action member q inside))
+  have policies := fun action member => policy.mono (regions action member)
+  have certified := MEMixedRun.trace_correct header objects model sigs pool prepared counts baseHeap firstBlock signed program config
     actual reset enterDefined exitDefined heap p clock before final finalClock addresses buffer actions owners valid configured
-    inPool persistent.ownership persistent.readonly stored resetStorage admitted
+    inPool persistent.ownership persistent.readonly stored resetStorage admitted current policies
   refine ⟨⟨config, certified⟩, certified.progress, ?_, ?_⟩
   · intro observed after epochs completed
     obtain ⟨nextStored, nextReset, _, ownersAfter, readonly, frame⟩ := certified.completed completed

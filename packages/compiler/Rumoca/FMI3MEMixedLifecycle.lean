@@ -3,6 +3,7 @@ import Rumoca.FMI3MEMixedRun
 import Rumoca.FMI3StaticLifecycle
 import RumocaFMI3.FactoryEnvironment
 import RumocaFMI3.MEMixedLifecycle
+import RumocaFMI3.InitializationStorage
 
 noncomputable section
 namespace Rumoca.FMI3.MEMixedRun
@@ -16,12 +17,14 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     (build : SourceBuildContract a c description adapter metadata) :
     compile input = .ok a ∧ Rumoca.ArtifactContract a c .internal ∧
     DerivativeMetadata.Contract a.parsed.ast metadata ∧
+    CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
         (LiteralPreparation.functions a.solve.prepareFMI3 sigs).flatMap functionNames),
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
       MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
+      (∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool) ∧
       ∀ (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (before : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -61,6 +64,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
             config.Matches args → config.Valid program objects addresses buffer →
             ReferenceTrace buffer (MENumericalHistory.ReferenceState.initial initArgs initial)
               (Time.Clock.initial initArgs.start) actions final finalClock →
+            (∀ action ∈ actions, action.Prepared objects heap addresses buffer) →
+            (∀ action ∈ actions, config.StoragePolicy action.CallerRegion) →
             let entered := InitializationEntry.finalHeap live p initArgs
             let exited := InitializationCalls.exitedHeap live p initArgs .me
             let trajectory := Initialization.trajectory (Binary64.value initArgs.start) (Binary64.value initial)
@@ -80,11 +85,11 @@ theorem runtime_create_release (compiled : compile input = .ok a)
             ((∃ observed after epochs, Completed program p addresses buffer exited actions observed after epochs) ∨
               Stopped program p addresses buffer exited actions) ∧
             (∀ stop, Interrupted program p addresses buffer exited actions stop →
-              SourcePrefix a.parsed.ast p addresses buffer (MENumericalHistory.ReferenceState.initial initArgs initial)
+              SourcePrefix a.solve p addresses buffer (MENumericalHistory.ReferenceState.initial initArgs initial)
                 (Time.Clock.initial initArgs.start) actions stop) ∧
             (∀ observed after epochs, Completed program p addresses buffer exited actions observed after epochs →
               MENumericalHistory.Stored after p finalClock final addresses buffer ∧ Reset.Storage after p ∧
-              config.Stored after p ∧ SourceObservations a.parsed.ast actions observed ∧
+              config.Stored after p ∧ SourceObservations a.solve actions observed ∧
               MENumericalRun.InitializedEpochs a.parsed.ast p epochs ∧ CReadOnly.Preserves heap after ∧
               LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner))
                 owner .me final.control.mode ∧
@@ -94,9 +99,12 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (∀ name ∈ DiscreteCalls.names, q ≠ addresses name) → q ≠ buffer →
                 q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot final.control.mode q = heap q))) := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, states, derivative,
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, _, states, derivative,
     _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
+  have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
+    letI : StaticLiterals := ⟨fun _ => none⟩
+    exact fun events => (queries inferInstance events).prepared pool made
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
       DerivativeEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique derivative.member derivative.numerical.fresh made,
@@ -106,7 +114,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
       MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
   refine ⟨compiled, build.numerical, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
-    sigs, pool, made, printed, functions, prepared, ?_⟩
+    CountMetadata.artifact_counts _ _ build.metadata, sigs, pool, made, printed, functions, prepared, counts, ?_⟩
   intro header instances flags separate before firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -146,7 +154,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   obtain ⟨initial, loaded, agreement, _, _⟩ := created.source_default a 0
   have state := created.initialized.state_cell initial loaded
   refine ⟨trace, slot, live, initial, work, reserved, created, agreement, creation, ?_⟩
-  intro initArgs config addresses buffer actions final finalClock admissible callers matching valid admitted
+  intro initArgs config addresses buffer actions final finalClock admissible callers matching valid admitted requests policies
   have outputs := (callers.storage_preserved preserved).at_index slot.val
   obtain ⟨entered, exited⟩ := InitializationEnvironment.calls header objects literals a.solve.prepareFMI3
     program live p initArgs .me enterDefined exitDefined admissible
@@ -160,10 +168,18 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have prefixReadonly : CReadOnly.Preserves heap initializedHeap :=
     (termination_preserves ((creation _).mpr rfl)).trans
       ((termination_preserves ((entered _).mpr rfl)).trans (termination_preserves ((exited _).mpr rfl)))
-  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared before firstBlock signed
+  have enteredStorage := (InitializationStorage.entered live p initArgs .me admissible
+    (StaticInitialization.entry_storage created.initialized) created.initialized.kindValue).1
+  have exitedStorage := (InitializationStorage.exited (InitializationEntry.finalHeap live p initArgs) p .me
+    (InitializationCalls.entered_mode live p initArgs)).1
+  have current : ∀ action ∈ actions, action.Prepared objects initializedHeap addresses buffer := by
+    intro action member
+    exact Action.Prepared.preserved action (requests action member)
+      ((preserved.trans (enteredStorage.trans exitedStorage)).on action.CallerRegion)
+  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts before firstBlock signed
     program config actual reset enterDefined exitDefined initializedHeap p _ _ final finalClock addresses buffer actions
     (SlotOwners.update owners slot (some owner)) valid initialConfig rfl initialOwners
-    (literalFrame.trans prefixReadonly) initialStored initialReset admitted
+    (literalFrame.trans prefixReadonly) initialStored initialReset admitted current policies
   have initialized := InitializationCalls.exited_source_initialized a.solve.prepareFMI3 live p initArgs .me ⟨initial⟩ loaded
   have initialModel := InitializationBodies.exit_model (InitializationEntry.model loaded initArgs) .me
   refine ⟨entered, exited, initialized,

@@ -67,6 +67,8 @@ inductive Faulted [CInterface] (program : Program Invocation) (p : Address)
   | reject : MEFailure.Prepares input heap ready buffer →
       (machine program).Behaves (.calling (request.call p).1 (request.call p).2 ready .done) (.wrong []) →
       Faulted program p addresses buffer heap (.reject request input)
+  | counts : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done) (.wrong []) →
+      Faulted program p addresses buffer heap (.counts request)
 
 inductive Stopped [CInterface] (program : Program Invocation) (p : Address)
     (addresses : String → Address) (buffer : Address) : Heap → List Action → Prop where
@@ -102,18 +104,26 @@ theorem ActionContract.faulted_iff
         rcases (called _).mp faulted with ⟨_, _, _, impossible⟩ | ⟨blocked, _⟩
         · cases impossible
         · exact blocked
+    | counts faulted =>
+      cases certified with
+      | counts contract =>
+        rcases (contract.behaviors _).mp faulted with ⟨_, _, _, _, impossible⟩ | ⟨blocked, _⟩
+        · cases impossible
+        · exact blocked
   · intro blocked
     cases certified with
     | run _ | quiet _ _ => exact False.elim blocked
     | logged _ _ _ prepared called => exact .reject prepared ((called _).mpr (Or.inr ⟨blocked, rfl⟩))
+    | counts contract => exact .counts ((contract.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
 
 theorem ActionContract.faulted_rejection
     (certified : ActionContract program p addresses buffer heap action returns blocked)
-    (actual : Faulted program p addresses buffer heap action) : ∃ request input, action = .reject request input := by
+    (actual : Faulted program p addresses buffer heap action) : action.Rejection := by
   have blocked := certified.faulted_iff.mp actual
   cases certified with
   | run _ | quiet _ _ => exact False.elim blocked
-  | logged _ _ _ _ _ => exact ⟨_, _, rfl⟩
+  | logged _ _ _ _ _ => trivial
+  | counts contract => exact contract.failure blocked
 
 /-- Every modeled returning or blocked alternative is derived, with no
 callback totality or deterministic-callback premise. -/
@@ -132,6 +142,10 @@ theorem ActionContract.progress
       · obtain ⟨value, after, returned⟩ := returning
         exact Or.inl ⟨_, after, [], rfl, rfl, value, returned⟩
       · exact Or.inr (fun value after returned => returning ⟨value, after, returned⟩)
+    | counts contract =>
+      rcases contract.available with ⟨events, status, after, returned⟩ | blocked
+      · exact Or.inl ⟨_, after, [], events, status, rfl, rfl, returned⟩
+      · exact Or.inr blocked
   rcases alternative with ⟨observed, after, epochs, outcome⟩ | blocked
   · exact Or.inl ⟨observed, after, epochs, outcome, certified.realizes outcome⟩
   · exact Or.inr ⟨blocked, certified.faulted_iff.mpr blocked⟩

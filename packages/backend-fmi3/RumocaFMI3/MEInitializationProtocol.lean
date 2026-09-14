@@ -28,29 +28,32 @@ def Plan.mode : Plan → Mode
   | .last cycle => cycle.final.control.mode
   | .next _ following => following.mode
 
-def Cycle.Admitted (cycle : Cycle) (objects : Objects) (retained : Address → Prop)
-    (original : Heap) (p : Address) (access : Float64Buffers.Layout) (buffer : Address) : Prop :=
-  InitializationProtocol.ReferenceTrace .me .reset cycle.initialization cycle.state ∧
-  (∀ action ∈ cycle.initialization, action.Prepared objects retained original p access) ∧
-  cycle.state.phase = .initialized cycle.args ∧
-  MEMixedRun.ReferenceTrace buffer (InitializationProtocol.meReference cycle.state cycle.args)
+structure Cycle.Admitted (cycle : Cycle) (objects : Objects) (retained : Address → Prop)
+    (original : Heap) (p : Address) (access : Float64Buffers.Layout)
+    (addresses : String → Address) (buffer : Address) : Prop where
+  initialization : InitializationProtocol.ReferenceTrace .me .reset cycle.initialization cycle.state
+  requests : ∀ action ∈ cycle.initialization, action.Prepared objects retained original p access
+  initialized : cycle.state.phase = .initialized cycle.args
+  simulation : MEMixedRun.ReferenceTrace buffer (InitializationProtocol.meReference cycle.state cycle.args)
     (Time.Clock.initial cycle.args.start) cycle.simulation cycle.final cycle.finalClock
+  resources : ∀ action ∈ cycle.simulation, action.Prepared objects original addresses buffer
+  regions : ∀ action ∈ cycle.simulation, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q
 
-theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted objects retained original p access buffer) :
+theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted objects retained original p access addresses buffer) :
     LifecycleRelease.CanFinish .me cycle.final.control.mode :=
-  admitted.2.2.2.can_finish (Or.inl (by simp [InitializationProtocol.meReference,
+  admitted.simulation.can_finish (Or.inl (by simp [InitializationProtocol.meReference,
     MENumericalHistory.ReferenceState.initial, MEHistory.ReferenceState.initial, Reference.Allowed]))
 
 inductive Admitted (objects : Objects) (retained : Address → Prop) (original : Heap)
-    (p : Address) (access : Float64Buffers.Layout) (buffer : Address) : Plan → Prop where
+    (p : Address) (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) : Plan → Prop where
   | finish : InitializationProtocol.ReferenceTrace .me .reset actions state →
       (∀ action ∈ actions, action.Prepared objects retained original p access) → state.phase.Finished →
-      Admitted objects retained original p access buffer (.finish actions state)
-  | last : cycle.Admitted objects retained original p access buffer →
-      Admitted objects retained original p access buffer (.last cycle)
-  | next : cycle.Admitted objects retained original p access buffer →
-      Admitted objects retained original p access buffer following →
-      Admitted objects retained original p access buffer (.next cycle following)
+      Admitted objects retained original p access addresses buffer (.finish actions state)
+  | last : cycle.Admitted objects retained original p access addresses buffer →
+      Admitted objects retained original p access addresses buffer (.last cycle)
+  | next : cycle.Admitted objects retained original p access addresses buffer →
+      Admitted objects retained original p access addresses buffer following →
+      Admitted objects retained original p access addresses buffer (.next cycle following)
 
 inductive Record where
   | initialization (observed : List (Float64Access.Observation Invocation)) (checkpoints : List Heap) (heap : Heap)

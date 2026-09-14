@@ -12,6 +12,10 @@ theorem Action.can_finish (action : Action)
     LifecycleRelease.CanFinish .me (action.next reference).control.mode := by
   cases action with
   | reject _ _ => exact Or.inr rfl
+  | counts request =>
+    cases request with
+    | get _ _ => exact ready
+    | reject _ _ _ => exact Or.inr rfl
   | run command =>
     cases command with
     | restart _ => exact Or.inl (by simp [Action.next, MENumericalHistory.ReferenceState.restart,

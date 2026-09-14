@@ -24,7 +24,7 @@ def MEContinuation [CInterface] (model : Solve.Model source) (objects : Objects)
   ∀ observed after epochs,
     MEMixedRun.Completed program p addresses buffer exited actions observed after epochs →
     MENumericalHistory.Stored after p finalClock final addresses buffer ∧ Reset.Storage after p ∧
-    config.Stored after p ∧ MEMixedRun.SourceObservations source actions observed ∧
+    config.Stored after p ∧ MEMixedRun.SourceObservations model actions observed ∧
     MENumericalRun.InitializedEpochs source p epochs ∧ CReadOnly.Preserves original after ∧
     LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner))
       owner .me final.control.mode ∧
@@ -42,6 +42,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
       (LiteralPreparation.functions model.prepareFMI3 sigs).flatMap CLiteral.functionNames))
     (lifecycle : LifecycleEnvironment.PreparedContract model.prepareFMI3 sigs)
     (prepared : MEEnvironment.PreparedContract model.prepareFMI3 sigs pool)
+    (counts : ∀ events, CountEnvironment.PreparedContract model.prepareFMI3 sigs events pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) (slot : Fin objects.capacity)
     (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -67,6 +68,8 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
     config.Matches factoryArgs → config.Valid program objects addresses buffer →
     MEMixedRun.ReferenceTrace buffer (meReference state args before during)
       (Time.Clock.initial args.start) actions final finalClock →
+    (∀ action ∈ actions, action.Prepared objects original addresses buffer) →
+    (∀ action ∈ actions, config.StoragePolicy action.CallerRegion) →
     MEContinuation model objects program tag slot owners owner original
       (InitializationBodies.exitHeap atExit p .me) access addresses buffer (meReference state args before during)
       final (Time.Clock.initial args.start) finalClock actions config := by
@@ -75,7 +78,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
   let p := objects.instances.index slot.val
   dsimp only
   intro initialized initializedInstance literals liveReadonly liveStorage liveFrame admissible outputs represented
-    reserved metadata config actions final finalClock matching valid admitted
+    reserved metadata config actions final finalClock matching valid admitted requests policies
   obtain ⟨reset, enterDefined, exitDefined, termination, releaseDefined⟩ :=
     lifecycle.execution header objects (pool.addresses firstBlock) program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
@@ -87,10 +90,14 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
   have configured := initialized.configuration (MEMixedRun.Configuration.created matching initializedInstance)
   have readonly := liveReadonly.trans initialized.readonly
   have ownership := initialized.owners represented
-  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared baseHeap firstBlock signed
+  have current : ∀ action ∈ actions, action.Prepared objects exited addresses buffer := by
+    intro action member
+    exact MEMixedRun.Action.Prepared.preserved action (requests action member)
+      ((liveStorage.trans initialized.storage).on action.CallerRegion)
+  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts baseHeap firstBlock signed
     program config actual reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
       (SlotOwners.update owners slot (some owner)) valid configured rfl ownership (literals.trans readonly)
-      stored resetStorage admitted
+      stored resetStorage admitted current policies
   refine ⟨certified, ?_⟩
   intro observed after epochs completed
   obtain ⟨finalStored, finalReset, finalConfig, finalOwners, runReadonly, frame⟩ := certified.completed completed
@@ -134,6 +141,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧
     Float64SetMetadata.Contract a.parsed.ast metadata ∧
     DerivativeMetadata.Contract a.parsed.ast metadata ∧
+    CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
         (LiteralPreparation.functions a.solve.prepareFMI3 sigs).flatMap CLiteral.functionNames),
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
@@ -141,6 +149,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
       LifecycleEnvironment.PreparedContract a.solve.prepareFMI3 sigs ∧
       MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
+      (∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool) ∧
       ∀ (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -198,13 +207,16 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
               config.Matches factoryArgs → config.Valid program objects addresses buffer →
               MEMixedRun.ReferenceTrace buffer (meReference ⟨initial⟩ args before during)
                 (Time.Clock.initial args.start) actions final finalClock →
+              (∀ action ∈ actions, action.Prepared objects heap addresses buffer) →
+              (∀ action ∈ actions, config.StoragePolicy action.CallerRegion) →
               MEContinuation a.solve objects program tag slot owners owner heap
                 (InitializationBodies.exitHeap atExit p .me) buffers addresses buffer (meReference ⟨initial⟩ args before during)
                 final (Time.Clock.initial args.start) finalClock actions config := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, create⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, create⟩ :=
     runtime_create_release compiled build
   refine ⟨compiled, numerical, metadataVariables, writable, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
-    sigs, pool, made, printed, functions, csPrepared.toPreparedContract, prepared, ?_⟩
+    CountMetadata.artifact_counts _ _ build.metadata,
+    sigs, pool, made, printed, functions, csPrepared.toPreparedContract, prepared, counts, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -223,12 +235,12 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
     admissible beforeFits beforeAllowed duringFits duringAllowed
   obtain ⟨_, initialized, uniqueSource⟩ := certified.completed_source executed
   refine ⟨beforeEntry, atExit, certified, executed, initialized, uniqueSource, fun _ _ => certified.execution_iff, ?_⟩
-  intro addresses buffer config actions final finalClock outputs matching valid admitted
-  exact certified.me_continuation a.solve header objects sigs pool csPrepared.toPreparedContract prepared
+  intro addresses buffer config actions final finalClock outputs matching valid admitted requests policies
+  exact certified.me_continuation a.solve header objects sigs pool csPrepared.toPreparedContract prepared counts
     baseHeap firstBlock signed slot buffers addresses buffer program tag actual write heap live beforeEntry atExit ⟨initial⟩ args
       before during factoryArgs owners owner created.initialized literalFrame
       (termination_preserves ((creation _).mpr rfl)) preserved createdFrame admissible (outputs.at_index slot.val)
-      created.represented reserved created.metadata config actions final finalClock matching valid admitted
+      created.represented reserved created.metadata config actions final finalClock matching valid admitted requests policies
 
 end Rumoca.FMI3.InitializationAccess
 end

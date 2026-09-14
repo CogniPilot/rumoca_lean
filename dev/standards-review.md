@@ -37,6 +37,36 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Count interleavings in ME simulation: 2026-09-14
+
+This increment uses the existing SR09 count policy: FMI 3.0.2 §§2.3.2 and
+2.3.5 permit ME count queries in Instantiated and Event Mode. The mixed ME
+history applies the same guard between control/simulation calls and resets;
+it retains successful observations and the existing §2.3.1 Error/logging
+behavior, including modeled blocked prefixes. Typed count outputs remain
+separate from numerical buffers. Original caller storage and the universal
+callback policy derive later resources, without a future-heap or callback-return
+premise. Recurring source histories retain observations across later resets.
+
+The existing C machine and actual prepared count contracts are reused. Source
+and GALEC grammars, numerical semantics, emitters, XML and mandatory artifact
+propositions are unchanged; pinned MLS 3.7 and eFMI 1.0.0 Beta 1 evidence and
+open shared-initialization/coding-guideline findings carry forward. All 24 draft
+modules and 14 selected roots passed standalone Lean checking before package
+integration. The owning FMI/compiler package gate passed at 21:15:09 UTC on
+1015 unchanged inputs in `build/c-factory/me-count-package-v1.log`, with nine
+new and eighteen affected roots and no unexpected axioms or changed-module
+warnings. The required full `nix develop .#verification --command lake test`
+gate passed at 22:01:57 UTC on 1015 unchanged inputs, with all 27 required
+roots and no unexpected axioms or changed-module warnings. Its log and JSON
+record are `build/c-factory/me-count-full-gate-v1.*`; only the three evidence
+documents change afterward. Retained artifacts and comparisons are in
+`build/c-factory/me-count-artifacts-v1/` and adjacent JSON records. Every FMU
+member is unchanged, including the native library; the eFMU changes only
+generation identities and their dependent references/checksums in three
+manifests. Numerical C, GALEC and eFMI Production C are unchanged.
+**Stage decision: open; nominal/remaining public calls and K02–K05 block growth.**
+
 ### Count observations through initialization/recovery: 2026-09-14
 
 This follow-up reuses the SR09 call-state repair below. FMI 3.0.2 §§2.3.2 and

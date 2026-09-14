@@ -1672,3 +1672,14 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEProtocol.Interrupted.stopped
 #audit axioms Rumoca.FMI3.MEProtocol.Stopped.interrupted
 #audit axioms Rumoca.FMI3.MEProtocol.interrupted_iff
+
+-- Count calls in mixed ME histories retain original caller storage and raw observations.
+#audit axioms Rumoca.FMI3.MECountCalls.written_frame
+#audit axioms Rumoca.FMI3.MECountCalls.written_memory
+#audit axioms Rumoca.FMI3.MECountCalls.configuration_frame
+#audit axioms Rumoca.FMI3.MECountCalls.Memory.success
+#audit axioms Rumoca.FMI3.MECountCalls.Memory.failure
+#audit axioms Rumoca.FMI3.MECountCalls.Contract.quiet
+#audit axioms Rumoca.FMI3.MECountCalls.execution
+#audit axioms Rumoca.FMI3.MEMixedRun.Configuration.StoragePolicy.mono
+#audit axioms Rumoca.FMI3.MEMixedRun.Action.Prepared.preserved

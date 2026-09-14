@@ -53,7 +53,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               InitializationProtocol.Resources objects retained heap p access → MENumericalHistory.CallerStorage heap p addresses buffer →
               InitializationProtocol.MEOutputsGuarded objects retained addresses buffer →
               InitializationProtocol.FactoryLogPolicy program objects retained factoryArgs →
-              Admitted objects retained heap p access buffer plan →
+              Admitted objects retained heap p access addresses buffer plan →
               Contract a.solve program objects retained (SlotOwners.update owners slot (some owner)) heap
                 (pool.install baseHeap firstBlock signed) live p access addresses buffer plan ∧
               ∀ records after, Completed program p access addresses buffer live plan records after →
@@ -92,11 +92,11 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     exact InitializationProtocol.source_contract initializeCalls reference requests ready
   have simulation : SimulationCompiler a.solve program objects retained
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p addresses buffer := by
-    intro current before final clock finalClock actions persistent stored storage reference
-    exact InitializationProtocol.me_execution header objects a.solve.prepareFMI3 sigs pool prepared.me
+    intro current before final clock finalClock actions persistent stored storage reference requests regions
+    exact InitializationProtocol.me_execution header objects a.solve.prepareFMI3 sigs pool prepared.me prepared.counts
       prepared.cs.toPreparedContract baseHeap firstBlock signed program actual retained
       (SlotOwners.update owners slot (some owner)) heap current p addresses buffer before final clock finalClock actions
-      persistent rfl guarded stored storage reference
+      persistent rfl guarded stored storage reference requests regions
   obtain ⟨reset, _, _, termination, releaseDefined⟩ := prepared.cs.execution header objects firstBlock program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := TerminationEnvironment.release_correct header objects (pool.addresses firstBlock) program tag termination releaseBindings

@@ -1,5 +1,35 @@
 # Exact verification contract
 
+**Counts in ME simulation histories (2026-09-14, full gate passed):**
+The mixed ME relation now includes successful and rejected count calls between
+simulation/control actions and resets. Raw execution admits arbitrary returned
+statuses, events and heaps; complete prepared C contracts derive the Solve
+count, lifecycle result, source observation and preserved storage. A blocked
+call is retained in its actual source-bearing prefix without assuming a
+callback return.
+
+The caller supplies typed count cells in the original heap. The existing
+universal callback storage policy and history induction derive each later
+precondition. The source-bound creation, initialization, recurring ME plans
+and release theorems retain these observations alongside actual XML counts.
+ME importer trial states still carry no external-integrator correctness claim.
+
+The owning FMI/compiler package gate passed at 21:15:09 UTC. The required
+`nix develop .#verification --command lake test` then passed at 22:01:57 UTC
+on 1015 unchanged inputs, including nine new and eighteen affected audit
+roots, with no unexpected axioms or changed-module warnings. Evidence is in
+`build/c-factory/me-count-full-gate-v1.log` and its JSON record. Only the three
+verification/roadmap documents change after the frozen full gate.
+
+Retained artifacts and comparisons are in `build/c-factory/me-count-artifacts-v1/`
+and adjacent JSON records. Every FMU member, including the native library, is
+unchanged from the preceding initialization-count artifact. The eFMU changes
+only generation identities and dependent references/checksums in three
+manifests. Numerical C, GALEC and eFMI Production C are unchanged.
+Source/GALEC grammars, numerical/C machine semantics, emitters, metadata and
+mandatory artifact propositions are unchanged. Nominal queries, remaining
+public calls, native/ABI correspondence and K02–K05 continue to block growth.
+
 **Count observations in initialization histories (2026-09-14, full gate passed):**
 The existing initialization protocol now includes both count queries. Successful
 observations report the prepared Solve state volume or zero event indicators;
@@ -34,8 +64,9 @@ count-runtime artifact. The eFMU changes only generation identities and their
 dependent references/checksums in three manifests. Numerical C, GALEC and
 eFMI Production C are unchanged.
 
-Counts interleaved with later ME simulation/control calls remain outside these
-histories. Nominal queries, logging configuration, remaining public calls,
+This initialization checkpoint alone excludes later ME simulation/control
+interleavings; the accepted extension above supplies them. Nominal queries,
+logging configuration, remaining public calls,
 native/ABI correspondence and K02–K05 also remain open. Grammar expansion is
 blocked.
 

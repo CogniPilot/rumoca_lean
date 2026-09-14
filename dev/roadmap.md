@@ -11,6 +11,25 @@ percentage of semantic coverage.
 
 ## Current position
 
+**ME count interleavings (full gate passed):** the checked
+draft is now integrated into the FMI/compiler packages. It extends the existing
+mixed ME execution, source observations, stopped prefixes and recurring
+creation/initialization/reset/release proofs. Original caller cells and the
+universal callback policy supply every later storage precondition. Nine new
+audit roots supplement the retained roots. The FMI/compiler package gate
+passed at 21:15:09 UTC on 1015 unchanged inputs, covering nine new and eighteen
+affected roots without unexpected axioms or changed-module warnings. Evidence
+is in `build/c-factory/me-count-package-v1.log`. The required full `lake test`
+gate then passed at 22:01:57 UTC on 1015 unchanged inputs in
+`build/c-factory/me-count-full-gate-v1.log`, with all 27 required roots and no
+unexpected axioms or changed-module warnings. Only the three evidence
+documents change after that frozen gate. Retained FMU members, including the
+native library, are unchanged; the eFMU changes only three manifests'
+generation identities and dependent references/checksums. See the
+`build/c-factory/me-count-artifacts-v1/` archives and comparison records.
+The next nominal-query work must connect existing value/metadata proofs to the
+shared runtime, later heaps, missing callbacks and complete histories.
+
 **Count-initialization checkpoint (full gate passed):** both count queries
 are now actions in the existing initialization protocol. Original caller
 `size_t` storage supports later calls without future-heap assumptions.
@@ -19,10 +38,8 @@ logger configuration and storage needed for recovery. The composed
 initialization, creation/release and recurring ME/CS source theorems compile
 with these observations and an explicit actual-XML count contract. The full
 gate passed at 21:05:03 UTC on 1012 unchanged inputs, including eight new and
-twelve affected roots. The ME simulation/control extension separately passes
-standalone Lean checking across 24 draft modules and 14 selected audit roots;
-package integration and its own artifact acceptance remain pending. Next,
-complete that integration, nominal-query coverage, logging configuration and
+twelve affected roots. The later ME simulation/control extension is accepted
+by the checkpoint above. Next, complete nominal-query coverage, logging configuration and
 metadata-matched optional/type-access paths.
 K02–K05 remain open; no new grammar case is admitted.
 

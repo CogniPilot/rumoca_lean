@@ -19,7 +19,7 @@ structure CycleEvidence (model : Solve.Model source) (p : Address) (cycle : Cycl
     (initial : List (Float64Access.Observation Invocation)) (checkpoints : List Heap)
     (observed : List (MENumericalHistory.Observation Invocation)) (epochs : List MENumericalRun.Epoch) : Prop where
   initialization : InitializationEvidence model p cycle.initialization initial checkpoints
-  observations : MEMixedRun.SourceObservations source cycle.simulation observed
+  observations : MEMixedRun.SourceObservations model cycle.simulation observed
   sourceEpochs : MENumericalRun.InitializedEpochs source p epochs
 
 /-- All completed initialization and ME observations survive later resets.
@@ -46,12 +46,12 @@ inductive SourceInterrupted (model : Solve.Model source) (p : Address)
   | nextInitialization : InitializationProtocol.SourcePrefix model.prepareFMI3 p .me .reset cycle.initialization stop →
       SourceInterrupted model p addresses buffer (.next cycle following) [] (.initialization stop)
   | lastSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
-      MEMixedRun.SourcePrefix source p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
+      MEMixedRun.SourcePrefix model p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
         (Time.Clock.initial cycle.args.start) cycle.simulation stop →
       SourceInterrupted model p addresses buffer (.last cycle)
         [.initialization initial checkpoints exited] (.simulation stop)
   | nextSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
-      MEMixedRun.SourcePrefix source p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
+      MEMixedRun.SourcePrefix model p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
         (Time.Clock.initial cycle.args.start) cycle.simulation stop →
       SourceInterrupted model p addresses buffer (.next cycle following)
         [.initialization initial checkpoints exited] (.simulation stop)
@@ -99,7 +99,7 @@ structure CycleContract (model : Solve.Model source) (program : Program Invocati
   simulationStopped : ∀ observed exited checkpoints,
     InitializationProtocol.Completed program p access heap cycle.initialization observed exited checkpoints →
     ∀ stop, MEMixedRun.Interrupted program p addresses buffer exited cycle.simulation stop →
-      MEMixedRun.SourcePrefix source p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
+      MEMixedRun.SourcePrefix model p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
         (Time.Clock.initial cycle.args.start) cycle.simulation stop
 
 theorem CycleContract.completed
@@ -127,21 +127,21 @@ theorem cycle_contract
     (simulation : SimulationCompiler model program objects retained owners original literals p addresses buffer)
     (outputs : MENumericalHistory.CallerStorage original p addresses buffer)
     (guarded : InitializationProtocol.MEOutputsGuarded objects retained addresses buffer)
-    (admitted : cycle.Admitted objects retained original p access buffer)
+    (admitted : cycle.Admitted objects retained original p access addresses buffer)
     (invariant : Invariant program objects retained owners original literals heap p .me .reset) :
     CycleContract model program objects retained owners original literals heap p access addresses buffer cycle := by
-  have certified := initialization heap cycle.initialization cycle.state invariant admitted.1 admitted.2.1
+  have certified := initialization heap cycle.initialization cycle.state invariant admitted.initialization admitted.requests
   refine ⟨certified, ?_, ?_, ?_⟩
   · intro observed exited checkpoints executed
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation exited _ cycle.final _ cycle.finalClock cycle.simulation ready.persistent
-      (ready.me_ready admitted.2.2.1 outputs guarded) ready.stored.reset admitted.2.2.2
+      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions
   · intro stop interrupted
-    exact initialization.interrupted invariant admitted.1 admitted.2.1 interrupted
+    exact initialization.interrupted invariant admitted.initialization admitted.requests interrupted
   · intro observed exited checkpoints executed stop interrupted
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation.interrupted ready.persistent
-      (ready.me_ready admitted.2.2.1 outputs guarded) ready.stored.reset admitted.2.2.2 interrupted
+      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions interrupted
 
 structure Contract (model : Solve.Model source) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
@@ -202,7 +202,7 @@ theorem interrupted_correct
     (reset : StaticReset.ExecutionContract program)
     (outputs : MENumericalHistory.CallerStorage original p addresses buffer)
     (guarded : InitializationProtocol.MEOutputsGuarded objects retained addresses buffer)
-    (admitted : Admitted objects retained original p access buffer plan)
+    (admitted : Admitted objects retained original p access addresses buffer plan)
     (invariant : Invariant program objects retained owners original literals heap p .me .reset)
     (actual : Interrupted program p access addresses buffer heap plan records stop) :
     SourceInterrupted model p addresses buffer plan records stop := by
@@ -241,7 +241,7 @@ theorem correct
     (reset : StaticReset.ExecutionContract program)
     (outputs : MENumericalHistory.CallerStorage original p addresses buffer)
     (guarded : InitializationProtocol.MEOutputsGuarded objects retained addresses buffer)
-    (admitted : Admitted objects retained original p access buffer plan)
+    (admitted : Admitted objects retained original p access addresses buffer plan)
     (invariant : Invariant program objects retained owners original literals heap p .me .reset) :
     Contract model program objects retained owners original literals heap p access addresses buffer plan := by
   induction admitted generalizing heap with
