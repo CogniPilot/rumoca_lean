@@ -37,6 +37,35 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Explicit rounding header and shared execution environment: 2026-09-13
+
+This derived-proof increment follows `3818eec`. Fourteen C/FMI/compiler roots
+supply a header-parametric rounding binding, the ordinary observation/branch
+prefix, reusable local body-call transfer, and actual-adapter consequences for
+ME quiet-time calls, their history/source frame and the numerical helper.
+The same definition table and literal pool serve every header value. The
+core/C/FMI/eFMI/compiler package audit passed in
+`build/c-factory/rounding-environment-package-gate-v1.log`, with all 854 inputs
+unchanged. Only the three status documents changed afterward; the full gate
+was not rerun for these derived proofs, retaining the preceding 847-input
+full artifact evidence. Existing definitions, emitters and mandatory artifact
+contracts remain unchanged; no new source case is admitted.
+
+[C11 §7.6 paragraph 8 and §7.6.3.1](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)
+require distinct nonnegative supported rounding-direction macro values and
+allow a negative `fegetround` failure result. The proof header selects the
+existing int32 target profile and supplies a bounded value explicitly; it does
+not assume that the macro is zero. Negative observations cannot equal this
+nearest-mode value. Reading/validating the native header and relating the
+ordinary external binding to the native environment remain separate work.
+
+The value-only guard theorem does not establish mode stability, floating flags,
+traps or restoration required by the applicable C/FMI environment contract.
+It describes the proposed ordinary-call form; generated `doStep` still uses
+nested calls, so actual guarded-body integration remains open. ME errors and
+complete histories still need transfer to the extended environment. No MLS,
+eFMI or MISRA finding is closed. **Stage decision: open; no grammar expansion.**
+
 ### CS duration and ordinary call continuations: 2026-09-13
 
 This derived-proof increment follows `d80cdce`. Fourteen shared C/FMI roots

@@ -1,3 +1,5 @@
+import RumocaC.Fenv
+import RumocaC.BodyCallInterface
 import RumocaC.CallDeclarationPrefix
 import RumocaC.AdditionResults
 import RumocaC.MathCalls
@@ -778,3 +780,11 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CCalls.Events.external_declaration_path
 #audit axioms Rumoca.CMathCalls.floor_declaration_path
 #audit axioms Rumoca.CMathCalls.rounding_declaration_path
+
+#audit axioms Rumoca.CFenv.Header.nearest_binding
+#audit axioms Rumoca.CFenv.Header.other_binding
+#audit axioms Rumoca.CFenv.Header.nearest_typed
+#audit axioms Rumoca.CFenv.Header.failure_distinct
+#audit axioms Rumoca.CFenv.Header.expression_agrees
+#audit axioms Rumoca.CFenv.rounding_branch_path
+#audit axioms Rumoca.CCalls.Events.body_call_interface_behaviors

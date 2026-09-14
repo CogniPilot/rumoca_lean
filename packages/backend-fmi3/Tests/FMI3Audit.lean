@@ -1,3 +1,4 @@
+import RumocaFMI3.RuntimeEnvironment
 import RumocaFMI3.StepAdmission
 import RumocaFMI3.StepAdvance
 import RumocaFMI3.ModelAdvance
@@ -1028,3 +1029,9 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StepAdvance.reaches
 #audit axioms Rumoca.FMI3.StepAdvance.written_frame
 #audit axioms Rumoca.FMI3.StepAdvance.written_values
+
+#audit axioms Rumoca.FMI3.RuntimeEnvironment.types_agree
+#audit axioms Rumoca.FMI3.RuntimeEnvironment.time_body_agrees
+#audit axioms Rumoca.FMI3.RuntimeEnvironment.time_call_behaviors
+#audit axioms Rumoca.FMI3.RuntimeEnvironment.model_advance_behaviors
+#audit axioms Rumoca.FMI3.RuntimeEnvironment.time_quiet

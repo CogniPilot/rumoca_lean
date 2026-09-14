@@ -115,6 +115,20 @@ package audit in `build/c-factory/cs-duration-package-gate-v2.log`, with all
 semantic definition or mandatory artifact contract changes. Full public
 admission, rejection/logging and repeated-step composition remain open.
 
+The rounding-environment follow-up supplies an explicit signed-32-bit
+`FE_TONEAREST` header value and proves the ordinary observation/branch prefix,
+including negative failure observations. A reusable closed-body call transfer
+preserves compatible interface bindings without requiring agreement on other
+functions. The actual adapter's ME quiet-time calls, time-history/source frame
+and numerical helper now have consequences in the same header/object/literal
+environment. These 14 added roots passed the core/C/FMI/eFMI/compiler package
+audit in `build/c-factory/rounding-environment-package-gate-v1.log`, with all
+854 inputs unchanged. Only the three status documents changed afterward;
+the full artifact gate was not rerun for these derived proofs.
+No existing semantic definition, emitter or mandatory artifact contract changes.
+Native header correspondence, mode stability/restoration and full public CS
+execution remain open.
+
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
 logging, rejection/exhaustion, reusable ownership and both successful and
@@ -360,7 +374,9 @@ simulation or concurrent host histories.
   Integer→Float64 and Float64→`uint64_t` conversion proofs are accepted.
   The accepted package increment supplies ordinary finite `floor`/`fegetround`
   contracts and actual helper execution. Connect these to public guarded
-  evaluation and an explicit target-header rounding-mode binding. The sum is
+  evaluation. An explicit target-header profile now supplies the macro binding,
+  with derived ME time/history and solver-helper consequences in one interface;
+  matching native headers and the complete guarded public call remain open. The sum is
   still computed before the unit-grid cap rejects a large step. The finite
   addition candidate now represents overflow as signed infinity, preserving
   this ordering. Complete public execution must connect this result to the

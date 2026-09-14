@@ -264,6 +264,35 @@ public `fmi3DoStep` contract; initial output writes, input/lifecycle checks,
 rounding-header correspondence, rejection/logging and histories still require
 composition. No test suite or source case is added.
 
+The next environment increment adds 14 roots. Shared C `CFenv.Header` represents
+an explicit nonnegative signed-32-bit `FE_TONEAREST` value; it supplies that
+binding while retaining the base types and literal addresses. No default
+numeric macro value is selected. The rounding-declaration/branch proof covers
+every supplied int32 observation, including negative failure, and retains all
+later rejection behavior. Declaration-free rejection blocks are explicit in
+the current C scope profile. `BodyCallInterface` transfers a closed-body call
+proof using local syntax/type/literal agreement, without assuming agreement on
+unrelated functions in the actual table.
+
+`RuntimeEnvironment` combines that header with the existing static objects
+and literal pool. Its admitted/null ME time-call and numerical-helper proofs
+share this interface. Two compiler consequences obtain the same function table
+and pool from the actual adapter certificate for every supplied header, retain
+the helper/source error bound, and transfer the ME time-history/source frame.
+The signatures and pool are chosen before quantifying over header values.
+
+The core/C/FMI/eFMI/compiler package audit passed in
+`build/c-factory/rounding-environment-package-gate-v1.log`, with all 854 inputs
+unchanged. Only the three status documents changed afterward; the full artifact
+gate was not rerun for these derived proofs. Earlier definitions, emitters and
+mandatory artifact contracts are unchanged; their 847-input full artifact evidence is
+retained. These consequences do not provide a complete public `fmi3DoStep`
+contract or certify native headers, floating-environment observations,
+mode stability, flags/traps/restoration or arbitrary surrounding histories.
+The base FMI constant dictionary remains a partial proof context; the new
+runtime environment supplies the library macro explicitly. No source case or
+new test suite is added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

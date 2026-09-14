@@ -1,3 +1,4 @@
+import Rumoca.FMI3RuntimeEnvironment
 import Rumoca.FMI3ModelAdvance
 import Rumoca.FMI3MELifecycle
 import Rumoca.FMI3MEInitialization
@@ -190,3 +191,6 @@ import Rumoca.InitializationDiagnosticProofs
 
 #audit axioms Rumoca.FMI3.ModelAdvance.source_error
 #audit axioms Rumoca.FMI3.adapter_model_advance
+
+#audit axioms Rumoca.FMI3.adapter_runtime_environment
+#audit axioms Rumoca.FMI3.adapter_runtime_time_history
