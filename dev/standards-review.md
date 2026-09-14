@@ -37,6 +37,31 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Initialization exit and caller-buffer preparation: 2026-09-14
+
+This derived-proof increment changes no source admission, runtime policy,
+emitted member or mandatory artifact contract. Independent initialization exit
+in the shared runtime and typed caller-buffer writes prepare the composition
+required by FMI 3.0.2 §§2.3.2–2.3.3. Original writable storage establishes the
+host transfers; successful calls or populated future buffers are not premises
+of those transfer proofs. Actual interleaved histories and their selected source
+IVP at exit remain open.
+
+The focused lifecycle review rechecked the existing Float64 setter policy
+against [FMI 3.0.2 §§2.3.5 and 3.2.1](https://fmi-standard.org/docs/3.0.2/):
+Event Mode explicitly permits continuous states with `reinit=false`, and
+Continuous-Time Mode permits continuous-state writes. The existing metadata
+contract establishes the former property. This supports retaining the guard;
+it does not resolve all phase-specific or whole-standard correspondence.
+
+Six added roots passed the C/FMI/compiler package gate on 937 unchanged inputs
+in `build/c-factory/initialization-prerequisites-package-v1.log`. The original
+axiom whitelist and earlier roots are unchanged. The separate 869-input full
+artifact gate remains evidence for unchanged semantics, emission, mandatory
+contracts and tests; no new full-gate pass is claimed. MLS 3.7, eFMI Beta 1,
+MISRA and K02–K05 findings carry forward. **Stage decision: open; no grammar
+expansion.**
+
 ### Float64 getter and common accessor runtime: 2026-09-14
 
 This derived follow-up to `9a5d98d` preserves the existing getter behavior in

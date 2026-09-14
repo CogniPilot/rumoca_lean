@@ -1,5 +1,26 @@
 # Exact verification contract
 
+**Initialization-history prerequisites (2026-09-14):**
+`InitializationEnvironment.quiet_correct` supplies the existing successful/null
+entry and exit contract in the shared runtime. Exit applies independently to
+the current heap with its kind and writable initialization-mode cell; it no
+longer needs to follow entry immediately. The theorem derives complete call
+behavior from the actual definitions, without assuming a successful execution.
+
+`CMemory.ArrayStore` proves indexed caller-buffer preparation through ordinary
+typed stores. Original writable cells and conversion identities establish exact
+readback; every successful transfer preserves the storage domain, types,
+permissions and read-only contents. A separate frame covers all other cells.
+These are host memory operations, not emitted tensor lowering or new grammar.
+
+The six roots passed `lake build check-c check-fmi3 check-compiler` on 937
+unchanged inputs in `build/c-factory/initialization-prerequisites-package-v1.log`.
+Only the three status documents changed afterward. Existing semantics, emission,
+mandatory contracts and tests retain their separate 869-input full artifact
+gate; this package pass is not a new full-gate result. Interleaved initialization
+histories must still derive every later buffer/heap and the source IVP at actual
+exit. No K02–K05 item or grammar-expansion gate is closed by these prerequisites.
+
 **Float64 reads and writes share the runtime (2026-09-14):**
 `float64_runtime_source` binds both actual accessors and the RHS helper to one
 compiled source, numerical C program, XML reference/writable-state metadata,

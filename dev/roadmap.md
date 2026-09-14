@@ -60,15 +60,24 @@ readback/state writes, empty/null calls, rejection and modeled logging behavior.
 The next proof work is initialization-history composition, then remaining public
 calls. Derive the source IVP from the actual state at initialization exit,
 including intervening host writes and queries; separate pre-entry start-value
-reads from initialization equation evaluation. Initialization exit must apply
-to the derived current heap after these accesses, not only the old contiguous
-entry/exit prefix. No later heap or successful call may substitute for that proof.
+reads from initialization equation evaluation. The shared runtime now has an
+independent initialization-exit contract, and generic typed caller-buffer writes
+have exact-readback and storage-preservation proofs. Compose these prerequisites
+with the accessors to derive the current heap and source IVP at exit. No later
+heap or successful call may substitute for that proof.
 Concurrent instance ownership and the transitive no-heap
 policy, complete source-to-artifact/provenance and C-profile correspondence,
 and standards/MISRA closure remain required. The final release also requires
 independent review and the complete artifact gate at that revision. These are
 substantial obligations; there is no defensible coverage percentage or short
 completion estimate from the number of audited roots.
+
+The six initialization/buffer prerequisite roots passed
+`lake build check-c check-fmi3 check-compiler` on 937 unchanged inputs in
+`build/c-factory/initialization-prerequisites-package-v1.log`. The existing
+semantics, emission, mandatory contracts and tests retain the separate 869-input
+full-gate evidence. This does not close initialization-history composition,
+K02–K05 or the grammar-expansion gate.
 
 The nine added getter/runtime roots passed `lake build check-fmi3 check-compiler`
 on 935 unchanged inputs in `build/c-factory/float64-environment-package-v1.log`.

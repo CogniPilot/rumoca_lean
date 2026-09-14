@@ -1,3 +1,4 @@
+import RumocaC.ArrayStore
 import RumocaC.CallPrefixInterface
 import RumocaC.Fenv
 import RumocaC.BodyCallInterface
@@ -792,3 +793,9 @@ import RumocaC.CallSignature
 
 #audit axioms Rumoca.CCalls.Events.internalNext_extends
 #audit axioms Rumoca.CCalls.Events.internal_reaches_interface
+
+#audit axioms Rumoca.CMemory.ArrayStore.written_at
+#audit axioms Rumoca.CMemory.ArrayStore.frame
+#audit axioms Rumoca.CMemory.ArrayStore.run_written
+#audit axioms Rumoca.CMemory.ArrayStore.run_preserves
+#audit axioms Rumoca.CMemory.ArrayStore.written_reads
