@@ -168,8 +168,15 @@ outputs, with enabled/suppressed logging and every represented callback outcome.
 Eleven added roots and the generalized existing roots passed the FMI/compiler
 package audit in `build/c-factory/cs-errors-package-v1.log` with all 858 inputs
 unchanged. Emitters, earlier semantics, mandatory artifact contracts and tests
-are unchanged. Missing-output/input/rounding/stop/discard calls, repeated
-histories and mandatory CS artifact composition remain open.
+are unchanged. The following argument-error increment adds complete public
+missing-output and invalid-numerical-input calls, with enabled/suppressed
+logging and exact output initialization. Twelve added roots passed the
+FMI/compiler package audit in `build/c-factory/cs-arguments-package-v1.log`
+with all 859 inputs unchanged. Existing error and lifecycle proofs reuse the
+new direct-prefix bridges without changing their propositions. Rounding/stop/
+discard calls, repeated histories and mandatory CS artifact composition remain
+open. This follow-up leaves emission, earlier semantics and mandatory contracts
+unchanged and retains the preceding full artifact evidence.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -424,10 +431,11 @@ simulation or concurrent host histories.
   ordering. The accepted guard proofs now connect it to stop/discard destinations.
   Complete successful/null public calls and raw-input prefix classification
   also pass the owning-package audit. Complete lifecycle rejection now covers
-  enabled/suppressed logging in the explicit error context. Finish the remaining
-  pointer/input/rounding/stop/discard calls, make the complete contract mandatory
-  in the artifact checker, and
-  compose repeated calls with source/clock histories.
+  enabled/suppressed logging in the explicit error context. Complete pointer
+  and raw-input rejection calls now pass the package audit too, retaining the
+  exact output writes and every represented callback outcome. Finish rounding,
+  stop and discard calls, make the complete contract mandatory in the artifact
+  checker, and compose repeated calls with source/clock histories.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.

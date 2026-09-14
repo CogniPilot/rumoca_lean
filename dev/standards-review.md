@@ -37,6 +37,33 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Complete CS argument-error calls: 2026-09-13
+
+This proof-only increment follows `a5967dd`. Twelve added roots cover the
+complete missing-output and raw-numerical-input rejection calls, including
+suppressed logging and every represented callback outcome. Shared direct-prefix
+bridges also simplify existing error/lifecycle proofs without changing their
+propositions. The FMI/compiler package audit passed in
+`build/c-factory/cs-arguments-package-v1.log` with all 859 inputs unchanged;
+only three status documents changed afterward. Emission, earlier semantics,
+mandatory contracts and tests retain the preceding 855-input full artifact
+evidence; the full gate was not rerun for these derived proofs.
+
+[FMI 3.0.2 §2.2.4](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions)
+requires Error when illegal arguments are detected and leaves returned output
+arguments undefined on Error. The proofs retain the implementation's exact
+output writes without turning those values into an importer guarantee. Missing
+pointers cause rejection before output access; invalid numerical inputs cause
+rejection after output initialization. [§4.2.1](https://fmi-standard.org/docs/3.0.2/#fmi3DoStep)
+defines the communication-point and positive-step arguments. All raw encodings
+are covered by the existing finite-value admission predicate. Writable caller
+storage remains explicit, and enabled callbacks retain their modeled effects;
+native validity, reentry and other-instance isolation still need integration
+evidence. The mandatory CS artifact contract and rounding/stop/discard/history
+proofs remain open. Existing MLS/eFMI initialization, coding-guideline, MISRA
+and native-header/ABI findings are unchanged. **Stage decision: open; no grammar
+expansion.**
+
 ### Explicit error contexts and complete CS lifecycle rejection: 2026-09-13
 
 This proof increment follows `0d4fe05`. Checked local interface requirements

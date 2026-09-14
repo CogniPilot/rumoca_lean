@@ -385,6 +385,29 @@ for this proof refactor and its derived call results. Missing-output, input,
 rounding, stop and discard calls, repeated histories and mandatory public-CS
 artifact composition remain open. No grammar or test suite is added.
 
+`StepArguments` then closes complete missing-output and invalid-numerical-input
+calls under the same checked error contexts. Missing outputs are rejected
+before any output access, without output/time/state storage premises. For
+invalid raw point/step encodings, the proof derives the initialized output heap
+and the helper's storage premises from the original caller buffers. Boolean
+outputs may alias; writable typed storage and separation from the instance
+block are explicit. The suppressed error preserves every instance field except
+mode, including the numerical state and clock. Enabled logging retains every
+represented callback outcome and the absence-of-outcome case, without assuming
+a callback memory frame or certifying native callback internals/reentry.
+
+Two reusable direct-prefix bridges compose prefixes already proved in the target
+interface with the existing failure-statement contracts. Earlier transferred
+failure calls and CS lifecycle proofs reuse them with unchanged propositions.
+Twelve added roots passed the FMI/compiler package audit in
+`build/c-factory/cs-arguments-package-v1.log`, with all 859 inputs unchanged.
+Only the three status documents changed afterward. No earlier semantic
+definition, emitter, mandatory artifact contract, test or axiom policy changed;
+the retained 855-input full gate still supplies their unchanged artifact evidence.
+The full gate was not rerun for this derived-proof increment. Rounding/stop/
+discard calls, repeated histories and mandatory public-CS artifact composition
+remain open. No grammar or test suite is added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

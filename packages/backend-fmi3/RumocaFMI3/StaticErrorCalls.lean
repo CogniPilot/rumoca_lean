@@ -331,6 +331,72 @@ theorem statement_suppressed_behaviors {E : Type} (context : ErrorContext litera
         CCalls.Typed.resume, saved, context.error_cast]) (.refl _))
       (CCalls.Events.return_forced program (.integer 3) (LifecycleBodies.writeMode heap p .terminated)))).behaviors behavior
 
+/-- Compose a prefix proved directly in the target interface with every
+represented error callback outcome. -/
+theorem prefix_all_behaviors {E : Type} (context : ErrorContext literals) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (fn : Function) (args : List Value)
+      (before after : Heap) (p message category logger : Address)
+      (text name : String) (environment : Option Address) (old : Option Value)
+      (foreign : CCalls.Events.External E),
+      @GuardedCalls.FailurePrefix context.target fn args before p text after →
+      program.internal.definitions fn.signature.name = some (.tree fn) →
+      program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+      literals text = some message → program.addresses logger = some name →
+      program.externals name = some foreign → foreign.signature = Logging.signature name →
+      literals "logStatus" = some category →
+      after (p.member "mode") = some ⟨.int32, true, old⟩ →
+      load after (p.member "logger") = some (.pointer (some logger)) →
+      load after (p.member "logging") = some (.integer 1) →
+      load after (p.member "environment") = some (.pointer environment) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves (.calling fn.signature.name args before .done) behavior ↔
+      (∃ events value final, foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode after p .terminated) events value final ∧
+        behavior = .terminates events ⟨.integer 3, final⟩) ∨
+      ((∀ events value final, ¬ foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode after p .terminated) events value final) ∧ behavior = .wrong []) := by
+  letI : CInterface := context.target
+  intro program fn args before after p message category logger text name environment old foreign
+    certified defined helper messageBound address external prototype literal hm hl hg he behavior
+  obtain ⟨status, closed, env, later, tail, steps, bound, executed, unshadowed, instanceBound⟩ :=
+    certified
+  obtain ⟨types, reached⟩ := CCalls.Events.body_prefix_reaches program fn args env later before after
+    (Runtime.fail text :: tail) .done steps defined bound closed executed
+  rw [status] at reached
+  rw [CCalls.Events.internal_prefix_behaviors program reached behavior]
+  exact statement_all_behaviors context program later types tail text after p message category logger
+    environment old name foreign unshadowed instanceBound helper messageBound address external
+    prototype literal hm hl hg he behavior
+
+/-- A proved target-interface prefix followed by suppressed logging has
+one complete Error/Terminated result. -/
+theorem prefix_suppressed_behaviors {E : Type} (context : ErrorContext literals) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (fn : Function) (args : List Value)
+      (before after : Heap) (p message : Address) (text : String)
+      (old : Option Value) (logger : Option Address) (logging : Bool),
+      @GuardedCalls.FailurePrefix context.target fn args before p text after →
+      program.internal.definitions fn.signature.name = some (.tree fn) →
+      program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+      literals text = some message →
+      after (p.member "mode") = some ⟨.int32, true, old⟩ →
+      load after (p.member "logger") = some (.pointer logger) →
+      load after (p.member "logging") = some (boolean logging) →
+      (logger = none ∨ logging = false) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves (.calling fn.signature.name args before .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode after p .terminated⟩ := by
+  letI : CInterface := context.target
+  intro program fn args before after p message text old logger logging
+    certified defined helper messageBound hm hl hg suppressed behavior
+  obtain ⟨status, closed, env, later, tail, steps, bound, executed, unshadowed, instanceBound⟩ :=
+    certified
+  obtain ⟨types, reached⟩ := CCalls.Events.body_prefix_reaches program fn args env later before after
+    (Runtime.fail text :: tail) .done steps defined bound closed executed
+  rw [status] at reached
+  rw [CCalls.Events.internal_prefix_behaviors program reached behavior]
+  exact statement_suppressed_behaviors context program later types tail text after p message old logger logging
+    unshadowed instanceBound helper messageBound hm hl hg suppressed behavior
+
 /-- The complete public failure path, including all callback outcomes. Its
 guard prefix and helper are the actual function definitions, not postulated
 successful API or logger calls. -/
@@ -360,15 +426,10 @@ theorem failure_all_behaviors {E : Type} (context : ErrorContext literals) :
   letI : CInterface := context.target
   intro program fn args before after p message category logger text name environment old foreign
     agrees certified defined helper messageBound address external prototype literal hm hl hg he behavior
-  obtain ⟨status, closed, env, later, tail, steps, bound, executed, unshadowed, instanceBound⟩ :=
-    failure_prefix context fn args before after p text agrees certified
-  obtain ⟨types, reached⟩ := CCalls.Events.body_prefix_reaches program fn args env later before after
-    (Runtime.fail text :: tail) .done steps defined bound closed executed
-  rw [status] at reached
-  rw [CCalls.Events.internal_prefix_behaviors program reached behavior]
-  exact statement_all_behaviors context program later types tail text after p message category logger
-    environment old name foreign unshadowed instanceBound helper messageBound address external
-    prototype literal hm hl hg he behavior
+  exact prefix_all_behaviors context program fn args before after p message category logger
+    text name environment old foreign
+    (failure_prefix context fn args before after p text agrees certified) defined helper messageBound
+    address external prototype literal hm hl hg he behavior
 
 theorem failure_suppressed_behaviors {E : Type} (context : ErrorContext literals) :
     letI : CInterface := context.target
@@ -389,14 +450,9 @@ theorem failure_suppressed_behaviors {E : Type} (context : ErrorContext literals
   letI : CInterface := context.target
   intro program fn args before after p message text old logger logging
     agrees certified defined helper messageBound hm hl hg suppressed behavior
-  obtain ⟨status, closed, env, later, tail, steps, bound, executed, unshadowed, instanceBound⟩ :=
-    failure_prefix context fn args before after p text agrees certified
-  obtain ⟨types, reached⟩ := CCalls.Events.body_prefix_reaches program fn args env later before after
-    (Runtime.fail text :: tail) .done steps defined bound closed executed
-  rw [status] at reached
-  rw [CCalls.Events.internal_prefix_behaviors program reached behavior]
-  exact statement_suppressed_behaviors context program later types tail text after p message old logger logging
-    unshadowed instanceBound helper messageBound hm hl hg suppressed behavior
+  exact prefix_suppressed_behaviors context program fn args before after p message text old logger logging
+    (failure_prefix context fn args before after p text agrees certified) defined helper messageBound
+    hm hl hg suppressed behavior
 
 theorem failure_silent_behaviors {E : Type} (context : ErrorContext literals) :
     letI : CInterface := context.target

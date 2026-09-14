@@ -1,3 +1,4 @@
+import RumocaFMI3.StepArguments
 import RumocaFMI3.ErrorContext
 import RumocaFMI3.StepErrors
 import RumocaFMI3.StepEntry
@@ -1077,3 +1078,16 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StepErrors.lifecycle_prefix
 #audit axioms Rumoca.FMI3.StepErrors.lifecycle_suppressed
 #audit axioms Rumoca.FMI3.StepErrors.types
+
+#audit axioms Rumoca.FMI3.StaticErrors.prefix_all_behaviors
+#audit axioms Rumoca.FMI3.StaticErrors.prefix_suppressed_behaviors
+#audit axioms Rumoca.FMI3.StepArguments.outputs_prefix
+#audit axioms Rumoca.FMI3.StepArguments.Storage.instance_frame
+#audit axioms Rumoca.FMI3.StepArguments.Storage.load_field
+#audit axioms Rumoca.FMI3.StepArguments.input_prefix
+#audit axioms Rumoca.FMI3.StepArguments.input_instance_frame
+#audit axioms Rumoca.FMI3.StepArguments.output_cases
+#audit axioms Rumoca.FMI3.StepArguments.outputs_suppressed
+#audit axioms Rumoca.FMI3.StepArguments.outputs_logged
+#audit axioms Rumoca.FMI3.StepArguments.input_suppressed
+#audit axioms Rumoca.FMI3.StepArguments.input_logged

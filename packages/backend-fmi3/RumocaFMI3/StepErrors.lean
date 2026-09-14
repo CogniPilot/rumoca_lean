@@ -62,17 +62,11 @@ theorem lifecycle_suppressed {E : Type} (context : ErrorContext literals) (model
     defined helper messageBound kindValue modeCell loggerValue loggingValue denied suppressed behavior
   have modeValue : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, modeCell, convert, Mode.code]
-  obtain ⟨status, closed, env, later, tail, steps, bound, executed, unshadowed, instanceBound⟩ :=
-    lifecycle_prefix context model heap p point step flag outputs kind mode kindValue modeValue denied
-  obtain ⟨localTypes, reached⟩ := CCalls.Events.body_prefix_reaches program
-    (Runtime.function model StepEntry.signature) _ env later heap heap (Runtime.fail ErrorCalls.rejectionMessage :: tail)
-    .done steps defined bound closed executed
-  rw [status] at reached
-  simp only [Runtime.function] at reached
-  rw [CCalls.Events.internal_prefix_behaviors program reached behavior]
-  exact StaticErrors.statement_suppressed_behaviors context program later localTypes tail
-    ErrorCalls.rejectionMessage heap p message _ logger logging unshadowed instanceBound helper
-    messageBound modeCell loggerValue loggingValue suppressed behavior
+  exact StaticErrors.prefix_suppressed_behaviors context program (Runtime.function model StepEntry.signature)
+    (StepEntry.arguments (some p) point step flag outputs) heap heap p message ErrorCalls.rejectionMessage
+    _ logger logging
+    (lifecycle_prefix context model heap p point step flag outputs kind mode kindValue modeValue denied)
+    defined helper messageBound modeCell loggerValue loggingValue suppressed behavior
 
 theorem lifecycle_logged {E : Type} (context : ErrorContext literals) (model : Solve.FMI3Model source) :
     letI : CInterface := context.target
@@ -105,18 +99,12 @@ theorem lifecycle_logged {E : Type} (context : ErrorContext literals) (model : S
     loggerValue loggingValue environmentValue denied behavior
   have modeValue : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, modeCell, convert, Mode.code]
-  obtain ⟨status, closed, env, later, tail, steps, bound, executed, unshadowed, instanceBound⟩ :=
-    lifecycle_prefix context model heap p point step flag outputs kind mode kindValue modeValue denied
-  obtain ⟨localTypes, reached⟩ := CCalls.Events.body_prefix_reaches program
-    (Runtime.function model StepEntry.signature) _ env later heap heap (Runtime.fail ErrorCalls.rejectionMessage :: tail)
-    .done steps defined bound closed executed
-  rw [status] at reached
-  simp only [Runtime.function] at reached
-  rw [CCalls.Events.internal_prefix_behaviors program reached behavior]
-  exact StaticErrors.statement_all_behaviors context program later localTypes tail
-    ErrorCalls.rejectionMessage heap p message category logger environment _ name foreign
-    unshadowed instanceBound helper messageBound address external prototype categoryBound
-    modeCell loggerValue loggingValue environmentValue behavior
+  exact StaticErrors.prefix_all_behaviors context program (Runtime.function model StepEntry.signature)
+    (StepEntry.arguments (some p) point step flag outputs) heap heap p message category logger
+    ErrorCalls.rejectionMessage name environment _ foreign
+    (lifecycle_prefix context model heap p point step flag outputs kind mode kindValue modeValue denied)
+    defined helper messageBound address external prototype categoryBound modeCell loggerValue
+    loggingValue environmentValue behavior
 
 end Rumoca.FMI3.StepErrors
 end
