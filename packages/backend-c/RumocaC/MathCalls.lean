@@ -1,3 +1,4 @@
+import RumocaC.CallDeclarationPrefix
 import RumocaCore.Real.Floor
 import RumocaC.CallCasts
 import RumocaC.CallEvents
@@ -107,5 +108,48 @@ theorem rounding_behaviors (program : CCalls.Events.Program E)
     ((rounding_effect integer mode bounded).mpr ⟨rfl, rfl, rfl⟩)
     (fun _ _ _ executed => (rounding_effect integer mode bounded).mp executed) behavior
 
+theorem floor_declaration_path (program : CCalls.Events.Program E)
+    (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
+    (destination : String) (argument : Expr) (x : Binary64.Value)
+    (rest : List Stmt) (resultType : String) (stack : CCalls.Typed.Continuation)
+    (double : interface.types "double" = some .float64)
+    (fresh : env destination = none) (unshadowed : env "floor" = none)
+    (named : interface.constants "floor" = none)
+    (evaluated : CBody.eval env heap argument = some (.finite x))
+    (found : program.externals "floor" = some (floorExternal double)) :
+    Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running (.declare "double" destination (.call (.id "floor") [argument]) :: rest)
+        env types heap) resultType stack)
+      []
+      (.body (.running rest (CBody.bind env destination (.finite (Binary64.floorValue x)))
+        (CLoops.bindType types destination .float64) heap) resultType stack) := by
+  apply CCalls.Events.external_declaration_path program env types heap heap "double" destination
+    "floor" [argument] [.finite x] [.finite x] rest resultType stack
+    (floorExternal double) [] (.finite (Binary64.floorValue x))
+    (.finite (Binary64.floorValue x)) .float64 fresh unshadowed named (by decide)
+    (by simp [CCalls.arguments, evaluated]) found (floor_arguments double x)
+    ((floor_effect double x).mpr ⟨rfl, rfl, rfl⟩)
+    (fun _ _ _ h => (floor_effect double x).mp h) double rfl
+
+theorem rounding_declaration_path (program : CCalls.Events.Program E)
+    (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
+    (destination : String) (mode : Int) (bounded : -(2^31) ≤ mode ∧ mode < 2^31)
+    (rest : List Stmt) (resultType : String) (stack : CCalls.Typed.Continuation)
+    (integer : interface.types "int" = some .int32)
+    (fresh : env destination = none) (unshadowed : env "fegetround" = none)
+    (named : interface.constants "fegetround" = none)
+    (found : program.externals "fegetround" = some (roundingExternal integer mode bounded)) :
+    Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running (.declare "int" destination (.call (.id "fegetround") []) :: rest)
+        env types heap) resultType stack)
+      []
+      (.body (.running rest (CBody.bind env destination (.integer mode))
+        (CLoops.bindType types destination .int32) heap) resultType stack) := by
+  apply CCalls.Events.external_declaration_path program env types heap heap "int" destination
+    "fegetround" [] [] [] rest resultType stack (roundingExternal integer mode bounded)
+    [] (.integer mode) (.integer mode) .int32 fresh unshadowed named (by decide) rfl
+    found rounding_arguments ((rounding_effect integer mode bounded).mpr ⟨rfl, rfl, rfl⟩)
+    (fun _ _ _ h => (rounding_effect integer mode bounded).mp h) integer
+    (by simp only [convert, if_pos bounded])
 end Rumoca.CMathCalls
 end

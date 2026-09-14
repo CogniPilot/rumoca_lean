@@ -242,6 +242,28 @@ No new test suite or emitted-code change was made.
 Floating status flags, traps, target-header/fenv correspondence and the complete
 public CS call remain outside these result proofs.
 
+A derived-proof follow-up adds 14 roots in the shared C and FMI packages.
+`CallDeclarationPrefix` composes a determinate ordinary external call with its
+typed local declaration while leaving future behavior unrestricted. `MathCalls`
+applies this to floor and the supplied rounding observation. `StepAdmission`
+connects the C comparisons to positive integral durations bounded by one
+million, proves the unique counter and its C conversion, and separates finite
+clock addition from strict clock progress. `StepAdvance` executes the actual
+final solver/time/output suffix, deriving the conversion from mathematical
+duration and the nested helper execution from the program definitions. Exact
+written values and the memory frame are proved under explicit storage premises.
+The earlier successful-conversion premise is unnecessary in this suffix proof.
+
+The core/C/FMI/eFMI/compiler package audit passed in
+`build/c-factory/cs-duration-package-gate-v2.log` with all 850 inputs unchanged.
+Only these three status documents changed afterward. Earlier definitions,
+emitters and mandatory artifact contracts are retained, with their preceding
+847-input full gate evidence; the full gate was not rerun for these derived
+proofs. These are derived consequences, not the complete
+public `fmi3DoStep` contract; initial output writes, input/lifecycle checks,
+rounding-header correspondence, rejection/logging and histories still require
+composition. No test suite or source case is added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

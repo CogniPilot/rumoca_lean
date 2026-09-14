@@ -37,6 +37,27 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### CS duration and ordinary call continuations: 2026-09-13
+
+This derived-proof increment follows `d80cdce`. Fourteen shared C/FMI roots
+connect ordinary floor/rounding calls to fresh local declarations, mathematical
+duration admission to the actual comparisons and bounded solver count, and the
+actual solver/time/output suffix to its nested execution and memory frame.
+The C count conversion is derived from exact duration. An admitted duration
+implies finite clock addition, while the separate progress guard remains
+necessary. The core/C/FMI/eFMI/compiler package audit passed in
+`build/c-factory/cs-duration-package-gate-v2.log` with all 850 inputs unchanged.
+Only the three status documents changed afterward; the full gate was not
+rerun for these derived proofs.
+
+The existing C11 cast, floor and rounding-observation review applies. Neither
+these proofs nor the unchanged prior artifact gate establish target-header
+bindings, floating-environment correspondence or a complete public CS call.
+Initial output setup, every rejection/logging path and repeated-step histories
+remain open. No MLS/eFMI syntax, initialization, solver policy or emitted member
+changes; the preceding 847-input full gate supplies unchanged artifact evidence.
+No standards or MISRA finding is closed. **Stage decision: open.**
+
 ### Finite-operand addition overflow: 2026-09-13
 
 This checkpoint follows `5c06e00`. Shared C addition now represents overflow

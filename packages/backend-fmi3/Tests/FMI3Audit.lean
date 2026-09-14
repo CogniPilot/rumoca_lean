@@ -1,3 +1,5 @@
+import RumocaFMI3.StepAdmission
+import RumocaFMI3.StepAdvance
 import RumocaFMI3.ModelAdvance
 import RumocaFMI3.StaticFactoryAcquisition
 import RumocaFMI3.MELifecycle
@@ -1014,3 +1016,15 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.ModelAdvance.static_types
 #audit axioms Rumoca.FMI3.ModelAdvance.prepared_behaviors
 #audit axioms Rumoca.FMI3.ModelAdvance.written_frame
+
+#audit axioms Rumoca.FMI3.StepAdmission.duration_count
+#audit axioms Rumoca.FMI3.StepAdmission.count_unique
+#audit axioms Rumoca.FMI3.StepAdmission.duration_of_count
+#audit axioms Rumoca.FMI3.StepAdmission.duration_checks
+#audit axioms Rumoca.FMI3.StepAdmission.duration_sum
+#audit axioms Rumoca.FMI3.StepAdmission.duration_progress
+#audit axioms Rumoca.FMI3.StepAdvance.actual_tail
+#audit axioms Rumoca.FMI3.StepAdvance.time_ne_state
+#audit axioms Rumoca.FMI3.StepAdvance.reaches
+#audit axioms Rumoca.FMI3.StepAdvance.written_frame
+#audit axioms Rumoca.FMI3.StepAdvance.written_values

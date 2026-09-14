@@ -1,3 +1,4 @@
+import RumocaC.CallDeclarationPrefix
 import RumocaC.AdditionResults
 import RumocaC.MathCalls
 import RumocaC.IntegerConversions
@@ -773,3 +774,7 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CArithmetic.negative_overflow_below
 #audit axioms Rumoca.CArithmetic.eval_member_add
 #audit axioms Rumoca.CArithmetic.eval_register_add
+
+#audit axioms Rumoca.CCalls.Events.external_declaration_path
+#audit axioms Rumoca.CMathCalls.floor_declaration_path
+#audit axioms Rumoca.CMathCalls.rounding_declaration_path

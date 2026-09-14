@@ -104,6 +104,17 @@ check. Both checked archives are retained under
 match the preceding artifacts; only eFMI generation identities and their
 dependent checksums changed. Complete public CS execution remains open.
 
+The next derived-proof increment connects ordinary external calls to fresh
+local declarations, and the CS duration checks to a unique positive bounded
+solver count. It derives the C count conversion and finite clock sum, while
+retaining the separate progress guard. The actual solver/time/output suffix
+derives the nested helper execution and exact state, clock and output writes,
+with an explicit memory frame. These 14 roots passed the core/C/FMI/eFMI/compiler
+package audit in `build/c-factory/cs-duration-package-gate-v2.log`, with all
+850 inputs unchanged. No emitter, existing
+semantic definition or mandatory artifact contract changes. Full public
+admission, rejection/logging and repeated-step composition remain open.
+
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
 logging, rejection/exhaustion, reusable ownership and both successful and
