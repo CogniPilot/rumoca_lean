@@ -112,5 +112,17 @@ theorem finite_behaviors (path : Prefix m s events t)
   | diverges history =>
     exact iff_false_intro (path.no_divergence (fun h observed => (complete (.diverges h)).mp observed) history)
 
+/-- A determined silent prefix preserves all behaviors when the continuation
+has only finite outcomes. The latter condition is supplied by its full contract. -/
+theorem silent_finite_behaviors {S E R : Type} {m : Machine S E R} {s t : S}
+    (path : Prefix m s [] t) (finite : ∀ history, ¬ m.Behaves t (.diverges history))
+    (behavior : Observation E R) : m.Behaves s behavior ↔ m.Behaves t behavior := by
+  cases behavior with
+  | terminates events result => simpa using path.terminates_iff (actual := events) (result := result)
+  | wrong events => simpa using path.wrong_iff (actual := events)
+  | diverges history =>
+    exact ⟨fun observed => False.elim (path.no_divergence finite history observed),
+      fun observed => False.elim (finite history observed)⟩
+
 end Prefix
 end Rumoca.Transition.Events

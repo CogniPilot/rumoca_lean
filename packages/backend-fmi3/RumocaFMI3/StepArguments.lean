@@ -250,5 +250,45 @@ theorem input_logged {E : Type} (context : ErrorContext literals) (model : Solve
     ((stored.load_field time "logger").trans loggerValue) ((stored.load_field time "logging").trans loggingValue)
     ((stored.load_field time "environment").trans environmentValue) behavior
 
+/-- Admission supplies the exact public body state after output initialization,
+for every valid pair of raw point/step encodings and the supplied caller buffers. -/
+theorem ready_prefix (context : ErrorContext literals) (model : Solve.FMI3Model source) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (heap : Heap) (p : Address) (buffers : StepEntry.Buffers)
+      (point step : BitVec 64) (time : Binary64.Value) (flag : Bool),
+      program.internal.definitions StepEntry.signature.name =
+        some (.tree (Runtime.function model StepEntry.signature)) →
+      load heap (p.member "kind") = some (.integer 1) →
+      load heap (p.member "mode") = some (.integer 4) →
+      load heap (p.member "time") = some (.finite time) → Storage heap p buffers →
+      StepEntry.InputsValid point step time →
+      ∃ types, Transition.Events.Prefix (CCalls.Events.machine program)
+        (.calling StepEntry.signature.name (StepEntry.arguments (some p) point step flag buffers.outputs) heap .done) []
+        (.body (.running (Runtime.doStep.drop 9)
+          (StepEntry.locals (StepEntry.parameters (some p) point step flag buffers.outputs) p)
+          types (StepEntry.outputHeap heap buffers time)) "fmi3Status" .done) := by
+  letI : CInterface := context.target
+  intro program heap p buffers point step time flag defined kindValue modeValue clock stored valid
+  let env := StepEntry.parameters (some p) point step flag buffers.outputs
+  let later := StepEntry.locals env p
+  obtain ⟨old, last⟩ := stored.last
+  have ran := StepEntry.prefix_run (StepErrors.types context) model env heap p buffers point step time old
+    (by simp [env, StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [env, StepEntry.parameters, StepEntry.bindings, CBody.bind]) kindValue modeValue
+    (by simp [env, StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [env, StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [env, StepEntry.parameters, StepEntry.bindings, StepEntry.Buffers.outputs, CBody.bind])
+    (by simp [env, StepEntry.parameters, StepEntry.bindings, StepEntry.Buffers.outputs, CBody.bind])
+    (by simp [env, StepEntry.parameters, StepEntry.bindings, StepEntry.Buffers.outputs, CBody.bind])
+    (by simp [env, StepEntry.parameters, StepEntry.bindings, StepEntry.Buffers.outputs, CBody.bind])
+    clock stored.event stored.terminate stored.early last stored.outsideEvent
+    stored.outsideTerminate stored.outsideEarly stored.outsideLast
+  simp only [StepEntry.inputDestination, valid, ↓reduceIte, List.nil_append] at ran
+  obtain ⟨types, entered⟩ := CCalls.Events.body_prefix_reaches program
+    (Runtime.function model StepEntry.signature) _ env later heap (StepEntry.outputHeap heap buffers time)
+    (Runtime.doStep.drop 9) .done 9 defined (StepEntry.parameters_bound (StepErrors.types context) _ _ _ _ _)
+    (BodyEmbedding.body_closed model StepEntry.signature) ran
+  exact ⟨types, CCalls.Events.internal_path program entered⟩
+
 end Rumoca.FMI3.StepArguments
 end

@@ -178,6 +178,17 @@ discard calls, repeated histories and mandatory CS artifact composition remain
 open. This follow-up leaves emission, earlier semantics and mandatory contracts
 unchanged and retains the preceding full artifact evidence.
 
+The rounding/stop follow-up adds complete public calls for rejected rounding
+observations and stop-limit violations, including overflowing finite-operand
+clock sums. Enabled and suppressed logging retain exact output writes and all
+represented callback outcomes. A shared admitted-entry prefix and error-path
+composition reuse existing body and ordinary-call proofs. Eleven new roots
+passed the core/C/FMI/eFMI/compiler package audit in
+`build/c-factory/cs-failures-package-v1.log`, with all 860 inputs unchanged.
+Every earlier declaration, emitter and mandatory artifact contract is retained;
+the preceding full artifact evidence still applies. Discard, the mandatory
+complete CS contract and repeated histories remain open.
+
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
 logging, rejection/exhaustion, reusable ownership and both successful and
@@ -433,9 +444,11 @@ simulation or concurrent host histories.
   also pass the owning-package audit. Complete lifecycle rejection now covers
   enabled/suppressed logging in the explicit error context. Complete pointer
   and raw-input rejection calls now pass the package audit too, retaining the
-  exact output writes and every represented callback outcome. Finish rounding,
-  stop and discard calls, make the complete contract mandatory in the artifact
-  checker, and compose repeated calls with source/clock histories.
+  exact output writes and every represented callback outcome. Rounding and
+  stop-limit failures now have complete call proofs too, including the rounded
+  sum and its overflow cases. Finish discard calls, make the complete contract
+  mandatory in the artifact checker, and compose repeated calls with source/clock
+  histories.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.

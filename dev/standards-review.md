@@ -37,6 +37,32 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Complete CS rounding and stop-limit errors: 2026-09-13
+
+This derived-proof increment follows `095323c`. Eleven new roots compose
+public output/input admission, ordinary rounding observations and stop-limit
+rejection with the actual error helper. Suppressed logging and every represented
+callback outcome are retained. The core/C/FMI/eFMI/compiler package audit passed
+in `build/c-factory/cs-failures-package-v1.log` with all 860 inputs unchanged;
+only three status documents changed afterward. Every earlier declaration,
+emitter, mandatory contract and test is retained. The preceding 855-input full
+artifact evidence still applies; the full gate was not rerun for this increment.
+
+[FMI 3.0.2, `fmi3EnterInitializationMode`](https://fmi-standard.org/docs/3.0.2/#fmi3EnterInitializationMode)
+requires Error when the importer attempts to compute beyond a defined stop
+value. The new stop-call theorem includes the rounded binary64 sum and overflow,
+and preserves the stop check before discard checks. The rounding-call theorem
+uses the explicit header and ordinary-library profile already recorded below;
+it does not certify the native floating environment, flags or traps.
+[§2.2.4](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions) governs
+Error and logging. The proof retains exact implementation output writes while
+keeping Error outputs undefined to an importer. Native callback execution,
+reentry and instance isolation still need integration evidence. The new public
+calls are not yet mandatory in the actual-adapter certificate. Discard and
+repeated histories remain open; existing MLS/eFMI initialization, coding-guideline,
+MISRA and native-header/ABI findings are unchanged. **Stage decision: open;
+no grammar expansion.**
+
 ### Complete CS argument-error calls: 2026-09-13
 
 This proof-only increment follows `a5967dd`. Twelve added roots cover the

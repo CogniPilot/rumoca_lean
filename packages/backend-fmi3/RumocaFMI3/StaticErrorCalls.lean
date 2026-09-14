@@ -331,6 +331,63 @@ theorem statement_suppressed_behaviors {E : Type} (context : ErrorContext litera
         CCalls.Typed.resume, saved, context.error_cast]) (.refl _))
       (CCalls.Events.return_forced program (.integer 3) (LifecycleBodies.writeMode heap p .terminated)))).behaviors behavior
 
+/-- A derived silent execution prefix ending at the actual error-helper call.
+Unlike a pure body run, this relation also composes ordinary library calls. -/
+def FailurePath [CInterface] (program : CCalls.Events.Program E) (start : CCalls.Typed.State)
+    (heap : Heap) (p : Address) (message : String) : Prop :=
+  ∃ env types code, Transition.Events.Prefix (CCalls.Events.machine program) start []
+      (.body (.running (Runtime.fail message :: code) env types heap) "fmi3Status" .done) ∧
+    env "fail" = none ∧ resolve env "m" = some (.pointer (some p))
+
+theorem path_suppressed_behaviors {E : Type} (context : ErrorContext literals) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (start : CCalls.Typed.State) (heap : Heap)
+      (p message : Address) (text : String) (old : Option Value) (logger : Option Address) (logging : Bool),
+      FailurePath program start heap p text →
+      program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+      literals text = some message → heap (p.member "mode") = some ⟨.int32, true, old⟩ →
+      load heap (p.member "logger") = some (.pointer logger) →
+      load heap (p.member "logging") = some (boolean logging) →
+      (logger = none ∨ logging = false) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves start behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
+  letI : CInterface := context.target
+  intro program start heap p message text old logger logging path helper literal mode loggerValue loggingValue suppressed
+  obtain ⟨env, types, code, reached, unshadowed, instanceBound⟩ := path
+  have result := statement_suppressed_behaviors context program env types code text heap p message old
+    logger logging unshadowed instanceBound helper literal mode loggerValue loggingValue suppressed
+  intro behavior
+  exact (reached.silent_finite_behaviors (by intro history; simp [result]) behavior).trans (result behavior)
+
+theorem path_all_behaviors {E : Type} (context : ErrorContext literals) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (start : CCalls.Typed.State) (heap : Heap)
+      (p message category logger : Address) (text name : String) (environment : Option Address)
+      (old : Option Value) (foreign : CCalls.Events.External E),
+      FailurePath program start heap p text →
+      program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+      literals text = some message → program.addresses logger = some name →
+      program.externals name = some foreign → foreign.signature = Logging.signature name →
+      literals "logStatus" = some category → heap (p.member "mode") = some ⟨.int32, true, old⟩ →
+      load heap (p.member "logger") = some (.pointer (some logger)) →
+      load heap (p.member "logging") = some (.integer 1) →
+      load heap (p.member "environment") = some (.pointer environment) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves start behavior ↔
+      (∃ events value final, foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value final ∧
+        behavior = .terminates events ⟨.integer 3, final⟩) ∨
+      ((∀ events value final, ¬ foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value final) ∧ behavior = .wrong []) := by
+  letI : CInterface := context.target
+  intro program start heap p message category logger text name environment old foreign path
+    helper literal address external prototype categoryBound mode loggerValue loggingValue environmentValue
+  obtain ⟨env, types, code, reached, unshadowed, instanceBound⟩ := path
+  have result := statement_all_behaviors context program env types code text heap p message category logger
+    environment old name foreign unshadowed instanceBound helper literal address external prototype categoryBound
+    mode loggerValue loggingValue environmentValue
+  intro behavior
+  exact (reached.silent_finite_behaviors (by intro history; simp [result]) behavior).trans (result behavior)
+
 /-- Compose a prefix proved directly in the target interface with every
 represented error callback outcome. -/
 theorem prefix_all_behaviors {E : Type} (context : ErrorContext literals) :

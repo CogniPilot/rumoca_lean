@@ -299,3 +299,5 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.Binary64.addResult_correct
 #audit axioms Rumoca.Binary64.addResult_finite
 #audit axioms Rumoca.Binary64.addResult_no_nan
+
+#audit axioms Rumoca.Transition.Events.Prefix.silent_finite_behaviors

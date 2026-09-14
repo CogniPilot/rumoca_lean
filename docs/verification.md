@@ -408,6 +408,33 @@ The full gate was not rerun for this derived-proof increment. Rounding/stop/
 discard calls, repeated histories and mandatory public-CS artifact composition
 remain open. No grammar or test suite is added.
 
+`StepFailures` subsequently composes public admission with the ordinary rounding
+observation and the stop guard. Rounding rejection covers every supplied int32
+observation unequal to the explicit header's nearest value, including negative
+failure observations, after valid raw input admission. Stop rejection covers
+finite duration encodings and the rounded clock sum, including overflow. It
+precedes progress and unit-grid rejection. Both paths retain exact output
+initialization and return Error through the actual helper; enabled logging
+retains every represented callback outcome and the absent-outcome case.
+
+The shared `StepArguments.ready_prefix` derives the public state after output
+writes from the original heap. `StaticErrors.FailurePath` also permits ordinary
+calls in a derived prefix, and its complete behavior theorems reuse the existing
+error-statement contracts. The core silent-prefix theorem obtains absence of
+divergence from that complete suffix contract; it does not postulate native
+callback termination. No successful C execution is a premise of the public
+rounding or stop theorems. Header/library bindings, valid caller storage and
+the established finite clock remain explicit.
+
+Eleven added roots passed the core/C/FMI/eFMI/compiler package audit in
+`build/c-factory/cs-failures-package-v1.log` with all 860 inputs unchanged.
+Every earlier declaration, emitter, mandatory artifact contract and test is
+retained. Only the three status documents changed afterward. The preceding
+855-input full artifact evidence is retained; the full gate was not rerun for
+these derived proofs. Discard calls, mandatory public-CS artifact composition,
+repeated histories and native floating-environment correspondence remain open.
+No grammar, test suite or axiom-policy change is introduced.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA
