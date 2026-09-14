@@ -1,31 +1,34 @@
 # Exact verification contract
 
-**Created ME numerical lifetime (2026-09-14):**
-`runtime_create_me_numerical_release` derives actual creation, initialization,
-every finite admitted mixed ME control/state/derivative history, termination
-and atomic release from original available storage and ownership. Creation
-supplies the handle and finite Solve default before the importer chooses its
-history. Caller buffers are specified in the original pre-creation heap;
-subsequent storage, slot metadata and ownership are derived. Release restores
-the original owner map and preserves unrelated memory.
+**Created ME numerical/reset lifetime (2026-09-14):**
+`runtime_create_me_run_release` derives actual creation, initialization, finite
+interleavings of accepted ME control/state/derivative operations and repeated
+reset/reinitialization, then termination and atomic release. Original available
+storage supplies the handle, finite Solve default and lease before the importer
+chooses its history. Caller buffers belong to the pre-creation heap; subsequent
+storage, slot metadata and ownership are derived. Release restores the original
+owner map and preserves unrelated memory.
 
-The theorem retains source compilation, numerical C, independently tokenized
-function sections and derivative/state metadata from the same artifact. For
-every completed actual history it derives statuses, raw query results and final
-memory; every returned derivative agrees with the source Real equation.
-Source initialization and its unique selected trajectory are recorded at the
-initialized heap. Later importer trial states are not asserted to follow that
-trajectory. Accepted calls do not invoke the configured logger.
+Each restart expands to three observable calls: reset, initialization entry and
+initialization exit. `Executed` records arbitrary statuses and intermediate heaps;
+`Calls.determines` derives all statuses, query results, final memory and the exact
+initialization checkpoints. Every actual checkpoint satisfies source Real
+initialization with its unique selected trajectory at the requested restart
+time. Every derivative query agrees with the source equation. Later importer
+trial states are not asserted to follow those trajectories. The same source
+artifact supplies numerical C, function-section tokenization and derivative/state
+metadata. Accepted calls do not invoke the configured logger.
 
-All eleven added roots passed `lake build check-fmi3 check-compiler` in
-`build/c-factory/me-numerical-lifecycle-package-v1.log` on 914 unchanged inputs.
+All 17 added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-numerical-run-package-v1.log` on 919 unchanged inputs.
 Only the three status documents changed afterward. Earlier semantics, emission,
 mandatory contracts and tests retain the separate 869-input full artifact gate
 and unchanged archives; no new full-gate pass is claimed. Original typed storage,
 caller-buffer separation, admitted host protocol and explicit external C/library
-bindings remain premises. Mixed ME rejection/reset/callback histories, remaining
-public interactions, concurrent ownership and complete artifact/native
-correspondence remain open. K02–K05 still block grammar expansion.
+bindings remain premises. The restart sequence is contiguous; intervening
+initialization accesses, rejected calls and enabled-callback histories still need
+composition. Remaining public interactions, concurrent ownership and complete
+artifact/native correspondence are open. K02–K05 still block grammar expansion.
 
 **Mixed ME numerical histories (2026-09-14):** `adapter_me_environment`
 supplies control, state and derivative contracts from one compiled table and

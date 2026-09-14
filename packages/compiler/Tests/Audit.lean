@@ -1,3 +1,4 @@
+import Rumoca.FMI3MENumericalRunLifecycle
 import Rumoca.FMI3MENumericalLifecycle
 import Rumoca.FMI3MENumericalHistory
 import Rumoca.FMI3MENumericalEnvironment
@@ -242,3 +243,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.runtime_me_numerical_history
 
 #audit axioms Rumoca.FMI3.runtime_create_me_numerical_release
+
+#audit axioms Rumoca.FMI3.MENumericalRun.observations_source
+#audit axioms Rumoca.FMI3.MENumericalRun.Calls.epochs_source
+#audit axioms Rumoca.FMI3.runtime_create_me_run_release

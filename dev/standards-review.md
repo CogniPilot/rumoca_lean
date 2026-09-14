@@ -37,6 +37,43 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Mixed ME numerical/reset lifetime: 2026-09-14
+
+This derived follow-up to `2f035d4` composes accepted ME operations and repeated
+reset/reinitialization from actual creation through release. Writable recovery
+storage survives every numerical operation, including inactive stop fields.
+Each restart exposes three actual calls and records its actual post-initialization
+heap. The raw execution relation supplies no expected status, output value,
+source property or reference transition. The derived certificate determines
+observations, final memory and all initialization checkpoints.
+
+The focused review rechecked `fmi3Reset` in
+[FMI 3.0.2 §2.3.1](https://fmi-standard.org/docs/3.0.2/): reset restores instance
+defaults and initialization is required before another run. The proof reuses the
+existing reset body and initialization contracts. Each restart selects the Solve
+default, resets the clock/event protocol and re-enters Event Mode through both
+initialization calls. At every recorded checkpoint, the compiler theorem proves
+source Real initialization and uniqueness at the requested start time. Subsequent
+trial-state writes do not establish a source IVP trajectory; derivative queries
+continue to agree with the source equations.
+
+The restart action describes contiguous reset→entry→exit calls, with each status
+visible. Calls inserted between these stages, rejection and enabled-callback
+histories, and remaining public interactions are still open. Original storage,
+caller-buffer separation, admissible reference protocol and explicit external
+bindings remain premises. Slot metadata and atomic ownership survive the complete
+history; release restores the original owner map. Native ABI/concurrency and
+the complete resource-lifetime obligation remain outside this increment.
+
+All 17 roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-numerical-run-package-v1.log` on 919 unchanged inputs. Only
+the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests retain the separate 869-input full gate and
+unchanged archives, whose hashes were rechecked. MLS 3.7, CS/eFMI and MISRA
+records carry forward unchanged. No grammar feature, new test suite, full-gate
+pass or standards closure is claimed. K02–K05 and grammar expansion remain open
+and blocked, respectively.
+
 ### Created ME numerical lifetime: 2026-09-14
 
 This derived follow-up to `bc19ec0` connects actual creation, initialization,

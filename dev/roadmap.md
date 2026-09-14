@@ -15,7 +15,7 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Mixed accepted/rejected CS step and reset histories compose with creation, initialization and release, including modeled logging outcomes. Accepted mixed ME control/state/derivative histories now also compose from actual creation through release. Observed statuses, source/numerical guarantees and original-owner restoration are proved within the stated runtime contracts. | Mixed ME rejection/reset/callback histories, remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Mixed accepted/rejected CS step and reset histories compose with creation, initialization and release, including modeled logging outcomes. Accepted mixed ME control/state/derivative histories and repeated reset/reinitialization also compose from actual creation through release, with source initialization at each actual restart checkpoint. Observed statuses, source/numerical guarantees and original-owner restoration are proved within the stated runtime contracts. | Mixed ME rejection/callback histories, intervening initialization accesses, remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
@@ -47,23 +47,27 @@ remains the 869-input gate. No new full-gate pass is claimed for this follow-up.
 
 **Distance to expansion:** K01 is closed for its scoped initialization profile;
 K02–K05 remain partial or open. Actual creation now composes with initialization,
-accepted mixed ME control/state/derivative histories, termination and release.
+accepted mixed ME control/state/derivative histories, repeated reset/reinitialization,
+termination and release. Every restart records the actual initialized heap and
+its source IVP; later trial-state writes remain separate from that trajectory.
 The corresponding CS lifetime also covers mixed accepted/rejected steps,
 reset/reinitialization and modeled logging outcomes. Both retain source
 observations and restore original ownership within their stated contracts.
 
-The next proof work is mixed ME rejection/reset/callback histories and remaining
-public-call coverage. Concurrent instance ownership and the transitive no-heap
+The next proof work is mixed ME rejection/callback/recovery histories,
+intervening initialization accesses and remaining public-call coverage.
+Concurrent instance ownership and the transitive no-heap
 policy, complete source-to-artifact/provenance and C-profile correspondence,
 and standards/MISRA closure remain required. The final release also requires
 independent review and the complete artifact gate at that revision. These are
 substantial obligations; there is no defensible coverage percentage or short
 completion estimate from the number of audited roots.
 
-The created ME numerical lifetime passed `lake build check-fmi3 check-compiler`
-in `build/c-factory/me-numerical-lifecycle-package-v1.log` on 914 unchanged
-inputs. Eleven added roots derive the handle, initialization, every admitted
-history's storage and observations, and release from original storage. Earlier
+The created ME numerical/reset lifetime passed `lake build check-fmi3 check-compiler`
+in `build/c-factory/me-numerical-run-package-v1.log` on 919 unchanged inputs.
+Seventeen added roots retain recovery storage, expose each of the three restart
+call results, derive actual initialization checkpoints and restore original
+owners after mixed numerical/reset histories. Earlier
 semantics, emission, mandatory contracts and tests retain the separate
 869-input full artifact gate and unchanged archives. No new full-gate pass
 or grammar admission is claimed for this derived-proof checkpoint.
@@ -531,12 +535,12 @@ next task. Any reusable storage/frame draft is only a prerequisite.
 
 ### K03 — Complete public FMI execution and histories
 
-The accepted mixed ME numerical lifetime now passes the 914-input FMI/compiler
-package gate. One actual table/pool supplies control, state and derivative
-contracts, and creation establishes the storage for initialization through
-termination/release. Rejected/reset/callback histories and remaining public
-interactions still need composition. No emitter or mandatory contract changed,
-and no new full-gate pass is claimed.
+The accepted mixed ME numerical/reset lifetime now passes the 919-input
+FMI/compiler package gate. One actual table/pool supplies numerical and reset
+calls, and creation establishes storage for repeated initialization through
+termination/release. Rejected/callback histories, intervening initialization
+accesses and remaining public interactions still need composition. No emitter
+or mandatory contract changed, and no new full-gate pass is claimed.
 
 **State:** partial; substantial body and helper proofs can be reused.
 **Existing IDs:** F01, F02, N01, N02.
@@ -590,12 +594,16 @@ simulation or concurrent host histories.
   restore the original owners on release. Retain the source initialization
   relation at the initialized heap and source equation agreement for every
   derivative query. The eleven roots passed the 914-input package gate.
-- [ ] Extend the created ME numerical lifetime to rejected calls, reset and
-  reinitialization, and all modeled logging outcomes. Retain the numerical/source
-  guarantee alongside all public observations and caller-protocol obligations.
-  Reset's successful/null calls and reset→initialization composition already
-  use the static object interface; their surrounding mixed histories and
-  remaining public interactions are still open.
+- [x] Compose repeated reset/reinitialization with accepted ME numerical
+  operations from creation through release. Preserve writable recovery storage,
+  derive the statuses of reset and both initialization calls, and prove source
+  initialization and uniqueness at every actual restart checkpoint. The 17 roots
+  passed the 919-input package gate; all three restart calls are contiguous.
+- [ ] Extend the created ME numerical/reset lifetime to rejected calls and all
+  modeled logging outcomes, including recovery after errors. Cover intervening
+  initialization accesses and remaining public interactions. Retain the
+  numerical/source guarantee alongside every public observation and the explicit
+  caller-protocol obligations.
 - [x] Require the complete public CS step contract in the actual artifact
   checker. All raw inputs are classified; successful/null/error/discard calls,
   exact output writes and represented logging outcomes share the prepared

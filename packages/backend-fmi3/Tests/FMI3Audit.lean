@@ -1,3 +1,4 @@
+import RumocaFMI3.MENumericalRunLifecycle
 import RumocaFMI3.MENumericalLifecycle
 import RumocaFMI3.MENumericalHistory
 import RumocaFMI3.MEControlEnvironment
@@ -1325,3 +1326,18 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MENumericalHistory.Stored.callers
 #audit axioms Rumoca.FMI3.MENumericalHistory.initialized_stored
 #audit axioms Rumoca.FMI3.MENumericalHistory.initialize_release
+
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.reset_storage
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.stop_outside
+#audit axioms Rumoca.FMI3.MENumericalHistory.step_reset_storage
+#audit axioms Rumoca.FMI3.MENumericalHistory.CallerStorage.reset
+#audit axioms Rumoca.FMI3.MENumericalHistory.reset_state_cell
+#audit axioms Rumoca.FMI3.MENumericalHistory.initialized_reset_storage
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.restart
+#audit axioms Rumoca.FMI3.MENumericalHistory.restart_atomic
+#audit axioms Rumoca.FMI3.MENumericalRun.Calls.executes
+#audit axioms Rumoca.FMI3.MENumericalRun.Calls.determines
+#audit axioms Rumoca.FMI3.MENumericalRun.restart_frame
+#audit axioms Rumoca.FMI3.MENumericalRun.trace
+#audit axioms Rumoca.FMI3.MENumericalRun.ReferenceTrace.live
+#audit axioms Rumoca.FMI3.MENumericalRun.initialize_release
