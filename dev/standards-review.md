@@ -37,6 +37,41 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Ordinary CS calls and guarded numerical execution: 2026-09-13
+
+This increment follows `aa5ef00` and changes the emitted CS body. Rounding
+and floor calls now initialize explicit function-scope locals. The guard
+destination proofs cover all supplied int32 rounding observations and every
+finite clock/duration operand, including overflowing sums. The successful
+suffix theorem derives its solver count and exact final writes. Eight new
+audit roots passed the core/C/FMI/eFMI/compiler package audit in
+`build/c-factory/cs-ordinary-package-v1.log`, with all 855 inputs unchanged.
+The renewed full artifact gate passed in
+`build/c-factory/cs-ordinary-full-gate-v1.log`, with the same 855 inputs
+unchanged and all 13 existing native FMI checks passing. Both archives and
+exact member comparisons are retained under
+`build/c-factory/cs-ordinary-artifacts-v1/`. The FMI adapter source and binary
+changed; numerical C, headers, FMI metadata, GALEC and eFMI Production C are
+unchanged. The eFMI manifests differ only in fresh generation identities and
+dependent checksums. Only the three status documents changed after the gate.
+No grammar or Solve policy change is made.
+
+[C11 §6.5.13–14](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)
+requires short-circuit evaluation: the normalization keeps floor after the
+finite/progress checks and keeps the optional stop rejection before discard.
+The earlier header/floor reviews still apply. The theorem describes the new
+actual statement sequence; no semantic equivalence to an unsupported nested
+ordinary-call expression is assumed. Native control/flags, header/library
+correspondence and excess-precision behavior remain separate obligations.
+
+[FMI 3.0.2 §4.2.1](https://fmi-standard.org/docs/3.0.2/#fmi3DoStep) requires a
+positive communication step and defines the requested next communication
+point. The suffix proof retains the finite rounded communication clock and
+separate unit-grid count. It does not yet compose public output initialization,
+input/lifecycle rejection, all status/logging outcomes or repeated-step
+histories. Existing MLS/eFMI initialization and MISRA findings are unchanged.
+**Stage decision: open; no grammar expansion.**
+
 ### Explicit rounding header and shared execution environment: 2026-09-13
 
 This derived-proof increment follows `3818eec`. Fourteen C/FMI/compiler roots

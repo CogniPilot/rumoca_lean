@@ -32,6 +32,9 @@ private theorem count_type : TypeSpelling typedefs "uint64_t" :=
 private theorem double_type : TypeSpelling typedefs "double" :=
   TypeSpelling.named (.primitive (by decide +kernel))
 
+private theorem int_type : TypeSpelling typedefs "int" :=
+  TypeSpelling.named (.primitive (by decide +kernel))
+
 private theorem status_type : TypeSpelling typedefs "fmi3Status" :=
   TypeSpelling.named (.typedefName (by decide +kernel) (by decide +kernel))
 
@@ -116,7 +119,8 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
     simp only [Runtime.makeInstance, Runtime.instancePrefix, Runtime.countLoop,
       Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
       Runtime.scalarAccessCheck, Runtime.pointerCheck,
-      Runtime.doStep, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
+      Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
+      Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
       Runtime.invalidTime, CInitialization.Emission.statement, CInitialization.value_zero,
       Runtime.raiseField, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
       Runtime.put, Runtime.out, Runtime.ok, Runtime.setMode, Runtime.log,
@@ -136,6 +140,7 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
       | exact size_type
       | exact count_type
       | exact double_type
+      | exact int_type
       | exact boolean_type
       | apply And.intro
       | apply ItemPrintable.declare

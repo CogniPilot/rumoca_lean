@@ -18,7 +18,7 @@ def code : List Stmt :=
     .cast "uint64_t" (Runtime.v "communicationStepSize")]) :: finalWrites
 
 omit interface in
-theorem actual_tail : Runtime.doStep.drop 13 = code := rfl
+theorem actual_tail : Runtime.doStep.drop 16 = code := rfl
 
 def written (heap : Heap) (p output : Address) (state time : Binary64.Value) : Heap :=
   StateProofs.written

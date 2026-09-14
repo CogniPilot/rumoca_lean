@@ -293,6 +293,40 @@ The base FMI constant dictionary remains a partial proof context; the new
 runtime environment supplies the library macro explicitly. No source case or
 new test suite is added.
 
+The ordinary-CS-call increment changes generated C: `fegetround` and `floor`
+now initialize fresh function-scope `int`/`double` locals. Named sections retain
+the existing rounding, addition, optional stop, finite-progress and unit-grid
+order. `StepGuards` characterizes stop/progress/duration comparisons using Real
+values and the decoded overflow domain. Its rounding, clock and grid prefixes
+cover every represented observation or finite input, preserving the heap and
+all behavior of the chosen rejection continuation. The clock proof includes
+both signed overflow outcomes and does not skip a rejected sum.
+
+`StepGuards.accepted_execution` composes these prefixes with the actual solver
+and output suffix. It derives a positive bounded count from duration admission,
+then proves all behaviors terminate with the computed state, rounded clock and
+last-successful-time write. `actual_sections` identifies this code in the emitted
+`doStep` body; the retained `StepAdvance.actual_tail` index changes from 13 to 16
+for the three added declarations/branches. This is execution after the first
+nine statements and their public input checks, not a complete public-call theorem. The ordinary
+external observations, declared C profile, valid storage and stop/progress
+conditions are explicit. Input/output setup, errors/logging, histories and
+native floating-environment correspondence remain open.
+
+Eight new audit roots passed the core/C/FMI/eFMI/compiler package audit in
+`build/c-factory/cs-ordinary-package-v1.log`, with all 855 inputs unchanged.
+The renewed full artifact gate passed in
+`build/c-factory/cs-ordinary-full-gate-v1.log`, with the same 855 inputs
+unchanged, including both actual archives and all 13 existing native FMI checks.
+The retained archives and exact member comparisons are under
+`build/c-factory/cs-ordinary-artifacts-v1/`. Only the reviewed FMI adapter
+source changes and its rebuilt binary differ from the previous FMU; numerical
+C, headers, FMI metadata, GALEC and eFMI Production C are unchanged. The eFMI
+manifests have fresh generation identities and dependent checksums only.
+Only the three status documents changed after that full gate. Existing
+mandatory artifact contracts and all earlier audit roots are retained; shared
+numerical semantics and the grammar are unchanged. No new test suite is added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

@@ -27,7 +27,8 @@ theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     Runtime.makeInstance, Runtime.require, Runtime.instancePrefix, Runtime.countLoop,
     Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
     Runtime.scalarAccessCheck, Runtime.pointerCheck,
-    Runtime.doStep, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
+    Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
+    Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
     CInitialization.Emission.statement,
     Runtime.raiseField, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
     Runtime.put, Runtime.out, Runtime.ok, Runtime.setMode, Runtime.log]

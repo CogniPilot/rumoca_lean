@@ -1,3 +1,4 @@
+import RumocaFMI3.StepGuards
 import RumocaFMI3.RuntimeEnvironment
 import RumocaFMI3.StepAdmission
 import RumocaFMI3.StepAdvance
@@ -1035,3 +1036,12 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.RuntimeEnvironment.time_call_behaviors
 #audit axioms Rumoca.FMI3.RuntimeEnvironment.model_advance_behaviors
 #audit axioms Rumoca.FMI3.RuntimeEnvironment.time_quiet
+
+#audit axioms Rumoca.FMI3.StepGuards.stop_condition
+#audit axioms Rumoca.FMI3.StepGuards.progress_condition
+#audit axioms Rumoca.FMI3.StepGuards.grid_condition
+#audit axioms Rumoca.FMI3.StepGuards.rounding_path
+#audit axioms Rumoca.FMI3.StepGuards.clock_path
+#audit axioms Rumoca.FMI3.StepGuards.grid_path
+#audit axioms Rumoca.FMI3.StepGuards.actual_sections
+#audit axioms Rumoca.FMI3.StepGuards.accepted_execution

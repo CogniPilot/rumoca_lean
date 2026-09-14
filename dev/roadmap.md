@@ -21,11 +21,11 @@ percentage of semantic coverage.
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
 Latest completed main-workspace gate:
-`build/c-factory/finite-addition-full-gate-v1.log`, passed with all 847
+`build/c-factory/cs-ordinary-full-gate-v1.log`, passed with all 855
 integration inputs unchanged. It checks the C conversions, ME control contracts, static runtime, both
 actual FMU interfaces and the eFMU, including the existing native and rejection
 controls. Retained artifacts and member comparisons are under
-`build/c-factory/finite-addition-artifacts-v1/` and adjacent review files.
+`build/c-factory/cs-ordinary-artifacts-v1/` and adjacent review files.
 Compared with `2628f35`, the FMI adapter replaces `calloc`/`free` with 32
 permanent ME/CS slots; numerical C, FMI metadata, GALEC and eFMI Production C
 are unchanged. Compared with the preceding time artifacts, the
@@ -128,6 +128,23 @@ the full artifact gate was not rerun for these derived proofs.
 No existing semantic definition, emitter or mandatory artifact contract changes.
 Native header correspondence, mode stability/restoration and full public CS
 execution remain open.
+
+The next CS increment emits ordinary `fegetround` and `floor` calls into fresh
+function-scope locals. Named rounding/clock/grid/solver sections retain the
+sum-before-stop-before-discard ordering. Eight new roots prove every finite
+sum's guard destination, including overflow, and compose admitted numerical
+execution through the actual solver and final state/clock/output writes.
+The solver count follows from the duration checks. The core/C/FMI/eFMI/compiler
+package audit passed in `build/c-factory/cs-ordinary-package-v1.log`, with all
+855 inputs unchanged. The renewed full artifact gate passed with the same
+855 inputs unchanged, including both actual archives and all 13 existing
+native FMI checks. Retained archives and exact member comparisons are under
+`build/c-factory/cs-ordinary-artifacts-v1/`; the FMI adapter source and binary
+changed, while numerical C, headers, FMI metadata, GALEC and eFMI Production C
+are unchanged. The eFMI manifests change only generation identities and
+dependent checksums. Public output setup, input/lifecycle admission,
+complete rejected-call logging and repeated-step histories remain open; the
+suffix theorem does not close K03 or authorize grammar expansion.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional

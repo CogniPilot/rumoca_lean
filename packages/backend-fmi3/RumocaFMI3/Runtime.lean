@@ -103,6 +103,30 @@ def setFloat64 : List Stmt := instancePrefix ++ [
   branch (both (eqv (v "nValueReferences") (n 0)) (eqv (v "nValues") (n 0)))
     [modeGuard .get, ok], modeGuard .setStart] ++ setFloat64Values
 
+def stepDiscard : List Stmt :=
+  [log "fmi3Discard" (.str "Step cannot be completed on the unit internal time grid"),
+   ret (v "fmi3Discard")]
+
+def stepRounding : List Stmt := [
+  .declare "int" "rounding" (call "fegetround"),
+  reject (nev (v "rounding") (v "FE_TONEAREST")) "Round-to-nearest arithmetic is required"]
+
+def stepClock : List Stmt := [
+  .declare "double" "next" (.bin .add (field "time") (v "communicationStepSize")),
+  reject (both (field "stopDefined") (gt (v "next") (field "stop"))) "Step exceeds stopTime",
+  branch (any [negate (finite (v "next")), le (v "next") (field "time")]) stepDiscard]
+
+def stepGrid : List Stmt := [
+  .declare "double" "floored" (call "floor" [v "communicationStepSize"]),
+  branch (any [nev (v "floored") (v "communicationStepSize"),
+    gt (v "communicationStepSize") (n 1000000)]) stepDiscard]
+
+def stepSolve : List Stmt := [
+  .eval (call "model_advance" [.address (field "model"), .cast "uint64_t" (v "communicationStepSize")]),
+  put "time" (v "next"), out "lastSuccessfulTime" (v "next"), ok]
+
+/-- Ordinary library calls have explicit function-scope destinations. Keep
+the stop check before the discard checks, and floor after finite progress. -/
 def doStep : List Stmt := require .doStep ++ [
   pointerCheck ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"],
   out "eventHandlingNeeded" (n 0), out "terminateSimulation" (n 0), out "earlyReturn" (n 0),
@@ -110,16 +134,8 @@ def doStep : List Stmt := require .doStep ++ [
   reject (any [negate (finite (v "currentCommunicationPoint")),
     negate (finite (v "communicationStepSize")),
     nev (v "currentCommunicationPoint") (field "time"), le (v "communicationStepSize") (n 0)])
-    "Invalid communication point or step size",
-  reject (nev (call "fegetround") (v "FE_TONEAREST")) "Round-to-nearest arithmetic is required",
-  .declare "double" "next" (.bin .add (field "time") (v "communicationStepSize")),
-  reject (both (field "stopDefined") (gt (v "next") (field "stop"))) "Step exceeds stopTime",
-  branch (any [negate (finite (v "next")), le (v "next") (field "time"),
-    nev (call "floor" [v "communicationStepSize"]) (v "communicationStepSize"),
-    gt (v "communicationStepSize") (n 1000000)])
-    [log "fmi3Discard" (.str "Step cannot be completed on the unit internal time grid"), ret (v "fmi3Discard")],
-  .eval (call "model_advance" [.address (field "model"), .cast "uint64_t" (v "communicationStepSize")]),
-  put "time" (v "next"), out "lastSuccessfulTime" (v "next"), ok]
+    "Invalid communication point or step size"] ++
+  stepRounding ++ stepClock ++ stepGrid ++ stepSolve
 
 def invalidTime : Expr := any [negate (finite (v "time")), lt (v "time") (field "timeMin"),
   both (field "stopDefined") (gt (v "time") (field "stop"))]
