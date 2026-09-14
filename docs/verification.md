@@ -1,5 +1,46 @@
 # Exact verification contract
 
+**Initialization access through mixed ME execution (2026-09-14):**
+`InitializationAccess.runtime_create_me_histories` connects actual source-bound
+creation and accepted initialization accesses to the existing mixed ME history
+and release contracts. The source theorem retains numerical C, XML numeric,
+writable-state and derivative metadata, function printing and one prepared
+table/pool. The original factory supplies the handle, finite Solve default,
+typed storage and reservation. Accepted host writes determine the actual
+initialization-exit value and its unique source Real IVP.
+
+`Certificate.me_storage` derives Event Mode, the required initial event
+iteration, selected state, initial clock/stop bound and original caller buffers.
+`Certificate.configuration` carries the original logger configuration across
+initialization accesses. Shared lifecycle and reset-storage proofs now have
+common modules; the existing CS handoff and theorem statements are retained.
+
+`Certificate.me_continuation` reuses `MEMixedRun.Trace` and its raw `Completed`
+relation. The contract retains the existing suppressed/missing and enabled
+logger configurations, returning branches and blocked alternative. Every
+completed history derives the actual statuses/query observations, source
+derivative equations and source initialization at each reset checkpoint.
+Release restores the original owner map. The memory frame reaches the
+pre-creation heap for protected cells outside the instance, history outputs,
+initialization-access ranges and released flag. The external callback frame
+remains explicit. Importer trial-state writes are not claimed to solve the
+initial source IVP, and later restarts retain their contiguous reset/enter/exit
+protocol and Solve default.
+
+Six new roots and the affected existing roots passed
+`lake build check-fmi3 check-compiler` on 955 unchanged inputs in
+`build/c-factory/initialization-me-run-package-v2.log`. The first package attempt
+identified a missing direct storage-proof import after the module split; that
+import was fixed before the passing run. The axiom whitelist is unchanged.
+Existing semantics, emission, mandatory artifact propositions and boundary
+tests retain the separate 869-input local full-gate evidence. This package pass
+is not a new full-gate result. No grammar or test suite was added.
+
+Rejected initialization accesses, access interleavings at later restarts and
+other public interactions remain open. K02–K05, including concurrent/native
+correspondence, complete artifacts/provenance and standards/MISRA closure, are
+not closed. Grammar expansion remains blocked.
+
 **Initialization access through mixed CS execution (2026-09-14):**
 `InitializationAccess.runtime_create_cs_histories` connects actual source-bound
 creation and accepted initialization accesses to the existing mixed CS histories.

@@ -31,15 +31,25 @@ theorem Certificate.owners
     SlotOwners.Represents block (InitializationBodies.exitHeap atExit p kind) owners :=
   SlotOwners.ordinary_preserves represented certified.atomic
 
+theorem Certificate.field
+    (certified : Certificate model program p buffers args kind state time heap before during beforeEntry atExit)
+    (name : String) (retained : name ∉ writtenFields) :
+    InitializationBodies.exitHeap atExit p kind (p.member name) = heap (p.member name) := by
+  have different (field : String) (member : field ∈ writtenFields) : p.member name ≠ p.member field := by
+    intro same
+    have names := (Address.member_inj _ _ _).mp same
+    exact retained (names ▸ member)
+  exact (InitializationBodies.exit_frame atExit p (p.member name) kind (different "mode" (by simp [writtenFields]))).trans
+    ((certified.atExitFields name).trans
+      ((InitializationEntry.frame beforeEntry p (p.member name) args
+        (different "time" (by simp [writtenFields])) (different "timeMin" (by simp [writtenFields]))
+        (different "eventTime" (by simp [writtenFields])) (different "lastCompleted" (by simp [writtenFields]))
+        (different "stop" (by simp [writtenFields])) (different "stopDefined" (by simp [writtenFields]))
+        (different "mode" (by simp [writtenFields]))).trans (certified.beforeFields name)))
 theorem Certificate.metadata
     (certified : Certificate model program p buffers args kind state time heap before during beforeEntry atExit) :
     load (InitializationBodies.exitHeap atExit p kind) (p.member "slot") = load heap (p.member "slot") := by
-  have same := (InitializationBodies.exit_frame atExit p (p.member "slot") kind (by simp)).trans
-    ((certified.atExitFields "slot").trans
-      ((InitializationEntry.frame beforeEntry p (p.member "slot") args
-        (by simp) (by simp) (by simp) (by simp) (by simp) (by simp) (by simp)).trans
-        (certified.beforeFields "slot")))
-  simp only [load, same]
+  simp only [load, certified.field "slot" (by decide)]
 
 /-- The executable CS seed is the value after all initialization writes.
 Original step-output storage survives even if those buffers were used by

@@ -1,3 +1,6 @@
+import RumocaFMI3.LifecycleEnvironment
+import RumocaFMI3.ResetStorage
+import RumocaFMI3.InitializationMERun
 import RumocaFMI3.CSRunEnvironment
 import RumocaFMI3.InitializationCSRun
 import RumocaFMI3.CSRunCompleted
@@ -1464,3 +1467,8 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSRun.Executed.performed
 #audit axioms Rumoca.FMI3.CSRun.Calls.executes
 #audit axioms Rumoca.FMI3.CSRun.Calls.determines
+
+#audit axioms Rumoca.FMI3.LifecycleEnvironment.PreparedContract.execution
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.field
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.me_storage
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.configuration

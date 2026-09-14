@@ -37,6 +37,41 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Initialization access followed by mixed ME execution: 2026-09-14
+
+This derived-proof increment changes no EBNF, admitted source profile, runtime
+policy, emitted member, metadata capability or mandatory artifact proposition.
+The existing MLS 3.7 initialization interpretation and eFMI Beta 1
+Algorithm/Production Code evidence are unchanged, including their open findings.
+
+The existing FMI 3.0.2 variable-access and initialization correspondence
+(§2.2.7.2 and §§2.3.2–2.3.3) now composes with the reviewed ME numerical,
+event/continuous control, rejected-operation and reset histories. The actual
+post-write exit heap supplies the selected state, Event Mode and initial event
+iteration, start clock, stop bound, caller buffers and factory logger settings.
+The original source and prepared program supply the access and ME contracts.
+
+Every completed raw history retains source derivative observations and the
+actual source initialization of each reset checkpoint. Mode-appropriate release
+restores original ownership. Suppressed, missing and enabled logging retain the
+existing modeled branches and explicit callback frame; no callback return is
+assumed. Importer trial-state writes do not establish a solution of the original
+IVP. Later resets still use contiguous reset/enter/exit and the Solve default.
+The prior status/callback/reset/release review applies to unchanged policy.
+
+Six new roots and affected existing CS roots passed the FMI/compiler package
+gate on 955 unchanged inputs in
+`build/c-factory/initialization-me-run-package-v2.log`. A missing direct import
+found by the first package attempt was corrected before this passing run.
+The axiom whitelist is unchanged; no tests were added. Existing semantics,
+emitters, mandatory contracts and boundary tests retain the distinct 869-input
+local full-gate evidence, not a new full-gate pass for these additions.
+
+Rejected initialization accesses, access interleavings at later restarts,
+remaining public calls, concurrent/native correspondence and whole-artifact
+composition remain open. Existing MLS/eFMI and MISRA findings carry forward.
+K02–K05 are not closed. **Stage decision: no grammar expansion.**
+
 ### Initialization access followed by mixed CS execution: 2026-09-14
 
 This derived-proof increment retains the same EBNF, source profile, runtime

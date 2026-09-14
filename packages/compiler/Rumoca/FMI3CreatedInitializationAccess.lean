@@ -3,6 +3,7 @@ import Rumoca.FMI3StaticLifecycle
 import RumocaFMI3.FactoryEnvironment
 import RumocaFMI3.InitializationAccessStorage
 import RumocaFMI3.CSRunEnvironment
+import RumocaFMI3.MEEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationAccess
@@ -24,6 +25,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
       CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
+      MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (E : Type) (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -84,18 +86,26 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization)) owners ∧
               (∀ q, ¬ p.InRecord q → Outside buffers q → q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization) q = heap q) := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, _, _, getter, setter,
-    initialization, _, factories, runtime, termination, _, _, _, _, step⟩ := build.adapter
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, states, derivative, getter, setter,
+    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made
   have runPrepared : CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
-    ⟨step.prepared pool made, LiteralPreparation.function_bound _ sigs unique _ resetMember,
+    ⟨⟨LiteralPreparation.function_bound _ sigs unique _ resetMember,
       by rw [← InitializationCalls.function_eq a.solve.prepareFMI3]; exact LiteralPreparation.function_bound _ sigs unique _ initialization.enterMember,
       LiteralPreparation.function_bound _ sigs unique _ initialization.exitMember,
-      LiteralPreparation.function_bound _ sigs unique _ termination.member, runtime.release_defined⟩
+      LiteralPreparation.function_bound _ sigs unique _ termination.member, runtime.release_defined⟩, step.prepared pool made⟩
+  have mePrepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
+    ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
+      DerivativeEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique derivative.member derivative.numerical.fresh made,
+      MEControlEnvironment.TimeControl.prepared_correct a.solve.prepareFMI3 sigs unique time.member made,
+      fun entry => MEControlEnvironment.EntryControl.prepared_correct a.solve.prepareFMI3 entry sigs
+        unique (entries entry).member made,
+      MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
+      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
-    Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, runPrepared, ?_⟩
+    Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, runPrepared, mePrepared, ?_⟩
   intro E header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock

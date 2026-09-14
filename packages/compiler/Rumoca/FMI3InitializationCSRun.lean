@@ -243,7 +243,7 @@ theorem runtime_create_cs_histories (compiled : compile input = .ok a)
               Continuation a.solve.prepareFMI3 objects program tag slot (SlotOwners.update owners slot (some owner)) owner
                 heap (InitializationBodies.exitHeap atExit p .cs) buffers stepBuffers (runReference ⟨initial⟩ args before during)
                 final actions statuses factoryArgs := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, prepared, create⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, prepared, _, create⟩ :=
     runtime_create_release compiled build
   refine ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, prepared, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
