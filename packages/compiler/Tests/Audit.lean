@@ -1,3 +1,4 @@
+import Rumoca.FMI3CSRunLifecycle
 import Rumoca.FMI3CSRun
 import Rumoca.FMI3Recovery
 import Rumoca.FMI3CSLifecycle
@@ -217,3 +218,5 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.CSRun.source_epoch
 #audit axioms Rumoca.FMI3.CSRun.Stored.source_observation
 #audit axioms Rumoca.FMI3.adapter_cs_run_history
+
+#audit axioms Rumoca.FMI3.adapter_create_cs_run_release

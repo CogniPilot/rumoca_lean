@@ -15,7 +15,7 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Actual creation through an accepted CS lifetime is proved. A separate actual-adapter theorem now composes mixed accepted/rejected steps and repeated reset/reinitialization with logging suppressed, retaining source/numerical guarantees, successful outputs and atomic reservations. | Callback-enabled mixed histories and their creation/release composition, remaining public calls, ME numerical interactions, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Actual creation through an accepted CS lifetime is proved. A further actual-adapter theorem now composes creation, initialization, mixed accepted/rejected steps, repeated reset/reinitialization and mode-appropriate release with logging suppressed, retaining source/numerical guarantees, successful outputs and restoration of the original owners. | Callback-enabled mixed lifetimes, remaining public calls, ME numerical interactions, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
@@ -48,9 +48,9 @@ remains the 869-input gate. No new full-gate pass is claimed for this follow-up.
 **Distance to expansion:** K01 is closed for its scoped initialization profile;
 K02–K05 remain partial or open. Actual creation now composes with the accepted
 CS lifetime. Mixed accepted/rejected step and reset/reinitialization histories
-now have an actual-adapter theorem with logging suppressed. Composing that trace
-with creation/release and callback-enabled histories is next; ME numerical
-interactions also remain open.
+now compose with actual creation, initialization and mode-appropriate release
+under suppressed logging. Callback-enabled mixed lifetimes are next; ME
+numerical interactions also remain open.
 Concurrent storage, whole-artifact correspondence and the standards/MISRA review
 remain required.
 These are substantial obligations, not a final build or a parser-only change.
@@ -79,6 +79,17 @@ and tests are unchanged; the 869-input full artifact evidence is retained.
 The theorem uses a fixed typed output-buffer bank (or omitted pointers),
 nearest-rounding library observations and suppressed logging. It does not
 replace the broader single-call contracts or close the whole lifecycle gate.
+
+The mixed-lifetime follow-up passed the same package command in
+`build/c-factory/cs-run-lifecycle-package-v1.log`, with all 893 inputs unchanged.
+Its 16 added roots derive creation through mixed stepping/recovery and release
+from original storage and ownership. Final Step Mode is terminated before
+release; final error/Terminated Mode is released directly. The composed frame
+preserves unrelated memory, and release restores the original owners. Source
+initialization, successful outputs and the final numerical/clock error bound
+remain explicit. Earlier semantics, emission, mandatory contracts and tests are
+unchanged, retaining the separate 869-input full artifact evidence. Enabled
+callbacks and the other K02–K05 obligations remain open.
 
 The actual adapter certificate now requires the complete `fmi3SetTime`
 contract. Its 25 added roots passed the owning-package and full artifact gates
@@ -529,12 +540,15 @@ simulation or concurrent host histories.
   storage, explicit successful outputs, source epochs, numerical/clock error,
   retained control fields and atomic reservations. The 25 added roots passed
   the 890-input package gate; caller-buffer and library premises remain explicit.
-- [ ] Extend the CS lifetime to histories containing rejected/discarded calls,
-  logging and reset, composing the mixed trace above with actual creation,
-  initialization and release, and adding callback-enabled histories.
-  Keep callback effects and frames
-  explicit; prove the required preservation across each interaction. Native
-  header and floating-environment correspondence remain separate obligations.
+- [x] Compose mixed accepted/rejected/reset histories with actual creation,
+  initialization and mode-appropriate release under suppressed logging. Derive
+  all later storage, source/numerical observations, the lifetime memory frame
+  and restoration of the original owners. The 16 added roots passed the
+  893-input FMI/compiler package gate.
+- [ ] Extend the CS lifetime to callback-enabled mixed histories. Retain every
+  represented callback outcome and explicit memory/ownership frames; prove the
+  required preservation across each interaction. Native header and
+  floating-environment correspondence remain separate obligations.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.

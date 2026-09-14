@@ -1,3 +1,5 @@
+import RumocaFMI3.CSRunFinish
+import RumocaFMI3.CSRunFrames
 import RumocaFMI3.CSRunExecution
 import RumocaFMI3.StepRecovery
 import RumocaFMI3.FactoryEnvironment
@@ -1216,3 +1218,19 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSRun.Stored.initialized
 #audit axioms Rumoca.FMI3.CSRun.change_correct
 #audit axioms Rumoca.FMI3.CSRun.trace_correct
+
+#audit axioms Rumoca.FMI3.CSRun.query_rehandle
+#audit axioms Rumoca.FMI3.CSRun.Change.rehandle
+#audit axioms Rumoca.FMI3.CSRun.ReferenceTrace.rehandle
+#audit axioms Rumoca.FMI3.CSRun.Change.can_finish
+#audit axioms Rumoca.FMI3.CSRun.ReferenceTrace.can_finish
+#audit axioms Rumoca.FMI3.CSRun.Stored.mode_cell
+#audit axioms Rumoca.FMI3.CSRun.finish_correct
+#audit axioms Rumoca.FMI3.CSRun.Outside.field
+#audit axioms Rumoca.FMI3.CSRun.Outside.cs
+#audit axioms Rumoca.FMI3.CSRun.rejection_frame
+#audit axioms Rumoca.FMI3.CSRun.initialize_frame
+#audit axioms Rumoca.FMI3.CSRun.initialize_retains
+#audit axioms Rumoca.FMI3.CSRun.Executed.heap_unique
+#audit axioms Rumoca.FMI3.CSRun.executed_frame
+#audit axioms Rumoca.FMI3.CSRun.trace_framed

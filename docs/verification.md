@@ -1,5 +1,34 @@
 # Exact verification contract
 
+**Created mixed CS lifetime follow-up (2026-09-14):**
+`adapter_create_cs_run_release` derives actual source-bound creation,
+initialization, mixed accepted/rejected steps, repeated reset/reinitialization
+and release from the original available static storage and owner map.
+The selected handle, initial finite Solve default, every subsequent heap,
+successful outputs and final release ownership are derived. Each reset starts
+a new source IVP; the final readable state retains its source-solution
+numerical/clock error bound. No post-creation or future-call storage/lease is
+supplied by the host.
+
+`CSRun.trace_framed` preserves cells outside the selected instance and caller
+outputs. `ReferenceTrace.can_finish` derives that the final mode is Step or
+Terminated. `finish_correct` terminates Step before release and releases an
+already terminated error path directly. The composed frame covers creation through release, and
+release restores the original owner map. The theorem grants no subsequent
+validity to a released handle. A stored-value error bound after a rejected call
+does not authorize continued simulation or assert a new public getter contract.
+
+The 16 added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/cs-run-lifecycle-package-v1.log`, with all 893 inputs unchanged.
+Only the three status documents changed afterward. Existing semantic
+definitions, emission, mandatory contracts and tests are unchanged; their
+artifact evidence remains the 869-input full gate and retained archives below.
+No new full-gate pass is claimed for this derived-proof increment.
+Suppressed logging, the explicit library profile and fixed typed caller buffers
+remain premises. Callback-enabled histories, ME numerical interactions,
+concurrency, complete artifact/native correspondence and standards/MISRA
+closure remain open. K02–K05 and the grammar expansion gate remain open.
+
 **Mixed CS run follow-up (2026-09-14):** `adapter_cs_run_history` now derives
 arbitrary finite interleavings of accepted steps, rejected calls and repeated
 reset/reinitialization from the actual adapter certificate, original valid

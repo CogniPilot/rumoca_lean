@@ -37,6 +37,36 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Created mixed CS lifetime with logging suppressed: 2026-09-14
+
+This derived follow-up to `eb0d3a0` connects actual creation and initialization
+to mixed CS steps/rejections/reset histories and final release. It derives the
+selected handle and all later storage from available initial storage, preserves
+successful outputs and the source/numerical invariant, and restores the original
+owner map. The ordinary frame covers the complete lifetime outside the selected
+instance, caller outputs and released reservation flag.
+
+The focused review uses FMI 3.0.2
+[§2.2.4, status returns](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions),
+[§2.3.1, reset and release](https://fmi-standard.org/docs/3.0.2/#super-state-fmu-state-settable),
+and [§2.3.8, Terminated](https://fmi-standard.org/docs/3.0.2/#state-terminated).
+The final Step path calls Terminate before FreeInstance; a path already
+Terminated by an error calls FreeInstance directly. Reset restores defaults and
+initialization establishes the new run. Preserved stored values after an error
+do not authorize continued simulation; this result adds no getter-call claim.
+The existing broader single-call logging contracts remain intact.
+
+All 16 added roots passed the FMI/compiler package gate in
+`build/c-factory/cs-run-lifecycle-package-v1.log`, with 893 unchanged inputs.
+Only the three status documents changed afterward. Earlier semantics,
+emission, mandatory contracts and tests are unchanged, retaining the separate
+869-input full gate and archives in `build/c-factory/cs-contract-artifacts-v1/`.
+No new full-gate pass or example suite is claimed. This theorem assumes
+suppressed logging, the explicit nearest-rounding/library profile and the
+existing typed caller-buffer bank; callback effects and concurrent histories
+remain open. Existing MLS/eFMI/MISRA findings are carried forward, not closed by
+this scoped review. **Stage decision: open; no grammar expansion.**
+
 ### Mixed CS steps and recovery with logging suppressed: 2026-09-14
 
 This derived-proof follow-up to `4d0d79e` adds 25 audit roots. An independent
