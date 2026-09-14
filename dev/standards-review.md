@@ -37,6 +37,38 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Created callback-enabled CS lifetime and observed statuses: 2026-09-14
+
+This derived follow-up to `0afdea3` connects the actual factory and initialization
+to callback-enabled mixed step/rejection/reset histories. Original available
+storage supplies all created-state and lease premises. The branching contract
+retains every modeled outcome; for every completed actual C script, its status
+list is proved equal to the reference list and its source/numerical observation
+and release ownership are derived. Termination/free follows the final mode and
+restores the original owner map. Protected unrelated instance/reservation cells
+are retained; private logger storage is allowed to change.
+
+The prior focused FMI 3.0.2 review is reused for unchanged policy:
+[§2.2.1, callback protocol](https://fmi-standard.org/docs/3.0.2/#requirements-for-implementations-of-the-c-api),
+[§2.2.4, statuses](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions),
+and [§2.3.1, creation/reset/release](https://fmi-standard.org/docs/3.0.2/#super-state-fmu-state-settable).
+Expected statuses are now conclusions for completed histories rather than
+premises. The universal external memory frame and existing returning-effect
+model remain explicit; this does not prove native callback behavior or permit
+log callback reentry. No callback return or eventual release is presumed for a
+blocked history. No logging/category, source initialization or emitted policy
+changed. Existing broader single-call contracts remain intact.
+
+The FMI/compiler package gate passed in
+`build/c-factory/cs-logged-lifetime-package-v1.log` with all 898 inputs unchanged
+and three added roots. Only the three status documents changed afterward.
+Earlier semantics, emission, mandatory contracts and tests retain the separate
+869-input full gate and archives in `build/c-factory/cs-contract-artifacts-v1/`.
+No new full-gate pass or example suite is claimed. The pinned MLS/eFMI/MISRA
+baselines and findings remain open where previously open. Remaining public/ME
+interactions, concurrency, artifact/native correspondence and the final standards
+review are still required. **Stage decision: open; no grammar expansion.**
+
 ### Callback-enabled mixed CS histories: 2026-09-14
 
 This derived follow-up to `938987a` proves branching accepted/rejected step and

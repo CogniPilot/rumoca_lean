@@ -1,3 +1,4 @@
+import RumocaFMI3.CSRunStatus
 import RumocaFMI3.CSRunLoggedExecution
 import RumocaFMI3.CSRunFinish
 import RumocaFMI3.CSRunFrames
@@ -1245,3 +1246,6 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSRun.logged_trace_correct
 #audit axioms Rumoca.FMI3.CSRun.ActionContract.returned
 #audit axioms Rumoca.FMI3.CSRun.LoggedTrace.completed
+
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.performed_status
+#audit axioms Rumoca.FMI3.CSRun.LoggedTrace.statuses_eq

@@ -1,5 +1,37 @@
 # Exact verification contract
 
+**Created callback-enabled CS lifetime (2026-09-14):**
+`adapter_create_logged_cs_release` now derives actual source-bound creation,
+initialization and the branching mixed step/rejection/reset history from
+original available static storage and matching logger configuration. The actual
+factory supplies the handle, finite Solve default and lease. Every completed
+actual history admits termination/release according to its final mode, restores
+the original owner map, and retains the source IVP and numerical/clock error.
+There is no assumed post-creation or post-callback heap or lease.
+
+The new `ActionContract.performed_status` and `LoggedTrace.statuses_eq` prove
+that observed return statuses equal the reference statuses. The lifetime theorem
+quantifies over arbitrary observed status lists and derives this equality;
+it does not assume expected statuses when selecting completed executions.
+The full branching certificate remains in the conclusion, including each
+modeled callback alternative and the no-return case. A completed final heap
+is not existentially promised if the logger has no returning outcome.
+
+The universal callback frame remains explicit. It protects the instance pool,
+reservation storage and caller outputs while allowing private logger effects.
+The final lifetime frame covers protected cells outside the selected instance,
+caller outputs and released flag. The theorem grants no future-call validity
+to a released handle and no new getter contract after an error.
+
+All three added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/cs-logged-lifetime-package-v1.log`, with all 898 inputs unchanged.
+Only the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests are unchanged; their separate 869-input full
+artifact gate and retained archives remain the evidence. No new full-gate pass
+is claimed for these derived proofs. Remaining public interactions, ME numerical
+histories, concurrency, complete artifact/native correspondence and standards/
+MISRA review keep K02–K05 and the grammar expansion gate open.
+
 **Callback-enabled mixed CS histories (2026-09-14):**
 `adapter_logged_cs_run_history` derives a branching contract for accepted and
 rejected steps interleaved with reset/reinitialization. `ActionContract` retains
