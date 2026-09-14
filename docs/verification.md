@@ -216,6 +216,32 @@ evidence; it was not rerun for these derived proofs. Only the three status
 documents changed after package acceptance. No new test suite was added.
 Complete public `fmi3DoStep` remains open.
 
+The C arithmetic checkpoint replaces the finite-addition overflow failure
+with an encoded signed-infinity result. `Binary64.Adds` independently states
+the Real overflow thresholds and finite nearest/even/signed-zero conditions;
+existence, uniqueness and complete result correspondence are proved.
+`CArithmetic.add_correct` relates actual C result values to that relation.
+Member-read and prepared-register expression proofs use the same `CLoops`
+arithmetic rule. The original `floatAdd_finite` statement and all unit-kernel
+claims are retained. This admits no new source syntax or nonfinite operand;
+multiplication still rejects overflow. NaN encoding is canonicalized only by
+the new result encoder; raw input payload decoding remains unchanged, and
+finite addition is proved never to produce NaN.
+
+Its 21 added roots passed the core/C/FMI/eFMI/compiler audit in
+`build/c-factory/finite-addition-package-gate-v1.log` with all 847 inputs
+unchanged. The renewed full artifact gate passed in
+`build/c-factory/finite-addition-full-gate-v1.log` with all 847 inputs unchanged.
+Both checked archives and exact member comparisons are retained under
+`build/c-factory/finite-addition-artifacts-v1/` and adjacent review files.
+C/header/GALEC and FMI XML match the preceding artifacts; the three eFMI
+manifests change only their generation identities and dependent checksums.
+The existing native FMI test passed overflow calls with and without a stop
+bound. Only these three status documents changed after full acceptance.
+No new test suite or emitted-code change was made.
+Floating status flags, traps, target-header/fenv correspondence and the complete
+public CS call remain outside these result proofs.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

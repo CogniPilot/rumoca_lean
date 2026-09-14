@@ -21,11 +21,11 @@ percentage of semantic coverage.
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
 Latest completed main-workspace gate:
-`build/c-factory/c-integer-full-gate-v1.log`, passed with all 840
+`build/c-factory/finite-addition-full-gate-v1.log`, passed with all 847
 integration inputs unchanged. It checks the C conversions, ME control contracts, static runtime, both
 actual FMU interfaces and the eFMU, including the existing native and rejection
 controls. Retained artifacts and member comparisons are under
-`build/c-factory/c-integer-artifacts-v1/` and adjacent review files.
+`build/c-factory/finite-addition-artifacts-v1/` and adjacent review files.
 Compared with `2628f35`, the FMI adapter replaces `calloc`/`free` with 32
 permanent ME/CS slots; numerical C, FMI metadata, GALEC and eFMI Production C
 are unchanged. Compared with the preceding time artifacts, the
@@ -87,6 +87,22 @@ unchanged. Earlier semantic definitions, emitters and mandatory contracts are
 unchanged, retaining the preceding full artifact evidence; the full gate was
 not rerun for these derived proofs. These prerequisites do not establish the
 public `fmi3DoStep` call.
+
+The arithmetic checkpoint gives every pair of finite addition operands a
+result, including signed infinity on overflow. An independent Real/rounding
+relation characterizes the result and its encoding, and C proofs cover both
+member-read and prepared-register expressions. Earlier finite-result theorem
+statements remain intact. This addresses the sum-before-cap semantic gap
+without changing generated C or rejection order; public-call composition is
+still required. Its 21 added roots passed the core/C/FMI/eFMI/compiler audit in
+`build/c-factory/finite-addition-package-gate-v1.log` with all 847 inputs
+unchanged. The renewed full artifact gate passed in
+`build/c-factory/finite-addition-full-gate-v1.log` with the same 847 inputs
+unchanged, including the two overflow cases added to the existing native FMI
+check. Both checked archives are retained under
+`build/c-factory/finite-addition-artifacts-v1/`. C/header/GALEC and FMI XML
+match the preceding artifacts; only eFMI generation identities and their
+dependent checksums changed. Complete public CS execution remains open.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -334,8 +350,10 @@ simulation or concurrent host histories.
   The accepted package increment supplies ordinary finite `floor`/`fegetround`
   contracts and actual helper execution. Connect these to public guarded
   evaluation and an explicit target-header rounding-mode binding. The sum is
-  still computed before the unit-grid cap rejects a large step. Proving only
-  accepted bounded additions would leave the complete rejection path uncovered.
+  still computed before the unit-grid cap rejects a large step. The finite
+  addition candidate now represents overflow as signed infinity, preserving
+  this ordering. Complete public execution must connect this result to the
+  stop/discard guards; an arithmetic lemma alone does not close the call.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.

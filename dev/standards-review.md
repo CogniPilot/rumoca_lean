@@ -37,6 +37,46 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Finite-operand addition overflow: 2026-09-13
+
+This checkpoint follows `5c06e00`. Shared C addition now represents overflow
+from two finite operands as signed infinity. The independent Real result
+relation retains strict finite bounds, nearest/even rounding and signed zero;
+its two threshold ties overflow. Encoding/decoding, result correspondence,
+infinity classification/comparison and member/register expression proofs add
+21 audit roots. Earlier finite theorem statements and mandatory contracts are
+retained. The core/C/FMI/eFMI/compiler package audit passed in
+`build/c-factory/finite-addition-package-gate-v1.log` with all 847 inputs
+unchanged. The renewed full artifact gate passed in
+`build/c-factory/finite-addition-full-gate-v1.log`, also with all 847 inputs
+unchanged. Both checked archives are retained under
+`build/c-factory/finite-addition-artifacts-v1/`; exact comparisons preserve
+C/header/GALEC and FMI XML bytes, permitting only fresh eFMI manifest identities
+and their dependent checksums. The existing native FMI check passed
+overflowing calls with and without a stop bound. Only the three status
+documents changed after full acceptance.
+
+The result model follows the current nearest-even binary64 profile and the
+[C11 Annex F.3](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n1570.pdf)
+mapping of addition to IEC 60559. Annex F.8.6/F.9.1 also requires attention to
+floating status flags and control modes; these are outside this numerical
+result relation. Native compiler/environment correspondence remains an
+explicit review obligation. A result-bit theorem is not a proof of the
+complete floating environment or all ISO C implementations.
+
+[FMI 3.0.2 §2.2.1](https://fmi-standard.org/docs/3.0.2/#general-mechanisms)
+requires restoration of changed thread settings before return or callbacks.
+Retain the environment correspondence/restoration obligation in K03/K05;
+distinguish operation status flags from control-setting changes during that
+review. No restoration guarantee follows from the new value-only theorem.
+Generated `fmi3DoStep` still adds before checking the step cap and keeps its
+existing stop-error/discard ordering. The complete public proof must connect
+the new overflow result to those actual guards, callbacks and output writes.
+
+No MLS 3.7/eFMI Beta 1 syntax, initialization, lowering, solver policy or
+generated member changes. No MISRA, FMI or other standards finding is closed.
+**Stage decision: open; no grammar expansion.**
+
 ### CS math calls and numerical helper: 2026-09-13
 
 This derived-proof increment follows `2051db5`. Five owning core/C/FMI/compiler

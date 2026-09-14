@@ -1,3 +1,4 @@
+import RumocaC.AdditionResults
 import RumocaC.MathCalls
 import RumocaC.IntegerConversions
 import RumocaC.OutputAtomicFrame
@@ -762,3 +763,13 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CMathCalls.floor_behaviors
 #audit axioms Rumoca.CMathCalls.rounding_effect
 #audit axioms Rumoca.CMathCalls.rounding_behaviors
+
+#audit axioms Rumoca.CArithmetic.add_result
+#audit axioms Rumoca.CArithmetic.add_correct
+#audit axioms Rumoca.CArithmetic.add_positive_overflow
+#audit axioms Rumoca.CArithmetic.add_negative_overflow
+#audit axioms Rumoca.CArithmetic.overflow_not_finite
+#audit axioms Rumoca.CArithmetic.positive_overflow_above
+#audit axioms Rumoca.CArithmetic.negative_overflow_below
+#audit axioms Rumoca.CArithmetic.eval_member_add
+#audit axioms Rumoca.CArithmetic.eval_register_add

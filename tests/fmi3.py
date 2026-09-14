@@ -377,6 +377,15 @@ class FMI3Tests(unittest.TestCase):
         self.initialize(h, time=2**53)
         self.assertEqual(self.step(h, 2**53, 1), (DISCARD, (False, False, False), 2**53))
         self.assertEqual(self.values(h)[1], 0.5)
+        # Native overflow boundary: the existing C adds before rejecting the
+        # unsupported increment. Retain the stop-error/discard precedence.
+        maximum = sys.float_info.max
+        for stop, status in [(None, DISCARD), (maximum, ERROR)]:
+            self.assertEqual(self.Reset(h), OK)
+            self.initialize(h, time=maximum, stop=stop)
+            self.assertEqual(self.step(h, maximum, maximum),
+                             (status, (False, False, False), maximum))
+            self.assertEqual(self.values(h), (maximum, 0.5, 1))
 
     def test_invalid_arguments_and_output_atomicity(self):
         # Native ABI boundary for the proved unit-profile initialization policy.
