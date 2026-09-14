@@ -331,3 +331,6 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.CSProtocol.Contract.progress_source
 #audit axioms Rumoca.FMI3.CSProtocol.Contract.released
 #audit axioms Rumoca.FMI3.CSProtocol.runtime_create_release
+
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.interrupted_source
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.stopped_source

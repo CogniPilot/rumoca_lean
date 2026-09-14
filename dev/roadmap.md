@@ -15,10 +15,30 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Source-bound CS creation now composes recurring initialization/simulation/reset segments through release, preserving raw statuses, explicit initialization checkpoints, every completed CS step/internal restart record and source samples, including observations before modeled blocked calls. Existing ME mixed histories retain derivative observations, initialized epochs and ownership. | Complete recurring ME composition and its stopped-source correspondence; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Source-bound CS creation composes recurring initialization/simulation/reset segments through release, preserving completed and stopped source observations. Source-bound ME creation now derives history progress and stopped-prefix derivative observations/initialized epochs; completed ME histories preserve resources for later initialization. | Compose recurring ME initialization/simulation/reset/release plans, including whole-plan stopped observations; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
+
+The ME follow-up passed the FMI/compiler package gate on 1001 unchanged inputs
+in `build/c-factory/me-prefix-package-v1.log`: 17 new and 3 affected roots,
+with no unexpected axioms or changed-module warnings. Returning/blocked
+equivalences and finite-history progress now feed the source-bound creation
+theorem. Every modeled stopped simulation prefix retains its completed source
+observations and initialization checkpoints; accepted numerical actions and
+internal restarts cannot block. ME trial states remain importer-selected.
+The original caller bank and universal logging policy supply the completed
+simulation handoff through `InitializationProtocol.me_execution`.
+
+Next, compose that handoff with the shared initialization invariant across
+recurring ME cycles and actual between-cycle resets, preserving earlier source
+observations on both completed and stopped paths. Then derive final release
+with the original owner map from the same actual creation/table/pool theorem.
+This whole-plan composition remains open. Only three documentation files
+change after the frozen package gate; no new source case is admitted.
+The earlier `fc02a22` revision passed the full
+[GitHub gate 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
+at 18:15:01 UTC. This increment still needs its own full-artifact acceptance.
 
 Latest completed main-workspace gate:
 `build/c-factory/cs-contract-full-gate-v1.log`, passed with all 869

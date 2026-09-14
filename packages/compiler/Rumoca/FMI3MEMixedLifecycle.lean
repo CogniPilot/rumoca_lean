@@ -77,6 +77,11 @@ theorem runtime_create_release (compiled : compile input = .ok a)
             Trace a.solve.prepareFMI3 objects (SlotOwners.update owners slot (some owner)) config program p addresses buffer
               exited (MENumericalHistory.ReferenceState.initial initArgs initial)
               (Time.Clock.initial initArgs.start) actions final finalClock ∧
+            ((∃ observed after epochs, Completed program p addresses buffer exited actions observed after epochs) ∨
+              Stopped program p addresses buffer exited actions) ∧
+            (∀ stop, Interrupted program p addresses buffer exited actions stop →
+              SourcePrefix a.parsed.ast p addresses buffer (MENumericalHistory.ReferenceState.initial initArgs initial)
+                (Time.Clock.initial initArgs.start) actions stop) ∧
             (∀ observed after epochs, Completed program p addresses buffer exited actions observed after epochs →
               MENumericalHistory.Stored after p finalClock final addresses buffer ∧ Reset.Storage after p ∧
               config.Stored after p ∧ SourceObservations a.parsed.ast actions observed ∧
@@ -162,36 +167,39 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have initialized := InitializationCalls.exited_source_initialized a.solve.prepareFMI3 live p initArgs .me ⟨initial⟩ loaded
   have initialModel := InitializationBodies.exit_model (InitializationEntry.model loaded initArgs) .me
   refine ⟨entered, exited, initialized,
-    fun _ given => InitializationCalls.source_initialized_unique given initialModel, certified, ?_⟩
-  intro observed after epochs executed
-  obtain ⟨finalStored, finalReset, finalConfig, finalOwners, readonly, frame⟩ := certified.completed executed
-  obtain ⟨sourceValues, sourceEpochs⟩ := certified.source a.solve executed
-  have metadataAfter : load after (p.member "slot") = some (.integer slot.val) :=
-    (certified.slot initialStored rfl executed).trans ((StaticInitialization.exited_metadata live p initArgs .me).trans created.metadata)
-  have released := LifecycleRelease.finish_correct objects program tag finish releaseBindings rfl after slot .me final.control.mode
-    (SlotOwners.update owners slot (some owner)) owner finalStored.control.kind finalStored.control.mode
-    (admitted.can_finish (Or.inl (by simp [MENumericalHistory.ReferenceState.initial,
-      MEHistory.ReferenceState.initial, Reference.Allowed]))) finalOwners created.owned metadataAfter
-  have discharged := released.discharged
-  have restored := released.ownersAfter
-  rw [SlotOwners.release_reserved_restore reserved] at discharged restored
-  refine ⟨finalStored, finalReset, finalConfig, sourceValues, sourceEpochs, prefixReadonly.trans readonly,
-    released, discharged, restored, ?_⟩
-  intro q guarded notRecord notOutputs notBuffer notFlag
-  have field (name : String) : q ≠ p.member name := by
-    intro same
-    exact notRecord (same ▸ p.member_in_record name)
-  have stateOutside : q ≠ StateProofs.stateAddress p := by
-    intro same
-    exact notRecord (same ▸ (p.member_in_record "model").member "x")
-  have outside : MENumericalRun.Outside p addresses buffer q :=
-    ⟨⟨⟨field "time", field "mode", field "eventTime", field "timeMin", field "lastCompleted", notOutputs⟩,
-      stateOutside, notBuffer⟩, field "stop", field "stopDefined"⟩
-  exact (released.frame q (field "mode") notFlag).trans
-    ((frame q guarded outside).trans
-      ((InitializationCalls.exited_frame live p q initArgs .me (field "time") (field "timeMin")
-        (field "eventTime") (field "lastCompleted") (field "stop") (field "stopDefined") (field "mode")).trans
-        (createdFrame q notRecord notFlag)))
+    fun _ given => InitializationCalls.source_initialized_unique given initialModel,
+    certified, certified.progress, ?_, ?_⟩
+  · intro stop interrupted
+    exact certified.interrupted_source a.solve initialStored initialReset initialConfig initialOwners admitted interrupted
+  · intro observed after epochs executed
+    obtain ⟨finalStored, finalReset, finalConfig, finalOwners, readonly, frame⟩ := certified.completed executed
+    obtain ⟨sourceValues, sourceEpochs⟩ := certified.source a.solve executed
+    have metadataAfter : load after (p.member "slot") = some (.integer slot.val) :=
+      (certified.slot initialStored rfl executed).trans ((StaticInitialization.exited_metadata live p initArgs .me).trans created.metadata)
+    have released := LifecycleRelease.finish_correct objects program tag finish releaseBindings rfl after slot .me final.control.mode
+      (SlotOwners.update owners slot (some owner)) owner finalStored.control.kind finalStored.control.mode
+      (admitted.can_finish (Or.inl (by simp [MENumericalHistory.ReferenceState.initial,
+        MEHistory.ReferenceState.initial, Reference.Allowed]))) finalOwners created.owned metadataAfter
+    have discharged := released.discharged
+    have restored := released.ownersAfter
+    rw [SlotOwners.release_reserved_restore reserved] at discharged restored
+    refine ⟨finalStored, finalReset, finalConfig, sourceValues, sourceEpochs, prefixReadonly.trans readonly,
+      released, discharged, restored, ?_⟩
+    intro q guarded notRecord notOutputs notBuffer notFlag
+    have field (name : String) : q ≠ p.member name := by
+      intro same
+      exact notRecord (same ▸ p.member_in_record name)
+    have stateOutside : q ≠ StateProofs.stateAddress p := by
+      intro same
+      exact notRecord (same ▸ (p.member_in_record "model").member "x")
+    have outside : MENumericalRun.Outside p addresses buffer q :=
+      ⟨⟨⟨field "time", field "mode", field "eventTime", field "timeMin", field "lastCompleted", notOutputs⟩,
+        stateOutside, notBuffer⟩, field "stop", field "stopDefined"⟩
+    exact (released.frame q (field "mode") notFlag).trans
+      ((frame q guarded outside).trans
+        ((InitializationCalls.exited_frame live p q initArgs .me (field "time") (field "timeMin")
+          (field "eventTime") (field "lastCompleted") (field "stop") (field "stopDefined") (field "mode")).trans
+          (createdFrame q notRecord notFlag)))
 
 end Rumoca.FMI3.MEMixedRun
 end

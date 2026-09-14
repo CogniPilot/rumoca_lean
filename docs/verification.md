@@ -1,5 +1,45 @@
 # Exact verification contract
 
+**ME progress and stopped-source observations (2026-09-14):**
+`MEMixedRun.runtime_history` and `runtime_create_release` now expose progress
+and source correspondence for every modeled stopped prefix of their admitted
+ME simulation histories. The creation theorem derives the starting heap,
+source default and ownership from actual creation and initialization in the
+same source-bound printed/prepared table and pool.
+
+Raw blocked numerical/restart actions retain arbitrary returned values and
+intermediate calls. Complete call contracts exclude blocking in an accepted
+numerical action or internal restart. Returning and blocked alternatives are
+characterized without assuming callback return or determinism. Every finite
+certified history has a completed execution or a modeled stopped prefix.
+
+The raw interrupted view is equivalent to `Stopped`. It records the completed
+script prefix, observations, initialization-exit checkpoints and pending call.
+`Trace.interrupted_source` reuses the completed-prefix source theorem and
+derives its final stored reference state and clock. Only a rejection can be
+pending under these contracts. The pending action contributes no returned
+status, output, checkpoint or release; its recorded heap precedes that action.
+The source claims are derivative observations and initialized source IVPs.
+Importer-selected ME trial states are not claimed to follow the exact IVP.
+
+`InitializationProtocol.me_execution` also derives retained original caller
+storage, ownership, literal preservation and logging policy through completed
+ME histories. Recurring initialization/ME simulation/reset/release composition
+still needs to connect these handoffs, including whole-protocol stopped
+prefixes. Native callback termination, remaining public calls and K02–K05
+remain open. Grammar expansion is blocked.
+
+Seventeen new and three affected roots passed the FMI/compiler package gate
+on 1001 unchanged inputs at 18:18:01 UTC in
+`build/c-factory/me-prefix-package-v1.log`, with no unexpected axioms or
+changed-module warnings. Only these three roadmap/verification documents
+change after the frozen gate. Grammars, source/Solve/C machine semantics,
+emitters, mandatory artifact propositions and boundary tests are unchanged.
+[GitHub run 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
+passed the full `lake test` gate for `fc02a22` at 18:15:01 UTC; its retained log
+is `build/c-factory/me-prefix-previous-ci-pass-v1.log`. That earlier revision's
+full-artifact result is distinct from this package pass.
+
 **Source-bound CS completed and stopped observations (2026-09-14):**
 `CSProtocol.runtime_create_release` connects actual source-bound static creation,
 recurring initialization/simulation/reset segments and final release. Its

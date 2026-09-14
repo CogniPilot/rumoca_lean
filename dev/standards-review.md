@@ -37,6 +37,41 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### ME progress and stopped-source observations: 2026-09-14
+
+The Modelica/GALEC grammars, source/Solve/C machine semantics, generated members
+and mandatory artifact propositions are unchanged. This increment extends the
+source-bound ME history and creation/release theorems with finite-history
+progress and every modeled stopped prefix's completed source observations.
+Raw interruption retains an explicit script decomposition and is equivalent
+to the stopped relation. Accepted numerical actions and internal restart
+calls cannot block under their complete call contracts.
+
+The focused [FMI 3.0.2 review](https://fmi-standard.org/docs/3.0.2/) rechecked
+§2.2.4's Error/output policy, §2.2.6's importer-controlled ME time and §2.3.1's
+logging/reset interface. Failed outputs remain undefined. A blocked callback
+in the C/effect model is not an FMI return status or a proved native hang.
+No returned status, output, initialization checkpoint or release is attributed
+to the pending action. ME trial states and times are importer-selected; the
+source correspondence covers derivative equations and initialized IVPs, not
+the correctness of an external integration algorithm.
+
+Completed ME histories also preserve original caller resources under the
+universal logger policy. Recurring initialization/simulation/reset/release
+composition and its whole-plan stopped observations remain open. The pinned
+MLS 3.7 and eFMI 1.0.0 Beta 1 evidence, initialization restrictions, MISRA
+findings and remaining public/native/concurrent obligations carry forward.
+No new normative policy or language case is introduced.
+
+Seventeen new and three affected roots passed the existing FMI/compiler gate
+on 1001 unchanged inputs in `build/c-factory/me-prefix-package-v1.log` at
+18:18:01 UTC, with no unexpected axioms or changed-module warnings. Only the
+three verification/roadmap documents change after that frozen gate.
+[GitHub run 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
+passed the full artifact gate for the earlier `fc02a22` revision at 18:15:01
+UTC; the current increment still needs its own full-artifact acceptance.
+**Stage decision: K02–K05 stay open; no grammar expansion.**
+
 ### Completed and stopped CS observations: 2026-09-14
 
 The admitted Modelica/GALEC grammars, generated FMI/eFMI members and mandatory

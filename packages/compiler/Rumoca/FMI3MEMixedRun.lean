@@ -1,5 +1,6 @@
 import Rumoca.FMI3MENumericalRunObservations
 import RumocaFMI3.MEMixedExecution
+import RumocaFMI3.MEMixedInterrupted
 import RumocaFMI3.ResetEnvironment
 
 noncomputable section
@@ -65,6 +66,58 @@ theorem Trace.source [CInterface] {source : AST.Model} {program : Program Invoca
         · exact epochHead epoch member
         · exact epochTail epoch member
 
+/-- Returned observations and source initialization checkpoints before a
+blocked action. ME trial states and clocks remain importer-selected. -/
+structure SourcePrefix (source : AST.Model) (p : Address) (addresses : String → Address)
+    (buffer : Address) (before : MENumericalHistory.ReferenceState) (clock : Time.Clock)
+    (actions : List Action) (stop : StopRecord) : Prop where
+  decomposition : actions = stop.done ++ stop.pending :: stop.rest
+  observations : SourceObservations source stop.done stop.observed
+  checkpoints : MENumericalRun.InitializedEpochs source p stop.epochs
+  pending : ∃ middle middleClock,
+    ReferenceTrace buffer before clock stop.done middle middleClock ∧
+    MENumericalHistory.Stored stop.heap p middleClock middle addresses buffer ∧
+    stop.pending.Allowed buffer middleClock middle ∧
+    ∃ request input, stop.pending = .reject request input
+
+theorem Trace.interrupted_source [CInterface] {source : AST.Model} {program : Program Invocation}
+    (model : Solve.Model source) {objects : Objects}
+    {owners : SlotOwners.State objects.capacity} {config : Configuration}
+    (certified : Trace model.prepareFMI3 objects owners config program p addresses buffer heap before clock actions final finalClock)
+    (stored : MENumericalHistory.Stored heap p clock before addresses buffer)
+    (reset : Reset.Storage heap p) (configured : config.Stored heap p)
+    (owned : SlotOwners.Represents objects.flagsBlock heap owners)
+    (admitted : ReferenceTrace buffer before clock actions final finalClock)
+    (interrupted : Interrupted program p addresses buffer heap actions stop) :
+    SourcePrefix source p addresses buffer before clock actions stop := by
+  obtain ⟨same, completed, faulted⟩ := interrupted
+  rw [same] at certified admitted
+  obtain ⟨middle, middleClock, first, last⟩ := admitted.split
+  have initial := certified.take stored reset configured owned first
+  obtain ⟨observations, checkpoints⟩ := initial.source model completed
+  have finalStored := (initial.completed completed).1
+  have suffix := certified.after_prefix first completed
+  cases last with
+  | cons allowed _ =>
+    cases suffix with
+    | cons called _ _ =>
+      exact ⟨same, observations, checkpoints, middle, middleClock, first, finalStored,
+        allowed, called.faulted_rejection faulted⟩
+
+theorem Trace.stopped_source [CInterface] {source : AST.Model} {program : Program Invocation}
+    (model : Solve.Model source) {objects : Objects}
+    {owners : SlotOwners.State objects.capacity} {config : Configuration}
+    (certified : Trace model.prepareFMI3 objects owners config program p addresses buffer heap before clock actions final finalClock)
+    (stored : MENumericalHistory.Stored heap p clock before addresses buffer)
+    (reset : Reset.Storage heap p) (configured : config.Stored heap p)
+    (owned : SlotOwners.Represents objects.flagsBlock heap owners)
+    (admitted : ReferenceTrace buffer before clock actions final finalClock)
+    (stopped : Stopped program p addresses buffer heap actions) :
+    ∃ stop, Interrupted program p addresses buffer heap actions stop ∧
+      SourcePrefix source p addresses buffer before clock actions stop := by
+  obtain ⟨stop, interrupted⟩ := stopped.interrupted
+  exact ⟨stop, interrupted, certified.interrupted_source model stored reset configured owned admitted interrupted⟩
+
 /-- Source compilation and its actual artifact contract supply the complete
 branching ME history in one emitted table and literal pool. All later storage,
 statuses, query values and actual initialization checkpoints are derived. -/
@@ -94,7 +147,11 @@ theorem runtime_history (compiled : compile input = .ok a)
             config.Stored after p ∧ SlotOwners.Represents objects.flagsBlock after owners ∧
             CReadOnly.Preserves heap after ∧
             (∀ q, MEFailure.Protected objects addresses buffer q → MENumericalRun.Outside p addresses buffer q → after q = heap q) ∧
-            SourceObservations a.parsed.ast actions observed ∧ MENumericalRun.InitializedEpochs a.parsed.ast p epochs) := by
+            SourceObservations a.parsed.ast actions observed ∧ MENumericalRun.InitializedEpochs a.parsed.ast p epochs) ∧
+          ((∃ observed after epochs, Completed program p addresses buffer heap actions observed after epochs) ∨
+            Stopped program p addresses buffer heap actions) ∧
+          (∀ stop, Interrupted program p addresses buffer heap actions stop →
+            SourcePrefix a.parsed.ast p addresses buffer reference clock actions stop) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, states, derivative,
     _, _, initialization, _, _, _, _, time, entries, completed, discrete, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
@@ -127,11 +184,13 @@ theorem runtime_history (compiled : compile input = .ok a)
   have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared literalBase firstBlock signed
     program config actual reset enterDefined exitDefined heap p clock reference final finalClock addresses buffer actions owners
     valid configured inPool represented readonly stored storage admitted
-  refine ⟨certified, ?_⟩
-  intro observed after epochs executed
-  obtain ⟨nextStored, nextReset, nextConfig, nextOwners, nextReadonly, frame⟩ := certified.completed executed
-  obtain ⟨observations, checkpoints⟩ := certified.source a.solve executed
-  exact ⟨nextStored, nextReset, nextConfig, nextOwners, nextReadonly, frame, observations, checkpoints⟩
+  refine ⟨certified, ?_, certified.progress, ?_⟩
+  · intro observed after epochs executed
+    obtain ⟨nextStored, nextReset, nextConfig, nextOwners, nextReadonly, frame⟩ := certified.completed executed
+    obtain ⟨observations, checkpoints⟩ := certified.source a.solve executed
+    exact ⟨nextStored, nextReset, nextConfig, nextOwners, nextReadonly, frame, observations, checkpoints⟩
+  · intro stop interrupted
+    exact certified.interrupted_source a.solve stored storage configured represented admitted interrupted
 
 end Rumoca.FMI3.MEMixedRun
 end

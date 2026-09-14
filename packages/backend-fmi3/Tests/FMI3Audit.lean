@@ -1,6 +1,8 @@
 import RumocaFMI3.InitializationProtocol
 import RumocaFMI3.InitializationProtocolEnvironment
 import RumocaFMI3.InitializationSimulation
+import RumocaFMI3.InitializationMESimulation
+import RumocaFMI3.MEMixedInterrupted
 import RumocaFMI3.CSInitializationProtocol
 import RumocaFMI3.CSProtocolInterrupted
 import RumocaFMI3.InitializationProtocolCreation
@@ -1632,3 +1634,19 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.fields
 #audit axioms Rumoca.FMI3.InitializationProtocol.Stored.reset_from
 #audit axioms Rumoca.FMI3.InitializationProtocol.reset_invariant
+
+#audit axioms Rumoca.FMI3.MENumericalRun.Calls.not_faulted
+#audit axioms Rumoca.FMI3.MEMixedRun.ActionContract.performed_iff
+#audit axioms Rumoca.FMI3.MEMixedRun.ActionContract.faulted_iff
+#audit axioms Rumoca.FMI3.MEMixedRun.ActionContract.faulted_rejection
+#audit axioms Rumoca.FMI3.MEMixedRun.ActionContract.progress
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.progress
+#audit axioms Rumoca.FMI3.MEMixedRun.Completed.stopped
+#audit axioms Rumoca.FMI3.MEMixedRun.Interrupted.stopped
+#audit axioms Rumoca.FMI3.MEMixedRun.Stopped.interrupted
+#audit axioms Rumoca.FMI3.MEMixedRun.interrupted_iff
+#audit axioms Rumoca.FMI3.MEMixedRun.ReferenceTrace.split
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.take
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.after_prefix
+#audit axioms Rumoca.FMI3.InitializationProtocol.me_field_outside
+#audit axioms Rumoca.FMI3.InitializationProtocol.me_execution
