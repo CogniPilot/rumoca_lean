@@ -1,3 +1,4 @@
+import RumocaFMI3.InitializationAccessStorage
 import RumocaFMI3.InitializationAccess
 import RumocaFMI3.InitializationRuntime
 import RumocaFMI3.Float64Environment
@@ -1440,3 +1441,15 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.executes
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.determines
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.execution_iff
+
+#audit axioms Rumoca.FMI3.InitializationStorage.entered
+#audit axioms Rumoca.FMI3.InitializationStorage.exited
+#audit axioms Rumoca.FMI3.Float64Access.Request.host_atomic
+#audit axioms Rumoca.FMI3.Float64Access.assigned_atomic
+#audit axioms Rumoca.FMI3.Float64Access.Request.after_atomic
+#audit axioms Rumoca.FMI3.InstanceInitialization.Initialized.access_instance
+#audit axioms Rumoca.FMI3.Float64Buffers.Layout.Separate.at_index
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.owners
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.metadata
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.cs_storage
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.release

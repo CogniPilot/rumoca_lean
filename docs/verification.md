@@ -1,5 +1,37 @@
 # Exact verification contract
 
+**Creation through initialization access and release (2026-09-14):**
+`InitializationAccess.runtime_create_release` now derives the original handle,
+finite Solve default and access-history storage from the actual source-bound
+static factory. The same header/object/literal environment and prepared function
+table supply creation, accepted Float64 accesses, initialization and release for
+both ME and CS. Identity/library bindings, available original typed storage,
+valid caller buffers and admitted finite requests remain explicit premises.
+
+Every accepted initialization script is constructed; every completed raw script
+determines its statuses/readbacks, selected source Real IVP and unique solution.
+State writes before and during initialization supply the actual exit value.
+The strengthened certificate preserves typed storage and atomic reservation
+cells. Ordinary checked stores cannot change atomic cells, so retaining leases
+does not require new caller-buffer separation from the reservation block.
+Mode-appropriate termination and release restore the original owners and retain
+the combined frame outside the instance, caller ranges and released flag.
+
+`Certificate.cs_storage` establishes the existing executable CS invariant using
+the final overridden state as its seed, start clock, configured stop bound and
+original step-output storage. It is a proved handoff; later CS step histories
+have not yet been composed with this initialization-access prefix. Rejected
+accesses, modeled logging/recovery, later ME/CS simulation and other public
+interactions also remain to be composed. No concurrent-host or native ABI claim
+is added, and K02–K05 remain open.
+
+The 15 new roots and affected existing roots passed
+`lake build check-c check-fmi3 check-compiler` on 947 unchanged inputs in
+`build/c-factory/created-access-package-v1.log`. Existing semantics, emission,
+mandatory artifact contracts and boundary tests are unchanged and retain their
+separate 869-input full-gate evidence. This is not a new full-gate pass. No
+grammar case or test suite was added; grammar expansion remains blocked.
+
 **Accepted initialization access histories (2026-09-14):**
 `InitializationAccess.runtime_source` binds accepted batched Float64 histories
 to actual source compilation, numerical C, XML reference/writable-state metadata,

@@ -37,6 +37,34 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Creation, initialization accesses and release: 2026-09-14
+
+This is a derived-proof continuation of the same unit-stage profile. No EBNF,
+runtime policy, generated member, capability flag or mandatory artifact
+proposition changes. The existing MLS 3.7 initialization interpretation and
+eFMI Beta 1 Algorithm/Production Code evidence remain scoped as before.
+
+The existing FMI 3.0.2 variable-access and initialization correspondence
+(§2.2.7.2 and §§2.3.2–2.3.3) now begins at actual source-bound creation.
+Original caller memory supplies all later access buffers. Completed scripts
+derive the raw observations and source IVP from the post-write exit state.
+The same actual runtime supplies termination/release; the proof restores the
+original owner map. Atomic preservation follows from the ordinary checked-store
+semantics without extra reservation-block separation for caller buffers.
+This is a sequential modeled lifetime, not concurrent/native correspondence.
+
+The CS handoff retains the selected state, start time, stop bound and reusable
+step-output storage. Later simulation must use this overridden seed; its
+composition remains open, as do rejected initialization accesses and their
+logging/recovery interactions. No full FMI/eFMI/MISRA conclusion follows.
+
+All 15 added roots and affected existing roots passed the C/FMI/compiler package
+gate on 947 unchanged inputs in `build/c-factory/created-access-package-v1.log`.
+The axiom whitelist is unchanged. The earlier 869-input full gate continues to
+cover the unchanged semantics, emitters, mandatory artifact propositions and
+boundary tests; no new full-gate pass is claimed. K02–K05 and the existing MLS,
+eFMI and MISRA findings remain open. **Stage decision: no grammar expansion.**
+
 ### Accepted initialization access histories: 2026-09-14
 
 This derived-proof increment preserves source admission, runtime policy, emitted

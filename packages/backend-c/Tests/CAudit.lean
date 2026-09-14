@@ -1,3 +1,4 @@
+import RumocaC.StoreRunInvariant
 import RumocaC.ArrayStore
 import RumocaC.CallPrefixInterface
 import RumocaC.Fenv
@@ -799,3 +800,7 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CMemory.ArrayStore.run_written
 #audit axioms Rumoca.CMemory.ArrayStore.run_preserves
 #audit axioms Rumoca.CMemory.ArrayStore.written_reads
+
+#audit axioms Rumoca.CStoreInvariant.body_reaches
+#audit axioms Rumoca.CStoreInvariant.body_run
+#audit axioms Rumoca.CStoreInvariant.array_run

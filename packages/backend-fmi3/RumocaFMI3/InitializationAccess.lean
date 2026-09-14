@@ -1,5 +1,6 @@
 import RumocaFMI3.Float64History
 import RumocaFMI3.InitializationRuntime
+import RumocaFMI3.InitializationStorage
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationAccess
@@ -96,6 +97,8 @@ structure Certificate [CInterface] (model : Solve.FMI3Model source) (program : C
     (nextMode .exitInitialization kind .initialization) (finalState during (finalState before state)) args.start
   buffersStored : Stored (InitializationBodies.exitHeap atExit p kind) buffers
   clockStored : HistoryProofs.Stored (InitializationBodies.exitHeap atExit p kind) p (Time.Clock.initial args.start)
+  storage : CStorage.Preserves heap (InitializationBodies.exitHeap atExit p kind)
+  atomic : CAtomicBoolean.Preserves heap (InitializationBodies.exitHeap atExit p kind)
   readonly : CReadOnly.Preserves heap (InitializationBodies.exitHeap atExit p kind)
   frame : ∀ q, OutsideInitialization p buffers q → InitializationBodies.exitHeap atExit p kind q = heap q
   beforeFields : ∀ name, beforeEntry (p.member name) = heap (p.member name)
@@ -115,18 +118,21 @@ theorem initialization_history [CInterface] (program : CCalls.Events.Program E)
     (duringFits : ∀ request ∈ during, request.Fits buffers)
     (duringAllowed : ∀ request ∈ during, request.Allowed kind .initialization) :
     ∃ beforeEntry atExit, Certificate model program p buffers args kind state time heap before during beforeEntry atExit := by
-  obtain ⟨beforeEntry, beforeCalls, beforeInstance, beforeBuffers, _, beforeReadonly, beforeFrame⟩ :=
+  obtain ⟨beforeEntry, beforeCalls, beforeInstance, beforeBuffers, beforeStorage, beforeReadonly, beforeAtomic, beforeFrame⟩ :=
     trace program get set before stored buffersStored separate beforeFits
       (fun request member => start_allowed request kind (beforeAllowed request member))
   have beforeFields : ∀ name, beforeEntry (p.member name) = heap (p.member name) :=
     fun name => beforeFrame _ (Ne.symm (HistoryBodies.state_ne_field p name)) (instance_outside separate rfl)
   have enterCall := initialization.enter beforeEntry p args kind admissible
     (entry_storage entryStored beforeFields) beforeInstance.kind
+  obtain ⟨enterStorage, enterAtomic⟩ := InitializationStorage.entered beforeEntry p args kind admissible
+    (entry_storage entryStored beforeFields) beforeInstance.kind
   have enterReadonly := CCalls.Events.termination_preserves ((enterCall _).mpr rfl)
-  obtain ⟨atExit, duringCalls, duringInstance, duringBuffers, _, duringReadonly, duringFrame⟩ :=
+  obtain ⟨atExit, duringCalls, duringInstance, duringBuffers, duringStorage, duringReadonly, duringAtomic, duringFrame⟩ :=
     trace program get set during (entered_instance beforeInstance args) (entered_buffers beforeBuffers separate args)
       separate duringFits duringAllowed
   have exitCall := initialization.exit atExit p kind duringInstance.kind duringInstance.mode
+  obtain ⟨exitStorage, exitAtomic⟩ := InitializationStorage.exited atExit p kind duringInstance.mode
   have exitReadonly := CCalls.Events.termination_preserves ((exitCall _).mpr rfl)
   have duringFields : ∀ name, atExit (p.member name) = InitializationEntry.finalHeap beforeEntry p args (p.member name) :=
     fun name => duringFrame _ (Ne.symm (HistoryBodies.state_ne_field p name)) (instance_outside separate rfl)
@@ -137,6 +143,8 @@ theorem initialization_history [CInterface] (program : CCalls.Events.Program E)
   refine ⟨beforeEntry, atExit, beforeCalls, enterCall, duringCalls, exitCall,
     exited_instance duringInstance, exited_buffers duringBuffers separate kind,
     InitializationBodies.exit_history currentClock kind,
+    beforeStorage.trans (enterStorage.trans (duringStorage.trans exitStorage)),
+    beforeAtomic.trans (enterAtomic.trans (duringAtomic.trans exitAtomic)),
     beforeReadonly.trans (enterReadonly.trans (duringReadonly.trans exitReadonly)), ?_, beforeFields, duringFields⟩
   intro q ⟨outside, notState, fields⟩
   exact (InitializationBodies.exit_frame atExit p q kind (fields "mode" (by simp [writtenFields]))).trans

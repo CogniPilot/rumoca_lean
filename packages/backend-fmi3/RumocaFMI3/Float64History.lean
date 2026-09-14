@@ -1,4 +1,4 @@
-import RumocaFMI3.Float64Access
+import RumocaFMI3.Float64Atomic
 
 noncomputable section
 namespace Rumoca.FMI3.Float64Access
@@ -78,19 +78,20 @@ theorem trace [CInterface] (program : CCalls.Events.Program E)
     (allowed : ∀ request ∈ requests, request.Allowed kind mode) :
     ∃ after, Calls program p buffers heap requests (expected model time requests state) after ∧
       Instance after p kind mode (finalState requests state) time ∧ Stored after buffers ∧
-      CStorage.Preserves heap after ∧ CReadOnly.Preserves heap after ∧
+      CStorage.Preserves heap after ∧ CReadOnly.Preserves heap after ∧ CAtomicBoolean.Preserves heap after ∧
       (∀ q, q ≠ StateProofs.stateAddress p → Outside buffers q → after q = heap q) := by
   induction requests generalizing heap state with
-  | nil => exact ⟨heap, .nil, stored, buffersStored, .refl _, .refl _, fun _ _ _ => rfl⟩
+  | nil => exact ⟨heap, .nil, stored, buffersStored, .refl _, .refl _, .refl _, fun _ _ _ => rfl⟩
   | cons request rest ih =>
     obtain ⟨prepared, called, instanceAfter, buffersAfter, observes, storageFrame, readonly, frame⟩ :=
       step program get set request stored buffersStored (fits request (by simp)) separate (allowed request (by simp))
-    obtain ⟨after, following, finalInstance, finalBuffers, finalStorage, finalReadonly, finalFrame⟩ :=
+    obtain ⟨after, following, finalInstance, finalBuffers, finalStorage, finalReadonly, finalAtomic, finalFrame⟩ :=
       ih instanceAfter buffersAfter
         (fun request member => fits request (List.mem_cons_of_mem _ member))
         (fun request member => allowed request (List.mem_cons_of_mem _ member))
     exact ⟨after, .cons prepared called (Request.readback_correct observes) following,
       finalInstance, finalBuffers, storageFrame.trans finalStorage, readonly.trans finalReadonly,
+      (request.after_atomic model stored buffersStored (fits request (by simp)) separate).trans finalAtomic,
       fun q other outside => (finalFrame q other outside).trans (frame q other outside)⟩
 
 theorem Calls.executes [CInterface] {program : CCalls.Events.Program E}

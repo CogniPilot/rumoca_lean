@@ -1,3 +1,4 @@
+import Rumoca.FMI3CreatedInitializationAccess
 import Rumoca.FMI3InitializationAccess
 import Rumoca.FMI3Float64Environment
 import Rumoca.FMI3Float64SetEnvironment
@@ -271,3 +272,5 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.InitializationAccess.Certificate.completed_source
 #audit axioms Rumoca.FMI3.InitializationAccess.source_contract
 #audit axioms Rumoca.FMI3.InitializationAccess.runtime_source
+
+#audit axioms Rumoca.FMI3.InitializationAccess.runtime_create_release
