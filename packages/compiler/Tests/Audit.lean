@@ -1,3 +1,4 @@
+import Rumoca.FMI3MEMixedRun
 import Rumoca.FMI3MEFailureRecovery
 import Rumoca.FMI3MENumericalRunLifecycle
 import Rumoca.FMI3MENumericalLifecycle
@@ -252,3 +253,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.MEFailure.Recovery.source
 #audit axioms Rumoca.FMI3.MEFailure.runtime_recovery
 #audit axioms Rumoca.FMI3.MEFailure.Recovery.executed_source
+
+#audit axioms Rumoca.FMI3.MEMixedRun.ActionContract.epochs_source
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.source
+#audit axioms Rumoca.FMI3.MEMixedRun.runtime_history

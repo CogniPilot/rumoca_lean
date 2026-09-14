@@ -1,5 +1,38 @@
 # Exact verification contract
 
+**Mixed ME rejection/recovery histories (2026-09-14):**
+`MEMixedRun.runtime_history` derives a branching certificate for finite admitted
+mixtures of numerical/control calls, rejected requests and reset/reinitialization.
+The same compiled table, diagnostic pool, numerical C and derivative/state
+metadata supply every call. Rejection selection uses reference state, raw
+arguments and clock bounds. Optional importer stores preserve all IEEE bit
+patterns, including non-finite setter inputs; later buffer contents are derived.
+
+`ActionContract.returned` and `ActionContract.realizes` connect every returning
+alternative to actual target calls in both directions. Enabled logging retains
+all modeled effect outcomes and the no-return alternative. No returning logger
+or final heap is presumed. Disabled logging and a missing logger are covered by
+the same history construction. Logger configuration remains fixed, with a
+universal external frame protecting instance/reservation storage and reusable
+caller buffers; private logger storage may change.
+
+For every completed raw script, `Trace.completed` derives final numerical/reset
+storage, ownership, diagnostic preservation and the protected memory frame.
+`Trace.source` derives success/Error statuses, source Real agreement for every
+successful derivative query, and source initialization/uniqueness at each actual
+restart checkpoint. Failed-call outputs receive no numerical guarantee. Importer
+trial states and debugging getters after Error do not authorize continuation of
+the original simulation or establish an IVP trajectory.
+
+All 15 added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/me-mixed-run-package-v1.log` on 927 unchanged inputs. Only the
+three status documents changed afterward. Earlier semantics, emission, mandatory
+contracts and tests retain the separate 869-input full artifact gate and unchanged
+archives; no new full-gate pass is claimed. Original valid non-null instance and
+caller storage remain premises. Creation/release composition for these histories,
+intervening initialization accesses, remaining public interactions and K02–K05
+remain open. No grammar case or test suite was added.
+
 **ME rejection and recovery (2026-09-14):** `MEFailure.Request.prepared`
 unifies the existing rejection contracts for state/derivative access, time,
 event/continuous entry, integrator completion and discrete updates. The request

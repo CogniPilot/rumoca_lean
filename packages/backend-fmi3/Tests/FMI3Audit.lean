@@ -1,3 +1,4 @@
+import RumocaFMI3.MEMixedExecution
 import RumocaFMI3.MEFailureRecovery
 import RumocaFMI3.MEFailureContracts
 import RumocaFMI3.MENumericalRunLifecycle
@@ -1356,3 +1357,16 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEFailure.Recovery.correct
 #audit axioms Rumoca.FMI3.MEFailure.Recovery.determines
 #audit axioms Rumoca.FMI3.MEFailure.Recovery.owners
+
+#audit axioms Rumoca.FMI3.MEFailure.Prepares.unique
+#audit axioms Rumoca.FMI3.MEFailure.prepare_frame
+#audit axioms Rumoca.FMI3.MEFailure.prepare_correct
+#audit axioms Rumoca.FMI3.MEFailure.Request.Selected.condition
+#audit axioms Rumoca.FMI3.MEMixedRun.Configuration.Stored.framed
+#audit axioms Rumoca.FMI3.MEMixedRun.configuration_outside
+#audit axioms Rumoca.FMI3.MEMixedRun.ActionContract.realizes
+#audit axioms Rumoca.FMI3.MEMixedRun.ActionContract.returned
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.completed
+#audit axioms Rumoca.FMI3.MEMixedRun.run_correct
+#audit axioms Rumoca.FMI3.MEMixedRun.action_correct
+#audit axioms Rumoca.FMI3.MEMixedRun.trace_correct
