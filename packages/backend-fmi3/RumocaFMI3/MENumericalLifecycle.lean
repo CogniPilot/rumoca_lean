@@ -1,0 +1,83 @@
+import RumocaFMI3.MENumericalAtomic
+import RumocaFMI3.MENumericalInitialization
+import RumocaFMI3.InitializationEnvironment
+
+noncomputable section
+namespace Rumoca.FMI3.MENumericalHistory
+open CTree CMemory StaticFactory
+
+/-- Initialization, mixed ME execution and termination/release share the
+original storage and lease. No initialized heap, later successful call or
+post-history ownership is supplied as a premise. -/
+theorem initialize_release (header : CFenv.Header) (objects : Objects)
+    (literals : CLiteralAddresses) (model : Solve.FMI3Model source) :
+    letI : CInterface := RuntimeEnvironment.interface header objects literals
+    ∀ (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
+      program.internal.definitions InitializationCalls.signature.name = some (.tree InitializationCalls.function) →
+      program.internal.definitions InitializationExit.signature.name =
+        some (.tree (Runtime.function model InitializationExit.signature)) →
+      MEEnvironment.Quiet model program → Termination.ReleaseContract objects program tag →
+      ∀ (heap : Heap) (slot : Fin objects.capacity) (owners : SlotOwners.State objects.capacity)
+        (owner : Nat) (args : Initialization.Arguments) (seed : Binary64.Value)
+        (addresses : String → Address) (buffer : Address) (actions : List Action) (final : ReferenceState),
+      let p := objects.instances.index slot.val
+      args.Admissible → InitializationCalls.EntryStorage heap p →
+      load heap (p.member "kind") = some (.integer 0) →
+      heap (StateProofs.stateAddress p) = some ⟨.float64, true, some (.finite seed)⟩ →
+      CallerStorage heap p addresses buffer → ReferenceTrace (ReferenceState.initial args seed) actions final →
+      SlotOwners.Represents objects.flagsBlock heap owners → owners slot = some owner →
+      load heap (p.member "slot") = some (.integer slot.val) →
+      let entered := InitializationEntry.finalHeap heap p args
+      let exited := InitializationCalls.exitedHeap heap p args .me
+      (∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling InitializationCalls.signature.name
+          (InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args)) heap .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, entered⟩) ∧
+      (∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling InitializationExit.signature.name (InitializationExit.arguments (some p)) entered .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, exited⟩) ∧
+      ∃ after finalClock,
+        Calls program p addresses buffer exited actions
+          (observations model (ReferenceState.initial args seed) actions) after ∧
+        Stored after p finalClock final addresses buffer ∧ CReadOnly.Preserves heap after ∧
+        let terminated := LifecycleBodies.writeMode after p .terminated
+        let released := replace terminated (AtomicSlots.address objects.flagsBlock slot) (CAtomicBoolean.cell false)
+        (∀ behavior, (CCalls.Events.machine program).Behaves
+          (.calling Termination.signature.name [.pointer (some p)] after .done) behavior ↔
+          behavior = .terminates [] ⟨.integer 0, terminated⟩) ∧
+        SlotOwners.release owners slot owner = some (SlotOwners.update owners slot none) ∧
+        SlotOwners.Represents objects.flagsBlock released (SlotOwners.update owners slot none) ∧
+        (∀ behavior, (CCalls.Events.machine program).Behaves
+          (.calling StaticRelease.function.signature.name [.pointer (some p)] terminated .done) behavior ↔
+          behavior = .terminates [tag (.write (AtomicSlots.address objects.flagsBlock slot) false)] ⟨.void, released⟩) ∧
+        (∀ q, Outside p addresses buffer q → q ≠ p.member "stop" → q ≠ p.member "stopDefined" →
+          q ≠ AtomicSlots.address objects.flagsBlock slot → released q = heap q) := by
+  letI : CInterface := RuntimeEnvironment.interface header objects literals
+  intro program tag enterDefined exitDefined quiet finish heap slot owners owner args seed addresses buffer actions final
+  let p := objects.instances.index slot.val
+  dsimp only
+  intro admissible storage kind stateCell outputs admitted represented owned metadata
+  obtain ⟨enteredCall, exitedCall⟩ := InitializationEnvironment.calls header objects literals model
+    program heap p args .me enterDefined exitDefined admissible storage kind
+  have initialStored := initialized_stored heap p args seed addresses buffer admissible kind stateCell outputs
+  obtain ⟨after, finalClock, called, finalStored, readonly, atomic, frame⟩ :=
+    trace_atomic program quiet initialStored admitted
+  have representedAfter := SlotOwners.ordinary_preserves
+    (StaticInitialization.exited_owners objects heap slot args .me owners represented) atomic
+  have metadataAfter : load after (p.member "slot") = some (.integer slot.val) := by
+    simpa only [load, frame _ initialStored.slot_outside] using
+      ((StaticInitialization.exited_metadata heap p args .me).trans metadata)
+  obtain ⟨terminated, discharged, releasedOwners, releasedFrame, freed⟩ :=
+    finish after slot owners owner .me final.control.mode finalStored.control.kind finalStored.control.mode
+      (admitted.live (Or.inl rfl)).terminate representedAfter owned metadataAfter
+  have readonlyEnter := CCalls.Events.termination_preserves ((enteredCall _).mpr rfl)
+  have readonlyExit := CCalls.Events.termination_preserves ((exitedCall _).mpr rfl)
+  refine ⟨enteredCall, exitedCall, after, finalClock, called, finalStored,
+    readonlyEnter.trans (readonlyExit.trans readonly), terminated, discharged, releasedOwners, freed, ?_⟩
+  intro q outside stop stopDefined flag
+  obtain ⟨time, mode, event, minimum, completed, _⟩ := outside.1
+  exact ((releasedFrame q mode flag).trans (frame q outside)).trans
+    (InitializationCalls.exited_frame heap p q args .me time minimum event completed stop stopDefined mode)
+
+end Rumoca.FMI3.MENumericalHistory
+end

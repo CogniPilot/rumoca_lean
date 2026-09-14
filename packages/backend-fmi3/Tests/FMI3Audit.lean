@@ -1,3 +1,4 @@
+import RumocaFMI3.MENumericalLifecycle
 import RumocaFMI3.MENumericalHistory
 import RumocaFMI3.MEControlEnvironment
 import RumocaFMI3.DerivativeEnvironment
@@ -1313,3 +1314,14 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MENumericalHistory.trace
 #audit axioms Rumoca.FMI3.MENumericalHistory.Calls.executes
 #audit axioms Rumoca.FMI3.MENumericalHistory.Calls.determines
+
+#audit axioms Rumoca.FMI3.MENumericalHistory.action_atomic
+#audit axioms Rumoca.FMI3.MENumericalHistory.trace_atomic
+#audit axioms Rumoca.FMI3.MENumericalHistory.Action.next_live
+#audit axioms Rumoca.FMI3.MENumericalHistory.ReferenceTrace.live
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.slot_outside
+#audit axioms Rumoca.FMI3.MENumericalHistory.CallerStorage.storage_preserved
+#audit axioms Rumoca.FMI3.MENumericalHistory.CallerStorage.at_index
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.callers
+#audit axioms Rumoca.FMI3.MENumericalHistory.initialized_stored
+#audit axioms Rumoca.FMI3.MENumericalHistory.initialize_release

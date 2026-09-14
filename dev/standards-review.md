@@ -37,6 +37,41 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Created ME numerical lifetime: 2026-09-14
+
+This derived follow-up to `bc19ec0` connects actual creation, initialization,
+accepted mixed control/state/derivative histories, termination and release in
+one header/object/literal environment. Creation establishes the handle, source
+default and lease before the importer chooses its history. Caller storage is
+specified before creation; later writable cells, metadata and owners are
+derived. Release restores the original owners and preserves unrelated memory.
+
+The focused review rechecked pinned FMI 3.0.2
+[§2.3.3](https://fmi-standard.org/docs/3.0.2/#state-initialization-mode),
+[§2.3.4](https://fmi-standard.org/docs/3.0.2/#super-state-initialized) and the
+[instance lifetime functions](https://fmi-standard.org/docs/3.0.2/#state-machine).
+ME initialization exits into Event Mode; the admitted history preserves a mode
+from which termination is allowed, then releases its instance. This result
+does not close the full resource/native lifetime obligation or arbitrary
+reset histories. Existing single-call failure and logging contracts remain.
+
+`runtime_create_me_numerical_release` retains source compilation, numerical C,
+function-section tokenization and derivative/state metadata. It derives actual
+statuses and raw query values without assuming expected observations. Source
+initialization is recorded at the initialized heap, before importer trial-state
+updates; derivative queries retain source Real equation agreement. The result
+does not certify an importer's integration method or native external code.
+
+All eleven added roots passed the FMI/compiler package gate on 914 unchanged
+inputs in `build/c-factory/me-numerical-lifecycle-package-v1.log`. Only the three
+status documents changed afterward. Earlier semantics, emission, mandatory
+contracts and tests retain the separate 869-input full gate and unchanged
+archives; their source and archive hashes were rechecked. MLS 3.7, CS/eFMI and
+MISRA clause records carry forward unchanged. No grammar feature, new test suite,
+full-gate pass or standards closure is claimed. Mixed ME rejection/reset/callback
+histories, remaining public calls, concurrency and complete artifact/native
+correspondence keep K02–K05 and grammar expansion open and blocked, respectively.
+
 ### Mixed ME control and numerical histories: 2026-09-14
 
 This derived follow-up to `ac3b5b5` uses one actual function table/pool for
