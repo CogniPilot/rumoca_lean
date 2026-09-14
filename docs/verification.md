@@ -327,6 +327,34 @@ Only the three status documents changed after that full gate. Existing
 mandatory artifact contracts and all earlier audit roots are retained; shared
 numerical semantics and the grammar are unchanged. No new test suite is added.
 
+`StepEntry` subsequently extends the public CS proof boundary. Its independent
+`InputsValid` predicate uses finite decoded values, numerical point/clock equality
+and positive duration. `input_condition_all` proves the emitted input guard for
+every pair of raw 64-bit encodings, including nonfinite values and both signed
+zeros. `prefix_run` connects the actual first nine statements to admission or
+the input-failure statement and records the precise initialized output heap.
+The earlier finite-input helpers now follow from these general proofs.
+
+`accepted_call` starts at public typed parameter binding and derives all successful
+call behavior through the ordinary library calls, guards and numerical helper.
+The solver count, final state, rounded clock, last-successful-time and three
+false Boolean outputs are derived, with an exact other-memory frame. Boolean
+outputs may alias; incompatibility with Float64 cells follows from the typed
+heap rather than a separate pairwise-address assumption. `null_call` covers
+all raw arguments and nullable output pointers without instance/buffer-storage
+premises. Type/header bindings, the ordinary external-call relations, valid
+nonnull storage and mathematical stop/progress conditions remain explicit.
+The raw-bit theorem models values, not signaling-NaN traps or floating flags.
+
+These sixteen added roots passed the FMI/compiler package audit in
+`build/c-factory/cs-entry-package-v1.log` with all 856 inputs unchanged.
+Only the three status documents changed afterward. Earlier semantic definitions,
+emitters, mandatory artifact contracts and tests are unchanged, so the preceding
+855-input full gate retains their artifact evidence; the full gate was not rerun
+for these derived proofs. The new public-call consequences are not yet mandatory
+in `AdapterContract`. Complete rejected/logged calls, repeated histories and
+actual-artifact composition remain required. No new test suite is added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

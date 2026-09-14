@@ -1,3 +1,4 @@
+import RumocaFMI3.StepEntry
 import RumocaFMI3.StepGuards
 import RumocaFMI3.RuntimeEnvironment
 import RumocaFMI3.StepAdmission
@@ -1045,3 +1046,20 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StepGuards.grid_path
 #audit axioms Rumoca.FMI3.StepGuards.actual_sections
 #audit axioms Rumoca.FMI3.StepGuards.accepted_execution
+
+#audit axioms Rumoca.FMI3.StepEntry.body
+#audit axioms Rumoca.FMI3.StepEntry.parameters_bound
+#audit axioms Rumoca.FMI3.StepEntry.lifecycle_run
+#audit axioms Rumoca.FMI3.StepEntry.input_condition
+#audit axioms Rumoca.FMI3.StepEntry.float_ne_boolean
+#audit axioms Rumoca.FMI3.StepEntry.outputs_run
+#audit axioms Rumoca.FMI3.StepEntry.output_frame
+#audit axioms Rumoca.FMI3.StepEntry.output_instance
+#audit axioms Rumoca.FMI3.StepEntry.ready_run
+#audit axioms Rumoca.FMI3.StepEntry.null_call
+#audit axioms Rumoca.FMI3.StepEntry.accepted_call
+#audit axioms Rumoca.FMI3.StepEntry.output_values
+#audit axioms Rumoca.FMI3.StepEntry.call_frame
+#audit axioms Rumoca.FMI3.StepEntry.final_values
+#audit axioms Rumoca.FMI3.StepEntry.input_condition_all
+#audit axioms Rumoca.FMI3.StepEntry.prefix_run

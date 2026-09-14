@@ -146,6 +146,18 @@ dependent checksums. Public output setup, input/lifecycle admission,
 complete rejected-call logging and repeated-step histories remain open; the
 suffix theorem does not close K03 or authorize grammar expansion.
 
+The subsequent public-entry increment adds complete successful and null-handle
+`fmi3DoStep` proofs. An independent input predicate and its actual guard theorem
+classify every raw point/step encoding; the public prefix preserves exact output
+initialization on both admission and input rejection. Success derives the
+solver count and complete state/clock/output writes with a memory frame.
+Sixteen added roots passed the FMI/compiler package audit in
+`build/c-factory/cs-entry-package-v1.log`, with all 856 inputs unchanged.
+Earlier semantics, emitters and mandatory artifact contracts are unchanged;
+the preceding full gate supplies their artifact evidence. Complete rejected
+calls/logging, repeated histories and mandatory public-CS artifact composition
+remain open. These proofs do not close K03 or authorize grammar expansion.
+
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
 logging, rejection/exhaustion, reusable ownership and both successful and
@@ -395,9 +407,12 @@ simulation or concurrent host histories.
   with derived ME time/history and solver-helper consequences in one interface;
   matching native headers and the complete guarded public call remain open. The sum is
   still computed before the unit-grid cap rejects a large step. The finite
-  addition candidate now represents overflow as signed infinity, preserving
-  this ordering. Complete public execution must connect this result to the
-  stop/discard guards; an arithmetic lemma alone does not close the call.
+  addition proof represents overflow as signed infinity, preserving this
+  ordering. The accepted guard proofs now connect it to stop/discard destinations.
+  Complete successful/null public calls and raw-input prefix classification
+  also pass the owning-package audit. Finish the other public rejection/logging
+  paths, make the complete contract mandatory in the artifact checker, and
+  compose repeated calls with source/clock histories.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.

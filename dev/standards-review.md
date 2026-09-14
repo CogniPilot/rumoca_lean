@@ -37,6 +37,33 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Public CS entry and raw-input classification: 2026-09-13
+
+This derived-proof increment follows `8ac1292`. Sixteen new `StepEntry` roots
+cover typed public arguments, every raw point/step input encoding, lifecycle
+and output setup, complete successful/null calls, output values and memory
+frames. They passed the FMI/compiler package audit in
+`build/c-factory/cs-entry-package-v1.log` with all 856 inputs unchanged; only
+three status documents changed afterward. Earlier semantics, emitters and
+mandatory artifact contracts are unchanged, retaining the preceding full-gate
+artifact evidence. No grammar or new test suite is introduced.
+
+[FMI 3.0.2 §4.2.1](https://fmi-standard.org/docs/3.0.2/#fmi3DoStep) defines
+positive communication steps and the returned time and event/termination
+outputs. The new proof derives the rounded returned time and false output
+flags for the current event-free unit profile. The guard compares finite
+numerical point/clock values, including both signed zeros. It reaches the
+actual rejection statement for invalid raw inputs after the existing output
+initialization. The remaining failure/logging and discard-state-restoration
+proofs are still required; this increment does not establish them.
+
+The complete success theorem uses an explicit typed-memory and external-library
+profile. Native headers/ABI, floating flags/traps, surrounding callback behavior
+and repeated clock/source histories remain outside this result. The new public
+call theorem is not yet required by the actual-adapter certificate. Existing
+MLS/eFMI initialization, coding-guideline and MISRA findings are unchanged.
+**Stage decision: open; no grammar expansion.**
+
 ### Ordinary CS calls and guarded numerical execution: 2026-09-13
 
 This increment follows `aa5ef00` and changes the emitted CS body. Rounding
