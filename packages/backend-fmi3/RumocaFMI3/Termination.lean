@@ -154,7 +154,7 @@ theorem suppressed_correct {E : Type} (objects : Objects) (literals : CLiteralAd
   intro program message heap defined helper messageBound p kind mode logger logging hk hm hl hg suppressed denied behavior
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
-  exact StaticErrors.failure_suppressed_behaviors objects literals program (Runtime.function model signature)
+  exact StaticErrors.failure_suppressed_behaviors (ErrorContext.static objects literals) program (Runtime.function model signature)
     [.pointer (some p)] heap heap p message ErrorCalls.rejectionMessage _ logger logging
     (body_agrees model objects literals) (failure_prefix model literals heap p kind mode hk modeLoaded denied)
     defined helper messageBound hm hl hg suppressed behavior
@@ -172,7 +172,7 @@ theorem logged_correct (objects : Objects) (literals : CLiteralAddresses) (model
     p logger environment kind mode name effect address external hk hm hl hg he denied
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
-  have all := StaticErrors.failure_all_behaviors objects literals program (Runtime.function model signature)
+  have all := StaticErrors.failure_all_behaviors (ErrorContext.static objects literals) program (Runtime.function model signature)
     [.pointer (some p)] heap heap p message category logger ErrorCalls.rejectionMessage name environment _
     (External.observed (Logging.signature name) effect) (body_agrees model objects literals)
     (failure_prefix model literals heap p kind mode hk modeLoaded denied) defined helper

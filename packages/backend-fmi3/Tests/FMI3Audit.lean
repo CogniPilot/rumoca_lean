@@ -1,3 +1,5 @@
+import RumocaFMI3.ErrorContext
+import RumocaFMI3.StepErrors
 import RumocaFMI3.StepEntry
 import RumocaFMI3.StepGuards
 import RumocaFMI3.RuntimeEnvironment
@@ -1063,3 +1065,15 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StepEntry.final_values
 #audit axioms Rumoca.FMI3.StepEntry.input_condition_all
 #audit axioms Rumoca.FMI3.StepEntry.prefix_run
+
+#audit axioms Rumoca.FMI3.ErrorContext.error_cast
+#audit axioms Rumoca.FMI3.ErrorContext.instance_binding
+#audit axioms Rumoca.FMI3.ErrorContext.logging_arguments
+#audit axioms Rumoca.FMI3.ErrorContext.static
+#audit axioms Rumoca.FMI3.ErrorContext.withRounding
+#audit axioms Rumoca.FMI3.StaticErrors.statement_all_behaviors
+#audit axioms Rumoca.FMI3.StaticErrors.statement_suppressed_behaviors
+#audit axioms Rumoca.FMI3.StepErrors.lifecycle_logged
+#audit axioms Rumoca.FMI3.StepErrors.lifecycle_prefix
+#audit axioms Rumoca.FMI3.StepErrors.lifecycle_suppressed
+#audit axioms Rumoca.FMI3.StepErrors.types

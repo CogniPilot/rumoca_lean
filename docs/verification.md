@@ -355,6 +355,36 @@ for these derived proofs. The new public-call consequences are not yet mandatory
 in `AdapterContract`. Complete rejected/logged calls, repeated histories and
 actual-artifact composition remain required. No new test suite is added.
 
+`ErrorContext` subsequently makes the error helper's local interface
+requirements explicit: type/literal agreement, agreement on its actual syntax,
+the Error binding and the ordinary `fail` name. The static-object constructor
+and rounding-header extension prove these requirements. Neither construction
+assumes successful execution or agreement on unrelated public functions.
+Fourteen existing `StaticErrors` roots are generalized to this context; sixteen
+existing caller sites instantiate the static constructor while retaining their
+public theorem statements. The new statement contracts retain enabled,
+suppressed and absent-outcome callback behavior, and can compose after ordinary
+library calls. Existing complete failure-call proofs reuse them.
+
+`StepErrors.lifecycle_prefix`, `lifecycle_suppressed` and `lifecycle_logged`
+cover complete public CS lifecycle rejection under every constructed context.
+The independent `Reference.Allowed` predicate selects forbidden kinds/modes.
+All raw numerical arguments and nullable output pointers are covered, with no
+output-buffer storage requirement. The suppressed case returns Error after
+the Terminated write; the enabled case retains the callback's exact represented
+trace, result heap and no-returning-outcome case. Native callback execution,
+reentry and ownership/frame assumptions remain separate obligations.
+
+The FMI/compiler package audit passed in
+`build/c-factory/cs-errors-package-v1.log`, with all 858 inputs unchanged,
+eleven new roots and no removed audit roots. Only the three status documents
+changed afterward. Earlier semantic definitions, emitters, mandatory artifact
+contracts and tests remain unchanged; the retained 855-input full artifact gate
+continues to apply to their unchanged products. The full gate was not rerun
+for this proof refactor and its derived call results. Missing-output, input,
+rounding, stop and discard calls, repeated histories and mandatory public-CS
+artifact composition remain open. No grammar or test suite is added.
+
 This does not close K02–K05. Remaining public calls must be composed in the same
 object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA

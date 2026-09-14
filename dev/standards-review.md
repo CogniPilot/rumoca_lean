@@ -37,6 +37,34 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Explicit error contexts and complete CS lifecycle rejection: 2026-09-13
+
+This proof increment follows `0d4fe05`. Checked local interface requirements
+allow the existing error-helper proofs to serve both static objects and an
+explicit rounding header. Fourteen existing roots are generalized; sixteen
+caller sites retain their public contract statements. Eleven added roots
+include complete CS lifecycle rejection with enabled/suppressed logging and
+all represented foreign outcomes. The FMI/compiler package audit passed in
+`build/c-factory/cs-errors-package-v1.log` with all 858 inputs unchanged; only
+three status documents changed afterward. Emitters, earlier semantics,
+mandatory artifact contracts and tests remain unchanged, retaining the
+preceding 855-input full-gate artifact evidence.
+
+[FMI 3.0.2 §2.2.4](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions)
+requires Error for forbidden lifecycle calls and respects logging settings;
+[§2.3.1](https://fmi-standard.org/docs/3.0.2/#FMUStateSettable) routes Error to
+Terminated. The new call proofs derive the actual mode write and Error return
+for the represented forbidden kinds/modes. Output storage is unnecessary:
+rejection precedes every output access. Enabled logging retains the represented
+callback's effects and traces; it does not certify native callback execution,
+reentry or cross-instance ownership. Those assumptions need the remaining
+history and integration evidence.
+
+The public CS results are not yet mandatory in the actual-adapter certificate.
+Other argument/rounding/stop/discard paths and repeated histories remain open.
+Existing MLS/eFMI initialization, coding-guideline, MISRA and native-header/ABI
+findings are unchanged. **Stage decision: open; no grammar expansion.**
+
 ### Public CS entry and raw-input classification: 2026-09-13
 
 This derived-proof increment follows `8ac1292`. Sixteen new `StepEntry` roots

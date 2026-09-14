@@ -330,7 +330,7 @@ theorem suppressed_correct {E : Type} (objects : Objects) (literals : CLiteralAd
     hk hm bounds condition hl hg suppressed behavior
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
-  exact StaticErrors.failure_suppressed_behaviors objects literals program (Runtime.function model signature)
+  exact StaticErrors.failure_suppressed_behaviors (ErrorContext.static objects literals) program (Runtime.function model signature)
     (arguments (some p) bits) heap heap p (messages reason) (failureMessage reason) _ logger logging
     (body_agrees model objects literals)
     (failure_prefix (static := ⟨literals⟩) model heap p bits kind mode window minimum reason hk modeLoaded bounds condition)
@@ -352,7 +352,7 @@ theorem logged_correct (objects : Objects) (literals : CLiteralAddresses) (model
     p logger environment bits kind mode window minimum reason name effect address external hk hm bounds condition hl hg he
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
-  have all := StaticErrors.failure_all_behaviors objects literals program (Runtime.function model signature)
+  have all := StaticErrors.failure_all_behaviors (ErrorContext.static objects literals) program (Runtime.function model signature)
     (arguments (some p) bits) heap heap p (messages reason) category logger (failureMessage reason) name environment _
     (External.observed (Logging.signature name) effect) (body_agrees model objects literals)
     (failure_prefix (static := ⟨literals⟩) model heap p bits kind mode window minimum reason hk modeLoaded bounds condition)

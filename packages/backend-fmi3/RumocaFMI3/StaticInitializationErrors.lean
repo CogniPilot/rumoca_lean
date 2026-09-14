@@ -20,7 +20,7 @@ theorem enter_silent_correct {E : Type} (objects : Objects) (literals : CLiteral
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
   have certified := InitializationCalls.failure_prefix (static := ⟨literals⟩) heap p args kind mode reason hk modeLoaded condition
-  exact StaticErrors.failure_silent_behaviors objects literals program InitializationCalls.function
+  exact StaticErrors.failure_silent_behaviors (ErrorContext.static objects literals) program InitializationCalls.function
     (InitializationCalls.arguments (some p) args) heap heap p message (InitializationCalls.failureMessage reason)
     _ logger (enter_agrees objects literals) certified defined helper messageBound hm hl hg behavior
 
@@ -39,7 +39,7 @@ theorem enter_logged_correct (objects : Objects) (literals : CLiteralAddresses) 
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
   have certified := InitializationCalls.failure_prefix (static := ⟨literals⟩) heap p args kind mode reason hk modeLoaded condition
-  have all := StaticErrors.failure_all_behaviors objects literals program InitializationCalls.function
+  have all := StaticErrors.failure_all_behaviors (ErrorContext.static objects literals) program InitializationCalls.function
     (InitializationCalls.arguments (some p) args) heap heap p message category logger
     (InitializationCalls.failureMessage reason) name environment _
     (External.observed (Logging.signature name) effect) (enter_agrees objects literals) certified defined helper
@@ -66,7 +66,7 @@ theorem exit_silent_correct {E : Type} (objects : Objects) (literals : CLiteralA
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
   have certified := InitializationExit.failure_prefix (static := ⟨literals⟩) model heap p kind mode hk modeLoaded denied
-  exact StaticErrors.failure_silent_behaviors objects literals program (Runtime.function model InitializationExit.signature)
+  exact StaticErrors.failure_silent_behaviors (ErrorContext.static objects literals) program (Runtime.function model InitializationExit.signature)
     (InitializationExit.arguments (some p)) heap heap p message ErrorCalls.rejectionMessage
     _ logger (exit_agrees model objects literals) certified defined helper messageBound hm hl hg behavior
 
@@ -85,7 +85,7 @@ theorem exit_logged_correct (objects : Objects) (literals : CLiteralAddresses)
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
   have certified := InitializationExit.failure_prefix (static := ⟨literals⟩) model heap p kind mode hk modeLoaded denied
-  have all := StaticErrors.failure_all_behaviors objects literals program (Runtime.function model InitializationExit.signature)
+  have all := StaticErrors.failure_all_behaviors (ErrorContext.static objects literals) program (Runtime.function model InitializationExit.signature)
     (InitializationExit.arguments (some p)) heap heap p message category logger ErrorCalls.rejectionMessage name environment _
     (External.observed (Logging.signature name) effect) (exit_agrees model objects literals) certified defined helper
     messageBound address external rfl literal hm hl hg he
@@ -137,7 +137,7 @@ theorem enter_suppressed_correct {E : Type} (objects : Objects) (literals : CLit
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
   have certified := InitializationCalls.failure_prefix (static := ⟨literals⟩) heap p args kind mode reason hk modeLoaded condition
-  exact StaticErrors.failure_suppressed_behaviors objects literals program InitializationCalls.function
+  exact StaticErrors.failure_suppressed_behaviors (ErrorContext.static objects literals) program InitializationCalls.function
     (InitializationCalls.arguments (some p) args) heap heap p message (InitializationCalls.failureMessage reason)
     _ logger logging (enter_agrees objects literals) certified defined helper messageBound hm hl hg suppressed behavior
 
@@ -153,7 +153,7 @@ theorem exit_suppressed_correct {E : Type} (objects : Objects) (literals : CLite
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
   have certified := InitializationExit.failure_prefix (static := ⟨literals⟩) model heap p kind mode hk modeLoaded denied
-  exact StaticErrors.failure_suppressed_behaviors objects literals program (Runtime.function model InitializationExit.signature)
+  exact StaticErrors.failure_suppressed_behaviors (ErrorContext.static objects literals) program (Runtime.function model InitializationExit.signature)
     (InitializationExit.arguments (some p)) heap heap p message ErrorCalls.rejectionMessage
     _ logger logging (exit_agrees model objects literals) certified defined helper messageBound hm hl hg suppressed behavior
 

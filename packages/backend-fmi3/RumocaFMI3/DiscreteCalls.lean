@@ -332,7 +332,7 @@ theorem suppressed_correct {E : Type} (objects : Objects) (literals : CLiteralAd
     hk hm condition hl hg suppressed behavior
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
-  exact StaticErrors.failure_suppressed_behaviors objects literals program (Runtime.function model signature)
+  exact StaticErrors.failure_suppressed_behaviors (ErrorContext.static objects literals) program (Runtime.function model signature)
     (arguments (some p) addresses) heap heap p (messages reason) (message reason) _ logger logging
     (body_agrees model objects literals)
     (failure_prefix model literals heap p addresses kind mode reason hk modeLoaded condition)
@@ -354,7 +354,7 @@ theorem logged_correct (objects : Objects) (literals : CLiteralAddresses) (model
     p logger environment addresses kind mode reason name effect address external hk hm condition hl hg he
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
-  have all := StaticErrors.failure_all_behaviors objects literals program (Runtime.function model signature)
+  have all := StaticErrors.failure_all_behaviors (ErrorContext.static objects literals) program (Runtime.function model signature)
     (arguments (some p) addresses) heap heap p (messages reason) category logger (message reason) name environment _
     (External.observed (Logging.signature name) effect) (body_agrees model objects literals)
     (failure_prefix model literals heap p addresses kind mode reason hk modeLoaded condition)
