@@ -37,6 +37,40 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Callback-enabled mixed CS histories: 2026-09-14
+
+This derived follow-up to `938987a` proves branching accepted/rejected step and
+reset/reinitialization histories using the actual prepared adapter. Complete
+call alternatives preserve callback symbols/arguments and all returning effects;
+a callback with no modeled return retains the existing `wrong` alternative.
+Every returned branch derives later storage, successful outputs and ownership.
+An independently defined completed C-call script retains the final source IVP
+and numerical/clock error bound. No successful callback is an initial premise.
+
+Applicable FMI 3.0.2 clauses are
+[§2.2.1, C-API requirements](https://fmi-standard.org/docs/3.0.2/#requirements-for-implementations-of-the-c-api),
+[§2.2.4, status returns](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions),
+and [§2.3.1, logging and reset](https://fmi-standard.org/docs/3.0.2/#super-state-fmu-state-settable).
+The actual callback invocation retains the environment, status, category and
+message arguments. The universal external frame protects the instance pool,
+reservation block and caller outputs, while allowing private logger effects.
+It is an integration contract, not a consequence of the FMI prose alone.
+FMI prohibits log callbacks from calling back into the FMU; supporting such
+reentry is not a new admitted requirement. Native protocol conformance,
+divergence and floating-environment correspondence remain explicit boundaries.
+Disabled/missing-logger histories and the broader single-call contracts remain
+unchanged; no logging/category policy or metadata changed.
+
+The FMI/compiler package gate passed in
+`build/c-factory/cs-run-logging-package-v1.log` with 896 unchanged inputs and
+11 added roots. Only the three status documents changed afterward. Earlier
+semantics, emission, mandatory contracts and tests retain their separate
+869-input full artifact gate and archives under
+`build/c-factory/cs-contract-artifacts-v1/`; no new full-gate pass is claimed.
+MLS/eFMI/MISRA findings remain unchanged. Creation/release composition for the
+enabled-logging trace, remaining APIs, ME numerical histories and concurrency
+still require work. **Stage decision: open; no grammar expansion.**
+
 ### Created mixed CS lifetime with logging suppressed: 2026-09-14
 
 This derived follow-up to `eb0d3a0` connects actual creation and initialization

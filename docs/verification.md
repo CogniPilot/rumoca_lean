@@ -1,5 +1,38 @@
 # Exact verification contract
 
+**Callback-enabled mixed CS histories (2026-09-14):**
+`adapter_logged_cs_run_history` derives a branching contract for accepted and
+rejected steps interleaved with reset/reinitialization. `ActionContract` retains
+complete actual calls, callback names/arguments and every modeled returning
+outcome. If the returning-effect relation has no outcome, the existing authored
+semantics exposes `wrong`; no successful callback or continuation is invented.
+`LoggedTrace` supplies a continuation for every returned branch, preserving
+intermediate finite state, successful outputs, logger configuration and owners.
+
+The external `Logger.Respects` premise universally preserves the FMU instance
+pool, reservation block and caller outputs. It permits effects on other private
+storage, including private atomics, and requires neither determinism nor a
+return. This is an explicit external memory contract, not a proof of arbitrary
+native logger code. `Performed` and `Completed` specify actual C-machine call
+sequences without source/Solve invariants. Their preservation theorem derives
+final storage, ownership and protected memory frames; the compiler consequence
+retains the source IVP and numerical/clock error bound for every completed
+script. The source index is explicitly shared with Solve.
+
+All 11 added roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/cs-run-logging-package-v1.log`, with all 896 inputs unchanged.
+Only the three status documents changed afterward. Earlier semantic definitions,
+emission, mandatory contracts and tests are unchanged; the separate 869-input
+full artifact gate and retained archives remain their evidence. No new full-gate
+pass or example suite is claimed for this derived increment.
+
+Actual creation/release composition for these enabled-logging histories,
+remaining public interactions, ME numerical histories, concurrent hosts and
+native ABI/floating-environment correspondence remain open. The existing
+returning-effect model does not prove native callback divergence or reentry;
+FMI prohibits log callbacks from calling back into the FMU. Broader single-call
+contracts are retained. K02–K05 remain open and grammar expansion stays blocked.
+
 **Created mixed CS lifetime follow-up (2026-09-14):**
 `adapter_create_cs_run_release` derives actual source-bound creation,
 initialization, mixed accepted/rejected steps, repeated reset/reinitialization

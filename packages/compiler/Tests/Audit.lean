@@ -1,3 +1,4 @@
+import Rumoca.FMI3CSRunLogging
 import Rumoca.FMI3CSRunLifecycle
 import Rumoca.FMI3CSRun
 import Rumoca.FMI3Recovery
@@ -220,3 +221,6 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.adapter_cs_run_history
 
 #audit axioms Rumoca.FMI3.adapter_create_cs_run_release
+
+#audit axioms Rumoca.FMI3.CSRun.LoggedTrace.source_observation
+#audit axioms Rumoca.FMI3.adapter_logged_cs_run_history

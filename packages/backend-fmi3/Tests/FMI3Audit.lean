@@ -1,3 +1,4 @@
+import RumocaFMI3.CSRunLoggedExecution
 import RumocaFMI3.CSRunFinish
 import RumocaFMI3.CSRunFrames
 import RumocaFMI3.CSRunExecution
@@ -1234,3 +1235,13 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSRun.Executed.heap_unique
 #audit axioms Rumoca.FMI3.CSRun.executed_frame
 #audit axioms Rumoca.FMI3.CSRun.trace_framed
+
+#audit axioms Rumoca.FMI3.CSRun.Retains.logger
+#audit axioms Rumoca.FMI3.CSRun.ProtectedFrame.run
+#audit axioms Rumoca.FMI3.CSRun.ProtectedFrame.retains
+#audit axioms Rumoca.FMI3.CSRun.ProtectedFrame.owners
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.step_behaviors
+#audit axioms Rumoca.FMI3.CSRun.change_logged_correct
+#audit axioms Rumoca.FMI3.CSRun.logged_trace_correct
+#audit axioms Rumoca.FMI3.CSRun.ActionContract.returned
+#audit axioms Rumoca.FMI3.CSRun.LoggedTrace.completed
