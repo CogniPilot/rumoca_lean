@@ -326,6 +326,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         simp [FMI3.CompletedCalls.signature]
       · change FMI3.DiscreteCalls.signature ∈ [$sigTerms,*]
         simp [FMI3.DiscreteCalls.signature]
+      · change FMI3.StepEntry.signature ∈ [$sigTerms,*]
+        simp [FMI3.StepEntry.signature]
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩

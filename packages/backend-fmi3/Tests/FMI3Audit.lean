@@ -1,3 +1,8 @@
+import RumocaFMI3.CSInitialization
+import RumocaFMI3.InitializationEnvironment
+import RumocaFMI3.CSRelease
+import RumocaFMI3.TerminationEnvironment
+import RumocaFMI3.StepContract
 import RumocaFMI3.StepCases
 import RumocaFMI3.StepDiscard
 import RumocaFMI3.StepFailures
@@ -1122,3 +1127,42 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.StepCases.partition
 #audit axioms Rumoca.FMI3.StepCases.ready_values
 #audit axioms Rumoca.FMI3.StepCases.accepted_values
+
+#audit axioms Rumoca.FMI3.StaticErrors.prefix_path
+#audit axioms Rumoca.FMI3.StepRejections.outputHeap_of_buffers
+#audit axioms Rumoca.FMI3.StepRejections.public_path
+#audit axioms Rumoca.FMI3.StepRejections.buffers_present
+#audit axioms Rumoca.FMI3.StepRejections.before_frame
+#audit axioms Rumoca.FMI3.StepRejections.before_load
+#audit axioms Rumoca.FMI3.StepRejections.suppressed_call
+#audit axioms Rumoca.FMI3.StepRejections.logged_call
+#audit axioms Rumoca.FMI3.StepCalls.accepted_call
+#audit axioms Rumoca.FMI3.StepCalls.accepted_correct
+#audit axioms Rumoca.FMI3.StepCalls.null_correct
+#audit axioms Rumoca.FMI3.StepCalls.suppressed_correct
+#audit axioms Rumoca.FMI3.StepCalls.logged_correct
+#audit axioms Rumoca.FMI3.StepCalls.outcome_cases
+#audit axioms Rumoca.FMI3.StepCalls.message_collected
+#audit axioms Rumoca.FMI3.StepCalls.prepared_correct
+#audit axioms Rumoca.FMI3.StepCalls.rendered_contract
+
+#audit axioms Rumoca.FMI3.CSHistory.accepted_case
+#audit axioms Rumoca.FMI3.CSHistory.written_frame
+#audit axioms Rumoca.FMI3.CSHistory.field_outside
+#audit axioms Rumoca.FMI3.CSHistory.written_stored
+#audit axioms Rumoca.FMI3.CSHistory.stored_call
+#audit axioms Rumoca.FMI3.CSHistory.accepted_of_case
+#audit axioms Rumoca.FMI3.CSHistory.step
+#audit axioms Rumoca.FMI3.CSHistory.trace_frame
+#audit axioms Rumoca.FMI3.CSHistory.ReferenceTrace.clock_monotone
+#audit axioms Rumoca.FMI3.CSHistory.ReferenceTrace.duration_monotone
+#audit axioms Rumoca.FMI3.InitializationEnvironment.enter_agrees
+#audit axioms Rumoca.FMI3.InitializationEnvironment.exit_agrees
+#audit axioms Rumoca.FMI3.InitializationEnvironment.calls
+#audit axioms Rumoca.FMI3.CSHistory.initialized_stored
+#audit axioms Rumoca.FMI3.TerminationEnvironment.body_agrees
+#audit axioms Rumoca.FMI3.TerminationEnvironment.quiet_correct
+#audit axioms Rumoca.FMI3.TerminationEnvironment.release_correct
+#audit axioms Rumoca.FMI3.CSHistory.Stored.atomic_outside
+#audit axioms Rumoca.FMI3.CSHistory.trace_atomic_frame
+#audit axioms Rumoca.FMI3.CSHistory.release_history

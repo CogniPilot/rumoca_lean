@@ -15,23 +15,33 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete termination, time and ME control-call contracts are mandatory and artifact-checked, with composed finite ME control histories; earlier derivative, Float64 getter/setter, reset, nominal/count/version and error-helper contracts remain required. | Remaining public calls, complete histories, static instance ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Derived CS proofs compose initialization, finite accepted-step histories, termination and release with the source solution and original lease. Earlier mandatory contracts remain required. | Remaining public calls, creation and mixed success/error/reset histories, concurrent instance ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
 Latest completed main-workspace gate:
-`build/c-factory/cs-ordinary-full-gate-v1.log`, passed with all 855
-integration inputs unchanged. It checks the C conversions, ME control contracts, static runtime, both
-actual FMU interfaces and the eFMU, including the existing native and rejection
-controls. Retained artifacts and member comparisons are under
-`build/c-factory/cs-ordinary-artifacts-v1/` and adjacent review files.
-Compared with `2628f35`, the FMI adapter replaces `calloc`/`free` with 32
-permanent ME/CS slots; numerical C, FMI metadata, GALEC and eFMI Production C
-are unchanged. Compared with the preceding time artifacts, the
-eFMI manifests change only their generation identities and dependent checksums.
-The derived termination/release proofs have separate passing FMI/compiler
-package evidence for 811 unchanged inputs. No new grammar case is admitted.
+`build/c-factory/cs-contract-full-gate-v1.log`, passed with all 869
+integration inputs unchanged. It checks the mandatory complete CS call contract,
+earlier contracts, both actual FMU interfaces and the eFMU, including the existing
+native and rejection controls. Retained archives and comparisons are under
+`build/c-factory/cs-contract-artifacts-v1/` and adjacent review files. All FMU
+member contents are unchanged from the preceding CS artifacts; the eFMU changes
+only generation identities and their dependent references/checksums in three
+manifests. Generated numerical C, GALEC and Production C are unchanged.
+
+The subsequent initialization/CS-history/release proofs passed
+`lake build check-fmi3 check-compiler` in
+`build/c-factory/cs-history-package-v1.log`, with all 877 inputs unchanged.
+This follow-up adds derived proofs and audit roots only; it retains the
+869-input full-gate evidence for unchanged emission, semantics and mandatory
+contracts. The two acceptance snapshots are distinct. No grammar case is added.
+
+**Distance to expansion:** K01 is closed for its scoped initialization profile;
+K02–K05 remain partial or open. The next concrete proof is creation composed
+with the accepted CS lifetime. Mixed error/reset histories, concurrent storage,
+whole-artifact correspondence and the standards/MISRA review still follow.
+These are substantial obligations, not a final build or a parser-only change.
 
 The actual adapter certificate now requires the complete `fmi3SetTime`
 contract. Its 25 added roots passed the owning-package and full artifact gates
@@ -197,8 +207,20 @@ exact finite encodings, duration admission, clock progress and the stop bound.
 Sixteen added roots passed the core/C/FMI/eFMI/compiler package audit in
 `build/c-factory/cs-cases-package-v1.log` with all 863 inputs unchanged. Earlier
 declarations, emitters and mandatory artifact contracts are unchanged, retaining
-the preceding full artifact evidence. Make these public cases mandatory in the
-artifact contract and compose repeated histories; K02–K05 remain open.
+the preceding full artifact evidence. At that checkpoint, making the public
+cases mandatory and composing repeated histories remained open.
+
+The current increment makes all eight raw CS admission cases mandatory in
+`AdapterContract`, with complete accepted/null/suppressed/logged call behavior
+in the prepared static interface. Its 18 added roots passed the full 869-input
+artifact gate. A further 24 derived roots compose both initialization calls,
+any finite accepted CS request history, termination and atomic release. Initial
+storage and ownership supply every later heap/lease premise. The result retains
+exact Solve state, rounded clock/output writes, the original source IVP and a
+bound separating numerical error from clock drift. Those derived roots passed
+the 877-input package gate. Creation, interspersed rejected/logged/reset calls,
+concurrent hosts and native header/layout correspondence remain open; K02–K05
+are not closed by this accepted sequential lifetime.
 
 The required adapter certificate includes the static declarations and initial
 creation/release contract. Derived theorems connect source identity, optional
@@ -314,10 +336,12 @@ and release, deriving the later metadata/flag premises from the original lease.
 The FMI/compiler package audit passed with 811 unchanged inputs; no emitter or
 mandatory contract changed in that follow-up.
 
-Next, compose the remaining operation/release histories and actual
-concurrent ownership histories. Close callback frames, the no-heap/acyclic call graph and native
-profile/layout. The required main gate passed on the 809-input termination
-source set; these remaining proofs are still open.
+Accepted CS stepping now preserves the original atomic lease through
+termination and release, with initialization included. Its derived package gate
+passed on 877 inputs; the preceding mandatory-contract full gate passed on 869.
+Next, compose creation and the remaining operation/release histories and prove
+actual concurrent ownership histories. Callback frames, the transitive no-heap
+and acyclic call graph, and native profile/layout remain open.
 The combined exit items below remain open until all their obligations are met;
 no broader item is closed by a sequential initialization prefix.
 **Existing IDs:** C01, C02, F02, F03, S03; new no-heap/RTOS requirement.
@@ -438,31 +462,21 @@ simulation or concurrent host histories.
   importer state/numerical interactions still need composition.
   Reset's successful/null calls and reset→initialization composition now use
   the static object interface; arbitrary surrounding histories remain open.
-- [ ] Finish public CS communication-time/step arithmetic, status/output
-  writes, rollback and repeated-step refinement. Prove progress or rejection
-  when binary64 time would stop advancing (including the `2^53` boundary).
-  An internal natural-number step counter is insufficient.
-  Integer→Float64 and Float64→`uint64_t` conversion proofs are accepted.
-  The accepted package increment supplies ordinary finite `floor`/`fegetround`
-  contracts and actual helper execution. Connect these to public guarded
-  evaluation. An explicit target-header profile now supplies the macro binding,
-  with derived ME time/history and solver-helper consequences in one interface;
-  matching native headers and the complete guarded public call remain open. The sum is
-  still computed before the unit-grid cap rejects a large step. The finite
-  addition proof represents overflow as signed infinity, preserving this
-  ordering. The accepted guard proofs now connect it to stop/discard destinations.
-  Complete successful/null public calls and raw-input prefix classification
-  also pass the owning-package audit. Complete lifecycle rejection now covers
-  enabled/suppressed logging in the explicit error context. Complete pointer
-  and raw-input rejection calls now pass the package audit too, retaining the
-  exact output writes and every represented callback outcome. Rounding and
-  stop-limit failures now have complete call proofs too, including the rounded
-  sum and its overflow cases. Both complete discard paths and an exhaustive,
-  disjoint raw-input partition now pass package acceptance too. Accepted cases
-  derive the finite encoding and numerical premises of successful execution.
-  Make the complete contract mandatory in the artifact checker, and compose
-  repeated calls with source/clock histories. Callback frame assumptions remain
-  explicit when deriving instance preservation across logged calls.
+- [x] Require the complete public CS step contract in the actual artifact
+  checker. All raw inputs are classified; successful/null/error/discard calls,
+  exact output writes and represented logging outcomes share the prepared
+  interface. Ordinary `floor`/`fegetround`, finite conversions, overflow,
+  stop checks and rejection when the rounded clock cannot advance are composed.
+  The strengthened contract passed the full 869-input artifact gate.
+- [x] Compose initialization, finite accepted CS step histories, termination
+  and atomic release from the original instance storage and lease. Derive exact
+  Solve state, rounded clock/output values, source-solution error and memory
+  frames without assuming later successful executions or ownership. The
+  24 derived roots passed the 877-input FMI/compiler package gate.
+- [ ] Extend that CS lifetime to actual creation and histories containing
+  rejected/discarded calls, logging and reset. Keep callback effects and frames
+  explicit; prove the required preservation across each interaction. Native
+  header and floating-environment correspondence remain separate obligations.
 - [ ] Prove ME/CS trace refinement from creation through initialization,
   operation, errors, reset and release under explicit host ownership rules.
   Include preserved other-instance state and observable callback traces.

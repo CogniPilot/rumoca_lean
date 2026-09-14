@@ -29,7 +29,7 @@ theorem adapter_me_calls (contract : AdapterContract a adapter) :
           (Runtime.function a.solve.prepareFMI3 DiscreteCalls.signature).render ∧
         DiscreteCalls.PreparedContract a.solve.prepareFMI3 signatures pool) := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, _, entries, completed, discrete⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, _, _, _, entries, completed, discrete, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_, ?_, ?_⟩
   · intro entry
@@ -85,7 +85,7 @@ theorem adapter_me_history (contract : AdapterContract a adapter) :
           (∀ start trajectory, InitializationCalls.SourceInitialized a.parsed.ast heap p start trajectory →
             InitializationCalls.SourceInitialized a.parsed.ast after p start trajectory) := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, time, entries, completed, discrete⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, _, _, time, entries, completed, discrete, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock

@@ -18,7 +18,7 @@ theorem adapter_me_release (contract : AdapterContract a adapter) :
         program.externals "atomic_store" = some (CAtomicBoolean.Calls.writeExternal tag) →
         MEHistory.ReleaseContract objects program tag := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, runtime, termination, time, entries, completed, discrete⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, runtime, termination, time, entries, completed, discrete, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock
@@ -94,7 +94,7 @@ theorem adapter_initialize_me_release (contract : AdapterContract a adapter) :
             query ≠ p.member "stopDefined" → query ≠ AtomicSlots.address objects.flagsBlock slot →
             released query = heap query) := by
   obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, runtime, termination, time, entries, completed, discrete⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, runtime, termination, time, entries, completed, discrete, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock

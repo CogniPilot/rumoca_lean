@@ -1,6 +1,43 @@
 # Exact verification contract
 
-**Latest storage checkpoint (2026-09-13):** this working source emits 32
+**Latest CS checkpoint (2026-09-14):** the actual adapter certificate now
+requires `StepCalls.FunctionContract`, composing exhaustive raw-input admission
+with complete successful, null, error and discard calls and optional logging.
+`adapter_cs_calls` extracts the rendered function and its prepared contract from
+that certificate. No successful target execution is supplied as its premise.
+The 18 added audit roots passed the full required artifact gate in
+`build/c-factory/cs-contract-full-gate-v1.log`, with all 869 inputs unchanged.
+The actual FMU/eFMU are retained in `build/c-factory/cs-contract-artifacts-v1/`.
+All FMU member contents are unchanged from the preceding CS artifacts. Only
+three eFMU manifests differ, in fresh generation identities and dependent
+references/checksums; numerical C, GALEC and Production C are unchanged.
+
+Twenty-four subsequent derived roots prove initialized accepted CS lifetimes.
+`CSHistory.trace_frame` derives every call and later storage from initial
+storage and a separately defined finite reference request history.
+`adapter_initialize_cs_release` composes actual initialization, those steps,
+termination and atomic release in one prepared program and object interface.
+The original lease supplies release ownership; no post-initialization or
+post-simulation heap/lease is a host premise. The theorem retains the unique
+source IVP and exact finite Solve state. Its source error bound separates
+accumulated numerical error from the difference between the reported rounded
+clock and the initial time plus elapsed solver duration. It does not assert
+exact Real integration at the rounded clock.
+
+The derived roots passed `lake build check-fmi3 check-compiler` in
+`build/c-factory/cs-history-package-v1.log`, with all 877 inputs unchanged.
+They change no preceding semantic definition, emitter or mandatory contract,
+so the 869-input full artifact evidence is retained for those components;
+the full gate was not rerun for the derived additions. No grammar, existing
+test or axiom-policy change is introduced. Original valid storage/ownership,
+the explicit target header, ordinary library calls and atomic external
+semantics remain premises. Creation, mixed error/discard/logging/reset
+histories, concurrent hosts and native ABI/profile correspondence remain open.
+Released handles are not promised valid for subsequent calls. K02–K05 remain
+open, and this checkpoint does not authorize grammar expansion. The following
+chronological records retain their original scope and acceptance snapshots.
+
+**Static storage foundation (2026-09-13):** this working source emits 32
 permanent, shared ME/CS instance slots with bounded atomic reservation and
 release. Its mandatory adapter contract now includes declaration syntax,
 record interpretation, capacity bounds, initial creation/release execution
@@ -450,7 +487,8 @@ accepted cases. The reusable `Float64.finite_encoding` theorem preserves the
 original finite bits, including signed zero. Accepted cases derive finite
 values, duration admission, a progressing rounded clock and the inclusive stop
 bound. This reference partition does not itself prove execution or conformance;
-the mandatory artifact contract must compose it with all public call proofs.
+the latest CS checkpoint above composes it with the public call proofs in the
+mandatory artifact contract.
 
 Sixteen added roots passed the core/C/FMI/eFMI/compiler package audit in
 `build/c-factory/cs-cases-package-v1.log`, with all 863 inputs unchanged.
@@ -466,7 +504,7 @@ object-aware execution interface; actual concurrent histories, callback
 frames, a transitive no-heap/call-graph policy, native ABI/profile and MISRA
 correspondence remain open. The production grammar is unchanged. Earlier
 paragraphs below record historical checkpoints, including the former
-allocating implementation; they do not supersede this storage status.
+allocating implementation; they do not supersede the latest CS/storage status.
 
 **Current claim boundary:** the numerical source-to-C core is formally
 checked. The whole FMI/eFMI compiler is not yet fully verified, even for the

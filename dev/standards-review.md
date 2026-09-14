@@ -37,6 +37,50 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Mandatory CS calls and initialized CS lifetimes: 2026-09-14
+
+This increment follows `9f85945`. Eighteen added roots make the complete CS
+step-call contract mandatory for actual adapter certification. It covers all
+eight raw admission cases and suppressed/supplied logging in the prepared
+static interface. The required full artifact gate passed in
+`build/c-factory/cs-contract-full-gate-v1.log`, with all 869 inputs unchanged.
+The retained FMU/eFMU and comparisons are under
+`build/c-factory/cs-contract-artifacts-v1/`. All FMU member contents match the
+preceding artifacts; the eFMU differs only in three manifests' fresh generation
+identities and dependent references/checksums. The existing archive, importer,
+native C and rejection checks passed. No new test suite was introduced.
+
+Twenty-four further derived roots compose actual initialization, any finite
+accepted CS request sequence, termination and release from original instance
+storage and ownership. The source consequence retains the initialized Real
+solution, exact finite Solve state, rounded communication clock and separate
+numerical/clock error terms. The FMI/compiler package audit passed in
+`build/c-factory/cs-history-package-v1.log`, with all 877 inputs unchanged.
+The mandatory contracts, earlier semantics and emission are unchanged by this
+follow-up; its package evidence is distinct from the retained 869-input full
+artifact gate. Only the three status documents changed after package acceptance.
+
+Applicable pinned clauses are
+[FMI 3.0.2 §2.2.6](https://fmi-standard.org/docs/3.0.2/#advancing-time),
+[initialization](https://fmi-standard.org/docs/3.0.2/#fmi3EnterInitializationMode),
+[§4.2.1, `fmi3DoStep`](https://fmi-standard.org/docs/3.0.2/#fmi3DoStep), and
+[§2.2.4, status returns](https://fmi-standard.org/docs/3.0.2/#status-returned-by-functions).
+The accepted reference starts at the initialization time and requires positive
+admitted durations, a progressing reported clock and the optional stop bound.
+Keeping solver duration distinct from reported time accommodates the specified
+possibility of a reported time differing from the requested endpoint. Error
+and Discard output values remain implementation evidence, not importer promises.
+The logged single-call contract retains all modeled callback outcomes; the
+accepted sequential lifetime has no interspersed logging or rejected calls.
+
+This is a scoped follow-up, not a new complete MLS/eFMI/MISRA review. Source
+grammar and emitted products are unchanged. Creation composed with the CS
+lifetime, mixed error/reset histories, callback frames/reentry, concurrent
+ownership, native headers/layout and existing MLS/eFMI initialization and
+coding-guideline findings remain open. The formal call contract establishes
+the authored execution model; it does not by itself establish native ABI or
+whole-standard correspondence. **Stage decision: open; no grammar expansion.**
+
 ### Complete CS discard calls and raw-input partition: 2026-09-14
 
 This derived-proof increment follows `f1113bb`. Sixteen added roots cover
