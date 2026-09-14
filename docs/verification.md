@@ -1,5 +1,46 @@
 # Exact verification contract
 
+**Created initialization protocols through ME/CS simulation (2026-09-14):**
+`InitializationProtocol.runtime_create_release` now derives the reusable
+initialization protocol from actual source-bound static creation. The factory
+supplies the handle, finite Solve default, typed storage and reservation. The
+same printed/prepared adapter table and pool supply creation, access, lifecycle,
+ME and CS contracts. Original caller resources and logger effects remain
+explicit; no future heap, field value or successful call is a premise.
+
+The derived memory invariant now preserves protected cell domains, types and
+permissions, including scalar simulation outputs as well as array buffers.
+The previous writable-array consequences follow from that stronger invariant.
+Completed initialization histories retain the unique source Real IVP at each
+exit, actual statuses/readbacks, logger configuration and original ownership.
+Initialized or failed histories compose with mode-appropriate release.
+
+`CreatedSourceContract.me_continuation` and `.cs_continuation` carry an actual
+initialized history into the existing mixed simulation relations. ME derives
+Event Mode, initial event-iteration readiness, selected state, clock and stop
+bound. CS derives the selected numerical seed and initial step state. Both
+transport output storage from the pre-creation heap and retain the existing
+suppressed/enabled logger contracts and all modeled returning outcomes.
+Completed ME runs retain source derivative observations and reset checkpoints;
+CS retains its source epoch and numerical/clock error bound. Release restores
+the original owner map and frames protected memory through the entire prefix,
+including the ranges used by rejected initialization requests.
+
+All 23 new roots and affected existing roots passed
+`lake build check-c check-fmi3 check-compiler` on 977 unchanged inputs in
+`build/c-factory/created-protocol-package-v1.log`. The axiom whitelist is
+unchanged and the new modules have no warnings. Source/runtime semantics,
+emitters, mandatory artifact propositions and boundary tests are unchanged;
+only derived storage contracts were strengthened. This package pass is
+distinct from the retained 869-input local full-artifact gate and successful
+GitHub run `34853259941` for `83b725c`; it is not a new full-gate result.
+
+Later simulation restarts still use contiguous reset/enter/exit calls and the
+Solve default. Access interleavings at those restarts, remaining public calls,
+native/concurrent correspondence, complete artifacts/provenance and the open
+standards/MISRA findings remain required. K02–K05 are not closed and grammar
+expansion remains blocked.
+
 **Repeated initialization protocols (2026-09-14):**
 `InitializationProtocol.runtime_source` binds a reusable initialization
 subprotocol to actual source compilation, numerical C, XML state/reference

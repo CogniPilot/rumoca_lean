@@ -92,22 +92,17 @@ theorem Stored.rejected (returned : Float64Rejection.Returned objects retained o
 later rejected request to reuse buffers of an earlier accepted/rejected call,
 without assuming that the later heap already has the required cells. -/
 def CallerStorage (objects : Objects) (retained : Address → Prop) (before after : Heap) : Prop :=
-  ∀ (base : Address) (type : CType) (count : Nat), ArrayStore.Writable before base type count →
-    (∀ i < count, Float64Rejection.Protected objects retained (base.index i)) →
-    ArrayStore.Writable after base type count
+  CStorage.PreservesOn (Float64Rejection.Protected objects retained) before after
 
 theorem CallerStorage.refl (objects : Objects) (retained : Address → Prop) (heap : Heap) :
-    CallerStorage objects retained heap heap := fun _ _ _ stored _ => stored
+    CallerStorage objects retained heap heap := CStorage.PreservesOn.refl _ _
 
 theorem CallerStorage.trans (first : CallerStorage objects retained before middle)
     (second : CallerStorage objects retained middle after) : CallerStorage objects retained before after :=
-  fun base type count stored guarded => second base type count (first base type count stored guarded) guarded
+  CStorage.PreservesOn.trans first second
 
 theorem CallerStorage.ordinary (preserved : CStorage.Preserves before after) :
-    CallerStorage objects retained before after := by
-  intro base type count stored _ i inside
-  obtain ⟨old, cell⟩ := stored i inside
-  exact preserved.cell cell
+    CallerStorage objects retained before after := preserved.on _
 
 def RequestGuarded (request : Float64Rejection.Request)
     (objects : Objects) (retained : Address → Prop) : Prop :=
@@ -128,7 +123,7 @@ theorem CallerStorage.request (kept : CallerStorage objects retained before afte
     | arrays => trivial
     | reference => cases input with
       | none => exact False.elim stored
-      | some input => exact kept _ _ _ stored guarded
+      | some input => exact CStorage.PreservesOn.array kept _ _ _ stored guarded
   | set reason input buffer n m refs bits =>
     cases reason with
     | lifecycle | arrays => trivial
@@ -136,7 +131,8 @@ theorem CallerStorage.request (kept : CallerStorage objects retained before afte
       | none => exact False.elim stored
       | some input => cases buffer with
         | none => exact False.elim stored
-        | some buffer => exact ⟨kept _ _ _ stored.1 guarded.1, kept _ _ _ stored.2.1 guarded.2, stored.2.2⟩
+        | some buffer => exact ⟨CStorage.PreservesOn.array kept _ _ _ stored.1 guarded.1,
+            CStorage.PreservesOn.array kept _ _ _ stored.2.1 guarded.2, stored.2.2⟩
 
 end Rumoca.FMI3.InitializationProtocol
 end

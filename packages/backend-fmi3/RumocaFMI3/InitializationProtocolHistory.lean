@@ -79,8 +79,8 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
   cases action with
   | access request =>
     have outputs : Float64Buffers.Stored heap buffers :=
-      ⟨invariant.caller _ _ _ resources.outputs.references resources.references,
-        invariant.caller _ _ _ resources.outputs.values resources.values⟩
+      ⟨CStorage.PreservesOn.array invariant.caller _ _ _ resources.outputs.references resources.references,
+        CStorage.PreservesOn.array invariant.caller _ _ _ resources.outputs.values resources.values⟩
     exact access_call program get set invariant.stored invariant.ownership outputs resources.separate request prepared allowed
   | reject request =>
     obtain ⟨inputs, guarded, separate⟩ := prepared

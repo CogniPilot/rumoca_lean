@@ -1,5 +1,6 @@
 import RumocaFMI3.Float64RejectionMemory
 import RumocaFMI3.InitializationAccessReset
+import RumocaC.StorageRegion
 
 noncomputable section
 namespace Rumoca.FMI3.Float64Rejection
@@ -31,9 +32,7 @@ structure Returned (objects : Objects) (retained : Address → Prop) (owners : S
   resetStorage : Reset.Storage after p
   ownership : SlotOwners.Represents objects.flagsBlock after owners
   readonly : CReadOnly.Preserves heap after
-  writable : ∀ (base : Address) (type : CType) (count : Nat),
-    ArrayStore.Writable heap base type count →
-    (∀ i < count, Protected objects retained (base.index i)) → ArrayStore.Writable after base type count
+  storage : CStorage.PreservesOn (Protected objects retained) heap after
   frame : ∀ q, Protected objects retained q → request.Outside q → q ≠ p.member "mode" → after q = heap q
 
 theorem Request.returned (request : Request) (objects : Objects) (retained : Address → Prop)
@@ -52,14 +51,16 @@ theorem Request.returned (request : Request) (objects : Objects) (retained : Add
     (storage.preserved preserved).record_preserved (callbackFrame.record inPool),
     callbackFrame.owners (SlotOwners.ordinary_preserves represented (preparedAtomic.trans modeFrame.2.2)),
     preparedReadonly.trans (modeFrame.2.1.trans callbackReadonly), ?_, ?_⟩
-  · intro base type count writable guarded
-    apply callbackFrame.writable _ guarded
-    intro i inside
-    obtain ⟨old, cell⟩ := writable i inside
-    exact preserved.cell cell
+  · exact (preserved.on _).trans (.of_frame callbackFrame)
   · intro q guarded outside different
     exact (callbackFrame q guarded).trans
       ((LifecycleBodies.write_frame _ p q .terminated different).trans (request.prepare_frame heap q outside))
+
+theorem Returned.writable
+    (returned : Returned objects retained owners request heap p kind state time after)
+    (base : Address) (type : CType) (count : Nat) (stored : ArrayStore.Writable heap base type count)
+    (guarded : ∀ i < count, Protected objects retained (base.index i)) : ArrayStore.Writable after base type count :=
+  returned.storage.array base type count stored guarded
 
 theorem Returned.buffers {buffers : Float64Buffers.Layout}
     (returned : Returned objects retained owners request heap p kind state time after)

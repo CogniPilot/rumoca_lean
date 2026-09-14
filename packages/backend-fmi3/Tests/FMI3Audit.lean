@@ -1,4 +1,7 @@
 import RumocaFMI3.InitializationProtocol
+import RumocaFMI3.InitializationProtocolCreation
+import RumocaFMI3.InitializationProtocolHandoff
+import RumocaFMI3.InitializationProtocolRunFrames
 import RumocaFMI3.InitializationProtocolCalls
 import RumocaFMI3.InitializationProtocolHistory
 import RumocaFMI3.InitializationProtocolLifetime
@@ -1546,3 +1549,17 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.Stored.created
 #audit axioms Rumoca.FMI3.InitializationProtocol.Phase.can_finish
 #audit axioms Rumoca.FMI3.InitializationProtocol.Completed.release
+
+#audit axioms Rumoca.FMI3.Float64Rejection.Returned.writable
+#audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.created
+#audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.created
+#audit axioms Rumoca.FMI3.InitializationProtocol.CallerStorage.me_outputs
+#audit axioms Rumoca.FMI3.InitializationProtocol.CallerStorage.cs_outputs
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.me_ready
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.cs_ready
+#audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.me_ready
+#audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.cs_ready
+#audit axioms Rumoca.FMI3.InitializationProtocol.MEOutputsGuarded.protects
+#audit axioms Rumoca.FMI3.InitializationProtocol.CSOutputsGuarded.protects
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retains.me_configuration
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retains.cs

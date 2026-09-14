@@ -15,7 +15,7 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Created CS and ME mixed histories now compose initialization, represented successful/rejected operations, modeled logging, reset/reinitialization and release. The ME theorem derives raw statuses, source derivative observations and initialization checkpoints, restoring original owners under the universal callback frame. | Compose the new initialization protocol with actual creation and repeating ME/CS histories; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Created CS and ME mixed histories now compose initialization, represented successful/rejected operations, modeled logging, reset/reinitialization and release. The ME theorem derives raw statuses, source derivative observations and initialization checkpoints, restoring original owners under the universal callback frame. | Compose initialization-access interleavings at later simulation restarts; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
@@ -45,6 +45,17 @@ reuses the extracted backend composition. Emission, semantics, mandatory
 contracts and existing tests are unchanged; their full artifact evidence
 remains the 869-input gate. No new full-gate pass is claimed for this follow-up.
 
+Actual source-bound creation now supplies the reusable initialization
+protocol, including repeated failures, resets and accepted accesses. Completed
+initialized histories feed the existing mixed ME and CS runs, with original
+caller storage, source observations and release restoring original owners.
+The common protected-cell invariant covers scalar outputs and indexed buffers.
+The 23 new roots passed the 977-input C/FMI/compiler package gate in
+`build/c-factory/created-protocol-package-v1.log`; this remains distinct from
+the earlier full-artifact evidence. The next composition is access interleavings
+at later simulation restarts. Those restarts still use contiguous reset/enter/
+exit calls and the Solve default. Remaining public calls and K02–K05 stay open.
+
 The reusable initialization subprotocol now composes accepted/rejected
 Float64 accesses, entry/exit and reset across repeated failed attempts.
 `InitializationProtocol.runtime_source` binds it to the actual source, numerical
@@ -55,8 +66,8 @@ blocked-call prefix. Factory-invariant and conditional-release lemmas are also
 checked. The 35 roots passed the 970-input FMI/compiler package gate in
 `build/c-factory/initialization-protocol-package-v1.log`; its review accounts
 for the existing audit macro's unquoted name format. This adds derived proofs,
-not a new full-artifact result. The next composition is actual source-bound
-creation → this protocol → ME/CS execution and later restarts → release.
+not a new full-artifact result. The subsequent 977-input checkpoint supplies
+actual creation, ME/CS execution and release; later restart accesses remain open.
 
 **Distance to expansion:** K01 is closed for its scoped initialization profile;
 K02–K05 remain partial or open. Actual creation now composes with initialization,
@@ -665,9 +676,11 @@ including actual source observations, reset checkpoints, retained caller/configu
 storage and release to the original owners. Rejected Float64 calls and shared
 reset with initialization accesses now pass on 963 inputs. Their actual caller
 transfers, raw statuses, callback frames, retained recovery buffers and source
-IVP are proved. Integration into created/repeating mixed histories, further
-failures during recovery and remaining public interactions are still required.
-No emitter or mandatory contract changed, and no new full-gate pass is claimed.
+IVP are proved. The 970-input protocol permits further failures during recovery;
+the 977-input creation/ME/CS composition supplies actual initial storage and
+release. Access interleavings at later simulation restarts and remaining public
+interactions are still required. No emitter or mandatory contract changed,
+and no new full-gate pass is claimed.
 
 **State:** partial; substantial body and helper proofs can be reused.
 **Existing IDs:** F01, F02, N01, N02.
@@ -741,9 +754,18 @@ simulation or concurrent host histories.
   Thirty-five roots passed the 970-input package gate. Initial valid instance
   storage remains explicit; factory-invariant and conditional-release lemmas
   do not yet compose the whole source-bound creation/simulation lifetime.
-- [ ] Integrate that subprotocol with actual source-bound creation, existing
-  ME/CS simulation and initialization accesses at later simulation restarts,
-  preserving the source checkpoints and original owners through release.
+- [x] Integrate that subprotocol with actual source-bound creation and the
+  existing ME/CS simulation histories. Derive the actual initial handle/default,
+  selected run state/clock, caller storage and configuration; retain source
+  checkpoints/observations and release to the original owners. The protected
+  storage invariant includes scalar outputs and indexed buffers. Twenty-three
+  roots passed the 977-input C/FMI/compiler package gate. The same printed table
+  and pool supply the contracts; this is not a new full-artifact result.
+- [ ] Admit initialization-access interleavings at later simulation restarts
+  using the reusable initialization subprotocol. Preserve actual exit/source
+  checkpoints, all modeled returning/blocked cases, original caller storage
+  and ownership through release. Reuse the existing ME/CS action contracts;
+  do not create a second simulation semantics or require future storage.
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.

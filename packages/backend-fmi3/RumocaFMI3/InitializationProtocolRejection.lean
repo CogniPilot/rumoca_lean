@@ -38,7 +38,7 @@ theorem Result.rejection
     (returned : Float64Rejection.Returned objects retained owners request heap p kind state.value state.time after)
     (inPool : p.block = objects.instances.block) (separate : ∀ q, p.InRecord q → request.Outside q) :
     Result objects retained owners p buffers heap after kind state (.reject request) := by
-  refine ⟨Stored.rejected returned, returned.ownership, returned.writable, returned.readonly, ?_, ?_⟩
+  refine ⟨Stored.rejected returned, returned.ownership, returned.storage, returned.readonly, ?_, ?_⟩
   · intro name outside
     apply returned.frame (p.member name) (Or.inl inPool) (separate _ (p.member_in_record name))
     intro same

@@ -1,4 +1,7 @@
 import Rumoca.FMI3InitializationProtocol
+import Rumoca.FMI3CreatedInitializationProtocol
+import Rumoca.FMI3InitializationProtocolME
+import Rumoca.FMI3InitializationProtocolCS
 import Rumoca.FMI3Float64Rejection
 import Rumoca.FMI3InitializationMERun
 import Rumoca.FMI3InitializationCSRun
@@ -294,3 +297,8 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.InitializationProtocol.Checkpoints.source_ivps
 #audit axioms Rumoca.FMI3.InitializationProtocol.source_contract
 #audit axioms Rumoca.FMI3.InitializationProtocol.runtime_source
+
+#audit axioms Rumoca.FMI3.InitializationProtocol.after_creation
+#audit axioms Rumoca.FMI3.InitializationProtocol.runtime_create_release
+#audit axioms Rumoca.FMI3.InitializationProtocol.CreatedSourceContract.me_continuation
+#audit axioms Rumoca.FMI3.InitializationProtocol.CreatedSourceContract.cs_continuation

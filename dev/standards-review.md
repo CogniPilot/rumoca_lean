@@ -37,6 +37,39 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Created initialization protocols through ME/CS simulation: 2026-09-14
+
+This derived-proof increment retains the frozen unit-state EBNFs, source
+admission, runtime policy, emitted members and mandatory artifact propositions.
+MLS 3.7 Real/default initialization and eFMI 1.0.0 Beta 1 Algorithm/Production
+Code evidence are unchanged; all cross-standard findings carry forward.
+
+The focused review rechecked [FMI 3.0.2 §§2.2.4, 2.2.6 and 2.3.1](https://fmi-standard.org/docs/3.0.2/):
+Error outputs are undefined, reset restores defaults before reinitialization,
+and ME importer time control differs from CS stepping. The new composition
+retains those existing distinctions. An actual initialized history supplies
+the new simulation seed/clock and original output storage. Rejected-call
+outputs are not source observations; later successful reads establish new
+observations. Importer trial states are not claimed to solve the initial IVP.
+
+The shared protected-storage invariant now includes scalar ME/CS outputs.
+Actual creation and returning logger effects preserve the required cell
+types/permissions; the universal external frame remains explicit. Both
+simulation continuations reuse the existing mixed histories, source evidence
+and release contracts, restoring original ownership. Callback return is not
+presumed. Later simulation resets still use the contiguous three-call protocol,
+so access interleavings at those restarts remain open.
+
+The 23 new roots and affected existing roots passed the C/FMI/compiler package
+gate on 977 unchanged inputs in `build/c-factory/created-protocol-package-v1.log`.
+No axiom-policy change or test suite was added. The unchanged runtime/emitter/
+mandatory-artifact boundary retains its distinct local 869-input full gate;
+GitHub run `34853259941` passed the full gate for `83b725c`, a separate revision.
+No full-gate pass for this increment or whole-standard conformance is claimed.
+Remaining public calls, native ABI/concurrency, complete artifacts/provenance,
+K02–K05 and standards/MISRA findings remain open.
+**Stage decision: no grammar expansion.**
+
 ### Repeated initialization protocols: 2026-09-14
 
 The new reference trace composes accepted/rejected Float64 accesses, entry,
