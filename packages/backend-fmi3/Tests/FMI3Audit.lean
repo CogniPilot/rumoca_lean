@@ -1,3 +1,4 @@
+import RumocaFMI3.Float64SetEnvironment
 import RumocaFMI3.MEMixedLifecycle
 import RumocaFMI3.MEMixedExecution
 import RumocaFMI3.MEFailureRecovery
@@ -1378,3 +1379,11 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEMixedRun.Configuration.created
 #audit axioms Rumoca.FMI3.MEMixedRun.Configuration.initialized
 #audit axioms Rumoca.FMI3.MEMixedRun.Trace.slot
+
+#audit axioms Rumoca.FMI3.Float64SetEnvironment.body_agrees
+#audit axioms Rumoca.FMI3.Float64SetEnvironment.reaches
+#audit axioms Rumoca.FMI3.Float64SetEnvironment.quiet_correct
+#audit axioms Rumoca.FMI3.Float64SetEnvironment.failure_site
+#audit axioms Rumoca.FMI3.Float64SetEnvironment.suppressed_correct
+#audit axioms Rumoca.FMI3.Float64SetEnvironment.logged_correct
+#audit axioms Rumoca.FMI3.Float64SetEnvironment.prepared_correct

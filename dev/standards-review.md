@@ -37,6 +37,35 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Float64 setter runtime bridge: 2026-09-14
+
+This derived follow-up to `bc575bf` reuses the existing batched setter proofs in
+the shared static runtime. `float64_set_runtime_source` binds the same numerical
+C, actual setter fragment, writable XML state, function-section tokenization and
+prepared literal pool. No source/GALEC grammar, emission or admission policy changes.
+
+| Focused FMI 3.0.2 clauses | Reviewed consequence and remaining boundary |
+| --- | --- |
+| [§2.2.7.2](https://fmi-standard.org/docs/3.0.2/), variable access | Scalar references justify equal reference/value counts for this profile. The existing proof retains batch validation, ordered writes, finite payload bits and rejection paths. No tensor-valued source variable is newly admitted. |
+| [§§2.3.2–2.3.3](https://fmi-standard.org/docs/3.0.2/), instantiated/initialization states | Setting the nonconstant `initial="exact"` state is permitted in these modes. The bridge retains the existing lifecycle predicate; host writes must still compose with actual initialization exit. |
+| [§2.4.7.5](https://fmi-standard.org/docs/3.0.2/), initialization metadata | The existing XML certificate identifies the same scalar state and exact-start policy used by the setter. This bridge does not close the shared MLS/eFMI initialization finding. |
+| [§2.2.4](https://fmi-standard.org/docs/3.0.2/), status/errors | Suppressed logging has the exact Error/Terminated result. Enabled logging retains actual callback arguments, every modeled returning effect and the no-return alternative. Protected-instance callback frames and native execution remain separate. |
+
+`internal_reaches_interface` is generic C proof infrastructure: checked internal
+prefixes survive definition-table extension and agreeing interface bindings.
+It does not require agreement for unrelated target functions. Setter failures
+stop the transported prefix before invoking the real runtime helper and actual
+logger; an external return or post-call heap is not assumed.
+
+The ten new roots passed the C/FMI/compiler package gate on 933 unchanged inputs
+in `build/c-factory/float64-set-environment-package-v1.log`. The axiom whitelist
+and all prior audit roots are retained. Earlier semantics, emission, mandatory
+contracts and tests retain the separate 869-input full artifact gate and unchanged
+archives, with their input/member hashes rechecked. MLS 3.7, eFMI Beta 1 and
+MISRA findings carry forward; this is a focused FMI bridge review. Getter and
+initialization-history composition, remaining APIs and K02–K05 remain open.
+**Stage decision: open; no grammar expansion or new full-gate claim.**
+
 ### Created mixed ME lifetime: 2026-09-14
 
 This derived follow-up to `d2f8e9f` connects original static creation storage

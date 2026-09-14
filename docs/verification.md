@@ -1,5 +1,36 @@
 # Exact verification contract
 
+**Float64 setter in the shared runtime (2026-09-14):**
+`float64_set_runtime_source` connects actual source compilation, numerical C,
+writable-state metadata, function-section tokenization and the emitted setter
+to `Float64SetEnvironment.PreparedContract`. The existing complete setter
+contract now holds in the header/object/literal interface used by creation and
+lifecycle calls, including later heaps preserving the installed diagnostic pool.
+
+The successful contract retains arbitrary representable batch lengths, the
+original tensor-shaped input snapshot, validation before writes, exact finite
+payloads and the final-request state update. Empty and null calls and all
+existing lifecycle/array/entry rejection cases are preserved. Suppression covers
+both a disabled flag and a missing logger. Enabled logging retains every modeled
+returning effect, its actual invocation and the no-return alternative; only the
+effect's read-only frame is imposed here. Ownership and protected instance frames
+must still be supplied when composing histories.
+
+The shared `internal_reaches_interface` theorem transports internal prefixes,
+including loops and kernel calls, into a larger runtime with agreeing types,
+literals, used syntax, numerical kernel, address table and existing definitions.
+Additional target functions and callbacks are unrestricted. The proof fragment's
+absent externals are used only for silent prefixes; the complete failure suffix
+uses the actual target callbacks. No successful target execution is a premise.
+
+All ten roots passed `lake build check-c check-fmi3 check-compiler` on 933
+unchanged inputs in `build/c-factory/float64-set-environment-package-v1.log`.
+Only the three status documents changed afterward. Earlier semantics, emission,
+mandatory contracts and tests retain the separate 869-input full artifact gate
+and unchanged archives; no new full-gate pass is claimed. Getter integration,
+intervening initialization histories and K02–K05 remain open. No source case or
+test suite was added.
+
 **Created mixed ME lifetime (2026-09-14):**
 `MEMixedRun.runtime_create_release` derives actual creation, initialization,
 mixed numerical/control/error/reset histories and final release from original

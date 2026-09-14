@@ -54,18 +54,28 @@ separate from that trajectory. The corresponding CS lifetime covers mixed
 accepted/rejected steps, reset/reinitialization and modeled logging outcomes.
 Both restore original ownership within their stated contracts.
 
-The next proof work is Float64 getter/setter integration into the shared runtime
-and initialization histories, then the remaining public calls. Existing
-`Float64Contract.lean` and `Float64SetContract.lean` provide individual contracts;
-their interface/history composition must derive the selected IVP from the actual
-state at initialization exit, including intervening host writes. No later heap
-or successful call may substitute for that proof.
+The Float64 setter now has an artifact-bound shared-runtime contract for its
+existing batched success, empty/null, rejection and modeled logging behavior.
+The next proof work is the Float64 getter bridge, then initialization histories
+and remaining public calls. `Float64Contract.lean` supplies the existing getter
+proofs; the generic C prefix-transfer theorem can preserve their loop/helper
+execution in the larger runtime. History composition must derive the selected
+IVP from the actual state at initialization exit, including intervening host
+writes. No later heap or successful call may substitute for that proof.
 Concurrent instance ownership and the transitive no-heap
 policy, complete source-to-artifact/provenance and C-profile correspondence,
 and standards/MISRA closure remain required. The final release also requires
 independent review and the complete artifact gate at that revision. These are
 substantial obligations; there is no defensible coverage percentage or short
 completion estimate from the number of audited roots.
+
+The ten added Float64 setter/runtime roots passed
+`lake build check-c check-fmi3 check-compiler` on 933 unchanged inputs in
+`build/c-factory/float64-set-environment-package-v1.log`. The generic prefix
+transfer, batched setter, suppressed/enabled failures, prepared diagnostics and
+source/artifact link are checked. Earlier semantics, emission, mandatory
+contracts and tests retain the separate 869-input full gate and unchanged
+archives; no new full-gate pass or grammar admission is claimed.
 
 The created mixed ME lifetime passed `lake build check-fmi3 check-compiler`
 in `build/c-factory/me-mixed-lifetime-package-v2.log` on 930 unchanged inputs.
@@ -591,6 +601,12 @@ their owning-package audit passed with 811 unchanged inputs. The emitter is
 unchanged. These finite call sequences do not cover arbitrary intervening
 simulation or concurrent host histories.
 
+- [x] Bind the existing complete Float64 setter to the creation/lifecycle
+  runtime and actual source/metadata/table/pool. Preserve arbitrary represented
+  batches, validation-before-write, all existing rejection cases, absent/disabled
+  logging and every modeled callback outcome. The ten added roots passed the
+  933-input C/FMI/compiler package gate; getter and initialization-history
+  composition remain open.
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.

@@ -1,3 +1,4 @@
+import RumocaC.CallPrefixInterface
 import RumocaC.Fenv
 import RumocaC.BodyCallInterface
 import RumocaC.CallDeclarationPrefix
@@ -788,3 +789,6 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CFenv.Header.expression_agrees
 #audit axioms Rumoca.CFenv.rounding_branch_path
 #audit axioms Rumoca.CCalls.Events.body_call_interface_behaviors
+
+#audit axioms Rumoca.CCalls.Events.internalNext_extends
+#audit axioms Rumoca.CCalls.Events.internal_reaches_interface
