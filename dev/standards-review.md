@@ -37,40 +37,51 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
-### ME progress and stopped-source observations: 2026-09-14
+### Recurring ME initialization/simulation/release: 2026-09-14
 
-The Modelica/GALEC grammars, source/Solve/C machine semantics, generated members
-and mandatory artifact propositions are unchanged. This increment extends the
-source-bound ME history and creation/release theorems with finite-history
-progress and every modeled stopped prefix's completed source observations.
-Raw interruption retains an explicit script decomposition and is equivalent
-to the stopped relation. Accepted numerical actions and internal restart
-calls cannot block under their complete call contracts.
+The admitted Modelica/GALEC grammars, source/Solve/C machine semantics,
+generated members and mandatory artifact propositions are unchanged.
+`MEProtocol.runtime_create_release` connects actual source-bound creation,
+repeated initialization/simulation/reset segments and final release. Original
+resources and the universal logger policy supply every later invariant.
+Completed and modeled stopped plans retain earlier initialization observations,
+source-IVP checkpoints and ME derivative observations. Raw reset values remain
+arbitrary; their complete C contracts derive success and exclude blocking.
 
-The focused [FMI 3.0.2 review](https://fmi-standard.org/docs/3.0.2/) rechecked
-§2.2.4's Error/output policy, §2.2.6's importer-controlled ME time and §2.3.1's
-logging/reset interface. Failed outputs remain undefined. A blocked callback
-in the C/effect model is not an FMI return status or a proved native hang.
-No returned status, output, initialization checkpoint or release is attributed
-to the pending action. ME trial states and times are importer-selected; the
-source correspondence covers derivative equations and initialized IVPs, not
-the correctness of an external integration algorithm.
+The [FMI 3.0.2 review](https://fmi-standard.org/docs/3.0.2/) retains §§2.2.4 and
+2.3.1's status/logging/reset mapping, §2.2.6's importer-controlled ME time and
+§§2.3.3–2.3.4's initialization/termination mapping. Failed outputs are not valid
+source observations. A blocked callback in the C/effect model has no FMI return
+status; the pending call contributes no invented output, exit checkpoint or
+release. The ME proof covers source derivatives and initialized IVPs, not the
+correctness of the importer's trial states or integration algorithm. Native
+callback termination and concurrent execution are outside this model.
 
-Completed ME histories also preserve original caller resources under the
-universal logger policy. Recurring initialization/simulation/reset/release
-composition and its whole-plan stopped observations remain open. The pinned
-MLS 3.7 and eFMI 1.0.0 Beta 1 evidence, initialization restrictions, MISRA
-findings and remaining public/native/concurrent obligations carry forward.
-No new normative policy or language case is introduced.
+Local upstream Rumoca at `c9e600967aac582fb18ee269272c800e18a56ed3` was checked
+against `SPEC_0007` and draft `SPEC_0048`: Solve remains the executable-model
+owner, and lifecycle composition consumes prepared products without repeating
+lowering. File identities and the focused review are retained in
+`build/c-factory/me-cycles-upstream-review-v1.json`. These are architecture
+references, not normative compliance authorities. Pinned MLS 3.7 and eFMI
+1.0.0 Beta 1 evidence, shared initialization restrictions and MISRA findings
+carry forward. No language case or normative policy is added.
 
-Seventeen new and three affected roots passed the existing FMI/compiler gate
-on 1001 unchanged inputs in `build/c-factory/me-prefix-package-v1.log` at
-18:18:01 UTC, with no unexpected axioms or changed-module warnings. Only the
-three verification/roadmap documents change after that frozen gate.
-[GitHub run 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
-passed the full artifact gate for the earlier `fc02a22` revision at 18:15:01
-UTC; the current increment still needs its own full-artifact acceptance.
-**Stage decision: K02–K05 stay open; no grammar expansion.**
+The next public-call review has concrete gaps: count-query contracts still use
+the earlier typed interface and only disabled-logging errors; nominal-query
+contracts need shared-runtime/history integration; debug-logging configuration,
+event-indicator/evaluation functions and generic unsupported/type-access paths
+need complete metadata-matched coverage. The absence of a capability flag must
+be interpreted using the relevant clause before specifying a stub's behavior;
+this is not blanket permission to return Error for every optional function.
+
+Twenty new and six affected roots passed the existing FMI/compiler gate on
+1007 unchanged inputs in `build/c-factory/me-cycles-package-v1.log` at 18:37:14
+UTC, with no unexpected axioms or changed-module warnings. Only three documents
+change after that frozen gate. The earlier `fc02a22` revision passed the full
+[GitHub gate 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
+at 18:15:01 UTC; this increment still needs its own full-artifact acceptance.
+**Stage decision: recurring ME composition is proved for the admitted plans;
+K02–K05 stay open and grammar expansion remains blocked.**
 
 ### Completed and stopped CS observations: 2026-09-14
 

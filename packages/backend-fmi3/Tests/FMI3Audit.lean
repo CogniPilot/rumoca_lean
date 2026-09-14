@@ -5,6 +5,7 @@ import RumocaFMI3.InitializationMESimulation
 import RumocaFMI3.MEMixedInterrupted
 import RumocaFMI3.CSInitializationProtocol
 import RumocaFMI3.CSProtocolInterrupted
+import RumocaFMI3.MEProtocolInterrupted
 import RumocaFMI3.InitializationProtocolCreation
 import RumocaFMI3.InitializationProtocolHandoff
 import RumocaFMI3.InitializationProtocolRunFrames
@@ -1650,3 +1651,9 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEMixedRun.Trace.after_prefix
 #audit axioms Rumoca.FMI3.InitializationProtocol.me_field_outside
 #audit axioms Rumoca.FMI3.InitializationProtocol.me_execution
+
+#audit axioms Rumoca.FMI3.MEProtocol.Cycle.Admitted.can_finish
+#audit axioms Rumoca.FMI3.MEProtocol.Plan.Outside.not_record
+#audit axioms Rumoca.FMI3.MEProtocol.Interrupted.stopped
+#audit axioms Rumoca.FMI3.MEProtocol.Stopped.interrupted
+#audit axioms Rumoca.FMI3.MEProtocol.interrupted_iff

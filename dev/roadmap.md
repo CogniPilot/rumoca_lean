@@ -15,27 +15,27 @@ percentage of semantic coverage.
 | --- | --- | --- |
 | Production grammar | One Modelica `Real` state with `der(state) = 1`; generic LALR engine for Modelica and GALEC. DFA implementation and generator removed in `2df35d3`. | No new source case is admitted until the closure checklist below passes. |
 | Source and numerical core | Source-independent Real semantics, per-IR equation/behavior preservation, checked default initialization, binary64 rounding and the unit numerical C theorem. | Whole-interface observations and source-to-artifact composition. |
-| FMI 3 ME/CS | Both interfaces share Solve. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. Source-bound CS creation composes recurring initialization/simulation/reset segments through release, preserving completed and stopped source observations. Source-bound ME creation now derives history progress and stopped-prefix derivative observations/initialized epochs; completed ME histories preserve resources for later initialization. | Compose recurring ME initialization/simulation/reset/release plans, including whole-plan stopped observations; cover remaining public calls, concurrent ownership, translation-unit and ABI correspondence. |
+| FMI 3 ME/CS | Both interfaces share Solve. Source-bound creation now composes recurring initialization/simulation/reset segments through release for both ME and CS, retaining completed and modeled stopped source observations. Complete CS step, termination, time and ME control-call contracts are mandatory and artifact-checked. | Complete remaining public calls and their source-bound histories, concurrent ownership, translation-unit and ABI correspondence. |
 | Initialization | Creation, entry/exit, rejection and optional logging share the actual static runtime and source IVP. The 801-input full gate and 804-input follow-up package audits passed. | Later host histories and callback frames remain in K02/K03; cross-standard correspondence remains in K05. |
 | eFMI | Checked DAE → GALEC → Solve Algorithm → Production C path, method/trace proofs, correlated manifests and actual eFMU certificate. | Cross-standard initialization, coding-guideline evidence and final compliance review. |
 | Tensor/AD development | Array source-to-Solve, forward derivative/reverse adjoint foundations and several prepared C contracts are checked. | These are development products; the production compiler still rejects the driven/array profiles. See [tensor plan](tensor-ad.md). |
 
-The ME follow-up passed the FMI/compiler package gate on 1001 unchanged inputs
-in `build/c-factory/me-prefix-package-v1.log`: 17 new and 3 affected roots,
-with no unexpected axioms or changed-module warnings. Returning/blocked
-equivalences and finite-history progress now feed the source-bound creation
-theorem. Every modeled stopped simulation prefix retains its completed source
-observations and initialization checkpoints; accepted numerical actions and
-internal restarts cannot block. ME trial states remain importer-selected.
-The original caller bank and universal logging policy supply the completed
-simulation handoff through `InitializationProtocol.me_execution`.
+The recurring ME theorem passed the FMI/compiler package gate on 1007 unchanged
+inputs in `build/c-factory/me-cycles-package-v1.log`: 20 new and 6 affected
+roots, with no unexpected axioms or changed-module warnings. Actual source-bound
+creation, initialization, simulation, reset and release share one printed table
+and pool. Original caller resources supply every handoff. Completed and modeled
+stopped plans retain earlier source observations and initialization checkpoints;
+between-cycle reset statuses are derived from complete C contracts. Release
+restores original ownership. Importer-selected ME trials carry no claim of
+following the exact source IVP. The generic initialization-prefix proof is now
+shared by ME and CS without changing the CS theorem's statement.
 
-Next, compose that handoff with the shared initialization invariant across
-recurring ME cycles and actual between-cycle resets, preserving earlier source
-observations on both completed and stopped paths. Then derive final release
-with the original owner map from the same actual creation/table/pool theorem.
-This whole-plan composition remains open. Only three documentation files
-change after the frozen package gate; no new source case is admitted.
+Next, close the remaining public API inventory and integrate those observations
+into the source-bound histories. Start with the count queries' shared-runtime
+and enabled-logging cases, then nominal queries, logging configuration and the
+metadata-matched optional/type-access paths. K02–K05 remain open. Only three
+documents change after the frozen gate; no new source case is admitted.
 The earlier `fc02a22` revision passed the full
 [GitHub gate 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
 at 18:15:01 UTC. This increment still needs its own full-artifact acceptance.
@@ -850,11 +850,12 @@ simulation or concurrent host histories.
   and restore original ownership. Progress retains real blocked prefixes.
   Fourteen new roots passed the 990-input package gate. Existing raw relations
   and action contracts are reused; no future storage or call success is assumed.
-- [ ] Complete the corresponding ME recurring initialization/simulation/release
-  theorem. First retain raw blocked alternatives and prove mixed-history
-  progress; reuse the persistent resource invariant and derived ME logger
-  policy for cycle handoffs. Carry trial-state/clock semantics, derivative
-  observations and source checkpoints across every cycle.
+- [x] Complete the corresponding ME recurring initialization/simulation/release
+  theorem. Actual creation, repeated handoffs, resets and final release share
+  one source-bound table/pool and the original caller bank. Preserve derivative
+  observations, initialized source IVPs, raw statuses, ownership and memory
+  frames. Twenty new and six affected roots passed the 1007-input package gate;
+  this is distinct from full-artifact acceptance.
 - [x] Lift every completed CS step and internal restart checkpoint into the
   recurring source trace. Prove raw record erasure/recovery, preserve exact
   statuses/events/heaps, annotate the same fixed-header reference transitions,
@@ -868,9 +869,11 @@ simulation or concurrent host histories.
   internal restarts and blocked between-cycle resets using complete call
   contracts. Nineteen new and eight affected roots passed the 998-input package
   gate. Native hang behavior and callback termination remain outside this model.
-- [ ] Carry the corresponding completed and stopped ME observations into its
-  recurring source theorem, preserving raw calls and source checkpoints while
-  keeping importer trial states distinct from solutions of the initialized IVP.
+- [x] Carry completed and modeled stopped ME observations into the recurring
+  source theorem. The interrupted/stopped views are equivalent and retain all
+  earlier cycles; complete C contracts exclude a blocked between-cycle reset.
+  Source evidence covers derivatives and initialized IVPs, without asserting
+  that importer trial states solve that IVP. Included in the 1007-input gate.
 - [ ] Inventory every emitted API against metadata: complete success, null,
   invalid-argument/lifecycle, unsupported-capability, logging and return cases.
   Register mandatory contracts for every remaining public function.
@@ -914,10 +917,10 @@ simulation or concurrent host histories.
   derive the statuses of reset and both initialization calls, and prove source
   initialization and uniqueness at every actual restart checkpoint. The 17 roots
   passed the 919-input package gate; all three restart calls are contiguous.
-- [ ] Extend the created mixed ME/CS lifetimes to intervening initialization
-  accesses and remaining public interactions. Retain the
-  numerical/source guarantee alongside every public observation and the explicit
-  caller-protocol obligations.
+- [ ] Extend the created mixed ME/CS lifetimes to the remaining public
+  interactions. Recurring initialization-access interleavings are now covered
+  for both interfaces. Retain the numerical/source guarantee alongside every
+  added public observation and the explicit caller-protocol obligations.
 - [x] Derive a common actual-source-bound rejection/recovery contract for
   non-null ME state/derivative, time, entry, completion and discrete-update
   requests. Retain all modeled logging outcomes; derive observed statuses and
