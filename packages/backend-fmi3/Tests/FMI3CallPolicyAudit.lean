@@ -1,3 +1,7 @@
+import RumocaFMI3.ReservationClaimOrigins
+import RumocaFMI3.ScanClaimOutcome
+import RumocaFMI3.FactoryAfterScan
+import RumocaFMI3.SubcallDomain
 import RumocaFMI3.HostCallPolicy
 import RumocaFMI3.InitialRecordedExecution
 import RumocaFMI3.ReservationOriginRuntime
@@ -124,3 +128,13 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ReservationOrigin.root_excluded
 #audit axioms Rumoca.FMI3.ReservationOrigin.root_heap
 #audit axioms Rumoca.FMI3.StaticRuntime.initial_recorded
+
+#audit axioms Rumoca.FMI3.ConcurrentSlots.recorded_claim
+#audit axioms Rumoca.FMI3.ConcurrentSlots.scan_claim_outcome
+#audit axioms Rumoca.FMI3.ReservationOrigin.factory_return_closed
+#audit axioms Rumoca.FMI3.ReservationOrigin.factory_suffix_closed
+#audit axioms Rumoca.FMI3.ReservationOrigin.factory_suffix_history
+#audit axioms Rumoca.FMI3.ReservationOrigin.logged_claim_origins
+#audit axioms Rumoca.FMI3.ReservationOrigin.logged_factory_suffix
+#audit axioms Rumoca.FMI3.ReservationOrigin.logged_subcall_domain
+#audit axioms Rumoca.FMI3.ReservationOrigin.subcall_domain

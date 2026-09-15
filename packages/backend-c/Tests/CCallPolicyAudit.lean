@@ -1,3 +1,5 @@
+import RumocaC.AtomicScanClaimHistory
+import RumocaC.CallContextHistory
 import RumocaC.HostCallSites
 import RumocaC.InvocationOrigins
 import RumocaC.InvocationExecution
@@ -155,3 +157,28 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.Host.other_thread
 #audit axioms Rumoca.CCalls.Host.step_threads
 #audit axioms Rumoca.CCalls.Host.update_twice
+
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.ClaimedReady.exit_value
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.ClaimedReady.no_call
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.ClaimedReady.withHeap
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.claimed_interval
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.claimed_step
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.scan_claim_step
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.scan_exchange
+#audit axioms Rumoca.CCalls.Concurrent.interval_erases
+#audit axioms Rumoca.CCalls.Concurrent.ownTrace_append
+#audit axioms Rumoca.CCalls.Concurrent.silent_interval_history
+#audit axioms Rumoca.CCalls.Concurrent.silent_saved_step
+#audit axioms Rumoca.CCalls.Context.active_of_suspended
+#audit axioms Rumoca.CCalls.Context.append_eq_outer
+#audit axioms Rumoca.CCalls.Context.appended_heap
+#audit axioms Rumoca.CCalls.Context.call_origin
+#audit axioms Rumoca.CCalls.Context.depth_append
+#audit axioms Rumoca.CCalls.Context.enter_append
+#audit axioms Rumoca.CCalls.Context.heap_append
+#audit axioms Rumoca.CCalls.Context.internal_append
+#audit axioms Rumoca.CCalls.Context.interval_history
+#audit axioms Rumoca.CCalls.Context.returned_local
+#audit axioms Rumoca.CCalls.Context.saved_step
+#audit axioms Rumoca.CCalls.Context.step_append
+#audit axioms Rumoca.CCalls.Context.step_unappend

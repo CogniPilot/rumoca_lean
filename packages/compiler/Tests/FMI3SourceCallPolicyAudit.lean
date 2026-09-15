@@ -1,3 +1,6 @@
+import Rumoca.FMI3ScanClaims
+import Rumoca.FMI3FactorySuffix
+import Rumoca.FMI3SubcallDomains
 import Rumoca.FMI3HostCalls
 import Rumoca.FMI3InitialRecorded
 import Rumoca.FMI3ReservationOrigins
@@ -35,3 +38,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.AtomicCallPolicy.source_host_calls
 #audit axioms Rumoca.FMI3.ReservationOrigin.source_reservation_origins
 #audit axioms Rumoca.FMI3.StaticRuntime.source_recorded_creation
+
+#audit axioms Rumoca.FMI3.ConcurrentSlots.source_scan_claims
+#audit axioms Rumoca.FMI3.ReservationOrigin.source_factory_suffix
+#audit axioms Rumoca.FMI3.ReservationOrigin.source_subcall_domains

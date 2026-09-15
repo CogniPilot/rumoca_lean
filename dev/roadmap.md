@@ -11,6 +11,55 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Slot claims and suspended callers (full gate passed):**
+
+Actual reservation uses the computed enclosing factory invocation serial as
+its slot lease and as the origin of the same recorded C step. Starting at the
+real helper entry, its atomic operation supplies the bounded slot, observation
+and ownership transition. On success, subsequent helper steps are silent,
+schedule no further calls and return that index under finite interleavings.
+The actual factory suffix cannot reserve again after the helper returns,
+including its exhaustion branch. Source theorems retain the same actual pool,
+header, table, numerical C, adapter and metadata contracts.
+
+Generic continuation proofs give exact C step correspondence in both directions
+beneath a suspended caller, preserving events and heap. The root-return boundary
+is explicit. Actual shared-history invariants retain the literal caller and
+derive each reached nested call's context. A source-bound helper-domain theorem
+uses this to exclude reservation inside identity validation without requiring
+the suspended factory's reservation suffix to satisfy that helper policy.
+
+The complete factory prefix must still derive helper-entry/return intervals
+from its raw host history. Current flag/owner representation, concurrent private
+initialization, live-handle publication and later legal lease/interference
+histories remain open. Control preservation does not assert ownership survives
+arbitrary future heap changes. No progress/fairness or native C11 claim is added.
+
+The owning-package checks passed at 20:49:47 UTC on 2026-09-15.
+The required `nix develop .#verification --command lake test` passed at
+21:38:47 UTC on 2026-09-15, with 1179 unchanged inputs and all
+280 selected roots (36 new, 244 retained). No unexpected axioms, changed-module
+warnings or source drift were found. The three existing audits retain every
+previous root; no unit test suite was added. Root counts do not measure semantic
+coverage.
+
+Draft review and dependency-isolation evidence remains in
+`build/c-host-boundary/`: `scan-claim-promotion-v2.json`,
+`context-promotion-v1.json`, `scan-claim-review-v2.md`, `context-review-v1.md`
+and `claims-context-extracted-v1.json`. Integration, package, full-gate,
+standards/upstream review and retained artifact records are under
+`build/c-scan-context/`.
+
+Every FMU member is unchanged from `57d361c`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and public interface emission are
+unchanged. Existing artifact, native and mutation checks pass. Only these three
+evidence documents change after the frozen gate.
+
+Factory identity-resumption follow-ups remain drafts outside this checkpoint.
+Native ABI/C11, callback/fenv correspondence, provenance, transitive allocation,
+MISRA and remaining MLS/FMI/eFMI findings stay open. K02–K05 block grammar growth.
+
 **Host histories and reservation origins (full gate passed):**
 
 The host boundary executes the existing C scheduler, admits calls through the
