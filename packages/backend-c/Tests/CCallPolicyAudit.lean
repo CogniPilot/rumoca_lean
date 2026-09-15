@@ -1,3 +1,5 @@
+import RumocaC.AtomicArguments
+import RumocaC.AtomicScanEntryInvariant
 import RumocaC.ConcurrentSteps
 import RumocaC.CallSites
 import RumocaC.CallStoreInvariant
@@ -81,3 +83,23 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCallSites.resume_ready
 #audit axioms Rumoca.CCalls.Concurrent.external_step_iff
 #audit axioms Rumoca.CCalls.Concurrent.internal_step_iff
+
+#audit axioms Rumoca.CAtomicBoolean.Calls.converted_shape
+#audit axioms Rumoca.CAtomicBoolean.Calls.exchange_from_arguments
+#audit axioms Rumoca.CAtomicBoolean.Calls.write_from_arguments
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.FullReady.atomic_origin
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.FullReady.exit_value
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.FullReady.withHeap
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.Ready.call_origin
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.Ready.exit_value
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.Ready.withHeap
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.call_prefix_bounds
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.full_step_ready
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.full_thread_reaches
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.loop_prefix_bounds
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.step_ready
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.thread_reaches
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.thread_step
+#audit axioms Rumoca.CCalls.Concurrent.exit_withHeap
+#audit axioms Rumoca.CCalls.Concurrent.external_step_values_iff
+#audit axioms Rumoca.CCalls.Concurrent.saved_predicate_step

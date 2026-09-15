@@ -50,3 +50,35 @@ theorem internal_step_iff (selected : before.threads thread = some saved)
   · rintro ⟨rfl, rfl⟩
     exact .run selected (.internal next)
 end Rumoca.CCalls.Concurrent
+
+namespace Rumoca.CCalls.Concurrent
+open CTree CMemory
+variable [CInterface] {E : Type} {program : Events.Program E}
+
+/-- Recover conversion and the foreign effect from an actual selected step.
+No converted-value shape is supplied as a premise. -/
+theorem external_step_values_iff (selected : before.threads thread = some saved)
+    (atCall : withHeap saved before.heap = .calling name args before.heap stack)
+    (bound : program.externals name = some fn) :
+    Step program before thread events after ↔
+      ∃ values result heap,
+        Events.convertedArguments fn.signature.parameters args = some values ∧
+        fn.execute values before.heap events result heap ∧
+        after = ⟨heap, update before.threads thread (.returning result heap stack)⟩ := by
+  constructor
+  · intro step
+    cases step with
+    | run found executed =>
+      cases Option.some.inj (found.symm.trans selected)
+      rw [atCall] at executed
+      cases executed with
+      | internal next =>
+        rw [Events.external_entry_exclusive program bound] at next
+        contradiction
+      | external found converted executed =>
+        cases Option.some.inj (found.symm.trans bound)
+        exact ⟨_, _, _, converted, executed, rfl⟩
+  · rintro ⟨values, result, heap, converted, executed, rfl⟩
+    exact .run selected (by rw [atCall]; exact .external bound converted executed)
+
+end Rumoca.CCalls.Concurrent

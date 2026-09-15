@@ -1,3 +1,6 @@
+import RumocaFMI3.AtomicCallExecution
+import RumocaFMI3.FactoryScanEntry
+import RumocaFMI3.ReservationClaims
 import RumocaFMI3.ConcurrentSlotHistories
 import RumocaFMI3.AtomicCallRuntime
 import RumocaFMI3.RuntimeStorage
@@ -75,3 +78,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConcurrentSlots.reserve_operation
 #audit axioms Rumoca.FMI3.ConcurrentSlots.reserve_scheduled
 #audit axioms Rumoca.FMI3.ConcurrentSlots.scheduled_reclaim_requires_release
+
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.exchange_scheduled
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.operations_of_values
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.release_scheduled
+#audit axioms Rumoca.FMI3.ConcurrentSlots.bounded_reservation_claim
+#audit axioms Rumoca.FMI3.StaticFactory.header_factory_scope
+#audit axioms Rumoca.FMI3.StaticFactory.header_reserve_entry

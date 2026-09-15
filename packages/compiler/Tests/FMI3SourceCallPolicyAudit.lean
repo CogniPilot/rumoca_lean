@@ -1,3 +1,5 @@
+import Rumoca.FMI3AtomicOperations
+import Rumoca.FMI3ReservationBounds
 import Rumoca.FMI3ConcurrentSlots
 import Rumoca.FMI3AtomicCalls
 import Rumoca.FMI3RuntimeStorage
@@ -18,3 +20,6 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.FMI3.AtomicCallPolicy.source_atomic_calls
 #audit axioms Rumoca.FMI3.ConcurrentSlots.source_slot_histories
+
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.source_atomic_operations
+#audit axioms Rumoca.FMI3.ConcurrentSlots.source_reservation_bounds

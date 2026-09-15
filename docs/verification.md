@@ -1,5 +1,48 @@
 # Exact verification contract
 
+**Reservation bounds and actual atomic operations (full gate passed):**
+
+The shared C invocation invariant covers actual helper entry, parameter binding,
+local initialization and every scan-loop prefix under shared-heap interleavings.
+It retains the original flag pointer and bounded index until the original caller
+resumes. The source theorem derives the actual helper, header types and emitted
+32-slot pool from the same source/adapter contract. The validated factory suffix
+obtains its helper arguments from fresh locals and concrete globals.
+
+Represented current flags supply an enabled, unique actual reservation step and
+its lease annotation, with the busy result, exact event, ownership update and
+other-thread control frame. Neither successful reservation nor argument
+conversion or a next-state annotation is a premise. Complete public factory
+entry, release authorization, fresh lease assignment and ordinary/logger flag
+frames remain open. An unsuccessful concurrent scan does not prove that all
+slots were busy at one instant.
+
+The separate generated-call proof derives Boolean conversion and actual atomic
+memory effects after finite shared executions from public entries. It retains
+exact events and return continuations without extra conversion or value-policy
+premises. Its unrestricted atomic pointers do not establish release authority.
+
+The affected package checks passed at 18:09:27 UTC on
+2026-09-15. The required
+`nix develop .#verification --command lake test` passed at 18:57:47 UTC
+on 2026-09-15, with 1142 unchanged inputs and all 166 selected roots
+(27 new, 139 retained). No unexpected axioms, changed-module warnings or source
+drift were found. The existing three audits retain all previous roots; no test
+suite was added. Evidence is in `build/c-reservation-bounds/`:
+`integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
+`standards-review-v1.json` and `artifacts-v1.*`.
+
+Every FMU member is unchanged from `00a235c`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and public interface emission are
+unchanged. Existing artifact, native and mutation checks pass. Only these
+three evidence documents change after the frozen gate.
+
+The ordinary flag-frame and callback-attribution follow-up remains a checked
+draft under `build/`, separate from this checkpoint. Native C11/ABI, full legal
+histories, provenance, transitive no-allocation, MISRA and remaining MLS/FMI/eFMI
+findings stay open. K02–K05 continue to block grammar expansion.
+
 **Concurrent slot histories and atomic-call values (full gate passed):**
 
 Reusable C proofs characterize actual shared-heap scheduler steps and preserve
