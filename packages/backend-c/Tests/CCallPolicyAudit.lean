@@ -1,3 +1,6 @@
+import RumocaC.AtomicOperationSteps
+import RumocaC.InvocationReplay
+import RumocaC.AssignmentFootprint
 import RumocaC.CallContextBoundary
 import RumocaC.BooleanConversion
 import RumocaC.AtomicScanClaimState
@@ -197,3 +200,17 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.Host.Recording.selected_history
 #audit axioms Rumoca.CCalls.Host.Recording.selected_step
 #audit axioms Rumoca.CMemory.boolean_conversion
+
+#audit axioms Rumoca.CAtomicBoolean.Calls.clear_scheduled
+#audit axioms Rumoca.CAtomicBoolean.Calls.exchange_scheduled
+#audit axioms Rumoca.CBody.Footprint.heap_free
+#audit axioms Rumoca.CBody.Footprint.loop_heap_free
+#audit axioms Rumoca.CCalls.Host.Recording.history_replay
+#audit axioms Rumoca.CCalls.Host.Recording.history_same_ledger
+#audit axioms Rumoca.CLoops.Footprint.assignment_next
+#audit axioms Rumoca.CLoops.Footprint.assignment_region
+#audit axioms Rumoca.CMemory.Footprint.load_eq
+#audit axioms Rumoca.CMemory.Footprint.replace_eq
+#audit axioms Rumoca.CMemory.Footprint.store_outside
+#audit axioms Rumoca.CMemory.Footprint.store_region
+#audit axioms Rumoca.CMemory.Footprint.store_transport

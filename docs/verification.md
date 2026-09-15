@@ -1,5 +1,68 @@
 # Exact verification contract
 
+**Computed reservation histories through actual claims (full gate passed):**
+
+The source-bound theorem now derives current reservation/flag representation
+from the typed C pool's initially free flags and the raw public host history.
+Actual selected controls, operands and recorded invocations compute each
+registry update. Successful exchanges record the enclosing factory's serial;
+busy exchanges retain the previous reservation. Actual false stores clear only
+the addressed slot, leaving this pool unchanged when the address is outside it.
+No next-map, owner, observation or per-step atomic annotation is supplied.
+
+Invocation replay proves that recordings of the same raw actions have the same
+ledger. The same derived registry therefore supplies actual factory claims,
+original arguments, bounded indices and saved continuations. Successful claims
+exclude any later reservation by that invocation, including after helper return
+and across thread reuse. Event tags need not be injective.
+
+The actual generated program proves clear-call operands and ordinary flag
+frames. Importer memory and logger effects must preserve atomic cells; these
+are explicit foreign-boundary contracts. Original factory inputs must satisfy
+the represented ABI profile. Neither valid identity strings nor supported CS
+requests are required; rejection paths remain covered.
+
+Additional C proofs use mathlib's `Set.EqOn` to transport actual typed stores
+and assignments across interference outside their symbolic address region.
+They preserve values, not merely cell types and permissions, and retain the
+other heap's exterior. Conservative operand certificates cover the body and
+loop evaluators. Every actual initializer store, including slot metadata and
+nested Solve state, satisfies the selected-record footprint. These lemmas
+supply the memory component; complete concurrent initialization remains open.
+The combined checked draft is `build/c-factory-history/initialization-footprint-v1.json`.
+
+This is a physical reservation registry. It records a clear even when the
+caller lacks release authority. The existing lease-checked release semantics
+are unchanged. Private initialization, actual handle publication, legal later
+metadata/buffer and release authority, and stale/reused handle safety remain
+open. A reservation or pointer alone is not published live-instance authority.
+
+The owning-package checks passed at 22:33:31 UTC on 2026-09-15.
+The required `nix develop .#verification --command lake test` passed at
+23:21:32 UTC on 2026-09-15, with 1204 unchanged inputs and all
+349 selected roots (39 new, 310 retained). No unexpected axioms, changed-module
+warnings or source drift were found. Root counts do not measure semantic
+coverage; all previously selected roots remain in the same three audits.
+
+Draft and dependency-isolation evidence is in `build/c-factory-history/`:
+`source-registry-v4.json`, `initialization-footprint-v1.json`,
+`registry-promotion-v2.json`, `registry-review-v2.md` and
+`registry-extracted-{c,fmi,all}-v2.json`. Integration, package, full-gate,
+standards/upstream review and retained artifact records are under
+`build/c-reservation-registry/`.
+
+Every FMU member is unchanged from `af477e9`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+No grammar, source/IR semantics, C emission, solver or interface policy changed;
+no test suite was added. The initial flags belong to the authored typed C
+semantics; native static initialization/C11/ABI, callback/fenv correspondence,
+provenance, transitive allocation, MISRA and remaining MLS/FMI/eFMI findings stay
+open. K02–K05 continue to block grammar growth and a complete assurance claim.
+
 **Public factory histories through slot claims (full gate passed):**
 
 The source-bound claim theorem now starts with the raw public host history.

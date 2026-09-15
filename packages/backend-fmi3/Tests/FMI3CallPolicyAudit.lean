@@ -1,3 +1,5 @@
+import RumocaFMI3.ReservationRegistryRuntime
+import RumocaFMI3.InitializationFootprint
 import RumocaFMI3.FactoryHistory
 import RumocaFMI3.ScanReadyOutcome
 import RumocaFMI3.ScanOnce
@@ -161,3 +163,29 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.FactoryValidation.actual_resume
 #audit axioms Rumoca.FMI3.FactoryValidation.header_reservation_after_identity
 #audit axioms Rumoca.FMI3.FactoryValidation.resume_next
+
+#audit axioms Rumoca.FMI3.ClearCallPolicy.body_policy
+#audit axioms Rumoca.FMI3.ClearCallPolicy.helpers_policy
+#audit axioms Rumoca.FMI3.ClearCallPolicy.logged_history
+#audit axioms Rumoca.FMI3.ClearCallPolicy.logged_named_only
+#audit axioms Rumoca.FMI3.ClearCallPolicy.operand_sound
+#audit axioms Rumoca.FMI3.ClearCallPolicy.program_policy
+#audit axioms Rumoca.FMI3.ClearCallPolicy.public_entry
+#audit axioms Rumoca.FMI3.InstanceInitialization.field_assignment_footprint
+#audit axioms Rumoca.FMI3.InstanceInitialization.initialization_footprint
+#audit axioms Rumoca.FMI3.InstanceInitialization.slot_initialization_footprint
+#audit axioms Rumoca.FMI3.ReservationRegistry.Step.erases
+#audit axioms Rumoca.FMI3.ReservationRegistry.claim_represents
+#audit axioms Rumoca.FMI3.ReservationRegistry.clearAt_outside
+#audit axioms Rumoca.FMI3.ReservationRegistry.clearAt_slot
+#audit axioms Rumoca.FMI3.ReservationRegistry.clear_represents
+#audit axioms Rumoca.FMI3.ReservationRegistry.executeUpdate_ordinary
+#audit axioms Rumoca.FMI3.ReservationRegistry.execute_represents
+#audit axioms Rumoca.FMI3.ReservationRegistry.history_erases
+#audit axioms Rumoca.FMI3.ReservationRegistry.history_lift
+#audit axioms Rumoca.FMI3.ReservationRegistry.history_represents
+#audit axioms Rumoca.FMI3.ReservationRegistry.logged_ready
+#audit axioms Rumoca.FMI3.ReservationRegistry.logged_reservations
+#audit axioms Rumoca.FMI3.ReservationRegistry.slotAt_address
+#audit axioms Rumoca.FMI3.ReservationRegistry.slotAt_sound
+#audit axioms Rumoca.FMI3.ReservationRegistry.step_represents
