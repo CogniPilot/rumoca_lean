@@ -1,3 +1,8 @@
+import RumocaFMI3.LoggingCapabilityEffects
+import RumocaFMI3.CSLoggingMemory
+import RumocaFMI3.MELoggingMemory
+import RumocaFMI3.CSLoggingCalls
+import RumocaFMI3.MELoggingCalls
 import RumocaFMI3.DebugLoggingInitialization
 import RumocaFMI3.DebugLoggingInputFrame
 import RumocaFMI3.InitializationProtocolInputs
@@ -1679,7 +1684,7 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEMixedRun.ReferenceTrace.split
 #audit axioms Rumoca.FMI3.MEMixedRun.Trace.take
 #audit axioms Rumoca.FMI3.MEMixedRun.Trace.after_prefix
-#audit axioms Rumoca.FMI3.InitializationProtocol.me_field_outside
+#audit axioms Rumoca.FMI3.MEMixedRun.retained_field_outside
 #audit axioms Rumoca.FMI3.InitializationProtocol.me_execution
 
 #audit axioms Rumoca.FMI3.MEProtocol.Cycle.Admitted.can_finish
@@ -1847,3 +1852,29 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEMixedRun.Configuration.FramePolicy.mono
 #audit axioms Rumoca.FMI3.MEMixedRun.Trace.callerFrame
 #audit axioms Rumoca.FMI3.CSRun.Calls.frame
+
+#audit axioms Rumoca.FMI3.CSLoggingCalls.Contract.quiet
+#audit axioms Rumoca.FMI3.CSLoggingCalls.Memory.failure
+#audit axioms Rumoca.FMI3.CSLoggingCalls.Memory.retention
+#audit axioms Rumoca.FMI3.CSLoggingCalls.Memory.success
+#audit axioms Rumoca.FMI3.CSLoggingCalls.execution
+#audit axioms Rumoca.FMI3.CSRun.Stored.failed
+#audit axioms Rumoca.FMI3.CSRun.Stored.logging_framed
+#audit axioms Rumoca.FMI3.CSRun.logging_failure_returned
+#audit axioms Rumoca.FMI3.CSRun.logging_legal_returned
+#audit axioms Rumoca.FMI3.InitializationAccess.Certificate.retention
+#audit axioms Rumoca.FMI3.Logging.Capability.Failure.cases
+#audit axioms Rumoca.FMI3.Logging.Capability.Failure.memory
+#audit axioms Rumoca.FMI3.Logging.Capability.Failure.storage
+#audit axioms Rumoca.FMI3.Logging.Capability.cs_frame
+#audit axioms Rumoca.FMI3.Logging.Capability.me_frame
+#audit axioms Rumoca.FMI3.MELoggingCalls.Contract.quiet
+#audit axioms Rumoca.FMI3.MELoggingCalls.Memory.failure
+#audit axioms Rumoca.FMI3.MELoggingCalls.Memory.retention
+#audit axioms Rumoca.FMI3.MELoggingCalls.Memory.success
+#audit axioms Rumoca.FMI3.MELoggingCalls.execution
+#audit axioms Rumoca.FMI3.MEMixedRun.Returned.of_frame
+#audit axioms Rumoca.FMI3.MEMixedRun.loggingUpdate_cons_getD
+#audit axioms Rumoca.FMI3.MENumericalHistory.Stored.logging_framed
+#audit axioms Rumoca.FMI3.MENumericalHistory.logging_failure_returned
+#audit axioms Rumoca.FMI3.MENumericalHistory.logging_legal_returned

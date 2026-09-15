@@ -72,6 +72,8 @@ inductive Faulted [CInterface] (program : Program Invocation) (p : Address)
 
   | nominals : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done) (.wrong []) →
       Faulted program p addresses buffer heap (.nominals request)
+  | logging : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done) (.wrong []) →
+      Faulted program p addresses buffer heap (.logging request)
 
 inductive Stopped [CInterface] (program : Program Invocation) (p : Address)
     (addresses : String → Address) (buffer : Address) : Heap → List Action → Prop where
@@ -119,6 +121,12 @@ theorem ActionContract.faulted_iff
         rcases (contract.behaviors _).mp faulted with ⟨_, _, _, _, impossible⟩ | ⟨blocked, _⟩
         · cases impossible
         · exact blocked
+    | logging faulted =>
+      cases certified with
+      | logging contract =>
+        rcases (contract.behaviors _).mp faulted with ⟨_, _, _, _, impossible⟩ | ⟨blocked, _⟩
+        · cases impossible
+        · exact blocked
   · intro blocked
     cases certified with
     | run _ | quiet _ _ => exact False.elim blocked
@@ -126,6 +134,7 @@ theorem ActionContract.faulted_iff
     | counts contract => exact .counts ((contract.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
 
     | nominals contract => exact .nominals ((contract.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
+    | logging contract => exact .logging ((contract.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
 
 theorem ActionContract.faulted_rejection
     (certified : ActionContract program p addresses buffer heap action returns blocked)
@@ -137,6 +146,7 @@ theorem ActionContract.faulted_rejection
   | counts contract => exact contract.failure blocked
 
   | nominals contract => exact contract.failure blocked
+  | logging contract => exact contract.failure blocked
 
 /-- Every modeled returning or blocked alternative is derived, with no
 callback totality or deterministic-callback premise. -/
@@ -163,13 +173,17 @@ theorem ActionContract.progress
       rcases contract.available with ⟨events, status, after, returned⟩ | blocked
       · exact Or.inl ⟨_, after, [], events, status, rfl, rfl, returned⟩
       · exact Or.inr blocked
+    | logging contract =>
+      rcases contract.available with ⟨events, status, after, returned⟩ | blocked
+      · exact Or.inl ⟨_, after, [], events, status, rfl, rfl, returned⟩
+      · exact Or.inr blocked
   rcases alternative with ⟨observed, after, epochs, outcome⟩ | blocked
   · exact Or.inl ⟨observed, after, epochs, outcome, certified.realizes outcome⟩
   · exact Or.inr ⟨blocked, certified.faulted_iff.mpr blocked⟩
 
 theorem Trace.progress {model : Solve.FMI3Model source} {objects : StaticFactory.Objects}
-    {owners : SlotOwners.State objects.capacity} {config : Configuration}
-    (certified : Trace model objects owners config program p addresses buffer heap reference clock actions final finalClock) :
+    {owners : SlotOwners.State objects.capacity} {capability : Logging.Capability}
+    (certified : Trace model objects owners capability program p addresses buffer heap enabled reference clock actions final finalClock) :
     (∃ observed after epochs, Completed program p addresses buffer heap actions observed after epochs) ∨
     Stopped program p addresses buffer heap actions := by
   induction certified with

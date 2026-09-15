@@ -11,6 +11,26 @@ percentage of semantic coverage.
 
 ## Current position
 
+**ME simulation logging (full gate passed):** All remaining
+initialization-access/protocol continuation and restart entry points have been
+ported. Its prepared logging contract comes from the same source-bound runtime
+bundle, and the affected CS caller retains its previous guarantees.
+Shared callback effects and ME/CS call proofs now live in separate package
+modules. The owning-package checks passed at 03:24:08 UTC, and the required
+`nix develop .#verification --command lake test` passed at 04:09:01 UTC on
+1062 unchanged inputs. All 89 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. See
+`build/c-factory/simulation-logging/package-v4.*` and `full-gate-v1.*`.
+Only the three evidence documents change after the frozen gate.
+
+Retained FMU members are all byte-identical to the initialization checkpoint.
+The eFMU changes only generation identities and dependent references/checksums
+in three manifests; numerical C, GALEC and Production C are unchanged.
+See `build/c-factory/simulation-logging/artifacts-v1/` and its JSON record.
+Mutable CS histories still require complete source/lifetime composition and
+their own artifact acceptance; the prepared CS logging call alone does not
+establish them. K02–K05 and the whole-subset compliance gate remain open.
+
 **Mutable logging in initialization histories (full gate passed):**
 Logging requests now use the existing raw action, reference transition and
 completed/stopped history relations. The prepared runtime derives every call,
@@ -54,18 +74,19 @@ obligations; this acceptance does not establish unrestricted FMI conformance.
 
 Remaining work, in dependency order:
 
-1. Complete logging interleavings during simulation in the existing ME and CS
-   action relations. The separate draft has 40 checked roots: both prepared
-   logging calls, ME raw/certified returning and blocked relations, and actual
-   ME mixed `action_correct`/`trace_correct` with original borrowed inputs.
-   This is development evidence in `build/c-factory/simulation-logging/`, not
-   accepted production coverage. CS mutable histories remain to be integrated.
-2. Carry the changed policy through source observations, stopped prefixes and
-   recurring creation/initialization/simulation/reset/release. Compose exact
-   logging updates across initialization and simulation segments, retaining
-   the numerical/source guarantee and original caller resources.
-3. Integrate the complete simulation slice into its owning packages, audit all
-   affected roots, and rerun the required full artifact gate. No future readable
+1. Complete mutable CS simulation histories. The isolated draft checks actual
+   mixed calls, raw per-call records, source observations, stopped-prefix flags,
+   release and the initialization handoff. Recurring protocol definitions and
+   interruption/prefix helpers are checked; recurring correctness and the
+   source-bound factory/runtime theorem remain unfinished. Evidence is in
+   `build/c-factory/simulation-logging/cs-mixed-v17.*` (50 selected roots).
+   This draft is not integrated or accepted production coverage.
+2. Port the remaining CS initialization-access and protocol/restart entry
+   points to the same capability and exact-update contracts. Preserve all
+   existing raw statuses, reset checkpoints and source observations, and
+   derive original borrowed inputs through actual factory and runtime frames.
+3. Integrate the complete CS slice into its owning packages, audit all
+   affected roots, and run the required full artifact gate. No future readable
    heap, selected callback return or unchanged factory flag may replace a proof.
 4. Complete the remaining public-call, native/ABI and MISRA obligations, then
    rerun the whole-subset MLS/FMI/eFMI checklist and close K02–K05 before growth.
@@ -87,7 +108,7 @@ generation identities and dependent references/checksums.
 
 The initialization-history checkpoint above now accepts the subsequent
 capability, original-category-input and recurring source-bound composition.
-Mutable logging during simulation and the other K02–K05 obligations remain
+Mutable logging during CS simulation and the other K02–K05 obligations remain
 open; the current work list distinguishes their draft and accepted evidence.
 
 **Nominal runtime and histories (full gate passed):**

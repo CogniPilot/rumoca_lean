@@ -12,6 +12,11 @@ theorem Action.can_finish (action : Action)
     LifecycleRelease.CanFinish .me (action.next reference).control.mode := by
   cases action with
   | reject _ _ => exact Or.inr rfl
+  | logging request =>
+    cases failed : request.failed <;>
+      simp only [Action.next, MELoggingCalls.next, failed, Bool.false_eq_true, if_false, if_true]
+    · exact ready
+    · exact Or.inr rfl
   | counts request =>
     cases request with
     | get _ _ => exact ready
@@ -71,14 +76,14 @@ theorem Configuration.initialized [CInterface] {config : Configuration}
 /-- A completed history preserves the slot metadata needed by release,
 including across every returning logger branch and reset epoch. -/
 theorem Trace.slot [CInterface] {source : AST.Model} {program : Program Invocation} {model : Solve.FMI3Model source}
-    {owners : SlotOwners.State objects.capacity} {config : Configuration}
-    (certified : Trace model objects owners config program p addresses buffer heap reference clock actions final finalClock)
+    {owners : SlotOwners.State objects.capacity} {capability : Logging.Capability}
+    (certified : Trace model objects owners capability program p addresses buffer heap enabled reference clock actions final finalClock)
     (stored : MENumericalHistory.Stored heap p clock reference addresses buffer)
     (inPool : p.block = objects.instances.block)
     (completed : Completed program p addresses buffer heap actions observed after epochs) :
     load after (p.member "slot") = load heap (p.member "slot") := by
-  obtain ⟨_, _, _, _, _, frame⟩ := certified.completed completed
-  simp only [load, frame (p.member "slot") (Or.inl inPool) (configuration_outside stored "slot" (by simp))]
+  obtain ⟨_, _, _, _, _, _, frame⟩ := certified.completed completed
+  simp only [load, frame (p.member "slot") (Or.inl inPool) (configuration_outside stored "slot" (by simp)) (by simp)]
 
 end Rumoca.FMI3.MEMixedRun
 end

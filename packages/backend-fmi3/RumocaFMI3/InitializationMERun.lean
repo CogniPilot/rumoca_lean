@@ -1,6 +1,6 @@
 import RumocaFMI3.InitializationAccessStorage
 import RumocaFMI3.MENumericalInitialization
-import RumocaFMI3.MEMixedLifecycle
+import RumocaFMI3.LoggingCapabilityLifetime
 import RumocaFMI3.ResetStorage
 
 noncomputable section
@@ -41,10 +41,16 @@ theorem Certificate.me_storage
     simpa only [Value.finite, Initialization.stopTime_bits args admissible limit selected]
       using (InitializationEntry.stop beforeEntry p args).1
 
-theorem Certificate.configuration {config : MEMixedRun.Configuration}
+/-- Initialization accesses preserve control fields outside their write set. -/
+theorem Certificate.retention
+    (certified : Certificate model program p access args kind state time heap before during beforeEntry atExit) :
+    InitializationProtocol.Retention none p heap (InitializationBodies.exitHeap atExit p kind) :=
+  InitializationProtocol.Retention.of_retains certified.field
+
+theorem Certificate.configuration {capability : Logging.Capability}
     (certified : Certificate model program p access args kind state time heap before during beforeEntry atExit)
-    (configured : config.Stored heap p) :
-    config.Stored (InitializationBodies.exitHeap atExit p kind) p := by
+    (configured : capability.Configured heap p enabled) :
+    capability.Configured (InitializationBodies.exitHeap atExit p kind) p enabled := by
   apply configured.framed
   intro name member
   apply certified.field

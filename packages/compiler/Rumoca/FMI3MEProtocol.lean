@@ -38,7 +38,7 @@ inductive SourceTrace (model : Solve.Model source) (p : Address) : Plan → List
         (.initialization initial checkpoints exited :: .simulation observed epochs simulated ::
           .reset [] (.integer 0) (Reset.finalHeap simulated p) :: records)
 
-inductive SourceInterrupted (model : Solve.Model source) (p : Address)
+inductive SourceInterrupted [CInterface] (model : Solve.Model source) (p : Address)
     (addresses : String → Address) (buffer : Address) : Plan → List Record → StopRecord → Prop where
   | finish : InitializationProtocol.SourcePrefix model.prepareFMI3 p .me .reset actions stop →
       SourceInterrupted model p addresses buffer (.finish actions state) [] (.initialization stop)
@@ -47,13 +47,13 @@ inductive SourceInterrupted (model : Solve.Model source) (p : Address)
   | nextInitialization : InitializationProtocol.SourcePrefix model.prepareFMI3 p .me .reset cycle.initialization stop →
       SourceInterrupted model p addresses buffer (.next cycle following) [] (.initialization stop)
   | lastSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
-      MEMixedRun.SourcePrefix model p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
-        (Time.Clock.initial cycle.args.start) cycle.simulation stop →
+      (∃ capability enabled, MEMixedRun.SourcePrefix model capability enabled exited p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
+        (Time.Clock.initial cycle.args.start) cycle.simulation stop) →
       SourceInterrupted model p addresses buffer (.last cycle)
         [.initialization initial checkpoints exited] (.simulation stop)
   | nextSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
-      MEMixedRun.SourcePrefix model p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
-        (Time.Clock.initial cycle.args.start) cycle.simulation stop →
+      (∃ capability enabled, MEMixedRun.SourcePrefix model capability enabled exited p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
+        (Time.Clock.initial cycle.args.start) cycle.simulation stop) →
       SourceInterrupted model p addresses buffer (.next cycle following)
         [.initialization initial checkpoints exited] (.simulation stop)
   | later : CycleEvidence model p cycle initial checkpoints observed epochs →
@@ -100,8 +100,8 @@ structure CycleContract (model : Solve.Model source) (program : Program Invocati
   simulationStopped : ∀ observed exited checkpoints,
     InitializationProtocol.Completed program p access heap cycle.initialization observed exited checkpoints →
     ∀ stop, MEMixedRun.Interrupted program p addresses buffer exited cycle.simulation stop →
-      MEMixedRun.SourcePrefix model p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
-        (Time.Clock.initial cycle.args.start) cycle.simulation stop
+      (∃ capability enabled, MEMixedRun.SourcePrefix model capability enabled exited p addresses buffer (InitializationProtocol.meReference cycle.state cycle.args)
+        (Time.Clock.initial cycle.args.start) cycle.simulation stop)
 
 theorem CycleContract.completed
     (certified : CycleContract model program objects retained owners original literals heap p access addresses buffer cycle readers)
@@ -111,17 +111,18 @@ theorem CycleContract.completed
     CycleEvidence model p cycle initial checkpoints observed epochs ∧
     MENumericalHistory.Stored after p cycle.finalClock cycle.final addresses buffer ∧ Reset.Storage after p ∧
     Persistent program objects retained owners original literals after p readers ∧
-    CReadOnly.Preserves heap after ∧ InitializationProtocol.Retention (InitializationProtocol.loggingUpdate cycle.initialization) p heap after ∧
+    CReadOnly.Preserves heap after ∧ InitializationProtocol.Retention cycle.loggingUpdate p heap after ∧
     (∀ q, MEFailure.Protected objects addresses buffer q → InitializationProtocol.Untouched p access cycle.initialization q →
       MENumericalRun.Outside p addresses buffer q → after q = heap q) := by
   obtain ⟨initialObservations, ivps, _, readonly, keeps, frame⟩ := certified.initialization.completed _ _ _ initialized
   have simulation := certified.simulation _ _ _ initialized
   obtain ⟨stored, reset, persistent, runKeeps, runReadonly, runFrame⟩ := simulation.completed _ _ _ executed
-  obtain ⟨config, trace⟩ := simulation.trace
+  obtain ⟨_, _, _, trace⟩ := simulation.trace
   obtain ⟨observations, epochs⟩ := trace.source model executed
   exact ⟨⟨⟨initialObservations, ivps⟩, observations, epochs⟩, stored, reset, persistent, readonly.trans runReadonly,
-    (by simpa using keeps.trans (InitializationProtocol.Retention.of_retains runKeeps)),
-    fun q inside untouched outside => (runFrame q inside outside).trans (frame q (guarded.protects inside) untouched)⟩
+    keeps.trans runKeeps,
+    fun q inside untouched outside => (runFrame q inside outside (by
+      intro same; exact untouched.1 (same ▸ p.member_in_record "logging"))).trans (frame q (guarded.protects inside) untouched)⟩
 
 theorem cycle_contract
     (initialization : InitializationCompiler model program objects retained owners original literals p access readers)
@@ -136,13 +137,13 @@ theorem cycle_contract
   · intro observed exited checkpoints executed
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation exited _ cycle.final _ cycle.finalClock cycle.simulation ready.persistent
-      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions admitted.readerSafe
+      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions admitted.readerSafe admitted.readerIncluded
   · intro stop interrupted
     exact initialization.interrupted invariant admitted.initialization admitted.requests interrupted
   · intro observed exited checkpoints executed stop interrupted
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation.interrupted ready.persistent
-      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions admitted.readerSafe interrupted
+      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions admitted.readerSafe admitted.readerIncluded interrupted
 
 structure Contract (model : Solve.Model source) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
@@ -184,7 +185,7 @@ theorem CycleContract.restarted
       behavior = .terminates [] ⟨.integer 0, Reset.finalHeap after p⟩) ∧
     Invariant program objects retained owners original literals (Reset.finalHeap after p) p .me .reset readers ∧
     CReadOnly.Preserves heap (Reset.finalHeap after p) ∧
-    InitializationProtocol.Retention (InitializationProtocol.loggingUpdate cycle.initialization) p heap (Reset.finalHeap after p) ∧
+    InitializationProtocol.Retention cycle.loggingUpdate p heap (Reset.finalHeap after p) ∧
     (∀ q, MEFailure.Protected objects addresses buffer q → InitializationProtocol.Untouched p access cycle.initialization q →
       MENumericalRun.Outside p addresses buffer q → Reset.finalHeap after p q = heap q) := by
   obtain ⟨evidence, stored, storage, persistent, readonly, keeps, frame⟩ := certified.completed initialized executed guarded

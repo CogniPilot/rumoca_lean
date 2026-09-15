@@ -4,6 +4,7 @@ import Rumoca.FMI3StaticLifecycle
 import RumocaFMI3.FactoryEnvironment
 import RumocaFMI3.MEMixedLifecycle
 import RumocaFMI3.InitializationStorage
+import RumocaFMI3.LoggingCapabilityCreation
 
 noncomputable section
 namespace Rumoca.FMI3.MEMixedRun
@@ -19,6 +20,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     DerivativeMetadata.Contract a.parsed.ast metadata ∧
     CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     NominalMetadata.Contract a.parsed.ast metadata ∧
+    DebugLogging.MetadataContract metadata "logStatus" ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
         (LiteralPreparation.functions a.solve.prepareFMI3 sigs).flatMap functionNames),
       LiteralPreparation.prepare a.solve.prepareFMI3 sigs = some pool ∧
@@ -27,6 +29,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       (∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool) ∧
       NominalEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
+      DebugLogging.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (before : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -35,6 +38,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
         ∀ (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation),
         program.internal = LiteralPreparation.program a.solve.prepareFMI3 sigs →
         Identity.Bindings program →
+        program.externals "strcmp" = some (CStringCalls.compareExternal (by rfl)) →
         program.externals "atomic_exchange" = some (CAtomicBoolean.Calls.exchangeExternal tag rfl) →
         program.externals "atomic_store" = some (CAtomicBoolean.Calls.writeExternal tag) →
         ∀ (args : FactoryArguments.Raw) (heap : Heap),
@@ -59,15 +63,24 @@ theorem runtime_create_release (compiled : compile input = .ok a)
           (∀ behavior, (machine program).Behaves
             (.calling (FactoryArguments.signature .me).name (FactoryArguments.arguments .me args) heap .done) behavior ↔
             behavior = .terminates (trace.map tag) ⟨.pointer (some p), live⟩) ∧
-          (∀ (initArgs : Initialization.Arguments) (config : Configuration)
+          (∀ (initArgs : Initialization.Arguments) (capability : Logging.Capability)
             (addresses : String → Address) (buffer : Address) (actions : List Action)
             (final : MENumericalHistory.ReferenceState) (finalClock : Time.Clock),
             initArgs.Admissible → MENumericalHistory.CallerStorage heap objects.instances addresses buffer →
-            config.Matches args → config.Valid program objects addresses buffer →
+            capability.Describes args → capability.Bound program →
+            capability.Requires (fun _ effect => MEFailure.Respects effect objects addresses buffer) →
             ReferenceTrace buffer (MENumericalHistory.ReferenceState.initial initArgs initial)
               (Time.Clock.initial initArgs.start) actions final finalClock →
             (∀ action ∈ actions, action.Prepared objects heap addresses buffer) →
-            (∀ action ∈ actions, config.StoragePolicy action.CallerRegion) →
+            (∀ action ∈ actions, capability.Requires (fun _ effect =>
+              ∀ args before value after, effect.execute args before value after →
+                CStorage.PreservesOn action.CallerRegion before after)) →
+            (∀ action ∈ actions, capability.Requires (fun _ effect =>
+              ∀ args before value after, effect.execute args before value after →
+                ∀ q, action.ReaderRegion q → after q = before q)) →
+            (∀ action ∈ actions, ∀ q, action.ReaderRegion q →
+              ¬ p.InRecord q ∧ (∀ name ∈ DiscreteCalls.names, q ≠ addresses name) ∧ q ≠ buffer) →
+            (∀ writer ∈ actions, ∀ reader ∈ actions, ∀ q, reader.ReaderRegion q → ¬ writer.CallerRegion q) →
             let entered := InitializationEntry.finalHeap live p initArgs
             let exited := InitializationCalls.exitedHeap live p initArgs .me
             let trajectory := Initialization.trajectory (Binary64.value initArgs.start) (Binary64.value initial)
@@ -81,17 +94,19 @@ theorem runtime_create_release (compiled : compile input = .ok a)
             InitializationCalls.SourceInitialized a.parsed.ast exited p initArgs.start trajectory ∧
             (∀ candidate, InitializationCalls.SourceInitialized a.parsed.ast exited p initArgs.start candidate →
               candidate = trajectory) ∧
-            Trace a.solve.prepareFMI3 objects (SlotOwners.update owners slot (some owner)) config program p addresses buffer
-              exited (MENumericalHistory.ReferenceState.initial initArgs initial)
+            Trace a.solve.prepareFMI3 objects (SlotOwners.update owners slot (some owner)) capability program p addresses buffer
+              exited args.logging (MENumericalHistory.ReferenceState.initial initArgs initial)
               (Time.Clock.initial initArgs.start) actions final finalClock ∧
             ((∃ observed after epochs, Completed program p addresses buffer exited actions observed after epochs) ∨
               Stopped program p addresses buffer exited actions) ∧
             (∀ stop, Interrupted program p addresses buffer exited actions stop →
-              SourcePrefix a.solve p addresses buffer (MENumericalHistory.ReferenceState.initial initArgs initial)
+              SourcePrefix a.solve capability args.logging exited p addresses buffer (MENumericalHistory.ReferenceState.initial initArgs initial)
                 (Time.Clock.initial initArgs.start) actions stop) ∧
             (∀ observed after epochs, Completed program p addresses buffer exited actions observed after epochs →
               MENumericalHistory.Stored after p finalClock final addresses buffer ∧ Reset.Storage after p ∧
-              config.Stored after p ∧ SourceObservations a.solve actions observed ∧
+              capability.Configured after p ((loggingUpdate actions).getD args.logging) ∧
+              InitializationProtocol.Retention (loggingUpdate actions) p live after ∧
+              SourceObservations a.solve actions observed ∧
               MENumericalRun.InitializedEpochs a.parsed.ast p epochs ∧ CReadOnly.Preserves heap after ∧
               LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner))
                 owner .me final.control.mode ∧
@@ -102,12 +117,13 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot final.control.mode q = heap q))) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative,
-    _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _⟩ := build.adapter
+    _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, loggingContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
   have nominals := nominalContract.runtime pool made
+  have logging := loggingContract.prepared pool made
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
       DerivativeEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique derivative.member derivative.numerical.fresh made,
@@ -117,13 +133,14 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
       MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
   refine ⟨compiled, build.numerical, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
-    CountMetadata.artifact_counts _ _ build.metadata, NominalMetadata.artifact_nominals _ _ build.metadata, sigs, pool, made, printed, functions, prepared, counts, nominals, ?_⟩
+    CountMetadata.artifact_counts _ _ build.metadata, NominalMetadata.artifact_nominals _ _ build.metadata,
+    DebugLogging.artifact_category _ _ build.metadata, sigs, pool, made, printed, functions, prepared, counts, nominals, logging, ?_⟩
   intro header instances flags separate before firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
   letI : CInterface := RuntimeEnvironment.interface header objects literals
   dsimp only
-  intro program tag actual identity exchange write args heap literalFrame storage name supplied nameBytes tokenBytes
+  intro program tag actual identity compare exchange write args heap literalFrame storage name supplied nameBytes tokenBytes
     nameBound tokenBound nameStored tokenStored fits accepted owners represented available owner
   obtain ⟨request⟩ := prepared_static_identity a sigs (factories.member .cs) made before firstBlock signed heap
     literalFrame .me args name supplied nameBytes tokenBytes (Or.inl rfl)
@@ -157,7 +174,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   obtain ⟨initial, loaded, agreement, _, _⟩ := created.source_default a 0
   have state := created.initialized.state_cell initial loaded
   refine ⟨trace, slot, live, initial, work, reserved, created, agreement, creation, ?_⟩
-  intro initArgs config addresses buffer actions final finalClock admissible callers matching valid admitted requests policies
+  intro initArgs capability addresses buffer actions final finalClock admissible callers matching bound required admitted requests
+    policies readPolicies guarded separateReaders
   have outputs := (callers.storage_preserved preserved).at_index slot.val
   obtain ⟨entered, exited⟩ := InitializationEnvironment.calls header objects literals a.solve.prepareFMI3
     program live p initArgs .me enterDefined exitDefined admissible
@@ -166,7 +184,19 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have initialStored := MENumericalHistory.initialized_stored live p initArgs initial addresses buffer admissible
     created.initialized.kindValue state outputs
   have initialReset := MENumericalHistory.initialized_reset_storage live p initArgs initial state
-  have initialConfig := Configuration.initialized (Configuration.created matching created.initialized) initArgs
+  have initRetains : InitializationProtocol.Retains p live initializedHeap := by
+    intro name retained
+    have different (field : String) (member : field ∈ InitializationAccess.writtenFields) :
+        p.member name ≠ p.member field := by
+      intro same
+      exact retained ((Address.member_inj _ _ _).mp same ▸ member)
+    exact InitializationCalls.exited_frame live p (p.member name) initArgs .me
+      (different "time" (by decide)) (different "timeMin" (by decide))
+      (different "eventTime" (by decide)) (different "lastCompleted" (by decide))
+      (different "stop" (by decide)) (different "stopDefined" (by decide)) (different "mode" (by decide))
+  have initialRetention := InitializationProtocol.Retention.of_retains initRetains
+  have initialConfig := (Logging.Capability.created matching created).initialization_retained initRetains
+  have initialWritable := initialRetention.writable created.initialized.storage.logging
   have initialOwners := StaticInitialization.exited_owners objects live slot initArgs .me _ created.represented
   have prefixReadonly : CReadOnly.Preserves heap initializedHeap :=
     (termination_preserves ((creation _).mpr rfl)).trans
@@ -175,14 +205,44 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     (StaticInitialization.entry_storage created.initialized) created.initialized.kindValue).1
   have exitedStorage := (InitializationStorage.exited (InitializationEntry.finalHeap live p initArgs) p .me
     (InitializationCalls.entered_mode live p initArgs)).1
+  have readOutside : ∀ action ∈ actions, ∀ q, action.ReaderRegion q →
+      MENumericalRun.Outside p addresses buffer q ∧ q ≠ p.member "logging" := by
+    intro action member q inside
+    obtain ⟨notRecord, notOutputs, notBuffer⟩ := guarded action member q inside
+    have field (name : String) : q ≠ p.member name := by
+      intro same
+      exact notRecord (same ▸ p.member_in_record name)
+    have stateOutside : q ≠ StateProofs.stateAddress p := by
+      intro same
+      exact notRecord (same ▸ (p.member_in_record "model").member "x")
+    exact ⟨⟨⟨⟨field "time", field "mode", field "eventTime", field "timeMin", field "lastCompleted", notOutputs⟩,
+      stateOutside, notBuffer⟩, field "stop", field "stopDefined"⟩, field "logging"⟩
   have current : ∀ action ∈ actions, action.Prepared objects initializedHeap addresses buffer := by
     intro action member
     exact Action.Prepared.preserved action (requests action member)
-      ((preserved.trans (enteredStorage.trans exitedStorage)).on action.CallerRegion)
-  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals before firstBlock signed
-    program config actual reset enterDefined exitDefined initializedHeap p _ _ final finalClock addresses buffer actions
-    (SlotOwners.update owners slot (some owner)) valid initialConfig rfl initialOwners
-    (literalFrame.trans prefixReadonly) initialStored initialReset admitted current policies
+      ((preserved.trans (enteredStorage.trans exitedStorage)).on action.CallerRegion) (by
+        intro q inside
+        have notRecord := (guarded action member q inside).1
+        have field (name : String) : q ≠ p.member name := by
+          intro same
+          exact notRecord (same ▸ p.member_in_record name)
+        have notFlag : q ≠ AtomicSlots.address objects.flagsBlock slot := by
+          cases action with
+          | run _ | reject _ _ | counts _ | nominals _ => cases inside
+          | logging request =>
+            have borrowed : InitializationProtocol.ReadBank.Stored [request] heap := by
+              intro selected selectedMember
+              have same : selected = request := by simpa only [List.mem_singleton] using selectedMember
+              subst selected
+              exact requests (.logging request) member
+            exact InitializationProtocol.ReadBank.Stored.not_flag (objects := objects) borrowed represented ⟨request, by simp, inside⟩ slot
+        exact (InitializationCalls.exited_frame live p q initArgs .me (field "time") (field "timeMin")
+          (field "eventTime") (field "lastCompleted") (field "stop") (field "stopDefined") (field "mode")).trans
+          (createdFrame q notRecord notFlag))
+  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals logging before firstBlock signed
+    program capability args.logging actual compare bound reset enterDefined exitDefined initializedHeap p _ _ final finalClock addresses buffer actions
+    (SlotOwners.update owners slot (some owner)) required initialConfig initialWritable rfl initialOwners
+    (literalFrame.trans prefixReadonly) initialStored initialReset admitted current policies readPolicies readOutside separateReaders
   have initialized := InitializationCalls.exited_source_initialized a.solve.prepareFMI3 live p initArgs .me ⟨initial⟩ loaded
   have initialModel := InitializationBodies.exit_model (InitializationEntry.model loaded initArgs) .me
   refine ⟨entered, exited, initialized,
@@ -191,7 +251,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   · intro stop interrupted
     exact certified.interrupted_source a.solve initialStored initialReset initialConfig initialOwners admitted interrupted
   · intro observed after epochs executed
-    obtain ⟨finalStored, finalReset, finalConfig, finalOwners, readonly, frame⟩ := certified.completed executed
+    obtain ⟨finalStored, finalReset, finalConfig, finalRetention, finalOwners, readonly, frame⟩ := certified.completed executed
     obtain ⟨sourceValues, sourceEpochs⟩ := certified.source a.solve executed
     have metadataAfter : load after (p.member "slot") = some (.integer slot.val) :=
       (certified.slot initialStored rfl executed).trans ((StaticInitialization.exited_metadata live p initArgs .me).trans created.metadata)
@@ -202,8 +262,10 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     have discharged := released.discharged
     have restored := released.ownersAfter
     rw [SlotOwners.release_reserved_restore reserved] at discharged restored
-    refine ⟨finalStored, finalReset, finalConfig, sourceValues, sourceEpochs, prefixReadonly.trans readonly,
+    refine ⟨finalStored, finalReset, finalConfig, ?_, sourceValues, sourceEpochs, prefixReadonly.trans readonly,
       released, discharged, restored, ?_⟩
+    · have combined := initialRetention.trans finalRetention
+      cases update : loggingUpdate actions <;> simpa only [update, Option.orElse] using combined
     intro q guarded notRecord notOutputs notBuffer notFlag
     have field (name : String) : q ≠ p.member name := by
       intro same
@@ -215,7 +277,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       ⟨⟨⟨field "time", field "mode", field "eventTime", field "timeMin", field "lastCompleted", notOutputs⟩,
         stateOutside, notBuffer⟩, field "stop", field "stopDefined"⟩
     exact (released.frame q (field "mode") notFlag).trans
-      ((frame q guarded outside).trans
+      ((frame q guarded outside (field "logging")).trans
         ((InitializationCalls.exited_frame live p q initArgs .me (field "time") (field "timeMin")
           (field "eventTime") (field "lastCompleted") (field "stop") (field "stopDefined") (field "mode")).trans
           (createdFrame q notRecord notFlag)))

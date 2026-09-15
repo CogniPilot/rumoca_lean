@@ -30,6 +30,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       (∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool) ∧
       NominalEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
+      DebugLogging.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (E : Type) (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -91,12 +92,13 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               (∀ q, ¬ p.InRecord q → Outside buffers q → q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization) q = heap q) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative, getter, setter,
-    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, _⟩ := build.adapter
+    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have countPrepared : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
   have nominalPrepared := nominalContract.runtime pool made
+  have loggingPrepared := logging.prepared pool made
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made
   have runPrepared : CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
@@ -113,7 +115,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
       MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
-    Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, runPrepared, mePrepared, countPrepared, nominalPrepared, ?_⟩
+    Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, runPrepared, mePrepared, countPrepared, nominalPrepared, loggingPrepared, ?_⟩
   intro E header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock

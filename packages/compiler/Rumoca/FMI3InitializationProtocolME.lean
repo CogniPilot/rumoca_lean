@@ -1,6 +1,7 @@
 import Rumoca.FMI3CreatedInitializationProtocol
 import Rumoca.FMI3MEMixedRun
 import RumocaFMI3.InitializationProtocolRunFrames
+import RumocaFMI3.LoggingCapabilityCreation
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
@@ -14,13 +15,15 @@ structure MEContinuation [CInterface] (model : Solve.Model source) (objects : Ob
     (original exited : Heap) (access : Float64Buffers.Layout) (initialization : List Action)
     (addresses : String → Address) (buffer : Address)
     (initial final : MENumericalHistory.ReferenceState) (clock finalClock : Time.Clock)
-    (actions : List MEMixedRun.Action) (config : MEMixedRun.Configuration) : Prop where
-  trace : MEMixedRun.Trace model.prepareFMI3 objects (SlotOwners.update owners slot (some owner)) config program
-    (objects.instances.index slot.val) addresses buffer exited initial clock actions final finalClock
+    (actions : List MEMixedRun.Action) (capability : Logging.Capability) (enabled : Bool) : Prop where
+  trace : MEMixedRun.Trace model.prepareFMI3 objects (SlotOwners.update owners slot (some owner)) capability program
+    (objects.instances.index slot.val) addresses buffer exited enabled initial clock actions final finalClock
   completed : ∀ observed after epochs,
     MEMixedRun.Completed program (objects.instances.index slot.val) addresses buffer exited actions observed after epochs →
     MENumericalHistory.Stored after (objects.instances.index slot.val) finalClock final addresses buffer ∧
-    Reset.Storage after (objects.instances.index slot.val) ∧ config.Stored after (objects.instances.index slot.val) ∧
+    Reset.Storage after (objects.instances.index slot.val) ∧
+    capability.Configured after (objects.instances.index slot.val) ((MEMixedRun.loggingUpdate actions).getD enabled) ∧
+    Retention (MEMixedRun.loggingUpdate actions) (objects.instances.index slot.val) exited after ∧
     MEMixedRun.SourceObservations model actions observed ∧
     MENumericalRun.InitializedEpochs source (objects.instances.index slot.val) epochs ∧
     CReadOnly.Preserves original after ∧
@@ -41,10 +44,12 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
     (prepared : MEEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (counts : ∀ events, CountEnvironment.PreparedContract model.prepareFMI3 sigs events pool)
     (nominals : NominalEnvironment.PreparedContract model.prepareFMI3 sigs pool)
+    (loggingPrepared : DebugLogging.PreparedContract model.prepareFMI3 sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation),
       program.internal = LiteralPreparation.program model.prepareFMI3 sigs →
+      program.externals "strcmp" = some (CStringCalls.compareExternal (by rfl)) →
       program.externals "atomic_store" = some (CAtomicBoolean.Calls.writeExternal tag) →
     ∀ (owners : SlotOwners.State objects.capacity) (slot : Fin objects.capacity) (owner : Nat)
       (retained : Address → Prop) (original live exited : Heap) (access : Float64Buffers.Layout)
@@ -61,25 +66,33 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
       Completed program p access live initialization initObserved exited initCheckpoints →
       state.phase = .initialized args → MENumericalHistory.CallerStorage original p addresses buffer →
       MEOutputsGuarded objects retained addresses buffer →
-    ∀ (config : MEMixedRun.Configuration) (actions : List MEMixedRun.Action)
+    ∀ (capability : Logging.Capability) (actions : List MEMixedRun.Action)
       (final : MENumericalHistory.ReferenceState) (finalClock : Time.Clock),
-      config.Matches { factoryArgs with logging := (loggingUpdate initialization).getD factoryArgs.logging } → config.Valid program objects addresses buffer →
+      capability.Describes factoryArgs → capability.Bound program →
+      capability.Requires (fun _ effect => MEFailure.Respects effect objects addresses buffer) →
       MEMixedRun.ReferenceTrace buffer (meReference state args) (Time.Clock.initial args.start) actions final finalClock →
       (∀ action ∈ actions, action.Prepared objects original addresses buffer) →
       (∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q) →
-      (∀ action ∈ actions, config.StoragePolicy action.CallerRegion) →
+      (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
+        effect.execute args before value after → CStorage.PreservesOn action.CallerRegion before after)) →
+      (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
+        effect.execute args before value after → ∀ q, action.ReaderRegion q → after q = before q)) →
+      (∀ action ∈ actions, ∀ q, action.ReaderRegion q → readers.Region q) →
+      (∀ action ∈ actions, ∀ q, action.ReaderRegion q → MENumericalRun.Outside p addresses buffer q ∧ q ≠ p.member "logging") →
+      (∀ writer ∈ actions, ∀ reader ∈ actions, ∀ q, reader.ReaderRegion q → ¬ writer.CallerRegion q) →
       MEContinuation model objects program tag slot owners owner original exited access initialization addresses buffer
-        (meReference state args) final (Time.Clock.initial args.start) finalClock actions config := by
+        (meReference state args) final (Time.Clock.initial args.start) finalClock actions capability ((loggingUpdate initialization).getD factoryArgs.logging) := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
-  intro program tag actual write owners slot owner retained original live exited access factoryArgs initialization state
+  intro program tag actual compare write owners slot owner retained original live exited access factoryArgs initialization state
     initObserved initCheckpoints args addresses buffer readers
   let p := objects.instances.index slot.val
   dsimp only
-  intro initialized created reserved creationFrame executed phase outputs guarded config actions final finalClock matching valid admitted requests regions policies
+  intro initialized created reserved creationFrame executed phase outputs guarded capability actions final finalClock matching bound required admitted requests regions policies readPolicies included readerOutside separateReaders
   obtain ⟨_, _, invariant, _, keeps, initialFrame⟩ := initialized.initialized.completed _ _ _ executed
   have readonly := (initialized.completed _ _ _ executed).1
   have stored := invariant.me_ready phase outputs guarded
-  have configured := keeps.me_created created.initialized matching
+  have configured := keeps.configured (Logging.Capability.created matching created)
+  have writable := keeps.writable created.initialized.storage.logging
   obtain ⟨reset, enterDefined, exitDefined, termination, releaseDefined⟩ :=
     lifecycle.execution header objects (pool.addresses firstBlock) program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
@@ -88,13 +101,14 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
     intro action member
     exact MEMixedRun.Action.Prepared.preserved action (requests action member)
       (fun q inside => invariant.caller q (regions action member q inside))
-  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals baseHeap firstBlock signed
-    program config actual reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
-      (SlotOwners.update owners slot (some owner)) valid configured rfl invariant.ownership invariant.readonly
-      stored invariant.stored.reset admitted current policies
+      (fun q inside => invariant.readerFrame q (included action member q inside))
+  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals loggingPrepared baseHeap firstBlock signed
+    program capability ((loggingUpdate initialization).getD factoryArgs.logging) actual compare bound reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
+      (SlotOwners.update owners slot (some owner)) required configured writable rfl invariant.ownership invariant.readonly
+      stored invariant.stored.reset admitted current policies readPolicies readerOutside separateReaders
   refine ⟨certified, ?_⟩
   intro observed after epochs completed
-  obtain ⟨finalStored, finalReset, finalConfig, finalOwners, runReadonly, frame⟩ := certified.completed completed
+  obtain ⟨finalStored, finalReset, finalConfig, retention, finalOwners, runReadonly, frame⟩ := certified.completed completed
   obtain ⟨sourceValues, sourceEpochs⟩ := certified.source model completed
   have metadataAtExit : load exited (p.member "slot") = some (.integer slot.val) := by
     change load exited ((objects.instances.index slot.val).member "slot") = _
@@ -107,11 +121,11 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
   have discharged := released.discharged
   have restored := released.ownersAfter
   rw [SlotOwners.release_reserved_restore reserved] at discharged restored
-  refine ⟨finalStored, finalReset, finalConfig, sourceValues, sourceEpochs, readonly.trans runReadonly,
+  refine ⟨finalStored, finalReset, finalConfig, retention, sourceValues, sourceEpochs, readonly.trans runReadonly,
     released, discharged, restored, ?_⟩
   intro q protectedOutput untouched outside notFlag
   have notMode : q ≠ p.member "mode" := fun same => untouched.1 (same ▸ p.member_in_record "mode")
-  exact (released.frame q notMode notFlag).trans ((frame q protectedOutput outside).trans
+  exact (released.frame q notMode notFlag).trans ((frame q protectedOutput outside (fun same => untouched.1 (same ▸ p.member_in_record "logging"))).trans
     ((initialFrame q (guarded.protects protectedOutput) untouched).trans (creationFrame q untouched.1 notFlag)))
 
 end Rumoca.FMI3.InitializationProtocol

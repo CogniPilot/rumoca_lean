@@ -67,19 +67,19 @@ theorem ReferenceTrace.split
       exact ⟨middle, middleClock, .cons allowed first, last⟩
 
 variable {model : Solve.FMI3Model source} {objects : StaticFactory.Objects}
-  {owners : SlotOwners.State objects.capacity} {config : Configuration}
+  {owners : SlotOwners.State objects.capacity} {capability : Logging.Capability}
 
 /-- A finite prefix inherits the same complete call contracts and every
 returning callback branch. Its starting resources are explicit. -/
 theorem Trace.take
-    (certified : Trace model objects owners config program p addresses buffer heap before clock
+    (certified : Trace model objects owners capability program p addresses buffer heap enabled before clock
       (left ++ right) final finalClock)
     (stored : MENumericalHistory.Stored heap p clock before addresses buffer)
-    (reset : Reset.Storage heap p) (configured : config.Stored heap p)
+    (reset : Reset.Storage heap p) (configured : capability.Configured heap p enabled)
     (owned : SlotOwners.Represents objects.flagsBlock heap owners)
     (admitted : ReferenceTrace buffer before clock left middle middleClock) :
-    Trace model objects owners config program p addresses buffer heap before clock left middle middleClock := by
-  induction admitted generalizing heap with
+    Trace model objects owners capability program p addresses buffer heap enabled before clock left middle middleClock := by
+  induction admitted generalizing heap enabled with
   | nil => exact .nil stored reset configured owned
   | cons _ _ ih =>
     cases certified with
@@ -92,18 +92,20 @@ theorem Trace.take
 /-- The suffix certificate starts at the actual last returned heap; no
 successful suffix or callback return is assumed. -/
 theorem Trace.after_prefix
-    (certified : Trace model objects owners config program p addresses buffer heap before clock
+    (certified : Trace model objects owners capability program p addresses buffer heap enabled before clock
       (left ++ right) final finalClock)
     (admitted : ReferenceTrace buffer before clock left middle middleClock)
     (completed : Completed program p addresses buffer heap left observed after epochs) :
-    Trace model objects owners config program p addresses buffer after middle middleClock right final finalClock := by
-  induction admitted generalizing heap observed after epochs with
+    Trace model objects owners capability program p addresses buffer after ((loggingUpdate left).getD enabled) middle middleClock right final finalClock := by
+  induction admitted generalizing heap enabled observed after epochs with
   | nil => cases completed; exact certified
   | cons _ _ ih =>
     cases completed with
     | cons performed tail =>
       cases certified with
-      | cons called _ following => exact ih (following _ _ _ (called.returned performed)) tail
+      | cons called _ following =>
+        simpa only [loggingUpdate_cons_getD] using
+          ih (following _ _ _ (called.returned performed)) tail
 
 end Rumoca.FMI3.MEMixedRun
 end

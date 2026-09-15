@@ -1,5 +1,36 @@
 # Exact verification contract
 
+**ME simulation logging (2026-09-15, full gate passed):** The existing ME
+history implementation now includes initialization-access and protocol continuations,
+restart, source observations, stopped-prefix flags and recurring source-bound
+creation/initialization/simulation/reset/release. The shared initialization
+bundle supplies the prepared logging contract from the same emitted table.
+The affected CS bundle consumer retains its previous guarantee.
+
+The package split separates shared callback effects, ME/CS memory invariants
+and prepared call contracts. A generic C storage theorem derives atomic-cell
+unreadability after tracing storage descriptions back through creation. Original
+borrowed inputs and universal callback frames remain explicit conditions.
+The owning C/FMI/compiler package checks passed at 03:24:08 UTC. The required
+`nix develop .#verification --command lake test` passed at 04:09:01 UTC on
+1062 unchanged inputs. All 89 selected audit roots passed, with no unexpected
+axioms, changed-module warnings or input drift. Evidence is in
+`build/c-factory/simulation-logging/package-v4.*` and `full-gate-v1.*`.
+The earlier package failures exposed missing imports and a stale audit name;
+the relocated retained-field theorem has the same statement. Its registration
+is preserved under its new name, without weakening the audit or contract.
+Only the three evidence documents change after the frozen full gate.
+
+Every retained FMU member, including the native library, is byte-identical to
+the initialization checkpoint. The eFMU changes only generation identities
+and dependent references/checksums in three manifests. Numerical C, GALEC and
+Production C are unchanged. Archives and comparisons are in
+`build/c-factory/simulation-logging/artifacts-v1/` and its adjacent JSON record.
+The existing artifact, importer, native and mutation checks passed; no test
+suite was added. Mutable CS histories and K02–K05 remain open; no grammar or
+emitter changed. Reset logging policy and native/ABI correspondence retain
+their stated review limits; this acceptance is not full standards conformance.
+
 **Mutable logging during initialization (2026-09-15, full gate passed):**
 The existing initialization protocol now admits public logging actions and
 records their exact effect on the logging cell. A failed request retains the
@@ -57,11 +88,11 @@ Production C are unchanged. The checked archives and comparisons are in
 Existing artifact, importer, native-interface and mutation checks passed;
 no new test suite was added.
 
-Logging interleavings during simulation remain outside this accepted
-initialization/handoff slice. A separate draft now constructs actual ME mixed
-runtime certificates with changing flags, but its source/lifetime composition,
-CS history integration and production acceptance remain unfinished. K02–K05
-still block grammar expansion.
+The subsequent ME checkpoint above accepts logging interleavings during ME
+simulation, including exact flags after completed and stopped prefixes and
+recurring source-bound lifetimes. Mutable CS histories still require complete
+source/lifetime composition and their own artifact acceptance. K02–K05 still
+block grammar expansion.
 
 **Public logging configuration (full gate passed):**
 The emitted `fmi3SetDebugLogging` now uses an explicit `strcmp` result before
@@ -99,7 +130,7 @@ logging policy on rejection; no new test suite was added.
 
 The initialization-history checkpoint above now composes the public setter
 with creation, initialization, ME/CS handoffs and recurring release. Logging
-changes during simulation, remaining public calls, native/ABI correspondence
+changes during CS simulation, remaining public calls, native/ABI correspondence
 and K02–K05 remain open.
 
 **Nominal observations in complete histories (2026-09-14, full gate passed):**

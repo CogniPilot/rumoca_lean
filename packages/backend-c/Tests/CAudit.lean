@@ -1,3 +1,4 @@
+import RumocaC.StorageAtomic
 import RumocaC.StringMemoryFrame
 import RumocaC.StringCompareAssignment
 import RumocaC.LoopBehavior
@@ -828,3 +829,5 @@ import RumocaC.CallSignature
 
 #audit axioms Rumoca.CStringMemory.Contents.readable
 #audit axioms Rumoca.CStringMemory.Contents.load_ne_none
+
+#audit axioms Rumoca.CStorage.Preserves.atomic_unreadable

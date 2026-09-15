@@ -11,31 +11,30 @@ variable {readers : ReadBank}
 /-- A completed mixed ME history supplies every reset/reinitialization
 premise. The new protocol uses the original caller bank and source contract. -/
 theorem restart_after_me [CInterface] {program : Program Invocation}
-    {objects : Objects} {owners : SlotOwners.State objects.capacity} {config : MEMixedRun.Configuration}
+    {objects : Objects} {owners : SlotOwners.State objects.capacity} {capability : Logging.Capability}
     (reset : StaticReset.ExecutionContract program)
-    (certified : MEMixedRun.Trace model objects owners config program p addresses buffer
-      heap reference clock simulation final finalClock)
+    (certified : MEMixedRun.Trace model objects owners capability program p addresses buffer
+      heap enabled reference clock simulation final finalClock)
     (executed : MEMixedRun.Completed program p addresses buffer heap simulation observed after epochs)
-    (initial : MENumericalHistory.Stored heap p clock reference addresses buffer)
-    (inPool : p.block = objects.instances.block)
     (caller : CallerStorage objects retained original heap)
     (literalFrame : CReadOnly.Preserves literals heap) (logging : LogPolicy program objects retained heap p)
-    (policy : config.StoragePolicy (Float64Rejection.Protected objects retained))
+    (policy : capability.Requires (fun _ effect => ∀ args before value after,
+      effect.execute args before value after → CStorage.PreservesOn (Float64Rejection.Protected objects retained) before after))
     (readerFrame : readers.Frame original heap)
-    (readerPolicy : config.FramePolicy readers.Region)
+    (readerPolicy : capability.Requires (fun _ effect => ∀ args before value after,
+      effect.execute args before value after → ∀ q, readers.Region q → after q = before q))
     (readerOutside : ∀ q, readers.Region q → ¬ p.InRecord q ∧ MENumericalRun.Outside p addresses buffer q)
     (readerSafe : ∀ action ∈ simulation, ∀ q, readers.Region q → ¬ action.CallerRegion q)
     (compileProtocol : ∀ next, Invariant program objects retained owners original literals next p .me State.reset readers →
       SourceContract model program objects retained owners original literals next p access .me State.reset nextState actions readers) :
     RestartSourceContract model program objects retained owners original literals after p access .me nextState actions readers := by
-  obtain ⟨stored, resetStorage, _, represented, readonly, frame⟩ := certified.completed executed
-  have loggingAfter := logging.fields (fun name member =>
-    frame _ (Or.inl inPool) (MEMixedRun.configuration_outside initial name
-      (by simpa using List.mem_append_left ["slot"] member)))
+  obtain ⟨stored, resetStorage, _, kept, represented, readonly, _⟩ := certified.completed executed
+  have loggingAfter := logging.updated kept
   exact restart_source model reset resetStorage stored.control.kind stored.mode_loaded represented
     (caller.trans (certified.storage executed policy)) (literalFrame.trans readonly) loggingAfter
     (readerFrame.trans (fun q inside => certified.callerFrame executed readerPolicy q inside
-      (readerOutside q inside).2 (fun action member => readerSafe action member q inside)))
+      (readerOutside q inside).2 (fun same => (readerOutside q inside).1 (same ▸ p.member_in_record "logging"))
+      (fun action member => readerSafe action member q inside)))
     (fun q inside => (readerOutside q inside).1) compileProtocol
 
 /-- Every returning logged CS branch can reset and run the same reusable

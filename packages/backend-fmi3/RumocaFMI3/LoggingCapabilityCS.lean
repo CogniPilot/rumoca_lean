@@ -58,3 +58,21 @@ theorem Capability.cs_control {capability : Capability}
 
 end Rumoca.FMI3.Logging
 end
+
+noncomputable section
+
+namespace Rumoca.FMI3.Logging
+open CMemory CCalls.Events
+
+theorem Capability.cs_frame [CInterface] {capability : Capability} {logger : CSRun.Logger}
+    {region : Address → Prop} (selected : capability.csLogger = some logger)
+    (required : capability.Requires (fun _ effect =>
+      ∀ args before value after, effect.execute args before value after → ∀ q, region q → after q = before q)) :
+    logger.FramePolicy region := by
+  cases capability with
+  | absent environment => cases selected
+  | present address environment name effect => cases selected; exact required
+
+end Rumoca.FMI3.Logging
+
+end

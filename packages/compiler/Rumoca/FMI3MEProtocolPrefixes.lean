@@ -26,6 +26,7 @@ def SimulationCompiler [CInterface] (model : Solve.Model source) (program : Prog
     (∀ action ∈ actions, action.Prepared objects original addresses buffer) →
     (∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q) →
     (∀ action ∈ actions, ∀ q, readers.Region q → ¬ action.CallerRegion q) →
+    (∀ action ∈ actions, ∀ q, action.ReaderRegion q → readers.Region q) →
     MEExecution model.prepareFMI3 program objects retained owners original literals heap p addresses buffer before clock actions final finalClock readers
 
 variable [CInterface] {source : AST.Model} {model : Solve.Model source} {program : Program Invocation}
@@ -48,27 +49,31 @@ theorem SimulationCompiler.interrupted
     (requests : ∀ action ∈ actions, action.Prepared objects original addresses buffer)
     (regions : ∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q)
     (readerSafe : ∀ action ∈ actions, ∀ q, readers.Region q → ¬ action.CallerRegion q)
+    (included : ∀ action ∈ actions, ∀ q, action.ReaderRegion q → readers.Region q)
     (actual : MEMixedRun.Interrupted program p addresses buffer heap actions stop) :
-    MEMixedRun.SourcePrefix model p addresses buffer before clock actions stop := by
+    ∃ capability enabled, MEMixedRun.SourcePrefix model capability enabled heap p addresses buffer before clock actions stop := by
   have split := reference
   rw [actual.1] at split
-  rw [actual.1] at requests regions readerSafe
+  rw [actual.1] at requests regions readerSafe included
   obtain ⟨middle, middleClock, prefixTrace, suffixTrace⟩ := split.split
   have certified := compiler heap before middle clock middleClock stop.done persistent stored reset prefixTrace
     (fun action member => requests action (List.mem_append_left _ member))
     (fun action member => regions action (List.mem_append_left _ member))
     (fun action member => readerSafe action (List.mem_append_left _ member))
+    (fun action member => included action (List.mem_append_left _ member))
   obtain ⟨storedAtStop, resetAtStop, persistentAtStop, _, _, _⟩ := certified.completed _ _ _ actual.2.1
-  obtain ⟨config, traced⟩ := certified.trace
+  obtain ⟨capability, enabled, _, traced⟩ := certified.trace
+  obtain ⟨_, _, configuredAtStop, retainedAtStop, _⟩ := traced.completed actual.2.1
   obtain ⟨observations, checkpoints⟩ := traced.source model actual.2.1
   have pending := compiler stop.heap middle final middleClock finalClock (stop.pending :: stop.rest)
     persistentAtStop storedAtStop resetAtStop suffixTrace
     (fun action member => requests action (List.mem_append_right _ member))
     (fun action member => regions action (List.mem_append_right _ member))
     (fun action member => readerSafe action (List.mem_append_right _ member))
+    (fun action member => included action (List.mem_append_right _ member))
   have isRejection := pending.faulted stop.pending stop.rest rfl actual.2.2
   cases suffixTrace with
-  | cons allowed _ => exact ⟨actual.1, observations, checkpoints, middle, middleClock,
+  | cons allowed _ => exact ⟨capability, enabled, actual.1, configuredAtStop, retainedAtStop, observations, checkpoints, middle, middleClock,
       prefixTrace, storedAtStop, allowed, isRejection⟩
 
 end Rumoca.FMI3.MEProtocol

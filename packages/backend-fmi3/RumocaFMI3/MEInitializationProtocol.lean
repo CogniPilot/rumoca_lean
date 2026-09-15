@@ -29,12 +29,16 @@ def Plan.mode : Plan → Mode
   | .last cycle => cycle.final.control.mode
   | .next _ following => following.mode
 
-/-- Compose the logging changes of each initialization segment. -/
+/-- Simulation updates follow the initialization updates in each cycle. -/
+def Cycle.loggingUpdate (cycle : Cycle) : Option Bool :=
+  (MEMixedRun.loggingUpdate cycle.simulation).orElse fun _ => InitializationProtocol.loggingUpdate cycle.initialization
+
+/-- Compose every initialization and simulation segment in execution order. -/
 def Plan.loggingUpdate : Plan → Option Bool
   | .finish actions _ => InitializationProtocol.loggingUpdate actions
-  | .last cycle => InitializationProtocol.loggingUpdate cycle.initialization
+  | .last cycle => cycle.loggingUpdate
   | .next cycle following => following.loggingUpdate.orElse
-      (fun _ => InitializationProtocol.loggingUpdate cycle.initialization)
+      (fun _ => cycle.loggingUpdate)
 
 structure Cycle.Admitted (cycle : Cycle) (objects : Objects) (retained : Address → Prop)
     (original : Heap) (p : Address) (access : Float64Buffers.Layout)
@@ -47,6 +51,7 @@ structure Cycle.Admitted (cycle : Cycle) (objects : Objects) (retained : Address
   resources : ∀ action ∈ cycle.simulation, action.Prepared objects original addresses buffer
   regions : ∀ action ∈ cycle.simulation, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q
   readerSafe : ∀ action ∈ cycle.simulation, ∀ q, readers.Region q → ¬ action.CallerRegion q
+  readerIncluded : ∀ action ∈ cycle.simulation, ∀ q, action.ReaderRegion q → readers.Region q
 
 theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted objects retained original p access addresses buffer readers) :
     LifecycleRelease.CanFinish .me cycle.final.control.mode :=

@@ -6,8 +6,8 @@ noncomputable section
 namespace Rumoca.FMI3.MEMixedRun
 open CTree CMemory CBody StaticFactory CCalls.Events
 
-/-- Logger configuration is fixed during these histories. Disabled logging
-and a missing logger retain the same contracts as an enabled foreign logger. -/
+/-- Per-call logging views. A whole mixed history retains the original
+callback capability and selects its quiet or logged view at the current flag. -/
 inductive Configuration [CInterface] where
   | quiet (logger : Option Address) (logging : Bool)
   | logged (logger : Address) (environment : Option Address) (name : String)

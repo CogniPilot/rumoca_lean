@@ -61,6 +61,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (pool.install baseHeap firstBlock signed) live p access addresses buffer plan readers ∧
               ∀ records after, Completed program p access addresses buffer live plan records after →
                 SourceTrace a.solve p plan records ∧ CReadOnly.Preserves heap after ∧
+                InitializationProtocol.Retention plan.loggingUpdate p live after ∧
+                load after (p.member "logging") = some (CBody.boolean (plan.loggingUpdate.getD factoryArgs.logging)) ∧
                 LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .me plan.mode ∧
                 SlotOwners.release (SlotOwners.update owners slot (some owner)) slot owner = some owners ∧
                 SlotOwners.Represents objects.flagsBlock (LifecycleRelease.releasedHeap after objects slot plan.mode) owners ∧
@@ -96,12 +98,13 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     exact InitializationProtocol.source_contract initializeCalls reference requests ready
   have simulation : SimulationCompiler a.solve program objects retained
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p addresses buffer readers := by
-    intro current before final clock finalClock actions persistent stored storage reference requests regions readerSafe
-    exact InitializationProtocol.me_execution header objects a.solve.prepareFMI3 sigs pool prepared.me prepared.counts prepared.nominals
-      prepared.cs.toPreparedContract baseHeap firstBlock signed program actual retained
+    intro current before final clock finalClock actions persistent stored storage reference requests regions readerSafe included
+    exact InitializationProtocol.me_execution header objects a.solve.prepareFMI3 sigs pool prepared.me prepared.counts prepared.nominals prepared.logging
+      prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
       (SlotOwners.update owners slot (some owner)) heap current p addresses buffer before final clock finalClock actions readers
-      persistent rfl guarded (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside⟩)
-      readerSafe stored storage reference requests regions
+      persistent rfl guarded (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside,
+        by intro same; exact (resources.readerGuarded q inside).2.1 (same ▸ p.member_in_record "logging")⟩)
+      readerSafe stored storage reference requests regions included
   obtain ⟨reset, _, _, termination, releaseDefined⟩ := prepared.cs.execution header objects firstBlock program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := TerminationEnvironment.release_correct header objects (pool.addresses firstBlock) program tag termination releaseBindings
@@ -113,6 +116,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have restored := released.ownersAfter
   rw [SlotOwners.release_reserved_restore reserved] at discharged restored
   refine ⟨sourceTrace, creationReadonly.trans (certified.completed _ _ completed).2.2.1,
+    (certified.completed _ _ completed).2.2.2.1,
+    (certified.completed _ _ completed).2.2.2.1.logging_value created.initialized.loggingValue,
     released, discharged, restored, ?_⟩
   intro q inside outside notFlag
   exact (frame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag)

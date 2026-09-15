@@ -42,7 +42,8 @@ and SPEC_0048 ownership rules; their unchanged hashes are recorded in
 `build/c-factory/logging-history/standards-review-v1.json`.
 
 The initialization-history follow-up below now accepts creation, handoff and
-recurring lifetime composition. Logging interleavings during simulation,
+recurring lifetime composition. The ME follow-up below also accepts simulation
+interleavings. Mutable CS simulation histories,
 native ABI/stdlib correspondence, MISRA coverage and previous MLS/eFMI findings
 remain open. This focused acceptance does not close the recurring whole-subset checklist.
 **Stage decision: open; no grammar expansion.**
@@ -71,6 +72,48 @@ automated claim that Lean has formalized the prose standards. Use universal
 proofs for compiler properties and keep tests to the existing external boundaries.
 
 ## Current unit-stage follow-up
+
+### ME simulation logging: 2026-09-15, full gate passed
+
+The existing ME histories now extend through all initialization
+continuations, stopped prefixes, resets and recurring source-bound release.
+It retains the reviewed FMI logging-category policy and original borrowing
+conditions. The actual initialization bundle now supplies the prepared setter
+from the same emitted program; no separate assumed implementation is used.
+The source/GALEC grammars, numerical IR semantics, emitters and eFMI product
+are unchanged.
+
+The review uses MLS 3.7, FMI 3.0.2 and eFMI 1.0.0 Beta 1. FMI §§2.2.4,
+2.3.1 and 2.4.5 govern the affected error/logging and category behavior.
+Raw execution retains arbitrary returned values, callbacks and stopped calls;
+the prepared contract derives the observed source state and exact flag.
+Original category storage and universal callback frames remain explicit host
+borrowing conditions, including when logging is disabled. They are not new
+FMI restrictions or unrestricted importer coverage. Reset retaining the current
+flag is proved for the authored body; the preceding normative reset-policy
+finding remains open. Native/ABI correspondence remains a separate boundary.
+
+The owning C/FMI/compiler package gate passed at 03:24:08 UTC. The required
+`nix develop .#verification --command lake test` passed at 04:09:01 UTC on
+1062 unchanged inputs. All 89 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. The stale retained-field audit entry
+was replaced by its equivalent relocated theorem; no contract or whitelist
+was weakened. Evidence is in `build/c-factory/simulation-logging/package-v4.*`,
+`full-gate-v1.*` and `audit-relocation-v1.json`. Only the three evidence
+documents change after the frozen gate.
+
+Every retained FMU member, including the native library, is byte-identical to
+the initialization checkpoint. The eFMU changes only generation identities and
+dependent references/checksums in three manifests. Numerical C, GALEC and
+Production C remain unchanged. The existing schema, importer, native,
+actual-artifact and mutation checks passed. Archives and comparisons are in
+`build/c-factory/simulation-logging/artifacts-v1/` and its adjacent JSON record.
+Upstream Rumoca revision `14ea621264819674293d6fc4959f1f2b2b03d99e`
+retains the reviewed SPEC_0007, SPEC_0043 and SPEC_0048 ownership rules; the
+reviewed hashes are in `build/c-factory/simulation-logging/standards-review-v1.json`.
+
+Mutable CS histories, preceding MLS/eFMI findings and K02–K05 remain open.
+**Stage decision: open; no grammar expansion.**
 
 ### Mutable logging during initialization: 2026-09-15, full gate passed
 
@@ -131,10 +174,12 @@ obligation; this logging slice performs no binding specialization or lowering
 in a backend. `build/c-factory/logging-history/standards-review-v3.json` records
 the reviewed revision and exact specification hashes.
 
-Logging interleavings during simulation are outside this accepted
-initialization/handoff slice. Their separate checked draft is not production
-or whole-stage acceptance. The preceding MLS/eFMI findings, native ABI/stdlib,
-MISRA and K02–K05 obligations remain open.
+The subsequent ME checkpoint above now accepts simulation logging through
+source-bound recurring creation/initialization/simulation/reset/release, with
+the original borrowing and universal callback conditions. Mutable CS histories
+still require complete composition and their own package/artifact acceptance.
+The preceding MLS/eFMI findings, native ABI/stdlib, MISRA and K02–K05 obligations
+remain open.
 **Stage decision: open; no grammar expansion.**
 
 ### Nominal queries through initialization and ME histories: 2026-09-14

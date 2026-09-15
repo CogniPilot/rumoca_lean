@@ -60,3 +60,23 @@ theorem Capability.initialization_policy {capability : Capability}
 
 end Rumoca.FMI3.Logging
 end
+
+noncomputable section
+
+namespace Rumoca.FMI3.Logging
+open CMemory CCalls.Events
+
+theorem Capability.me_frame [CInterface] {capability : Capability} {region : Address → Prop}
+    (required : capability.Requires (fun _ effect =>
+      ∀ args before value after, effect.execute args before value after → ∀ q, region q → after q = before q))
+    (enabled : Bool) : (capability.meView enabled).FramePolicy region := by
+  cases capability with
+  | absent environment => trivial
+  | present logger environment name effect =>
+    cases enabled
+    · trivial
+    · exact required
+
+end Rumoca.FMI3.Logging
+
+end
