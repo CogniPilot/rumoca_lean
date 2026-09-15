@@ -56,7 +56,7 @@ path = "../verification"
 
 [[lean_lib]]
 name = "RumocaCompilerChecks"
-roots = ["Tests.Audit", "Tests.SemanticChecks", "Tests.EFMIChecks"]
+roots = ["Tests.Audit", "Tests.FMI3SourceCallPolicyAudit", "Tests.SemanticChecks", "Tests.EFMIChecks"]
 
 [[require]]
 name = "sha1"

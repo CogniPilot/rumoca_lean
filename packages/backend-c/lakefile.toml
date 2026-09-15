@@ -17,7 +17,7 @@ globs = ["RumocaC", "RumocaC.+"]
 
 [[lean_lib]]
 name = "RumocaCChecks"
-roots = ["Tests.CAudit", "Tests.TensorAudit"]
+roots = ["Tests.CAudit", "Tests.CCallPolicyAudit", "Tests.TensorAudit"]
 
 [[lean_lib]]
 name = "TensorCChecks"

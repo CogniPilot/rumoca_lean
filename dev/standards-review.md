@@ -121,6 +121,48 @@ review separates capability flags, variable domains, lifecycle restrictions
 and defensive calls. Clock and empty output-derivative findings remain open.
 Pinned MLS/eFMI findings carry forward. **Stage decision: open.**
 
+### Generated call policy: full gate passed
+
+**Generated call policy (full gate passed):**
+
+The shared C package has a complete structural call inventory and an independent
+admission predicate. Its executable checker walks the tree directly; Lean
+proves exact Boolean equivalence to checking the full inventory for every
+predicate and function. FMI classifies generated helpers, library routines and
+importer callbacks. Checked ranks exclude cycles in the complete prepared
+direct-call graph, including numerical definitions. The shared resolver connects
+named calls to that graph, and numerical-kernel execution is proved unable to
+issue a scheduler call. The source consequence derives the policy from the
+mandatory actual adapter/header contract without an extra rank assumption.
+
+The affected package checks passed at 14:22:06 UTC on 2026-09-15. The required
+`nix develop .#verification --command lake test` passed at 15:09:42 UTC
+on 2026-09-15, with 1114 unchanged inputs and all 33 selected roots.
+No unexpected axioms, changed-module warnings or source drift were found.
+The policy audits have separate modules in the existing package check libraries;
+unrelated audits retain Lake's normal cache. Evidence is in
+`build/c-call-policy/`: `integration-v3.json`, `package-v3.*`,
+`full-gate-v1.*`, `upstream-review-v2.json` and `artifacts-v1.*`.
+
+Every FMU member, including its native library, is unchanged from `d757659`.
+The eFMU changes only generation identities and dependent references/checksums
+in three manifests. Numerical C, GALEC, Production C, grammars, solver policy,
+metadata and lifecycle emission are unchanged. The existing artifact, native
+and mutation checks pass; no test suite was added. Only these three evidence
+documents change after the frozen gate.
+
+This accepts call classification and direct-call graph ranking. Complete
+execution/continuation composition, native/transitive no-allocation, callback
+reentry, layout, concurrency and MISRA remain open. K02–K05 still block grammar
+expansion; this is not a full standards or CompCert-level whole-compiler claim.
+
+This is a prerequisite for K02 and MISRA allocation/recursion review, not a
+completed guideline-compliance argument. No MLS/GALEC grammar, Solve lowering,
+FMI lifecycle/emitter or eFMI artifact behavior changes. The pinned whole-
+subset standards findings remain open. Upstream Rumoca `6da1462` retains the
+reviewed IR/prepared-product specifications; see `upstream-review-v2.json`
+in the call-policy evidence directory.
+
 ### SR09 — empty-setter endpoint repair: full gate passed
 
 [FMI 3.0.2 §2.3.8](https://fmi-standard.org/docs/3.0.2/#Terminated) permits
