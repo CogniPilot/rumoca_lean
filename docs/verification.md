@@ -1,5 +1,45 @@
 # Exact verification contract
 
+**Concurrent slot histories and atomic-call values (full gate passed):**
+
+Reusable C proofs characterize actual shared-heap scheduler steps and preserve
+operand restrictions through calls, returns and finite interleavings. The direct
+Boolean checker is equivalent to the structural predicate. FMI derives
+reservation=true and release=false from the generated trees and actual argument
+evaluation. Its linked address map excludes indirect atomic aliases. The source
+theorem supplies this invariant from the actual adapter/header contract and
+ordinary public invocations, without later-call annotations or an extra atomic
+argument policy.
+
+The separate ownership simulation derives atomic steps from represented flag
+memory and connects annotated C histories to independent lease transitions.
+An owned slot cannot be successfully reclaimed without its prior lease being
+released. Source binding supplies the generated table, library bindings and
+emitted 32-slot pool. Complete factory-path classification still needs valid
+flag-address origins, release authorization and atomic-value frames for other
+effects; these obligations are not assumed away by the call-value proof.
+
+The affected package checks passed at 17:16:36 UTC on
+2026-09-15. The required
+`nix develop .#verification --command lake test` passed at 18:07:31 UTC
+on 2026-09-15, with 1133 unchanged inputs and all 139 selected roots
+(45 new, 94 retained). No unexpected axioms, changed-module warnings or source
+drift were found. No test suite was added. Evidence is in
+`build/c-concurrent-slots/`: `integration-v1.json`, `package-v1.*`,
+`full-gate-v1.*`, `standards-review-v1.json`, `upstream-review-v1.json`
+and `artifacts-v1.*`.
+
+Every FMU member is unchanged from `fdb6bc8`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+The atomic-operation, reservation-bound and flag-frame follow-ups are checked
+drafts under `build/`; they are not integrated at this checkpoint. Native atomics/ABI, full legal histories,
+provenance, transitive no-allocation, MISRA and remaining MLS/FMI/eFMI findings
+stay open. K02–K05 still block grammar expansion.
+
 **Runtime storage and state-setter permissions (full gate passed):**
 
 Generic C proofs lift store-stable heap relations through foreign calls and

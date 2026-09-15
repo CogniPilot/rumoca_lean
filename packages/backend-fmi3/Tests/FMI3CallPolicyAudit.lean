@@ -1,3 +1,5 @@
+import RumocaFMI3.ConcurrentSlotHistories
+import RumocaFMI3.AtomicCallRuntime
 import RumocaFMI3.RuntimeStorage
 import RumocaFMI3.StateSetterPolicy
 import RumocaFMI3.RuntimeLinkage
@@ -44,3 +46,32 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StateSetterPolicy.writable_declaration
 #audit axioms Rumoca.FMI3.StateSetterPolicy.writable_guard
 #audit axioms Rumoca.FMI3.StateSetterPolicy.writable_modes
+
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.arguments_value
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.body_policy
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.boolean_eval
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.check_correct
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.entry_valid
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.exchange_value
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.functions_policy
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.helpers_policy
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.logged_concurrent_reaches
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.logged_named_only
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.logged_reaches
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.operand_sound
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.program_policy
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.ranked_entry
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.release_value
+#audit axioms Rumoca.FMI3.ConcurrentSlots.Claim.target
+#audit axioms Rumoca.FMI3.ConcurrentSlots.ScheduledStep.erases
+#audit axioms Rumoca.FMI3.ConcurrentSlots.ScheduledStep.refines
+#audit axioms Rumoca.FMI3.ConcurrentSlots.claim_busy
+#audit axioms Rumoca.FMI3.ConcurrentSlots.claim_success
+#audit axioms Rumoca.FMI3.ConcurrentSlots.history_refines
+#audit axioms Rumoca.FMI3.ConcurrentSlots.owner_history_keeps
+#audit axioms Rumoca.FMI3.ConcurrentSlots.owner_step_keeps
+#audit axioms Rumoca.FMI3.ConcurrentSlots.reclaim_requires_release
+#audit axioms Rumoca.FMI3.ConcurrentSlots.release_scheduled
+#audit axioms Rumoca.FMI3.ConcurrentSlots.reserve_operation
+#audit axioms Rumoca.FMI3.ConcurrentSlots.reserve_scheduled
+#audit axioms Rumoca.FMI3.ConcurrentSlots.scheduled_reclaim_requires_release

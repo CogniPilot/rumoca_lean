@@ -1,3 +1,5 @@
+import Rumoca.FMI3ConcurrentSlots
+import Rumoca.FMI3AtomicCalls
 import Rumoca.FMI3RuntimeStorage
 import Rumoca.FMI3StateSetterPolicy
 import Rumoca.FMI3RuntimeLinkage
@@ -13,3 +15,6 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.FMI3.RuntimeStorage.source_resource_environment
 #audit axioms Rumoca.FMI3.StateSetterPolicy.source_permission
+
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.source_atomic_calls
+#audit axioms Rumoca.FMI3.ConcurrentSlots.source_slot_histories
