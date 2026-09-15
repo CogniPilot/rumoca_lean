@@ -86,7 +86,7 @@ def Action.Allowed (action : Action) (kind : Kind) (state : State) : Prop :=
   | .nominals request => request.Allowed kind (state.phase.mode kind)
   | .eventIndicators request => request.Allowed kind (state.phase.mode kind)
   | .evaluation request => request.Allowed kind (state.phase.mode kind)
-  | .absent request => request.Condition
+  | .absent request => request.Condition kind (state.phase.mode kind)
   | .logging _ => True
   | .enter args => state.phase = .instantiated ∧ args.Admissible
   | .exit => ∃ args, state.phase = .initializing args

@@ -121,9 +121,9 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
     | empty ty write references sizes values =>
       exact absent_empty_call ty write references sizes values model program
         ((absent ty write).quiet header Invocation objects firstBlock program actual)
-        invariant.stored invariant.ownership
-    | reject ty write references sizes values n m =>
-      exact absent_rejection_call ty write references sizes values n m
+        invariant.stored invariant.ownership allowed
+    | reject reason ty write references sizes values n m =>
+      exact absent_rejection_call reason ty write references sizes values n m
         header objects model sigs pool (absent ty write)
         baseHeap firstBlock signed program actual heap p buffers kind state owners retained
         invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging

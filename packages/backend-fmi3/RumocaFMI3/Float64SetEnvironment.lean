@@ -85,12 +85,12 @@ theorem quiet_correct {E : Type} (header : CFenv.Header) (objects : Objects)
     exact (CCalls.Events.internal_prefix program
       (reaches header objects literals model program _ heap _ defined executed)
       (CCalls.Events.return_forced program _ _)).behaviors behavior
-  · intro p input buffer kind mode hk hm behavior
+  · intro p input buffer kind mode hk hm permitted behavior
     have executed := SetterScope.hoisted_empty_run (static := ⟨literals⟩)
       (parameters (some p) input buffer 0 0) heap p kind mode Runtime.setFloat64Values
       (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind])
       (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind])
-      (by simp [parameters, CBody.bind]) hk hm
+      (by simp [parameters, CBody.bind]) hk hm permitted
     exact CCalls.Events.body_call_interface_behaviors (cInterface literals)
       (RuntimeEnvironment.interface header objects literals)
       (RuntimeEnvironment.types_agree header objects literals) rfl
@@ -101,7 +101,7 @@ theorem quiet_correct {E : Type} (header : CFenv.Header) (objects : Objects)
   · intro input buffer n m behavior
     have executed := GuardedCalls.null_body (static := ⟨literals⟩)
       (parameters none input buffer n m) heap
-      ([Runtime.branch SetterScope.empty [Runtime.modeGuard .get, Runtime.ok], Runtime.modeGuard .setStart] ++
+      ([Runtime.branch SetterScope.empty [Runtime.modeGuard .setVariables, Runtime.ok], Runtime.modeGuard .setStart] ++
         Runtime.setFloat64Values)
       (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind])
       (by simp [parameters, CBody.bind])

@@ -67,7 +67,8 @@ def Request.Fits (request : Request) (buffers : Layout) : Prop :=
 def Request.Allowed (request : Request) (kind : Kind) (mode : Mode) : Prop :=
   match request with
   | .get shape references => Reference.Allowed .get kind mode ∧ ∀ i < shape.volume, (references i).toNat ≤ 2
-  | .set _ => Reference.Allowed .setStart kind mode
+  | .set (shape := shape) _ => if shape.volume = 0 then Reference.Allowed .setVariables kind mode
+      else Reference.Allowed .setStart kind mode
 
 /-- Before entering initialization, only state start-value queries are used.
 Equation and time queries belong to the initialized equation environment. -/
@@ -273,15 +274,19 @@ theorem step [CInterface] (program : CCalls.Events.Program E)
             (Float64Calls.outputValues model state time shape (fun j => Float64Calls.selectReference (references j)))[i]) at loaded
         simpa only [Float64Calls.outputValues_at] using loaded
     | set values =>
+      change (if (Request.set values).shape.volume = 0 then Reference.Allowed .setVariables kind mode
+        else Reference.Allowed .setStart kind mode) at allowed
       have assigned := assigned_correct _ p values state prepared.state
       refine ⟨?_, assigned.1, assigned.2.1, assigned.2.2, trivial⟩
       by_cases nonempty : 0 < (Request.set values).shape.volume
       · exact (set _).set p buffers.references buffers.values _ _ values _ kind mode _ count nonempty
-          prepared.kind prepared.mode_loaded allowed readable (fun _ _ => rfl)
+          prepared.kind prepared.mode_loaded
+          (by rwa [if_neg (Nat.ne_of_gt nonempty)] at allowed) readable (fun _ _ => rfl)
           (TensorView.written_reads _ _ values) prepared.state stateSeparate
       · have empty : (Request.set values).shape.volume = 0 := by omega
         have called := (set ((Request.set values).prepare heap buffers)).empty p
           (some buffers.references) (some buffers.values) kind mode prepared.kind prepared.mode_loaded
+          (by rwa [if_pos empty] at allowed)
         simpa only [Request.call, Request.isWrite, Request.after, empty, Float64Set.assigned] using called
   obtain ⟨called, storedFrame, readonly, cell, observes⟩ := result
   have frame := request.after_frame model heap p buffers state time fits

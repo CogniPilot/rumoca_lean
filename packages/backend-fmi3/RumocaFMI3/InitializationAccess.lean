@@ -10,7 +10,9 @@ theorem start_allowed (request : Request) (kind : Kind) (start : request.StartQu
     request.Allowed kind .instantiated := by
   cases request with
   | get shape references => exact ⟨trivial, fun i hi => by rw [start i hi]; decide⟩
-  | set _ => exact Or.inl rfl
+  | set values =>
+      simp only [Request.Allowed]
+      split <;> exact Or.inl rfl
 
 theorem entry_storage (stored : InitializationCalls.EntryStorage before p)
     (fields : ∀ name, after (p.member name) = before (p.member name)) :

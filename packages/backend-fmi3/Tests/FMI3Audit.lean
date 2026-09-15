@@ -1,3 +1,4 @@
+import RumocaFMI3.PublicAPI
 import RumocaFMI3.CapabilityRejectionFamily
 import RumocaFMI3.CapabilityMetadata
 import RumocaFMI3.InitializationProtocolAbsent
@@ -2101,3 +2102,12 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CapabilityRejection.signatures_printable
 #audit axioms Rumoca.FMI3.CapabilityRejection.family_correct
 #audit axioms Rumoca.FMI3.CapabilityRejection.all_correct
+
+#audit axioms Rumoca.FMI3.SetterScope.nested_empty_reject
+#audit axioms Rumoca.FMI3.SetterScope.hoisted_empty_reject
+#audit axioms Rumoca.FMI3.Float64Set.empty_lifecycle_site
+#audit axioms Rumoca.FMI3.AbsentVariables.failure_unique
+#audit axioms Rumoca.FMI3.AbsentVariables.failure_prefix
+#audit axioms Rumoca.FMI3.AbsentVariables.terminated_setter
+#audit axioms Rumoca.FMI3.AbsentVariables.cs_step_empty
+#audit axioms Rumoca.FMI3.PublicAPI.every_export

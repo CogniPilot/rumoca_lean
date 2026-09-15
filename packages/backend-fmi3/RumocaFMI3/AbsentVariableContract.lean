@@ -6,9 +6,10 @@ noncomputable section
 namespace Rumoca.FMI3.AbsentVariables
 open CTree CMemory CBody CLiteral CCalls.Events StaticFactory CLiteral.Interface
 
-theorem message_collected (model : Solve.FMI3Model source) (ty : VariableType) (write : Bool) :
-    failureMessage ∈ functionTexts (Runtime.function model (signature ty write)) := by
-  simp [functionTexts, Runtime.function, body_eq, suffix, failureMessage,
+theorem message_collected (model : Solve.FMI3Model source) (ty : VariableType) (write : Bool) (reason : Failure) :
+    failureMessage reason ∈ functionTexts (Runtime.function model (signature ty write)) := by
+  cases reason <;> simp [functionTexts, Runtime.function, body_eq, suffix, failureMessage,
+    ErrorCalls.rejectionMessage,
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
     Runtime.branch, Runtime.fail, Runtime.ret, Runtime.call, Runtime.ok,
     statementTexts, expressionTexts, Runtime.v]
@@ -29,17 +30,17 @@ structure PreparedContract (model : Solve.FMI3Model source) (sigs : List Signatu
       program.internal = LiteralPreparation.program model sigs → QuietContract ty write program
   failures : ∀ (header : CFenv.Header) (before : Heap) (firstBlock : Nat) (signed : Bool)
     (objects : Objects) (heap : Heap), CReadOnly.Preserves (pool.install before firstBlock signed) heap →
-    ∃ category message,
+    ∃ (category : Address) (messages : Failure → Address),
       pool.addresses firstBlock "logStatus" = some category ∧
-      pool.addresses firstBlock failureMessage = some message ∧
-      Stored signed heap category "logStatus" ∧ Stored signed heap message failureMessage ∧
+      (∀ reason, pool.addresses firstBlock (failureMessage reason) = some (messages reason)) ∧
+      Stored signed heap category "logStatus" ∧ (∀ reason, Stored signed heap (messages reason) (failureMessage reason)) ∧
       (letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
        ∀ (E : Type) (program : Program E),
-         program.internal = LiteralPreparation.program model sigs → SuppressedContract ty write program heap) ∧
+         program.internal = LiteralPreparation.program model sigs → ∀ reason, SuppressedContract ty write reason program heap) ∧
       (letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
        ∀ (program : Program Invocation),
          program.internal = LiteralPreparation.program model sigs →
-         LoggedContract ty write program category message heap signed)
+         ∀ reason, LoggedContract ty write reason program category (messages reason) heap signed)
 
 theorem prepared_correct (model : Solve.FMI3Model source) (sigs : List Signature)
     (ty : VariableType) (write : Bool)
@@ -63,10 +64,14 @@ theorem prepared_correct (model : Solve.FMI3Model source) (sigs : List Signature
   · intro header before firstBlock signed objects heap frame
     obtain ⟨category, categoryBound⟩ := LiteralPreparation.text_bound model sigs made Runtime.helpers[0]
       (List.mem_append_left _ (by simp [Runtime.helpers])) "logStatus" Logging.category_collected firstBlock
-    obtain ⟨message, messageBound⟩ := LiteralPreparation.message_bound model sigs made (signature ty write) member
-      failureMessage (message_collected model ty write) firstBlock
+    have available : ∀ reason, ∃ message, pool.addresses firstBlock (failureMessage reason) = some message := by
+      intro reason
+      exact LiteralPreparation.message_bound model sigs made (signature ty write) member
+        (failureMessage reason) (message_collected model ty write reason) firstBlock
+    choose messages messageBound using available
     have categoryStored := (pool.storage_valid before firstBlock signed "logStatus" category categoryBound).preserved frame
-    have messageStored := (pool.storage_valid before firstBlock signed failureMessage message messageBound).preserved frame
+    have messageStored : ∀ reason, Stored signed heap (messages reason) (failureMessage reason) := fun reason =>
+      (pool.storage_valid before firstBlock signed (failureMessage reason) (messages reason) (messageBound reason)).preserved frame
     let literals := pool.addresses firstBlock
     letI : CInterface := RuntimeEnvironment.interface header objects literals
     have definitions : ∀ (E : Type) (program : Program E),
@@ -78,14 +83,14 @@ theorem prepared_correct (model : Solve.FMI3Model source) (sigs : List Signature
       constructor
       · rw [actual]; exact LiteralPreparation.function_bound model sigs unique (signature ty write) member
       · rw [actual]; exact LiteralPreparation.helpers_bound model sigs Runtime.helpers[0] (by simp [Runtime.helpers])
-    refine ⟨category, message, categoryBound, messageBound, categoryStored, messageStored, ?_, ?_⟩
-    · intro E program actual
+    refine ⟨category, messages, categoryBound, messageBound, categoryStored, messageStored, ?_, ?_⟩
+    · intro E program actual reason
       obtain ⟨defined, helper⟩ := definitions E program actual
-      exact suppressed_correct header objects literals model ty write program message heap defined helper messageBound
-    · intro program actual
+      exact suppressed_correct header objects literals model ty write reason program (messages reason) heap defined helper (messageBound reason)
+    · intro program actual reason
       obtain ⟨defined, helper⟩ := definitions Invocation program actual
-      exact logged_correct header objects literals model ty write program category message heap signed defined helper
-        categoryBound messageBound categoryStored messageStored
+      exact logged_correct header objects literals model ty write reason program category (messages reason) heap signed defined helper
+        categoryBound (messageBound reason) categoryStored (messageStored reason)
 
 theorem value_type_printable (ty : VariableType) (write : Bool) :
     Syntax.TypeSpelling RuntimePrinter.typedefs ((if write then "const fmi3" else "fmi3") ++ ty.name) := by

@@ -22,7 +22,7 @@ theorem capabilities_source (compiled : compile input = .ok a)
           CapabilityRejection.FunctionContract a.solve.prepareFMI3 sigs sig sig.parameters.tail text) ∧
         CapabilityRejection.PreparedContract a.solve.prepareFMI3 sigs sig sig.parameters.tail pool := by
   obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, family⟩ := contract.adapter
+    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, family, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   refine ⟨compiled, contract.numerical, CapabilityMetadata.artifact _ _ contract.metadata,
     sigs, pool, made, printed, grammar, ?_⟩
@@ -46,7 +46,7 @@ theorem scheduled_creation_source (compiled : compile input = .ok a)
         ScheduledCreation.FunctionContract a.solve.prepareFMI3 sigs text) ∧
       ScheduledCreation.PreparedContract a.solve.prepareFMI3 sigs pool := by
   obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, family⟩ := contract.adapter
+    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, family, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have query := family.scheduled
   obtain ⟨before, after, located⟩ := query.fragment

@@ -308,3 +308,8 @@ import RumocaCore.Solve.FMI3OriginProofs
 
 #audit axioms Rumoca.FMI3.evaluation_allowed_iff
 #audit axioms Rumoca.FMI3.evaluation_rejects_initialization
+
+#audit axioms Rumoca.FMI3.variable_setter_allowed_iff
+#audit axioms Rumoca.FMI3.variable_setter_terminated
+#audit axioms Rumoca.FMI3.state_assignment_endpoint
+#audit axioms Rumoca.FMI3.cs_empty_setter_endpoint

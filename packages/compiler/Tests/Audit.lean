@@ -1,3 +1,4 @@
+import Rumoca.FMI3PublicContracts
 import Rumoca.FMI3CapabilityProofs
 import Rumoca.FMI3AbsentVariableProofs
 import Rumoca.FMI3DiscreteEvaluationProofs
@@ -382,3 +383,5 @@ import Rumoca.InitializationDiagnosticProofs
 -- Existing unsupported public calls, their printers and actual-source contracts.
 #audit axioms Rumoca.FMI3.capabilities_source
 #audit axioms Rumoca.FMI3.scheduled_creation_source
+#audit axioms Rumoca.FMI3.adapter_public_contracts
+#audit axioms Rumoca.FMI3.public_functions_source

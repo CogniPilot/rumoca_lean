@@ -5,10 +5,12 @@ import Rumoca.FMI3AdapterProofs
 
 namespace Rumoca.FMI3
 
-/-- Numerical C, build dependencies, public identifiers and the source prefix
-are joined with complete adapter byte identity and the proved reset fragment.
-This does not certify the other public bodies, whole-C preprocessing/header
-semantics, full normative metadata conformance, native linking or the ZIP. -/
+/-- Numerical C, build dependencies, public identifiers, source prefix and
+actual XML share one adapter contract. Its mandatory header coverage binds
+every exported signature to its existing execution/printer contract. Those
+contracts retain their explicit preconditions and modeled call/history scope;
+whole-C preprocessing/ABI, legal-history correspondence, native linking and
+complete correlated archive/provenance obligations remain separate. -/
 structure SourceBuildContract (a : Artifact source) (c description adapter metadata : String) : Prop where
   numerical : Rumoca.ArtifactContract a c .internal
   build : Build.ArtifactContract a.parsed.ast.name description

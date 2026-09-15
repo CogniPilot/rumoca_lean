@@ -1,3 +1,4 @@
+import RumocaFMI3.PublicAPI
 import RumocaFMI3.CapabilityRejectionFamily
 import RumocaFMI3.AbsentVariableContract
 import RumocaFMI3.EventIndicatorFunction
@@ -115,7 +116,7 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     DiscreteEvaluation.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 DiscreteEvaluation.signature).render ∧
     AbsentVariables.FamilyContract a.solve.prepareFMI3 sigs ∧
-    CapabilityRejection.AllContract a.solve.prepareFMI3 sigs
+    CapabilityRejection.AllContract a.solve.prepareFMI3 sigs ∧ PublicAPI.Covered sigs
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -150,6 +151,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (absent : ∀ ty write, AbsentVariables.signature ty write ∈ sigs)
     (capabilities : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs)
     (scheduled : ScheduledCreation.signature ∈ sigs)
+    (covered : PublicAPI.Covered sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -180,7 +182,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     EventIndicatorCalls.rendered_contract _ sigs unique indicators,
     DiscreteEvaluation.rendered_contract _ sigs unique evaluation,
     AbsentVariables.family_correct _ sigs unique absent,
-    CapabilityRejection.all_correct _ sigs unique capabilities scheduled⟩
+    CapabilityRejection.all_correct _ sigs unique capabilities scheduled, covered⟩
 
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table

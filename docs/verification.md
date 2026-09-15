@@ -1,5 +1,41 @@
 # Exact verification contract
 
+**SR09 empty-setter correction and public-export coverage (full gate passed):**
+
+Empty Float64 and absent-type setters now use the general setter endpoint
+rule. Terminated instances reject them; CS Step Mode retains empty calls.
+The nonempty Float64 validation domain is unchanged. Complete success and
+lifecycle/count rejection contracts preserve every modeled callback outcome,
+prepared diagnostics, raw arguments and source/history composition.
+
+Every emitted header signature now has mandatory coverage by a named public
+execution/printer contract. The fixed actual-file checker supplies this witness
+for the same adapter table and literal pool. The general C return-continuation
+law proves unused caller suffixes cannot change the modeled call behavior;
+it does not weaken the C machine or the previous behavior contracts.
+
+The combined core/C/FMI/compiler checks passed at 13:01:38 UTC. The required
+`nix develop .#verification --command lake test` passed at 13:52:47 UTC on
+2026-09-15 with 1107 unchanged inputs and all 436 selected roots. There were
+no unexpected axioms, changed-module warnings or input drift. Evidence is in
+`build/c-factory/setter-endpoints/`: `package-v3.*`, `full-gate-v1.*`,
+`integration-v3.json`, `standards-review-v1.json`, `upstream-review-v1.json`
+and `artifacts-v1.*`.
+
+The actual FMU changes exactly 13 setter guard lines and its native library;
+every other member is byte-identical to `4db587a`'s retained FMU. The eFMU
+changes only generation identities and dependent references/checksums in three
+manifests. Numerical C, GALEC, Production C and metadata behavior are unchanged.
+The existing native boundary check now includes terminated empty setters for
+both interfaces; no test suite or grammar was added. Only these three evidence
+documents change after the frozen gate.
+
+This accepts the empty-setter repair and complete raw-call contracts. The
+separate nonempty local-state setter wording review, complete legal-history
+correspondence, native/ABI, provenance, concurrency, no-heap and MISRA obligations
+remain open. K02–K05 still block grammar expansion; this is not a full FMI/eFMI
+conformance or CompCert-level whole-compiler claim.
+
 **Unsupported public FMI calls (2026-09-15, full gate passed):**
 
 The mandatory adapter proposition includes all 25 existing generic rejection
@@ -37,14 +73,10 @@ together with native/ABI, full provenance, concurrency and MISRA obligations.
 K02–K05 still block grammar expansion. No full FMI/eFMI conformance or
 CompCert-level whole-compiler claim follows from this increment.
 
-The next correction is SR09: empty Float64 and absent-type setters currently
-use the getter lifecycle guard and return OK after termination. Four checked
-review roots establish this behavior for both interface kinds and all absent
-types, including nonnull array pointers; the source consequence obtains the
-implementation from the mandatory artifact contract. Evidence is in
-`empty-setter-review-v1.*` and `public-coverage-review-v2.json`. Correct the
-setter endpoint guard and carry complete success/rejection behavior through
-the existing contracts and histories before closing the standards finding.
+This checkpoint exposed SR09's empty-setter endpoint defect. Its original
+review witnesses remain in `empty-setter-review-v1.*` and
+`public-coverage-review-v2.json`; the accepted correction and full artifact
+evidence are recorded in the SR09 section.
 
 **Absent-variable initialization histories (2026-09-15, full gate passed):**
 

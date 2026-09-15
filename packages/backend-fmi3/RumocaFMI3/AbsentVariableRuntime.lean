@@ -4,7 +4,7 @@ import RumocaFMI3.StaticErrorCalls
 
 /-! The common absent-variable body in the actual static/runtime interfaces.
 Its raw behavior includes defensive calls; legal FMI issuance is a separate
-reference domain and is not inferred from the emitter's shared getter guard. -/
+reference domain and is not inferred from the raw execution contract. -/
 noncomputable section
 namespace Rumoca.FMI3.AbsentVariables
 open CTree CMemory CBody StaticFactory CLiteral CLiteral.Interface CCalls.Events
@@ -15,7 +15,7 @@ theorem body_agrees (header : CFenv.Header) (objects : Objects)
     CodeAgrees (cInterface literals) (RuntimeEnvironment.interface header objects literals)
       (Runtime.body model (signature ty write)) := by
   rw [body_eq]
-  simp [CodeAgrees, StmtAgrees, ExprAgrees, names, suffix, Runtime.require,
+  cases write <;> simp [accessCommand, CodeAgrees, StmtAgrees, ExprAgrees, names, suffix, Runtime.require,
     Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail,
     Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
@@ -28,7 +28,7 @@ theorem body_agrees_static (objects : Objects) (literals : CLiteralAddresses)
     CodeAgrees (cInterface literals) (executionInterface objects literals)
       (Runtime.body model (signature ty write)) := by
   rw [body_eq]
-  simp [CodeAgrees, StmtAgrees, ExprAgrees, names, suffix, Runtime.require,
+  cases write <;> simp [accessCommand, CodeAgrees, StmtAgrees, ExprAgrees, names, suffix, Runtime.require,
     Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail,
     Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
@@ -41,6 +41,7 @@ structure QuietContract [CInterface] (ty : VariableType) (write : Bool)
     (kind : Kind) (mode : Mode),
     load heap (p.member "kind") = some (.integer kind.code) →
     load heap (p.member "mode") = some (.integer mode.code) →
+    Reference.Allowed (accessCommand write) kind mode →
     ∀ observed, (machine program).Behaves
       (.calling (signature ty write).name
         (arguments ty.hasSizes (some p) references sizes values 0 0) heap .done) observed ↔
@@ -64,12 +65,12 @@ theorem quiet_agreed {E : Type} (target : CInterface)
   letI : CInterface := target
   intro program defined
   constructor
-  · intro heap p references sizes values kind mode hk hm observed
-    have executed := empty_body (static := ⟨literals⟩)
+  · intro heap p references sizes values kind mode hk hm permitted observed
+    have executed := empty_body (static := ⟨literals⟩) write
       (parameters ty.hasSizes (some p) references sizes values 0 0) heap p kind mode
       (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind, ite_apply])
       (by simp [parameters, CBody.bind, ite_apply]) (by simp [parameters, CBody.bind])
-      (by simp [parameters, CBody.bind, ite_apply]) hk hm True.intro
+      (by simp [parameters, CBody.bind, ite_apply]) hk hm permitted
     rw [← body_eq model ty write] at executed
     exact body_call_interface_behaviors (cInterface literals) target types bytes
       program (Runtime.function model (signature ty write)) _ _ heap _ (.integer 0) 5 defined
@@ -77,11 +78,11 @@ theorem quiet_agreed {E : Type} (target : CInterface)
       (BodyEmbedding.body_closed model (signature ty write)) agrees executed rfl observed
   · intro heap references sizes values n m observed
     have executed := GuardedCalls.null_body (static := ⟨literals⟩)
-      (parameters ty.hasSizes none references sizes values n m) heap (Runtime.modeGuard .get :: suffix)
+      (parameters ty.hasSizes none references sizes values n m) heap (Runtime.modeGuard (accessCommand write) :: suffix)
       (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind, ite_apply])
       (by simp [parameters, CBody.bind, ite_apply])
     have shaped : (Runtime.function model (signature ty write)).body =
-        Runtime.instancePrefix ++ Runtime.modeGuard .get :: suffix := by
+        Runtime.instancePrefix ++ Runtime.modeGuard (accessCommand write) :: suffix := by
       simp [Runtime.function, body_eq, Runtime.require, List.append_assoc]
     rw [← shaped] at executed
     exact body_call_interface_behaviors (cInterface literals) target types bytes

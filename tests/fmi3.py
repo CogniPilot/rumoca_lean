@@ -485,6 +485,23 @@ class FMI3Tests(unittest.TestCase):
         self.initialize(h, stop=1)
         self.assertEqual(self.step(h, 0, 2)[0], ERROR)
 
+        # Exercise the native ABI and logger transport for the formally
+        # classified empty-setter rejection; both interfaces use the same guard.
+        for kind in ["cs", "me"]:
+            terminated = self.create(kind, logging=True)
+            self.initialize(terminated, kind)
+            before_values = self.values(terminated)
+            self.assertEqual(self.Terminate(terminated), OK)
+            references = (VR * 1)(1)
+            for setter, unused in [(self.SetFloat64, (D * 1)(99)),
+                                   (self.SetInt32, (C.c_int32 * 1)(99))]:
+                before_messages = len(self.messages)
+                self.assertEqual(setter(terminated, references, 0, unused, 0), ERROR)
+                self.assertEqual(self.messages[before_messages:],
+                                 [(123, ERROR, b"logStatus", b"Call is not allowed in the current FMI state")])
+                self.assertEqual(self.values(terminated), before_values)
+            self.assertEqual(self.GetFloat64(terminated, references, 0, (D * 1)(99), 0), OK)
+
     def test_binary64_kernel_through_cs(self):
         h = self.create()
         starts = [-0.0, 0.0, -0.5, -2, 0.5, 2**53, -(2**53),

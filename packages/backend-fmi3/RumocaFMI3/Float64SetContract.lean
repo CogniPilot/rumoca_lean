@@ -122,6 +122,7 @@ structure QuietExecutionContract [interface : CInterface]
   empty : ∀ p input buffer (kind : Kind) (mode : Mode),
     load heap (p.member "kind") = some (.integer kind.code) →
     load heap (p.member "mode") = some (.integer mode.code) →
+    Reference.Allowed .setVariables kind mode →
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling (signature true).name (arguments (some p) input buffer 0 0) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, heap⟩
@@ -142,8 +143,8 @@ theorem quiet_execution_correct (model : Solve.FMI3Model source)
       allowed readable valid loaded stored separate behavior
     exact set_behaviors model program heap p input buffer n values references kind mode old volume nonempty
       defined hk hm allowed readable valid loaded stored separate behavior
-  · intro p input buffer kind mode hk hm behavior
-    exact empty_behaviors model program heap p input buffer kind mode defined hk hm behavior
+  · intro p input buffer kind mode hk hm permitted behavior
+    exact empty_behaviors model program heap p input buffer kind mode defined hk hm permitted behavior
   · intro input buffer n m behavior
     exact null_behaviors model program heap input buffer n m defined behavior
 

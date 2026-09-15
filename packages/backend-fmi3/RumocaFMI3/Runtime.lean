@@ -98,11 +98,11 @@ def setFloat64Values : List Stmt := [
   [Stmt.assign (v "k") (n 0), .whileLoop (lt (v "k") (v "nValueReferences")) [
     .assign x (.index (v "values") (v "k")), .assign (v "k") (.bin .add (v "k") (n 1))], ok]
 
-/-- The instance binding has function scope. Empty calls still use the read
-guard and return before validating pointers or writing model values. -/
+/-- The instance binding has function scope. Empty calls use the general setter
+endpoint guard and return before validating pointers or writing model values. -/
 def setFloat64 : List Stmt := instancePrefix ++ [
   branch (both (eqv (v "nValueReferences") (n 0)) (eqv (v "nValues") (n 0)))
-    [modeGuard .get, ok], modeGuard .setStart] ++ setFloat64Values
+    [modeGuard .setVariables, ok], modeGuard .setStart] ++ setFloat64Values
 
 def stepDiscard : List Stmt :=
   [log "fmi3Discard" (.str "Step cannot be completed on the unit internal time grid"),
@@ -217,7 +217,7 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
          sig.name.endsWith "Int16" || sig.name.endsWith "UInt16" || sig.name.endsWith "Int32" ||
          sig.name.endsWith "UInt32" || sig.name.endsWith "Int64" || sig.name.endsWith "UInt64" ||
          sig.name.endsWith "Boolean" || sig.name.endsWith "String" || sig.name.endsWith "Binary") then
-      require .get ++
+      require (if sig.name.startsWith "fmi3Set" then .setVariables else .get) ++
       [branch (both (eqv (v "nValueReferences") (n 0)) (eqv (v "nValues") (n 0))) [ok],
        fail "No variables of this type exist"]
     else instancePrefix ++ [fail "FMI capability is not supported"]

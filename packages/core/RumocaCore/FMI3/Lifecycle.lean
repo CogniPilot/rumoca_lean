@@ -14,7 +14,7 @@ inductive Mode where | instantiated | initialization | event | continuous | step
   deriving Repr, BEq, DecidableEq
 inductive Command where
   | enterInitialization | exitInitialization | enterEvent | enterContinuous
-  | updateDiscrete | evaluateDiscrete | terminate | reset | get | setStart
+  | updateDiscrete | evaluateDiscrete | terminate | reset | get | setStart | setVariables
   | setTime | setStates | getStates | getDerivatives | getNominals | getCounts
   | completedStep | doStep | logging
   deriving Repr, BEq, DecidableEq
@@ -36,6 +36,8 @@ def permittedModes : Command → Kind → List Mode
   | .get, _ | .logging, _ => [.instantiated, .initialization, .event, .continuous, .step, .terminated]
   | .setStart, .me => [.instantiated, .initialization, .event, .continuous]
   | .setStart, .cs => [.instantiated, .initialization]
+  | .setVariables, .me => [.instantiated, .initialization, .event, .continuous]
+  | .setVariables, .cs => [.instantiated, .initialization, .step]
   | .setTime, .me => [.continuous]
   | .setStates, .me => [.continuous]
   | .getStates, .me => [.initialization, .event, .continuous, .terminated]
@@ -61,6 +63,8 @@ def Allowed (c : Command) (k : Kind) (m : Mode) : Prop :=
   | .get | .logging => True
   | .setStart => m = .instantiated ∨ m = .initialization ∨
       (k = .me ∧ (m = .event ∨ m = .continuous))
+  | .setVariables => m = .instantiated ∨ m = .initialization ∨
+      (k = .me ∧ (m = .event ∨ m = .continuous)) ∨ (k = .cs ∧ m = .step)
   | .getStates | .getDerivatives | .getNominals => k = .me ∧
       (m = .initialization ∨ m = .event ∨ m = .continuous ∨ m = .terminated)
   | .setTime | .setStates | .completedStep => k = .me ∧ m = .continuous
@@ -72,6 +76,32 @@ theorem allowed_correct (c : Command) (k : Kind) (m : Mode) :
     allowed c k m = true ↔ Reference.Allowed c k m := by
   cases c <;> cases k <;> cases m <;>
     simp [Reference.Allowed, allowed, permittedModes] <;> decide +kernel
+
+/-- General setter endpoints for the implemented interface modes. Per-variable
+selection, pointer validity and CS getter/setter ordering are separate. Empty
+selections do not license a setter after Terminated (FMI 3.0.2 §2.3.8). -/
+theorem variable_setter_allowed_iff (k : Kind) (m : Mode) :
+    allowed .setVariables k m = true ↔
+      m = .instantiated ∨ m = .initialization ∨
+        (k = .me ∧ (m = .event ∨ m = .continuous)) ∨ (k = .cs ∧ m = .step) :=
+  allowed_correct .setVariables k m
+
+theorem variable_setter_terminated (k : Kind) :
+    allowed .setVariables k .terminated = false := by
+  cases k <;> rfl
+
+/-- Preservation of the existing raw state-assignment domain does not by
+itself establish that domain's full correspondence to legal FMI issuance. -/
+theorem state_assignment_endpoint (valid : Reference.Allowed .setStart k m) :
+    Reference.Allowed .setVariables k m := by
+  rcases valid with first | second | state
+  · exact Or.inl first
+  · exact Or.inr (Or.inl second)
+  · exact Or.inr (Or.inr (Or.inl state))
+
+theorem cs_empty_setter_endpoint :
+    allowed .setVariables .cs .step = true ∧ allowed .setStart .cs .step = false := by
+  decide +kernel
 
 /-- Event-only evaluation for the current ME profile. CS event handling is
 not enabled. FMI 3.0.2 §2.3.5 lists this call; Initialization (§2.3.3) does not.

@@ -30,12 +30,13 @@ theorem QuietContract.selection_call [CInterface] {E : Type} {program : Program 
     (heap : Heap) (p : Address) (references sizes values : Option Address)
     (kind : Kind) (mode : Mode)
     (kindStored : load heap (p.member "kind") = some (.integer kind.code))
-    (modeStored : load heap (p.member "mode") = some (.integer mode.code)) :
+    (modeStored : load heap (p.member "mode") = some (.integer mode.code))
+    (permitted : Reference.Allowed (accessCommand write) kind mode) :
     ∀ observed, (machine program).Behaves
       (.calling (signature ty write).name
         (arguments ty.hasSizes (some p) references sizes values n m) heap .done) observed ↔
       observed = .terminates [] ⟨.integer 0, heap⟩ := by
   obtain ⟨rfl, rfl⟩ := selected_cardinalities_zero absent selected extent declared n m referenceCount valueCount
-  exact contract.empty heap p references sizes values kind mode kindStored modeStored
+  exact contract.empty heap p references sizes values kind mode kindStored modeStored permitted
 
 end Rumoca.FMI3.AbsentVariables

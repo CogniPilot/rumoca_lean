@@ -69,7 +69,8 @@ theorem empty_behaviors (model : Solve.FMI3Model source) (program : CCalls.Event
     (defined : program.internal.definitions (signature true).name =
       some (.tree (Runtime.function model (signature true))))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code)) (behavior) :
+    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (permitted : Reference.Allowed .setVariables kind mode) (behavior) :
     (CCalls.Events.machine program).Behaves
       (.calling (signature true).name (arguments (some p) input buffer 0 0) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, heap⟩ := by
@@ -80,7 +81,7 @@ theorem empty_behaviors (model : Solve.FMI3Model source) (program : CCalls.Event
   · exact SetterScope.hoisted_empty_run _ heap p kind mode Runtime.setFloat64Values
       (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind])
       (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind])
-      (by simp [parameters, CBody.bind]) hk hm
+      (by simp [parameters, CBody.bind]) hk hm permitted
   · rfl
 
 theorem null_behaviors (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)
@@ -91,7 +92,7 @@ theorem null_behaviors (model : Solve.FMI3Model source) (program : CCalls.Events
       (.calling (signature true).name (arguments none input buffer n m) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩ := by
   apply GuardedCalls.null_behaviors program (Runtime.function model (signature true))
-    ([Runtime.branch SetterScope.empty [Runtime.modeGuard .get, Runtime.ok], Runtime.modeGuard .setStart] ++
+    ([Runtime.branch SetterScope.empty [Runtime.modeGuard .setVariables, Runtime.ok], Runtime.modeGuard .setStart] ++
       Runtime.setFloat64Values) (arguments none input buffer n m) (parameters none input buffer n m)
     heap defined (parameters_bound true _ _ _ _ _) rfl rfl (BodyEmbedding.body_closed model (signature true))
   all_goals simp [parameters, CBody.bind]

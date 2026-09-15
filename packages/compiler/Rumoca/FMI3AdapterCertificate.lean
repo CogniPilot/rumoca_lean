@@ -1,3 +1,4 @@
+import RumocaFMI3.PublicAPICertificate
 import Rumoca.FMI3AdapterProofs
 import RumocaC.PrinterCertificate
 import Lean
@@ -342,6 +343,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         simp [FMI3.CapabilityRejection.signatures]
       · change FMI3.ScheduledCreation.signature ∈ [$sigTerms,*]
         simp [FMI3.ScheduledCreation.signature]
+      · change FMI3.PublicAPI.Covered [$sigTerms,*]
+        fmi_public_coverage
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩

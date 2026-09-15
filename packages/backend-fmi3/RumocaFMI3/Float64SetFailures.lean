@@ -15,11 +15,15 @@ def failureMessage : Failure → String
 def Nonempty (n m : UInt64) : Prop := n.toNat ≠ 0 ∨ m.toNat ≠ 0
 
 def FailureCondition (reason : Failure) (kind : Kind) (mode : Mode)
-    (input buffer : Option Address) (n m : UInt64) (references : Nat → UInt32) (bits : Nat → BitVec 64) : Prop :=
-  Nonempty n m ∧ match reason with
-  | .lifecycle => ¬ Reference.Allowed .setStart kind mode
-  | .arrays => Reference.Allowed .setStart kind mode ∧ ¬ ArrayAccess.Valid input buffer n m
-  | .entry => Reference.Allowed .setStart kind mode ∧ ArrayAccess.Valid input buffer n m ∧
+    (input buffer : Option Address) (n m : UInt64)
+    (references : Nat → UInt32) (bits : Nat → BitVec 64) : Prop :=
+  match reason with
+  | .lifecycle => (Float64Set.Nonempty n m ∧ ¬ Reference.Allowed .setStart kind mode) ∨
+      (¬ Float64Set.Nonempty n m ∧ ¬ Reference.Allowed .setVariables kind mode)
+  | .arrays => Float64Set.Nonempty n m ∧ Reference.Allowed .setStart kind mode ∧
+      ¬ ArrayAccess.Valid input buffer n m
+  | .entry => Float64Set.Nonempty n m ∧ Reference.Allowed .setStart kind mode ∧
+      ArrayAccess.Valid input buffer n m ∧
       ∃ bad, bad < n.toNat ∧ ¬ ValidEntry (references bad) (bits bad) ∧
         ∀ i < bad, ValidEntry (references i) (bits i)
 
@@ -40,7 +44,7 @@ theorem entry_cases (references : Nat → UInt32) (bits : Nat → BitVec 64) (n 
 theorem query_cases (kind : Kind) (mode : Mode) (handle input buffer : Option Address)
     (n m : UInt64) (references : Nat → UInt32) (bits : Nat → BitVec 64) :
     handle = none ∨ ∃ p, handle = some p ∧
-      ((n = 0 ∧ m = 0) ∨
+      ((n = 0 ∧ m = 0 ∧ Reference.Allowed .setVariables kind mode) ∨
         (∃ inputAddress bufferAddress, input = some inputAddress ∧ buffer = some bufferAddress ∧
           n = m ∧ 0 < n.toNat ∧ Reference.Allowed .setStart kind mode ∧
           ∀ i < n.toNat, ValidEntry (references i) (bits i)) ∨
@@ -50,8 +54,11 @@ theorem query_cases (kind : Kind) (mode : Mode) (handle input buffer : Option Ad
   | some p =>
       refine Or.inr ⟨p, rfl, ?_⟩
       by_cases empty : n.toNat = 0 ∧ m.toNat = 0
-      · exact Or.inl ⟨UInt64.toNat_inj.mp empty.1, UInt64.toNat_inj.mp empty.2⟩
-      · have nonempty : Nonempty n m := by unfold Nonempty; omega
+      · by_cases permitted : Reference.Allowed .setVariables kind mode
+        · exact Or.inl ⟨UInt64.toNat_inj.mp empty.1, UInt64.toNat_inj.mp empty.2, permitted⟩
+        · refine Or.inr (Or.inr ⟨.lifecycle, ?_⟩)
+          simpa [FailureCondition, Float64Set.Nonempty, empty.1, empty.2] using permitted
+      · have nonempty : Float64Set.Nonempty n m := by unfold Float64Set.Nonempty; omega
         by_cases permitted : Reference.Allowed .setStart kind mode
         · by_cases arrays : ArrayAccess.Valid input buffer n m
           · rcases entry_cases references bits n.toNat with valid | bad
@@ -68,15 +75,42 @@ theorem query_cases (kind : Kind) (mode : Mode) (handle input buffer : Option Ad
                       exact Or.inr (Or.inl ⟨_, _, rfl, rfl, same, positive, permitted, valid⟩)
             · exact Or.inr (Or.inr ⟨.entry, nonempty, permitted, arrays, bad⟩)
           · exact Or.inr (Or.inr ⟨.arrays, nonempty, permitted, arrays⟩)
-        · exact Or.inr (Or.inr ⟨.lifecycle, nonempty, permitted⟩)
+        · refine Or.inr (Or.inr ⟨.lifecycle, ?_⟩)
+          simpa [FailureCondition, nonempty] using permitted
 
 theorem failure_unique (first : FailureCondition a kind mode input buffer n m references bits)
     (second : FailureCondition b kind mode input buffer n m references bits) : a = b := by
-  cases a <;> cases b <;> simp_all [FailureCondition]
+  by_cases nonempty : Float64Set.Nonempty n m
+  · cases a <;> cases b <;> simp_all [FailureCondition]
+  · cases a <;> cases b <;> simp_all [FailureCondition]
 
 section
 variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses
+
+theorem empty_lifecycle_site (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)
+    (heap : Heap) (p : Address) (input buffer : Option Address) (kind : Kind) (mode : Mode)
+    (defined : program.internal.definitions (signature true).name =
+      some (.tree (Runtime.function model (signature true))))
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (denied : ¬ Reference.Allowed .setVariables kind mode) :
+    GuardedCalls.FailureSite program
+      (.calling (signature true).name (arguments (some p) input buffer 0 0) heap .done)
+      heap p ErrorCalls.rejectionMessage := by
+  have rejected := SetterScope.hoisted_empty_reject (parameters (some p) input buffer 0 0)
+    heap p kind mode Runtime.setFloat64Values
+    (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind])
+    (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm denied
+  obtain ⟨types, reached⟩ := CCalls.Events.body_prefix_reaches program (Runtime.function model (signature true))
+    (arguments (some p) input buffer 0 0) (parameters (some p) input buffer 0 0) (locals p input buffer 0 0)
+    heap heap (Runtime.fail ErrorCalls.rejectionMessage :: Runtime.ok :: Runtime.modeGuard .setStart ::
+      Runtime.setFloat64Values) .done 4 defined (parameters_bound true _ _ _ _ _)
+    (BodyEmbedding.body_closed model (signature true)) rejected
+  refine ⟨locals p input buffer 0 0, types, Runtime.ok :: Runtime.modeGuard .setStart ::
+    Runtime.setFloat64Values, reached, ?_, ?_⟩
+  · simp [locals, parameters, CBody.bind]
+  · simp [locals, CBody.bind, resolve]
 
 theorem lifecycle_site (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)
     (heap : Heap) (p : Address) (input buffer : Option Address) (n m : UInt64) (kind : Kind) (mode : Mode)
@@ -172,7 +206,19 @@ theorem failure_site (model : Solve.FMI3Model source) (program : CCalls.Events.P
       (.calling (signature true).name (arguments (some p) input buffer n m) heap .done)
       heap p (failureMessage reason) := by
   cases reason with
-  | lifecycle => exact lifecycle_site model program heap p input buffer n m kind mode defined condition.1 hk hm condition.2
+  | lifecycle =>
+      rcases condition with ⟨nonempty, denied⟩ | ⟨empty, denied⟩
+      · exact lifecycle_site model program heap p input buffer n m kind mode defined nonempty hk hm denied
+      · have hn : n = 0 := UInt64.toNat_inj.mp (by
+          change n.toNat = 0
+          unfold Nonempty at empty
+          omega)
+        have hmCount : m = 0 := UInt64.toNat_inj.mp (by
+          change m.toNat = 0
+          unfold Nonempty at empty
+          omega)
+        subst n; subst m
+        exact empty_lifecycle_site model program heap p input buffer kind mode defined hk hm denied
   | arrays => exact array_site model program heap p input buffer n m kind mode defined condition.1 hk hm condition.2.1 condition.2.2
   | entry =>
       obtain ⟨_, permitted, arrays, bad, inside, invalid, prior⟩ := condition

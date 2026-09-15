@@ -44,16 +44,37 @@ def suffix : List Stmt :=
       (Runtime.eqv (Runtime.v "nValues") (Runtime.n 0))) [Runtime.ok],
    Runtime.fail "No variables of this type exist"]
 
+def accessCommand (write : Bool) : Command := if write then .setVariables else .get
+
+inductive Failure where | lifecycle | selection
+  deriving DecidableEq
+
+def failureMessage : Failure → String
+  | .lifecycle => ErrorCalls.rejectionMessage
+  | .selection => "No variables of this type exist"
+
+def Failure.Condition (reason : Failure) (write : Bool) (kind : Kind) (mode : Mode)
+    (n m : UInt64) : Prop :=
+  match reason with
+  | .lifecycle => ¬ Reference.Allowed (accessCommand write) kind mode
+  | .selection => Reference.Allowed (accessCommand write) kind mode ∧
+      (n.toNat ≠ 0 ∨ m.toNat ≠ 0)
+
+theorem failure_unique (first : Failure.Condition a write kind mode n m)
+    (second : Failure.Condition b write kind mode n m) : a = b := by
+  cases a <;> cases b <;> simp_all [Failure.Condition]
+
 /-- Every member uses the same suffix in the actual emitter. This does not
 assume a body supplied by a caller or a replacement implementation. -/
 theorem body_eq (model : Solve.FMI3Model source) (kind : VariableType) (write : Bool) :
-    Runtime.body model (signature kind write) = Runtime.require .get ++ suffix := by
+    Runtime.body model (signature kind write) = Runtime.require (accessCommand write) ++ suffix := by
   cases kind <;> cases write <;>
-    simp only [signature, VariableType.name, VariableType.hasSizes,
-      Bool.false_eq_true, ↓reduceIte, String.reduceAppend] <;>
-    unfold Runtime.body <;> split <;> first
-    | (rename_i impossible; solve | simp at impossible)
-    | (split <;> first | rfl | (rename_i rejected; exact (rejected (by decide +kernel)).elim))
+    simp [signature, VariableType.name, Runtime.body, accessCommand, suffix] <;> split
+  all_goals first
+    | (rename_i denied; exact (denied (by decide +kernel)).elim)
+    | (split <;> first
+      | rfl
+      | (rename_i impossible; exact absurd impossible (by decide +kernel)))
 
 def arguments (hasSizes : Bool) (handle references sizes values : Option Address)
     (n m : UInt64) : List Value :=
@@ -71,7 +92,7 @@ variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses
 
 /-- No array elements or pointers are read when both cardinalities are zero. -/
-theorem empty_body (env : Locals) (heap : Heap) (p : Address)
+theorem empty_body (write : Bool) (env : Locals) (heap : Heap) (p : Address)
     (kind : Kind) (mode : Mode)
     (hi : env "instance" = some (.pointer (some p))) (hn : env "m" = none)
     (ok : env "fmi3OK" = none)
@@ -79,31 +100,31 @@ theorem empty_body (env : Locals) (heap : Heap) (p : Address)
     (values : env "nValues" = some (.integer 0))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .get kind mode) :
-    run 5 (.running (Runtime.require .get ++ suffix) env heap) =
+    (allowed : Reference.Allowed (accessCommand write) kind mode) :
+    run 5 (.running (Runtime.require (accessCommand write) ++ suffix) env heap) =
       some (.returned ⟨.integer 0, heap⟩) := by
   rw [show 5 = 3 + 2 from rfl, run_add,
-    LifecycleGuard.accept env heap p .get kind mode suffix hi hn hk hm allowed]
+    LifecycleGuard.accept env heap p (accessCommand write) kind mode suffix hi hn hk hm allowed]
   simp [suffix, run, next, Runtime.branch, Runtime.both, Runtime.eqv,
     Runtime.v, Runtime.n, Runtime.ok, Runtime.ret, eval, resolve,
     CBody.bind, constants, refs, values, ok, Value.truth, boolean, comparison]
 
 /-- A nonempty request reaches the shared diagnostic before reading any
 array element. The existing failure-call theorem supplies logger outcomes. -/
-theorem nonempty_body (env : Locals) (heap : Heap) (p : Address)
+theorem nonempty_body (write : Bool) (env : Locals) (heap : Heap) (p : Address)
     (kind : Kind) (mode : Mode) (referenceCount valueCount : Int)
     (hi : env "instance" = some (.pointer (some p))) (hn : env "m" = none)
     (refs : env "nValueReferences" = some (.integer referenceCount))
     (values : env "nValues" = some (.integer valueCount))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .get kind mode)
+    (allowed : Reference.Allowed (accessCommand write) kind mode)
     (nonempty : referenceCount ≠ 0 ∨ valueCount ≠ 0) :
-    run 4 (.running (Runtime.require .get ++ suffix) env heap) =
+    run 4 (.running (Runtime.require (accessCommand write) ++ suffix) env heap) =
       some (.running [Runtime.fail "No variables of this type exist"]
         (CBody.bind env "m" (.pointer (some p))) heap) := by
   rw [show 4 = 3 + 1 from rfl, run_add,
-    LifecycleGuard.accept env heap p .get kind mode suffix hi hn hk hm allowed]
+    LifecycleGuard.accept env heap p (accessCommand write) kind mode suffix hi hn hk hm allowed]
   by_cases referenceZero : referenceCount = 0
   · have valueNonzero : valueCount ≠ 0 := nonempty.resolve_left (by simpa using referenceZero)
     simp [suffix, run, next, Runtime.branch, Runtime.both, Runtime.eqv,
@@ -136,12 +157,12 @@ theorem empty_behaviors (model : Solve.FMI3Model source) (ty : VariableType) (wr
       some (.tree (Runtime.function model (signature ty write))))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .get kind mode) (observed) :
+    (allowed : Reference.Allowed (accessCommand write) kind mode) (observed) :
     (CCalls.Events.machine program).Behaves
       (.calling (signature ty write).name
         (arguments ty.hasSizes (some p) references sizes values 0 0) heap .done) observed ↔
       observed = .terminates [] ⟨.integer 0, heap⟩ := by
-  have executed := empty_body (parameters ty.hasSizes (some p) references sizes values 0 0)
+  have executed := empty_body write (parameters ty.hasSizes (some p) references sizes values 0 0)
     heap p kind mode (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind, ite_apply])
     (by simp [parameters, CBody.bind, ite_apply]) (by simp [parameters, CBody.bind])
     (by simp [parameters, CBody.bind, ite_apply]) hk hm allowed
@@ -162,10 +183,10 @@ theorem null_behaviors (model : Solve.FMI3Model source) (ty : VariableType) (wri
         (arguments ty.hasSizes none references sizes values n m) heap .done) observed ↔
       observed = .terminates [] ⟨.integer 3, heap⟩ := by
   have shaped : (Runtime.function model (signature ty write)).body =
-      Runtime.instancePrefix ++ Runtime.modeGuard .get :: suffix := by
+      Runtime.instancePrefix ++ Runtime.modeGuard (accessCommand write) :: suffix := by
     simp [Runtime.function, body_eq, Runtime.require, List.append_assoc]
   apply GuardedCalls.null_behaviors program (Runtime.function model (signature ty write))
-    (Runtime.modeGuard .get :: suffix) _ (parameters ty.hasSizes none references sizes values n m)
+    (Runtime.modeGuard (accessCommand write) :: suffix) _ (parameters ty.hasSizes none references sizes values n m)
     heap defined (parameters_bound ty write _ _ _ _ _ _) shaped rfl
     (BodyEmbedding.body_closed model (signature ty write))
   · simp [parameters, CBody.bind]
@@ -179,13 +200,13 @@ theorem nonempty_prefix (model : Solve.FMI3Model source) (ty : VariableType) (wr
     (n m : UInt64) (kind : Kind) (mode : Mode)
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .get kind mode)
+    (allowed : Reference.Allowed (accessCommand write) kind mode)
     (nonempty : n.toNat ≠ 0 ∨ m.toNat ≠ 0) :
     GuardedCalls.FailurePrefix (Runtime.function model (signature ty write))
       (arguments ty.hasSizes (some p) references sizes values n m) heap p
       "No variables of this type exist" heap := by
   let env := parameters ty.hasSizes (some p) references sizes values n m
-  have executed := nonempty_body env heap p kind mode n.toNat m.toNat
+  have executed := nonempty_body write env heap p kind mode n.toNat m.toNat
     (by simp [env, parameters, CBody.bind]) (by simp [env, parameters, CBody.bind, ite_apply])
     (by simp [env, parameters, CBody.bind]) (by simp [env, parameters, CBody.bind, ite_apply])
     hk hm allowed (by omega)
@@ -195,6 +216,34 @@ theorem nonempty_prefix (model : Solve.FMI3Model source) (ty : VariableType) (wr
   · simpa only [Runtime.function, body_eq] using executed
   · simp [env, parameters, CBody.bind, ite_apply]
   · simp [CBody.bind, resolve]
+
+/-- Every rejection reaches the matching emitted diagnostic before array
+access. The returned helper status and all callback outcomes are derived by
+the shared FailurePrefix execution rules. -/
+theorem failure_prefix (model : Solve.FMI3Model source) (ty : VariableType) (write : Bool)
+    (reason : Failure) (heap : Heap) (p : Address) (references sizes values : Option Address)
+    (n m : UInt64) (kind : Kind) (mode : Mode)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (condition : reason.Condition write kind mode n m) :
+    GuardedCalls.FailurePrefix (Runtime.function model (signature ty write))
+      (arguments ty.hasSizes (some p) references sizes values n m) heap p
+      (failureMessage reason) heap := by
+  cases reason with
+  | selection =>
+      exact nonempty_prefix model ty write heap p references sizes values n m kind mode
+        hk hm condition.1 condition.2
+  | lifecycle =>
+      let env := parameters ty.hasSizes (some p) references sizes values n m
+      have executed := LifecycleGuard.reject_prefix env heap p (accessCommand write) kind mode suffix
+        (by simp [env, parameters, CBody.bind]) (by simp [env, parameters, CBody.bind, ite_apply])
+        hk hm condition
+      refine ⟨rfl, BodyEmbedding.body_closed model (signature ty write), env,
+        CBody.bind env "m" (.pointer (some p)), suffix, 3,
+        parameters_bound ty write _ _ _ _ _ _, ?_, ?_, ?_⟩
+      · simpa only [Runtime.function, body_eq, failureMessage] using executed
+      · simp [env, parameters, CBody.bind, ite_apply]
+      · simp [CBody.bind, resolve]
 
 end Rumoca.FMI3.AbsentVariables
 end
