@@ -121,6 +121,48 @@ review separates capability flags, variable domains, lifecycle restrictions
 and defensive calls. Clock and empty output-derivative findings remain open.
 Pinned MLS/eFMI findings carry forward. **Stage decision: open.**
 
+### Runtime storage and state-setter permissions: full gate passed
+
+**Runtime storage and state-setter permissions (full gate passed):**
+
+Generic C proofs lift store-stable heap relations through foreign calls and
+modeled thread interleavings. The selected string, atomic and math bindings
+preserve object existence, types and permissions. The source-bound prepared
+runtime combines this with the call-depth bound under an explicit logger storage
+contract. Without that contract, any observed storage change is attributed to
+an actual logger execution, with its arguments and trace position. These are
+modeled storage properties; native/transient allocation and race freedom remain
+separate obligations.
+
+The state-setter policy identifies continuous states through the actual XML's
+ModelStructure derivative links. Initialization and reinitialization attributes
+determine the phase permissions. Lean proves exact correspondence with the
+existing guard for every accepted XML witness and connects it to the actual
+source/setter contract. The ME interpretation follows accepted FMI clarification
+#1956; the Table 17 editorial conflict remains explicit in the standards review.
+
+The affected package checks passed at 16:16:22 UTC on
+2026-09-15. The required
+`nix develop .#verification --command lake test` passed at 17:12:17 UTC
+on 2026-09-15, with 1125 unchanged inputs and all 94 selected roots
+(32 new, 62 retained). No unexpected axioms, changed-module warnings or source
+drift were found. The existing separate audits retain every prior root; no
+test suite was added. Evidence is in `build/c-runtime-resources/`:
+`integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
+`standards-review-v1.json` and `artifacts-v1.*`.
+
+Every FMU member is unchanged from `026bc92`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and public-call emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+The annotated concurrent lease-history and atomic-call-value follow-up proofs
+are checked drafts under `build/`; they are not integrated at this checkpoint. Complete factory-path
+classification, native/ABI, full legal histories, provenance, transitive
+no-allocation and MISRA obligations remain open. K02–K05 and the remaining
+MLS/FMI/eFMI findings still block grammar expansion.
+
 ### Source-bound runtime and call depth: full gate passed
 
 **Source-bound runtime and call depth (full gate passed):**
@@ -246,17 +288,37 @@ correspondence, native/ABI, provenance, concurrency, no-heap and MISRA obligatio
 remain open. K02–K05 still block grammar expansion; this is not a full FMI/eFMI
 conformance or CompCert-level whole-compiler claim.
 
-**Separate nonempty-state wording review:** the pinned specification's
-[§3.2.1](https://fmi-standard.org/docs/3.0.2/#ContinuousTimeMode) includes
-continuous-time states under `fmi3Set{VariableType}`, while
-[§2.4.7.4, Table 17](https://fmi-standard.org/docs/3.0.2/#causality) prohibits
-setting local variables through those functions in Initialized and names
-`fmi3SetContinuousStates` for ME states. Our actual `Writable` metadata marks
-`x` as local. Reconcile these clauses before claiming the nonempty `setStart`
-domain matches legal importer calls. Its raw execution proofs and preserved
-validation domain do not settle that interpretation. This separate finding
-does not reopen the accepted empty-setter repair or authorize a metadata
-change to avoid the review.
+**Nonempty-state setter interpretation (full gate passed for this interpretation):**
+The pinned [FMI 3.0.2 Continuous-Time rule](https://fmi-standard.org/docs/3.0.2/#ContinuousTimeMode)
+permits generic setters for continuous states; the
+[Event rule](https://fmi-standard.org/docs/3.0.2/#EventMode) permits states with
+`reinit=false`. Initial-state setting follows the phase's `initial` and
+`variability` conditions. Table 17's generic local-variable restriction conflicts
+with those state-specific clauses. The compiler retains the state-specific
+exception, rather than changing `x`'s metadata to avoid the review.
+
+The standards project's approved [PR #1956](https://github.com/modelica/fmi-standard/pull/1956)
+added continuous states to the Continuous-Time generic-setter rule. Its merge
+`fd8c034e5b7dd5c8a2ad5689e5df13b84be34ab9` is included in `v3.0.2`;
+the retained release comparison is 20 commits ahead and none behind. This
+supports the interpretation for identified states, independently of causality;
+it does not establish consistency of all prose or license arbitrary locals.
+The Table 17 editorial inconsistency remains visible. The policy theorem proves correspondence with this interpretation; the
+owning-package and full artifact gates passed as recorded above. Evidence: `build/c-call-depth/fmi-setter-review/` and the nine-root
+`state-setter-policy-v3.json` draft result. Complete legal-history correspondence
+and the empty Clock/interval/output-derivative findings remain open.
+
+**Legal importer and resource boundary:**
+[FMI 3.0.2 §2.2.1](https://fmi-standard.org/docs/3.0.2/#general-mechanisms)
+prohibits logger callbacks from calling back into the FMU. The host also owns
+race avoidance for calls to one instance. Required native correspondence must
+state these obligations; support for forbidden logger reentry is not a required
+conformance feature. Shared static-pool ownership and native atomic refinement
+remain separate work. A modeled heap invariant does not establish hidden native
+allocation, private callback stack use, lock freedom or RTOS timing. See
+`build/c-call-depth/runtime-boundary-review-v1.md` and the retained tagged
+`2_2_common_mechanisms.adoc`. Prior prose mentioning reentry is scoped by this
+legal-importer boundary, without weakening any existing theorem.
 
 ### Absent-variable initialization histories: full gate passed
 

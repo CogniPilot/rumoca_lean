@@ -1,3 +1,5 @@
+import RumocaC.CallStoreInvariant
+import RumocaC.StorageLibrary
 import RumocaC.CallPolicyExecution
 import RumocaC.CallLinkage
 import RumocaC.CallDepth
@@ -45,3 +47,19 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.Events.Linkage.withExternal_bound
 #audit axioms Rumoca.CCalls.Events.Linkage.withExternal_foreign
 #audit axioms Rumoca.CCalls.Events.Linkage.withExternal_keeps
+
+#audit axioms Rumoca.CStorage.compare_external
+#audit axioms Rumoca.CStorage.exchange_external
+#audit axioms Rumoca.CStorage.floor_external
+#audit axioms Rumoca.CStorage.length_external
+#audit axioms Rumoca.CStorage.rounding_external
+#audit axioms Rumoca.CStorage.span_external
+#audit axioms Rumoca.CStorage.string_library
+#audit axioms Rumoca.CStorage.write_external
+#audit axioms Rumoca.CStoreInvariant.concurrent_next
+#audit axioms Rumoca.CStoreInvariant.concurrent_reaches
+#audit axioms Rumoca.CStoreInvariant.event_next
+#audit axioms Rumoca.CStoreInvariant.event_reaches
+#audit axioms Rumoca.CStoreInvariant.foreign_change_origin
+#audit axioms Rumoca.CStoreInvariant.linked_address
+#audit axioms Rumoca.CStoreInvariant.linked_external

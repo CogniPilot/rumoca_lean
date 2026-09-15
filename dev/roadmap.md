@@ -11,6 +11,46 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Runtime storage and state-setter permissions (full gate passed):**
+
+Generic C proofs lift store-stable heap relations through foreign calls and
+modeled thread interleavings. The selected string, atomic and math bindings
+preserve object existence, types and permissions. The source-bound prepared
+runtime combines this with the call-depth bound under an explicit logger storage
+contract. Without that contract, any observed storage change is attributed to
+an actual logger execution, with its arguments and trace position. These are
+modeled storage properties; native/transient allocation and race freedom remain
+separate obligations.
+
+The state-setter policy identifies continuous states through the actual XML's
+ModelStructure derivative links. Initialization and reinitialization attributes
+determine the phase permissions. Lean proves exact correspondence with the
+existing guard for every accepted XML witness and connects it to the actual
+source/setter contract. The ME interpretation follows accepted FMI clarification
+#1956; the Table 17 editorial conflict remains explicit in the standards review.
+
+The affected package checks passed at 16:16:22 UTC on
+2026-09-15. The required
+`nix develop .#verification --command lake test` passed at 17:12:17 UTC
+on 2026-09-15, with 1125 unchanged inputs and all 94 selected roots
+(32 new, 62 retained). No unexpected axioms, changed-module warnings or source
+drift were found. The existing separate audits retain every prior root; no
+test suite was added. Evidence is in `build/c-runtime-resources/`:
+`integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
+`standards-review-v1.json` and `artifacts-v1.*`.
+
+Every FMU member is unchanged from `026bc92`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and public-call emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+The annotated concurrent lease-history and atomic-call-value follow-up proofs
+are checked drafts under `build/`; they are not integrated at this checkpoint. Complete factory-path
+classification, native/ABI, full legal histories, provenance, transitive
+no-allocation and MISRA obligations remain open. K02–K05 and the remaining
+MLS/FMI/eFMI findings still block grammar expansion.
+
 **Source-bound runtime and call depth (full gate passed):**
 
 One prepared environment contains the actual generated function table,
@@ -1254,6 +1294,12 @@ eFMI artifacts pass the required gate. Dynamic allocator modeling is not the
 next task. Any reusable storage/frame draft is only a prerequisite.
 
 ### K03 — Complete public FMI execution and histories
+
+The legal-importer boundary follows FMI §2.2.1: logger callbacks must not
+reenter the FMU, and the host prevents races when calling one instance.
+Supporting forbidden logger reentry is not an exit requirement. Native callback
+correspondence and shared-pool concurrency remain explicit obligations; see the
+current [standards interpretation](standards-review.md).
 
 The accepted mixed ME numerical/reset lifetime passed the 919-input FMI/compiler
 gate, followed by rejection/recovery on 923, mixed histories on 927 and their
