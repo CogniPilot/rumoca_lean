@@ -11,6 +11,103 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Host histories and reservation origins (full gate passed):**
+
+The host boundary executes the existing C scheduler, admits calls through the
+actual public table, observes their halted results and permits repeated calls.
+Host memory changes have an explicit policy relation. Computed invocation
+records retain the original thread, function and arguments; issued serials
+form a strictly increasing interval and are not recycled at completion.
+
+Existing typed C executions embed with exact events, values and output heaps.
+The source-bound initial factory/release contract assigns the factory's
+invocation serial as its lease and passes its actual returned pointer to release.
+Release gets a new invocation serial while using the original factory lease.
+These complete calls have matching intermediate states for sequential
+composition; they do not establish arbitrary concurrent lifecycle histories.
+
+The actual generated bodies prove a closed non-factory call domain. Generic C
+step equivalence and control invariants tied to each recorded invocation derive
+the enclosing ME/CS factory for every reached reservation helper or exchange.
+The raw host history supplies the descriptor, fresh serial and prior invocation
+witness; no later factory or owner annotation is assumed. Successful claim
+handoff, concurrent initialization, live-handle publication and later legal
+ownership/frame histories remain open.
+
+This checkpoint also includes the release-origin and ordinary flag-frame
+proofs described below. The combined package checks passed at
+19:55:20 UTC on 2026-09-15. The required
+`nix develop .#verification --command lake test` passed at 20:46:20 UTC
+on 2026-09-15, with 1166 unchanged inputs and all 244 selected roots
+(78 new, 166 retained). No unexpected axioms, changed-module warnings or source
+drift were found. The three existing audits retain every earlier root; no
+unit test suite was added. A root count is not a measure of semantic coverage.
+
+Evidence is in `build/c-host-boundary/`: `integration-v1.json`, `package-v1.*`,
+`full-gate-v1.*`, `standards-review-v1.json`, `upstream-review-v1.json` and
+`artifacts-v1.*`. The earlier release/frame evidence remains in
+`build/c-release-frames/`. The combined gate covers its pre-publication EOF
+cleanup as well as all new host/recording/origin modules.
+
+Every FMU member is unchanged from `4b55612`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and public interface emission are
+unchanged. Existing artifact, native and mutation checks pass. Only these
+three evidence documents change after the frozen gate.
+
+Further scan-claim work remains an ignored draft under `build/`; it is not
+part of this checkpoint. Complete legal histories, native C11/ABI and
+callback/fenv correspondence, provenance, transitive allocation, MISRA and the
+remaining MLS/FMI/eFMI findings remain open. K02–K05 block grammar expansion.
+
+**Release origins and ordinary flag frames (full gate passed):**
+
+Generic C proofs classify real shared steps as ordinary frame-preserving work
+or exceptional foreign calls. Prepared string and math bindings retain atomic
+flag values. Under an explicit logger flag-preservation contract, only atomic
+operations may change them. Without that contract, a flag-changing step is
+attributed to an actual atomic or canonical importer logger call. Source binding
+supplies the actual adapter table, types and library; no per-step ordinary
+annotation is assumed.
+
+Atomic exchange/store preserve successfully loaded ordinary cells. Their cell
+types prove non-aliasing without an extra address-inequality premise. A generic
+heap-dependent invocation rule separates own execution from other-thread
+interference. Actual public release preserves its slot metadata through entry,
+parameters, local initialization, the null guard, store and void return. Null
+release requires no metadata cell.
+
+The source release theorem supplies the actual function, header and 32-slot
+pool. Valid original metadata and an explicit other-thread metadata frame
+determine its release address. A represented current lease supplies the enabled
+unique atomic step, ownership update, exact event and return continuation.
+Successful release, converted arguments and next-state annotations are not
+premises. Complete legal histories must still derive interference and current
+lease conditions; original metadata alone does not authorize a stale or
+duplicate release.
+
+The affected package checks passed at 18:59:11 UTC on
+2026-09-15. The required
+`nix develop .#verification --command lake test` passed at 19:48:41 UTC
+on 2026-09-15, with 1151 unchanged inputs and all 191 selected roots
+(25 new, 166 retained). No unexpected axioms, changed-module warnings or source
+drift were found. The three existing audits retain all previous roots; no test
+suite was added. Evidence is in `build/c-release-frames/`:
+`integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
+`standards-review-v1.json`, `upstream-review-v1.json` and `artifacts-v1.*`.
+
+Every FMU member is unchanged from `4b55612`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and public interface emission are
+unchanged. Existing artifact, native and mutation checks pass. Three evidence documents were updated after that frozen gate. A later
+pre-publication EOF cleanup is included in the combined gate above.
+
+The host-boundary and recorded reservation-origin follow-ups are integrated
+in the combined checkpoint above. Complete legal histories and live-lease
+handoff, native C11/ABI/fenv/callback correspondence, provenance, transitive
+allocation, MISRA and remaining MLS/FMI/eFMI findings stay open. K02–K05
+continue to block grammar expansion.
+
 **Reservation bounds and actual atomic operations (full gate passed):**
 
 The shared C invocation invariant covers actual helper entry, parameter binding,

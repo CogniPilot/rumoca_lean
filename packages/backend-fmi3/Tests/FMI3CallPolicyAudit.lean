@@ -1,3 +1,9 @@
+import RumocaFMI3.HostCallPolicy
+import RumocaFMI3.InitialRecordedExecution
+import RumocaFMI3.ReservationOriginRuntime
+import RumocaFMI3.AtomicFlagFrame
+import RumocaFMI3.ReleaseConcurrentInvariant
+import RumocaFMI3.ReleaseClaims
 import RumocaFMI3.AtomicCallExecution
 import RumocaFMI3.FactoryScanEntry
 import RumocaFMI3.ReservationClaims
@@ -85,3 +91,36 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConcurrentSlots.bounded_reservation_claim
 #audit axioms Rumoca.FMI3.StaticFactory.header_factory_scope
 #audit axioms Rumoca.FMI3.StaticFactory.header_reserve_entry
+
+#audit axioms Rumoca.FMI3.AtomicFlagFrame.linked_flags
+#audit axioms Rumoca.FMI3.AtomicFlagFrame.logged_changed_origin
+#audit axioms Rumoca.FMI3.AtomicFlagFrame.logged_exceptions
+#audit axioms Rumoca.FMI3.AtomicFlagFrame.logged_flags
+#audit axioms Rumoca.FMI3.AtomicFlagFrame.logged_step
+#audit axioms Rumoca.FMI3.AtomicFlagFrame.static_library
+#audit axioms Rumoca.FMI3.ConcurrentSlots.release_for_slot
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.Metadata.preserved
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.MetadataFrame.refl
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.Ready.atomic_origin
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.Ready.exit_value
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.Ready.withHeap
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.call_prefix_origin
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.step_ready
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.thread_reaches
+#audit axioms Rumoca.FMI3.StaticRelease.ConcurrentInvariant.thread_step
+
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.logged_host_history
+#audit axioms Rumoca.FMI3.ReservationOrigin.body_policy
+#audit axioms Rumoca.FMI3.ReservationOrigin.entry_allowed
+#audit axioms Rumoca.FMI3.ReservationOrigin.event_ready
+#audit axioms Rumoca.FMI3.ReservationOrigin.excluded
+#audit axioms Rumoca.FMI3.ReservationOrigin.functions_policy
+#audit axioms Rumoca.FMI3.ReservationOrigin.helpers_policy
+#audit axioms Rumoca.FMI3.ReservationOrigin.logged_controls
+#audit axioms Rumoca.FMI3.ReservationOrigin.logged_host_origins
+#audit axioms Rumoca.FMI3.ReservationOrigin.logged_named_only
+#audit axioms Rumoca.FMI3.ReservationOrigin.operand_sound
+#audit axioms Rumoca.FMI3.ReservationOrigin.program_policy
+#audit axioms Rumoca.FMI3.ReservationOrigin.root_excluded
+#audit axioms Rumoca.FMI3.ReservationOrigin.root_heap
+#audit axioms Rumoca.FMI3.StaticRuntime.initial_recorded

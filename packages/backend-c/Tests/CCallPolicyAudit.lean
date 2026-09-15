@@ -1,3 +1,11 @@
+import RumocaC.HostCallSites
+import RumocaC.InvocationOrigins
+import RumocaC.InvocationExecution
+import RumocaC.CallSubprogram
+import RumocaC.InvocationControl
+import RumocaC.CallFrameClassification
+import RumocaC.AtomicLoadedFrame
+import RumocaC.CallHeapIntervals
 import RumocaC.AtomicArguments
 import RumocaC.AtomicScanEntryInvariant
 import RumocaC.ConcurrentSteps
@@ -103,3 +111,47 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.Concurrent.exit_withHeap
 #audit axioms Rumoca.CCalls.Concurrent.external_step_values_iff
 #audit axioms Rumoca.CCalls.Concurrent.saved_predicate_step
+
+#audit axioms Rumoca.CAtomicBoolean.exchange_preserves_loaded
+#audit axioms Rumoca.CAtomicBoolean.write_preserves_loaded
+#audit axioms Rumoca.CCalls.Concurrent.framed_predicate_step
+#audit axioms Rumoca.CStoreInvariant.ExceptPreserves.mono
+#audit axioms Rumoca.CStoreInvariant.concurrent_classifies
+#audit axioms Rumoca.CStoreInvariant.event_classifies
+#audit axioms Rumoca.CStoreInvariant.linked_except
+
+#audit axioms Rumoca.CCallSites.Subprogram.event_ready
+#audit axioms Rumoca.CCallSites.Subprogram.event_same
+#audit axioms Rumoca.CCallSites.Subprogram.functions_admit
+#audit axioms Rumoca.CCallSites.Subprogram.internal_same
+#audit axioms Rumoca.CCallSites.host_history
+#audit axioms Rumoca.CCalls.Events.terminating_path
+#audit axioms Rumoca.CCalls.Host.Recording.advance_fresh
+#audit axioms Rumoca.CCalls.Host.Recording.advance_origin
+#audit axioms Rumoca.CCalls.Host.Recording.aligned_active
+#audit axioms Rumoca.CCalls.Host.Recording.callTrace_issued
+#audit axioms Rumoca.CCalls.Host.Recording.call_recorded
+#audit axioms Rumoca.CCalls.Host.Recording.completion_origin
+#audit axioms Rumoca.CCalls.Host.Recording.execution_recorded
+#audit axioms Rumoca.CCalls.Host.Recording.history_controls
+#audit axioms Rumoca.CCalls.Host.Recording.history_erases
+#audit axioms Rumoca.CCalls.Host.Recording.history_invariants
+#audit axioms Rumoca.CCalls.Host.Recording.history_issued
+#audit axioms Rumoca.CCalls.Host.Recording.history_lift
+#audit axioms Rumoca.CCalls.Host.Recording.history_ordered_ids
+#audit axioms Rumoca.CCalls.Host.Recording.history_origin
+#audit axioms Rumoca.CCalls.Host.Recording.history_unique_ids
+#audit axioms Rumoca.CCalls.Host.Recording.initial_aligned
+#audit axioms Rumoca.CCalls.Host.Recording.initial_fresh
+#audit axioms Rumoca.CCalls.Host.Recording.step_aligned
+#audit axioms Rumoca.CCalls.Host.Recording.step_controls
+#audit axioms Rumoca.CCalls.Host.call_history
+#audit axioms Rumoca.CCalls.Host.complete_iff
+#audit axioms Rumoca.CCalls.Host.execute_iff
+#audit axioms Rumoca.CCalls.Host.execute_installed
+#audit axioms Rumoca.CCalls.Host.execution_history
+#audit axioms Rumoca.CCalls.Host.history_threads
+#audit axioms Rumoca.CCalls.Host.invoke_iff
+#audit axioms Rumoca.CCalls.Host.other_thread
+#audit axioms Rumoca.CCalls.Host.step_threads
+#audit axioms Rumoca.CCalls.Host.update_twice

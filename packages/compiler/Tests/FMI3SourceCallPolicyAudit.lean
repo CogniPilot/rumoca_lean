@@ -1,3 +1,8 @@
+import Rumoca.FMI3HostCalls
+import Rumoca.FMI3InitialRecorded
+import Rumoca.FMI3ReservationOrigins
+import Rumoca.FMI3AtomicFlagFrame
+import Rumoca.FMI3ReleaseBounds
 import Rumoca.FMI3AtomicOperations
 import Rumoca.FMI3ReservationBounds
 import Rumoca.FMI3ConcurrentSlots
@@ -23,3 +28,10 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.FMI3.AtomicCallPolicy.source_atomic_operations
 #audit axioms Rumoca.FMI3.ConcurrentSlots.source_reservation_bounds
+
+#audit axioms Rumoca.FMI3.AtomicFlagFrame.source_flag_frames
+#audit axioms Rumoca.FMI3.ConcurrentSlots.source_release_bounds
+
+#audit axioms Rumoca.FMI3.AtomicCallPolicy.source_host_calls
+#audit axioms Rumoca.FMI3.ReservationOrigin.source_reservation_origins
+#audit axioms Rumoca.FMI3.StaticRuntime.source_recorded_creation
