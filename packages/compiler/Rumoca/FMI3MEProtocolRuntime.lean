@@ -90,7 +90,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have readerFrame := resources.readerInputs.creation_frame represented resources.readerGuarded creationFrame
   have invariant := InitializationProtocol.Invariant.created objects created preserved (literalFrame.trans creationReadonly) logging readerFrame
   have initializeCalls := InitializationProtocol.execution_contract header objects a.solve.prepareFMI3 sigs pool
-    prepared.getter prepared.setter prepared.counts prepared.nominals prepared.logging prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
+    prepared.getter prepared.setter prepared.counts prepared.nominals prepared.logging prepared.eventIndicators prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
     (SlotOwners.update owners slot (some owner)) heap p access .me readers resources
   have initialization : InitializationCompiler a.solve program objects retained
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p access readers := by
@@ -99,7 +99,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have simulation : SimulationCompiler a.solve program objects retained
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p addresses buffer readers := by
     intro current before final clock finalClock actions persistent stored storage reference requests regions readerSafe included
-    exact InitializationProtocol.me_execution header objects a.solve.prepareFMI3 sigs pool prepared.me prepared.counts prepared.nominals prepared.logging
+    exact InitializationProtocol.me_execution header objects a.solve.prepareFMI3 sigs pool prepared.me prepared.counts prepared.nominals prepared.logging prepared.eventIndicators
       prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
       (SlotOwners.update owners slot (some owner)) heap current p addresses buffer before final clock finalClock actions readers
       persistent rfl guarded (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside,

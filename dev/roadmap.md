@@ -11,6 +11,37 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Event-indicator histories (full gate passed):** Empty event queries
+now compose with initialization, mixed ME operation, reset, creation and release.
+Raw observations, original caller/borrowed storage and universal callback
+policies determine the source checkpoints and completed/stopped results.
+
+The owning C/FMI/compiler checks passed at 06:36:55 UTC; the required
+`nix develop .#verification --command lake test` passed at 07:20:04 UTC on
+1079 unchanged inputs. All 63 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Three new audit registrations supplement
+the retained history/source roots. Evidence is in
+`build/c-factory/event-histories/package-v1.*`, `full-gate-v1.*` and
+`integration-v1.json`.
+
+Every retained FMU member, including the native library, is byte-identical to
+the accepted zero-event getter checkpoint. The eFMU changes only generation
+identities and dependent references/checksums in three manifests; numerical C,
+GALEC and Production C are unchanged. See
+`build/c-factory/event-histories/artifacts-v1/` and its JSON record.
+The existing artifact, importer, native and mutation checks passed; no test
+suite was added. Only these three evidence documents change after the frozen gate.
+
+The next discrete-evaluation review found an overbroad lifecycle predicate:
+`fmi3EvaluateDiscreteStates` was admitted during Initialization, although the
+pinned FMI 3.0.2 call table lists it in Event Mode. Its false capability default
+requires an ignored operation there, so generic capability rejection is not
+the replacement. An Event-only policy correction and complete no-op call,
+metadata, source and control-history drafts are in
+`build/c-factory/discrete-evaluation/`; combined production and artifact
+acceptance remain pending. No new grammar or numerical capability is admitted.
+K02–K05 and the recurring whole-subset standards review remain open.
+
 **Zero-event getter (full gate passed):** Its mandatory adapter/checker
 contract now binds the actual public C function, prepared runtime, XML zero-event
 count and the same source/Solve product. Complete ME call-memory behavior covers
@@ -33,9 +64,8 @@ and its JSON record. The existing artifact, importer, native and mutation
 checks passed; no test suite was added. Only these three evidence documents
 change after the frozen gate.
 
-The next increment composes this call into initialization and mixed ME
-histories. Its core, creation/release and resource-handoff drafts have passed
-isolated checks; continuation integration and the required artifact gate remain.
+The later event-history checkpoint above accepts initialization, mixed ME,
+creation/release and resource-handoff composition with its own artifact gate.
 K02–K05 and the whole-subset standards review still block grammar expansion.
 
 **CS simulation logging (full gate passed):** Recurring source-bound
@@ -59,7 +89,7 @@ Only generation identities and dependent references/checksums in three eFMU
 manifests change. Numerical C, GALEC and Production C are unchanged; see
 `build/c-factory/cs-simulation-logging/artifacts-v1/` and its JSON record.
 K02–K05 and the whole-subset standards gate remain open. The zero-event getter's mandatory checker and artifact acceptance
-are recorded above. Complete history composition remains the next increment.
+and the later complete event-history composition are recorded above.
 
 **ME simulation logging (full gate passed):** All remaining
 initialization-access/protocol continuation and restart entry points have been
@@ -124,9 +154,9 @@ obligations; this acceptance does not establish unrestricted FMI conformance.
 
 Remaining work, in dependency order:
 
-1. Finish the existing zero-event getter's mandatory adapter/checker contract
-   and source/XML binding, then compose initialization and ME histories with
-   derived memory invariants. Review legal versus defensive calls explicitly.
+1. Correct the discrete-evaluation lifecycle predicate and bind its no-op
+   behavior, false capability default and complete histories to actual source
+   artifacts. Retain the distinction between legal and defensive calls.
 2. Complete the remaining emitted public-call families, including capability
    rejection and other variable-type accessors, using reusable call contracts.
    Retain every raw return, callback alternative, recovery state and origin.

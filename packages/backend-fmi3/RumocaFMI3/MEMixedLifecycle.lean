@@ -25,6 +25,10 @@ theorem Action.can_finish (action : Action)
     cases request with
     | get _ => exact ready
     | reject _ _ _ => exact Or.inr rfl
+  | eventIndicators request =>
+    cases request with
+    | get _ => exact ready
+    | reject _ _ _ => exact Or.inr rfl
   | run command =>
     cases command with
     | restart _ => exact Or.inl (by simp [Action.next, MENumericalHistory.ReferenceState.restart,

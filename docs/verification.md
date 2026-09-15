@@ -1,5 +1,39 @@
 # Exact verification contract
 
+**Event-indicator histories (2026-09-15, full gate passed):** The
+existing initialization and mixed ME histories now include empty event queries.
+Raw target executions determine status, observations, reference transitions and
+completed/stopped prefixes. Original borrowed inputs, logging configuration,
+ownership and reset/source initialization checkpoints compose through the same
+history relations. Source-bound creation/release, resource handoff and recurring
+ME/CS bundle consumers retain their numerical and memory obligations.
+
+The owning C/FMI/compiler checks passed at 06:36:55 UTC; the required
+`nix develop .#verification --command lake test` passed at 07:20:04 UTC on
+1079 unchanged inputs. All 63 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Three new audit registrations supplement
+the retained history/source roots. Evidence is in
+`build/c-factory/event-histories/package-v1.*`, `full-gate-v1.*` and
+`integration-v1.json`.
+
+Every retained FMU member, including the native library, is byte-identical to
+the accepted zero-event getter checkpoint. The eFMU changes only generation
+identities and dependent references/checksums in three manifests; numerical C,
+GALEC and Production C are unchanged. See
+`build/c-factory/event-histories/artifacts-v1/` and its JSON record.
+The existing artifact, importer, native and mutation checks passed; no test
+suite was added. Only these three evidence documents change after the frozen gate.
+
+The next discrete-evaluation review found an overbroad lifecycle predicate:
+`fmi3EvaluateDiscreteStates` was admitted during Initialization, although the
+pinned FMI 3.0.2 call table lists it in Event Mode. Its false capability default
+requires an ignored operation there, so generic capability rejection is not
+the replacement. An Event-only policy correction and complete no-op call,
+metadata, source and control-history drafts are in
+`build/c-factory/discrete-evaluation/`; combined production and artifact
+acceptance remain pending. No new grammar or numerical capability is admitted.
+K02–K05 and the recurring whole-subset standards review remain open.
+
 **Zero-event getter (2026-09-15, full gate passed):** The mandatory
 adapter proposition and fixed checker require the printed/prepared
 `fmi3GetEventIndicators` contract. Its source theorem joins the actual C file,
@@ -25,9 +59,8 @@ and its JSON record. The existing artifact, importer, native and mutation
 checks passed; no test suite was added. Only these three evidence documents
 change after the frozen gate.
 
-Initialization and mixed ME history composition remain pending integration.
-Their isolated follow-up proofs are in `build/c-factory/event-histories/`;
-component checks do not substitute for owning-module and artifact acceptance.
+The later event-history checkpoint above accepts initialization and mixed
+ME composition together with its own package and actual-artifact evidence.
 The standards review distinguishes normative valid calls from the body's
 additional null-pointer tolerance. No grammar, numerical lowering or emitter
 change is admitted. Native/ABI correspondence, remaining public calls,

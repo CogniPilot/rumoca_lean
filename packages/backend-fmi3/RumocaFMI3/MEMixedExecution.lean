@@ -90,6 +90,7 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
     (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
     (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (logging : DebugLogging.PreparedContract model sigs pool)
+    (eventIndicators : EventIndicatorEnvironment.PreparedContract model sigs pool)
     (literalBase : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (capability : Logging.Capability) (enabled : Bool),
@@ -230,6 +231,26 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
         (fun region preserve q inside outside _ => (framePolicy region preserve _ _ _ _ outcome q inside).trans
           ((LifecycleBodies.write_frame ready p q .terminated outside.1.1.2.1).trans
             (MEFailure.prepare_frame input heap buffer q outside.1.2.2)))
+  | eventIndicators request =>
+    obtain ⟨outcomes, blocked, contract⟩ := MEEventIndicatorCalls.execution header objects model sigs pool eventIndicators
+      literalBase firstBlock signed program config actual heap p clock reference addresses buffer request owners
+      valid current inPool represented literals stored storage allowed
+    refine ⟨_, blocked, .eventIndicators contract, ?_⟩
+    rintro observed after epochs ⟨events, status, rfl, rfl, returned⟩
+    obtain ⟨observation, memory⟩ := contract.returned events status after returned
+    refine Returned.of_frame configured stored inPool rfl memory.stored memory.reset memory.ownership ?_ memory.readonly
+      memory.frame (fun region policy => memory.storage region (storagePolicy region policy)) ?_
+    · obtain ⟨statusValue, quiet⟩ := observation
+      cases failed : request.failed with
+      | false =>
+        have empty := quiet failed
+        simp only [Action.Observed, failed, Bool.false_eq_true, if_false, statusValue,
+          empty, MENumericalHistory.Observation.ok]
+      | true =>
+        simp only [Action.Observed, failed, if_true]
+        exact ⟨events, by simp only [statusValue, failed, if_true]⟩
+    · intro region policy q inside outside _
+      exact memory.callerFrame region (framePolicy region policy) q inside outside.1.1.2.1
   | logging request =>
     obtain ⟨outcomes, blocked, contract⟩ := MELoggingCalls.execution header objects model sigs pool logging
       literalBase firstBlock signed program capability enabled actual compare bound heap p clock reference addresses buffer request owners
@@ -269,6 +290,7 @@ theorem trace_correct (header : CFenv.Header) (objects : Objects) (model : Solve
     (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
     (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (logging : DebugLogging.PreparedContract model sigs pool)
+    (eventIndicators : EventIndicatorEnvironment.PreparedContract model sigs pool)
     (literalBase : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (capability : Logging.Capability) (enabled : Bool),
@@ -304,7 +326,7 @@ theorem trace_correct (header : CFenv.Header) (objects : Objects) (model : Solve
   induction admitted generalizing heap enabled with
   | nil => exact .nil stored storage configured represented
   | @cons rest final finalClock before clock action accepted _ ih =>
-    obtain ⟨returns, blocked, called, returned⟩ := action_correct header objects model sigs pool prepared counts nominals logging
+    obtain ⟨returns, blocked, called, returned⟩ := action_correct header objects model sigs pool prepared counts nominals logging eventIndicators
       literalBase firstBlock signed program capability enabled actual compare bound reset enterDefined exitDefined
       heap p clock before addresses buffer action owners required configured writable inPool represented literals stored storage
       accepted (ready _ (by simp))

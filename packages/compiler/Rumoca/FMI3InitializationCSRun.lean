@@ -258,7 +258,7 @@ theorem runtime_create_cs_histories (compiled : compile input = .ok a)
               Continuation a.solve.prepareFMI3 header objects program tag slot (SlotOwners.update owners slot (some owner)) owner
                 heap (InitializationBodies.exitHeap atExit p .cs) buffers stepBuffers (runReference ⟨initial⟩ args before during)
                 final actions statuses capability factoryArgs.logging := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, prepared, _, _, _, loggingPrepared, create⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, prepared, _, _, _, loggingPrepared, _, create⟩ :=
     InitializationAccess.runtime_create_release compiled build
   refine ⟨compiled, numerical, metadataVariables, writable, DebugLogging.artifact_category _ _ build.metadata,
     sigs, pool, made, printed, functions, prepared, loggingPrepared, ?_⟩

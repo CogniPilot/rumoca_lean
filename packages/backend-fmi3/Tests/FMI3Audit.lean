@@ -1,3 +1,4 @@
+import RumocaFMI3.InitializationProtocolEventIndicators
 import RumocaFMI3.MEEventIndicatorExecution
 import RumocaFMI3.CSMixedExecution
 import RumocaFMI3.CSMixedPrefixes
@@ -1990,3 +1991,9 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MEEventIndicatorCalls.Memory.failure
 #audit axioms Rumoca.FMI3.MEEventIndicatorCalls.Memory.success
 #audit axioms Rumoca.FMI3.MEEventIndicatorCalls.execution
+
+#audit axioms Rumoca.FMI3.InitializationProtocol.event_indicators_get_call
+
+#audit axioms Rumoca.FMI3.InitializationProtocol.Result.event_indicators_rejected
+
+#audit axioms Rumoca.FMI3.InitializationProtocol.event_indicators_rejection_call

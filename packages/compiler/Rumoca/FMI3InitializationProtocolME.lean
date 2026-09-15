@@ -45,6 +45,7 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
     (counts : ∀ events, CountEnvironment.PreparedContract model.prepareFMI3 sigs events pool)
     (nominals : NominalEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (loggingPrepared : DebugLogging.PreparedContract model.prepareFMI3 sigs pool)
+    (eventPrepared : EventIndicatorEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation),
@@ -102,7 +103,7 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
     exact MEMixedRun.Action.Prepared.preserved action (requests action member)
       (fun q inside => invariant.caller q (regions action member q inside))
       (fun q inside => invariant.readerFrame q (included action member q inside))
-  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals loggingPrepared baseHeap firstBlock signed
+  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals loggingPrepared eventPrepared baseHeap firstBlock signed
     program capability ((loggingUpdate initialization).getD factoryArgs.logging) actual compare bound reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
       (SlotOwners.update owners slot (some owner)) required configured writable rfl invariant.ownership invariant.readonly
       stored invariant.stored.reset admitted current policies readPolicies readerOutside separateReaders

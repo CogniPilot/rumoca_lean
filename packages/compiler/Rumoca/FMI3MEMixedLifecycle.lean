@@ -117,13 +117,14 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot final.control.mode q = heap q))) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative,
-    _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, loggingContract, _⟩ := build.adapter
+    _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, loggingContract, eventContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
   have nominals := nominalContract.runtime pool made
   have logging := loggingContract.prepared pool made
+  have eventIndicators := eventContract.runtime pool made
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
       DerivativeEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique derivative.member derivative.numerical.fresh made,
@@ -228,7 +229,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
           exact notRecord (same ▸ p.member_in_record name)
         have notFlag : q ≠ AtomicSlots.address objects.flagsBlock slot := by
           cases action with
-          | run _ | reject _ _ | counts _ | nominals _ => cases inside
+          | run _ | reject _ _ | counts _ | nominals _ | eventIndicators _ => cases inside
           | logging request =>
             have borrowed : InitializationProtocol.ReadBank.Stored [request] heap := by
               intro selected selectedMember
@@ -239,7 +240,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
         exact (InitializationCalls.exited_frame live p q initArgs .me (field "time") (field "timeMin")
           (field "eventTime") (field "lastCompleted") (field "stop") (field "stopDefined") (field "mode")).trans
           (createdFrame q notRecord notFlag))
-  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals logging before firstBlock signed
+  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals logging eventIndicators before firstBlock signed
     program capability args.logging actual compare bound reset enterDefined exitDefined initializedHeap p _ _ final finalClock addresses buffer actions
     (SlotOwners.update owners slot (some owner)) required initialConfig initialWritable rfl initialOwners
     (literalFrame.trans prefixReadonly) initialStored initialReset admitted current policies readPolicies readOutside separateReaders

@@ -1,5 +1,6 @@
 import RumocaFMI3.MENominalExecution
 import RumocaFMI3.MELoggingCalls
+import RumocaFMI3.MEEventIndicatorExecution
 
 noncomputable section
 namespace Rumoca.FMI3.MEMixedRun
@@ -11,6 +12,7 @@ inductive Action where
   | counts (request : CountAccess.Request)
   | nominals (request : NominalAccess.Request)
   | logging (request : DebugLogging.Request)
+  | eventIndicators (request : EventIndicatorAccess.Request)
 
 def Action.next (action : Action) (reference : MENumericalHistory.ReferenceState) : MENumericalHistory.ReferenceState :=
   match action with
@@ -20,6 +22,7 @@ def Action.next (action : Action) (reference : MENumericalHistory.ReferenceState
   | .counts request => MECountCalls.next request reference
   | .nominals request => MENominalCalls.next request reference
   | .logging request => MELoggingCalls.next request reference
+  | .eventIndicators request => MEEventIndicatorCalls.next request reference
 
 def Action.clock (action : Action) (clock : Time.Clock) : Time.Clock :=
   match action with
@@ -29,6 +32,7 @@ def Action.clock (action : Action) (clock : Time.Clock) : Time.Clock :=
   | .counts _ => clock
   | .nominals _ => clock
   | .logging _ => clock
+  | .eventIndicators _ => clock
 
 def Action.Allowed (action : Action) (buffer : Address) (clock : Time.Clock)
     (reference : MENumericalHistory.ReferenceState) : Prop :=
@@ -39,6 +43,7 @@ def Action.Allowed (action : Action) (buffer : Address) (clock : Time.Clock)
   | .counts request => request.Allowed .me reference.control.mode
   | .nominals request => request.Allowed .me reference.control.mode
   | .logging _ => True
+  | .eventIndicators request => request.Allowed .me reference.control.mode
 
 def Action.Rejection : Action → Prop
   | .run _ => False
@@ -46,6 +51,7 @@ def Action.Rejection : Action → Prop
   | .counts request => request.failed = true
   | .nominals request => request.failed = true
   | .logging request => request.failed = true
+  | .eventIndicators request => request.failed = true
 
 /-- Additional caller cells needed by a particular action. Existing numerical
 actions keep their previous buffer contract. -/
@@ -74,7 +80,7 @@ theorem Action.Prepared.preserved (action : Action)
     (readers : ∀ q, action.ReaderRegion q → after q = before q) :
     action.Prepared objects after addresses buffer := by
   cases action with
-  | run _ | reject _ _ => trivial
+  | run _ | reject _ _ | eventIndicators _ => trivial
   | logging request => exact prepared.framed readers
   | counts request =>
     cases request with
@@ -102,7 +108,8 @@ def Action.Observed (action : Action) (model : Solve.FMI3Model source)
       else observed = [MENumericalHistory.Observation.ok (request.expected model 0)]
   | .logging request => if request.failed then ∃ events, observed = [⟨events, .integer 3, none⟩]
       else observed = [MENumericalHistory.Observation.ok none]
-
+  | .eventIndicators request => if request.failed then ∃ events, observed = [⟨events, .integer 3, none⟩]
+      else observed = [MENumericalHistory.Observation.ok none]
 inductive ReferenceTrace (buffer : Address) : MENumericalHistory.ReferenceState → Time.Clock →
     List Action → MENumericalHistory.ReferenceState → Time.Clock → Prop where
   | nil : ReferenceTrace buffer reference clock [] reference clock
@@ -132,7 +139,9 @@ inductive Performed [CInterface] (program : Program Invocation) (p : Address)
   | logging : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done)
         (.terminates events ⟨status, after⟩) →
       Performed program p addresses buffer heap (.logging request) [⟨events, status, none⟩] after []
-
+  | eventIndicators : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done)
+        (.terminates events ⟨status, after⟩) →
+      Performed program p addresses buffer heap (.eventIndicators request) [⟨events, status, none⟩] after []
 inductive Completed [CInterface] (program : Program Invocation) (p : Address)
     (addresses : String → Address) (buffer : Address) : Heap → List Action →
     List (MENumericalHistory.Observation Invocation) → Heap → List MENumericalRun.Epoch → Prop where
@@ -182,7 +191,12 @@ inductive ActionContract [CInterface] (program : Program Invocation) (p : Addres
         (fun observed next checkpoints => ∃ events status,
           observed = [⟨events, status, none⟩] ∧ checkpoints = [] ∧ outcomes events status next)
         blocked
-
+  | eventIndicators (contract : MEEventIndicatorCalls.Contract program objects owners config heap p addresses buffer
+      clock reference request outcomes blocked) :
+      ActionContract program p addresses buffer heap (.eventIndicators request)
+        (fun observed next checkpoints => ∃ events status,
+          observed = [⟨events, status, none⟩] ∧ checkpoints = [] ∧ outcomes events status next)
+        blocked
 theorem ActionContract.returned [CInterface] {program : Program Invocation}
     (certified : ActionContract program p addresses buffer heap action returns blocked)
     (performed : Performed program p addresses buffer heap action observed after epochs) :
@@ -226,7 +240,13 @@ theorem ActionContract.returned [CInterface] {program : Program Invocation}
       · cases same
         exact ⟨_, _, rfl, rfl, outcome⟩
       · cases impossible
-
+  | eventIndicators executed =>
+    cases certified with
+    | eventIndicators contract =>
+      rcases (contract.behaviors _).mp executed with ⟨events, status, next, outcome, same⟩ | ⟨_, impossible⟩
+      · cases same
+        exact ⟨_, _, rfl, rfl, outcome⟩
+      · cases impossible
 /-- Each certified returning alternative is realized by actual target calls;
 this direction prevents the branching certificate from inventing outcomes. -/
 theorem ActionContract.realizes [CInterface] {program : Program Invocation}
@@ -252,7 +272,9 @@ theorem ActionContract.realizes [CInterface] {program : Program Invocation}
   | logging contract =>
     obtain ⟨events, status, rfl, rfl, returned⟩ := outcome
     exact .logging ((contract.behaviors _).mpr (Or.inl ⟨events, status, after, returned, rfl⟩))
-
+  | eventIndicators contract =>
+    obtain ⟨events, status, rfl, rfl, returned⟩ := outcome
+    exact .eventIndicators ((contract.behaviors _).mpr (Or.inl ⟨events, status, after, returned, rfl⟩))
 def Action.loggingUpdate : Action → Option Bool
   | .logging request => request.loggingUpdate
   | _ => none

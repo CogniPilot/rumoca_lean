@@ -50,6 +50,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
     (counts : ∀ events, CountEnvironment.PreparedContract model.prepareFMI3 sigs events pool)
     (nominals : NominalEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (loggingPrepared : DebugLogging.PreparedContract model.prepareFMI3 sigs pool)
+    (eventPrepared : EventIndicatorEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) (slot : Fin objects.capacity)
     (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -120,7 +121,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
           fun same => notRecord (same ▸ (p.member_in_record "model").member "x")
         have notFlag : q ≠ AtomicSlots.address objects.flagsBlock slot := by
           cases action with
-          | run _ | reject _ _ | counts _ | nominals _ => cases inside
+          | run _ | reject _ _ | counts _ | nominals _ | eventIndicators _ => cases inside
           | logging request =>
             have readable := (show request.Inputs original from requests (.logging request) member).load_ne_none inside
             intro same
@@ -128,7 +129,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
             exact readable (liveStorage.atomic_unreadable (represented slot) rfl)
         exact (initialized.frame q ⟨accessOutside, notState, fun name _ => field name⟩).trans
           (liveFrame q notRecord notFlag))
-  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals loggingPrepared baseHeap firstBlock signed
+  have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals loggingPrepared eventPrepared baseHeap firstBlock signed
     program capability factoryArgs.logging actual compare bound reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
       (SlotOwners.update owners slot (some owner)) required configured writable rfl ownership (literals.trans readonly)
       stored resetStorage admitted current policies readPolicies
@@ -190,6 +191,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
       (∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool) ∧
       NominalEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       DebugLogging.PreparedContract a.solve.prepareFMI3 sigs pool ∧
+      EventIndicatorEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -259,12 +261,12 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
               MEContinuation a.solve objects program tag slot owners owner heap
                 (InitializationBodies.exitHeap atExit p .me) buffers addresses buffer (meReference ⟨initial⟩ args before during)
                 final (Time.Clock.initial args.start) finalClock actions capability factoryArgs.logging := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, nominals, loggingPrepared, create⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, nominals, loggingPrepared, eventPrepared, create⟩ :=
     runtime_create_release compiled build
   refine ⟨compiled, numerical, metadataVariables, writable, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
     CountMetadata.artifact_counts _ _ build.metadata, NominalMetadata.artifact_nominals _ _ build.metadata,
     DebugLogging.artifact_category _ _ build.metadata,
-    sigs, pool, made, printed, functions, csPrepared.toPreparedContract, prepared, counts, nominals, loggingPrepared, ?_⟩
+    sigs, pool, made, printed, functions, csPrepared.toPreparedContract, prepared, counts, nominals, loggingPrepared, eventPrepared, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -284,7 +286,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
   obtain ⟨_, initialized, uniqueSource⟩ := certified.completed_source executed
   refine ⟨beforeEntry, atExit, certified, executed, initialized, uniqueSource, fun _ _ => certified.execution_iff, ?_⟩
   intro addresses buffer capability actions final finalClock outputs matching bound required admitted requests policies readPolicies readerOutside separateReaders
-  exact certified.me_continuation a.solve header objects sigs pool csPrepared.toPreparedContract prepared counts nominals loggingPrepared
+  exact certified.me_continuation a.solve header objects sigs pool csPrepared.toPreparedContract prepared counts nominals loggingPrepared eventPrepared
     baseHeap firstBlock signed slot buffers addresses buffer program tag actual identity.compareBinding write heap live beforeEntry atExit ⟨initial⟩ args
       before during factoryArgs owners owner created.initialized literalFrame
       (termination_preserves ((creation _).mpr rfl)) preserved createdFrame admissible (outputs.at_index slot.val)

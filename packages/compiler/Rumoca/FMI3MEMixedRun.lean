@@ -33,9 +33,12 @@ inductive SourceObservations (model : Solve.Model source) : List Action →
 
   | logging : request.failed = false → SourceObservations model rest tail →
       SourceObservations model (.logging request :: rest) (MENumericalHistory.Observation.ok none :: tail)
+  | eventIndicators : request.failed = false → SourceObservations model rest tail →
+      SourceObservations model (.eventIndicators request :: rest) (MENumericalHistory.Observation.ok none :: tail)
   | loggingRejected : request.failed = true → SourceObservations model rest tail →
       SourceObservations model (.logging request :: rest) (⟨events, .integer 3, none⟩ :: tail)
-
+  | eventIndicatorsRejected : request.failed = true → SourceObservations model rest tail →
+      SourceObservations model (.eventIndicators request :: rest) (⟨events, .integer 3, none⟩ :: tail)
 theorem ActionContract.epochs_source [CInterface] {source : AST.Model} {program : Program Invocation}
     (model : Solve.Model source) (certified : ActionContract program p addresses buffer heap action returns blocked)
     (performed : Performed program p addresses buffer heap action observed after epochs) :
@@ -50,7 +53,7 @@ theorem ActionContract.epochs_source [CInterface] {source : AST.Model} {program 
   | counts _ => intro epoch member; cases member
   | nominals _ => intro epoch member; cases member
   | logging _ => intro epoch member; cases member
-
+  | eventIndicators _ => intro epoch member; cases member
 /-- The actual completed script, including arbitrary observed statuses and
 callback returns, inherits the source equations and every reset's source IVP. -/
 theorem Trace.source [CInterface] {source : AST.Model} {program : Program Invocation}
@@ -115,6 +118,18 @@ theorem Trace.source [CInterface] {source : AST.Model} {program : Program Invoca
             obtain ⟨events, values⟩ := values
             rw [values]
             exact .loggingRejected failed sourceTail
+        | eventIndicators request =>
+          have values := post.observation
+          cases failed : request.failed with
+          | false =>
+            simp only [Action.Observed, failed, Bool.false_eq_true, if_false] at values
+            rw [values]
+            exact .eventIndicators failed sourceTail
+          | true =>
+            simp only [Action.Observed, failed, if_true] at values
+            obtain ⟨events, values⟩ := values
+            rw [values]
+            exact .eventIndicatorsRejected failed sourceTail
       · intro epoch member
         rcases List.mem_append.mp member with member | member
         · exact epochHead epoch member
@@ -238,13 +253,14 @@ theorem runtime_history (compiled : compile input = .ok a)
           (∀ stop, Interrupted program p addresses buffer heap actions stop →
             SourcePrefix a.solve capability enabled heap p addresses buffer reference clock actions stop) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative,
-    _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, loggingContract, _⟩ := build.adapter
+    _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, loggingContract, eventContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
   have nominals := nominalContract.runtime pool made
   have logging := loggingContract.prepared pool made
+  have eventIndicators := eventContract.runtime pool made
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
       DerivativeEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique derivative.member derivative.numerical.fresh made,
@@ -272,7 +288,7 @@ theorem runtime_history (compiled : compile input = .ok a)
       some (.tree (Runtime.function a.solve.prepareFMI3 InitializationExit.signature)) := by
     rw [actual]
     exact LiteralPreparation.function_bound _ sigs unique _ initialization.exitMember
-  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals logging literalBase firstBlock signed
+  have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals logging eventIndicators literalBase firstBlock signed
     program capability enabled actual compare bound reset enterDefined exitDefined heap p clock reference final finalClock addresses buffer actions owners
     required configured writable inPool represented readonly stored storage admitted requests policies readPolicies readerOutside separate
   refine ⟨certified, ?_, certified.progress, ?_⟩

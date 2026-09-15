@@ -2,6 +2,7 @@ import RumocaFMI3.Float64RejectionExecution
 import RumocaFMI3.CountRequests
 import RumocaFMI3.NominalRequests
 import RumocaFMI3.LoggingRequests
+import RumocaFMI3.EventIndicatorRequests
 
 /-! Initialization is a protocol, not an indivisible reset/enter/exit macro.
 Its reference transitions are independent of the target heaps and statuses.
@@ -35,6 +36,7 @@ inductive Action where
   | counts (request : CountAccess.Request)
   | nominals (request : NominalAccess.Request)
   | logging (request : DebugLogging.Request)
+  | eventIndicators (request : EventIndicatorAccess.Request)
   | enter (args : Initialization.Arguments)
   | exit
   | reset
@@ -45,6 +47,7 @@ def Action.next (action : Action) (state : State) : State :=
   | .reject _ => { state with phase := .failed }
   | .counts request => if request.failed then { state with phase := .failed } else state
   | .nominals request => if request.failed then { state with phase := .failed } else state
+  | .eventIndicators request => if request.failed then { state with phase := .failed } else state
   | .logging request => if request.failed then { state with phase := .failed } else state
   | .enter args => { state with phase := .initializing args, time := args.start }
   | .exit => match state.phase with
@@ -75,6 +78,7 @@ def Action.Allowed (action : Action) (kind : Kind) (state : State) : Prop :=
   | .reject request => request.Condition kind (state.phase.mode kind)
   | .counts request => request.Allowed kind (state.phase.mode kind)
   | .nominals request => request.Allowed kind (state.phase.mode kind)
+  | .eventIndicators request => request.Allowed kind (state.phase.mode kind)
   | .logging _ => True
   | .enter args => state.phase = .instantiated ∧ args.Admissible
   | .exit => ∃ args, state.phase = .initializing args
@@ -92,6 +96,7 @@ def Action.call (action : Action) (p : Address) (buffers : Float64Buffers.Layout
   | .reject request => request.call p
   | .counts request => request.call p
   | .nominals request => request.call p
+  | .eventIndicators request => request.call p
   | .logging request => request.call p
   | .enter args => (InitializationCalls.signature.name,
       InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args))
@@ -124,6 +129,9 @@ def Action.Observed (action : Action) (model : Solve.FMI3Model source) (state : 
       observed.status = .integer 3 ∧ observed.values = fun _ => none
     else observed = .ok (request.expected model)
   | .logging request => if request.failed then
+      observed.status = .integer 3 ∧ observed.values = fun _ => none
+    else observed = .ok (fun _ => none)
+  | .eventIndicators request => if request.failed then
       observed.status = .integer 3 ∧ observed.values = fun _ => none
     else observed = .ok (fun _ => none)
   | _ => observed = .ok (fun _ => none)

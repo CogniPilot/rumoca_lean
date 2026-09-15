@@ -74,7 +74,8 @@ inductive Faulted [CInterface] (program : Program Invocation) (p : Address)
       Faulted program p addresses buffer heap (.nominals request)
   | logging : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done) (.wrong []) →
       Faulted program p addresses buffer heap (.logging request)
-
+  | eventIndicators : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done) (.wrong []) →
+      Faulted program p addresses buffer heap (.eventIndicators request)
 inductive Stopped [CInterface] (program : Program Invocation) (p : Address)
     (addresses : String → Address) (buffer : Address) : Heap → List Action → Prop where
   | here : Faulted program p addresses buffer heap action →
@@ -127,6 +128,12 @@ theorem ActionContract.faulted_iff
         rcases (contract.behaviors _).mp faulted with ⟨_, _, _, _, impossible⟩ | ⟨blocked, _⟩
         · cases impossible
         · exact blocked
+    | eventIndicators faulted =>
+      cases certified with
+      | eventIndicators contract =>
+        rcases (contract.behaviors _).mp faulted with ⟨_, _, _, _, impossible⟩ | ⟨blocked, _⟩
+        · cases impossible
+        · exact blocked
   · intro blocked
     cases certified with
     | run _ | quiet _ _ => exact False.elim blocked
@@ -135,7 +142,7 @@ theorem ActionContract.faulted_iff
 
     | nominals contract => exact .nominals ((contract.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
     | logging contract => exact .logging ((contract.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
-
+    | eventIndicators contract => exact .eventIndicators ((contract.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
 theorem ActionContract.faulted_rejection
     (certified : ActionContract program p addresses buffer heap action returns blocked)
     (actual : Faulted program p addresses buffer heap action) : action.Rejection := by
@@ -147,7 +154,7 @@ theorem ActionContract.faulted_rejection
 
   | nominals contract => exact contract.failure blocked
   | logging contract => exact contract.failure blocked
-
+  | eventIndicators contract => exact contract.failure blocked
 /-- Every modeled returning or blocked alternative is derived, with no
 callback totality or deterministic-callback premise. -/
 theorem ActionContract.progress
@@ -174,6 +181,10 @@ theorem ActionContract.progress
       · exact Or.inl ⟨_, after, [], events, status, rfl, rfl, returned⟩
       · exact Or.inr blocked
     | logging contract =>
+      rcases contract.available with ⟨events, status, after, returned⟩ | blocked
+      · exact Or.inl ⟨_, after, [], events, status, rfl, rfl, returned⟩
+      · exact Or.inr blocked
+    | eventIndicators contract =>
       rcases contract.available with ⟨events, status, after, returned⟩ | blocked
       · exact Or.inl ⟨_, after, [], events, status, rfl, rfl, returned⟩
       · exact Or.inr blocked

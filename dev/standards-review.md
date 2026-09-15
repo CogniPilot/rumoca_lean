@@ -73,6 +73,53 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Event-indicator histories: full gate passed
+
+The same reviewed lifecycle/count guard now composes through initialization,
+mixed ME operation, source-bound creation/release and recurring ME/CS drivers.
+Actual calls determine status and memory frames. Original borrowed storage and
+universal callback policies remain explicit host conditions; no future heap or
+selected logger return replaces them. Null output tolerance is defensive, and
+post-Error queries are diagnostic-only.
+
+The owning C/FMI/compiler checks passed at 06:36:55 UTC; the required
+`nix develop .#verification --command lake test` passed at 07:20:04 UTC on
+1079 unchanged inputs. All 63 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Three new audit registrations supplement
+the retained history/source roots. Evidence is in
+`build/c-factory/event-histories/package-v1.*`, `full-gate-v1.*` and
+`integration-v1.json`.
+
+Every retained FMU member, including the native library, is byte-identical to
+the accepted zero-event getter checkpoint. The eFMU changes only generation
+identities and dependent references/checksums in three manifests; numerical C,
+GALEC and Production C are unchanged. See
+`build/c-factory/event-histories/artifacts-v1/` and its JSON record.
+The existing artifact, importer, native and mutation checks passed; no test
+suite was added. Only these three evidence documents change after the frozen gate.
+
+Upstream Rumoca `b0217592` preserves the reviewed SPEC_0007/SPEC_0048 ownership
+rules. Its SPEC_0043 affine-elimination/factor-freshness addition concerns later
+numerical projection; this increment does not perform that work. The focused
+review is retained in `build/c-factory/event-histories/standards-review-v1.json`.
+Pinned MLS 3.7 and eFMI 1.0.0 Beta 1 findings carry forward.
+
+The next discrete-evaluation review found an overbroad lifecycle predicate:
+`fmi3EvaluateDiscreteStates` was admitted during Initialization, although the
+pinned FMI 3.0.2 call table lists it in Event Mode. Its false capability default
+requires an ignored operation there, so generic capability rejection is not
+the replacement. An Event-only policy correction and complete no-op call,
+metadata, source and control-history drafts are in
+`build/c-factory/discrete-evaluation/`; combined production and artifact
+acceptance remain pending. No new grammar or numerical capability is admitted.
+K02–K05 and the recurring whole-subset standards review remain open.
+
+The new evaluation finding is based on [FMI 3.0.2 §§2.3.3–2.3.5 and
+§2.4.2](https://fmi-standard.org/docs/3.0.2/) and the
+[pinned interface schema](https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3InterfaceType.xsd).
+Its isolated drafts do not constitute the corrected emitted-artifact guarantee.
+**Stage decision: open; no grammar expansion.**
+
 ### Zero-event getter: full gate passed
 
 The source theorem binds the mandatory printed/prepared public function,

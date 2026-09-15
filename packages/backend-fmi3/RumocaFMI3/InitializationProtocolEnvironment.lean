@@ -1,5 +1,6 @@
 import RumocaFMI3.InitializationProtocolHistory
 import RumocaFMI3.InitializationProtocolLogging
+import RumocaFMI3.InitializationProtocolEventIndicators
 import RumocaFMI3.CSRunEnvironment
 import RumocaFMI3.MEEnvironment
 
@@ -18,6 +19,7 @@ structure PreparedContract (model : Solve.FMI3Model source) (sigs : List Signatu
   counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool
   nominals : NominalEnvironment.PreparedContract model sigs pool
   logging : DebugLogging.PreparedContract model sigs pool
+  eventIndicators : EventIndicatorEnvironment.PreparedContract model sigs pool
   cs : CSRunEnvironment.PreparedContract model sigs pool
   me : MEEnvironment.PreparedContract model sigs pool
 
@@ -31,6 +33,7 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
     (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
     (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (logging : DebugLogging.PreparedContract model sigs pool)
+    (eventIndicators : EventIndicatorEnvironment.PreparedContract model sigs pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -86,6 +89,16 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
         (fun inside => separate buffer inside rfl) allowed
     | reject access buffer count =>
       exact nominal_rejection_call access buffer count header objects model sigs pool nominals
+        baseHeap firstBlock signed program actual heap p buffers kind state owners retained
+        invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging
+  | eventIndicators request =>
+    cases request with
+    | get buffer =>
+      exact event_indicators_get_call model program
+        (eventIndicators.quiet header Invocation objects firstBlock program actual)
+        invariant.stored invariant.ownership buffer allowed
+    | reject access buffer count =>
+      exact event_indicators_rejection_call access buffer count header objects model sigs pool eventIndicators
         baseHeap firstBlock signed program actual heap p buffers kind state owners retained
         invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging
   | logging request =>

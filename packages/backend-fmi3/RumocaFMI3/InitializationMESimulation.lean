@@ -34,6 +34,7 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
     (counts : ∀ events, CountEnvironment.PreparedContract model sigs events pool)
     (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (logging : DebugLogging.PreparedContract model sigs pool)
+    (eventIndicators : EventIndicatorEnvironment.PreparedContract model sigs pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -81,7 +82,7 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
     exact MEMixedRun.Action.Prepared.preserved action (requests action member)
       (fun q inside => persistent.caller q (regions action member q inside))
       (fun q inside => persistent.readerFrame q (included action member q inside))
-  have certified := MEMixedRun.trace_correct header objects model sigs pool prepared counts nominals logging baseHeap firstBlock signed
+  have certified := MEMixedRun.trace_correct header objects model sigs pool prepared counts nominals logging eventIndicators baseHeap firstBlock signed
     program capability enabled actual compare bound reset enterDefined exitDefined heap p clock before final finalClock
     addresses buffer actions owners meRequired configured writable inPool persistent.ownership persistent.readonly
     stored resetStorage admitted current
