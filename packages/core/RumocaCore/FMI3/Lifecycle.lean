@@ -29,7 +29,7 @@ def permittedModes : Command → Kind → List Mode
   | .enterEvent, .me => [.continuous]
   | .enterContinuous, .me => [.event]
   | .updateDiscrete, .me => [.event]
-  | .evaluateDiscrete, .me => [.initialization, .event]
+  | .evaluateDiscrete, .me => [.event]
   | .terminate, .me => [.event, .continuous]
   | .terminate, .cs => [.step]
   | .reset, _ => [.instantiated, .initialization, .event, .continuous, .step, .terminated]
@@ -55,7 +55,7 @@ def Allowed (c : Command) (k : Kind) (m : Mode) : Prop :=
   | .exitInitialization => m = .initialization
   | .enterEvent => k = .me ∧ m = .continuous
   | .enterContinuous | .updateDiscrete => k = .me ∧ m = .event
-  | .evaluateDiscrete => k = .me ∧ (m = .initialization ∨ m = .event)
+  | .evaluateDiscrete => k = .me ∧ m = .event
   | .terminate => (k = .me ∧ (m = .event ∨ m = .continuous)) ∨ (k = .cs ∧ m = .step)
   | .reset => True
   | .get | .logging => True
@@ -72,6 +72,18 @@ theorem allowed_correct (c : Command) (k : Kind) (m : Mode) :
     allowed c k m = true ↔ Reference.Allowed c k m := by
   cases c <;> cases k <;> cases m <;>
     simp [Reference.Allowed, allowed, permittedModes] <;> decide +kernel
+
+/-- Event-only evaluation for the current ME profile. CS event handling is
+not enabled. FMI 3.0.2 §2.3.5 lists this call; Initialization (§2.3.3) does not.
+The omitted capability makes evaluation an ignored operation in Event Mode,
+not a replacement for the required discrete-state update. -/
+theorem evaluation_allowed_iff (k : Kind) (m : Mode) :
+    allowed .evaluateDiscrete k m = true ↔ k = .me ∧ m = .event :=
+  allowed_correct .evaluateDiscrete k m
+
+theorem evaluation_rejects_initialization (k : Kind) :
+    ¬ Reference.Allowed .evaluateDiscrete k .initialization := by
+  simp [Reference.Allowed]
 
 /-- FMI 3.0.2 §2.3.2 excludes the nominal query from Instantiated; §§2.3.3,
 2.3.4 and 2.3.8 allow it in Initialization, Initialized and Terminated.

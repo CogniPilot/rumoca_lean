@@ -18,6 +18,7 @@ structure PreparedContract (model : Solve.FMI3Model source) (sigs : List Signatu
   entry : ∀ entry, MEControlEnvironment.EntryControl.PreparedContract model entry sigs pool
   completed : MEControlEnvironment.CompletedControl.PreparedContract model sigs pool
   discrete : MEControlEnvironment.DiscreteControl.PreparedContract model sigs pool
+  evaluation : DiscreteEvaluation.PreparedContract model sigs pool
 
 /-- Complete successful and null calls, reusable on every later valid heap.
 Failure contracts remain in `PreparedContract` for eventful histories. -/
@@ -37,7 +38,8 @@ theorem PreparedContract.quiet (contract : PreparedContract model sigs pool)
   exact ⟨⟨contract.time.quiet header E objects firstBlock program actual,
       fun entry => (contract.entry entry).quiet header E objects firstBlock program actual,
       contract.completed.quiet header E objects firstBlock program actual,
-      contract.discrete.quiet header E objects firstBlock program actual⟩,
+      contract.discrete.quiet header E objects firstBlock program actual,
+      contract.evaluation.quiet header E objects firstBlock program actual⟩,
     contract.states.quiet header E objects firstBlock program actual,
     contract.derivatives.quiet header E objects firstBlock program actual⟩
 

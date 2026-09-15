@@ -15,8 +15,8 @@ theorem adapter_me_environment (contract : AdapterContract a adapter) :
       Runtime.render a.solve.prepareFMI3 sigs = adapter ∧
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
       MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool := by
-  obtain ⟨sigs, unique, _, printed, _, functions, _, _, _, ready, _, _, _, _,
-    states, derivative, _, _, _, _, _, _, _, time, entries, completed, discrete, _⟩ := contract
+  obtain ⟨sigs, unique, _, printed, _, functions, _, _, _, ready,
+    _, _, _, _, states, derivative, _, _, _, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   refine ⟨sigs, pool, made, printed, functions, ?_⟩
   exact ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
@@ -26,7 +26,8 @@ theorem adapter_me_environment (contract : AdapterContract a adapter) :
     fun entry => MEControlEnvironment.EntryControl.prepared_correct a.solve.prepareFMI3 entry sigs
       unique (entries entry).member made,
     MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
-    MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
+    MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made,
+      evaluationContract.prepared pool made⟩
 
 end Rumoca.FMI3
 end

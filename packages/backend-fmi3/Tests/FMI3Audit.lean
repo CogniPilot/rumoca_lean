@@ -1,3 +1,5 @@
+import RumocaFMI3.DiscreteEvaluationMetadata
+import RumocaFMI3.DiscreteEvaluationContract
 import RumocaFMI3.InitializationProtocolEventIndicators
 import RumocaFMI3.MEEventIndicatorExecution
 import RumocaFMI3.CSMixedExecution
@@ -1997,3 +1999,22 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.Result.event_indicators_rejected
 
 #audit axioms Rumoca.FMI3.InitializationProtocol.event_indicators_rejection_call
+
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.artifact_capability
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.body_agrees
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.body_agrees_static
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.described_capability
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.failure_prefix
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.logged_correct
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.message_collected
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.parameters_bound
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.prepared_correct
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.query_cases
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.quiet_agreed
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.quiet_correct
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.quiet_static_correct
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.rendered_contract
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.suppressed_correct
+#audit axioms Rumoca.FMI3.GuardedCalls.unchanged_body
+#audit axioms Rumoca.FMI3.MEHistory.evaluation_preserves_iteration
+#audit axioms Rumoca.FMI3.MEHistory.initial_evaluation_still_requires_iteration

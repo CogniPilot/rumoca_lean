@@ -6,7 +6,7 @@ noncomputable section
 namespace Rumoca.FMI3
 open CTree CMemory StaticFactory
 
-/-- All four ME control functions occur in the independently checked adapter.
+/-- The ME event-control functions occur in the independently checked adapter.
 Their tokenization and complete call contracts share its actual definition
 table and prepared literal pool. -/
 theorem adapter_me_calls (contract : AdapterContract a adapter) :
@@ -27,11 +27,16 @@ theorem adapter_me_calls (contract : AdapterContract a adapter) :
         adapter = before ++ (Runtime.function a.solve.prepareFMI3 DiscreteCalls.signature).render ++ after ∧
         DiscreteCalls.FunctionContract a.solve.prepareFMI3 signatures
           (Runtime.function a.solve.prepareFMI3 DiscreteCalls.signature).render ∧
-        DiscreteCalls.PreparedContract a.solve.prepareFMI3 signatures pool) := by
+        DiscreteCalls.PreparedContract a.solve.prepareFMI3 signatures pool) ∧
+      (∃ before after,
+        adapter = before ++ (Runtime.function a.solve.prepareFMI3 DiscreteEvaluation.signature).render ++ after ∧
+        DiscreteEvaluation.FunctionContract a.solve.prepareFMI3 signatures
+          (Runtime.function a.solve.prepareFMI3 DiscreteEvaluation.signature).render ∧
+        DiscreteEvaluation.PreparedContract a.solve.prepareFMI3 signatures pool) := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, _, entries, completed, discrete, _⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, _, _, _, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
-  refine ⟨signatures, pool, made, printed, ?_, ?_, ?_⟩
+  refine ⟨signatures, pool, made, printed, ?_, ?_, ?_, ?_⟩
   · intro entry
     obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 signatures
       (EventEntry.signature entry) (entries entry).member
@@ -42,6 +47,9 @@ theorem adapter_me_calls (contract : AdapterContract a adapter) :
   · obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 signatures
       DiscreteCalls.signature discrete.member
     exact ⟨before, after, printed ▸ located, discrete, discrete.prepared pool made⟩
+  · obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 signatures
+      DiscreteEvaluation.signature evaluationContract.member
+    exact ⟨before, after, printed ▸ located, evaluationContract, evaluationContract.prepared pool made⟩
 
 /-- The history frame retains the model's selected source IVP. It does not
 identify an unchanged state with the solution at a later importer trial time. -/
@@ -85,7 +93,7 @@ theorem adapter_me_history (contract : AdapterContract a adapter) :
           (∀ start trajectory, InitializationCalls.SourceInitialized a.parsed.ast heap p start trajectory →
             InitializationCalls.SourceInitialized a.parsed.ast after p start trajectory) := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, time, entries, completed, discrete, _⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock
@@ -95,7 +103,8 @@ theorem adapter_me_history (contract : AdapterContract a adapter) :
     ⟨(time.prepared pool made).quiet E objects firstBlock program actual,
       fun entry => ((entries entry).prepared pool made).quiet E objects firstBlock program actual,
       (completed.prepared pool made).quiet E objects firstBlock program actual,
-      (discrete.prepared pool made).quiet E objects firstBlock program actual⟩
+      (discrete.prepared pool made).quiet E objects firstBlock program actual,
+      (evaluationContract.prepared pool made).staticQuiet E objects firstBlock program actual⟩
   obtain ⟨after, finalClock, called, storedAfter, framed⟩ := MEHistory.trace_frame program quiet stored admitted
   exact ⟨after, finalClock, called, storedAfter, framed,
     fun _ _ initialized => MEHistory.source_frame initialized stored.outside framed⟩

@@ -46,6 +46,7 @@ theorem action_storage (stored : Stored heap p clock reference model addresses) 
         exact stored.mode
       exact (HistoryProofs.event_storage stored.clockStored).trans (CStorage.replace_typed modeAfter _ rfl rfl)
   | updateDiscrete => exact COutputAssignments.after_storage stored.buffers.writable
+  | evaluateDiscrete => exact .refl heap
   | completed _ =>
     have event : HistoryBodies.BoolWritable heap (addresses "discreteStatesNeedUpdate") :=
       stored.buffers ("discreteStatesNeedUpdate", .boolean) (by decide +kernel)

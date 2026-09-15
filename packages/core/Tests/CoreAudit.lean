@@ -305,3 +305,6 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.Transition.Events.Prefix.silent_finite_behaviors
 
 #audit axioms Rumoca.Float64.finite_encoding
+
+#audit axioms Rumoca.FMI3.evaluation_allowed_iff
+#audit axioms Rumoca.FMI3.evaluation_rejects_initialization

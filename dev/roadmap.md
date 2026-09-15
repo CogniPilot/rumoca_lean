@@ -11,6 +11,37 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Discrete evaluation (full gate passed):**
+
+The existing evaluation call now accepts only ME Event Mode in this profile.
+The actual XML omits the capability, whose reviewed default is false; successful
+evaluation preserves the whole heap. It does not complete event iteration.
+Null/rejected calls retain every modeled status and logger alternative. The
+mandatory adapter/checker binds the exact printed function and common prepared
+table/literal pool; the source theorem retains the same numerical C and XML.
+ME control and rejection histories, storage frames, creation/release and the
+numerical/recurring source consumers carry the strengthened contract.
+
+The owning core/C/FMI/compiler checks passed at 07:31:36 UTC; the required
+`nix develop .#verification --command lake test` passed at 08:15:06 UTC on
+1085 unchanged inputs. All 133 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. The audit adds 21 registrations and
+retains all prior roots. Evidence is in `build/c-factory/discrete-evaluation/`:
+`package-v1.*`, `full-gate-v1.*`, `integration-v1.json` and `artifacts-v1.*`.
+
+The retained FMU changes only the evaluation guard in `sources/fmi3.c` and its
+native library. The eFMU changes only generation identities and dependent
+references/checksums in three manifests. Numerical C, GALEC and Production C
+remain unchanged. The existing ME native lifecycle check now exercises
+Initialization rejection and Event no-op; no new test suite was added.
+Only these three evidence documents change after the frozen gate.
+
+This accepts the corrected call and represented ME control/rejection history
+composition. It does not close the remaining initialization/public-call
+interleavings, unrestricted host/callback behavior, complete native/ABI and
+artifact provenance, or MISRA and whole-subset standards obligations.
+K02–K05 remain open; no grammar expansion or full FMI-conformance claim.
+
 **Event-indicator histories (full gate passed):** Empty event queries
 now compose with initialization, mixed ME operation, reset, creation and release.
 Raw observations, original caller/borrowed storage and universal callback

@@ -18,7 +18,7 @@ theorem adapter_me_release (contract : AdapterContract a adapter) :
         program.externals "atomic_store" = some (CAtomicBoolean.Calls.writeExternal tag) →
         MEHistory.ReleaseContract objects program tag := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, runtime, termination, time, entries, completed, discrete, _⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, runtime, termination, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock
@@ -29,7 +29,8 @@ theorem adapter_me_release (contract : AdapterContract a adapter) :
     ⟨(time.prepared pool made).quiet E objects firstBlock program actual,
       fun entry => ((entries entry).prepared pool made).quiet E objects firstBlock program actual,
       (completed.prepared pool made).quiet E objects firstBlock program actual,
-      (discrete.prepared pool made).quiet E objects firstBlock program actual⟩
+      (discrete.prepared pool made).quiet E objects firstBlock program actual,
+      (evaluationContract.prepared pool made).staticQuiet E objects firstBlock program actual⟩
   have bindings : StaticRelease.Bindings program tag :=
     ⟨by rw [actual]; exact runtime.release_defined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   exact MEHistory.release_correct objects program tag quiet
@@ -94,7 +95,7 @@ theorem adapter_initialize_me_release (contract : AdapterContract a adapter) :
             query ≠ p.member "stopDefined" → query ≠ AtomicSlots.address objects.flagsBlock slot →
             released query = heap query) := by
   obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, runtime, termination, time, entries, completed, discrete, _⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, runtime, termination, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock
@@ -114,7 +115,8 @@ theorem adapter_initialize_me_release (contract : AdapterContract a adapter) :
     ⟨(time.prepared pool made).quiet E objects firstBlock program actual,
       fun entry => ((entries entry).prepared pool made).quiet E objects firstBlock program actual,
       (completed.prepared pool made).quiet E objects firstBlock program actual,
-      (discrete.prepared pool made).quiet E objects firstBlock program actual⟩
+      (discrete.prepared pool made).quiet E objects firstBlock program actual,
+      (evaluationContract.prepared pool made).staticQuiet E objects firstBlock program actual⟩
   have bindings : StaticRelease.Bindings program tag :=
     ⟨by rw [actual]; exact runtime.release_defined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := MEHistory.release_correct objects program tag quiet

@@ -272,6 +272,12 @@ class FMI3Tests(unittest.TestCase):
             self.assertEqual(self.Reset(rejected), OK)
             self.assertEqual(self.EnterInitializationMode(rejected, False, 0, 0, False, 0), OK)
             self.assertEqual(self.GetNominalsOfContinuousStates(rejected, nominal, 1), OK)
+            # Evaluation is event-only; exercise the corrected native guard.
+            values = self.values(rejected)
+            before = len(self.messages)
+            self.assertEqual(self.EvaluateDiscreteStates(rejected), ERROR)
+            self.assertEqual(self.messages[before:], expected)
+            self.assertEqual(self.values(rejected), values)
         h = self.create("me")
         count = N(99)
         self.assertEqual(self.GetNumberOfContinuousStates(h, C.byref(count)), OK)
@@ -291,6 +297,10 @@ class FMI3Tests(unittest.TestCase):
         self.assertEqual(count.value, 0)
         self.assertEqual(self.GetContinuousStateDerivatives(h, out, 1), OK)
         self.assertEqual(self.SetFloat64(h, (VR * 1)(1), 1, (D * 1)(2), 1), OK)
+        # The omitted capability has a false default: evaluation is a no-op.
+        values = self.values(h)
+        self.assertEqual(self.EvaluateDiscreteStates(h), OK)
+        self.assertEqual(self.values(h), values)
         flags, next_time = [B() for _ in range(5)], D()
         self.assertEqual(self.UpdateDiscreteStates(h, *map(C.byref, flags), C.byref(next_time)), OK)
         self.assertEqual(self.EnterContinuousTimeMode(h), OK)

@@ -43,7 +43,7 @@ theorem adapter_initialize_me_history (contract : AdapterContract a adapter) :
             candidate = Initialization.trajectory (Binary64.value args.start) (Binary64.value state.x)) ∧
           (∀ query, MEHistory.Outside p addresses query → after query = exited query) := by
   obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock
@@ -60,7 +60,8 @@ theorem adapter_initialize_me_history (contract : AdapterContract a adapter) :
     ⟨(time.prepared pool made).quiet E objects firstBlock program actual,
       fun entry => ((entries entry).prepared pool made).quiet E objects firstBlock program actual,
       (completed.prepared pool made).quiet E objects firstBlock program actual,
-      (discrete.prepared pool made).quiet E objects firstBlock program actual⟩
+      (discrete.prepared pool made).quiet E objects firstBlock program actual,
+      (evaluationContract.prepared pool made).staticQuiet E objects firstBlock program actual⟩
   obtain ⟨entered, exited, after, finalClock, called, stored, framed⟩ :=
     MEHistory.initialize_trace program initQuiet quiet heap p args state addresses admissible storage
       kind model buffers outside admitted

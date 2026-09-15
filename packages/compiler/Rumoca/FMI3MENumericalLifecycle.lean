@@ -99,8 +99,8 @@ theorem runtime_create_me_numerical_release (compiled : compile input = .ok a)
                 behavior = .terminates [tag (.write (AtomicSlots.address objects.flagsBlock slot) false)] ⟨.void, released⟩) ∧
               (∀ q, ¬ p.InRecord q → (∀ name ∈ DiscreteCalls.names, q ≠ addresses name) →
                 q ≠ buffer → q ≠ AtomicSlots.address objects.flagsBlock slot → released q = heap q)) := by
-  obtain ⟨sigs, unique, _, printed, _, functions, _, _, _, ready, _, _, _, _, states, derivative,
-    _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _⟩ := build.adapter
+  obtain ⟨sigs, unique, _, printed, _, functions, _, _, _, ready,
+    _, _, _, _, states, derivative, _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
@@ -109,7 +109,8 @@ theorem runtime_create_me_numerical_release (compiled : compile input = .ok a)
       fun entry => MEControlEnvironment.EntryControl.prepared_correct a.solve.prepareFMI3 entry sigs
         unique (entries entry).member made,
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
-      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
+      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made,
+      evaluationContract.prepared pool made⟩
   refine ⟨compiled, build.numerical, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
     sigs, pool, made, printed, functions, prepared, ?_⟩
   intro E header instances flags separate before firstBlock signed

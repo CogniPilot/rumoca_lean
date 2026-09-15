@@ -23,7 +23,7 @@ theorem event_indicators_source (compiled : compile input = .ok a)
         EventIndicatorCalls.FunctionContract a.solve.prepareFMI3 sigs text) ∧
       EventIndicatorEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool := by
   obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, query⟩ := contract.adapter
+    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, query, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 sigs
     EventIndicatorCalls.signature query.member

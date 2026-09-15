@@ -1,6 +1,7 @@
 import RumocaFMI3.EventEntryHistory
 import RumocaFMI3.CompletedHistory
 import RumocaFMI3.DiscreteHistory
+import RumocaFMI3.DiscreteEvaluationContract
 
 noncomputable section
 namespace Rumoca.FMI3.MEHistory
@@ -16,6 +17,7 @@ inductive Action where
   | setTime (time : Binary64.Value)
   | enter (entry : EventEntry.Entry)
   | updateDiscrete
+  | evaluateDiscrete
   | completed (noSetState : Bool)
 
 structure ReferenceState where
@@ -31,6 +33,7 @@ def Action.next (action : Action) (state : ReferenceState) : ReferenceState :=
   | .setTime time => { state with history := state.history.setTime time }
   | .enter entry => ⟨entry.after, afterHistory entry state.history, false⟩
   | .updateDiscrete => { state with eventReady := true }
+  | .evaluateDiscrete => state
   | .completed _ => { state with history := state.history.completed }
 
 def Action.Allowed (action : Action) (state : ReferenceState) : Prop :=
@@ -39,6 +42,7 @@ def Action.Allowed (action : Action) (state : ReferenceState) : Prop :=
   | .enter entry => Reference.Allowed entry.command .me state.mode ∧
       (entry = .continuous → state.eventReady = true)
   | .updateDiscrete => Reference.Allowed .updateDiscrete .me state.mode
+  | .evaluateDiscrete => Reference.Allowed .evaluateDiscrete .me state.mode
   | .completed _ => Reference.Allowed .completedStep .me state.mode
 
 def Action.call (action : Action) (p : Address) (addresses : String → Address) : String × List Value :=
@@ -46,6 +50,7 @@ def Action.call (action : Action) (p : Address) (addresses : String → Address)
   | .setTime time => (TimeCalls.signature.name, TimeCalls.arguments (some p) (Binary64.toBits time).val)
   | .enter entry => ((signature entry).name, [.pointer (some p)])
   | .updateDiscrete => (DiscreteCalls.signature.name, DiscreteCalls.arguments (some p) (fun name => some (addresses name)))
+  | .evaluateDiscrete => (DiscreteEvaluation.signature.name, DiscreteEvaluation.arguments (some p))
   | .completed flag => (CompletedCalls.signature.name, CompletedCalls.arguments (some p)
       (some (addresses "discreteStatesNeedUpdate")) (some (addresses "terminateSimulation")) flag)
 
@@ -54,6 +59,7 @@ def Action.clock (action : Action) (clock : Time.Clock) : Time.Clock :=
   | .setTime time => clock.setTime time
   | .enter entry => afterClock entry clock
   | .updateDiscrete => clock
+  | .evaluateDiscrete => clock
   | .completed _ => clock.completed
 
 def Action.heap (action : Action) (heap : Heap) (p : Address) (clock : Time.Clock)
@@ -62,6 +68,7 @@ def Action.heap (action : Action) (heap : Heap) (p : Address) (clock : Time.Cloc
   | .setTime time => StateProofs.written heap (p.member "time") (Binary64.toBits time).val
   | .enter entry => afterHeap entry heap p clock
   | .updateDiscrete => COutputAssignments.after heap (DiscreteCalls.outputs addresses)
+  | .evaluateDiscrete => heap
   | .completed _ => HistoryBodies.completedHeap heap p
       (addresses "discreteStatesNeedUpdate") (addresses "terminateSimulation") clock
 
@@ -145,6 +152,7 @@ structure Quiet [interface : CInterface] (program : CCalls.Events.Program E) : P
   entry : ∀ entry, EventEntry.QuietContract entry program
   completed : CompletedCalls.QuietContract program
   discrete : DiscreteCalls.QuietContract program
+  evaluation : DiscreteEvaluation.QuietContract program
 
 theorem step [interface : CInterface] (program : CCalls.Events.Program E) (quiet : Quiet program)
     (stored : Stored heap p clock reference model addresses) (action : Action) (accepted : action.Allowed reference) :
@@ -196,6 +204,11 @@ theorem step [interface : CInterface] (program : CCalls.Events.Program E) (quiet
     · exact stored.buffers.transport (fun layout member => framed _ (stored.outside.field layout member "mode")
         (fun _ => ⟨stored.outside.field layout member "eventTime", stored.outside.field layout member "timeMin"⟩))
     · exact stored.outside
+  | evaluateDiscrete =>
+    have modeLoaded : load heap (p.member "mode") = some (.integer reference.mode.code) := by
+      cases mode : reference.mode <;> simp [load, stored.mode, mode, convert, Mode.code]
+    exact ⟨quiet.evaluation.successful heap p .me reference.mode stored.kind modeLoaded accepted,
+      stored, True.intro⟩
   | updateDiscrete =>
     have mode : reference.mode = .event := accepted.2
     have modeCell : heap (p.member "mode") = some ⟨.int32, true, some (.integer 2)⟩ := by
@@ -291,6 +304,7 @@ theorem action_frame (action : Action) (heap : Heap) (p query : Address) (clock 
   | setTime _ => exact TimeCalls.frame heap p query _ time
   | enter entry => exact EventEntry.frame entry heap p query clock mode (fun _ => ⟨event, minimum⟩)
   | updateDiscrete => exact DiscreteCalls.frame heap addresses query outputs
+  | evaluateDiscrete => rfl
   | completed _ =>
     exact HistoryBodies.completed_frame heap p _ _ query clock completed minimum
       (outputs "discreteStatesNeedUpdate" (by decide +kernel)) (outputs "terminateSimulation" (by decide +kernel))
@@ -308,5 +322,16 @@ theorem trace_frame [interface : CInterface] (program : CCalls.Events.Program E)
     refine ⟨after, finalClock, .cons called outputs calledRest, storedFinal, ?_⟩
     intro query outside
     exact (framed query outside).trans (action_frame _ heap p query clock addresses outside)
+
+/-- Evaluating the discrete equations does not signal a converged event
+iteration; only UpdateDiscreteStates supplies that protocol observation. -/
+theorem evaluation_preserves_iteration (reference : ReferenceState) :
+    (Action.evaluateDiscrete.next reference).eventReady = reference.eventReady := rfl
+
+theorem initial_evaluation_still_requires_iteration
+    (start : Binary64.Value) (stop : Option Binary64.Value) :
+    ¬ Action.Allowed (.enter .continuous)
+      (Action.evaluateDiscrete.next (ReferenceState.initial start stop)) :=
+  initial_requires_iteration start stop
 
 end Rumoca.FMI3.MEHistory

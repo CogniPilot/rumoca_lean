@@ -116,8 +116,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (∀ name ∈ DiscreteCalls.names, q ≠ addresses name) → q ≠ buffer →
                 q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot final.control.mode q = heap q))) := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative,
-    _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, loggingContract, eventContract⟩ := build.adapter
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
+    _, _, _, nominalContract, states, derivative, _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, loggingContract, eventContract, evaluationContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
@@ -132,7 +132,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       fun entry => MEControlEnvironment.EntryControl.prepared_correct a.solve.prepareFMI3 entry sigs
         unique (entries entry).member made,
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
-      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
+      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made,
+      evaluationContract.prepared pool made⟩
   refine ⟨compiled, build.numerical, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
     CountMetadata.artifact_counts _ _ build.metadata, NominalMetadata.artifact_nominals _ _ build.metadata,
     DebugLogging.artifact_category _ _ build.metadata, sigs, pool, made, printed, functions, prepared, counts, nominals, logging, ?_⟩

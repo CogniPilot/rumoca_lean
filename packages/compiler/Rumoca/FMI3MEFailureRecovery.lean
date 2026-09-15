@@ -92,8 +92,8 @@ theorem runtime_recovery (compiled : compile input = .ok a)
                   (.calling (request.call p).1 (request.call p).2 heap .done) (.terminates events ⟨status, after⟩) →
                 events = [⟨name, Logging.arguments environment category message⟩] ∧ status = .integer 3 ∧
                 Returned a.parsed.ast program objects owners heap after p clock reference addresses buffer) := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, states, derivative,
-    _, _, initialization, _, _, _, _, time, entries, completed, discrete, _⟩ := build.adapter
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready,
+    _, _, _, _, states, derivative, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,
@@ -102,7 +102,8 @@ theorem runtime_recovery (compiled : compile input = .ok a)
       fun entry => MEControlEnvironment.EntryControl.prepared_correct a.solve.prepareFMI3 entry sigs
         unique (entries entry).member made,
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
-      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
+      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made,
+      evaluationContract.prepared pool made⟩
   refine ⟨compiled, build.numerical, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
     sigs, pool, made, printed, functions, prepared, ?_⟩
   intro header objects before firstBlock signed

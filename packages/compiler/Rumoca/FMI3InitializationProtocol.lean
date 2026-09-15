@@ -97,8 +97,8 @@ theorem runtime_source (compiled : compile input = .ok a)
           (∀ action ∈ actions, action.Prepared objects retained original p buffers readers) →
           SourceContract a.solve.prepareFMI3 program objects retained owners original
             (pool.install baseHeap firstBlock signed) heap p buffers kind state final actions readers := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominals, _, _, getter, setter,
-    initialization, _, _, runtime, termination, _, _, _, _, _, logging, eventContract⟩ := build.adapter
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
+    _, _, _, nominals, _, _, getter, setter, initialization, _, _, runtime, termination, _, _, _, _, _, logging, eventContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made

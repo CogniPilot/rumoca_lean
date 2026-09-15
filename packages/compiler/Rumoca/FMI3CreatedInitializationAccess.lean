@@ -92,8 +92,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization)) owners ∧
               (∀ q, ¬ p.InRecord q → Outside buffers q → q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization) q = heap q) := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative, getter, setter,
-    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract⟩ := build.adapter
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
+    _, _, _, nominalContract, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract, evaluationContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have countPrepared : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
@@ -115,7 +115,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       fun entry => MEControlEnvironment.EntryControl.prepared_correct a.solve.prepareFMI3 entry sigs
         unique (entries entry).member made,
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
-      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
+      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made,
+      evaluationContract.prepared pool made⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
     Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, runPrepared, mePrepared, countPrepared, nominalPrepared, loggingPrepared, eventPrepared, ?_⟩
   intro E header instances flags separate baseHeap firstBlock signed

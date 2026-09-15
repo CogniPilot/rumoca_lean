@@ -11,6 +11,7 @@ inductive Request where
   | derivative (access : Bool) (buffer : Option Address) (count : UInt64)
   | time (reason : TimeCalls.Failure) (bits : BitVec 64) (window : Time.Window) (minimum : Binary64.Value)
   | entry (entry : EventEntry.Entry)
+  | evaluation
   | completed (reason : CompletedCalls.Failure) (event terminate : Option Address) (flag : Bool)
   | discrete (reason : DiscreteCalls.Failure) (addresses : String → Option Address)
 
@@ -20,6 +21,7 @@ def Request.call (request : Request) (p : Address) : String × List Value :=
   | .derivative _ buffer count => (DerivativeCalls.signature.name, DerivativeCalls.values (some p) buffer count)
   | .time _ bits _ _ => (TimeCalls.signature.name, TimeCalls.arguments (some p) bits)
   | .entry transition => ((EventEntry.signature transition).name, [.pointer (some p)])
+  | .evaluation => (DiscreteEvaluation.signature.name, DiscreteEvaluation.arguments (some p))
   | .completed _ event terminate flag => (CompletedCalls.signature.name, CompletedCalls.arguments (some p) event terminate flag)
   | .discrete _ addresses => (DiscreteCalls.signature.name, DiscreteCalls.arguments (some p) addresses)
 
@@ -28,6 +30,7 @@ def Request.message : Request → String
   | .derivative access _ _ => DerivativeCalls.failureMessage access
   | .time reason _ _ _ => TimeCalls.failureMessage reason
   | .entry _ => ErrorCalls.rejectionMessage
+  | .evaluation => ErrorCalls.rejectionMessage
   | .completed reason _ _ _ => CompletedCalls.message reason
   | .discrete reason _ => DiscreteCalls.message reason
 
@@ -40,6 +43,7 @@ def Request.Condition (request : Request) (heap : Heap) (p : Address) (kind : Ki
   | .time reason bits window minimum => TimeCalls.FailureCondition reason kind mode window bits ∧
       (reason = .window → TimeCalls.Bounds heap p window minimum)
   | .entry transition => ¬ Reference.Allowed transition.command kind mode
+  | .evaluation => ¬ Reference.Allowed .evaluateDiscrete kind mode
   | .completed reason event terminate _ => CompletedCalls.FailureCondition reason kind mode event terminate
   | .discrete reason addresses => DiscreteCalls.FailureCondition reason kind mode addresses
 
@@ -126,6 +130,14 @@ theorem Request.prepared (request : Request) (prepared : MEEnvironment.PreparedC
   | entry entry =>
     obtain ⟨category, message, categoryBound, messageBound, categoryStored, messageStored, quiet, logged⟩ :=
       (prepared.entry entry).failures header before firstBlock signed objects heap preserved
+    refine ⟨category, message, categoryBound, messageBound, categoryStored, messageStored, ?_, ?_⟩
+    · intro E program actual p kind mode logger logging hk hm condition hl hg suppressed
+      exact quiet E program actual p kind mode logger logging hk hm hl hg suppressed condition
+    · intro program actual p logger environment kind mode name effect address external hk hm condition hl hg he
+      exact logged program actual p logger environment kind mode name effect address external hk hm hl hg he condition
+  | evaluation =>
+    obtain ⟨category, message, categoryBound, messageBound, categoryStored, messageStored, quiet, logged⟩ :=
+      prepared.evaluation.failures header before firstBlock signed objects heap preserved
     refine ⟨category, message, categoryBound, messageBound, categoryStored, messageStored, ?_, ?_⟩
     · intro E program actual p kind mode logger logging hk hm condition hl hg suppressed
       exact quiet E program actual p kind mode logger logging hk hm hl hg suppressed condition

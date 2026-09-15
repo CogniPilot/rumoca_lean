@@ -128,8 +128,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               (∀ action ∈ actions, action.Prepared objects retained heap p buffers readers) →
               CreatedSourceContract a.solve.prepareFMI3 program objects tag retained owners slot owner heap
                 (pool.install baseHeap firstBlock signed) live buffers kind actions final readers := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominals, states, derivative, getter, setter,
-    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract⟩ := build.adapter
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
+    _, _, _, nominals, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract, evaluationContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made
@@ -150,7 +150,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEControlEnvironment.TimeControl.prepared_correct a.solve.prepareFMI3 sigs unique time.member made,
       fun entry => MEControlEnvironment.EntryControl.prepared_correct a.solve.prepareFMI3 entry sigs unique (entries entry).member made,
       MEControlEnvironment.CompletedControl.prepared_correct a.solve.prepareFMI3 sigs unique completed.member made,
-      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made⟩
+      MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made,
+      evaluationContract.prepared pool made⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
     Float64SetMetadata.artifact_state _ _ build.metadata, CountMetadata.artifact_counts _ _ build.metadata,
     NominalMetadata.artifact_nominals _ _ build.metadata,

@@ -10,7 +10,7 @@ def ReferenceState.Live (reference : ReferenceState) : Prop :=
 theorem Action.next_live (action : Action) (live : reference.Live) : (action.next reference).Live := by
   cases action with
   | setTime _ => exact live
-  | updateDiscrete => exact live
+  | updateDiscrete | evaluateDiscrete => exact live
   | completed _ => exact live
   | enter entry => cases entry <;> simp [Action.next, ReferenceState.Live, EventEntry.Entry.after]
 

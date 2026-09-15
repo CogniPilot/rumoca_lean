@@ -62,6 +62,7 @@ def Request.Selected (request : Request) (input : Option (BitVec 64))
   | .time reason bits window minimum => TimeCalls.FailureCondition reason .me reference.control.mode window bits ∧
       (reason = .window → window = reference.control.history.window ∧ minimum = clock.minimum)
   | .entry transition => ¬ Reference.Allowed transition.command .me reference.control.mode
+  | .evaluation => ¬ Reference.Allowed .evaluateDiscrete .me reference.control.mode
   | .completed reason event terminate _ => CompletedCalls.FailureCondition reason .me reference.control.mode event terminate
   | .discrete reason pointers => DiscreteCalls.FailureCondition reason .me reference.control.mode pointers
 
@@ -77,7 +78,7 @@ theorem Request.Selected.condition {request : Request}
       obtain ⟨write, allowed, count, pointer, bits, input, invalid⟩ := selected
       refine ⟨write, allowed, count, buffer, bits, pointer, ?_, invalid⟩
       simp [input, prepare, StateProofs.written, load, convert]
-  | derivative _ _ _ | entry _ | completed _ _ _ _ | discrete _ _ => exact selected
+  | derivative _ _ _ | entry _ | evaluation | completed _ _ _ _ | discrete _ _ => exact selected
   | time reason bits window minimum =>
     refine ⟨selected.1, ?_⟩
     intro failure

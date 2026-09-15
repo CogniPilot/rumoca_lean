@@ -83,7 +83,7 @@ theorem adapter_create_me_release (contract : AdapterContract a adapter) :
             (∀ name ∈ DiscreteCalls.names, query ≠ addresses name) →
             query ≠ AtomicSlots.address objects.flagsBlock slot → released query = heap query) := by
   obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E instances flags separate before firstBlock signed
@@ -114,7 +114,8 @@ theorem adapter_create_me_release (contract : AdapterContract a adapter) :
     ⟨(time.prepared pool made).quiet E objects firstBlock program actual,
       fun entry => ((entries entry).prepared pool made).quiet E objects firstBlock program actual,
       (completed.prepared pool made).quiet E objects firstBlock program actual,
-      (discrete.prepared pool made).quiet E objects firstBlock program actual⟩
+      (discrete.prepared pool made).quiet E objects firstBlock program actual,
+      (evaluationContract.prepared pool made).staticQuiet E objects firstBlock program actual⟩
   have releaseBindings : StaticRelease.Bindings program tag :=
     ⟨by rw [actual]; exact runtime.release_defined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := MEHistory.release_correct objects program tag quiet

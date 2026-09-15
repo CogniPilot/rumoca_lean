@@ -1,4 +1,5 @@
 import RumocaFMI3.EventIndicatorFunction
+import RumocaFMI3.DiscreteEvaluationContract
 import RumocaFMI3.StepContract
 import RumocaFMI3.DebugLoggingContract
 import RumocaFMI3.NominalContract
@@ -108,7 +109,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     DebugLogging.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 DebugLogging.signature).render ∧
     EventIndicatorCalls.FunctionContract a.solve.prepareFMI3 sigs
-      (Runtime.function a.solve.prepareFMI3 EventIndicatorCalls.signature).render
+      (Runtime.function a.solve.prepareFMI3 EventIndicatorCalls.signature).render ∧
+    DiscreteEvaluation.FunctionContract a.solve.prepareFMI3 sigs
+      (Runtime.function a.solve.prepareFMI3 DiscreteEvaluation.signature).render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -139,6 +142,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (step : StepEntry.signature ∈ sigs)
     (debugLogging : DebugLogging.signature ∈ sigs)
     (indicators : EventIndicatorCalls.signature ∈ sigs)
+    (evaluation : DiscreteEvaluation.signature ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -166,7 +170,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     DiscreteCalls.rendered_contract _ sigs unique discrete,
     StepCalls.rendered_contract _ sigs unique numerical step,
     DebugLogging.rendered_contract _ sigs unique debugLogging,
-    EventIndicatorCalls.rendered_contract _ sigs unique indicators⟩
+    EventIndicatorCalls.rendered_contract _ sigs unique indicators,
+    DiscreteEvaluation.rendered_contract _ sigs unique evaluation⟩
 
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table

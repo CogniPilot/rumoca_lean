@@ -47,6 +47,7 @@ theorem action_atomic (stored : Stored heap p clock reference model addresses) (
         exact stored.mode
       exact (HistoryProofs.event_atomic stored.clockStored).trans
         (CAtomicBoolean.replace_nonatomic modeAfter (by intro h; cases h) _)
+  | evaluateDiscrete => exact .refl heap
   | updateDiscrete =>
     apply COutputAssignments.after_atomic stored.buffers.writable
     intro entry member

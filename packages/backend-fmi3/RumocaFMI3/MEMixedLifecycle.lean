@@ -38,7 +38,7 @@ theorem Action.can_finish (action : Action)
       | setState _ | getState | derivative => exact ready
       | control control =>
         cases control with
-        | setTime _ | updateDiscrete | completed _ => exact ready
+        | setTime _ | updateDiscrete | evaluateDiscrete | completed _ => exact ready
         | enter transition => cases transition <;> exact Or.inl (by simp [Action.next,
             MENumericalHistory.Action.next, MEHistory.Action.next, EventEntry.Entry.after,
             EventEntry.afterHistory, Reference.Allowed])
