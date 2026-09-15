@@ -1,3 +1,6 @@
+import RumocaFMI3.FactoryHistory
+import RumocaFMI3.ScanReadyOutcome
+import RumocaFMI3.ScanOnce
 import RumocaFMI3.ReservationClaimOrigins
 import RumocaFMI3.ScanClaimOutcome
 import RumocaFMI3.FactoryAfterScan
@@ -138,3 +141,23 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ReservationOrigin.logged_factory_suffix
 #audit axioms Rumoca.FMI3.ReservationOrigin.logged_subcall_domain
 #audit axioms Rumoca.FMI3.ReservationOrigin.subcall_domain
+
+#audit axioms Rumoca.FMI3.ConcurrentSlots.post_claim_call
+#audit axioms Rumoca.FMI3.ConcurrentSlots.post_claim_heap
+#audit axioms Rumoca.FMI3.ConcurrentSlots.post_claim_history
+#audit axioms Rumoca.FMI3.ConcurrentSlots.post_claim_step
+#audit axioms Rumoca.FMI3.ConcurrentSlots.scan_once
+#audit axioms Rumoca.FMI3.ConcurrentSlots.scan_ready_outcome
+#audit axioms Rumoca.FMI3.FactoryControl.Control.atomic_origin
+#audit axioms Rumoca.FMI3.FactoryControl.Control.withHeap
+#audit axioms Rumoca.FMI3.FactoryControl.control_step
+#audit axioms Rumoca.FMI3.FactoryControl.logged_host_atomic
+#audit axioms Rumoca.FMI3.FactoryControl.recorded_controls
+#audit axioms Rumoca.FMI3.FactoryControl.root_heap
+#audit axioms Rumoca.FMI3.FactoryRejection.Control.call_allowed
+#audit axioms Rumoca.FMI3.FactoryRejection.Control.withHeap
+#audit axioms Rumoca.FMI3.FactoryRejection.control_step
+#audit axioms Rumoca.FMI3.FactoryValidation.actual_guard
+#audit axioms Rumoca.FMI3.FactoryValidation.actual_resume
+#audit axioms Rumoca.FMI3.FactoryValidation.header_reservation_after_identity
+#audit axioms Rumoca.FMI3.FactoryValidation.resume_next

@@ -121,6 +121,59 @@ review separates capability flags, variable domains, lifecycle restrictions
 and defensive calls. Clock and empty output-derivative findings remain open.
 Pinned MLS/eFMI findings carry forward. **Stage decision: open.**
 
+### Public factory histories through slot claims: full gate passed
+
+**Public factory histories through slot claims (full gate passed):**
+
+The source-bound claim theorem now starts with the raw public host history.
+It derives the original ME/CS factory arguments, the exact saved reservation
+continuation, the prepared flag-array pointer and the bounded exchange index.
+It no longer requires a separately supplied helper-entry interval. That same
+actual C step supplies its event, observation, recorded invocation and slot
+ownership transition. A successful helper continuation remains silent and
+returns the selected index. The same factory invocation cannot reserve again
+anywhere in its remaining host history, including after the helper returns.
+Later calls on a reused thread receive new invocation identities.
+
+The factory control proof covers supported and rejected CS requests, both
+identity outcomes, optional rejection logging, reservation, and the closed
+post-scan suffix. An unconditional return makes rejected creation code
+unreachable. Generic context lemmas preserve the literal saved caller and
+exclude premature local halting. Host histories include other invocations,
+completions and admitted heap changes, as well as C execution.
+
+The original factory call must satisfy the represented ABI argument profile
+(`AdmitsFactories`). It need not contain valid identity strings or request
+supported CS capabilities. Current owner/flag representation remains an
+explicit heap premise. Ownership at the successful atomic result does not
+establish its preservation under arbitrary later changes. Concurrent private
+initialization, actual live-handle publication and subsequent legal lifetime,
+metadata/buffer and release authority remain open.
+
+The owning-package checks passed at 21:40:48 UTC on 2026-09-15.
+The required `nix develop .#verification --command lake test` passed at
+22:31:16 UTC on 2026-09-15, with 1192 unchanged inputs and all
+310 selected roots (30 new, 280 retained). No unexpected axioms, changed-module
+warnings or source drift were found. Root counts do not measure semantic
+coverage; all previously selected roots remain in the same three audits.
+
+Draft and dependency-isolation evidence is in `build/c-scan-context/`:
+`factory-history-promotion-v3.json`, `factory-history-review-v2.md`,
+`fmi3-factory-once-v1.json` and `factory-extracted-{c,fmi,all}-v3.json`.
+Integration, package, full-gate, standards/upstream review and retained artifact
+records are under `build/c-factory-history/`.
+
+Every FMU member is unchanged from `eb412f9`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+No grammar, source/IR semantics, C emission, solver or interface policy changed;
+no test suite was added. Native C11/ABI, callback/fenv correspondence, provenance,
+transitive allocation, MISRA and remaining MLS/FMI/eFMI findings stay open.
+K02–K05 continue to block grammar growth and a complete assurance claim.
+
 ### Slot claims and suspended callers: full gate passed
 
 **Slot claims and suspended callers (full gate passed):**

@@ -1,3 +1,7 @@
+import RumocaC.CallContextBoundary
+import RumocaC.BooleanConversion
+import RumocaC.AtomicScanClaimState
+import RumocaC.InvocationContinuation
 import RumocaC.AtomicScanClaimHistory
 import RumocaC.CallContextHistory
 import RumocaC.HostCallSites
@@ -182,3 +186,14 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.Context.saved_step
 #audit axioms Rumoca.CCalls.Context.step_append
 #audit axioms Rumoca.CCalls.Context.step_unappend
+
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.scan_claim_state
+#audit axioms Rumoca.CCalls.Context.live_heap
+#audit axioms Rumoca.CCalls.Context.step_live
+#audit axioms Rumoca.CCalls.Context.suspended_call
+#audit axioms Rumoca.CCalls.Context.suspended_heap
+#audit axioms Rumoca.CCalls.Context.suspended_step
+#audit axioms Rumoca.CCalls.Host.Recording.advance_next
+#audit axioms Rumoca.CCalls.Host.Recording.selected_history
+#audit axioms Rumoca.CCalls.Host.Recording.selected_step
+#audit axioms Rumoca.CMemory.boolean_conversion

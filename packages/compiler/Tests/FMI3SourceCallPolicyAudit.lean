@@ -1,3 +1,4 @@
+import Rumoca.FMI3FactoryClaims
 import Rumoca.FMI3ScanClaims
 import Rumoca.FMI3FactorySuffix
 import Rumoca.FMI3SubcallDomains
@@ -42,3 +43,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConcurrentSlots.source_scan_claims
 #audit axioms Rumoca.FMI3.ReservationOrigin.source_factory_suffix
 #audit axioms Rumoca.FMI3.ReservationOrigin.source_subcall_domains
+
+#audit axioms Rumoca.FMI3.ConcurrentSlots.source_factory_claims
