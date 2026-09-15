@@ -1,5 +1,41 @@
 # Exact verification contract
 
+**Source-bound runtime and call depth (full gate passed):**
+
+One prepared environment contains the actual generated function table,
+string/atomic/math bindings and an arbitrary logger effect. Generic linking
+preserves existing bindings and registers function addresses only for imported
+entries. The C rank invariant survives every internal step, return and returning
+foreign choice. Every finite execution prefix in this FMI environment has at
+most three modeled continuation frames, without assuming successful termination.
+The source theorem derives the literal pool, public printer coverage and
+concrete object/fenv interface from the actual adapter contract. It uses the
+emitted 32-slot configuration, with no separate type, pointer-policy or rank
+premise. Native layout, library/callback internals, native stack bytes and
+transitive allocation remain outside this bound.
+
+The affected package checks passed at 15:17:26 UTC on
+2026-09-15. The required
+`nix develop .#verification --command lake test` passed at 16:14:54 UTC
+on 2026-09-15, with 1119 unchanged inputs and all 62 selected roots
+(29 new). No unexpected axioms, changed-module warnings or source drift were
+found. The existing separate package audits retain every prior root. Evidence
+is in `build/c-call-depth/`: `integration-v1.json`, `package-v1.*`,
+`full-gate-v1.*`, `upstream-review-v2.json` and `artifacts-v1.*`.
+
+Every FMU member is unchanged from `f0694e8`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and public-call emission are unchanged.
+The existing artifact, native and mutation checks pass; no test suite was added.
+Only these three evidence documents change after the frozen gate.
+
+This accepts the modeled execution-depth and source linkage increment.
+The storage and state-setter follow-up proofs remain checked drafts under
+`build/`; they are not accepted package/artifact results at this checkpoint.
+Native resource, ABI, complete legal-history, provenance and MISRA obligations
+remain open. K02–K05 and the whole-subset standards findings still block grammar
+expansion; no full standards or CompCert-level whole-compiler claim follows.
+
 **Generated call policy (full gate passed):**
 
 The shared C package has a complete structural call inventory and an independent

@@ -1,3 +1,6 @@
+import RumocaC.CallPolicyExecution
+import RumocaC.CallLinkage
+import RumocaC.CallDepth
 import RumocaC.CallPolicyProofs
 import ProofAudit.Audit
 
@@ -22,3 +25,23 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCallPolicy.kernel_no_call
 #audit axioms Rumoca.CCallPolicy.function_inventory_ready
 #audit axioms Rumoca.CCallPolicy.resolved_named_edge
+
+#audit axioms Rumoca.CCallDepth.Frames.depth_bound
+#audit axioms Rumoca.CCallDepth.Frames.weaken
+#audit axioms Rumoca.CCallDepth.definition_ready
+#audit axioms Rumoca.CCallDepth.enter_ready
+#audit axioms Rumoca.CCallDepth.event_ready
+#audit axioms Rumoca.CCallDepth.execution_depth_bound
+#audit axioms Rumoca.CCallDepth.initial_ready
+#audit axioms Rumoca.CCallDepth.internal_ready
+#audit axioms Rumoca.CCallDepth.reaches_ready
+#audit axioms Rumoca.CCallDepth.ready_depth
+#audit axioms Rumoca.CCallDepth.resume_ready
+#audit axioms Rumoca.CCallPolicy.entered_internal_edge
+#audit axioms Rumoca.CCallPolicy.internal_resolution
+#audit axioms Rumoca.CCallPolicy.scheduled_internal_decreases
+#audit axioms Rumoca.CCallPolicy.scheduled_internal_edge
+#audit axioms Rumoca.CCalls.Events.Linkage.withAddress_foreign
+#audit axioms Rumoca.CCalls.Events.Linkage.withExternal_bound
+#audit axioms Rumoca.CCalls.Events.Linkage.withExternal_foreign
+#audit axioms Rumoca.CCalls.Events.Linkage.withExternal_keeps
