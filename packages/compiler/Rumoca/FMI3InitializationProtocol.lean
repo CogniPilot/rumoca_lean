@@ -98,7 +98,7 @@ theorem runtime_source (compiled : compile input = .ok a)
           SourceContract a.solve.prepareFMI3 program objects retained owners original
             (pool.install baseHeap firstBlock signed) heap p buffers kind state final actions readers := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
-    _, _, _, nominals, _, _, getter, setter, initialization, _, _, runtime, termination, _, _, _, _, _, logging, eventContract, evaluationContract, _⟩ := build.adapter
+    _, _, _, nominals, _, _, getter, setter, initialization, _, _, runtime, termination, _, _, _, _, _, logging, eventContract, evaluationContract, absentContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made
@@ -109,6 +109,7 @@ theorem runtime_source (compiled : compile input = .ok a)
   have loggingPrepared := logging.prepared pool made
   have eventPrepared := eventContract.runtime pool made
   have evaluationPrepared := evaluationContract.prepared pool made
+  have absentPrepared := fun ty write => (absentContract ty write).prepared pool made
   have lifecycle : LifecycleEnvironment.PreparedContract a.solve.prepareFMI3 sigs :=
     ⟨LiteralPreparation.function_bound _ sigs unique _ resetMember,
       by rw [← InitializationCalls.function_eq a.solve.prepareFMI3]; exact LiteralPreparation.function_bound _ sigs unique _ initialization.enterMember,
@@ -123,7 +124,7 @@ theorem runtime_source (compiled : compile input = .ok a)
   intro header objects baseHeap firstBlock signed
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program actual compare retained owners original heap p buffers kind state final actions readers resources invariant reference prepared
-  exact source_contract (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared loggingPrepared eventPrepared evaluationPrepared lifecycle
+  exact source_contract (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared loggingPrepared eventPrepared evaluationPrepared absentPrepared lifecycle
     baseHeap firstBlock signed program actual compare retained owners original p buffers kind readers resources) reference prepared invariant
 
 end Rumoca.FMI3.InitializationProtocol

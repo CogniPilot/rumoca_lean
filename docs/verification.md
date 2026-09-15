@@ -1,5 +1,36 @@
 # Exact verification contract
 
+**Absent-variable initialization histories (2026-09-15, full gate passed):**
+
+The initialization protocol includes all 24 existing absent-variable accessors.
+Empty calls preserve the heap; rejected counts derive Error and retain every
+modeled logger return or blocked outcome. Source-bound creation, initialization,
+simulation, reset and release compose through recurring ME/CS histories,
+including interrupted prefixes. Caller storage, readonly diagnostics, ownership,
+logging configuration and numerical source observations are retained.
+
+The owning core/C/FMI/compiler checks passed at 10:19:29 UTC; the required
+`nix develop .#verification --command lake test` passed at 11:05:22 UTC on
+1096 unchanged inputs. All 194 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Six new audit registrations retain all
+previous roots. Evidence is in `build/c-factory/accessor-histories/`:
+`package-v1.*`, `full-gate-v1.*`, `integration-v1.json`,
+`standards-review-v1.json` and `artifacts-v1.*`. The existing mandatory adapter
+field supplies every prepared accessor from the same source artifact.
+
+Every retained FMU member, including the native library, is unchanged. The
+eFMU changes only generation identities and dependent references/checksums in
+three manifests. Numerical C, GALEC and Production C remain unchanged. Existing
+artifact/native/rejection checks passed; no grammar, emitter, solver, metadata
+or test behavior changed. Only these three evidence documents change after
+the frozen gate.
+
+These are raw execution histories. They do not license null arguments,
+terminated-state setters or unrestricted CS getter/setter ordering. Complete
+legal-history correspondence, remaining public APIs, native/ABI and provenance,
+concurrency and MISRA obligations remain open. K02–K05 still block grammar
+expansion; no full FMI/eFMI or CompCert-level compiler claim follows.
+
 **Absent-variable accessors (2026-09-15, full gate passed):**
 
 A shared contract covers all 24 emitted Get/Set functions for Float32,

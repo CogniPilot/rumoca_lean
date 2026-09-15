@@ -94,7 +94,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have readerFrame := resources.readerInputs.creation_frame represented resources.readerGuarded creationFrame
   have invariant := InitializationProtocol.Invariant.created objects created preserved (literalFrame.trans creationReadonly) logging readerFrame
   have initializeCalls := InitializationProtocol.execution_contract header objects a.solve.prepareFMI3 sigs pool
-    prepared.getter prepared.setter prepared.counts prepared.nominals prepared.logging prepared.eventIndicators prepared.me.evaluation prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
+    prepared.getter prepared.setter prepared.counts prepared.nominals prepared.logging prepared.eventIndicators prepared.me.evaluation prepared.absent prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
     (SlotOwners.update owners slot (some owner)) heap p access .cs readers resources
   have initialization : InitializationCompiler a.solve.prepareFMI3 program objects retained
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p access readers := by

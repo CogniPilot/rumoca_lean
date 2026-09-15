@@ -1,3 +1,5 @@
+import RumocaFMI3.InitializationProtocolAbsent
+import RumocaFMI3.AbsentVariableRequests
 import RumocaFMI3.AbsentVariableContract
 import RumocaFMI3.AbsentVariableSelection
 import RumocaFMI3.InitializationProtocolEvaluation
@@ -2054,3 +2056,11 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.AbsentVariables.signature_printable
 #audit axioms Rumoca.FMI3.AbsentVariables.suppressed_correct
 #audit axioms Rumoca.FMI3.AbsentVariables.value_type_printable
+
+-- Raw absent-variable requests and complete initialization call composition.
+#audit axioms Rumoca.FMI3.AbsentVariables.classify_correct
+#audit axioms Rumoca.FMI3.AbsentVariables.classify_call
+#audit axioms Rumoca.FMI3.AbsentVariables.request_coverage
+#audit axioms Rumoca.FMI3.InitializationProtocol.absent_empty_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.Result.absent_rejected
+#audit axioms Rumoca.FMI3.InitializationProtocol.absent_rejection_call

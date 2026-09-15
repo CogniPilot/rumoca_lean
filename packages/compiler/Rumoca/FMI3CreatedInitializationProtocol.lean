@@ -129,7 +129,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               CreatedSourceContract a.solve.prepareFMI3 program objects tag retained owners slot owner heap
                 (pool.install baseHeap firstBlock signed) live buffers kind actions final readers := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
-    _, _, _, nominals, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract, evaluationContract, _⟩ := build.adapter
+    _, _, _, nominals, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract, evaluationContract, absentContract⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made
@@ -139,6 +139,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have nominalPrepared := nominals.runtime pool made
   have loggingPrepared := logging.prepared pool made
   have eventPrepared := eventContract.runtime pool made
+  have absentPrepared := fun ty write => (absentContract ty write).prepared pool made
   have runPrepared : CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨⟨LiteralPreparation.function_bound _ sigs unique _ resetMember,
       by rw [← InitializationCalls.function_eq a.solve.prepareFMI3]; exact LiteralPreparation.function_bound _ sigs unique _ initialization.enterMember,
@@ -157,7 +158,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     NominalMetadata.artifact_nominals _ _ build.metadata,
     DebugLogging.artifact_category _ _ build.metadata,
     derivative_value_source a.solve,
-    sigs, pool, made, printed, functions, ⟨getPrepared, setPrepared, countPrepared, nominalPrepared, loggingPrepared, eventPrepared, runPrepared, mePrepared⟩, ?_⟩
+    sigs, pool, made, printed, functions, ⟨getPrepared, setPrepared, countPrepared, nominalPrepared, loggingPrepared, eventPrepared, runPrepared, mePrepared, absentPrepared⟩, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -185,7 +186,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   intro retained buffers actions final readers resources logging reference prepared
   exact after_creation objects tag owners slot owner created reserved represented preserved (termination_preserves ((creation _).mpr rfl))
     literalFrame createdFrame logging
-    (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared loggingPrepared eventPrepared mePrepared.evaluation runPrepared.toPreparedContract
+    (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared loggingPrepared eventPrepared mePrepared.evaluation absentPrepared runPrepared.toPreparedContract
       baseHeap firstBlock signed program actual identity.compareBinding retained (SlotOwners.update owners slot (some owner)) heap _ buffers kind readers resources)
     reference prepared finish releaseBindings rfl
 
