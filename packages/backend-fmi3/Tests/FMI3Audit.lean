@@ -1,3 +1,4 @@
+import RumocaFMI3.InitializationProtocolEvaluation
 import RumocaFMI3.DiscreteEvaluationMetadata
 import RumocaFMI3.DiscreteEvaluationContract
 import RumocaFMI3.InitializationProtocolEventIndicators
@@ -2018,3 +2019,9 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.GuardedCalls.unchanged_body
 #audit axioms Rumoca.FMI3.MEHistory.evaluation_preserves_iteration
 #audit axioms Rumoca.FMI3.MEHistory.initial_evaluation_still_requires_iteration
+
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.classify_correct
+#audit axioms Rumoca.FMI3.DiscreteEvaluation.request_coverage
+#audit axioms Rumoca.FMI3.InitializationProtocol.Result.evaluation_rejected
+#audit axioms Rumoca.FMI3.InitializationProtocol.evaluation_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.evaluation_rejection_call

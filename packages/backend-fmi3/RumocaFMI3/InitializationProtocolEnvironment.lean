@@ -1,6 +1,7 @@
 import RumocaFMI3.InitializationProtocolHistory
 import RumocaFMI3.InitializationProtocolLogging
 import RumocaFMI3.InitializationProtocolEventIndicators
+import RumocaFMI3.InitializationProtocolEvaluation
 import RumocaFMI3.CSRunEnvironment
 import RumocaFMI3.MEEnvironment
 
@@ -34,6 +35,7 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
     (nominals : NominalEnvironment.PreparedContract model sigs pool)
     (logging : DebugLogging.PreparedContract model sigs pool)
     (eventIndicators : EventIndicatorEnvironment.PreparedContract model sigs pool)
+    (evaluation : DiscreteEvaluation.PreparedContract model sigs pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -99,6 +101,16 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
         invariant.stored invariant.ownership buffer allowed
     | reject access buffer count =>
       exact event_indicators_rejection_call access buffer count header objects model sigs pool eventIndicators
+        baseHeap firstBlock signed program actual heap p buffers kind state owners retained
+        invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging
+  | evaluation request =>
+    cases request with
+    | evaluate =>
+      exact evaluation_call model program
+        (evaluation.quiet header Invocation objects firstBlock program actual)
+        invariant.stored invariant.ownership allowed
+    | reject =>
+      exact evaluation_rejection_call header objects model sigs pool evaluation
         baseHeap firstBlock signed program actual heap p buffers kind state owners retained
         invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging
   | logging request =>

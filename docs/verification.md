@@ -1,5 +1,38 @@
 # Exact verification contract
 
+**Evaluation during initialization histories (2026-09-15, full gate passed):**
+
+Evaluation success and rejection now compose through the initialization
+protocol, reset/retry, post-exit ME operation and recurring ME/CS runs. The
+classifier covers every represented interface/mode pair. The same public C
+function derives returned status and memory effects, including every modeled
+logger return and the blocked alternative. Original caller/borrowed storage,
+ownership, source checkpoints and completed/stopped observations compose from
+actual creation through final release.
+
+The common bundle reuses its existing ME evaluation contract. Successful
+evaluation preserves state and cannot replace the required discrete update.
+The owning core/C/FMI/compiler checks passed at 08:23:37 UTC; the required
+`nix develop .#verification --command lake test` passed at 09:17:17 UTC on
+1087 unchanged inputs. All 150 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Five new audit registrations supplement
+the retained source/history roots. Evidence is in
+`build/c-factory/evaluation-initialization/`: `package-v1.*`, `full-gate-v1.*`,
+`integration-v1.json`, `standards-review-v1.json` and `artifacts-v1.*`.
+
+Every retained FMU member, including the native library, is byte-identical to
+the accepted discrete-evaluation checkpoint. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC and Production C are unchanged. Existing artifact/native/rejection checks
+passed; no grammar, solver, emitter, metadata or test suite was added.
+Only these three evidence documents change after the frozen gate.
+
+This closes evaluation interleavings in the represented initialization and
+recurring protocols. Remaining public capability/type-access calls, unrestricted
+host/callback/concurrent behavior, complete native/ABI and artifact provenance,
+MISRA and whole-subset standards obligations remain open. K02–K05 still block
+grammar expansion; this is not a full FMI-conformance claim.
+
 **Discrete evaluation (2026-09-15, full gate passed):**
 
 The existing evaluation call now accepts only ME Event Mode in this profile.
