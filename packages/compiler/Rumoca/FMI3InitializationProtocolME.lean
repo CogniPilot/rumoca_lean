@@ -50,10 +50,10 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
       (retained : Address → Prop) (original live exited : Heap) (access : Float64Buffers.Layout)
       (factoryArgs : FactoryArguments.Raw) (initialization : List Action) (state : State)
       (initObserved : List (Float64Access.Observation Invocation)) (initCheckpoints : List Heap)
-      (args : Initialization.Arguments) (addresses : String → Address) (buffer : Address),
+      (args : Initialization.Arguments) (addresses : String → Address) (buffer : Address) (readers : ReadBank),
       let p := objects.instances.index slot.val
       CreatedSourceContract model.prepareFMI3 program objects tag retained owners slot owner original
-        (pool.install baseHeap firstBlock signed) live access .me initialization state →
+        (pool.install baseHeap firstBlock signed) live access .me initialization state readers →
       Created live objects.instances objects.flagsBlock (SlotOwners.update owners slot (some owner)) slot owner .me
         factoryArgs.environment factoryArgs.logger factoryArgs.logging →
       SlotOwners.reserve owners slot owner = some (SlotOwners.update owners slot (some owner)) →
@@ -63,7 +63,7 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
       MEOutputsGuarded objects retained addresses buffer →
     ∀ (config : MEMixedRun.Configuration) (actions : List MEMixedRun.Action)
       (final : MENumericalHistory.ReferenceState) (finalClock : Time.Clock),
-      config.Matches factoryArgs → config.Valid program objects addresses buffer →
+      config.Matches { factoryArgs with logging := (loggingUpdate initialization).getD factoryArgs.logging } → config.Valid program objects addresses buffer →
       MEMixedRun.ReferenceTrace buffer (meReference state args) (Time.Clock.initial args.start) actions final finalClock →
       (∀ action ∈ actions, action.Prepared objects original addresses buffer) →
       (∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q) →
@@ -72,14 +72,14 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
         (meReference state args) final (Time.Clock.initial args.start) finalClock actions config := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program tag actual write owners slot owner retained original live exited access factoryArgs initialization state
-    initObserved initCheckpoints args addresses buffer
+    initObserved initCheckpoints args addresses buffer readers
   let p := objects.instances.index slot.val
   dsimp only
   intro initialized created reserved creationFrame executed phase outputs guarded config actions final finalClock matching valid admitted requests regions policies
   obtain ⟨_, _, invariant, _, keeps, initialFrame⟩ := initialized.initialized.completed _ _ _ executed
   have readonly := (initialized.completed _ _ _ executed).1
   have stored := invariant.me_ready phase outputs guarded
-  have configured := keeps.me_configuration (MEMixedRun.Configuration.created matching created.initialized)
+  have configured := keeps.me_created created.initialized matching
   obtain ⟨reset, enterDefined, exitDefined, termination, releaseDefined⟩ :=
     lifecycle.execution header objects (pool.addresses firstBlock) program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
@@ -98,7 +98,7 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
   obtain ⟨sourceValues, sourceEpochs⟩ := certified.source model completed
   have metadataAtExit : load exited (p.member "slot") = some (.integer slot.val) := by
     change load exited ((objects.instances.index slot.val).member "slot") = _
-    simpa only [load, keeps "slot" (by decide)] using created.metadata
+    simpa only [load, keeps.fields "slot" (by decide) (by decide)] using created.metadata
   have metadataAfter := (certified.slot stored rfl completed).trans metadataAtExit
   have released := LifecycleRelease.finish_correct objects program tag finish releaseBindings rfl after slot .me
     final.control.mode (SlotOwners.update owners slot (some owner)) owner finalStored.control.kind finalStored.control.mode

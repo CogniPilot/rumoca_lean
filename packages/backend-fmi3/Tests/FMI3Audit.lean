@@ -1,3 +1,17 @@
+import RumocaFMI3.DebugLoggingInitialization
+import RumocaFMI3.DebugLoggingInputFrame
+import RumocaFMI3.InitializationProtocolInputs
+import RumocaFMI3.InitializationProtocolLogging
+import RumocaFMI3.InitializationRetention
+import RumocaFMI3.LoggingCapability
+import RumocaFMI3.LoggingCapabilityCS
+import RumocaFMI3.LoggingCapabilityCalls
+import RumocaFMI3.LoggingCapabilityCreation
+import RumocaFMI3.LoggingCapabilityEnvironment
+import RumocaFMI3.LoggingCapabilityFrames
+import RumocaFMI3.LoggingCapabilityLifetime
+import RumocaFMI3.LoggingCapabilityViews
+import RumocaFMI3.LoggingRequests
 import RumocaFMI3.DebugLoggingContract
 import RumocaFMI3.InitializationProtocol
 import RumocaFMI3.InitializationProtocolEnvironment
@@ -1765,3 +1779,71 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.DebugLogging.legal_returned
 #audit axioms Rumoca.FMI3.DebugLogging.function_eq
 #audit axioms Rumoca.FMI3.DebugLogging.rendered_contract
+
+#audit axioms Rumoca.FMI3.InitializationProtocol.Stored.logging_framed
+#audit axioms Rumoca.FMI3.InitializationProtocol.logging_legal_returned
+#audit axioms Rumoca.FMI3.InitializationProtocol.logging_failure_returned
+#audit axioms Rumoca.FMI3.DebugLogging.input_empty
+#audit axioms Rumoca.FMI3.DebugLogging.Entries.framed
+#audit axioms Rumoca.FMI3.InitializationProtocol.ReadBank.Frame.refl
+#audit axioms Rumoca.FMI3.InitializationProtocol.ReadBank.Frame.trans
+#audit axioms Rumoca.FMI3.InitializationProtocol.ReadBank.Stored.framed
+#audit axioms Rumoca.FMI3.InitializationProtocol.Result.inputs_framed
+#audit axioms Rumoca.FMI3.InitializationProtocol.logging_call
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.of_retains
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.to_retains
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.refl
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.trans
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.writable
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.configured
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.logging_written
+#audit axioms Rumoca.FMI3.Logging.Capability.requires_mono
+#audit axioms Rumoca.FMI3.Logging.Capability.requires_and
+#audit axioms Rumoca.FMI3.Logging.Capability.Stored.framed
+#audit axioms Rumoca.FMI3.Logging.Capability.Stored.logging_written
+#audit axioms Rumoca.FMI3.Logging.Capability.Stored.mode_written
+#audit axioms Rumoca.FMI3.Logging.Capability.Configured.logging_written
+#audit axioms Rumoca.FMI3.Logging.Capability.Configured.framed
+#audit axioms Rumoca.FMI3.Logging.Capability.cs_stored
+#audit axioms Rumoca.FMI3.Logging.Capability.cs_bound
+#audit axioms Rumoca.FMI3.Logging.Capability.cs_respects
+#audit axioms Rumoca.FMI3.Logging.Capability.cs_storage
+#audit axioms Rumoca.FMI3.Logging.Capability.cs_control
+#audit axioms Rumoca.FMI3.Logging.Capability.request_contract
+#audit axioms Rumoca.FMI3.Logging.Capability.legal_returned
+#audit axioms Rumoca.FMI3.Logging.Capability.factory_policy
+#audit axioms Rumoca.FMI3.Logging.Capability.created
+#audit axioms Rumoca.FMI3.Logging.Capability.created_invariant
+#audit axioms Rumoca.FMI3.Logging.Capability.prepared_request
+#audit axioms Rumoca.FMI3.Logging.Capability.initialization_control
+#audit axioms Rumoca.FMI3.Logging.Capability.me_control
+#audit axioms Rumoca.FMI3.Logging.Capability.Configured.mode_written
+#audit axioms Rumoca.FMI3.Logging.Capability.Failure.returned
+#audit axioms Rumoca.FMI3.Logging.Capability.Failure.progress
+#audit axioms Rumoca.FMI3.Logging.Capability.initialized
+#audit axioms Rumoca.FMI3.Logging.Capability.Configured.reset
+#audit axioms Rumoca.FMI3.Logging.Capability.Configured.initialization_retained
+#audit axioms Rumoca.FMI3.Logging.Capability.me_stored
+#audit axioms Rumoca.FMI3.Logging.Capability.me_valid
+#audit axioms Rumoca.FMI3.Logging.Capability.me_storage
+#audit axioms Rumoca.FMI3.Logging.Capability.initialization_policy
+#audit axioms Rumoca.FMI3.DebugLogging.Request.logging_update
+#audit axioms Rumoca.FMI3.DebugLogging.Request.legal_accepted
+#audit axioms Rumoca.FMI3.DebugLogging.Request.legal_logging
+#audit axioms Rumoca.FMI3.DebugLogging.Request.Inputs.framed
+#audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.current
+#audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.updated
+
+#audit axioms Rumoca.FMI3.DebugLogging.Entries.load_ne_none
+#audit axioms Rumoca.FMI3.DebugLogging.Request.Inputs.load_ne_none
+#audit axioms Rumoca.FMI3.InitializationProtocol.ReadBank.Stored.not_flag
+#audit axioms Rumoca.FMI3.InitializationProtocol.ReadBank.Stored.creation_frame
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.logging_value
+#audit axioms Rumoca.FMI3.InitializationProtocol.Retention.me_created
+#audit axioms Rumoca.FMI3.CSRun.Logger.FramePolicy.storage
+#audit axioms Rumoca.FMI3.CSRun.LoggedTrace.frame
+
+#audit axioms Rumoca.FMI3.MEMixedRun.Configuration.FramePolicy.storage
+#audit axioms Rumoca.FMI3.MEMixedRun.Configuration.FramePolicy.mono
+#audit axioms Rumoca.FMI3.MEMixedRun.Trace.callerFrame
+#audit axioms Rumoca.FMI3.CSRun.Calls.frame

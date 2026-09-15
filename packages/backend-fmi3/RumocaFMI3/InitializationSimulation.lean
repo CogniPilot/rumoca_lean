@@ -6,22 +6,24 @@ import RumocaFMI3.CSRunEnvironment
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
 open CTree CMemory StaticFactory CCalls.Events
+variable {readers : ReadBank}
 
 /-- Resources shared by initialization and simulation. The original caller
 bank and literal heap stay fixed across every reset and handoff. -/
 structure Persistent [CInterface] (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
-    (original literals heap : Heap) (p : Address) : Prop where
+    (original literals heap : Heap) (p : Address) (readers : ReadBank) : Prop where
   ownership : SlotOwners.Represents objects.flagsBlock heap owners
   caller : CallerStorage objects retained original heap
   readonly : CReadOnly.Preserves literals heap
   logging : LogPolicy program objects retained heap p
+  readerFrame : readers.Frame original heap
 
 theorem Invariant.persistent [CInterface] {program : Program Invocation}
     {objects : Objects} {owners : SlotOwners.State objects.capacity}
-    (invariant : Invariant program objects retained owners original literals heap p kind state) :
-    Persistent program objects retained owners original literals heap p :=
-  ⟨invariant.ownership, invariant.caller, invariant.readonly, invariant.logging⟩
+    (invariant : Invariant program objects retained owners original literals heap p kind state readers) :
+    Persistent program objects retained owners original literals heap p readers :=
+  ⟨invariant.ownership, invariant.caller, invariant.readonly, invariant.logging, invariant.readerFrame⟩
 
 /-- The initialization logger policy supplies the simulation policy at the
 actual handoff heap. No configuration from the first factory heap is needed. -/
@@ -30,12 +32,13 @@ theorem LogPolicy.cs [CInterface] {program : Program Invocation}
     (guarded : CSOutputsGuarded objects retained buffers) :
     CSRun.Suppressed heap p ∨ ∃ logger : CSRun.Logger,
       logger.Stored heap p ∧ logger.Bound program ∧ logger.Respects objects buffers ∧
-      logger.StoragePolicy (Float64Rejection.Protected objects retained) := by
-  rcases logging with quiet |
+      logger.StoragePolicy (Float64Rejection.Protected objects retained) ∧
+      logger.FramePolicy (Float64Rejection.Protected objects retained) := by
+  rcases logging.current with quiet |
     ⟨pointer, environment, name, effect, loggerValue, loggingValue, environmentValue, address, external, respects⟩
   · exact Or.inl quiet
   · refine Or.inr ⟨⟨pointer, environment, name, effect⟩,
-      ⟨loggerValue, loggingValue, environmentValue⟩, ⟨address, external⟩, ?_, ?_⟩
+      ⟨loggerValue, loggingValue, environmentValue⟩, ⟨address, external⟩, ?_, ?_, respects⟩
     · intro args before value after returned q inside
       exact respects args before value after returned q (guarded.protects inside)
     · intro args before value after returned
@@ -45,12 +48,13 @@ theorem LogPolicy.me [CInterface] {program : Program Invocation}
     (logging : LogPolicy program objects retained heap p)
     (guarded : MEOutputsGuarded objects retained addresses buffer) :
     ∃ config : MEMixedRun.Configuration, config.Stored heap p ∧ config.Valid program objects addresses buffer ∧
-      config.StoragePolicy (Float64Rejection.Protected objects retained) := by
-  rcases logging with ⟨logger, enabled, loggerValue, loggingValue, quiet⟩ |
+      config.StoragePolicy (Float64Rejection.Protected objects retained) ∧
+      config.FramePolicy (Float64Rejection.Protected objects retained) := by
+  rcases logging.current with ⟨logger, enabled, loggerValue, loggingValue, quiet⟩ |
     ⟨pointer, environment, name, effect, loggerValue, loggingValue, environmentValue, address, external, respects⟩
-  · exact ⟨.quiet logger enabled, ⟨loggerValue, loggingValue⟩, quiet, trivial⟩
+  · exact ⟨.quiet logger enabled, ⟨loggerValue, loggingValue⟩, quiet, trivial, trivial⟩
   · refine ⟨.logged pointer environment name effect,
-      ⟨loggerValue, loggingValue, environmentValue⟩, ⟨address, external, ?_⟩, ?_⟩
+      ⟨loggerValue, loggingValue, environmentValue⟩, ⟨address, external, ?_⟩, ?_, respects⟩
     · intro args before value after returned q inside
       exact respects args before value after returned q (guarded.protects inside)
     · intro args before value after returned
@@ -61,12 +65,13 @@ initialization, for every raw completed execution and every logger outcome. -/
 structure CSExecution [CInterface] (model : Solve.FMI3Model source) (header : CFenv.Header) (program : Program Invocation)
     (objects : Objects) (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
     (original literals heap : Heap) (p : Address) (buffers : StepEntry.Buffers)
-    (before : CSRun.Reference) (actions : List CSRun.Action) (final : CSRun.Reference) (statuses : List Int) : Prop where
+    (before : CSRun.Reference) (actions : List CSRun.Action) (final : CSRun.Reference) (statuses : List Int)
+    (readers : ReadBank) : Prop where
   progress : (∃ events after, CSRun.Completed program p heap actions statuses events after) ∨
     CSRun.Stopped program p heap actions
   completed : ∀ observed events after, CSRun.Completed program p heap actions observed events after →
     observed = statuses ∧ CSRun.Stored model.solve after p buffers final ∧
-    Persistent program objects retained owners original literals after p ∧
+    Persistent program objects retained owners original literals after p readers ∧
     CSRun.Retains p heap after ∧ CReadOnly.Preserves heap after ∧
     (∀ q, CSRun.Protected objects buffers q → CSRun.Outside p buffers q → after q = heap q)
   semantic : ∀ observed events after records, CSRun.Recorded program p heap actions observed events after records →
@@ -87,17 +92,18 @@ theorem cs_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
       program.externals "floor" = some (CMathCalls.floorExternal rfl) →
     ∀ (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
       (original heap : Heap) (p : Address) (buffers : StepEntry.Buffers)
-      (before final : CSRun.Reference) (actions : List CSRun.Action) (statuses : List Int),
-      Persistent program objects retained owners original (pool.install baseHeap firstBlock signed) heap p →
+      (before final : CSRun.Reference) (actions : List CSRun.Action) (statuses : List Int) (readers : ReadBank),
+      Persistent program objects retained owners original (pool.install baseHeap firstBlock signed) heap p readers →
       p.block = objects.instances.block → CSOutputsGuarded objects retained buffers →
+      (∀ q, readers.Region q → Float64Rejection.Protected objects retained q ∧ CSRun.Outside p buffers q) →
       CSRun.Stored model.solve heap p buffers before → CSRun.ReferenceTrace header p buffers before actions final statuses →
       CSExecution model header program objects retained owners original (pool.install baseHeap firstBlock signed)
-        heap p buffers before actions final statuses := by
+        heap p buffers before actions final statuses readers := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
-  intro program range actual rounding floorBound retained owners original heap p buffers before final actions statuses
-    persistent inPool guarded stored admitted
+  intro program range actual rounding floorBound retained owners original heap p buffers before final actions statuses readers
+    persistent inPool guarded readerGuarded stored admitted
   obtain ⟨reset, enterDefined, exitDefined, _, _⟩ := prepared.execution header objects firstBlock program actual
-  rcases persistent.logging.cs guarded with quiet | ⟨logger, logging, bound, policy, storagePolicy⟩
+  rcases persistent.logging.cs guarded with quiet | ⟨logger, logging, bound, policy, storagePolicy, framePolicy⟩
   · obtain ⟨after, calls, finalStored, keeps, readonly, atomic, frame, semantic⟩ :=
       CSRun.trace_framed header objects model sigs pool prepared.step baseHeap firstBlock signed p buffers program range
         actual rounding floorBound reset enterDefined exitDefined heap before final actions statuses persistent.readonly stored quiet admitted
@@ -108,7 +114,8 @@ theorem cs_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
       exact ⟨sameStatuses, finalStored,
         ⟨SlotOwners.ordinary_preserves persistent.ownership atomic,
           persistent.caller.trans (CallerStorage.ordinary calls.storage), persistent.readonly.trans readonly,
-          persistent.logging.framed (fun name outside => keeps name outside)⟩,
+          persistent.logging.framed (fun name outside => keeps name outside),
+          persistent.readerFrame.trans (fun q inside => frame q (readerGuarded q inside).2)⟩,
         keeps, readonly, fun q _ outside => frame q outside⟩
     · intro action rest same actual
       cases same
@@ -123,7 +130,11 @@ theorem cs_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
       subst observed
       obtain ⟨finalStored, _, ownership, keeps, readonly, frame⟩ := certified.completed completed
       exact ⟨rfl, finalStored, ⟨ownership, persistent.caller.trans (certified.storage completed storagePolicy),
-        persistent.readonly.trans readonly, persistent.logging.framed (fun name outside => keeps name outside)⟩,
+        persistent.readonly.trans readonly, persistent.logging.framed (fun name outside => keeps name outside),
+        persistent.readerFrame.trans (fun q inside => certified.frame completed
+          (fun args before value after returned cell member =>
+            framePolicy args before value after returned cell (readerGuarded cell member).1)
+          q inside (readerGuarded q inside).2)⟩,
         keeps, readonly, frame⟩
     · intro action rest same actual
       cases same

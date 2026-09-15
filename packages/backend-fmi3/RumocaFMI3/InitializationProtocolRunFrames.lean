@@ -35,5 +35,30 @@ theorem Retains.me_configuration [CInterface] {config : MEMixedRun.Configuration
 theorem Retains.cs (retains : Retains p before after) : CSRun.Retains p before after :=
   fun name outside => retains name outside
 
+/-- ME receives the flag selected by the completed initialization history.
+The record update describes that configuration; it performs no new factory
+call and changes neither the original callback nor its environment. -/
+theorem Retention.me_created [CInterface] {config : MEMixedRun.Configuration}
+    {args : FactoryArguments.Raw}
+    (kept : Retention update p before after)
+    (initialized : InstanceInitialization.Initialized before p .me args.environment args.logger args.logging)
+    (matching : config.Matches { args with logging := update.getD args.logging }) :
+    config.Stored after p := by
+  have logger : load after (p.member "logger") = some (.pointer args.logger) := by
+    simpa only [load, kept.fields "logger" (by decide) (by decide)] using initialized.loggerValue
+  have environment : load after (p.member "environment") = some (.pointer args.environment) := by
+    simpa only [load, kept.fields "environment" (by decide) (by decide)] using initialized.environmentValue
+  have logging := kept.logging_value initialized.loggingValue
+  cases config with
+  | quiet pointer enabled =>
+    change args.logger = pointer ∧ update.getD args.logging = enabled at matching
+    exact ⟨by simpa only [matching.1] using logger,
+      by simpa only [matching.2] using logging⟩
+  | logged pointer context name effect =>
+    change args.logger = some pointer ∧ update.getD args.logging = true ∧ args.environment = context at matching
+    exact ⟨by simpa only [matching.1] using logger,
+      by simpa only [matching.2.1, CBody.boolean] using logging,
+      by simpa only [matching.2.2] using environment⟩
+
 end Rumoca.FMI3.InitializationProtocol
 end

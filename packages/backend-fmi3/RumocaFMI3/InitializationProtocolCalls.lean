@@ -1,11 +1,9 @@
 import RumocaFMI3.InitializationProtocolStorage
+import RumocaFMI3.InitializationRetention
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
 open CTree CMemory CBody StaticFactory CCalls.Events
-
-def Retains (p : Address) (before after : Heap) : Prop :=
-  ∀ name, name ∉ InitializationAccess.writtenFields → after (p.member name) = before (p.member name)
 
 def Action.Outside (action : Action) (q : Address) : Prop :=
   match action with
@@ -21,7 +19,7 @@ structure Result (objects : Objects) (retained : Address → Prop)
   ownership : SlotOwners.Represents objects.flagsBlock after owners
   caller : CallerStorage objects retained heap after
   readonly : CReadOnly.Preserves heap after
-  retains : Retains p heap after
+  retains : Retention action.loggingUpdate p heap after
   frame : ∀ q, Float64Rejection.Protected objects retained q → ¬ p.InRecord q →
     Float64Access.Outside buffers q → action.Outside q → after q = heap q
 
@@ -60,10 +58,11 @@ theorem Result.ordinary
     (ownersStored : SlotOwners.Represents objects.flagsBlock heap owners)
     (storage : CStorage.Preserves heap after) (atomic : CAtomicBoolean.Preserves heap after)
     (readonly : CReadOnly.Preserves heap after) (retains : Retains p heap after)
+    (unchanged : action.loggingUpdate = none)
     (frame : ∀ q, ¬ p.InRecord q → Float64Access.Outside buffers q → after q = heap q) :
     Result objects retained owners p buffers heap after kind state action :=
   ⟨stored, SlotOwners.ordinary_preserves ownersStored atomic, CallerStorage.ordinary storage,
-    readonly, retains, fun q _ notRecord outside _ => frame q notRecord outside⟩
+    readonly, unchanged ▸ Retention.of_retains retains, fun q _ notRecord outside _ => frame q notRecord outside⟩
 
 theorem access_call [CInterface] (program : Program Invocation)
     (get : ∀ heap, Float64Calls.QuietExecutionContract model program heap)
@@ -85,7 +84,7 @@ theorem access_call [CInterface] (program : Program Invocation)
   exact CallContract.quiet prepared called
     (by simp only [Action.Observed, Action.readback, request.readback_correct observed, Float64Access.Observation.ok])
     (Result.ordinary (stored.access request instanceAfter storage fields) ownersStored storage
-      (request.after_atomic model stored.instanceStored outputs fits separate) readonly (fun name _ => fields name)
+      (request.after_atomic model stored.instanceStored outputs fits separate) readonly (fun name _ => fields name) rfl
       (fun q notRecord outside => frame q
         (fun same => notRecord (same ▸ (p.member_in_record "model").member "x")) outside))
 
@@ -109,6 +108,7 @@ theorem enter_call [CInterface] (model : Solve.FMI3Model source) (program : Prog
     (Result.ordinary (stored.entered args phase admissible) ownersStored memory.1 memory.2
       (termination_preserves ((called _).mpr rfl))
       (fun name outside => frame _ (fun other member same => outside ((Address.member_inj _ _ _).mp same ▸ member)))
+      rfl
       (fun q notRecord _ => frame q (fun name _ same => notRecord (same ▸ p.member_in_record name))))
 
 theorem exit_call [CInterface] (model : Solve.FMI3Model source) (program : Program Invocation)
@@ -129,6 +129,7 @@ theorem exit_call [CInterface] (model : Solve.FMI3Model source) (program : Progr
         apply outside
         have equal := (Address.member_inj _ _ _).mp same
         simp [InitializationAccess.writtenFields, equal]))
+      rfl
       (fun q notRecord _ => InitializationBodies.exit_frame heap p q kind
         (fun same => notRecord (same ▸ p.member_in_record "mode"))))
 
@@ -141,7 +142,7 @@ theorem reset_call [CInterface] (model : Solve.FMI3Model source) (program : Prog
   exact CallContract.quiet rfl called rfl
     (Result.ordinary (stored.reset_done model) ownersStored memory.1 memory.2
       (termination_preserves ((called _).mpr rfl))
-      (Reset.retained_field heap p) (fun q notRecord _ => StaticReset.record_frame heap p q notRecord))
+      (Reset.retained_field heap p) rfl (fun q notRecord _ => StaticReset.record_frame heap p q notRecord))
 
 end Rumoca.FMI3.InitializationProtocol
 end

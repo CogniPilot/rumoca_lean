@@ -1,6 +1,7 @@
 import RumocaFMI3.Float64RejectionExecution
 import RumocaFMI3.CountRequests
 import RumocaFMI3.NominalRequests
+import RumocaFMI3.LoggingRequests
 
 /-! Initialization is a protocol, not an indivisible reset/enter/exit macro.
 Its reference transitions are independent of the target heaps and statuses.
@@ -33,6 +34,7 @@ inductive Action where
   | reject (request : Float64Rejection.Request)
   | counts (request : CountAccess.Request)
   | nominals (request : NominalAccess.Request)
+  | logging (request : DebugLogging.Request)
   | enter (args : Initialization.Arguments)
   | exit
   | reset
@@ -43,11 +45,22 @@ def Action.next (action : Action) (state : State) : State :=
   | .reject _ => { state with phase := .failed }
   | .counts request => if request.failed then { state with phase := .failed } else state
   | .nominals request => if request.failed then { state with phase := .failed } else state
+  | .logging request => if request.failed then { state with phase := .failed } else state
   | .enter args => { state with phase := .initializing args, time := args.start }
   | .exit => match state.phase with
     | .initializing args => { state with phase := .initialized args }
     | _ => state
   | .reset => .reset
+
+def Action.loggingUpdate : Action → Option Bool
+  | .logging request => request.loggingUpdate
+  | _ => none
+
+/-- The last successful logging update determines the final flag. Failed
+updates and ordinary numerical/control actions preserve the preceding flag. -/
+def loggingUpdate : List Action → Option Bool
+  | [] => none
+  | action :: rest => (loggingUpdate rest).orElse fun _ => action.loggingUpdate
 
 /-- Subsequent simulation is handled by the existing ME/CS histories; count
 queries may also observe the instantiated or post-exit Event Mode. Reset can
@@ -62,6 +75,7 @@ def Action.Allowed (action : Action) (kind : Kind) (state : State) : Prop :=
   | .reject request => request.Condition kind (state.phase.mode kind)
   | .counts request => request.Allowed kind (state.phase.mode kind)
   | .nominals request => request.Allowed kind (state.phase.mode kind)
+  | .logging _ => True
   | .enter args => state.phase = .instantiated ∧ args.Admissible
   | .exit => ∃ args, state.phase = .initializing args
   | .reset => True
@@ -78,6 +92,7 @@ def Action.call (action : Action) (p : Address) (buffers : Float64Buffers.Layout
   | .reject request => request.call p
   | .counts request => request.call p
   | .nominals request => request.call p
+  | .logging request => request.call p
   | .enter args => (InitializationCalls.signature.name,
       InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args))
   | .exit => (InitializationExit.signature.name, InitializationExit.arguments (some p))
@@ -108,6 +123,9 @@ def Action.Observed (action : Action) (model : Solve.FMI3Model source) (state : 
   | .nominals request => if request.failed then
       observed.status = .integer 3 ∧ observed.values = fun _ => none
     else observed = .ok (request.expected model)
+  | .logging request => if request.failed then
+      observed.status = .integer 3 ∧ observed.values = fun _ => none
+    else observed = .ok (fun _ => none)
   | _ => observed = .ok (fun _ => none)
 
 /-- An exit checkpoint keeps the actual heap. Source initialization is proved

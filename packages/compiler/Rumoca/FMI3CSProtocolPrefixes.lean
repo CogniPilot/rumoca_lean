@@ -17,39 +17,40 @@ def CSRun.SourcePrefix (source : AST.Model) (header : CFenv.Header) (p : Address
     ∃ request outputs, stop.pending = .step request outputs
 
 namespace CSProtocol
-open InitializationProtocol (Invariant Persistent CSExecution SourceContract)
+open InitializationProtocol (Invariant Persistent CSExecution SourceContract ReadBank)
+variable {readers : ReadBank}
 
 def InitializationCompiler [CInterface] (model : Solve.FMI3Model source) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity) (original literals : Heap)
-    (p : Address) (access : Float64Buffers.Layout) : Prop :=
-  ∀ heap actions state, Invariant program objects retained owners original literals heap p .cs .reset →
+    (p : Address) (access : Float64Buffers.Layout) (readers : ReadBank) : Prop :=
+  ∀ heap actions state, Invariant program objects retained owners original literals heap p .cs .reset readers →
     InitializationProtocol.ReferenceTrace .cs .reset actions state →
-    (∀ action ∈ actions, action.Prepared objects retained original p access) →
-    SourceContract model program objects retained owners original literals heap p access .cs .reset state actions
+    (∀ action ∈ actions, action.Prepared objects retained original p access readers) →
+    SourceContract model program objects retained owners original literals heap p access .cs .reset state actions readers
 
 def SimulationCompiler [CInterface] (model : Solve.FMI3Model source) (program : Program Invocation) (header : CFenv.Header)
     (objects : Objects) (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
-    (original literals : Heap) (p : Address) (buffers : StepEntry.Buffers) : Prop :=
+    (original literals : Heap) (p : Address) (buffers : StepEntry.Buffers) (readers : ReadBank) : Prop :=
   ∀ heap before final actions statuses,
-    Persistent program objects retained owners original literals heap p →
+    Persistent program objects retained owners original literals heap p readers →
     CSRun.Stored model.solve heap p buffers before → CSRun.ReferenceTrace header p buffers before actions final statuses →
-    CSExecution model header program objects retained owners original literals heap p buffers before actions final statuses
+    CSExecution model header program objects retained owners original literals heap p buffers before actions final statuses readers
 
 variable [CInterface] {source : AST.Model} {model : Solve.FMI3Model source} {program : Program Invocation}
   {objects : Objects} {owners : SlotOwners.State objects.capacity}
 
 theorem InitializationCompiler.interrupted
-    (compiler : InitializationCompiler model program objects retained owners original literals p access)
-    (invariant : Invariant program objects retained owners original literals heap p .cs .reset)
+    (compiler : InitializationCompiler model program objects retained owners original literals p access readers)
+    (invariant : Invariant program objects retained owners original literals heap p .cs .reset readers)
     (reference : InitializationProtocol.ReferenceTrace .cs .reset actions final)
-    (prepared : ∀ action ∈ actions, action.Prepared objects retained original p access)
+    (prepared : ∀ action ∈ actions, action.Prepared objects retained original p access readers)
     (actual : InitializationProtocol.Interrupted program p access heap actions stop) :
     InitializationProtocol.SourcePrefix model p .cs .reset actions stop :=
   InitializationProtocol.SourcePrefix.of_compiler compiler invariant reference prepared actual
 
 theorem SimulationCompiler.interrupted
-    (compiler : SimulationCompiler model program header objects retained owners original literals p buffers)
-    (persistent : Persistent program objects retained owners original literals heap p)
+    (compiler : SimulationCompiler model program header objects retained owners original literals p buffers readers)
+    (persistent : Persistent program objects retained owners original literals heap p readers)
     (stored : CSRun.Stored model.solve heap p buffers before)
     (reference : CSRun.ReferenceTrace header p buffers before actions final statuses)
     (actual : CSRun.Interrupted program p heap actions stop) :

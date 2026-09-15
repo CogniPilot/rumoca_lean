@@ -11,14 +11,15 @@ namespace Rumoca.FMI3.InitializationProtocol
 open CTree CMemory CLiteral CStringMemory StaticFactory CCalls.Events
 
 variable {source : AST.Model} {model : Solve.FMI3Model source}
+variable {readers : ReadBank}
 
 structure CreatedSourceContract [CInterface] (model : Solve.FMI3Model source) (program : Program Invocation)
     (objects : Objects) (tag : CAtomicBoolean.Calls.Event → Invocation) (retained : Address → Prop)
     (owners : SlotOwners.State objects.capacity) (slot : Fin objects.capacity) (owner : Nat)
     (original literals live : Heap) (buffers : Float64Buffers.Layout) (kind : Kind)
-    (actions : List Action) (final : State) : Prop where
+    (actions : List Action) (final : State) (readers : ReadBank) : Prop where
   initialized : SourceContract model program objects retained (SlotOwners.update owners slot (some owner))
-    original literals live (objects.instances.index slot.val) buffers kind State.reset final actions
+    original literals live (objects.instances.index slot.val) buffers kind State.reset final actions readers
   completed : ∀ observed after checkpoints,
     Completed program (objects.instances.index slot.val) buffers live actions observed after checkpoints →
     CReadOnly.Preserves original after ∧
@@ -38,19 +39,22 @@ theorem after_creation [interface : CInterface] {program : Program Invocation}
     (created : Created live objects.instances objects.flagsBlock (SlotOwners.update owners slot (some owner))
       slot owner kind factoryArgs.environment factoryArgs.logger factoryArgs.logging)
     (reserved : SlotOwners.reserve owners slot owner = some (SlotOwners.update owners slot (some owner)))
+    (represented : SlotOwners.Represents objects.flagsBlock original owners)
     (storage : CStorage.Preserves original live) (readonly : CReadOnly.Preserves original live)
     (literalFrame : CReadOnly.Preserves literals original)
     (creationFrame : ∀ q, ¬ (objects.instances.index slot.val).InRecord q →
       q ≠ AtomicSlots.address objects.flagsBlock slot → live q = original q)
     (logging : FactoryLogPolicy program objects retained factoryArgs)
     (contract : ExecutionContract model program objects retained (SlotOwners.update owners slot (some owner))
-      original literals (objects.instances.index slot.val) buffers kind)
+      original literals (objects.instances.index slot.val) buffers kind readers)
     (reference : ReferenceTrace kind State.reset actions final)
-    (prepared : ∀ action ∈ actions, action.Prepared objects retained original (objects.instances.index slot.val) buffers)
+    (prepared : ∀ action ∈ actions, action.Prepared objects retained original (objects.instances.index slot.val) buffers readers)
     (finish : Termination.ReleaseContract objects program tag) (release : StaticRelease.Bindings program tag)
     (flags : interface.constants "rumoca_instance_flags" = some (.pointer (some ⟨objects.flagsBlock, [], 0⟩))) :
-    CreatedSourceContract model program objects tag retained owners slot owner original literals live buffers kind actions final := by
-  have invariant := Invariant.created objects created storage (literalFrame.trans readonly) logging
+    CreatedSourceContract model program objects tag retained owners slot owner original literals live buffers kind actions final readers := by
+  have readerFrame := contract.resources.readerInputs.creation_frame represented
+    contract.resources.readerGuarded creationFrame
+  have invariant := Invariant.created objects created storage (literalFrame.trans readonly) logging readerFrame
   refine ⟨source_contract contract reference prepared invariant, ?_⟩
   intro observed after checkpoints executed
   obtain ⟨_, _, _, kept, _, frame⟩ := executed.correct contract reference prepared invariant
@@ -76,6 +80,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧ Float64SetMetadata.Contract a.parsed.ast metadata ∧
     CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     NominalMetadata.Contract a.parsed.ast metadata ∧
+    DebugLogging.MetadataContract metadata "logStatus" ∧
     (∀ state d, Source.Equation a.parsed.ast d ↔
       d a.parsed.ast.state = Binary64.value (ModelExchange.derivative a.solve state)) ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
@@ -116,14 +121,15 @@ theorem runtime_create_release (compiled : compile input = .ok a)
             (∀ behavior, (machine program).Behaves
               (.calling (FactoryArguments.signature kind).name (FactoryArguments.arguments kind factoryArgs) heap .done) behavior ↔
               behavior = .terminates (trace.map tag) ⟨.pointer (some p), live⟩) ∧
-            ∀ (retained : Address → Prop) (buffers : Float64Buffers.Layout) (actions : List Action) (final : State),
-              Resources objects retained heap p buffers → FactoryLogPolicy program objects retained factoryArgs →
+            ∀ (retained : Address → Prop) (buffers : Float64Buffers.Layout) (actions : List Action) (final : State)
+              (readers : ReadBank),
+              Resources objects retained heap p buffers readers → FactoryLogPolicy program objects retained factoryArgs →
               ReferenceTrace kind State.reset actions final →
-              (∀ action ∈ actions, action.Prepared objects retained heap p buffers) →
+              (∀ action ∈ actions, action.Prepared objects retained heap p buffers readers) →
               CreatedSourceContract a.solve.prepareFMI3 program objects tag retained owners slot owner heap
-                (pool.install baseHeap firstBlock signed) live buffers kind actions final := by
+                (pool.install baseHeap firstBlock signed) live buffers kind actions final readers := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominals, states, derivative, getter, setter,
-    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, _⟩ := build.adapter
+    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made
@@ -131,6 +137,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
   have nominalPrepared := nominals.runtime pool made
+  have loggingPrepared := logging.prepared pool made
   have runPrepared : CSRunEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨⟨LiteralPreparation.function_bound _ sigs unique _ resetMember,
       by rw [← InitializationCalls.function_eq a.solve.prepareFMI3]; exact LiteralPreparation.function_bound _ sigs unique _ initialization.enterMember,
@@ -146,8 +153,9 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
     Float64SetMetadata.artifact_state _ _ build.metadata, CountMetadata.artifact_counts _ _ build.metadata,
     NominalMetadata.artifact_nominals _ _ build.metadata,
+    DebugLogging.artifact_category _ _ build.metadata,
     derivative_value_source a.solve,
-    sigs, pool, made, printed, functions, ⟨getPrepared, setPrepared, countPrepared, nominalPrepared, runPrepared, mePrepared⟩, ?_⟩
+    sigs, pool, made, printed, functions, ⟨getPrepared, setPrepared, countPrepared, nominalPrepared, loggingPrepared, runPrepared, mePrepared⟩, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock
@@ -172,11 +180,11 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have finish := TerminationEnvironment.release_correct header objects literals program tag terminateQuiet releaseBindings
   obtain ⟨initial, loaded, agreement, _, _⟩ := created.source_default a 0
   refine ⟨trace, slot, live, initial, work, reserved, created, loaded, agreement, preserved, createdFrame, creation, ?_⟩
-  intro retained buffers actions final resources logging reference prepared
-  exact after_creation objects tag owners slot owner created reserved preserved (termination_preserves ((creation _).mpr rfl))
+  intro retained buffers actions final readers resources logging reference prepared
+  exact after_creation objects tag owners slot owner created reserved represented preserved (termination_preserves ((creation _).mpr rfl))
     literalFrame createdFrame logging
-    (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared runPrepared.toPreparedContract
-      baseHeap firstBlock signed program actual retained (SlotOwners.update owners slot (some owner)) heap _ buffers kind resources)
+    (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared loggingPrepared runPrepared.toPreparedContract
+      baseHeap firstBlock signed program actual identity.compareBinding retained (SlotOwners.update owners slot (some owner)) heap _ buffers kind readers resources)
     reference prepared finish releaseBindings rfl
 
 end Rumoca.FMI3.InitializationProtocol

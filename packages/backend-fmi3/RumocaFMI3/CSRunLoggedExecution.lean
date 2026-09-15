@@ -50,7 +50,8 @@ theorem change_logged_correct (header : CFenv.Header) (objects : Objects)
       SlotOwners.ordinary_preserves represented (advance_atomic stored mode _), fun _ => outputs,
       retained, Events.termination_preserves ((called _).mpr rfl),
       (fun query _ outside => CSHistory.written_frame model.solve before.seed heap p buffers before.current _ query outside.cs),
-      fun region _ => (advance_storage stored advanced).on region⟩
+      (fun region _ => (advance_storage stored advanced).on region),
+      fun _ _ query _ outside => CSHistory.written_frame model.solve before.seed heap p buffers before.current _ query outside.cs⟩
   | rejected reason selection selected =>
     rename_i request outputs
     obtain ⟨category, messages, _, _, _, _, _, logged⟩ := prepared.rejections _ literalBase firstBlock signed objects heap literals
@@ -71,8 +72,10 @@ theorem change_logged_correct (header : CFenv.Header) (objects : Objects)
       Events.termination_preserves ((called _).mpr (Or.inl ⟨value, after, performed, rfl⟩)),
       (fun query isProtected outside => (kept query isProtected).trans
         (rejection_frame reason _ heap p buffers selection selected query outside)),
-      fun region preserve => ((StepRejections.after_storage reason _ heap p reads selected stored.reset).on region).trans
-        (preserve _ _ _ _ performed)⟩
+      (fun region preserve => ((StepRejections.after_storage reason _ heap p reads selected stored.reset).on region).trans
+        (preserve _ _ _ _ performed)),
+      fun _ preserve query inside outside => (preserve _ _ _ _ performed query inside).trans
+        (rejection_frame reason _ heap p buffers selection selected query outside)⟩
   | restart admissible =>
     rename_i args
     obtain ⟨entered, exited⟩ := InitializationEnvironment.calls header objects (pool.addresses firstBlock) model
@@ -87,8 +90,9 @@ theorem change_logged_correct (header : CFenv.Header) (objects : Objects)
     exact ⟨stored.restart _ admissible, retained.logger logging,
       SlotOwners.ordinary_preserves represented (restart_atomic stored.reset _), True.intro,
       retained, executed.readonly, (fun query _ outside => StaticReset.restarted_frame heap p query _ .cs outside.1),
-      fun region _ => (InitializationStorage.restarted model heap p .cs before.mode stored.reset
-        stored.kind stored.mode args admissible).on region⟩
+      (fun region _ => (InitializationStorage.restarted model heap p .cs before.mode stored.reset
+        stored.kind stored.mode args admissible).on region),
+      fun _ _ query _ outside => StaticReset.restarted_frame heap p query args .cs outside.1⟩
 
 theorem ActionContract.recorded_correct [CInterface] {program : Events.Program Events.Invocation}
     {before next : Reference}

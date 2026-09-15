@@ -39,6 +39,16 @@ def Logger.Respects [CInterface] (logger : Logger) (objects : Objects) (buffers 
 def Logger.StoragePolicy [CInterface] (logger : Logger) (region : Address → Prop) : Prop :=
   ∀ args before value after, logger.effect.execute args before value after → CStorage.PreservesOn region before after
 
+/-- Borrowed inputs need their contents as well as their storage types.
+Every return of the actual callback must frame the selected cells. -/
+def Logger.FramePolicy [CInterface] (logger : Logger) (region : Address → Prop) : Prop :=
+  ∀ args before value after, logger.effect.execute args before value after →
+    ∀ q, region q → after q = before q
+
+theorem Logger.FramePolicy.storage [CInterface] {logger : Logger}
+    (policy : logger.FramePolicy region) : logger.StoragePolicy region :=
+  fun args before value after returned => CStorage.PreservesOn.of_frame (policy args before value after returned)
+
 theorem Retains.logger [CInterface] {logger : Logger} (kept : Retains p before after) (stored : Logger.Stored logger before p) :
     Logger.Stored logger after p := by
   exact ⟨by simpa only [load, kept "logger" (by simp)] using stored.1,
@@ -115,6 +125,8 @@ structure Returned [CInterface] (objects : Objects) (logger : Logger) (owners : 
   readonly : CReadOnly.Preserves before after
   framed : ∀ query, Protected objects buffers query → Outside p buffers query → after query = before query
   storage : ∀ region, logger.StoragePolicy region → CStorage.PreservesOn region before after
+  callerFrame : ∀ region, logger.FramePolicy region →
+    ∀ q, region q → Outside p buffers q → after q = before q
 
 /-- A finite reference history induces a branching proof for all returning
 callback outcomes. If a callback has no modeled return, ActionContract keeps
@@ -217,6 +229,25 @@ theorem LoggedTrace.storage [CInterface] {program : Events.Program Events.Invoca
     | cons called returned following =>
       have outcome := called.returned performed
       exact ((returned _ _ outcome).storage region policy).trans (ih (following _ _ outcome))
+
+/-- Borrowed cells survive every actual returned CS branch, including
+callbacks and resets. Numerical/output writes are excluded explicitly; the
+callback policy alone is not a claim about those writes. -/
+theorem LoggedTrace.frame [CInterface] {program : Events.Program Events.Invocation}
+    {objects : Objects} {logger : Logger} {owners : SlotOwners.State objects.capacity}
+    (certified : LoggedTrace objects logger owners model program p buffers heap before actions final statuses)
+    (completed : Completed program p heap actions statuses events after)
+    (policy : logger.FramePolicy region) :
+    ∀ q, region q → Outside p buffers q → after q = heap q := by
+  induction completed generalizing before final with
+  | nil => exact fun _ _ _ => rfl
+  | cons performed _ ih =>
+    cases certified with
+    | cons called returned following =>
+      have outcome := called.returned performed
+      intro q inside outside
+      exact (ih (following _ _ outcome) q inside outside).trans
+        ((returned _ _ outcome).callerFrame region policy q inside outside)
 
 end Rumoca.FMI3.CSRun
 end

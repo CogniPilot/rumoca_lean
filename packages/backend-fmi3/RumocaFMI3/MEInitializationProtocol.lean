@@ -7,6 +7,7 @@ import RumocaFMI3.MEMixedInterrupted
 noncomputable section
 namespace Rumoca.FMI3.MEProtocol
 open CMemory StaticFactory CCalls.Events
+variable {readers : InitializationProtocol.ReadBank}
 
 /-- Reference states constrain admission, while raw executions retain the
 actual observations of the requested initialization and ME calls. -/
@@ -28,32 +29,40 @@ def Plan.mode : Plan → Mode
   | .last cycle => cycle.final.control.mode
   | .next _ following => following.mode
 
+/-- Compose the logging changes of each initialization segment. -/
+def Plan.loggingUpdate : Plan → Option Bool
+  | .finish actions _ => InitializationProtocol.loggingUpdate actions
+  | .last cycle => InitializationProtocol.loggingUpdate cycle.initialization
+  | .next cycle following => following.loggingUpdate.orElse
+      (fun _ => InitializationProtocol.loggingUpdate cycle.initialization)
+
 structure Cycle.Admitted (cycle : Cycle) (objects : Objects) (retained : Address → Prop)
     (original : Heap) (p : Address) (access : Float64Buffers.Layout)
-    (addresses : String → Address) (buffer : Address) : Prop where
+    (addresses : String → Address) (buffer : Address) (readers : InitializationProtocol.ReadBank) : Prop where
   initialization : InitializationProtocol.ReferenceTrace .me .reset cycle.initialization cycle.state
-  requests : ∀ action ∈ cycle.initialization, action.Prepared objects retained original p access
+  requests : ∀ action ∈ cycle.initialization, action.Prepared objects retained original p access readers
   initialized : cycle.state.phase = .initialized cycle.args
   simulation : MEMixedRun.ReferenceTrace buffer (InitializationProtocol.meReference cycle.state cycle.args)
     (Time.Clock.initial cycle.args.start) cycle.simulation cycle.final cycle.finalClock
   resources : ∀ action ∈ cycle.simulation, action.Prepared objects original addresses buffer
   regions : ∀ action ∈ cycle.simulation, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q
+  readerSafe : ∀ action ∈ cycle.simulation, ∀ q, readers.Region q → ¬ action.CallerRegion q
 
-theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted objects retained original p access addresses buffer) :
+theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted objects retained original p access addresses buffer readers) :
     LifecycleRelease.CanFinish .me cycle.final.control.mode :=
   admitted.simulation.can_finish (Or.inl (by simp [InitializationProtocol.meReference,
     MENumericalHistory.ReferenceState.initial, MEHistory.ReferenceState.initial, Reference.Allowed]))
 
 inductive Admitted (objects : Objects) (retained : Address → Prop) (original : Heap)
-    (p : Address) (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) : Plan → Prop where
+    (p : Address) (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) (readers : InitializationProtocol.ReadBank) : Plan → Prop where
   | finish : InitializationProtocol.ReferenceTrace .me .reset actions state →
-      (∀ action ∈ actions, action.Prepared objects retained original p access) → state.phase.Finished →
-      Admitted objects retained original p access addresses buffer (.finish actions state)
-  | last : cycle.Admitted objects retained original p access addresses buffer →
-      Admitted objects retained original p access addresses buffer (.last cycle)
-  | next : cycle.Admitted objects retained original p access addresses buffer →
-      Admitted objects retained original p access addresses buffer following →
-      Admitted objects retained original p access addresses buffer (.next cycle following)
+      (∀ action ∈ actions, action.Prepared objects retained original p access readers) → state.phase.Finished →
+      Admitted objects retained original p access addresses buffer readers (.finish actions state)
+  | last : cycle.Admitted objects retained original p access addresses buffer readers →
+      Admitted objects retained original p access addresses buffer readers (.last cycle)
+  | next : cycle.Admitted objects retained original p access addresses buffer readers →
+      Admitted objects retained original p access addresses buffer readers following →
+      Admitted objects retained original p access addresses buffer readers (.next cycle following)
 
 inductive Record where
   | initialization (observed : List (Float64Access.Observation Invocation)) (checkpoints : List Heap) (heap : Heap)

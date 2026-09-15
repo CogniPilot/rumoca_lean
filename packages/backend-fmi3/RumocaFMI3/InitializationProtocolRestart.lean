@@ -3,6 +3,7 @@ import RumocaFMI3.InitializationProtocolRunFrames
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
 open CMemory StaticFactory CCalls.Events
+variable {readers : ReadBank}
 
 /-- Reset establishes the protocol's fresh state from the actual simulation
 storage. No pre-reset finite payload or initialization phase is assumed. -/
@@ -26,10 +27,12 @@ theorem reset_invariant [CInterface] {program : Program Invocation}
     (represented : SlotOwners.Represents objects.flagsBlock heap owners)
     (caller : CallerStorage objects retained original heap)
     (literals : CReadOnly.Preserves literalHeap heap)
-    (logging : LogPolicy program objects retained heap p) :
+    (logging : LogPolicy program objects retained heap p)
+    (readerFrame : readers.Frame original heap)
+    (readerOutside : ∀ q, readers.Region q → ¬ p.InRecord q) :
     (∀ behavior, (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, Reset.finalHeap heap p⟩) ∧
-    Invariant program objects retained owners original literalHeap (Reset.finalHeap heap p) p kind State.reset ∧
+    Invariant program objects retained owners original literalHeap (Reset.finalHeap heap p) p kind State.reset readers ∧
     CReadOnly.Preserves heap (Reset.finalHeap heap p) ∧ Retains p heap (Reset.finalHeap heap p) := by
   have called := reset.successful heap p kind mode storage kindValue modeValue
   have memory := Reset.preserves model heap p kind mode storage kindValue modeValue
@@ -37,7 +40,8 @@ theorem reset_invariant [CInterface] {program : Program Invocation}
   have retains := Reset.retained_field heap p
   exact ⟨called, ⟨Stored.reset_from model storage kindValue modeValue,
     SlotOwners.ordinary_preserves represented memory.2, caller.trans (CallerStorage.ordinary memory.1),
-    literals.trans readonly, logging.framed retains⟩, readonly, retains⟩
+    literals.trans readonly, logging.framed retains,
+    readerFrame.trans (fun q inside => StaticReset.record_frame heap p q (readerOutside q inside))⟩, readonly, retains⟩
 
 end Rumoca.FMI3.InitializationProtocol
 end

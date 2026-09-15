@@ -41,10 +41,10 @@ Upstream Rumoca `41477d6f` retains the previously reviewed SPEC_0007, SPEC_0043
 and SPEC_0048 ownership rules; their unchanged hashes are recorded in
 `build/c-factory/logging-history/standards-review-v1.json`.
 
-Mutable logging histories, native ABI/stdlib correspondence, MISRA coverage
-and previous MLS/eFMI findings remain open. Isolated creation and memory-frame
-proofs support the next history work without establishing that composition.
-This focused acceptance does not close the recurring whole-subset checklist.
+The initialization-history follow-up below now accepts creation, handoff and
+recurring lifetime composition. Logging interleavings during simulation,
+native ABI/stdlib correspondence, MISRA coverage and previous MLS/eFMI findings
+remain open. This focused acceptance does not close the recurring whole-subset checklist.
 **Stage decision: open; no grammar expansion.**
 
 Before extending the grammar or admitting a development profile to production,
@@ -71,6 +71,71 @@ automated claim that Lean has formalized the prose standards. Use universal
 proofs for compiler properties and keep tests to the existing external boundaries.
 
 ## Current unit-stage follow-up
+
+### Mutable logging during initialization: 2026-09-15, full gate passed
+
+The new action uses the previously reviewed FMI 3.0.2 logging-category policy.
+Legal selections and defensive C acceptance remain separate: zero-count,
+non-null input can have a defensive C result without being a legal FMI request.
+The source theorem binds the XML category to the same prepared adapter and
+retains initialized source IVPs through logging actions, errors and resets.
+No Modelica/GALEC grammar, numerical lowering, C emitter or eFMI product changed.
+
+The current history profile borrows original category arrays and strings.
+`ReadBank.Guarded` and `Action.ReadSafe` describe separation from writes and
+protected callback storage; they are host-profile conditions, not normative
+FMI requirements. Persistent callback binding is now required while logging
+is disabled so later enabling is justified. A suppression-only precondition
+cannot establish that binding. The premise review is recorded in
+`build/c-factory/logging-history/premise-review-v1.json`. These conditional
+history theorems do not establish unrestricted FMI compliance.
+
+Creation now derives its input frame from the actual factory frame and the
+original readable cells, including string terminators. No new flag-disjointness
+premise was added to the source entry theorem. Reset retains the current flag
+in this implementation; it is not being declared a new normative FMI rule.
+ME/CS continuation contracts use the flag selected by the initialization
+history while retaining the original logger/environment.
+
+Both ME and CS simulation now derive exact borrowed-cell preservation through
+actual returning calls and universal callback effects. This includes ME count
+and nominal writes, numerical and rejection calls, and resets. Recurring
+source-bound creation/initialization/simulation/release contracts carry the
+same bank and exact accumulated logging update. Suppressed CS certificates
+retain exact frames so restart helpers do not assume future input contents.
+
+Write separation remains an explicit borrowing-profile condition, including
+ME per-action output regions. These are not new normative FMI requirements.
+The original callback binding and universal policy persist while disabled.
+The new frame obligations are derived from that policy at actual calls; a
+successful callback return remains unnecessary for progress.
+
+The owning package checks passed at 01:38:40 UTC, followed by the required
+`nix develop .#verification --command lake test` at 02:22:20 UTC on 1056
+unchanged inputs. All 173 selected roots passed, including 68 newly registered
+roots, with no unexpected axioms, changed-module warnings or input drift.
+Evidence is in `build/c-factory/logging-history/package-v1.*` and
+`full-gate-v1.*`. Only the three evidence documents change after the frozen gate.
+
+Retained archives and comparisons are in
+`build/c-factory/logging-history/artifacts-v1/`. Every FMU member is unchanged,
+including the native library. The eFMU changes only generation identities and
+dependent references/checksums in three manifests. Numerical C, GALEC,
+Production C, source grammars and numerical lowering are unchanged. The
+existing actual-artifact, schema, importer, native and mutation checks passed.
+
+Upstream Rumoca `cb9920bc` retains the reviewed prepared-product and construction
+contracts. Its SPEC_0007 update clarifies scalar binding specialization and
+preservation of parameter dependencies. That is a future Flat-stage
+obligation; this logging slice performs no binding specialization or lowering
+in a backend. `build/c-factory/logging-history/standards-review-v3.json` records
+the reviewed revision and exact specification hashes.
+
+Logging interleavings during simulation are outside this accepted
+initialization/handoff slice. Their separate checked draft is not production
+or whole-stage acceptance. The preceding MLS/eFMI findings, native ABI/stdlib,
+MISRA and K02–K05 obligations remain open.
+**Stage decision: open; no grammar expansion.**
 
 ### Nominal queries through initialization and ME histories: 2026-09-14
 

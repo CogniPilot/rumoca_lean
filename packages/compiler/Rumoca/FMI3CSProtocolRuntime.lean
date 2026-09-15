@@ -14,6 +14,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧ Float64SetMetadata.Contract a.parsed.ast metadata ∧
     CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     NominalMetadata.Contract a.parsed.ast metadata ∧
+    DebugLogging.MetadataContract metadata "logStatus" ∧
     (∀ state d, Source.Equation a.parsed.ast d ↔
       d a.parsed.ast.state = Binary64.value (ModelExchange.derivative a.solve state)) ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
@@ -54,13 +55,14 @@ theorem runtime_create_release (compiled : compile input = .ok a)
             (∀ behavior, (machine program).Behaves
               (.calling (FactoryArguments.signature .cs).name (FactoryArguments.arguments .cs factoryArgs) heap .done) behavior ↔
               behavior = .terminates (trace.map tag) ⟨.pointer (some p), live⟩) ∧
-            ∀ (retained : Address → Prop) (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (plan : Plan),
-              InitializationProtocol.Resources objects retained heap p access → StepArguments.Storage heap p buffers →
+            ∀ (retained : Address → Prop) (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (plan : Plan) (readers : InitializationProtocol.ReadBank),
+              InitializationProtocol.Resources objects retained heap p access readers → StepArguments.Storage heap p buffers →
               InitializationProtocol.CSOutputsGuarded objects retained buffers →
+              (∀ q, readers.Region q → CSRun.Outside p buffers q) →
               InitializationProtocol.FactoryLogPolicy program objects retained factoryArgs →
-              Admitted header objects retained heap p access buffers plan →
+              Admitted header objects retained heap p access buffers readers plan →
               Contract a.solve.prepareFMI3 header program objects retained (SlotOwners.update owners slot (some owner)) heap
-                (pool.install baseHeap firstBlock signed) live p access buffers plan ∧
+                (pool.install baseHeap firstBlock signed) live p access buffers plan readers ∧
               ∀ records after, Completed program p access live plan records after →
                 SourceTrace a.solve.prepareFMI3 header p buffers plan records ∧ CReadOnly.Preserves heap after ∧
                 LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .cs plan.mode ∧
@@ -69,9 +71,9 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (∀ q, CSRun.Protected objects buffers q → plan.Outside p access buffers q →
                   q ≠ AtomicSlots.address objects.flagsBlock slot →
                   LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q) := by
-  obtain ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, equation, sigs, pool, made, printed, functions,
+  obtain ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, loggingMetadata, equation, sigs, pool, made, printed, functions,
     prepared, create⟩ := InitializationProtocol.runtime_create_release compiled build
-  refine ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, equation, sigs, pool, made, printed, functions, ?_⟩
+  refine ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, loggingMetadata, equation, sigs, pool, made, printed, functions, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -85,26 +87,28 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       owners represented available owner
   let p := objects.instances.index slot.val
   refine ⟨trace, slot, live, initial, work, reserved, created, loaded, agreement, creation, ?_⟩
-  intro retained access buffers plan resources outputs guarded logging admitted
+  intro retained access buffers plan readers resources outputs guarded readerOutside logging admitted
   have creationReadonly := termination_preserves ((creation _).mpr rfl)
-  have invariant := InitializationProtocol.Invariant.created objects created preserved (literalFrame.trans creationReadonly) logging
+  have readerFrame := resources.readerInputs.creation_frame represented resources.readerGuarded creationFrame
+  have invariant := InitializationProtocol.Invariant.created objects created preserved (literalFrame.trans creationReadonly) logging readerFrame
   have initializeCalls := InitializationProtocol.execution_contract header objects a.solve.prepareFMI3 sigs pool
-    prepared.getter prepared.setter prepared.counts prepared.nominals prepared.cs.toPreparedContract baseHeap firstBlock signed program actual retained
-    (SlotOwners.update owners slot (some owner)) heap p access .cs resources
+    prepared.getter prepared.setter prepared.counts prepared.nominals prepared.logging prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
+    (SlotOwners.update owners slot (some owner)) heap p access .cs readers resources
   have initialization : InitializationCompiler a.solve.prepareFMI3 program objects retained
-      (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p access := by
+      (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p access readers := by
     intro current actions state ready reference requests
     exact InitializationProtocol.source_contract initializeCalls reference requests ready
   have simulation : SimulationCompiler a.solve.prepareFMI3 program header objects retained
-      (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p buffers := by
+      (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p buffers readers := by
     intro current before final actions statuses persistent stored reference
     exact InitializationProtocol.cs_execution header objects a.solve.prepareFMI3 sigs pool prepared.cs baseHeap firstBlock signed
       program range actual rounding floorBound retained (SlotOwners.update owners slot (some owner)) heap current p buffers
-      before final actions statuses persistent rfl guarded stored reference
+      before final actions statuses readers persistent rfl guarded
+      (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside⟩) stored reference
   obtain ⟨reset, _, _, termination, releaseDefined⟩ := prepared.cs.execution header objects firstBlock program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := TerminationEnvironment.release_correct header objects (pool.addresses firstBlock) program tag termination releaseBindings
-  have certified := correct initialization simulation reset outputs guarded admitted invariant
+  have certified := correct initialization simulation reset outputs guarded (fun q inside => (resources.readerGuarded q inside).2.1) admitted invariant
   refine ⟨certified, ?_⟩
   intro records after completed
   obtain ⟨sourceTrace, released, frame⟩ := certified.released objects tag slot finish releaseBindings rfl created.owned created.metadata completed

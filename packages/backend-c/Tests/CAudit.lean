@@ -1,3 +1,4 @@
+import RumocaC.StringMemoryFrame
 import RumocaC.StringCompareAssignment
 import RumocaC.LoopBehavior
 import RumocaC.StoreRunInvariant
@@ -822,3 +823,8 @@ import RumocaC.CallSignature
 
 #audit axioms Rumoca.CStringCalls.compare_assignment_equivalence
 #audit axioms Rumoca.CCalls.Events.loop_prefix_equivalence
+
+#audit axioms Rumoca.CStringMemory.Contents.framed
+
+#audit axioms Rumoca.CStringMemory.Contents.readable
+#audit axioms Rumoca.CStringMemory.Contents.load_ne_none

@@ -1,6 +1,6 @@
 # Roadmap to a verified Modelica compiler core
 
-Reviewed **2026-09-14**. **Grammar expansion is blocked.** The numerical
+Reviewed **2026-09-15**. **Grammar expansion is blocked.** The numerical
 source-to-C core is formally checked; complete FMI/eFMI compiler verification
 is unfinished. [Verification contract](../docs/verification.md) defines the
 current guarantee. This file tracks the work needed to strengthen it.
@@ -10,6 +10,65 @@ not yet assigned. A proof count or percentage of checked boxes is not a
 percentage of semantic coverage.
 
 ## Current position
+
+**Mutable logging in initialization histories (full gate passed):**
+Logging requests now use the existing raw action, reference transition and
+completed/stopped history relations. The prepared runtime derives every call,
+including validation failure and a callback with no modeled return. Exact
+logging-cell updates compose alongside the numerical state; `Retention.to_retains`
+recovers the unchanged-field guarantee when no successful update occurs.
+Original category arrays and strings, including writable caller storage, are
+carried in a read bank. Each earlier call derives its frame under the stated
+borrowing guards; the source theorem does not assume future readable inputs.
+
+The source-to-initialization theorem binds the same source, numerical C, XML
+logging category and prepared adapter. Actual factory execution now supplies
+the borrowed-input frame: readable pointer/character cells cannot alias atomic
+reservation flags. Source-bound creation/release, restart, stopped prefixes
+and ME/CS handoffs have been ported. Both handoffs use the final logging flag
+computed from the initialization history.
+
+CS simulation now retains the read bank through actual steps, failures,
+callbacks and resets, under explicit write separation. Universal exact callback
+frames supplement the existing typed-storage policy; unchanged types alone
+do not preserve borrowed contents.
+
+ME count/nominal and mixed numerical/error/callback frames now retain exact
+borrowed contents. The recurring ME/CS contracts compose logging updates across initialization
+segments, and their actual factory executions supply the initial input frame.
+Suppressed CS certificates now retain exact frames as well as typed storage.
+
+The owning package checks passed at 01:38:40 UTC. The required full
+`nix develop .#verification --command lake test` passed at 02:22:20 UTC on
+1056 unchanged inputs. All 173 selected roots passed, including 68 newly
+registered roots, with no unexpected axioms, changed-module warnings or input
+drift. See `build/c-factory/logging-history/package-v1.*` and `full-gate-v1.*`.
+Only the three evidence documents change after that gate.
+
+The retained FMU members are all unchanged, including the native library.
+The eFMU changes only three manifests' generation identities and dependent
+references/checksums; numerical C, GALEC and Production C are unchanged.
+Archives and comparisons are in `build/c-factory/logging-history/artifacts-v1/`.
+The premise review preserves the explicit borrowing and universal callback
+obligations; this acceptance does not establish unrestricted FMI conformance.
+
+Remaining work, in dependency order:
+
+1. Complete logging interleavings during simulation in the existing ME and CS
+   action relations. The separate draft has 40 checked roots: both prepared
+   logging calls, ME raw/certified returning and blocked relations, and actual
+   ME mixed `action_correct`/`trace_correct` with original borrowed inputs.
+   This is development evidence in `build/c-factory/simulation-logging/`, not
+   accepted production coverage. CS mutable histories remain to be integrated.
+2. Carry the changed policy through source observations, stopped prefixes and
+   recurring creation/initialization/simulation/reset/release. Compose exact
+   logging updates across initialization and simulation segments, retaining
+   the numerical/source guarantee and original caller resources.
+3. Integrate the complete simulation slice into its owning packages, audit all
+   affected roots, and rerun the required full artifact gate. No future readable
+   heap, selected callback return or unchanged factory flag may replace a proof.
+4. Complete the remaining public-call, native/ABI and MISRA obligations, then
+   rerun the whole-subset MLS/FMI/eFMI checklist and close K02–K05 before growth.
 
 **Public logging configuration (full gate passed):**
 The emitted setter and mandatory actual adapter contract now include the
@@ -26,15 +85,10 @@ The FMU changes only the public setter in `sources/fmi3.c`; its native library
 and other members are unchanged. The eFMU changes only three manifests'
 generation identities and dependent references/checksums.
 
-Next, carry mutable logging through the existing initialization and ME/CS
-histories, including callback guarantees while disabled. Eleven isolated
-prerequisite modules and 35 selected roots pass ordinary Lean checking
-(`build/c-factory/logging-history/review-v3.json`). They derive the actual
-public call, creation configuration, successful initialization-state frame
-and rejected-call recovery resources. Action/history integration, original
-category inputs and recurring source-bound composition remain unfinished;
-these drafts are not part of accepted production coverage. Remaining public
-calls and K02–K05 continue to block grammar growth.
+The initialization-history checkpoint above now accepts the subsequent
+capability, original-category-input and recurring source-bound composition.
+Mutable logging during simulation and the other K02–K05 obligations remain
+open; the current work list distinguishes their draft and accepted evidence.
 
 **Nominal runtime and histories (full gate passed):**
 The final ignored draft passed across 80 modules and 56 selected roots. The

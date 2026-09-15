@@ -40,7 +40,16 @@ theorem Calls.retains (certified : Calls model program p buffers heap before act
     Retains p heap after := by
   induction certified with
   | nil => exact fun _ _ => rfl
-  | cons _ _ _ memory _ ih => exact memory.2.2.trans ih
+  | cons _ _ _ memory _ ih => exact memory.2.2.1.trans ih
+
+/-- The complete silent-call certificate retains exact contents outside
+its instance and outputs, including borrowed buffers for later initialization. -/
+theorem Calls.frame (certified : Calls model program p buffers heap before actions after final statuses) :
+    ∀ q, Outside p buffers q → after q = heap q := by
+  induction certified with
+  | nil => exact fun _ _ => rfl
+  | cons _ _ _ memory _ ih =>
+    exact fun q outside => (ih q outside).trans (memory.2.2.2 q outside)
 
 theorem Calls.readonly (certified : Calls model program p buffers heap before actions after final statuses) :
     CReadOnly.Preserves heap after := by

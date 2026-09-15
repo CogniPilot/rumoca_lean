@@ -14,6 +14,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧ Float64SetMetadata.Contract a.parsed.ast metadata ∧
     CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     NominalMetadata.Contract a.parsed.ast metadata ∧
+    DebugLogging.MetadataContract metadata "logStatus" ∧
     (∀ state d, Source.Equation a.parsed.ast d ↔
       d a.parsed.ast.state = Binary64.value (ModelExchange.derivative a.solve state)) ∧
     ∃ sigs, ∃ pool : Pool (LiteralPreparation.excluded ++
@@ -50,13 +51,14 @@ theorem runtime_create_release (compiled : compile input = .ok a)
             (∀ behavior, (machine program).Behaves
               (.calling (FactoryArguments.signature .me).name (FactoryArguments.arguments .me factoryArgs) heap .done) behavior ↔
               behavior = .terminates (trace.map tag) ⟨.pointer (some p), live⟩) ∧
-            ∀ (retained : Address → Prop) (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) (plan : Plan),
-              InitializationProtocol.Resources objects retained heap p access → MENumericalHistory.CallerStorage heap p addresses buffer →
+            ∀ (retained : Address → Prop) (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) (plan : Plan) (readers : InitializationProtocol.ReadBank),
+              InitializationProtocol.Resources objects retained heap p access readers → MENumericalHistory.CallerStorage heap p addresses buffer →
               InitializationProtocol.MEOutputsGuarded objects retained addresses buffer →
+              (∀ q, readers.Region q → MENumericalRun.Outside p addresses buffer q) →
               InitializationProtocol.FactoryLogPolicy program objects retained factoryArgs →
-              Admitted objects retained heap p access addresses buffer plan →
+              Admitted objects retained heap p access addresses buffer readers plan →
               Contract a.solve program objects retained (SlotOwners.update owners slot (some owner)) heap
-                (pool.install baseHeap firstBlock signed) live p access addresses buffer plan ∧
+                (pool.install baseHeap firstBlock signed) live p access addresses buffer plan readers ∧
               ∀ records after, Completed program p access addresses buffer live plan records after →
                 SourceTrace a.solve p plan records ∧ CReadOnly.Preserves heap after ∧
                 LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .me plan.mode ∧
@@ -65,9 +67,9 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (∀ q, MEFailure.Protected objects addresses buffer q → plan.Outside p access addresses buffer q →
                   q ≠ AtomicSlots.address objects.flagsBlock slot →
                   LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q) := by
-  obtain ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, equation, sigs, pool, made, printed, functions,
+  obtain ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, loggingMetadata, equation, sigs, pool, made, printed, functions,
     prepared, create⟩ := InitializationProtocol.runtime_create_release compiled build
-  refine ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, equation, sigs, pool, made, printed, functions, ?_⟩
+  refine ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, loggingMetadata, equation, sigs, pool, made, printed, functions, ?_⟩
   intro header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -81,27 +83,29 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       owners represented available owner
   let p := objects.instances.index slot.val
   refine ⟨trace, slot, live, initial, work, reserved, created, loaded, agreement, creation, ?_⟩
-  intro retained access addresses buffer plan resources outputs guarded logging admitted
+  intro retained access addresses buffer plan readers resources outputs guarded readerOutside logging admitted
   have creationReadonly := termination_preserves ((creation _).mpr rfl)
-  have invariant := InitializationProtocol.Invariant.created objects created preserved (literalFrame.trans creationReadonly) logging
+  have readerFrame := resources.readerInputs.creation_frame represented resources.readerGuarded creationFrame
+  have invariant := InitializationProtocol.Invariant.created objects created preserved (literalFrame.trans creationReadonly) logging readerFrame
   have initializeCalls := InitializationProtocol.execution_contract header objects a.solve.prepareFMI3 sigs pool
-    prepared.getter prepared.setter prepared.counts prepared.nominals prepared.cs.toPreparedContract baseHeap firstBlock signed program actual retained
-    (SlotOwners.update owners slot (some owner)) heap p access .me resources
+    prepared.getter prepared.setter prepared.counts prepared.nominals prepared.logging prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
+    (SlotOwners.update owners slot (some owner)) heap p access .me readers resources
   have initialization : InitializationCompiler a.solve program objects retained
-      (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p access := by
+      (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p access readers := by
     intro current actions state ready reference requests
     exact InitializationProtocol.source_contract initializeCalls reference requests ready
   have simulation : SimulationCompiler a.solve program objects retained
-      (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p addresses buffer := by
-    intro current before final clock finalClock actions persistent stored storage reference requests regions
+      (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p addresses buffer readers := by
+    intro current before final clock finalClock actions persistent stored storage reference requests regions readerSafe
     exact InitializationProtocol.me_execution header objects a.solve.prepareFMI3 sigs pool prepared.me prepared.counts prepared.nominals
       prepared.cs.toPreparedContract baseHeap firstBlock signed program actual retained
-      (SlotOwners.update owners slot (some owner)) heap current p addresses buffer before final clock finalClock actions
-      persistent rfl guarded stored storage reference requests regions
+      (SlotOwners.update owners slot (some owner)) heap current p addresses buffer before final clock finalClock actions readers
+      persistent rfl guarded (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside⟩)
+      readerSafe stored storage reference requests regions
   obtain ⟨reset, _, _, termination, releaseDefined⟩ := prepared.cs.execution header objects firstBlock program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := TerminationEnvironment.release_correct header objects (pool.addresses firstBlock) program tag termination releaseBindings
-  have certified := correct initialization simulation reset outputs guarded admitted invariant
+  have certified := correct initialization simulation reset outputs guarded (fun q inside => (resources.readerGuarded q inside).2.1) admitted invariant
   refine ⟨certified, ?_⟩
   intro records after completed
   obtain ⟨sourceTrace, released, frame⟩ := certified.released objects tag slot finish releaseBindings rfl created.owned created.metadata completed

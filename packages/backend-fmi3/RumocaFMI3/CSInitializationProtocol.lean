@@ -27,25 +27,33 @@ def Plan.mode : Plan → Mode
   | .last cycle => cycle.final.mode
   | .next _ following => following.mode
 
+/-- The exact final logging update across all initialization segments.
+Simulation and reset retain that flag in this protocol. -/
+def Plan.loggingUpdate : Plan → Option Bool
+  | .finish actions _ => InitializationProtocol.loggingUpdate actions
+  | .last cycle => InitializationProtocol.loggingUpdate cycle.initialization
+  | .next cycle following => following.loggingUpdate.orElse
+      (fun _ => InitializationProtocol.loggingUpdate cycle.initialization)
+
 def Cycle.Admitted (cycle : Cycle) (header : CFenv.Header) (objects : Objects)
     (retained : Address → Prop) (original : Heap) (p : Address)
-    (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) : Prop :=
+    (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (readers : InitializationProtocol.ReadBank) : Prop :=
   InitializationProtocol.ReferenceTrace .cs .reset cycle.initialization cycle.state ∧
-  (∀ action ∈ cycle.initialization, action.Prepared objects retained original p access) ∧
+  (∀ action ∈ cycle.initialization, action.Prepared objects retained original p access readers) ∧
   cycle.state.phase = .initialized cycle.args ∧
   CSRun.ReferenceTrace header p buffers (InitializationProtocol.csReference cycle.state cycle.args)
     cycle.simulation cycle.final cycle.statuses
 
 inductive Admitted (header : CFenv.Header) (objects : Objects) (retained : Address → Prop)
-    (original : Heap) (p : Address) (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) : Plan → Prop where
+    (original : Heap) (p : Address) (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (readers : InitializationProtocol.ReadBank) : Plan → Prop where
   | finish : InitializationProtocol.ReferenceTrace .cs .reset actions state →
-      (∀ action ∈ actions, action.Prepared objects retained original p access) → state.phase.Finished →
-      Admitted header objects retained original p access buffers (.finish actions state)
-  | last : cycle.Admitted header objects retained original p access buffers →
-      Admitted header objects retained original p access buffers (.last cycle)
-  | next : cycle.Admitted header objects retained original p access buffers →
-      Admitted header objects retained original p access buffers following →
-      Admitted header objects retained original p access buffers (.next cycle following)
+      (∀ action ∈ actions, action.Prepared objects retained original p access readers) → state.phase.Finished →
+      Admitted header objects retained original p access buffers readers (.finish actions state)
+  | last : cycle.Admitted header objects retained original p access buffers readers →
+      Admitted header objects retained original p access buffers readers (.last cycle)
+  | next : cycle.Admitted header objects retained original p access buffers readers →
+      Admitted header objects retained original p access buffers readers following →
+      Admitted header objects retained original p access buffers readers (.next cycle following)
 
 /-- Keep every segment's actual observations and heap; later resets cannot
 erase the source initialization checkpoints or earlier numerical samples. -/

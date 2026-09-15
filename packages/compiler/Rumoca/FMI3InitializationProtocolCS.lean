@@ -45,13 +45,14 @@ def CSContinuation [CInterface] (model : Solve.FMI3Model source) (objects : Obje
     (buffers : StepEntry.Buffers) (initial final : CSRun.Reference)
     (actions : List CSRun.Action) (statuses : List Int) (factoryArgs : FactoryArguments.Raw) : Prop :=
   let p := objects.instances.index slot.val
-  ((factoryArgs.logger = none ∨ factoryArgs.logging = false) →
+  let enabled := (loggingUpdate initialization).getD factoryArgs.logging
+  ((factoryArgs.logger = none ∨ enabled = false) →
     ∃ after, CSRun.Calls model.solve program p buffers exited initial actions after final statuses ∧
       CSRun.Completed program p exited actions statuses [] after ∧
       ∀ observed events actualAfter, CSRun.Completed program p exited actions observed events actualAfter →
         observed = statuses ∧ events = [] ∧
           CSRunOutcome model objects program tag slot owners owner original access initialization buffers final actualAfter) ∧
-  (∀ logger : CSRun.Logger, factoryArgs.logger = some logger.pointer → factoryArgs.logging = true →
+  (∀ logger : CSRun.Logger, factoryArgs.logger = some logger.pointer → enabled = true →
     factoryArgs.environment = logger.environment → logger.Bound program → logger.Respects objects buffers →
     CSRun.LoggedTrace objects logger (SlotOwners.update owners slot (some owner)) model.solve program p buffers
       exited initial actions final statuses ∧
@@ -75,10 +76,10 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
       (retained : Address → Prop) (original live exited : Heap) (access : Float64Buffers.Layout)
       (factoryArgs : FactoryArguments.Raw) (initialization : List Action) (state : State)
       (initObserved : List (Float64Access.Observation Invocation)) (initCheckpoints : List Heap)
-      (args : Initialization.Arguments) (buffers : StepEntry.Buffers),
+      (args : Initialization.Arguments) (buffers : StepEntry.Buffers) (readers : ReadBank),
       let p := objects.instances.index slot.val
       CreatedSourceContract model program objects tag retained owners slot owner original
-        (pool.install baseHeap firstBlock signed) live access .cs initialization state →
+        (pool.install baseHeap firstBlock signed) live access .cs initialization state readers →
       Created live objects.instances objects.flagsBlock (SlotOwners.update owners slot (some owner)) slot owner .cs
         factoryArgs.environment factoryArgs.logger factoryArgs.logging →
       SlotOwners.reserve owners slot owner = some (SlotOwners.update owners slot (some owner)) →
@@ -92,7 +93,7 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
         (csReference state args) final actions statuses factoryArgs := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program tag range actual write rounding floorBound owners slot owner retained original live exited access factoryArgs
-    initialization state initObserved initCheckpoints args buffers
+    initialization state initObserved initCheckpoints args buffers readers
   let p := objects.instances.index slot.val
   dsimp only
   intro initialized created reserved creationFrame executed phase outputs guarded actions final statuses admitted
@@ -105,7 +106,7 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
   have finish := TerminationEnvironment.release_correct header objects (pool.addresses firstBlock) program tag termination releaseBindings
   have metadataAtExit : load exited (p.member "slot") = some (.integer slot.val) := by
     change load exited ((objects.instances.index slot.val).member "slot") = _
-    simpa only [load, keeps "slot" (by decide)] using created.metadata
+    simpa only [load, keeps.fields "slot" (by decide) (by decide)] using created.metadata
   have finishRun (after : Heap) (finalStored : CSRun.Stored model.solve after p buffers final)
       (finalOwners : SlotOwners.Represents objects.flagsBlock after (SlotOwners.update owners slot (some owner)))
       (retains : CSRun.Retains p exited after) (runReadonly : CReadOnly.Preserves exited after)
@@ -124,14 +125,21 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
     intro q protectedOutput outside untouched notFlag
     exact (released.frame q (outside.field "mode") notFlag).trans ((runFrame q protectedOutput outside).trans
       ((initialFrame q (guarded.protects protectedOutput) untouched).trans (creationFrame q untouched.1 notFlag)))
+  have loggerValue : load exited (p.member "logger") = some (.pointer factoryArgs.logger) := by
+    change load exited ((objects.instances.index slot.val).member "logger") = _
+    simpa only [load, keeps.fields "logger" (by decide) (by decide)] using created.initialized.loggerValue
+  have environmentValue : load exited (p.member "environment") = some (.pointer factoryArgs.environment) := by
+    change load exited ((objects.instances.index slot.val).member "environment") = _
+    simpa only [load, keeps.fields "environment" (by decide) (by decide)] using created.initialized.environmentValue
+  have loggingValue := keeps.logging_value created.initialized.loggingValue
   constructor
   · intro suppressed
-    have quiet : CSRun.Suppressed live p :=
-      ⟨factoryArgs.logger, factoryArgs.logging, created.initialized.loggerValue, created.initialized.loggingValue, suppressed⟩
+    have quiet : CSRun.Suppressed exited p :=
+      ⟨factoryArgs.logger, (loggingUpdate initialization).getD factoryArgs.logging, loggerValue, loggingValue, suppressed⟩
     obtain ⟨after, calls, finalStored, retains, runReadonly, atomic, frame, _⟩ :=
       CSRun.trace_framed header objects model sigs pool prepared.step baseHeap firstBlock signed p buffers
         program range actual rounding floorBound reset enterDefined exitDefined exited _ final actions statuses
-        invariant.readonly stored (keeps.cs.suppressed quiet) admitted
+        invariant.readonly stored quiet admitted
     refine ⟨after, calls, calls.executes, ?_⟩
     intro observed events actualAfter completed
     obtain ⟨statusesMatch, eventsMatch, same⟩ := calls.determines completed
@@ -139,14 +147,14 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
     exact ⟨statusesMatch, eventsMatch, finishRun after finalStored
       (SlotOwners.ordinary_preserves invariant.ownership atomic) retains runReadonly (fun q _ => frame q)⟩
   · intro logger loggerArg loggingArg environmentArg bound policy
-    have logging : logger.Stored live p :=
-      ⟨by simpa only [loggerArg] using created.initialized.loggerValue,
-        by simpa only [loggingArg, CBody.boolean] using created.initialized.loggingValue,
-        by simpa only [environmentArg] using created.initialized.environmentValue⟩
+    have logging : logger.Stored exited p :=
+      ⟨by simpa only [loggerArg] using loggerValue,
+        by simpa only [loggingArg, CBody.boolean] using loggingValue,
+        by simpa only [environmentArg] using environmentValue⟩
     obtain ⟨trace, _⟩ := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
       p buffers rfl program range logger actual rounding floorBound bound policy reset enterDefined exitDefined
       exited _ final actions statuses (SlotOwners.update owners slot (some owner)) invariant.readonly stored
-      (keeps.cs.logger logging) invariant.ownership admitted
+      logging invariant.ownership admitted
     refine ⟨trace, ?_⟩
     intro observed events after completed
     have statusesMatch := trace.statuses_eq completed

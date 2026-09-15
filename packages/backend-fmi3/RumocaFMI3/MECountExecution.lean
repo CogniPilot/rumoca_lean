@@ -30,6 +30,8 @@ structure Memory [CInterface] (objects : Objects) (owners : SlotOwners.State obj
   readonly : CReadOnly.Preserves heap after
   frame : ∀ q, MEFailure.Protected objects addresses buffer q → q ≠ p.member "mode" → after q = heap q
   storage : ∀ region, config.StoragePolicy region → CStorage.PreservesOn region heap after
+  callerFrame : ∀ region, config.FramePolicy region →
+    ∀ q, region q → q ≠ p.member "mode" → request.Outside q → after q = heap q
 
 theorem configuration_frame [CInterface] {config : MEMixedRun.Configuration}
     (configured : config.Stored heap p)
@@ -55,7 +57,8 @@ theorem Memory.success [CInterface] (events : Bool) (output : Address)
   obtain ⟨storedAfter, resetAfter, ownersAfter, preserved, readonly, frame⟩ :=
     written_memory events heap p output objects addresses buffer clock reference owners old storage stored reset ownership inPool outside
   exact ⟨storedAfter, resetAfter, configuration_frame configured inPool (fun q guarded _ => frame q guarded),
-    ownersAfter, readonly, fun q guarded _ => frame q guarded, fun region _ => preserved.on region⟩
+    ownersAfter, readonly, (fun q guarded _ => frame q guarded), (fun region _ => preserved.on region),
+    fun _ _ q _ _ outside => CountQueries.frame events heap output q outside⟩
 
 theorem Memory.failure [CInterface] (events missing : Bool) (output : Option Address)
     {owners : SlotOwners.State objects.capacity} {config : MEMixedRun.Configuration}
@@ -66,7 +69,9 @@ theorem Memory.failure [CInterface] (events missing : Bool) (output : Option Add
     (callbackFrame : MEFailure.ProtectedFrame objects addresses buffer (LifecycleBodies.writeMode heap p .terminated) after)
     (callbackReadonly : CReadOnly.Preserves (LifecycleBodies.writeMode heap p .terminated) after)
     (callbackStorage : ∀ region, config.StoragePolicy region →
-      CStorage.PreservesOn region (LifecycleBodies.writeMode heap p .terminated) after) :
+      CStorage.PreservesOn region (LifecycleBodies.writeMode heap p .terminated) after)
+    (callbackCells : ∀ region, config.FramePolicy region →
+      ∀ q, region q → after q = LifecycleBodies.writeMode heap p .terminated q) :
     Memory objects owners config heap after p addresses buffer clock reference (.reject events missing output) := by
   have numerical := callbackFrame.numerical inPool
   have changed := LifecycleBodies.write_storage heap p _ .terminated stored.control.mode
@@ -76,7 +81,9 @@ theorem Memory.failure [CInterface] (events missing : Bool) (output : Option Add
     configuration_frame configured inPool frame,
     callbackFrame.owners (SlotOwners.ordinary_preserves ownership changed.2.2),
     changed.2.1.trans callbackReadonly, frame,
-    fun region policy => (changed.1.on region).trans (callbackStorage region policy)⟩
+    (fun region policy => (changed.1.on region).trans (callbackStorage region policy)),
+    fun region policy q inside different _ => (callbackCells region policy q inside).trans
+      (LifecycleBodies.write_frame heap p q .terminated different)⟩
 
 def CorrectObservation (model : Solve.FMI3Model source) (request : CountAccess.Request)
     (events : List Invocation) (status : Value) (after : Heap) : Prop :=
@@ -157,7 +164,7 @@ theorem execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI
       refine ⟨_, False, Contract.quiet called ?_ ?_⟩
       · exact ⟨rfl, by simp [CountAccess.Request.failed], rfl⟩
       · exact Memory.failure events missing output stored reset configured ownership inPool
-          (fun _ _ => rfl) (.refl _) (fun region _ => .refl region _)
+          (fun _ _ => rfl) (.refl _) (fun region _ => .refl region _) (fun _ _ _ _ => rfl)
     | logged logger environment name effect =>
       obtain ⟨address, external, policy⟩ := valid
       have called := (logged program actual missing p logger environment output .me reference.control.mode name effect
@@ -185,7 +192,8 @@ theorem execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI
         exact ⟨⟨rfl, by simp [CountAccess.Request.failed], rfl⟩,
           Memory.failure events missing output stored reset configured ownership inPool
             (policy _ _ _ _ returned) (effect.readonly _ _ _ _ returned)
-            (fun region preserve => preserve _ _ _ _ returned)⟩
+            (fun region preserve => preserve _ _ _ _ returned)
+            (fun _ preserve q inside => preserve _ _ _ _ returned q inside)⟩
 
 end Rumoca.FMI3.MECountCalls
 end

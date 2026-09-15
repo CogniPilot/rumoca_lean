@@ -4,7 +4,8 @@ import Rumoca.FMI3MEProtocolPrefixes
 noncomputable section
 namespace Rumoca.FMI3.MEProtocol
 open CMemory StaticFactory CCalls.Events
-open InitializationProtocol (Invariant Persistent MEExecution SourceContract)
+open InitializationProtocol (Invariant Persistent MEExecution SourceContract ReadBank)
+variable {readers : ReadBank}
 
 variable {source : AST.Model} {model : Solve.Model source}
 
@@ -62,38 +63,38 @@ inductive SourceInterrupted (model : Solve.Model source) (p : Address)
           .reset [] (.integer 0) (Reset.finalHeap simulated p) :: records) stop
 
 structure Ready [CInterface] (program : Program Invocation) (objects : Objects) (retained : Address → Prop)
-    (owners : SlotOwners.State objects.capacity) (original literals heap : Heap) (p : Address) (mode : Mode) : Prop where
+    (owners : SlotOwners.State objects.capacity) (original literals heap : Heap) (p : Address) (mode : Mode) (readers : ReadBank) : Prop where
   kindValue : load heap (p.member "kind") = some (.integer Kind.me.code)
   modeValue : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩
   finishable : LifecycleRelease.CanFinish .me mode
-  persistent : Persistent program objects retained owners original literals heap p
+  persistent : Persistent program objects retained owners original literals heap p readers
 
 variable [interface : CInterface] {program : Program Invocation} {objects : Objects}
   {owners : SlotOwners.State objects.capacity}
 
 theorem Ready.initialization
-    (invariant : Invariant program objects retained owners original literals heap p .me state)
-    (finished : state.phase.Finished) : Ready program objects retained owners original literals heap p (state.phase.mode .me) :=
+    (invariant : Invariant program objects retained owners original literals heap p .me state readers)
+    (finished : state.phase.Finished) : Ready program objects retained owners original literals heap p (state.phase.mode .me) readers :=
   ⟨invariant.stored.instanceStored.kind, invariant.stored.instanceStored.mode,
     state.phase.can_finish .me finished, invariant.persistent⟩
 
 theorem Ready.simulation (stored : MENumericalHistory.Stored heap p clock reference addresses buffer)
-    (persistent : Persistent program objects retained owners original literals heap p)
+    (persistent : Persistent program objects retained owners original literals heap p readers)
     (finished : LifecycleRelease.CanFinish .me reference.control.mode) :
-    Ready program objects retained owners original literals heap p reference.control.mode :=
+    Ready program objects retained owners original literals heap p reference.control.mode readers :=
   ⟨stored.control.kind, stored.control.mode, finished, persistent⟩
 
 structure CycleContract (model : Solve.Model source) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
     (original literals heap : Heap) (p : Address) (access : Float64Buffers.Layout)
-    (addresses : String → Address) (buffer : Address) (cycle : Cycle) : Prop where
+    (addresses : String → Address) (buffer : Address) (cycle : Cycle) (readers : ReadBank) : Prop where
   initialization : SourceContract model.prepareFMI3 program objects retained owners original literals heap p access
-    .me .reset cycle.state cycle.initialization
+    .me .reset cycle.state cycle.initialization readers
   simulation : ∀ observed exited checkpoints,
     InitializationProtocol.Completed program p access heap cycle.initialization observed exited checkpoints →
     MEExecution model.prepareFMI3 program objects retained owners original literals exited p addresses buffer
       (InitializationProtocol.meReference cycle.state cycle.args) (Time.Clock.initial cycle.args.start)
-      cycle.simulation cycle.final cycle.finalClock
+      cycle.simulation cycle.final cycle.finalClock readers
   initializationStopped : ∀ stop, InitializationProtocol.Interrupted program p access heap cycle.initialization stop →
     InitializationProtocol.SourcePrefix model.prepareFMI3 p .me .reset cycle.initialization stop
   simulationStopped : ∀ observed exited checkpoints,
@@ -103,14 +104,14 @@ structure CycleContract (model : Solve.Model source) (program : Program Invocati
         (Time.Clock.initial cycle.args.start) cycle.simulation stop
 
 theorem CycleContract.completed
-    (certified : CycleContract model program objects retained owners original literals heap p access addresses buffer cycle)
+    (certified : CycleContract model program objects retained owners original literals heap p access addresses buffer cycle readers)
     (initialized : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints)
     (executed : MEMixedRun.Completed program p addresses buffer exited cycle.simulation observed after epochs)
     (guarded : InitializationProtocol.MEOutputsGuarded objects retained addresses buffer) :
     CycleEvidence model p cycle initial checkpoints observed epochs ∧
     MENumericalHistory.Stored after p cycle.finalClock cycle.final addresses buffer ∧ Reset.Storage after p ∧
-    Persistent program objects retained owners original literals after p ∧
-    CReadOnly.Preserves heap after ∧ InitializationProtocol.Retains p heap after ∧
+    Persistent program objects retained owners original literals after p readers ∧
+    CReadOnly.Preserves heap after ∧ InitializationProtocol.Retention (InitializationProtocol.loggingUpdate cycle.initialization) p heap after ∧
     (∀ q, MEFailure.Protected objects addresses buffer q → InitializationProtocol.Untouched p access cycle.initialization q →
       MENumericalRun.Outside p addresses buffer q → after q = heap q) := by
   obtain ⟨initialObservations, ivps, _, readonly, keeps, frame⟩ := certified.initialization.completed _ _ _ initialized
@@ -119,45 +120,45 @@ theorem CycleContract.completed
   obtain ⟨config, trace⟩ := simulation.trace
   obtain ⟨observations, epochs⟩ := trace.source model executed
   exact ⟨⟨⟨initialObservations, ivps⟩, observations, epochs⟩, stored, reset, persistent, readonly.trans runReadonly,
-    (fun name outside => (runKeeps name outside).trans (keeps name outside)),
+    (by simpa using keeps.trans (InitializationProtocol.Retention.of_retains runKeeps)),
     fun q inside untouched outside => (runFrame q inside outside).trans (frame q (guarded.protects inside) untouched)⟩
 
 theorem cycle_contract
-    (initialization : InitializationCompiler model program objects retained owners original literals p access)
-    (simulation : SimulationCompiler model program objects retained owners original literals p addresses buffer)
+    (initialization : InitializationCompiler model program objects retained owners original literals p access readers)
+    (simulation : SimulationCompiler model program objects retained owners original literals p addresses buffer readers)
     (outputs : MENumericalHistory.CallerStorage original p addresses buffer)
     (guarded : InitializationProtocol.MEOutputsGuarded objects retained addresses buffer)
-    (admitted : cycle.Admitted objects retained original p access addresses buffer)
-    (invariant : Invariant program objects retained owners original literals heap p .me .reset) :
-    CycleContract model program objects retained owners original literals heap p access addresses buffer cycle := by
+    (admitted : cycle.Admitted objects retained original p access addresses buffer readers)
+    (invariant : Invariant program objects retained owners original literals heap p .me .reset readers) :
+    CycleContract model program objects retained owners original literals heap p access addresses buffer cycle readers := by
   have certified := initialization heap cycle.initialization cycle.state invariant admitted.initialization admitted.requests
   refine ⟨certified, ?_, ?_, ?_⟩
   · intro observed exited checkpoints executed
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation exited _ cycle.final _ cycle.finalClock cycle.simulation ready.persistent
-      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions
+      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions admitted.readerSafe
   · intro stop interrupted
     exact initialization.interrupted invariant admitted.initialization admitted.requests interrupted
   · intro observed exited checkpoints executed stop interrupted
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation.interrupted ready.persistent
-      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions interrupted
+      (ready.me_ready admitted.initialized outputs guarded) ready.stored.reset admitted.simulation admitted.resources admitted.regions admitted.readerSafe interrupted
 
 structure Contract (model : Solve.Model source) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
     (original literals heap : Heap) (p : Address) (access : Float64Buffers.Layout)
-    (addresses : String → Address) (buffer : Address) (plan : Plan) : Prop where
+    (addresses : String → Address) (buffer : Address) (plan : Plan) (readers : ReadBank) : Prop where
   progress : (∃ records after, Completed program p access addresses buffer heap plan records after) ∨
     Stopped program p access addresses buffer heap plan
   completed : ∀ records after, Completed program p access addresses buffer heap plan records after →
-    SourceTrace model p plan records ∧ Ready program objects retained owners original literals after p plan.mode ∧
-    CReadOnly.Preserves heap after ∧ InitializationProtocol.Retains p heap after ∧
+    SourceTrace model p plan records ∧ Ready program objects retained owners original literals after p plan.mode readers ∧
+    CReadOnly.Preserves heap after ∧ InitializationProtocol.Retention plan.loggingUpdate p heap after ∧
     (∀ q, MEFailure.Protected objects addresses buffer q → plan.Outside p access addresses buffer q → after q = heap q)
   interrupted : ∀ records stop, Interrupted program p access addresses buffer heap plan records stop →
     SourceInterrupted model p addresses buffer plan records stop
 
 theorem CycleContract.progress
-    (certified : CycleContract model program objects retained owners original literals heap p access addresses buffer cycle) :
+    (certified : CycleContract model program objects retained owners original literals heap p access addresses buffer cycle readers) :
     (∃ initial exited checkpoints observed after epochs,
       InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints ∧
       MEMixedRun.Completed program p addresses buffer exited cycle.simulation observed after epochs) ∨
@@ -172,38 +173,41 @@ theorem CycleContract.progress
   · exact Or.inr (Or.inl stopped)
 
 theorem CycleContract.restarted
-    (certified : CycleContract model program objects retained owners original literals heap p access addresses buffer cycle)
+    (certified : CycleContract model program objects retained owners original literals heap p access addresses buffer cycle readers)
     (reset : StaticReset.ExecutionContract program)
     (guarded : InitializationProtocol.MEOutputsGuarded objects retained addresses buffer)
+    (readerOutside : ∀ q, readers.Region q → ¬ p.InRecord q)
     (initialized : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints)
     (executed : MEMixedRun.Completed program p addresses buffer exited cycle.simulation observed after epochs) :
     CycleEvidence model p cycle initial checkpoints observed epochs ∧
     (∀ behavior, (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] after .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, Reset.finalHeap after p⟩) ∧
-    Invariant program objects retained owners original literals (Reset.finalHeap after p) p .me .reset ∧
+    Invariant program objects retained owners original literals (Reset.finalHeap after p) p .me .reset readers ∧
     CReadOnly.Preserves heap (Reset.finalHeap after p) ∧
-    InitializationProtocol.Retains p heap (Reset.finalHeap after p) ∧
+    InitializationProtocol.Retention (InitializationProtocol.loggingUpdate cycle.initialization) p heap (Reset.finalHeap after p) ∧
     (∀ q, MEFailure.Protected objects addresses buffer q → InitializationProtocol.Untouched p access cycle.initialization q →
       MENumericalRun.Outside p addresses buffer q → Reset.finalHeap after p q = heap q) := by
   obtain ⟨evidence, stored, storage, persistent, readonly, keeps, frame⟩ := certified.completed initialized executed guarded
   obtain ⟨called, invariant, resetReadonly, resetKeeps⟩ := InitializationProtocol.reset_invariant
     (kind := .me) (mode := cycle.final.control.mode) model.prepareFMI3 reset storage stored.control.kind
     stored.mode_loaded persistent.ownership persistent.caller persistent.readonly persistent.logging
+    persistent.readerFrame readerOutside
   exact ⟨evidence, called, invariant, readonly.trans resetReadonly,
-    (fun name outside => (resetKeeps name outside).trans (keeps name outside)),
+    (by simpa using keeps.trans (InitializationProtocol.Retention.of_retains resetKeeps)),
     fun q inside untouched outside => (StaticReset.record_frame after p q untouched.1).trans
       (frame q inside untouched outside)⟩
 
 /-- Source correspondence for every actual interrupted history, including
 prefixes in later cycles. The reset contract excludes a blocked reset outcome. -/
 theorem interrupted_correct
-    (initialization : InitializationCompiler model program objects retained owners original literals p access)
-    (simulation : SimulationCompiler model program objects retained owners original literals p addresses buffer)
+    (initialization : InitializationCompiler model program objects retained owners original literals p access readers)
+    (simulation : SimulationCompiler model program objects retained owners original literals p addresses buffer readers)
     (reset : StaticReset.ExecutionContract program)
     (outputs : MENumericalHistory.CallerStorage original p addresses buffer)
     (guarded : InitializationProtocol.MEOutputsGuarded objects retained addresses buffer)
-    (admitted : Admitted objects retained original p access addresses buffer plan)
-    (invariant : Invariant program objects retained owners original literals heap p .me .reset)
+    (readerOutside : ∀ q, readers.Region q → ¬ p.InRecord q)
+    (admitted : Admitted objects retained original p access addresses buffer readers plan)
+    (invariant : Invariant program objects retained owners original literals heap p .me .reset readers)
     (actual : Interrupted program p access addresses buffer heap plan records stop) :
     SourceInterrupted model p addresses buffer plan records stop := by
   induction admitted generalizing heap records stop with
@@ -225,10 +229,10 @@ theorem interrupted_correct
       obtain ⟨observations, checkpoints, _, _, _, _⟩ := certified.initialization.completed _ _ _ initialized
       exact .nextSimulation ⟨observations, checkpoints⟩ (certified.simulationStopped _ _ _ initialized _ interrupted)
     | reset initialized simulated blocked =>
-      obtain ⟨_, resetCall, _, _, _, _⟩ := certified.restarted reset guarded initialized simulated
+      obtain ⟨_, resetCall, _, _, _, _⟩ := certified.restarted reset guarded readerOutside initialized simulated
       cases (resetCall _).mp blocked
     | later initialized simulated resetActual interrupted =>
-      obtain ⟨evidence, resetCall, resetInvariant, _, _, _⟩ := certified.restarted reset guarded initialized simulated
+      obtain ⟨evidence, resetCall, resetInvariant, _, _, _⟩ := certified.restarted reset guarded readerOutside initialized simulated
       cases (resetCall _).mp resetActual
       exact .later evidence (ih resetInvariant interrupted)
 
@@ -236,14 +240,15 @@ theorem interrupted_correct
 heaps, statuses, resource invariants and source observations are derived from
 actual executions, including every returning external-effect branch. -/
 theorem correct
-    (initialization : InitializationCompiler model program objects retained owners original literals p access)
-    (simulation : SimulationCompiler model program objects retained owners original literals p addresses buffer)
+    (initialization : InitializationCompiler model program objects retained owners original literals p access readers)
+    (simulation : SimulationCompiler model program objects retained owners original literals p addresses buffer readers)
     (reset : StaticReset.ExecutionContract program)
     (outputs : MENumericalHistory.CallerStorage original p addresses buffer)
     (guarded : InitializationProtocol.MEOutputsGuarded objects retained addresses buffer)
-    (admitted : Admitted objects retained original p access addresses buffer plan)
-    (invariant : Invariant program objects retained owners original literals heap p .me .reset) :
-    Contract model program objects retained owners original literals heap p access addresses buffer plan := by
+    (readerOutside : ∀ q, readers.Region q → ¬ p.InRecord q)
+    (admitted : Admitted objects retained original p access addresses buffer readers plan)
+    (invariant : Invariant program objects retained owners original literals heap p .me .reset readers) :
+    Contract model program objects retained owners original literals heap p access addresses buffer plan readers := by
   induction admitted generalizing heap with
   | finish reference prepared finished =>
     have certified := initialization heap _ _ invariant reference prepared
@@ -258,7 +263,7 @@ theorem correct
         exact ⟨.finish ⟨observations, ivps⟩, Ready.initialization ready finished, readonly, keeps,
           fun q inside outside => frame q (guarded.protects inside) outside⟩
     · intro records stop interrupted
-      exact interrupted_correct initialization simulation reset outputs guarded (.finish reference prepared finished) invariant interrupted
+      exact interrupted_correct initialization simulation reset outputs guarded readerOutside (.finish reference prepared finished) invariant interrupted
   | last admitted =>
     have certified := cycle_contract initialization simulation outputs guarded admitted invariant
     constructor
@@ -274,13 +279,13 @@ theorem correct
         exact ⟨.last evidence, Ready.simulation stored persistent admitted.can_finish,
           readonly, keeps, fun q inside outside => frame q inside outside.1 outside.2⟩
     · intro records stop interrupted
-      exact interrupted_correct initialization simulation reset outputs guarded (.last admitted) invariant interrupted
+      exact interrupted_correct initialization simulation reset outputs guarded readerOutside (.last admitted) invariant interrupted
   | next admitted following ih =>
     have certified := cycle_contract initialization simulation outputs guarded admitted invariant
     constructor
     · rcases certified.progress with ⟨initial, exited, checkpoints, observed, after, epochs, initialized, simulated⟩ |
         stopped | ⟨initial, exited, checkpoints, initialized, stopped⟩
-      · obtain ⟨_, resetCall, resetInvariant, _, _, _⟩ := certified.restarted reset guarded initialized simulated
+      · obtain ⟨_, resetCall, resetInvariant, _, _, _⟩ := certified.restarted reset guarded readerOutside initialized simulated
         have next := ih resetInvariant
         rcases next.progress with ⟨records, final, completed⟩ | stopped
         · exact Or.inl ⟨_, final, .next initialized simulated ((resetCall _).mpr rfl) completed⟩
@@ -290,17 +295,17 @@ theorem correct
     · intro records after executed
       cases executed with
       | next initialized simulated resetActual following =>
-        obtain ⟨evidence, resetCall, resetInvariant, readonly, keeps, frame⟩ := certified.restarted reset guarded initialized simulated
+        obtain ⟨evidence, resetCall, resetInvariant, readonly, keeps, frame⟩ := certified.restarted reset guarded readerOutside initialized simulated
         cases (resetCall _).mp resetActual
         obtain ⟨sourceTrace, ready, laterReadonly, laterKeeps, laterFrame⟩ := (ih resetInvariant).completed _ _ following
         exact ⟨.next evidence sourceTrace, ready, readonly.trans laterReadonly,
-          (fun name outside => (laterKeeps name outside).trans (keeps name outside)),
+          keeps.trans laterKeeps,
           fun q inside outside => (laterFrame q inside outside.2.2).trans (frame q inside outside.1 outside.2.1)⟩
     · intro records stop interrupted
-      exact interrupted_correct initialization simulation reset outputs guarded (.next admitted following) invariant interrupted
+      exact interrupted_correct initialization simulation reset outputs guarded readerOutside (.next admitted following) invariant interrupted
 
 theorem Contract.stopped_source
-    (certified : Contract model program objects retained owners original literals heap p access addresses buffer plan)
+    (certified : Contract model program objects retained owners original literals heap p access addresses buffer plan readers)
     (actual : Stopped program p access addresses buffer heap plan) :
     ∃ records stop, Interrupted program p access addresses buffer heap plan records stop ∧
       SourceInterrupted model p addresses buffer plan records stop := by
@@ -310,7 +315,7 @@ theorem Contract.stopped_source
 /-- Progress carries source evidence for either outcome; blocking never
 turns a pending call into a successful numerical or initialization observation. -/
 theorem Contract.progress_source
-    (certified : Contract model program objects retained owners original literals heap p access addresses buffer plan) :
+    (certified : Contract model program objects retained owners original literals heap p access addresses buffer plan readers) :
     (∃ records after, Completed program p access addresses buffer heap plan records after ∧ SourceTrace model p plan records) ∨
     (∃ records stop, Interrupted program p access addresses buffer heap plan records stop ∧
       SourceInterrupted model p addresses buffer plan records stop) := by
@@ -324,7 +329,7 @@ theorem Contract.released {program : Program Invocation}
     (objects : Objects) (tag : CAtomicBoolean.Calls.Event → Invocation) (slot : Fin objects.capacity)
     {owners : SlotOwners.State objects.capacity}
     (certified : Contract model program objects retained owners original literals heap
-      (objects.instances.index slot.val) access addresses buffer plan)
+      (objects.instances.index slot.val) access addresses buffer plan readers)
     (termination : Termination.ReleaseContract objects program tag) (release : StaticRelease.Bindings program tag)
     (flags : interface.constants "rumoca_instance_flags" = some (.pointer (some ⟨objects.flagsBlock, [], 0⟩)))
     (owned : owners slot = some owner)
@@ -337,7 +342,7 @@ theorem Contract.released {program : Program Invocation}
       LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q) := by
   obtain ⟨sourceTrace, ready, _, keeps, frame⟩ := certified.completed _ _ executed
   have metadataAfter : load after ((objects.instances.index slot.val).member "slot") = some (.integer slot.val) := by
-    simpa only [load, keeps "slot" (by decide)] using metadata
+    simpa only [load, keeps.fields "slot" (by decide) (by decide)] using metadata
   have released := LifecycleRelease.finish_correct objects program tag termination release flags after slot .me plan.mode
     owners owner ready.kindValue ready.modeValue ready.finishable ready.persistent.ownership owned metadataAfter
   refine ⟨sourceTrace, released, ?_⟩

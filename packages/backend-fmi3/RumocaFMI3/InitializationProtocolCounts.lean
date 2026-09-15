@@ -36,7 +36,7 @@ theorem count_get_call [CInterface] (model : Solve.FMI3Model source)
   · exact ⟨⟨instanceAfter, resetAfter, stored.configured.framed
         (fun name _ => record _ (p.member_in_record name))⟩,
       ownersAfter, CallerStorage.ordinary preserved, readonly,
-      fun name _ => record _ (p.member_in_record name), fun q _ _ _ outside => frame q outside⟩
+      Retention.of_retains (fun name _ => record _ (p.member_in_record name)), fun q _ _ _ outside => frame q outside⟩
 
 theorem Result.count_rejected (events missing : Bool) (buffer : Option Address)
     (stored : Stored heap p kind state)
@@ -48,7 +48,7 @@ theorem Result.count_rejected (events missing : Bool) (buffer : Option Address)
   obtain ⟨instanceAfter, resetAfter, ownersAfter, preserved, readonly, frame⟩ :=
     CountQueries.failed_memory objects retained owners heap p stored.instanceStored stored.reset
       inPool ownership callbackFrame callbackReadonly
-  refine ⟨⟨instanceAfter, resetAfter, trivial⟩, ownersAfter, preserved, readonly, ?_, ?_⟩
+  refine ⟨⟨instanceAfter, resetAfter, trivial⟩, ownersAfter, preserved, readonly, Retention.of_retains ?_, ?_⟩
   · intro name outside
     apply frame (p.member name) (Or.inl inPool)
     intro same
@@ -82,7 +82,7 @@ theorem count_rejection_call (events missing : Bool) (buffer : Option Address)
       (machine program).Behaves (.calling (CountQueries.signature events).name
         (CountQueries.arguments (some p) buffer) heap .done) observed := by
     simp [Action.Behaves, Action.hostRun, Action.call, CountAccess.Request.call]
-  rcases policy with ⟨logger, logging, loggerValue, loggingValue, suppressed⟩ |
+  rcases policy.current with ⟨logger, logging, loggerValue, loggingValue, suppressed⟩ |
     ⟨logger, environment, name, effect, loggerValue, loggingValue, environmentValue, address, external, respects⟩
   · have called := fun observed => (behavior observed).trans
       (quiet Invocation program actual missing p buffer kind (state.phase.mode kind) logger logging

@@ -37,6 +37,30 @@ def Configuration.StoragePolicy [CInterface] (config : Configuration) (region : 
   | .logged _ _ _ effect =>
       ∀ args before value after, effect.execute args before value after → CStorage.PreservesOn region before after
 
+/-- Borrowed caller inputs require exact contents across every callback
+return. Typed-storage preservation alone does not imply this property. -/
+def Configuration.FramePolicy [CInterface] (config : Configuration) (region : Address → Prop) : Prop :=
+  match config with
+  | .quiet _ _ => True
+  | .logged _ _ _ effect =>
+      ∀ args before value after, effect.execute args before value after →
+        ∀ q, region q → after q = before q
+
+theorem Configuration.FramePolicy.storage [CInterface] {config : Configuration}
+    (policy : config.FramePolicy region) : config.StoragePolicy region := by
+  cases config with
+  | quiet _ _ => trivial
+  | logged _ _ _ _ =>
+    exact fun args before value after returned => CStorage.PreservesOn.of_frame (policy args before value after returned)
+
+theorem Configuration.FramePolicy.mono [CInterface] {config : Configuration}
+    (policy : config.FramePolicy region) (subset : ∀ q, selected q → region q) :
+    config.FramePolicy selected := by
+  cases config with
+  | quiet _ _ => trivial
+  | logged _ _ _ _ =>
+    exact fun args before value after returned q inside => policy args before value after returned q (subset q inside)
+
 theorem Configuration.StoragePolicy.mono [CInterface] {config : Configuration}
     (policy : config.StoragePolicy region) (subset : ∀ q, selected q → region q) :
     config.StoragePolicy selected := by

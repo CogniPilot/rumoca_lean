@@ -31,12 +31,12 @@ mode, metadata and reservation at release come from the original ownership
 and the completed raw calls, including all prior rejected accesses/resets. -/
 theorem Completed.release [interface : CInterface] {program : Program Invocation}
     (objects : Objects) (tag : CAtomicBoolean.Calls.Event → Invocation)
-    (slot : Fin objects.capacity) {owners : SlotOwners.State objects.capacity}
+    (slot : Fin objects.capacity) {owners : SlotOwners.State objects.capacity} {readers : ReadBank}
     (contract : ExecutionContract model program objects retained owners original literals
-      (objects.instances.index slot.val) buffers kind)
+      (objects.instances.index slot.val) buffers kind readers)
     (reference : ReferenceTrace kind state actions final)
-    (prepared : ∀ action ∈ actions, action.Prepared objects retained original (objects.instances.index slot.val) buffers)
-    (invariant : Invariant program objects retained owners original literals heap (objects.instances.index slot.val) kind state)
+    (prepared : ∀ action ∈ actions, action.Prepared objects retained original (objects.instances.index slot.val) buffers readers)
+    (invariant : Invariant program objects retained owners original literals heap (objects.instances.index slot.val) kind state readers)
     (executed : Completed program (objects.instances.index slot.val) buffers heap actions observed after checkpoints)
     (finished : final.phase.Finished)
     (termination : Termination.ReleaseContract objects program tag)
@@ -49,7 +49,7 @@ theorem Completed.release [interface : CInterface] {program : Program Invocation
   apply LifecycleRelease.finish_correct objects program tag termination release flags after slot kind _ owners owner
     finalInvariant.stored.instanceStored.kind finalInvariant.stored.instanceStored.mode
     (final.phase.can_finish kind finished) finalInvariant.ownership owned
-  simpa only [load, retains "slot" (by decide)] using metadata
+  simpa only [load, retains.fields "slot" (by decide) (by decide)] using metadata
 
 end Rumoca.FMI3.InitializationProtocol
 end

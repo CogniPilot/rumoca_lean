@@ -82,16 +82,19 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
     rintro observed after epochs ⟨events, status, rfl, rfl, returned⟩
     obtain ⟨observation, memory⟩ := contract.returned events status after returned
     refine ⟨memory.stored, memory.reset, memory.configuration, memory.ownership, ?_, memory.readonly,
-      fun q guarded outside => memory.frame q guarded outside.1.1.2.1, memory.storage⟩
-    cases request with
-    | get which output =>
-      obtain ⟨statusEq, quiet, readback⟩ := observation
-      have empty := quiet rfl
-      simp only [Action.Observed, statusEq, empty, readback, CountAccess.Request.failed,
-        Bool.false_eq_true, ↓reduceIte, MENumericalHistory.Observation.ok]
-    | reject which missing output =>
-      exact ⟨events, by simp only [CountAccess.Request.readback, observation.1,
-        CountAccess.Request.failed, ↓reduceIte]⟩
+      (fun q guarded outside => memory.frame q guarded outside.1.1.2.1), memory.storage, ?_⟩
+    · cases request with
+      | get which output =>
+        obtain ⟨statusEq, quiet, readback⟩ := observation
+        have empty := quiet rfl
+        simp only [Action.Observed, statusEq, empty, readback, CountAccess.Request.failed,
+          Bool.false_eq_true, ↓reduceIte, MENumericalHistory.Observation.ok]
+      | reject which missing output =>
+        exact ⟨events, by simp only [CountAccess.Request.readback, observation.1,
+          CountAccess.Request.failed, ↓reduceIte]⟩
+    · intro region policy q inside outside disjoint
+      apply memory.callerFrame region policy q inside outside.1.1.2.1
+      cases request <;> first | exact disjoint | trivial
   | nominals request =>
     obtain ⟨outcomes, blocked, contract⟩ := MENominalCalls.execution header objects model sigs pool nominals
       literalBase firstBlock signed program config actual heap p clock reference addresses buffer request owners
@@ -100,17 +103,20 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
     rintro observed after epochs ⟨events, status, rfl, rfl, returned⟩
     obtain ⟨observation, memory⟩ := contract.returned events status after returned
     refine ⟨memory.stored, memory.reset, memory.configuration, memory.ownership, ?_, memory.readonly,
-      fun q guarded outside => memory.frame q guarded outside, memory.storage⟩
-    cases request with
-    | get output =>
-      obtain ⟨statusEq, quiet, readback⟩ := observation
-      have empty := quiet rfl
-      have readbackAt := congrFun readback 0
-      simp only [Action.Observed, statusEq, empty, readbackAt, NominalAccess.Request.failed,
-        Bool.false_eq_true, ↓reduceIte, MENumericalHistory.Observation.ok]
-    | reject access output count =>
-      exact ⟨events, by simp only [NominalAccess.Request.readback, observation.1,
-        NominalAccess.Request.failed, ↓reduceIte]⟩
+      (fun q guarded outside => memory.frame q guarded outside), memory.storage, ?_⟩
+    · cases request with
+      | get output =>
+        obtain ⟨statusEq, quiet, readback⟩ := observation
+        have empty := quiet rfl
+        have readbackAt := congrFun readback 0
+        simp only [Action.Observed, statusEq, empty, readbackAt, NominalAccess.Request.failed,
+          Bool.false_eq_true, ↓reduceIte, MENumericalHistory.Observation.ok]
+      | reject access output count =>
+        exact ⟨events, by simp only [NominalAccess.Request.readback, observation.1,
+          NominalAccess.Request.failed, ↓reduceIte]⟩
+    · intro region policy q inside outside disjoint
+      apply memory.callerFrame region policy q inside outside.1.1.2.1
+      cases request <;> first | exact disjoint | trivial
   | run command =>
     obtain ⟨after, epochs, called, nextStored, nextReset, readonly, atomic, keptStorage, frame⟩ :=
       run_correct header objects (pool.addresses firstBlock) model program
@@ -120,7 +126,7 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
     rintro observed next checkpoints ⟨rfl, rfl, rfl⟩
     exact ⟨nextStored, nextReset, configuration _ (fun q _ outside => frame q outside),
       SlotOwners.ordinary_preserves represented atomic, rfl, readonly, (fun q _ outside => frame q outside),
-      fun region _ => keptStorage.on region⟩
+      (fun region _ => keptStorage.on region), fun _ _ q _ outside _ => frame q outside⟩
   | reject request input =>
     obtain ⟨preparation, readyStored, readyReset, readyReadonly, readyAtomic⟩ := MEFailure.prepare_correct input stored storage
     let ready := MEFailure.prepare input heap buffer
@@ -148,8 +154,10 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
       exact ⟨readyStored.failed, readyStored.failed_reset readyReset, configuration _ frame,
         SlotOwners.ordinary_preserves readyOwners readyStored.failed_atomic, ⟨[], rfl⟩,
         readyReadonly.trans (termination_preserves ((called _).mpr rfl)), frame,
-        fun region _ => (readyStorage.trans (CStorage.replace_typed readyStored.control.mode
-          ⟨.int32, true, some (.integer Mode.terminated.code)⟩ rfl rfl)).on region⟩
+        (fun region _ => (readyStorage.trans (CStorage.replace_typed readyStored.control.mode
+          ⟨.int32, true, some (.integer Mode.terminated.code)⟩ rfl rfl)).on region),
+        fun _ _ q _ outside _ => (LifecycleBodies.write_frame ready p q .terminated outside.1.1.2.1).trans
+          (MEFailure.prepare_frame input heap buffer q outside.1.2.2)⟩
     | logged logger environment name effect =>
       obtain ⟨address, external, policy⟩ := valid
       have called := (logged program actual p logger environment .me reference.control.mode name effect address external
@@ -160,10 +168,13 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
       have frame := finishFrame after preserved
       exact ⟨nextStored, nextReset, configuration after frame, nextOwners, ⟨_, rfl⟩,
         readyReadonly.trans (termination_preserves ((called _).mpr (Or.inl ⟨value, after, outcome, rfl⟩))), frame,
-        fun region preserve =>
+        (fun region preserve =>
           ((readyStorage.trans (CStorage.replace_typed readyStored.control.mode
             ⟨.int32, true, some (.integer Mode.terminated.code)⟩ rfl rfl)).on region).trans
-            (preserve _ _ _ _ outcome)⟩
+            (preserve _ _ _ _ outcome)),
+        fun _ preserve q inside outside _ => (preserve _ _ _ _ outcome q inside).trans
+          ((LifecycleBodies.write_frame ready p q .terminated outside.1.1.2.1).trans
+            (MEFailure.prepare_frame input heap buffer q outside.1.2.2))⟩
 
 /-- Arbitrarily long finite mixtures retain all modeled callback outcomes.
 No later heap, expected status or returning callback is supplied as a premise. -/

@@ -230,6 +230,9 @@ structure Returned [CInterface] (model : Solve.FMI3Model source) (objects : Obje
   readonly : CReadOnly.Preserves heap after
   frame : ∀ q, MEFailure.Protected objects addresses buffer q → MENumericalRun.Outside p addresses buffer q → after q = heap q
   storage : ∀ region, config.StoragePolicy region → CStorage.PreservesOn region heap after
+  callerFrame : ∀ region, config.FramePolicy region →
+    ∀ q, region q → MENumericalRun.Outside p addresses buffer q →
+      ¬ action.CallerRegion q → after q = heap q
 
 /-- The finite history certificate branches over all returning outcomes. A
 non-returning callback retains its contract and has no invented continuation. -/
@@ -283,6 +286,26 @@ theorem Trace.storage [CInterface] {program : Program Invocation} {model : Solve
     | cons called returned following =>
       have outcome := called.returned performed
       exact ((returned _ _ _ outcome).storage region policy).trans (ih (following _ _ _ outcome))
+
+/-- Exact caller contents survive the actual completed mixed history when
+its writes and every returning callback preserve the selected read cells. -/
+theorem Trace.callerFrame [CInterface] {program : Program Invocation} {model : Solve.FMI3Model source}
+    {objects : Objects} {owners : SlotOwners.State objects.capacity} {config : Configuration}
+    (certified : Trace model objects owners config program p addresses buffer heap reference clock actions final finalClock)
+    (completed : Completed program p addresses buffer heap actions observed after epochs)
+    (policy : config.FramePolicy region) :
+    ∀ q, region q → MENumericalRun.Outside p addresses buffer q →
+      (∀ action ∈ actions, ¬ action.CallerRegion q) → after q = heap q := by
+  induction completed generalizing reference clock final finalClock with
+  | nil => exact fun _ _ _ _ => rfl
+  | cons performed _ ih =>
+    cases certified with
+    | cons called returned following =>
+      have outcome := called.returned performed
+      intro q inside outside untouched
+      exact (ih (following _ _ _ outcome) q inside outside
+        (fun action member => untouched action (List.mem_cons_of_mem _ member))).trans
+        ((returned _ _ _ outcome).callerFrame region policy q inside outside (untouched _ (by simp)))
 
 end Rumoca.FMI3.MEMixedRun
 end

@@ -43,6 +43,8 @@ structure Memory [CInterface] (objects : Objects) (owners : SlotOwners.State obj
   frame : ∀ q, MEFailure.Protected objects addresses buffer q →
     MENumericalRun.Outside p addresses buffer q → after q = heap q
   storage : ∀ region, config.StoragePolicy region → CStorage.PreservesOn region heap after
+  callerFrame : ∀ region, config.FramePolicy region →
+    ∀ q, region q → q ≠ p.member "mode" → request.Outside q → after q = heap q
 
 theorem Memory.success [CInterface] (output : Address)
     {owners : SlotOwners.State objects.capacity} {config : MEMixedRun.Configuration}
@@ -63,8 +65,8 @@ theorem Memory.success [CInterface] (output : Address)
     intro name _
     exact frame _ (fun same => notRecord (same ▸ p.member_in_record name))
   exact ⟨storedAfter, resetAfter, configAfter, ownersAfter, readonly,
-    fun _ guarded untouched => frame _ (separate_frame outside guarded untouched),
-    fun region _ => preserved.on region⟩
+    (fun _ guarded untouched => frame _ (separate_frame outside guarded untouched)),
+    (fun region _ => preserved.on region), fun _ _ q _ _ untouched => frame q untouched⟩
 
 theorem Memory.failure [CInterface] (access : Bool) (output : Option Address) (count : UInt64)
     {owners : SlotOwners.State objects.capacity} {config : MEMixedRun.Configuration}
@@ -75,7 +77,9 @@ theorem Memory.failure [CInterface] (access : Bool) (output : Option Address) (c
     (callbackFrame : MEFailure.ProtectedFrame objects addresses buffer (LifecycleBodies.writeMode heap p .terminated) after)
     (callbackReadonly : CReadOnly.Preserves (LifecycleBodies.writeMode heap p .terminated) after)
     (callbackStorage : ∀ region, config.StoragePolicy region →
-      CStorage.PreservesOn region (LifecycleBodies.writeMode heap p .terminated) after) :
+      CStorage.PreservesOn region (LifecycleBodies.writeMode heap p .terminated) after)
+    (callbackCells : ∀ region, config.FramePolicy region →
+      ∀ q, region q → after q = LifecycleBodies.writeMode heap p .terminated q) :
     Memory objects owners config heap after p addresses buffer clock reference (.reject access output count) := by
   have numerical := callbackFrame.numerical inPool
   have changed := LifecycleBodies.write_storage heap p _ .terminated stored.control.mode
@@ -85,7 +89,9 @@ theorem Memory.failure [CInterface] (access : Bool) (output : Option Address) (c
     MECountCalls.configuration_frame configured inPool frame,
     callbackFrame.owners (SlotOwners.ordinary_preserves ownership changed.2.2),
     changed.2.1.trans callbackReadonly, fun q guarded outside => frame q guarded outside.1.1.2.1,
-    fun region policy => (changed.1.on region).trans (callbackStorage region policy)⟩
+    (fun region policy => (changed.1.on region).trans (callbackStorage region policy)),
+    fun region policy q inside different _ => (callbackCells region policy q inside).trans
+      (LifecycleBodies.write_frame heap p q .terminated different)⟩
 
 def CorrectObservation (model : Solve.FMI3Model source) (request : NominalAccess.Request)
     (events : List Invocation) (status : Value) (after : Heap) : Prop :=
@@ -164,7 +170,7 @@ theorem execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI
       refine ⟨_, False, Contract.quiet called ?_ ?_⟩
       · exact ⟨rfl, by simp [NominalAccess.Request.failed], rfl⟩
       · exact Memory.failure access output count stored reset configured ownership inPool
-          (fun _ _ => rfl) (.refl _) (fun region _ => .refl region _)
+          (fun _ _ => rfl) (.refl _) (fun region _ => .refl region _) (fun _ _ _ _ => rfl)
     | logged logger environment name effect =>
       obtain ⟨address, external, policy⟩ := valid
       have called := (logged program actual access p logger environment output count .me reference.control.mode name effect
@@ -192,7 +198,8 @@ theorem execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI
         exact ⟨⟨rfl, by simp [NominalAccess.Request.failed], rfl⟩,
           Memory.failure access output count stored reset configured ownership inPool
             (policy _ _ _ _ returned) (effect.readonly _ _ _ _ returned)
-            (fun region preserve => preserve _ _ _ _ returned)⟩
+            (fun region preserve => preserve _ _ _ _ returned)
+            (fun _ preserve q inside => preserve _ _ _ _ returned q inside)⟩
 
 end Rumoca.FMI3.MENominalCalls
 end

@@ -28,13 +28,13 @@ structure MEExecution [CInterface] (model : Solve.FMI3Model source) (program : P
     (objects : Objects) (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
     (original literals heap : Heap) (p : Address) (addresses : String → Address) (buffer : Address)
     (before : MENumericalHistory.ReferenceState) (clock : Time.Clock) (actions : List MEMixedRun.Action)
-    (final : MENumericalHistory.ReferenceState) (finalClock : Time.Clock) : Prop where
+    (final : MENumericalHistory.ReferenceState) (finalClock : Time.Clock) (readers : ReadBank) : Prop where
   trace : ∃ config, MEMixedRun.Trace model objects owners config program p addresses buffer heap before clock actions final finalClock
   progress : (∃ observed after epochs, MEMixedRun.Completed program p addresses buffer heap actions observed after epochs) ∨
     MEMixedRun.Stopped program p addresses buffer heap actions
   completed : ∀ observed after epochs, MEMixedRun.Completed program p addresses buffer heap actions observed after epochs →
     MENumericalHistory.Stored after p finalClock final addresses buffer ∧ Reset.Storage after p ∧
-    Persistent program objects retained owners original literals after p ∧
+    Persistent program objects retained owners original literals after p readers ∧
     Retains p heap after ∧ CReadOnly.Preserves heap after ∧
     (∀ q, MEFailure.Protected objects addresses buffer q → MENumericalRun.Outside p addresses buffer q → after q = heap q)
   faulted : ∀ action rest, actions = action :: rest → MEMixedRun.Faulted program p addresses buffer heap action →
@@ -53,19 +53,21 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
     ∀ (program : Program Invocation), program.internal = LiteralPreparation.program model sigs →
     ∀ (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
       (original heap : Heap) (p : Address) (addresses : String → Address) (buffer : Address)
-      (before final : MENumericalHistory.ReferenceState) (clock finalClock : Time.Clock) (actions : List MEMixedRun.Action),
-      Persistent program objects retained owners original (pool.install baseHeap firstBlock signed) heap p →
+      (before final : MENumericalHistory.ReferenceState) (clock finalClock : Time.Clock) (actions : List MEMixedRun.Action) (readers : ReadBank),
+      Persistent program objects retained owners original (pool.install baseHeap firstBlock signed) heap p readers →
       p.block = objects.instances.block → MEOutputsGuarded objects retained addresses buffer →
+      (∀ q, readers.Region q → Float64Rejection.Protected objects retained q ∧ MENumericalRun.Outside p addresses buffer q) →
+      (∀ action ∈ actions, ∀ q, readers.Region q → ¬ action.CallerRegion q) →
       MENumericalHistory.Stored heap p clock before addresses buffer → Reset.Storage heap p →
       MEMixedRun.ReferenceTrace buffer before clock actions final finalClock →
       (∀ action ∈ actions, action.Prepared objects original addresses buffer) →
       (∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q) →
       MEExecution model program objects retained owners original (pool.install baseHeap firstBlock signed)
-        heap p addresses buffer before clock actions final finalClock := by
+        heap p addresses buffer before clock actions final finalClock readers := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
-  intro program actual retained owners original heap p addresses buffer before final clock finalClock actions
-    persistent inPool guarded stored resetStorage admitted requests regions
-  obtain ⟨config, configured, valid, policy⟩ := persistent.logging.me guarded
+  intro program actual retained owners original heap p addresses buffer before final clock finalClock actions readers
+    persistent inPool guarded readerGuarded readerSafe stored resetStorage admitted requests regions
+  obtain ⟨config, configured, valid, policy, framePolicy⟩ := persistent.logging.me guarded
   obtain ⟨reset, enterDefined, exitDefined, _, _⟩ := lifecycle.execution header objects (pool.addresses firstBlock) program actual
   have current : ∀ action ∈ actions, action.Prepared objects heap addresses buffer := by
     intro action member
@@ -82,7 +84,11 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
       frame (p.member name) (Or.inl (by simpa using inPool)) (me_field_outside stored name retained)
     exact ⟨nextStored, nextReset,
       ⟨ownersAfter, persistent.caller.trans (certified.storage completed policy), persistent.readonly.trans readonly,
-        persistent.logging.framed keeps⟩, keeps, readonly, frame⟩
+        persistent.logging.framed keeps,
+        persistent.readerFrame.trans (fun q inside => certified.callerFrame completed
+          (framePolicy.mono (fun cell member => (readerGuarded cell member).1))
+          q inside (readerGuarded q inside).2 (fun action member => readerSafe action member q inside))⟩,
+      keeps, readonly, frame⟩
   · intro action rest same faulted
     cases same
     cases certified with

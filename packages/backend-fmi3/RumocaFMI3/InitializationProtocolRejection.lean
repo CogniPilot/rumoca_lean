@@ -1,13 +1,24 @@
 import RumocaFMI3.InitializationProtocolCalls
+import RumocaFMI3.LoggingCapability
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
 open CTree CMemory CBody StaticFactory CCalls.Events CLiteral
 
-/-- A stored logger is either suppressed or bound to an observed external
-effect with a universal frame. No callback return or determinism is assumed. -/
+/-- The original callback binding and universal frame remain available while
+logging is disabled. This is an importer obligation, not a fact inferred from
+a disabled pointer. The flag's writable storage supports later public updates. -/
 def LogPolicy [CInterface] (program : Program Invocation) (objects : Objects) (retained : Address → Prop)
     (heap : Heap) (p : Address) : Prop :=
+  ∃ (capability : Logging.Capability) (enabled : Bool),
+    capability.Configured heap p enabled ∧ capability.Bound program ∧
+    capability.Requires (fun _ effect => Float64Rejection.Respects effect objects retained) ∧
+    Reset.Writable heap (p.member "logging") .boolean
+
+/-- Current dispatch is a view of the persistent policy. No callback return
+or determinism is assumed, including when this view selects logging. -/
+theorem LogPolicy.current [CInterface] {program : Program Invocation}
+    (policy : LogPolicy program objects retained heap p) :
   (∃ (logger : Option Address) (logging : Bool),
     load heap (p.member "logger") = some (.pointer logger) ∧
     load heap (p.member "logging") = some (boolean logging) ∧ (logger = none ∨ logging = false)) ∨
@@ -17,21 +28,28 @@ def LogPolicy [CInterface] (program : Program Invocation) (objects : Objects) (r
     load heap (p.member "environment") = some (.pointer environment) ∧
     program.addresses logger = some name ∧
     program.externals name = some (External.observed (Logging.signature name) effect) ∧
-    Float64Rejection.Respects effect objects retained)
+    Float64Rejection.Respects effect objects retained) := by
+  obtain ⟨capability, enabled, configured, bound, required, _⟩ := policy
+  cases capability with
+  | absent environment =>
+    exact Or.inl ⟨none, enabled, configured.1.1, configured.2, Or.inl rfl⟩
+  | present logger environment name effect =>
+    cases enabled
+    · exact Or.inl ⟨some logger, false, configured.1.1, configured.2, Or.inr rfl⟩
+    · exact Or.inr ⟨logger, environment, name, effect, configured.1.1, configured.2,
+        configured.1.2, bound.1, bound.2, required⟩
 
 theorem LogPolicy.fields [CInterface] {program : Program Invocation}
     (policy : LogPolicy program objects retained heap p)
     (frame : ∀ name ∈ ["logger", "logging", "environment"], after (p.member name) = heap (p.member name)) :
     LogPolicy program objects retained after p := by
-  have field (name : String) (member : name ∈ ["logger", "logging", "environment"]) :
-      load after (p.member name) = load heap (p.member name) := by simp only [load, frame name member]
-  rcases policy with ⟨logger, logging, loggerValue, loggingValue, quiet⟩ |
-    ⟨logger, environment, name, effect, loggerValue, loggingValue, environmentValue, address, external, respects⟩
-  · exact Or.inl ⟨logger, logging, (field "logger" (by decide)).trans loggerValue,
-      (field "logging" (by decide)).trans loggingValue, quiet⟩
-  · exact Or.inr ⟨logger, environment, name, effect, (field "logger" (by decide)).trans loggerValue,
-      (field "logging" (by decide)).trans loggingValue, (field "environment" (by decide)).trans environmentValue,
-      address, external, respects⟩
+  obtain ⟨capability, enabled, configured, bound, required, old, storage⟩ := policy
+  refine ⟨capability, enabled, configured.framed ?_, bound, required,
+    old, (frame "logging" (by decide)).trans storage⟩
+  intro name member
+  apply frame
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at member ⊢
+  tauto
 
 theorem LogPolicy.framed [CInterface] {program : Program Invocation}
     (policy : LogPolicy program objects retained heap p) (frame : Retains p heap after) :
@@ -42,13 +60,20 @@ theorem LogPolicy.framed [CInterface] {program : Program Invocation}
   simp only [List.mem_cons, List.not_mem_nil, or_false] at member
   rcases member with rfl | rfl | rfl <;> decide
 
+theorem LogPolicy.updated [CInterface] {program : Program Invocation}
+    (policy : LogPolicy program objects retained heap p) (frame : Retention update p heap after) :
+    LogPolicy program objects retained after p := by
+  obtain ⟨capability, enabled, configured, bound, required, writable⟩ := policy
+  exact ⟨capability, update.getD enabled, frame.configured configured, bound, required, frame.writable writable⟩
+
 variable {objects : Objects} {owners : SlotOwners.State objects.capacity}
 
 theorem Result.rejection
     (returned : Float64Rejection.Returned objects retained owners request heap p kind state.value state.time after)
     (inPool : p.block = objects.instances.block) (separate : ∀ q, p.InRecord q → request.Outside q) :
     Result objects retained owners p buffers heap after kind state (.reject request) := by
-  refine ⟨Stored.rejected returned, returned.ownership, returned.storage, returned.readonly, ?_, ?_⟩
+  refine ⟨Stored.rejected returned, returned.ownership, returned.storage, returned.readonly,
+    Retention.of_retains ?_, ?_⟩
   · intro name outside
     apply returned.frame (p.member name) (Or.inl inPool) (separate _ (p.member_in_record name))
     intro same
@@ -79,7 +104,7 @@ theorem rejection_call (request : Float64Rejection.Request) (header : CFenv.Head
   obtain ⟨category, message, _, _, _, quiet, logged⟩ :=
     request.execution header objects model sigs pool getter setter baseHeap firstBlock signed program actual
       heap p kind _ state.value state.time owners retained literals stored.instanceStored stored.reset inputs separate condition inPool ownership
-  rcases policy with ⟨logger, logging, loggerValue, loggingValue, suppressed⟩ |
+  rcases policy.current with ⟨logger, logging, loggerValue, loggingValue, suppressed⟩ |
     ⟨logger, environment, name, effect, loggerValue, loggingValue, environmentValue, address, external, respects⟩
   · obtain ⟨called, returned⟩ := quiet logger logging loggerValue loggingValue suppressed
     refine ⟨Or.inl ⟨[], .integer 3, _, (called _).mpr rfl⟩, ?_⟩

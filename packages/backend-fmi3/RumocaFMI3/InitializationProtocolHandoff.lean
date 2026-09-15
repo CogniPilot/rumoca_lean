@@ -5,6 +5,7 @@ import RumocaFMI3.CSRunState
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
 open CMemory StaticFactory
+variable {readers : ReadBank}
 
 def MEOutputsGuarded (objects : Objects) (retained : Address → Prop)
     (addresses : String → Address) (buffer : Address) : Prop :=
@@ -77,7 +78,7 @@ theorem Stored.cs_ready (model : Solve.Model source) (stored : Stored heap p .cs
 
 theorem Invariant.me_ready [CInterface] {program : CCalls.Events.Program CCalls.Events.Invocation}
     {objects : Objects} {owners : SlotOwners.State objects.capacity}
-    (invariant : Invariant program objects retained owners original literals heap p .me state)
+    (invariant : Invariant program objects retained owners original literals heap p .me state readers)
     (phase : state.phase = .initialized args)
     (outputs : MENumericalHistory.CallerStorage original p addresses buffer)
     (guarded : MEOutputsGuarded objects retained addresses buffer) :
@@ -86,7 +87,7 @@ theorem Invariant.me_ready [CInterface] {program : CCalls.Events.Program CCalls.
 
 theorem Invariant.cs_ready [CInterface] {program : CCalls.Events.Program CCalls.Events.Invocation}
     {objects : Objects} {owners : SlotOwners.State objects.capacity} (model : Solve.Model source)
-    (invariant : Invariant program objects retained owners original literals heap p .cs state)
+    (invariant : Invariant program objects retained owners original literals heap p .cs state readers)
     (phase : state.phase = .initialized args) (outputs : StepArguments.Storage original p buffers)
     (guarded : CSOutputsGuarded objects retained buffers) :
     CSRun.Stored model heap p buffers (csReference state args) :=

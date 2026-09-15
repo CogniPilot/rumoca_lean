@@ -35,7 +35,7 @@ theorem nominal_get_call [CInterface] (model : Solve.FMI3Model source)
   · exact ⟨⟨instanceAfter, resetAfter, stored.configured.framed
         (fun name _ => record _ (p.member_in_record name))⟩,
       ownersAfter, CallerStorage.ordinary preserved, readonly,
-      fun name _ => record _ (p.member_in_record name), fun q _ _ _ outside => frame q outside⟩
+      Retention.of_retains (fun name _ => record _ (p.member_in_record name)), fun q _ _ _ outside => frame q outside⟩
 
 theorem Result.nominal_rejected (access : Bool) (buffer : Option Address) (count : UInt64)
     (stored : Stored heap p kind state)
@@ -47,7 +47,7 @@ theorem Result.nominal_rejected (access : Bool) (buffer : Option Address) (count
   obtain ⟨instanceAfter, resetAfter, ownersAfter, preserved, readonly, frame⟩ :=
     CountQueries.failed_memory objects retained owners heap p stored.instanceStored stored.reset
       inPool ownership callbackFrame callbackReadonly
-  refine ⟨⟨instanceAfter, resetAfter, trivial⟩, ownersAfter, preserved, readonly, ?_, ?_⟩
+  refine ⟨⟨instanceAfter, resetAfter, trivial⟩, ownersAfter, preserved, readonly, Retention.of_retains ?_, ?_⟩
   · intro name outside
     apply frame (p.member name) (Or.inl inPool)
     intro same
@@ -81,7 +81,7 @@ theorem nominal_rejection_call (access : Bool) (buffer : Option Address) (count 
       (machine program).Behaves (.calling ErrorCalls.nominalSignature.name
         (ErrorCalls.nominalArguments p buffer count) heap .done) observed := by
     simp [Action.Behaves, Action.hostRun, Action.call, NominalAccess.Request.call]
-  rcases policy with ⟨logger, logging, loggerValue, loggingValue, suppressed⟩ |
+  rcases policy.current with ⟨logger, logging, loggerValue, loggingValue, suppressed⟩ |
     ⟨logger, environment, name, effect, loggerValue, loggingValue, environmentValue, address, external, respects⟩
   · have called := fun observed => (behavior observed).trans
       (quiet Invocation program actual access p buffer count kind (state.phase.mode kind) logger logging

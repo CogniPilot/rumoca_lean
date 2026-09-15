@@ -1,5 +1,68 @@
 # Exact verification contract
 
+**Mutable logging during initialization (2026-09-15, full gate passed):**
+The existing initialization protocol now admits public logging actions and
+records their exact effect on the logging cell. A failed request retains the
+old flag and enters the failed phase; a successful request changes the flag
+without changing the source IVP. Original borrowed category arrays and strings
+are preserved through preceding calls under explicit read/write separation
+and callback-frame conditions. They may be writable; no future readable heap
+is an external premise of the composed initialization theorem.
+
+`InitializationProtocol.runtime_source` now includes the actual XML logging
+category and the prepared public setter. Its callback capability retains the
+original binding and universal memory policy while disabled. This is a
+stronger history precondition than a suppression-only fact; the latter does
+not imply a valid callable pointer. The separate low-level suppressed-call
+contracts remain available. The read-bank borrowing guards are a modeled host
+discipline, not an FMI standard requirement or a claim of unrestricted host
+trace coverage.
+
+Creation now derives the original-to-created read-bank frame from the actual
+factory execution: ordinary category reads, including string terminators,
+cannot alias atomic reservation flags. The source-bound creation/release,
+reset/initialization and stopped-prefix theorems carry the same bank. ME/CS
+handoffs use the exact final flag selected by initialization, instead of
+assuming it still equals the factory argument.
+
+CS simulation now preserves exact borrowed contents, alongside existing typed
+storage. Its `Logger.FramePolicy` is a universal callback obligation, and
+`LoggedTrace.frame` derives the frame for every actual returned branch. The
+actual prepared `cs_execution` supplies the new persistent read-bank frame
+under explicit separation from instance/output writes. These guards describe
+a borrowing profile; they do not establish unrestricted importer behavior.
+
+ME now has the same exact-content guarantee for count, nominal, numerical,
+rejection and reset calls. Its actual mixed-history proof derives the borrowed
+input frame using the original callback policy and explicit separation from
+writes. Both recurring source-bound runtime theorems now carry this bank from
+actual creation through initialization/simulation cycles, stopped prefixes,
+resets and release. Their postconditions compose the exact logging update
+across all initialization segments. The suppressed CS call certificate also
+retains its exact output/instance frame, so restart helpers derive later inputs.
+
+The owning C/FMI/compiler package checks passed at 01:38:40 UTC. The required
+`nix develop .#verification --command lake test` then passed at 02:22:20 UTC,
+on 1056 unchanged inputs. All 173 selected roots passed, including 68 newly
+registered roots, with no unexpected axioms, changed-module warnings or input
+drift. Evidence is in `build/c-factory/logging-history/package-v1.*` and
+`full-gate-v1.*`. Only the three evidence documents change after the frozen
+full gate.
+
+Every retained FMU member, including the native library, is byte-identical to
+the public-setter checkpoint. The eFMU changes only generation identities and
+dependent references/checksums in three manifests. Numerical C, GALEC and eFMI
+Production C are unchanged. The checked archives and comparisons are in
+`build/c-factory/logging-history/artifacts-v1/` and its adjacent JSON record.
+Existing artifact, importer, native-interface and mutation checks passed;
+no new test suite was added.
+
+Logging interleavings during simulation remain outside this accepted
+initialization/handoff slice. A separate draft now constructs actual ME mixed
+runtime certificates with changing flags, but its source/lifetime composition,
+CS history integration and production acceptance remain unfinished. K02–K05
+still block grammar expansion.
+
 **Public logging configuration (full gate passed):**
 The emitted `fmi3SetDebugLogging` now uses an explicit `strcmp` result before
 checking each selected category. The shared C machine models every permitted
@@ -34,10 +97,10 @@ are in `build/c-factory/debug-logging/artifacts-v1/` and its adjacent JSON recor
 The existing native FMI check covers the string-array ABI and the original
 logging policy on rejection; no new test suite was added.
 
-Mutable logging policy in complete initialization and ME/CS histories remains
-unfinished. Its isolated capability, storage and creation proofs are development
-evidence, not accepted history coverage. Remaining public calls, native/ABI
-correspondence and K02–K05 still block grammar expansion.
+The initialization-history checkpoint above now composes the public setter
+with creation, initialization, ME/CS handoffs and recurring release. Logging
+changes during simulation, remaining public calls, native/ABI correspondence
+and K02–K05 remain open.
 
 **Nominal observations in complete histories (2026-09-14, full gate passed):**
 The nominal function contract now supplies the actual shared runtime on later
