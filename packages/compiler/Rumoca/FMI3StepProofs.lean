@@ -17,7 +17,7 @@ theorem adapter_cs_calls (contract : AdapterContract a adapter) :
           (Runtime.function a.solve.prepareFMI3 StepEntry.signature).render ∧
         StepCalls.PreparedContract a.solve.prepareFMI3 signatures pool := by
   obtain ⟨signatures, _, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, step⟩ := contract
+    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, step, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 signatures
     StepEntry.signature step.member

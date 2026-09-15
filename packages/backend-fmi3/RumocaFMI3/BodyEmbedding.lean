@@ -14,7 +14,11 @@ omit static in
 theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     (Runtime.body m sig).all CBodyEmbedding.closedBlocks = true := by
   unfold Runtime.body
-  split <;> simp_all [CBodyEmbedding.closedBlocks, CLoops.noDeclarations,
+  split <;> simp_all [DebugLogging.code, DebugLogging.missing, DebugLogging.failure,
+      DebugLogging.validation, DebugLogging.iteration, DebugLogging.rejectNull,
+      DebugLogging.comparison, DebugLogging.rejectDifference, DebugLogging.category,
+      DebugLogging.finish, DebugLogging.writeLogging, CLoops.loop, CLoops.counterStep,
+    CBodyEmbedding.closedBlocks, CLoops.noDeclarations,
     FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
     FactoryRejection.code, FactoryRejection.logCall,
     StaticFactory.code, StaticFactory.reserve, StaticFactory.guard, StaticFactory.exhausted,

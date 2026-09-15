@@ -11,6 +11,31 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Public logging configuration (full gate passed):**
+The emitted setter and mandatory actual adapter contract now include the
+proved comparison/validation loop, printer, XML category and prepared shared
+runtime. Legal selections entail the exact flag update and memory frame;
+invalid selections retain the original callback policy. The owning-package
+gate passed on 1040 unchanged inputs with 58 new and five affected roots.
+The required full `lake test` passed on 2026-09-15 at 00:18:22 UTC,
+with all 63 roots and no unexpected axioms, changed-module warnings or input
+drift. See `build/c-factory/debug-logging/full-gate-v1.*` and `artifacts-v1.*`.
+Only the three evidence documents change after that gate.
+
+The FMU changes only the public setter in `sources/fmi3.c`; its native library
+and other members are unchanged. The eFMU changes only three manifests'
+generation identities and dependent references/checksums.
+
+Next, carry mutable logging through the existing initialization and ME/CS
+histories, including callback guarantees while disabled. Eleven isolated
+prerequisite modules and 35 selected roots pass ordinary Lean checking
+(`build/c-factory/logging-history/review-v3.json`). They derive the actual
+public call, creation configuration, successful initialization-state frame
+and rejected-call recovery resources. Action/history integration, original
+category inputs and recurring source-bound composition remain unfinished;
+these drafts are not part of accepted production coverage. Remaining public
+calls and K02–K05 continue to block grammar growth.
+
 **Nominal runtime and histories (full gate passed):**
 The final ignored draft passed across 80 modules and 56 selected roots. The
 owning FMI/compiler changes now connect actual nominal C calls, original

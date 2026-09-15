@@ -1,4 +1,5 @@
 import RumocaFMI3.StepContract
+import RumocaFMI3.DebugLoggingContract
 import RumocaFMI3.NominalContract
 import RumocaFMI3.StateContract
 import RumocaFMI3.DerivativeContract
@@ -102,7 +103,9 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     DiscreteCalls.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 DiscreteCalls.signature).render ∧
     StepCalls.FunctionContract a.solve.prepareFMI3 sigs
-      (Runtime.function a.solve.prepareFMI3 StepEntry.signature).render
+      (Runtime.function a.solve.prepareFMI3 StepEntry.signature).render ∧
+    DebugLogging.FunctionContract a.solve.prepareFMI3 sigs
+      (Runtime.function a.solve.prepareFMI3 DebugLogging.signature).render
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -131,6 +134,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (completed : CompletedCalls.signature ∈ sigs)
     (discrete : DiscreteCalls.signature ∈ sigs)
     (step : StepEntry.signature ∈ sigs)
+    (debugLogging : DebugLogging.signature ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -156,7 +160,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (fun entry => EventEntry.rendered_contract _ entry sigs unique (entries entry)),
     CompletedCalls.rendered_contract _ sigs unique completed,
     DiscreteCalls.rendered_contract _ sigs unique discrete,
-    StepCalls.rendered_contract _ sigs unique numerical step⟩
+    StepCalls.rendered_contract _ sigs unique numerical step,
+    DebugLogging.rendered_contract _ sigs unique debugLogging⟩
 
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table

@@ -33,7 +33,7 @@ theorem adapter_suppressed_recovery (contract : AdapterContract a adapter) :
         behavior = .terminates [] ⟨.integer (StepRejections.status reason), StepRejections.afterHeap reason query heap p⟩) ∧
       Restarted a program (StepRejections.afterHeap reason query heap p) p query.kind args := by
   obtain ⟨signatures, unique, member, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, _, _, _, _, _, _, step⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, _, _, _, _, _, _, step, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro query objects before firstBlock signed heap literalFrame
@@ -105,7 +105,7 @@ theorem adapter_logged_recovery (contract : AdapterContract a adapter) :
         ((∀ address, p.InRecord address → after address = StepRejections.afterHeap reason query heap p address) →
           Restarted a program after p query.kind args)) := by
   obtain ⟨signatures, unique, member, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, _, _, _, _, _, _, step⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, _, _, _, _, _, _, step, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro query objects before firstBlock signed heap literalFrame

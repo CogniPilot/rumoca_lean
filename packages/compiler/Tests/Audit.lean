@@ -1,3 +1,4 @@
+import Rumoca.FMI3DebugLoggingProofs
 import Rumoca.FMI3InitializationProtocol
 import Rumoca.FMI3CSProtocolRuntime
 import Rumoca.FMI3MEProtocolRuntime
@@ -354,3 +355,5 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.MEProtocol.runtime_create_release
 
 #audit axioms Rumoca.FMI3.nominals_runtime_source
+
+#audit axioms Rumoca.FMI3.debug_logging_source

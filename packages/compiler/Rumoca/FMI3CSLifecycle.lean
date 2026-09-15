@@ -86,7 +86,7 @@ theorem adapter_create_cs_release (contract : AdapterContract a adapter) :
             query ≠ buffers.early → query ≠ buffers.last →
             query ≠ AtomicSlots.address objects.flagsBlock slot → released query = heap query) := by
   obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, factories, runtime, termination, _, _, _, _, step⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, factories, runtime, termination, _, _, _, _, step, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E header instances flags separate before firstBlock signed

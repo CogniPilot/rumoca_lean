@@ -1,3 +1,5 @@
+import RumocaC.StringCompareAssignment
+import RumocaC.LoopBehavior
 import RumocaC.StoreRunInvariant
 import RumocaC.ArrayStore
 import RumocaC.CallPrefixInterface
@@ -817,3 +819,6 @@ import RumocaC.CallSignature
 #audit axioms Rumoca.CStorage.replace_typed
 #audit axioms Rumoca.COutputAssignments.write_storage
 #audit axioms Rumoca.COutputAssignments.after_storage
+
+#audit axioms Rumoca.CStringCalls.compare_assignment_equivalence
+#audit axioms Rumoca.CCalls.Events.loop_prefix_equivalence

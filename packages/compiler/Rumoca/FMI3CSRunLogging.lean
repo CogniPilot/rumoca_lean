@@ -60,7 +60,7 @@ theorem adapter_logged_cs_run_history (contract : AdapterContract a adapter) :
               (final.current.elapsed : ℝ) +
                 |Binary64.value final.current.time - (Binary64.value final.start + (final.current.elapsed : ℝ))|)) := by
   obtain ⟨signatures, unique, resetMember, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, _, _, _, _, _, _, step⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, _, _, _, _, _, _, step, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro header objects firstBlock literalBase signed

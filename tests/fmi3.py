@@ -171,6 +171,35 @@ class FMI3Tests(unittest.TestCase):
         self.messages.clear()
         self.assertEqual(self.Terminate(h), ERROR)
         self.assertEqual(self.messages, [])
+        # Exercise the native string-array ABI used by the proved validation
+        # loop. Universal behavior and memory frames are checked in Lean.
+        valid = (C.c_char_p * 3)(b"logStatus", b"logStatus", b"logStatus")
+        for kind in ["me", "cs"]:
+            h = self.create(kind)
+            initial = self.values(h)
+            self.assertEqual(self.SetDebugLogging(h, True, 3, valid), OK)
+            self.assertEqual(self.SetDebugLogging(h, False, 3, valid), OK)
+            self.assertEqual(self.SetDebugLogging(h, True, 0, None), OK)
+            self.assertEqual(self.values(h), initial)
+            self.messages.clear()
+            self.assertEqual(self.Terminate(h), ERROR)
+            self.assertEqual(len(self.messages), 1)
+            self.assertEqual(self.messages[0][:3], (123, ERROR, b"logStatus"))
+            for categories, count, message in [
+                (None, 1, b"Missing log categories"),
+                ((C.c_char_p * 2)(b"logStatus", None), 2, b"Unknown log category"),
+                ((C.c_char_p * 2)(b"logStatus", b"unknown"), 2, b"Unknown log category"),
+            ]:
+                for old_logging in [False, True]:
+                    h = self.create(kind, logging=old_logging)
+                    self.messages.clear()
+                    self.assertEqual(self.SetDebugLogging(h, not old_logging, count, categories), ERROR)
+                    # Rejection uses the original policy: a valid prefix must
+                    # not change the flag before all categories are accepted.
+                    self.assertEqual(self.messages, [(123, ERROR, b"logStatus", message)] if old_logging else [])
+        self.messages.clear()
+        self.assertEqual(self.SetDebugLogging(None, True, 1, None), ERROR)
+        self.assertEqual(self.messages, [])
         self.FreeInstance(None)
 
     def test_lifecycle_reset_and_isolation(self):

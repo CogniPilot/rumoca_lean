@@ -5,6 +5,7 @@ import RumocaFMI3.IdentityCode
 import RumocaFMI3.StaticFactoryCode
 import RumocaFMI3.StaticReleaseCode
 import RumocaFMI3.StaticStorageCode
+import RumocaFMI3.DebugLoggingCode
 
 /-! FMI ABI construction. Numerical evaluation is delegated to the existing
 verified Solve/C kernel. The lifecycle table supplies guards. C memory,
@@ -164,12 +165,7 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
     branch (both (v "logMessage") (v "loggingOn")) [.eval (.call (v "logMessage")
       [v "instanceEnvironment", v "fmi3Error", .str "logStatus", .str "Scheduled Execution is unsupported"])], ret (v "NULL")]
   | "fmi3FreeInstance" => StaticRelease.function.body
-  | "fmi3SetDebugLogging" => require .logging ++ [
-    reject (both (v "nCategories") (negate (v "categories"))) "Missing log categories"] ++
-    countLoop (v "nCategories") [
-      reject (either (negate (.index (v "categories") (v "k")))
-        (nev (call "strcmp" [.index (v "categories") (v "k"), .str "logStatus"]) (n 0))) "Unknown log category"] ++
-    [put "logging" (v "loggingOn"), ok]
+  | "fmi3SetDebugLogging" => require .logging ++ DebugLogging.code
   | "fmi3EnterInitializationMode" => require .enterInitialization ++ [
     reject (any [negate (finite (v "startTime")),
       both (v "stopTimeDefined") (either (negate (finite (v "stopTime"))) (lt (v "stopTime") (v "startTime")))])

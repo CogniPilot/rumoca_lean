@@ -1,5 +1,44 @@
 # Exact verification contract
 
+**Public logging configuration (full gate passed):**
+The emitted `fmi3SetDebugLogging` now uses an explicit `strcmp` result before
+checking each selected category. The shared C machine models every permitted
+comparison result; the validation loop checks arbitrary finite category arrays
+and writes the logging flag only after the entire array succeeds. This adds
+no allocation or numerical lowering to the FMI backend.
+
+The mandatory adapter proposition includes `DebugLogging.FunctionContract`:
+the actual function tree, certified printer, declared XML category and a
+prepared runtime contract. Its success, suppressed-error and logged-error
+branches derive the failure helper from the actual definition table and the
+immutable literal pool. Every modeled callback return and the no-return
+alternative remain explicit. Legal requests derive the requested flag and
+preserve every other memory cell, storage and immutable-memory guarantees.
+
+The owning C/FMI/compiler package gate passed on 1040 unchanged inputs,
+covering 58 new and five affected audit roots. The first attempt exposed
+missing direct unfolding in two existing structural proofs; those proofs were
+repaired without weakening their statements. The required
+`nix develop .#verification --command lake test` then passed on
+2026-09-15 at 00:18:22 UTC, with all 63 required roots, no unexpected axioms
+and no changed-module warnings or input drift. Evidence is in
+`build/c-factory/debug-logging/package-v2.*` and `full-gate-v1.*`.
+Only the three evidence documents change after the frozen full gate.
+
+The retained FMU changes only `sources/fmi3.c`, specifically the public logging
+setter; all other members, including the native library, are byte-identical
+to the preceding nominal-history artifact. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC and eFMI Production C are unchanged. Retained archives and member hashes
+are in `build/c-factory/debug-logging/artifacts-v1/` and its adjacent JSON record.
+The existing native FMI check covers the string-array ABI and the original
+logging policy on rejection; no new test suite was added.
+
+Mutable logging policy in complete initialization and ME/CS histories remains
+unfinished. Its isolated capability, storage and creation proofs are development
+evidence, not accepted history coverage. Remaining public calls, native/ABI
+correspondence and K02–K05 still block grammar expansion.
+
 **Nominal observations in complete histories (2026-09-14, full gate passed):**
 The nominal function contract now supplies the actual shared runtime on later
 literal-preserving heaps, including suppressed logging and all modeled logger

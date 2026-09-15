@@ -116,7 +116,11 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
     | exact StaticFactory.Printer.release_printable.2
     | skip
   all_goals
-    simp only [Runtime.makeInstance, Runtime.instancePrefix, Runtime.countLoop,
+    simp only [DebugLogging.code, DebugLogging.missing, DebugLogging.failure,
+      DebugLogging.validation, DebugLogging.iteration, DebugLogging.rejectNull,
+      DebugLogging.comparison, DebugLogging.rejectDifference, DebugLogging.category,
+      DebugLogging.finish, DebugLogging.writeLogging, CLoops.loop, CLoops.counterStep,
+      Runtime.instancePrefix, Runtime.countLoop,
       Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
       Runtime.scalarAccessCheck, Runtime.pointerCheck,
       Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
@@ -197,7 +201,6 @@ theorem helpers_printable : ∀ fn ∈ Runtime.helpers, FunctionPrintable typede
   all_goals simp only [FunctionPrintable, SignaturePrintable, ParameterPrintable,
     Runtime.setMode, Runtime.put, Runtime.mode, Runtime.log, Runtime.branch,
     Runtime.both, Runtime.field, Runtime.v, Runtime.n, Runtime.ret, Runtime.call,
-    CAtomicScan.function, CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   all_goals repeat first
     | exact instance_type

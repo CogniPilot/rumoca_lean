@@ -1,3 +1,4 @@
+import RumocaFMI3.DebugLoggingContract
 import RumocaFMI3.InitializationProtocol
 import RumocaFMI3.InitializationProtocolEnvironment
 import RumocaFMI3.InitializationSimulation
@@ -1708,3 +1709,59 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MENominalCalls.Memory.failure
 #audit axioms Rumoca.FMI3.MENominalCalls.Contract.quiet
 #audit axioms Rumoca.FMI3.MENominalCalls.execution
+
+#audit axioms Rumoca.FMI3.DebugLogging.iteration_closed
+#audit axioms Rumoca.FMI3.DebugLogging.category_eval
+#audit axioms Rumoca.FMI3.DebugLogging.null_category_step
+#audit axioms Rumoca.FMI3.DebugLogging.difference_step
+#audit axioms Rumoca.FMI3.DebugLogging.iteration_valid_equivalence
+#audit axioms Rumoca.FMI3.DebugLogging.entry_eval
+#audit axioms Rumoca.FMI3.DebugLogging.validation_prefix_equivalence
+#audit axioms Rumoca.FMI3.DebugLogging.validation_valid_equivalence
+#audit axioms Rumoca.FMI3.DebugLogging.suppressed_failure_contract
+#audit axioms Rumoca.FMI3.DebugLogging.logged_failure_contract
+#audit axioms Rumoca.FMI3.DebugLogging.iteration_invalid_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.category_cases
+#audit axioms Rumoca.FMI3.DebugLogging.validation_rejected_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.written_store
+#audit axioms Rumoca.FMI3.DebugLogging.written_frame
+#audit axioms Rumoca.FMI3.DebugLogging.written_storage
+#audit axioms Rumoca.FMI3.DebugLogging.missing_step
+#audit axioms Rumoca.FMI3.DebugLogging.declarations_reaches
+#audit axioms Rumoca.FMI3.DebugLogging.write_logging_step
+#audit axioms Rumoca.FMI3.DebugLogging.finish_reaches
+#audit axioms Rumoca.FMI3.DebugLogging.prepare_code
+#audit axioms Rumoca.FMI3.DebugLogging.Entries.readable
+#audit axioms Rumoca.FMI3.DebugLogging.code_success_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.code_unknown_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.code_missing_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.code_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.public_scope
+#audit axioms Rumoca.FMI3.DebugLogging.function_closed
+#audit axioms Rumoca.FMI3.DebugLogging.parameters_bound
+#audit axioms Rumoca.FMI3.DebugLogging.logging_guard_run
+#audit axioms Rumoca.FMI3.DebugLogging.entry_run
+#audit axioms Rumoca.FMI3.DebugLogging.null_run
+#audit axioms Rumoca.FMI3.DebugLogging.public_prefix
+#audit axioms Rumoca.FMI3.DebugLogging.public_null_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.call_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.call_success_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.written_flag
+#audit axioms Rumoca.FMI3.DebugLogging.call_success_returned
+#audit axioms Rumoca.FMI3.DebugLogging.described_category
+#audit axioms Rumoca.FMI3.DebugLogging.artifact_category
+#audit axioms Rumoca.FMI3.DebugLogging.legal_single_accepted
+#audit axioms Rumoca.FMI3.DebugLogging.legal_empty_null
+#audit axioms Rumoca.FMI3.DebugLogging.message_collected
+#audit axioms Rumoca.FMI3.DebugLogging.runtime_types
+#audit axioms Rumoca.FMI3.DebugLogging.runtime_library
+#audit axioms Rumoca.FMI3.DebugLogging.prepared_definitions
+#audit axioms Rumoca.FMI3.DebugLogging.prepared_literals
+#audit axioms Rumoca.FMI3.DebugLogging.runtime_suppressed_correct
+#audit axioms Rumoca.FMI3.DebugLogging.runtime_logged_correct
+#audit axioms Rumoca.FMI3.DebugLogging.runtime_null_correct
+#audit axioms Rumoca.FMI3.DebugLogging.prepared_correct
+#audit axioms Rumoca.FMI3.DebugLogging.legal_behaviors
+#audit axioms Rumoca.FMI3.DebugLogging.legal_returned
+#audit axioms Rumoca.FMI3.DebugLogging.function_eq
+#audit axioms Rumoca.FMI3.DebugLogging.rendered_contract

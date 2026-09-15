@@ -172,6 +172,10 @@ theorem declarations_correct (m : Solve.FMI3Model source) (signatures : List Sig
 
 macro "fmi_literal_calls" : tactic => `(tactic|
   simp [CLiteral.Lowering.CallsWellFormed, CLiteral.Lowering.CallHeadSafe,
+    DebugLogging.code, DebugLogging.missing, DebugLogging.failure,
+    DebugLogging.validation, DebugLogging.iteration, DebugLogging.rejectNull,
+    DebugLogging.comparison, DebugLogging.rejectDifference, DebugLogging.category,
+    DebugLogging.finish, DebugLogging.writeLogging, CLoops.loop, CLoops.counterStep,
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
     Runtime.fail, Runtime.branch, Runtime.ret, Runtime.v, Runtime.n,
     Runtime.call, Runtime.log, Runtime.ok, Runtime.put, Runtime.setMode,

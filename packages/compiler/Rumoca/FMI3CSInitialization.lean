@@ -46,7 +46,7 @@ theorem adapter_initialize_cs_history (contract : AdapterContract a adapter) :
             |Binary64.value (a.solve.run seed final.elapsed) - trajectory (Binary64.value final.time)| ≤
               (final.elapsed : ℝ) + |Binary64.value final.time - (Binary64.value args.start + (final.elapsed : ℝ))| := by
   obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, _, _, _, _, _, _, step⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, _, _, _, _, _, _, step, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E header objects firstBlock

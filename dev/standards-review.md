@@ -12,6 +12,41 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Public logging configuration: full gate passed.** The focused review of
+[FMI 3.0.2 §2.3.1 and §2.4.5](https://fmi-standard.org/docs/3.0.2/) confirms
+that a zero-length category list requires `NULL` and applies to all categories;
+nonempty selections must use declared names. The actual XML declares only
+`logStatus`. `DebugLogging.LegalRequest` states that caller obligation separately
+from C validation; `legal_behaviors` and `legal_returned` derive successful
+configuration and its exact memory frame. Invalid importer inputs and a missing
+callback have separately identified defensive behavior, without classifying
+them as legal standard requests.
+
+The emitted validation loop, mandatory function/source-artifact contract and
+owning-package audits passed. The required full
+`nix develop .#verification --command lake test` passed on
+2026-09-15 at 00:18:22 UTC, with 1040 unchanged inputs, all 63 required
+roots and no unexpected axioms or changed-module warnings. Evidence is in
+`build/c-factory/debug-logging/full-gate-v1.*`. Only the three evidence
+documents change after that frozen gate. Existing FMI boundary checks cover
+the string-array ABI, both interfaces and rejection before a flag change;
+the existing eFMI artifact and mutation controls also passed.
+
+Retained archives are in `build/c-factory/debug-logging/artifacts-v1/`.
+Only the FMU's public logging setter in `sources/fmi3.c` changes; the native
+library and other members are identical. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. There is no
+MLS or GALEC grammar, Solve numerical policy or eFMI emission change.
+Upstream Rumoca `41477d6f` retains the previously reviewed SPEC_0007, SPEC_0043
+and SPEC_0048 ownership rules; their unchanged hashes are recorded in
+`build/c-factory/logging-history/standards-review-v1.json`.
+
+Mutable logging histories, native ABI/stdlib correspondence, MISRA coverage
+and previous MLS/eFMI findings remain open. Isolated creation and memory-frame
+proofs support the next history work without establishing that composition.
+This focused acceptance does not close the recurring whole-subset checklist.
+**Stage decision: open; no grammar expansion.**
+
 Before extending the grammar or admitting a development profile to production,
 complete the following record for the **entire currently admitted subset**.
 Reuse unaffected evidence only after checking its dependencies; review changed
