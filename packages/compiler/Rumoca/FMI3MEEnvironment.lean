@@ -16,7 +16,7 @@ theorem adapter_me_environment (contract : AdapterContract a adapter) :
       AdapterPrinter.FunctionsContract a.solve.prepareFMI3 sigs adapter ∧
       MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool := by
   obtain ⟨sigs, unique, _, printed, _, functions, _, _, _, ready,
-    _, _, _, _, states, derivative, _, _, _, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
+    _, _, _, _, states, derivative, _, _, _, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   refine ⟨sigs, pool, made, printed, functions, ?_⟩
   exact ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,

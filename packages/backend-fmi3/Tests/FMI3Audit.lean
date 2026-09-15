@@ -1,3 +1,5 @@
+import RumocaFMI3.AbsentVariableContract
+import RumocaFMI3.AbsentVariableSelection
 import RumocaFMI3.InitializationProtocolEvaluation
 import RumocaFMI3.DiscreteEvaluationMetadata
 import RumocaFMI3.DiscreteEvaluationContract
@@ -2025,3 +2027,30 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.Result.evaluation_rejected
 #audit axioms Rumoca.FMI3.InitializationProtocol.evaluation_call
 #audit axioms Rumoca.FMI3.InitializationProtocol.evaluation_rejection_call
+
+#audit axioms Rumoca.FMI3.AbsentVariables.Absent.no_declaration
+#audit axioms Rumoca.FMI3.AbsentVariables.Absent.selection_empty
+#audit axioms Rumoca.FMI3.AbsentVariables.QuietContract.selection_call
+#audit axioms Rumoca.FMI3.AbsentVariables.artifact_absence
+#audit axioms Rumoca.FMI3.AbsentVariables.body_agrees
+#audit axioms Rumoca.FMI3.AbsentVariables.body_agrees_static
+#audit axioms Rumoca.FMI3.AbsentVariables.body_eq
+#audit axioms Rumoca.FMI3.AbsentVariables.described_absence
+#audit axioms Rumoca.FMI3.AbsentVariables.empty_behaviors
+#audit axioms Rumoca.FMI3.AbsentVariables.empty_body
+#audit axioms Rumoca.FMI3.AbsentVariables.family_correct
+#audit axioms Rumoca.FMI3.AbsentVariables.logged_correct
+#audit axioms Rumoca.FMI3.AbsentVariables.message_collected
+#audit axioms Rumoca.FMI3.AbsentVariables.nonempty_body
+#audit axioms Rumoca.FMI3.AbsentVariables.nonempty_prefix
+#audit axioms Rumoca.FMI3.AbsentVariables.null_behaviors
+#audit axioms Rumoca.FMI3.AbsentVariables.parameters_bound
+#audit axioms Rumoca.FMI3.AbsentVariables.prepared_correct
+#audit axioms Rumoca.FMI3.AbsentVariables.quiet_agreed
+#audit axioms Rumoca.FMI3.AbsentVariables.quiet_correct
+#audit axioms Rumoca.FMI3.AbsentVariables.quiet_static_correct
+#audit axioms Rumoca.FMI3.AbsentVariables.rendered_contract
+#audit axioms Rumoca.FMI3.AbsentVariables.selected_cardinalities_zero
+#audit axioms Rumoca.FMI3.AbsentVariables.signature_printable
+#audit axioms Rumoca.FMI3.AbsentVariables.suppressed_correct
+#audit axioms Rumoca.FMI3.AbsentVariables.value_type_printable

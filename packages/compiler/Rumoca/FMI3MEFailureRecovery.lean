@@ -93,7 +93,7 @@ theorem runtime_recovery (compiled : compile input = .ok a)
                 events = [⟨name, Logging.arguments environment category message⟩] ∧ status = .integer 3 ∧
                 Returned a.parsed.ast program objects owners heap after p clock reference addresses buffer) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready,
-    _, _, _, _, states, derivative, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := build.adapter
+    _, _, _, _, states, derivative, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,

@@ -43,7 +43,7 @@ theorem adapter_initialize_me_history (contract : AdapterContract a adapter) :
             candidate = Initialization.trajectory (Binary64.value args.start) (Binary64.value state.x)) ∧
           (∀ query, MEHistory.Outside p addresses query → after query = exited query) := by
   obtain ⟨signatures, unique, _, printed, _, _, _, _, _, poolReady,
-    _, _, _, _, _, _, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := contract
+    _, _, _, _, _, _, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, _, _, evaluationContract, _⟩ := contract
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp poolReady
   refine ⟨signatures, pool, made, printed, ?_⟩
   intro E objects firstBlock

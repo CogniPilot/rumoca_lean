@@ -1,3 +1,4 @@
+import RumocaFMI3.AbsentVariableContract
 import RumocaFMI3.EventIndicatorFunction
 import RumocaFMI3.DiscreteEvaluationContract
 import RumocaFMI3.StepContract
@@ -111,7 +112,8 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
     EventIndicatorCalls.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 EventIndicatorCalls.signature).render ∧
     DiscreteEvaluation.FunctionContract a.solve.prepareFMI3 sigs
-      (Runtime.function a.solve.prepareFMI3 DiscreteEvaluation.signature).render
+      (Runtime.function a.solve.prepareFMI3 DiscreteEvaluation.signature).render ∧
+    AbsentVariables.FamilyContract a.solve.prepareFMI3 sigs
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -143,6 +145,7 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (debugLogging : DebugLogging.signature ∈ sigs)
     (indicators : EventIndicatorCalls.signature ∈ sigs)
     (evaluation : DiscreteEvaluation.signature ∈ sigs)
+    (absent : ∀ ty write, AbsentVariables.signature ty write ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -171,7 +174,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     StepCalls.rendered_contract _ sigs unique numerical step,
     DebugLogging.rendered_contract _ sigs unique debugLogging,
     EventIndicatorCalls.rendered_contract _ sigs unique indicators,
-    DiscreteEvaluation.rendered_contract _ sigs unique evaluation⟩
+    DiscreteEvaluation.rendered_contract _ sigs unique evaluation,
+    AbsentVariables.family_correct _ sigs unique absent⟩
 
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table

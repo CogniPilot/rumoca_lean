@@ -253,7 +253,7 @@ theorem runtime_history (compiled : compile input = .ok a)
           (∀ stop, Interrupted program p addresses buffer heap actions stop →
             SourcePrefix a.solve capability enabled heap p addresses buffer reference clock actions stop) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
-    _, _, _, nominalContract, states, derivative, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, loggingContract, eventContract, evaluationContract⟩ := build.adapter
+    _, _, _, nominalContract, states, derivative, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, loggingContract, eventContract, evaluationContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩

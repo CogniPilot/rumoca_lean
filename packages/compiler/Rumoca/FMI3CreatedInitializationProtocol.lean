@@ -129,7 +129,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               CreatedSourceContract a.solve.prepareFMI3 program objects tag retained owners slot owner heap
                 (pool.install baseHeap firstBlock signed) live buffers kind actions final readers := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
-    _, _, _, nominals, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract, evaluationContract⟩ := build.adapter
+    _, _, _, nominals, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract, evaluationContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have getPrepared := Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made
   have setPrepared := Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made

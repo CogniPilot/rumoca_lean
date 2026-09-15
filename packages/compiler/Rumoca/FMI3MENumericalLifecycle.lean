@@ -100,7 +100,7 @@ theorem runtime_create_me_numerical_release (compiled : compile input = .ok a)
               (∀ q, ¬ p.InRecord q → (∀ name ∈ DiscreteCalls.names, q ≠ addresses name) →
                 q ≠ buffer → q ≠ AtomicSlots.address objects.flagsBlock slot → released q = heap q)) := by
   obtain ⟨sigs, unique, _, printed, _, functions, _, _, _, ready,
-    _, _, _, _, states, derivative, _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, _, _, evaluationContract⟩ := build.adapter
+    _, _, _, _, states, derivative, _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, _, _, evaluationContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have prepared : MEEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool :=
     ⟨StateEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique states.member made,

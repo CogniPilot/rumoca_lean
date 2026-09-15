@@ -1,3 +1,4 @@
+import Rumoca.FMI3AbsentVariableProofs
 import Rumoca.FMI3DiscreteEvaluationProofs
 import Rumoca.FMI3EventIndicatorProofs
 import Rumoca.FMI3CSMixedRun
@@ -374,3 +375,5 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.event_indicators_source
 
 #audit axioms Rumoca.FMI3.discrete_evaluation_source
+
+#audit axioms Rumoca.FMI3.absent_variables_source

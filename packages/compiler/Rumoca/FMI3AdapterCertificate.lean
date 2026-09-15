@@ -54,9 +54,9 @@ private def checkCharacterEquality (name : Ident) (left right : TSyntax `term) :
     let type ← instantiateMVars type
     let proof ← Meta.mkEqRefl (← instantiateMVars rhs)
     addDecl (.thmDecl { name := name.getId, levelParams := [], type, value := proof })
-  let axioms ← collectAxioms name.getId
-  unless axioms.isEmpty do
-    throwError "invalid character equality certificate: {axioms.toList}"
+  let collected ← collectAxioms name.getId
+  unless collected.isEmpty do
+    throwError "invalid character equality certificate: {collected.toList}"
 
 /-- Prove exact concatenation, including EOF, by composing checked segments.
 Lengths only propose input cursors: the kernel checks every split against the
@@ -96,9 +96,9 @@ private def certifyConcatenation (name : Name) (actual : Ident)
       exact (congrArg (fun rest : List Char => $piece ++ rest) $joined).trans (Eq.symm $split)))
     tail := next
     joined := nextEq
-  let axioms ← collectAxioms joined.getId
-  unless axioms.isEmpty do
-    throwError "invalid adapter concatenation certificate: {axioms.toList}"
+  let collected ← collectAxioms joined.getId
+  unless collected.isEmpty do
+    throwError "invalid adapter concatenation certificate: {collected.toList}"
   return joined
 
 private def quoteSignature (sig : CTree.Signature) : CommandElabM (TSyntax `term) := do
@@ -210,8 +210,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
           List.map_cons, List.map_nil, CString.join_toList, String.toList_append,
           String.toList_ofList, List.flatMap_cons, List.flatMap_nil] <;>
           decide +kernel))
-    let axioms ← collectAxioms checked.getId
-    for dependency in axioms do
+    let collected ← collectAxioms checked.getId
+    for dependency in collected do
       unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
         throwError "invalid printer certificate for {function.signature.name}: {dependency}"
     trees := trees.push tree
@@ -334,6 +334,10 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         simp [FMI3.EventIndicatorCalls.signature]
       · change FMI3.DiscreteEvaluation.signature ∈ [$sigTerms,*]
         simp [FMI3.DiscreteEvaluation.signature]
+      · intro ty write
+        cases ty <;> cases write <;> change FMI3.AbsentVariables.signature _ _ ∈ [$sigTerms,*]
+        all_goals simp [FMI3.AbsentVariables.signature, FMI3.AbsentVariables.VariableType.name,
+          FMI3.AbsentVariables.VariableType.hasSizes]
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩

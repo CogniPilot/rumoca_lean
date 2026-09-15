@@ -1,5 +1,38 @@
 # Exact verification contract
 
+**Absent-variable accessors (2026-09-15, full gate passed):**
+
+A shared contract covers all 24 emitted Get/Set functions for Float32,
+integer, Boolean, String and Binary types absent from the current model.
+Empty calls preserve the whole heap. Null/nonempty rejection and every modeled
+logger outcome use the actual function table and prepared diagnostic pool.
+Binary's separate size array is retained. The actual XML proof also excludes
+Enumeration, which shares the Int64 APIs; valid typed selections and consistent
+counts derive the successful call without assuming its returned result.
+
+The mandatory adapter contract and fixed checker bind every exact signature,
+printed function and runtime contract to the same compiled source, numerical C
+and XML. Existing source/history theorem statements remain intact. The owning
+core/C/FMI/compiler checks passed at 09:27:21 UTC; the required
+`nix develop .#verification --command lake test` passed at 10:12:18 UTC on
+1094 unchanged inputs. All 188 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. The audit adds 27 registrations and
+removes none. The initial failed build and unchanged-statement fixes remain
+recorded in `package-v1.*` and `additional-consumers-v1.json`. Evidence is in `build/c-factory/empty-access/`: `package-v2.*`,
+`full-gate-v1.*`, `integration-v2.json`, `review-v4.json` and `artifacts-v1.*`.
+
+Every retained FMU member, including the native library, is unchanged. The
+eFMU changes only generation identities and dependent references/checksums in
+three manifests. Numerical C, GALEC and Production C remain unchanged. Existing
+artifact/native/rejection checks passed; no emitter, solver, source grammar or
+test suite changed. Only these three evidence documents change after the gate.
+
+This accepts the raw public-call and same-source artifact contracts. It does
+not authorize null arguments, setters after termination or arbitrary importer
+histories. CS getter-after-setter ordering, complete history composition and
+standards correspondence remain open, together with native/ABI, provenance,
+concurrency and MISRA obligations. K02–K05 still block grammar expansion.
+
 **Evaluation during initialization histories (2026-09-15, full gate passed):**
 
 Evaluation success and rejection now compose through the initialization
