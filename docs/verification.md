@@ -1,5 +1,38 @@
 # Exact verification contract
 
+**Zero-event getter (2026-09-15, full gate passed):** The mandatory
+adapter proposition and fixed checker require the printed/prepared
+`fmi3GetEventIndicators` contract. Its source theorem joins the actual C file,
+XML zero-event count and the same Solve product. Success preserves the whole
+heap; rejection retains every modeled logger return and no-return alternative.
+The ME call theorem derives the numerical/caller memory frame under the
+existing universal callback policy.
+
+The owning C/FMI/compiler checks passed at 05:43:02 UTC; the required
+`nix develop .#verification --command lake test` passed at 06:26:27 UTC on
+1078 unchanged inputs. All 40 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Six existing consumers were updated to
+unpack the strengthened adapter conjunction; their statements and audit roots
+are preserved. Failed integration evidence remains in `package-v1.*`.
+Accepted evidence is in `build/c-factory/event-indicators/package-v2.*`,
+`full-gate-v1.*` and `integration-fixes-v1.json`.
+
+Every retained FMU member, including the native library, is byte-identical to
+the accepted CS checkpoint. Only generation identities and dependent
+references/checksums in three eFMU manifests change. Numerical C, GALEC and
+Production C are unchanged. See `build/c-factory/event-indicators/artifacts-v1/`
+and its JSON record. The existing artifact, importer, native and mutation
+checks passed; no test suite was added. Only these three evidence documents
+change after the frozen gate.
+
+Initialization and mixed ME history composition remain pending integration.
+Their isolated follow-up proofs are in `build/c-factory/event-histories/`;
+component checks do not substitute for owning-module and artifact acceptance.
+The standards review distinguishes normative valid calls from the body's
+additional null-pointer tolerance. No grammar, numerical lowering or emitter
+change is admitted. Native/ABI correspondence, remaining public calls,
+reset-policy review and K02–K05 remain open.
+
 **CS simulation logging (2026-09-15, full gate passed):** The recurring
 CS protocol and initialization-access/protocol continuations now use one mixed
 numerical/logging history. Source-bound creation, initialization, simulation,

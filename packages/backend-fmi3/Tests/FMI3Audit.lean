@@ -1,3 +1,4 @@
+import RumocaFMI3.MEEventIndicatorExecution
 import RumocaFMI3.CSMixedExecution
 import RumocaFMI3.CSMixedPrefixes
 import RumocaFMI3.CSMixedLifecycle
@@ -1964,3 +1965,28 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.CSMixedRun.trace_correct
 
 #audit axioms Rumoca.FMI3.CSProtocol.Cycle.Admitted.can_finish
+
+#audit axioms Rumoca.FMI3.EventIndicatorAccess.request_coverage
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.QuietContract.get_refines
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.accepted_run
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.allowed_iff
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.behaviors
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.body_eq
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.failure_message_collected
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.failure_prefix
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.failure_unique
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.invalid_run
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.null_behaviors
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.parameters_bound
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.query_cases
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.reaches
+#audit axioms Rumoca.FMI3.EventIndicatorCalls.rendered_contract
+#audit axioms Rumoca.FMI3.EventIndicatorEnvironment.body_agrees
+#audit axioms Rumoca.FMI3.EventIndicatorEnvironment.logged_correct
+#audit axioms Rumoca.FMI3.EventIndicatorEnvironment.prepared_correct
+#audit axioms Rumoca.FMI3.EventIndicatorEnvironment.quiet_correct
+#audit axioms Rumoca.FMI3.EventIndicatorEnvironment.suppressed_correct
+#audit axioms Rumoca.FMI3.MEEventIndicatorCalls.Contract.quiet
+#audit axioms Rumoca.FMI3.MEEventIndicatorCalls.Memory.failure
+#audit axioms Rumoca.FMI3.MEEventIndicatorCalls.Memory.success
+#audit axioms Rumoca.FMI3.MEEventIndicatorCalls.execution

@@ -11,6 +11,33 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Zero-event getter (full gate passed):** Its mandatory adapter/checker
+contract now binds the actual public C function, prepared runtime, XML zero-event
+count and the same source/Solve product. Complete ME call-memory behavior covers
+success, rejection and every modeled logger alternative.
+
+The owning C/FMI/compiler checks passed at 05:43:02 UTC; the required
+`nix develop .#verification --command lake test` passed at 06:26:27 UTC on
+1078 unchanged inputs. All 40 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Six existing consumers were updated to
+unpack the strengthened adapter conjunction; their statements and audit roots
+are preserved. Failed integration evidence remains in `package-v1.*`.
+Accepted evidence is in `build/c-factory/event-indicators/package-v2.*`,
+`full-gate-v1.*` and `integration-fixes-v1.json`.
+
+Every retained FMU member, including the native library, is byte-identical to
+the accepted CS checkpoint. Only generation identities and dependent
+references/checksums in three eFMU manifests change. Numerical C, GALEC and
+Production C are unchanged. See `build/c-factory/event-indicators/artifacts-v1/`
+and its JSON record. The existing artifact, importer, native and mutation
+checks passed; no test suite was added. Only these three evidence documents
+change after the frozen gate.
+
+The next increment composes this call into initialization and mixed ME
+histories. Its core, creation/release and resource-handoff drafts have passed
+isolated checks; continuation integration and the required artifact gate remain.
+K02–K05 and the whole-subset standards review still block grammar expansion.
+
 **CS simulation logging (full gate passed):** Recurring source-bound
 creation, initialization, simulation, reset and release now use the mixed
 numerical/logging history. Access/protocol continuations and unified restart
@@ -31,10 +58,8 @@ Every retained FMU member is byte-identical to the accepted ME checkpoint.
 Only generation identities and dependent references/checksums in three eFMU
 manifests change. Numerical C, GALEC and Production C are unchanged; see
 `build/c-factory/cs-simulation-logging/artifacts-v1/` and its JSON record.
-K02–K05 and the whole-subset standards gate remain open. The next public call
-is the existing zero-event getter: its source/printer/runtime and ME memory
-proofs have an isolated draft, but mandatory checker integration, complete
-history composition and artifact acceptance are still required.
+K02–K05 and the whole-subset standards gate remain open. The zero-event getter's mandatory checker and artifact acceptance
+are recorded above. Complete history composition remains the next increment.
 
 **ME simulation logging (full gate passed):** All remaining
 initialization-access/protocol continuation and restart entry points have been

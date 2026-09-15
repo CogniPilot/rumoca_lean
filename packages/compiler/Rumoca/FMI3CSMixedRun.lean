@@ -99,7 +99,7 @@ theorem runtime_history (compiled : compile input = .ok a)
               SlotOwners.Represents objects.flagsBlock middle owners ∧ CReadOnly.Preserves heap middle ∧
               (∀ q, CSRun.Protected objects buffers q → CSRun.Outside p buffers q → middle q = heap q)) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, _, _, _, _,
-    initialization, _, _, _, _, _, _, _, _, stepContract, loggingContract⟩ := build.adapter
+    initialization, _, _, _, _, _, _, _, _, stepContract, loggingContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have step := stepContract.prepared pool made
   have logging := loggingContract.prepared pool made

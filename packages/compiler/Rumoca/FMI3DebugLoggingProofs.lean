@@ -21,7 +21,7 @@ theorem debug_logging_source (compiled : compile input = .ok a)
         DebugLogging.FunctionContract a.solve.prepareFMI3 sigs text) ∧
       DebugLogging.PreparedContract a.solve.prepareFMI3 sigs pool := by
   obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, logging⟩ := contract.adapter
+    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, logging, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   obtain ⟨before, after, located⟩ := LiteralPreparation.rendered_member a.solve.prepareFMI3 sigs
     DebugLogging.signature logging.member

@@ -73,6 +73,44 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Zero-event getter: full gate passed
+
+The source theorem binds the mandatory printed/prepared public function,
+actual adapter and XML zero-event count to the same source/Solve product.
+The independent lifecycle predicate covers the reviewed ME modes under FMI
+3.0.2 §§2.3.3, 2.3.5, 2.3.8 and 3.2.1; §2.4.8 supplies the event-count/order
+obligation. The valid empty query preserves the whole heap. Failure preserves
+the actual guard priority, Error result and all modeled logger alternatives
+under the stated caller and callback memory policies.
+
+FMI §2.2.1's general pointer rule remains separate: the additional tolerance
+of a null output pointer is defensive implementation behavior, not a claimed
+normative importer permission. Queries following Error remain diagnostic-only.
+No event grammar, solver policy, metadata capability or emitter change is added.
+Pinned MLS 3.7 and eFMI 1.0.0 Beta 1 findings carry forward unchanged.
+
+The owning C/FMI/compiler checks passed at 05:43:02 UTC; the required
+`nix develop .#verification --command lake test` passed at 06:26:27 UTC on
+1078 unchanged inputs. All 40 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Six existing consumers were updated to
+unpack the strengthened adapter conjunction; their statements and audit roots
+are preserved. Failed integration evidence remains in `package-v1.*`.
+Accepted evidence is in `build/c-factory/event-indicators/package-v2.*`,
+`full-gate-v1.*` and `integration-fixes-v1.json`.
+
+Every retained FMU member, including the native library, is byte-identical to
+the accepted CS checkpoint. Only generation identities and dependent
+references/checksums in three eFMU manifests change. Numerical C, GALEC and
+Production C are unchanged. See `build/c-factory/event-indicators/artifacts-v1/`
+and its JSON record. The existing artifact, importer, native and mutation
+checks passed; no test suite was added. Only these three evidence documents
+change after the frozen gate.
+
+Initialization/ME history composition, remaining public functions, native/ABI
+correspondence, reset policy and MISRA closure remain open. The follow-up
+history proofs have isolated development evidence; full conformance is not
+established. **Stage decision: open; no grammar expansion.**
+
 ### CS simulation logging: full gate passed
 
 Recurring initialization/simulation/reset/release, raw call records, source

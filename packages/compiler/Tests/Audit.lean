@@ -1,3 +1,4 @@
+import Rumoca.FMI3EventIndicatorProofs
 import Rumoca.FMI3CSMixedRun
 import Rumoca.FMI3DebugLoggingProofs
 import Rumoca.FMI3InitializationProtocol
@@ -367,3 +368,6 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.CSMixedRun.Trace.stopped_source
 
 #audit axioms Rumoca.FMI3.CSMixedRun.runtime_history
+
+#audit axioms Rumoca.FMI3.event_indicators_me_source
+#audit axioms Rumoca.FMI3.event_indicators_source

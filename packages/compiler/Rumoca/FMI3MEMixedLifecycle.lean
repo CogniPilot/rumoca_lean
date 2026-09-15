@@ -117,7 +117,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot final.control.mode q = heap q))) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative,
-    _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, loggingContract⟩ := build.adapter
+    _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, loggingContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩

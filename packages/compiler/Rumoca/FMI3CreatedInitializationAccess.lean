@@ -92,7 +92,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               (∀ q, ¬ p.InRecord q → Outside buffers q → q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization) q = heap q) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready, _, _, _, nominalContract, states, derivative, getter, setter,
-    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging⟩ := build.adapter
+    initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have countPrepared : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
