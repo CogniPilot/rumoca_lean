@@ -23,7 +23,7 @@ theorem absent_variables_source (compiled : compile input = .ok a)
           AbsentVariables.FunctionContract a.solve.prepareFMI3 sigs ty write text) ∧
         AbsentVariables.PreparedContract a.solve.prepareFMI3 sigs ty write pool := by
   obtain ⟨sigs, _, _, printed, _, grammar, _, _, _, ready,
-    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, family⟩ := contract.adapter
+    _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, family, _⟩ := contract.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   refine ⟨compiled, contract.numerical, AbsentVariables.artifact_absence _ _ contract.metadata,
     sigs, pool, made, printed, grammar, ?_⟩

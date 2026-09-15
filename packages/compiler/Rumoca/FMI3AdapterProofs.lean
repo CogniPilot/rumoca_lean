@@ -1,3 +1,4 @@
+import RumocaFMI3.CapabilityRejectionFamily
 import RumocaFMI3.AbsentVariableContract
 import RumocaFMI3.EventIndicatorFunction
 import RumocaFMI3.DiscreteEvaluationContract
@@ -113,7 +114,8 @@ def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
       (Runtime.function a.solve.prepareFMI3 EventIndicatorCalls.signature).render ∧
     DiscreteEvaluation.FunctionContract a.solve.prepareFMI3 sigs
       (Runtime.function a.solve.prepareFMI3 DiscreteEvaluation.signature).render ∧
-    AbsentVariables.FamilyContract a.solve.prepareFMI3 sigs
+    AbsentVariables.FamilyContract a.solve.prepareFMI3 sigs ∧
+    CapabilityRejection.AllContract a.solve.prepareFMI3 sigs
 
 theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (unique : ((LiteralPreparation.functions a.solve.prepareFMI3 sigs).map
@@ -146,6 +148,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     (indicators : EventIndicatorCalls.signature ∈ sigs)
     (evaluation : DiscreteEvaluation.signature ∈ sigs)
     (absent : ∀ ty write, AbsentVariables.signature ty write ∈ sigs)
+    (capabilities : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs)
+    (scheduled : ScheduledCreation.signature ∈ sigs)
     (pool : (LiteralPreparation.prepare a.solve.prepareFMI3 sigs).isSome = true)
     (printed : Runtime.render a.solve.prepareFMI3 sigs = adapter) : AdapterContract a adapter :=
   ⟨sigs, unique, member, printed,
@@ -175,7 +179,8 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     DebugLogging.rendered_contract _ sigs unique debugLogging,
     EventIndicatorCalls.rendered_contract _ sigs unique indicators,
     DiscreteEvaluation.rendered_contract _ sigs unique evaluation,
-    AbsentVariables.family_correct _ sigs unique absent⟩
+    AbsentVariables.family_correct _ sigs unique absent,
+    CapabilityRejection.all_correct _ sigs unique capabilities scheduled⟩
 
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table

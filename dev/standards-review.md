@@ -73,6 +73,75 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Unsupported public FMI calls: full gate passed
+
+The mandatory adapter proposition includes all 25 existing generic rejection
+APIs and the separate Scheduled Execution creation rejection. Shared proofs
+derive typed call entry, null/quiet/logged behavior, every modeled callback
+return and the blocked alternative. Prepared contracts construct the diagnostic
+pool and preserve readonly strings. Exact signatures, printers and fragments
+use the existing C printer certificates. The fixed actual-file checker derives
+membership in the same header signature list before constructing the contract.
+
+Two source consequences connect the same compiled source, numerical C, XML
+capability/declaration omissions, adapter bytes, prepared table and literal
+pool. They require no extra adapter assumption. The three affected existing
+source/history consumers retain their theorem statements. Six backend modules
+and one compiler proof module add 35 audit registrations; none are removed.
+
+The owning core/C/FMI/compiler checks passed at 11:19:44 UTC; the required
+`nix develop .#verification --command lake test` passed at 12:06:06 UTC on
+1103 unchanged inputs. All 418 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Evidence is in
+`build/c-factory/public-api-inventory/`: `package-v1.*`, `full-gate-v1.*`,
+`integration-v1.json`, `review-v5.json` and `artifacts-v1.*`.
+
+Every retained FMU member, including the native library, is unchanged. The
+eFMU changes only generation identities and dependent references/checksums in
+three manifests. Numerical C, GALEC and Production C remain unchanged. Existing
+artifact/native/rejection checks passed; no grammar, runtime emitter, solver,
+metadata behavior or test suite changed. Only these three evidence documents
+change after the frozen gate.
+
+These are raw execution contracts. XML omissions do not establish that every
+empty Clock, interval or output-derivative request must be rejected. Those
+standards findings and complete legal-history correspondence remain open,
+together with native/ABI, full provenance, concurrency and MISRA obligations.
+K02–K05 still block grammar expansion. No full FMI/eFMI conformance or
+CompCert-level whole-compiler claim follows from this increment.
+
+The next correction is SR09: empty Float64 and absent-type setters currently
+use the getter lifecycle guard and return OK after termination. Four checked
+review roots establish this behavior for both interface kinds and all absent
+types, including nonnull array pointers; the source consequence obtains the
+implementation from the mandatory artifact contract. Evidence is in
+`empty-setter-review-v1.*` and `public-coverage-review-v2.json`. Correct the
+setter endpoint guard and carry complete success/rejection behavior through
+the existing contracts and histories before closing the standards finding.
+
+The pinned [FMI 3.0.2 §§2.2.1, 2.2.7.2, 2.2.7.4, 2.2.8.4,
+2.2.9, 2.2.12, 2.3.6–2.3.7, 2.4.2 and 4.1.2](https://fmi-standard.org/docs/3.0.2/)
+review separates capability flags, variable domains, lifecycle restrictions
+and defensive calls. Clock and empty output-derivative findings remain open.
+Pinned MLS/eFMI findings carry forward. **Stage decision: open.**
+
+### SR09 — open: empty setters use the getter lifecycle guard
+
+[FMI 3.0.2 §2.3.8](https://fmi-standard.org/docs/3.0.2/#Terminated) lists
+final-value getters in Terminated, not setters. The implemented empty
+Float64 and absent-type setter paths instead use `modeGuard .get`.
+The kernel-checked review witness derives OK with the unchanged heap
+for a represented terminated instance and nonnull array pointers.
+This is outside the reviewed setter endpoint policy. The prose-to-
+predicate correspondence remains a standards-review obligation.
+
+**Close with:** a general setter endpoint rule, separate from the
+per-variable `setStart` domain; corrected C guards; complete empty
+success and rejection contracts with all modeled callbacks; updated
+source/history composition and actual-artifact acceptance. Retain legal
+empty calls in CS Step Mode. Do not hide the case by adding a theorem
+premise or treating a getter guard as setter permission.
+
 ### Absent-variable initialization histories: full gate passed
 
 The initialization protocol includes all 24 existing absent-variable accessors.

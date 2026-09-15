@@ -1,3 +1,5 @@
+import RumocaFMI3.CapabilityRejectionFamily
+import RumocaFMI3.CapabilityMetadata
 import RumocaFMI3.InitializationProtocolAbsent
 import RumocaFMI3.AbsentVariableRequests
 import RumocaFMI3.AbsentVariableContract
@@ -2064,3 +2066,38 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.absent_empty_call
 #audit axioms Rumoca.FMI3.InitializationProtocol.Result.absent_rejected
 #audit axioms Rumoca.FMI3.InitializationProtocol.absent_rejection_call
+
+-- Existing unsupported public calls, their printers and actual-source contracts.
+#audit axioms Rumoca.FMI3.CapabilityRejection.locals_instance
+#audit axioms Rumoca.FMI3.CapabilityRejection.arguments_exist
+#audit axioms Rumoca.FMI3.CapabilityRejection.locals_fresh
+#audit axioms Rumoca.FMI3.CapabilityRejection.parameters_bound
+#audit axioms Rumoca.FMI3.CapabilityRejection.nonnull_body
+#audit axioms Rumoca.FMI3.CapabilityRejection.failure_prefix
+#audit axioms Rumoca.FMI3.CapabilityRejection.null_body
+#audit axioms Rumoca.FMI3.CapabilityRejection.code_agrees
+#audit axioms Rumoca.FMI3.CapabilityRejection.null_call
+#audit axioms Rumoca.FMI3.CapabilityRejection.suppressed_call
+#audit axioms Rumoca.FMI3.CapabilityRejection.logged_call
+#audit axioms Rumoca.FMI3.CapabilityRejection.failures_correct
+#audit axioms Rumoca.FMI3.CapabilityRejection.message_collected
+#audit axioms Rumoca.FMI3.CapabilityRejection.prepared_correct
+#audit axioms Rumoca.FMI3.CapabilityRejection.rendered_contract
+#audit axioms Rumoca.FMI3.ScheduledCreation.scope
+#audit axioms Rumoca.FMI3.ScheduledCreation.body
+#audit axioms Rumoca.FMI3.ScheduledCreation.arguments_converted
+#audit axioms Rumoca.FMI3.ScheduledCreation.call_entry
+#audit axioms Rumoca.FMI3.ScheduledCreation.quiet_call
+#audit axioms Rumoca.FMI3.ScheduledCreation.logged_call
+#audit axioms Rumoca.FMI3.ScheduledCreation.message_collected
+#audit axioms Rumoca.FMI3.ScheduledCreation.prepared_correct
+#audit axioms Rumoca.FMI3.ScheduledCreation.signature_printable
+#audit axioms Rumoca.FMI3.ScheduledCreation.rendered_contract
+#audit axioms Rumoca.FMI3.CapabilityMetadata.described
+#audit axioms Rumoca.FMI3.CapabilityMetadata.no_clock_or_structural_parameter
+#audit axioms Rumoca.FMI3.CapabilityMetadata.artifact
+#audit axioms Rumoca.FMI3.CapabilityRejection.routing
+#audit axioms Rumoca.FMI3.CapabilityRejection.profiles
+#audit axioms Rumoca.FMI3.CapabilityRejection.signatures_printable
+#audit axioms Rumoca.FMI3.CapabilityRejection.family_correct
+#audit axioms Rumoca.FMI3.CapabilityRejection.all_correct

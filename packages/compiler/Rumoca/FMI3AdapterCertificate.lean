@@ -338,6 +338,10 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
         cases ty <;> cases write <;> change FMI3.AbsentVariables.signature _ _ ∈ [$sigTerms,*]
         all_goals simp [FMI3.AbsentVariables.signature, FMI3.AbsentVariables.VariableType.name,
           FMI3.AbsentVariables.VariableType.hasSizes]
+      · change ∀ sig ∈ FMI3.CapabilityRejection.signatures, sig ∈ [$sigTerms,*]
+        simp [FMI3.CapabilityRejection.signatures]
+      · change FMI3.ScheduledCreation.signature ∈ [$sigTerms,*]
+        simp [FMI3.ScheduledCreation.signature]
       · exact $poolReady
       · exact $rendered))
   return ⟨theoremId, artifact, compiled⟩
