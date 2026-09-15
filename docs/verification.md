@@ -1,5 +1,41 @@
 # Exact verification contract
 
+**CS simulation logging (2026-09-15, full gate passed):** The recurring
+CS protocol and initialization-access/protocol continuations now use one mixed
+numerical/logging history. Source-bound creation, initialization, simulation,
+reset and release retain the last successful logging update, raw call returns,
+numerical source observations and stopped prefixes. The numerical call proofs
+remain shared components; the two fixed-logging restart wrappers are replaced
+by one theorem over the mixed history.
+
+Original borrowed category arrays and strings are carried through preceding
+calls. Their write separation and universal callback policies remain explicit
+host-profile conditions, including while logging is disabled. Expected return
+statuses and final flags are derived from actual executions. No future readable
+heap or selected callback result replaces that derivation. Shared initialization
+retention/configuration facts now live in the common access storage module.
+
+The owning C/FMI/compiler checks passed at 04:46:54 UTC. The required
+`nix develop .#verification --command lake test` passed at 05:28:57 UTC on
+1071 unchanged inputs. All 69 selected audit roots passed, with no unexpected
+axioms, changed-module warnings or input drift. Earlier failed package attempts
+are retained; missing direct imports and an extra namespace terminator were
+fixed. The five original CS numerical interruption roots remain registered,
+and the generalized handoff/restart roots replace their former wrappers
+without weakening the contracts or axiom whitelist. Evidence is in
+`build/c-factory/cs-simulation-logging/package-v4.*` and `full-gate-v1.*`.
+Only the three evidence documents change after the frozen full gate.
+
+Every retained FMU member, including the native library, is byte-identical to
+the accepted ME checkpoint. The eFMU changes only generation identities and
+dependent references/checksums in three manifests. Numerical C, GALEC and
+Production C are unchanged. Archives and comparisons are in
+`build/c-factory/cs-simulation-logging/artifacts-v1/` and its adjacent JSON
+record. Existing artifact, importer, native and mutation checks passed; no
+test suite was added. Reset logging policy, remaining public calls, native/ABI
+correspondence and K02–K05 retain their stated review limits. This acceptance
+adds no grammar or emitter change and does not establish full conformance.
+
 **ME simulation logging (2026-09-15, full gate passed):** The existing ME
 history implementation now includes initialization-access and protocol continuations,
 restart, source observations, stopped-prefix flags and recurring source-bound
@@ -27,8 +63,8 @@ and dependent references/checksums in three manifests. Numerical C, GALEC and
 Production C are unchanged. Archives and comparisons are in
 `build/c-factory/simulation-logging/artifacts-v1/` and its adjacent JSON record.
 The existing artifact, importer, native and mutation checks passed; no test
-suite was added. Mutable CS histories and K02–K05 remain open; no grammar or
-emitter changed. Reset logging policy and native/ABI correspondence retain
+suite was added. The CS checkpoint above accepts the later mixed CS histories;
+K02–K05 remain open. No grammar or emitter changed. Reset logging policy and native/ABI correspondence retain
 their stated review limits; this acceptance is not full standards conformance.
 
 **Mutable logging during initialization (2026-09-15, full gate passed):**
@@ -90,9 +126,9 @@ no new test suite was added.
 
 The subsequent ME checkpoint above accepts logging interleavings during ME
 simulation, including exact flags after completed and stopped prefixes and
-recurring source-bound lifetimes. Mutable CS histories still require complete
-source/lifetime composition and their own artifact acceptance. K02–K05 still
-block grammar expansion.
+recurring source-bound lifetimes. The CS checkpoint above supplies the later
+CS source/lifetime composition and artifact acceptance. K02–K05 still block
+grammar expansion.
 
 **Public logging configuration (full gate passed):**
 The emitted `fmi3SetDebugLogging` now uses an explicit `strcmp` result before

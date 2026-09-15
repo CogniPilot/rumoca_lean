@@ -11,6 +11,31 @@ percentage of semantic coverage.
 
 ## Current position
 
+**CS simulation logging (full gate passed):** Recurring source-bound
+creation, initialization, simulation, reset and release now use the mixed
+numerical/logging history. Access/protocol continuations and unified restart
+retain raw records, source observations, stopped prefixes and the last
+successful flag update. Original borrowed inputs and universal callback memory
+policies remain explicit host-profile obligations.
+
+The owning C/FMI/compiler checks passed at 04:46:54 UTC; the required
+`nix develop .#verification --command lake test` passed at 05:28:57 UTC on
+1071 unchanged inputs. All 69 selected roots passed without unexpected axioms,
+changed-module warnings or input drift. Earlier failed integration attempts
+are retained; their fixes preserve the existing numerical interruption audits
+and generalize the handoff/restart contracts. Evidence is in
+`build/c-factory/cs-simulation-logging/package-v4.*` and `full-gate-v1.*`.
+Only the three evidence documents change after the frozen gate.
+
+Every retained FMU member is byte-identical to the accepted ME checkpoint.
+Only generation identities and dependent references/checksums in three eFMU
+manifests change. Numerical C, GALEC and Production C are unchanged; see
+`build/c-factory/cs-simulation-logging/artifacts-v1/` and its JSON record.
+K02–K05 and the whole-subset standards gate remain open. The next public call
+is the existing zero-event getter: its source/printer/runtime and ME memory
+proofs have an isolated draft, but mandatory checker integration, complete
+history composition and artifact acceptance are still required.
+
 **ME simulation logging (full gate passed):** All remaining
 initialization-access/protocol continuation and restart entry points have been
 ported. Its prepared logging contract comes from the same source-bound runtime
@@ -27,9 +52,9 @@ Retained FMU members are all byte-identical to the initialization checkpoint.
 The eFMU changes only generation identities and dependent references/checksums
 in three manifests; numerical C, GALEC and Production C are unchanged.
 See `build/c-factory/simulation-logging/artifacts-v1/` and its JSON record.
-Mutable CS histories still require complete source/lifetime composition and
-their own artifact acceptance; the prepared CS logging call alone does not
-establish them. K02–K05 and the whole-subset compliance gate remain open.
+The CS checkpoint above accepts the later complete source/lifetime composition
+and its own artifact gate; the prepared CS logging call alone did not establish
+that guarantee. K02–K05 and the whole-subset compliance gate remain open.
 
 **Mutable logging in initialization histories (full gate passed):**
 Logging requests now use the existing raw action, reference transition and
@@ -74,22 +99,14 @@ obligations; this acceptance does not establish unrestricted FMI conformance.
 
 Remaining work, in dependency order:
 
-1. Complete mutable CS simulation histories. The isolated draft checks actual
-   mixed calls, raw per-call records, source observations, stopped-prefix flags,
-   release and the initialization handoff. Recurring protocol definitions and
-   interruption/prefix helpers are checked; recurring correctness and the
-   source-bound factory/runtime theorem remain unfinished. Evidence is in
-   `build/c-factory/simulation-logging/cs-mixed-v17.*` (50 selected roots).
-   This draft is not integrated or accepted production coverage.
-2. Port the remaining CS initialization-access and protocol/restart entry
-   points to the same capability and exact-update contracts. Preserve all
-   existing raw statuses, reset checkpoints and source observations, and
-   derive original borrowed inputs through actual factory and runtime frames.
-3. Integrate the complete CS slice into its owning packages, audit all
-   affected roots, and run the required full artifact gate. No future readable
-   heap, selected callback return or unchanged factory flag may replace a proof.
-4. Complete the remaining public-call, native/ABI and MISRA obligations, then
-   rerun the whole-subset MLS/FMI/eFMI checklist and close K02–K05 before growth.
+1. Finish the existing zero-event getter's mandatory adapter/checker contract
+   and source/XML binding, then compose initialization and ME histories with
+   derived memory invariants. Review legal versus defensive calls explicitly.
+2. Complete the remaining emitted public-call families, including capability
+   rejection and other variable-type accessors, using reusable call contracts.
+   Retain every raw return, callback alternative, recovery state and origin.
+3. Complete the native/ABI, complete artifact/provenance and MISRA obligations,
+   then rerun the whole-subset MLS/FMI/eFMI checklist. Close K02–K05 before growth.
 
 **Public logging configuration (full gate passed):**
 The emitted setter and mandatory actual adapter contract now include the

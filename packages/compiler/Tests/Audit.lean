@@ -1,3 +1,4 @@
+import Rumoca.FMI3CSMixedRun
 import Rumoca.FMI3DebugLoggingProofs
 import Rumoca.FMI3InitializationProtocol
 import Rumoca.FMI3CSProtocolRuntime
@@ -318,8 +319,7 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.InitializationProtocol.restart_source
 #audit axioms Rumoca.FMI3.InitializationProtocol.runtime_restart_source
 #audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_me
-#audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_cs_logged
-#audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_cs_suppressed
+#audit axioms Rumoca.FMI3.InitializationProtocol.restart_after_cs
 #audit axioms Rumoca.FMI3.CSProtocol.Ready.initialization
 #audit axioms Rumoca.FMI3.CSProtocol.Ready.simulation
 #audit axioms Rumoca.FMI3.CSProtocol.CycleContract.completed
@@ -357,3 +357,13 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.nominals_runtime_source
 
 #audit axioms Rumoca.FMI3.debug_logging_source
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Execution.recorded_source
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.completed_source
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.recorded_source
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.stopped_source
+
+#audit axioms Rumoca.FMI3.CSMixedRun.runtime_history

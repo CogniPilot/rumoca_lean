@@ -1,17 +1,14 @@
 import Rumoca.FMI3CreatedInitializationProtocol
-import Rumoca.FMI3CSRunLogging
-import RumocaFMI3.CSRunFinish
-import RumocaFMI3.CSRunCompleted
+import Rumoca.FMI3CSMixedRun
+import RumocaFMI3.CSMixedLifecycle
+import RumocaFMI3.LoggingCapabilityCreation
 import RumocaFMI3.InitializationProtocolRunFrames
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
 open CTree CMemory StaticFactory CCalls.Events
-
 variable {source : AST.Model} {model : Solve.FMI3Model source}
 
-/-- The completed CS run is tied to the original allocation and to the
-initialization history that established its seed. -/
 structure CSRunOutcome [CInterface] (model : Solve.FMI3Model source) (objects : Objects)
     (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation)
     (slot : Fin objects.capacity) (owners : SlotOwners.State objects.capacity) (owner : Nat)
@@ -36,39 +33,37 @@ structure CSRunOutcome [CInterface] (model : Solve.FMI3Model source) (objects : 
     q ≠ AtomicSlots.address objects.flagsBlock slot →
     CSRun.releasedHeap after objects slot final.mode q = original q
 
-/-- Suppressed and enabled logging share the same actual initialized heap.
-Callback return values and final heaps are universally quantified. -/
-def CSContinuation [CInterface] (model : Solve.FMI3Model source) (objects : Objects)
+
+/-- One capability supplies every current logging view. The raw history and
+its source records retain all actual returns and callback alternatives. -/
+def CSContinuation [CInterface] (model : Solve.FMI3Model source) (header : CFenv.Header) (objects : Objects)
     (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation)
     (slot : Fin objects.capacity) (owners : SlotOwners.State objects.capacity) (owner : Nat)
-    (original exited : Heap) (access : Float64Buffers.Layout) (initialization : List Action)
+    (original exited : Heap) (access : Float64Buffers.Layout) (initialization : List InitializationProtocol.Action)
     (buffers : StepEntry.Buffers) (initial final : CSRun.Reference)
-    (actions : List CSRun.Action) (statuses : List Int) (factoryArgs : FactoryArguments.Raw) : Prop :=
+    (actions : List CSMixedRun.Action) (statuses : List Int) (capability : Logging.Capability) (enabled : Bool) : Prop :=
   let p := objects.instances.index slot.val
-  let enabled := (loggingUpdate initialization).getD factoryArgs.logging
-  ((factoryArgs.logger = none ∨ enabled = false) →
-    ∃ after, CSRun.Calls model.solve program p buffers exited initial actions after final statuses ∧
-      CSRun.Completed program p exited actions statuses [] after ∧
-      ∀ observed events actualAfter, CSRun.Completed program p exited actions observed events actualAfter →
-        observed = statuses ∧ events = [] ∧
-          CSRunOutcome model objects program tag slot owners owner original access initialization buffers final actualAfter) ∧
-  (∀ logger : CSRun.Logger, factoryArgs.logger = some logger.pointer → enabled = true →
-    factoryArgs.environment = logger.environment → logger.Bound program → logger.Respects objects buffers →
-    CSRun.LoggedTrace objects logger (SlotOwners.update owners slot (some owner)) model.solve program p buffers
-      exited initial actions final statuses ∧
-    ∀ observed events after, CSRun.Completed program p exited actions observed events after →
-      observed = statuses ∧ CSRunOutcome model objects program tag slot owners owner original access initialization buffers final after)
+  CSMixedRun.Trace header objects (SlotOwners.update owners slot (some owner)) model.solve capability
+    program p buffers exited enabled initial actions final statuses ∧
+  (∀ observed events after, CSMixedRun.Completed program p exited actions observed events after →
+    observed = statuses.map Value.integer ∧ capability.Configured after p ((CSMixedRun.loggingUpdate actions).getD enabled) ∧
+    InitializationProtocol.Retention (CSMixedRun.loggingUpdate actions) p exited after ∧
+    InitializationProtocol.CSRunOutcome model objects program tag slot owners owner original access initialization buffers final after) ∧
+  (∀ observed events after records, CSMixedRun.Recorded program p exited actions observed events after records →
+    CSMixedRun.SourceTrace source header p buffers exited initial actions observed records after final)
 
 theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects : Objects)
     (sigs : List Signature)
     (pool : CLiteral.Pool (LiteralPreparation.excluded ++
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : CSRunEnvironment.PreparedContract model sigs pool)
+    (loggingPrepared : DebugLogging.PreparedContract model sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation)
       (range : -(2^31) ≤ header.nearest ∧ header.nearest < 2^31),
       program.internal = LiteralPreparation.program model sigs →
+      program.externals "strcmp" = some (CStringCalls.compareExternal rfl) →
       program.externals "atomic_store" = some (CAtomicBoolean.Calls.writeExternal tag) →
       program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest range) →
       program.externals "floor" = some (CMathCalls.floorExternal rfl) →
@@ -87,16 +82,24 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
       Completed program p access live initialization initObserved exited initCheckpoints →
       state.phase = .initialized args → StepArguments.Storage original p buffers →
       CSOutputsGuarded objects retained buffers →
-    ∀ (actions : List CSRun.Action) (final : CSRun.Reference) (statuses : List Int),
-      CSRun.ReferenceTrace header p buffers (csReference state args) actions final statuses →
-      CSContinuation model objects program tag slot owners owner original exited access initialization buffers
-        (csReference state args) final actions statuses factoryArgs := by
+    ∀ (capability : Logging.Capability) (actions : List CSMixedRun.Action) (final : CSRun.Reference) (statuses : List Int),
+      capability.Describes factoryArgs → capability.Bound program →
+      capability.Requires (fun _ effect => ∀ args before value after,
+        effect.execute args before value after → CSRun.ProtectedFrame objects buffers before after) →
+      CSMixedRun.ReferenceTrace header p buffers (csReference state args) actions final statuses →
+      (∀ action ∈ actions, action.Prepared original) →
+      (∀ action ∈ actions, ∀ q, action.ReaderRegion q → readers.Region q) →
+      (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
+        effect.execute args before value after → ∀ q, action.ReaderRegion q → after q = before q)) →
+      (∀ action ∈ actions, ∀ q, action.ReaderRegion q → CSRun.Outside p buffers q) →
+      CSContinuation model header objects program tag slot owners owner original exited access initialization buffers
+        (csReference state args) final actions statuses capability ((loggingUpdate initialization).getD factoryArgs.logging) := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
-  intro program tag range actual write rounding floorBound owners slot owner retained original live exited access factoryArgs
+  intro program tag range actual compare write rounding floorBound owners slot owner retained original live exited access factoryArgs
     initialization state initObserved initCheckpoints args buffers readers
   let p := objects.instances.index slot.val
   dsimp only
-  intro initialized created reserved creationFrame executed phase outputs guarded actions final statuses admitted
+  intro initialized created reserved creationFrame executed phase outputs guarded capability actions final statuses matching bound required admitted requests included policies readerOutside
   obtain ⟨_, _, invariant, _, keeps, initialFrame⟩ := initialized.initialized.completed _ _ _ executed
   have readonly := (initialized.completed _ _ _ executed).1
   have stored := invariant.cs_ready model.solve phase outputs guarded
@@ -109,11 +112,11 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
     simpa only [load, keeps.fields "slot" (by decide) (by decide)] using created.metadata
   have finishRun (after : Heap) (finalStored : CSRun.Stored model.solve after p buffers final)
       (finalOwners : SlotOwners.Represents objects.flagsBlock after (SlotOwners.update owners slot (some owner)))
-      (retains : CSRun.Retains p exited after) (runReadonly : CReadOnly.Preserves exited after)
+      (retains : InitializationProtocol.Retention (CSMixedRun.loggingUpdate actions) p exited after) (runReadonly : CReadOnly.Preserves exited after)
       (runFrame : ∀ q, CSRun.Protected objects buffers q → CSRun.Outside p buffers q → after q = exited q) :
       CSRunOutcome model objects program tag slot owners owner original access initialization buffers final after := by
     have slotValue : load after (p.member "slot") = some (.integer slot.val) := by
-      simpa only [load, retains "slot" (by simp)] using metadataAtExit
+      simpa only [load, retains.fields "slot" (by decide) (by decide)] using metadataAtExit
     have released := CSRun.finish_correct objects program tag finish releaseBindings rfl model.solve after slot buffers final
       (SlotOwners.update owners slot (some owner)) owner finalStored (admitted.can_finish (Or.inl rfl)) finalOwners
       (by simp [SlotOwners.update]) slotValue
@@ -125,42 +128,21 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
     intro q protectedOutput outside untouched notFlag
     exact (released.frame q (outside.field "mode") notFlag).trans ((runFrame q protectedOutput outside).trans
       ((initialFrame q (guarded.protects protectedOutput) untouched).trans (creationFrame q untouched.1 notFlag)))
-  have loggerValue : load exited (p.member "logger") = some (.pointer factoryArgs.logger) := by
-    change load exited ((objects.instances.index slot.val).member "logger") = _
-    simpa only [load, keeps.fields "logger" (by decide) (by decide)] using created.initialized.loggerValue
-  have environmentValue : load exited (p.member "environment") = some (.pointer factoryArgs.environment) := by
-    change load exited ((objects.instances.index slot.val).member "environment") = _
-    simpa only [load, keeps.fields "environment" (by decide) (by decide)] using created.initialized.environmentValue
-  have loggingValue := keeps.logging_value created.initialized.loggingValue
-  constructor
-  · intro suppressed
-    have quiet : CSRun.Suppressed exited p :=
-      ⟨factoryArgs.logger, (loggingUpdate initialization).getD factoryArgs.logging, loggerValue, loggingValue, suppressed⟩
-    obtain ⟨after, calls, finalStored, retains, runReadonly, atomic, frame, _⟩ :=
-      CSRun.trace_framed header objects model sigs pool prepared.step baseHeap firstBlock signed p buffers
-        program range actual rounding floorBound reset enterDefined exitDefined exited _ final actions statuses
-        invariant.readonly stored quiet admitted
-    refine ⟨after, calls, calls.executes, ?_⟩
-    intro observed events actualAfter completed
-    obtain ⟨statusesMatch, eventsMatch, same⟩ := calls.determines completed
-    subst actualAfter
-    exact ⟨statusesMatch, eventsMatch, finishRun after finalStored
-      (SlotOwners.ordinary_preserves invariant.ownership atomic) retains runReadonly (fun q _ => frame q)⟩
-  · intro logger loggerArg loggingArg environmentArg bound policy
-    have logging : logger.Stored exited p :=
-      ⟨by simpa only [loggerArg] using loggerValue,
-        by simpa only [loggingArg, CBody.boolean] using loggingValue,
-        by simpa only [environmentArg] using environmentValue⟩
-    obtain ⟨trace, _⟩ := CSRun.logged_trace_correct header objects model sigs pool prepared.step baseHeap firstBlock signed
-      p buffers rfl program range logger actual rounding floorBound bound policy reset enterDefined exitDefined
-      exited _ final actions statuses (SlotOwners.update owners slot (some owner)) invariant.readonly stored
-      logging invariant.ownership admitted
-    refine ⟨trace, ?_⟩
-    intro observed events after completed
-    have statusesMatch := trace.statuses_eq completed
-    subst observed
-    obtain ⟨finalStored, _, finalOwners, retains, runReadonly, frame⟩ := trace.completed completed
-    exact ⟨rfl, finishRun after finalStored finalOwners retains runReadonly frame⟩
+  have configured := keeps.configured (Logging.Capability.created matching created)
+  have writable := keeps.writable created.initialized.storage.logging
+  have current : ∀ action ∈ actions, action.Prepared exited := by
+    intro action member
+    exact CSMixedRun.Action.Prepared.framed action (requests action member)
+      (fun q inside => invariant.readerFrame q (included action member q inside))
+  have certified := CSMixedRun.trace_correct header objects model sigs pool prepared.step loggingPrepared baseHeap firstBlock signed
+    p buffers rfl program capability ((loggingUpdate initialization).getD factoryArgs.logging)
+    range actual rounding floorBound compare bound required reset enterDefined exitDefined
+    exited _ final actions statuses (SlotOwners.update owners slot (some owner)) invariant.readonly stored
+    configured writable invariant.ownership admitted current policies readerOutside
+  refine ⟨certified, ?_, fun _ _ _ _ recorded => certified.recorded_source recorded⟩
+  intro observed events after completed
+  obtain ⟨statusValues, finalStored, finalConfig, retention, finalOwners, runReadonly, frame⟩ := certified.completed completed
+  exact ⟨statusValues, finalConfig, retention, finishRun after finalStored finalOwners retention runReadonly frame⟩
 
 end Rumoca.FMI3.InitializationProtocol
 end

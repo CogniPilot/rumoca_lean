@@ -1,3 +1,9 @@
+import RumocaFMI3.CSMixedExecution
+import RumocaFMI3.CSMixedPrefixes
+import RumocaFMI3.CSMixedLifecycle
+import RumocaFMI3.CSMixedInterrupted
+import RumocaFMI3.CSMixedHandoff
+import RumocaFMI3.CSRunInterrupted
 import RumocaFMI3.LoggingCapabilityEffects
 import RumocaFMI3.CSLoggingMemory
 import RumocaFMI3.MELoggingMemory
@@ -1652,7 +1658,7 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.InitializationProtocol.Invariant.persistent
 #audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.cs
 #audit axioms Rumoca.FMI3.InitializationProtocol.LogPolicy.me
-#audit axioms Rumoca.FMI3.InitializationProtocol.cs_execution
+#audit axioms Rumoca.FMI3.CSMixedRun.execution
 #audit axioms Rumoca.FMI3.CSProtocol.Plan.Outside.not_record
 #audit axioms Rumoca.FMI3.CSRun.Recorded.stopped
 #audit axioms Rumoca.FMI3.CSRun.Interrupted.stopped
@@ -1878,3 +1884,83 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.MENumericalHistory.Stored.logging_framed
 #audit axioms Rumoca.FMI3.MENumericalHistory.logging_failure_returned
 #audit axioms Rumoca.FMI3.MENumericalHistory.logging_legal_returned
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Action.Prepared.framed
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ActionContract.faulted_iff
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ActionContract.faulted_kind
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ActionContract.performed_iff
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ActionContract.progress
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ActionContract.realizes
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ActionContract.returned
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ActionContract.run_recorded
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Change.can_finish
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Change.rehandle
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Completed.records
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Interrupted.stopped
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Performed.records
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Recorded.completed
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Recorded.stopped
+
+#audit axioms Rumoca.FMI3.CSMixedRun.RecordedAction.performed
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ReferenceTrace.can_finish
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ReferenceTrace.rehandle
+
+#audit axioms Rumoca.FMI3.CSMixedRun.ReferenceTrace.split
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Returned.logged
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Returned.logging
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Returned.quiet
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Stopped.decompose
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Stopped.interrupted
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.after_prefix
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.callerFrame
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.completed
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.progress
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.reference_of_completed
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.released
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.released_frame
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.stopped_prefix
+
+#audit axioms Rumoca.FMI3.CSMixedRun.Trace.storage
+
+#audit axioms Rumoca.FMI3.CSMixedRun.action_correct
+
+#audit axioms Rumoca.FMI3.CSMixedRun.configuration_cases
+
+#audit axioms Rumoca.FMI3.CSMixedRun.interrupted_iff
+
+#audit axioms Rumoca.FMI3.CSMixedRun.loggingUpdate_cons_getD
+
+#audit axioms Rumoca.FMI3.CSMixedRun.recorded_iff
+
+#audit axioms Rumoca.FMI3.CSMixedRun.trace_correct
+
+#audit axioms Rumoca.FMI3.CSProtocol.Cycle.Admitted.can_finish

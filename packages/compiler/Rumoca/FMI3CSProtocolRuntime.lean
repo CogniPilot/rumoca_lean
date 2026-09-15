@@ -65,6 +65,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (pool.install baseHeap firstBlock signed) live p access buffers plan readers ∧
               ∀ records after, Completed program p access live plan records after →
                 SourceTrace a.solve.prepareFMI3 header p buffers plan records ∧ CReadOnly.Preserves heap after ∧
+                InitializationProtocol.Retention plan.loggingUpdate p live after ∧
+                load after (p.member "logging") = some (CBody.boolean (plan.loggingUpdate.getD factoryArgs.logging)) ∧
                 LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .cs plan.mode ∧
                 SlotOwners.release (SlotOwners.update owners slot (some owner)) slot owner = some owners ∧
                 SlotOwners.Represents objects.flagsBlock (LifecycleRelease.releasedHeap after objects slot plan.mode) owners ∧
@@ -100,11 +102,11 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     exact InitializationProtocol.source_contract initializeCalls reference requests ready
   have simulation : SimulationCompiler a.solve.prepareFMI3 program header objects retained
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p buffers readers := by
-    intro current before final actions statuses persistent stored reference
-    exact InitializationProtocol.cs_execution header objects a.solve.prepareFMI3 sigs pool prepared.cs baseHeap firstBlock signed
-      program range actual rounding floorBound retained (SlotOwners.update owners slot (some owner)) heap current p buffers
+    intro current before final actions statuses persistent stored reference requests included
+    exact CSMixedRun.execution header objects a.solve.prepareFMI3 sigs pool prepared.cs prepared.logging baseHeap firstBlock signed
+      program range actual rounding floorBound identity.compareBinding retained (SlotOwners.update owners slot (some owner)) heap current p buffers
       before final actions statuses readers persistent rfl guarded
-      (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside⟩) stored reference
+      (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside⟩) stored reference requests included
   obtain ⟨reset, _, _, termination, releaseDefined⟩ := prepared.cs.execution header objects firstBlock program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := TerminationEnvironment.release_correct header objects (pool.addresses firstBlock) program tag termination releaseBindings
@@ -116,6 +118,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have restored := released.ownersAfter
   rw [SlotOwners.release_reserved_restore reserved] at discharged restored
   refine ⟨sourceTrace, creationReadonly.trans (certified.completed _ _ completed).2.2.1,
+    (certified.completed _ _ completed).2.2.2.1,
+    (certified.completed _ _ completed).2.2.2.1.logging_value created.initialized.loggingValue,
     released, discharged, restored, ?_⟩
   intro q inside outside notFlag
   exact (frame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag)

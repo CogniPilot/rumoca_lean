@@ -1,5 +1,5 @@
 import Rumoca.FMI3InitializationRestart
-import RumocaFMI3.CSRunCompleted
+import RumocaFMI3.CSMixedPrefixes
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
@@ -37,56 +37,32 @@ theorem restart_after_me [CInterface] {program : Program Invocation}
       (fun action member => readerSafe action member q inside)))
     (fun q inside => (readerOutside q inside).1) compileProtocol
 
-/-- Every returning logged CS branch can reset and run the same reusable
-initialization protocol, without presuming a callback return or later storage. -/
-theorem restart_after_cs_logged [CInterface] {program : Program Invocation}
-    {objects : Objects} {owners : SlotOwners.State objects.capacity} {logger : CSRun.Logger}
+/-- Every completed mixed CS history supplies reset and initialization from
+the original caller bank. Current logging is derived from the whole history;
+no returning callback or future readable heap is an external premise. -/
+theorem restart_after_cs [CInterface] {program : Program Invocation}
+    {objects : Objects} {owners : SlotOwners.State objects.capacity} {capability : Logging.Capability}
     (reset : StaticReset.ExecutionContract program)
-    (certified : CSRun.LoggedTrace objects logger owners model.solve program p buffers heap reference simulation final statuses)
-    (executed : CSRun.Completed program p heap simulation observed events after)
+    (certified : CSMixedRun.Trace header objects owners model.solve capability program p buffers
+      heap enabled reference simulation final statuses)
+    (executed : CSMixedRun.Completed program p heap simulation observed events after)
     (caller : CallerStorage objects retained original heap)
     (literalFrame : CReadOnly.Preserves literals heap) (logging : LogPolicy program objects retained heap p)
-    (policy : logger.StoragePolicy (Float64Rejection.Protected objects retained))
+    (policy : capability.Requires (fun _ effect => ∀ args before value after,
+      effect.execute args before value after → CStorage.PreservesOn (Float64Rejection.Protected objects retained) before after))
     (readerFrame : readers.Frame original heap)
-    (readerPolicy : logger.FramePolicy readers.Region)
+    (readerPolicy : capability.Requires (fun _ effect => ∀ args before value after,
+      effect.execute args before value after → ∀ q, readers.Region q → after q = before q))
     (readerOutside : ∀ q, readers.Region q → CSRun.Outside p buffers q)
     (compileProtocol : ∀ next, Invariant program objects retained owners original literals next p .cs State.reset readers →
       SourceContract model program objects retained owners original literals next p access .cs State.reset nextState actions readers) :
     RestartSourceContract model program objects retained owners original literals after p access .cs nextState actions readers := by
-  have same := certified.statuses_eq executed
-  subst observed
-  obtain ⟨stored, _, represented, keeps, readonly, _⟩ := certified.completed executed
+  obtain ⟨_, stored, _, keeps, represented, readonly, _⟩ := certified.completed executed
   exact restart_source model reset stored.reset stored.kind stored.mode represented
-    (caller.trans (certified.storage executed policy)) (literalFrame.trans readonly)
-    (logging.framed (fun name outside => keeps name outside))
-    (readerFrame.trans (fun q inside => certified.frame executed readerPolicy q inside (readerOutside q inside)))
+    (caller.trans (certified.storage executed policy)) (literalFrame.trans readonly) (logging.updated keeps)
+    (readerFrame.trans (fun q inside => certified.callerFrame executed readerPolicy q inside (readerOutside q inside)))
     (fun q inside => (readerOutside q inside).1) compileProtocol
 
-/-- The suppressed CS certificate derives the same restart obligations and
-determines every raw completed history's final heap and statuses. -/
-theorem restart_after_cs_suppressed [CInterface] {program : Program Invocation}
-    {objects : Objects} {owners : SlotOwners.State objects.capacity}
-    (reset : StaticReset.ExecutionContract program)
-    (certified : CSRun.Calls model.solve program p buffers heap reference simulation expectedHeap final statuses)
-    (executed : CSRun.Completed program p heap simulation observed events after)
-    (initial : CSRun.Stored model.solve heap p buffers reference)
-    (represented : SlotOwners.Represents objects.flagsBlock heap owners)
-    (caller : CallerStorage objects retained original heap)
-    (literalFrame : CReadOnly.Preserves literals heap) (logging : LogPolicy program objects retained heap p)
-    (readerFrame : readers.Frame original heap)
-    (readerOutside : ∀ q, readers.Region q → CSRun.Outside p buffers q)
-    (compileProtocol : ∀ next, Invariant program objects retained owners original literals next p .cs State.reset readers →
-      SourceContract model program objects retained owners original literals next p access .cs State.reset nextState actions readers) :
-    RestartSourceContract model program objects retained owners original literals after p access .cs nextState actions readers := by
-  obtain ⟨_, _, same⟩ := certified.determines executed
-  subst after
-  have stored := certified.stored initial
-  exact restart_source model reset stored.reset stored.kind stored.mode
-    (SlotOwners.ordinary_preserves represented certified.atomic)
-    (caller.trans (CallerStorage.ordinary certified.storage)) (literalFrame.trans certified.readonly)
-    (logging.framed (fun name outside => certified.retains name outside))
-    (readerFrame.trans (fun q inside => certified.frame q (readerOutside q inside)))
-    (fun q inside => (readerOutside q inside).1) compileProtocol
 
 end Rumoca.FMI3.InitializationProtocol
 end

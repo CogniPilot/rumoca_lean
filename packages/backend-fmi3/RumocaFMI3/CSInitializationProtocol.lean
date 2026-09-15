@@ -1,7 +1,7 @@
-import RumocaFMI3.InitializationSimulation
-import RumocaFMI3.InitializationProtocolRestart
+import RumocaFMI3.CSMixedHandoff
+import RumocaFMI3.CSMixedLifecycle
+import RumocaFMI3.CSMixedRecords
 import RumocaFMI3.InitializationProtocolLifetime
-import RumocaFMI3.CSRunFinish
 
 noncomputable section
 namespace Rumoca.FMI3.CSProtocol
@@ -13,7 +13,7 @@ structure Cycle where
   initialization : List InitializationProtocol.Action
   state : InitializationProtocol.State
   args : Initialization.Arguments
-  simulation : List CSRun.Action
+  simulation : List CSMixedRun.Action
   final : CSRun.Reference
   statuses : List Int
 
@@ -27,13 +27,17 @@ def Plan.mode : Plan → Mode
   | .last cycle => cycle.final.mode
   | .next _ following => following.mode
 
-/-- The exact final logging update across all initialization segments.
-Simulation and reset retain that flag in this protocol. -/
+/-- Each cycle composes the initialization and simulation logging updates. -/
+def Cycle.loggingUpdate (cycle : Cycle) : Option Bool :=
+  (CSMixedRun.loggingUpdate cycle.simulation).orElse
+    (fun _ => InitializationProtocol.loggingUpdate cycle.initialization)
+
+/-- The final update includes every initialization and simulation segment. -/
 def Plan.loggingUpdate : Plan → Option Bool
   | .finish actions _ => InitializationProtocol.loggingUpdate actions
-  | .last cycle => InitializationProtocol.loggingUpdate cycle.initialization
+  | .last cycle => cycle.loggingUpdate
   | .next cycle following => following.loggingUpdate.orElse
-      (fun _ => InitializationProtocol.loggingUpdate cycle.initialization)
+      (fun _ => cycle.loggingUpdate)
 
 def Cycle.Admitted (cycle : Cycle) (header : CFenv.Header) (objects : Objects)
     (retained : Address → Prop) (original : Heap) (p : Address)
@@ -41,8 +45,10 @@ def Cycle.Admitted (cycle : Cycle) (header : CFenv.Header) (objects : Objects)
   InitializationProtocol.ReferenceTrace .cs .reset cycle.initialization cycle.state ∧
   (∀ action ∈ cycle.initialization, action.Prepared objects retained original p access readers) ∧
   cycle.state.phase = .initialized cycle.args ∧
-  CSRun.ReferenceTrace header p buffers (InitializationProtocol.csReference cycle.state cycle.args)
-    cycle.simulation cycle.final cycle.statuses
+  CSMixedRun.ReferenceTrace header p buffers (InitializationProtocol.csReference cycle.state cycle.args)
+    cycle.simulation cycle.final cycle.statuses ∧
+  (∀ action ∈ cycle.simulation, action.Prepared original) ∧
+  (∀ action ∈ cycle.simulation, ∀ q, action.ReaderRegion q → readers.Region q)
 
 inductive Admitted (header : CFenv.Header) (objects : Objects) (retained : Address → Prop)
     (original : Heap) (p : Address) (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (readers : InitializationProtocol.ReadBank) : Plan → Prop where
@@ -59,7 +65,7 @@ inductive Admitted (header : CFenv.Header) (objects : Objects) (retained : Addre
 erase the source initialization checkpoints or earlier numerical samples. -/
 inductive Record where
   | initialization (observed : List (Float64Access.Observation Invocation)) (checkpoints : List Heap) (heap : Heap)
-  | simulation (statuses : List Int) (events : List Invocation) (calls : List (CSRun.CallRecord Invocation)) (heap : Heap)
+  | simulation (statuses : List Value) (events : List Invocation) (calls : List CSMixedRun.CallRecord) (heap : Heap)
   | reset (events : List Invocation) (status : Value) (heap : Heap)
 
 /-- This is sequencing of the existing raw relations, not another numerical
@@ -69,11 +75,11 @@ inductive Completed [CInterface] (program : Program Invocation) (p : Address) (a
   | finish : InitializationProtocol.Completed program p access heap actions observed after checkpoints →
       Completed program p access heap (.finish actions state) [.initialization observed checkpoints after] after
   | last : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Recorded program p exited cycle.simulation statuses events after calls →
+      CSMixedRun.Recorded program p exited cycle.simulation statuses events after calls →
       Completed program p access heap (.last cycle)
         [.initialization initial checkpoints exited, .simulation statuses events calls after] after
   | next : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Recorded program p exited cycle.simulation statuses events simulated calls →
+      CSMixedRun.Recorded program p exited cycle.simulation statuses events simulated calls →
       (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] simulated .done)
         (.terminates resetEvents ⟨resetStatus, resetHeap⟩) →
       Completed program p access resetHeap following records after →
@@ -89,15 +95,15 @@ inductive Stopped [CInterface] (program : Program Invocation) (p : Address) (acc
   | nextInitialization : InitializationProtocol.Stopped program p access heap cycle.initialization →
       Stopped program p access heap (.next cycle following)
   | lastSimulation : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Stopped program p exited cycle.simulation → Stopped program p access heap (.last cycle)
+      CSMixedRun.Stopped program p exited cycle.simulation → Stopped program p access heap (.last cycle)
   | nextSimulation : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Stopped program p exited cycle.simulation → Stopped program p access heap (.next cycle following)
+      CSMixedRun.Stopped program p exited cycle.simulation → Stopped program p access heap (.next cycle following)
   | reset : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Recorded program p exited cycle.simulation statuses events simulated calls →
+      CSMixedRun.Recorded program p exited cycle.simulation statuses events simulated calls →
       (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] simulated .done) (.wrong []) →
       Stopped program p access heap (.next cycle following)
   | later : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Recorded program p exited cycle.simulation statuses events simulated calls →
+      CSMixedRun.Recorded program p exited cycle.simulation statuses events simulated calls →
       (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] simulated .done)
         (.terminates resetEvents ⟨resetStatus, resetHeap⟩) →
       Stopped program p access resetHeap following → Stopped program p access heap (.next cycle following)
@@ -116,6 +122,10 @@ theorem Plan.Outside.not_record {plan : Plan} {p q : Address}
   | finish _ _ => exact outside.1
   | last _ => exact outside.1.1
   | next _ _ => exact outside.1.1
+
+theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted header objects retained original p access buffers readers) :
+    CSRun.CanFinish cycle.final.mode :=
+  admitted.2.2.2.1.can_finish (Or.inl rfl)
 
 end Rumoca.FMI3.CSProtocol
 end

@@ -1,3 +1,5 @@
+import RumocaFMI3.InitializationRetention
+import RumocaFMI3.LoggingCapabilityFrames
 import RumocaFMI3.InitializationAccess
 import RumocaFMI3.CSCreationStorage
 import RumocaFMI3.StaticInitialization
@@ -88,6 +90,23 @@ theorem Certificate.release (objects : Objects) (tag : CAtomicBoolean.Calls.Even
     (by cases kind <;> exact Or.inl (by simp [Reference.Allowed, me_initialization, cs_initialization]))
     (certified.owners represented) owned
     (certified.metadata.trans metadata)
+
+/-- Initialization accesses preserve control fields outside their write set. -/
+theorem Certificate.retention
+    (certified : Certificate model program p access args kind state time heap before during beforeEntry atExit) :
+    InitializationProtocol.Retention none p heap (InitializationBodies.exitHeap atExit p kind) :=
+  InitializationProtocol.Retention.of_retains certified.field
+
+theorem Certificate.configuration {capability : Logging.Capability}
+    (certified : Certificate model program p access args kind state time heap before during beforeEntry atExit)
+    (configured : capability.Configured heap p enabled) :
+    capability.Configured (InitializationBodies.exitHeap atExit p kind) p enabled := by
+  apply configured.framed
+  intro name member
+  apply certified.field
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl | rfl <;> decide
+
 
 end InitializationAccess
 end Rumoca.FMI3

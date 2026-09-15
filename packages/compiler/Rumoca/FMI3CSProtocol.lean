@@ -1,11 +1,11 @@
-import RumocaFMI3.CSProtocolInterrupted
-import Rumoca.FMI3InitializationProtocol
 import Rumoca.FMI3CSProtocolPrefixes
+import RumocaFMI3.InitializationProtocolRestart
+import RumocaFMI3.InitializationProtocolLifetime
 
 noncomputable section
 namespace Rumoca.FMI3.CSProtocol
 open CMemory StaticFactory CCalls.Events
-open InitializationProtocol (Invariant Persistent CSExecution SourceContract ReadBank)
+open InitializationProtocol (Invariant Persistent SourceContract ReadBank)
 variable {readers : ReadBank}
 
 variable {source : AST.Model} {model : Solve.FMI3Model source}
@@ -20,10 +20,10 @@ structure InitializationEvidence (model : Solve.FMI3Model source) (p : Address)
 structure CycleEvidence (model : Solve.FMI3Model source) (header : CFenv.Header) (p : Address)
     (buffers : StepEntry.Buffers) (cycle : Cycle)
     (initial : List (Float64Access.Observation Invocation)) (checkpoints : List Heap)
-    (exited : Heap) (statuses : List Int) (calls : List (CSRun.CallRecord Invocation)) (after : Heap) : Prop where
+    (exited : Heap) (statuses : List Value) (calls : List CSMixedRun.CallRecord) (after : Heap) : Prop where
   initialization : InitializationEvidence model p cycle.initialization initial checkpoints
-  statuses_eq : statuses = cycle.statuses
-  callSources : CSRun.SourceTrace source header p buffers exited
+  statuses_eq : statuses = cycle.statuses.map Value.integer
+  callSources : CSMixedRun.SourceTrace source header p buffers exited
     (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation statuses calls after cycle.final
   sourceEpoch : ∃! trajectory, CSRun.SourceEpoch source cycle.final trajectory
   sample : ∀ trajectory, CSRun.SourceEpoch source cycle.final trajectory →
@@ -59,11 +59,11 @@ inductive SourceInterrupted (model : Solve.FMI3Model source) (header : CFenv.Hea
   | nextInitialization : InitializationProtocol.SourcePrefix model p .cs .reset cycle.initialization stop →
       SourceInterrupted model header p buffers (.next cycle following) [] (.initialization stop)
   | lastSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
-      CSRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
+      CSMixedRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
       SourceInterrupted model header p buffers (.last cycle)
         [.initialization initial checkpoints exited] (.simulation stop)
   | nextSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
-      CSRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
+      CSMixedRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
       SourceInterrupted model header p buffers (.next cycle following)
         [.initialization initial checkpoints exited] (.simulation stop)
   | later : CycleEvidence model header p buffers cycle initial checkpoints exited statuses calls simulated →
@@ -102,33 +102,33 @@ structure CycleContract (model : Solve.FMI3Model source) (header : CFenv.Header)
     .cs .reset cycle.state cycle.initialization readers
   simulation : ∀ observed exited checkpoints,
     InitializationProtocol.Completed program p access heap cycle.initialization observed exited checkpoints →
-    CSExecution model header program objects retained owners original literals exited p buffers
+    CSMixedRun.Execution model header program objects retained owners original literals exited p buffers
       (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation cycle.final cycle.statuses readers
   initializationStopped : ∀ stop, InitializationProtocol.Interrupted program p access heap cycle.initialization stop →
     InitializationProtocol.SourcePrefix model p .cs .reset cycle.initialization stop
   simulationStopped : ∀ observed exited checkpoints,
     InitializationProtocol.Completed program p access heap cycle.initialization observed exited checkpoints →
-    ∀ stop, CSRun.Interrupted program p exited cycle.simulation stop →
-      CSRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop
+    ∀ stop, CSMixedRun.Interrupted program p exited cycle.simulation stop →
+      CSMixedRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop
 
 theorem CycleContract.completed
     (certified : CycleContract model header program objects retained owners original literals heap p access buffers cycle readers)
     (initialized : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints)
-    (executed : CSRun.Recorded program p exited cycle.simulation statuses events after calls)
+    (executed : CSMixedRun.Recorded program p exited cycle.simulation statuses events after calls)
     (guarded : InitializationProtocol.CSOutputsGuarded objects retained buffers) :
     CycleEvidence model header p buffers cycle initial checkpoints exited statuses calls after ∧
     CSRun.Stored model.solve after p buffers cycle.final ∧
     Persistent program objects retained owners original literals after p readers ∧
-    CReadOnly.Preserves heap after ∧ InitializationProtocol.Retention (InitializationProtocol.loggingUpdate cycle.initialization) p heap after ∧
+    CReadOnly.Preserves heap after ∧ InitializationProtocol.Retention cycle.loggingUpdate p heap after ∧
     (∀ q, CSRun.Protected objects buffers q → InitializationProtocol.Untouched p access cycle.initialization q →
       CSRun.Outside p buffers q → after q = heap q) := by
   obtain ⟨observations, ivps, _, readonly, keeps, frame⟩ := certified.initialization.completed _ _ _ initialized
   obtain ⟨same, stored, persistent, runKeeps, runReadonly, runFrame⟩ :=
     (certified.simulation _ _ _ initialized).completed _ _ _ executed.completed
-  exact ⟨⟨⟨observations, ivps⟩, same, ((certified.simulation _ _ _ initialized).semantic _ _ _ _ executed).source_observations,
+  exact ⟨⟨⟨observations, ivps⟩, same, (certified.simulation _ _ _ initialized).recorded_source executed,
       CSRun.source_epoch model.solve cycle.final,
       fun _ epoch => stored.source_observation epoch⟩, stored, persistent, readonly.trans runReadonly,
-    (by simpa using keeps.trans (InitializationProtocol.Retention.of_retains (fun name outside => runKeeps name outside))),
+    keeps.trans runKeeps,
     fun q inside untouched outside => (runFrame q inside outside).trans (frame q (guarded.protects inside) untouched)⟩
 
 theorem cycle_contract
@@ -144,13 +144,15 @@ theorem cycle_contract
   · intro observed exited checkpoints executed
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation exited _ cycle.final cycle.simulation cycle.statuses ready.persistent
-      (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2
+      (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2.1
+      admitted.2.2.2.2.1 admitted.2.2.2.2.2
   · intro stop interrupted
     exact initialization.interrupted invariant admitted.1 admitted.2.1 interrupted
   · intro observed exited checkpoints executed stop interrupted
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation.interrupted ready.persistent
-      (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2 interrupted
+      (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2.1
+      admitted.2.2.2.2.1 admitted.2.2.2.2.2 interrupted
 
 structure Contract (model : Solve.FMI3Model source) (header : CFenv.Header) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
@@ -167,15 +169,15 @@ theorem CycleContract.progress
     (certified : CycleContract model header program objects retained owners original literals heap p access buffers cycle readers) :
     (∃ initial exited checkpoints statuses events after calls,
       InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints ∧
-      CSRun.Recorded program p exited cycle.simulation statuses events after calls) ∨
+      CSMixedRun.Recorded program p exited cycle.simulation statuses events after calls) ∨
     InitializationProtocol.Stopped program p access heap cycle.initialization ∨
     (∃ initial exited checkpoints,
       InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints ∧
-      CSRun.Stopped program p exited cycle.simulation) := by
+      CSMixedRun.Stopped program p exited cycle.simulation) := by
   rcases certified.initialization.progress with ⟨initial, exited, checkpoints, initialized⟩ | stopped
-  · rcases (certified.simulation _ _ _ initialized).progress with ⟨events, after, completed⟩ | stopped
+  · rcases (certified.simulation _ _ _ initialized).progress with ⟨statuses, events, after, completed⟩ | stopped
     · obtain ⟨calls, recorded⟩ := completed.records
-      exact Or.inl ⟨initial, exited, checkpoints, cycle.statuses, events, after, calls, initialized, recorded⟩
+      exact Or.inl ⟨initial, exited, checkpoints, statuses, events, after, calls, initialized, recorded⟩
     · exact Or.inr (Or.inr ⟨initial, exited, checkpoints, initialized, stopped⟩)
   · exact Or.inr (Or.inl stopped)
 
@@ -185,13 +187,13 @@ theorem CycleContract.restarted
     (guarded : InitializationProtocol.CSOutputsGuarded objects retained buffers)
     (readerOutside : ∀ q, readers.Region q → ¬ p.InRecord q)
     (initialized : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints)
-    (executed : CSRun.Recorded program p exited cycle.simulation statuses events after calls) :
+    (executed : CSMixedRun.Recorded program p exited cycle.simulation statuses events after calls) :
     CycleEvidence model header p buffers cycle initial checkpoints exited statuses calls after ∧
     (∀ behavior, (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] after .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, Reset.finalHeap after p⟩) ∧
     Invariant program objects retained owners original literals (Reset.finalHeap after p) p .cs .reset readers ∧
     CReadOnly.Preserves heap (Reset.finalHeap after p) ∧
-    InitializationProtocol.Retention (InitializationProtocol.loggingUpdate cycle.initialization) p heap (Reset.finalHeap after p) ∧
+    InitializationProtocol.Retention cycle.loggingUpdate p heap (Reset.finalHeap after p) ∧
     (∀ q, CSRun.Protected objects buffers q → InitializationProtocol.Untouched p access cycle.initialization q →
       CSRun.Outside p buffers q → Reset.finalHeap after p q = heap q) := by
   obtain ⟨evidence, stored, persistent, readonly, keeps, frame⟩ := certified.completed initialized executed guarded
@@ -283,7 +285,7 @@ theorem correct
       cases executed with
       | last initialized simulated =>
         obtain ⟨evidence, stored, persistent, readonly, keeps, frame⟩ := certified.completed initialized simulated guarded
-        exact ⟨.last evidence, Ready.simulation stored persistent (admitted.2.2.2.can_finish (Or.inl rfl)),
+        exact ⟨.last evidence, Ready.simulation stored persistent admitted.can_finish,
           readonly, keeps, fun q inside outside => frame q inside outside.1 outside.2⟩
     · intro records stop interrupted
       exact interrupted_correct initialization simulation reset outputs guarded readerOutside (.last admitted) invariant interrupted

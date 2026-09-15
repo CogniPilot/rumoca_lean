@@ -1,5 +1,5 @@
 import RumocaFMI3.CSInitializationProtocol
-import RumocaFMI3.CSRunInterrupted
+import RumocaFMI3.CSMixedInterrupted
 import RumocaFMI3.InitializationProtocolInterrupted
 
 noncomputable section
@@ -8,7 +8,7 @@ open CMemory CCalls.Events
 
 inductive StopRecord where
   | initialization (stop : InitializationProtocol.StopRecord)
-  | simulation (stop : CSRun.StopRecord Invocation)
+  | simulation (stop : CSMixedRun.StopRecord)
   | reset (heap : Heap)
 
 /-- Retain all completed cycles and the observed prefix of the interrupted
@@ -22,18 +22,18 @@ inductive Interrupted [CInterface] (program : Program Invocation) (p : Address) 
   | nextInitialization : InitializationProtocol.Interrupted program p access heap cycle.initialization stop →
       Interrupted program p access heap (.next cycle following) [] (.initialization stop)
   | lastSimulation : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Interrupted program p exited cycle.simulation stop →
+      CSMixedRun.Interrupted program p exited cycle.simulation stop →
       Interrupted program p access heap (.last cycle) [.initialization initial checkpoints exited] (.simulation stop)
   | nextSimulation : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Interrupted program p exited cycle.simulation stop →
+      CSMixedRun.Interrupted program p exited cycle.simulation stop →
       Interrupted program p access heap (.next cycle following) [.initialization initial checkpoints exited] (.simulation stop)
   | reset : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Recorded program p exited cycle.simulation statuses events simulated calls →
+      CSMixedRun.Recorded program p exited cycle.simulation statuses events simulated calls →
       (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] simulated .done) (.wrong []) →
       Interrupted program p access heap (.next cycle following)
         [.initialization initial checkpoints exited, .simulation statuses events calls simulated] (.reset simulated)
   | later : InitializationProtocol.Completed program p access heap cycle.initialization initial exited checkpoints →
-      CSRun.Recorded program p exited cycle.simulation statuses events simulated calls →
+      CSMixedRun.Recorded program p exited cycle.simulation statuses events simulated calls →
       (machine program).Behaves (.calling Reset.signature.name [.pointer (some p)] simulated .done)
         (.terminates resetEvents ⟨resetStatus, resetHeap⟩) →
       Interrupted program p access resetHeap following records stop →

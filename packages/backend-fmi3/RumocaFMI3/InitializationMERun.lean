@@ -41,21 +41,5 @@ theorem Certificate.me_storage
     simpa only [Value.finite, Initialization.stopTime_bits args admissible limit selected]
       using (InitializationEntry.stop beforeEntry p args).1
 
-/-- Initialization accesses preserve control fields outside their write set. -/
-theorem Certificate.retention
-    (certified : Certificate model program p access args kind state time heap before during beforeEntry atExit) :
-    InitializationProtocol.Retention none p heap (InitializationBodies.exitHeap atExit p kind) :=
-  InitializationProtocol.Retention.of_retains certified.field
-
-theorem Certificate.configuration {capability : Logging.Capability}
-    (certified : Certificate model program p access args kind state time heap before during beforeEntry atExit)
-    (configured : capability.Configured heap p enabled) :
-    capability.Configured (InitializationBodies.exitHeap atExit p kind) p enabled := by
-  apply configured.framed
-  intro name member
-  apply certified.field
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl | rfl <;> decide
-
 end Rumoca.FMI3.InitializationAccess
 end

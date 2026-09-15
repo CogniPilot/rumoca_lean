@@ -43,8 +43,8 @@ and SPEC_0048 ownership rules; their unchanged hashes are recorded in
 
 The initialization-history follow-up below now accepts creation, handoff and
 recurring lifetime composition. The ME follow-up below also accepts simulation
-interleavings. Mutable CS simulation histories,
-native ABI/stdlib correspondence, MISRA coverage and previous MLS/eFMI findings
+interleavings; the CS follow-up accepts the corresponding CS histories.
+Native ABI/stdlib correspondence, MISRA coverage and previous MLS/eFMI findings
 remain open. This focused acceptance does not close the recurring whole-subset checklist.
 **Stage decision: open; no grammar expansion.**
 
@@ -72,6 +72,45 @@ automated claim that Lean has formalized the prose standards. Use universal
 proofs for compiler properties and keep tests to the existing external boundaries.
 
 ## Current unit-stage follow-up
+
+### CS simulation logging: full gate passed
+
+Recurring initialization/simulation/reset/release, raw call records, source
+observations, interrupted prefixes, access/protocol continuations and unified
+restart now have owning-package and actual-artifact acceptance. The pinned
+baseline remains MLS 3.7, FMI 3.0.2 and eFMI 1.0.0 Beta 1. Affected FMI
+§§2.2.4, 2.3.1 and 2.4.5 retain the reviewed category, suppression, error and
+callback obligations. Legal requests remain distinct from defensive handling
+of invalid inputs.
+
+Borrowing and universal callback frames are host-profile premises, including
+while logging is disabled. Original inputs are retained through actual calls;
+expected statuses, source samples and final logging flags are consequences of
+the history proof. Reset flag retention describes the authored implementation;
+the normative reset-policy finding remains open. No grammar, numerical
+lowering, emitter or eFMI product changed. Previous MLS/eFMI findings and
+native/ABI/MISRA obligations still apply.
+
+The owning package checks passed at 04:46:54 UTC. The required full
+`nix develop .#verification --command lake test` passed at 05:28:57 UTC on
+1071 unchanged inputs. All 69 selected roots passed with no unexpected axioms,
+changed-module warnings or input drift. Failed package logs are retained;
+repairs preserve the five earlier numerical interruption audit roots and the
+generalized handoff/restart guarantees. Only the three evidence documents
+change after the frozen gate. Evidence is in
+`build/c-factory/cs-simulation-logging/package-v4.*`, `full-gate-v1.*`,
+`premise-review-v2.json` and `standards-review-v2.json`.
+
+All retained FMU members, including the native library, match the accepted ME
+checkpoint byte for byte. The eFMU changes only generation identities and
+dependent references/checksums in three manifests. Numerical C, GALEC and
+Production C are unchanged; actual-artifact, importer, native and mutation
+checks passed. Archives and comparisons are in
+`build/c-factory/cs-simulation-logging/artifacts-v1/` and its adjacent JSON.
+Upstream Rumoca `c3631581c691ebcc06da5cf14b06e9e477fe7c33` preserves the
+reviewed IR/prepared-product ownership. SPEC_0043's additional AD projection
+reuse rules concern future optimization; this slice performs none.
+**Stage decision: open; no grammar expansion.**
 
 ### ME simulation logging: 2026-09-15, full gate passed
 
