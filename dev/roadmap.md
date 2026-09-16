@@ -11,6 +11,25 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Fused tensor derivative getter and machine transfer (derived proofs):**
+
+`CCalls.Events.loop_call_reaches_events` and `loop_call_behaviors_events` in
+the shared C package transfer a terminating typed-machine execution of a callee
+to the observable call machine under an explicit `Resolves` agreement on its
+nested helper call sites, without changing either machine. Through it,
+`TensorContinuousStates.deriv_contract` proves the tensor
+`fmi3GetContinuousStateDerivatives` body as one observable-machine run: the
+sole terminating behavior calls the prepared derivative entry, delivers the
+finite tensor derivative to the caller buffer with the instance's derivative
+region holding the same values, preserves every other instance, and rejects a
+null handle. The `Resolves` premise and finite execution remain explicit; the
+tensor count queries were not completed because their successful-path proof
+hit a kernel deep-recursion limit and remain open. Nothing is emitted by
+production and no existing contract changed. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 9m45s
+(`build/tensor-fmi/full-gate-v6.log`).
+
 **Tensor continuous-state interface bodies (derived proofs):**
 
 `FMI3.TensorContinuousStates` defines tensor `fmi3GetContinuousStates`,

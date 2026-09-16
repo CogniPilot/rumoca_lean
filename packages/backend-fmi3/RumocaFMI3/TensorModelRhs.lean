@@ -1,6 +1,7 @@
 import RumocaC.TensorIVPContract
 import RumocaC.TensorTypedContract
 import RumocaC.TensorProgramPrinter
+import RumocaC.TypedEventsTransfer
 
 /-! Typed-call execution contract for the prepared tensor model right-hand
 side. The derivative entry of a `Solve.PointwiseIVP` runs under the typed
@@ -94,6 +95,44 @@ theorem behaviors {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : 
     (plan.derivative.correct valid).2 definitions target linked library found args arguments
       locations values result heap bound represented ready executed
   exact ⟨finalHeap, reads, frame, callResult.2⟩
+
+/-- Observable-machine execution of the prepared tensor derivative entry. The
+entry runs in the void loop-call machine (`CLoops.Calls.machine`, the level of
+the tensor `CallCorrect`); its nested calls are the emitted tensor helper
+functions, direct calls by identifier. Under the direct-resolution premise for
+the call sites the run visits (`resolves`), the transfer lemma
+`CCalls.Events.loop_call_reaches_events` embeds the same execution into the
+observable machine under any saved caller, reaching the identical final heap. -/
+theorem events_reaches {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
+    (valid : plan.derivative.function.valid = true)
+    (definitions : CLoops.Calls.Definitions) {E : Type} (program : CCalls.Events.Program E)
+    (linked : CCalls.Typed.Extends definitions program.internal) (library : Library definitions)
+    (found : definitions plan.derivative.function.name = some plan.derivative.function.tree)
+    (args : Arguments.Values) (arguments : Arguments.Valid plan.derivative.function.parameters args)
+    (locations : Locations) (values : Env Binary64.Value [shape, shape]) (result : Values shape) (heap : Heap)
+    (bound : LayoutBound (Arguments.locals plan.derivative.function.parameters args) locations
+      (derivativeLayout p plan))
+    (represented : Represents locations (derivativeLayout p plan) heap values)
+    (ready : Ready (Arguments.locals plan.derivative.function.parameters args) locations
+      p.derivative (derivativePlan p plan) (derivativeLayout p plan) heap)
+    (executed : Finite.Executes p.derivative values result)
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling plan.derivative.function.name
+        (Arguments.values plan.derivative.function.parameters args) heap .done) v →
+      CCalls.Events.Resolves program v)
+    (stack : CCalls.Typed.Continuation) :
+    ∃ finalHeap,
+      Reads finalHeap (derivativeBuffer p plan locations) result ∧
+      (∀ q, Outside locations p.derivative (derivativePlan p plan) q → finalHeap q = heap q) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling plan.derivative.function.name
+          (Arguments.values plan.derivative.function.parameters args) heap stack)
+        (.returning .void finalHeap stack) := by
+  obtain ⟨finalHeap, reads, _boundResult, frame, behaviorIff⟩ :=
+    (plan.derivative.correct valid).1.2 definitions library found args arguments
+      locations values result heap bound represented ready executed
+  exact ⟨finalHeap, reads, frame,
+    CCalls.Events.loop_call_reaches_events program definitions linked ((behaviorIff _).mpr rfl) resolves stack⟩
 
 end Rumoca.FMI3.TensorModelRhs
 

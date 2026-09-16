@@ -73,6 +73,37 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Fused tensor derivative getter and typed-to-observable transfer: standards impact
+
+`CCalls.Events.loop_call_reaches_events`/`loop_call_behaviors_events` (in
+`packages/backend-c`, the owner of both call machines) transfer a completed void
+loop-call execution from the typed tensor call scheduler
+(`CLoops.Calls.machine`, the level of `CTensor.Lowering.CallCorrect`) into the
+observable call machine (`CCalls.Events`), reaching the identical final heap.
+Building on that, `FMI3.TensorContinuousStates.deriv_reaches`/`deriv_behaviors`
+prove the fused single-run `fmi3GetContinuousStateDerivatives` body over the
+`FMI3.TensorInstance` record as one observable-machine execution, and
+`deriv_contract` bundles it as a consumable `FunctionContract`. These are
+package-checked products only: they emit no production artifact, add no CLI or
+grammar case, and leave the scalar adapter and every existing contract unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| FMI 3.0.2, Model Exchange interface, evaluating state derivatives | The fused-run open item of the previous increment is resolved. `fmi3GetContinuousStateDerivatives` now runs in one observable-machine execution: it guards the handle/lifecycle, checks that `nContinuousStates` equals the symbolic state volume and the buffer is non-null, invokes the prepared tensor derivative entry `rumoca_rhs` (resolved directly by name), then copies the written `der(x)` region into the caller buffer. Its sole terminating behavior returns `fmi3OK` with the finite tensor derivative delivered to the caller buffer, the instance's `der(x)` region holding the same values, and every other cell of every other instance preserved (`deriv_reaches`, `deriv_behaviors`, `deriv_contract`). A null handle returns `fmi3Error` changing nothing (`null_deriv_behaviors`). |
+| FMI 3.0.2, function-call resolution across the interface | The typed and observable call schedulers share the `CCalls.Typed.nextWith` scheduler and differ only in call-site resolution: the typed scheduler reads a direct callee name from the statement, while the observable scheduler resolves the callee expression through the address dictionary. The transfer lemma (`loop_call_reaches_events`) discharges the difference under `CCalls.Events.Resolves`, the exact premise that each nested direct call the entry visits resolves to its own name (the emitted tensor helper functions are direct calls by identifier, not shadowed by constants). This makes the prepared entry's execution, proved in the typed machine (`TensorModelRhs`, `TensorInstanceRhs.derivative_writes`), available as an observable-machine run (`TensorModelRhs.events_reaches`, `TensorInstanceRhs.derivative_writes_events`) with the identical final heap. |
+| C11 / printer conformance | The fused body prints its intended C token grammar (`derivBody_printable`, `derivSignature_printable`) and the rendered function denotes itself under the shared `CTree.Printer` relation (`derivFunction_denotes`), carried by the contract's `denotes` field. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The fused body stages each region base pointer and the element count into ordinary locals, invokes the entry by direct call, and copies with a counted `size_t` loop over the static instance pool; no dynamic allocation is introduced, and the transfer lemma changes neither machine definition. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The theorems hold for arbitrary tensor shape, instance index, request length and
+heap. The fused getter carries an explicit direct-resolution premise
+(`resolves`), which a tensor adapter discharges for its own emitted helper
+functions. The tensor count queries (`fmi3GetNumberOfContinuousStates`,
+`fmi3GetNumberOfEventIndicators`), the count-negotiation policy for a partial or
+oversized request, and binding to an emitted adapter wrapper with its lifecycle
+and numerical policy remain open. **Stage decision: open; no grammar expansion.**
+
 ### Tensor continuous-state interface bodies over the tensor instance record: standards impact
 
 `FMI3.TensorContinuousStates` defines the Model Exchange continuous-state function

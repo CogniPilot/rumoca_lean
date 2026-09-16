@@ -5,6 +5,7 @@ import RumocaC.TensorDiagonalContract
 import TensorCChecks.Entry
 import TensorCChecks.DiagonalEntry
 import TensorCChecks.IVPEntry
+import RumocaC.TypedEventsTransfer
 
 #audit axioms Rumoca.CArithmetic.floatMul_finite
 #audit axioms Rumoca.CLoops.increment_exact
@@ -198,3 +199,13 @@ import TensorCChecks.IVPEntry
 #audit axioms Rumoca.CCalls.Typed.invoke_return_reaches
 #audit axioms Rumoca.CTensor.Lowering.typed_call_correct
 #audit axioms Rumoca.CTensor.Lowering.typed_diagonal_call_correct
+
+#audit axioms Rumoca.CCalls.Events.enter_loop_call_events
+#audit axioms Rumoca.CCalls.Events.loop_step_events
+#audit axioms Rumoca.CCalls.Events.loop_reaches_events
+#audit axioms Rumoca.CCalls.Events.loop_terminates_reaches_events
+#audit axioms Rumoca.CCalls.Events.enter_append_events
+#audit axioms Rumoca.CCalls.Events.append_step_events
+#audit axioms Rumoca.CCalls.Events.append_reaches_events
+#audit axioms Rumoca.CCalls.Events.loop_call_reaches_events
+#audit axioms Rumoca.CCalls.Events.loop_call_behaviors_events

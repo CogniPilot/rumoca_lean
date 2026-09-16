@@ -584,6 +584,7 @@ import RumocaFMI3.TensorContinuousStates
 #audit axioms Rumoca.FMI3.ModelRhs.rendered_contract
 #audit axioms Rumoca.FMI3.TensorModelRhs.reaches
 #audit axioms Rumoca.FMI3.TensorModelRhs.behaviors
+#audit axioms Rumoca.FMI3.TensorModelRhs.events_reaches
 #audit axioms Rumoca.FMI3.TensorModelRhs.rendered_contract
 #audit axioms Rumoca.FMI3.DerivativeCalls.parameters_bound
 #audit axioms Rumoca.FMI3.DerivativeCalls.body_eq
@@ -2150,6 +2151,8 @@ import RumocaFMI3.TensorContinuousStates
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivativeBuffer_eq
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.parameter_bound
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.buffer_outside
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes_events
 
 
 -- Tensor Float64 accessor bodies over the tensor instance record (package-checked
@@ -2223,3 +2226,8 @@ import RumocaFMI3.TensorContinuousStates
 #audit axioms Rumoca.FMI3.TensorContinuousStates.derivBody_printable
 #audit axioms Rumoca.FMI3.TensorContinuousStates.derivSignature_printable
 #audit axioms Rumoca.FMI3.TensorContinuousStates.derivFunction_denotes
+#audit axioms Rumoca.FMI3.TensorContinuousStates.derivCount_pass
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_enter
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_reaches
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_contract

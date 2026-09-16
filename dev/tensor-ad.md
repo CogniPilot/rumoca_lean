@@ -821,6 +821,10 @@ is `fmi3OK` on success and `fmi3Error` for a null handle.
 | A null handle is rejected with `fmi3Error`, changing nothing | `TensorContinuousStates.null_get_behaviors`, `null_set_behaviors`, `null_deriv_behaviors` |
 | The derivative entry writes `der(x)` and preserves every other instance | `TensorInstanceRhs.derivative_writes` |
 | The derivative getter's copy suffix delivers the written `der(x)` to the buffer | `TensorContinuousStates.deriv_delivers`, `deriv_instance_delivers` |
+| A completed typed loop-call embeds into the observable machine with the identical final heap | `CCalls.Events.loop_call_reaches_events`, `loop_call_behaviors_events` |
+| The prepared tensor derivative entry runs in the observable machine | `TensorModelRhs.events_reaches`, `TensorInstanceRhs.derivative_writes_events` |
+| The fused derivative getter runs and returns `fmi3OK` in one observable-machine execution | `TensorContinuousStates.deriv_reaches`, `deriv_behaviors` |
+| Printed text, closedness, denotation and fused execution as a contract | `TensorContinuousStates.deriv_contract` |
 | Every body prints its intended C token grammar and denotes itself under the shared C printer | `TensorContinuousStates.getBody_printable`, `setBody_printable`, `derivBody_printable`, `getFunction_denotes`, `setFunction_denotes`, `derivFunction_denotes` |
 | Printed text, closedness, denotation and null rejection as a contract | `TensorContinuousStates.get_contract`, `set_contract` |
 
@@ -831,19 +835,50 @@ the `fail` statement before the copy loop with the heap unchanged, and
 `get_fail_behaviors`/`set_fail_behaviors` return `fmi3Error` through
 `GuardedCalls.FailurePrefix.silent_behaviors`.
 
-The derivative getter is delivered as two proved products across two machines:
-`TensorInstanceRhs.derivative_writes` runs the prepared entry (writing
-`der(x) = f(x,u)`, preserving every other instance) in the typed tensor call
-machine `CCalls.Typed.machine`, and `deriv_delivers` runs the copy suffix
-(reading `der(x)`, delivering it to the buffer) in the observable call machine
-`CCalls.Events.machine`. The two machines are the same scheduler differing only in
-call-site resolution, and the derivative entry body is a call-free loop on which
-the two resolutions agree; fusing them into a single observable-machine execution
-of the whole `fmi3GetContinuousStateDerivatives` body needs an observable-machine
-execution of the tensor entry tree, which currently exists only in the typed
-machine through `TensorModelRhs`. That fused single-run theorem, the
-count-negotiation policy for a partial or oversized request, and binding the
-bodies to an emitted FMU wrapper with its lifecycle and numerical policy remain
-open. This is a package-checked product only: no production artifact is emitted,
-no CLI or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged.
+The derivative getter is now delivered as one fused observable-machine execution
+(`TensorContinuousStates.deriv_reaches`/`deriv_behaviors`, bundled by
+`deriv_contract`), resolving the previously open fused-run item.
+`fmi3GetContinuousStateDerivatives` guards the handle/lifecycle, checks the
+count, invokes the prepared tensor derivative entry `rumoca_rhs` (resolved
+directly by name, saving the copy suffix as the caller continuation), then copies
+the written `der(x)` region into the caller buffer, all in the observable call
+machine `CCalls.Events.machine`. Its sole terminating behavior returns `fmi3OK`
+with the finite tensor derivative delivered to the caller buffer, the instance's
+`der(x)` region holding the same values, and every other cell of every other
+instance preserved; a null handle returns `fmi3Error` changing nothing.
+
+### The typed-to-observable transfer lemma
+
+The two call machines are the same `CCalls.Typed.nextWith` scheduler over the
+same program definitions; they differ only in the call-site `enterCall`. The
+typed scheduler reads a direct callee name from the statement, while the
+observable scheduler resolves the callee expression through the address
+dictionary. On the call-free entry-loop body, on every empty-body return, and on
+a nested direct call they agree unconditionally except when the observable
+resolution returns a different name; the exact premise capturing agreement is
+`CCalls.Events.Resolves`.
+
+The prepared tensor derivative entry runs in the void loop-call machine
+`CLoops.Calls.machine` (the level of `CTensor.Lowering.CallCorrect`), whose nested
+calls are the emitted tensor helper functions (`rumoca_tensor_mul`, and, for the
+initializer, `rumoca_tensor_fill`), all direct calls by identifier that are not
+shadowed by constants. The transfer lemma
+`CCalls.Events.loop_call_reaches_events`/`loop_call_behaviors_events` (proved in
+`packages/backend-c`, the owner of both machines, mirroring
+`CCalls.Typed.loop_call_result`; only the call-site lemma changes) embeds the
+same completed loop-call execution into the observable machine under any saved
+caller, reaching the identical final heap, under `Resolves` for the call sites the
+run visits. It changes neither machine definition. `TensorModelRhs.events_reaches`
+and `TensorInstanceRhs.derivative_writes_events` apply it to make the prepared
+entry's execution, proved in the typed machine (`TensorModelRhs`,
+`TensorInstanceRhs.derivative_writes`), available as an observable-machine run
+with the identical `der(x)` write and instance-preservation frame.
+
+The fused getter carries the direct-resolution premise (`resolves`) explicitly; a
+tensor adapter discharges it for its own emitted helper functions. The tensor
+count queries (`fmi3GetNumberOfContinuousStates`,
+`fmi3GetNumberOfEventIndicators`), the count-negotiation policy for a partial or
+oversized request, and binding the bodies to an emitted FMU wrapper with its
+lifecycle and numerical policy remain open. This is a package-checked product
+only: no production artifact is emitted, no CLI or grammar case is added, and the
+scalar adapter, `Runtime.lean` and every existing contract are unchanged.
