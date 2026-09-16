@@ -1,3 +1,5 @@
+import RumocaC.InvocationRetention
+import RumocaC.WriteRegions
 import RumocaC.InvocationIdentity
 import RumocaC.InvocationFootprint
 import RumocaC.VoidReturn
@@ -256,3 +258,14 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.Host.Recording.advance_unique
 #audit axioms Rumoca.CCalls.Host.Recording.history_unique
 #audit axioms Rumoca.CCalls.Host.Recording.initial_unique
+
+#audit axioms Rumoca.CCalls.Host.Recording.advance_retained
+#audit axioms Rumoca.CCalls.Host.Recording.history_retained
+#audit axioms Rumoca.CWriteFootprint.concurrent_region
+#audit axioms Rumoca.CWriteFootprint.enter_frame
+#audit axioms Rumoca.CWriteFootprint.event_region
+#audit axioms Rumoca.CWriteFootprint.internal_frame
+#audit axioms Rumoca.CWriteFootprint.internal_region
+#audit axioms Rumoca.CWriteFootprint.loop_frame
+#audit axioms Rumoca.CWriteFootprint.resume_frame
+#audit axioms Rumoca.CWriteFootprint.store_outside

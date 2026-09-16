@@ -1,5 +1,57 @@
 # Exact verification contract
 
+**Private reservation retention and initialization (full gate passed):**
+
+A still-active original invocation now retains its private reservation through
+the coupled history. Claims preserve occupied slots; release authority cannot
+clear a private slot; another completion cannot publish it under the original
+serial. The ledger derives intermediate descriptor retention even with thread
+reuse. Starting from claimed-initializer control and the initial private entry,
+the same framed history derives the final reservation, initialized record,
+returned handle and current importer resource. These facts discharge this
+factory completion's publication boundary. Its completion is outside the
+prefix, so the proof does not assume the result it establishes. The source
+theorem retains the actual C/adapter/metadata/program and preceding contracts.
+
+The C write footprint now covers every supported internal transition, including
+loop bodies, indirect call entry and saved return assignments. It resolves the
+current destination without evaluating the RHS or enumerating tensor elements.
+Actual execution preserves every other cell. Current resource authority then
+derives separation from private initializer records, including nested members
+and tensor offsets. Eventful and concurrent frames use the current shared heap;
+foreign effects remain explicit. Complete method destination confinement and
+caller-buffer separation are still needed to discharge the initialization
+theorem's private interference premise for the whole public protocol.
+
+The owning-package checks passed at 02:47:13 UTC on 2026-09-16.
+The required `nix develop .#verification --command lake test` passed at
+03:34:37 UTC on 2026-09-16, with 1260 unchanged inputs and all
+548 selected roots (26 new, 522 retained). No unexpected axioms, changed-module
+warnings or source drift were found. Root counts do not measure semantic
+coverage; all previously selected roots remain in the same three audits.
+
+Draft, dependency-isolation and semantic-review evidence is in
+`build/c-resource-histories/`: `source-retention-v2.json`,
+`retention-promotion-v2.json`, `retention-review-v1.md`,
+`retention-extracted-v1.json`, `retention-extracted-fmi-v1.json`,
+`retention-c-reuse-v1.json`, `owned-write-frame-v1.json`,
+`writes-extracted-v1.json`, `writes-c-reuse-v1.json` and `writes-review-v1.md`.
+Integration, package, full-gate, standards/upstream review and retained
+artifacts are under `build/c-private-retention/`.
+
+Every FMU member is unchanged from `6f169ea`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+No grammar, source/IR semantics, C emission, solver or interface policy changed;
+no test suite was added. Starting typed storage, complete admitted public
+histories, destination/buffer/callback confinement, native C11/static
+initialization/ABI/fenv correspondence, provenance, transitive allocation,
+MISRA and existing MLS/FMI/eFMI findings remain open. K02–K05 still block grammar
+expansion and a complete assurance claim.
+
 **Resource origins and release histories (full gate passed):**
 
 Resource updates now follow actual recorded C/host actions. The original ledger

@@ -1,3 +1,5 @@
+import RumocaFMI3.RetainedInitialization
+import RumocaFMI3.PrivateWriteFrame
 import RumocaFMI3.ClearedOrigins
 import RumocaFMI3.ResourcePublication
 import RumocaFMI3.InstanceAuthorityActions
@@ -343,3 +345,19 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.InstanceAuthority.unowned_observation
 #audit axioms Rumoca.FMI3.PublicAPI.ordinary_iff
 #audit axioms Rumoca.FMI3.PublicAPI.ordinary_signature
+
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.FactoryResult.returned
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.Step.private_reservation
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.claim_keeps
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.clear_keeps
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.complete_keeps
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.execute_keeps
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.framed_history
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.history_private_reservation
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.initialized_from_history
+#audit axioms Rumoca.FMI3.InstanceAuthority.concurrent_preserves_private
+#audit axioms Rumoca.FMI3.InstanceAuthority.event_preserves_private
+#audit axioms Rumoca.FMI3.InstanceAuthority.internal_preserves_private
+#audit axioms Rumoca.FMI3.InstanceAuthority.owned_writes_avoid_private
+#audit axioms Rumoca.FMI3.InstanceAuthority.private_record_separate
+#audit axioms Rumoca.FMI3.InstanceAuthority.store_preserves_private
