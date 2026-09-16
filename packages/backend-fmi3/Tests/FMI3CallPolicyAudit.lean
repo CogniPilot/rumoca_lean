@@ -1,3 +1,6 @@
+import RumocaFMI3.InitializationHistory
+import RumocaFMI3.InitializationIsolation
+import RumocaFMI3.ExchangeInitialization
 import RumocaFMI3.ReservationRegistryRuntime
 import RumocaFMI3.InitializationFootprint
 import RumocaFMI3.FactoryHistory
@@ -189,3 +192,20 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ReservationRegistry.slotAt_address
 #audit axioms Rumoca.FMI3.ReservationRegistry.slotAt_sound
 #audit axioms Rumoca.FMI3.ReservationRegistry.step_represents
+
+#audit axioms Rumoca.FMI3.InstanceInitialization.Initialized.region
+#audit axioms Rumoca.FMI3.InstanceInitialization.Storage.region
+#audit axioms Rumoca.FMI3.InstanceSlot.initialization_history
+#audit axioms Rumoca.FMI3.InstanceSlot.initialization_observed
+#audit axioms Rumoca.FMI3.InstanceSlot.initialization_other_instance
+#audit axioms Rumoca.FMI3.InstanceSlot.initialization_ready
+#audit axioms Rumoca.FMI3.InstanceSlot.initialized_region
+#audit axioms Rumoca.FMI3.InstanceSlot.run_return
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.Ready.halted
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.Ready.withHeap
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.claimed_history
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.claimed_observed
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.exchange_initialization
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.step_other_instance
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.step_ready
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.step_with_frame

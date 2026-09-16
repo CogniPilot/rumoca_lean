@@ -11,6 +11,64 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Concurrent initialization through host observation (full gate passed):**
+
+The source-bound theorem now connects the checked source, numerical C,
+prepared runtime and actual public history to successful reservation,
+initialization and host-observed return. The raw history derives the original
+factory arguments and saved caller. Its actual exchange supplies the index,
+observation, event, new heap and successful continuation. The real helper
+return, capacity guard and instance selection derive initializer entry.
+
+The initializer runs its emitted metadata, prepared Solve state, clock,
+lifecycle and callback stores. A reference execution stays related to the
+current heap only on its private record. Its actual internal steps are enabled,
+silent, preserve the exterior and reduce a control-derived remaining-step
+count. Zero means actual root halting. The returned handle, initialized values,
+writable storage and slot metadata are proved at host-observed completion.
+Scheduler fairness is not asserted.
+
+Shared-history invariants use the current heap and original invocation serial.
+Thread reuse cannot reuse that identity. A distinct initializer's actual C
+steps preserve every member of this record, without enumerating array elements.
+The complete successful factory continuation derives its exterior frame,
+including helper return, guard and selection; the successful scan preserves
+the whole shared heap.
+
+Typed pool storage at the reached exchange and private-record interference
+remain explicit premises. The complete legal host/callback/buffer protocol must
+establish them and connect actual completion to live-handle authority and
+authorized release. The physical reservation registry remains a separate
+proved component; pointer bits or a busy flag do not establish caller authority.
+The source theorem does not yet combine these into one complete lifetime rule.
+
+The owning-package checks passed at 23:23:46 UTC on 2026-09-15.
+The required `nix develop .#verification --command lake test` passed at
+00:13:37 UTC on 2026-09-16, with 1217 unchanged inputs and all
+382 selected roots (33 new, 349 retained). No unexpected axioms, changed-module
+warnings or source drift were found. Root counts do not measure semantic
+coverage; all previously selected roots remain in the same three audits.
+
+Draft and dependency-isolation evidence is in `build/c-reservation-registry/`:
+`source-initialization-v3.json`, `initialization-promotion-v2.json`,
+`initialization-review-v2.md` and
+`initialization-extracted-c-v1.json` plus
+`initialization-extracted-{fmi,all}-v2.json`. Integration, package, full-gate,
+standards/upstream review and retained artifact records are under
+`build/c-private-initialization/`.
+
+Every FMU member is unchanged from `88b8f7c`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+No grammar, source/IR semantics, C emission, solver or interface policy changed;
+no test suite was added. Native static initialization/C11/ABI, callback/fenv
+correspondence, provenance, transitive allocation, MISRA and remaining
+MLS/FMI/eFMI findings stay open. K02–K05 continue to block grammar growth and
+a complete assurance claim.
+
 **Computed reservation histories through actual claims (full gate passed):**
 
 The source-bound theorem now derives current reservation/flag representation

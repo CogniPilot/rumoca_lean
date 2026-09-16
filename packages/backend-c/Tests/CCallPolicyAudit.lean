@@ -1,3 +1,6 @@
+import RumocaC.InitializationProgress
+import RumocaC.InvocationRegion
+import RumocaC.AtomicClaimProgress
 import RumocaC.AtomicOperationSteps
 import RumocaC.InvocationReplay
 import RumocaC.AssignmentFootprint
@@ -214,3 +217,20 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CMemory.Footprint.store_outside
 #audit axioms Rumoca.CMemory.Footprint.store_region
 #audit axioms Rumoca.CMemory.Footprint.store_transport
+
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.claimed_next
+#audit axioms Rumoca.CAtomicScan.ConcurrentInvariant.claimed_step_heap
+#audit axioms Rumoca.CCalls.Host.Recording.current_selected_history
+#audit axioms Rumoca.CCalls.Host.Recording.current_selected_step
+#audit axioms Rumoca.CCalls.InitializationRegion.CompleteReady.halted
+#audit axioms Rumoca.CCalls.InitializationRegion.CompleteReady.withHeap
+#audit axioms Rumoca.CCalls.InitializationRegion.CompleteReady.zero_iff_halted
+#audit axioms Rumoca.CCalls.InitializationRegion.Ready.exit
+#audit axioms Rumoca.CCalls.InitializationRegion.Ready.withHeap
+#audit axioms Rumoca.CCalls.InitializationRegion.complete_next_ready
+#audit axioms Rumoca.CCalls.InitializationRegion.complete_step_decreases
+#audit axioms Rumoca.CCalls.InitializationRegion.complete_step_frame
+#audit axioms Rumoca.CCalls.InitializationRegion.complete_step_ready
+#audit axioms Rumoca.CCalls.InitializationRegion.next_ready
+#audit axioms Rumoca.CCalls.InitializationRegion.remaining_withHeap
+#audit axioms Rumoca.CCalls.InitializationRegion.step_ready
