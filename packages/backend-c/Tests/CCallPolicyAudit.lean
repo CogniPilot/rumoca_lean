@@ -1,3 +1,5 @@
+import RumocaC.VoidReturn
+import RumocaC.HostStoreInvariant
 import RumocaC.InitializationProgress
 import RumocaC.InvocationRegion
 import RumocaC.AtomicClaimProgress
@@ -234,3 +236,14 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.InitializationRegion.next_ready
 #audit axioms Rumoca.CCalls.InitializationRegion.remaining_withHeap
 #audit axioms Rumoca.CCalls.InitializationRegion.step_ready
+
+#audit axioms Rumoca.CCalls.VoidReturn.Ready.halted_value
+#audit axioms Rumoca.CCalls.VoidReturn.Ready.withHeap
+#audit axioms Rumoca.CCalls.VoidReturn.Ready.zero_iff_halted
+#audit axioms Rumoca.CCalls.VoidReturn.history_ready
+#audit axioms Rumoca.CCalls.VoidReturn.next_ready
+#audit axioms Rumoca.CCalls.VoidReturn.observed_void
+#audit axioms Rumoca.CCalls.VoidReturn.step_ready
+#audit axioms Rumoca.CStoreInvariant.host_history
+#audit axioms Rumoca.CStoreInvariant.host_next
+#audit axioms Rumoca.CStoreInvariant.recorded_history

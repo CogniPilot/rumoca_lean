@@ -1,3 +1,5 @@
+import Rumoca.FMI3PublicationHistories
+import Rumoca.FMI3StaticInitializationHistories
 import Rumoca.FMI3InitializationHistories
 import Rumoca.FMI3ReservationHistories
 import Rumoca.FMI3FactoryClaims
@@ -51,3 +53,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ReservationRegistry.source_reservation_histories
 
 #audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.source_factory_initializations
+
+#audit axioms Rumoca.FMI3.PublicationRegistry.source_publication_histories
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.source_creation_histories
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.source_static_factory_initializations

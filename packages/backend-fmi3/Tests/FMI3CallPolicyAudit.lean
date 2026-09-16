@@ -1,3 +1,9 @@
+import RumocaFMI3.PublicationMemory
+import RumocaFMI3.PublicationTransitions
+import RumocaFMI3.PublicationProjection
+import RumocaFMI3.ReleaseTail
+import RumocaFMI3.InitializedPublication
+import RumocaFMI3.HostInstanceStorage
 import RumocaFMI3.InitializationHistory
 import RumocaFMI3.InitializationIsolation
 import RumocaFMI3.ExchangeInitialization
@@ -209,3 +215,40 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.step_other_instance
 #audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.step_ready
 #audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.step_with_frame
+
+#audit axioms Rumoca.FMI3.PublicationRegistry.Step.erases
+#audit axioms Rumoca.FMI3.PublicationRegistry.Step.reservations
+#audit axioms Rumoca.FMI3.PublicationRegistry.advance_claim_free
+#audit axioms Rumoca.FMI3.PublicationRegistry.advance_clear
+#audit axioms Rumoca.FMI3.PublicationRegistry.advance_origin
+#audit axioms Rumoca.FMI3.PublicationRegistry.advance_void_completion
+#audit axioms Rumoca.FMI3.PublicationRegistry.claimed_publication
+#audit axioms Rumoca.FMI3.PublicationRegistry.history_checked
+#audit axioms Rumoca.FMI3.PublicationRegistry.history_erases
+#audit axioms Rumoca.FMI3.PublicationRegistry.history_lift
+#audit axioms Rumoca.FMI3.PublicationRegistry.history_publication_origin
+#audit axioms Rumoca.FMI3.PublicationRegistry.history_represents
+#audit axioms Rumoca.FMI3.PublicationRegistry.history_reservations
+#audit axioms Rumoca.FMI3.PublicationRegistry.observe_origin
+#audit axioms Rumoca.FMI3.PublicationRegistry.observe_owned
+#audit axioms Rumoca.FMI3.PublicationRegistry.publish_origin
+#audit axioms Rumoca.FMI3.PublicationRegistry.publish_owned
+#audit axioms Rumoca.FMI3.PublicationRegistry.publish_wrong_lease
+#audit axioms Rumoca.FMI3.PublicationRegistry.published_reservation
+#audit axioms Rumoca.FMI3.PublicationRegistry.reservation_history_lift
+#audit axioms Rumoca.FMI3.PublicationRegistry.reservations_advance
+#audit axioms Rumoca.FMI3.PublicationRegistry.reservations_observe
+#audit axioms Rumoca.FMI3.PublicationRegistry.reservations_publish
+#audit axioms Rumoca.FMI3.PublicationRegistry.reservations_synchronize
+#audit axioms Rumoca.FMI3.PublicationRegistry.step_publication_origin
+#audit axioms Rumoca.FMI3.PublicationRegistry.synchronize_claim_busy
+#audit axioms Rumoca.FMI3.PublicationRegistry.synchronize_claim_free
+#audit axioms Rumoca.FMI3.PublicationRegistry.synchronize_clear
+#audit axioms Rumoca.FMI3.PublicationRegistry.synchronize_cleared
+#audit axioms Rumoca.FMI3.PublicationRegistry.synchronize_new
+#audit axioms Rumoca.FMI3.PublicationRegistry.synchronize_published
+#audit axioms Rumoca.FMI3.PublicationRegistry.synchronize_reservations
+#audit axioms Rumoca.FMI3.RuntimeStorage.logged_host_storage
+#audit axioms Rumoca.FMI3.RuntimeStorage.logged_initial_slots
+#audit axioms Rumoca.FMI3.StaticRelease.clear_return_tail
+#audit axioms Rumoca.FMI3.StaticRelease.return_tail_observed

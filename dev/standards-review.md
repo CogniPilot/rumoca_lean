@@ -121,6 +121,69 @@ review separates capability flags, variable domains, lifecycle restrictions
 and defensive calls. Clock and empty output-derivative findings remain open.
 Pinned MLS/eFMI findings carry forward. **Stage decision: open.**
 
+### Computed publication and release completion: full gate passed
+
+**Computed publication and release completion (full gate passed):**
+
+Publication now extends the same actual reservation history with computed
+private/published phases. Claims, clears, observed returns, bounded addresses
+and original invocation serials determine the transitions. Its projection
+preserves the exact physical leases and flag representation. Every current
+publication has an actual matching factory-completion event. Forward transition
+proofs also show that matching completion really publishes.
+
+The source theorem retains the actual C/adapter/metadata and prepared-runtime
+contracts. The initialization bridge proves that the same actual completion
+returns the initialized record and publishes its retained reservation. Typed
+initial storage, private-record interference and retention remain explicit
+premises for the complete legal lifetime protocol to establish. Observation
+does not establish a caller's authority to use or release the handle.
+
+A further source theorem starts from the authored static declaration
+initialization and derives writable storage at every reached reservation.
+Callbacks and host memory actions must preserve object descriptors; numerical
+values remain mutable. The original heap must provide fresh static blocks.
+No reached writable-pool premise or successful initializer run is supplied.
+A combined source theorem connects static storage, the exact physical and
+publication histories, and successful initialization under one program and
+invocation ledger. Native static initialization remains a separate
+correspondence obligation.
+
+After the emitted release's real atomic clear, its remaining instructions are
+enabled, silent, preserve the entire current heap and decrease an own-step
+count. The generic suffix remains valid under admitted interference without
+a metadata frame. Its original invocation returns void even if another factory
+has reused the storage. That delayed completion cannot alter publication of a
+new lease. Existing lease-checked release rules are unchanged.
+
+The owning-package checks passed at 00:17:00 UTC on 2026-09-16.
+The required `nix develop .#verification --command lake test` passed at
+01:05:09 UTC on 2026-09-16, with 1230 unchanged inputs and all
+431 selected roots (49 new, 382 retained). No unexpected axioms, changed-module
+warnings or source drift were found. Root counts do not measure semantic
+coverage; all previously selected roots remain in the same three audits.
+
+Draft and dependency-isolation evidence is in `build/c-private-initialization/`:
+`initialized-publication-v3.json`, `release-tail-v2.json`,
+`source-static-initialization-v1.json`, `source-creation-histories-v1.json`, `publication-promotion-v3.json`,
+`publication-review-v3.md`, `publication-c-reuse-v2.json` and
+`publication-extracted-fmi-v2.json`, `publication-extracted-all-v3.json` and
+`publication-dependency-reuse-v3.json`. Integration, package, full-gate,
+standards/upstream review and retained artifact records are under
+`build/c-publication-history/`.
+
+Every FMU member is unchanged from `93192e8`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+No grammar, source/IR semantics, C emission, solver or interface policy changed;
+no test suite was added. The complete legal host/callback/buffer protocol,
+current lifetime authority, native C11/static initialization/ABI, fenv,
+provenance, transitive allocation, MISRA and remaining MLS/FMI/eFMI findings
+stay open. K02–K05 still block grammar expansion and a complete assurance claim.
+
 ### Concurrent initialization through host observation: full gate passed
 
 **Concurrent initialization through host observation (full gate passed):**
