@@ -661,3 +661,58 @@ and the native regression executable ties the actual `ArrayCompiler.prepare`
 kernel to that fixture by rendering the same bytes. No production artifact is
 emitted; general non-uniform initialization and the bound tensor FMU/eFMU
 certificates remain deferred.
+
+## Tensor instance storage bound to the model right-hand side
+
+`FMI3.TensorInstance` gives one tensor model instance a fully typed static object
+record for a prepared `Solve.TensorFMI3Model shape`. The record holds the
+FMI-visible tensors: the independent time base, the input tensor `u`, the state
+tensor `x`, the state derivative `der(x)`, and, when the prepared problem exposes
+a dense observation, the output tensor `J`. Each tensor member is a contiguous
+array of `double` whose extent is the shape volume; there is no dynamic
+allocation. It reuses the shared tensor region machinery
+(`CMemory.TensorRegion`) rather than a new memory model: a member array is a
+`place`d range of `float64` cells addressed inside one record of the static
+instance pool. Records are addressed by an instance index into the pool, so
+distinct instances occupy distinct array elements. This mirrors the scalar
+adapter's bounded static pool (`StaticStorage`, `deploymentCapacity = 32`); the
+storage and separation theorems are universal in the instance index, so any pool
+bound applies. Rank and extents stay symbolic; no tensor coordinate is
+enumerated. This is a package-checked product only: no production artifact is
+emitted, no CLI or grammar case is added, and the scalar adapter and every
+existing contract are unchanged.
+
+`FMI3.TensorInstanceRhs` deploys the admitted `TensorSquare` kernel
+(`der(x) = u .* u`) into that record. The derivative entry's parameters and
+result are pointed at the instance's `x` and `u` (inputs) and `dx` (output)
+regions. A well-formed instance heap discharges the tensor derivative entry's
+`Arguments.Valid`, `LayoutBound`, `Represents` and `Ready` predicates, so
+`FMI3.TensorModelRhs.behaviors` applies. The concluding theorem is universal in
+the tensor shape and the instance index: running the derivative entry on an
+instance writes the finite tensor derivative into that instance's `der(x)`
+region, preserves every cell outside it, and in particular preserves every
+tensor cell of every other instance in the static pool. Finite execution of the
+ordered arithmetic is an explicit entry premise; storage validity is derived
+from the record, not assumed of the caller.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| The instance's state and input regions are readable | `TensorInstance.reads_state`, `TensorInstance.reads_input` |
+| The instance's derivative region is writable | `TensorInstance.writable_derivative` |
+| Distinct tensor members of one instance never alias | `TensorInstance.fields_separate` |
+| Distinct instances of the pool never alias | `TensorInstance.instances_separate` |
+| Preparing one instance preserves every other instance's storage | `TensorInstance.store_other_instance` |
+| The derivative buffer resolves to the instance's `der(x)` region | `TensorInstanceRhs.derivativeBuffer_eq` |
+| Each named buffer resolves to its member address and count | `TensorInstanceRhs.parameter_bound` |
+| The derivative entry runs, writing `der(x)` and preserving other instances | `TensorInstanceRhs.derivative_writes` |
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms. The `TensorInstance` storage and separation theorems are
+model-agnostic; `TensorInstanceRhs` binds the concrete admitted kernel, keeping
+`RumocaCore.Array` (the development array profile) in a checked package product
+without emitting it. The dense output tensor `J` is supported as an optional
+record member; the bound derivative demonstration uses the no-output kernel, so
+the diagonal observation and non-uniform initialization remain deferred, along
+with the FMI lifecycle, numerical overflow/error policy and the complete bound
+tensor FMU/eFMU certificates. No wrapper body, metadata or archive contract is
+added, and no grammar case is admitted.

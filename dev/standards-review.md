@@ -73,6 +73,28 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor instance storage bound to the model right-hand side: standards impact
+
+`FMI3.TensorInstance` and `FMI3.TensorInstanceRhs` are package-checked products
+only. They emit no production artifact, add no CLI or grammar case, and leave the
+scalar static adapter (`StaticStorage`, `DerivativeCalls`, `ModelRhs`) and every
+existing contract unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS 3.7 | No admission, grammar, source semantics, initialization or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| FMI 3.0.2 ME/CS (storage/lifetime) | New derived product only. A tensor instance's FMI-visible tensors (`time`, `u`, `x`, `der(x)`, and `J` when present) are modeled as static object regions of `double`, one contiguous array per tensor with extent equal to the shape volume, addressed by an instance index into a bounded static pool. This mirrors the FMI instance-lifetime model: an instance is a distinct, persistent storage record for the duration between `fmi3InstantiateModelExchange`/`CoSimulation` and `fmi3FreeInstance`, with `fmi3GetContinuousStateDerivatives` reading the state and input and writing the derivative buffer. The theorems establish pairwise region separation, cross-instance separation over the pool (mirroring the scalar `deploymentCapacity` pool), and that running the prepared derivative entry writes only `der(x)` and preserves every other instance. No emitted `fmi3*` body, production metadata or mandatory adapter contract changes; the derivative entry stays the derived typed-machine contract `FMI3.TensorModelRhs`, not yet bound to an emitted wrapper. |
+| MISRA C:2012 (no allocation) | The instance record is static object storage; there is no dynamic allocation, consistent with the no-heap generated-C rule (Rule 21.3, no `malloc`/`calloc`/`realloc`/`free`). Every tensor member is a fixed static array of `double`; the pool has a fixed bound. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The universal theorems establish readable state/input regions, a writable
+derivative region, distinct-member and distinct-instance separation, and the
+derivative-entry write-and-frame result over the typed tensor call machine.
+Storage validity is derived from the record, not assumed of the caller. Finite
+overflow/error policy, the FMI lifecycle and time base, the dense output
+observation binding, and the complete bound tensor FMU/eFMU certificates remain
+open. **Stage decision: open; no grammar expansion.**
+
 ### Tensor FMI 3 model description: standards impact
 
 `FMI3.TensorMetadata.modelDescription` is a package-checked product only. It is

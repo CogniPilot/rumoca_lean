@@ -6,6 +6,7 @@ import RumocaCore.Solve.IVP
 import RumocaCore.Solve.Tensor.Reverse
 import Rumoca.EFMIIdentity
 import RumocaFMI3.TensorMetadata
+import RumocaFMI3.TensorInstanceRhs
 import Tests.TensorMetadataFixture
 
 open _root_.Parser
@@ -63,6 +64,9 @@ def main : IO Unit := do
             XML.document (FMI3.TensorMetadata.modelDescription preparedModel)
               == XML.document (FMI3.TensorMetadata.modelDescription
                   Tests.TensorMetadataFixture.fixtureModel))
+        expect "prepared TensorSquare RHS matches the tensor instance record's bound derivative"
+          (kernel.problem.rhs ops 0 1 state input ==
+            (FMI3.TensorInstanceRhs.kernel ArrayProfile.stateShape).problem.rhs ops 0 1 state input)
       | _, _ => throw (IO.userError "Solve observation does not match the source profile")
       match ArrayProfile.LocatedParsed.call? p with
       | none => pure ()

@@ -237,6 +237,8 @@ import RumocaFMI3.CountMetadata
 import RumocaFMI3.Version
 import RumocaFMI3.VersionMetadata
 import RumocaFMI3.TensorMetadata
+import RumocaFMI3.TensorInstanceStorage
+import RumocaFMI3.TensorInstanceRhs
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2134,3 +2136,16 @@ import RumocaFMI3.TensorMetadata
 #audit axioms Rumoca.FMI3.TensorMetadata.structure_references_declared
 #audit axioms Rumoca.FMI3.TensorMetadata.structure_dependencies_declared
 #audit axioms Rumoca.FMI3.TensorMetadata.modelIdentifiers_decode
+
+-- Tensor instance storage bound to the model right-hand side (package-checked
+-- product; no production emission, no scalar-adapter or existing-contract change).
+#audit axioms Rumoca.FMI3.TensorInstance.reads_state
+#audit axioms Rumoca.FMI3.TensorInstance.reads_input
+#audit axioms Rumoca.FMI3.TensorInstance.writable_derivative
+#audit axioms Rumoca.FMI3.TensorInstance.fields_separate
+#audit axioms Rumoca.FMI3.TensorInstance.instances_separate
+#audit axioms Rumoca.FMI3.TensorInstance.store_other_instance
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_valid
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.derivativeBuffer_eq
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.parameter_bound
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes

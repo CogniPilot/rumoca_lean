@@ -11,6 +11,25 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor instance storage bound to the tensor right-hand side (derived proofs):**
+
+`FMI3.TensorInstance` places a tensor model's time, state, input, derivative
+and optional output tensors as contiguous `double` regions of one record in a
+static instance pool, with no heap. Its roots prove readable inputs, a writable
+derivative region, separation of distinct members and of distinct instances,
+and preservation of every other instance when one is prepared, universally in
+the shape and the pool index. `FMI3.TensorInstanceRhs` points the admitted
+`TensorSquare` derivative entry at those regions, derives the entry predicates
+from the instance heap and concludes, through `TensorModelRhs.behaviors`, that
+the typed machine's sole behavior writes the finite tensor derivative into
+that instance's derivative region and preserves every other cell of every
+other instance. Finite execution, the environment facts and the count bound
+remain explicit premises; the dense output binding, lifecycle, time base and
+overflow policy remain open. Nothing is emitted by production and no existing
+contract changed. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 9m00s
+(`build/tensor-fmi/full-gate-v3.log`).
+
 **Tensor FMI 3 model description (derived proofs and package checks):**
 
 `Solve.TensorFMI3Model` pairs a model name with a prepared `PointwiseIVP`, and
