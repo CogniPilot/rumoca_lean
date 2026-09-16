@@ -1,5 +1,51 @@
 # Exact verification contract
 
+**Resource origins and release histories (full gate passed):**
+
+Resource updates now follow actual recorded C/host actions. The original ledger
+computes fresh invocation identities, and each ordinary-use or release ticket
+retains its exact public API and original instance argument. Ordinary completion
+returns only its own resource. The actual captured clear consumes the release
+resource; a history theorem proves that subsequent calls, thread reuse and slot
+reuse cannot recreate the retired ticket. Its delayed void completion leaves
+the current resource map, publication map and heap unchanged.
+
+One coupled history projects to the same resource and computed publication
+histories. Every later resource link and API origin follows from the initial
+invariant. Starting with an empty host ledger, each usable handle has an actual
+observed factory return with that slot and original serial. A successful factory
+observation must still retain its private reservation; this boundary remains
+explicit. The source theorem uses the same checked source, numerical C, adapter,
+metadata and logged program, retaining its captured-release contract.
+
+The owning-package checks passed at 01:57:44 UTC on 2026-09-16.
+The required `nix develop .#verification --command lake test` passed at
+02:44:19 UTC on 2026-09-16, with 1252 unchanged inputs and all
+522 selected roots (57 new, 465 retained). No unexpected axioms, changed-module
+warnings or source drift were found. Root counts do not measure semantic
+coverage; all previously selected roots remain in the same three audits.
+
+Draft, dependency-isolation and semantic-review evidence is in
+`build/c-instance-authority/`: `source-resources-v2.json`,
+`resource-promotion-v2.json`, `resource-review-v2.md`,
+`resource-extracted-v2.json`, `resource-extracted-fmi-v2.json` and
+`resource-c-reuse-v2.json`. Integration, package, full-gate, standards/upstream
+review and retained artifacts are under `build/c-resource-histories/`.
+
+Every FMU member is unchanged from `d67ad60`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+No grammar, source/IR semantics, C emission, solver or interface policy changed;
+no test suite was added. Complete public-call/lifecycle admission, private-value,
+buffer/saved-destination and callback frames, private-reservation retention,
+native C11/static initialization/ABI/fenv correspondence, provenance, transitive
+allocation, MISRA and the existing MLS/FMI/eFMI findings remain open. Logical
+resources are a verification design, not native generation tags. K02–K05 still
+block grammar expansion and a complete assurance claim.
+
 **Current handle authority and captured release (full gate passed):**
 
 Logical handles retain the original observed factory serial and bounded slot;

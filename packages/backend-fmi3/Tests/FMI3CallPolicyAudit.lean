@@ -1,3 +1,5 @@
+import RumocaFMI3.ClearedOrigins
+import RumocaFMI3.ResourcePublication
 import RumocaFMI3.InstanceAuthorityActions
 import RumocaFMI3.InitializedAuthority
 import RumocaFMI3.AuthorizedReleaseHistories
@@ -287,3 +289,57 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StaticRelease.Capture.protected_frame
 #audit axioms Rumoca.FMI3.StaticRelease.Capture.step_protected
 #audit axioms Rumoca.FMI3.StaticRelease.Capture.tail_footprint
+
+#audit axioms Rumoca.FMI3.InstanceAuthority.CallOrigin.map
+#audit axioms Rumoca.FMI3.InstanceAuthority.CallOrigin.retire
+#audit axioms Rumoca.FMI3.InstanceAuthority.CallOrigins.arguments
+#audit axioms Rumoca.FMI3.InstanceAuthority.Linked.claim
+#audit axioms Rumoca.FMI3.InstanceAuthority.Linked.execute
+#audit axioms Rumoca.FMI3.InstanceAuthority.NoTicket.clear
+#audit axioms Rumoca.FMI3.InstanceAuthority.NoTicket.completeUse
+#audit axioms Rumoca.FMI3.InstanceAuthority.NoTicket.enter
+#audit axioms Rumoca.FMI3.InstanceAuthority.NoTicket.publish
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Change.linked
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.Step.invariant
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.Step.publications
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.Step.resources
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.history_invariant
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.initial_handle_origin
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.initial_history
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Step.erases
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.clear_retires
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.history_erases
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.history_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.history_retired
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.initial_history_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.released_history_complete
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.step_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.step_retired
+#audit axioms Rumoca.FMI3.InstanceAuthority.borrowing_from_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.captured_release_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.clear_call_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.cleared_no_ticket
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_argument_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_call_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_frame
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_without_ticket
+#audit axioms Rumoca.FMI3.InstanceAuthority.empty_argument_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.empty_call_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.enter_argument_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.enter_call_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.factory_complete_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.factory_no_ticket
+#audit axioms Rumoca.FMI3.InstanceAuthority.idle_call_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.method_complete
+#audit axioms Rumoca.FMI3.InstanceAuthority.method_complete_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.method_enter
+#audit axioms Rumoca.FMI3.InstanceAuthority.method_enter_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.method_observation
+#audit axioms Rumoca.FMI3.InstanceAuthority.null_release_no_ticket
+#audit axioms Rumoca.FMI3.InstanceAuthority.publish_call_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.release_enter_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.released_complete_origins
+#audit axioms Rumoca.FMI3.InstanceAuthority.ticket_unique
+#audit axioms Rumoca.FMI3.InstanceAuthority.unowned_observation
+#audit axioms Rumoca.FMI3.PublicAPI.ordinary_iff
+#audit axioms Rumoca.FMI3.PublicAPI.ordinary_signature

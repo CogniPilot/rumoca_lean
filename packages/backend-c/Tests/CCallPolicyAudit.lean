@@ -1,3 +1,4 @@
+import RumocaC.InvocationIdentity
 import RumocaC.InvocationFootprint
 import RumocaC.VoidReturn
 import RumocaC.HostStoreInvariant
@@ -251,3 +252,7 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.CCalls.Host.Recording.current_footprint_history
 #audit axioms Rumoca.CCalls.Host.Recording.current_footprint_step
+
+#audit axioms Rumoca.CCalls.Host.Recording.advance_unique
+#audit axioms Rumoca.CCalls.Host.Recording.history_unique
+#audit axioms Rumoca.CCalls.Host.Recording.initial_unique
