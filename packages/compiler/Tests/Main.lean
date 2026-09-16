@@ -5,6 +5,8 @@ import Rumoca.ArrayCompiler
 import RumocaCore.Solve.IVP
 import RumocaCore.Solve.Tensor.Reverse
 import Rumoca.EFMIIdentity
+import RumocaFMI3.TensorMetadata
+import Tests.TensorMetadataFixture
 
 open _root_.Parser
 
@@ -54,6 +56,13 @@ def main : IO Unit := do
         expect "parsed square and Jacobian reach executable Solve IR"
           ((kernel.problem.rhs ops 0 1 state input).data.toArray == #[4, 9] &&
             (matrix.eval ops 0 1 (kernel.problem.environment state input)).data.toArray == #[4, 0, 0, 6])
+        let preparedModel : Solve.TensorFMI3Model ArrayProfile.stateShape := ⟨"TensorSquare", kernel⟩
+        expect "prepared TensorSquare renders the fixture's well-formed tensor model description"
+          (preparedModel.hasOutput &&
+            (FMI3.TensorMetadata.modelDescription preparedModel).valid &&
+            XML.document (FMI3.TensorMetadata.modelDescription preparedModel)
+              == XML.document (FMI3.TensorMetadata.modelDescription
+                  Tests.TensorMetadataFixture.fixtureModel))
       | _, _ => throw (IO.userError "Solve observation does not match the source profile")
       match ArrayProfile.LocatedParsed.call? p with
       | none => pure ()

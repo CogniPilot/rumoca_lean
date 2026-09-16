@@ -236,6 +236,7 @@ import RumocaFMI3.CountPool
 import RumocaFMI3.CountMetadata
 import RumocaFMI3.Version
 import RumocaFMI3.VersionMetadata
+import RumocaFMI3.TensorMetadata
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2115,3 +2116,21 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.AbsentVariables.terminated_setter
 #audit axioms Rumoca.FMI3.AbsentVariables.cs_step_empty
 #audit axioms Rumoca.FMI3.PublicAPI.every_export
+
+-- Tensor FMI 3 model description (package-checked product; no production emission).
+#audit axioms Rumoca.FMI3.TensorMetadata.text_toString
+#audit axioms Rumoca.FMI3.TensorMetadata.startEntries_length
+#audit axioms Rumoca.FMI3.TensorMetadata.startValue_text
+#audit axioms Rumoca.FMI3.TensorMetadata.valid
+#audit axioms Rumoca.FMI3.TensorMetadata.document
+#audit axioms Rumoca.FMI3.TensorMetadata.valueReferences_eq
+#audit axioms Rumoca.FMI3.TensorMetadata.valueReferences_nodup
+#audit axioms Rumoca.FMI3.TensorMetadata.dimStarts_dimensions
+#audit axioms Rumoca.FMI3.TensorMetadata.stateVar_dim_product
+#audit axioms Rumoca.FMI3.TensorMetadata.inputVar_dim_product
+#audit axioms Rumoca.FMI3.TensorMetadata.derivativeVar_dim_product
+#audit axioms Rumoca.FMI3.TensorMetadata.outputVar_dim_product
+#audit axioms Rumoca.FMI3.TensorMetadata.derivative_references_state
+#audit axioms Rumoca.FMI3.TensorMetadata.structure_references_declared
+#audit axioms Rumoca.FMI3.TensorMetadata.structure_dependencies_declared
+#audit axioms Rumoca.FMI3.TensorMetadata.modelIdentifiers_decode

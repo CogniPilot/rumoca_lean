@@ -11,6 +11,23 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor FMI 3 model description (derived proofs and package checks):**
+
+`Solve.TensorFMI3Model` pairs a model name with a prepared `PointwiseIVP`, and
+`FMI3.TensorMetadata.modelDescription` builds its model description universally
+over the tensor shape: one `Float64` per tensor variable with one `Dimension`
+per extent, per-element `start` lists for the fixed-zero profile, the
+derivative bound to its state, and a model structure whose entries record the
+single input dependency. Audited roots prove renderer well-formedness under a
+printable name, distinct value references, dimension products equal to the
+tensor volume, start-list length, declared structure and dependency references,
+and unchanged model-identifier decoding. A compiler check renders the
+`TensorSquare` development kernel to the fixture bytes. Nothing is emitted by
+production; the unit document, grammar, CLI and every mandatory contract are
+unchanged. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 11m06s
+(`build/tensor-fmi/full-gate-v2.log`).
+
 **Tensor model right-hand-side contract (derived proofs):**
 
 `FMI3.TensorModelRhs` restates the prepared tensor derivative entry as an

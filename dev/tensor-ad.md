@@ -604,3 +604,60 @@ to the same prepared IVP, establish its finite overflow/error and lifecycle/time
 policy, and compose the source-to-archive certificate. General sparsity and
 further grammar remain deferred. The typed call theorem alone does not establish
 an allocator, ABI, solver, FMI lifecycle or complete FMU/eFMU contract.
+
+## Tensor FMI 3 model description
+
+`FMI3.TensorMetadata.modelDescription` builds an FMI 3 model description for a
+prepared `Solve.TensorFMI3Model shape`, universally over the tensor shape: rank
+and extents stay symbolic and no coordinate is enumerated. It is a
+package-checked product only. It is not emitted by production, adds no CLI or
+grammar case, and leaves the existing scalar unit `modelDescription` and every
+existing contract unchanged.
+
+The document declares the independent time base, the input tensor `u`, the state
+tensor `x` (`initial="exact"` from the prepared fixed-zero initialization), the
+derivative tensor `der(x)` (referencing the state's value reference), and, when
+the prepared problem carries a diagonal observation, the dense output tensor `J`.
+Each tensor variable is one `Float64` declaration carrying one `Dimension` per
+extent with a constant `start`; the output's dimensions come from the state
+element count squared. `ModelStructure` lists the output, the continuous-state
+derivative and the initial unknowns, each with an explicit `dependencies="1"`
+and `dependenciesKind="dependent"` recording the single input dependency (`u`).
+Value references are one per variable (`time`, `u`, `x`, `der(x)`, `J`). Per the
+FMI 3.0.2 array `start` rule, the `start` attribute of an array variable is a
+space-separated list of one value per element (the product of the `Dimension`
+starts); `u` and `x` render the profile's uniform fixed-zero initialization as
+that flattened list.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Decimal extents are printable XML text | `TensorMetadata.text_toString` |
+| Array `start` lists one value per element | `TensorMetadata.startEntries_length` |
+| The array `start` list is printable XML text | `TensorMetadata.startValue_text` |
+| The document is a well-formed tree under the in-tree validator | `TensorMetadata.valid` |
+| The document is accepted by the renderer/syntax `Document` relation | `TensorMetadata.document` |
+| Value references are pairwise distinct | `TensorMetadata.valueReferences_nodup` |
+| Dimension starts recover the declared extents | `TensorMetadata.dimStarts_dimensions` |
+| Each variable's Dimension starts multiply to its tensor element count | `TensorMetadata.stateVar_dim_product`, `inputVar_dim_product`, `derivativeVar_dim_product`, `outputVar_dim_product` |
+| The derivative's `derivative` attribute references the state's value reference | `TensorMetadata.derivative_references_state` |
+| Every `ModelStructure` entry references a declared variable | `TensorMetadata.structure_references_declared` |
+| Every `dependencies` reference is a declared variable's value reference | `TensorMetadata.structure_dependencies_declared` |
+| Model identifiers decode exactly as the unit document | `TensorMetadata.modelIdentifiers_decode` |
+
+The well-formedness theorems are universal in a printable model name
+(`XML.Text` of the name). The element count is `Tensor.Shape.volume`, so the
+Dimension-start product theorems reduce to `shape.dimensions.foldr (·*·) 1` for
+`u`, `x` and `der(x)`, and to `shape.volume * shape.volume` for `J`; the array
+`start` list has that same `shape.volume` many entries. The identifiers decode
+through the same `FMI3.decodeModelIdentifiers` used for the unit document, over
+the shared `ModelExchange`/`CoSimulation` model-identifier structure. Each
+`ModelStructure` entry in this profile lists exactly one dependency reference,
+the input `u`.
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms. `Rumoca.Tests.TensorMetadataFixture.fixture_document`
+audits the concrete `TensorSquare` shape rendering to a well-formed document,
+and the native regression executable ties the actual `ArrayCompiler.prepare`
+kernel to that fixture by rendering the same bytes. No production artifact is
+emitted; general non-uniform initialization and the bound tensor FMU/eFMU
+certificates remain deferred.

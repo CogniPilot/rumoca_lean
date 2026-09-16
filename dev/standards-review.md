@@ -73,6 +73,33 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor FMI 3 model description: standards impact
+
+`FMI3.TensorMetadata.modelDescription` is a package-checked product only. It is
+not emitted by production, adds no CLI or grammar case, and leaves the existing
+scalar unit `modelDescription` and every existing contract unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS 3.7 | No admission, grammar, source semantics or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| FMI 3.0.2 ME/CS | New derived product only. The tensor `fmi3ModelDescription` declares each tensor variable as one `fmi3Float64` with one `Dimension` (constant `start`) per extent, one `valueReference` per variable, `causality`/`variability`/`initial` mirroring the unit document, the derivative's `derivative` attribute referencing the state, and an `fmi3ModelStructure` listing `Output`, `ContinuousStateDerivative` and `InitialUnknown`. Array `start` on `u` and `x` is the space-separated flattened list of one value per element (the `Dimension`-start product) for the uniform fixed-zero initialization. `ModelStructure` entries carry an explicit `dependencies="1"` with `dependenciesKind="dependent"` recording the single input dependency, since an omitted `dependencies` means "depends on all". No emitted `fmi3*` body, production metadata or mandatory adapter contract changes. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+Schema basis: the pinned FMI 3.0.2 XML schema elements `fmi3ModelDescription`,
+`fmi3Float64`, the `Dimension` element (`start` versus dynamic `valueReference`),
+the array variable `start` list, and `fmi3ModelStructure` (`Output`,
+`ContinuousStateDerivative`, `InitialUnknown` with the `dependencies` and
+`dependenciesKind` attributes), consistent with the metadata-projection
+obligation recorded in `dev/fmi3/contracts.md` and the scalar
+ModelStructure/no-Dimension restriction there. The universal theorems establish
+well-formedness under the in-tree renderer, distinct value references,
+Dimension-start products equal to `Tensor.Shape.volume`, an array `start` list of
+that same element count, the derivative-to-state reference, ModelStructure
+references to declared variables, every `dependencies` reference declared, and
+identical `decodeModelIdentifiers` output. Complete FMI metadata conformance and
+the bound tensor FMU/eFMU certificates remain open. **Stage decision: open; no
+grammar expansion.**
+
 ### Tensor model right-hand-side contract: standards impact
 
 | Standard | Impact |
