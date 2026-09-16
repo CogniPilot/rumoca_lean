@@ -46,7 +46,12 @@ The required `nix develop .#verification --command lake test` passed on
 2026-09-16 with these build products in place, in 36m16s, while a separate
 build shared the machine. Every certificate was rebuilt cold in that run because
 the root Lake file is a traced input and had changed; the steady-state warm
-gate is measured below. Evidence is in `build/certificate-cache/full-gate-v3.log`.
+gate follows. Evidence is in `build/certificate-cache/full-gate-v3.log`.
+
+The next full gate on the same revision, with every certificate reused, passed
+in 11m57s (`build/certificate-cache/full-gate-v4-warm.log`), against the
+46.5-minute baseline. The remaining time is Lake dependency checking, native C
+compilation, importer runs, mutation rejections and the boundary scripts.
 
 ## Development loop
 
