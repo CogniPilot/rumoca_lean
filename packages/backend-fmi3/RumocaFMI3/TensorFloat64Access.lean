@@ -1416,6 +1416,218 @@ theorem null_set_behaviors (shape : Tensor.Shape) (program : CCalls.Events.Progr
 
 end
 
+/-! ### Unknown or unsupported value-reference failure paths
+
+The tensor Float64 dispatch reaches the scalar `fail` statement before the copy
+loop for a value reference that names no supported region: an unknown getter
+reference (`r ∉ {0,1,2,3,4}`), the output reference `4` on a record with no dense
+output (`outputShape = none`), and any non-writable setter reference. The
+memory-machine execution witness leaves the heap unchanged up to that statement;
+`GuardedCalls.FailurePrefix.silent_behaviors` then returns `fmi3Error`. -/
+
+section
+variable [static : StaticLiterals]
+private local instance failPathInterface : CInterface := cInterface static.addresses
+
+/-- The basic request check passes for a non-null single-reference request. -/
+private theorem basic_pass (heap : Heap) (p refs buffer : Address) (n m : UInt64) (nref : n.toNat = 1) :
+    CBody.eval (guardEnv p refs buffer n m) heap
+      (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
+        Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) =
+      some (boolean false) := by
+  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval,
+    guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, nref]
+
+/-- The getter's memory-machine execution reaches its `fail` statement before the
+copy loop, leaving the heap unchanged, for an unknown reference or the output
+reference on a record without a dense output. -/
+theorem get_fail_prefix (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
+    (heap : Heap) (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (r : Nat)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .get kind mode) (nref : n.toNat = 1)
+    (refRead : load heap (refs.index 0) = some (.integer r))
+    (h0 : r ≠ 0) (h1 : r ≠ 1) (h2 : r ≠ 2) (h3 : r ≠ 3) (h4 : r = 4 → outputShape = none) :
+    GuardedCalls.FailurePrefix (getFunction shape outputShape)
+      (arguments (some p) (some refs) (some buffer) n m) heap p "Unknown value reference" heap := by
+  set env0 := parameters (some p) (some refs) (some buffer) n m with henv0
+  set g := guardEnv p refs buffer n m with hg
+  set d := declaredEnv g with hd
+  have rv : resolve d "valueReferences" = some (.pointer (some refs)) := by
+    simp [hd, declaredEnv, hg, guardEnv, parameters, CBody.bind, CBody.resolve]
+  -- guard, then the basic request check passes
+  have s_accept : CBody.run 3 (.running (getBody shape outputShape) env0 heap) =
+      some (.running (basicReject :: getRest shape outputShape) g heap) :=
+    LifecycleGuard.accept env0 heap p .get kind mode (basicReject :: getRest shape outputShape)
+      (by simp [henv0, parameters, CBody.bind]) (by simp [henv0, parameters, CBody.bind]) hk hm allowed
+  have s_reject : CBody.run 1 (.running (basicReject :: getRest shape outputShape) g heap) =
+      some (.running (getRest shape outputShape) g heap) :=
+    run_one (reject_false g heap _ "Invalid Float64 array lengths or pointers" (getRest shape outputShape)
+      (basic_pass heap p refs buffer n m nref))
+  -- stage the two declarations
+  have s_src : CBody.run 1 (.running (getRest shape outputShape) g heap) =
+      some (.running (.declare "size_t" "expected" (Runtime.n 0) ::
+        getDispatch shape outputShape :: countReject :: getLoopSuffix)
+        (CBody.bind g "src" (.pointer none)) heap) :=
+    run_one (declare_next g heap "fmi3Float64 *" "src" Expr.nullPointer (.pointer none) (.pointer none) _
+      (by simp [hg, guardEnv, parameters, CBody.bind])
+      (by simp [Expr.nullPointer, CBody.eval, CBody.expressionCast, CBody.zeroLiteral])
+      (by simp [CBody.cast, convert]))
+  have s_exp : CBody.run 1 (.running (.declare "size_t" "expected" (Runtime.n 0) ::
+        getDispatch shape outputShape :: countReject :: getLoopSuffix)
+        (CBody.bind g "src" (.pointer none)) heap) =
+      some (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix) d heap) :=
+    run_one (declare_next (CBody.bind g "src" (.pointer none)) heap "size_t" "expected" (Runtime.n 0)
+      (.integer 0) (.integer 0) _ (by simp [hg, guardEnv, parameters, CBody.bind])
+      (by simp [Runtime.n, CBody.eval]) (by simp [CBody.cast, convert]))
+  -- dispatch: branch 0..3 fall through
+  have b0 : CBody.run 1 (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix) d heap) =
+      some (.running (getDispatch1 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
+    run_one (branch_false d heap _ (getArm timeName 1) (getDispatch1 shape outputShape) _
+      (vr0_bne d heap refs r 0 rv refRead h0))
+  have b1 : CBody.run 1 (.running (getDispatch1 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
+      some (.running (getDispatch2 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
+    run_one (branch_false d heap _ (getArm inputName shape.volume) (getDispatch2 shape outputShape) _
+      (vr0_bne d heap refs r 1 rv refRead h1))
+  have b2 : CBody.run 1 (.running (getDispatch2 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
+      some (.running (getDispatch3 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
+    run_one (branch_false d heap _ (getArm stateName shape.volume) (getDispatch3 shape outputShape) _
+      (vr0_bne d heap refs r 2 rv refRead h2))
+  have b3 : CBody.run 1 (.running (getDispatch3 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
+      some (.running (getDispatch4 outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
+    run_one (branch_false d heap _ (getArm derivativeName shape.volume) (getDispatch4 outputShape) _
+      (vr0_bne d heap refs r 3 rv refRead h3))
+  -- branch 4: either falls through (r ≠ 4) or takes the empty output arm (no output)
+  have b4 : CBody.run 1 (.running (getDispatch4 outputShape ++ (countReject :: getLoopSuffix)) d heap) =
+      some (.running (Runtime.fail "Unknown value reference" :: countReject :: getLoopSuffix) d heap) := by
+    by_cases hr4 : r = 4
+    · have hnone : outputShape = none := h4 hr4
+      subst hnone
+      refine run_one (branch_true d heap _ (getOutputArm none) [Runtime.fail "Unknown value reference"] _ ?_)
+      have := vr0_cmp d heap refs r 4 rv refRead
+      simpa [hr4, getOutputArm] using this
+    · exact run_one (branch_false d heap _ (getOutputArm outputShape)
+        [Runtime.fail "Unknown value reference"] _ (vr0_bne d heap refs r 4 rv refRead hr4))
+  have chain : CBody.run 11 (.running (getBody shape outputShape) env0 heap) =
+      some (.running (Runtime.fail "Unknown value reference" :: countReject :: getLoopSuffix) d heap) :=
+    run_append s_accept (run_append s_reject (run_append s_src (run_append s_exp
+      (run_append b0 (run_append b1 (run_append b2 (run_append b3 b4)))))))
+  refine ⟨rfl, getBody_closed shape outputShape, env0, d, countReject :: getLoopSuffix, 11,
+    parameters_bound false _ _ _ _ _, chain, ?_, ?_⟩
+  · simp [hd, declaredEnv, hg, guardEnv, parameters, CBody.bind]
+  · simp [hd, declaredEnv, hg, guardEnv, parameters, CBody.bind, CBody.resolve]
+
+/-- The setter's memory-machine execution reaches its `fail` statement before the
+copy loop for a reference that names no writable region (`r ∉ {1,2}`). -/
+theorem set_fail_prefix (shape : Tensor.Shape)
+    (heap : Heap) (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (r : Nat)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .setStart kind mode) (nref : n.toNat = 1)
+    (refRead : load heap (refs.index 0) = some (.integer r))
+    (h1 : r ≠ 1) (h2 : r ≠ 2) :
+    GuardedCalls.FailurePrefix (setFunction shape)
+      (arguments (some p) (some refs) (some buffer) n m) heap p "Unknown or read-only value reference" heap := by
+  set env0 := parameters (some p) (some refs) (some buffer) n m with henv0
+  set g := guardEnv p refs buffer n m with hg
+  set d := setDeclaredEnv g with hd
+  have rv : resolve d "valueReferences" = some (.pointer (some refs)) := by
+    simp [hd, setDeclaredEnv, hg, guardEnv, parameters, CBody.bind, CBody.resolve]
+  have s_accept : CBody.run 3 (.running (setBody shape) env0 heap) =
+      some (.running (basicReject :: setRest shape) g heap) :=
+    LifecycleGuard.accept env0 heap p .setStart kind mode (basicReject :: setRest shape)
+      (by simp [henv0, parameters, CBody.bind]) (by simp [henv0, parameters, CBody.bind]) hk hm allowed
+  have s_reject : CBody.run 1 (.running (basicReject :: setRest shape) g heap) =
+      some (.running (setRest shape) g heap) :=
+    run_one (reject_false g heap _ "Invalid Float64 array lengths or pointers" (setRest shape)
+      (basic_pass heap p refs buffer n m nref))
+  have s_dst : CBody.run 1 (.running (setRest shape) g heap) =
+      some (.running (.declare "size_t" "expected" (Runtime.n 0) ::
+        setDispatch shape :: countReject :: setLoopSuffix)
+        (CBody.bind g "dst" (.pointer none)) heap) :=
+    run_one (declare_next g heap "fmi3Float64 *" "dst" Expr.nullPointer (.pointer none) (.pointer none) _
+      (by simp [hg, guardEnv, parameters, CBody.bind])
+      (by simp [Expr.nullPointer, CBody.eval, CBody.expressionCast, CBody.zeroLiteral])
+      (by simp [CBody.cast, convert]))
+  have s_exp : CBody.run 1 (.running (.declare "size_t" "expected" (Runtime.n 0) ::
+        setDispatch shape :: countReject :: setLoopSuffix)
+        (CBody.bind g "dst" (.pointer none)) heap) =
+      some (.running (setDispatch shape :: countReject :: setLoopSuffix) d heap) :=
+    run_one (declare_next (CBody.bind g "dst" (.pointer none)) heap "size_t" "expected" (Runtime.n 0)
+      (.integer 0) (.integer 0) _ (by simp [hg, guardEnv, parameters, CBody.bind])
+      (by simp [Runtime.n, CBody.eval]) (by simp [CBody.cast, convert]))
+  have b1 : CBody.run 1 (.running (setDispatch shape :: countReject :: setLoopSuffix) d heap) =
+      some (.running (setDispatch2 shape ++ (countReject :: setLoopSuffix)) d heap) :=
+    run_one (branch_false d heap _ (setArm inputName shape.volume) (setDispatch2 shape) _
+      (vr0_bne d heap refs r 1 rv refRead h1))
+  have b2 : CBody.run 1 (.running (setDispatch2 shape ++ (countReject :: setLoopSuffix)) d heap) =
+      some (.running (Runtime.fail "Unknown or read-only value reference" :: countReject :: setLoopSuffix) d heap) :=
+    run_one (branch_false d heap _ (setArm stateName shape.volume)
+      [Runtime.fail "Unknown or read-only value reference"] _ (vr0_bne d heap refs r 2 rv refRead h2))
+  have chain : CBody.run 8 (.running (setBody shape) env0 heap) =
+      some (.running (Runtime.fail "Unknown or read-only value reference" :: countReject :: setLoopSuffix) d heap) :=
+    run_append s_accept (run_append s_reject (run_append s_dst (run_append s_exp
+      (run_append b1 b2))))
+  refine ⟨rfl, setBody_closed shape, env0, d, countReject :: setLoopSuffix, 8,
+    parameters_bound true _ _ _ _ _, chain, ?_, ?_⟩
+  · simp [hd, setDeclaredEnv, hg, guardEnv, parameters, CBody.bind]
+  · simp [hd, setDeclaredEnv, hg, guardEnv, parameters, CBody.bind, CBody.resolve]
+
+/-- The getter's whole behavior on an unknown or unsupported reference with
+logging disabled: it reaches `fail` before the copy loop and returns `fmi3Error`,
+its only heap change the terminated lifecycle mode. -/
+theorem get_fail_behaviors (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
+    (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer message : Address)
+    (n m : UInt64) (kind : Kind) (mode : Mode) (r : Nat) (logger : Option Address)
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
+    (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (messageBound : static.addresses "Unknown value reference" = some message)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hmode : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
+    (allowed : Reference.Allowed .get kind mode) (nref : n.toNat = 1)
+    (refRead : load heap (refs.index 0) = some (.integer r))
+    (h0 : r ≠ 0) (h1 : r ≠ 1) (h2 : r ≠ 2) (h3 : r ≠ 3) (h4 : r = 4 → outputShape = none)
+    (hl : load heap (p.member "logger") = some (.pointer logger))
+    (hg : load heap (p.member "logging") = some (.integer 0)) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
+  have hmodeLoad : load heap (p.member "mode") = some (.integer mode.code) := by
+    cases mode <;> simp [load, hmode, convert, Mode.code]
+  exact GuardedCalls.FailurePrefix.silent_behaviors program (getFunction shape outputShape)
+    (arguments (some p) (some refs) (some buffer) n m) heap heap p message "Unknown value reference"
+    (some (.integer mode.code)) logger
+    (get_fail_prefix shape outputShape heap p refs buffer n m kind mode r hk hmodeLoad allowed nref refRead
+      h0 h1 h2 h3 h4) defined helper messageBound hmode hl hg behavior
+
+/-- The setter's whole behavior on a reference that names no writable region
+with logging disabled: it reaches `fail` before the copy loop and returns
+`fmi3Error`, its only heap change the terminated lifecycle mode. -/
+theorem set_fail_behaviors (shape : Tensor.Shape)
+    (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer message : Address)
+    (n m : UInt64) (kind : Kind) (mode : Mode) (r : Nat) (logger : Option Address)
+    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
+    (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (messageBound : static.addresses "Unknown or read-only value reference" = some message)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hmode : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
+    (allowed : Reference.Allowed .setStart kind mode) (nref : n.toNat = 1)
+    (refRead : load heap (refs.index 0) = some (.integer r)) (h1 : r ≠ 1) (h2 : r ≠ 2)
+    (hl : load heap (p.member "logger") = some (.pointer logger))
+    (hg : load heap (p.member "logging") = some (.integer 0)) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3SetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
+  have hmodeLoad : load heap (p.member "mode") = some (.integer mode.code) := by
+    cases mode <;> simp [load, hmode, convert, Mode.code]
+  exact GuardedCalls.FailurePrefix.silent_behaviors program (setFunction shape)
+    (arguments (some p) (some refs) (some buffer) n m) heap heap p message "Unknown or read-only value reference"
+    (some (.integer mode.code)) logger
+    (set_fail_prefix shape heap p refs buffer n m kind mode r hk hmodeLoad allowed nref refRead h1 h2)
+    defined helper messageBound hmode hl hg behavior
+
+end
+
 /-! ### The setter bound to the static tensor instance record -/
 
 /-- The instance record with its input region made writable, modeling an

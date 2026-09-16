@@ -240,6 +240,7 @@ import RumocaFMI3.TensorMetadata
 import RumocaFMI3.TensorInstanceStorage
 import RumocaFMI3.TensorInstanceRhs
 import RumocaFMI3.TensorFloat64Access
+import RumocaFMI3.TensorContinuousStates
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2189,3 +2190,36 @@ import RumocaFMI3.TensorFloat64Access
 #audit axioms Rumoca.FMI3.TensorFloat64.setFunction_denotes
 #audit axioms Rumoca.FMI3.TensorFloat64.get_contract
 #audit axioms Rumoca.FMI3.TensorFloat64.set_contract
+#audit axioms Rumoca.FMI3.TensorFloat64.get_fail_prefix
+#audit axioms Rumoca.FMI3.TensorFloat64.set_fail_prefix
+#audit axioms Rumoca.FMI3.TensorFloat64.get_fail_behaviors
+#audit axioms Rumoca.FMI3.TensorFloat64.set_fail_behaviors
+
+#audit axioms Rumoca.FMI3.TensorContinuousStates.parameters_bound
+#audit axioms Rumoca.FMI3.TensorContinuousStates.count_pass
+#audit axioms Rumoca.FMI3.TensorContinuousStates.getBody_closed
+#audit axioms Rumoca.FMI3.TensorContinuousStates.setBody_closed
+#audit axioms Rumoca.FMI3.TensorContinuousStates.get_reaches
+#audit axioms Rumoca.FMI3.TensorContinuousStates.get_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.set_reaches
+#audit axioms Rumoca.FMI3.TensorContinuousStates.set_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.null_get_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.null_set_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.get_instance_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.set_instance_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.set_preserves_other_instances
+#audit axioms Rumoca.FMI3.TensorContinuousStates.signature_printable
+#audit axioms Rumoca.FMI3.TensorContinuousStates.getBody_printable
+#audit axioms Rumoca.FMI3.TensorContinuousStates.setBody_printable
+#audit axioms Rumoca.FMI3.TensorContinuousStates.getFunction_denotes
+#audit axioms Rumoca.FMI3.TensorContinuousStates.setFunction_denotes
+#audit axioms Rumoca.FMI3.TensorContinuousStates.get_contract
+#audit axioms Rumoca.FMI3.TensorContinuousStates.set_contract
+#audit axioms Rumoca.FMI3.TensorContinuousStates.derivParameters_bound
+#audit axioms Rumoca.FMI3.TensorContinuousStates.derivBody_closed
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_delivers
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_instance_delivers
+#audit axioms Rumoca.FMI3.TensorContinuousStates.null_deriv_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.derivBody_printable
+#audit axioms Rumoca.FMI3.TensorContinuousStates.derivSignature_printable
+#audit axioms Rumoca.FMI3.TensorContinuousStates.derivFunction_denotes

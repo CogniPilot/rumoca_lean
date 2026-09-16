@@ -73,6 +73,33 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor continuous-state interface bodies over the tensor instance record: standards impact
+
+`FMI3.TensorContinuousStates` defines the Model Exchange continuous-state function
+bodies `fmi3GetContinuousStates`, `fmi3SetContinuousStates` and
+`fmi3GetContinuousStateDerivatives` over the `FMI3.TensorInstance` record as
+package-checked products. They emit no production artifact, add no CLI or grammar
+case, and leave the scalar adapter (`Runtime.lean`, `StateCalls`,
+`DerivativeCalls`) and every existing contract unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| MLS, Real finiteness | The setter validates that every caller value is finite before any write; a non-finite value would reject before reaching the copy loop (reusing `TensorFloat64.validate_reaches`). This matches the scalar policy: a Real value written through the interface must be a finite binary64 value. |
+| FMI 3.0.2, Model Exchange interface, getting and setting continuous states | New derived product only. `fmi3GetContinuousStates` copies the state tensor `x` and `fmi3SetContinuousStates` copies the caller values into `x`, each as a contiguous row-major block whose element count is the symbolic state volume. `nContinuousStates` must equal that volume and the buffer must be non-null; both bodies reject otherwise before touching the buffer. Each is proved end to end through the observable call machine and bound to the instance record (`get_behaviors`, `set_behaviors`, `get_instance_behaviors`, `set_instance_behaviors`); the counted copy loop's bound is the symbolic volume, with no tensor coordinate enumerated. |
+| FMI 3.0.2, Model Exchange interface, evaluating state derivatives | `fmi3GetContinuousStateDerivatives` invokes the prepared tensor derivative entry on the instance (whose execution writes `der(x) = f(x,u)` and preserves every other instance is the product `TensorInstanceRhs.derivative_writes`, in the typed tensor call machine), then copies `der(x)` into the caller buffer (`deriv_delivers`, `deriv_instance_delivers`, in the observable call machine). The fused single-run execution of the entry call and the copy in one observable-machine run remains open (see below). |
+| FMI 3.0.2, instance handle and calling-sequence state | The handle and lifecycle guard are validated exactly as the scalar bodies (`Runtime.require` with `getStates`/`setStates`/`getDerivatives`): a null handle returns `fmi3Error` changing nothing (`null_get_behaviors`, `null_set_behaviors`, `null_deriv_behaviors`). The successful getter writes only the caller buffer; the successful setter writes only instance `i`'s state region, preserving every other cell including every tensor cell of every other instance (`set_preserves_other_instances`). |
+| C11 / printer conformance | Every body prints its intended C token grammar (`getBody_printable`, `setBody_printable`, `derivBody_printable`, `signature_printable`, `derivSignature_printable`) and the rendered functions denote themselves under the shared `CTree.Printer` relation (`getFunction_denotes`, `setFunction_denotes`, `derivFunction_denotes`). |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | Each body stages the region base pointer and element count into ordinary locals and copies with a counted `size_t` loop over the static instance pool; no dynamic allocation is introduced. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The universal theorems hold for arbitrary tensor shape, instance index, request
+length and heap. The bodies are not emitted; the fused single-run derivative
+getter (running the typed-machine entry and the observable-machine copy in one
+execution), the multi-instance count-negotiation policy, and binding to an
+emitted adapter wrapper remain open. **Stage decision: open; no grammar
+expansion.**
+
 ### Tensor Float64 accessor bodies over the tensor instance record: standards impact
 
 `FMI3.TensorFloat64` defines tensor `fmi3GetFloat64`/`fmi3SetFloat64` function
@@ -92,10 +119,13 @@ every existing contract unchanged.
 | eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
 
 The universal theorems hold for arbitrary tensor shape, instance index, request
-lengths and heap. The bodies are not emitted; the multi-reference aggregate copy,
-the full memory-machine execution witness for the unknown-reference `fail` path,
-and binding to an emitted adapter wrapper remain open. **Stage decision: open; no
-grammar expansion.**
+lengths and heap. The memory-machine execution witness for the unknown or
+unsupported value-reference `fail` path is now proved end to end
+(`get_fail_prefix`/`set_fail_prefix` reach the `fail` statement before the copy
+loop with the heap unchanged; `get_fail_behaviors`/`set_fail_behaviors` return
+`fmi3Error` through `GuardedCalls.FailurePrefix.silent_behaviors`). The bodies are
+not emitted; the multi-reference aggregate copy and binding to an emitted adapter
+wrapper remain open. **Stage decision: open; no grammar expansion.**
 
 ### Tensor instance storage bound to the model right-hand side: standards impact
 

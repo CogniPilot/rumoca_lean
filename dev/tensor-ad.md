@@ -790,3 +790,60 @@ unsupported-reference `fail` path (the dispatch structurally reaches the scalar
 loop; only the null-handle rejection is proved end to end here); and binding the
 bodies to an emitted FMU wrapper with its lifecycle and numerical policy. Parser
 acceptance and this package product do not authorize production generation.
+
+## Tensor continuous-state interface bodies over the tensor instance record
+
+`FMI3.TensorContinuousStates` defines the Model Exchange continuous-state
+function bodies over one `FMI3.TensorInstance` record, in the same authored C
+subset the scalar runtime uses. Each body validates the instance handle and
+lifecycle guard exactly as the scalar bodies do (`Runtime.require`, with the
+`getStates`/`setStates`/`getDerivatives` commands), checks that
+`nContinuousStates` equals the symbolic state volume and that the buffer is
+non-null, and then moves a whole tensor region between the caller's `fmi3Float64`
+buffer and the instance record with one counted `size_t` loop whose bound is the
+symbolic volume; no tensor coordinate is enumerated. The copy core and finiteness
+validation loop are reused from `FMI3.TensorFloat64`.
+
+`fmi3GetContinuousStates` copies the state tensor `x` into the caller buffer;
+`fmi3SetContinuousStates` validates finiteness of every caller value and then
+copies them into `x`; `fmi3GetContinuousStateDerivatives` invokes the prepared
+tensor derivative entry on the instance and then copies the written `der(x)`
+region into the caller buffer. Each theorem is universal in the tensor shape, the
+instance index of the static pool, the request length and the heap. Return status
+is `fmi3OK` on success and `fmi3Error` for a null handle.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| The getter copies exactly the state region in row-major order and changes nothing else | `TensorContinuousStates.get_reaches`, `get_behaviors` |
+| The setter validates finiteness, then replaces exactly instance `i`'s state region | `TensorContinuousStates.set_reaches`, `set_behaviors` |
+| The successful setter preserves every tensor cell of every other instance | `TensorContinuousStates.set_preserves_other_instances` |
+| Each accessor bound to the static instance record | `TensorContinuousStates.get_instance_behaviors`, `set_instance_behaviors` |
+| A null handle is rejected with `fmi3Error`, changing nothing | `TensorContinuousStates.null_get_behaviors`, `null_set_behaviors`, `null_deriv_behaviors` |
+| The derivative entry writes `der(x)` and preserves every other instance | `TensorInstanceRhs.derivative_writes` |
+| The derivative getter's copy suffix delivers the written `der(x)` to the buffer | `TensorContinuousStates.deriv_delivers`, `deriv_instance_delivers` |
+| Every body prints its intended C token grammar and denotes itself under the shared C printer | `TensorContinuousStates.getBody_printable`, `setBody_printable`, `derivBody_printable`, `getFunction_denotes`, `setFunction_denotes`, `derivFunction_denotes` |
+| Printed text, closedness, denotation and null rejection as a contract | `TensorContinuousStates.get_contract`, `set_contract` |
+
+The unknown or unsupported value-reference `fail` path of the tensor Float64
+getter and setter, left open by the accessor increment, is now proved end to end:
+`TensorFloat64.get_fail_prefix`/`set_fail_prefix` execute the memory machine to
+the `fail` statement before the copy loop with the heap unchanged, and
+`get_fail_behaviors`/`set_fail_behaviors` return `fmi3Error` through
+`GuardedCalls.FailurePrefix.silent_behaviors`.
+
+The derivative getter is delivered as two proved products across two machines:
+`TensorInstanceRhs.derivative_writes` runs the prepared entry (writing
+`der(x) = f(x,u)`, preserving every other instance) in the typed tensor call
+machine `CCalls.Typed.machine`, and `deriv_delivers` runs the copy suffix
+(reading `der(x)`, delivering it to the buffer) in the observable call machine
+`CCalls.Events.machine`. The two machines are the same scheduler differing only in
+call-site resolution, and the derivative entry body is a call-free loop on which
+the two resolutions agree; fusing them into a single observable-machine execution
+of the whole `fmi3GetContinuousStateDerivatives` body needs an observable-machine
+execution of the tensor entry tree, which currently exists only in the typed
+machine through `TensorModelRhs`. That fused single-run theorem, the
+count-negotiation policy for a partial or oversized request, and binding the
+bodies to an emitted FMU wrapper with its lifecycle and numerical policy remain
+open. This is a package-checked product only: no production artifact is emitted,
+no CLI or grammar case is added, and the scalar adapter, `Runtime.lean` and every
+existing contract are unchanged.

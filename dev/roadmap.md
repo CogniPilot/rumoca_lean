@@ -11,6 +11,23 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor continuous-state interface bodies (derived proofs):**
+
+`FMI3.TensorContinuousStates` defines tensor `fmi3GetContinuousStates`,
+`fmi3SetContinuousStates` and `fmi3GetContinuousStateDerivatives` bodies over
+the static tensor instance record, reusing the counted copy core and the
+finiteness validation loop. The state getter and setter have end-to-end
+behaviors bound to instance `i`, preserving every other instance, with null and
+count rejections, printer denotation and consumable contracts. The derivative
+getter's copy suffix delivers the derivative region to the caller; its entry
+call is proved separately in the typed machine, and the fused single-run
+behavior awaits a typed-to-observable machine bridge, which remains open. The
+unknown-reference failure path of the tensor Float64 accessors is now proved
+through the memory machine. Nothing is emitted by production and no existing
+contract changed. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 9m35s
+(`build/tensor-fmi/full-gate-v5.log`).
+
 **Tensor Float64 accessor bodies (derived proofs):**
 
 `FMI3.TensorFloat64` defines tensor `fmi3GetFloat64`/`fmi3SetFloat64` bodies
