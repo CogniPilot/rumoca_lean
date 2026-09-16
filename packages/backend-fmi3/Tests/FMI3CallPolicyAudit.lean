@@ -1,3 +1,4 @@
+import RumocaFMI3.ControlledInitialization
 import RumocaFMI3.RetainedInitialization
 import RumocaFMI3.PrivateWriteFrame
 import RumocaFMI3.ClearedOrigins
@@ -361,3 +362,22 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.InstanceAuthority.owned_writes_avoid_private
 #audit axioms Rumoca.FMI3.InstanceAuthority.private_record_separate
 #audit axioms Rumoca.FMI3.InstanceAuthority.store_preserves_private
+
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.borrowed_writable
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.complete_controls
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.complete_writable_other
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.controlled_history
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.controls_erases
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.controls_private
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.exchange_controls
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.initialized_from_controls
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.initializer_controls
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.invoke_controls
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.invoke_writable_other
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.release_controls
+#audit axioms Rumoca.FMI3.InstanceAuthority.Resources.Publication.writable_excludes_private
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_preserves_ticket
+#audit axioms Rumoca.FMI3.PublicationRegistry.reserved_records_separate
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.Ready.destination
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.Ready.foreign_frame
+#audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.step_preserves_other_private

@@ -1,3 +1,6 @@
+import RumocaC.WriteInterference
+import RumocaC.InitializerWrites
+import RumocaC.AtomicWriteFrames
 import RumocaC.InvocationRetention
 import RumocaC.WriteRegions
 import RumocaC.InvocationIdentity
@@ -269,3 +272,14 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CWriteFootprint.loop_frame
 #audit axioms Rumoca.CWriteFootprint.resume_frame
 #audit axioms Rumoca.CWriteFootprint.store_outside
+
+#audit axioms Rumoca.CAtomicBoolean.Calls.exchange_foreign_frame
+#audit axioms Rumoca.CAtomicBoolean.Calls.write_foreign_frame
+#audit axioms Rumoca.CCalls.Host.Recording.controls_frame
+#audit axioms Rumoca.CCalls.Host.Recording.controls_history
+#audit axioms Rumoca.CCalls.InitializationRegion.CompleteReady.destination
+#audit axioms Rumoca.CCalls.InitializationRegion.CompleteReady.foreign_frame
+#audit axioms Rumoca.CCalls.InitializationRegion.Ready.destination
+#audit axioms Rumoca.CCalls.InitializationRegion.Ready.foreign_frame
+#audit axioms Rumoca.CWriteFootprint.ForeignFrame.mono
+#audit axioms Rumoca.CWriteFootprint.internal_entry_foreign_frame

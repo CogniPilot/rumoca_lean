@@ -121,6 +121,62 @@ review separates capability flags, variable domains, lifecycle restrictions
 and defensive calls. Clock and empty output-derivative findings remain open.
 Pinned MLS/eFMI findings carry forward. **Stage decision: open.**
 
+### Initialization from checked controls: full gate passed
+
+**Initialization from checked controls (full gate passed):**
+
+The private interference frame now follows from current C destinations on the
+same coupled history. Permissions distinguish caller objects outside the pool,
+the executing invocation's borrowed record, and its own private reservation.
+Invocation identity derives separation from every other private initializer,
+including nested members and tensor offsets. Intermediate activity and private
+reservation retention follow from the ledger and actual history.
+
+Actual initializer controls establish their write destinations and exclude new
+foreign calls. Atomic exchange and clear frames follow from their modeled
+prototype conversions and one-cell updates. Actual public entry preserves all
+current control permissions: the new internal call has no write or foreign
+effect, and entering one resource cannot revoke another active borrow. Observing
+a real return also preserves the remaining controls: only that original
+invocation can return its borrow; successful publication cannot overwrite an
+occupied resource; another call cannot publish a retained private reservation.
+
+The source theorem retains the actual source/C/adapter/metadata/program and
+earlier release, initialization and resource-history contracts. Its additional
+controlled-initialization contract derives the private frame, initialized
+record, returned handle and current publication from that same prefix. It does
+not replace the existing general initialization contract or narrow production
+source acceptance. Current foreign effects and importer-memory ownership remain
+explicit; complete method control invariants and caller-buffer validity still
+need to establish those permissions throughout every public lifecycle.
+
+The owning-package checks passed at 03:38:56 UTC on 2026-09-16.
+The required `nix develop .#verification --command lake test` passed at
+04:26:45 UTC on 2026-09-16, with 1267 unchanged inputs and all
+577 selected roots (29 new, 548 retained). No unexpected axioms, changed-module
+warnings or source drift were found. Root counts do not measure semantic
+coverage; all previously selected roots remain in the same three audits.
+
+Draft, dependency-isolation and semantic-review evidence is in
+`build/c-private-retention/`: `completion-controls-v3.json`,
+`controls-promotion-v3.json`, `controls-review-v3.md`,
+`controls-extracted-v3.json`, `controls-extracted-fmi-v3.json` and
+`controls-extracted-c-v2.json`. Integration, package, full-gate,
+standards/upstream review and retained artifacts are under
+`build/c-controlled-initialization/`.
+
+Every FMU member is unchanged from `d304f4d`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+No grammar, source/IR semantics, C emission, solver or interface policy changed;
+no test suite was added. Full public-control/lifecycle admission, importer and
+callback effects, caller-buffer validity, native C11/static layout/ABI/fenv,
+provenance, transitive allocation, MISRA and existing MLS/FMI/eFMI findings remain
+open. K02–K05 still block grammar expansion and a complete assurance claim.
+
 ### Private reservation retention and initialization: full gate passed
 
 **Private reservation retention and initialization (full gate passed):**
