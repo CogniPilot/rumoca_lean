@@ -716,3 +716,77 @@ the diagonal observation and non-uniform initialization remain deferred, along
 with the FMI lifecycle, numerical overflow/error policy and the complete bound
 tensor FMU/eFMU certificates. No wrapper body, metadata or archive contract is
 added, and no grammar case is admitted.
+
+## Tensor Float64 accessor bodies over the tensor instance record
+
+`FMI3.TensorFloat64` defines the tensor `fmi3GetFloat64` and `fmi3SetFloat64`
+function bodies over one `FMI3.TensorInstance` record, in the same authored C
+subset the scalar runtime uses. Each accessor validates the instance handle and
+lifecycle guard exactly as the scalar bodies do (`Runtime.require`), then
+dispatches one array value reference to a whole instance region under the FMI
+3.0.2 array-access rule. The request must name exactly one value reference
+(`nValueReferences = 1`); the caller's `nValues` must equal the referenced
+variable's element count; the copy uses one counted `size_t` loop whose bound is
+that symbolic count, so no tensor coordinate is enumerated. Return status is
+`fmi3OK` on success and the scalar code's status on rejection.
+
+The getter dispatches all declared variables: reference `0` denotes the time
+base (element count 1), `1` the input `u`, `2` the state `x`, `3` the derivative
+`der(x)` (each element count `shape.volume`), and `4` the dense output `J`
+(element count `oshape.volume`, present only when the instance record carries the
+output; otherwise reference `4` is rejected). The setter dispatches the two
+writable variables, input `u` (1) and state `x` (2), validating that every caller
+value is finite before any write; references `0`, `3`, `4` and any unknown
+reference are rejected. The dispatch stages the region pointer and count into
+ordinary locals and runs in the typed call machine (where local assignment is
+defined); the guard runs in the memory machine and the two share the reusable
+copy core.
+
+This is a package-checked product only: no production artifact is emitted, no
+CLI or grammar case is added, and the scalar adapter, `Runtime.lean` and every
+existing contract are unchanged. Every theorem is universal in the tensor shape,
+the instance index of the static pool, the request lengths and the heap.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| One getter/setter copy iteration reads and writes one cell | `TensorFloat64.getCopy_step`, `setCopy_step` |
+| The copy loop moves exactly the region, row-major | `TensorFloat64.getCopy_reaches`, `setCopy_reaches` |
+| The finiteness validation loop accepts every finite value, heap fixed | `TensorFloat64.validate_reaches` |
+| Both bodies contain no nested block declarations | `TensorFloat64.getBody_closed`, `setBody_closed` |
+| The staged prefix reaches the copy loop for any selected region | `TensorFloat64.get_reaches_of`, `set_reaches_of` |
+| The getter's sole terminating behavior per reference (`time`, `u`, `x`, `der(x)`, `J`) | `TensorFloat64.get_behaviors_time`/`input`/`state`/`deriv`/`output` |
+| The setter's sole terminating behavior per writable reference (`u`, `x`) | `TensorFloat64.set_behaviors_input`/`state` |
+| Each accepted getter reference bound to the instance record | `TensorFloat64.get_instance_behaviors_time`/`input`/`state`/`deriv`/`output` |
+| Each accepted setter reference bound to the instance record | `TensorFloat64.set_instance_behaviors_state`/`input` |
+| The successful setter preserves every tensor cell of every other instance | `TensorFloat64.set_preserves_other_instances` |
+| A null instance handle is rejected with `fmi3Error`, changing nothing | `TensorFloat64.null_get_behaviors`, `null_set_behaviors` |
+| The time/output regions are readable and the state region writable | `TensorFloat64.reads_time`, `reads_output`, `writable_state` |
+| The input region is writable in the input-writable instance | `TensorFloat64.inputWritableStore_writable` |
+| Both bodies print their intended C token grammar | `TensorFloat64.getBody_printable`, `setBody_printable`, `signature_printable` |
+| The rendered functions denote themselves under the shared C printer | `TensorFloat64.getFunction_denotes`, `setFunction_denotes` |
+| Printed text, closedness, denotation and null rejection as a contract | `TensorFloat64.get_contract`, `set_contract` |
+
+The `written` result is the shared tensor-memory snapshot
+(`CMemory.TensorView.written`): the getter's result heap sets exactly the
+buffer's element-count cells to the region values in row-major order and
+preserves every other cell; the setter's result heap sets exactly instance `i`'s
+selected region and preserves every other cell, including every tensor cell of
+every other instance in the pool. The `der(x)` getter is stated over the instance
+heap after the right-hand side has written the derivative region. Because the
+instance record models the input region as read-only, the input-setter
+instance theorem is stated over `inputWritableStore`, the instance whose input
+region is writable (an instance ready to receive inputs). The printed-text
+denotation reuses the shared `CTree.Printer.function_denotes` over a constructed
+`FunctionPrintable` witness; the contracts carry it as their `denotes` field.
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms.
+
+Remaining and deferred: multi-reference aggregate requests (a request naming
+several variables at once, with `nValues` the sum of their element counts and a
+running output offset), which are rejected here (`nValueReferences` must equal 1),
+not mishandled; the full memory-machine execution witness for the unknown/
+unsupported-reference `fail` path (the dispatch structurally reaches the scalar
+`fail` statement, returning `fmi3Error` as the scalar bodies do, before the copy
+loop; only the null-handle rejection is proved end to end here); and binding the
+bodies to an emitted FMU wrapper with its lifecycle and numerical policy. Parser
+acceptance and this package product do not authorize production generation.

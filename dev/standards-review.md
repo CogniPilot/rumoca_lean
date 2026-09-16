@@ -73,6 +73,30 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor Float64 accessor bodies over the tensor instance record: standards impact
+
+`FMI3.TensorFloat64` defines tensor `fmi3GetFloat64`/`fmi3SetFloat64` function
+bodies over the `FMI3.TensorInstance` record as package-checked products. They
+emit no production artifact, add no CLI or grammar case, and leave the scalar
+adapter (`Runtime.getFloat64`/`setFloat64`, `Float64Calls`, `Float64Set`) and
+every existing contract unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS 3.7 | No admission, grammar, source semantics or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| MLS Real finiteness | The setter validates that every caller value is finite before any write; a non-finite value would reject before reaching the copy loop (`validate_reaches`). This matches the scalar policy (`Float64SetProofs`, `FMI3Float64Rejection`): a Real value written through the interface must be a finite binary64 value. `Value.isFinite` classifies the loaded cell. |
+| FMI 3.0.2 §2.2.6.5, getting and setting variable values for array variables | New derived product only. One value reference denotes the whole array variable; the accessor reads/writes the referenced instance region as a contiguous row-major block whose element count is the shape volume (`shape.volume` for `u`/`x`/`der(x)`, `1` for `time`, `oshape.volume` for `J`). The caller's `nValues` must equal that count; the accessor rejects otherwise before touching the buffer. The getter dispatches all declared variables (`0→time`, `1→u`, `2→x`, `3→der(x)`, `4→J`, the last present only when the record carries the output); the setter dispatches the writable `u`(1)/`x`(2) and rejects `0`/`3`/`4`/unknown, mirroring the scalar setter's read-only rejection. Each accepted reference is proved end to end through the typed call machine and bound to the instance record; the counted copy loop's bound is the symbolic element count, with no tensor coordinate enumerated. A request must name exactly one value reference (`nValueReferences = 1`); the multi-reference aggregate (with `nValues` the sum of element counts and a running output offset) is rejected, not mishandled, and is the identified extension. |
+| FMI 3.0.2 (instance handle / lifecycle) | The handle and lifecycle guard are validated exactly as the scalar bodies (`Runtime.require`): a null handle returns `fmi3Error` changing nothing (`null_get_behaviors`/`null_set_behaviors`), and an unknown/unsupported reference reaches the scalar `fail` error path (returning `fmi3Error` as the scalar bodies do) without reaching the copy loop. The successful getter writes only the caller buffer; the successful setter writes only the selected region of instance `i`, preserving every other cell including every tensor cell of every other instance (`set_preserves_other_instances`). |
+| C11 / printer conformance | Both bodies print their intended C token grammar (`getBody_printable`/`setBody_printable`/`signature_printable`) and the rendered functions denote themselves under the shared `CTree.Printer` relation (`getFunction_denotes`/`setFunction_denotes`), carried by the contracts' `denotes` field. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The accessor stages the region base pointer and element count into ordinary locals and copies with a counted `size_t` loop; no dynamic allocation is introduced. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The universal theorems hold for arbitrary tensor shape, instance index, request
+lengths and heap. The bodies are not emitted; the multi-reference aggregate copy,
+the full memory-machine execution witness for the unknown-reference `fail` path,
+and binding to an emitted adapter wrapper remain open. **Stage decision: open; no
+grammar expansion.**
+
 ### Tensor instance storage bound to the model right-hand side: standards impact
 
 `FMI3.TensorInstance` and `FMI3.TensorInstanceRhs` are package-checked products
@@ -84,7 +108,7 @@ existing contract unchanged.
 | --- | --- |
 | MLS 3.7 | No admission, grammar, source semantics, initialization or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
 | FMI 3.0.2 ME/CS (storage/lifetime) | New derived product only. A tensor instance's FMI-visible tensors (`time`, `u`, `x`, `der(x)`, and `J` when present) are modeled as static object regions of `double`, one contiguous array per tensor with extent equal to the shape volume, addressed by an instance index into a bounded static pool. This mirrors the FMI instance-lifetime model: an instance is a distinct, persistent storage record for the duration between `fmi3InstantiateModelExchange`/`CoSimulation` and `fmi3FreeInstance`, with `fmi3GetContinuousStateDerivatives` reading the state and input and writing the derivative buffer. The theorems establish pairwise region separation, cross-instance separation over the pool (mirroring the scalar `deploymentCapacity` pool), and that running the prepared derivative entry writes only `der(x)` and preserves every other instance. No emitted `fmi3*` body, production metadata or mandatory adapter contract changes; the derivative entry stays the derived typed-machine contract `FMI3.TensorModelRhs`, not yet bound to an emitted wrapper. |
-| MISRA C:2012 (no allocation) | The instance record is static object storage; there is no dynamic allocation, consistent with the no-heap generated-C rule (Rule 21.3, no `malloc`/`calloc`/`realloc`/`free`). Every tensor member is a fixed static array of `double`; the pool has a fixed bound. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The instance record is static object storage; there is no dynamic allocation, consistent with the no-heap generated-C rule (Rule 21.3, no `malloc`/`calloc`/`realloc`/`free`). Every tensor member is a fixed static array of `double`; the pool has a fixed bound. |
 | eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
 
 The universal theorems establish readable state/input regions, a writable

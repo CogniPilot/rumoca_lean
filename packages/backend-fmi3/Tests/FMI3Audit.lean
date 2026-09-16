@@ -239,6 +239,7 @@ import RumocaFMI3.VersionMetadata
 import RumocaFMI3.TensorMetadata
 import RumocaFMI3.TensorInstanceStorage
 import RumocaFMI3.TensorInstanceRhs
+import RumocaFMI3.TensorFloat64Access
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2138,7 +2139,6 @@ import RumocaFMI3.TensorInstanceRhs
 #audit axioms Rumoca.FMI3.TensorMetadata.modelIdentifiers_decode
 
 -- Tensor instance storage bound to the model right-hand side (package-checked
--- product; no production emission, no scalar-adapter or existing-contract change).
 #audit axioms Rumoca.FMI3.TensorInstance.reads_state
 #audit axioms Rumoca.FMI3.TensorInstance.reads_input
 #audit axioms Rumoca.FMI3.TensorInstance.writable_derivative
@@ -2149,3 +2149,43 @@ import RumocaFMI3.TensorInstanceRhs
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivativeBuffer_eq
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.parameter_bound
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes
+
+
+-- Tensor Float64 accessor bodies over the tensor instance record (package-checked
+-- product; single-reference dispatch over all declared variables, printed-text
+-- denotation; no production emission, no scalar-adapter or existing-contract change).
+#audit axioms Rumoca.FMI3.TensorFloat64.getCopy_reaches
+#audit axioms Rumoca.FMI3.TensorFloat64.setCopy_reaches
+#audit axioms Rumoca.FMI3.TensorFloat64.getBody_closed
+#audit axioms Rumoca.FMI3.TensorFloat64.setBody_closed
+#audit axioms Rumoca.FMI3.TensorFloat64.validate_reaches
+#audit axioms Rumoca.FMI3.TensorFloat64.get_reaches_of
+#audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_time
+#audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_input
+#audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_state
+#audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_deriv
+#audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_output
+#audit axioms Rumoca.FMI3.TensorFloat64.set_reaches_of
+#audit axioms Rumoca.FMI3.TensorFloat64.set_behaviors_input
+#audit axioms Rumoca.FMI3.TensorFloat64.set_behaviors_state
+#audit axioms Rumoca.FMI3.TensorFloat64.null_get_behaviors
+#audit axioms Rumoca.FMI3.TensorFloat64.null_set_behaviors
+#audit axioms Rumoca.FMI3.TensorFloat64.reads_time
+#audit axioms Rumoca.FMI3.TensorFloat64.reads_output
+#audit axioms Rumoca.FMI3.TensorFloat64.writable_state
+#audit axioms Rumoca.FMI3.TensorFloat64.inputWritableStore_writable
+#audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_time
+#audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_input
+#audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_state
+#audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_deriv
+#audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_output
+#audit axioms Rumoca.FMI3.TensorFloat64.set_instance_behaviors_state
+#audit axioms Rumoca.FMI3.TensorFloat64.set_instance_behaviors_input
+#audit axioms Rumoca.FMI3.TensorFloat64.set_preserves_other_instances
+#audit axioms Rumoca.FMI3.TensorFloat64.getBody_printable
+#audit axioms Rumoca.FMI3.TensorFloat64.setBody_printable
+#audit axioms Rumoca.FMI3.TensorFloat64.signature_printable
+#audit axioms Rumoca.FMI3.TensorFloat64.getFunction_denotes
+#audit axioms Rumoca.FMI3.TensorFloat64.setFunction_denotes
+#audit axioms Rumoca.FMI3.TensorFloat64.get_contract
+#audit axioms Rumoca.FMI3.TensorFloat64.set_contract

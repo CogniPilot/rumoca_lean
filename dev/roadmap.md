@@ -11,6 +11,25 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor Float64 accessor bodies (derived proofs):**
+
+`FMI3.TensorFloat64` defines tensor `fmi3GetFloat64`/`fmi3SetFloat64` bodies
+over the static tensor instance record. One value reference denotes a whole
+tensor variable; the getter dispatches time, input, state, derivative and the
+optional output, the setter dispatches the writable input and state after
+validating that every value is finite, and `nValues` must equal the referenced
+element count. A shared counted copy loop with the symbolic volume as its bound
+is proved once and reused. Each accepted reference has an end-to-end typed
+machine behavior bound to instance `i`, preserving every other cell of every
+other instance; the null-handle rejection is proved; the contracts carry the
+printed text, closedness and printer denotation. Multi-reference aggregate
+requests are rejected and remain the identified extension; the execution
+witness for the unknown-reference failure path and the binding to an emitted
+wrapper remain open. Nothing is emitted by production and no existing contract
+changed. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 10m21s
+(`build/tensor-fmi/full-gate-v4.log`).
+
 **Tensor instance storage bound to the tensor right-hand side (derived proofs):**
 
 `FMI3.TensorInstance` places a tensor model's time, state, input, derivative
