@@ -1,3 +1,6 @@
+import RumocaFMI3.InstanceAuthorityActions
+import RumocaFMI3.InitializedAuthority
+import RumocaFMI3.AuthorizedReleaseHistories
 import RumocaFMI3.PublicationMemory
 import RumocaFMI3.PublicationTransitions
 import RumocaFMI3.PublicationProjection
@@ -252,3 +255,35 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.RuntimeStorage.logged_initial_slots
 #audit axioms Rumoca.FMI3.StaticRelease.clear_return_tail
 #audit axioms Rumoca.FMI3.StaticRelease.return_tail_observed
+
+#audit axioms Rumoca.FMI3.InstanceAuthority.authorized_clear
+#audit axioms Rumoca.FMI3.InstanceAuthority.captured_authorized_clear
+#audit axioms Rumoca.FMI3.InstanceAuthority.clear_iff
+#audit axioms Rumoca.FMI3.InstanceAuthority.clear_linked
+#audit axioms Rumoca.FMI3.InstanceAuthority.clear_vacant
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_client
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_linked
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_other_call
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_owned
+#audit axioms Rumoca.FMI3.InstanceAuthority.complete_releasing
+#audit axioms Rumoca.FMI3.InstanceAuthority.enter_iff
+#audit axioms Rumoca.FMI3.InstanceAuthority.enter_linked
+#audit axioms Rumoca.FMI3.InstanceAuthority.enter_other
+#audit axioms Rumoca.FMI3.InstanceAuthority.entered_excludes
+#audit axioms Rumoca.FMI3.InstanceAuthority.factory_complete
+#audit axioms Rumoca.FMI3.InstanceAuthority.handle_erasure
+#audit axioms Rumoca.FMI3.InstanceAuthority.initialized_handle
+#audit axioms Rumoca.FMI3.InstanceAuthority.private_vacant
+#audit axioms Rumoca.FMI3.InstanceAuthority.publish_iff
+#audit axioms Rumoca.FMI3.InstanceAuthority.publish_linked
+#audit axioms Rumoca.FMI3.InstanceAuthority.published_owns
+#audit axioms Rumoca.FMI3.InstanceAuthority.release_enter
+#audit axioms Rumoca.FMI3.InstanceAuthority.releasing_reservation
+#audit axioms Rumoca.FMI3.InstanceAuthority.stale_rejected
+#audit axioms Rumoca.FMI3.StaticRelease.Capture.atomic_control
+#audit axioms Rumoca.FMI3.StaticRelease.Capture.captured_footprint
+#audit axioms Rumoca.FMI3.StaticRelease.Capture.history_protected
+#audit axioms Rumoca.FMI3.StaticRelease.Capture.needsMetadata_withHeap
+#audit axioms Rumoca.FMI3.StaticRelease.Capture.protected_frame
+#audit axioms Rumoca.FMI3.StaticRelease.Capture.step_protected
+#audit axioms Rumoca.FMI3.StaticRelease.Capture.tail_footprint

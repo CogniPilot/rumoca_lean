@@ -1,3 +1,4 @@
+import RumocaC.InvocationFootprint
 import RumocaC.VoidReturn
 import RumocaC.HostStoreInvariant
 import RumocaC.InitializationProgress
@@ -247,3 +248,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CStoreInvariant.host_history
 #audit axioms Rumoca.CStoreInvariant.host_next
 #audit axioms Rumoca.CStoreInvariant.recorded_history
+
+#audit axioms Rumoca.CCalls.Host.Recording.current_footprint_history
+#audit axioms Rumoca.CCalls.Host.Recording.current_footprint_step

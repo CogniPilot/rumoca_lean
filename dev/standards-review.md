@@ -121,6 +121,57 @@ review separates capability flags, variable domains, lifecycle restrictions
 and defensive calls. Clock and empty output-derivative findings remain open.
 Pinned MLS/eFMI findings carry forward. **Stage decision: open.**
 
+### Current handle authority and captured release: full gate passed
+
+**Current handle authority and captured release (full gate passed):**
+
+Logical handles retain the original observed factory serial and bounded slot;
+the emitted C pointer is unchanged. Resource borrowing excludes overlapping
+use of one instance and rejects stale generations, while other slots remain
+independent. Actual successful initialization and factory completion issue the
+resource for that initialized record; an unpublished reservation has no client
+authority. Actual public release entry uses the invocation ledger's next serial.
+
+Current releasing authority supplies the unchanged lease-checked release rule.
+The actual atomic clear consumes that resource and reservation together, updates
+computed publication, and leaves a heap-independent void-return suffix. A
+reusable current-control footprint theorem preserves the original invocation
+through host histories. Its release instantiation protects metadata only until
+operand capture; later atomic/return states have an empty footprint. The actual
+entry and history derive the pending clear arguments and saved continuation.
+
+The source theorem binds this release contract to the actual numerical C,
+adapter, metadata, literal preparation and logged runtime. Current resource
+retention, flag representation and the prefix interference frame remain legal
+caller obligations. The theorem does not infer authority from pointer bits or
+claim arbitrary raw importer histories are valid.
+
+The owning-package checks passed at 01:07:23 UTC on 2026-09-16.
+The required `nix develop .#verification --command lake test` passed at
+01:55:22 UTC on 2026-09-16, with 1238 unchanged inputs and all
+465 selected roots (34 new, 431 retained). No unexpected axioms, changed-module
+warnings or source drift were found. Root counts do not measure semantic
+coverage; all previously selected roots remain in the same three audits.
+
+Draft, dependency-isolation and semantic-review evidence is in
+`build/c-publication-history/`: `source-authority-v1.json`,
+`authority-promotion-v2.json`, `authority-review-v2.md`,
+`authority-extracted-v2.json`, `authority-extracted-fmi-v2.json` and
+`authority-c-reuse-v2.json`. Integration, package, full-gate, standards review
+and retained artifacts are under `build/c-instance-authority/`.
+
+Every FMU member is unchanged from `380cb59`. The eFMU changes only generation
+identities and dependent references/checksums in three manifests. Numerical C,
+GALEC, Production C, grammars, metadata and interface emission are unchanged.
+Existing artifact, native and mutation checks pass. Only these three evidence
+documents change after the frozen gate.
+
+No grammar, source/IR semantics, C emission, solver or interface policy changed;
+no test suite was added. Complete caller/resource histories, private-value and
+buffer/callback frames, native C11/static initialization/ABI/fenv correspondence,
+provenance, transitive allocation, MISRA and remaining MLS/FMI/eFMI findings
+stay open. K02–K05 still block grammar growth and a complete assurance claim.
+
 ### Computed publication and release completion: full gate passed
 
 **Computed publication and release completion (full gate passed):**

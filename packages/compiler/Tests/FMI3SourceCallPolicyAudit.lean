@@ -1,3 +1,4 @@
+import Rumoca.FMI3InstanceAuthority
 import Rumoca.FMI3PublicationHistories
 import Rumoca.FMI3StaticInitializationHistories
 import Rumoca.FMI3InitializationHistories
@@ -57,3 +58,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.PublicationRegistry.source_publication_histories
 #audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.source_creation_histories
 #audit axioms Rumoca.FMI3.StaticFactory.ClaimInitialization.source_static_factory_initializations
+
+#audit axioms Rumoca.FMI3.InstanceAuthority.source_authorized_release
