@@ -11,6 +11,18 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor model right-hand-side contract (derived proofs):**
+
+`FMI3.TensorModelRhs` restates the prepared tensor derivative entry as an
+FMI-side function contract with the scalar contract's shape: printed text,
+lexical denotation and typed-machine execution writing the finite tensor
+derivative into its output buffer under any saved caller, with an exact frame.
+Its three audited roots compose `PointwisePlan.correct`; no emitter, metadata,
+lifecycle, mandatory contract or grammar changed. The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 10m06s
+with all certificates reused (`build/tensor-fmi/full-gate-v1.log`). See
+[tensor arrays and AD](tensor-ad.md#tensor-model-right-hand-side-contract).
+
 **Cached artifact certificates (full gate passed):**
 
 Actual-artifact certificates are now native Lake build products keyed by every

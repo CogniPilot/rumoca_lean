@@ -586,8 +586,20 @@ the package build passes in `build/c-typed-package.log`. The required complete
 gate passed in `build/c-typed-full-gate.log` and in
 [CI for 2e53e66](https://github.com/CogniPilot/rumoca_lean/actions/runs/34494402729).
 
-Next, lift the existing FMI body proofs under the typed machine's scope rules
-and compose the actual tensor wrapper bodies. Bind instance storage and metadata
+## Tensor model right-hand-side contract
+
+`FMI3.TensorModelRhs` states the derivative entry of a prepared
+`Solve.PointwiseIVP` as an FMI-side function contract in the shape of the scalar
+`ModelRhs.FunctionContract`: the printed function, its lexical denotation and
+its execution under the typed tensor call machine. `reaches` and `behaviors`
+follow from `PointwisePlan.correct`; under any saved caller the machine returns
+`void` with the finite tensor derivative in the output buffer and every cell
+outside that region preserved. The statements are universal in the tensor
+shape, heap and storage; storage validity is supplied at entry. The three roots
+are audited in the FMI package checks. No wrapper body, metadata, lifecycle or
+archive contract is added, and no grammar case is admitted.
+
+Next, compose the actual tensor wrapper bodies over this contract. Bind instance storage and metadata
 to the same prepared IVP, establish its finite overflow/error and lifecycle/time
 policy, and compose the source-to-archive certificate. General sparsity and
 further grammar remain deferred. The typed call theorem alone does not establish

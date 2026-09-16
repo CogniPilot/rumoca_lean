@@ -181,6 +181,7 @@ import RumocaFMI3.Float64Metadata
 import RumocaFMI3.Float64Contract
 import RumocaFMI3.NumericalBindings
 import RumocaFMI3.ModelRhs
+import RumocaFMI3.TensorModelRhs
 import RumocaFMI3.DerivativeCalls
 import RumocaFMI3.DerivativeFailures
 import RumocaFMI3.DerivativeContract
@@ -576,6 +577,9 @@ import RumocaFMI3.VersionMetadata
 #audit axioms Rumoca.FMI3.ModelRhs.reaches
 #audit axioms Rumoca.FMI3.ModelRhs.behaviors
 #audit axioms Rumoca.FMI3.ModelRhs.rendered_contract
+#audit axioms Rumoca.FMI3.TensorModelRhs.reaches
+#audit axioms Rumoca.FMI3.TensorModelRhs.behaviors
+#audit axioms Rumoca.FMI3.TensorModelRhs.rendered_contract
 #audit axioms Rumoca.FMI3.DerivativeCalls.parameters_bound
 #audit axioms Rumoca.FMI3.DerivativeCalls.body_eq
 #audit axioms Rumoca.FMI3.DerivativeCalls.accepted_run

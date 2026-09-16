@@ -73,6 +73,17 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor model right-hand-side contract: standards impact
+
+| Standard | Impact |
+| --- | --- |
+| MLS 3.7 | No admission, grammar, source semantics, initialization or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| FMI 3.0.2 ME/CS | No emitted function, metadata or mandatory adapter contract changes. `FMI3.TensorModelRhs` is a derived typed-machine contract for a prepared tensor derivative entry, not yet bound to any emitted `fmi3*` body. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The FMI package audit passed with the three new roots on the three permitted
+axioms, and the required full gate passed on 2026-09-16 in 10m06s.
+
 ### Unsupported public FMI calls: full gate passed
 
 The mandatory adapter proposition includes all 25 existing generic rejection
