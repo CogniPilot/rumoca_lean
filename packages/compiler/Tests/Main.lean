@@ -4,6 +4,7 @@ import ModelicaParser.Driven
 import Rumoca.ArrayCompiler
 import RumocaCore.Solve.IVP
 import RumocaCore.Solve.Tensor.Reverse
+import Rumoca.EFMIIdentity
 
 open _root_.Parser
 
@@ -145,4 +146,31 @@ def main : IO Unit := do
       expect "target step" (C.eval x a.target.step == x + 1)
     expect "binary64 tie rounds to even" (C.eval (9007199254740992.0 : Float) a.target.step == 9007199254740992.0)
     expect "10000 steps" (C.run a.target (7.5 : Float) 10000 == 10007.5)
+  -- eFMI manifest identity generation. Native boundary: OS entropy, the
+  -- SOURCE_DATE_EPOCH environment mode and the wall clock live outside the proof
+  -- model, so the layout and mode selection are checked here directly.
+  let efmiSource := "model Integrator Real x; equation der(x) = 1; end Integrator;"
+  let hexDigit (uuid : String) (index : Nat) : Char :=
+    (uuid.toList.filter (fun c => c != '{' && c != '}' && c != '-'))[index]!
+  let isVariant (c : Char) : Bool := c == '8' || c == '9' || c == 'a' || c == 'b'
+  for _ in [0, 1, 2] do
+    let random ← EFMIIdentity.randomUUID
+    expect "random eFMI identity is a version 4 UUID" (hexDigit random 12 == '4')
+    expect "random eFMI identity carries the RFC 9562 variant" (isVariant (hexDigit random 16))
+  let reproducible := EFMIIdentity.derivedIdentity "Integrator" efmiSource 0
+  expect "reproducible eFMI identity is deterministic"
+    (reproducible == EFMIIdentity.derivedIdentity "Integrator" efmiSource 0)
+  expect "reproducible eFMI identity passes the manifest identity checker"
+    (EFMI.Manifest.Identity.valid reproducible)
+  for id in [reproducible.container, reproducible.algorithm, reproducible.production] do
+    expect "reproducible eFMI identity is a version 5 UUID" (hexDigit id 12 == '5')
+    expect "reproducible eFMI identity carries the RFC 9562 variant" (isVariant (hexDigit id 16))
+  expect "reproducible eFMI identities are distinct"
+    (decide (EFMI.Manifest.Identity.Distinct reproducible))
+  expect "reproducible eFMI identity tracks the source text"
+    (reproducible != EFMIIdentity.derivedIdentity "Integrator" (efmiSource ++ " ") 0)
+  expect "SOURCE_DATE_EPOCH zero formats to the Unix epoch"
+    (EFMIIdentity.epochGenerated 0 == "1970-01-01T00:00:00Z")
+  expect "SOURCE_DATE_EPOCH formats a known instant"
+    (EFMIIdentity.epochGenerated 1234567890 == "2009-02-13T23:31:30Z")
   IO.println "Lean regression tests passed"

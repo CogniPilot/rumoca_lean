@@ -11,8 +11,12 @@ cp "$source_path" "$artifact_dir/Source.mo"
 "${RUMOCA_COMPILER:-packages/compiler/.lake/build/bin/rumoca}" "$artifact_dir/Source.mo" -o "$artifact_dir/Model.c"
 "${RUMOCA_CERTIFY:-packages/compiler/.lake/build/bin/certify}" "$artifact_dir/Source.mo" "$artifact_dir/Model.c" "$artifact_dir/Candidate.lean"
 cp packages/compiler/Tools/CheckArtifact.lean "$artifact_dir/Artifact.lean"
-RUMOCA_SOURCE="$artifact_dir/Source.mo" RUMOCA_C="$artifact_dir/Model.c" \
-  lake env lean packages/compiler/Tools/CheckArtifact.lean > "$artifact_dir/lean-audit.log" 2>&1
+if ! lake run verify-artifact c "$artifact_dir/Source.mo" "$artifact_dir/Model.c" \
+    "${RUMOCA_GRAMMAR:-packages/modelica-parser/grammar/Modelica.ebnf}" \
+    > "$artifact_dir/lean-audit.log" 2> "$artifact_dir/lake-build.log"; then
+  cat "$artifact_dir/lake-build.log" >&2
+  exit 1
+fi
 bash scripts/audit-lean.sh "$artifact_dir/lean-audit.log"
 sha256sum "$artifact_dir/Source.mo" "$artifact_dir/Model.c" \
   "$artifact_dir/Artifact.lean" lean-toolchain lake-manifest.json \

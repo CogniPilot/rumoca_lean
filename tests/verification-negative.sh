@@ -5,6 +5,11 @@ verified="$PWD/build/verified-lean"
 task_tmp=$(mktemp -d "$PWD/build/verification-negative.XXXXXX")
 trap 'task_status=$?; if [ "$task_status" -eq 0 ]; then rm -rf "$task_tmp"; else printf "Verification logs retained: %s\n" "$task_tmp" >&2; fi' EXIT
 
+# No-build succeeds only when Lake can reuse the actual checked proof product.
+lake run verify-artifact --check-only c "$verified/Source.mo" "$verified/Model.c" \
+  packages/modelica-parser/grammar/Modelica.ebnf > "$task_tmp/cached.log"
+bash scripts/audit-lean.sh "$task_tmp/cached.log"
+
 # The kernel must reject altered actual output even if the native generator lies.
 sed 's/1\.0/2.0/g' "$verified/Model.c" > "$task_tmp/Bad.c"
 packages/compiler/.lake/build/bin/certify "$verified/Source.mo" "$task_tmp/Bad.c" "$task_tmp/Bad.lean"
@@ -12,6 +17,20 @@ if lake env lean "$task_tmp/Bad.lean" > "$task_tmp/lean.log" 2>&1; then
   echo 'mutated C passed the Lean artifact certificate' >&2; exit 1
 fi
 rg -q 'Tactic.*decide|evaluated to' "$task_tmp/lean.log"
+
+# Mutate the same cached input path, then restore it. A failed verification
+# cannot authorize new bytes or destroy the reusable proof for the old bytes.
+cp "$verified/Model.c" "$task_tmp/Original.c"
+cp "$task_tmp/Bad.c" "$verified/Model.c"
+cache_status=0
+lake run verify-artifact c "$verified/Source.mo" "$verified/Model.c" \
+  packages/modelica-parser/grammar/Modelica.ebnf > "$task_tmp/cached-mutation.log" 2>&1 || cache_status=$?
+cp "$task_tmp/Original.c" "$verified/Model.c"
+test "$cache_status" -ne 0
+rg -q 'actual numerical C differs' "$task_tmp/cached-mutation.log"
+lake run verify-artifact --check-only c "$verified/Source.mo" "$verified/Model.c" \
+  packages/modelica-parser/grammar/Modelica.ebnf > "$task_tmp/restored-cache.log"
+bash scripts/audit-lean.sh "$task_tmp/restored-cache.log"
 
 # Bypass the generator and corrupt the source embedded in a checked certificate.
 sed 's/der(x) = 1/der(x) = 2/' "$verified/Candidate.lean" > "$task_tmp/BadSource.lean"
@@ -56,7 +75,7 @@ for producer in trivial-certify seed-certify; do
     echo "forged producer $producer passed actual-file verification" >&2; exit 1
   fi
   test ! -e "$task_tmp/$producer-output/manifest.sha256"
-  rg -q 'error:' "$task_tmp/$producer-output/lean-audit.log"
+  rg -q 'error:' "$task_tmp/$producer-output/lake-build.log"
 done
 
 sed 's/der(x) = 1/der(x) = 2/' "$verified/Source.mo" > "$task_tmp/Wrong.mo"

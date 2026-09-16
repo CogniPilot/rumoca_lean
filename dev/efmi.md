@@ -509,7 +509,18 @@ the eFMU templates. Rust also validates a canonical UTC instant, supplies
 artifact identities separately from the compiler IR and rejects repeated IDs
 within the artifact session. Lean retains that ownership: no identity work is
 added to DAE or Solve lowering. Global identity freshness and accuracy of the
-supplied generation time remain external facts. Fresh identity allocation for
+supplied generation time remain external facts.
+
+Identity generation (`Rumoca.EFMIIdentity`) has two modes sharing one layout.
+Without `SOURCE_DATE_EPOCH` it emits RFC 9562 version 4 UUIDs from OS entropy and
+the wall clock. With `SOURCE_DATE_EPOCH` set to whole UTC seconds it emits RFC
+9562 version 5 name-based (SHA-1) UUIDs over a fixed Rumoca namespace and the
+role, model name, complete source text and epoch, with the generation time fixed
+to that instant, so identical inputs yield identical archives; a set but
+unparsable value is a hard error. Reproducibility of identical inputs is the
+caller's responsibility. The checker's `Identity.Valid` and `Identity.Distinct`
+obligations are unchanged: they cover layout, UTC validity and per-archive
+distinctness, not global uniqueness. Fresh identity allocation for
 the eventual producer, general schema correspondence, pinned schema-resource
 membership, actual archive binding and failure-preserving publication remain
 E05 work; the independent compliance checker and final review remain required.

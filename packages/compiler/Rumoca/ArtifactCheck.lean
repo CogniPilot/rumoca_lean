@@ -1,4 +1,5 @@
 import Rumoca.Verified
+import Rumoca.CertificateOptions
 import Lean
 
 open _root_.Parser
@@ -66,6 +67,6 @@ elab "verify_artifact_files" : command => do
   let some sourcePath ← IO.getEnv "RUMOCA_SOURCE" | throwError "RUMOCA_SOURCE is required"
   let some cPath ← IO.getEnv "RUMOCA_C" | throwError "RUMOCA_C is required"
   let grammarPath := (← IO.getEnv "RUMOCA_GRAMMAR").getD "packages/modelica-parser/grammar/Modelica.ebnf"
-  check sourcePath (← IO.FS.readFile sourcePath) (← IO.FS.readFile cPath) (← IO.FS.readFile grammarPath)
+  check (CertificateOptions.sourceName (← getOptions) sourcePath) (← IO.FS.readFile sourcePath) (← IO.FS.readFile cPath) (← IO.FS.readFile grammarPath)
 
 end Rumoca.ArtifactCheck

@@ -37,6 +37,12 @@ Flat/DAE/Solve origin chain. FMI/eFMI publication takes the artifact and output
 path, using the artifact's source snapshot. It cannot receive a second,
 potentially different source string.
 
+Actual-file certificates are cached as checked `.olean` products by the root's
+`lake run verify-artifact` build job. The job tracks input bytes and checker
+dependencies; publication preserves the original source identity across staging
+directories. Native checks still run, and fresh eFMU metadata requires a fresh
+certificate. See [certificate reuse](../../docs/development.md#cached-artifact-certificates).
+
 The C target machinery is shared by both output routes:
 DAE → GALEC → Solve → C for eFMI, and DAE → Solve → C for FMI 3.
 GALEC text is rendered from the same checked GALEC product that is refined

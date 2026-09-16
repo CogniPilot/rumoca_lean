@@ -14,8 +14,8 @@ for mode in me cs; do
     --variable x --stop 3 --step 1 --csv "build/Integrator-$mode.csv"
 done
 # Reuse the unit profile under a distinct source name to exercise source linking.
-sed 's/Integrator/SecondIntegrator/g' examples/Integrator.mo > "$task_tmp/SecondIntegrator.mo"
-"$compiler" "$task_tmp/SecondIntegrator.mo" -o "$task_tmp/SecondIntegrator.fmu" > build/fmi-second-model.log
+sed 's/Integrator/SecondIntegrator/g' examples/Integrator.mo > build/SecondIntegrator.mo
+"$compiler" build/SecondIntegrator.mo -o "$task_tmp/SecondIntegrator.fmu" > build/fmi-second-model.log
 python3 tests/fmi3.py build/Integrator.fmu "$task_tmp/SecondIntegrator.fmu"
 python3 - <<'PY'
 import csv
@@ -39,6 +39,17 @@ if "$compiler" examples/DrivenIntegrator.mo -o build/preserved.fmu > build/fmi-u
   echo "compiler admitted the unverified driven profile" >&2; exit 1
 fi
 cmp build/Integrator.fmu build/preserved.fmu
+# A new extraction directory must reuse the proof of identical bytes, retaining
+# the original Modelica identity. No-build fails if certification would run.
+python - build/Integrator.fmu "$task_tmp/changed build" <<'PY'
+from zipfile import ZipFile
+import sys
+with ZipFile(sys.argv[1]) as archive:
+    archive.extractall(sys.argv[2])
+PY
+lake run verify-artifact --check-only fmi3 "$task_tmp/changed build" examples/Integrator.mo \
+  > "$task_tmp/cached-fmi3.log"
+bash scripts/audit-lean.sh "$task_tmp/cached-fmi3.log"
 # A missing declared dependency must fail the actual-file contract before the
 # native build. Keep this as one mutation of the existing packaged unit model.
 python - build/Integrator.fmu "$task_tmp/changed build" <<'PY'
@@ -54,8 +65,7 @@ changed = text.replace('<Library name="m" external="true"/>', '')
 assert changed != text
 path.write_text(changed)
 PY
-if lake env lean "-Drumoca.fmi3.root=$task_tmp/changed build" \
-    packages/compiler/Tools/CheckFMI3Build.lean > build/fmi-build-metadata-rejection.log 2>&1; then
+if lake run verify-artifact fmi3 "$task_tmp/changed build" examples/Integrator.mo > build/fmi-build-metadata-rejection.log 2>&1; then
   echo 'FMI source-build certificate accepted a missing dependency' >&2; exit 1
 fi
 rg -q 'actual FMI build description differs from the required source-build profile' \
@@ -75,8 +85,7 @@ changed = text.replace('#define FMI3_FUNCTION_PREFIX Rumoca_Integrator_',
 assert changed != text
 path.write_text(changed)
 PY
-if lake env lean "-Drumoca.fmi3.root=$task_tmp/changed build" \
-    packages/compiler/Tools/CheckFMI3Build.lean > build/fmi-source-prefix-rejection.log 2>&1; then
+if lake run verify-artifact fmi3 "$task_tmp/changed build" examples/Integrator.mo > build/fmi-source-prefix-rejection.log 2>&1; then
   echo 'FMI source-build certificate accepted a mismatched API prefix' >&2; exit 1
 fi
 rg -q 'actual FMI source prefix or private-kernel inclusion differs from its model identifier' \
@@ -99,8 +108,7 @@ changed = body.replace('((double)0)', '((double)2)', 1)
 assert changed != body
 path.write_text(text[:start] + changed + text[stop:])
 PY
-if lake env lean "-Drumoca.fmi3.root=$task_tmp/changed build" \
-    packages/compiler/Tools/CheckFMI3Build.lean > build/fmi-reset-body-rejection.log 2>&1; then
+if lake run verify-artifact fmi3 "$task_tmp/changed build" examples/Integrator.mo > build/fmi-reset-body-rejection.log 2>&1; then
   echo 'FMI adapter certificate accepted an altered reset value' >&2; exit 1
 fi
 rg -q 'actual FMI adapter differs from the complete prepared function list' \

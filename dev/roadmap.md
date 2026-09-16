@@ -11,6 +11,20 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Cached artifact certificates (full gate passed):**
+
+Actual-artifact certificates are now native Lake build products keyed by every
+input byte, the source identity, the checker imports and the build
+coordination, with retained input snapshots compared on reuse. eFMU generation
+gains a reproducible identity mode under `SOURCE_DATE_EPOCH`, and the eFMI
+gates stage their inputs at stable paths, so unchanged certificates are reused
+across gates. Publication of an eFMU now consumes the checker's audit output
+directly, and the axiom audit rejects a log whose final line lacks a newline.
+The required `nix develop .#verification --command lake test` passed on
+2026-09-16 in 36m16s with every certificate rebuilt cold; see
+[verification performance](verification-performance.md). No grammar, semantics,
+emission, solver, interface policy or proof obligation changed.
+
 **Initialization from checked controls (full gate passed):**
 
 The private interference frame now follows from current C destinations on the

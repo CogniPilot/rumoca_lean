@@ -2,7 +2,8 @@
 set -euo pipefail
 report=$1
 test -s "$report"
-while IFS= read -r line; do
+# A final line without a newline is still audited.
+while IFS= read -r line || [ -n "$line" ]; do
   case "$line" in
     *' depends on axioms: ['*']')
       names=${line#*'['}

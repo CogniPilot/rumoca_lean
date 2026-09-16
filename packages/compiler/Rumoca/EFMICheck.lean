@@ -13,25 +13,20 @@ inductive Product where
   | efmi
 
 def run (product : Product) (input source : FilePath)
-    (grammar galecGrammar : Option FilePath := none) : IO String := do
+    (grammar galecGrammar : Option FilePath := none) (sourceName : Option String := none) : IO String := do
+  let name := sourceName.getD source.toString
   let workspace ← FMU.workspace
   let input ← IO.FS.realPath input
   let source ← IO.FS.realPath source
   let grammar ← IO.FS.realPath (grammar.getD (workspace / "packages/modelica-parser/grammar/Modelica.ebnf"))
   let galecGrammar ← IO.FS.realPath (galecGrammar.getD (workspace / "packages/galec-parser/grammar/GALEC.ebnf"))
-  let (entry, option, checker) ← match product with
-    | .algorithm => pure ("CheckEFMIAlgorithm.lean", "algorithm", "Rumoca.EFMIArtifactCheck")
-    | .efmi => do
-      if ← input.isDir then
-        pure ("CheckEFMIManifests.lean", "root", "Rumoca.EFMIManifestArtifactCheck")
-      else
-        pure ("CheckEFMIArchive.lean", "root", "Rumoca.EFMIArchiveArtifactCheck")
-  -- `lake env lean` does not build imports. Ask Lake to bring the checker and
-  -- its dependencies up to date, reusing its native module cache when possible.
-  let _ ← FMI3.Package.command "lake" #["build", s!"rumoca_compiler/{checker}"] (some workspace)
-  FMI3.Package.command "lake" #["env", "lean", "-s", "65536",
-    s!"-Drumoca.efmi.source={source}", s!"-Drumoca.efmi.{option}={input}",
-    s!"-Drumoca.efmi.grammar={grammar}", s!"-Drumoca.efmi.galecGrammar={galecGrammar}",
-    ("packages/compiler/Tools/" ++ entry)] (some workspace)
+  let kind : String ← match product with
+    | .algorithm => pure "algorithm"
+    | .efmi => do if ← input.isDir then pure "efmi-directory" else pure "efmi-archive"
+  -- The native Lake job builds imports and traces the actual bytes, including
+  -- both grammars. Its product is the checked .olean, never a producer's proof.
+  FMI3.Package.command "lake" #["run", "verify-artifact", kind, source.toString,
+    input.toString, grammar.toString, galecGrammar.toString, name]
+    (some workspace)
 
 end Rumoca.EFMICheck

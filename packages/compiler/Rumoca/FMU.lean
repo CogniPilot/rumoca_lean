@@ -24,10 +24,9 @@ def workspace : IO FilePath := do
 /-- The fixed checker reads the staged source, kernel, adapter and XML bytes.
 Producer-supplied proofs, native compilation and ZIP validation cannot authorize
 this contract. -/
-def checkSources (workspace root : FilePath) : IO Unit := do
+def checkSources (workspace root : FilePath) (sourceName : String) : IO Unit := do
   let extra := root / "extra/org.cognipilot.rumoca"
-  let log ← command "lake" #["env", "lean", s!"-Drumoca.fmi3.root={root}",
-    "packages/compiler/Tools/CheckFMI3Build.lean"] (some workspace)
+  let log ← command "lake" #["run", "verify-artifact", "fmi3", root.toString, sourceName] (some workspace)
   IO.FS.writeFile (extra / "kernel-audit.log") log
   let _ ← command "bash" #["scripts/audit-lean.sh", (extra / "kernel-audit.log").toString] (some workspace)
   IO.FS.writeFile (extra / "lean-toolchain") (← IO.FS.readFile (workspace / "lean-toolchain"))
@@ -47,7 +46,7 @@ def build (artifact : Artifact input) (output : FilePath) : IO Unit := do
     FMI3.Package.writeSources artifact.solve.prepareFMI3 root vendor
     IO.FS.writeFile (root / "extra/org.cognipilot.rumoca/Source.mo") input.source
     IO.println "Checking the numerical C, source-build recipe and FMI identities in Lean..."
-    checkSources workspace root
+    checkSources workspace root input.name
     IO.println "Building and validating the FMU..."
     let archive := staging / "model.fmu"
     FMI3.Package.archive artifact.solve.prepareFMI3.name root vendor archive

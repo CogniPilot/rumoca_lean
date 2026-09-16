@@ -2,14 +2,37 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p build
-stage=$(mktemp -d "$PWD/build/efmi production test.XXXXXX")
+# A stable stage path (with an embedded space to exercise path handling) keeps
+# the source identity constant, so the archive certificate is reused across
+# gate runs. Stale contents are cleared first so a previous run cannot satisfy a
+# check vacuously; the certificate products under the compiler package stay.
+stage="$PWD/build/efmi production"
+rm -rf "$stage"
+mkdir -p "$stage"
 trap 'status=$?; if [ "$status" -eq 0 ]; then rm -rf "$stage"; else echo "Failure logs: $stage" >&2; fi' EXIT
 compiler=packages/compiler/.lake/build/bin/rumoca
+# Reproducible eFMU identities and generation time make the archive bytes
+# stable across runs: version 5 name-based UUIDs and this fixed UTC instant.
+export SOURCE_DATE_EPOCH=1700000000
 cp examples/Integrator.mo "$stage/Source.mo"
 archive="$stage/model.efmu"
 "$compiler" "$stage/Source.mo" -o "$archive" > "$stage/checked.log"
 bash scripts/audit-lean.sh "$stage/checked.log"
 rg 'Rumoca.CheckedEFMIFiles.source_to_archive depends on axioms:' "$stage/checked.log"
+# The published ZIP moved out of staging, but its checked bytes and source
+# identity are unchanged. Require reuse of the native proof, not a fresh run.
+lake run verify-artifact --check-only efmi-archive "$stage/Source.mo" "$archive" \
+  packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+  > "$stage/cached-archive.log"
+bash scripts/audit-lean.sh "$stage/cached-archive.log"
+# The same bytes under another source identity are a different proposition:
+# no-build reuse must fail rather than borrow the checked declarations.
+if lake run verify-artifact --check-only efmi-archive "$stage/Source.mo" "$archive" \
+    packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+    "$stage/Other.mo" > "$stage/foreign-identity.log" 2>&1; then
+  echo "eFMU certificate reused under a different source identity" >&2; exit 1
+fi
+rg -q "out-of-date" "$stage/foreign-identity.log"
 # Check the I/O boundary after archive preparation: a failed checker must not
 # replace a published archive or leave a new destination or staging directory.
 cp "$archive" "$stage/preserved.efmu"
@@ -44,6 +67,7 @@ from datetime import datetime, timezone
 from lxml import etree
 from zipfile import ZipFile
 from uuid import UUID
+import os
 import sys
 
 stage = Path(sys.argv[2])
@@ -88,11 +112,14 @@ roots = [etree.parse(str(stage / name)).getroot() for name in [
     '__content.xml', 'AlgorithmCode/manifest.xml', 'ProductionCode/manifest.xml']]
 identities = [UUID(root.get('id')) for root in roots]
 assert len(set(identities)) == 3
-assert all(identity.version == 4 for identity in identities)
+# Reproducible compile under SOURCE_DATE_EPOCH: version 5 name-based identities
+# and the generation time fixed to that epoch.
+assert all(identity.version == 5 for identity in identities)
 times = {root.get('generationDateAndTime') for root in roots}
 assert len(times) == 1
 generated = datetime.fromisoformat(times.pop())
 assert generated.tzinfo == timezone.utc
+assert generated == datetime.fromtimestamp(int(os.environ["SOURCE_DATE_EPOCH"]), tz=timezone.utc)
 for rep, name in zip(content.findall('ModelRepresentation'), ['AlgorithmCode/manifest.xml', 'ProductionCode/manifest.xml'], strict=True):
     assert rep.get('checksum') == sha1((stage / name).read_bytes()).hexdigest()
 PY

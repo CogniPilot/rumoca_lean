@@ -92,6 +92,149 @@ private def command (cmd : String) (args : Array String := #[]) : ScriptM Unit :
 private def noArgs (args : List String) : ScriptM Unit := do
   unless args.isEmpty do throw (IO.userError "this command takes no arguments")
 
+private structure CertificateOutputs where
+  object : System.FilePath
+  audit : System.FilePath
+  identityFile : System.FilePath
+  identity : ByteArray
+  inputs : Array (System.FilePath × ByteArray)
+
+-- Actual artifacts are untrusted inputs. Lake's freshness hash selects a build
+-- product; exact snapshot equality binds that product to the current files.
+private def CertificateOutputs.matches (out : CertificateOutputs) : IO Bool := do
+  unless (← out.object.pathExists) && (← out.audit.pathExists) do return false
+  unless (← IO.FS.readBinFile out.identityFile) == out.identity do return false
+  for (path, bytes) in out.inputs do
+    unless (← IO.FS.readBinFile path) == bytes do return false
+  return true
+
+private instance : CheckExists CertificateOutputs where
+  checkExists out := do return (← out.matches.toBaseIO).toOption.getD false
+
+private instance : GetMTime CertificateOutputs where
+  getMTime out := do return min (← getMTime out.object) (← getMTime out.audit)
+
+private structure CertificateRequest where
+  kind : String
+  sourceName : String
+  entry : System.FilePath
+  inputs : Array System.FilePath
+  options : Array String
+  env : Array (String × Option String) := #[]
+
+private def certificateJob (request : CertificateRequest) : FetchM (Job System.FilePath) :=
+  withRegisterJob s!"certificate {request.kind}" do
+  let workspace ← getWorkspace
+  let some compiler := workspace.findPackageByName? `rumoca_compiler
+    | error "missing compiler package"
+  let mut deps := #[]
+  -- Parse the fixed entry point's real imports; additions cannot evade the trace.
+  let header ← Lean.parseImports' (← IO.FS.readFile request.entry) request.entry.toString
+  for imp in header.imports do
+    if let some mod := workspace.findModule? imp.module then
+      deps := deps.push (← mod.leanArts.fetch).toOpaque
+    else if !(imp.module == `Init || imp.module == `Lean || imp.module == `Std) then
+      error s!"untracked certificate import: {imp.module}"
+  for path in request.inputs do
+    let job ← inputBinFile path
+    deps := deps.push job.toOpaque
+  for path in #[request.entry, "lakefile.lean"] do
+    deps := deps.push (← inputBinFile path).toOpaque
+  (Job.mixArray deps).mapM fun _ => do
+    addLeanTrace
+    addPlatformTrace
+    -- File locations are I/O routing, except the source identity quoted into
+    -- the theorem. Input bytes are traced in a fixed, role-sensitive order.
+    addPureTrace #[request.kind, request.sourceName] "certificate identity"
+    let trace ← getTrace
+    let directory := compiler.buildDir / "certificates" / request.kind / trace.hash.toString
+    let objectName := (request.entry.withExtension "olean").fileName.getD "Certificate.olean"
+    let inputBytes ← (request.inputs.mapM IO.FS.readBinFile : IO (Array ByteArray))
+    let identity := Lean.toJson #[request.kind, request.sourceName] |>.compress.toUTF8
+    let outputs : CertificateOutputs := {
+      object := directory / objectName, audit := directory / "audit.log",
+      identityFile := directory / "identity.json", identity,
+      inputs := inputBytes.mapIdx fun i bytes => (directory / s!"input-{i}.bin", bytes) }
+    let traceFile := directory / "Certificate.trace"
+    buildUnlessUpToDate outputs trace traceFile do
+      IO.FS.createDirAll directory
+      removeFileIfExists traceFile
+      removeFileIfExists outputs.object
+      removeFileIfExists outputs.audit
+      -- Lake supplies an explicit import-artifact map (--setup), so the
+      -- checker loads the same modules whose native jobs are dependencies.
+      let invocation ← (← prepareLeanCommand request.entry (#["-s", "65536",
+        "-R", (request.entry.parent.getD ".").toString, "-o", outputs.object.toString,
+        s!"-Drumoca.certificate.sourceName={request.sourceName}"] ++ request.options)).await
+      let result ← IO.Process.output { invocation with
+        env := invocation.env ++ request.env
+        cwd := workspace.root.dir }
+      unless result.exitCode == 0 do
+        -- A failed run retains no product; do not leave an empty directory.
+        IO.FS.removeDirAll directory
+        error (result.stdout ++ result.stderr)
+      IO.FS.writeFile outputs.audit (result.stdout ++ result.stderr)
+      IO.FS.writeBinFile outputs.identityFile outputs.identity
+      for (path, bytes) in outputs.inputs do IO.FS.writeBinFile path bytes
+    -- Publication must not use a trace computed before a concurrent file edit.
+    for path in request.inputs, before in inputBytes do
+      unless (← IO.FS.readBinFile path) == before do
+        removeFileIfExists traceFile
+        error s!"verification input changed during certification: {path}"
+    return outputs.audit
+
+private def certificateRequest (args : List String) : IO CertificateRequest := do
+  let tools : System.FilePath := "packages/compiler/Tools"
+  let mGrammar : System.FilePath := "packages/modelica-parser/grammar/Modelica.ebnf"
+  match args with
+  | ["c", source, output, grammar] => do
+    return {
+      kind := "c", sourceName := source, entry := tools / "CheckArtifact.lean",
+      inputs := #[source, output, grammar].map System.FilePath.mk, options := #[],
+      env := #[("RUMOCA_SOURCE", some source), ("RUMOCA_C", some output), ("RUMOCA_GRAMMAR", some grammar)] }
+  | "fmi3" :: root :: names => do
+    let directory : System.FilePath := root
+    let source := directory / "extra/org.cognipilot.rumoca/Source.mo"
+    let name ← match names with
+      | [] => pure source.toString
+      | [name] => pure name
+      | _ => throw (IO.userError "expected fmi3 ROOT [SOURCE_NAME]")
+    return {
+      kind := "fmi3", sourceName := name, entry := tools / "CheckFMI3Build.lean",
+      inputs := #[source, directory / "sources/model.c", directory / "sources/fmi3.c",
+        directory / "sources/buildDescription.xml", directory / "modelDescription.xml", mGrammar,
+        "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"],
+      options := #[s!"-Drumoca.fmi3.root={root}"] }
+  | kind :: source :: input :: grammar :: galecGrammar :: names => do
+    let name ← match names with
+      | [] => pure source
+      | [name] => pure name
+      | _ => throw (IO.userError "expected one optional SOURCE_NAME")
+    let directory : System.FilePath := input
+    let (entry, option, files) ← match kind with
+      | "algorithm" => pure ("CheckEFMIAlgorithm.lean", "algorithm", #[directory])
+      | "efmi-archive" => pure ("CheckEFMIArchive.lean", "root", #[directory])
+      | "efmi-directory" => pure ("CheckEFMIManifests.lean", "root", #[
+          directory / "AlgorithmCode/model.alg", directory / "ProductionCode/production.c",
+          directory / "AlgorithmCode/manifest.xml", directory / "ProductionCode/manifest.xml",
+          directory / "__content.xml"])
+      | _ => throw (IO.userError s!"unknown artifact kind: {kind}")
+    return {
+      kind, sourceName := name, entry := tools / entry,
+      inputs := #[source, grammar, galecGrammar].map System.FilePath.mk ++ files,
+      options := #[s!"-Drumoca.efmi.source={source}", s!"-Drumoca.efmi.{option}={input}",
+        s!"-Drumoca.efmi.grammar={grammar}", s!"-Drumoca.efmi.galecGrammar={galecGrammar}"] }
+  | _ => throw (IO.userError "expected c SOURCE C GRAMMAR; fmi3 ROOT [SOURCE_NAME]; or {algorithm|efmi-archive|efmi-directory} SOURCE INPUT GRAMMAR GALEC [SOURCE_NAME]")
+
+/-- Kernel-check actual artifact bytes, reusing native Lake proof products. -/
+script «verify-artifact» args do
+  let checkOnly := args.head? == some "--check-only"
+  let request ← certificateRequest (if checkOnly then args.drop 1 else args)
+  if request.sourceName.isEmpty then throw (IO.userError "source identity must not be empty")
+  let report ← runBuild (certificateJob request) {verbosity := .quiet, noBuild := checkOnly}
+  IO.print (← IO.FS.readFile report)
+  return 0
+
 private def buildDir : ScriptM Unit := do
   IO.FS.createDirAll ((← getRootPackage).dir / "build")
 

@@ -1,4 +1,4 @@
-import Lean
+import Rumoca.CertificateOptions
 import Parser.Source
 
 
@@ -39,9 +39,9 @@ def required (option : Lean.Option String) : CommandElabM String := do
 
 def readCode (algorithm : String) : CommandElabM Code := do
   let options ← getOptions
-  let sourceName ← required rumoca.efmi.source
+  let sourcePath ← required rumoca.efmi.source
   return {
-    sourceName, source := (← IO.FS.readFile sourceName), algorithm,
+    sourceName := CertificateOptions.sourceName options sourcePath, source := (← IO.FS.readFile sourcePath), algorithm,
     grammar := (← IO.FS.readFile (rumoca.efmi.grammar.get options : String)),
     galecGrammar := (← IO.FS.readFile (rumoca.efmi.galecGrammar.get options : String)) }
 

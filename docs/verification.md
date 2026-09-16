@@ -3618,6 +3618,22 @@ respective backend packages. The
 
 ## Required gate and actual-file binding
 
+Actual-artifact certificates are native Lake build products. The fixed checking
+entry points, theorem schemas and axiom whitelist are unchanged. Reuse
+requires matching actual input bytes, original source identity, checker/import
+dependencies, build coordination and Lean toolchain; changed or missing inputs
+fail or rebuild. Cache hits also compare actual bytes and source identity with
+the retained input snapshots. A freshness hash alone cannot establish that
+binding. The product is the kernel-checked `.olean`, input snapshots and audit report,
+not a producer-supplied proof or cached test status. Original source names are
+preserved across temporary staging locations and remain part of the proposition.
+File I/O, this dependency inventory and the integrity of imported build products
+belong to the same explicit build trust boundary. See
+[artifact certificate caching](development.md#cached-artifact-certificates).
+Fresh eFMU identities and timestamps remain checked against their complete new
+XML and ZIP bytes. Native compilation and external compliance remain separate.
+
+
 Run `nix develop .#verification --command lake test`. This checks Lean proofs,
 grammar freshness, axiom dependencies, actual source/C contracts, mutation
 rejection and native C execution. `lake build audit` alone is insufficient.

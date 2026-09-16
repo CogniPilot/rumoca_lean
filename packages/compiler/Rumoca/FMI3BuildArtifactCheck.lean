@@ -27,13 +27,14 @@ elab "verify_fmi3_build_files" : command => do
   if directory.isEmpty then throwError "missing rumoca.fmi3.root"
   let root : System.FilePath := directory
   let sourcePath := root / "extra/org.cognipilot.rumoca/Source.mo"
+  let sourceName := CertificateOptions.sourceName (← getOptions) sourcePath.toString
   let source ← IO.FS.readFile sourcePath
   let c ← IO.FS.readFile (root / "sources/model.c")
   let adapter ← IO.FS.readFile (root / "sources/fmi3.c")
   let description ← IO.FS.readFile (root / "sources/buildDescription.xml")
   let metadata ← IO.FS.readFile (root / "modelDescription.xml")
   let grammar ← IO.FS.readFile "packages/modelica-parser/grammar/Modelica.ebnf"
-  let .ok candidate := compile (.single sourcePath.toString source) | throwError "source compilation failed"
+  let .ok candidate := compile (.single sourceName source) | throwError "source compilation failed"
   let modelName := candidate.parsed.ast.name
   let buildTree := FMI3.Build.description modelName
   let metadataTree := FMI3.modelDescription candidate.solve.prepareFMI3
@@ -44,7 +45,7 @@ elab "verify_fmi3_build_files" : command => do
     throwError "actual FMI model description differs from the prepared model"
   if !adapter.startsWith expectedPrefix then
     throwError "actual FMI source prefix or private-kernel inclusion differs from its model identifier"
-  ArtifactCheck.check sourcePath.toString source c grammar .internal
+  ArtifactCheck.check sourceName source c grammar .internal
   let tree := mkIdent `Rumoca.CheckedFMI3Files.build_tree
   let bytes := mkIdent `Rumoca.CheckedFMI3Files.build_bytes
   XML.CertificateCheck.certify tree.getId bytes.getId buildTree description
@@ -62,7 +63,7 @@ elab "verify_fmi3_build_files" : command => do
     theorem $identifiers:ident : FMI3.decodeModelIdentifiers $mdTree =
         some ($name, FMI3.modelIdentifier $name, FMI3.modelIdentifier $name) := by decide +kernel))
   let src := Syntax.mkStrLit source
-  let sourceFile := Syntax.mkStrLit sourcePath.toString
+  let sourceFile := Syntax.mkStrLit sourceName
   let inputTerm ← `(term| Parser.Source.InputRef.single $sourceFile $src)
   let out := Syntax.mkStrLit c
   let xml := Syntax.mkStrLit description
@@ -70,7 +71,7 @@ elab "verify_fmi3_build_files" : command => do
   let chars ← quoteCharacters `Rumoca.CheckedFMI3Files.adapter_chars adapter
   let header ← IO.FS.readFile "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"
   let .ok signatures := FMI3.Header.signatures header | throwError "invalid FMI signature header"
-  let adapterCertificate ← FMI3AdapterCertificate.certify sourcePath.toString source adapter signatures chars
+  let adapterCertificate ← FMI3AdapterCertificate.certify sourceName source adapter signatures chars
   let adapterContract := adapterCertificate.contract
   let artifact := adapterCertificate.artifact
   let compiled := adapterCertificate.compiled

@@ -122,11 +122,75 @@ integration stages are Lake scripts: `lake run verify-c`,
 example workflows. These scripts propagate failures and run their boundary
 checks on each invocation; a passing stamp is never used to skip them.
 
-The eFMI verification CLI first uses `lake build` to update its checking module
-and imports, then runs the fixed actual-file entry point. `lake env lean` alone
-only supplies an environment; it does not build imports. The native cache
-reuses the checker implementation and library proofs. The file-specific
-certificate is still constructed on each invocation.
+The artifact verification CLI uses a native Lake build job for the fixed checking
+entry point and its actual inputs. `lake env lean` alone only supplies an
+environment; it does not build imports or cache the file-specific certificate.
+
+### Cached artifact certificates
+
+`lake run verify-artifact` builds a checked `.olean` and its axiom report under
+`packages/compiler/.lake/build/certificates/`. Lake traces the entry point's
+parsed imports and their dependencies, the build coordination, pinned Lean and
+platform, original source identity, and every independently read input file.
+File inputs use binary traces, including grammars, headers, XML and complete ZIP
+bytes. File timestamps alone cannot authorize reuse. A changed input is rebuilt
+or rejected by the same fixed checker and axiom whitelist. Missing proof or audit
+outputs also require rebuilding. Each product retains its exact input snapshots
+and source identity. A cache hit compares these bytes with the current inputs;
+a hash match alone cannot bind a certificate to an untrusted artifact. Missing
+or differing snapshots require the fixed checker to run again.
+
+Keep the job's file dependency inventory aligned with the fixed checker: a new
+file read requires a corresponding native input dependency in the same change.
+
+The compiler preserves the original source name when checking a temporary
+snapshot. Temporary staging paths locate bytes; they are not new source
+identities. Moving identical artifacts therefore reuses the same checked
+declarations. Direct verification defaults to the actual source path. The
+logical name remains literal data in `InputRef`, preserving source spans.
+
+For example:
+
+```sh
+lake run verify-artifact c build/verified-lean/Source.mo build/verified-lean/Model.c \
+  packages/modelica-parser/grammar/Modelica.ebnf
+lake run verify-artifact --check-only c build/verified-lean/Source.mo build/verified-lean/Model.c \
+  packages/modelica-parser/grammar/Modelica.ebnf
+```
+
+Use the same source-name spelling in both calls. `--check-only` passes Lake's
+native `noBuild` flag to the job and fails if any prerequisite or certificate
+needs rebuilding. The FMI/eFMI publishing and verification commands use this
+same build path automatically. Files are compared byte for byte again after certification;
+detected concurrent input changes fail publication and discard the trace.
+Inputs and imported build products must remain stable during a build, as with
+ordinary Lake compilation.
+
+This caches checked declarations and their native build traces, not a separate
+"verification passed" flag. Importing `.olean` files retains Lean's usual build
+trust boundary; native Lake freshness hashes are not cryptographic authenticity
+proofs. The existing CI package cache retains these products between commits.
+Deleting `build/` preserves them; deleting the compiler's `.lake/build` removes
+them. Different inputs retain separate products using Lake's dependency hash.
+
+By default, eFMU generation draws its three manifest identities from the
+operating system (RFC 9562 version 4 UUIDs) and stamps the wall-clock
+generation time, so two archives from identical inputs still differ and need
+separate certificates. Set the standard `SOURCE_DATE_EPOCH` environment variable
+(whole seconds since the Unix epoch, UTC) to make generation reproducible. The
+generation time is then that instant, and the identities are RFC 9562 version 5
+name-based (SHA-1) values over a fixed Rumoca namespace and the role, model
+name, complete source text and epoch. Identical inputs then produce identical
+archive bytes, which is the caller's responsibility under `SOURCE_DATE_EPOCH`;
+a set but unparsable value is a hard error rather than a silent fallback. The
+Lean identity checker still verifies only the brace-delimited UUID layout, UTC
+validity and distinctness within one archive; it does not establish global UUID
+uniqueness or the accuracy of the supplied clock. `tests/efmi-production.sh`
+compiles under a fixed `SOURCE_DATE_EPOCH`, and both eFMI gates stage their
+certificate inputs at stable paths, so identical bytes recur across runs.
+Native execution, importer checks, mutation controls and publication-failure
+checks run on every full gate. Caching does not replace any of those boundary
+checks.
 
 The pinned eFMI schema contents have a separate `RumocaEFMIResources` library
 with Lake's native `efmiSchemas` input-directory dependency. Its trace is binary,
@@ -161,7 +225,7 @@ and avoids repeatedly losing an unfinished cold cache to small source pushes.
 
 The workflow pins actions to commit IDs and uses read-only repository permissions.
 Nix supplies toolchains; Lake builds the source. One native cache retains
-`.lake/packages`, `.lake/build` and `packages/*/.lake/build`, including checked
+`.lake/packages` and `packages/*/.lake/build`, including checked
 theorem modules and axiom-audit targets. Its compatibility prefix binds the OS,
 architecture, Lean toolchain, Nix environment and dependency manifest. A commit
 suffix lets each successful run save its incremental results, including newly
@@ -197,8 +261,9 @@ rebuild is useful for checking reproducibility or investigating cache integrity,
 but is not forced on every change.
 
 The full `lake test` command still runs every time. Actual source/C/GALEC/XML/ZIP
-certificates, mutation controls and native integration checks read fresh artifacts;
-`build/` and their success status are never restored from the proof cache. Two
+inputs are freshly traced, with matching artifact certificates reused through
+Lake. Mutation controls and native integration checks still run; generated
+`build/` artifacts and an overall test success status are never restored. Two
 Lean workers limit memory contention without changing proof obligations.
 
 Passing this workflow establishes the documented tiny-core gates. It does not
