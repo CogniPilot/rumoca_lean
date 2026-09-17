@@ -73,6 +73,33 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor nominal-value getter over the symbolic state volume: standards impact
+
+`FMI3.TensorNominals` delivers the tensor `fmi3GetNominalsOfContinuousStates` body
+over the static tensor instance record as a package-checked product. It emits no
+production artifact, adds no CLI or grammar case, and leaves the scalar adapter
+(`Runtime.lean`, `ErrorCalls`, the scalar nominal contract) and every existing
+contract unchanged. The scalar body assumes a single continuous state; the tensor
+body writes the fixed nominal `1` into every cell of the caller buffer over the
+symbolic state volume, so no tensor coordinate is enumerated during lowering.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| FMI 3.0.2 §5.2.2, header files and naming of functions | New derived product only. The function reuses the pinned public prototype `ErrorCalls.nominalSignature` for `fmi3GetNominalsOfContinuousStates`; the emitted signature is the header prototype, checked printable and denoting against the runtime typedefs (`TensorNominals.signature_printable`, `function_denotes`). No new header name or type is introduced. |
+| FMI 3.0.2 §3.2.2, getting nominal values of continuous states (Model Exchange) | New derived product only. After the shared handle and lifecycle guard (`Runtime.require .getNominals`), the body checks that the requested count equals the symbolic state volume `shape.volume` and that the caller buffer is non-null (`countReject`, `count_pass`), then writes the fixed nominal `1` into every buffer cell with a counted `size_t` loop bounded by the symbolic volume. The sole terminating behavior returns `fmi3OK` with the buffer reading `1` in every cell (`nominal_behaviors`, `reads_nominals`); the write preserves every cell outside the buffer (`preserves_instance`); a null handle returns `fmi3Error` changing nothing (`null_behaviors`). |
+| FMI 3.0.2 common functions and ME/CS interfaces | No change beyond the single Model Exchange getter above; the count query, state accessors, derivative getter, time setter, reset, lifecycle transitions, creation and free bodies are unchanged. |
+| C11 / printer conformance | The body's block closedness is checked (`TensorNominals.body_closed`); every statement prints its intended C token grammar (`body_printable`) and the whole function denotes its rendered bytes (`function_denotes`). This increment adds a package-checked getter semantics, not a new production emission. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The getter writes into caller-provided storage through a counted `size_t` loop bounded by the symbolic volume; it forms no new storage and runs no allocator. No dynamic allocation, byte arena or allocator run is introduced (Rule 21.3, no `malloc`/`calloc`/`realloc`/`free`; Dir 4.12, no dynamic memory). The `2 ^ 64` size bound stays abstract against the symbolic shape volume. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The theorems hold for arbitrary tensor shape, instance address, caller buffer and
+heap. **Open:** the count-negotiation policy for a partial or oversized request,
+the whole tensor adapter renderer and its adapter contract binding every emitted
+function, and binding this body to an emitted FMU wrapper, remain open, as does
+production generation, which this package product does not authorize. **Stage
+decision: open; no grammar expansion.**
+
 ### Tensor instance creation over the static tensor pool: standards impact
 
 `FMI3.TensorInstanceInit`, `FMI3.TensorFactory` (and the strengthened

@@ -1105,3 +1105,46 @@ Remaining and deferred: the count-negotiation policy for a partial or oversized
 request, and binding these bodies to an emitted FMU wrapper with its lifecycle and
 numerical policy, remain open. This package product does not authorize production
 generation.
+
+## Tensor nominal-value getter over the symbolic state volume
+
+`FMI3.TensorNominals` defines the tensor `fmi3GetNominalsOfContinuousStates` body
+over the static tensor instance record as a package-checked product. The scalar
+body assumes a single continuous state and writes the fixed nominal `1` into
+`nominals[0]` after checking `nContinuousStates == 1`. The tensor profile carries
+the symbolic state volume, so this body validates the instance handle and lifecycle
+guard exactly as the scalar body does (`Runtime.require` with the `getNominals`
+command), checks that the request count equals the symbolic state volume
+`shape.volume` and that the caller buffer is non-null (`countReject`), and then
+writes the fixed nominal `1` into every cell of the caller buffer with a counted
+`size_t` loop whose bound is the symbolic volume. The loop bound is the symbolic
+volume, so no tensor coordinate is enumerated during lowering. The integer literal
+`1` converts to the exact binary64 value `Binary64.one`.
+
+The function shares the scalar public signature `ErrorCalls.nominalSignature`, so
+the emitted prototype is the pinned header prototype. The single-cell fill step
+reuses the shared `TensorFloat64` copy-cell address lemmas (`dstCell`,
+`dstCell_lvalue`), and the counted loop reuses the shared loop scheduler
+(`CCalls.Events.loop_reaches`) and pending-output storage lemma
+(`Float64Calls.pending_output`) that the tensor reset and continuous-state bodies
+use. Its sole terminating behavior on the observable call machine
+`CCalls.Events.machine` returns `fmi3OK` and leaves the caller buffer reading the
+fixed nominal `1` in every cell, with every cell outside the buffer preserved
+(`preserves_instance`); a null handle returns `fmi3Error` changing nothing
+(`null_behaviors`).
+
+| Obligation | Checked theorem |
+| --- | --- |
+| One fill iteration writes `1` into the staged buffer cell | `TensorNominals.oneCopy_step` |
+| The counted loop fills the whole caller buffer with `1` | `TensorNominals.oneCopy_reaches` |
+| The request check passes for a matched non-null request | `TensorNominals.count_pass` |
+| The getter runs, writes `1` to every buffer cell and returns `fmi3OK`; null returns `fmi3Error` | `TensorNominals.nominal_behaviors`, `null_behaviors` |
+| The filled buffer reads the fixed nominal `1` in every cell | `TensorNominals.reads_nominals` |
+| The fill preserves every cell outside the caller buffer | `TensorNominals.preserves_instance` |
+| Printed prototype, closedness, denotation and behaviors as a contract | `TensorNominals.signature_printable`, `body_printable`, `function_denotes`, `contract` |
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms. Every theorem is universal in the tensor shape, the instance
+address, the caller buffer and the heap. This is a package-checked product only: no
+production artifact is emitted, no CLI or grammar case is added, and the scalar
+adapter, `Runtime.lean` and every existing contract are unchanged.

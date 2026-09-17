@@ -249,6 +249,7 @@ import RumocaFMI3.TensorFree
 import RumocaFMI3.TensorLifecycleHistory
 import RumocaFMI3.TensorInstanceInit
 import RumocaFMI3.TensorStaticFactory
+import RumocaFMI3.TensorNominals
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2340,3 +2341,21 @@ import RumocaFMI3.TensorStaticFactory
 -- Tensor lifecycle history started from a proved creation call (package-checked
 -- product; no production emission).
 #audit axioms Rumoca.FMI3.TensorLifecycleHistory.lifecycle_from_creation
+
+-- Tensor fmi3GetNominalsOfContinuousStates over the symbolic state volume
+-- (package-checked product; no production emission).
+#audit axioms Rumoca.FMI3.TensorNominals.oneBody_closed
+#audit axioms Rumoca.FMI3.TensorNominals.oneCopy_step
+#audit axioms Rumoca.FMI3.TensorNominals.oneCopy_reaches
+#audit axioms Rumoca.FMI3.TensorNominals.body_closed
+#audit axioms Rumoca.FMI3.TensorNominals.parameters_bound
+#audit axioms Rumoca.FMI3.TensorNominals.count_pass
+#audit axioms Rumoca.FMI3.TensorNominals.nominal_reaches
+#audit axioms Rumoca.FMI3.TensorNominals.nominal_behaviors
+#audit axioms Rumoca.FMI3.TensorNominals.null_behaviors
+#audit axioms Rumoca.FMI3.TensorNominals.reads_nominals
+#audit axioms Rumoca.FMI3.TensorNominals.preserves_instance
+#audit axioms Rumoca.FMI3.TensorNominals.signature_printable
+#audit axioms Rumoca.FMI3.TensorNominals.body_printable
+#audit axioms Rumoca.FMI3.TensorNominals.function_denotes
+#audit axioms Rumoca.FMI3.TensorNominals.contract

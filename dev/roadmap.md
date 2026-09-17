@@ -11,6 +11,22 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor nominal-value getter (derived proofs):**
+
+`FMI3.TensorNominals` proves the tensor `fmi3GetNominalsOfContinuousStates`
+body: after the handle and lifecycle guard and the count and buffer checks, a
+counted loop bounded by the symbolic volume writes the fixed nominal one into
+every caller cell, preserving every other cell; the null handle is rejected.
+With it, the tensor slice has authored bodies for eighteen of the twenty-six
+behavioral functions. The remaining eight (version, debug logging, scheduled
+execution rejection, discrete evaluation and update, completed integrator step,
+event indicators, and the co-simulation step) and the tensor adapter renderer,
+family contracts and adapter contract remain open. Nothing is emitted by
+production and no existing contract changed. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 9m21s
+(`build/tensor-fmi/full-gate-v10.log`).
+
 **Tensor instance creation and a create-to-release history (derived proofs):**
 
 `FMI3.TensorInstanceInit` and `TensorStaticFactory` prove the tensor
