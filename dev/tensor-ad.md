@@ -1407,3 +1407,83 @@ tensor package's `cInterface` populates `fmi3OK` but not `FE_TONEAREST`, which t
 tensor numerical lemmas on that interface is a separate step. Binding any of these bodies
 to an emitted FMU wrapper with its lifecycle and numerical policy also remains open. This
 package product does not authorize production generation.
+
+## Tensor adapter function list and the two family contracts
+
+`FMI3.TensorFunctions.functions` is the tensor analog of the scalar
+`LiteralPreparation.functions`: the reused helper prefix (`Runtime.helpers`,
+including the `fail` diagnostic the family failure paths call) followed by one
+dispatched function per pinned-header signature, in header order.
+`TensorFunctions.tensorFunction` maps each header signature by its public name to
+its proved tensor behavioral body (the 19 shape-dependent functions: `fmi3Reset`,
+`fmi3GetNominalsOfContinuousStates`, the two count queries, `fmi3SetTime`, the
+five Model Exchange mode transitions, `fmi3FreeInstance`, the two instantiation
+functions, the two Float64 accessors, the three continuous-state functions and
+`fmi3DoStep`); every other signature (the seven model-independent behavioral
+functions and the 49 unsupported/absent-type functions) renders exactly the
+scalar body `Runtime.function model sig`. The fixed declaration preamble and the
+numerical kernel are reused from the scalar witness model; tensor rank and
+extents stay symbolic in the shape parameter.
+
+`tensorFunction_name` proves each dispatched function keeps its header name, so
+`functions_names` proves the tensor list's public-name multiset equals the scalar
+adapter list's. Distinctness (`functions_nodup`), the located positions
+(`rendered_member`, mirroring the scalar located lemma), the renderer identity
+(`rendered_functions`), the definition table (`program`, `definition_bound`,
+`function_bound`, `helpers_bound`, `program_covered`) and the literal pool
+(`prepare`, `header_fresh`, `text_bound`, `pool_complete`) then follow the scalar
+development, universally in the tensor shape and the scalar model name.
+
+The two model-agnostic families are proved over the tensor list without
+duplicating any family execution proof. The absent-type family
+(`TensorAbsentVariables.family_correct`) and the unsupported-capability family
+(`TensorCapabilityRejection.family_correct`) reuse the existing model-agnostic
+execution core (`AbsentVariables.quiet_correct`/`quiet_static_correct`/
+`suppressed_correct`/`logged_correct`, `CapabilityRejection.null_call`/
+`failures_correct`, and the `message_collected` lemmas), which already take the
+definition-table and literal-pool facts as premises. The tensor contracts only
+re-plumb those facts from `TensorFunctions`: the family bodies fall through the
+tensor dispatch to the scalar body (`absent_function`, `capability_function`,
+`scheduled_function`), so the tensor definition table binds each family
+signature to exactly `Runtime.function model sig` (`scalar_bound`) and the tensor
+literal pool carries the same failure-message and `logStatus` literals
+(`scalar_member` with `text_bound`). The family bodies are identical to the
+scalar renderer's; only the surrounding function list and its literal pool
+differ.
+
+`PublicAPI.Covered` is model-free, so the model-free coverage witness accounts
+for every listed signature unchanged. `FMI3.TensorAdapter.Contract` is a first
+skeleton binding the rendered adapter text (`TensorFunctions.render`) to that
+coverage, the two family contracts over the list, and every proved tensor
+behavioral function contract, in header order; `render_contract` discharges the
+bundle from the located header list. The contract is stated relative to one
+static literal table, which supplies the ambient C interface the accessor,
+factory and release contracts use; the seven runtime-interface behavioral
+functions supply their own floating-environment header, objects and literal
+addresses, stated as explicit premises rather than weakening any conjunct. The
+two open `fmi3DoStep` behaviors remain inside `TensorDoStep.contract` itself (the
+`fmi3Discard` off-grid composition and the header-aware floating-environment
+interface); the skeleton includes that contract as proved and inherits exactly
+those open items.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Each dispatched function keeps its header public name | `TensorFunctions.tensorFunction_name` |
+| The tensor list's name multiset equals the scalar list's | `TensorFunctions.functions_names` |
+| The public names are pairwise distinct | `TensorFunctions.functions_nodup` |
+| Each header signature is rendered once at its header-order slot | `TensorFunctions.rendered_member` |
+| The rendered adapter is the preamble followed by the function list | `TensorFunctions.rendered_functions` |
+| Each header signature is bound to its tree in the definition table | `TensorFunctions.function_bound` |
+| The reused `fail` helper is bound to its tree | `TensorFunctions.helpers_bound` |
+| Every collected literal occurrence has a pool address | `TensorFunctions.text_bound` |
+| Each family signature falls through to the scalar body | `absent_function`, `capability_function`, `scheduled_function` |
+| The absent-type family contract over the tensor list | `TensorAbsentVariables.family_correct` |
+| The unsupported-capability family contract over the tensor list | `TensorCapabilityRejection.family_correct` |
+| The first tensor adapter contract bound to the rendered text | `TensorAdapter.render_contract` |
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms (`propext`, `Quot.sound`, `Classical.choice`) in
+`FMI3Audit.lean`, and `lake build check-fmi3` is green. These are
+package-checked products only: no production artifact is emitted, no CLI or
+grammar case is added, and the scalar renderer, the families and every existing
+contract are unchanged.

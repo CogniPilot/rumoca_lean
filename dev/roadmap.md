@@ -11,6 +11,23 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor adapter function list, family contracts and adapter contract skeleton (derived proofs):**
+
+`FMI3.TensorFunctions` maps every pinned header signature to its tensor body
+or to the unchanged scalar family body, with the helper definitions and
+literal pool facts, name distinctness and located rendering proved universally
+in the shape and model name. `TensorFamilyContracts` re-plumbs the
+model-agnostic absent-variable and capability-rejection execution cores over
+the tensor list without duplicating their proofs. `TensorAdapter.Contract`
+binds the rendered function text to public-API coverage, both family contracts
+and every tensor behavioral contract in header order, and `render_contract`
+proves it. The rendered preamble still reuses the scalar declarations, so the
+tensor pool declaration is not yet bound; the co-simulation discard
+composition and the floating-environment interface premise carry forward.
+Nothing is emitted by production. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 9m01s
+(`build/tensor-fmi/full-gate-v16.log`).
+
 **Tensor co-simulation step execution and contract (derived proofs):**
 
 `TensorDoStep.accepted_behaviors` proves the guarded tensor `fmi3DoStep` as

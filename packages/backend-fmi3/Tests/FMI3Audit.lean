@@ -258,6 +258,9 @@ import RumocaFMI3.TensorDiscreteUpdate
 import RumocaFMI3.TensorCompletedStep
 import RumocaFMI3.TensorEventIndicators
 import RumocaFMI3.TensorDoStep
+import RumocaFMI3.TensorFunctions
+import RumocaFMI3.TensorFamilyContracts
+import RumocaFMI3.TensorAdapterContract
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2456,3 +2459,44 @@ import RumocaFMI3.TensorDoStep
 #audit axioms Rumoca.FMI3.TensorDoStep.body_printable
 #audit axioms Rumoca.FMI3.TensorDoStep.function_denotes
 #audit axioms Rumoca.FMI3.TensorDoStep.contract
+
+-- Tensor FMI 3 adapter function list (package-checked product; no production
+-- emission). Each pinned header signature renders its proved tensor behavioral
+-- body (19 shape-dependent functions dispatched by name) or, for the seven
+-- model-independent behavioral and the 49 unsupported/absent-type functions, the
+-- same body the scalar renderer emits. The name multiset equals the scalar list's,
+-- so distinctness, located positions, definition table and literal pool follow.
+#audit axioms Rumoca.FMI3.TensorFunctions.tensorFunction_name
+#audit axioms Rumoca.FMI3.TensorFunctions.functions_names
+#audit axioms Rumoca.FMI3.TensorFunctions.functions_nodup
+#audit axioms Rumoca.FMI3.TensorFunctions.rendered_functions
+#audit axioms Rumoca.FMI3.TensorFunctions.rendered_member
+#audit axioms Rumoca.FMI3.TensorFunctions.rendered_helper
+#audit axioms Rumoca.FMI3.TensorFunctions.definition_bound
+#audit axioms Rumoca.FMI3.TensorFunctions.function_bound
+#audit axioms Rumoca.FMI3.TensorFunctions.program_covered
+#audit axioms Rumoca.FMI3.TensorFunctions.helpers_bound
+#audit axioms Rumoca.FMI3.TensorFunctions.header_fresh
+#audit axioms Rumoca.FMI3.TensorFunctions.text_bound
+#audit axioms Rumoca.FMI3.TensorFunctions.pool_complete
+
+-- The two unsupported/absent-type family contracts over the tensor adapter list.
+-- The family execution bodies are identical to the scalar renderer's; only the
+-- surrounding function list and its literal pool differ. The model-agnostic
+-- execution core is reused verbatim, so no family execution proof is duplicated.
+#audit axioms Rumoca.FMI3.absent_function
+#audit axioms Rumoca.FMI3.capability_function
+#audit axioms Rumoca.FMI3.scheduled_function
+#audit axioms Rumoca.FMI3.scalar_bound
+#audit axioms Rumoca.FMI3.scalar_member
+#audit axioms Rumoca.FMI3.TensorAbsentVariables.prepared_correct
+#audit axioms Rumoca.FMI3.TensorAbsentVariables.rendered_contract
+#audit axioms Rumoca.FMI3.TensorAbsentVariables.family_correct
+#audit axioms Rumoca.FMI3.TensorCapabilityRejection.prepared_correct
+#audit axioms Rumoca.FMI3.TensorCapabilityRejection.rendered_contract
+#audit axioms Rumoca.FMI3.TensorCapabilityRejection.family_correct
+
+-- The first tensor adapter contract skeleton: the rendered text of the function
+-- list bound to the model-free public-API coverage, the two family contracts and
+-- every proved tensor behavioral function contract, with `render_contract` proved.
+#audit axioms Rumoca.FMI3.TensorAdapter.render_contract
