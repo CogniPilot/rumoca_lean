@@ -2,6 +2,7 @@ import ProofAudit.Audit
 import RumocaC.TensorCallContract
 import RumocaC.TensorFillContract
 import RumocaC.TensorDiagonalContract
+import RumocaC.TensorSquareDiagonal
 import TensorCChecks.Entry
 import TensorCChecks.DiagonalEntry
 import TensorCChecks.IVPEntry
@@ -211,3 +212,16 @@ import RumocaC.TypedEventsTransfer
 #audit axioms Rumoca.CCalls.Events.append_reaches_events
 #audit axioms Rumoca.CCalls.Events.loop_call_reaches_events
 #audit axioms Rumoca.CCalls.Events.loop_call_behaviors_events
+
+-- Reusable scratch-free square-Jacobian materializer diag(2*u).
+#audit axioms Rumoca.CTensor.SquareDiagonal.copy_step
+#audit axioms Rumoca.CTensor.SquareDiagonal.coeff_reads
+#audit axioms Rumoca.CTensor.SquareDiagonal.loop_reaches
+#audit axioms Rumoca.CTensor.SquareDiagonal.function_reaches
+#audit axioms Rumoca.CTensor.SquareDiagonal.helper_call_reaches
+#audit axioms Rumoca.CTensor.SquareDiagonal.helper_call_correct
+#audit axioms Rumoca.CTensor.SquareDiagonal.invoke_reaches
+#audit axioms Rumoca.CTensor.SquareDiagonal.output_reads
+#audit axioms Rumoca.CTensor.SquareDiagonal.output_frame
+#audit axioms Rumoca.CTensor.SquareDiagonal.diagonal_nearest
+#audit axioms Rumoca.CTensor.SquareDiagonal.matrix_diagonal_nearest

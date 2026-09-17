@@ -11,6 +11,22 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Square Jacobian diagonal helper (derived proofs):**
+
+`CTensor.SquareDiagonal` adds the scratch-free C helper that zero-fills a
+dense output tensor with the shared fill and writes `u[k] + u[k]` at each
+diagonal cell with one strided counted loop over the symbolic volume, reusing
+the existing diagonal memory model. Its call is proved to reach the dense
+matrix with zeros off the diagonal and to preserve everything outside the
+output, and each stored diagonal entry is a nearest finite value of the real
+Jacobian entry of the square kernel established by the array-profile AD lemmas.
+The helper is not yet emitted or called by the tensor adapter, so the native
+run still reads `J` as zero; wiring it into the derivative getter and the
+co-simulation step with the contract conjuncts is the next obligation. Nothing
+is emitted by production. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 9m58s
+(`build/tensor-fmi/full-gate-v23.log`).
+
 **Kind-aware co-simulation exit and tensor instantiation token (derived proofs and boundary run):**
 
 The tensor exit-initialization transition now branches on the instance kind

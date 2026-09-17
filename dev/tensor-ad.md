@@ -1907,3 +1907,74 @@ and writes its diagonal from the diagonal kernel (reusing `emitDiagonal_correct`
 and the typed-to-observable transfer, universal in the symbolic matrix volume with
 counted loops), and extending the relevant getter/step contract and the adapter
 contract. This is the one open tensor item.
+
+## Reusable square-Jacobian output materializer (increment 1.23)
+
+The output tensor `J` (value reference 4, declared `J[2,2]` by `TensorMetadata`)
+now has a proven, scratch-free computing body. The prepared AD kernel
+`rumoca_square_jacobian` computes the Jacobian coefficients into six scratch
+buffers the static instance record lacks; rather than add that scratch, the
+increment adds a direct materializer that reads only the input tensor `u` and the
+output region `J`.
+
+### The helper `rumoca_square_jacobian_diag`
+
+`Rumoca.CTensor.SquareDiagonal` (`packages/backend-c/RumocaC/TensorSquareDiagonal.lean`)
+defines the reusable C helper `rumoca_square_jacobian_diag(coeff, out, count, cells)`.
+Its body zero-fills the dense `out` region with the shared `rumoca_tensor_fill`
+helper (`Fill.invoke`) and then, in one counted loop, stores `coeff[k] + coeff[k]`
+at the diagonal cell `k * (count + 1)` of the row-major matrix, advancing a
+carried `offset` by `stride = count + 1` each iteration. The signature matches the
+diagonal-copy helper (`Diagonal.signatureParameters`); only the stored value
+differs, so the entire memory model of `Rumoca.CTensor.Diagonal` (`scatter`,
+`zeroHeap`, `resultHeap`, `matrix`, `result_reads`, `result_frame`,
+`scatter_store_next`, `offset_step`, `offset_eval`) is reused.
+
+Proven, universal in the tensor shape (no coordinate enumeration):
+
+| Obligation | Checked theorem |
+| --- | --- |
+| One diagonal iteration stores `u[k] + u[k]` and advances the scatter | `SquareDiagonal.copy_step` |
+| The input region survives the zero-fill and every diagonal store | `SquareDiagonal.coeff_reads` |
+| The counted diagonal loop reaches `resultHeap` | `SquareDiagonal.loop_reaches` |
+| The whole body reaches `resultHeap` from a readable/writable heap | `SquareDiagonal.function_reaches` |
+| The ordinary call's sole terminating behavior writes `resultHeap` | `SquareDiagonal.helper_call_correct` |
+| A body-site call advances past with `J` holding the dense matrix | `SquareDiagonal.invoke_reaches` |
+| `J` then reads the dense matrix `diag(2*u)`, zero off-diagonal | `SquareDiagonal.output_reads` (via `Diagonal.matrix`) |
+| Every cell outside the `J` region is preserved | `SquareDiagonal.output_frame` |
+| Each diagonal entry is a nearest finite value to `2 * u[k]` (the AD Jacobian diagonal) | `SquareDiagonal.diagonal_nearest` |
+
+The matrix is stated as `Diagonal.matrix result` (Lean function of the diagonal
+vector), which is `Value.ofMatrix (Matrix.diagonal (fun i => result[i]))`;
+`Diagonal.matrix_get` gives `if i = j then result[i] else positiveZero`. The
+relation to the prepared Jacobian program is `SquareDiagonal.diagonal_nearest`:
+the stored `u[k] + u[k]` is nearest to `2 * u[k]`, which is exactly the `(k, k)`
+entry of the real Jacobian `AD.squareJacobian` that
+`ArrayProfile.square_jacobian_eval` proves equals
+`(squareJacobianProgram shape).eval AD.realOps 0 1 (environment state u)`; the
+prepared coefficient program's finite value has the same nearest property
+(`ArrayProfile.square_jacobian_coefficients_nearest`). The helper's correctness
+theorems are registered in `packages/backend-c/Tests/TensorAudit.lean`.
+
+### Remaining wiring (open)
+
+The helper is not yet emitted or called by the tensor adapter, so
+`fmi3GetFloat64(J)` still reads the output region's zero initialization and
+`tests/tensor-c.sh` still reports `J = (0, 0, 0, 0)` in both interfaces (the
+assertion is left at the honest zeros). Completing the output requires, in order:
+
+1. Emit `rumoca_square_jacobian_diag` in the adapter so it resolves in the program
+   definitions (add it to the emitted helper set and its resolution/printability
+   conjuncts in `TensorFunctions`/`FMI3.TensorAdapter.Contract`).
+2. Make the tensor derivative getter output-aware: when the record carries the
+   output, call the helper on the `u` and `J` regions after the derivative entry,
+   using the observable-machine transfer `CCalls.Events.loop_call_reaches_events`
+   (the same bridge the getter already uses for `rumoca_rhs`) and the region-frame
+   lemmas, then extend `TensorContinuousStates.DerivContract` with the `J`
+   conjunct (`Reads finalHeap (field pool i outputName) (Diagonal.matrix (doubled u))`).
+   Keep the output-free record (`outputShape = none`) unchanged.
+3. Call the helper once per accepted co-simulation step in `TensorDoStep` and
+   extend `TensorDoStep.Contract` with the same `J` conjunct.
+4. Extend `FMI3.TensorAdapter.Contract` with the two `J` conjuncts, keep
+   `TensorLifecycleHistory` building, and update the `tests/tensor-c.sh` boundary
+   assertion to `J = (2, 0, 0, 4)` once the emitted adapter computes it.
