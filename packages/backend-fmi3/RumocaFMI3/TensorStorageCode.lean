@@ -94,20 +94,46 @@ def recordRender (shape : Shape) (hasOutput : Bool) : String :=
     String.join ((members shape hasOutput).map fun m => "  " ++ m.render ++ "\n") ++
     "} " ++ recordName ++ ";\n"
 
-/-- The complete tensor storage section: the shared numerical model record, the
-tensor instance record, and the shared permanent pool array, always-lock-free
-flag array and capacity constant. -/
+/-- The complete tensor storage section: the tensor instance record, and the
+shared permanent pool array, always-lock-free flag array and capacity constant.
+The scalar numerical `Model` record is not declared here: the tensor bodies
+address the tensor instance record and call the prepared tensor kernel entry
+`rumoca_rhs` directly, so the scalar record and its scalar helpers carry no
+meaning for the tensor adapter. -/
 def storageRender (shape : Shape) (hasOutput : Bool) : String :=
-  StaticStorage.modelRecord.render ++ recordRender shape hasOutput ++
+  recordRender shape hasOutput ++
     (StaticStorage.instances StaticStorage.deploymentCapacity).render ++
     (StaticStorage.flags StaticStorage.deploymentCapacity).render ++
     (StaticStorage.count StaticStorage.deploymentCapacity).render
 
-/-- The tensor adapter declaration preamble: the shared header inclusion block
-followed by the tensor storage section. This replaces `Runtime.declarations`
-(which declares the scalar instance record) in the tensor renderer. -/
+/-- The exported prototype of the prepared tensor derivative kernel entry
+`rumoca_rhs`, in the shape the tensor plan gives it: three contiguous `double`
+regions (the state `x`, input `u` and derivative `dx`) and the element count. The
+member names agree with `TensorInstance` and the region roles with the plan's
+`input`/`output` parameter kinds (`const double *` for the read regions,
+`double *` for the written derivative). This is the signature the C IVP product
+renders for the plan's derivative function. -/
+def kernelSignature : CTree.Signature :=
+  ⟨"void", "rumoca_rhs",
+    [⟨"const double *", TensorInstance.stateName, false⟩,
+     ⟨"const double *", TensorInstance.inputName, false⟩,
+     ⟨"double *", TensorInstance.derivativeName, false⟩,
+     ⟨"size_t", "count", false⟩]⟩
+
+/-- The forward declaration of the prepared tensor kernel entry `rumoca_rhs`. The
+tensor bodies call this entry directly with the instance's `x`, `u` and `dx`
+region pointers and the element count; the preamble declaration makes those calls
+match the definition in the included private kernel `model.c`. It replaces the
+scalar `model_rhs`/`model_advance` wrapper helpers, which called the scalar
+kernel over the scalar `Model` record and are dead for the tensor adapter. -/
+def kernelPrototype : String := kernelSignature.render ++ ";\n"
+
+/-- The tensor adapter declaration preamble: the shared header inclusion block,
+the tensor storage section and the forward declaration of the prepared tensor
+kernel entry. This replaces `Runtime.declarations` (which declares the scalar
+instance record) in the tensor renderer. -/
 def declarations (shape : Shape) (hasOutput : Bool) : String :=
-  Runtime.declarationPrefix ++ storageRender shape hasOutput ++ "\n"
+  Runtime.declarationPrefix ++ storageRender shape hasOutput ++ kernelPrototype ++ "\n"
 
 /-! ### Record layout agrees with the addressed tensor regions -/
 
@@ -324,13 +350,11 @@ theorem record_printed (shape : Tensor.Shape) (hasOutput : Bool) :
     (kw "typedef" parts_typedef _).append ((kw "struct" parts_struct _).append (opening.append body))
 
 /-- The complete tensor storage section scans into a concrete token sequence:
-the shared model record, the tensor instance record and the shared permanent
-pool array, flag array and capacity constant. The shared declarations reuse
-their existing render/tokenization proofs; the tensor instance record uses
-`record_printed`. -/
+the tensor instance record and the shared permanent pool array, flag array and
+capacity constant. The shared declarations reuse their existing
+render/tokenization proofs; the tensor instance record uses `record_printed`. -/
 theorem storage_printed (shape : Tensor.Shape) (hasOutput : Bool) :
     ∃ tokens, ∀ rest, CTokens.Prefix ((storageRender shape hasOutput).toList ++ rest) tokens rest := by
-  obtain ⟨modelTokens, modelPhrase, modelLex⟩ := CObject.record_renders StaticStorage.model_printable
   obtain ⟨recordTokens, recordLex⟩ := record_printed shape hasOutput
   obtain ⟨arrayTokens, arrayPhrase, arrayLex⟩ :=
     CObject.array_renders (StaticStorage.instances_printable (capacity := StaticStorage.deploymentCapacity) (by decide +kernel))
@@ -338,8 +362,8 @@ theorem storage_printed (shape : Tensor.Shape) (hasOutput : Bool) :
     CObject.array_renders (StaticStorage.flags_printable (capacity := StaticStorage.deploymentCapacity) (by decide +kernel))
   obtain ⟨countTokens, countPhrase, countLex⟩ :=
     CObject.constant_renders (StaticStorage.count_printable StaticStorage.deploymentCapacity)
-  refine ⟨modelTokens ++ recordTokens ++ arrayTokens ++ flagTokens ++ countTokens, fun rest => ?_⟩
-  have composed := (modelLex _).append ((recordLex _).append ((arrayLex _).append ((flagLex _).append (countLex rest))))
+  refine ⟨recordTokens ++ arrayTokens ++ flagTokens ++ countTokens, fun rest => ?_⟩
+  have composed := (recordLex _).append ((arrayLex _).append ((flagLex _).append (countLex rest)))
   simpa only [storageRender, String.toList_append, List.append_assoc] using composed
 
 /-- The tensor declaration preamble is the shared header inclusion block
@@ -348,7 +372,8 @@ section. This exposes the header-inclusion prefix as model-independent and
 identical to the scalar declarations' header block. -/
 theorem declarations_header (shape : Tensor.Shape) (hasOutput : Bool) :
     (declarations shape hasOutput).toList =
-      Runtime.declarationPrefix.toList ++ (storageRender shape hasOutput ++ "\n").toList := by
+      Runtime.declarationPrefix.toList ++
+        (storageRender shape hasOutput ++ kernelPrototype ++ "\n").toList := by
   simp [declarations, String.toList_append]
 
 end Tokenization

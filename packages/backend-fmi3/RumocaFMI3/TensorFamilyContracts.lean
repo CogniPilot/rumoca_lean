@@ -115,7 +115,7 @@ theorem prepared_correct (model : Solve.FMI3Model source) (m : Solve.TensorFMI3M
     exact scalar_bound model m sigs unique (signature ty write) member routed
   · intro header before firstBlock signed objects heap frame
     obtain ⟨category, categoryBound⟩ := TensorFunctions.text_bound model m sigs made Runtime.helpers[0]
-      (List.mem_append_left _ (by simp [Runtime.helpers])) "logStatus" Logging.category_collected firstBlock
+      (List.mem_append_left _ (by simp [TensorFunctions.helpers])) "logStatus" Logging.category_collected firstBlock
     have available : ∀ reason, ∃ message, pool.addresses firstBlock (failureMessage reason) = some message := by
       intro reason
       exact TensorFunctions.text_bound model m sigs made (Runtime.function model (signature ty write))
@@ -135,7 +135,7 @@ theorem prepared_correct (model : Solve.FMI3Model source) (m : Solve.TensorFMI3M
       intro E prog actual
       refine ⟨?_, ?_⟩
       · rw [actual]; exact scalar_bound model m sigs unique (signature ty write) member routed
-      · rw [actual]; exact TensorFunctions.helpers_bound model m sigs Runtime.helpers[0] (by simp [Runtime.helpers])
+      · rw [actual]; exact TensorFunctions.helpers_bound model m sigs Runtime.helpers[0] (by simp [TensorFunctions.helpers])
     refine ⟨category, messages, categoryBound, messageBound, categoryStored, messageStored, ?_, ?_⟩
     · intro E prog actual reason
       obtain ⟨defined, helper⟩ := definitions E prog actual
@@ -213,7 +213,7 @@ theorem prepared_correct (model : Solve.FMI3Model source) (m : Solve.TensorFMI3M
     exact scalar_bound model m sigs unique sig member fallthrough
   · intro header before firstBlock signed objects heap frame
     obtain ⟨category, categoryBound⟩ := TensorFunctions.text_bound model m sigs made Runtime.helpers[0]
-      (List.mem_append_left _ (by simp [Runtime.helpers])) "logStatus" Logging.category_collected firstBlock
+      (List.mem_append_left _ (by simp [TensorFunctions.helpers])) "logStatus" Logging.category_collected firstBlock
     obtain ⟨text, bound⟩ := TensorFunctions.text_bound model m sigs made (Runtime.function model sig)
       (scalar_member model m sigs sig member fallthrough) message (CapabilityRejection.message_collected model routed) firstBlock
     have categoryStored := (pool.storage_valid before firstBlock signed "logStatus" category categoryBound).preserved frame
@@ -223,7 +223,7 @@ theorem prepared_correct (model : Solve.FMI3Model source) (m : Solve.TensorFMI3M
     intro E prog actual
     apply CapabilityRejection.failures_correct header objects (pool.addresses firstBlock) model profile routed prog heap category text signed
     · rw [actual]; exact scalar_bound model m sigs unique sig member fallthrough
-    · rw [actual]; exact TensorFunctions.helpers_bound model m sigs Runtime.helpers[0] (by simp [Runtime.helpers])
+    · rw [actual]; exact TensorFunctions.helpers_bound model m sigs Runtime.helpers[0] (by simp [TensorFunctions.helpers])
     · exact bound
     · exact categoryBound
     · exact categoryStored

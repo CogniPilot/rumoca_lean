@@ -7,6 +7,7 @@ import RumocaCore.Solve.Tensor.Reverse
 import Rumoca.EFMIIdentity
 import RumocaFMI3.TensorMetadata
 import RumocaFMI3.TensorInstanceRhs
+import RumocaFMI3.Header
 import Tests.TensorMetadataFixture
 import Tests.TensorAdapterFixture
 
@@ -72,8 +73,34 @@ def main : IO Unit := do
           (FMI3.TensorFunctions.render Tests.TensorAdapterFixture.scalarModel preparedModel
               Tests.TensorAdapterFixture.signatures
             == Tests.TensorAdapterFixture.adapterBytes)
-        IO.FS.createDirAll "build/tensor-fmi"
-        IO.FS.writeFile "build/tensor-fmi/adapter.c" Tests.TensorAdapterFixture.adapterBytes
+        -- Full pinned header signature list: obtain the 75 signatures the way the
+        -- scalar path does, from the vendored fmi3FunctionTypes.h, render the
+        -- complete tensor adapter for the actual prepared kernel and retain it.
+        let header ← IO.FS.readFile "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"
+        match FMI3.Header.signatures header with
+        | .error e => throw (IO.userError s!"FMI header signatures: {e}")
+        | .ok fullSignatures =>
+          let full := FMI3.TensorFunctions.render Tests.TensorAdapterFixture.scalarModel
+            preparedModel fullSignatures
+          expect "full pinned header signature list has the expected count"
+            (fullSignatures.length == 75)
+          -- The whole rendered text is the fixed preamble (model prefix, private
+          -- kernel inclusion and the tensor declaration block with the kernel
+          -- prototype) followed by the tensor function list, one function per
+          -- reused helper and per pinned signature. This is the concrete instance
+          -- of `TensorFunctions.rendered_functions`, whose function section is
+          -- certified against the maximal-munch grammar by
+          -- `TensorAdapterPrinter.rendered_contract`.
+          expect "full tensor adapter is the fixed preamble followed by the tensor function list"
+            (full == FMI3.functionPrefix preparedModel.name ++ "#include \"model.c\"\n" ++
+                FMI3.TensorStorage.declarations ArrayProfile.stateShape preparedModel.hasOutput ++
+                String.join ((FMI3.TensorFunctions.functions Tests.TensorAdapterFixture.scalarModel
+                    preparedModel fullSignatures).map CTree.Function.render))
+          expect "the full tensor function list has one function per reused helper and pinned signature"
+            ((FMI3.TensorFunctions.functions Tests.TensorAdapterFixture.scalarModel
+                preparedModel fullSignatures).length == FMI3.TensorFunctions.helpers.length + 75)
+          IO.FS.createDirAll "build/tensor-fmi"
+          IO.FS.writeFile "build/tensor-fmi/adapter.c" full
       | _, _ => throw (IO.userError "Solve observation does not match the source profile")
       match ArrayProfile.LocatedParsed.call? p with
       | none => pure ()

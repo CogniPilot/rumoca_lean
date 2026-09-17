@@ -1552,3 +1552,89 @@ pinned header list; the package fixture instantiates it on a representative
 dispatched slice defined in Lean (the concrete full-list rendering with its exact
 bytes is the actual-file certificate's boundary, driven from the vendored
 header).
+
+## Tensor adapter helper set and full-list rendered adapter
+
+The previous rendered adapter still carried three scalar remnants meaningless for
+the tensor record: the scalar numerical `Model` record
+(`typedef struct { double x; } Model;`) in the storage section, and the scalar
+helpers `model_rhs` (a wrapper returning `rumoca_rhs()` with no arguments) and
+`model_advance` (advancing a scalar `Model`). No tensor body called them: the
+three scalar bodies that did (`fmi3GetFloat64`, `fmi3DoStep`,
+`fmi3GetContinuousStateDerivatives`) are all dispatched to tensor bodies, which
+instead call the prepared tensor derivative entry `rumoca_rhs` directly with the
+instance's `x`, `u` and `dx` region pointers and the element count
+(`TensorContinuousStates.derivEntryArgs`, `TensorDoStep`).
+
+`TensorStorage.storageRender` now drops the scalar `Model` record; the storage
+section is the tensor instance record followed by the shared permanent pool
+array, always-lock-free flag array and capacity constant. The declaration
+preamble (`TensorStorage.declarations`) adds `TensorStorage.kernelPrototype`, the
+forward declaration `void rumoca_rhs(const double * x, const double * u, double *
+dx, size_t count);`. Its parameter roles come from the tensor plan
+(`const double *` for the read regions `x`/`u`, `double *` for the written
+derivative `dx`, `size_t` for the count), so the adapter's direct calls match the
+definition in the included private kernel `model.c`. `TensorFunctions.helpers`
+replaces the reused `Runtime.helpers` prefix with `[fail, rumoca_valid_identity,
+rumoca_reserve_slot]`, exactly the shared helpers the tensor bodies call; its
+names are a sublist of the scalar helper names (`helper_names_sublist`), so
+distinctness, the definition table and the literal pool follow the scalar
+development unchanged (`functions_names`, `scalar_names`, `functions_nodup`).
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Each tensor helper is one of the shared scalar helpers | `TensorFunctions.helpers_subset` |
+| The tensor helper names are a sublist of the scalar helper names | `TensorFunctions.helper_names_sublist` |
+| The tensor and scalar name lists differ only in the helper prefix | `TensorFunctions.functions_names`, `scalar_names` |
+| Distinctness follows from the scalar list's distinctness | `TensorFunctions.functions_nodup` |
+| Each tensor helper is bound to its rendered tree | `TensorFunctions.helpers_bound` |
+| The prepared kernel entry `rumoca_rhs` always resolves in the definition table | `TensorFunctions.kernel_entry_resolves` |
+| With header names disjoint from it, `rumoca_rhs` resolves to the prepared RHS kernel | `TensorFunctions.kernel_entry_is_kernel` |
+| The preamble prototype agrees in arity and roles with `derivEntryArgs` | `TensorFunctions.kernel_prototype_matches_args` |
+| The storage section (without the scalar record) tokenizes under the shared scanner | `TensorStorage.storage_printed` |
+| The preamble is the header inclusion, the storage section and the kernel prototype | `TensorStorage.declarations_header` |
+| The adapter contract carries the call-resolution facts | `TensorAdapter.render_contract` |
+
+`FMI3.TensorAdapter.Contract` is extended with the call-resolution facts: the
+kernel prototype is a fragment of the rendered text, the prepared kernel entry
+`rumoca_rhs` resolves to the prepared RHS kernel (given a header-name freshness
+premise the pinned list satisfies), its prototype agrees with `derivEntryArgs`,
+and every shared helper the tensor bodies call resolves to its defined tree
+(reusing `helpers_bound`). Every function name a tensor body calls by identifier
+is therefore accounted for: `fail`, `rumoca_valid_identity` and
+`rumoca_reserve_slot` are defined helpers; the dispatched functions are defined
+adapter functions (`function_bound`); the library calls `isfinite`, `floor`,
+`fegetround`, `atomic_exchange`, `atomic_store`, `strlen`, `strspn` and `strcmp`
+are declared by the included C standard headers; and `rumoca_rhs` is the prepared
+kernel entry forward-declared in the preamble. `render_contract` remains proved
+with the extended contract.
+
+The native regression executable now obtains the full pinned header signature
+list the way the scalar path does, from the vendored `fmi3FunctionTypes.h` via
+`FMI3.Header.signatures`, renders the complete tensor adapter for the actual
+`ArrayCompiler.prepare` kernel (checking the 75-signature count, and that the
+whole rendered text is the fixed preamble followed by the tensor function list,
+one function per reused helper and per pinned signature), and retains the full
+bytes under `build/tensor-fmi/adapter.c` (git-ignored) for review. The
+function-section grammar of that whole text is the universal theorem
+`TensorAdapterPrinter.rendered_contract` applied to the pinned list; the pure
+package fixture still proves it and the preamble tokenization over a
+representative dispatched slice defined in Lean.
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms (`propext`, `Quot.sound`, `Classical.choice`), and
+`lake build check-fmi3` and `lake build rumoca_compiler/tests` are green with the
+test executable passing. These are package-checked products only: no production
+artifact is emitted, no CLI or grammar case is added, and the scalar renderer,
+`Runtime.lean` and every existing contract are unchanged.
+
+One inconsistency in the retained adapter remains outside this increment's scope
+and is left for a later storage increment, not silently changed: the tensor
+bodies address array members with the scalar `&(m->field)` idiom
+(`&(m->x)`, `&(m->u)`, `&(m->dx)`), which for the array members `double x[2]`
+etc. yields a pointer-to-array rather than the pointer-to-`double` the prototype
+and the copy locals (`fmi3Float64 * src = (&(m->dx));`) expect. It addresses the
+same storage and works in practice, but a strictly conforming emission would use
+the decayed array (`m->x`) or `&(m->x[0])`. This idiom predates this increment
+and is shared with the scalar adapter (where the member is a scalar `double` and
+the idiom is exact).

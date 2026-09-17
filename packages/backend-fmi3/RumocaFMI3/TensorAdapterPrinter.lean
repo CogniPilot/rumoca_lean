@@ -120,7 +120,7 @@ theorem functions_printable (model : Solve.FMI3Model source) (m : Solve.TensorFM
     ∀ fn ∈ TensorFunctions.functions model m signatures, FunctionPrintable RuntimePrinter.typedefs fn := by
   intro fn member
   rcases List.mem_append.mp member with helper | exported
-  · exact RuntimePrinter.helpers_printable fn helper
+  · exact RuntimePrinter.helpers_printable fn (TensorFunctions.helpers_subset fn helper)
   · obtain ⟨sig, sigMember, rfl⟩ := List.mem_map.mp exported
     exact tensorFunction_printable model m sig (valid sig sigMember)
 

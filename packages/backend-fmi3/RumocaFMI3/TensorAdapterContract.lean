@@ -100,7 +100,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (∃ before after : String,
       text = before ++ TensorStorage.declarations shape m.hasOutput ++ after) ∧
     (TensorStorage.declarations shape m.hasOutput).toList =
-      Runtime.declarationPrefix.toList ++ (TensorStorage.storageRender shape m.hasOutput ++ "\n").toList ∧
+      Runtime.declarationPrefix.toList ++
+        (TensorStorage.storageRender shape m.hasOutput ++ TensorStorage.kernelPrototype ++ "\n").toList ∧
     (TensorStorage.regionMembers shape true).map TensorStorage.Member.baseName = TensorInstance.fieldNames ∧
     TensorStorage.Member.region TensorInstance.stateName shape.volume ∈ TensorStorage.regionMembers shape m.hasOutput ∧
     (TensorStorage.Member.region TensorInstance.outputName ((Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
@@ -111,7 +112,27 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     -- (`TensorMetadata.modelIdentifiers_decode`).
     (∃ rest : String, text = "#define FMI3_FUNCTION_PREFIX " ++ modelIdentifier m.name ++ "_\n" ++ rest) ∧
     decodeModelIdentifiers (TensorMetadata.modelDescription m)
-      = some (m.name, modelIdentifier m.name, modelIdentifier m.name)
+      = some (m.name, modelIdentifier m.name, modelIdentifier m.name) ∧
+    -- Call resolution: every function name the tensor bodies call resolves. The
+    -- prepared derivative kernel `rumoca_rhs` is forward-declared in the preamble
+    -- and resolves to the prepared RHS kernel; its declared prototype agrees in
+    -- arity and parameter roles with the arguments the derivative bodies pass
+    -- (`TensorContinuousStates.derivEntryArgs`). The shared helpers the bodies
+    -- call resolve to their defined trees. No tensor body calls the scalar
+    -- `model_rhs`/`model_advance` wrappers, which are no longer emitted.
+    (∃ before after : String, text = before ++ TensorStorage.kernelPrototype ++ after) ∧
+    (TensorFunctions.program model m sigs).definitions "rumoca_rhs" = some (.kernel .rhs) ∧
+    TensorStorage.kernelSignature.parameters.length =
+        TensorContinuousStates.derivEntryArgs.length ∧
+    TensorStorage.kernelSignature.parameters.map CTree.Parameter.name =
+      [TensorInstance.stateName, TensorInstance.inputName,
+        TensorInstance.derivativeName, "count"] ∧
+    (TensorFunctions.program model m sigs).definitions TensorFunctions.helpers[0].signature.name
+        = some (.tree TensorFunctions.helpers[0]) ∧
+    (TensorFunctions.program model m sigs).definitions Identity.function.signature.name
+        = some (.tree Identity.function) ∧
+    (TensorFunctions.program model m sigs).definitions CAtomicScan.function.signature.name
+        = some (.tree CAtomicScan.function)
 
 /-- The tensor adapter contract holds for the rendered text of the function list,
 given the located and distinct header signatures and the model-free coverage. -/
@@ -120,7 +141,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     (unique : ((functions model m sigs).map (fun fn => fn.signature.name)).Nodup)
     (covered : PublicAPI.Covered sigs)
     (absentMembers : ∀ ty write, AbsentVariables.signature ty write ∈ sigs)
-    (capMembers : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs) :
+    (capMembers : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs)
+    (freshKernel : ∀ sig ∈ sigs, sig.name ≠ "rumoca_rhs") :
     Contract model m (render model m sigs) :=
   ⟨sigs, unique, rfl, covered,
     TensorAbsentVariables.family_correct model m sigs unique absentMembers,
@@ -146,7 +168,7 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     (fun _E prog tag => TensorFactory.contract prog tag model shape),
     (fun _E prog tag bindings => TensorFree.contract prog tag bindings),
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n",
-      String.join (Runtime.helpers.map Function.render) ++
+      String.join (TensorFunctions.helpers.map Function.render) ++
         String.join (sigs.map fun sig => (TensorFunctions.tensorFunction model m sig).render),
       by rw [render]; simp only [String.append_assoc]⟩,
     TensorStorage.declarations_header shape m.hasOutput,
@@ -154,10 +176,25 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     (TensorStorage.layout_state_extent shape m.hasOutput).1,
     TensorStorage.layout_output_extent shape,
     ⟨"#include \"model.c\"\n" ++ TensorStorage.declarations shape m.hasOutput ++
-        String.join (Runtime.helpers.map Function.render) ++
+        String.join (TensorFunctions.helpers.map Function.render) ++
         String.join (sigs.map fun sig => (TensorFunctions.tensorFunction model m sig).render),
       by rw [render, functionPrefix]; simp only [String.append_assoc]⟩,
-    TensorMetadata.modelIdentifiers_decode m⟩
+    TensorMetadata.modelIdentifiers_decode m,
+    -- Call-resolution witnesses.
+    ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarationPrefix ++
+        TensorStorage.storageRender shape m.hasOutput,
+      "\n" ++ String.join (TensorFunctions.helpers.map Function.render) ++
+        String.join (sigs.map fun sig => (TensorFunctions.tensorFunction model m sig).render),
+      by rw [render, TensorStorage.declarations]; simp only [String.append_assoc]⟩,
+    TensorFunctions.kernel_entry_is_kernel model m sigs freshKernel,
+    TensorFunctions.kernel_prototype_matches_args.1,
+    TensorFunctions.kernel_prototype_matches_args.2,
+    TensorFunctions.helpers_bound model m sigs TensorFunctions.helpers[0]
+      (by simp [TensorFunctions.helpers]),
+    TensorFunctions.helpers_bound model m sigs Identity.function
+      (by simp [TensorFunctions.helpers]),
+    TensorFunctions.helpers_bound model m sigs CAtomicScan.function
+      (by simp [TensorFunctions.helpers])⟩
 
 end Rumoca.FMI3.TensorAdapter
 end

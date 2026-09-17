@@ -11,6 +11,25 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor helper set and full-list adapter render (derived proofs):**
+
+The tensor preamble no longer carries the scalar model record or the scalar
+helpers; it declares the prepared kernel entry `rumoca_rhs` with the prototype
+the tensor bodies call, and the helper list is exactly the shared failure,
+identity and reservation helpers. Call resolution is proved: every name the
+tensor bodies call is a helper, an adapter function, a header function or the
+declared kernel entry, and the entry's prototype matches the passed arguments.
+The compiler check now renders the complete adapter for all seventy-five
+pinned signatures of the `TensorSquare` kernel and retains it under
+`build/tensor-fmi/adapter.c`. Review of that render found that array members
+are addressed with the scalar `&(m->x)` idiom, a pointer to array where the
+kernel prototype and copy locals take a pointer to `double`; correcting the
+tensor bodies to the decayed array address and adding a native compile check
+of the rendered adapter is the next obligation. Nothing is emitted by
+production. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 10m29s
+(`build/tensor-fmi/full-gate-v18.log`).
+
 **Tensor adapter preamble and concrete rendered check (derived proofs):**
 
 `FMI3.TensorStorage.declarations` renders the tensor instance record with

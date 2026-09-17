@@ -2481,6 +2481,18 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorFunctions.header_fresh
 #audit axioms Rumoca.FMI3.TensorFunctions.text_bound
 #audit axioms Rumoca.FMI3.TensorFunctions.pool_complete
+-- The tensor helper prefix drops the dead scalar `model_rhs`/`model_advance`
+-- wrappers; its names are a sublist of the scalar helper names. Call resolution
+-- for the prepared kernel entry the tensor bodies call directly: it resolves in
+-- the definition table (to the prepared RHS kernel when the header names are
+-- disjoint from it), and its preamble prototype agrees with the derivative
+-- arguments.
+#audit axioms Rumoca.FMI3.TensorFunctions.helpers_subset
+#audit axioms Rumoca.FMI3.TensorFunctions.scalar_names
+#audit axioms Rumoca.FMI3.TensorFunctions.helper_names_sublist
+#audit axioms Rumoca.FMI3.TensorFunctions.kernel_entry_resolves
+#audit axioms Rumoca.FMI3.TensorFunctions.kernel_entry_is_kernel
+#audit axioms Rumoca.FMI3.TensorFunctions.kernel_prototype_matches_args
 
 -- The two unsupported/absent-type family contracts over the tensor adapter list.
 -- The family execution bodies are identical to the scalar renderer's; only the
