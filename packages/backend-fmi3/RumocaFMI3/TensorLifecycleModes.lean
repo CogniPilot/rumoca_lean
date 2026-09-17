@@ -57,11 +57,57 @@ def Phase.name : Phase → String
   | .enterContinuous => "fmi3EnterContinuousTimeMode"
   | .terminate => "fmi3Terminate"
 
-def signature (ph : Phase) : Signature := ⟨"fmi3Status", ph.name, [⟨"fmi3Instance", "instance", false⟩]⟩
+/-- The header parameters of `fmi3EnterInitializationMode` beyond the `instance`
+handle: the tolerance and stop-time configuration (FMI 3.0.2 §3.2.4). This
+mode-transition body reads only the handle, so these are bound but never read; the
+contract quantifies over them so it is stated over the full emitted six-parameter
+header prototype the adapter actually emits. -/
+structure Extra where
+  toleranceDefined : Bool
+  tolerance : BitVec 64
+  startTime : BitVec 64
+  stopTimeDefined : Bool
+  stopTime : BitVec 64
+  deriving Inhabited
 
-def arguments (handle : Option Address) : List Value := [.pointer handle]
+/-- Header parameters beyond the `instance` handle. Only the Model Exchange
+`fmi3EnterInitializationMode` prototype carries any; the other transitions take the
+handle alone. The parameter names and types match the pinned header prototype. -/
+def Phase.extraParameters : Phase → List Parameter
+  | .enterInitialization =>
+      [⟨"fmi3Boolean", "toleranceDefined", false⟩, ⟨"fmi3Float64", "tolerance", false⟩,
+       ⟨"fmi3Float64", "startTime", false⟩, ⟨"fmi3Boolean", "stopTimeDefined", false⟩,
+       ⟨"fmi3Float64", "stopTime", false⟩]
+  | _ => []
 
-def parameters (handle : Option Address) : Locals := bind (fun _ => none) "instance" (.pointer handle)
+/-- The argument values passed to the extra parameters, in header order. -/
+def Phase.extraArguments (extra : Extra) : Phase → List Value
+  | .enterInitialization =>
+      [boolean extra.toleranceDefined, .float64 extra.tolerance, .float64 extra.startTime,
+       boolean extra.stopTimeDefined, .float64 extra.stopTime]
+  | _ => []
+
+/-- The local bindings for the extra parameters; the last header parameter binds
+innermost, so `instance` (bound in `parameters`) sits outermost. -/
+def Phase.extraLocals (extra : Extra) : Phase → Locals
+  | .enterInitialization =>
+      CBody.bind (CBody.bind (CBody.bind (CBody.bind (CBody.bind (fun _ => none)
+        "stopTime" (.float64 extra.stopTime)) "stopTimeDefined" (boolean extra.stopTimeDefined))
+        "startTime" (.float64 extra.startTime)) "tolerance" (.float64 extra.tolerance))
+        "toleranceDefined" (boolean extra.toleranceDefined)
+  | _ => fun _ => none
+
+/-- The emitted header signature of each transition: the `instance` handle followed
+by the transition's extra header parameters. Only `fmi3EnterInitializationMode`
+carries extra parameters; the others reduce to the single-handle prototype. -/
+def signature (ph : Phase) : Signature :=
+  ⟨"fmi3Status", ph.name, ⟨"fmi3Instance", "instance", false⟩ :: ph.extraParameters⟩
+
+def arguments (ph : Phase) (handle : Option Address) (extra : Extra := default) : List Value :=
+  .pointer handle :: ph.extraArguments extra
+
+def parameters (ph : Phase) (handle : Option Address) (extra : Extra := default) : Locals :=
+  CBody.bind (ph.extraLocals extra) "instance" (.pointer handle)
 
 /-- The statements after the handle/lifecycle guard: write the single mode field
 and return `fmi3OK`. -/
@@ -82,77 +128,91 @@ section
 variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses
 
-theorem parameters_bound (ph : Phase) (handle : Option Address) :
-    CCalls.parameters (signature ph).parameters (arguments handle) = some (parameters handle) := by
-  cases ph <;> rfl
+theorem parameters_bound (ph : Phase) (handle : Option Address) (extra : Extra) :
+    CCalls.parameters (signature ph).parameters (arguments ph handle extra) = some (parameters ph handle extra) := by
+  cases ph
+  case enterInitialization =>
+    cases ht : extra.toleranceDefined <;> cases hs : extra.stopTimeDefined <;>
+      simp [signature, arguments, Phase.extraParameters, Phase.extraArguments, parameters,
+        Phase.extraLocals, CCalls.parameters, CCalls.parameterType, CBody.bind, CBody.cast,
+        convert, boolean, Value.truth, ht, hs]
+  all_goals rfl
 
 /-- The whole transition body runs to the single mode write and success return.
 Composed from the shared lifecycle guard and the two-statement tail, so the body
 is established without unfolding any tensor region. -/
-theorem body_run (ph : Phase) (heap : Heap) (p : Address) (kind : Kind) (mode : Mode)
+theorem body_run (ph : Phase) (heap : Heap) (p : Address) (kind : Kind) (mode : Mode) (extra : Extra)
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
     (allowed : Reference.Allowed ph.command kind mode) :
-    CBody.run 5 (.running (body ph) (parameters (some p)) heap) =
+    CBody.run 5 (.running (body ph) (parameters ph (some p) extra) heap) =
       some (.returned ⟨.integer 0, writeMode heap p ph.after⟩) := by
   have hmode : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
-  have entered := LifecycleGuard.accept (parameters (some p)) heap p ph.command kind mode
-    (tail ph) (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hmode allowed
+  have hi : parameters ph (some p) extra "instance" = some (.pointer (some p)) := by
+    simp [parameters, CBody.bind]
+  have hn : parameters ph (some p) extra "m" = none := by
+    cases ph <;> simp [parameters, Phase.extraLocals, CBody.bind]
+  have entered := LifecycleGuard.accept (parameters ph (some p) extra) heap p ph.command kind mode
+    (tail ph) hi hn hk hmode allowed
   rw [body, show (5 : Nat) = 3 + 2 from rfl, CBody.run_add, entered]
   cases ph <;>
     simp [tail, Phase.after, run, next, Runtime.setMode, Runtime.put, Runtime.field, Runtime.v,
       Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, eval, lvalue, parameters,
-      CBody.bind, resolve, constants, Value.address, store, hm, convert, writeMode]
+      Phase.extraLocals, CBody.bind, resolve, constants, Value.address, store, hm, convert, writeMode]
 
 theorem call_behaviors (ph : Phase) (program : CCalls.Events.Program E) (heap : Heap) (p : Address)
-    (kind : Kind) (mode : Mode)
+    (kind : Kind) (mode : Mode) (extra : Extra)
     (defined : program.internal.definitions (signature ph).name = some (.tree (function ph)))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
     (allowed : Reference.Allowed ph.command kind mode) (behavior) :
     (CCalls.Events.machine program).Behaves
-      (.calling (signature ph).name (arguments (some p)) heap .done) behavior ↔
+      (.calling (signature ph).name (arguments ph (some p) extra) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, writeMode heap p ph.after⟩ := by
-  apply CCalls.Events.body_call_behaviors program (function ph) (arguments (some p))
-    (parameters (some p)) heap ⟨.integer 0, writeMode heap p ph.after⟩ (.integer 0) 5 defined
-    (parameters_bound ph _) (body_closed ph)
-  · exact body_run ph heap p kind mode hk hm allowed
+  apply CCalls.Events.body_call_behaviors program (function ph) (arguments ph (some p) extra)
+    (parameters ph (some p) extra) heap ⟨.integer 0, writeMode heap p ph.after⟩ (.integer 0) 5 defined
+    (parameters_bound ph _ extra) (body_closed ph)
+  · exact body_run ph heap p kind mode extra hk hm allowed
   · cases ph <;> simp [function, signature, Phase.name, CCalls.returnCast, CBody.cast, convert]
 
-theorem null_behaviors (ph : Phase) (program : CCalls.Events.Program E) (heap : Heap)
+theorem null_behaviors (ph : Phase) (program : CCalls.Events.Program E) (heap : Heap) (extra : Extra)
     (defined : program.internal.definitions (signature ph).name = some (.tree (function ph)))
     (behavior) :
     (CCalls.Events.machine program).Behaves
-      (.calling (signature ph).name (arguments none) heap .done) behavior ↔
+      (.calling (signature ph).name (arguments ph none extra) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩ := by
   apply GuardedCalls.null_behaviors program (function ph)
     (Runtime.modeGuard ph.command :: tail ph)
-    (arguments none) (parameters none) heap defined (parameters_bound ph _)
+    (arguments ph none extra) (parameters ph none extra) heap defined (parameters_bound ph _ extra)
     (by cases ph <;> simp [function, body, tail, Runtime.require, List.append_assoc])
     rfl (body_closed ph)
-  all_goals simp [parameters, CBody.bind]
+  all_goals cases ph <;> simp [parameters, Phase.extraLocals, CBody.bind]
 
 /-- An illegal-mode call reaches the shared `fail` statement with the heap
 unchanged. -/
-theorem illegal_prefix (ph : Phase) (heap : Heap) (p : Address) (kind : Kind) (mode : Mode)
+theorem illegal_prefix (ph : Phase) (heap : Heap) (p : Address) (kind : Kind) (mode : Mode) (extra : Extra)
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
     (denied : ¬ Reference.Allowed ph.command kind mode) :
-    GuardedCalls.FailurePrefix (function ph) (arguments (some p)) heap p
+    GuardedCalls.FailurePrefix (function ph) (arguments ph (some p) extra) heap p
       ErrorCalls.rejectionMessage heap := by
-  have reached := LifecycleGuard.reject_prefix (parameters (some p)) heap p ph.command kind mode
-    (tail ph) (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm denied
-  refine ⟨rfl, body_closed ph, parameters (some p),
-    CBody.bind (parameters (some p)) "m" (.pointer (some p)), tail ph, 3, parameters_bound ph _, ?_, ?_, ?_⟩
+  have hi : parameters ph (some p) extra "instance" = some (.pointer (some p)) := by
+    simp [parameters, CBody.bind]
+  have hn : parameters ph (some p) extra "m" = none := by
+    cases ph <;> simp [parameters, Phase.extraLocals, CBody.bind]
+  have reached := LifecycleGuard.reject_prefix (parameters ph (some p) extra) heap p ph.command kind mode
+    (tail ph) hi hn hk hm denied
+  refine ⟨rfl, body_closed ph, parameters ph (some p) extra,
+    CBody.bind (parameters ph (some p) extra) "m" (.pointer (some p)), tail ph, 3, parameters_bound ph _ extra, ?_, ?_, ?_⟩
   · simpa only [function, body] using reached
-  · simp [parameters, CBody.bind]
+  · cases ph <;> simp [parameters, Phase.extraLocals, CBody.bind]
   · simp [CBody.bind, CBody.resolve]
 
 /-- The illegal-mode rejection returns `fmi3Error` with logging suppressed, after
 entering the Terminated mode. -/
 theorem illegal_behaviors (ph : Phase) (program : CCalls.Events.Program E) (heap : Heap)
-    (p message : Address) (kind : Kind) (mode : Mode) (logger : Option Address)
+    (p message : Address) (kind : Kind) (mode : Mode) (extra : Extra) (logger : Option Address)
     (defined : program.internal.definitions (signature ph).name = some (.tree (function ph)))
     (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
     (literal : static.addresses ErrorCalls.rejectionMessage = some message)
@@ -162,13 +222,13 @@ theorem illegal_behaviors (ph : Phase) (program : CCalls.Events.Program E) (heap
     (hg : load heap (p.member "logging") = some (.integer 0))
     (denied : ¬ Reference.Allowed ph.command kind mode) (behavior) :
     (CCalls.Events.machine program).Behaves
-      (.calling (signature ph).name (arguments (some p)) heap .done) behavior ↔
+      (.calling (signature ph).name (arguments ph (some p) extra) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, writeMode heap p .terminated⟩ := by
   have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
-  exact GuardedCalls.FailurePrefix.silent_behaviors program (function ph) (arguments (some p)) heap heap
+  exact GuardedCalls.FailurePrefix.silent_behaviors program (function ph) (arguments ph (some p) extra) heap heap
     p message ErrorCalls.rejectionMessage (some (.integer mode.code)) logger
-    (illegal_prefix ph heap p kind mode hk modeLoaded denied) defined helper literal hm hl hg behavior
+    (illegal_prefix ph heap p kind mode extra hk modeLoaded denied) defined helper literal hm hl hg behavior
 
 end
 
@@ -195,10 +255,26 @@ theorem signature_printable (ph : Phase) :
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   have handleType : TypeSpelling RuntimePrinter.typedefs "fmi3Instance" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  cases ph <;>
+  have boolType : TypeSpelling RuntimePrinter.typedefs "fmi3Boolean" :=
+    .named (.typedefName (by decide +kernel) (by decide +kernel))
+  have floatType : TypeSpelling RuntimePrinter.typedefs "fmi3Float64" :=
+    .named (.typedefName (by decide +kernel) (by decide +kernel))
+  cases ph
+  case enterInitialization =>
+    refine ⟨statusType, by decide +kernel, ?_⟩
+    intro param member
+    simp only [signature, Phase.extraParameters, List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl | rfl | rfl | rfl
+    · exact ⟨handleType, by decide +kernel⟩
+    · exact ⟨boolType, by decide +kernel⟩
+    · exact ⟨floatType, by decide +kernel⟩
+    · exact ⟨floatType, by decide +kernel⟩
+    · exact ⟨boolType, by decide +kernel⟩
+    · exact ⟨floatType, by decide +kernel⟩
+  all_goals
     (refine ⟨statusType, by decide +kernel, ?_⟩
      intro param member
-     simp only [signature, List.mem_cons, List.not_mem_nil, or_false] at member
+     simp only [signature, Phase.extraParameters, List.mem_cons, List.not_mem_nil, or_false] at member
      rcases member with rfl
      exact ⟨handleType, by decide +kernel⟩)
 
@@ -261,16 +337,16 @@ structure Contract (ph : Phase) (text : String) : Prop where
   closed : (function ph).body.all CBodyEmbedding.closedBlocks = true
   denotes : FunctionDenotes RuntimePrinter.typedefs text (function ph)
   successful : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (p : Address)
-    (kind : Kind) (mode : Mode),
+    (kind : Kind) (mode : Mode) (extra : Extra),
     program.internal.definitions (signature ph).name = some (.tree (function ph)) →
     load heap (p.member "kind") = some (.integer kind.code) →
     heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
     Reference.Allowed ph.command kind mode →
     ∀ behavior, (CCalls.Events.machine program).Behaves
-      (.calling (signature ph).name (arguments (some p)) heap .done) behavior ↔
+      (.calling (signature ph).name (arguments ph (some p) extra) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, writeMode heap p ph.after⟩
   illegal : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (p message : Address)
-    (kind : Kind) (mode : Mode) (logger : Option Address),
+    (kind : Kind) (mode : Mode) (extra : Extra) (logger : Option Address),
     program.internal.definitions (signature ph).name = some (.tree (function ph)) →
     program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
     static.addresses ErrorCalls.rejectionMessage = some message →
@@ -280,23 +356,23 @@ structure Contract (ph : Phase) (text : String) : Prop where
     load heap (p.member "logging") = some (.integer 0) →
     ¬ Reference.Allowed ph.command kind mode →
     ∀ behavior, (CCalls.Events.machine program).Behaves
-      (.calling (signature ph).name (arguments (some p)) heap .done) behavior ↔
+      (.calling (signature ph).name (arguments ph (some p) extra) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, writeMode heap p .terminated⟩
-  null : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap),
+  null : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (extra : Extra),
     program.internal.definitions (signature ph).name = some (.tree (function ph)) →
     ∀ behavior, (CCalls.Events.machine program).Behaves
-      (.calling (signature ph).name (arguments none) heap .done) behavior ↔
+      (.calling (signature ph).name (arguments ph none extra) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩
 
 theorem contract (ph : Phase) : Contract ph (function ph).render where
   printed := rfl
   closed := body_closed ph
   denotes := function_denotes ph
-  successful program heap p kind mode defined hk hm allowed :=
-    call_behaviors ph program heap p kind mode defined hk hm allowed
-  illegal program heap p message kind mode logger defined helper literal hk hm hl hg denied :=
-    illegal_behaviors ph program heap p message kind mode logger defined helper literal hk hm hl hg denied
-  null program heap defined := null_behaviors ph program heap defined
+  successful program heap p kind mode extra defined hk hm allowed :=
+    call_behaviors ph program heap p kind mode extra defined hk hm allowed
+  illegal program heap p message kind mode extra logger defined helper literal hk hm hl hg denied :=
+    illegal_behaviors ph program heap p message kind mode extra logger defined helper literal hk hm hl hg denied
+  null program heap extra defined := null_behaviors ph program heap extra defined
 
 end
 

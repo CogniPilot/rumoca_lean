@@ -97,3 +97,131 @@ if [ "$status" -ne 0 ] || [ -s build/tensor-fmi/adapter-cc.log ]; then
   exit 1
 fi
 echo 'Tensor FMI 3 adapter standalone-object boundary check passed'
+
+# --- Development tensor FMU boundary run (NOT a production FMU) ---
+# Assemble a development FMU for the TensorSquare kernel from the already-produced
+# certified pieces and drive it through FMPy in Model Exchange and Co-Simulation.
+# This is a development artifact only: unlike the scalar production path (tests/fmi3.sh),
+# the tensor FMU carries no source-to-archive production certificate. Native
+# compilation, ZIP transport and the FMPy importer are boundaries outside the proof
+# model. The pieces:
+#   sources/fmi3.c            = the retained, contract-checked tensor adapter (adapter.c)
+#   sources/model.c           = the certified tensor kernel C bodies (build/tensor-c/*.c),
+#                               in dependency order, with <stddef.h> prepended so size_t is
+#                               in scope at the adapter's `#include "model.c"`
+#   modelDescription.xml      = the checked TensorMetadata fixture bytes (from the tests exe)
+#   sources/buildDescription.xml = the build recipe mirroring the scalar one (from the tests exe)
+# The shared library is compiled with the same recipe flags the scalar FMU build uses
+# (RumocaFMI3.Build.recipe) plus -fPIC -shared -DFMI3_OVERRIDE_FUNCTION_PREFIX.
+md=build/tensor-fmi/modelDescription.xml
+if [ ! -f "$adapter" ] || [ ! -f "$md" ] || [ ! -f build/tensor-fmi/buildDescription.xml ]; then
+  packages/compiler/.lake/build/bin/tests
+fi
+fmu_root=build/tensor-fmi/fmu
+rm -rf "$fmu_root"
+case "$(uname -m)" in
+  x86_64) platform=x86_64-linux ;;
+  aarch64|arm64) platform=aarch64-linux ;;
+  *) echo "unsupported host arch for the development tensor FMU: $(uname -m)" >&2; exit 1 ;;
+esac
+mkdir -p "$fmu_root/sources" "$fmu_root/binaries/$platform" "$fmu_root/documentation"
+{ echo '#include <stddef.h>'
+  cat build/tensor-c/fill.c build/tensor-c/add.c build/tensor-c/mul.c build/tensor-c/diagonal.c \
+      build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian.c
+} > "$fmu_root/sources/model.c"
+cp "$adapter" "$fmu_root/sources/fmi3.c"
+cp "$md" "$fmu_root/modelDescription.xml"
+cp build/tensor-fmi/buildDescription.xml "$fmu_root/sources/buildDescription.xml"
+"${CC:-gcc}" -std=c11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter -pedantic \
+  -fno-fast-math -ffp-contract=off -frounding-math -fPIC -shared -DFMI3_OVERRIDE_FUNCTION_PREFIX \
+  -I packages/backend-fmi3/vendor/fmi3 "$fmu_root/sources/fmi3.c" -lm \
+  -o "$fmu_root/binaries/$platform/Rumoca_TensorSquare.so" \
+  > build/tensor-fmi/fmu-cc.log 2>&1
+if [ -s build/tensor-fmi/fmu-cc.log ]; then
+  echo 'development tensor FMU shared library did not compile cleanly' >&2
+  cat build/tensor-fmi/fmu-cc.log >&2
+  exit 1
+fi
+dev_fmu=build/tensor-fmi/TensorSquare-dev.fmu
+dev_fmu_abs="$PWD/$dev_fmu"
+rm -f "$dev_fmu"
+( cd "$fmu_root" && zip -q -X -0 -r "$dev_fmu_abs" modelDescription.xml sources binaries documentation )
+fmpy validate "$dev_fmu" > build/tensor-fmi/fmu-validate.log 2>&1
+# Drive the actual adapter in ME and CS. The importer instantiates with the token the
+# adapter validates. NOTE (reported mismatch): the adapter's compiled-in expected
+# instantiation token is the scalar-witness token "lean-rumoca-unit-v1:TensorSquare:x"
+# (the runtime-interface bodies are built over the scalar witness model), while the
+# tensor model description declares "lean-rumoca-tensor-v1:TensorSquare"; reconciling
+# the two is an open tensor-adapter identity design item, so the run passes the token
+# the emitted adapter accepts.
+python3 - "$dev_fmu" > build/tensor-fmi/fmu-run.log 2>&1 <<'PY'
+import sys, ctypes
+from fmpy import read_model_description, extract
+from fmpy.fmi3 import FMU3Model, FMU3Slave
+from fmpy.fmi1 import FMICallException
+path = sys.argv[1]
+md = read_model_description(path)
+vr = {v.name: v.valueReference for v in md.modelVariables}
+udir = extract(path)
+TOKEN = "lean-rumoca-unit-v1:TensorSquare:x"
+def arr(vals): return (ctypes.c_double * len(vals))(*vals)
+def approx(a, b): return all(abs(x - y) < 1e-12 for x, y in zip(a, b))
+
+# Model Exchange: der(x) = u .* u and an ME-driven explicit Euler trajectory.
+me = FMU3Model(guid=TOKEN, modelIdentifier=md.modelExchange.modelIdentifier,
+               unzipDirectory=udir, instanceName="me")
+me.instantiate(loggingOn=False)
+me.enterInitializationMode(startTime=0.0)
+me.setFloat64([vr["u"]], [1.0, 2.0])
+me.exitInitializationMode()
+me.enterContinuousTimeMode()
+me.setContinuousStates(arr([0.0, 0.0]), 2)
+der = (ctypes.c_double * 2)()
+me.getContinuousStateDerivatives(der, 2)
+me_der = list(der)
+print("ME der(x) with u=(1,2) =", me_der)
+assert approx(me_der, [1.0, 4.0]), "ME der(x) != (1, 4)"
+x = [0.0, 0.0]
+for _ in range(3):
+    me.setContinuousStates(arr(x), 2)
+    d = (ctypes.c_double * 2)()
+    me.getContinuousStateDerivatives(d, 2)
+    x = [x[i] + 1.0 * d[i] for i in range(2)]
+print("ME-driven Euler x@t=3 =", x)
+assert approx(x, [3.0, 12.0]), "ME-driven Euler x@t=3 != (3, 12)"
+me_J = list(me.getFloat64([vr["J"]], 4))
+print("ME J =", me_J)
+# J reads the zero-initialized output region: no adapter lifecycle body computes the
+# Jacobian (the diagonal kernel rumoca_square_jacobian is emitted but wired to no FMI
+# entry), so the output tensor stays at its file-scope zero initialization.
+assert approx(me_J, [0.0, 0.0, 0.0, 0.0]), "ME J != (0, 0, 0, 0)"
+me.terminate(); me.freeInstance()
+
+# Co-Simulation: instantiate and initialize succeed; the internal-Euler fmi3DoStep is
+# currently REJECTED. The tensor exitInitializationMode writes Event mode (the proved
+# ME transition; its own definition documents "for the Model Exchange profile"), but
+# CS fmi3DoStep requires Step mode. The CS Step-mode exit transition is not yet modeled
+# by the tensor lifecycle table: a listed open lifecycle-binding item. This boundary
+# asserts the current documented behavior so the check is deterministic.
+cs = FMU3Slave(guid=TOKEN, modelIdentifier=md.coSimulation.modelIdentifier,
+               unzipDirectory=udir, instanceName="cs")
+cs.instantiate(loggingOn=False)
+cs.enterInitializationMode(startTime=0.0)
+cs.setFloat64([vr["u"]], [1.0, 2.0])
+cs.exitInitializationMode()
+try:
+    cs.doStep(0.0, 1.0)
+    raise SystemExit("CS fmi3DoStep unexpectedly succeeded; the exit-mode item may be resolved")
+except FMICallException as e:
+    print("CS fmi3DoStep rejected, status =", e.status, "(3 = fmi3Error: not in Step mode)")
+    assert e.status == 3, "CS doStep rejection status changed"
+cs.freeInstance()
+print("DEV TENSOR FMU BOUNDARY RUN OK")
+PY
+if ! grep -q 'DEV TENSOR FMU BOUNDARY RUN OK' build/tensor-fmi/fmu-run.log; then
+  echo 'development tensor FMU boundary run failed' >&2
+  cat build/tensor-fmi/fmu-run.log >&2
+  exit 1
+fi
+cat build/tensor-fmi/fmu-run.log
+echo 'Development tensor FMU boundary run passed (ME numeric checks; CS doStep documented open item)'

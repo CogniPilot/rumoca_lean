@@ -99,13 +99,13 @@ theorem lifecycle_history (tag : CAtomicBoolean.Calls.Event → E)
       -- enter Initialization Mode: fmi3OK, writes the mode cell to Initialization
       (∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling (TensorLifecycleModes.signature .enterInitialization).name
-          (TensorLifecycleModes.arguments (some (TensorInstance.record pool slot.val))) H0 .done) behavior ↔
+          (TensorLifecycleModes.arguments .enterInitialization (some (TensorInstance.record pool slot.val))) H0 .done) behavior ↔
         behavior = .terminates [] ⟨.integer 0,
           writeMode H0 (TensorInstance.record pool slot.val) .initialization⟩) ∧
       -- exit Initialization Mode: fmi3OK, writes the mode cell to Event
       (∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling (TensorLifecycleModes.signature .exitInitialization).name
-          (TensorLifecycleModes.arguments (some (TensorInstance.record pool slot.val)))
+          (TensorLifecycleModes.arguments .exitInitialization (some (TensorInstance.record pool slot.val)))
           (writeMode H0 (TensorInstance.record pool slot.val) .initialization) .done) behavior ↔
         behavior = .terminates [] ⟨.integer 0,
           writeMode (writeMode H0 (TensorInstance.record pool slot.val) .initialization)
@@ -154,10 +154,10 @@ theorem lifecycle_history (tag : CAtomicBoolean.Calls.Event → E)
     simp only [load, h2, h1]; exact slotMeta0
   -- enter Initialization Mode
   have ei := TensorLifecycleModes.call_behaviors .enterInitialization program H0 rp Kind.me
-    Mode.instantiated eiDef hk0 hm0 (by exact rfl)
+    Mode.instantiated default eiDef hk0 hm0 (by exact rfl)
   -- exit Initialization Mode
   have xi := TensorLifecycleModes.call_behaviors .exitInitialization program
-    (writeMode H0 rp .initialization) rp Kind.me Mode.initialization xiDef kind1 mode1 (by exact rfl)
+    (writeMode H0 rp .initialization) rp Kind.me Mode.initialization default xiDef kind1 mode1 (by exact rfl)
   -- derivative query on the reached Event-Mode heap
   have hk : load (TensorInstance.store backing2 pool slot.val shape oshape time state input output)
       (rp.member "kind") = some (.integer Kind.me.code) := by rw [← coherent]; exact kind2
@@ -247,7 +247,7 @@ theorem lifecycle_from_creation (tag : CAtomicBoolean.Calls.Event → E)
       -- enter/exit Initialization Mode: fmi3OK, writing the mode cell
       (∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling (TensorLifecycleModes.signature .enterInitialization).name
-          (TensorLifecycleModes.arguments (some (TensorInstance.record pool slot.val)))
+          (TensorLifecycleModes.arguments .enterInitialization (some (TensorInstance.record pool slot.val)))
           (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging shape)
           .done) behavior ↔
         behavior = .terminates [] ⟨.integer 0, writeMode

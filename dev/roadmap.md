@@ -11,6 +11,27 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Initialization-entry contract lift and a native tensor FMU boundary run:**
+
+The tensor `fmi3EnterInitializationMode` contract is now stated over the
+emitted six-parameter function, so every conjunct of `TensorAdapter.Contract`
+is literally about an emitted function. `tests/tensor-c.sh` assembles a
+development FMU for the `TensorSquare` kernel from the retained adapter, the
+certified tensor kernel C, the fixture model description and a build
+description, compiles it cleanly, validates it with FMPy and drives it in Model
+Exchange: with `u = (1, 2)` the derivatives read `(1, 4)` and three importer
+Euler steps give `x = (3, 12)` at `t = 3`, matching the proved kernel. The run
+is a boundary check outside the proof model and exposed three defects: the
+tensor exit-initialization transition enters Event Mode for both kinds, so
+co-simulation `fmi3DoStep` is rejected and needs the kind-aware Step Mode exit;
+the factory validates the scalar witness instantiation token rather than the
+tensor metadata token; and the Jacobian output is never computed, so `J` reads
+zero. Fixing these three with proofs is the next obligation. The FMU is
+retained under `build/tensor-fmi/`. Nothing is emitted by production. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 8m33s
+(`build/tensor-fmi/full-gate-v21.log`).
+
 **Header-conforming tensor adapter compiled as a standalone object (derived proofs and boundary check):**
 
 Every tensor adapter function now carries exactly the pinned header prototype

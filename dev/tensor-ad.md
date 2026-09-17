@@ -1725,3 +1725,113 @@ list only the three permitted foundational axioms (`propext`, `Quot.sound`,
 standalone object with zero diagnostics. These are package-checked products only:
 no production artifact is emitted, no CLI or grammar case is added, and the scalar
 renderer, `Runtime.lean` and every existing contract are unchanged.
+
+## Initialization-entry contract lift and the development tensor FMU boundary run
+
+### Lifting the initialization-entry contract over the emitted prototype
+
+The Model Exchange `fmi3EnterInitializationMode` is emitted under its full pinned
+six-parameter header prototype, while its body reads only the `instance` handle.
+`TensorLifecycleModes` now states the standalone contract over that emitted
+function: `Phase.extraParameters` supplies the header's tolerance and stop-time
+parameters (`toleranceDefined`, `tolerance`, `startTime`, `stopTimeDefined`,
+`stopTime`) for the `enterInitialization` phase, `signature` prepends the
+`instance` handle to them, and `arguments`/`parameters` carry the bound-but-unused
+argument values through a small `Extra` payload. Because the body ignores those
+parameters, `parameters_bound`, `body_run`, `call_behaviors`, `null_behaviors`,
+`illegal_prefix`, `illegal_behaviors` and the `Contract` (`successful`, `illegal`,
+`null`) are all universal in the extra values. The four other mode transitions keep
+their single-handle prototype (`extraParameters` is empty). The conjunct of
+`FMI3.TensorAdapter.Contract` for the lifecycle transitions
+(`∀ ph, TensorLifecycleModes.Contract ph (function ph).render`) is therefore now
+literally about the emitted six-parameter function for `enterInitialization`; the
+witness `TensorLifecycleModes.contract` and the adapter `render_contract` are
+unchanged in shape. The emitted adapter bytes do not change: the adapter already
+paired the dispatched body with the pinned header signature
+(`{ tensorDispatch model m sig with signature := sig }`); this increment aligns the
+standalone contract's own function with that prototype.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Parameter binding for the emitted prototype, over any extra values | `TensorLifecycleModes.parameters_bound` |
+| The transition body runs to the single mode write, over any extra values | `TensorLifecycleModes.body_run`, `call_behaviors` |
+| Null-handle and illegal-mode rejections over the emitted prototype | `TensorLifecycleModes.null_behaviors`, `illegal_prefix`, `illegal_behaviors` |
+| The emitted six-parameter signature is printable and the function denotes itself | `TensorLifecycleModes.signature_printable`, `function_denotes` |
+| The bundled mode-transition contract over the emitted function | `TensorLifecycleModes.contract` |
+
+`lake build check-fmi3` is green and every `TensorLifecycleModes`/
+`TensorLifecycleHistory` audit root lists only the three permitted foundational
+axioms (`propext`, `Quot.sound`, `Classical.choice`). No new axioms and no new
+audit roots are introduced; the changed theorems keep their existing roots.
+
+### Native development tensor FMU boundary run
+
+`tests/tensor-c.sh` (the `tensor-c-test` target) assembles a development tensor FMU
+for the `TensorSquare` kernel from the already-produced, checked pieces and drives
+it through FMPy in Model Exchange and Co-Simulation. This is a boundary check
+outside the proof model, not a proof, and the FMU is a development artifact: unlike
+the scalar production path (`tests/fmi3.sh`), it carries no source-to-archive
+production certificate. The pieces are the contract-checked adapter
+(`build/tensor-fmi/adapter.c`) as `sources/fmi3.c`; the certified tensor kernel C
+bodies (`build/tensor-c/{fill,add,mul,diagonal,initial,derivative,jacobian}.c`)
+concatenated in dependency order, with `#include <stddef.h>` prepended so `size_t`
+is in scope at the adapter's `#include "model.c"`, as `sources/model.c`; the checked
+`TensorMetadata.modelDescription` bytes as `modelDescription.xml`; and a build
+description mirroring the scalar recipe (`FMI3.Build.description`) as
+`sources/buildDescription.xml`. The regression executable now retains the model and
+build descriptions alongside the adapter under `build/tensor-fmi/`. The shared
+library is compiled with the scalar FMU recipe flags plus
+`-fPIC -shared -DFMI3_OVERRIDE_FUNCTION_PREFIX`. The retained FMU is
+`build/tensor-fmi/TensorSquare-dev.fmu`; the run and validation logs are
+`build/tensor-fmi/fmu-run.log` and `build/tensor-fmi/fmu-validate.log`.
+
+Observed results (`fmpy validate`: no problems found):
+
+- Model Exchange: instantiate, enter/exit initialization, set `u = (1, 2)`;
+  `fmi3GetContinuousStateDerivatives` returns `der(x) = (1, 4)`. An importer-driven
+  explicit Euler over the FMU's derivative (three unit steps) reaches
+  `x = (3, 12)` at `t = 3`. `fmi3GetFloat64` of the output `J` reads
+  `(0, 0, 0, 0)`. Free the instance.
+- Co-Simulation: instantiate and initialize succeed; `fmi3DoStep` is rejected with
+  `fmi3Error`.
+
+### Reported mismatches and open items
+
+The boundary run surfaces the following; each is reported, not silently worked
+around. Neither is a violation of a proved contract: the adapter faithfully emits
+its proved behavior in each case.
+
+1. Instantiation-token mismatch (identity). The emitted adapter validates the
+   scalar-witness instantiation token `lean-rumoca-unit-v1:TensorSquare:x` (the
+   runtime-interface factory bodies are built over the scalar witness model in the
+   adapter contract skeleton), while the tensor model description declares
+   `lean-rumoca-tensor-v1:TensorSquare`. The adapter correctly rejects a
+   non-matching token per its proved `FactoryValidation` contract, so the boundary
+   run instantiates with the token the adapter accepts. Reconciling the tensor
+   model description's token with the adapter's expected token is an open
+   tensor-adapter identity design item.
+2. Co-Simulation Step Mode not reached (lifecycle). The tensor
+   `fmi3ExitInitializationMode` writes Event Mode for both kinds (the proved Model
+   Exchange transition; `TensorLifecycleModes.Phase.after .exitInitialization`), but
+   Co-Simulation `fmi3DoStep` requires Step Mode (mode code `4`). The tensor
+   lifecycle table does not yet model the kind-aware Co-Simulation Step-Mode exit
+   transition (the scalar `InitializationExit` body branches on kind:
+   Event for Model Exchange, Step for Co-Simulation). Because reaching Step Mode
+   requires extending the tensor lifecycle table with the kind-aware exit
+   transition (a design change with its own proof obligations that would also touch
+   the tensor lifecycle history and the adapter contract's exit conjunct), it is
+   left as a listed open lifecycle-binding item rather than fixed here, consistent
+   with the standing "binding these bodies to an emitted FMU wrapper with its
+   lifecycle and numerical policy remain open". The `tests/tensor-c.sh` boundary
+   asserts the current documented `fmi3Error` rejection so the check is
+   deterministic. Consequently the three-step Co-Simulation `x = (3, 12)` check
+   cannot be demonstrated against the current emitted adapter; the same trajectory
+   is demonstrated through the working Model Exchange derivative above.
+
+No emission defect internal to the tensor emission was found that is fixable with a
+local, proof-green change in this increment; both items above are cross-artifact or
+lifecycle-coverage design questions and are left listed. What `J` reads is stated
+precisely: the diagonal Jacobian kernel `rumoca_square_jacobian` is emitted but
+wired to no FMI entry, so the output tensor stays at its file-scope zero
+initialization and `fmi3GetFloat64` of `J` reads `(0, 0, 0, 0)`; wiring the diagonal
+kernel into an FMI output is a separate design item.

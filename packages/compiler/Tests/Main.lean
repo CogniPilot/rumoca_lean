@@ -7,6 +7,7 @@ import RumocaCore.Solve.Tensor.Reverse
 import Rumoca.EFMIIdentity
 import RumocaFMI3.TensorMetadata
 import RumocaFMI3.TensorInstanceRhs
+import RumocaFMI3.BuildDescription
 import RumocaFMI3.Header
 import Tests.TensorMetadataFixture
 import Tests.TensorAdapterFixture
@@ -101,6 +102,13 @@ def main : IO Unit := do
                 preparedModel fullSignatures).length == FMI3.TensorFunctions.helpers.length + 75)
           IO.FS.createDirAll "build/tensor-fmi"
           IO.FS.writeFile "build/tensor-fmi/adapter.c" full
+          -- Retain the checked model description and a build description mirroring
+          -- the scalar recipe, for the development tensor FMU the boundary script
+          -- assembles. These are development artifacts, not a production FMU.
+          IO.FS.writeFile "build/tensor-fmi/modelDescription.xml"
+            (XML.document (FMI3.TensorMetadata.modelDescription preparedModel))
+          IO.FS.writeFile "build/tensor-fmi/buildDescription.xml"
+            (XML.document (FMI3.Build.description preparedModel.name))
       | _, _ => throw (IO.userError "Solve observation does not match the source profile")
       match ArrayProfile.LocatedParsed.call? p with
       | none => pure ()
