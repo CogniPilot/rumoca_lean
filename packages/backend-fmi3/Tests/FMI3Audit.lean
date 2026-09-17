@@ -2468,8 +2468,10 @@ import RumocaFMI3.TensorAdapterContract
 -- model-independent behavioral and the 49 unsupported/absent-type functions, the
 -- same body the scalar renderer emits. The name multiset equals the scalar list's,
 -- so distinctness, located positions, definition table and literal pool follow.
+#audit axioms Rumoca.FMI3.TensorFunctions.tensorFunction_signature
 #audit axioms Rumoca.FMI3.TensorFunctions.tensorFunction_name
 #audit axioms Rumoca.FMI3.TensorFunctions.functions_names
+#audit axioms Rumoca.FMI3.TensorFunctions.functions_signatures
 #audit axioms Rumoca.FMI3.TensorFunctions.functions_nodup
 #audit axioms Rumoca.FMI3.TensorFunctions.rendered_functions
 #audit axioms Rumoca.FMI3.TensorFunctions.rendered_member

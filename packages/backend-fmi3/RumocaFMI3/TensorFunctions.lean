@@ -44,12 +44,16 @@ problem exposes a dense output, otherwise absent. -/
 def outputShape (m : Solve.TensorFMI3Model shape) : Option Shape :=
   m.ivp.diagonal.map (fun _ => matrixShape shape.volume shape.volume)
 
-/-- Map one pinned header signature to its emitted tensor function. The 19
-shape-dependent behavioral functions dispatch by name to their proved tensor
+/-- Select the emitted tensor function body for one pinned header signature. The
+19 shape-dependent behavioral functions dispatch by name to their proved tensor
 bodies; every other signature (the seven model-independent behavioral functions
-and the 49 unsupported/absent-type functions) renders exactly the scalar body
-`Runtime.function model sig`. -/
-def tensorFunction (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
+and the 49 unsupported/absent-type functions) selects the scalar body
+`Runtime.function model sig`. The signature this body is paired with is fixed by
+`tensorFunction` to the header prototype `sig`, so a dispatched body whose own
+reduced prototype carries fewer parameters than the header (the Model Exchange
+`fmi3EnterInitializationMode`) is emitted under the full header prototype, with
+the extra parameters unused by the body. -/
+def tensorDispatch (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (sig : Signature) : Function :=
   match sig.name with
   | "fmi3Reset" => TensorReset.function shape
@@ -73,23 +77,21 @@ def tensorFunction (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model s
   | "fmi3DoStep" => TensorDoStep.function shape
   | _ => Runtime.function model sig
 
-/-- Every dispatched tensor function keeps the header signature's name; the
-behavioral bodies name the same public function, and the fallthrough is the
-scalar body over the same signature. -/
+/-- The emitted tensor function for one pinned header signature: the dispatched
+tensor (or scalar) body under the exact header prototype `sig`. Pairing the body
+with the header signature makes every emitted function conform to the pinned
+prototype for its name; parameters a body ignores are simply unused. -/
+def tensorFunction (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
+    (sig : Signature) : Function :=
+  { tensorDispatch model m sig with signature := sig }
+
+/-- Every emitted tensor function carries exactly the pinned header prototype for
+its name; in particular its signature name is the header name. -/
+theorem tensorFunction_signature (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
+    (sig : Signature) : (tensorFunction model m sig).signature = sig := rfl
+
 theorem tensorFunction_name (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
-    (sig : Signature) : (tensorFunction model m sig).signature.name = sig.name := by
-  unfold tensorFunction
-  split <;>
-    simp_all only [reduceIte, Bool.false_eq_true, if_true, if_false,
-      TensorReset.function, TensorReset.signature, TensorNominals.function,
-      TensorNominals.signature, ErrorCalls.nominalSignature, TensorCountQueries.function,
-      TensorCountQueries.signature, TensorSetTime.function, TensorSetTime.signature,
-      TensorLifecycleModes.function, TensorLifecycleModes.signature, TensorLifecycleModes.Phase.name,
-      TensorFree.function, StaticRelease.function, TensorFactory.function, FactoryArguments.signature,
-      Identity.factoryName, TensorFloat64.getFunction, TensorFloat64.setFunction, Float64Calls.signature,
-      TensorContinuousStates.getFunction, TensorContinuousStates.setFunction,
-      TensorContinuousStates.derivFunction, TensorContinuousStates.signature, DerivativeCalls.signature,
-      TensorDoStep.function, TensorDoStep.signature, Runtime.function]
+    (sig : Signature) : (tensorFunction model m sig).signature.name = sig.name := rfl
 
 /-- The tensor adapter helper prefix: the shared `fail` diagnostic
 (`Runtime.helpers[0]`) and the two static-factory helpers the tensor factory
@@ -126,6 +128,23 @@ theorem functions_names (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
   apply List.map_congr_left
   intro sig _
   exact tensorFunction_name model m sig
+
+/-- The tensor adapter signature list equals the header signature list position by
+position, after the fixed tensor helper prefix: every dispatched tensor function
+is emitted under the exact pinned header prototype at its list slot, not merely
+under a matching name. This is the prototype-level strengthening of
+`functions_names`. -/
+theorem functions_signatures (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
+    (signatures : List Signature) :
+    (functions model m signatures).map (fun fn => fn.signature)
+      = helpers.map (fun fn => fn.signature) ++ signatures := by
+  simp only [functions, List.map_append]
+  congr 1
+  rw [List.map_map]
+  conv_rhs => rw [← List.map_id signatures]
+  apply List.map_congr_left
+  intro sig _
+  exact tensorFunction_signature model m sig
 
 /-- The scalar adapter public-name list is the scalar helper names followed by the
 same dispatched header names; the two lists differ only in their helper prefix. -/

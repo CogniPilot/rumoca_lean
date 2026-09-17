@@ -82,35 +82,34 @@ theorem tensorFunction_printable (model : Solve.FMI3Model source)
     (m : Solve.TensorFMI3Model shape) (sig : Signature)
     (valid : SignaturePrintable RuntimePrinter.typedefs sig) :
     FunctionPrintable RuntimePrinter.typedefs (TensorFunctions.tensorFunction model m sig) := by
-  unfold TensorFunctions.tensorFunction
+  -- The emitted function carries the header prototype `sig`, so its signature is
+  -- printable by `valid`; its body is the dispatched tensor (or scalar) body.
+  refine ⟨valid, ?_⟩
+  show ∀ stmt ∈ (TensorFunctions.tensorDispatch model m sig).body,
+    ItemPrintable RuntimePrinter.typedefs stmt
+  unfold TensorFunctions.tensorDispatch
   split <;>
     first
-      | exact ⟨TensorReset.signature_printable, TensorReset.body_printable shape⟩
-      | exact ⟨TensorNominals.signature_printable, TensorNominals.body_printable shape⟩
-      | exact ⟨TensorCountQueries.signature_printable false, TensorCountQueries.body_printable shape false⟩
-      | exact ⟨TensorCountQueries.signature_printable true, TensorCountQueries.body_printable shape true⟩
-      | exact ⟨TensorSetTime.signature_printable, TensorSetTime.body_printable⟩
-      | exact ⟨TensorLifecycleModes.signature_printable .enterInitialization,
-          TensorLifecycleModes.body_printable .enterInitialization⟩
-      | exact ⟨TensorLifecycleModes.signature_printable .exitInitialization,
-          TensorLifecycleModes.body_printable .exitInitialization⟩
-      | exact ⟨TensorLifecycleModes.signature_printable .enterEvent,
-          TensorLifecycleModes.body_printable .enterEvent⟩
-      | exact ⟨TensorLifecycleModes.signature_printable .enterContinuous,
-          TensorLifecycleModes.body_printable .enterContinuous⟩
-      | exact ⟨TensorLifecycleModes.signature_printable .terminate,
-          TensorLifecycleModes.body_printable .terminate⟩
-      | exact StaticFactory.Printer.release_printable
-      | exact factory_printable model shape .me
-      | exact factory_printable model shape .cs
-      | exact ⟨TensorFloat64.signature_printable false,
-          TensorFloat64.getBody_printable shape (TensorFunctions.outputShape m)⟩
-      | exact ⟨TensorFloat64.signature_printable true, TensorFloat64.setBody_printable shape⟩
-      | exact ⟨TensorContinuousStates.signature_printable false, TensorContinuousStates.getBody_printable shape⟩
-      | exact ⟨TensorContinuousStates.signature_printable true, TensorContinuousStates.setBody_printable shape⟩
-      | exact ⟨TensorContinuousStates.derivSignature_printable, TensorContinuousStates.derivBody_printable shape⟩
-      | exact ⟨TensorDoStep.signature_printable, TensorDoStep.body_printable shape⟩
-      | exact RuntimePrinter.function_printable model sig valid
+      | exact TensorReset.body_printable shape
+      | exact TensorNominals.body_printable shape
+      | exact TensorCountQueries.body_printable shape false
+      | exact TensorCountQueries.body_printable shape true
+      | exact TensorSetTime.body_printable
+      | exact TensorLifecycleModes.body_printable .enterInitialization
+      | exact TensorLifecycleModes.body_printable .exitInitialization
+      | exact TensorLifecycleModes.body_printable .enterEvent
+      | exact TensorLifecycleModes.body_printable .enterContinuous
+      | exact TensorLifecycleModes.body_printable .terminate
+      | exact StaticFactory.Printer.release_printable.2
+      | exact (factory_printable model shape .me).2
+      | exact (factory_printable model shape .cs).2
+      | exact TensorFloat64.getBody_printable shape (TensorFunctions.outputShape m)
+      | exact TensorFloat64.setBody_printable shape
+      | exact TensorContinuousStates.getBody_printable shape
+      | exact TensorContinuousStates.setBody_printable shape
+      | exact TensorContinuousStates.derivBody_printable shape
+      | exact TensorDoStep.body_printable shape
+      | exact (RuntimePrinter.function_printable model sig valid).2
 
 /-- Every function of the tensor adapter list is printable, given the shared
 helper printability and per-signature printability. -/

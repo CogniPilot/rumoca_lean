@@ -52,7 +52,10 @@ def metaCode (kind : Kind) : List Stmt := [
   Runtime.put "environment" (Runtime.v "instanceEnvironment"),
   Runtime.put "logger" (Runtime.v "logMessage"),
   Runtime.put "logging" (Runtime.v "loggingOn"),
-  Runtime.put "time" (Runtime.n 0)]
+  Runtime.put "time" (Runtime.n 0),
+  Runtime.put "timeMin" (Runtime.n 0),
+  Runtime.put "eventTime" (Runtime.n 0),
+  Runtime.put "lastCompleted" (Runtime.n 0)]
 
 /-- The state-region fill and handle return: stage the region pointer and count,
 run the zero-fill loop, then return the record cast to `fmi3Instance`. -/
@@ -98,6 +101,9 @@ structure Storage (heap : Heap) (p : Address) (shape : Tensor.Shape) : Prop wher
   logger : ∃ old, heap (p.member "logger") = some ⟨.pointer, true, old⟩
   logging : ∃ old, heap (p.member "logging") = some ⟨.boolean, true, old⟩
   time : ∃ old, heap (p.member "time") = some ⟨.float64, true, old⟩
+  timeMin : ∃ old, heap (p.member "timeMin") = some ⟨.float64, true, old⟩
+  eventTime : ∃ old, heap (p.member "eventTime") = some ⟨.float64, true, old⟩
+  lastCompleted : ∃ old, heap (p.member "lastCompleted") = some ⟨.float64, true, old⟩
   state : Writable heap (p.member stateName) shape.volume
 
 /-- The reserved-record storage survives an atomic-scan reservation (or any
@@ -105,9 +111,11 @@ storage-preserving execution), so initialization can proceed after reservation. 
 theorem Storage.preserved {before after : Heap} {p : Address} {shape : Tensor.Shape}
     (storage : Storage before p shape) (preserved : CStorage.Preserves before after) :
     Storage after p shape := by
-  obtain ⟨⟨_, hs⟩, ⟨_, hk⟩, ⟨_, hm⟩, ⟨_, hv⟩, ⟨_, hl⟩, ⟨_, hg⟩, ⟨_, ht⟩, hstate⟩ := storage
+  obtain ⟨⟨_, hs⟩, ⟨_, hk⟩, ⟨_, hm⟩, ⟨_, hv⟩, ⟨_, hl⟩, ⟨_, hg⟩, ⟨_, ht⟩,
+    ⟨_, htm⟩, ⟨_, het⟩, ⟨_, hlc⟩, hstate⟩ := storage
   refine ⟨preserved.cell hs, preserved.cell hk, preserved.cell hm, preserved.cell hv,
-    preserved.cell hl, preserved.cell hg, preserved.cell ht, fun i hi => ?_⟩
+    preserved.cell hl, preserved.cell hg, preserved.cell ht,
+    preserved.cell htm, preserved.cell het, preserved.cell hlc, fun i hi => ?_⟩
   obtain ⟨_, h⟩ := hstate i hi
   exact preserved.cell h
 
@@ -122,13 +130,16 @@ def slotHeap (heap : Heap) (p : Address) (slot : Nat) : Heap :=
 time base at `+0`, over the reserved-record backing. -/
 def metaHeap (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
     (environment logger : Option Address) (logging : Bool) : Heap :=
-  replace (replace (replace (replace (replace (replace (slotHeap heap p slot)
+  replace (replace (replace (replace (replace (replace (replace (replace (replace (slotHeap heap p slot)
     (p.member "kind") ⟨.int32, true, some (.integer kind.code)⟩)
     (p.member "mode") ⟨.int32, true, some (.integer Mode.instantiated.code)⟩)
     (p.member "environment") ⟨.pointer, true, some (.pointer environment)⟩)
     (p.member "logger") ⟨.pointer, true, some (.pointer logger)⟩)
     (p.member "logging") ⟨.boolean, true, some (boolean logging)⟩)
-    (p.member "time") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩
+    (p.member "time") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
+    (p.member "timeMin") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
+    (p.member "eventTime") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
+    (p.member "lastCompleted") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩
 
 /-- The heap after the full initializer: the metadata heap with the state region
 `x` zero-filled. -/
@@ -158,7 +169,10 @@ theorem metaHeap_state (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
     metaHeap heap p slot kind environment logger logging ((p.member stateName).index i) =
       heap ((p.member stateName).index i) := by
   unfold metaHeap slotHeap
-  rw [replace_other _ _ _ _ (state_ne_meta p "time" (by decide +kernel) i),
+  rw [replace_other _ _ _ _ (state_ne_meta p "lastCompleted" (by decide +kernel) i),
+    replace_other _ _ _ _ (state_ne_meta p "eventTime" (by decide +kernel) i),
+    replace_other _ _ _ _ (state_ne_meta p "timeMin" (by decide +kernel) i),
+    replace_other _ _ _ _ (state_ne_meta p "time" (by decide +kernel) i),
     replace_other _ _ _ _ (state_ne_meta p "logging" (by decide +kernel) i),
     replace_other _ _ _ _ (state_ne_meta p "logger" (by decide +kernel) i),
     replace_other _ _ _ _ (state_ne_meta p "environment" (by decide +kernel) i),
@@ -185,7 +199,9 @@ theorem frame (heap : Heap) (p query : Address) (slot : Nat) (kind : Kind)
   rw [finalHeap, written_frame _ _ _ _ query
     (fun i _ h => outside (h ▸ (p.member_in_record stateName).index i))]
   unfold metaHeap slotHeap
-  rw [replace_other _ _ _ _ (ne "time"), replace_other _ _ _ _ (ne "logging"),
+  rw [replace_other _ _ _ _ (ne "lastCompleted"), replace_other _ _ _ _ (ne "eventTime"),
+    replace_other _ _ _ _ (ne "timeMin"),
+    replace_other _ _ _ _ (ne "time"), replace_other _ _ _ _ (ne "logging"),
     replace_other _ _ _ _ (ne "logger"), replace_other _ _ _ _ (ne "environment"),
     replace_other _ _ _ _ (ne "mode"), replace_other _ _ _ _ (ne "kind"),
     replace_other _ _ _ _ (ne "slot")]
@@ -252,33 +268,39 @@ theorem initialized (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
         some ⟨.size, true, some (.integer slot)⟩ :=
       (fm "slot" (by decide +kernel)).trans (by
         simp [metaHeap, slotHeap, replace, mne "slot" "time", mne "slot" "logging", mne "slot" "logger",
-          mne "slot" "environment", mne "slot" "mode", mne "slot" "kind"])
+          mne "slot" "environment", mne "slot" "mode", mne "slot" "kind",
+          mne "slot" "timeMin", mne "slot" "eventTime", mne "slot" "lastCompleted"])
     exact load_converted _ _ .size true (.integer slot) cell (by decide +kernel)
       (CLoops.convert_size_nat slot bounded)
   · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "kind") =
         some ⟨.int32, true, some (.integer kind.code)⟩ :=
       (fm "kind" (by decide +kernel)).trans (by
         simp [metaHeap, slotHeap, replace, mne "kind" "time", mne "kind" "logging", mne "kind" "logger",
-          mne "kind" "environment", mne "kind" "mode"])
+          mne "kind" "environment", mne "kind" "mode",
+          mne "kind" "timeMin", mne "kind" "eventTime", mne "kind" "lastCompleted"])
     cases kind <;> exact load_converted _ _ .int32 true _ cell (by decide +kernel) (by decide +kernel)
   · rw [fm "mode" (by decide +kernel)]
     simp [metaHeap, slotHeap, replace, mne "mode" "time", mne "mode" "logging", mne "mode" "logger",
-      mne "mode" "environment"]
+      mne "mode" "environment",
+      mne "mode" "timeMin", mne "mode" "eventTime", mne "mode" "lastCompleted"]
   · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "environment") =
         some ⟨.pointer, true, some (.pointer environment)⟩ :=
       (fm "environment" (by decide +kernel)).trans (by
         simp [metaHeap, slotHeap, replace, mne "environment" "time", mne "environment" "logging",
-          mne "environment" "logger"])
+          mne "environment" "logger",
+          mne "environment" "timeMin", mne "environment" "eventTime", mne "environment" "lastCompleted"])
     exact load_converted _ _ .pointer true _ cell (by decide +kernel) (by simp [convert])
   · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "logger") =
         some ⟨.pointer, true, some (.pointer logger)⟩ :=
       (fm "logger" (by decide +kernel)).trans (by
-        simp [metaHeap, slotHeap, replace, mne "logger" "time", mne "logger" "logging"])
+        simp [metaHeap, slotHeap, replace, mne "logger" "time", mne "logger" "logging",
+          mne "logger" "timeMin", mne "logger" "eventTime", mne "logger" "lastCompleted"])
     exact load_converted _ _ .pointer true _ cell (by decide +kernel) (by simp [convert])
   · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "logging") =
         some ⟨.boolean, true, some (boolean logging)⟩ :=
       (fm "logging" (by decide +kernel)).trans (by
-        simp [metaHeap, slotHeap, replace, mne "logging" "time"])
+        simp [metaHeap, slotHeap, replace, mne "logging" "time",
+          mne "logging" "timeMin", mne "logging" "eventTime", mne "logging" "lastCompleted"])
     cases logging <;> exact load_converted _ _ .boolean true _ cell (by decide +kernel) (by decide +kernel)
 
 
@@ -310,28 +332,38 @@ theorem slot_step (env : Locals) (heap : Heap) (p : Address) (slot : Nat) (rest 
     (.integer slot) old rest instanceBound (by simp [Runtime.v, CBody.eval, slotBound]) cell (by decide +kernel)
     (CLoops.convert_size_nat slot bounded)
 
+set_option maxHeartbeats 1600000 in
 /-- The concrete metadata block runs to the metadata heap over the slot heap in
 the bounded body machine. No `size_t` conversion appears, so the whole block
 reduces without evaluating the 64-bit bound. -/
 theorem metaCode_run (shape : Tensor.Shape) (kind : Kind) (env : Locals) (heap : Heap) (p : Address)
     (slot : Nat) (environment logger : Option Address) (logging : Bool) (rest : List Stmt)
     (storage : Storage heap p shape) (bindings : Bindings env p slot environment logger logging) :
-    CBody.run 6 (.running (metaCode kind ++ rest) env (slotHeap heap p slot)) =
+    CBody.run 9 (.running (metaCode kind ++ rest) env (slotHeap heap p slot)) =
       some (.running rest env (metaHeap heap p slot kind environment logger logging)) := by
   obtain ⟨_, ⟨kindOld, hkind⟩, ⟨modeOld, hmode⟩, ⟨envOld, henv⟩,
-    ⟨logOld, hlog⟩, ⟨lgOld, hlg⟩, ⟨timeOld, htime⟩, _⟩ := storage
+    ⟨logOld, hlog⟩, ⟨lgOld, hlg⟩, ⟨timeOld, htime⟩,
+    ⟨tmOld, htm⟩, ⟨etOld, het⟩, ⟨lcOld, hlc⟩, _⟩ := storage
   have mne : ∀ a b, a ≠ b → p.member a ≠ p.member b := fun a b h => member_ne p a b h
   cases kind <;> cases logging <;>
     simp [metaCode, Runtime.put, Runtime.field, Runtime.v, Runtime.n, CBody.run, CBody.next,
       CBody.eval, CBody.lvalue, bindings.instanceBound, bindings.environmentBound, bindings.loggerBound,
       bindings.loggingBound, Value.address, Value.finite, CMemory.store, convert, boolean, Value.truth,
       slotHeap, replace, metaHeap, Mode.code, Kind.code, hkind, hmode, henv, hlog, hlg, htime,
+      htm, het, hlc,
       mne "kind" "slot", mne "mode" "slot", mne "mode" "kind", mne "environment" "slot",
       mne "environment" "kind", mne "environment" "mode", mne "logger" "slot", mne "logger" "kind",
       mne "logger" "mode", mne "logger" "environment", mne "logging" "slot", mne "logging" "kind",
       mne "logging" "mode", mne "logging" "environment", mne "logging" "logger", mne "time" "slot",
       mne "time" "kind", mne "time" "mode", mne "time" "environment", mne "time" "logger",
-      mne "time" "logging"]
+      mne "time" "logging",
+      mne "timeMin" "slot", mne "timeMin" "kind", mne "timeMin" "mode", mne "timeMin" "environment",
+      mne "timeMin" "logger", mne "timeMin" "logging", mne "timeMin" "time",
+      mne "eventTime" "slot", mne "eventTime" "kind", mne "eventTime" "mode", mne "eventTime" "environment",
+      mne "eventTime" "logger", mne "eventTime" "logging", mne "eventTime" "time", mne "eventTime" "timeMin",
+      mne "lastCompleted" "slot", mne "lastCompleted" "kind", mne "lastCompleted" "mode",
+      mne "lastCompleted" "environment", mne "lastCompleted" "logger", mne "lastCompleted" "logging",
+      mne "lastCompleted" "time", mne "lastCompleted" "timeMin", mne "lastCompleted" "eventTime"]
 
 end
 
@@ -357,16 +389,16 @@ theorem return_reaches (shape : Tensor.Shape) (kind : Kind) (env : Locals) (type
       (.returning (.pointer (some p)) (finalHeap heap p slot kind environment logger logging shape) stack) := by
   set mh := metaHeap heap p slot kind environment logger logging with hmh
   -- Phase A: the slot store and metadata block reach the metadata heap.
-  have runA : CBody.run 7 (.running (code shape kind) env heap) =
+  have runA : CBody.run 10 (.running (code shape kind) env heap) =
       some (.running (stateTail shape) env mh) := by
-    rw [code, show (7 : Nat) = 1 + 6 from rfl, CBody.run_add]
+    rw [code, show (10 : Nat) = 1 + 9 from rfl, CBody.run_add]
     rw [show slotStore :: metaCode kind ++ stateTail shape =
         slotStore :: (metaCode kind ++ stateTail shape) from rfl, CBody.run,
       slot_step env heap p slot (metaCode kind ++ stateTail shape) bindings.instanceBound
         bindings.slotBound storage.slot bounded]
     simpa using metaCode_run shape kind env heap p slot environment logger logging (stateTail shape)
       storage bindings
-  obtain ⟨types', executed, _⟩ := CBodyEmbedding.run_refines 7 (.running (code shape kind) env heap)
+  obtain ⟨types', executed, _⟩ := CBodyEmbedding.run_refines 10 (.running (code shape kind) env heap)
     (.running (stateTail shape) env mh) types (code_closed shape kind) runA
   refine (CCalls.Events.body_reaches program (CLoops.run_reaches executed) "fmi3Instance" stack).trans ?_
   -- Phase B: stage the region pointer and count, run the fill loop, return the handle.

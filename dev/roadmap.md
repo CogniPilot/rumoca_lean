@@ -11,6 +11,22 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Header-conforming tensor adapter compiled as a standalone object (derived proofs and boundary check):**
+
+Every tensor adapter function now carries exactly the pinned header prototype
+for its name, proved position by position by `TensorFunctions.functions_signatures`;
+the tensor record gained the event-time bookkeeping members the reused
+completed-step body reads, initialized by both factories; and the state
+setter's copy local is const-qualified. `tests/tensor-c.sh` now requires a
+clean object compile of the retained adapter with the vendored FMI headers
+under strict C11 flags with zero diagnostics, and it passes. The
+initialization-entry lifecycle contract is still stated over the reduced
+one-parameter function whose body the emitted six-parameter function shares;
+lifting that statement to the header signature is the next obligation.
+Nothing is emitted by production. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 9m11s
+(`build/tensor-fmi/full-gate-v20.log`).
+
 **Conforming array-member region pointers and a native adapter boundary check (derived proofs):**
 
 The tensor bodies now stage every array-member region pointer as the address

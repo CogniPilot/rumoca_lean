@@ -1672,18 +1672,56 @@ lists only the three permitted foundational axioms (`propext`, `Quot.sound`,
 `Classical.choice`). No production artifact is emitted, no CLI or grammar case is
 added, and the memory model's semantics for existing expressions are preserved.
 
-### Native array-member pointer boundary check
+### Native standalone-object boundary check
 
-`tests/tensor-c.sh` (the `tensor-c-test` target) now compiles the rendered
+`tests/tensor-c.sh` (the `tensor-c-test` target) compiles the rendered
 `build/tensor-fmi/adapter.c` with the verification shell's C11 compiler, using the
 vendored FMI 3 headers (`packages/backend-fmi3/vendor/fmi3`) and an empty
 `model.c`; the adapter declares the `rumoca_rhs` prototype itself, so an
 object-only compile needs no kernel definition. Native compilation is a boundary
-outside the proof model. The check asserts the compiler reports no
-`incompatible pointer type` diagnostic: it fails on the array-member idiom before
-this increment and passes after. It does not assert a full standalone object of
-this development adapter, whose scalar-fallback event and discrete bodies still
-reference scalar-only record members (`timeMin`, `lastCompleted`, `eventTime`) and
-whose reduced lifecycle/query signatures differ from the pinned FMI prototypes;
-those are separate development-stage matters, distinct from the array-member
-pointer-type contract established here.
+outside the proof model. The check requires a clean object compile with zero
+diagnostics under the strict flags (`-std=c11 -O2 -Wall -Wextra -Werror -pedantic
+-fno-fast-math -ffp-contract=off -Wno-unused-parameter`): any compiler error, or
+any warning promoted by `-Werror`, or any residual compiler output rejects the
+adapter. It thereby asserts that the whole rendered adapter is a well-formed C11
+translation unit, not only that the array-member idiom is accepted.
+
+### Header-conforming signatures and event-time record members
+
+Every emitted tensor function carries the pinned FMI prototype for its name.
+`TensorFunctions.tensorFunction` pairs the dispatched tensor (or scalar) body with
+the header signature `sig` (`{ tensorDispatch model m sig with signature := sig }`),
+so the emitted prototype is the pinned one position by position;
+`TensorFunctions.functions_signatures` proves the tensor function list's
+signatures equal the header signature list after the fixed helper prefix, the
+prototype-level strengthening of `functions_names`. A body that reads fewer
+parameters than its header prototype declares (the Model Exchange
+`fmi3EnterInitializationMode`, whose body reads only the `instance` handle) is
+emitted under the full prototype with the extra parameters unused, so
+`-Wno-unused-parameter` is part of the strict flag set. The standalone behavioral
+contracts (for example `TensorLifecycleModes.contract`) keep their statements over
+the bodies they prove.
+
+The tensor instance record declares the event-time bookkeeping cells the reused
+Model Exchange completed-step body maintains, `timeMin`, `eventTime` and
+`lastCompleted` (each `double`), added to `TensorStorage.bookkeepingMembers`
+alongside the existing lifecycle/host/slot fields. The tensor reserved-record
+initializer (`TensorInstanceInit`) resets all three to `+0`, mirroring the scalar
+factory (`InstanceInitialization.code`); the `Storage`, `metaHeap`, `metaCode_run`,
+framing (`metaHeap_state`, `frame`, `other_instance`) and `return_reaches`
+statements are extended for the three cells, and `TensorStaticFactory` carries the
+extended initializer through the successful-creation and exhaustion behaviors. The
+completed-step body computes only over the scalar time cells, not over any tensor
+region, so reusing the scalar body is correct for the tensor model, which exposes
+no event indicators. The setter copy local for `fmi3SetContinuousStates` carries
+the source qualifier (`const fmi3Float64 *`) so the object compile is clean under
+`-Werror`.
+
+`lake build check-fmi3`, `lake build rumoca_compiler/tests` and the regression
+executable are green with the test executable passing, the added audit roots
+(`TensorFunctions.tensorFunction_signature`, `TensorFunctions.functions_signatures`)
+list only the three permitted foundational axioms (`propext`, `Quot.sound`,
+`Classical.choice`), and `tests/tensor-c.sh` compiles the rendered adapter to a
+standalone object with zero diagnostics. These are package-checked products only:
+no production artifact is emitted, no CLI or grammar case is added, and the scalar
+renderer, `Runtime.lean` and every existing contract are unchanged.

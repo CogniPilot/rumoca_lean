@@ -69,11 +69,13 @@ def regionMembers (shape : Shape) (hasOutput : Bool) : List Member :=
     else [])
 
 /-- The FMI lifecycle, host and slot bookkeeping fields the tensor bodies read:
-the kind and mode, the stop-time interval, the logging flag, the captured
-environment and logger, and the reserved slot index. These mirror the scalar
-instance record's non-model fields. -/
+the kind and mode, the stop-time interval, the event-time bookkeeping cells the
+Model Exchange completed-step body maintains (`timeMin`, `eventTime`,
+`lastCompleted`), the logging flag, the captured environment and logger, and the
+reserved slot index. These mirror the scalar instance record's non-model fields. -/
 def bookkeepingMembers : List Member :=
-  [.scalar "double" "stop", .scalar "int" "kind", .scalar "int" "mode",
+  [.scalar "double" "stop", .scalar "double" "timeMin", .scalar "double" "eventTime",
+   .scalar "double" "lastCompleted", .scalar "int" "kind", .scalar "int" "mode",
    .scalar "fmi3Boolean" "stopDefined", .scalar "fmi3Boolean" "logging",
    .scalar "fmi3InstanceEnvironment" "environment",
    .scalar "fmi3LogMessageCallback" "logger", .scalar "size_t" "slot"]
@@ -237,6 +239,9 @@ private theorem parts_u : CIdentifierToken.WordParts TensorInstance.inputName :=
 private theorem parts_dx : CIdentifierToken.WordParts TensorInstance.derivativeName := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
 private theorem parts_J : CIdentifierToken.WordParts TensorInstance.outputName := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
 private theorem parts_stop : CIdentifierToken.WordParts "stop" := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
+private theorem parts_timeMin : CIdentifierToken.WordParts "timeMin" := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
+private theorem parts_eventTime : CIdentifierToken.WordParts "eventTime" := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
+private theorem parts_lastCompleted : CIdentifierToken.WordParts "lastCompleted" := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
 private theorem parts_kind : CIdentifierToken.WordParts "kind" := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
 private theorem parts_mode : CIdentifierToken.WordParts "mode" := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
 private theorem parts_stopDefined : CIdentifierToken.WordParts "stopDefined" := ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩
@@ -299,6 +304,8 @@ private theorem members_wf (shape : Tensor.Shape) (hasOutput : Bool) :
     fin_cases mem <;>
       first
         | exact ⟨parts_double, parts_time⟩ | exact ⟨parts_double, parts_stop⟩
+        | exact ⟨parts_double, parts_timeMin⟩ | exact ⟨parts_double, parts_eventTime⟩
+        | exact ⟨parts_double, parts_lastCompleted⟩
         | exact ⟨parts_int, parts_kind⟩ | exact ⟨parts_int, parts_mode⟩
         | exact ⟨parts_boolean, parts_stopDefined⟩ | exact ⟨parts_boolean, parts_logging⟩
         | exact ⟨parts_env, parts_environment⟩ | exact ⟨parts_cb, parts_logger⟩
@@ -310,6 +317,8 @@ private theorem members_wf (shape : Tensor.Shape) (hasOutput : Bool) :
     fin_cases mem <;>
       first
         | exact ⟨parts_double, parts_time⟩ | exact ⟨parts_double, parts_stop⟩
+        | exact ⟨parts_double, parts_timeMin⟩ | exact ⟨parts_double, parts_eventTime⟩
+        | exact ⟨parts_double, parts_lastCompleted⟩
         | exact ⟨parts_int, parts_kind⟩ | exact ⟨parts_int, parts_mode⟩
         | exact ⟨parts_boolean, parts_stopDefined⟩ | exact ⟨parts_boolean, parts_logging⟩
         | exact ⟨parts_env, parts_environment⟩ | exact ⟨parts_cb, parts_logger⟩

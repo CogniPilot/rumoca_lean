@@ -215,7 +215,7 @@ end
 
 def setTail (shape : Tensor.Shape) : List Stmt :=
   .declare "fmi3Float64 *" "dst" ((Runtime.region stateName)) ::
-  .declare "fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
+  .declare "const fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
   .declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix
 
 def setBody (shape : Tensor.Shape) : List Stmt :=
@@ -271,7 +271,7 @@ theorem set_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address) (c
   refine entered.trans ?_
   have mBound : guardEnv p buffer count "m" = some (.pointer (some p)) := by simp [guardEnv, CBody.bind]
   have s_dst : CLoops.next (.running (setTail shape) (guardEnv p buffer count) types0 heap) =
-      some (.running (.declare "fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
+      some (.running (.declare "const fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
         .declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix)
         (bind (guardEnv p buffer count) "dst" (.pointer (some (p.member stateName))))
         (bindType types0 "dst" .pointer) heap) :=
@@ -281,14 +281,14 @@ theorem set_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address) (c
       (by apply CBodyEmbedding.eval_refines
           simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, guardEnv, parameters, CBody.bind,
             CBody.resolve, mBound, Value.address]) rfl
-  have s_values : CLoops.next (.running (.declare "fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
+  have s_values : CLoops.next (.running (.declare "const fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
         .declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix)
         (bind (guardEnv p buffer count) "dst" (.pointer (some (p.member stateName))))
         (bindType types0 "dst" .pointer) heap) =
       some (.running (.declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix)
         (bind (bind (guardEnv p buffer count) "dst" (.pointer (some (p.member stateName))))
           "values" (.pointer (some buffer))) (bindType (bindType types0 "dst" .pointer) "values" .pointer) heap) :=
-    TensorFloat64.declare_step_e _ _ heap "fmi3Float64 *" "values" (Runtime.v "continuousStates") .pointer
+    TensorFloat64.declare_step_e _ _ heap "const fmi3Float64 *" "values" (Runtime.v "continuousStates") .pointer
       (.pointer (some buffer)) (.pointer (some buffer)) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
       (by simp [Runtime.v, CLoops.eval, CBody.eval, guardEnv, parameters, CBody.bind, CBody.resolve]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix)
@@ -515,6 +515,8 @@ theorem setBody_printable (shape : Tensor.Shape) :
     .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have fType : TypeSpelling RuntimePrinter.typedefs "fmi3Float64 *" :=
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
+  have cfType : TypeSpelling RuntimePrinter.typedefs "const fmi3Float64 *" :=
+    .const (.pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel))))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   simp only [setFunction, setBody, setTail, countReject, setLoopSuffix, Runtime.region, Runtime.require,
@@ -529,6 +531,7 @@ theorem setBody_printable (shape : Tensor.Shape) :
       | exact CNull.literal_printable _
       | exact iType
       | exact fType
+      | exact cfType
       | exact sType
       | apply And.intro
       | apply ItemPrintable.declare
