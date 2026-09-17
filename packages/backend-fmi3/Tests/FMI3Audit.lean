@@ -250,6 +250,14 @@ import RumocaFMI3.TensorLifecycleHistory
 import RumocaFMI3.TensorInstanceInit
 import RumocaFMI3.TensorStaticFactory
 import RumocaFMI3.TensorNominals
+import RumocaFMI3.TensorVersion
+import RumocaFMI3.TensorDebugLogging
+import RumocaFMI3.TensorScheduledCreation
+import RumocaFMI3.TensorDiscreteEvaluation
+import RumocaFMI3.TensorDiscreteUpdate
+import RumocaFMI3.TensorCompletedStep
+import RumocaFMI3.TensorEventIndicators
+import RumocaFMI3.TensorDoStep
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2359,3 +2367,38 @@ import RumocaFMI3.TensorNominals
 #audit axioms Rumoca.FMI3.TensorNominals.body_printable
 #audit axioms Rumoca.FMI3.TensorNominals.function_denotes
 #audit axioms Rumoca.FMI3.TensorNominals.contract
+
+-- Tensor behavioral bodies reusing the model-independent scalar contracts over
+-- the tensor instance record (package-checked products; no production emission).
+-- Each `independent` root certifies the emitted function does not depend on the
+-- prepared model, so the scalar contract transfers to the tensor instance record.
+#audit axioms Rumoca.FMI3.TensorVersion.independent
+#audit axioms Rumoca.FMI3.TensorVersion.contract
+#audit axioms Rumoca.FMI3.TensorDebugLogging.independent
+#audit axioms Rumoca.FMI3.TensorDebugLogging.denotation
+#audit axioms Rumoca.FMI3.TensorDebugLogging.contract
+#audit axioms Rumoca.FMI3.TensorScheduledCreation.independent
+#audit axioms Rumoca.FMI3.TensorScheduledCreation.contract
+#audit axioms Rumoca.FMI3.TensorDiscreteEvaluation.independent
+#audit axioms Rumoca.FMI3.TensorDiscreteEvaluation.denotation
+#audit axioms Rumoca.FMI3.TensorDiscreteEvaluation.contract
+#audit axioms Rumoca.FMI3.TensorDiscreteUpdate.independent
+#audit axioms Rumoca.FMI3.TensorDiscreteUpdate.denotation
+#audit axioms Rumoca.FMI3.TensorDiscreteUpdate.contract
+#audit axioms Rumoca.FMI3.TensorCompletedStep.independent
+#audit axioms Rumoca.FMI3.TensorCompletedStep.denotation
+#audit axioms Rumoca.FMI3.TensorCompletedStep.contract
+#audit axioms Rumoca.FMI3.TensorEventIndicators.independent
+#audit axioms Rumoca.FMI3.TensorEventIndicators.denotation
+#audit axioms Rumoca.FMI3.TensorEventIndicators.contract
+
+-- Tensor Co-Simulation fmi3DoStep internal Euler update over the symbolic state
+-- volume (package-checked product; no production emission). The elementwise
+-- x[k] = x[k] + dx[k] counted loop keeps each cell's finite-arithmetic outcome
+-- explicit as an `Adds` premise.
+#audit axioms Rumoca.FMI3.TensorDoStep.eulerBody_closed
+#audit axioms Rumoca.FMI3.TensorDoStep.eulerStep
+#audit axioms Rumoca.FMI3.TensorDoStep.euler_reaches
+#audit axioms Rumoca.FMI3.TensorDoStep.euler_delivers
+#audit axioms Rumoca.FMI3.TensorDoStep.store_writable_state
+#audit axioms Rumoca.FMI3.TensorDoStep.internalStep_reaches

@@ -11,6 +11,25 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Remaining tensor behavioral bodies and the co-simulation step kernel (derived proofs):**
+
+Seven behavioral functions (version, debug logging, scheduled-execution
+rejection, discrete evaluation and update, completed integrator step, event
+indicators) are proved model-independent, so the tensor slice reuses the
+scalar bodies and contracts verbatim over the tensor record. `TensorDoStep`
+proves the tensor co-simulation kernel: one Euler iteration per state cell with
+explicit finite-addition premises, the counted loop over the symbolic volume,
+and one complete internal step that evaluates the derivative entry and
+advances the state region as a single observable-machine execution. Twenty-five
+of the twenty-six behavioral functions now have proved tensor bodies. The full
+`fmi3DoStep` body with its grid-policy discard, null and lifecycle rejections,
+time advance and multi-step iteration remains open because staging
+declarations inside the solve loop conflict with the closed-block discipline.
+Nothing is emitted by production and no existing contract changed. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 9m17s
+(`build/tensor-fmi/full-gate-v11.log`).
+
 **Tensor nominal-value getter (derived proofs):**
 
 `FMI3.TensorNominals` proves the tensor `fmi3GetNominalsOfContinuousStates`

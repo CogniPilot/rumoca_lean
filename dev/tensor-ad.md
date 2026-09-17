@@ -1148,3 +1148,81 @@ foundational axioms. Every theorem is universal in the tensor shape, the instanc
 address, the caller buffer and the heap. This is a package-checked product only: no
 production artifact is emitted, no CLI or grammar case is added, and the scalar
 adapter, `Runtime.lean` and every existing contract are unchanged.
+
+## Tensor behavioral bodies and the Co-Simulation step kernel
+
+`FMI3.TensorVersion`, `FMI3.TensorDebugLogging`, `FMI3.TensorScheduledCreation`,
+`FMI3.TensorDiscreteEvaluation`, `FMI3.TensorDiscreteUpdate`,
+`FMI3.TensorCompletedStep` and `FMI3.TensorEventIndicators` deliver the seven
+model-independent behavioral FMI 3 functions over the tensor instance record as
+package-checked products. For each, the scalar body `Runtime.body m signature`
+reads no source name and touches no tensor region, so the emitted function is
+constant in the prepared model: `Runtime.function m signature = Runtime.function
+m' signature` by `rfl` (`Tensor<Name>.independent`). The tensor slice therefore
+reuses the scalar bodies and their contracts verbatim over the tensor instance
+record, whose metadata cells (`kind`, `mode`, the logging flag, the environment
+and the logger) supply the scalar execution premises. Each module bundles a
+`Contract` in the shape the other tensor contracts use: model independence, the
+emitted text, block closedness, C denotation (the scalar tokenization), and the
+scalar execution behaviors specialized over the instance record.
+
+`fmi3GetVersion` returns a pointer to the pinned `"3.0"` literal with the heap
+unchanged (`TensorVersion.contract`). `fmi3SetDebugLogging` is the model-free
+constant `DebugLogging.function`; the tensor contract reuses the scalar runtime
+null, suppressed-rejection and logged-rejection behaviors
+(`TensorDebugLogging.contract`). `fmi3InstantiateScheduledExecution` is the fixed
+rejection returning `NULL`, quiet or through the logger callback
+(`TensorScheduledCreation.contract`). `fmi3EvaluateDiscreteStates` returns
+`fmi3OK` leaving the heap unchanged, `fmi3UpdateDiscreteStates` writes the fixed
+discrete-update results into the caller's output pointers,
+`fmi3CompletedIntegratorStep` writes the two result flags and the completed-time
+history, and `fmi3GetEventIndicators` accepts the valid empty query for the
+event-free unit product; each rejects a null handle with `fmi3Error`
+(`TensorDiscreteEvaluation.contract`, `TensorDiscreteUpdate.contract`,
+`TensorCompletedStep.contract`, `TensorEventIndicators.contract`).
+
+`FMI3.TensorDoStep` delivers the tensor Co-Simulation step's internal Euler
+kernel. The tensor step mirrors the scalar unit-Euler policy: each internal step
+evaluates the prepared tensor derivative entry `rumoca_rhs` into the instance
+`der(x)` region and advances the state `x` by `x + dx` elementwise. The
+elementwise update loop `x[k] = x[k] + dx[k]` runs over the symbolic state volume
+with a counted `size_t` loop (`eulerBody`, `eulerStep`, `euler_reaches`), reading
+each state cell before it is overwritten and the disjoint derivative cell, and
+each cell's finite-arithmetic outcome is kept explicit as a `Binary64.Adds`
+premise, in the same style the tensor derivative getter keeps `Finite.Executes`
+explicit. `euler_delivers` runs the staged Euler tail (point `dst` at `x`, `src`
+at `dx`, stage the element count, run the loop) over a heap whose derivative
+region already holds `result`. `internalStep_reaches` composes the two into one
+observable-machine execution: it enters `rumoca_rhs`, applies the transfer lemma
+(`TensorInstanceRhs.derivative_writes_events`) to write `der(x) = result` and
+preserve every cell of every other instance, resumes into the staged Euler tail,
+and advances the state region to the elementwise finite Euler sum `state +
+result`. The loop bound is the symbolic state volume, so no tensor coordinate is
+enumerated in Lean.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Each behavioral function is constant in the prepared model | `Tensor<Name>.independent` |
+| Emitted text, closedness, denotation and execution behaviors as a contract | `TensorVersion.contract`, `TensorDebugLogging.contract`, `TensorScheduledCreation.contract`, `TensorDiscreteEvaluation.contract`, `TensorDiscreteUpdate.contract`, `TensorCompletedStep.contract`, `TensorEventIndicators.contract` |
+| One Euler iteration writes the finite cell sum into the state cell | `TensorDoStep.eulerStep` |
+| The counted loop advances the whole state region by the elementwise Euler sum | `TensorDoStep.euler_reaches` |
+| The staged Euler tail advances the state region after the derivative write | `TensorDoStep.euler_delivers` |
+| One internal step: derivative evaluation composed with the Euler update | `TensorDoStep.internalStep_reaches` |
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms. These are package-checked products only: no production
+artifact is emitted, no CLI or grammar case is added, and the scalar adapter,
+`Runtime.lean` and every existing contract are unchanged.
+
+Behavioral coverage of the tensor slice now stands at 25 of the 26 behavioral FMI
+3 functions delivered as proved package products (the seven here complete the
+model-independent common and Model Exchange functions), plus the Co-Simulation
+`fmi3DoStep` internal-step Euler kernel and its one-internal-step composition.
+Open for `fmi3DoStep`: the full function body wrapping the handle/lifecycle
+guards, the Co-Simulation grid-policy discard for a communication step that is not
+a positive integer multiple of the unit step or exceeds the scalar bound, the null
+and lifecycle rejections, the independent time advance, and the accepted step for
+an arbitrary number of internal steps (the multi-step iteration of
+`internalStep_reaches`). Binding any of these bodies to an emitted FMU wrapper
+with its lifecycle and numerical policy also remains open. This package product
+does not authorize production generation.
