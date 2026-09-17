@@ -241,6 +241,9 @@ import RumocaFMI3.TensorInstanceStorage
 import RumocaFMI3.TensorInstanceRhs
 import RumocaFMI3.TensorFloat64Access
 import RumocaFMI3.TensorContinuousStates
+import RumocaFMI3.TensorCountQueries
+import RumocaFMI3.TensorSetTime
+import RumocaFMI3.TensorReset
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2231,3 +2234,48 @@ import RumocaFMI3.TensorContinuousStates
 #audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_reaches
 #audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_behaviors
 #audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_contract
+
+#audit axioms Rumoca.CMemory.store_of_convert
+#audit axioms Rumoca.FMI3.TensorCountQueries.count_bounded
+#audit axioms Rumoca.FMI3.TensorCountQueries.body_closed
+#audit axioms Rumoca.FMI3.TensorCountQueries.parameters_bound
+#audit axioms Rumoca.FMI3.TensorCountQueries.store_count
+#audit axioms Rumoca.FMI3.TensorCountQueries.pointer_pass
+#audit axioms Rumoca.FMI3.TensorCountQueries.body_run
+#audit axioms Rumoca.FMI3.TensorCountQueries.call_behaviors
+#audit axioms Rumoca.FMI3.TensorCountQueries.null_behaviors
+#audit axioms Rumoca.FMI3.TensorCountQueries.signature_printable
+#audit axioms Rumoca.FMI3.TensorCountQueries.body_printable
+#audit axioms Rumoca.FMI3.TensorCountQueries.function_denotes
+#audit axioms Rumoca.FMI3.TensorCountQueries.contract
+
+#audit axioms Rumoca.FMI3.TensorSetTime.body_closed
+#audit axioms Rumoca.FMI3.TensorSetTime.parameters_bound
+#audit axioms Rumoca.FMI3.TensorSetTime.finite_pass
+#audit axioms Rumoca.FMI3.TensorSetTime.time_write
+#audit axioms Rumoca.FMI3.TensorSetTime.body_run
+#audit axioms Rumoca.FMI3.TensorSetTime.call_behaviors
+#audit axioms Rumoca.FMI3.TensorSetTime.null_behaviors
+#audit axioms Rumoca.FMI3.TensorSetTime.nonfinite_prefix
+#audit axioms Rumoca.FMI3.TensorSetTime.nonfinite_behaviors
+#audit axioms Rumoca.FMI3.TensorSetTime.preserves_other_instances
+#audit axioms Rumoca.FMI3.TensorSetTime.signature_printable
+#audit axioms Rumoca.FMI3.TensorSetTime.body_printable
+#audit axioms Rumoca.FMI3.TensorSetTime.function_denotes
+#audit axioms Rumoca.FMI3.TensorSetTime.contract
+
+#audit axioms Rumoca.FMI3.TensorReset.zeroBody_closed
+#audit axioms Rumoca.FMI3.TensorReset.zeroCopy_step
+#audit axioms Rumoca.FMI3.TensorReset.zeroCopy_reaches
+#audit axioms Rumoca.FMI3.TensorReset.body_closed
+#audit axioms Rumoca.FMI3.TensorReset.parameters_bound
+#audit axioms Rumoca.FMI3.TensorReset.reset_reaches
+#audit axioms Rumoca.FMI3.TensorReset.reset_behaviors
+#audit axioms Rumoca.FMI3.TensorReset.null_behaviors
+#audit axioms Rumoca.FMI3.TensorReset.reads_initialization
+#audit axioms Rumoca.FMI3.TensorReset.initialization_is_zero
+#audit axioms Rumoca.FMI3.TensorReset.preserves_other_instances
+#audit axioms Rumoca.FMI3.TensorReset.signature_printable
+#audit axioms Rumoca.FMI3.TensorReset.body_printable
+#audit axioms Rumoca.FMI3.TensorReset.function_denotes
+#audit axioms Rumoca.FMI3.TensorReset.contract

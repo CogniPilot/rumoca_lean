@@ -11,6 +11,23 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor count queries, time setter and reset (derived proofs):**
+
+`FMI3.TensorCountQueries`, `TensorSetTime` and `TensorReset` add the tensor
+`fmi3GetNumberOfContinuousStates`, `fmi3GetNumberOfEventIndicators`,
+`fmi3SetTime` and `fmi3Reset` bodies over the static tensor instance record.
+The count query stores the symbolic volume as a `size_t` under an explicit
+bound through a store lemma that keeps the cell type abstract, so the kernel
+never evaluates the conversion range. The time setter validates finiteness and
+writes only the instance's time cell; reset zero-fills the state region with a
+counted loop bounded by the symbolic volume and the post-reset region reads the
+kernel's initialization program. Each body has its sole terminating behavior,
+null and non-finite rejections, other-instance preservation, denotation and a
+consumable contract. Nothing is emitted by production and no existing contract
+changed. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 10m07s
+(`build/tensor-fmi/full-gate-v7.log`).
+
 **Fused tensor derivative getter and machine transfer (derived proofs):**
 
 `CCalls.Events.loop_call_reaches_events` and `loop_call_behaviors_events` in

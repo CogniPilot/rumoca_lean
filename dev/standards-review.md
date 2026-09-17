@@ -73,6 +73,32 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor count queries, time setter and reset: standards impact
+
+`FMI3.TensorCountQueries`, `FMI3.TensorSetTime` and `FMI3.TensorReset` define the
+Model Exchange count-query, time-setter and reset function bodies as
+package-checked products. They emit no production artifact, add no CLI or grammar
+case, and leave the scalar adapter (`Runtime.lean`, `CountQueries`, `TimeCalls`,
+`Reset`) and every existing contract unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS 3.7, admitted subset | No admission, grammar, source semantics or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| MLS 3.7 §8.6 (initialization: solving initialization problems) | The reset body restores the prepared IVP's fixed-zero initialization. `TensorReset.reads_initialization` proves the post-reset state region reads the fixed-zero fill, and `TensorReset.initialization_is_zero` proves that fill is exactly the evaluation of the admitted kernel's initialization program `fill shape .zero` (`TensorInstanceRhs.kernel`), so the interface reset re-establishes the same initial state the initialization program specifies. |
+| FMI 3.0.2, Model Exchange interface, getting the number of continuous states and event indicators | New derived product only. `fmi3GetNumberOfContinuousStates` writes the symbolic state volume `shape.volume` as a `size_t` into the caller's pointer; `fmi3GetNumberOfEventIndicators` writes `0`. Each guards the handle and lifecycle exactly as the scalar body (`Runtime.require` with `getCounts`), rejects a null output pointer, and its sole terminating behavior returns `fmi3OK` with the count written (`call_behaviors`, bundled by `contract`); a null handle returns `fmi3Error` changing nothing (`null_behaviors`). The `size_t` conversion is discharged under an explicit `shape.volume < 2 ^ 64` premise through the reusable `CLoops.convert_size_nat` lemma, and the body run is composed from small machine steps, so the `2 ^ 64` bound is never evaluated against the symbolic volume. |
+| FMI 3.0.2, Model Exchange interface, setting time | New derived product only. `fmi3SetTime` guards the handle and lifecycle exactly as the scalar body (`Runtime.require` with `setTime`, admitted only in continuous-time mode), rejects a non-finite time value, and writes the finite value into the instance's independent time base (a single `double` cell). Its sole terminating behavior returns `fmi3OK` writing exactly the time cell of instance `i` and preserving every other cell, including every tensor cell of every other instance (`call_behaviors`, `preserves_other_instances`, `contract`); a non-finite value returns `fmi3Error` with logging suppressed (`nonfinite_behaviors`) and a null handle returns `fmi3Error` changing nothing (`null_behaviors`). |
+| FMI 3.0.2, Model Exchange interface, reset | New derived product only. `fmi3Reset` guards the handle and lifecycle exactly as the scalar body (`Runtime.require` with `reset`), restores the fixed-zero initialization of the state region `x` with a counted `size_t` loop whose bound is the symbolic state volume, and resets the independent time base to zero. Its sole terminating behavior returns `fmi3OK` writing exactly those cells of instance `i` to `+0` and preserving every other cell of every other instance (`reset_behaviors`, `preserves_other_instances`, `contract`); a null handle returns `fmi3Error` changing nothing (`null_behaviors`). The loop bound is the symbolic volume, with no tensor coordinate enumerated. |
+| C11 / printer conformance | Every body prints its intended C token grammar (`body_printable`, `signature_printable`) and the rendered functions denote themselves under the shared `CTree.Printer` relation (`function_denotes`), carried by the contracts' `denotes` field. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The count query writes a single `size_t` cell; the time setter writes a single `double` cell; the reset stages the state region base pointer and element count into ordinary locals and fills with a counted `size_t` loop over the static instance pool. No dynamic allocation is introduced (Rule 21.3, no `malloc`/`calloc`/`realloc`/`free`); the reset's fixed-bound counted loop and single-cell writes respect Dir 4.12 (no dynamic memory). |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The universal theorems hold for arbitrary tensor shape, instance address (and,
+for the framing corollaries, the instance index of the static pool) and heap. The
+integer-to-`size_t` conversion of `shape.volume` is kept symbolic against the
+`2 ^ 64` bound; the count-negotiation policy for a partial or oversized request and
+binding these bodies to an emitted adapter wrapper with its lifecycle and numerical
+policy remain open. **Stage decision: open; no grammar expansion.**
+
 ### Fused tensor derivative getter and typed-to-observable transfer: standards impact
 
 `CCalls.Events.loop_call_reaches_events`/`loop_call_behaviors_events` (in

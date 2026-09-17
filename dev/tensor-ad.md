@@ -876,9 +876,67 @@ with the identical `der(x)` write and instance-preservation frame.
 
 The fused getter carries the direct-resolution premise (`resolves`) explicitly; a
 tensor adapter discharges it for its own emitted helper functions. The tensor
-count queries (`fmi3GetNumberOfContinuousStates`,
-`fmi3GetNumberOfEventIndicators`), the count-negotiation policy for a partial or
-oversized request, and binding the bodies to an emitted FMU wrapper with its
-lifecycle and numerical policy remain open. This is a package-checked product
-only: no production artifact is emitted, no CLI or grammar case is added, and the
-scalar adapter, `Runtime.lean` and every existing contract are unchanged.
+count queries are now delivered (see below). The count-negotiation policy for a
+partial or oversized request, and binding the bodies to an emitted FMU wrapper
+with its lifecycle and numerical policy, remain open. This is a package-checked
+product only: no production artifact is emitted, no CLI or grammar case is added,
+and the scalar adapter, `Runtime.lean` and every existing contract are unchanged.
+
+## Tensor count queries, time setter and reset
+
+`FMI3.TensorCountQueries`, `FMI3.TensorSetTime` and `FMI3.TensorReset` define the
+Model Exchange count-query, time-setter and reset function bodies over the tensor
+instance record, in the same authored C subset the scalar runtime uses, as
+package-checked products. Each guards the instance handle and lifecycle exactly as
+the corresponding scalar body (`Runtime.require`), and every theorem is universal
+in the tensor shape, the instance address (and, for the framing corollaries, the
+instance index of the static pool) and the heap.
+
+`fmi3GetNumberOfContinuousStates` writes the symbolic state volume `shape.volume`
+as a `size_t` into the caller's pointer, and `fmi3GetNumberOfEventIndicators`
+writes `0`. Their sole terminating behaviors, null rejection, closedness,
+denotation and a bundling `Contract` are proved universally in the shape under an
+explicit `shape.volume < 2 ^ 64` premise. The integer-to-`size_t` conversion of
+the count is discharged through the reusable `CLoops.convert_size_nat` lemma (a
+shared `CMemory.store_of_convert` step keeps the target cell type abstract), and
+the body run is composed from the existing small machine steps rather than one
+large reduction, so the `2 ^ 64` bound is never evaluated against the symbolic
+volume.
+
+`fmi3SetTime` validates finiteness of the time value and writes it into the
+instance's independent time base (the scalar rank-0 member, one `double` cell). Its
+successful behavior writes exactly the time cell of instance `i` and preserves
+every other cell (`preserves_other_instances`); a non-finite value returns
+`fmi3Error` with logging suppressed (`nonfinite_behaviors`, through
+`GuardedCalls.FailurePrefix.silent_behaviors`) and a null handle returns
+`fmi3Error` changing nothing.
+
+`fmi3Reset` restores the fixed-zero initialization of the state region `x` with a
+counted `size_t` loop bounded by the symbolic volume, and resets the time cell to
+zero. Its sole terminating behavior writes exactly those cells of instance `i` to
+`+0` and preserves every other cell of every other instance
+(`preserves_other_instances`); a null handle returns `fmi3Error` changing nothing.
+`reads_initialization` proves the post-reset state region reads the fixed-zero
+fill, and `initialization_is_zero` identifies that fill with the evaluation of the
+prepared IVP's initialization program `fill shape .zero` for the admitted kernel
+(`TensorInstanceRhs.kernel`), so the reset re-establishes the initialization
+program's value.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Count query writes the count and returns `fmi3OK`; null returns `fmi3Error` | `TensorCountQueries.call_behaviors`, `null_behaviors` |
+| The `size_t` count conversion stays symbolic against `2 ^ 64` | `TensorCountQueries.store_count`, `CMemory.store_of_convert` |
+| Time setter writes the time cell and preserves everything else | `TensorSetTime.call_behaviors`, `preserves_other_instances` |
+| Non-finite and null time rejections | `TensorSetTime.nonfinite_behaviors`, `null_behaviors` |
+| Reset fills the state region with `+0` and resets time; null returns `fmi3Error` | `TensorReset.reset_behaviors`, `null_behaviors` |
+| The post-reset state region reads the initialization program's value | `TensorReset.reads_initialization`, `initialization_is_zero` |
+| Reset preserves every cell of every other instance | `TensorReset.preserves_other_instances` |
+| Each body prints its C token grammar and denotes itself | `*.body_printable`, `*.signature_printable`, `*.function_denotes` |
+| Printed text, closedness, denotation and behaviors as a contract | `TensorCountQueries.contract`, `TensorSetTime.contract`, `TensorReset.contract` |
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms. These are package-checked products only: no production
+artifact is emitted, no CLI or grammar case is added, and the scalar adapter,
+`Runtime.lean` and every existing contract are unchanged. The count-negotiation
+policy for a partial or oversized request and binding these bodies to an emitted
+FMU wrapper with its lifecycle and numerical policy remain open.
