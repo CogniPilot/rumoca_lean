@@ -1234,6 +1234,13 @@ reads `result`, and every cell of every other instance preserved.
 | One internal step from the declaration-free body over an abstract heap | `TensorDoStep.internalStepPure_reaches` |
 | The N-fold finite Euler state iteration as a Lean function of the step count | `TensorDoStep.eulerIterate` |
 | The outer grid loop of N internal steps over the symbolic state volume | `TensorDoStep.stepLoop_reaches` |
+| One time-advance step writes the finite time sum `t + 1` into the scalar time cell | `TensorDoStep.timeStep` |
+| The time-augmented internal step is closed and declaration-free | `TensorDoStep.stepBodyT_closed`, `TensorDoStep.stepBodyT_noDecl` |
+| One internal step advancing state and time from the declaration-free `stepBodyT` | `TensorDoStep.internalStepPureT_reaches` |
+| The N-step grid loop carrying state by the Euler step and time to the sum `times N` | `TensorDoStep.stepLoopT_reaches` |
+| The guarded body's outer grid loop is a legal closed block | `TensorDoStep.outerLoop_closed` |
+| The complete guarded `fmi3DoStep` body is a closed block | `TensorDoStep.doStepBody_closed` |
+| The guard prefix is exactly the scalar `Runtime.doStep` prefix through `stepGrid` | `TensorDoStep.doStepBody_prefix` |
 
 The added roots pass the FMI package axiom audit on the three permitted
 foundational axioms. These are package-checked products only: no production
@@ -1246,8 +1253,14 @@ model-independent common and Model Exchange functions), plus the Co-Simulation
 `fmi3DoStep` internal-step Euler kernel, its one-internal-step composition, the
 abstract-heap derivative transfer (`derivative_run`), the declaration-free
 per-internal-step body run over an arbitrary well-formed instance heap
-(`internalStepPure_reaches`), and the accepted-case N-step grid loop
-(`stepLoop_reaches`).
+(`internalStepPure_reaches`), the accepted-case N-step grid loop
+(`stepLoop_reaches`), the per-internal-step time advance and its N-step time
+conclusion (`timeStep`, `stepBodyT`, `internalStepPureT_reaches`,
+`stepLoopT_reaches`), and the complete guarded `fmi3DoStep` function body with its
+closed-block certification (`doStepBody`, `doStepBody_closed`). The 26th function,
+`fmi3DoStep`, is not yet a fully proved product: its accepted-case end-to-end
+execution and its bundled function contract (null, lifecycle and discard cases) over
+the tensor instance record remain open, as detailed below.
 
 ### The strengthened prepared-program execution contract
 
@@ -1295,14 +1308,50 @@ the outer loop reaches its exit under any saved caller. The per-step finite tens
 derivative and cell addition are the explicit premises `executes` and `adds`, and
 `resolves` records the uniform direct resolution of the nested tensor helper calls.
 
-Open for `fmi3DoStep`: the independent per-internal-step time advance folded into the
-step body (currently `stepBody` advances the state only; advancing the instance's
-time region by one per step, hoisting the declaration, would carry the time cell
-forward by `N`), and the full guarded function body wrapping the handle and
-lifecycle guards, the scalar argument classification, the rounding and grid-policy
-checks reused from the model-independent `Runtime` helpers, `fmi3Discard` for a
-communication step that is off-grid or over the bound, and the bundled function
-contract (null and lifecycle rejections, the discard case, and the accepted case
-built on `stepLoop_reaches`). Binding any of these bodies to an emitted FMU wrapper
-with its lifecycle and numerical policy also remains open. This package product does
-not authorize production generation.
+The per-internal-step time advance is now folded into the step body. `timeStep`
+performs `m->time = m->time + 1.0` on the instance's scalar time base (the volume-one
+tensor time member, which coincides with the `p.member "time"` cell by
+`Address.index_zero`), keeping the finite addition explicit as a
+`Binary64.Adds t 1 (.finite t')` premise through the shared C one renderer
+(`CAlgorithm.literal .one`). `stepBodyT` prepends it to `stepBody` and stays
+declaration-free (`stepBodyT_closed`, `stepBodyT_noDecl`). `internalStepPureT_reaches`
+runs the time-augmented step over an arbitrary well-formed instance heap, exposing
+that the returned heap's time cell reads `t + 1` alongside the state, derivative,
+input and other-instance conclusions; it reuses `internalStepPure_reaches`, whose
+conclusion is additively strengthened with a same-instance member frame (every
+instance member other than `der(x)` is preserved) so the time cell carries through.
+`stepLoopT_reaches` iterates `stepBodyT` `N` times in the outer counted loop
+`loop "n" steps stepBodyT`: the state region reads the `N`-fold finite Euler step
+`eulerIterate initial sums N`, the derivative region reads the last result, the input
+region and every cell of every other instance are preserved, the state and derivative
+regions stay readable/writable, and the time base reads the `N`-fold finite time sum
+`times N` (the initial time plus `N` under the explicit per-step `timeAdds` premises).
+
+The complete guarded function body is authored as `TensorDoStep.doStepBody`: the
+model-independent scalar guard prefix of `Runtime.doStep` through `stepGrid`
+(`doStepBody_prefix` records it is exactly `Runtime.doStep.take 16`) followed by the
+hoisted state/derivative pointers, element count `expected`, internal step count
+`steps` and both loop counters declared once at function scope, the outer grid loop
+`loop "n" steps stepBodyT`, the `lastSuccessfulTime` write of the advanced time base,
+and the `fmi3OK` return (`TensorDoStep.function`). Every loop body is declaration-free
+(`outerLoop_closed`), so the whole function is a closed block (`doStepBody_closed`).
+The guard prefix is reused verbatim: the tensor instance record carries the scalar
+metadata cells (`kind`, `mode`, `stopDefined`, `stop`) and its scalar time base is the
+`p.member "time"` cell those guards read, and a step off the unit grid or over the
+bound reaches `fmi3Discard` without advancing (`Runtime.stepDiscard`).
+
+Open for `fmi3DoStep`: the accepted-case end-to-end execution, composing the reused
+model-independent guard lemmas (`StepGuards.rounding_path`/`clock_path`/`grid_path`,
+`Runtime.require`) over the tensor instance heap with the tensor grid loop
+`stepLoopT_reaches` and the `lastSuccessfulTime`/`fmi3OK` tail; the `fmi3Discard`
+off-grid/over-bound path and the null and lifecycle rejections as behaviors over the
+tensor record; the emitted-text tokenization/denotation of the guarded body; and the
+bundled function contract in the shape of `StepContract.FunctionContract`
+(the scalar `StepCalls`/`StepContract` bundle) so a tensor adapter contract can consume
+it. These require a tensor analog of the scalar `StepCases`/`StepEntry`/`StepRejections`
+storage-and-outcome scaffolding over the tensor instance record; the reusable guard,
+admission and advance lemmas are model-independent, but the accepted-case storage
+premises (the tensor state/input/derivative/time regions plus the scalar metadata and
+clock cells) and the rejection cases still need to be constructed and composed. Binding
+any of these bodies to an emitted FMU wrapper with its lifecycle and numerical policy
+also remains open. This package product does not authorize production generation.

@@ -11,6 +11,22 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor co-simulation time advance and guarded step body (derived proofs):**
+
+`TensorDoStep` now advances the instance time cell by one inside each
+declaration-free internal step, and `stepLoopT_reaches` carries the time base
+through N steps alongside the state, derivative, input and other-instance
+conclusions under explicit finite-addition premises. The complete guarded
+tensor `fmi3DoStep` function is authored: the model-independent guard prefix of
+the scalar body, the hoisted declarations, the outer grid loop and the return,
+with its closed-block certification proved. The accepted-case execution of
+that body and its bundled contract with the null, lifecycle and discard cases
+remain open; the scalar step contract scaffolding is large and bound to the
+scalar record. Nothing is emitted by production. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 8m51s
+(`build/tensor-fmi/full-gate-v14.log`).
+
 **Output-region writability and the N-step tensor co-simulation loop (derived proofs):**
 
 The shared prepared tensor program contract `CTensor.Lowering.CallCorrect`

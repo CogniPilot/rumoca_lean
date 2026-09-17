@@ -1,6 +1,7 @@
 import RumocaFMI3.TensorContinuousStates
 import RumocaFMI3.TensorInstanceRhs
 import RumocaC.AdditionResults
+import RumocaC.TensorFillProofs
 
 /-! Tensor Co-Simulation `fmi3DoStep` internal step over the static tensor
 instance record, as a package-checked product.
@@ -592,6 +593,9 @@ theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Ca
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         derivHeap ((TensorInstance.field pool j b).index k) =
           H ((TensorInstance.field pool j b).index k)) ∧
+      (∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName →
+        derivHeap ((TensorInstance.field pool i b).index k) =
+          H ((TensorInstance.field pool i b).index k)) ∧
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
         (.body (.running (stepBody ++ rest) env types0 H) resultType stack)
         (.body (.running rest (counterEnv env "k" shape.volume) types0
@@ -684,7 +688,12 @@ theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Ca
     rest resultType stack bounded typedK expBound
     (by simpa only [hm'] using dstBound) (by simpa only [hm'] using srcBound)
     readableX readableDx writableX separateXdx adds
-  refine ⟨derivHeap, readableDx, writableDeriv, readableInputDeriv, others, ?_⟩
+  have memberFrame : ∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName →
+      derivHeap ((TensorInstance.field pool i b).index k) = H ((TensorInstance.field pool i b).index k) := by
+    intro b k hb
+    exact frameH _ ⟨fun a2 _ => TensorInstance.fields_separate pool i b TensorInstance.derivativeName hb k a2,
+      True.intro⟩
+  refine ⟨derivHeap, readableDx, writableDeriv, readableInputDeriv, others, memberFrame, ?_⟩
   refine .next (argsEq ▸ enter) (ran.trans (.next resume ?_))
   exact .next (CCalls.Events.body_step program reset resultType stack) eulerRun
 
@@ -883,7 +892,7 @@ theorem stepLoop_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Defi
       ((eval_id_loopEnv env0 shape.volume k Hk "steps" (by decide) (by decide)).trans stepsBound)
       stepBody_noDecl hk
     -- One internal step over the current heap.
-    obtain ⟨Dk, readsDk, wDerivDk, inputDk, othersDk, stepReach⟩ :=
+    obtain ⟨Dk, readsDk, wDerivDk, inputDk, othersDk, _memberDk, stepReach⟩ :=
       internalStepPure_reaches program shape definitions linked library found Hk pool i
         (eulerIterate initial sums k) input (results k) (sums k) count v0
         (counterEnv (loopLocals env0 shape.volume k) "n" k) types0 resultType stack
@@ -931,4 +940,460 @@ theorem stepLoop_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Defi
       exact .next (CCalls.Events.body_step program increment resultType stack) (.refl _)
 
 end
+
+/-! ### Per-internal-step time advance
+
+The scalar unit-Euler policy advances the instance's independent time base by one
+unit per internal step. The tensor time base is the scalar (rank-0) member of the
+instance record, so it is a single `double` cell that coincides with the scalar
+`p.member "time"` cell (`Address.index_zero`). `timeAdvance` advances it in place:
+`m->time = m->time + 1.0;`, reading and writing one cell, with the finite-arithmetic
+outcome kept explicit as a `Binary64.Adds` premise, exactly as the elementwise state
+update keeps each cell addition explicit. -/
+
+/-- The `(double)1` unit-step literal, the shared C one renderer. -/
+def oneExpr : Expr := CAlgorithm.literal .one
+
+/-- The per-internal-step time advance `m->time = m->time + 1.0;`. -/
+def timeAdvance : List Stmt := [Runtime.put "time" (.bin .add (Runtime.field "time") oneExpr)]
+
+theorem timeAdvance_closed : timeAdvance.all CBodyEmbedding.closedBlocks = true := by
+  simp [timeAdvance, Runtime.put, Runtime.field, Runtime.v, oneExpr, CAlgorithm.literal,
+    CBodyEmbedding.closedBlocks, CLoops.noDeclarations]
+
+theorem timeAdvance_noDecl : timeAdvance.all CLoops.noDeclarations = true := by
+  simp [timeAdvance, Runtime.put, Runtime.field, Runtime.v, oneExpr, CAlgorithm.literal,
+    CLoops.noDeclarations]
+
+section
+variable [interface : CInterface]
+
+/-- One time-advance step reads the instance's scalar time cell holding `t` and
+writes the finite C sum `t + 1` back into it. The finite-arithmetic outcome is the
+explicit premise `adds : Binary64.Adds t 1 (.finite t')`. -/
+theorem timeStep (env : Locals) (types : Types) (heap : Heap) (p : Address)
+    (t t' : Binary64.Value) (old : Option Value) (rest : List Stmt)
+    (double : interface.types "double" = some .float64)
+    (mBound : env "m" = some (.pointer (some p)))
+    (clock : load heap (p.member "time") = some (.finite t))
+    (storage : heap (p.member "time") = some ⟨.float64, true, old⟩)
+    (adds : Binary64.Adds t Binary64.one (.finite t')) :
+    CLoops.next (.running (timeAdvance ++ rest) env types heap) =
+      some (.running rest env types
+        (StateProofs.written heap (p.member "time") (toBits t').val)) := by
+  have leftEval : CBody.eval env heap (Runtime.field "time") = some (.finite t) := by
+    have raw : CBody.eval env heap (Runtime.field "time") = load heap (p.member "time") := by
+      simp [Runtime.field, Runtime.v, CBody.eval, CBody.resolve, mBound, Value.address]
+    exact raw.trans clock
+  have rightEval : CBody.eval env heap oneExpr = some (.finite Binary64.one) :=
+    Rumoca.CTensor.Fill.literal_eval .one env heap double
+  have rhs : CLoops.eval env types heap (.bin .add (Runtime.field "time") oneExpr) =
+      some (.float64 (Binary64.addResult t Binary64.one).encode) :=
+    CArithmetic.eval_member_add env types heap (Runtime.v "m") oneExpr "time" true t Binary64.one
+      leftEval rightEval
+  have encoded : (Binary64.addResult t Binary64.one).encode = (toBits t').val := by
+    rw [(Binary64.addResult_correct t Binary64.one (.finite t')).mpr adds]; rfl
+  rw [encoded] at rhs
+  have address : CBody.lvalue env heap (Runtime.field "time") = some (p.member "time") := by
+    simp [Runtime.field, Runtime.v, CBody.lvalue, CBody.eval, CBody.resolve, mBound, Value.address]
+  simp only [Runtime.field, Runtime.v] at address rhs
+  simp [timeAdvance, Runtime.put, Runtime.field, Runtime.v, CLoops.next, address, rhs,
+    Option.bind_some, store_float64 heap _ old _ storage, StateProofs.written]
+
+end
+
+/-- The time-augmented per-internal-step body: advance the instance's time base by
+one, then run the declaration-free state step (`stepBody`). Both fragments are
+declaration-free, so it is a legal outer-loop body and the whole function stays
+closed. -/
+def stepBodyT : List Stmt := timeAdvance ++ stepBody
+
+theorem stepBodyT_closed : stepBodyT.all CBodyEmbedding.closedBlocks = true := by
+  simp only [stepBodyT, List.all_append, Bool.and_eq_true]
+  exact ⟨timeAdvance_closed, stepBody_closed⟩
+
+theorem stepBodyT_noDecl : stepBodyT.all CLoops.noDeclarations = true := by
+  simp only [stepBodyT, List.all_append, Bool.and_eq_true]
+  exact ⟨timeAdvance_noDecl, stepBody_noDecl⟩
+
+section
+variable [static : StaticLiterals]
+private local instance pureTInterface : CInterface := cInterface static.addresses
+variable (program : CCalls.Events.Program E)
+
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
+/-- One tensor Co-Simulation internal step from the time-augmented declaration-free
+body `stepBodyT` over an arbitrary well-formed instance heap `H`: advance the scalar
+time base by one, evaluate the prepared derivative entry into `der(x)`, reset the
+inner counter, and advance the state region `x` by `x + dx` elementwise over the
+symbolic volume. The reached heap's state region reads the finite Euler sum
+`state + result`, its derivative region reads `result`, its time cell reads the
+finite sum `t + 1`, the input region and every other instance are preserved, and
+the state, derivative and input regions stay readable/writable so the next step's
+premises re-establish. `executed`, `adds`, `timeAdds` and `resolves` carry the
+finite tensor derivative, the per-cell finite addition, the finite time addition
+and the direct helper resolution. -/
+theorem internalStepPureT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H : Heap) (pool : Address) (i : Nat)
+    (state input result sum : Values shape) (t t' : Binary64.Value) (count : UInt64) (v0 : Nat)
+    (env : Locals) (types0 : Types) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (rest : List Stmt)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (mBound : env "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (countBound : env "nContinuousStates" = some (.integer count.toNat))
+    (kBound : env "k" = some (.integer v0)) (typedK : types0 "k" = some .size)
+    (dstBound : resolve env "dst" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.stateName))))
+    (srcBound : resolve env "src" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.derivativeName))))
+    (expBound : resolve env "expected" = some (.integer shape.volume))
+    (freshRhs : env "rumoca_rhs" = none)
+    (readsState : Reads H (TensorInstance.field pool i TensorInstance.stateName) state)
+    (readsInput : Reads H (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable H (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDx : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (timeStored : H (TensorInstance.field pool i TensorInstance.timeName) =
+      some ⟨.float64, true, some (.finite t)⟩)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (adds : ∀ a : Fin shape.volume, Binary64.Adds state[a] result[a] (.finite sum[a]))
+    (timeAdds : Binary64.Adds t Binary64.one (.finite t'))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName) sum ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.inputName) input ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.stateName) shape.volume ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite t')⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) =
+          H ((TensorInstance.field pool j b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (stepBodyT ++ rest) env types0 H) resultType stack)
+        (.body (.running rest (counterEnv env "k" shape.volume) types0 finalHeap) resultType stack) := by
+  have tfield : TensorInstance.field pool i TensorInstance.timeName =
+      (TensorInstance.record pool i).member "time" := rfl
+  set p := TensorInstance.record pool i with hp
+  set H1 := StateProofs.written H (p.member "time") (toBits t').val with hH1
+  have clockLoad : load H (p.member "time") = some (.finite t) := by
+    rw [← tfield]; simp [load, timeStored, convert, Value.finite]
+  have timeTrans : CLoops.next (.running (timeAdvance ++ (stepBody ++ rest)) env types0 H) =
+      some (.running (stepBody ++ rest) env types0 H1) :=
+    timeStep env types0 H p t t' (some (.finite t)) (stepBody ++ rest) rfl
+      mBound clockLoad (by rw [← tfield]; exact timeStored) timeAdds
+  -- The time cell coincides with the scalar `p.member "time"` cell, separate from
+  -- every other tensor member; framing carries the tensor reads/writability across
+  -- the time write.
+  have time_ne : ∀ (nm : String) (a : Nat), nm ≠ TensorInstance.timeName →
+      (TensorInstance.field pool i nm).index a ≠ p.member "time" := by
+    intro nm a hnm
+    rw [← tfield, show TensorInstance.field pool i TensorInstance.timeName =
+      (TensorInstance.field pool i TensorInstance.timeName).index 0 from (Address.index_zero _).symm]
+    exact TensorInstance.fields_separate pool i nm TensorInstance.timeName hnm a 0
+  have frameH1 : ∀ (nm : String) (a : Nat), nm ≠ TensorInstance.timeName →
+      H1 ((TensorInstance.field pool i nm).index a) = H ((TensorInstance.field pool i nm).index a) :=
+    fun nm a hnm => StateProofs.written_frame H (p.member "time") _ _ (time_ne nm a hnm)
+  have readsStateH1 : Reads H1 (TensorInstance.field pool i TensorInstance.stateName) state := fun a => by
+    simp only [load, frameH1 TensorInstance.stateName a.val (by decide)]; exact readsState a
+  have readsInputH1 : Reads H1 (TensorInstance.field pool i TensorInstance.inputName) input := fun a => by
+    simp only [load, frameH1 TensorInstance.inputName a.val (by decide)]; exact readsInput a
+  have writableStateH1 : Writable H1 (TensorInstance.field pool i TensorInstance.stateName) shape.volume :=
+    fun a ha => by
+      obtain ⟨old, ho⟩ := writableState a ha
+      exact ⟨old, by rw [frameH1 TensorInstance.stateName a (by decide)]; exact ho⟩
+  have writableDxH1 : Writable H1 (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume :=
+    fun a ha => by
+      obtain ⟨old, ho⟩ := writableDx a ha
+      exact ⟨old, by rw [frameH1 TensorInstance.derivativeName a (by decide)]; exact ho⟩
+  -- One internal state step over the time-advanced heap.
+  obtain ⟨D, readsD, wDerivD, inputD, othersD, memberD, reachInner⟩ :=
+    internalStepPure_reaches program shape definitions linked library found H1 pool i
+      state input result sum count v0 env types0 resultType stack rest bounded matched
+      mBound countBound kBound typedK dstBound srcBound expBound freshRhs
+      readsStateH1 readsInputH1 writableStateH1 writableDxH1 executed adds (resolves H1)
+  refine ⟨written D (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume,
+    written_reads D _ sum, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · exact reads_written D _ _ sum result shape.volume
+      (fun a _ b _ => TensorInstance.fields_separate pool i TensorInstance.stateName
+        TensorInstance.derivativeName (by decide) a b) readsD
+  · exact reads_written D _ _ sum input shape.volume
+      (fun a _ b _ => TensorInstance.fields_separate pool i TensorInstance.stateName
+        TensorInstance.inputName (by decide) a b) inputD
+  · exact written_writable D _ sum shape.volume (le_refl _)
+  · exact writable_written D _ _ sum shape.volume wDerivD
+      (fun a _ b _ => TensorInstance.fields_separate pool i TensorInstance.derivativeName
+        TensorInstance.stateName (by decide) a b)
+  · -- time cell advanced to `t + 1`
+    have frameTime : written D (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume
+        (p.member "time") = D (p.member "time") :=
+      written_frame D _ sum shape.volume (p.member "time")
+        (fun a _ => (time_ne TensorInstance.stateName a (by decide)).symm)
+    have memberTime : D (p.member "time") = H1 (p.member "time") := by
+      have h := memberD TensorInstance.timeName 0 (by decide)
+      rw [Address.index_zero, tfield] at h; exact h
+    have h1Time : H1 (p.member "time") = some ⟨.float64, true, some (.finite t')⟩ := by
+      rw [hH1, StateProofs.written]; simp [replace, Value.finite]
+    rw [tfield, frameTime, memberTime, h1Time]
+  · -- other instances preserved
+    intro j b k different
+    have frameOther : written D (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume
+        ((TensorInstance.field pool j b).index k) = D ((TensorInstance.field pool j b).index k) :=
+      written_frame D _ sum shape.volume ((TensorInstance.field pool j b).index k)
+        (fun a _ => Address.instances_separate pool j i different b TensorInstance.stateName k a)
+    have otherH1 : H1 ((TensorInstance.field pool j b).index k) =
+        H ((TensorInstance.field pool j b).index k) := by
+      apply StateProofs.written_frame
+      rw [← tfield, show TensorInstance.field pool i TensorInstance.timeName =
+        (TensorInstance.field pool i TensorInstance.timeName).index 0 from (Address.index_zero _).symm]
+      exact Address.instances_separate pool j i different b TensorInstance.timeName k 0
+    rw [frameOther, othersD j b k different, otherH1]
+  · -- the observable-machine execution
+    have assoc : stepBodyT ++ rest = timeAdvance ++ (stepBody ++ rest) := by
+      simp [stepBodyT, List.append_assoc]
+    rw [assoc]
+    exact .next (CCalls.Events.body_step program timeTrans resultType stack) reachInner
+
+end
+
+/-! ### The N-step Co-Simulation grid loop with time advance
+
+`stepLoopT_reaches` iterates the time-augmented internal step `stepBodyT` `N` times
+inside the outer counted loop `loop "n" steps stepBodyT`, by induction on the number
+of completed steps. Alongside the state region (which advances by the `N`-fold finite
+Euler step `eulerIterate initial sums`), the instance's scalar time base advances by
+one unit per step, so after `N` steps it reads the finite time sum `times N`, where
+`times 0` is the initial time and each `times (n+1)` is the finite C sum of `times n`
+and one (the explicit per-step premise `timeAdds`). The derivative region reads the
+last result, the input region and every cell of every other instance are preserved,
+and the state, derivative and time cells stay readable/writable throughout. -/
+section
+variable [static : StaticLiterals]
+private local instance loopTInterface : CInterface := cInterface static.addresses
+variable (program : CCalls.Events.Program E)
+
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
+theorem stepLoopT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H0 : Heap) (pool : Address) (i : Nat) (initial input : Values shape)
+    (results sums : Nat → Values shape) (times : Nat → Binary64.Value) (count : UInt64) (N : Nat)
+    (env0 : Locals) (types0 : Types) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (rest : List Stmt)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume) (nBound : N < 2 ^ 64)
+    (mBound : env0 "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (countBound : env0 "nContinuousStates" = some (.integer count.toNat))
+    (typedK : types0 "k" = some .size) (typedN : types0 "n" = some .size)
+    (kInit : env0 "k" = some (.integer 0))
+    (dstBound : CBody.resolve env0 "dst" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.stateName))))
+    (srcBound : CBody.resolve env0 "src" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.derivativeName))))
+    (expBound : CBody.resolve env0 "expected" = some (.integer shape.volume))
+    (stepsBound : CBody.resolve env0 "steps" = some (.integer N))
+    (freshRhs : env0 "rumoca_rhs" = none)
+    (readsState0 : Reads H0 (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput0 : Reads H0 (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState0 : Writable H0 (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv0 : Writable H0 (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (timeInit0 : H0 (TensorInstance.field pool i TensorInstance.timeName) =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (executes : ∀ n < N, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n < N, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (timeAdds : ∀ n < N, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName) (eulerIterate initial sums N) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.inputName) input ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.stateName) shape.volume ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times N))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = H0 ((TensorInstance.field pool j b).index k)) ∧
+      (∀ pos, N = pos + 1 →
+        Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) (results pos)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (loop "n" (Runtime.v "steps") stepBodyT :: rest)
+          (counterEnv env0 "n" 0) types0 H0) resultType stack)
+        (.body (.running rest (counterEnv (loopLocals env0 shape.volume N) "n" N) types0 finalHeap)
+          resultType stack) := by
+  set sf := TensorInstance.field pool i TensorInstance.stateName with hsf
+  set df := TensorInstance.field pool i TensorInstance.derivativeName with hdf
+  set jf := TensorInstance.field pool i TensorInstance.inputName with hjf
+  set tf := TensorInstance.field pool i TensorInstance.timeName with htf
+  suffices key : ∀ k, k ≤ N → ∃ Hk,
+      Reads Hk sf (eulerIterate initial sums k) ∧
+      Reads Hk jf input ∧
+      Writable Hk sf shape.volume ∧ Writable Hk df shape.volume ∧
+      Hk tf = some ⟨.float64, true, some (.finite (times k))⟩ ∧
+      (∀ (j : Nat) (b : String) (m : Nat), j ≠ i →
+        Hk ((TensorInstance.field pool j b).index m) = H0 ((TensorInstance.field pool j b).index m)) ∧
+      (∀ pos, k = pos + 1 → Reads Hk df (results pos)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (loop "n" (Runtime.v "steps") stepBodyT :: rest)
+          (counterEnv env0 "n" 0) types0 H0) resultType stack)
+        (.body (.running (loop "n" (Runtime.v "steps") stepBodyT :: rest)
+          (counterEnv (loopLocals env0 shape.volume k) "n" k) types0 Hk) resultType stack) by
+    obtain ⟨HN, stateN, inputN, wStateN, wDerivN, timeN, othersN, derivN, reachN⟩ := key N (le_refl N)
+    have stop := CLoops.loop_stop (counterEnv (loopLocals env0 shape.volume N) "n" N) types0 HN "n"
+      (Runtime.v "steps") stepBodyT rest N (by simp [counterEnv, CBody.bind])
+      ((eval_id_loopEnv env0 shape.volume N HN "steps" (by decide) (by decide)).trans stepsBound)
+      stepBodyT_noDecl
+    exact ⟨HN, stateN, inputN, wStateN, wDerivN, timeN, othersN, derivN,
+      reachN.trans (.next (CCalls.Events.body_step program stop resultType stack) (.refl _))⟩
+  intro k
+  induction k with
+  | zero =>
+    intro _
+    refine ⟨H0, ?_, readsInput0, writableState0, writableDeriv0, timeInit0, fun _ _ _ _ => rfl, ?_, ?_⟩
+    · exact readsState0
+    · intro pos hpos; exact absurd hpos.symm (Nat.succ_ne_zero pos)
+    · exact .refl _
+  | succ k ih =>
+    intro hk1
+    have hk : k < N := Nat.lt_of_succ_le hk1
+    obtain ⟨Hk, stateK, inputK, wStateK, wDerivK, timeK, othersK, _derivK, reachK⟩ := ih (le_of_lt hk)
+    obtain ⟨v0, kv0⟩ := loopLocals_counter env0 shape.volume kInit k
+    have enter := CLoops.loop_enter (counterEnv (loopLocals env0 shape.volume k) "n" k) types0 Hk "n"
+      (Runtime.v "steps") stepBodyT rest k N
+      (by simp [counterEnv, CBody.bind])
+      ((eval_id_loopEnv env0 shape.volume k Hk "steps" (by decide) (by decide)).trans stepsBound)
+      stepBodyT_noDecl hk
+    obtain ⟨Dk, sumDk, derivDk, inputDk, wStateDk, wDerivDk, timeDk, othersDk, stepReach⟩ :=
+      internalStepPureT_reaches program shape definitions linked library found Hk pool i
+        (eulerIterate initial sums k) input (results k) (sums k) (times k) (times (k + 1)) count v0
+        (counterEnv (loopLocals env0 shape.volume k) "n" k) types0 resultType stack
+        (counterStep "n" :: loop "n" (Runtime.v "steps") stepBodyT :: rest)
+        bounded matched
+        ((loopEnv_get env0 shape.volume k "m" (by decide) (by decide)).trans mBound)
+        ((loopEnv_get env0 shape.volume k "nContinuousStates" (by decide) (by decide)).trans countBound)
+        (loopEnv_inner env0 shape.volume k kv0) typedK
+        ((resolve_loopEnv env0 shape.volume k "dst" (by decide) (by decide)).trans dstBound)
+        ((resolve_loopEnv env0 shape.volume k "src" (by decide) (by decide)).trans srcBound)
+        ((resolve_loopEnv env0 shape.volume k "expected" (by decide) (by decide)).trans expBound)
+        ((loopEnv_get env0 shape.volume k "rumoca_rhs" (by decide) (by decide)).trans freshRhs)
+        stateK inputK wStateK wDerivK timeK (executes k hk) (adds k hk) (timeAdds k hk) resolves
+    have commute : counterEnv (counterEnv (loopLocals env0 shape.volume k) "n" k) "k" shape.volume =
+        counterEnv (loopLocals env0 shape.volume (k + 1)) "n" k :=
+      counterEnv_reset_comm (loopLocals env0 shape.volume k) k shape.volume
+    have increment := CLoops.counter_step (loopLocals env0 shape.volume (k + 1)) types0
+      Dk "n" k (loop "n" (Runtime.v "steps") stepBodyT :: rest) typedN (by omega)
+    refine ⟨Dk, ?_, inputDk, wStateDk, wDerivDk, timeDk, ?_, ?_, ?_⟩
+    · simpa only [eulerIterate_succ] using sumDk
+    · intro j b m different
+      rw [othersDk j b m different]; exact othersK j b m different
+    · intro pos hpos
+      have hpk : pos = k := by omega
+      rw [hpk]; exact derivDk
+    · refine reachK.trans (.next (CCalls.Events.body_step program enter resultType stack) ?_)
+      refine stepReach.trans ?_
+      rw [commute]
+      exact .next (CCalls.Events.body_step program increment resultType stack) (.refl _)
+
+end
+
+
+/-! ### The guarded tensor `fmi3DoStep` body
+
+The complete guarded function wraps the outer grid loop with the handle and
+lifecycle guard, the scalar argument classification, and the rounding and
+grid-policy checks. The guard prefix is the model-independent scalar prefix of
+`Runtime.doStep` (handle/lifecycle guard, the output-pointer check and writes, the
+invalid communication-point/step rejection, `stepRounding`, `stepClock`,
+`stepGrid`), reused verbatim: the tensor instance record carries the scalar
+metadata cells (`kind`, `mode`, `stopDefined`, `stop`) and its scalar time base
+coincides with the `p.member "time"` cell those guards read, so those checks apply
+unchanged. A communication step that is off the unit grid or over the bound reaches
+`fmi3Discard` without advancing (the shared `Runtime.stepDiscard`). Only the final
+numerical section is model dependent: instead of the scalar `model_advance` call it
+declares the state/derivative pointers, the element count `expected`, the internal
+step count `steps` and both loop counters once at function scope, runs the outer
+grid loop `loop "n" steps stepBodyT` (each time-augmented internal step advances the
+state elementwise and the time base by one), writes the advanced time base to
+`lastSuccessfulTime`, and returns `fmi3OK`. Every loop body is declaration-free, so
+`CBodyEmbedding.closedBlocks` holds for the whole function. -/
+
+/-- The `fmi3DoStep` ABI signature (shared with the scalar adapter). -/
+def signature : Signature := ⟨"fmi3Status", "fmi3DoStep",
+  [⟨"fmi3Instance", "instance", false⟩,
+   ⟨"fmi3Float64", "currentCommunicationPoint", false⟩,
+   ⟨"fmi3Float64", "communicationStepSize", false⟩,
+   ⟨"fmi3Boolean", "noSetFMUStatePriorToCurrentPoint", false⟩,
+   ⟨"fmi3Boolean *", "eventHandlingNeeded", false⟩,
+   ⟨"fmi3Boolean *", "terminateSimulation", false⟩,
+   ⟨"fmi3Boolean *", "earlyReturn", false⟩,
+   ⟨"fmi3Float64 *", "lastSuccessfulTime", false⟩]⟩
+
+/-- The model-dependent numerical tail of the tensor `fmi3DoStep`: hoist the
+state/derivative pointers, element count, step count and loop counters to function
+scope, run the outer grid loop, publish the advanced time and return `fmi3OK`. -/
+def tensorStepSolve (shape : Tensor.Shape) : List Stmt :=
+  .declare "fmi3Float64 *" "dst" (.address (Runtime.field TensorInstance.stateName)) ::
+  .declare "fmi3Float64 *" "src" (.address (Runtime.field TensorInstance.derivativeName)) ::
+  .declare "size_t" "expected" (Runtime.n shape.volume) ::
+  .declare "size_t" "steps" (.cast "size_t" (Runtime.v "communicationStepSize")) ::
+  .declare "size_t" "k" (Runtime.n 0) ::
+  .declare "size_t" "n" (Runtime.n 0) ::
+  loop "n" (Runtime.v "steps") stepBodyT ::
+  Runtime.out "lastSuccessfulTime" (Runtime.field "time") ::
+  [Runtime.ok]
+
+/-- The complete guarded tensor `fmi3DoStep` body: the model-independent scalar
+guard prefix of `Runtime.doStep` followed by the tensor numerical tail. -/
+def doStepBody (shape : Tensor.Shape) : List Stmt :=
+  Runtime.require .doStep ++
+  [Runtime.pointerCheck ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"],
+   Runtime.out "eventHandlingNeeded" (Runtime.n 0), Runtime.out "terminateSimulation" (Runtime.n 0),
+   Runtime.out "earlyReturn" (Runtime.n 0), Runtime.out "lastSuccessfulTime" (Runtime.field "time"),
+   Runtime.reject (Runtime.any [Runtime.negate (Runtime.finite (Runtime.v "currentCommunicationPoint")),
+     Runtime.negate (Runtime.finite (Runtime.v "communicationStepSize")),
+     Runtime.nev (Runtime.v "currentCommunicationPoint") (Runtime.field "time"),
+     Runtime.le (Runtime.v "communicationStepSize") (Runtime.n 0)])
+     "Invalid communication point or step size"] ++
+  Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape
+
+/-- The tensor `fmi3DoStep` function over the shared `fmi3DoStep` signature. -/
+def function (shape : Tensor.Shape) : CTree.Function := ⟨signature, doStepBody shape, false⟩
+
+/-- The guard prefix of the tensor body is exactly the model-independent scalar
+prefix of `Runtime.doStep` (the 16 statements up to and including `stepGrid`); only
+the trailing numerical section differs. -/
+theorem doStepBody_prefix (shape : Tensor.Shape) :
+    doStepBody shape = Runtime.doStep.take 16 ++ tensorStepSolve shape := rfl
+
+/-- The outer grid-loop statement is a legal closed block: its body `stepBodyT`
+(with the loop counter step) introduces no declarations. -/
+theorem outerLoop_closed :
+    CBodyEmbedding.closedBlocks (loop "n" (Runtime.v "steps") stepBodyT) = true := by
+  simp only [CLoops.loop, CBodyEmbedding.closedBlocks, List.all_append, Bool.and_eq_true]
+  exact ⟨stepBodyT_noDecl, by simp [CLoops.counterStep, CLoops.noDeclarations]⟩
+
+theorem doStepBody_closed (shape : Tensor.Shape) :
+    (doStepBody shape).all CBodyEmbedding.closedBlocks = true := by
+  simp [doStepBody, tensorStepSolve, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
+    Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.out, Runtime.stepRounding,
+    Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.fail, Runtime.ret,
+    Runtime.ok, Runtime.call, Runtime.field, Runtime.v, Runtime.n, Runtime.any, Runtime.negate,
+    Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.either, Runtime.put,
+    CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop, CLoops.counterStep,
+    List.all_append, stepBodyT_noDecl]
+
 end Rumoca.FMI3.TensorDoStep

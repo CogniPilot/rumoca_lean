@@ -2418,3 +2418,21 @@ import RumocaFMI3.TensorDoStep
 -- result, and the input region and every other instance are preserved.
 #audit axioms Rumoca.FMI3.TensorDoStep.eulerIterate_succ
 #audit axioms Rumoca.FMI3.TensorDoStep.stepLoop_reaches
+
+-- The per-internal-step time advance (advance the instance's scalar time base by
+-- one, keeping the finite addition explicit as an `Adds` premise), the
+-- time-augmented internal step, and the N-step grid loop that carries the state by
+-- the N-fold Euler step and the time base to the N-fold finite sum `times N`.
+#audit axioms Rumoca.FMI3.TensorDoStep.timeStep
+#audit axioms Rumoca.FMI3.TensorDoStep.stepBodyT_closed
+#audit axioms Rumoca.FMI3.TensorDoStep.stepBodyT_noDecl
+#audit axioms Rumoca.FMI3.TensorDoStep.internalStepPureT_reaches
+#audit axioms Rumoca.FMI3.TensorDoStep.stepLoopT_reaches
+
+-- The complete guarded tensor `fmi3DoStep` body: the model-independent scalar
+-- guard prefix of `Runtime.doStep` (through `stepGrid`) followed by the hoisted
+-- declarations and the outer grid loop over the time-augmented internal step. The
+-- whole function is a closed block (every loop body is declaration-free).
+#audit axioms Rumoca.FMI3.TensorDoStep.doStepBody_prefix
+#audit axioms Rumoca.FMI3.TensorDoStep.outerLoop_closed
+#audit axioms Rumoca.FMI3.TensorDoStep.doStepBody_closed
