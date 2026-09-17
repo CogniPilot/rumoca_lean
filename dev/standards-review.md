@@ -73,6 +73,41 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor instance creation over the static tensor pool: standards impact
+
+`FMI3.TensorInstanceInit`, `FMI3.TensorFactory` (and the strengthened
+`FMI3.TensorLifecycleHistory.lifecycle_from_creation`) deliver the Model Exchange
+and Co-Simulation instance-creation bodies over the static tensor instance pool as
+package-checked products. They emit no production artifact, add no CLI or grammar
+case, and leave the scalar factory (`StaticFactory`, `FactoryPrefix`,
+`FactoryValidation`, `InstanceInitialization`, `StaticRelease`), `Runtime.lean` and
+every existing contract unchanged. The tensor factory shares the scalar factory's
+model-agnostic reservation prefix (`StaticFactory.reserve`, `guard`,
+`selectInstance`, `select_step`, `guard_step`, `ReservationBindings`, the
+`CAtomicScan` helper) and admission prefix (`FactoryPrefix.body`, the shared
+`Identity.function` validator); only the reserved-record initializer differs.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| FMI 3.0.2 §2.3.2, creation of an FMU instance | New derived product only. `fmi3InstantiateModelExchange` and `fmi3InstantiateCoSimulation` are the `kind`-parameterized `TensorFactory.function model shape kind`. After the shared admission prefix, a bounded serial reservation with the atomic scan helper selects a free slot; the reserved record is initialized inline and its address returned cast to `fmi3Instance`. Successful creation returns a handle to a slot that was free, initializes exactly that record and preserves every other cell, performing only the scan's bounded atomic work (`TensorFactory.successful`), and marks the slot owned in the reservation-flag block (`TensorFactory.successful_owned`, whose postcondition `Created` exposes the created `kind`, mode `Instantiated` and `slot` cells). Exhaustion returns null and changes no record (`TensorFactory.exhausted_silent`). |
+| FMI 3.0.2 §2.3.2, instantiation token and instance name rules | New derived product only. The admission prefix reuses the shared `Identity.function` validator through `FactoryPrefix.body`, parameterized over the model only through its `instantiationToken` string (`Metadata.token`). An accepted identity reduces the public call to the tensor reservation body (`TensorFactory.admission_accepts`, reusing `FactoryValidation.admission_equivalence`); a bad instance name or instantiation token is rejected with a null return, the documented `"Invalid name or instantiation token"` logging and no reservation (`TensorFactory.rejected_silent`, reusing `FactoryValidation.rejected_silent`). The Co-Simulation capability guard rejects requested event mode and intermediate updates outside the admitted unit profile, exactly as the scalar prefix (`FactoryPrefix.capabilityGuard`). No identity-validation proof is duplicated. |
+| FMI 3.0.2 §2.3.1, initial FMU state | New derived product only. The initializer stores the reserved slot index, writes `kind`, mode `Instantiated`, the captured environment and logger, the logging flag, resets the independent time base to `+0`, and zero-fills the state region `x` with the same counted `size_t` loop the tensor reset uses (`TensorInstanceInit.code`, `return_reaches`). The post-initialization state region reads the fixed-zero fill, which is the evaluation of the prepared IVP's initialization program `fill shape .zero` for the admitted kernel (`TensorInstanceInit.reads_state`, `TensorReset.initialization_is_zero`), so a created instance begins in the initialization program's value. Creation initializes exactly the reserved record's cells and preserves every cell outside it (`TensorInstanceInit.frame`) and every cell of every other pool instance (`other_instance`). |
+| FMI 3.0.2, lifecycle ordering from creation | New derived product only. `TensorLifecycleHistory.lifecycle_from_creation` starts from an initial free pool and the proved reservation-body creation call, whose postcondition supplies the created-instance cells the mode transitions and free consume, then proceeds create, enter/exit Initialization Mode, one continuous-state derivative query, and free. It derives the returned handle, the observed statuses, and the final owner map equal to the original free pool (`create` marks the slot owned and `fmi3FreeInstance` restores it to unowned). |
+| C11 / printer conformance | The initializer's block closedness is checked (`TensorInstanceInit.code_closed`); the tensor factory reuses the scalar factory's printed reservation prefix and the shared `Identity.function`/`StaticRelease.function`, whose printing and denotation are checked in the scalar review. This increment adds a package-checked reservation and initialization semantics, not a new production emission. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | Creation reserves a permanently existing element of the static instance array with one atomic exchange, forms its address after a capacity check, and initializes its fields in place; the state region is zero-filled by a counted `size_t` loop bounded by the symbolic volume. No dynamic allocation, byte arena or allocator run is introduced (Rule 21.3, no `malloc`/`calloc`/`realloc`/`free`; Dir 4.12, no dynamic memory). The `2 ^ 64` size bounds stay abstract against the symbolic shape volume and slot index. |
+| MISRA C:2025 concurrency directives for the reservation pool | Slot reservation is one `atomic_exchange` on the pool's reservation-flag block (the shared model-agnostic `CAtomicScan` primitive the scalar factory uses); the ghost lease (`SlotOwners`) is a specification device (`exchange_reserves`, `reserved_owner`), and a concurrent implementation must still discharge atomicity/linearization against its chosen synchronization primitives, as the scalar review records for the pool. The scan's bounded atomic work is the only shared-memory effect of a successful or exhausted creation. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The theorems hold for arbitrary tensor shape and pool index (and, for the framing
+corollaries, the pool root, reservation-flag block, capacity, owner map and slot);
+the admission prefix is parameterized over the model only through its
+instantiation token. **Open:** the count-negotiation policy for a partial or
+oversized request, and binding these bodies to an emitted FMU wrapper with its
+lifecycle and numerical policy, remain open, as does production generation, which
+this package product does not authorize. **Stage decision: open; no grammar
+expansion.**
+
 ### Tensor instance lifecycle bodies over the static tensor pool: standards impact
 
 `FMI3.TensorLifecycleModes`, `FMI3.TensorFree` and `FMI3.TensorLifecycleHistory`
@@ -103,17 +138,14 @@ history, the pool root, reservation-flag block, capacity, owner map and slot). T
 mode-transition bodies are shape-independent (they never read or write a tensor
 region) and the free is exactly the shared release, so both are stated over an
 arbitrary instance address and specialized to the tensor pool record only in the
-framing corollaries and the history. **Open:** the instance-creation body
-(`fmi3InstantiateModelExchange`/`fmi3InstantiateCoSimulation`) is not yet delivered
-as a package product. Its name/token admission prefix (`FactoryPrefix`) and the
-prepared-model initializer are parameterized over the scalar `Solve.FMI3Model`
-model type, which the tensor track deliberately does not instantiate, and its
-reserved-slot initializer would use the tensor zero-fill loop rather than the
-scalar state initializer; composing the reservation entry, the exhaustion/null
-logging path and that tensor initialization tail into the creation behaviors is the
-remaining lifecycle body. The count-negotiation policy for a partial or oversized
-request and binding these bodies to an emitted FMU wrapper with its lifecycle and
-numerical policy also remain open. **Stage decision: open; no grammar expansion.**
+framing corollaries and the history. The instance-creation body
+(`fmi3InstantiateModelExchange`/`fmi3InstantiateCoSimulation`) is now delivered as a
+package product (see the tensor instance creation subsection above): the tensor
+factory reuses the model-agnostic reservation and admission prefixes and a
+tensor-specific reserved-record initializer built on the zero-fill loop. The
+count-negotiation policy for a partial or oversized request and binding these
+bodies to an emitted FMU wrapper with its lifecycle and numerical policy remain
+open. **Stage decision: open; no grammar expansion.**
 
 ### Tensor count queries, time setter and reset: standards impact
 

@@ -11,6 +11,26 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor instance creation and a create-to-release history (derived proofs):**
+
+`FMI3.TensorInstanceInit` and `TensorStaticFactory` prove the tensor
+`fmi3InstantiateModelExchange`/`fmi3InstantiateCoSimulation` bodies: the shared
+admission prefix and identity helper are reused unchanged, the bounded serial
+reservation uses the existing atomic helper, and the reserved record is
+initialized with slot, kind, time zero, Instantiated mode, callback capture and
+the zero-fill loop over the state region. At the reservation scope of the
+scalar factory theorem, a free slot yields an initialized owned handle with
+every other slot and instance preserved, exhaustion returns null with no record
+change, and a rejected identity returns null with the documented logging and
+no reservation. `TensorLifecycleHistory.lifecycle_from_creation` threads
+creation, initialization entry and exit, one derivative query and release from
+an initial free pool back to the original owner map. The public-entry
+composition through admission to creation in one theorem and the logged
+rejection variant remain open. Nothing is emitted by production and no
+existing contract changed. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 9m27s
+(`build/tensor-fmi/full-gate-v9.log`).
+
 **Tensor lifecycle modes, release and a composed history (derived proofs):**
 
 `FMI3.TensorLifecycleModes` proves the tensor initialization entry and exit,

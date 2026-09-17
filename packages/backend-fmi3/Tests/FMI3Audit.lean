@@ -247,6 +247,8 @@ import RumocaFMI3.TensorReset
 import RumocaFMI3.TensorLifecycleModes
 import RumocaFMI3.TensorFree
 import RumocaFMI3.TensorLifecycleHistory
+import RumocaFMI3.TensorInstanceInit
+import RumocaFMI3.TensorStaticFactory
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2307,3 +2309,34 @@ import RumocaFMI3.TensorLifecycleHistory
 -- Composed tensor lifecycle history over the static instance pool (package-checked
 -- product; no production emission).
 #audit axioms Rumoca.FMI3.TensorLifecycleHistory.lifecycle_history
+
+-- Reserved tensor instance-record initializer (package-checked product; no
+-- production emission).
+#audit axioms Rumoca.FMI3.TensorInstanceInit.code_closed
+#audit axioms Rumoca.FMI3.TensorInstanceInit.metaCode_run
+#audit axioms Rumoca.FMI3.TensorInstanceInit.return_reaches
+#audit axioms Rumoca.FMI3.TensorInstanceInit.complete
+#audit axioms Rumoca.FMI3.TensorInstanceInit.initialized
+#audit axioms Rumoca.FMI3.TensorInstanceInit.reads_state
+#audit axioms Rumoca.FMI3.TensorInstanceInit.frame
+#audit axioms Rumoca.FMI3.TensorInstanceInit.other_instance
+#audit axioms Rumoca.FMI3.TensorInstanceInit.Storage.preserved
+
+-- Tensor instance-creation reservation suffix over the static tensor pool
+-- (package-checked product; no production emission).
+#audit axioms Rumoca.FMI3.TensorFactory.reserve_entry
+#audit axioms Rumoca.FMI3.TensorFactory.initialization_reaches
+#audit axioms Rumoca.FMI3.TensorFactory.guarded_initialization
+#audit axioms Rumoca.FMI3.TensorFactory.successful
+#audit axioms Rumoca.FMI3.TensorFactory.exhausted_silent
+#audit axioms Rumoca.FMI3.TensorFactory.initialized_owners
+#audit axioms Rumoca.FMI3.TensorFactory.successful_owned
+#audit axioms Rumoca.FMI3.TensorFactory.Created.release
+#audit axioms Rumoca.FMI3.TensorFactory.create_release
+#audit axioms Rumoca.FMI3.TensorFactory.admission_accepts
+#audit axioms Rumoca.FMI3.TensorFactory.rejected_silent
+#audit axioms Rumoca.FMI3.TensorFactory.contract
+
+-- Tensor lifecycle history started from a proved creation call (package-checked
+-- product; no production emission).
+#audit axioms Rumoca.FMI3.TensorLifecycleHistory.lifecycle_from_creation

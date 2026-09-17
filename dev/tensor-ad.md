@@ -1016,19 +1016,92 @@ foundational axioms. These are package-checked products only: no production
 artifact is emitted, no CLI or grammar case is added, and the scalar adapter,
 `Runtime.lean` and every existing contract are unchanged.
 
-Remaining and deferred: the instance-creation body
-(`fmi3InstantiateModelExchange`/`fmi3InstantiateCoSimulation`) is not yet delivered
-as a package product. The scalar factory splits into a name/token admission prefix
-(`FactoryPrefix`, capability guard and identity validation) and a bounded serial
-slot reservation with the atomic scan helper, followed by the prepared-model
-instance initializer; the admission prefix and initializer are parameterized over
-the scalar `Solve.FMI3Model` model type, which the tensor track deliberately does
-not instantiate, and the tensor reserved-slot initializer would fill the state
-region with the zero-fill loop reused from `FMI3.TensorReset` rather than the
-scalar state initializer. Composing the reservation entry, the exhaustion/null
-logging path and that tensor initialization tail into the creation behaviors (with
-the reservation `Scope` premise, as the scalar `StaticFactory.successful` is
-stated) is the remaining lifecycle body. The count-negotiation policy for a partial
-or oversized request and binding these bodies to an emitted FMU wrapper with its
-lifecycle and numerical policy also remain open. This package product does not
-authorize production generation.
+## Tensor instance creation over the static tensor pool
+
+`FMI3.TensorInstanceInit` and `FMI3.TensorFactory` define the Model Exchange and
+Co-Simulation instance-creation bodies over the static tensor instance pool, in the
+same authored C subset the scalar runtime uses, as package-checked products. The
+tensor factory shares the scalar factory's model-agnostic reservation prefix and
+its name/token admission prefix; only the reserved-record initializer differs.
+
+`FMI3.TensorInstanceInit` is the reserved-record initializer. After the reserved
+array element is selected, it stores the reserved slot index `m->slot`, writes the
+FMI lifecycle metadata (`kind`, mode `Instantiated`, the captured environment and
+logger, the logging flag), resets the independent time base to `+0`, and zero-fills
+the state region `x` with the same counted `size_t` loop the tensor reset uses
+(`TensorReset.zeroBody`), then returns the record cast to `fmi3Instance`. The
+metadata block runs as single-cell stores in the bounded body machine and is lifted
+into the observable call machine; the state fill and handle return complete in the
+same call machine (`TensorInstanceInit.return_reaches`, bundled by `complete`). The
+loop bound is the symbolic state volume, so no tensor coordinate is enumerated, and
+the `2 ^ 64` size bounds stay abstract. The post-initialization state region reads
+the fixed-zero fill, which is the evaluation of the admitted kernel's initialization
+program `fill shape .zero` (`reads_state`, `TensorReset.initialization_is_zero`).
+The initialized record exposes the metadata and state values the lifecycle,
+derivative and free bodies consume (`initialized`, `Initialized`), and creation
+touches only the reserved record's own cells, preserving every cell outside it
+(`frame`) and every cell of every other pool instance (`other_instance`).
+
+`FMI3.TensorFactory` composes the creation behaviors at the same reservation `Scope`
+premise level as the scalar `StaticFactory.successful`. `fmi3InstantiateModelExchange`
+and `fmi3InstantiateCoSimulation` are the `kind`-parameterized
+`TensorFactory.function model shape kind`. Reusing the shared reservation lemmas
+(`StaticFactory.reserve`, `guard`, `selectInstance`, `select_step`, `guard_step`,
+`ReservationBindings`) and the `CAtomicScan` helper, the reservation body enters the
+atomic scan, checks capacity, selects the reserved element, and runs the tensor
+initializer. Successful creation returns a handle to a slot that was free,
+initializes exactly that record and preserves every other slot and every other
+instance's tensor regions, performing only the scan's bounded atomic work
+(`successful`); it marks the reserved slot owned in the reservation-flag block
+(`successful_owned`, whose postcondition `Created` supplies the created `kind`, mode
+`Instantiated` and `slot` cells). Exhaustion returns null and changes no record
+(`exhausted_silent`). Ownership is preserved through the initializer because it only
+writes the reserved record's own cells (`initialized_owners`), so a created slot can
+be released (`Created.release`), and a creation followed by a release restores the
+original slot ownership and reusable storage (`create_release`).
+
+The admission prefix is reused, not reauthored: the tensor factory function is the
+shared `FactoryPrefix.body model kind (TensorFactory.code shape kind)`, parameterized
+over the model only through its instantiation `token` string. An accepted identity
+reduces the public call to the tensor reservation body (`admission_accepts`, reusing
+`FactoryValidation.admission_equivalence`); a bad instance name or instantiation
+token returns null with the documented `"Invalid name or instantiation token"`
+logging and no reservation (`rejected_silent`, reusing
+`FactoryValidation.rejected_silent`); the Co-Simulation capability guard rejects
+requested event mode and intermediate updates outside the admitted profile, exactly
+as the scalar prefix. No identity-validation proof is duplicated. The creation,
+exhaustion, ownership, admission and rejection guarantees are bundled as a
+`FunctionContract` mirroring the creation portion of `StaticRuntime.FunctionContract`
+and the admission/rejection portion of `FactoryAdmission.FunctionContract`.
+
+`FMI3.TensorLifecycleHistory.lifecycle_from_creation` strengthens the composed
+lifecycle history to start from an initial free pool and the proved reservation-body
+creation call rather than a supplied created-record premise: the creation reserves
+the free slot, initializes the record and marks it owned, and its postcondition
+supplies the created-instance cells the two Initialization-mode transitions and the
+free consume. The history proceeds create, enter/exit Initialization Mode, one
+continuous-state derivative query, and free, deriving the returned handle, the
+observed statuses, and the final owner map equal to the original free pool.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| The metadata block runs to the metadata heap without evaluating the 64-bit bound | `TensorInstanceInit.metaCode_run` |
+| The initializer runs to the returned handle and initialized heap, preserving other cells | `TensorInstanceInit.return_reaches`, `complete` |
+| The initialized record exposes the metadata and zero-filled state values | `TensorInstanceInit.initialized`, `reads_state` |
+| Creation touches only the reserved record; other cells and other instances are preserved | `TensorInstanceInit.frame`, `other_instance`, `Storage.preserved` |
+| Successful creation returns an initialized handle to a free slot, marking it owned | `TensorFactory.successful`, `successful_owned` |
+| Exhaustion returns null and changes no record | `TensorFactory.exhausted_silent` |
+| A created slot is released; create-then-release restores the pool | `TensorFactory.Created.release`, `create_release` |
+| An accepted admission reduces to the reservation body; bad name/token is rejected | `TensorFactory.admission_accepts`, `rejected_silent` |
+| Creation, exhaustion, ownership, admission and rejection as a contract | `TensorFactory.contract` |
+| The lifecycle history started from a proved creation call | `TensorLifecycleHistory.lifecycle_from_creation` |
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms. These are package-checked products only: no production
+artifact is emitted, no CLI or grammar case is added, and the scalar factory,
+`Runtime.lean` and every existing contract are unchanged.
+
+Remaining and deferred: the count-negotiation policy for a partial or oversized
+request, and binding these bodies to an emitted FMU wrapper with its lifecycle and
+numerical policy, remain open. This package product does not authorize production
+generation.
