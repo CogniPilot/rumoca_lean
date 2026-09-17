@@ -1978,3 +1978,114 @@ assertion is left at the honest zeros). Completing the output requires, in order
 4. Extend `FMI3.TensorAdapter.Contract` with the two `J` conjuncts, keep
    `TensorLifecycleHistory` building, and update the `tests/tensor-c.sh` boundary
    assertion to `J = (2, 0, 0, 4)` once the emitted adapter computes it.
+
+## Prepared square-Jacobian kernel entry (increment 1.24)
+
+This increment makes the scratch-free dense-Jacobian materializer a second
+prepared kernel entry of the certified tensor kernel product, `diag(2*u)`
+computed through the kernel-call path exactly as `rumoca_rhs` is, rather than the
+previously attempted adapter-emitted tree helper. The kernel side and the native
+kernel boundary are complete; the adapter's emission of the call is the remaining
+wiring, so `fmi3GetFloat64(J)` still reads zeros in the development FMU.
+
+### Why the tree-helper route was not used
+
+The prior attempt to wire `SquareDiagonal.function` as an adapter-emitted tree
+helper (increment 1.23's step 1) failed on two verified blockers:
+
+1. The adapter's runtime C interface (`Rumoca.FMI3.cInterface`) types
+   `fmi3Float64 *` but not `double *`, so the helper's `HeaderTypes` binding
+   premises are unsatisfiable under the adapter's tree-call machine, which
+   consults interface types when binding parameters.
+2. `tests/tensor-c.sh` builds the development FMU's `model.c` by concatenating the
+   certified tensor kernel files (`fill.c`, `add.c`, `mul.c`, `diagonal.c`,
+   `initial.c`, `derivative.c`, `jacobian.c`), so an adapter-emitted copy of the
+   `rumoca_tensor_fill` the helper calls would be a duplicate definition.
+
+The kernel-entry route sidesteps both, mirroring `rumoca_rhs`: the entry is a
+`.kernel` definition (a `CTree.Function`) declared by a preamble prototype,
+defined once in the concatenated `model.c`, and executed through the kernel-call
+path, which does not consult adapter interface types. The header-type premises the
+helper's execution needs are supplied by the shared `Library definitions` (which
+bundles `CTensor.HeaderTypes` and `Fill.HeaderTypes` for the kernel interface),
+not by the adapter's `fmi3Float64 *`-only interface, and the typed-to-observable
+transfer lemma `CCalls.Events.loop_call_reaches_events` bridges its proof.
+
+### Kernel side (`packages/backend-c`): complete
+
+`rumoca_square_jacobian_diag` (`Rumoca.CTensor.SquareDiagonal.function`) is now
+emitted alongside `rumoca_rhs` and certified in the prepared tensor kernel
+product:
+
+- `EmitTensor` renders `SquareDiagonal.function` to `build/tensor-c/jacobian-diag.c`.
+- The IVP artifact contract (`Rumoca.CTensor.ProgramFixture.IVPEntry`) is extended,
+  as `derivative` is, with the entry's correctness. `ArtifactContract` now carries
+  the certified source `jacobianDiagSource = SquareDiagonal.function.render` and
+  `JacobianDiagStorageContract`, which bundles `SquareDiagonal.helper_call_correct`
+  (the ordinary call's sole terminating behavior writes the dense matrix
+  `diag(2*u)`), `output_reads` (the region then reads `Diagonal.matrix (doubled u)`)
+  and `output_frame` (every cell outside the region is preserved), universal in the
+  symbolic matrix volume. Every existing conclusion is kept.
+- `verify_tensor_ivp` (`TensorCChecks.ArtifactCheck`) reads the actual
+  `jacobian-diag.c` and proves the extended contract; `lake build check-c` and the
+  boundary IVP check are green, with the new fixture theorem
+  `IVPEntry.jacobianDiag_correct` on the three permitted foundational axioms.
+- `tests/tensor-c.sh` compiles `jacobian-diag.c` in the native kernel boundary
+  check (asserting `rumoca_square_jacobian_diag((2, 3), out, 2, 4)` writes
+  `(4, 0, 0, 6) = diag(2*u)` while preserving neighbours and the input) and
+  concatenates it into the development FMU's `model.c` exactly once, after
+  `fill.c`; `fill` stays where it is.
+
+### Adapter side (`packages/backend-fmi3`): prepared execution lemma
+
+The observable-machine execution of the entry bound to the static instance record
+is proved, mirroring `TensorInstanceRhs.derivative_writes_events`:
+
+- `TensorInstance.writable_output` proves the output region `J` is a writable
+  dense-matrix range in the instance heap when the prepared problem exposes the
+  output.
+- `FMI3.TensorInstanceJacobian.jacobian_writes_events` proves that, over any heap
+  in which the instance's `u` region is readable and its `J` region is a writable
+  dense-matrix range, running the entry embeds into the observable call machine
+  under any saved caller (via `CCalls.Events.loop_call_reaches_events` bridging
+  `SquareDiagonal.helper_call_correct`), reaching a final heap in which `J` reads
+  `Diagonal.matrix (doubled u)` and every cell outside the `J` region is
+  preserved. Its header premises come from the shared `Library definitions`, so no
+  `fmi3Float64 *`/`double *` interface obligation is imposed, and it takes the
+  explicit no-overflow premise `∀ k, Binary64.Adds u[k] u[k] (.finite (doubled u)[k])`
+  and the direct-resolution premise for the nested `rumoca_tensor_fill` call,
+  stated like the existing `rumoca_rhs` ones.
+
+Both lemmas are on the three permitted foundational axioms (`propext`,
+`Quot.sound`, `Classical.choice`) in the FMI package audit.
+
+### Remaining open item: emitting the adapter call
+
+The adapter does not yet emit or call the entry, so the tensor preamble declares
+no `rumoca_square_jacobian_diag` prototype, the getter and the co-simulation step
+do not call it, and `tests/tensor-c.sh` still reports `J = (0, 0, 0, 0)` in both
+interfaces (the assertion is left at the honest zeros). Completing the FMU output
+requires, using `jacobian_writes_events` as the prepared execution:
+
+1. Declare the entry's prototype in the tensor preamble next to
+   `TensorStorage.kernelSignature`, and add its prototype-fragment and
+   prototype-matches-args facts to `FMI3.TensorAdapter.Contract`.
+2. Make the tensor derivative getter output-aware: when `outputShape` is present,
+   emit `rumoca_square_jacobian_diag(&m->u[0], &m->J[0], nContinuousStates, cells)`
+   after `rumoca_rhs`, thread `jacobian_writes_events` through `deriv_reaches`
+   (generalizing `deriv_enter` over the saved rest and adding a `jac_enter` step),
+   and extend `TensorContinuousStates.DerivContract` with the conjunct
+   `Reads finalHeap (field pool i outputName) (Diagonal.matrix (doubled u))`. Keep
+   the output-free getter (`outputShape = none`) unchanged.
+3. Call the entry once per accepted co-simulation step after the internal-step
+   loop in `TensorDoStep` and extend `TensorDoStep.Contract` with the same conjunct.
+4. Extend `FMI3.TensorAdapter.Contract` with the two `J` conjuncts, update the
+   dispatch (`TensorFunctions`) and the two `TensorLifecycleHistory` theorems that
+   thread the getter through `deriv_behaviors`, keep the printer and the
+   standalone-object compile green, and update the `tests/tensor-c.sh` boundary
+   assertion to `J = (2, 0, 0, 4)` once the emitted adapter computes it.
+
+This is a cross-cutting emission change over the tensor getter, the co-simulation
+step, the tensor lifecycle histories that execute the getter, the adapter contract
+and the adapter printer; it is left as the listed open wiring item, with the kernel
+entry and the prepared adapter execution above already certified.

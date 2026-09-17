@@ -11,6 +11,24 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Jacobian diagonal as a prepared kernel entry (derived proofs and boundary check):**
+
+The certified tensor kernel product now emits `rumoca_square_jacobian_diag`
+as a second prepared entry beside `rumoca_rhs`; the tensor IVP artifact
+contract and its fixed checker bind the actual `jacobian-diag.c` bytes with
+the helper's call correctness, output reads and frame, and the native kernel
+boundary asserts `diag(2u)` for a sample input. On the adapter side,
+`TensorInstanceJacobian.jacobian_writes_events` executes the entry on an
+instance through the observable machine with header premises taken from the
+library, avoiding the adapter interface's pointer-type gap. The adapter does
+not yet declare or call the entry, so the development FMU still reads `J` as
+zero; the prototype declaration, the output-aware derivative getter, the
+co-simulation step call and the contract conjuncts remain the next
+obligation. Nothing is emitted by production. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 8m54s
+(`build/tensor-fmi/full-gate-v24.log`).
+
 **Square Jacobian diagonal helper (derived proofs):**
 
 `CTensor.SquareDiagonal` adds the scratch-free C helper that zero-fills a

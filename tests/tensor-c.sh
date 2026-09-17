@@ -38,7 +38,7 @@ rg -q 'actual tensor C file differs' build/tensor-c/rejection.log
 
 # Change one operation in the complete IVP; other members remain valid.
 mkdir -p build/tensor-c/corrupt-ivp
-cp build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/corrupt-ivp/
+cp build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian-diag.c build/tensor-c/corrupt-ivp/
 sed 's/rumoca_tensor_add(left, right/rumoca_tensor_mul(left, right/' \
   build/tensor-c/jacobian.c > build/tensor-c/corrupt-ivp/jacobian.c
 cat > build/tensor-c/Reject-ivp.lean <<'LEAN'
@@ -56,6 +56,7 @@ rg -q 'actual tensor IVP differs' build/tensor-c/ivp-rejection.log
   -Wno-unused-parameter -include packages/backend-c/Tests/tensor-native.h \
   build/tensor-c/add.c build/tensor-c/mul.c build/tensor-c/fill.c build/tensor-c/diagonal.c \
   build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian.c \
+  build/tensor-c/jacobian-diag.c \
   packages/backend-c/Tests/tensor-native.c -lm -o build/tensor-c/native
 build/tensor-c/native
 echo 'Tensor C actual-file contracts, mutation rejection and native boundary check passed'
@@ -127,7 +128,8 @@ esac
 mkdir -p "$fmu_root/sources" "$fmu_root/binaries/$platform" "$fmu_root/documentation"
 { echo '#include <stddef.h>'
   cat build/tensor-c/fill.c build/tensor-c/add.c build/tensor-c/mul.c build/tensor-c/diagonal.c \
-      build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian.c
+      build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian.c \
+      build/tensor-c/jacobian-diag.c
 } > "$fmu_root/sources/model.c"
 cp "$adapter" "$fmu_root/sources/fmi3.c"
 cp "$md" "$fmu_root/modelDescription.xml"

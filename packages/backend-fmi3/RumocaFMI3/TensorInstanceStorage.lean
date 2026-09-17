@@ -126,6 +126,16 @@ theorem writable_derivative (backing : Heap) (pool : Address) (i : Nat) (shape o
   | none => exact core_writable_derivative backing pool i shape time state input
   | some J => exact writable_place_other (by decide +kernel) (core_writable_derivative backing pool i shape time state input)
 
+/-- When the prepared problem exposes a dense output, the output region `J` is a
+writable range whose extent is the dense observation volume `oshape`. -/
+theorem writable_output (backing : Heap) (pool : Address) (i : Nat) (shape oshape : Shape)
+    (time : Values Tensor.scalar) (state input : Values shape) (J : Values oshape) :
+    Writable (store backing pool i shape oshape time state input (some J))
+      (field pool i outputName) oshape.volume := by
+  show Writable (place (core backing pool i shape time state input)
+      ((record pool i).member outputName) oshape true (some J)) ((record pool i).member outputName) oshape.volume
+  exact place_writable _ _ _ (some J)
+
 /-! ### Pairwise separation of the instance's tensor regions -/
 
 /-- Distinct tensor members of one instance never share a cell, for arbitrary

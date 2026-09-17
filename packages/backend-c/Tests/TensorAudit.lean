@@ -180,6 +180,7 @@ import RumocaC.TypedEventsTransfer
 #audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.initial_call_correct
 #audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.derivative_call_correct
 #audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.artifact_correct
+#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.jacobianDiag_correct
 #audit axioms Rumoca.CCalls.Typed.enter_loop_call
 #audit axioms Rumoca.CCalls.Typed.loop_step
 #audit axioms Rumoca.CCalls.Typed.loop_reaches

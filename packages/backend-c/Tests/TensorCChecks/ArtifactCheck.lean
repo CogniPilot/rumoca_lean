@@ -11,21 +11,25 @@ elab "verify_tensor_ivp " path:str : command => do
   let initial ← IO.FS.readFile (root / "initial.c")
   let derivative ← IO.FS.readFile (root / "derivative.c")
   let diagonal ← IO.FS.readFile (root / "jacobian.c")
+  let jacobianDiag ← IO.FS.readFile (root / "jacobian-diag.c")
   let actual : Lowering.PointwiseSources := ⟨initial, derivative, some diagonal⟩
-  if actual != IVPEntry.sources then
+  if actual != IVPEntry.sources || jacobianDiag != IVPEntry.jacobianDiagSource then
     throwError "actual tensor IVP differs from the certified Solve emission"
   let initialLiteral := Lean.Syntax.mkStrLit initial
   let derivativeLiteral := Lean.Syntax.mkStrLit derivative
   let diagonalLiteral := Lean.Syntax.mkStrLit diagonal
+  let jacobianDiagLiteral := Lean.Syntax.mkStrLit jacobianDiag
   let theoremName := `Rumoca.CTensor.CheckedIVP.contract
   let theoremId := mkIdent theoremName
   elabCommand (← `(command|
     set_option maxRecDepth 10000 in
     theorem $theoremId:ident : IVPEntry.ArtifactContract
-        ⟨$initialLiteral, $derivativeLiteral, some $diagonalLiteral⟩ := by
-      apply IVPEntry.artifact_correct
-      tensor_expand_ivp_fixture
-      decide +kernel))
+        ⟨$initialLiteral, $derivativeLiteral, some $diagonalLiteral⟩ $jacobianDiagLiteral := by
+      refine IVPEntry.artifact_correct _ _ ?_ ?_
+      · tensor_expand_ivp_fixture
+        decide +kernel
+      · tensor_expand_jacobian_diag
+        decide +kernel))
   let dependencies ← collectAxioms theoremName
   for dependency in dependencies do
     unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do

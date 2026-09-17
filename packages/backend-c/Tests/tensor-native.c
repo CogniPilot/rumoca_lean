@@ -45,5 +45,12 @@ int main(void) {
   assert(jacobian[0] == 17.0 && jacobian[1] == 4.0 && jacobian[2] == 0.0 &&
          !signbit(jacobian[2]) && jacobian[3] == 0.0 && !signbit(jacobian[3]) &&
          jacobian[4] == 6.0 && jacobian[5] == 19.0);
+  /* The scratch-free dense Jacobian materializer diag(2*u). */
+  double jdiag[6] = {17.0, -1.0, -1.0, -1.0, -1.0, 19.0};
+  rumoca_square_jacobian_diag(input, jdiag + 1, 2, 4);
+  assert(jdiag[0] == 17.0 && jdiag[1] == 4.0 && jdiag[2] == 0.0 &&
+         !signbit(jdiag[2]) && jdiag[3] == 0.0 && !signbit(jdiag[3]) &&
+         jdiag[4] == 6.0 && jdiag[5] == 19.0);
+  assert(input[0] == 2.0 && input[1] == 3.0);
   return 0;
 }

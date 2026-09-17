@@ -239,6 +239,7 @@ import RumocaFMI3.VersionMetadata
 import RumocaFMI3.TensorMetadata
 import RumocaFMI3.TensorInstanceStorage
 import RumocaFMI3.TensorInstanceRhs
+import RumocaFMI3.TensorInstanceJacobian
 import RumocaFMI3.TensorFloat64Access
 import RumocaFMI3.TensorContinuousStates
 import RumocaFMI3.TensorCountQueries
@@ -2176,6 +2177,8 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.buffer_outside
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes_events
+#audit axioms Rumoca.FMI3.TensorInstance.writable_output
+#audit axioms Rumoca.FMI3.TensorInstanceJacobian.jacobian_writes_events
 
 
 -- Tensor Float64 accessor bodies over the tensor instance record (package-checked

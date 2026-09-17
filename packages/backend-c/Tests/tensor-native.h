@@ -10,6 +10,7 @@ void rumoca_tensor_diagonal(const double *coeff, double *out, size_t count, size
 void rumoca_square_jacobian(const double *x, const double *u,
     double *zero, double *one, double *primal, double *left, double *right,
     double *result, size_t count, double *J, size_t cells);
+void rumoca_square_jacobian_diag(const double *coeff, double *out, size_t count, size_t cells);
 void rumoca_initialize(double *x, size_t count);
 void rumoca_rhs(const double *x, const double *u, double *dx, size_t count);
 #endif

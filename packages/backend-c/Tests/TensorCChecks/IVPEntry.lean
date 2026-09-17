@@ -1,5 +1,6 @@
 import TensorCChecks.DiagonalEntry
 import RumocaC.TensorIVPContract
+import RumocaC.TensorSquareDiagonal
 
 /-! The existing square/Jacobian example now checks the complete IVP product.
 Initial and RHS calls derive storage premises from the actual arguments and
@@ -207,11 +208,71 @@ def DerivativeStorageContract : Prop :=
         (Arguments.values (plan shape).derivative.function.parameters (Entry.args base shape)) heap .done) behavior ↔
       behavior = .terminates finalHeap
 
-def ArtifactContract (actual : PointwiseSources) : Prop :=
-  ProgramContract actual ∧ InitialStorageContract ∧ DerivativeStorageContract
+/-! ### The scratch-free square-Jacobian diagonal entry
 
-theorem artifact_correct (actual : PointwiseSources) (printed : actual = sources) : ArtifactContract actual := by
-  refine ⟨program_correct actual printed, ?_, ?_⟩
+Alongside the initial, derivative and full coefficient Jacobian entries, the
+prepared kernel product carries the reusable scratch-free materializer
+`rumoca_square_jacobian_diag` (`Rumoca.CTensor.SquareDiagonal.function`), which
+writes the dense Jacobian `diag(2*u)` from the input tensor with no coefficient
+buffer. This is a second prepared kernel entry: it is defined in the certified
+kernel product and called directly by the tensor FMI adapter through the
+kernel-call path, mirroring `rumoca_rhs`. Its certified source is the rendered
+function; its storage behavior is the standalone helper's call correctness. -/
+
+/-- The certified source of the scratch-free square-Jacobian diagonal entry. -/
+def jacobianDiagSource : String := SquareDiagonal.function.render
+
+/-- Normalize `jacobianDiagSource` (the rendered `rumoca_square_jacobian_diag`
+function) to a string literal, mirroring `tensor_expand_diagonal_printer` for the
+diagonal-copy helper whose structure it shares. -/
+macro "tensor_expand_jacobian_diag" : tactic => `(tactic|
+  simp [jacobianDiagSource, Rumoca.CTensor.SquareDiagonal.function,
+    Rumoca.CTensor.SquareDiagonal.tail, Rumoca.CTensor.SquareDiagonal.operation,
+    Rumoca.CTensor.Diagonal.signatureParameters, Lowering.Syntax.Parameter.tree,
+    Lowering.Syntax.ParamKind.type, Rumoca.CTensor.Fill.invoke, Rumoca.CTensor.Fill.function,
+    Rumoca.CAlgorithm.literal, Rumoca.CTensor.indexed, CLoops.counted, CLoops.loop,
+    CLoops.counterStep, CTree.Function.render, CTree.Signature.render, CTree.Parameter.render,
+    CTree.Stmt.render, CTree.Expr.render, CTree.BinOp.render])
+
+/-- The prepared square-Jacobian diagonal entry's storage behavior: the ordinary
+call writes the dense diagonal matrix `diag(2*coeff)` into the output region and
+that region then reads the matrix, with every cell outside it preserved. This
+bundles `SquareDiagonal.helper_call_correct`, `output_reads` and `output_frame`,
+mirroring `DerivativeStorageContract` for the derivative entry `rumoca_rhs`. -/
+def JacobianDiagStorageContract : Prop :=
+  ∀ [interface : CInterface] (definitions : CLoops.Calls.Definitions) {shape : Tensor.Shape}
+    (input output : Address) (result values : Values shape) (heap : Heap),
+  definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function →
+  definitions Fill.function.signature.name = some Fill.function →
+  CTensor.HeaderTypes interface → Fill.HeaderTypes interface →
+  Diagonal.Separate output input shape → Reads heap input values →
+  (∀ i : Fin shape.volume, Binary64.Adds values[i] values[i] (.finite result[i])) →
+  Writable heap output (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume →
+  (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64 →
+    (∀ behavior, (CLoops.Calls.machine definitions).Behaves
+        (.calling SquareDiagonal.function.signature.name
+          (Diagonal.argumentValues input output shape) heap .done) behavior ↔
+        behavior = .terminates (Diagonal.resultHeap heap output result)) ∧
+      Reads (Diagonal.resultHeap heap output result) output (Diagonal.matrix result) ∧
+      (∀ q, (∀ i < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume, q ≠ output.index i) →
+        Diagonal.resultHeap heap output result q = heap q)
+
+theorem jacobianDiag_correct : JacobianDiagStorageContract := by
+  intro interface definitions shape input output result values heap found fillDefined header fillHeader
+    separate reads adds writable bounded
+  exact ⟨SquareDiagonal.helper_call_correct definitions input output result values heap found fillDefined
+      header fillHeader separate reads adds writable bounded,
+    SquareDiagonal.output_reads heap output result,
+    SquareDiagonal.output_frame heap output result⟩
+
+def ArtifactContract (actual : PointwiseSources) (actualDiag : String) : Prop :=
+  ProgramContract actual ∧ InitialStorageContract ∧ DerivativeStorageContract ∧
+    actualDiag = jacobianDiagSource ∧ JacobianDiagStorageContract
+
+theorem artifact_correct (actual : PointwiseSources) (actualDiag : String)
+    (printed : actual = sources) (printedDiag : actualDiag = jacobianDiagSource) :
+    ArtifactContract actual actualDiag := by
+  refine ⟨program_correct actual printed, ?_, ?_, printedDiag, jacobianDiag_correct⟩
   · intro interface definitions library shape found heap base bounded writable
     exact initial_call_correct definitions library found heap base bounded writable
   · intro interface definitions library shape found heap base state input result bounded rs ri writable executed
