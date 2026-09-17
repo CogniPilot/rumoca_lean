@@ -399,4 +399,278 @@ theorem internalStep_reaches (shape oshape : Tensor.Shape) (definitions : CLoops
   exact .next (argsEq ▸ enter) (ran.trans (.next resume eulerRun))
 
 end
+
+/-! ### The prepared derivative run over an abstract well-formed instance heap
+
+The internal-step composition above runs the derivative entry on the concrete
+`TensorInstance.store` heap. The multi-step Co-Simulation loop reaches heaps that
+are no longer literally `store`: after one internal step the `der(x)` region holds
+the previous derivative rather than the uninitialized placement, so the transfer
+lemma cannot be re-applied in `store` form. `derivative_run` states the same
+derivative transfer over an arbitrary heap whose state and input regions read the
+supplied values and whose derivative region is writable. The three heap premises
+are exactly what `TensorModelRhs.events_reaches` needs; every other premise of the
+prepared entry (argument validity, layout bounds, member separation) is structural
+in the instance record and holds for any heap. -/
+section
+variable [static : StaticLiterals]
+private local instance runInterface : CInterface := cInterface static.addresses
+variable (program : CCalls.Events.Program E)
+
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
+/-- Running the prepared tensor derivative entry `rumoca_rhs` on instance `i` over
+an arbitrary heap `H` whose state region reads `state`, whose input region reads
+`input`, and whose derivative region is writable: it writes the finite tensor
+derivative `result` into the `der(x)` region and preserves every cell outside that
+region (in particular the state, input and time regions, and every cell of every
+other instance). Universal in the shape, instance index, heap and caller. -/
+theorem derivative_run (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H : Heap) (pool : Address) (i : Nat) (state input result : Values shape)
+    (bounded : shape.volume < 2 ^ 64)
+    (readsState : Reads H (TensorInstance.field pool i TensorInstance.stateName) state)
+    (readsInput : Reads H (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableDx : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) H .done) v →
+      CCalls.Events.Resolves program v)
+    (stack : CCalls.Typed.Continuation) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      (∀ q, Outside (TensorInstanceRhs.locations pool i) (TensorInstanceRhs.kernel shape).derivative
+          (TensorModelRhs.derivativePlan (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape)) q →
+        finalHeap q = H q) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+          (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+            (TensorInstanceRhs.args pool i shape)) H stack)
+        (.returning .void finalHeap stack) := by
+  have arguments : Arguments.Valid (TensorInstanceRhs.plan shape).derivative.function.parameters
+      (TensorInstanceRhs.args pool i shape) := by
+    intro p member
+    change p ∈ TensorInstanceRhs.derivativeParameters at member
+    simp only [TensorInstanceRhs.derivativeParameters, List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl | rfl
+    · exact .input _
+    · exact .input _
+    · exact .output _
+    · exact .count _ bounded
+  have bound : LayoutBound (Arguments.locals (TensorInstanceRhs.plan shape).derivative.function.parameters
+      (TensorInstanceRhs.args pool i shape)) (TensorInstanceRhs.locations pool i)
+      (TensorModelRhs.derivativeLayout (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape)) := by
+    intro s r
+    cases r with
+    | here =>
+      exact TensorInstanceRhs.parameter_bound TensorInstanceRhs.derivativeParameters pool i shape
+        TensorInstance.stateName (by decide +kernel) (by decide +kernel) (by decide +kernel)
+    | there r => cases r with
+      | here =>
+        exact TensorInstanceRhs.parameter_bound TensorInstanceRhs.derivativeParameters pool i shape
+          TensorInstance.inputName (by decide +kernel) (by decide +kernel) (by decide +kernel)
+      | there r => nomatch r
+  have represented : Represents (TensorInstanceRhs.locations pool i)
+      (TensorModelRhs.derivativeLayout (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape))
+      H (ArrayProfile.environment state input) := by
+    intro s r
+    cases r with
+    | here => exact readsState
+    | there r => cases r with
+      | here => exact readsInput
+      | there r => nomatch r
+  have ready : Ready (Arguments.locals (TensorInstanceRhs.plan shape).derivative.function.parameters
+      (TensorInstanceRhs.args pool i shape)) (TensorInstanceRhs.locations pool i)
+      (TensorInstanceRhs.kernel shape).derivative
+      (TensorModelRhs.derivativePlan (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape))
+      (TensorModelRhs.derivativeLayout (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape)) H := by
+    refine ⟨writableDx, bounded,
+      TensorInstanceRhs.parameter_bound TensorInstanceRhs.derivativeParameters pool i shape
+        TensorInstance.derivativeName (by decide +kernel) (by decide +kernel) (by decide +kernel), ?_, True.intro⟩
+    intro s r i' hi' j hj
+    cases r with
+    | here =>
+      exact TensorInstance.fields_separate pool i TensorInstance.derivativeName TensorInstance.stateName
+        (by decide +kernel) i' j
+    | there r => cases r with
+      | here =>
+        exact TensorInstance.fields_separate pool i TensorInstance.derivativeName TensorInstance.inputName
+          (by decide +kernel) i' j
+      | there r => nomatch r
+  obtain ⟨finalHeap, reads, frame, ran⟩ :=
+    TensorModelRhs.events_reaches (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape)
+      (TensorInstanceRhs.derivative_valid shape)
+      definitions program linked library found (TensorInstanceRhs.args pool i shape) arguments
+      (TensorInstanceRhs.locations pool i) (ArrayProfile.environment state input) result H
+      bound represented ready executed resolves stack
+  exact ⟨finalHeap, by rwa [TensorInstanceRhs.derivativeBuffer_eq] at reads, frame, ran⟩
+
+end
+
+/-! ### The declaration-free internal-step body
+
+The Co-Simulation grid loop runs each internal step from one shared function-level
+block: the pointers to `x` and `dx`, the element count, and both loop counters are
+declared once at the top of `fmi3DoStep`, so every loop body is declaration-free
+and `CBodyEmbedding.closedBlocks` holds for the whole function. `stepBody` is that
+per-internal-step body: evaluate the prepared tensor derivative entry `rumoca_rhs`
+into `der(x)`, reset the inner Euler counter `k`, and run the elementwise
+`x[k] = x[k] + dx[k]` update loop over the symbolic state volume. Unlike
+`internalBody`, it introduces no declarations, so it is a legal outer-loop body. -/
+def stepBody : List Stmt :=
+  .eval (Runtime.call "rumoca_rhs" TensorContinuousStates.derivEntryArgs) ::
+  .assign (Runtime.v "k") (Runtime.n 0) ::
+  [loop "k" (Runtime.v "expected") eulerBody]
+
+theorem stepBody_closed : stepBody.all CBodyEmbedding.closedBlocks = true := by
+  simp [stepBody, Runtime.call, Runtime.v, Runtime.n, eulerBody, dstCell, srcCell,
+    CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
+
+theorem stepBody_noDecl : stepBody.all CLoops.noDeclarations = true := by
+  simp [stepBody, Runtime.call, Runtime.v, Runtime.n, eulerBody, dstCell, srcCell,
+    CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
+
+section
+variable [static : StaticLiterals]
+private local instance pureInterface : CInterface := cInterface static.addresses
+variable (program : CCalls.Events.Program E)
+
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
+/-- One tensor Co-Simulation internal step from the declaration-free body
+`stepBody` over an arbitrary well-formed instance heap `H`: evaluate the prepared
+derivative entry into `der(x)`, reset the inner counter, and advance the state
+region `x` by `x + dx` elementwise over the symbolic volume. It reaches a heap
+whose state region reads the finite Euler sum `state + result`, whose derivative
+region reads `result`, and every cell of every other instance preserved. The three
+heap premises `readsState`, `readsInput`, `writableState`/`writableDx` are exactly
+those the prepared derivative entry and the Euler tail require; `executed`,
+`adds` and `resolves` carry the finite tensor derivative, the per-cell finite
+addition and the direct helper resolution, as in `internalStep_reaches`. -/
+theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H : Heap) (pool : Address) (i : Nat)
+    (state input result sum : Values shape) (count : UInt64) (v0 : Nat)
+    (env : Locals) (types0 : Types) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (rest : List Stmt)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (mBound : env "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (countBound : env "nContinuousStates" = some (.integer count.toNat))
+    (kBound : env "k" = some (.integer v0)) (typedK : types0 "k" = some .size)
+    (dstBound : resolve env "dst" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.stateName))))
+    (srcBound : resolve env "src" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.derivativeName))))
+    (expBound : resolve env "expected" = some (.integer shape.volume))
+    (freshRhs : env "rumoca_rhs" = none)
+    (readsState : Reads H (TensorInstance.field pool i TensorInstance.stateName) state)
+    (readsInput : Reads H (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable H (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDx : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (adds : ∀ a : Fin shape.volume, Binary64.Adds state[a] result[a] (.finite sum[a]))
+    (resolves : ∀ w, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) H .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ derivHeap,
+      Reads derivHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        derivHeap ((TensorInstance.field pool j b).index k) =
+          H ((TensorInstance.field pool j b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (stepBody ++ rest) env types0 H) resultType stack)
+        (.body (.running rest (counterEnv env "k" shape.volume) types0
+          (written derivHeap (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume))
+          resultType stack) := by
+  set m := TensorInstance.record pool i with hm'
+  set tail := .assign (Runtime.v "k") (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest
+    with htail
+  set cont := CCalls.Typed.Continuation.caller .discard tail env types0 resultType stack with hcont
+  have enter : CCalls.Events.internalNext program
+      (.body (.running (stepBody ++ rest) env types0 H) resultType stack) =
+      some (.calling "rumoca_rhs"
+        [.pointer (some (m.member TensorInstance.stateName)), .pointer (some (m.member TensorInstance.inputName)),
+         .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] H cont) := by
+    simp [stepBody, htail, List.cons_append, CCalls.Events.internalNext, CCalls.Typed.nextWith,
+      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.field,
+      Runtime.v, CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve,
+      CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments, mBound, countBound,
+      CBody.resolve, CBody.constants, Value.address, hcont, freshRhs]
+  have argsEq : [Value.pointer (some (m.member TensorInstance.stateName)),
+      .pointer (some (m.member TensorInstance.inputName)),
+      .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] =
+      Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+        (TensorInstanceRhs.args pool i shape) := by
+    rw [hm', matched]; rfl
+  obtain ⟨derivHeap, reads, frameH, ran⟩ :=
+    derivative_run program shape definitions linked library found H pool i state input result bounded
+      readsState readsInput writableDx executed resolves cont
+  have others : ∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+      derivHeap ((TensorInstance.field pool j b).index k) =
+        H ((TensorInstance.field pool j b).index k) := by
+    intro j b k different
+    have outside : Outside (TensorInstanceRhs.locations pool i) (TensorInstanceRhs.kernel shape).derivative
+        (TensorModelRhs.derivativePlan (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape))
+        ((TensorInstance.field pool j b).index k) :=
+      ⟨fun i' _ => Address.instances_separate pool j i different b TensorInstance.derivativeName k i',
+        True.intro⟩
+    exact frameH _ outside
+  have resume : CCalls.Events.internalNext program (.returning .void derivHeap cont) =
+      some (.body (.running tail env types0 derivHeap) resultType stack) := by
+    simp [hcont, CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+  have reset : CLoops.next (.running tail env types0 derivHeap) =
+      some (.running (loop "k" (Runtime.v "expected") eulerBody :: rest)
+        (counterEnv env "k" 0) types0 derivHeap) := by
+    have step := CLoops.assign_local env types0 derivHeap "k" (Runtime.n 0)
+      (loop "k" (Runtime.v "expected") eulerBody :: rest) (.integer v0) (.integer 0) (.integer 0) .size
+      kBound typedK (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat 0 (by decide +kernel))
+    simpa only [htail, counterEnv] using step
+  have outsideX : ∀ a : Fin shape.volume,
+      Outside (TensorInstanceRhs.locations pool i) (TensorInstanceRhs.kernel shape).derivative
+        (TensorModelRhs.derivativePlan (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape))
+        ((TensorInstance.field pool i TensorInstance.stateName).index a.val) :=
+    fun a => ⟨fun a2 _ => TensorInstance.fields_separate pool i TensorInstance.stateName
+      TensorInstance.derivativeName (by decide +kernel) a.val a2, True.intro⟩
+  have readableX : Reads derivHeap (m.member TensorInstance.stateName) state := by
+    intro a
+    have frame := frameH ((TensorInstance.field pool i TensorInstance.stateName).index a.val) (outsideX a)
+    have base := readsState a
+    simp only [TensorInstance.field, hm'] at frame ⊢
+    simp only [load, frame]
+    simpa only [load, TensorInstance.field] using base
+  have readableDx : Reads derivHeap (m.member TensorInstance.derivativeName) result := by
+    intro a; simpa only [TensorInstance.field, hm'] using reads a
+  have writableX : Writable derivHeap (m.member TensorInstance.stateName) shape.volume := by
+    intro a ha
+    have frame := frameH ((TensorInstance.field pool i TensorInstance.stateName).index a) (outsideX ⟨a, ha⟩)
+    obtain ⟨old, ho⟩ := writableState a ha
+    refine ⟨old, ?_⟩
+    simp only [TensorInstance.field, hm'] at frame ho ⊢
+    rw [frame]; exact ho
+  have separateXdx : ∀ a < shape.volume, ∀ b < shape.volume,
+      (m.member TensorInstance.stateName).index a ≠ (m.member TensorInstance.derivativeName).index b := by
+    intro a _ b _
+    simpa only [TensorInstance.field, hm'] using
+      TensorInstance.fields_separate pool i TensorInstance.stateName TensorInstance.derivativeName
+        (by decide +kernel) a b
+  have eulerRun := euler_reaches program env types0 derivHeap
+    (m.member TensorInstance.stateName) (m.member TensorInstance.derivativeName) state result sum
+    rest resultType stack bounded typedK expBound
+    (by simpa only [hm'] using dstBound) (by simpa only [hm'] using srcBound)
+    readableX readableDx writableX separateXdx adds
+  refine ⟨derivHeap, readableDx, others, ?_⟩
+  refine .next (argsEq ▸ enter) (ran.trans (.next resume ?_))
+  exact .next (CCalls.Events.body_step program reset resultType stack) eulerRun
+
+end
 end Rumoca.FMI3.TensorDoStep

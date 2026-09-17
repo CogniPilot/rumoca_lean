@@ -11,6 +11,23 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Declaration-free co-simulation step kernel (derived proofs):**
+
+`TensorDoStep.derivative_run` restates the prepared derivative entry over any
+well-formed instance heap from three region facts, `stepBody` is the
+declaration-free per-internal-step body whose pointers, count and counters are
+hoisted to the enclosing block, and `internalStepPure_reaches` runs one such
+step as one observable-machine execution. Iterating the step is blocked by the
+shared prepared-program contract, which exposes that the output region reads
+the result and that outside cells are preserved but not that the output region
+remains writable; strengthening that shared contract in the C package is the
+next obligation, after which the guarded `fmi3DoStep` body, its grid-policy
+discard, time advance and contract can be composed. Nothing is emitted by
+production and no existing contract changed. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 9m29s
+(`build/tensor-fmi/full-gate-v12.log`).
+
 **Remaining tensor behavioral bodies and the co-simulation step kernel (derived proofs):**
 
 Seven behavioral functions (version, debug logging, scheduled-execution

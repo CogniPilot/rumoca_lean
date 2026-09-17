@@ -1200,6 +1200,27 @@ and advances the state region to the elementwise finite Euler sum `state +
 result`. The loop bound is the symbolic state volume, so no tensor coordinate is
 enumerated in Lean.
 
+The Co-Simulation grid loop runs each internal step from one shared function-level
+block, so the pointers to `x` and `dx`, the element count and the loop counters are
+declared once at the top of `fmi3DoStep` and every loop body is declaration-free.
+`derivative_run` restates the prepared derivative transfer over an arbitrary
+well-formed instance heap: given only that the state and input regions read the
+supplied values and the derivative region is writable, running `rumoca_rhs` writes
+the finite tensor derivative `result` into `der(x)` and preserves every cell
+outside it (including the state, input and time regions and every other instance).
+Its three heap premises are exactly what `TensorModelRhs.events_reaches` needs;
+every other premise (argument validity, layout bounds, member separation) is
+structural in the instance record and holds for any heap. `stepBody` is the
+declaration-free per-internal-step body (evaluate the derivative entry, reset the
+inner counter, run the elementwise `x[k] = x[k] + dx[k]` update loop) and
+`stepBody_closed`/`stepBody_noDecl` certify it introduces no declarations, so it is
+a legal outer-loop body and `CBodyEmbedding.closedBlocks` holds function-wide.
+`internalStepPure_reaches` runs that body over an arbitrary well-formed instance
+heap: it reuses `derivative_run` for the derivative entry, `CLoops.assign_local`
+for the counter reset and `euler_reaches` for the Euler tail, reaching a heap whose
+state region reads the finite Euler sum `state + result`, whose derivative region
+reads `result`, and every cell of every other instance preserved.
+
 | Obligation | Checked theorem |
 | --- | --- |
 | Each behavioral function is constant in the prepared model | `Tensor<Name>.independent` |
@@ -1208,6 +1229,9 @@ enumerated in Lean.
 | The counted loop advances the whole state region by the elementwise Euler sum | `TensorDoStep.euler_reaches` |
 | The staged Euler tail advances the state region after the derivative write | `TensorDoStep.euler_delivers` |
 | One internal step: derivative evaluation composed with the Euler update | `TensorDoStep.internalStep_reaches` |
+| The prepared derivative entry over an arbitrary well-formed instance heap | `TensorDoStep.derivative_run` |
+| The declaration-free per-internal-step body is closed and declaration-free | `TensorDoStep.stepBody_closed`, `TensorDoStep.stepBody_noDecl` |
+| One internal step from the declaration-free body over an abstract heap | `TensorDoStep.internalStepPure_reaches` |
 
 The added roots pass the FMI package axiom audit on the three permitted
 foundational axioms. These are package-checked products only: no production
@@ -1217,12 +1241,32 @@ artifact is emitted, no CLI or grammar case is added, and the scalar adapter,
 Behavioral coverage of the tensor slice now stands at 25 of the 26 behavioral FMI
 3 functions delivered as proved package products (the seven here complete the
 model-independent common and Model Exchange functions), plus the Co-Simulation
-`fmi3DoStep` internal-step Euler kernel and its one-internal-step composition.
-Open for `fmi3DoStep`: the full function body wrapping the handle/lifecycle
-guards, the Co-Simulation grid-policy discard for a communication step that is not
-a positive integer multiple of the unit step or exceeds the scalar bound, the null
+`fmi3DoStep` internal-step Euler kernel, its one-internal-step composition, the
+abstract-heap derivative transfer (`derivative_run`), and the declaration-free
+per-internal-step body run over an arbitrary well-formed instance heap
+(`internalStepPure_reaches`).
+
+Open for `fmi3DoStep`: the full function body wrapping the handle/lifecycle guards,
+the Co-Simulation grid-policy discard for a communication step that is not a
+positive integer multiple of the unit step or exceeds the scalar bound, the null
 and lifecycle rejections, the independent time advance, and the accepted step for
-an arbitrary number of internal steps (the multi-step iteration of
-`internalStep_reaches`). Binding any of these bodies to an emitted FMU wrapper
-with its lifecycle and numerical policy also remains open. This package product
-does not authorize production generation.
+an arbitrary number of internal steps.
+
+The multi-step accepted-case iteration is blocked at a specific point. Chaining
+`internalStepPure_reaches` over the outer step count requires, before each internal
+step, that the instance's `der(x)` region is writable; after the previous internal
+step that region holds the previous derivative result. The prepared derivative
+execution contract (`CTensor.Lowering.CallCorrect`, surfaced through
+`TensorModelRhs.events_reaches` and `derivative_run`) exposes only that the output
+region reads the finite result and that every cell outside it is preserved; it does
+not expose that the written output region remains writable in the returned heap.
+Recovering the writable flag of the derivative output region is therefore a
+strengthening of the shared tensor-program execution contract in `backend-c` /
+`RumocaCore` (the same fact that the derivative getter obtains only for a caller
+buffer that lies outside the written region, via `buffer_outside`), not a
+`backend-fmi3` change, and it re-verifies across every prepared-program certificate.
+Until that fact is available, the outer grid loop and the accepted-case N-fold
+iteration contract cannot be closed without an unproved step, and the independent
+per-internal-step time advance is deferred with it. Binding any of these bodies to
+an emitted FMU wrapper with its lifecycle and numerical policy also remains open.
+This package product does not authorize production generation.

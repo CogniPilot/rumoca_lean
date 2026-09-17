@@ -2402,3 +2402,13 @@ import RumocaFMI3.TensorDoStep
 #audit axioms Rumoca.FMI3.TensorDoStep.euler_delivers
 #audit axioms Rumoca.FMI3.TensorDoStep.store_writable_state
 #audit axioms Rumoca.FMI3.TensorDoStep.internalStep_reaches
+
+-- The prepared derivative entry over an arbitrary well-formed instance heap, and
+-- the declaration-free per-internal-step body used by the Co-Simulation grid loop:
+-- evaluate `rumoca_rhs` into `der(x)`, reset the inner counter, and run the
+-- elementwise Euler update over the symbolic state volume. Every loop body is
+-- declaration-free so `CBodyEmbedding.closedBlocks` holds function-wide.
+#audit axioms Rumoca.FMI3.TensorDoStep.derivative_run
+#audit axioms Rumoca.FMI3.TensorDoStep.stepBody_closed
+#audit axioms Rumoca.FMI3.TensorDoStep.stepBody_noDecl
+#audit axioms Rumoca.FMI3.TensorDoStep.internalStepPure_reaches
