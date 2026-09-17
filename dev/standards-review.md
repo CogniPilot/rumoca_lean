@@ -73,6 +73,48 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Tensor instance lifecycle bodies over the static tensor pool: standards impact
+
+`FMI3.TensorLifecycleModes`, `FMI3.TensorFree` and `FMI3.TensorLifecycleHistory`
+define the Model Exchange mode-transition bodies, the instance-free body and a
+composed lifecycle history over the static tensor instance pool, as
+package-checked products. They emit no production artifact, add no CLI or grammar
+case, and leave the scalar adapter (`Runtime.lean`, `Termination`, `EventEntry`,
+`InitializationCalls`, `StaticRelease`) and every existing contract unchanged. The
+instance-creation body (`fmi3InstantiateModelExchange`/`fmi3InstantiateCoSimulation`)
+is the remaining open lifecycle body (see the note below the table).
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The array profiles remain development cases; `jacobian` remains an identified extension. |
+| FMI 3.0.2, entering and exiting Initialization Mode | New derived product only. `fmi3EnterInitializationMode` and `fmi3ExitInitializationMode` guard the handle and lifecycle exactly as the scalar bodies (`Runtime.require` with `enterInitialization`/`exitInitialization`), then write the single lifecycle-mode cell (Instantiated → Initialization, Initialization → Event for the Model Exchange profile, matching `nextMode`). Each sole terminating behavior returns `fmi3OK` changing only that cell (`TensorLifecycleModes.call_behaviors`, bundled by `contract`); a null handle returns `fmi3Error` changing nothing (`null_behaviors`); an illegal mode reaches the shared `fail` statement and returns `fmi3Error` with logging suppressed, after entering Terminated as the scalar rejection does (`illegal_behaviors`, FMI 3.0.2 §2.3.1). |
+| FMI 3.0.2, event and continuous-time modes | New derived product only. `fmi3EnterEventMode` (Continuous → Event) and `fmi3EnterContinuousTimeMode` (Event → Continuous) share the same guarded single-cell mode write, with the same success, null and illegal-mode behaviors as above (`TensorLifecycleModes.call_behaviors`, `null_behaviors`, `illegal_behaviors`, `contract`). No event indicators or clock activation are modeled in this profile. |
+| FMI 3.0.2, terminating an FMU | New derived product only. `fmi3Terminate` (Event or Continuous → Terminated) shares the guarded single-cell mode write with the same success, null and illegal-mode behaviors (`TensorLifecycleModes.call_behaviors`, `null_behaviors`, `illegal_behaviors`, `contract`). A successful transition of instance `i` changes only its `mode` cell and preserves every tensor cell of every other instance in the static pool (`preserves_other_instances`). |
+| FMI 3.0.2, freeing an FMU instance | New derived product only, reusing the shared model-agnostic release. `fmi3FreeInstance` reads only the reserved slot index `m->slot` stored at creation and the pool's reservation-flag block, performs one atomic store clearing the slot's flag, and returns void; it never reads or writes a tensor region. For an owned slot it discharges exactly its lease, restores the owner map to `update owners slot none`, preserves every other cell, and returns void (`TensorFree.free_owned`, bundled by `contract`, instantiating `StaticRelease.release_owned` for the tensor pool record `TensorInstance.record pool i = pool.index i`); a null handle changes nothing (`null_behaviors`). |
+| FMI 3.0.2, lifecycle ordering | New derived product only. `TensorLifecycleHistory.lifecycle_history` composes the sequence from a created, Instantiated-mode record: `fmi3EnterInitializationMode` and `fmi3ExitInitializationMode` thread into Event Mode by two single-cell mode writes, and from the reached Event-Mode heap the instance answers a continuous-state derivative query (`TensorContinuousStates.deriv_contract`) and is released by `fmi3FreeInstance`. It derives the observed status of each call (`fmi3OK` for the two mode transitions and the derivative query, void for free) and the pool's final owner map (the released slot restored to unowned). The premises are explicit (created-instance record cells, finite kernel execution, direct-resolution, the reached-heap identification, and the reservation-flag representation and release bindings). The derivative query and the free act on disjoint memory, so both issue from the reached Event-Mode heap. |
+| C11 / printer conformance | Every mode-transition body prints its intended C token grammar (`TensorLifecycleModes.body_printable`, `signature_printable`) and the rendered functions denote themselves under the shared `CTree.Printer` relation (`function_denotes`), carried by the contracts' `denotes` field. The free body is the shared `StaticRelease.function`, whose printing is checked in the scalar review. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | Each mode transition writes a single `int32` mode cell into permanent static storage; the free performs one atomic store into the reservation-flag block. No dynamic allocation is introduced (Rule 21.3, no `malloc`/`calloc`/`realloc`/`free`); both respect Dir 4.12 (no dynamic memory). The instance slots and reservation flags are permanently allocated static arrays. |
+| MISRA C:2025 concurrency directives for the reservation pool | The free's slot release is one `atomic_store` on the pool's reservation-flag block, the same shared model-agnostic primitive the scalar factory/release use; the ghost lease (`SlotOwners`) is a specification device, and a concurrent implementation must still discharge atomicity/linearization against its chosen synchronization primitives, as the scalar review records for the pool. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The theorems hold for arbitrary tensor shape, instance address, and heap (and, for
+the framing corollaries, the instance index of the static pool; for the free and
+history, the pool root, reservation-flag block, capacity, owner map and slot). The
+mode-transition bodies are shape-independent (they never read or write a tensor
+region) and the free is exactly the shared release, so both are stated over an
+arbitrary instance address and specialized to the tensor pool record only in the
+framing corollaries and the history. **Open:** the instance-creation body
+(`fmi3InstantiateModelExchange`/`fmi3InstantiateCoSimulation`) is not yet delivered
+as a package product. Its name/token admission prefix (`FactoryPrefix`) and the
+prepared-model initializer are parameterized over the scalar `Solve.FMI3Model`
+model type, which the tensor track deliberately does not instantiate, and its
+reserved-slot initializer would use the tensor zero-fill loop rather than the
+scalar state initializer; composing the reservation entry, the exhaustion/null
+logging path and that tensor initialization tail into the creation behaviors is the
+remaining lifecycle body. The count-negotiation policy for a partial or oversized
+request and binding these bodies to an emitted FMU wrapper with its lifecycle and
+numerical policy also remain open. **Stage decision: open; no grammar expansion.**
+
 ### Tensor count queries, time setter and reset: standards impact
 
 `FMI3.TensorCountQueries`, `FMI3.TensorSetTime` and `FMI3.TensorReset` define the

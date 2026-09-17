@@ -11,6 +11,25 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor lifecycle modes, release and a composed history (derived proofs):**
+
+`FMI3.TensorLifecycleModes` proves the tensor initialization entry and exit,
+event and continuous-time entry and termination bodies over the static tensor
+record: each writes only the instance's mode cell, rejects a null handle, and
+rejects an illegal mode through the shared failure path, preserving every other
+instance. `TensorFree` instantiates the model-agnostic release body for the
+tensor pool, freeing exactly the owned slot and restoring the owner map.
+`TensorLifecycleHistory.lifecycle_history` composes initialization entry and
+exit, one derivative query and release from a created record, deriving the
+observed statuses and the final owner map with explicit premises. The tensor
+instance-creation body is not yet proved: the scalar admission prefix is
+parameterized over the scalar model type, and the tensor record initializer
+needs its own loop-based execution proof; the history therefore starts from the
+created record as a premise. Nothing is emitted by production and no existing
+contract changed. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-16 in 10m10s
+(`build/tensor-fmi/full-gate-v8.log`).
+
 **Tensor count queries, time setter and reset (derived proofs):**
 
 `FMI3.TensorCountQueries`, `TensorSetTime` and `TensorReset` add the tensor

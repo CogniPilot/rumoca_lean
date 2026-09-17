@@ -244,6 +244,9 @@ import RumocaFMI3.TensorContinuousStates
 import RumocaFMI3.TensorCountQueries
 import RumocaFMI3.TensorSetTime
 import RumocaFMI3.TensorReset
+import RumocaFMI3.TensorLifecycleModes
+import RumocaFMI3.TensorFree
+import RumocaFMI3.TensorLifecycleHistory
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2279,3 +2282,28 @@ import RumocaFMI3.TensorReset
 #audit axioms Rumoca.FMI3.TensorReset.body_printable
 #audit axioms Rumoca.FMI3.TensorReset.function_denotes
 #audit axioms Rumoca.FMI3.TensorReset.contract
+
+-- Tensor Model Exchange mode-transition bodies over the tensor instance record
+-- (package-checked product; no production emission).
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.body_closed
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.parameters_bound
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.body_run
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.call_behaviors
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.null_behaviors
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.illegal_prefix
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.illegal_behaviors
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.preserves_other_instances
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.signature_printable
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.body_printable
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.function_denotes
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.contract
+
+-- Tensor fmi3FreeInstance over the static tensor instance pool (package-checked
+-- product; reuses the shared model-agnostic release; no production emission).
+#audit axioms Rumoca.FMI3.TensorFree.free_owned
+#audit axioms Rumoca.FMI3.TensorFree.null_behaviors
+#audit axioms Rumoca.FMI3.TensorFree.contract
+
+-- Composed tensor lifecycle history over the static instance pool (package-checked
+-- product; no production emission).
+#audit axioms Rumoca.FMI3.TensorLifecycleHistory.lifecycle_history
