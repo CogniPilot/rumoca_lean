@@ -2161,6 +2161,7 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorMetadata.structure_references_declared
 #audit axioms Rumoca.FMI3.TensorMetadata.structure_dependencies_declared
 #audit axioms Rumoca.FMI3.TensorMetadata.modelIdentifiers_decode
+#audit axioms Rumoca.FMI3.TensorMetadata.token_attribute
 
 -- Tensor instance storage bound to the model right-hand side (package-checked
 #audit axioms Rumoca.FMI3.TensorInstance.reads_state
@@ -2313,6 +2314,7 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorLifecycleModes.body_printable
 #audit axioms Rumoca.FMI3.TensorLifecycleModes.function_denotes
 #audit axioms Rumoca.FMI3.TensorLifecycleModes.contract
+#audit axioms Rumoca.FMI3.TensorLifecycleModes.Phase.afterKind_of_ne_exit
 
 -- Tensor fmi3FreeInstance over the static tensor instance pool (package-checked
 -- product; reuses the shared model-agnostic release; no production emission).
@@ -2323,6 +2325,7 @@ import RumocaFMI3.TensorAdapterContract
 -- Composed tensor lifecycle history over the static instance pool (package-checked
 -- product; no production emission).
 #audit axioms Rumoca.FMI3.TensorLifecycleHistory.lifecycle_history
+#audit axioms Rumoca.FMI3.TensorLifecycleHistory.lifecycle_cs_step
 
 -- Reserved tensor instance-record initializer (package-checked product; no
 -- production emission).

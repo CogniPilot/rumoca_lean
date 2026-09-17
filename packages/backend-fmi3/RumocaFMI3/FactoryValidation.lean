@@ -18,17 +18,17 @@ section
 variable [interface : CInterface]
 
 theorem admission_equivalence (program : CCalls.Events.Program E) (bindings : Identity.Bindings program)
-    (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt) (args : Raw) (heap : Heap)
+    (model : Solve.FMI3Model source) (tok : String := token model) (kind : Kind) (creation : List Stmt) (args : Raw) (heap : Heap)
     (stack : CCalls.Typed.Continuation) (name suppliedToken expected whitespace : Address)
     (nameBytes tokenBytes expectedBytes whitespaceBytes : List UInt8)
     (defined : program.internal.definitions (signature kind).name =
-      some (.tree ⟨signature kind, FactoryPrefix.body model kind creation, false⟩))
+      some (.tree ⟨signature kind, FactoryPrefix.body model kind creation tok, false⟩))
     (helper : program.internal.definitions Identity.function.signature.name = some (.tree Identity.function))
     (typeBindings : FactoryArguments.Types)
     (named : interface.constants Identity.function.signature.name = none)
     (supported : kind = .me ∨ FactoryEntry.unsupported args = false)
     (nameBound : args.name = some name) (tokenBound : args.token = some suppliedToken)
-    (expectedBound : interface.literals (token model) = some expected)
+    (expectedBound : interface.literals tok = some expected)
     (whitespaceBound : interface.literals " \t\n\r\u000c\u000b" = some whitespace)
     (nameStored : Contents heap name nameBytes) (tokenStored : Contents heap suppliedToken tokenBytes)
     (expectedStored : Contents heap expected expectedBytes) (whitespaceStored : Contents heap whitespace whitespaceBytes)
@@ -41,12 +41,12 @@ theorem admission_equivalence (program : CCalls.Events.Program E) (bindings : Id
           (locals kind args (Identity.accepted nameBytes whitespaceBytes tokenBytes expectedBytes)) types heap)
           "fmi3Instance" stack) behavior := by
   obtain ⟨types, entered, _, scope⟩ := FactoryEntry.validation_entry program
-    (FactoryPrefix.validation model :: FactoryPrefix.identityGuard :: creation)
+    (FactoryPrefix.validation model tok :: FactoryPrefix.identityGuard :: creation)
     kind args heap stack typeBindings defined supported
   refine ⟨CLoops.bindType types "validIdentity" .boolean, ?_⟩
   intro behavior
   rw [CCalls.Events.internal_prefix_behaviors program entered behavior]
-  rw [Identity.factory_validates program bindings helper model (FactoryPrefix.identityGuard :: creation) (parameters kind args) types heap
+  rw [Identity.factory_validates program bindings helper model tok (FactoryPrefix.identityGuard :: creation) (parameters kind args) types heap
     "fmi3Instance" stack name suppliedToken expected whitespace nameBytes tokenBytes expectedBytes whitespaceBytes
     scope.result scope.helper named (by simpa [nameBound] using scope.name)
     (by simpa [tokenBound] using scope.token) expectedBound whitespaceBound
@@ -61,18 +61,18 @@ theorem admission_equivalence (program : CCalls.Events.Program E) (bindings : Id
 /-- A rejected valid-buffer request returns null with unchanged memory when
 logging is disabled or no callback was supplied. -/
 theorem rejected_silent (program : CCalls.Events.Program E) (bindings : Identity.Bindings program)
-    (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt) (args : Raw) (heap : Heap)
+    (model : Solve.FMI3Model source) (tok : String := token model) (kind : Kind) (creation : List Stmt) (args : Raw) (heap : Heap)
     (name suppliedToken expected whitespace : Address)
     (nameBytes tokenBytes expectedBytes whitespaceBytes : List UInt8)
     (defined : program.internal.definitions (signature kind).name =
-      some (.tree ⟨signature kind, FactoryPrefix.body model kind creation, false⟩))
+      some (.tree ⟨signature kind, FactoryPrefix.body model kind creation tok, false⟩))
     (helper : program.internal.definitions Identity.function.signature.name = some (.tree Identity.function))
     (typeBindings : FactoryArguments.Types)
     (named : interface.constants Identity.function.signature.name = none)
     (nullConstant : interface.constants "NULL" = some (.pointer none))
     (supported : kind = .me ∨ FactoryEntry.unsupported args = false)
     (nameBound : args.name = some name) (tokenBound : args.token = some suppliedToken)
-    (expectedBound : interface.literals (token model) = some expected)
+    (expectedBound : interface.literals tok = some expected)
     (whitespaceBound : interface.literals " \t\n\r\u000c\u000b" = some whitespace)
     (nameStored : Contents heap name nameBytes) (tokenStored : Contents heap suppliedToken tokenBytes)
     (expectedStored : Contents heap expected expectedBytes) (whitespaceStored : Contents heap whitespace whitespaceBytes)
@@ -82,7 +82,7 @@ theorem rejected_silent (program : CCalls.Events.Program E) (bindings : Identity
     (CCalls.Events.machine program).Behaves
       (.calling (signature kind).name (arguments kind args) heap .done) behavior ↔
       behavior = .terminates [] ⟨.pointer none, heap⟩ := by
-  obtain ⟨types, path⟩ := admission_equivalence program bindings model kind creation args heap .done
+  obtain ⟨types, path⟩ := admission_equivalence program bindings model tok kind creation args heap .done
     name suppliedToken expected whitespace nameBytes tokenBytes expectedBytes whitespaceBytes
     defined helper typeBindings named supported nameBound tokenBound expectedBound whitespaceBound
     nameStored tokenStored expectedStored whitespaceStored fits
@@ -101,19 +101,19 @@ theorem rejected_silent (program : CCalls.Events.Program E) (bindings : Identity
 /-- Enabled rejection logging retains every represented host outcome. The
 result cannot be mistaken for successful instance creation. -/
 theorem rejected_logged (program : CCalls.Events.Program E) (bindings : Identity.Bindings program)
-    (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt) (args : Raw) (heap : Heap)
+    (model : Solve.FMI3Model source) (tok : String := token model) (kind : Kind) (creation : List Stmt) (args : Raw) (heap : Heap)
     (name suppliedToken expected whitespace logger category message : Address)
     (nameBytes tokenBytes expectedBytes whitespaceBytes : List UInt8)
     (loggerName : String) (foreign : CCalls.Events.External E)
     (defined : program.internal.definitions (signature kind).name =
-      some (.tree ⟨signature kind, FactoryPrefix.body model kind creation, false⟩))
+      some (.tree ⟨signature kind, FactoryPrefix.body model kind creation tok, false⟩))
     (helper : program.internal.definitions Identity.function.signature.name = some (.tree Identity.function))
     (typeBindings : FactoryArguments.Types)
     (named : interface.constants Identity.function.signature.name = none)
     (nullConstant : interface.constants "NULL" = some (.pointer none))
     (supported : kind = .me ∨ FactoryEntry.unsupported args = false)
     (nameBound : args.name = some name) (tokenBound : args.token = some suppliedToken)
-    (expectedBound : interface.literals (token model) = some expected)
+    (expectedBound : interface.literals tok = some expected)
     (whitespaceBound : interface.literals " \t\n\r\u000c\u000b" = some whitespace)
     (nameStored : Contents heap name nameBytes) (tokenStored : Contents heap suppliedToken tokenBytes)
     (expectedStored : Contents heap expected expectedBytes) (whitespaceStored : Contents heap whitespace whitespaceBytes)
@@ -135,7 +135,7 @@ theorem rejected_logged (program : CCalls.Events.Program E) (bindings : Identity
       heap events value after ∧ behavior = .terminates events ⟨.pointer none, after⟩) ∨
     ((∀ events value after, ¬ foreign.execute (Logging.arguments args.environment category message)
       heap events value after) ∧ behavior = .wrong []) := by
-  obtain ⟨types, path⟩ := admission_equivalence program bindings model kind creation args heap .done
+  obtain ⟨types, path⟩ := admission_equivalence program bindings model tok kind creation args heap .done
     name suppliedToken expected whitespace nameBytes tokenBytes expectedBytes whitespaceBytes
     defined helper typeBindings named supported nameBound tokenBound expectedBound whitespaceBound
     nameStored tokenStored expectedStored whitespaceStored fits

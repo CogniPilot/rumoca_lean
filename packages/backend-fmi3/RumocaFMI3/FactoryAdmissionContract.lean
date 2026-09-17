@@ -75,7 +75,7 @@ theorem execution_correct (model : Solve.FMI3Model source) (program : CCalls.Eve
   constructor
   · intro bindings kind args name suppliedToken nameBytes tokenBytes supported nameBound tokenBound
       nameStored tokenStored fits stack
-    exact FactoryValidation.admission_equivalence program bindings model kind
+    exact FactoryValidation.admission_equivalence program bindings model (token model) kind
       ((Runtime.makeInstance model kind).drop 2) args heap stack
       name suppliedToken (addresses .expected) (addresses .whitespace) nameBytes tokenBytes
       (content (token model)) (content (text model .whitespace))

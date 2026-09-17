@@ -55,7 +55,7 @@ theorem public_admission {E : Type} (objects : Objects) (literals : CLiteralAddr
           "fmi3Instance" stack) behavior := by
   letI : CInterface := executionInterface objects literals
   intro program identity model kind args heap stack request defined helper
-  obtain ⟨types, path⟩ := FactoryValidation.admission_equivalence program identity model kind (code model.solve kind)
+  obtain ⟨types, path⟩ := FactoryValidation.admission_equivalence program identity model (token model) kind (code model.solve kind)
     args heap stack request.name request.suppliedToken request.expected request.whitespace
     request.nameBytes request.tokenBytes request.expectedBytes request.whitespaceBytes
     defined helper (factory_types objects literals) rfl request.supported request.nameBound request.tokenBound

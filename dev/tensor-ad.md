@@ -1835,3 +1835,75 @@ precisely: the diagonal Jacobian kernel `rumoca_square_jacobian` is emitted but
 wired to no FMI entry, so the output tensor stays at its file-scope zero
 initialization and `fmi3GetFloat64` of `J` reads `(0, 0, 0, 0)`; wiring the diagonal
 kernel into an FMI output is a separate design item.
+
+## Kind-aware Co-Simulation exit and tensor instantiation token
+
+This increment resolves two of the three defects the previous boundary run
+surfaced and states the third precisely.
+
+### 1. Kind-aware exit into Step Mode (Co-Simulation)
+
+`fmi3ExitInitializationMode` now branches on the instance `kind` cell exactly as
+the scalar `InitializationExit` body does: Model Exchange instances enter Event
+Mode and Co-Simulation instances enter Step Mode on exiting Initialization Mode
+(FMI 3.0.2 section 2.3, the state machine of Co-Simulation). `TensorLifecycleModes`
+adds `Phase.afterKind` (the kind-aware target, `Event` for Model Exchange, `Step`
+for Co-Simulation, agreeing with the reference `Rumoca.FMI3.nextMode
+.exitInitialization kind .initialization`) and makes the exit `tail` the same
+`kind == 0 ? setMode Event : setMode Step` branch the scalar body emits; the four
+other transitions keep their single kind-independent mode write. `Phase.steps`
+gives the exit body its extra branch step. `body_run`, `call_behaviors`, the
+mode-transition `Contract` and the adapter contract's lifecycle conjunct
+(`forall ph, TensorLifecycleModes.Contract ph`) are all restated over `writeMode
+heap p (Phase.afterKind kind)`, so `FMI3.TensorAdapter.Contract` now proves the
+Co-Simulation Step-Mode exit; the four kind-independent transitions are unchanged
+via `Phase.afterKind_of_ne_exit`.
+
+`TensorLifecycleHistory` keeps the Model Exchange `lifecycle_history` (its Event
+exit holds by definitional reduction of `afterKind .exitInitialization .me`) and
+adds `lifecycle_cs_step`: from a created Co-Simulation instance, enter and exit
+Initialization Mode reaches Step Mode (`mode = 4`), which is exactly the state
+`TensorDoStep.accepted_behaviors` admits, so the reached heap threads directly
+into an accepted `fmi3DoStep`. The step's numerical premises are the accepted-step
+contract's own premises.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Kind-aware exit target | `TensorLifecycleModes.Phase.afterKind`, `afterKind_of_ne_exit` |
+| The exit body runs to the kind-selected mode write | `TensorLifecycleModes.body_run`, `call_behaviors` |
+| The mode-transition contract over the kind-aware exit | `TensorLifecycleModes.contract` |
+| Co-Simulation create/enter/exit into an accepted step | `TensorLifecycleHistory.lifecycle_cs_step` |
+
+### 2. The tensor factory validates the model description's token
+
+The tensor factory validates the tensor model description's declared
+`instantiationToken`, `lean-rumoca-tensor-v1:TensorSquare` (`TensorMetadata.token`),
+instead of the scalar-witness token. The shared admission prefix and identity
+helper proofs are reused unchanged: `FactoryPrefix.validation`/`body` and the
+shared `FactoryValidation`/`Identity` admission lemmas take the expected token as a
+string parameter defaulting to the scalar `Metadata.token`, so every scalar caller
+and the scalar production certificate are untouched (each passes `token model` and
+sees the identical instantiated statement), and the tensor factory instantiates
+them with the tensor token literal. `FMI3.TensorAdapter.Contract` gains a conjunct
+proving the factory's expected token equals the model description's
+`instantiationToken` attribute (`TensorMetadata.token_attribute`), mirroring the
+model-identifier agreement, so the emitted adapter accepts precisely the token the
+model description declares. The metadata's `instantiationToken` attribute now reads
+`TensorMetadata.token m`, and the factory dispatch passes the same token
+(`TensorFunctions.tensorDispatch`), so `TensorFactory.function`,
+`FunctionContract`, `admission_accepts`/`rejected_silent`, and
+`TensorAdapterPrinter.factory_printable` are stated over that token.
+
+### 3. Remaining open item: the output tensor `J`
+
+The output tensor `J` (value reference 4) is still not computed by any emitted
+adapter body: the prepared diagonal Jacobian kernel `rumoca_square_jacobian` is
+emitted but wired to no FMI entry, so `fmi3GetFloat64(J)` reads the output region's
+file-scope zero initialization. The tensor kernel bound to the instance record,
+`TensorInstanceRhs.kernel`, still carries `diagonal := none` (the diagonal
+observation is deferred there), so completing this output requires undeferring that
+diagonal observation, adding an adapter body that zero-fills the dense `J` region
+and writes its diagonal from the diagonal kernel (reusing `emitDiagonal_correct`
+and the typed-to-observable transfer, universal in the symbolic matrix volume with
+counted loops), and extending the relevant getter/step contract and the adapter
+contract. This is the one open tensor item.

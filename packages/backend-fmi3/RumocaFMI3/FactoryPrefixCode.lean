@@ -41,9 +41,9 @@ end FactoryRejection
 
 namespace FactoryPrefix
 
-def validation (model : Solve.FMI3Model source) : Stmt :=
+def validation (model : Solve.FMI3Model source) (tok : String := token model) : Stmt :=
   .declare "fmi3Boolean" "validIdentity" (.call (.id Identity.function.signature.name)
-    [.id "instanceName", .id "instantiationToken", .str (token model), .str " \t\n\r\u000c\u000b"])
+    [.id "instanceName", .id "instantiationToken", .str tok, .str " \t\n\r\u000c\u000b"])
 
 def identityGuard : Stmt := .branch (.not (.id "validIdentity"))
   (FactoryRejection.code "Invalid name or instantiation token") []
@@ -57,8 +57,8 @@ def entry (kind : Kind) (rest : List Stmt) : List Stmt :=
   | .me => rest
   | .cs => capabilityGuard :: rest
 
-def body (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt) : List Stmt :=
-  entry kind (validation model :: identityGuard :: creation)
+def body (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt) (tok : String := token model) : List Stmt :=
+  entry kind (validation model tok :: identityGuard :: creation)
 
 end FactoryPrefix
 end Rumoca.FMI3

@@ -58,7 +58,7 @@ theorem public_rejected_silent {E : Type} (objects : Objects) (literals : CLiter
         defined helper (factory_types objects literals) rfl rfl rfl rfl rfl supported missing
         expectedBound whitespaceBound quiet behavior
   | identity request bindings helper =>
-      exact FactoryValidation.rejected_silent program bindings model kind (code model.solve kind) args heap
+      exact FactoryValidation.rejected_silent program bindings model (token model) kind (code model.solve kind) args heap
         request.name request.suppliedToken request.expected request.whitespace
         request.nameBytes request.tokenBytes request.expectedBytes request.whitespaceBytes
         defined helper (factory_types objects literals) rfl rfl request.supported request.nameBound request.tokenBound
@@ -106,7 +106,7 @@ theorem public_rejected_logged {E : Type} (objects : Objects) (literals : CLiter
         rfl rfl rfl rfl rfl supported missing expectedBound whitespaceBound
         loggerBound logging categoryBound messageBound address external prototype rfl converted behavior
   | identity request bindings helper =>
-      exact FactoryValidation.rejected_logged program bindings model kind (code model.solve kind) args heap
+      exact FactoryValidation.rejected_logged program bindings model (token model) kind (code model.solve kind) args heap
         request.name request.suppliedToken request.expected request.whitespace logger category text
         request.nameBytes request.tokenBytes request.expectedBytes request.whitespaceBytes name foreign
         defined helper (factory_types objects literals) rfl rfl request.supported request.nameBound request.tokenBound

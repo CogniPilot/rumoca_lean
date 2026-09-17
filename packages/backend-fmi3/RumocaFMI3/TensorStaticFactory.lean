@@ -422,22 +422,23 @@ open FactoryArguments
 
 /-- The tensor public factory function: the shared admission prefix followed by the
 tensor reservation suffix. Parameterized over the model for its token only. -/
-def function (model : Solve.FMI3Model source) (shape : Tensor.Shape) (kind : Kind) : Function :=
-  ⟨signature kind, FactoryPrefix.body model kind (code shape kind), false⟩
+def function (model : Solve.FMI3Model source) (shape : Tensor.Shape) (kind : Kind)
+    (tok : String := token model) : Function :=
+  ⟨signature kind, FactoryPrefix.body model kind (code shape kind) tok, false⟩
 
 /-- An accepted admission reduces the public call to the tensor reservation body.
 Reuses `FactoryValidation.admission_equivalence` with the tensor reservation suffix. -/
 theorem admission_accepts (program : CCalls.Events.Program E) (bindings : Identity.Bindings program)
-    (model : Solve.FMI3Model source) (shape : Tensor.Shape) (kind : Kind) (args : Raw) (heap : Heap)
+    (model : Solve.FMI3Model source) (tok : String := token model) (shape : Tensor.Shape) (kind : Kind) (args : Raw) (heap : Heap)
     (stack : CCalls.Typed.Continuation) (name suppliedToken expected whitespace : Address)
     (nameBytes tokenBytes expectedBytes whitespaceBytes : List UInt8)
-    (defined : program.internal.definitions (signature kind).name = some (.tree (function model shape kind)))
+    (defined : program.internal.definitions (signature kind).name = some (.tree (function model shape kind tok)))
     (helper : program.internal.definitions Identity.function.signature.name = some (.tree Identity.function))
     (typeBindings : FactoryArguments.Types)
     (named : interface.constants Identity.function.signature.name = none)
     (supported : kind = .me ∨ FactoryEntry.unsupported args = false)
     (nameBound : args.name = some name) (tokenBound : args.token = some suppliedToken)
-    (expectedBound : interface.literals (token model) = some expected)
+    (expectedBound : interface.literals tok = some expected)
     (whitespaceBound : interface.literals " \t\n\r\u000c\u000b" = some whitespace)
     (nameStored : CStringMemory.Contents heap name nameBytes)
     (tokenStored : CStringMemory.Contents heap suppliedToken tokenBytes)
@@ -453,7 +454,7 @@ theorem admission_accepts (program : CCalls.Events.Program E) (bindings : Identi
           (FactoryValidation.locals kind args
             (Identity.accepted nameBytes whitespaceBytes tokenBytes expectedBytes)) types heap)
           "fmi3Instance" stack) behavior :=
-  FactoryValidation.admission_equivalence program bindings model kind (code shape kind) args heap stack
+  FactoryValidation.admission_equivalence program bindings model tok kind (code shape kind) args heap stack
     name suppliedToken expected whitespace nameBytes tokenBytes expectedBytes whitespaceBytes defined helper
     typeBindings named supported nameBound tokenBound expectedBound whitespaceBound nameStored tokenStored
     expectedStored whitespaceStored fits
@@ -461,17 +462,17 @@ theorem admission_accepts (program : CCalls.Events.Program E) (bindings : Identi
 /-- A rejected admission (bad name or token) returns null with no reservation when
 logging is disabled or absent. Reuses `FactoryValidation.rejected_silent`. -/
 theorem rejected_silent (program : CCalls.Events.Program E) (bindings : Identity.Bindings program)
-    (model : Solve.FMI3Model source) (shape : Tensor.Shape) (kind : Kind) (args : Raw) (heap : Heap)
+    (model : Solve.FMI3Model source) (tok : String := token model) (shape : Tensor.Shape) (kind : Kind) (args : Raw) (heap : Heap)
     (name suppliedToken expected whitespace : Address)
     (nameBytes tokenBytes expectedBytes whitespaceBytes : List UInt8)
-    (defined : program.internal.definitions (signature kind).name = some (.tree (function model shape kind)))
+    (defined : program.internal.definitions (signature kind).name = some (.tree (function model shape kind tok)))
     (helper : program.internal.definitions Identity.function.signature.name = some (.tree Identity.function))
     (typeBindings : FactoryArguments.Types)
     (named : interface.constants Identity.function.signature.name = none)
     (nullConstant : interface.constants "NULL" = some (.pointer none))
     (supported : kind = .me ∨ FactoryEntry.unsupported args = false)
     (nameBound : args.name = some name) (tokenBound : args.token = some suppliedToken)
-    (expectedBound : interface.literals (token model) = some expected)
+    (expectedBound : interface.literals tok = some expected)
     (whitespaceBound : interface.literals " \t\n\r\u000c\u000b" = some whitespace)
     (nameStored : CStringMemory.Contents heap name nameBytes)
     (tokenStored : CStringMemory.Contents heap suppliedToken tokenBytes)
@@ -483,7 +484,7 @@ theorem rejected_silent (program : CCalls.Events.Program E) (bindings : Identity
     (CCalls.Events.machine program).Behaves
       (.calling (signature kind).name (arguments kind args) heap .done) behavior ↔
       behavior = .terminates [] ⟨.pointer none, heap⟩ :=
-  FactoryValidation.rejected_silent program bindings model kind (code shape kind) args heap
+  FactoryValidation.rejected_silent program bindings model tok kind (code shape kind) args heap
     name suppliedToken expected whitespace nameBytes tokenBytes expectedBytes whitespaceBytes defined helper
     typeBindings named nullConstant supported nameBound tokenBound expectedBound whitespaceBound nameStored
     tokenStored expectedStored whitespaceStored fits rejected quiet behavior
@@ -543,16 +544,16 @@ reservation; successful creation returning an initialized owned handle to a free
 slot; exhaustion returning null with no record change; and the create-then-release
 round trip restoring the pool. Every field is a proved theorem of this module. -/
 structure FunctionContract (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
-    (model : Solve.FMI3Model source) (shape : Tensor.Shape) : Prop where
+    (model : Solve.FMI3Model source) (tok : String := token model) (shape : Tensor.Shape) : Prop where
   accepts : ∀ (bindings : Identity.Bindings program) (kind : Kind) (args : FactoryArguments.Raw)
     (heap : Heap) (stack : CCalls.Typed.Continuation) (name suppliedToken expected whitespace : Address)
     (nameBytes tokenBytes expectedBytes whitespaceBytes : List UInt8),
-    program.internal.definitions (FactoryArguments.signature kind).name = some (.tree (function model shape kind)) →
+    program.internal.definitions (FactoryArguments.signature kind).name = some (.tree (function model shape kind tok)) →
     program.internal.definitions Identity.function.signature.name = some (.tree Identity.function) →
     FactoryArguments.Types → interface.constants Identity.function.signature.name = none →
     (kind = .me ∨ FactoryEntry.unsupported args = false) →
     args.name = some name → args.token = some suppliedToken →
-    interface.literals (token model) = some expected →
+    interface.literals tok = some expected →
     interface.literals " \t\n\r\u000c\u000b" = some whitespace →
     CStringMemory.Contents heap name nameBytes → CStringMemory.Contents heap suppliedToken tokenBytes →
     CStringMemory.Contents heap expected expectedBytes → CStringMemory.Contents heap whitespace whitespaceBytes →
@@ -600,13 +601,13 @@ structure FunctionContract (program : CCalls.Events.Program E) (tag : CAtomicBoo
   rejected : ∀ (bindings : Identity.Bindings program) (kind : Kind) (args : FactoryArguments.Raw)
     (heap : Heap) (name suppliedToken expected whitespace : Address)
     (nameBytes tokenBytes expectedBytes whitespaceBytes : List UInt8),
-    program.internal.definitions (FactoryArguments.signature kind).name = some (.tree (function model shape kind)) →
+    program.internal.definitions (FactoryArguments.signature kind).name = some (.tree (function model shape kind tok)) →
     program.internal.definitions Identity.function.signature.name = some (.tree Identity.function) →
     FactoryArguments.Types → interface.constants Identity.function.signature.name = none →
     interface.constants "NULL" = some (.pointer none) →
     (kind = .me ∨ FactoryEntry.unsupported args = false) →
     args.name = some name → args.token = some suppliedToken →
-    interface.literals (token model) = some expected →
+    interface.literals tok = some expected →
     interface.literals " \t\n\r\u000c\u000b" = some whitespace →
     CStringMemory.Contents heap name nameBytes → CStringMemory.Contents heap suppliedToken tokenBytes →
     CStringMemory.Contents heap expected expectedBytes → CStringMemory.Contents heap whitespace whitespaceBytes →
@@ -619,12 +620,13 @@ structure FunctionContract (program : CCalls.Events.Program E) (tag : CAtomicBoo
 
 /-- The tensor creation contract holds for the tensor factory function. -/
 theorem contract (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
-    (model : Solve.FMI3Model source) (shape : Tensor.Shape) : FunctionContract program tag model shape where
+    (model : Solve.FMI3Model source) (tok : String := token model) (shape : Tensor.Shape) :
+    FunctionContract program tag model tok shape where
   accepts bindings kind args heap stack name suppliedToken expected whitespace
       nameBytes tokenBytes expectedBytes whitespaceBytes defined helper typeBindings named supported
       nameBound tokenBound expectedBound whitespaceBound nameStored tokenStored expectedStored
       whitespaceStored fits :=
-    admission_accepts program bindings model shape kind args heap stack name suppliedToken expected whitespace
+    admission_accepts program bindings model tok shape kind args heap stack name suppliedToken expected whitespace
       nameBytes tokenBytes expectedBytes whitespaceBytes defined helper typeBindings named supported
       nameBound tokenBound expectedBound whitespaceBound nameStored tokenStored expectedStored whitespaceStored fits
   created env types before after base flags capacity environment logger logging kind trace slot scope storage
@@ -640,7 +642,7 @@ theorem contract (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls
   rejected bindings kind args heap name suppliedToken expected whitespace nameBytes tokenBytes expectedBytes
       whitespaceBytes defined helper typeBindings named nullConstant supported nameBound tokenBound expectedBound
       whitespaceBound nameStored tokenStored expectedStored whitespaceStored fits rejectedId quiet :=
-    rejected_silent program bindings model shape kind args heap name suppliedToken expected whitespace
+    rejected_silent program bindings model tok shape kind args heap name suppliedToken expected whitespace
       nameBytes tokenBytes expectedBytes whitespaceBytes defined helper typeBindings named nullConstant
       supported nameBound tokenBound expectedBound whitespaceBound nameStored tokenStored expectedStored
       whitespaceStored fits rejectedId quiet

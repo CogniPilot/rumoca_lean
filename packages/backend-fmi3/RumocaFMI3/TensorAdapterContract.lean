@@ -90,7 +90,7 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     TensorContinuousStates.DerivContract shape (TensorContinuousStates.derivFunction shape).render ∧
     -- Factory and release over the static tensor instance pool.
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
-      TensorFactory.FunctionContract prog tag model shape) ∧
+      TensorFactory.FunctionContract prog tag model (TensorMetadata.token m) shape) ∧
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
       StaticRelease.Bindings prog tag → TensorFree.Contract prog tag) ∧
     -- Declaration preamble: the tensor storage block (`TensorStorage.declarations`)
@@ -113,6 +113,13 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (∃ rest : String, text = "#define FMI3_FUNCTION_PREFIX " ++ modelIdentifier m.name ++ "_\n" ++ rest) ∧
     decodeModelIdentifiers (TensorMetadata.modelDescription m)
       = some (m.name, modelIdentifier m.name, modelIdentifier m.name) ∧
+    -- Instantiation-token agreement: the tensor factory validates exactly the
+    -- token the tensor model description declares as its `instantiationToken`
+    -- attribute (`TensorMetadata.token_attribute`). The factory contract above is
+    -- stated over this same `TensorMetadata.token m`, so the emitted adapter
+    -- accepts precisely the model description's token (FMI 3.0.2 §2.4.1).
+    (TensorMetadata.modelDescription m).attributes.lookup "instantiationToken"
+      = some (TensorMetadata.token m) ∧
     -- Call resolution: every function name the tensor bodies call resolves. The
     -- prepared derivative kernel `rumoca_rhs` is forward-declared in the preamble
     -- and resolves to the prepared RHS kernel; its declared prototype agrees in
@@ -165,7 +172,7 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     TensorContinuousStates.get_contract shape,
     TensorContinuousStates.set_contract shape,
     TensorContinuousStates.deriv_contract shape,
-    (fun _E prog tag => TensorFactory.contract prog tag model shape),
+    (fun _E prog tag => TensorFactory.contract prog tag model (TensorMetadata.token m) shape),
     (fun _E prog tag bindings => TensorFree.contract prog tag bindings),
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n",
       String.join (TensorFunctions.helpers.map Function.render) ++
@@ -180,6 +187,7 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
         String.join (sigs.map fun sig => (TensorFunctions.tensorFunction model m sig).render),
       by rw [render, functionPrefix]; simp only [String.append_assoc]⟩,
     TensorMetadata.modelIdentifiers_decode m,
+    TensorMetadata.token_attribute m,
     -- Call-resolution witnesses.
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarationPrefix ++
         TensorStorage.storageRender shape m.hasOutput,

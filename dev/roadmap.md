@@ -11,6 +11,28 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Kind-aware co-simulation exit and tensor instantiation token (derived proofs and boundary run):**
+
+The tensor exit-initialization transition now branches on the instance kind
+as the scalar body does, entering Event Mode for Model Exchange and Step Mode
+for Co-Simulation; `TensorLifecycleHistory.lifecycle_cs_step` threads creation,
+initialization and the Step Mode exit into an accepted `fmi3DoStep`. The shared
+admission prefix and identity lemmas are generalized over the expected token
+with the scalar token as default, so the scalar adapter is unchanged, and the
+tensor factory validates the tensor metadata token, with the agreement between
+the factory and the model description's `instantiationToken` a new conjunct of
+`TensorAdapter.Contract`. The native development FMU run now passes in both
+interfaces: derivatives `(1, 4)` and `x = (3, 12)` at `t = 3` in Model Exchange
+and in three co-simulation steps. The Jacobian output is still not computed;
+its wiring through a zero-fill and a strided diagonal write in the derivative
+getter and the co-simulation step, with the dense-matrix theorem, is the next
+obligation. Nothing is emitted by production. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 27m44s
+with the FMI certificates rebuilt (`build/tensor-fmi/full-gate-v22b.log`); the
+unit FMU's sources and model description are byte-identical to the previous
+gate's.
+
 **Initialization-entry contract lift and a native tensor FMU boundary run:**
 
 The tensor `fmi3EnterInitializationMode` contract is now stated over the

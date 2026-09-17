@@ -10,6 +10,7 @@ import RumocaFMI3.TensorFloat64Access
 import RumocaFMI3.TensorContinuousStates
 import RumocaFMI3.TensorDoStep
 import RumocaFMI3.TensorStorageCode
+import RumocaFMI3.TensorMetadata
 
 /-! The tensor FMI 3 adapter function list. This is the tensor analog of
 `LiteralPreparation.functions`: each pinned header signature renders either its
@@ -67,8 +68,8 @@ def tensorDispatch (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model s
   | "fmi3EnterContinuousTimeMode" => TensorLifecycleModes.function .enterContinuous
   | "fmi3Terminate" => TensorLifecycleModes.function .terminate
   | "fmi3FreeInstance" => TensorFree.function
-  | "fmi3InstantiateModelExchange" => TensorFactory.function model shape .me
-  | "fmi3InstantiateCoSimulation" => TensorFactory.function model shape .cs
+  | "fmi3InstantiateModelExchange" => TensorFactory.function model shape .me (TensorMetadata.token m)
+  | "fmi3InstantiateCoSimulation" => TensorFactory.function model shape .cs (TensorMetadata.token m)
   | "fmi3GetFloat64" => TensorFloat64.getFunction shape (outputShape m)
   | "fmi3SetFloat64" => TensorFloat64.setFunction shape
   | "fmi3GetContinuousStates" => TensorContinuousStates.getFunction shape

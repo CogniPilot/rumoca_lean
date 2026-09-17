@@ -46,7 +46,7 @@ theorem control_step (header : CFenv.Header) (objects : StaticFactory.Objects)
     · exact .capabilityRejected types (.dispatch heap)
   | validation types heap =>
     have scope := FactoryArguments.scope kind args
-    have entered := Identity.factory_enters program model
+    have entered := Identity.factory_enters program model (token model)
       (FactoryPrefix.identityGuard :: StaticFactory.code model.solve kind)
       (FactoryArguments.parameters kind args) types heap "fmi3Instance" .done
       args.name args.token expected whitespace scope.result scope.helper rfl scope.name scope.token

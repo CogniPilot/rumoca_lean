@@ -8,11 +8,16 @@ The Model Exchange mode transitions `fmi3EnterInitializationMode`,
 `fmi3ExitInitializationMode`, `fmi3EnterEventMode`, `fmi3EnterContinuousTimeMode`
 and `fmi3Terminate` each validate the instance handle and lifecycle guard exactly
 as the scalar bodies do (`Runtime.require` with the corresponding command), then
-write the single lifecycle-mode field of the instance record and return `fmi3OK`.
-Each body is `Runtime.require cmd ++ [Runtime.setMode after, Runtime.ok]`, so a
-successful transition changes only the `mode` cell of the addressed instance and
-preserves every other cell, including every cell of every other instance in the
-static pool. A null handle is rejected with `fmi3Error`; a call issued in an
+write the lifecycle-mode field of the instance record and return `fmi3OK`. Four of
+the transitions write a single kind-independent target
+(`Runtime.require cmd ++ [Runtime.setMode after, Runtime.ok]`).
+`fmi3ExitInitializationMode` branches on the instance `kind` cell exactly as the
+scalar `InitializationExit` body does, entering Event Mode for Model Exchange and
+Step Mode for Co-Simulation (FMI 3.0.2 §2.3, the state machine of Co-Simulation);
+its target is `Phase.afterKind`. So a successful transition changes only the
+`mode` cell of the addressed instance and preserves every other cell, including
+every cell of every other instance in the static pool. A null handle is rejected
+with `fmi3Error`; a call issued in an
 illegal mode reaches the shared `fail` statement and returns `fmi3Error` with
 logging suppressed, after entering the Terminated mode as the scalar rejection
 does (FMI 3.0.2 §2.3.1).
@@ -40,14 +45,46 @@ def Phase.command : Phase → Command
   | .enterContinuous => .enterContinuous
   | .terminate => .terminate
 
-/-- The lifecycle mode each transition writes. Exit-initialization enters Event
-Mode for the Model Exchange profile (`nextMode .exitInitialization .me`). -/
+/-- The lifecycle mode each transition writes for the Model Exchange profile.
+Exit-initialization enters Event Mode for Model Exchange (`nextMode
+.exitInitialization .me`); the kind-aware target is `Phase.afterKind`. -/
 def Phase.after : Phase → Mode
   | .enterInitialization => .initialization
   | .exitInitialization => .event
   | .enterEvent => .event
   | .enterContinuous => .continuous
   | .terminate => .terminated
+
+/-- The lifecycle mode each transition writes, aware of the instance kind. Only
+`fmi3ExitInitializationMode` differs by kind: Model Exchange instances enter Event
+Mode and Co-Simulation instances enter Step Mode on exiting Initialization Mode
+(FMI 3.0.2 §2.3, the state machine of Co-Simulation), matching the reference
+`nextMode .exitInitialization kind .initialization`. Every other transition writes
+its single kind-independent target. -/
+def Phase.afterKind : Phase → Kind → Mode
+  | .exitInitialization, .me => .event
+  | .exitInitialization, .cs => .step
+  | .enterInitialization, _ => .initialization
+  | .enterEvent, _ => .event
+  | .enterContinuous, _ => .continuous
+  | .terminate, _ => .terminated
+
+/-- The fuel each transition body needs to run to its mode write and return. The
+kind-aware exit body branches, so it takes one extra step; every other transition
+writes the single mode field directly. -/
+def Phase.steps : Phase → Nat
+  | .enterInitialization => 5
+  | .exitInitialization => 6
+  | .enterEvent => 5
+  | .enterContinuous => 5
+  | .terminate => 5
+
+/-- For every transition but exit-initialization the kind-aware target is the
+single Model Exchange target, so the four kind-independent transitions keep their
+existing statements. -/
+theorem Phase.afterKind_of_ne_exit (ph : Phase) (kind : Kind)
+    (h : ph ≠ .exitInitialization) : ph.afterKind kind = ph.after := by
+  cases ph <;> first | rfl | exact absurd rfl h
 
 /-- The public FMI 3 function name of each transition. -/
 def Phase.name : Phase → String
@@ -109,9 +146,20 @@ def arguments (ph : Phase) (handle : Option Address) (extra : Extra := default) 
 def parameters (ph : Phase) (handle : Option Address) (extra : Extra := default) : Locals :=
   CBody.bind (ph.extraLocals extra) "instance" (.pointer handle)
 
-/-- The statements after the handle/lifecycle guard: write the single mode field
-and return `fmi3OK`. -/
-def tail (ph : Phase) : List Stmt := [Runtime.setMode ph.after, Runtime.ok]
+/-- The statements after the handle/lifecycle guard: write the mode field and
+return `fmi3OK`. The exit-initialization transition branches on the instance kind
+cell exactly as the scalar `InitializationExit` body does (Event Mode for Model
+Exchange, Step Mode for Co-Simulation); every other transition writes its single
+Model Exchange target directly. -/
+def tail (ph : Phase) : List Stmt :=
+  match ph with
+  | .exitInitialization =>
+      [Runtime.branch (Runtime.eqv (Runtime.field "kind") (Runtime.n 0))
+        [Runtime.setMode .event] [Runtime.setMode .step], Runtime.ok]
+  | .enterInitialization => [Runtime.setMode .initialization, Runtime.ok]
+  | .enterEvent => [Runtime.setMode .event, Runtime.ok]
+  | .enterContinuous => [Runtime.setMode .continuous, Runtime.ok]
+  | .terminate => [Runtime.setMode .terminated, Runtime.ok]
 
 def body (ph : Phase) : List Stmt := Runtime.require ph.command ++ tail ph
 
@@ -122,7 +170,8 @@ theorem body_closed (ph : Phase) :
   cases ph <;>
     simp [function, body, tail, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.setMode, Runtime.put,
-      Runtime.ok, Phase.command, Phase.after, CBodyEmbedding.closedBlocks, CLoops.noDeclarations]
+      Runtime.ok, Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, Phase.command,
+      CBodyEmbedding.closedBlocks, CLoops.noDeclarations]
 
 section
 variable [static : StaticLiterals]
@@ -145,8 +194,8 @@ theorem body_run (ph : Phase) (heap : Heap) (p : Address) (kind : Kind) (mode : 
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
     (allowed : Reference.Allowed ph.command kind mode) :
-    CBody.run 5 (.running (body ph) (parameters ph (some p) extra) heap) =
-      some (.returned ⟨.integer 0, writeMode heap p ph.after⟩) := by
+    CBody.run ph.steps (.running (body ph) (parameters ph (some p) extra) heap) =
+      some (.returned ⟨.integer 0, writeMode heap p (ph.afterKind kind)⟩) := by
   have hmode : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hm, convert, Mode.code]
   have hi : parameters ph (some p) extra "instance" = some (.pointer (some p)) := by
@@ -155,11 +204,19 @@ theorem body_run (ph : Phase) (heap : Heap) (p : Address) (kind : Kind) (mode : 
     cases ph <;> simp [parameters, Phase.extraLocals, CBody.bind]
   have entered := LifecycleGuard.accept (parameters ph (some p) extra) heap p ph.command kind mode
     (tail ph) hi hn hk hmode allowed
-  rw [body, show (5 : Nat) = 3 + 2 from rfl, CBody.run_add, entered]
-  cases ph <;>
-    simp [tail, Phase.after, run, next, Runtime.setMode, Runtime.put, Runtime.field, Runtime.v,
-      Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, eval, lvalue, parameters,
-      Phase.extraLocals, CBody.bind, resolve, constants, Value.address, store, hm, convert, writeMode]
+  cases ph
+  case exitInitialization =>
+    rw [body, show Phase.steps .exitInitialization = 3 + 3 from rfl, CBody.run_add, entered]
+    cases kind <;>
+      simp [tail, Phase.afterKind, run, next, Runtime.branch, Runtime.eqv, Runtime.setMode,
+        Runtime.put, Runtime.field, Runtime.v, Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret,
+        Mode.code, Kind.code, eval, lvalue, parameters, Phase.extraLocals, CBody.bind, resolve,
+        constants, comparison, boolean, Value.truth, Value.address, store, hk, hm, convert, writeMode]
+  all_goals
+    (rw [body, show Phase.steps _ = 3 + 2 from rfl, CBody.run_add, entered]
+     simp [tail, Phase.afterKind, run, next, Runtime.setMode, Runtime.put, Runtime.field,
+       Runtime.v, Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, eval, lvalue, parameters,
+       Phase.extraLocals, CBody.bind, resolve, constants, Value.address, store, hm, convert, writeMode])
 
 theorem call_behaviors (ph : Phase) (program : CCalls.Events.Program E) (heap : Heap) (p : Address)
     (kind : Kind) (mode : Mode) (extra : Extra)
@@ -169,10 +226,10 @@ theorem call_behaviors (ph : Phase) (program : CCalls.Events.Program E) (heap : 
     (allowed : Reference.Allowed ph.command kind mode) (behavior) :
     (CCalls.Events.machine program).Behaves
       (.calling (signature ph).name (arguments ph (some p) extra) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, writeMode heap p ph.after⟩ := by
+      behavior = .terminates [] ⟨.integer 0, writeMode heap p (ph.afterKind kind)⟩ := by
   apply CCalls.Events.body_call_behaviors program (function ph) (arguments ph (some p) extra)
-    (parameters ph (some p) extra) heap ⟨.integer 0, writeMode heap p ph.after⟩ (.integer 0) 5 defined
-    (parameters_bound ph _ extra) (body_closed ph)
+    (parameters ph (some p) extra) heap ⟨.integer 0, writeMode heap p (ph.afterKind kind)⟩ (.integer 0)
+    ph.steps defined (parameters_bound ph _ extra) (body_closed ph)
   · exact body_run ph heap p kind mode extra hk hm allowed
   · cases ph <;> simp [function, signature, Phase.name, CCalls.returnCast, CBody.cast, convert]
 
@@ -283,7 +340,7 @@ theorem body_printable (ph : Phase) :
   have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
     .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   cases ph <;>
-    (simp only [function, body, tail, Phase.command, Phase.after, Runtime.require,
+    (simp only [function, body, tail, Phase.command, Runtime.require,
         Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
         Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.setMode, Runtime.put,
         Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.both, Runtime.either,
@@ -344,7 +401,7 @@ structure Contract (ph : Phase) (text : String) : Prop where
     Reference.Allowed ph.command kind mode →
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling (signature ph).name (arguments ph (some p) extra) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, writeMode heap p ph.after⟩
+      behavior = .terminates [] ⟨.integer 0, writeMode heap p (ph.afterKind kind)⟩
   illegal : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (p message : Address)
     (kind : Kind) (mode : Mode) (extra : Extra) (logger : Option Address),
     program.internal.definitions (signature ph).name = some (.tree (function ph)) →

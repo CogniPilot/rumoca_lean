@@ -148,12 +148,10 @@ rm -f "$dev_fmu"
 ( cd "$fmu_root" && zip -q -X -0 -r "$dev_fmu_abs" modelDescription.xml sources binaries documentation )
 fmpy validate "$dev_fmu" > build/tensor-fmi/fmu-validate.log 2>&1
 # Drive the actual adapter in ME and CS. The importer instantiates with the token the
-# adapter validates. NOTE (reported mismatch): the adapter's compiled-in expected
-# instantiation token is the scalar-witness token "lean-rumoca-unit-v1:TensorSquare:x"
-# (the runtime-interface bodies are built over the scalar witness model), while the
-# tensor model description declares "lean-rumoca-tensor-v1:TensorSquare"; reconciling
-# the two is an open tensor-adapter identity design item, so the run passes the token
-# the emitted adapter accepts.
+# model description declares: the tensor factory now validates the tensor model
+# description's instantiationToken "lean-rumoca-tensor-v1:TensorSquare"
+# (TensorMetadata.token), and TensorAdapter.Contract proves the factory's expected
+# token equals that attribute (TensorMetadata.token_attribute).
 python3 - "$dev_fmu" > build/tensor-fmi/fmu-run.log 2>&1 <<'PY'
 import sys, ctypes
 from fmpy import read_model_description, extract
@@ -163,7 +161,7 @@ path = sys.argv[1]
 md = read_model_description(path)
 vr = {v.name: v.valueReference for v in md.modelVariables}
 udir = extract(path)
-TOKEN = "lean-rumoca-unit-v1:TensorSquare:x"
+TOKEN = "lean-rumoca-tensor-v1:TensorSquare"
 def arr(vals): return (ctypes.c_double * len(vals))(*vals)
 def approx(a, b): return all(abs(x - y) < 1e-12 for x, y in zip(a, b))
 
@@ -197,25 +195,31 @@ print("ME J =", me_J)
 assert approx(me_J, [0.0, 0.0, 0.0, 0.0]), "ME J != (0, 0, 0, 0)"
 me.terminate(); me.freeInstance()
 
-# Co-Simulation: instantiate and initialize succeed; the internal-Euler fmi3DoStep is
-# currently REJECTED. The tensor exitInitializationMode writes Event mode (the proved
-# ME transition; its own definition documents "for the Model Exchange profile"), but
-# CS fmi3DoStep requires Step mode. The CS Step-mode exit transition is not yet modeled
-# by the tensor lifecycle table: a listed open lifecycle-binding item. This boundary
-# asserts the current documented behavior so the check is deterministic.
+# Co-Simulation: the tensor exitInitializationMode is now kind-aware and enters Step
+# mode for a Co-Simulation instance (TensorLifecycleModes.Phase.afterKind, matching the
+# scalar InitializationExit body), so fmi3DoStep is accepted. Three unit steps with the
+# constant input u = (1, 2) advance x by u .* u = (1, 4) each step, reaching x = (3, 12)
+# at t = 3 (TensorLifecycleHistory.lifecycle_cs_step threads the Step-mode exit into an
+# accepted step).
 cs = FMU3Slave(guid=TOKEN, modelIdentifier=md.coSimulation.modelIdentifier,
                unzipDirectory=udir, instanceName="cs")
 cs.instantiate(loggingOn=False)
 cs.enterInitializationMode(startTime=0.0)
 cs.setFloat64([vr["u"]], [1.0, 2.0])
 cs.exitInitializationMode()
-try:
-    cs.doStep(0.0, 1.0)
-    raise SystemExit("CS fmi3DoStep unexpectedly succeeded; the exit-mode item may be resolved")
-except FMICallException as e:
-    print("CS fmi3DoStep rejected, status =", e.status, "(3 = fmi3Error: not in Step mode)")
-    assert e.status == 3, "CS doStep rejection status changed"
-cs.freeInstance()
+t = 0.0
+for _ in range(3):
+    cs.doStep(t, 1.0)
+    t += 1.0
+cs_x = list(cs.getFloat64([vr["x"]], 2))
+print("CS x@t=3 =", cs_x)
+assert approx(cs_x, [3.0, 12.0]), "CS x@t=3 != (3, 12)"
+cs_J = list(cs.getFloat64([vr["J"]], 4))
+print("CS J =", cs_J)
+# J still reads the zero-initialized output region: wiring the emitted diagonal kernel
+# rumoca_square_jacobian into an FMI output is the remaining open tensor item.
+assert approx(cs_J, [0.0, 0.0, 0.0, 0.0]), "CS J != (0, 0, 0, 0)"
+cs.terminate(); cs.freeInstance()
 print("DEV TENSOR FMU BOUNDARY RUN OK")
 PY
 if ! grep -q 'DEV TENSOR FMU BOUNDARY RUN OK' build/tensor-fmi/fmu-run.log; then
@@ -224,4 +228,4 @@ if ! grep -q 'DEV TENSOR FMU BOUNDARY RUN OK' build/tensor-fmi/fmu-run.log; then
   exit 1
 fi
 cat build/tensor-fmi/fmu-run.log
-echo 'Development tensor FMU boundary run passed (ME numeric checks; CS doStep documented open item)'
+echo 'Development tensor FMU boundary run passed (ME and CS x@t=3 = (3, 12); J = zeros is the remaining open item)'

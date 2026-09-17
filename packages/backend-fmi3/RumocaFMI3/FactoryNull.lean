@@ -42,7 +42,7 @@ theorem reaches_rejection (program : CCalls.Events.Program E) (model : Solve.FMI
   intro behavior
   rw [CCalls.Events.internal_prefix_behaviors program entered behavior]
   rw [Identity.factory_null program helper pointer typeBindings.size integer typeBindings.boolean voidPointer
-    model (FactoryPrefix.identityGuard :: creation)
+    model (token model) (FactoryPrefix.identityGuard :: creation)
     (parameters kind args) types heap "fmi3Instance" stack args.name args.token expected whitespace
     scope.result scope.helper named scope.name scope.token expectedBound whitespaceBound missing behavior]
   exact CCalls.Events.internal_prefix_behaviors program

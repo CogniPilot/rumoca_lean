@@ -98,11 +98,16 @@ def structureNodes : Bool → List Element
   | true => [outputEntry, continuousStateDerivative, initialUnknownDerivative, initialUnknownOutput]
   | false => [continuousStateDerivative, initialUnknownDerivative]
 
+/-- The tensor model's instantiation token (FMI 3.0.2 §2.4.1 `instantiationToken`),
+the tensor namespace paired with the model name. The tensor factory validates this
+literal, and it is the `instantiationToken` attribute of the model description. -/
+def token (m : TensorFMI3Model shape) : String := "lean-rumoca-tensor-v1:" ++ m.name
+
 /-- The tensor model description for a prepared `TensorFMI3Model`, universal in
 the tensor shape. -/
 def modelDescription (m : TensorFMI3Model shape) : Element :=
   ⟨"fmiModelDescription", [("fmiVersion", "3.0"), ("modelName", m.name),
-    ("instantiationToken", "lean-rumoca-tensor-v1:" ++ m.name),
+    ("instantiationToken", token m),
     ("generationTool", "lean_rumoca")], [
     ⟨"ModelExchange", [("modelIdentifier", modelIdentifier m.name)], [], ""⟩,
     ⟨"CoSimulation", [("modelIdentifier", modelIdentifier m.name),
@@ -111,6 +116,12 @@ def modelDescription (m : TensorFMI3Model shape) : Element :=
     ⟨"DefaultExperiment", [("startTime", "0"), ("stopTime", "3"), ("stepSize", "1")], [], ""⟩,
     ⟨"ModelVariables", [], variableNodes shape m.hasOutput, ""⟩,
     ⟨"ModelStructure", [], structureNodes m.hasOutput, ""⟩], ""⟩
+
+/-- The model description's declared `instantiationToken` attribute is exactly the
+tensor token the tensor factory validates, so the emitted adapter accepts precisely
+the token the model description declares (FMI 3.0.2 §2.4.1). -/
+theorem token_attribute (m : TensorFMI3Model shape) :
+    (modelDescription m).attributes.lookup "instantiationToken" = some (token m) := rfl
 
 /-! ### Text of decimal extents -/
 

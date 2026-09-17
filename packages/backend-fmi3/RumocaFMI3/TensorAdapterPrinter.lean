@@ -23,8 +23,9 @@ private theorem named_type (name : String) (member : name ∈ RuntimePrinter.typ
 followed by the tensor reserved-record initializer (slot store, lifecycle
 metadata, the counted state-region zero fill and the handle return). This is the
 one dispatched tensor body without an existing printability theorem. -/
-theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tensor.Shape) (kind : Kind) :
-    FunctionPrintable RuntimePrinter.typedefs (TensorFactory.function model shape kind) := by
+theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tensor.Shape) (kind : Kind)
+    (tok : String := token model) :
+    FunctionPrintable RuntimePrinter.typedefs (TensorFactory.function model shape kind tok) := by
   refine ⟨StaticFactory.Printer.signature_printable kind, ?_⟩
   have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
     .pointer (text := "Instance") (named_type _ (by decide +kernel))
@@ -101,8 +102,8 @@ theorem tensorFunction_printable (model : Solve.FMI3Model source)
       | exact TensorLifecycleModes.body_printable .enterContinuous
       | exact TensorLifecycleModes.body_printable .terminate
       | exact StaticFactory.Printer.release_printable.2
-      | exact (factory_printable model shape .me).2
-      | exact (factory_printable model shape .cs).2
+      | exact (factory_printable model shape .me (TensorMetadata.token m)).2
+      | exact (factory_printable model shape .cs (TensorMetadata.token m)).2
       | exact TensorFloat64.getBody_printable shape (TensorFunctions.outputShape m)
       | exact TensorFloat64.setBody_printable shape
       | exact TensorContinuousStates.getBody_printable shape
