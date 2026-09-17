@@ -1487,3 +1487,68 @@ foundational axioms (`propext`, `Quot.sound`, `Classical.choice`) in
 package-checked products only: no production artifact is emitted, no CLI or
 grammar case is added, and the scalar renderer, the families and every existing
 contract are unchanged.
+
+## Tensor adapter preamble and rendered adapter check
+
+The previous adapter list reused the scalar declaration preamble
+(`Runtime.declarations`), which declares the scalar instance record. The tensor
+bodies instead address a tensor instance record. `TensorStorage.declarations`
+now supplies the tensor declaration preamble: the shared header-inclusion block
+(`Runtime.declarationPrefix`, reused verbatim) followed by the tensor storage
+section. `declarations_header` records that the preamble begins with exactly the
+scalar header-inclusion block. `TensorFunctions.render` uses this preamble in
+place of the scalar one.
+
+The tensor instance record declares the FMI-visible tensors of a prepared
+`TensorFMI3Model`: the independent time base as a single `double`, the state
+`x`, input `u` and derivative `dx` as contiguous `double[N]` regions of the
+symbolic state element count, and, when the prepared problem exposes a dense
+observation, the Jacobian `J` as a `double[N*N]` region, followed by the FMI
+lifecycle, host and slot bookkeeping fields the tensor bodies read (`kind`,
+`mode`, `stop`, `stopDefined`, `logging`, `environment`, `logger`, `slot`). The
+permanent instance pool array, its always-lock-free flag array and the
+deployment-capacity constant are shared verbatim with the scalar storage; only
+the record body differs. Extents stay symbolic in the shape; no coordinate is
+enumerated.
+
+| Obligation | Checked theorem |
+| --- | --- |
+| Region member names agree with the addressed `TensorInstance` fields | `TensorStorage.layout_names`, `layout_names_core` |
+| Region array extents agree with the addressed region counts | `TensorStorage.layout_state_extent`, `layout_output_extent` |
+| The tensor instance record scans into its token sequence | `TensorStorage.record_printed` |
+| The whole storage section tokenizes under the shared C scanner | `TensorStorage.storage_printed` |
+| The preamble is the shared header inclusion followed by the storage | `TensorStorage.declarations_header` |
+| The tensor factory reserved-record initializer is printable | `TensorAdapterPrinter.factory_printable` |
+| Each dispatched tensor function is printable | `TensorAdapterPrinter.tensorFunction_printable` |
+| Every function of the tensor adapter list is printable | `TensorAdapterPrinter.functions_printable` |
+| The function section tokenizes maximally as the tensor function list | `TensorAdapterPrinter.rendered_contract` |
+| The adapter contract carries the record-layout and identifier agreements | `TensorAdapter.render_contract` |
+
+`TensorAdapter.Contract` is extended with the declaration-preamble facts: the
+tensor storage block is the adapter's preamble, its record member names and
+region extents agree with `TensorInstance`, and the adapter's function prefix
+names the same model identifier the tensor model description decodes to
+(`TensorMetadata.modelIdentifiers_decode`).
+
+The rendered `TensorSquare` adapter is checked concretely in the compiler
+package (`Tests.TensorAdapterFixture`, mirroring `Tests.TensorMetadataFixture`):
+a scalar model witness (built through the same checked parse/lower/prepare path)
+and the `TensorSquare` kernel witness render a concrete adapter over a
+representative dispatched signature slice; `fixture_function_section` applies the
+function-section grammar to the actual rendered bytes, `fixture_preamble_tokenizes`
+the storage tokenization, and `fixture_preamble_layout`/`fixture_identifier` the
+record-layout and identifier agreements. The native regression executable ties
+the actual `ArrayCompiler.prepare` kernel to the fixture (its rendered adapter
+bytes equal the fixture's) and retains the rendered adapter under
+`build/tensor-fmi/adapter.c` (git-ignored) for review.
+
+The added roots pass the FMI package axiom audit on the three permitted
+foundational axioms (`propext`, `Quot.sound`, `Classical.choice`). These are
+package-checked products only: no production artifact is emitted, no CLI or
+grammar case is added, and the scalar renderer, `Runtime.lean` and every
+existing contract are unchanged. `TensorAdapterPrinter.rendered_contract` is universal in
+the signature list, so the function-section grammar applies to the complete
+pinned header list; the package fixture instantiates it on a representative
+dispatched slice defined in Lean (the concrete full-list rendering with its exact
+bytes is the actual-file certificate's boundary, driven from the vendored
+header).

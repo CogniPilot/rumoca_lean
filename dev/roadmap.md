@@ -11,6 +11,27 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor adapter preamble and concrete rendered check (derived proofs):**
+
+`FMI3.TensorStorage.declarations` renders the tensor instance record with
+`double` regions of the symbolic volume for the state, input and derivative,
+the flattened output region when present, and the slot, kind, mode, stop,
+logging, environment and logger fields, plus the static pool of the deployment
+capacity; the layout agrees with `TensorInstance` by proof and the text
+tokenizes under the shared C grammar. `TensorFunctions.render` now uses this
+preamble and `TensorAdapter.Contract` carries the layout and identifier
+agreements. A compiler check renders the `TensorSquare` kernel's adapter to
+concrete bytes, checks a representative function slice against the
+function-section grammar and ties the actual prepared kernel to the fixture;
+the bytes are retained under `build/tensor-fmi/adapter.c`. Review of that
+render shows the helper section still carries the scalar model record and the
+scalar `model_rhs`/`model_advance` helpers rather than the tensor derivative
+entry with its buffer arguments; replacing the helper set is the next
+obligation, together with the full-list concrete render. Nothing is emitted by
+production. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 8m38s
+(`build/tensor-fmi/full-gate-v17.log`).
+
 **Tensor adapter function list, family contracts and adapter contract skeleton (derived proofs):**
 
 `FMI3.TensorFunctions` maps every pinned header signature to its tensor body

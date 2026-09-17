@@ -260,6 +260,8 @@ import RumocaFMI3.TensorEventIndicators
 import RumocaFMI3.TensorDoStep
 import RumocaFMI3.TensorFunctions
 import RumocaFMI3.TensorFamilyContracts
+import RumocaFMI3.TensorStorageCode
+import RumocaFMI3.TensorAdapterPrinter
 import RumocaFMI3.TensorAdapterContract
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
@@ -2496,7 +2498,29 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorCapabilityRejection.rendered_contract
 #audit axioms Rumoca.FMI3.TensorCapabilityRejection.family_correct
 
+-- The tensor storage preamble: the tensor instance record layout the tensor
+-- bodies address (member names and region extents agree with `TensorInstance`),
+-- and the storage section's tokenization under the shared C scanner. The header
+-- inclusion block is the scalar preamble's, reused verbatim.
+#audit axioms Rumoca.FMI3.TensorStorage.layout_names
+#audit axioms Rumoca.FMI3.TensorStorage.layout_names_core
+#audit axioms Rumoca.FMI3.TensorStorage.layout_state_extent
+#audit axioms Rumoca.FMI3.TensorStorage.layout_output_extent
+#audit axioms Rumoca.FMI3.TensorStorage.record_printed
+#audit axioms Rumoca.FMI3.TensorStorage.storage_printed
+#audit axioms Rumoca.FMI3.TensorStorage.declarations_header
+
+-- The tensor adapter function-section grammar: the factory-body printability
+-- (the one dispatched tensor body without a prior printability theorem), the
+-- per-function printability dispatch, and the maximal-munch tokenization of the
+-- whole function section as the tensor function list.
+#audit axioms Rumoca.FMI3.TensorAdapterPrinter.factory_printable
+#audit axioms Rumoca.FMI3.TensorAdapterPrinter.tensorFunction_printable
+#audit axioms Rumoca.FMI3.TensorAdapterPrinter.functions_printable
+#audit axioms Rumoca.FMI3.TensorAdapterPrinter.rendered_contract
+
 -- The first tensor adapter contract skeleton: the rendered text of the function
--- list bound to the model-free public-API coverage, the two family contracts and
--- every proved tensor behavioral function contract, with `render_contract` proved.
+-- list bound to the model-free public-API coverage, the two family contracts,
+-- every proved tensor behavioral function contract, and the declaration-preamble
+-- record-layout and identifier agreements, with `render_contract` proved.
 #audit axioms Rumoca.FMI3.TensorAdapter.render_contract

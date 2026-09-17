@@ -17,6 +17,8 @@ import RumocaFMI3.TensorFloat64Access
 import RumocaFMI3.TensorContinuousStates
 import RumocaFMI3.TensorStaticFactory
 import RumocaFMI3.TensorFree
+import RumocaFMI3.TensorStorageCode
+import RumocaFMI3.TensorMetadata
 
 /-! First tensor adapter contract skeleton. It binds the rendered text of the
 tensor adapter function list to the model-free public-API coverage, the two
@@ -90,7 +92,26 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
       TensorFactory.FunctionContract prog tag model shape) ∧
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
-      StaticRelease.Bindings prog tag → TensorFree.Contract prog tag)
+      StaticRelease.Bindings prog tag → TensorFree.Contract prog tag) ∧
+    -- Declaration preamble: the tensor storage block (`TensorStorage.declarations`)
+    -- is the adapter's declaration preamble, the shared header inclusion followed
+    -- by the tensor instance record layout the tensor bodies address. Its record
+    -- member names and region extents agree with `TensorInstance.field`.
+    (∃ before after : String,
+      text = before ++ TensorStorage.declarations shape m.hasOutput ++ after) ∧
+    (TensorStorage.declarations shape m.hasOutput).toList =
+      Runtime.declarationPrefix.toList ++ (TensorStorage.storageRender shape m.hasOutput ++ "\n").toList ∧
+    (TensorStorage.regionMembers shape true).map TensorStorage.Member.baseName = TensorInstance.fieldNames ∧
+    TensorStorage.Member.region TensorInstance.stateName shape.volume ∈ TensorStorage.regionMembers shape m.hasOutput ∧
+    (TensorStorage.Member.region TensorInstance.outputName ((Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
+        ∈ TensorStorage.regionMembers shape true ∧
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume = shape.volume * shape.volume) ∧
+    -- Identifier agreement: the adapter's function-prefix names the same model
+    -- identifier the tensor model description decodes to
+    -- (`TensorMetadata.modelIdentifiers_decode`).
+    (∃ rest : String, text = "#define FMI3_FUNCTION_PREFIX " ++ modelIdentifier m.name ++ "_\n" ++ rest) ∧
+    decodeModelIdentifiers (TensorMetadata.modelDescription m)
+      = some (m.name, modelIdentifier m.name, modelIdentifier m.name)
 
 /-- The tensor adapter contract holds for the rendered text of the function list,
 given the located and distinct header signatures and the model-free coverage. -/
@@ -123,7 +144,20 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     TensorContinuousStates.set_contract shape,
     TensorContinuousStates.deriv_contract shape,
     (fun _E prog tag => TensorFactory.contract prog tag model shape),
-    (fun _E prog tag bindings => TensorFree.contract prog tag bindings)⟩
+    (fun _E prog tag bindings => TensorFree.contract prog tag bindings),
+    ⟨functionPrefix m.name ++ "#include \"model.c\"\n",
+      String.join (Runtime.helpers.map Function.render) ++
+        String.join (sigs.map fun sig => (TensorFunctions.tensorFunction model m sig).render),
+      by rw [render]; simp only [String.append_assoc]⟩,
+    TensorStorage.declarations_header shape m.hasOutput,
+    TensorStorage.layout_names shape,
+    (TensorStorage.layout_state_extent shape m.hasOutput).1,
+    TensorStorage.layout_output_extent shape,
+    ⟨"#include \"model.c\"\n" ++ TensorStorage.declarations shape m.hasOutput ++
+        String.join (Runtime.helpers.map Function.render) ++
+        String.join (sigs.map fun sig => (TensorFunctions.tensorFunction model m sig).render),
+      by rw [render, functionPrefix]; simp only [String.append_assoc]⟩,
+    TensorMetadata.modelIdentifiers_decode m⟩
 
 end Rumoca.FMI3.TensorAdapter
 end

@@ -8,6 +8,7 @@ import Rumoca.EFMIIdentity
 import RumocaFMI3.TensorMetadata
 import RumocaFMI3.TensorInstanceRhs
 import Tests.TensorMetadataFixture
+import Tests.TensorAdapterFixture
 
 open _root_.Parser
 
@@ -67,6 +68,12 @@ def main : IO Unit := do
         expect "prepared TensorSquare RHS matches the tensor instance record's bound derivative"
           (kernel.problem.rhs ops 0 1 state input ==
             (FMI3.TensorInstanceRhs.kernel ArrayProfile.stateShape).problem.rhs ops 0 1 state input)
+        expect "prepared TensorSquare renders the fixture's tensor adapter bytes"
+          (FMI3.TensorFunctions.render Tests.TensorAdapterFixture.scalarModel preparedModel
+              Tests.TensorAdapterFixture.signatures
+            == Tests.TensorAdapterFixture.adapterBytes)
+        IO.FS.createDirAll "build/tensor-fmi"
+        IO.FS.writeFile "build/tensor-fmi/adapter.c" Tests.TensorAdapterFixture.adapterBytes
       | _, _ => throw (IO.userError "Solve observation does not match the source profile")
       match ArrayProfile.LocatedParsed.call? p with
       | none => pure ()

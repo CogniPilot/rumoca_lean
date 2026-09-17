@@ -9,6 +9,7 @@ import RumocaFMI3.TensorStaticFactory
 import RumocaFMI3.TensorFloat64Access
 import RumocaFMI3.TensorContinuousStates
 import RumocaFMI3.TensorDoStep
+import RumocaFMI3.TensorStorageCode
 
 /-! The tensor FMI 3 adapter function list. This is the tensor analog of
 `LiteralPreparation.functions`: each pinned header signature renders either its
@@ -16,8 +17,10 @@ proved tensor behavioral body (19 shape-dependent functions dispatched by name)
 or, for every model-independent behavioral and unsupported/absent-type function,
 the same body the scalar renderer emits (`Runtime.function model sig`). The
 shared helper prefix (`Runtime.helpers`, including the `fail` diagnostic the
-family failure paths call) and the fixed declaration preamble are reused
-verbatim.
+family failure paths call) is reused verbatim. The declaration preamble is the
+tensor storage preamble (`TensorStorage.declarations`): the shared header
+inclusion block followed by the tensor instance record layout the tensor bodies
+address, in place of the scalar instance record.
 
 The name multiset of this list equals the scalar list's name multiset, so its
 distinctness, located positions, definition table and literal pool follow the
@@ -120,14 +123,14 @@ include and the shared declaration block) followed by the concatenated helper
 and dispatched-function renderings, in header order. -/
 def render (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (signatures : List Signature) : String :=
-  functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarations ++
+  functionPrefix m.name ++ "#include \"model.c\"\n" ++ TensorStorage.declarations shape m.hasOutput ++
     String.join (Runtime.helpers.map Function.render) ++
     String.join (signatures.map fun sig => (tensorFunction model m sig).render)
 
 theorem rendered_functions (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (signatures : List Signature) :
     render model m signatures = functionPrefix m.name ++ "#include \"model.c\"\n" ++
-      Runtime.declarations ++ String.join ((functions model m signatures).map Function.render) := by
+      TensorStorage.declarations shape m.hasOutput ++ String.join ((functions model m signatures).map Function.render) := by
   apply String.toList_injective
   simp [render, functions, String.toList_append, CString.join_toList,
     List.flatMap_map, List.append_assoc]
@@ -138,7 +141,7 @@ theorem rendered_member (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     ∃ before after : String,
       render model m sigs = before ++ (tensorFunction model m sig).render ++ after := by
   obtain ⟨left, right, rfl⟩ := List.mem_iff_append.mp member
-  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarations ++
+  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ TensorStorage.declarations shape m.hasOutput ++
     String.join (Runtime.helpers.map Function.render) ++
     String.join (left.map fun sig => (tensorFunction model m sig).render),
     String.join (right.map fun sig => (tensorFunction model m sig).render), ?_⟩
@@ -151,7 +154,7 @@ theorem rendered_helper (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     (sigs : List Signature) (fn : Function) (member : fn ∈ Runtime.helpers) :
     ∃ before after : String, render model m sigs = before ++ fn.render ++ after := by
   obtain ⟨left, right, same⟩ := List.mem_iff_append.mp member
-  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarations ++
+  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ TensorStorage.declarations shape m.hasOutput ++
     String.join (left.map Function.render),
     String.join (right.map Function.render) ++
       String.join (sigs.map fun sig => (tensorFunction model m sig).render), ?_⟩
