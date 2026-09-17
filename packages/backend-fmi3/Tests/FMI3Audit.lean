@@ -2436,3 +2436,23 @@ import RumocaFMI3.TensorDoStep
 #audit axioms Rumoca.FMI3.TensorDoStep.doStepBody_prefix
 #audit axioms Rumoca.FMI3.TensorDoStep.outerLoop_closed
 #audit axioms Rumoca.FMI3.TensorDoStep.doStepBody_closed
+
+-- The accepted tensor `fmi3DoStep` execution and its bundled tensor-native contract:
+-- the model-dependent numerical tail as one observable execution (declarations, the
+-- outer grid loop, the last-successful-time publication and the `fmi3OK` return), the
+-- reused model-independent guard prefix, the accepted end-to-end reach/behaviors under
+-- the guard and admitted-duration premises exactly as `StepGuards`/`StepAdmission`
+-- expose them, the null-handle and lifecycle rejections, and the printed-text
+-- denotation of the guarded body.
+#audit axioms Rumoca.FMI3.TensorDoStep.field_index_block
+#audit axioms Rumoca.FMI3.TensorDoStep.cell_block_ne
+#audit axioms Rumoca.FMI3.TensorDoStep.tensorSolve_reaches
+#audit axioms Rumoca.FMI3.TensorDoStep.front_run
+#audit axioms Rumoca.FMI3.TensorDoStep.accepted_reaches
+#audit axioms Rumoca.FMI3.TensorDoStep.accepted_behaviors
+#audit axioms Rumoca.FMI3.TensorDoStep.null_behaviors
+#audit axioms Rumoca.FMI3.TensorDoStep.lifecycle_behaviors
+#audit axioms Rumoca.FMI3.TensorDoStep.signature_printable
+#audit axioms Rumoca.FMI3.TensorDoStep.body_printable
+#audit axioms Rumoca.FMI3.TensorDoStep.function_denotes
+#audit axioms Rumoca.FMI3.TensorDoStep.contract

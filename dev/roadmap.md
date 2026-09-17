@@ -11,6 +11,26 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor co-simulation step execution and contract (derived proofs):**
+
+`TensorDoStep.accepted_behaviors` proves the guarded tensor `fmi3DoStep` as
+one observable-machine execution: the reused model-independent guard prefix,
+the hoisted declarations, the outer grid loop with time advance, the
+last-successful-time publication and the `fmi3OK` return, with the state
+region equal to the finite Euler iteration, the time advanced by the step
+count, the caller buffers written as the scalar body writes them and every
+other instance preserved. Null and lifecycle rejections, printer denotation and
+the tensor-native contract are proved, so all twenty-six behavioral functions
+now have tensor bodies with contracts. Two items are explicit: the whole-call
+`fmi3Discard` behavior still needs the scalar discard logging composition over
+the tensor record, and the accepted case carries the round-to-nearest
+floating-environment premise that the bare C interface cannot discharge, so
+the tensor numerical lemmas must be rebased on the header-aware interface
+before the contract is instantiable. Nothing is emitted by production. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 8m59s
+(`build/tensor-fmi/full-gate-v15.log`).
+
 **Tensor co-simulation time advance and guarded step body (derived proofs):**
 
 `TensorDoStep` now advances the instance time cell by one inside each

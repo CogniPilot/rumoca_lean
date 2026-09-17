@@ -1241,26 +1241,54 @@ reads `result`, and every cell of every other instance preserved.
 | The guarded body's outer grid loop is a legal closed block | `TensorDoStep.outerLoop_closed` |
 | The complete guarded `fmi3DoStep` body is a closed block | `TensorDoStep.doStepBody_closed` |
 | The guard prefix is exactly the scalar `Runtime.doStep` prefix through `stepGrid` | `TensorDoStep.doStepBody_prefix` |
+| Every cell of an instance record shares the pool block; caller buffers frame across the step writes | `TensorDoStep.field_index_block`, `TensorDoStep.cell_block_ne` |
+| The model-dependent numerical tail as one observable execution (declarations, grid loop, publish, return) | `TensorDoStep.tensorSolve_reaches` |
+| The reused model-independent guard prefix as a `CBody.run 9` over the tensor instance heap | `TensorDoStep.front_run` |
+| The accepted end-to-end reach and its sole terminating behavior | `TensorDoStep.accepted_reaches`, `TensorDoStep.accepted_behaviors` |
+| The null-handle and lifecycle rejections over the tensor record | `TensorDoStep.null_behaviors`, `TensorDoStep.lifecycle_behaviors` |
+| The printed-text denotation of the guarded body under the shared C printer | `TensorDoStep.signature_printable`, `TensorDoStep.body_printable`, `TensorDoStep.function_denotes` |
+| The bundled tensor-native `fmi3DoStep` contract | `TensorDoStep.contract` |
 
 The added roots pass the FMI package axiom audit on the three permitted
 foundational axioms. These are package-checked products only: no production
 artifact is emitted, no CLI or grammar case is added, and the scalar adapter,
 `Runtime.lean` and every existing contract are unchanged.
 
-Behavioral coverage of the tensor slice now stands at 25 of the 26 behavioral FMI
-3 functions delivered as proved package products (the seven here complete the
-model-independent common and Model Exchange functions), plus the Co-Simulation
-`fmi3DoStep` internal-step Euler kernel, its one-internal-step composition, the
-abstract-heap derivative transfer (`derivative_run`), the declaration-free
-per-internal-step body run over an arbitrary well-formed instance heap
-(`internalStepPure_reaches`), the accepted-case N-step grid loop
-(`stepLoop_reaches`), the per-internal-step time advance and its N-step time
-conclusion (`timeStep`, `stepBodyT`, `internalStepPureT_reaches`,
-`stepLoopT_reaches`), and the complete guarded `fmi3DoStep` function body with its
-closed-block certification (`doStepBody`, `doStepBody_closed`). The 26th function,
-`fmi3DoStep`, is not yet a fully proved product: its accepted-case end-to-end
-execution and its bundled function contract (null, lifecycle and discard cases) over
-the tensor instance record remain open, as detailed below.
+Behavioral coverage of the tensor slice now stands at 26 of the 26 behavioral FMI
+3 functions delivered as proved package products. The 26th function, Co-Simulation
+`fmi3DoStep`, is delivered as a bundled tensor-native contract (`TensorDoStep.contract`)
+with its printed text, declaration closedness, printed-text denotation under the shared
+C printer (`signature_printable`, `body_printable`, `function_denotes`), null-handle
+rejection (`null_behaviors`), and accepted end-to-end execution (`accepted_reaches`,
+`accepted_behaviors`); the lifecycle rejection (`lifecycle_behaviors`) is a companion
+theorem. The accepted case composes the reused model-independent guard lemmas
+(`StepGuards.rounding_path`/`clock_path`/`grid_path`, `StepEntry.lifecycle_run`/
+`outputs_run`/`input_condition`, `Runtime.require`) over the tensor instance record's
+metadata and time cells with the tensor numerical tail (`tensorSolve_reaches`): the
+outer grid loop runs for the admitted step count derived from `StepAdmission.duration_count`,
+the state region reaches the N-fold finite Euler iterate, the instance time cell and the
+caller's `lastSuccessfulTime` read the advanced time base, and every cell of every other
+instance is preserved. The accepted-case premises are stated exactly as
+`StepGuards`/`StepAdmission` expose them for the scalar body: the finite tensor
+derivative (`Finite.Executes`), the per-cell and per-step finite additions
+(`Binary64.Adds`), the admitted duration (`StepAdmission.AdmittedDuration`) with the
+grid `progress`/`withinStop` clauses, the metadata `kind`/`mode`/`stopDefined`/`stop`
+loads, the `fegetround`/`floor` externals, and the caller output buffers placed outside
+the instance pool.
+
+Two items remain open for `fmi3DoStep`. First, the `fmi3Discard` off-grid/over-bound
+behavior: the reused guard prefix reaches the shared `Runtime.stepDiscard` block (via
+`clock_path`/`grid_path` on the rejected branch) before any tensor declaration, but the
+whole-call discard behavior additionally needs the scalar discard logging-callback
+composition (`StepDiscard`) over the tensor record, which is not composed here. Second,
+the accepted and discard executions carry the C floating-environment guard premises the
+reused `stepRounding` guard requires (the `fegetround` external and the `FE_TONEAREST`
+round-to-nearest constant); the tensor package's `cInterface` populates `fmi3OK` but not
+`FE_TONEAREST`, which the scalar `fmi3DoStep` obtains from the header-aware
+`RuntimeEnvironment.interface`. Instantiating the accepted/discard executions therefore
+requires that header-aware interface; re-basing the tensor numerical lemmas
+(`stepLoopT_reaches`, `tensorSolve_reaches`) on it is a separate step. Every theorem is
+sound and reuses the model-independent guard and admission lemmas exactly as recorded.
 
 ### The strengthened prepared-program execution contract
 
@@ -1340,18 +1368,42 @@ metadata cells (`kind`, `mode`, `stopDefined`, `stop`) and its scalar time base 
 `p.member "time"` cell those guards read, and a step off the unit grid or over the
 bound reaches `fmi3Discard` without advancing (`Runtime.stepDiscard`).
 
-Open for `fmi3DoStep`: the accepted-case end-to-end execution, composing the reused
-model-independent guard lemmas (`StepGuards.rounding_path`/`clock_path`/`grid_path`,
-`Runtime.require`) over the tensor instance heap with the tensor grid loop
-`stepLoopT_reaches` and the `lastSuccessfulTime`/`fmi3OK` tail; the `fmi3Discard`
-off-grid/over-bound path and the null and lifecycle rejections as behaviors over the
-tensor record; the emitted-text tokenization/denotation of the guarded body; and the
-bundled function contract in the shape of `StepContract.FunctionContract`
-(the scalar `StepCalls`/`StepContract` bundle) so a tensor adapter contract can consume
-it. These require a tensor analog of the scalar `StepCases`/`StepEntry`/`StepRejections`
-storage-and-outcome scaffolding over the tensor instance record; the reusable guard,
-admission and advance lemmas are model-independent, but the accepted-case storage
-premises (the tensor state/input/derivative/time regions plus the scalar metadata and
-clock cells) and the rejection cases still need to be constructed and composed. Binding
-any of these bodies to an emitted FMU wrapper with its lifecycle and numerical policy
-also remains open. This package product does not authorize production generation.
+The accepted-case end-to-end execution is now delivered. `TensorDoStep.front_run`
+runs the model-independent scalar guard prefix (the first nine statements: the handle
+and lifecycle guard `StepEntry.lifecycle_run`, the output-pointer check and zero/last
+writes `StepEntry.outputs_run`, and the invalid communication-point/step rejection
+`StepEntry.input_condition`) as a `CBody.run 9` over the tensor instance heap.
+`TensorDoStep.tensorSolve_reaches` runs the model-dependent numerical tail as one
+observable-machine execution: the seven function-scope declarations (state/derivative
+pointers, `nContinuousStates`, `expected`, the `size_t`-cast step count `steps`, and
+both loop counters), the outer grid loop through `stepLoopT_reaches`, the
+`lastSuccessfulTime` publication and the `fmi3OK` return. `TensorDoStep.accepted_reaches`
+composes them with the reused `StepGuards.rounding_path`/`clock_path`/`grid_path` guard
+sections (under the admitted-duration, progress and stop premises exactly as
+`StepGuards`/`StepAdmission` expose them) into one silent prefix from the entry call to
+the `fmi3OK` return, and `accepted_behaviors` reads off its sole terminating behavior.
+`TensorDoStep.null_behaviors` and `lifecycle_behaviors` reuse the shared `GuardedCalls`
+rejection lemmas for the pre-guard null and disallowed-mode rejections, and
+`signature_printable`/`body_printable`/`function_denotes` give the printed-text
+denotation of the whole guarded body. `TensorDoStep.contract` bundles the printed text,
+closedness, denotation, the null rejection and the accepted execution as the tensor-native
+contract, mirroring `TensorReset.Contract`, `TensorContinuousStates.DerivContract` and
+`TensorNominals.Contract`.
+
+The seven-declaration numerical tail required one authored correction: the shared tensor
+derivative entry arguments (`TensorContinuousStates.derivEntryArgs`) pass the element
+count through `nContinuousStates`, so `tensorStepSolve` now declares that element count
+at function scope alongside `expected`, keeping every loop body declaration-free
+(`doStepBody_closed`, `doStepBody_prefix` unchanged).
+
+Remaining for `fmi3DoStep`: the `fmi3Discard` off-grid/over-bound behavior (the reused
+guard prefix reaches the shared `Runtime.stepDiscard` block before any tensor declaration,
+but the whole-call discard behavior needs the scalar discard logging-callback composition
+`StepDiscard` over the tensor record); and instantiation of the accepted/discard
+executions, which carry the C floating-environment guard premises the reused `stepRounding`
+guard requires (`fegetround` external, `FE_TONEAREST` round-to-nearest constant). The
+tensor package's `cInterface` populates `fmi3OK` but not `FE_TONEAREST`, which the scalar
+`fmi3DoStep` obtains from the header-aware `RuntimeEnvironment.interface`; re-basing the
+tensor numerical lemmas on that interface is a separate step. Binding any of these bodies
+to an emitted FMU wrapper with its lifecycle and numerical policy also remains open. This
+package product does not authorize production generation.
