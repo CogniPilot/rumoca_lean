@@ -108,7 +108,7 @@ theorem tensorFunction_printable (model : Solve.FMI3Model source)
       | exact TensorFloat64.setBody_printable shape
       | exact TensorContinuousStates.getBody_printable shape
       | exact TensorContinuousStates.setBody_printable shape
-      | exact TensorContinuousStates.derivBody_printable shape
+      | exact TensorContinuousStates.derivBody_printable shape m.hasOutput
       | exact TensorDoStep.body_printable shape
       | exact (RuntimePrinter.function_printable model sig valid).2
 

@@ -191,10 +191,10 @@ print("ME-driven Euler x@t=3 =", x)
 assert approx(x, [3.0, 12.0]), "ME-driven Euler x@t=3 != (3, 12)"
 me_J = list(me.getFloat64([vr["J"]], 4))
 print("ME J =", me_J)
-# J reads the zero-initialized output region: no adapter lifecycle body computes the
-# Jacobian (the diagonal kernel rumoca_square_jacobian is emitted but wired to no FMI
-# entry), so the output tensor stays at its file-scope zero initialization.
-assert approx(me_J, [0.0, 0.0, 0.0, 0.0]), "ME J != (0, 0, 0, 0)"
+# The derivative getter now runs the prepared square-Jacobian diagonal entry
+# rumoca_square_jacobian_diag after rumoca_rhs, so J holds the dense Jacobian
+# diag(2*u) = diag(2, 4), row-major (2, 0, 0, 4), for u = (1, 2).
+assert approx(me_J, [2.0, 0.0, 0.0, 4.0]), "ME J != (2, 0, 0, 4)"
 me.terminate(); me.freeInstance()
 
 # Co-Simulation: the tensor exitInitializationMode is now kind-aware and enters Step
@@ -218,8 +218,9 @@ print("CS x@t=3 =", cs_x)
 assert approx(cs_x, [3.0, 12.0]), "CS x@t=3 != (3, 12)"
 cs_J = list(cs.getFloat64([vr["J"]], 4))
 print("CS J =", cs_J)
-# J still reads the zero-initialized output region: wiring the emitted diagonal kernel
-# rumoca_square_jacobian into an FMI output is the remaining open tensor item.
+# J still reads the zero-initialized output region in Co-Simulation: the accepted
+# fmi3DoStep does not yet run the square-Jacobian diagonal entry (only the Model
+# Exchange derivative getter does). Wiring the step call is the next stage.
 assert approx(cs_J, [0.0, 0.0, 0.0, 0.0]), "CS J != (0, 0, 0, 0)"
 cs.terminate(); cs.freeInstance()
 print("DEV TENSOR FMU BOUNDARY RUN OK")
@@ -230,4 +231,4 @@ if ! grep -q 'DEV TENSOR FMU BOUNDARY RUN OK' build/tensor-fmi/fmu-run.log; then
   exit 1
 fi
 cat build/tensor-fmi/fmu-run.log
-echo 'Development tensor FMU boundary run passed (ME and CS x@t=3 = (3, 12); J = zeros is the remaining open item)'
+echo 'Development tensor FMU boundary run passed (ME and CS x@t=3 = (3, 12); ME J = (2, 0, 0, 4); CS J = zeros is the next-stage step wiring)'

@@ -2089,3 +2089,52 @@ This is a cross-cutting emission change over the tensor getter, the co-simulatio
 step, the tensor lifecycle histories that execute the getter, the adapter contract
 and the adapter printer; it is left as the listed open wiring item, with the kernel
 entry and the prepared adapter execution above already certified.
+
+### Adapter getter wiring (increment 1.25): Model Exchange output complete
+
+The Model Exchange half of the open wiring item above is now done: the tensor
+derivative getter emits and executes the square-Jacobian diagonal entry, so
+`fmi3GetFloat64(J)` reads the dense Jacobian in a Model Exchange instance.
+
+Preamble (`TensorStorageCode.lean`). `TensorStorage.jacobianSignature` /
+`jacobianPrototype` declare `void rumoca_square_jacobian_diag(const double *
+coeff, double * out, size_t count, size_t cells)` next to `rumoca_rhs`; both
+prototypes are always emitted (`TensorStorage.declarations`), and the certified
+kernel product defines both once in the concatenated `model.c`. `declarations_header`
+and `FMI3.TensorAdapter.Contract` carry the second prototype fragment, and
+`TensorFunctions.jacobian_prototype_matches_args` proves its arity and parameter
+names (`coeff`, `out`, `count`, `cells`) agree with the emitted argument list.
+
+Output-aware getter (`TensorContinuousStates.lean`).
+`TensorContinuousStates.jacobianEntryArgs` is the argument form `(&(m->u[0]),
+&(m->J[0]), nContinuousStates, cells)`, with `cells` the flattened `N*N` matrix
+volume as a decimal literal. `derivFunction`/`derivBody`/`DerivContract` are
+parameterized on the output presence: `derivTail shape false = derivCopyTail` is
+the unchanged output-free body, and `derivTail shape true` inserts `jacobianCall`
+before the copy suffix. The fused single run `deriv_output_reaches`
+(and its behavioral wrapper `deriv_output_behaviors`) threads
+`TensorInstanceRhs.derivative_writes_events` and then
+`TensorInstanceJacobian.jacobian_writes_events` across the getter, generalizing
+`deriv_enter` over the saved continuation and adding a `jac_enter` step, with the
+explicit `Resolves`, definition (`SquareDiagonal.function`) and no-overflow
+(`adds`) premises stated like the derivative-entry ones. Its conclusion adds the
+conjunct `Reads finalHeap (field pool i outputName) (Diagonal.matrix
+(SquareDiagonal.doubled u))`. `DerivContract shape hasOutput` selects the
+output-free or output execution by `cond hasOutput` over `DerivExecutionFree` /
+`DerivExecutionOutput`; the output-free case is identical to before. The
+input-region readability and output-region writability on the post-RHS heap are
+recovered from the RHS frame through the helper `TensorInstanceRhs.field_outside`
+(any instance member other than `der(x)` lies outside the derivative write).
+
+Dispatch and consumers. `TensorFunctions.tensorDispatch` selects `derivFunction
+shape m.hasOutput`; `TensorAdapter.Contract` binds `deriv_contract shape
+m.hasOutput` and the second prototype facts; the two `TensorLifecycleHistory`
+theorems thread the output-free getter (`derivFunction shape false`), unchanged.
+Every new theorem is on the three permitted foundational axioms.
+
+Boundary. `tests/tensor-c.sh` now asserts `fmi3GetFloat64(J) = (2, 0, 0, 4)` in
+Model Exchange after `fmi3GetContinuousStateDerivatives` (`diag(2*u)` for
+`u = (1, 2)`). The Co-Simulation assertion is left at zeros with a comment: the
+accepted `fmi3DoStep` does not yet run the entry, so calling it once per accepted
+step in `TensorDoStep` and extending `TensorDoStep.Contract` (and the adapter
+contract's Co-Simulation conjunct) with the same `J` read is the remaining stage.

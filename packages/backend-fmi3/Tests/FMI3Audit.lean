@@ -2177,6 +2177,7 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.buffer_outside
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes_events
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.field_outside
 #audit axioms Rumoca.FMI3.TensorInstance.writable_output
 #audit axioms Rumoca.FMI3.TensorInstanceJacobian.jacobian_writes_events
 
@@ -2256,6 +2257,11 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_enter
 #audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_reaches
 #audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.jac_enter
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_output_reaches
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_output_behaviors
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_execution_free
+#audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_execution_output
 #audit axioms Rumoca.FMI3.TensorContinuousStates.deriv_contract
 
 #audit axioms Rumoca.CMemory.store_of_convert
@@ -2501,6 +2507,7 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorFunctions.kernel_entry_resolves
 #audit axioms Rumoca.FMI3.TensorFunctions.kernel_entry_is_kernel
 #audit axioms Rumoca.FMI3.TensorFunctions.kernel_prototype_matches_args
+#audit axioms Rumoca.FMI3.TensorFunctions.jacobian_prototype_matches_args
 
 -- The two unsupported/absent-type family contracts over the tensor adapter list.
 -- The family execution bodies are identical to the scalar renderer's; only the

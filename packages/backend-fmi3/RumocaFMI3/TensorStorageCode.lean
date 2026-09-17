@@ -130,12 +130,38 @@ scalar `model_rhs`/`model_advance` wrapper helpers, which called the scalar
 kernel over the scalar `Model` record and are dead for the tensor adapter. -/
 def kernelPrototype : String := kernelSignature.render ++ ";\n"
 
+/-- The exported prototype of the prepared scratch-free square-Jacobian diagonal
+kernel entry `rumoca_square_jacobian_diag`, in the shape the certified tensor
+kernel product gives it (`Rumoca.CTensor.SquareDiagonal.function`): the read
+coefficient region (`const double *`), the written dense-matrix region
+(`double *`), the state element count and the flattened matrix cell count. The
+tensor derivative getter calls this entry with the instance's input region `u`,
+output region `J`, the element count and the matrix cell count; the definition is
+supplied by the same included private kernel `model.c` that defines `rumoca_rhs`. -/
+def jacobianSignature : CTree.Signature :=
+  ⟨"void", "rumoca_square_jacobian_diag",
+    [⟨"const double *", "coeff", false⟩,
+     ⟨"double *", "out", false⟩,
+     ⟨"size_t", "count", false⟩,
+     ⟨"size_t", "cells", false⟩]⟩
+
+/-- The forward declaration of the prepared square-Jacobian diagonal kernel entry
+`rumoca_square_jacobian_diag`. It is declared next to `rumoca_rhs` and always
+emitted: the certified entry is defined once in the included private kernel
+`model.c`, and the tensor derivative getter calls it only when the prepared
+problem exposes a dense observation. -/
+def jacobianPrototype : String := jacobianSignature.render ++ ";\n"
+
 /-- The tensor adapter declaration preamble: the shared header inclusion block,
-the tensor storage section and the forward declaration of the prepared tensor
-kernel entry. This replaces `Runtime.declarations` (which declares the scalar
-instance record) in the tensor renderer. -/
+the tensor storage section and the forward declarations of the two prepared
+tensor kernel entries (`rumoca_rhs` and `rumoca_square_jacobian_diag`). This
+replaces `Runtime.declarations` (which declares the scalar instance record) in
+the tensor renderer. Both entry prototypes are always declared; the certified
+kernel product defines both in the included private `model.c`, and the getter
+calls the second only when the record carries the dense output. -/
 def declarations (shape : Shape) (hasOutput : Bool) : String :=
-  Runtime.declarationPrefix ++ storageRender shape hasOutput ++ kernelPrototype ++ "\n"
+  Runtime.declarationPrefix ++ storageRender shape hasOutput ++ kernelPrototype ++
+    jacobianPrototype ++ "\n"
 
 /-! ### Record layout agrees with the addressed tensor regions -/
 
@@ -382,7 +408,7 @@ identical to the scalar declarations' header block. -/
 theorem declarations_header (shape : Tensor.Shape) (hasOutput : Bool) :
     (declarations shape hasOutput).toList =
       Runtime.declarationPrefix.toList ++
-        (storageRender shape hasOutput ++ kernelPrototype ++ "\n").toList := by
+        (storageRender shape hasOutput ++ kernelPrototype ++ jacobianPrototype ++ "\n").toList := by
   simp [declarations, String.toList_append]
 
 end Tokenization

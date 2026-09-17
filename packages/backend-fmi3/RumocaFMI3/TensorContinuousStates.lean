@@ -1,5 +1,6 @@
 import RumocaFMI3.TensorFloat64Access
 import RumocaFMI3.TensorInstanceRhs
+import RumocaFMI3.TensorInstanceJacobian
 
 /-! Tensor continuous-state interface bodies over the static tensor instance
 record, as package-checked products.
@@ -647,18 +648,42 @@ def derivEntryArgs : List Expr :=
   [(Runtime.region stateName), (Runtime.region inputName),
     (Runtime.region derivativeName), Runtime.v "nContinuousStates"]
 
+/-- The C arguments of the prepared square-Jacobian diagonal entry: a pointer to
+the instance's input region `u` (the coefficients), a pointer to its output region
+`J` (the dense matrix), the state element count and the flattened matrix cell
+count. This is the argument form `(&(m->u[0]), &(m->J[0]), nContinuousStates,
+cells)`; the cell count is the row-major volume of the `N*N` matrix, emitted as a
+decimal literal. -/
+def jacobianEntryArgs (shape : Tensor.Shape) : List Expr :=
+  [(Runtime.region inputName), (Runtime.region outputName),
+    Runtime.v "nContinuousStates",
+    Runtime.n (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume]
+
 /-- The copy suffix that stages the `der(x)` region and moves it into the buffer. -/
 def derivCopyTail (shape : Tensor.Shape) : List Stmt :=
   .declare "fmi3Float64 *" "src" ((Runtime.region derivativeName)) ::
   .declare "fmi3Float64 *" "values" (Runtime.v "derivatives") ::
   .declare "size_t" "expected" (Runtime.n shape.volume) :: getLoopSuffix
 
-def derivBody (shape : Tensor.Shape) : List Stmt :=
-  Runtime.require .getDerivatives ++
-    (derivCountReject shape.volume :: .eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: derivCopyTail shape)
+/-- The prepared square-Jacobian diagonal call statement, evaluated for its
+effect on the instance's output region `J`. -/
+def jacobianCall (shape : Tensor.Shape) : Stmt :=
+  .eval (Runtime.call "rumoca_square_jacobian_diag" (jacobianEntryArgs shape))
 
-def derivFunction (shape : Tensor.Shape) : CTree.Function :=
-  ⟨DerivativeCalls.signature, derivBody shape, false⟩
+/-- The derivative getter's tail after the `rumoca_rhs` call. When the prepared
+problem exposes a dense observation, the square-Jacobian diagonal entry runs
+before the `der(x)` copy suffix; otherwise the copy suffix runs directly. -/
+def derivTail (shape : Tensor.Shape) : Bool → List Stmt
+  | false => derivCopyTail shape
+  | true => jacobianCall shape :: derivCopyTail shape
+
+def derivBody (shape : Tensor.Shape) (hasOutput : Bool) : List Stmt :=
+  Runtime.require .getDerivatives ++
+    (derivCountReject shape.volume :: .eval (Runtime.call "rumoca_rhs" derivEntryArgs) ::
+      derivTail shape hasOutput)
+
+def derivFunction (shape : Tensor.Shape) (hasOutput : Bool) : CTree.Function :=
+  ⟨DerivativeCalls.signature, derivBody shape hasOutput, false⟩
 
 section
 variable [static : StaticLiterals]
@@ -673,12 +698,14 @@ theorem derivParameters_bound (handle buffer : Option Address) (count : UInt64) 
     Bool.false_eq_true, ↓reduceIte, cc]
   rfl
 
-theorem derivBody_closed (shape : Tensor.Shape) :
-    (derivFunction shape).body.all CBodyEmbedding.closedBlocks = true := by
-  simp [derivFunction, derivBody, derivCopyTail, derivCountReject, derivEntryArgs, getLoopSuffix,
-    getCopyBody, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch,
-    Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v, Runtime.call, CBodyEmbedding.closedBlocks,
-    CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
+theorem derivBody_closed (shape : Tensor.Shape) (hasOutput : Bool) :
+    (derivFunction shape hasOutput).body.all CBodyEmbedding.closedBlocks = true := by
+  cases hasOutput <;>
+    simp [derivFunction, derivBody, derivTail, jacobianCall, jacobianEntryArgs, derivCopyTail,
+      derivCountReject, derivEntryArgs, getLoopSuffix, getCopyBody, Runtime.require,
+      Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail,
+      Runtime.ret, Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.region, Runtime.call,
+      CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
 
 /-- The derivative count/pointer check passes for a matched non-null request. -/
 theorem derivCount_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume : Nat)
@@ -696,16 +723,37 @@ the prepared tensor derivative entry `rumoca_rhs`, resolved directly by name,
 with the instance's `x`, `u` and `der(x)` region pointers and the element count
 as arguments and the copy suffix saved as the caller continuation. -/
 theorem deriv_enter (shape : Tensor.Shape) (p buffer : Address) (count : UInt64)
-    (types0 : Types) (H : Heap) (stack : CCalls.Typed.Continuation) :
+    (types0 : Types) (H : Heap) (rest : List Stmt) (stack : CCalls.Typed.Continuation) :
     CCalls.Events.internalNext program
-      (.body (.running (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: derivCopyTail shape)
+      (.body (.running (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: rest)
         (derivGuardEnv p buffer count) types0 H) "fmi3Status" stack) =
       some (.calling "rumoca_rhs"
         [.pointer (some (p.member stateName)), .pointer (some (p.member inputName)),
          .pointer (some (p.member derivativeName)), .integer count.toNat] H
-        (.caller .discard (derivCopyTail shape) (derivGuardEnv p buffer count) types0 "fmi3Status" stack)) := by
+        (.caller .discard rest (derivGuardEnv p buffer count) types0 "fmi3Status" stack)) := by
   simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
     derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
+    CBody.lvalue,
+    CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve,
+    CCalls.arguments, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.constants,
+    Value.address]
+
+/-- The Jacobian entry-call step: from the resumed `der(x)` frame the observable
+scheduler enters the prepared square-Jacobian diagonal entry
+`rumoca_square_jacobian_diag`, resolved directly by name, with the instance's `u`
+and `J` region pointers, the element count and the flattened matrix cell count as
+arguments and the remaining copy suffix saved as the caller continuation. -/
+theorem jac_enter (shape : Tensor.Shape) (p buffer : Address) (count : UInt64)
+    (types0 : Types) (H : Heap) (rest : List Stmt) (stack : CCalls.Typed.Continuation) :
+    CCalls.Events.internalNext program
+      (.body (.running (jacobianCall shape :: rest)
+        (derivGuardEnv p buffer count) types0 H) "fmi3Status" stack) =
+      some (.calling "rumoca_square_jacobian_diag"
+        [.pointer (some (p.member inputName)), .pointer (some (p.member outputName)),
+         .integer count.toNat, .integer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume] H
+        (.caller .discard rest (derivGuardEnv p buffer count) types0 "fmi3Status" stack)) := by
+  simp [jacobianCall, CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
+    jacobianEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
     CBody.lvalue,
     CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve,
     CCalls.arguments, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.constants,
@@ -818,7 +866,7 @@ theorem deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.
     (buffer : Address) (count : UInt64) (kind : Kind) (mode : Mode) (stack : CCalls.Typed.Continuation)
     (matched : count.toNat = shape.volume) (bounded : shape.volume < 2 ^ 64)
     (defined : program.internal.definitions "fmi3GetContinuousStateDerivatives" =
-      some (.tree (derivFunction shape)))
+      some (.tree (derivFunction shape false)))
     (hk : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (TensorInstance.store backing pool i shape oshape time state input output)
@@ -853,20 +901,21 @@ theorem deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.
     .getDerivatives kind mode
     (derivCountReject shape.volume :: .eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: derivCopyTail shape)
     (by simp [derivParameters, CBody.bind]) (by simp [derivParameters, CBody.bind]) hk hm allowed
-  have prefixRun : CBody.run 4 (.running (derivBody shape) (derivParameters (some m) (some buffer) count) H) =
+  have prefixRun : CBody.run 4 (.running (derivBody shape false) (derivParameters (some m) (some buffer) count) H) =
       some (.running (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: derivCopyTail shape)
         (derivGuardEnv m buffer count) H) := by
-    rw [derivBody, show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
+    rw [derivBody]; simp only [derivTail]
+    rw [show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
     exact TensorFloat64.run_one (TensorFloat64.reject_false (derivGuardEnv m buffer count) H
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n shape.volume),
         Runtime.negate (Runtime.v "derivatives")]) "Invalid continuous state count or pointer"
       (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: derivCopyTail shape)
       (derivCount_pass H m buffer count shape.volume matched))
-  obtain ⟨types0, entered⟩ := CCalls.Events.body_prefix_reaches program (derivFunction shape)
+  obtain ⟨types0, entered⟩ := CCalls.Events.body_prefix_reaches program (derivFunction shape false)
     (DerivativeCalls.values (some m) (some buffer) count) (derivParameters (some m) (some buffer) count)
     (derivGuardEnv m buffer count) H H
     (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: derivCopyTail shape) stack 4 defined
-    (derivParameters_bound _ _ _) (derivBody_closed shape) prefixRun
+    (derivParameters_bound _ _ _) (derivBody_closed shape false) prefixRun
   have argsEq : [Value.pointer (some (m.member stateName)), .pointer (some (m.member inputName)),
       .pointer (some (m.member derivativeName)), .integer count.toNat] =
       Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
@@ -879,7 +928,7 @@ theorem deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.
         (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
           (TensorInstanceRhs.args pool i shape)) H
         (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)) := by
-    rw [← argsEq]; exact deriv_enter program shape m buffer count types0 H stack
+    rw [← argsEq]; exact deriv_enter program shape m buffer count types0 H (derivCopyTail shape) stack
   obtain ⟨finalHeap, reads, _writableDeriv, frameH, others, ran⟩ :=
     TensorInstanceRhs.derivative_writes_events (shape := shape) definitions program linked library found
       backing pool i oshape time state input result output bounded executed resolves
@@ -914,7 +963,7 @@ theorem deriv_behaviors (shape oshape : Tensor.Shape) (definitions : CLoops.Call
     (buffer : Address) (count : UInt64) (kind : Kind) (mode : Mode)
     (matched : count.toNat = shape.volume) (bounded : shape.volume < 2 ^ 64)
     (defined : program.internal.definitions "fmi3GetContinuousStateDerivatives" =
-      some (.tree (derivFunction shape)))
+      some (.tree (derivFunction shape false)))
     (hk : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (TensorInstance.store backing pool i shape oshape time state input output)
@@ -948,19 +997,278 @@ theorem deriv_behaviors (shape oshape : Tensor.Shape) (definitions : CLoops.Call
   exact ⟨finalHeap, reads, others, fun behavior =>
     (CCalls.Events.internal_prefix program ran (CCalls.Events.return_forced program _ _)).behaviors behavior⟩
 
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile Rumoca.CTensor in
+/-- The fused single-run output-aware derivative getter over instance `i`:
+guarding, checking the count, invoking the prepared derivative entry `rumoca_rhs`,
+then the prepared square-Jacobian diagonal entry `rumoca_square_jacobian_diag`,
+and copying the written `der(x)` region into the caller buffer, all as one
+observable-machine execution. It reaches `fmi3OK` with the caller buffer holding
+the finite tensor derivative, the instance's `der(x)` region holding the same
+values (`reads`), its `J` region holding the dense Jacobian `diag(2*u)`
+(`jacReads`), and every other cell of every other instance preserved (`others`).
+The `resolves`/`jacResolves` premises record that the nested tensor helper calls
+each entry visits resolve directly by name, and `adds` is the explicit no-overflow
+condition on the doubled input cells. -/
+theorem deriv_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (jacFound : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
+    (backing : Heap) (pool : Address) (i : Nat)
+    (time : Values Tensor.scalar) (state input result : Values shape)
+    (J : Values (Rumoca.Tensor.matrixShape shape.volume shape.volume))
+    (buffer : Address) (count : UInt64) (kind : Kind) (mode : Mode) (stack : CCalls.Typed.Continuation)
+    (matched : count.toNat = shape.volume) (bounded : shape.volume < 2 ^ 64)
+    (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
+    (defined : program.internal.definitions "fmi3GetContinuousStateDerivatives" =
+      some (.tree (derivFunction shape true)))
+    (hk : load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
+    (hm : load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .getDerivatives kind mode)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (writable : Writable (TensorInstance.store backing pool i shape
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J)) buffer shape.volume)
+    (separate : ∀ a < shape.volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i derivativeName).index a ≠ buffer.index b)
+    (separateOutput : ∀ a < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i outputName).index a ≠ buffer.index b)
+    (adds : ∀ k : Fin shape.volume,
+      Binary64.Adds input[k] input[k] (.finite (SquareDiagonal.doubled input)[k]))
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape))
+        (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+          time state input (some J)) .done) v →
+      CCalls.Events.Resolves program v)
+    (jacResolves : ∀ (H' : Heap) v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling SquareDiagonal.function.signature.name
+        (Diagonal.argumentValues (TensorInstance.field pool i inputName)
+          (TensorInstance.field pool i outputName) shape) H' .done) v →
+      CCalls.Events.Resolves program v) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i derivativeName) result ∧
+      Reads finalHeap (TensorInstance.field pool i outputName)
+        (Diagonal.matrix (SquareDiagonal.doubled input)) ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) =
+          backing ((TensorInstance.field pool j b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling "fmi3GetContinuousStateDerivatives"
+          (DerivativeCalls.values (some (TensorInstance.record pool i)) (some buffer) count)
+          (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+            time state input (some J)) stack)
+        (.returning (.integer 0)
+          (written finalHeap buffer result shape.volume) stack) := by
+  set H := TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+    time state input (some J) with hH
+  set m := TensorInstance.record pool i with hm'
+  -- guard, count check, then enter the typed body at the two entry calls plus the copy suffix
+  have accepted := LifecycleGuard.accept (derivParameters (some m) (some buffer) count) H m
+    .getDerivatives kind mode
+    (derivCountReject shape.volume :: .eval (Runtime.call "rumoca_rhs" derivEntryArgs) ::
+      jacobianCall shape :: derivCopyTail shape)
+    (by simp [derivParameters, CBody.bind]) (by simp [derivParameters, CBody.bind]) hk hm allowed
+  have prefixRun : CBody.run 4 (.running (derivBody shape true) (derivParameters (some m) (some buffer) count) H) =
+      some (.running (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: jacobianCall shape :: derivCopyTail shape)
+        (derivGuardEnv m buffer count) H) := by
+    rw [derivBody]; simp only [derivTail]
+    rw [show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
+    exact TensorFloat64.run_one (TensorFloat64.reject_false (derivGuardEnv m buffer count) H
+      (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n shape.volume),
+        Runtime.negate (Runtime.v "derivatives")]) "Invalid continuous state count or pointer"
+      (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: jacobianCall shape :: derivCopyTail shape)
+      (derivCount_pass H m buffer count shape.volume matched))
+  obtain ⟨types0, entered⟩ := CCalls.Events.body_prefix_reaches program (derivFunction shape true)
+    (DerivativeCalls.values (some m) (some buffer) count) (derivParameters (some m) (some buffer) count)
+    (derivGuardEnv m buffer count) H H
+    (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: jacobianCall shape :: derivCopyTail shape) stack 4 defined
+    (derivParameters_bound _ _ _) (derivBody_closed shape true) prefixRun
+  -- the derivative entry `rumoca_rhs`
+  have argsEq : [Value.pointer (some (m.member stateName)), .pointer (some (m.member inputName)),
+      .pointer (some (m.member derivativeName)), .integer count.toNat] =
+      Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+        (TensorInstanceRhs.args pool i shape) := by
+    rw [hm', matched]; rfl
+  have enterStep : CCalls.Events.internalNext program
+      (.body (.running (.eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: jacobianCall shape :: derivCopyTail shape)
+        (derivGuardEnv m buffer count) types0 H) "fmi3Status" stack) =
+      some (.calling "rumoca_rhs"
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) H
+        (.caller .discard (jacobianCall shape :: derivCopyTail shape) (derivGuardEnv m buffer count) types0
+          "fmi3Status" stack)) := by
+    rw [← argsEq]
+    exact deriv_enter program shape m buffer count types0 H (jacobianCall shape :: derivCopyTail shape) stack
+  obtain ⟨finalHeap1, reads, _writableDeriv, frameH, others, ran⟩ :=
+    TensorInstanceRhs.derivative_writes_events (shape := shape) definitions program linked library found
+      backing pool i (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input result (some J)
+      bounded executed resolves
+      (.caller .discard (jacobianCall shape :: derivCopyTail shape) (derivGuardEnv m buffer count) types0
+        "fmi3Status" stack)
+  have resumeStep1 : CCalls.Events.internalNext program
+      (.returning .void finalHeap1
+        (.caller .discard (jacobianCall shape :: derivCopyTail shape) (derivGuardEnv m buffer count) types0
+          "fmi3Status" stack)) =
+      some (.body (.running (jacobianCall shape :: derivCopyTail shape) (derivGuardEnv m buffer count) types0
+        finalHeap1) "fmi3Status" stack) := by
+    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+  -- the input region is readable and the output region writable on the post-RHS heap
+  have readsInputFinal : Reads finalHeap1 (TensorInstance.field pool i inputName) input := by
+    intro k
+    have hpt := frameH ((TensorInstance.field pool i inputName).index k.val)
+      (TensorInstanceRhs.field_outside pool i inputName k.val (by decide +kernel))
+    have h := TensorInstance.reads_input backing pool i shape
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J) k
+    simp only [load] at h ⊢
+    rw [hpt]; exact h
+  have writableOutputFinal : Writable finalHeap1 (TensorInstance.field pool i outputName)
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume := by
+    intro b hb
+    obtain ⟨old, ho⟩ := TensorInstance.writable_output backing pool i shape
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input J b hb
+    exact ⟨old, (frameH _ (TensorInstanceRhs.field_outside pool i outputName b (by decide +kernel))).trans ho⟩
+  -- the Jacobian entry `rumoca_square_jacobian_diag`
+  have argsEqJac : [Value.pointer (some (m.member inputName)), .pointer (some (m.member outputName)),
+      .integer count.toNat, .integer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume] =
+      Diagonal.argumentValues (TensorInstance.field pool i inputName)
+        (TensorInstance.field pool i outputName) shape := by
+    rw [hm', matched]; rfl
+  have jacEnterStep : CCalls.Events.internalNext program
+      (.body (.running (jacobianCall shape :: derivCopyTail shape) (derivGuardEnv m buffer count) types0 finalHeap1)
+        "fmi3Status" stack) =
+      some (.calling "rumoca_square_jacobian_diag"
+        (Diagonal.argumentValues (TensorInstance.field pool i inputName)
+          (TensorInstance.field pool i outputName) shape) finalHeap1
+        (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)) := by
+    rw [← argsEqJac]
+    exact jac_enter program shape m buffer count types0 finalHeap1 (derivCopyTail shape) stack
+  obtain ⟨jacReads, jacFrame, jacRan⟩ :=
+    TensorInstanceJacobian.jacobian_writes_events (shape := shape) definitions program linked library jacFound
+      pool i input finalHeap1 bounded2 readsInputFinal writableOutputFinal adds (jacResolves finalHeap1)
+      (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)
+  set finalHeap2 := Diagonal.resultHeap finalHeap1 (TensorInstance.field pool i outputName)
+    (SquareDiagonal.doubled input) with hfh2
+  have resumeStep2 : CCalls.Events.internalNext program
+      (.returning .void finalHeap2
+        (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)) =
+      some (.body (.running (derivCopyTail shape) (derivGuardEnv m buffer count) types0 finalHeap2)
+        "fmi3Status" stack) := by
+    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+  -- der(x) survives the Jacobian write, and every other instance is preserved
+  have derReadFinal : Reads finalHeap2 (TensorInstance.field pool i derivativeName) result := by
+    intro k
+    have hpt := jacFrame ((TensorInstance.field pool i derivativeName).index k.val)
+      (fun a _ => TensorInstance.fields_separate pool i derivativeName outputName (by decide +kernel) k.val a)
+    simp only [load] at reads ⊢
+    rw [hpt]; exact reads k
+  have others2 : ∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+      finalHeap2 ((TensorInstance.field pool j b).index k) = backing ((TensorInstance.field pool j b).index k) := by
+    intro j b k hji
+    rw [jacFrame ((TensorInstance.field pool j b).index k)
+      (fun a _ => Address.instances_separate pool j i hji b outputName k a)]
+    exact others j b k hji
+  -- the caller buffer stays writable across both writes, then the copy suffix delivers der(x)
+  have writableBufferFinal : Writable finalHeap2 buffer shape.volume := by
+    intro b hb
+    obtain ⟨old, ho⟩ := writable b hb
+    refine ⟨old, ?_⟩
+    rw [jacFrame _ (fun a ha => (separateOutput a ha b hb).symm),
+      frameH _ (TensorInstanceRhs.buffer_outside pool i buffer b hb separate)]
+    exact ho
+  have deliver := deriv_delivers program shape finalHeap2 m buffer count types0 result stack bounded
+    derReadFinal writableBufferFinal separate
+  exact ⟨finalHeap2, derReadFinal, jacReads, others2,
+    entered.trans (.next enterStep (ran.trans (.next resumeStep1
+      (.next jacEnterStep (jacRan.trans (.next resumeStep2 deliver))))))⟩
+
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile Rumoca.CTensor in
+/-- The output-aware derivative getter's sole terminating observable behavior over
+instance `i`: it returns `fmi3OK` with the finite tensor derivative delivered to
+the caller buffer, the instance's `der(x)` region holding the same values, its `J`
+region holding the dense Jacobian `diag(2*u)`, and every other cell of every other
+instance preserved. -/
+theorem deriv_output_behaviors (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (jacFound : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
+    (backing : Heap) (pool : Address) (i : Nat)
+    (time : Values Tensor.scalar) (state input result : Values shape)
+    (J : Values (Rumoca.Tensor.matrixShape shape.volume shape.volume))
+    (buffer : Address) (count : UInt64) (kind : Kind) (mode : Mode)
+    (matched : count.toNat = shape.volume) (bounded : shape.volume < 2 ^ 64)
+    (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
+    (defined : program.internal.definitions "fmi3GetContinuousStateDerivatives" =
+      some (.tree (derivFunction shape true)))
+    (hk : load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
+    (hm : load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .getDerivatives kind mode)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (writable : Writable (TensorInstance.store backing pool i shape
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J)) buffer shape.volume)
+    (separate : ∀ a < shape.volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i derivativeName).index a ≠ buffer.index b)
+    (separateOutput : ∀ a < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i outputName).index a ≠ buffer.index b)
+    (adds : ∀ k : Fin shape.volume,
+      Binary64.Adds input[k] input[k] (.finite (SquareDiagonal.doubled input)[k]))
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape))
+        (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+          time state input (some J)) .done) v →
+      CCalls.Events.Resolves program v)
+    (jacResolves : ∀ (H' : Heap) v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling SquareDiagonal.function.signature.name
+        (Diagonal.argumentValues (TensorInstance.field pool i inputName)
+          (TensorInstance.field pool i outputName) shape) H' .done) v →
+      CCalls.Events.Resolves program v) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i derivativeName) result ∧
+      Reads finalHeap (TensorInstance.field pool i outputName)
+        (Diagonal.matrix (SquareDiagonal.doubled input)) ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) =
+          backing ((TensorInstance.field pool j b).index k)) ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3GetContinuousStateDerivatives"
+          (DerivativeCalls.values (some (TensorInstance.record pool i)) (some buffer) count)
+          (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+            time state input (some J)) .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, written finalHeap buffer result shape.volume⟩ := by
+  obtain ⟨finalHeap, dReads, jReads, others, ran⟩ :=
+    deriv_output_reaches program shape definitions linked library found jacFound backing pool i time state input
+      result J buffer count kind mode .done matched bounded bounded2 defined hk hm allowed executed writable
+      separate separateOutput adds resolves jacResolves
+  exact ⟨finalHeap, dReads, jReads, others, fun behavior =>
+    (CCalls.Events.internal_prefix program ran (CCalls.Events.return_forced program _ _)).behaviors behavior⟩
+
 /-- A null instance handle is rejected with `fmi3Error`, changing nothing. -/
-theorem null_deriv_behaviors (shape : Tensor.Shape) (heap : Heap) (buffer : Option Address) (count : UInt64)
-    (defined : program.internal.definitions "fmi3GetContinuousStateDerivatives" = some (.tree (derivFunction shape)))
+theorem null_deriv_behaviors (shape : Tensor.Shape) (hasOutput : Bool) (heap : Heap)
+    (buffer : Option Address) (count : UInt64)
+    (defined : program.internal.definitions "fmi3GetContinuousStateDerivatives" =
+      some (.tree (derivFunction shape hasOutput)))
     (behavior) :
     (CCalls.Events.machine program).Behaves
       (.calling "fmi3GetContinuousStateDerivatives" (DerivativeCalls.values none buffer count) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩ := by
-  apply GuardedCalls.null_behaviors program (derivFunction shape)
+  apply GuardedCalls.null_behaviors program (derivFunction shape hasOutput)
     (Runtime.modeGuard .getDerivatives :: derivCountReject shape.volume ::
-      .eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: derivCopyTail shape)
+      .eval (Runtime.call "rumoca_rhs" derivEntryArgs) :: derivTail shape hasOutput)
     (DerivativeCalls.values none buffer count) (derivParameters none buffer count) heap defined
-    (derivParameters_bound _ _ _) (by simp [derivFunction, derivBody, Runtime.require, List.append_assoc])
-    rfl (derivBody_closed shape)
+    (derivParameters_bound _ _ _)
+    (by cases hasOutput <;> simp [derivFunction, derivBody, derivTail, Runtime.require, List.append_assoc])
+    rfl (derivBody_closed shape hasOutput)
   all_goals simp [derivParameters, CBody.bind]
 
 end
@@ -971,15 +1279,17 @@ section
 open CTree.Printer CTree.Syntax
 
 set_option maxHeartbeats 4000000 in
-theorem derivBody_printable (shape : Tensor.Shape) :
-    ∀ stmt ∈ (derivFunction shape).body, ItemPrintable RuntimePrinter.typedefs stmt := by
+theorem derivBody_printable (shape : Tensor.Shape) (hasOutput : Bool) :
+    ∀ stmt ∈ (derivFunction shape hasOutput).body, ItemPrintable RuntimePrinter.typedefs stmt := by
   have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
     .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have fType : TypeSpelling RuntimePrinter.typedefs "fmi3Float64 *" :=
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [derivFunction, derivBody, derivCopyTail, derivCountReject, derivEntryArgs, getLoopSuffix, Runtime.region,
+  cases hasOutput <;>
+    simp only [derivFunction, derivBody, derivTail, jacobianCall, jacobianEntryArgs, derivCopyTail,
+      derivCountReject, derivEntryArgs, getLoopSuffix, Runtime.region,
       Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
@@ -1023,9 +1333,9 @@ theorem derivSignature_printable :
   all_goals exact ⟨.named (.typedefName (by decide +kernel) (by decide +kernel)), by decide +kernel⟩
 
 /-- The rendered derivative getter denotes its function under the shared C printer. -/
-theorem derivFunction_denotes (shape : Tensor.Shape) :
-    FunctionDenotes RuntimePrinter.typedefs (derivFunction shape).render (derivFunction shape) :=
-  CTree.Printer.function_denotes ⟨derivSignature_printable, derivBody_printable shape⟩
+theorem derivFunction_denotes (shape : Tensor.Shape) (hasOutput : Bool) :
+    FunctionDenotes RuntimePrinter.typedefs (derivFunction shape hasOutput).render (derivFunction shape hasOutput) :=
+  CTree.Printer.function_denotes ⟨derivSignature_printable, derivBody_printable shape hasOutput⟩
 
 end
 
@@ -1038,21 +1348,15 @@ and the null-handle rejection. A tensor adapter contract can consume it. -/
 
 section
 open CTree.Printer
-open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile Rumoca.CTensor
 variable [static : StaticLiterals]
 private local instance derivContractInterface : CInterface := cInterface static.addresses
 
-/-- The tensor `fmi3GetContinuousStateDerivatives` function contract. -/
-structure DerivContract (shape : Tensor.Shape) (text : String) : Prop where
-  printed : text = (derivFunction shape).render
-  closed : (derivFunction shape).body.all CBodyEmbedding.closedBlocks = true
-  denotes : FunctionDenotes RuntimePrinter.typedefs text (derivFunction shape)
-  rejected : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (buffer : Option Address) (count : UInt64),
-    program.internal.definitions "fmi3GetContinuousStateDerivatives" = some (.tree (derivFunction shape)) →
-    ∀ behavior, (CCalls.Events.machine program).Behaves
-      (.calling "fmi3GetContinuousStateDerivatives" (DerivativeCalls.values none buffer count) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 3, heap⟩
-  execution : ∀ {E} (program : CCalls.Events.Program E) (definitions : CLoops.Calls.Definitions),
+/-- The fused single-run execution of the output-free derivative getter
+(`derivFunction shape false`): it delivers the finite tensor derivative into the
+caller buffer, preserving every other instance. -/
+def DerivExecutionFree (shape : Tensor.Shape) : Prop :=
+  ∀ {E} (program : CCalls.Events.Program E) (definitions : CLoops.Calls.Definitions),
     CCalls.Typed.Extends definitions program.internal → Rumoca.CTensor.Lowering.Library definitions →
     definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree →
@@ -1060,7 +1364,7 @@ structure DerivContract (shape : Tensor.Shape) (text : String) : Prop where
       (time : Values Tensor.scalar) (state input result : Values shape) (output : Option (Values oshape))
       (buffer : Address) (count : UInt64) (kind : Kind) (mode : Mode),
     count.toNat = shape.volume → shape.volume < 2 ^ 64 →
-    program.internal.definitions "fmi3GetContinuousStateDerivatives" = some (.tree (derivFunction shape)) →
+    program.internal.definitions "fmi3GetContinuousStateDerivatives" = some (.tree (derivFunction shape false)) →
     load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code) →
     load (TensorInstance.store backing pool i shape oshape time state input output)
@@ -1087,16 +1391,102 @@ structure DerivContract (shape : Tensor.Shape) (text : String) : Prop where
           (TensorInstance.store backing pool i shape oshape time state input output) .done) behavior ↔
         behavior = .terminates [] ⟨.integer 0, written finalHeap buffer result shape.volume⟩
 
-theorem deriv_contract (shape : Tensor.Shape) : DerivContract shape (derivFunction shape).render where
-  printed := rfl
-  closed := derivBody_closed shape
-  denotes := derivFunction_denotes shape
-  rejected program heap buffer count defined :=
-    null_deriv_behaviors program shape heap buffer count defined
-  execution program definitions linked library found backing pool i oshape time state input result output
-    buffer count kind mode matched bounded defined hk hm allowed executed writable separate resolves :=
+/-- The fused single-run execution of the output-aware derivative getter
+(`derivFunction shape true`): it delivers the finite tensor derivative into the
+caller buffer and, in addition, writes the dense Jacobian `diag(2*u)` into the
+instance's `J` region, preserving every other instance. -/
+def DerivExecutionOutput (shape : Tensor.Shape) : Prop :=
+  ∀ {E} (program : CCalls.Events.Program E) (definitions : CLoops.Calls.Definitions),
+    CCalls.Typed.Extends definitions program.internal → Rumoca.CTensor.Lowering.Library definitions →
+    definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree →
+    definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function →
+    ∀ (backing : Heap) (pool : Address) (i : Nat)
+      (time : Values Tensor.scalar) (state input result : Values shape)
+      (J : Values (Rumoca.Tensor.matrixShape shape.volume shape.volume))
+      (buffer : Address) (count : UInt64) (kind : Kind) (mode : Mode),
+    count.toNat = shape.volume → shape.volume < 2 ^ 64 →
+    (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64 →
+    program.internal.definitions "fmi3GetContinuousStateDerivatives" = some (.tree (derivFunction shape true)) →
+    load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "kind") = some (.integer kind.code) →
+    load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "mode") = some (.integer mode.code) →
+    Reference.Allowed .getDerivatives kind mode →
+    Finite.Executes (TensorInstanceRhs.kernel shape).derivative (ArrayProfile.environment state input) result →
+    Writable (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) buffer shape.volume →
+    (∀ a < shape.volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i derivativeName).index a ≠ buffer.index b) →
+    (∀ a < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i outputName).index a ≠ buffer.index b) →
+    (∀ k : Fin shape.volume,
+      Binary64.Adds input[k] input[k] (.finite (SquareDiagonal.doubled input)[k])) →
+    (∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape))
+        (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+          time state input (some J)) .done) v →
+      CCalls.Events.Resolves program v) →
+    (∀ (H' : Heap) v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling SquareDiagonal.function.signature.name
+        (Diagonal.argumentValues (TensorInstance.field pool i inputName)
+          (TensorInstance.field pool i outputName) shape) H' .done) v →
+      CCalls.Events.Resolves program v) →
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i derivativeName) result ∧
+      Reads finalHeap (TensorInstance.field pool i outputName)
+        (Diagonal.matrix (SquareDiagonal.doubled input)) ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) =
+          backing ((TensorInstance.field pool j b).index k)) ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3GetContinuousStateDerivatives"
+          (DerivativeCalls.values (some (TensorInstance.record pool i)) (some buffer) count)
+          (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+            time state input (some J)) .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, written finalHeap buffer result shape.volume⟩
+
+theorem deriv_execution_free (shape : Tensor.Shape) : DerivExecutionFree shape :=
+  fun program definitions linked library found backing pool i oshape time state input result output
+      buffer count kind mode matched bounded defined hk hm allowed executed writable separate resolves =>
     deriv_behaviors program shape oshape definitions linked library found backing pool i time state input
       result output buffer count kind mode matched bounded defined hk hm allowed executed writable separate resolves
+
+theorem deriv_execution_output (shape : Tensor.Shape) : DerivExecutionOutput shape :=
+  fun program definitions linked library found jacFound backing pool i time state input result J
+      buffer count kind mode matched bounded bounded2 defined hk hm allowed executed writable separate
+      separateOutput adds resolves jacResolves =>
+    deriv_output_behaviors program shape definitions linked library found jacFound backing pool i time state
+      input result J buffer count kind mode matched bounded bounded2 defined hk hm allowed executed writable
+      separate separateOutput adds resolves jacResolves
+
+/-- The tensor `fmi3GetContinuousStateDerivatives` function contract, parameterized
+on whether the prepared problem exposes a dense observation. The fused execution
+carries the extra Jacobian conjunct exactly in the output case. -/
+structure DerivContract (shape : Tensor.Shape) (hasOutput : Bool) (text : String) : Prop where
+  printed : text = (derivFunction shape hasOutput).render
+  closed : (derivFunction shape hasOutput).body.all CBodyEmbedding.closedBlocks = true
+  denotes : FunctionDenotes RuntimePrinter.typedefs text (derivFunction shape hasOutput)
+  rejected : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (buffer : Option Address) (count : UInt64),
+    program.internal.definitions "fmi3GetContinuousStateDerivatives" = some (.tree (derivFunction shape hasOutput)) →
+    ∀ behavior, (CCalls.Events.machine program).Behaves
+      (.calling "fmi3GetContinuousStateDerivatives" (DerivativeCalls.values none buffer count) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, heap⟩
+  execution : cond hasOutput (DerivExecutionOutput shape) (DerivExecutionFree shape)
+
+theorem deriv_contract (shape : Tensor.Shape) (hasOutput : Bool) :
+    DerivContract shape hasOutput (derivFunction shape hasOutput).render where
+  printed := rfl
+  closed := derivBody_closed shape hasOutput
+  denotes := derivFunction_denotes shape hasOutput
+  rejected program heap buffer count defined :=
+    null_deriv_behaviors program shape hasOutput heap buffer count defined
+  execution := by
+    cases hasOutput
+    · exact deriv_execution_free shape
+    · exact deriv_execution_output shape
 
 end
 

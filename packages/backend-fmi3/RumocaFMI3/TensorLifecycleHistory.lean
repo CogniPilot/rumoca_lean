@@ -64,7 +64,7 @@ theorem lifecycle_history (tag : CAtomicBoolean.Calls.Event → E)
       (TensorLifecycleModes.signature .exitInitialization).name =
         some (.tree (TensorLifecycleModes.function .exitInitialization)))
     (derivDef : program.internal.definitions "fmi3GetContinuousStateDerivatives" =
-      some (.tree (TensorContinuousStates.derivFunction shape)))
+      some (.tree (TensorContinuousStates.derivFunction shape false)))
     -- created-instance record cells (the factory postcondition)
     (hk0 : load H0 ((TensorInstance.record pool slot.val).member "kind") =
       some (.integer Kind.me.code))
@@ -206,7 +206,7 @@ theorem lifecycle_from_creation (tag : CAtomicBoolean.Calls.Event → E)
       (TensorLifecycleModes.signature .exitInitialization).name =
         some (.tree (TensorLifecycleModes.function .exitInitialization)))
     (derivDef : program.internal.definitions "fmi3GetContinuousStateDerivatives" =
-      some (.tree (TensorContinuousStates.derivFunction shape)))
+      some (.tree (TensorContinuousStates.derivFunction shape false)))
     -- the proved creation call
     (scope : TensorFactory.Scope env pool ⟨block, [], 0⟩ capacity environment logger logging)
     (storage : ∀ s : Fin capacity, TensorInstanceInit.Storage before (pool.index s.val) shape)

@@ -87,7 +87,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     TensorFloat64.SetContract shape (TensorFloat64.setFunction shape).render ∧
     TensorContinuousStates.GetContract shape (TensorContinuousStates.getFunction shape).render ∧
     TensorContinuousStates.SetContract shape (TensorContinuousStates.setFunction shape).render ∧
-    TensorContinuousStates.DerivContract shape (TensorContinuousStates.derivFunction shape).render ∧
+    TensorContinuousStates.DerivContract shape m.hasOutput
+      (TensorContinuousStates.derivFunction shape m.hasOutput).render ∧
     -- Factory and release over the static tensor instance pool.
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
       TensorFactory.FunctionContract prog tag model (TensorMetadata.token m) shape) ∧
@@ -101,7 +102,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
       text = before ++ TensorStorage.declarations shape m.hasOutput ++ after) ∧
     (TensorStorage.declarations shape m.hasOutput).toList =
       Runtime.declarationPrefix.toList ++
-        (TensorStorage.storageRender shape m.hasOutput ++ TensorStorage.kernelPrototype ++ "\n").toList ∧
+        (TensorStorage.storageRender shape m.hasOutput ++ TensorStorage.kernelPrototype ++
+          TensorStorage.jacobianPrototype ++ "\n").toList ∧
     (TensorStorage.regionMembers shape true).map TensorStorage.Member.baseName = TensorInstance.fieldNames ∧
     TensorStorage.Member.region TensorInstance.stateName shape.volume ∈ TensorStorage.regionMembers shape m.hasOutput ∧
     (TensorStorage.Member.region TensorInstance.outputName ((Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
@@ -134,6 +136,17 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     TensorStorage.kernelSignature.parameters.map CTree.Parameter.name =
       [TensorInstance.stateName, TensorInstance.inputName,
         TensorInstance.derivativeName, "count"] ∧
+    -- The prepared square-Jacobian diagonal entry `rumoca_square_jacobian_diag` is
+    -- forward-declared alongside `rumoca_rhs`; its declared prototype agrees in
+    -- arity and parameter names with the arguments the output-aware derivative
+    -- getter passes (`TensorContinuousStates.jacobianEntryArgs`). Its definition is
+    -- supplied by the included private kernel `model.c` and its observable-machine
+    -- execution on the instance is `TensorInstanceJacobian.jacobian_writes_events`.
+    (∃ before after : String, text = before ++ TensorStorage.jacobianPrototype ++ after) ∧
+    TensorStorage.jacobianSignature.parameters.length =
+        (TensorContinuousStates.jacobianEntryArgs shape).length ∧
+    TensorStorage.jacobianSignature.parameters.map CTree.Parameter.name =
+      ["coeff", "out", "count", "cells"] ∧
     (TensorFunctions.program model m sigs).definitions TensorFunctions.helpers[0].signature.name
         = some (.tree TensorFunctions.helpers[0]) ∧
     (TensorFunctions.program model m sigs).definitions Identity.function.signature.name
@@ -171,7 +184,7 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     TensorFloat64.set_contract shape,
     TensorContinuousStates.get_contract shape,
     TensorContinuousStates.set_contract shape,
-    TensorContinuousStates.deriv_contract shape,
+    TensorContinuousStates.deriv_contract shape m.hasOutput,
     (fun _E prog tag => TensorFactory.contract prog tag model (TensorMetadata.token m) shape),
     (fun _E prog tag bindings => TensorFree.contract prog tag bindings),
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n",
@@ -191,12 +204,19 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     -- Call-resolution witnesses.
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarationPrefix ++
         TensorStorage.storageRender shape m.hasOutput,
-      "\n" ++ String.join (TensorFunctions.helpers.map Function.render) ++
+      TensorStorage.jacobianPrototype ++ "\n" ++ String.join (TensorFunctions.helpers.map Function.render) ++
         String.join (sigs.map fun sig => (TensorFunctions.tensorFunction model m sig).render),
       by rw [render, TensorStorage.declarations]; simp only [String.append_assoc]⟩,
     TensorFunctions.kernel_entry_is_kernel model m sigs freshKernel,
     TensorFunctions.kernel_prototype_matches_args.1,
     TensorFunctions.kernel_prototype_matches_args.2,
+    ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarationPrefix ++
+        TensorStorage.storageRender shape m.hasOutput ++ TensorStorage.kernelPrototype,
+      "\n" ++ String.join (TensorFunctions.helpers.map Function.render) ++
+        String.join (sigs.map fun sig => (TensorFunctions.tensorFunction model m sig).render),
+      by rw [render, TensorStorage.declarations]; simp only [String.append_assoc]⟩,
+    (TensorFunctions.jacobian_prototype_matches_args shape).1,
+    (TensorFunctions.jacobian_prototype_matches_args shape).2,
     TensorFunctions.helpers_bound model m sigs TensorFunctions.helpers[0]
       (by simp [TensorFunctions.helpers]),
     TensorFunctions.helpers_bound model m sigs Identity.function

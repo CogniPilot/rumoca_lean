@@ -74,7 +74,7 @@ def tensorDispatch (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model s
   | "fmi3SetFloat64" => TensorFloat64.setFunction shape
   | "fmi3GetContinuousStates" => TensorContinuousStates.getFunction shape
   | "fmi3SetContinuousStates" => TensorContinuousStates.setFunction shape
-  | "fmi3GetContinuousStateDerivatives" => TensorContinuousStates.derivFunction shape
+  | "fmi3GetContinuousStateDerivatives" => TensorContinuousStates.derivFunction shape m.hasOutput
   | "fmi3DoStep" => TensorDoStep.function shape
   | _ => Runtime.function model sig
 
@@ -381,6 +381,18 @@ theorem kernel_prototype_matches_args :
       TensorStorage.kernelSignature.parameters.map CTree.Parameter.name =
         [TensorInstance.stateName, TensorInstance.inputName,
           TensorInstance.derivativeName, "count"] :=
+  ⟨rfl, rfl⟩
+
+/-- The preamble prototype of the square-Jacobian diagonal entry agrees with the
+arguments the tensor derivative getter passes: its parameter list has the same
+length as `TensorContinuousStates.jacobianEntryArgs` (the two region pointers, the
+element count and the matrix cell count), and its declared parameter names are the
+kernel entry's own `coeff`/`out`/`count`/`cells`. -/
+theorem jacobian_prototype_matches_args (shape : Shape) :
+    TensorStorage.jacobianSignature.parameters.length =
+        (TensorContinuousStates.jacobianEntryArgs shape).length ∧
+      TensorStorage.jacobianSignature.parameters.map CTree.Parameter.name =
+        ["coeff", "out", "count", "cells"] :=
   ⟨rfl, rfl⟩
 
 end Rumoca.FMI3.TensorFunctions

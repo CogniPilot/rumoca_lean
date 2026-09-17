@@ -11,6 +11,24 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Jacobian output through the tensor derivative getter (derived proofs and boundary run):**
+
+The tensor preamble declares the prepared `rumoca_square_jacobian_diag`
+entry beside `rumoca_rhs`, with prototype and argument agreement proved and
+bound by `TensorAdapter.Contract`. The tensor derivative getter is now
+output-aware: when the record carries the output it calls the entry after the
+derivative entry, and `deriv_output_behaviors` composes both kernel executions
+under explicit resolution, definition and no-overflow premises, adding to the
+contract that the output region reads the dense matrix with twice the input
+on the diagonal and zeros elsewhere. The output-free case is unchanged. The
+native development FMU run now reads `J = (2, 0, 0, 4)` after the derivative
+evaluation in Model Exchange; the co-simulation step does not yet call the
+entry, so `J` after `fmi3DoStep` still reads zero and that call with its
+contract conjunct is the next obligation. Nothing is emitted by production.
+See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 9m16s
+(`build/tensor-fmi/full-gate-v25.log`).
+
 **Jacobian diagonal as a prepared kernel entry (derived proofs and boundary check):**
 
 The certified tensor kernel product now emits `rumoca_square_jacobian_diag`

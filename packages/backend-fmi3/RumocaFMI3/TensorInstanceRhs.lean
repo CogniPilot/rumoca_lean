@@ -202,6 +202,17 @@ theorem buffer_outside {shape : Shape} (pool : Address) (i : Nat) (buffer : Addr
       (TensorModelRhs.derivativePlan (kernel shape) (plan shape)) (buffer.index b) :=
   ⟨fun a ha => (separate a ha b hb).symm, True.intro⟩
 
+omit interface in
+/-- Any cell of a member of instance `i` other than the derivative region lies
+outside the derivative entry's written region (which is exactly the `der(x)`
+region), so the entry's frame preserves it. This covers the input region `u` and
+the dense output region `J`, both read or written by neighbouring adapter code. -/
+theorem field_outside {shape : Shape} (pool : Address) (i : Nat) (b : String) (k : Nat)
+    (different : b ≠ TensorInstance.derivativeName) :
+    Outside (locations pool i) (kernel shape).derivative
+      (TensorModelRhs.derivativePlan (kernel shape) (plan shape)) ((TensorInstance.field pool i b).index k) :=
+  ⟨fun a _ => TensorInstance.fields_separate pool i b TensorInstance.derivativeName different k a, True.intro⟩
+
 /-- The observable-machine version of `derivative_writes`: running the prepared
 derivative entry on instance `i` embeds into the observable call machine under
 any saved caller, writing the finite tensor derivative into the instance's
