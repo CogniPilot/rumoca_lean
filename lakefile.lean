@@ -288,8 +288,10 @@ private def verifyC : ScriptM Unit := do
 
 private def tensorCTest : ScriptM Unit := do
   IO.println "Checking development tensor C helper artifacts"
+  -- The compiler regression executable renders build/tensor-fmi/adapter.c, which
+  -- the script's tensor adapter pointer-type boundary check consumes.
   buildTargets ["check-c", "rumoca_c/RumocaC.TensorArtifactCheck",
-    "rumoca_c/TensorCChecks.ArtifactCheck"]
+    "rumoca_c/TensorCChecks.ArtifactCheck", "rumoca_compiler/tests"]
   command "bash" #["tests/tensor-c.sh"]
 
 private def fmiTest : ScriptM Unit := do

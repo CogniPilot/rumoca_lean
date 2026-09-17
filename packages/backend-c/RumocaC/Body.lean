@@ -8,7 +8,13 @@ fragment. No rule recognizes FMI function names or replaces an FMI body by
 its intended behavior. Only `isfinite` is an intrinsic here; `CCalls` extends
 this machine with ordinary call/return execution and a proved lifting. Expressions
 in this fragment are side-effect free. Local assignment/addresses/block scopes, general
-integer arithmetic and other C operators require further rules and proofs. -/
+integer arithmetic and other C operators require further rules and proofs.
+Subscripting `a[i]` takes its base pointer from `a`'s address when `a` is an
+lvalue (a field, subscript or dereference) and otherwise from `a`'s pointer
+value; this models C array-to-pointer conversion, so subscripting an array
+member `m->x[i]` denotes the member's `i`th element cell, while subscripting a
+pointer variable `p[i]` follows the stored pointer (a pointer variable has no
+lvalue in this fragment). -/
 namespace Rumoca.CBody
 open CTree CMemory
 
@@ -114,7 +120,7 @@ mutual
       let p ← if pointer then do (← eval env heap a).address else lvalue env heap a
       load heap (p.member name)
     | .index a i => do
-      let p ← (← eval env heap a).address
+      let p ← lvalue env heap a <|> (eval env heap a).bind Value.address
       let .integer n ← eval env heap i | none
       if n < 0 then none else load heap (p.index n.toNat)
     | .call (.id "isfinite") [a] => do return boolean (← (← eval env heap a).isFinite)
@@ -126,11 +132,22 @@ mutual
       let p ← if pointer then do (← eval env heap a).address else lvalue env heap a
       return p.member name
     | .index a i => do
-      let p ← (← eval env heap a).address
+      let p ← lvalue env heap a <|> (eval env heap a).bind Value.address
       let .integer n ← eval env heap i | none
       if n < 0 then none else some (p.index n.toNat)
     | _ => none
 end
+
+/-- A bare identifier is not an lvalue in this fragment, so subscripting a
+pointer variable `p[i]` takes the array-decay branch's fallback and follows the
+stored pointer value. -/
+@[simp] theorem lvalue_id (env : Locals) (heap : Heap) (name : String) :
+    lvalue env heap (.id name) = none := rfl
+
+/-- A string literal is not an lvalue in this fragment; subscripting it follows
+its represented object pointer through the array-decay fallback. -/
+@[simp] theorem lvalue_str (env : Locals) (heap : Heap) (s : String) :
+    lvalue env heap (.str s) = none := rfl
 
 structure Result where
   value : Value

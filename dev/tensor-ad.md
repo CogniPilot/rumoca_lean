@@ -1628,13 +1628,62 @@ test executable passing. These are package-checked products only: no production
 artifact is emitted, no CLI or grammar case is added, and the scalar renderer,
 `Runtime.lean` and every existing contract are unchanged.
 
-One inconsistency in the retained adapter remains outside this increment's scope
-and is left for a later storage increment, not silently changed: the tensor
-bodies address array members with the scalar `&(m->field)` idiom
-(`&(m->x)`, `&(m->u)`, `&(m->dx)`), which for the array members `double x[2]`
-etc. yields a pointer-to-array rather than the pointer-to-`double` the prototype
-and the copy locals (`fmi3Float64 * src = (&(m->dx));`) expect. It addresses the
-same storage and works in practice, but a strictly conforming emission would use
-the decayed array (`m->x`) or `&(m->x[0])`. This idiom predates this increment
-and is shared with the scalar adapter (where the member is a scalar `double` and
-the idiom is exact).
+## Conforming array-member region pointers
+
+The tensor bodies now stage the pointer to an array member's first element,
+`&(m->name[0])`, instead of the scalar `&(m->field)` idiom. For an array member
+`double name[N]` the earlier `&(m->x)` has type pointer-to-array
+(`double (*)[N]`), which a conforming C11 compiler diagnoses as incompatible with
+the pointer-to-`double` that the kernel prototype
+`void rumoca_rhs(const double *, const double *, double *, size_t)` and the copy
+locals (`fmi3Float64 * src = ...;`) require. `&(m->name[0])` is a `double *`
+denoting the member's first cell. The scalar rank-0 `time` member (`double time;`)
+keeps the exact `&(m->time)` idiom, and the scalar adapter (whose model member is a
+scalar `double`) is unchanged.
+
+The staged region pointer is `Runtime.region name`, defined as
+`.address (.index (Runtime.field name) (n 0))` (`&(m->name[0])`), with
+`Runtime.eval_region` proving it evaluates to `.pointer (some (m.member name))`
+heap-independently whenever `m` resolves to the instance pointer. This is the same
+address the earlier `&(m->name)` denoted, so every region read and write, and
+every tensor storage theorem and contract, keeps its statement and proof: only the
+staged C expression changed, at index `0` (`Address.index_zero`). The tensor
+`fmi3GetFloat64` dispatch, which also serves the scalar time base, selects the
+staged pointer through `TensorFloat64.memberPointer`, using the scalar `&(m->time)`
+idiom for `time` and `Runtime.region` for every array member; `eval_memberPointer`
+proves both cases stage the member's first cell.
+
+The authored C subset's expression grammar already prints
+`.address (.index (.field ...) (.nat 0))`. The object-memory model in
+`packages/backend-c` did not model subscripting an array member: `CBody.lvalue`
+and `CBody.eval` took a subscript's base pointer only from the operand's stored
+pointer value, which for an array member is a `double` cell, not a pointer. The
+`.index` rules now take the base from the operand's address when the operand is an
+lvalue (a field, subscript or dereference) and otherwise from its pointer value,
+modelling C array-to-pointer conversion: `m->x[i]` denotes the member's `i`th
+element cell, while a pointer variable `p[i]` still follows the stored pointer (a
+pointer variable has no lvalue in this fragment). Existing subscript proofs over
+pointer variables are unchanged; the reduction is definitional once the base
+resolves to a pointer.
+
+`lake build check-c`, `lake build check-fmi3`, `lake build rumoca_compiler/tests`
+and the regression executable are green, and every FMI package audit root still
+lists only the three permitted foundational axioms (`propext`, `Quot.sound`,
+`Classical.choice`). No production artifact is emitted, no CLI or grammar case is
+added, and the memory model's semantics for existing expressions are preserved.
+
+### Native array-member pointer boundary check
+
+`tests/tensor-c.sh` (the `tensor-c-test` target) now compiles the rendered
+`build/tensor-fmi/adapter.c` with the verification shell's C11 compiler, using the
+vendored FMI 3 headers (`packages/backend-fmi3/vendor/fmi3`) and an empty
+`model.c`; the adapter declares the `rumoca_rhs` prototype itself, so an
+object-only compile needs no kernel definition. Native compilation is a boundary
+outside the proof model. The check asserts the compiler reports no
+`incompatible pointer type` diagnostic: it fails on the array-member idiom before
+this increment and passes after. It does not assert a full standalone object of
+this development adapter, whose scalar-fallback event and discrete bodies still
+reference scalar-only record members (`timeMin`, `lastCompleted`, `eventTime`) and
+whose reduced lifecycle/query signatures differ from the pinned FMI prototypes;
+those are separate development-stage matters, distinct from the array-member
+pointer-type contract established here.

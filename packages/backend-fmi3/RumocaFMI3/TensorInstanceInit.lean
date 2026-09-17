@@ -57,7 +57,7 @@ def metaCode (kind : Kind) : List Stmt := [
 /-- The state-region fill and handle return: stage the region pointer and count,
 run the zero-fill loop, then return the record cast to `fmi3Instance`. -/
 def stateTail (shape : Tensor.Shape) : List Stmt :=
-  .declare "fmi3Float64 *" "dst" (.address (Runtime.field stateName)) ::
+  .declare "fmi3Float64 *" "dst" ((Runtime.region stateName)) ::
   .declare "size_t" "expected" (Runtime.n shape.volume) ::
   .declare "size_t" "k" (Runtime.n 0) ::
   loop "k" (Runtime.v "expected") zeroBody :: [returnHandle]
@@ -378,10 +378,10 @@ theorem return_reaches (shape : Tensor.Shape) (kind : Kind) (env : Locals) (type
       some (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: [returnHandle])
         (CBody.bind env "dst" (.pointer (some (p.member stateName)))) (CLoops.bindType types' "dst" .pointer) mh) :=
-    declare_step_e env types' mh "fmi3Float64 *" "dst" (.address (Runtime.field stateName)) .pointer
+    declare_step_e env types' mh "fmi3Float64 *" "dst" ((Runtime.region stateName)) .pointer
       (.pointer (some (p.member stateName))) (.pointer (some (p.member stateName))) _ bindings.dstFresh float
       (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, mBound, Value.address]) rfl
+          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, mBound, Value.address]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: [returnHandle])
         (CBody.bind env "dst" (.pointer (some (p.member stateName)))) (CLoops.bindType types' "dst" .pointer) mh) =

@@ -180,8 +180,8 @@ solve while keeping the state tensor symbolic. -/
 derivative region `dx`, stage the element count, and run the elementwise update
 loop. -/
 def eulerTail (shape : Tensor.Shape) : List Stmt :=
-  .declare "fmi3Float64 *" "dst" (.address (Runtime.field TensorInstance.stateName)) ::
-  .declare "fmi3Float64 *" "src" (.address (Runtime.field TensorInstance.derivativeName)) ::
+  .declare "fmi3Float64 *" "dst" ((Runtime.region TensorInstance.stateName)) ::
+  .declare "fmi3Float64 *" "src" ((Runtime.region TensorInstance.derivativeName)) ::
   .declare "size_t" "expected" (Runtime.n shape.volume) ::
   .declare "size_t" "k" (Runtime.n 0) ::
   [loop "k" (Runtime.v "expected") eulerBody]
@@ -214,19 +214,19 @@ theorem euler_delivers (shape : Tensor.Shape) (H : Heap) (p : Address) (env : Lo
       (.body (.running rest envF typesF
         (written H (p.member TensorInstance.stateName) sum shape.volume)) resultType stack) := by
   have s_dst : CLoops.next (.running (eulerTail shape ++ rest) env types0 H) =
-      some (.running (.declare "fmi3Float64 *" "src" (.address (Runtime.field TensorInstance.derivativeName)) ::
+      some (.running (.declare "fmi3Float64 *" "src" ((Runtime.region TensorInstance.derivativeName)) ::
         .declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
         (bind env "dst" (.pointer (some (p.member TensorInstance.stateName))))
         (bindType types0 "dst" .pointer) H) := by
     apply TensorFloat64.declare_step_e env types0 H "fmi3Float64 *" "dst"
-      (.address (Runtime.field TensorInstance.stateName)) .pointer
+      ((Runtime.region TensorInstance.stateName)) .pointer
       (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst rfl _ rfl
     apply CBodyEmbedding.eval_refines
-    simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]
+    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]
   set env1 := bind env "dst" (.pointer (some (p.member TensorInstance.stateName))) with henv1
   have s_src : CLoops.next (.running (.declare "fmi3Float64 *" "src"
-        (.address (Runtime.field TensorInstance.derivativeName)) ::
+        ((Runtime.region TensorInstance.derivativeName)) ::
         .declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
         env1 (bindType types0 "dst" .pointer) H) =
@@ -235,12 +235,12 @@ theorem euler_delivers (shape : Tensor.Shape) (H : Heap) (p : Address) (env : Lo
         (bind env1 "src" (.pointer (some (p.member TensorInstance.derivativeName))))
         (bindType (bindType types0 "dst" .pointer) "src" .pointer) H) := by
     apply TensorFloat64.declare_step_e env1 _ H "fmi3Float64 *" "src"
-      (.address (Runtime.field TensorInstance.derivativeName)) .pointer
+      ((Runtime.region TensorInstance.derivativeName)) .pointer
       (.pointer (some (p.member TensorInstance.derivativeName))) _ _
       (by simp [henv1, CBody.bind, freshSrc]) rfl _ rfl
     apply CBodyEmbedding.eval_refines
     have m1 : env1 "m" = some (.pointer (some p)) := by simp [henv1, CBody.bind, mBound]
-    simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]
+    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]
   set env2 := bind env1 "src" (.pointer (some (p.member TensorInstance.derivativeName))) with henv2
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
@@ -366,7 +366,7 @@ theorem internalStep_reaches (shape oshape : Tensor.Shape) (definitions : CLoops
         [.pointer (some (m.member TensorInstance.stateName)), .pointer (some (m.member TensorInstance.inputName)),
          .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] H cont) := by
     simp [internalBody, eulerTail, List.cons_append, CCalls.Events.internalNext, CCalls.Typed.nextWith,
-      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.field,
+      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
       Runtime.v, CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve,
       CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments, mBound, countBound,
       CBody.bind, CBody.resolve, CBody.constants, Value.address, hcont, freshRhs]
@@ -630,7 +630,7 @@ theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Ca
         [.pointer (some (m.member TensorInstance.stateName)), .pointer (some (m.member TensorInstance.inputName)),
          .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] H cont) := by
     simp [stepBody, htail, List.cons_append, CCalls.Events.internalNext, CCalls.Typed.nextWith,
-      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.field,
+      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
       Runtime.v, CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve,
       CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments, mBound, countBound,
       CBody.resolve, CBody.constants, Value.address, hcont, freshRhs]
@@ -1389,8 +1389,8 @@ def signature : Signature := ⟨"fmi3Status", "fmi3DoStep",
 state/derivative pointers, element count, step count and loop counters to function
 scope, run the outer grid loop, publish the advanced time and return `fmi3OK`. -/
 def tensorStepSolve (shape : Tensor.Shape) : List Stmt :=
-  .declare "fmi3Float64 *" "dst" (.address (Runtime.field TensorInstance.stateName)) ::
-  .declare "fmi3Float64 *" "src" (.address (Runtime.field TensorInstance.derivativeName)) ::
+  .declare "fmi3Float64 *" "dst" ((Runtime.region TensorInstance.stateName)) ::
+  .declare "fmi3Float64 *" "src" ((Runtime.region TensorInstance.derivativeName)) ::
   .declare "size_t" "nContinuousStates" (Runtime.n shape.volume) ::
   .declare "size_t" "expected" (Runtime.n shape.volume) ::
   .declare "size_t" "steps" (.cast "size_t" (Runtime.v "communicationStepSize")) ::
@@ -1544,18 +1544,18 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
         (counterEnv env6 "n" 0) types7 H) "fmi3Status" stack) := by
     refine .next (CCalls.Events.body_step program
       (TensorFloat64.declare_step_e env types0 H "fmi3Float64 *" "dst"
-        (.address (Runtime.field TensorInstance.stateName)) .pointer
+        ((Runtime.region TensorInstance.stateName)) .pointer
         (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst rfl
         (by apply CBodyEmbedding.eval_refines
-            simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]) rfl)
+            simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]) rfl)
       "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env1 types1 H "fmi3Float64 *" "src"
-          (.address (Runtime.field TensorInstance.derivativeName)) .pointer
+          ((Runtime.region TensorInstance.derivativeName)) .pointer
           (.pointer (some (p.member TensorInstance.derivativeName))) _ _
           (by simp [henv1, CBody.bind, freshSrc]) rfl
           (by apply CBodyEmbedding.eval_refines
-              simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]) rfl)
+              simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]) rfl)
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env2 types2 H "size_t" "nContinuousStates"
@@ -2120,7 +2120,8 @@ theorem body_printable (shape : Tensor.Shape) :
   have intType : TypeSpelling RuntimePrinter.typedefs "int" := .named (.primitive (by decide +kernel))
   have doubleType : TypeSpelling RuntimePrinter.typedefs "double" := .named (.primitive (by decide +kernel))
   simp only [function, doStepBody, tensorStepSolve, stepBodyT, stepBody, eulerBody, timeAdvance, oneExpr,
-      dstCell, srcCell, TensorContinuousStates.derivEntryArgs, Runtime.require, Runtime.instancePrefix,
+      dstCell, srcCell, TensorContinuousStates.derivEntryArgs, Runtime.region, Runtime.require,
+      Runtime.instancePrefix,
       Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.mode, Runtime.reject, Runtime.branch,
       Runtime.pointerCheck, Runtime.out, Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding,
       Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call, Runtime.any,

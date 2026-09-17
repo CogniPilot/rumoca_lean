@@ -102,7 +102,7 @@ theorem expression_correct (bound : Bound symbols env) (safe : NoIntrinsic symbo
   | deref a ha => simp [expression, CBody.eval, CBody.lvalue, ha.1]
   | address a ha => simp [expression, CBody.eval, CBody.lvalue, ha.2]
   | field a name pointer ha => simp [expression, CBody.eval, CBody.lvalue, ha.1, ha.2]
-  | index a i ha hi => simp [expression, CBody.eval, CBody.lvalue, ha.1, hi.1]
+  | index a i ha hi => simp [expression, CBody.eval, CBody.lvalue, ha.1, ha.2, hi.1]
   | cast type a ha =>
       have casts (value : Value) :
           CBody.expressionCast type (expression symbols a) value = CBody.expressionCast type a value := by

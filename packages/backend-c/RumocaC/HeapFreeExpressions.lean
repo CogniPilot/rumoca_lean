@@ -70,7 +70,12 @@ theorem heap_free (expr : Expr) :
     · simp [heapFreeValue]
     · intro accepted env before after
       obtain ⟨b, i⟩ := Bool.and_eq_true_iff.mp accepted
-      simp only [lvalue, (heap_free base).1 b env before after, (heap_free index).1 i env before after]
+      -- A base certified `heapFreeValue` is not an lvalue expression, so the
+      -- array-decay fallback branch is unreachable and heap-independent.
+      have lvNone : ∀ h, lvalue env h base = none := by
+        cases base <;> simp_all [heapFreeValue, lvalue]
+      simp only [lvalue, (heap_free base).1 b env before after, (heap_free index).1 i env before after,
+        lvNone]
   | call | sizeof => simp [heapFreeValue, heapFreeAddress]
 termination_by sizeOf expr
 

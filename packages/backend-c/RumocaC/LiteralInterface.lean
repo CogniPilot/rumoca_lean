@@ -44,7 +44,7 @@ theorem expression_agreement (before after : CInterface)
       intro agree
       have left := ha (fun name member => agree name (by simp [names, member]))
       have right := hb (fun name member => agree name (by simp [names, member]))
-      simp [CBody.eval, CBody.lvalue, left.1, right.1]
+      simp [CBody.eval, CBody.lvalue, left.1, left.2, right.1]
   | not a ha | deref a ha | address a ha | field a name pointer ha =>
       intro agree
       have same := ha (by simpa only [names] using agree)

@@ -59,3 +59,36 @@ rg -q 'actual tensor IVP differs' build/tensor-c/ivp-rejection.log
   packages/backend-c/Tests/tensor-native.c -lm -o build/tensor-c/native
 build/tensor-c/native
 echo 'Tensor C actual-file contracts, mutation rejection and native boundary check passed'
+
+# --- Tensor FMI 3 adapter array-member pointer-type boundary check ---
+# The compiler regression executable renders the development tensor adapter to
+# build/tensor-fmi/adapter.c. This step confirms that a C11 compiler, using the
+# vendored FMI 3 headers, reports no array-member pointer-type mismatch: each
+# array member `double name[N]` stages its element pointer `&(m->name[0])`
+# (type `double *`), matching the copy locals and the `rumoca_rhs` kernel
+# prototype `void rumoca_rhs(const double *, const double *, double *, size_t)`.
+# The scalar rank-0 `time` member keeps the exact `&(m->time)` idiom. Native
+# compilation is a boundary outside the proof model. A full standalone object of
+# this development adapter is not asserted here: its scalar-fallback event and
+# discrete bodies reference scalar-only record members and its reduced
+# lifecycle/query signatures differ from the pinned FMI prototypes, both of which
+# are separate from the array-member pointer-type contract of this step.
+adapter=build/tensor-fmi/adapter.c
+if [ ! -f "$adapter" ]; then
+  packages/compiler/.lake/build/bin/tests
+fi
+# The adapter includes "model.c" (empty here) and declares the tensor kernel
+# prototype itself, so an object-only compile needs no kernel definition;
+# rumoca_rhs stays an undefined extern. Header preprocessing and the native
+# toolchain remain outside the authored C semantics.
+: > build/tensor-fmi/model.c
+"${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror -pedantic -fno-fast-math -ffp-contract=off \
+  -Wno-unused-parameter -I packages/backend-fmi3/vendor/fmi3 -I build/tensor-fmi \
+  -c "$adapter" -o build/tensor-fmi/adapter.o \
+  > build/tensor-fmi/adapter-cc.log 2>&1 || true
+if rg -q 'incompatible pointer type' build/tensor-fmi/adapter-cc.log; then
+  echo 'tensor adapter stages an incompatible array-member pointer type' >&2
+  cat build/tensor-fmi/adapter-cc.log >&2
+  exit 1
+fi
+echo 'Tensor FMI 3 adapter array-member pointer-type boundary check passed'

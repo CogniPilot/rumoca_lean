@@ -126,13 +126,21 @@ end
 
 /-! ### The getter body -/
 
+/-- The pointer to a record member's first element staged by a dispatch arm.
+The rank-0 time base is a scalar `double` member, whose exact idiom is
+`&(m->time)`; every other declared member (`u`, `x`, `dx`, `J`) is a `double`
+array, whose element pointer is `&(m->name[0])` (`Runtime.region`). Both denote
+the member's first cell `m.member name`, so the staged region base is the same. -/
+def memberPointer (member : String) : Expr :=
+  if member = timeName then .address (Runtime.field member) else Runtime.region member
+
 /-- The remaining copy-loop suffix, shared by every value reference. -/
 def getLoopSuffix : List Stmt :=
   [.declare "size_t" "k" (Runtime.n 0), CLoops.loop "k" (Runtime.v "expected") getCopyBody, Runtime.ok]
 
 /-- One dispatch arm stages the region pointer and its element count. -/
 def getArm (member : String) (count : Nat) : List Stmt :=
-  [.assign (Runtime.v "src") (.address (Runtime.field member)), .assign (Runtime.v "expected") (Runtime.n count)]
+  [.assign (Runtime.v "src") (memberPointer member), .assign (Runtime.v "expected") (Runtime.n count)]
 
 /-- The `J` arm is present only when the instance record carries the output. -/
 def getOutputArm (outputShape : Option Tensor.Shape) : List Stmt :=
@@ -358,6 +366,17 @@ theorem cvr0_cmp (env : Locals) (types : Types) (heap : Heap) (refs : Address) (
     CLoops.eval env types heap (Runtime.eqv vr0 (Runtime.n j)) = some (boolean (decide ((r : Int) = j))) :=
   CBodyEmbedding.eval_refines env types heap _ _ (vr0_cmp env heap refs r j rBound refRead)
 
+/-- The staged member pointer evaluates to the member's first element cell,
+heap-independently, for both the scalar time base and the array regions. -/
+theorem eval_memberPointer (env : Locals) (heap : Heap) (member : String) (p regionBase : Address)
+    (mResolves : CBody.resolve env "m" = some (.pointer (some p))) (regionEq : p.member member = regionBase) :
+    CBody.eval env heap (memberPointer member) = some (.pointer (some regionBase)) := by
+  subst regionEq
+  unfold memberPointer
+  split
+  · simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, mResolves, Value.address]
+  · exact Runtime.eval_region env heap member p mResolves
+
 /-- The two dispatch assignments stage the region pointer and count. -/
 theorem stage_reaches (program : CCalls.Events.Program E) (env0 : Locals) (types0 : Types) (heap : Heap)
     (p regionBase : Address) (member : String) (count : Nat) (rest : List Stmt)
@@ -368,16 +387,16 @@ theorem stage_reaches (program : CCalls.Events.Program E) (env0 : Locals) (types
         "fmi3Status" stack)
       (.body (.running rest (stagedEnv env0 regionBase count) (declaredTypes types0) heap)
         "fmi3Status" stack) := by
-  have addr : CLoops.eval (declaredEnv env0) (declaredTypes types0) heap (.address (Runtime.field member)) =
+  have addr : CLoops.eval (declaredEnv env0) (declaredTypes types0) heap (memberPointer member) =
       some (.pointer (some regionBase)) := by
     apply CBodyEmbedding.eval_refines
-    simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, declaredEnv, CBody.bind, CBody.resolve,
-      mBound, Value.address, regionEq]
+    exact eval_memberPointer (declaredEnv env0) heap member p regionBase
+      (by simp [declaredEnv, CBody.bind, CBody.resolve, mBound]) regionEq
   have s1 : CLoops.next (.running (getArm member count ++ rest) (declaredEnv env0) (declaredTypes types0) heap) =
       some (.running (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
         (CBody.bind (declaredEnv env0) "src" (.pointer (some regionBase))) (declaredTypes types0) heap) := by
     have := CLoops.assign_local (declaredEnv env0) (declaredTypes types0) heap "src"
-      (.address (Runtime.field member)) (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
+      (memberPointer member) (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
       (.pointer none) (.pointer (some regionBase)) (.pointer (some regionBase)) .pointer
       (by simp [declaredEnv, CBody.bind]) (by simp [declaredTypes, CLoops.bindType]) addr rfl
     simpa [getArm, Runtime.v] using this
@@ -873,7 +892,7 @@ def setLoopSuffix : List Stmt :=
 
 /-- One setter dispatch arm stages the writable region pointer and its count. -/
 def setArm (member : String) (count : Nat) : List Stmt :=
-  [.assign (Runtime.v "dst") (.address (Runtime.field member)), .assign (Runtime.v "expected") (Runtime.n count)]
+  [.assign (Runtime.v "dst") (memberPointer member), .assign (Runtime.v "expected") (Runtime.n count)]
 
 /-- Setter dispatch tail for reference 2 (the state `x`). -/
 def setDispatch2 (shape : Tensor.Shape) : List Stmt :=
@@ -1034,16 +1053,16 @@ theorem set_stage_reaches (program : CCalls.Events.Program E) (env0 : Locals) (t
         "fmi3Status" stack)
       (.body (.running rest (stagedSetEnv env0 regionBase count) (setDeclaredTypes types0) heap)
         "fmi3Status" stack) := by
-  have addr : CLoops.eval (setDeclaredEnv env0) (setDeclaredTypes types0) heap (.address (Runtime.field member)) =
+  have addr : CLoops.eval (setDeclaredEnv env0) (setDeclaredTypes types0) heap (memberPointer member) =
       some (.pointer (some regionBase)) := by
     apply CBodyEmbedding.eval_refines
-    simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, setDeclaredEnv, CBody.bind, CBody.resolve,
-      mBound, Value.address, regionEq]
+    exact eval_memberPointer (setDeclaredEnv env0) heap member p regionBase
+      (by simp [setDeclaredEnv, CBody.bind, CBody.resolve, mBound]) regionEq
   have s1 : CLoops.next (.running (setArm member count ++ rest) (setDeclaredEnv env0) (setDeclaredTypes types0) heap) =
       some (.running (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
         (CBody.bind (setDeclaredEnv env0) "dst" (.pointer (some regionBase))) (setDeclaredTypes types0) heap) := by
     have := CLoops.assign_local (setDeclaredEnv env0) (setDeclaredTypes types0) heap "dst"
-      (.address (Runtime.field member)) (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
+      (memberPointer member) (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
       (.pointer none) (.pointer (some regionBase)) (.pointer (some regionBase)) .pointer
       (by simp [setDeclaredEnv, CBody.bind]) (by simp [setDeclaredTypes, CLoops.bindType]) addr rfl
     simpa [setArm, Runtime.v] using this
@@ -1270,7 +1289,8 @@ theorem getBody_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Sh
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   cases outputShape <;>
     (simp only [getFunction, getBody, getRest, getDispatch, getDispatch1, getDispatch2, getDispatch3,
-        getDispatch4, getArm, getOutputArm, getLoopSuffix, basicReject, countReject, vr0,
+        getDispatch4, getArm, getOutputArm, getLoopSuffix, memberPointer, Runtime.region,
+        timeName, stateName, inputName, derivativeName, outputName, basicReject, countReject, vr0,
         Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
         permittedModes, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok,
         Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
@@ -1316,6 +1336,7 @@ theorem setBody_printable (shape : Tensor.Shape) :
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   simp only [setFunction, setBody, setRest, setDispatch, setDispatch2, setArm, setLoopSuffix, validateBody,
+      memberPointer, Runtime.region, timeName, stateName, inputName, derivativeName, outputName,
       basicReject, countReject, vr0, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
       Runtime.allowedExpression, permittedModes, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
       Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,

@@ -81,7 +81,7 @@ theorem count_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume :
 /-! ### The getter -/
 
 def getTail (shape : Tensor.Shape) : List Stmt :=
-  .declare "fmi3Float64 *" "src" (.address (Runtime.field stateName)) ::
+  .declare "fmi3Float64 *" "src" ((Runtime.region stateName)) ::
   .declare "fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
   .declare "size_t" "expected" (Runtime.n shape.volume) :: getLoopSuffix
 
@@ -148,10 +148,10 @@ theorem get_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address) (c
         (bind (guardEnv p buffer count) "src" (.pointer (some (p.member stateName))))
         (bindType types0 "src" .pointer) heap) :=
     TensorFloat64.declare_step_e (guardEnv p buffer count) types0 heap "fmi3Float64 *" "src"
-      (.address (Runtime.field stateName)) .pointer (.pointer (some (p.member stateName)))
+      ((Runtime.region stateName)) .pointer (.pointer (some (p.member stateName)))
       (.pointer (some (p.member stateName))) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
       (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, guardEnv, parameters, CBody.bind,
+          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, guardEnv, parameters, CBody.bind,
             CBody.resolve, mBound, Value.address]) rfl
   have s_values : CLoops.next (.running (.declare "fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
         .declare "size_t" "expected" (Runtime.n shape.volume) :: getLoopSuffix)
@@ -214,7 +214,7 @@ end
 /-! ### The setter -/
 
 def setTail (shape : Tensor.Shape) : List Stmt :=
-  .declare "fmi3Float64 *" "dst" (.address (Runtime.field stateName)) ::
+  .declare "fmi3Float64 *" "dst" ((Runtime.region stateName)) ::
   .declare "fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
   .declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix
 
@@ -276,10 +276,10 @@ theorem set_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address) (c
         (bind (guardEnv p buffer count) "dst" (.pointer (some (p.member stateName))))
         (bindType types0 "dst" .pointer) heap) :=
     TensorFloat64.declare_step_e (guardEnv p buffer count) types0 heap "fmi3Float64 *" "dst"
-      (.address (Runtime.field stateName)) .pointer (.pointer (some (p.member stateName)))
+      ((Runtime.region stateName)) .pointer (.pointer (some (p.member stateName)))
       (.pointer (some (p.member stateName))) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
       (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, guardEnv, parameters, CBody.bind,
+          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, guardEnv, parameters, CBody.bind,
             CBody.resolve, mBound, Value.address]) rfl
   have s_values : CLoops.next (.running (.declare "fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
         .declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix)
@@ -473,7 +473,7 @@ theorem getBody_printable (shape : Tensor.Shape) :
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [getFunction, getBody, getTail, countReject, getLoopSuffix, Runtime.require,
+  simp only [getFunction, getBody, getTail, countReject, getLoopSuffix, Runtime.region, Runtime.require,
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
@@ -517,7 +517,7 @@ theorem setBody_printable (shape : Tensor.Shape) :
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [setFunction, setBody, setTail, countReject, setLoopSuffix, Runtime.require,
+  simp only [setFunction, setBody, setTail, countReject, setLoopSuffix, Runtime.region, Runtime.require,
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
@@ -641,12 +641,12 @@ def derivCountReject (volume : Nat) : Stmt :=
 /-- The C arguments of the prepared derivative entry: pointers to the instance's
 `x`, `u` and `der(x)` regions and the element count. -/
 def derivEntryArgs : List Expr :=
-  [.address (Runtime.field stateName), .address (Runtime.field inputName),
-    .address (Runtime.field derivativeName), Runtime.v "nContinuousStates"]
+  [(Runtime.region stateName), (Runtime.region inputName),
+    (Runtime.region derivativeName), Runtime.v "nContinuousStates"]
 
 /-- The copy suffix that stages the `der(x)` region and moves it into the buffer. -/
 def derivCopyTail (shape : Tensor.Shape) : List Stmt :=
-  .declare "fmi3Float64 *" "src" (.address (Runtime.field derivativeName)) ::
+  .declare "fmi3Float64 *" "src" ((Runtime.region derivativeName)) ::
   .declare "fmi3Float64 *" "values" (Runtime.v "derivatives") ::
   .declare "size_t" "expected" (Runtime.n shape.volume) :: getLoopSuffix
 
@@ -702,7 +702,8 @@ theorem deriv_enter (shape : Tensor.Shape) (p buffer : Address) (count : UInt64)
          .pointer (some (p.member derivativeName)), .integer count.toNat] H
         (.caller .discard (derivCopyTail shape) (derivGuardEnv p buffer count) types0 "fmi3Status" stack)) := by
   simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-    derivEntryArgs, Runtime.call, Runtime.field, Runtime.v, CBody.eval, CBody.lvalue,
+    derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
+    CBody.lvalue,
     CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve,
     CCalls.arguments, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.constants,
     Value.address]
@@ -727,10 +728,10 @@ theorem deriv_delivers (shape : Tensor.Shape) (H : Heap) (p buffer : Address) (c
         (bind (derivGuardEnv p buffer count) "src" (.pointer (some (p.member derivativeName))))
         (bindType types0 "src" .pointer) H) :=
     TensorFloat64.declare_step_e (derivGuardEnv p buffer count) types0 H "fmi3Float64 *" "src"
-      (.address (Runtime.field derivativeName)) .pointer (.pointer (some (p.member derivativeName)))
+      ((Runtime.region derivativeName)) .pointer (.pointer (some (p.member derivativeName)))
       (.pointer (some (p.member derivativeName))) _ (by simp [derivGuardEnv, derivParameters, CBody.bind])
       rfl (by apply CBodyEmbedding.eval_refines
-              simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, derivGuardEnv, derivParameters,
+              simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, derivGuardEnv, derivParameters,
                 CBody.bind, CBody.resolve, mBound, Value.address]) rfl
   have s_values : CLoops.next (.running (.declare "fmi3Float64 *" "values" (Runtime.v "derivatives") ::
         .declare "size_t" "expected" (Runtime.n shape.volume) :: getLoopSuffix)
@@ -975,7 +976,7 @@ theorem derivBody_printable (shape : Tensor.Shape) :
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [derivFunction, derivBody, derivCopyTail, derivCountReject, derivEntryArgs, getLoopSuffix,
+  simp only [derivFunction, derivBody, derivCopyTail, derivCountReject, derivEntryArgs, getLoopSuffix, Runtime.region,
       Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,

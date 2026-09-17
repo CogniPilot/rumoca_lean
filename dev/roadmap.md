@@ -11,6 +11,24 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Conforming array-member region pointers and a native adapter boundary check (derived proofs):**
+
+The tensor bodies now stage every array-member region pointer as the address
+of the first element, printed `&(m->x[0])`, which denotes the same instance
+address at index zero, so every tensor theorem and contract keeps its
+statement. The authored C body semantics gained array-to-pointer conversion
+for subscripting an array member, backward compatible with pointer subscripts.
+`tests/tensor-c.sh` now compiles the retained tensor adapter object-only with
+the vendored FMI headers and strict C11 flags and fails on any incompatible
+pointer type diagnostic; before the fix that compile reported twenty. That
+compile also exposed two remaining development-stage defects for the next
+increment: reused scalar event and discrete bodies reference record members
+the tensor record lacks, and the reduced tensor lifecycle and query signatures
+differ from the pinned header prototypes. Nothing is emitted by production.
+See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 36m05s
+with the C certificates rebuilt (`build/tensor-fmi/full-gate-v19.log`).
+
 **Tensor helper set and full-list adapter render (derived proofs):**
 
 The tensor preamble no longer carries the scalar model record or the scalar

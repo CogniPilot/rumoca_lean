@@ -1,5 +1,7 @@
 import RumocaCore.FMI3.Lifecycle
 import RumocaFMI3.Metadata
+import RumocaC.Interface
+import RumocaC.Body
 import RumocaC.InitializationCode
 import RumocaFMI3.IdentityCode
 import RumocaFMI3.StaticFactoryCode
@@ -18,6 +20,24 @@ def v := Expr.id
 def n := Expr.nat
 def call (name : String) (args : List Expr := []) := Expr.call (v name) args
 def field (name : String) := Expr.field (v "m") name true
+/-- Pointer to the first element of an array-typed record member: `&(m->name[0])`.
+For an array member `double name[N]` this is the pointer-to-element type
+(`double *`) the tensor copy loops and the tensor kernel prototype require; the
+scalar member idiom `&(m->name)` (`.address (field name)`) is exact only for a
+scalar member such as the rank-0 time base. The denoted address is the member's
+first element cell, so region reads and writes are unchanged. -/
+def region (name : String) := Expr.address (Expr.index (field name) (n 0))
+
+open CMemory in
+/-- `region name` evaluates to a pointer to the member's first element cell,
+heap-independently, whenever `m` resolves to the instance pointer. The denoted
+address is the same `m.member name` the scalar `&(m->name)` idiom denotes, so
+region reads and writes are unchanged. -/
+theorem eval_region [Rumoca.CInterface] (env : CBody.Locals) (heap : Heap)
+    (name : String) (m : Address)
+    (mResolves : CBody.resolve env "m" = some (.pointer (some m))) :
+    CBody.eval env heap (region name) = some (.pointer (some (m.member name))) := by
+  simp [region, field, v, n, CBody.eval, CBody.lvalue, mResolves, Value.address]
 def x := Expr.field (field "model") "x"
 def eqv := Expr.bin BinOp.eq
 def nev := Expr.bin BinOp.ne

@@ -109,7 +109,7 @@ def guardEnv (p : Address) : Locals := bind (parameters (some p)) "m" (.pointer 
 /-- The statements after the guard: stage the region pointer and count, run the
 zero-fill loop, reset the time base, and return. -/
 def resetTail (shape : Tensor.Shape) : List Stmt :=
-  .declare "fmi3Float64 *" "dst" (.address (Runtime.field stateName)) ::
+  .declare "fmi3Float64 *" "dst" ((Runtime.region stateName)) ::
   .declare "size_t" "expected" (Runtime.n shape.volume) ::
   .declare "size_t" "k" (Runtime.n 0) ::
   loop "k" (Runtime.v "expected") zeroBody ::
@@ -180,11 +180,11 @@ theorem reset_reaches (shape : Tensor.Shape) (heap : Heap) (p : Address) (kind :
         Runtime.put "time" (Runtime.n 0) :: [Runtime.ok])
         (bind (guardEnv p) "dst" (.pointer (some (p.member stateName)))) (bindType types0 "dst" .pointer) heap) :=
     declare_step_e (guardEnv p) types0 heap "fmi3Float64 *" "dst"
-      (.address (Runtime.field stateName)) .pointer (.pointer (some (p.member stateName)))
+      ((Runtime.region stateName)) .pointer (.pointer (some (p.member stateName)))
       (.pointer (some (p.member stateName))) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
       (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, guardEnv, parameters, CBody.bind,
-            CBody.resolve, mBound, Value.address]) rfl
+          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, guardEnv,
+            parameters, CBody.bind, CBody.resolve, mBound, Value.address]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody ::
         Runtime.put "time" (Runtime.n 0) :: [Runtime.ok])
@@ -333,7 +333,8 @@ theorem body_printable (shape : Tensor.Shape) :
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [function, body, resetTail, zeroBody, dstCell, Runtime.require, Runtime.instancePrefix,
+  simp only [function, body, resetTail, zeroBody, dstCell, Runtime.region, Runtime.require,
+      Runtime.instancePrefix,
       Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.reject, Runtime.branch,
       Runtime.fail, Runtime.ret, Runtime.ok, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
       Runtime.eqv, Runtime.both, Runtime.either, Runtime.negate, Runtime.any, Runtime.mode, Runtime.call,
