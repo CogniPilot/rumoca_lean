@@ -55,7 +55,9 @@ theorem program_call_reaches (f : Syntax.Function) (valid : f.valid = true)
       (.calling f.name (Arguments.values f.parameters args) heap stack) (.returning finalHeap stack) ∧
       Reads finalHeap (locations (emit p plan layout).result) result ∧
       Bound (Arguments.locals f.parameters args) locations (emit p plan layout).result ∧
-      ∀ q, Outside locations p plan q → finalHeap q = heap q := by
+      (∀ q, Outside locations p plan q → finalHeap q = heap q) ∧
+      (Writable heap (locations (emit p plan layout).result) shape.volume →
+        Writable finalHeap (locations (emit p plan layout).result) shape.volume) := by
   have nodup := valid_nodup f valid
   have parameters := Arguments.bind_parameters f.parameters args library.binaryHeader nodup arguments
   have types := Arguments.bind_types f.parameters library.binaryHeader nodup
@@ -65,7 +67,7 @@ theorem program_call_reaches (f : Syntax.Function) (valid : f.valid = true)
     simp only [CLoops.Calls.machine, CLoops.Calls.next, found, Syntax.Function.tree,
       ne_eq, not_true_eq_false, ↓reduceIte, parameters, types, bind, Option.bind_some, pure]
   obtain ⟨domain, resultEq⟩ := Finite.executes_sound executed
-  obtain ⟨finalHeap, ran, readResult, boundResult, frame⟩ :=
+  obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
     emit_correct (Arguments.locals f.parameters args) (Arguments.types f.parameters) locations
       definitions (library.setup definitions f valid args) p plan layout values heap bound represented ready domain
       [.ret none] stack
@@ -76,7 +78,7 @@ theorem program_call_reaches (f : Syntax.Function) (valid : f.valid = true)
       (.next (by simp [CLoops.Calls.machine, CLoops.Calls.next]) (.refl _))
   change f.tree.body = (emit p plan layout).code ++ [.ret none] at matched
   rw [matched] at entered
-  exact ⟨finalHeap, .next entered (ran.trans returned), resultEq ▸ readResult, boundResult, frame⟩
+  exact ⟨finalHeap, .next entered (ran.trans returned), resultEq ▸ readResult, boundResult, frame, writableResult⟩
 
 theorem program_call_refines (f : Syntax.Function) (valid : f.valid = true)
     (p : Program Γ shape) (plan : Plan p) (layout : Layout Γ) (matched : Syntax.Matches f p plan layout)
@@ -91,11 +93,14 @@ theorem program_call_refines (f : Syntax.Function) (valid : f.valid = true)
     ∃ finalHeap, Reads finalHeap (locations (emit p plan layout).result) result ∧
       Bound (Arguments.locals f.parameters args) locations (emit p plan layout).result ∧
       (∀ q, Outside locations p plan q → finalHeap q = heap q) ∧
+      (Writable heap (locations (emit p plan layout).result) shape.volume →
+        Writable finalHeap (locations (emit p plan layout).result) shape.volume) ∧
       ∀ behavior, (CLoops.Calls.machine definitions).Behaves
         (.calling f.name (Arguments.values f.parameters args) heap .done) behavior ↔
         behavior = .terminates finalHeap := by
-  obtain ⟨finalHeap, ran, readResult, boundResult, frame⟩ := program_call_reaches f valid p plan layout matched
-    definitions library found args arguments locations values result heap bound represented ready executed .done
-  exact ⟨finalHeap, readResult, boundResult, frame,
+  obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
+    program_call_reaches f valid p plan layout matched
+      definitions library found args arguments locations values result heap bound represented ready executed .done
+  exact ⟨finalHeap, readResult, boundResult, frame, writableResult,
     fun _ => (CLoops.Calls.machine definitions).behavior_iff (ran.trans (.next (by rfl) (.refl _))) rfl⟩
 end Rumoca.CTensor.Lowering

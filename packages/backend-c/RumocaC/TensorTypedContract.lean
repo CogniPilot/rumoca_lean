@@ -22,14 +22,16 @@ def TypedCallCorrect (f : Syntax.Function) (p : Program Γ shape) (plan : Plan p
     ∃ finalHeap, Reads finalHeap (locations (emit p plan layout).result) result ∧
       Bound (Arguments.locals f.parameters args) locations (emit p plan layout).result ∧
       (∀ q, Outside locations p plan q → finalHeap q = heap q) ∧
+      (Writable heap (locations (emit p plan layout).result) shape.volume →
+        Writable finalHeap (locations (emit p plan layout).result) shape.volume) ∧
       CCalls.Typed.CallResult target f.name (Arguments.values f.parameters args) heap finalHeap
 
 theorem typed_call_correct (h : CallCorrect f p plan layout) : TypedCallCorrect f p plan layout := by
   intro interface definitions target linked library found args arguments locations values result heap
     bound represented ready executed
-  obtain ⟨finalHeap, reads, resultBound, frame, behavior⟩ := h definitions library found args arguments
+  obtain ⟨finalHeap, reads, resultBound, frame, writableResult, behavior⟩ := h definitions library found args arguments
     locations values result heap bound represented ready executed
-  exact ⟨finalHeap, reads, resultBound, frame,
+  exact ⟨finalHeap, reads, resultBound, frame, writableResult,
     CCalls.Typed.loop_call_result target definitions linked ((behavior _).mpr rfl)⟩
 
 def TypedDiagonalCallCorrect (f : Syntax.Function) (p : DiagonalProgram Γ shape)

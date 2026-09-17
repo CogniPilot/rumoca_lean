@@ -83,4 +83,32 @@ theorem written_reads (heap : Heap) (base : Address) (values : Values shape) :
   rw [if_pos i.isLt] at he
   simp [load, he, convert, Value.finite]
 
+/-- Each cell that `written` stores carries the writable flag. Writing the whole
+tensor destination therefore leaves the destination region writable. -/
+theorem written_writable (heap : Heap) (base : Address) (values : Values shape) (count : Nat)
+    (bound : count ≤ shape.volume) :
+    Writable (written heap base values shape.volume) base count := by
+  intro i hi
+  have he := written_at heap base values shape.volume (le_refl _) ⟨i, lt_of_lt_of_le hi bound⟩
+  rw [if_pos (lt_of_lt_of_le hi bound)] at he
+  exact ⟨_, he⟩
+
+/-- `written` preserves an existing writable region: each cell it stores is
+writable (float64, flagged), and every other cell keeps its prior contents. So
+any region writable before the write stays writable after it. -/
+theorem written_preserves_writable (heap : Heap) (base : Address) (values : Values shape) (k : Nat)
+    (region : Address) (count : Nat) (writable : Writable heap region count) :
+    Writable (written heap base values k) region count := by
+  induction k with
+  | zero => exact writable
+  | succ k ih =>
+    intro i hi
+    rw [written]
+    split
+    · by_cases h : region.index i = base.index k
+      · exact ⟨some (Value.finite values[k]), by simp [replace, h]⟩
+      · obtain ⟨old, ho⟩ := ih i hi
+        exact ⟨old, by rw [replace_other _ _ _ _ h]; exact ho⟩
+    · exact ih i hi
+
 end Rumoca.CMemory.TensorView

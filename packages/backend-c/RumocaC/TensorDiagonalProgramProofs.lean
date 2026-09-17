@@ -26,7 +26,7 @@ theorem emitDiagonal_correct (locals : CBody.Locals) (types : CLoops.Types) (loc
       Reads finalHeap (locations (emit p.coefficients plan layout).result) coefficients ∧
       ∀ q, DiagonalOutside locations p plan output q → finalHeap q = heap q := by
   obtain ⟨domain, resultEq⟩ := Finite.executes_sound executed
-  obtain ⟨intermediate, produced, readResult, resultBound, frame⟩ := emit_correct locals types locations
+  obtain ⟨intermediate, produced, readResult, resultBound, frame, _⟩ := emit_correct locals types locations
     definitions setup p.coefficients plan layout values heap bound represented ready domain
     (Diagonal.invoke (emit p.coefficients plan layout).result.pointer output.pointer
       (emit p.coefficients plan layout).result.count output.count :: rest) stack

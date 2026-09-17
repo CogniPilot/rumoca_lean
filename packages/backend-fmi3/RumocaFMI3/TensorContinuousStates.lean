@@ -876,7 +876,7 @@ theorem deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.
           (TensorInstanceRhs.args pool i shape)) H
         (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)) := by
     rw [← argsEq]; exact deriv_enter program shape m buffer count types0 H stack
-  obtain ⟨finalHeap, reads, frameH, others, ran⟩ :=
+  obtain ⟨finalHeap, reads, _writableDeriv, frameH, others, ran⟩ :=
     TensorInstanceRhs.derivative_writes_events (shape := shape) definitions program linked library found
       backing pool i oshape time state input result output bounded executed resolves
       (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)

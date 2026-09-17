@@ -3566,6 +3566,9 @@ printer/call/storage contracts and additionally require `TypedCallCorrect` and
 the emitted functions under the typed, value-returning machine too. These
 theorems preserve the exact finite Solve result and whole-heap frame for all
 shapes, with the same explicit storage and header/definition-table premises.
+The call contracts additionally conclude that the emitted program's output
+region remains writable in the returned heap whenever it was writable at entry;
+this conjunct is additive and is what lets a caller iterate the prepared entry.
 All 22 added roots, the stronger actual-file certificate, mutation rejection and
 the existing native boundary check pass in `build/c-typed-gate.log`. The exact
 file root is audited in `build/tensor-c/ivp-contract.log`; the package build

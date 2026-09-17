@@ -16,6 +16,8 @@ def CallCorrect (f : Syntax.Function) (p : Program Γ shape) (plan : Plan p) (la
     ∃ finalHeap, Reads finalHeap (locations (emit p plan layout).result) result ∧
       Bound (Arguments.locals f.parameters args) locations (emit p plan layout).result ∧
       (∀ q, Outside locations p plan q → finalHeap q = heap q) ∧
+      (Writable heap (locations (emit p plan layout).result) shape.volume →
+        Writable finalHeap (locations (emit p plan layout).result) shape.volume) ∧
       ∀ behavior, (CLoops.Calls.machine definitions).Behaves
         (.calling f.name (Arguments.values f.parameters args) heap .done) behavior ↔
         behavior = .terminates finalHeap

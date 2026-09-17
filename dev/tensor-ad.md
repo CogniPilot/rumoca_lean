@@ -1232,6 +1232,8 @@ reads `result`, and every cell of every other instance preserved.
 | The prepared derivative entry over an arbitrary well-formed instance heap | `TensorDoStep.derivative_run` |
 | The declaration-free per-internal-step body is closed and declaration-free | `TensorDoStep.stepBody_closed`, `TensorDoStep.stepBody_noDecl` |
 | One internal step from the declaration-free body over an abstract heap | `TensorDoStep.internalStepPure_reaches` |
+| The N-fold finite Euler state iteration as a Lean function of the step count | `TensorDoStep.eulerIterate` |
+| The outer grid loop of N internal steps over the symbolic state volume | `TensorDoStep.stepLoop_reaches` |
 
 The added roots pass the FMI package axiom audit on the three permitted
 foundational axioms. These are package-checked products only: no production
@@ -1242,31 +1244,65 @@ Behavioral coverage of the tensor slice now stands at 25 of the 26 behavioral FM
 3 functions delivered as proved package products (the seven here complete the
 model-independent common and Model Exchange functions), plus the Co-Simulation
 `fmi3DoStep` internal-step Euler kernel, its one-internal-step composition, the
-abstract-heap derivative transfer (`derivative_run`), and the declaration-free
+abstract-heap derivative transfer (`derivative_run`), the declaration-free
 per-internal-step body run over an arbitrary well-formed instance heap
-(`internalStepPure_reaches`).
+(`internalStepPure_reaches`), and the accepted-case N-step grid loop
+(`stepLoop_reaches`).
 
-Open for `fmi3DoStep`: the full function body wrapping the handle/lifecycle guards,
-the Co-Simulation grid-policy discard for a communication step that is not a
-positive integer multiple of the unit step or exceeds the scalar bound, the null
-and lifecycle rejections, the independent time advance, and the accepted step for
-an arbitrary number of internal steps.
+### The strengthened prepared-program execution contract
 
-The multi-step accepted-case iteration is blocked at a specific point. Chaining
-`internalStepPure_reaches` over the outer step count requires, before each internal
-step, that the instance's `der(x)` region is writable; after the previous internal
-step that region holds the previous derivative result. The prepared derivative
-execution contract (`CTensor.Lowering.CallCorrect`, surfaced through
-`TensorModelRhs.events_reaches` and `derivative_run`) exposes only that the output
-region reads the finite result and that every cell outside it is preserved; it does
-not expose that the written output region remains writable in the returned heap.
-Recovering the writable flag of the derivative output region is therefore a
-strengthening of the shared tensor-program execution contract in `backend-c` /
-`RumocaCore` (the same fact that the derivative getter obtains only for a caller
-buffer that lies outside the written region, via `buffer_outside`), not a
-`backend-fmi3` change, and it re-verifies across every prepared-program certificate.
-Until that fact is available, the outer grid loop and the accepted-case N-fold
-iteration contract cannot be closed without an unproved step, and the independent
-per-internal-step time advance is deferred with it. Binding any of these bodies to
-an emitted FMU wrapper with its lifecycle and numerical policy also remains open.
-This package product does not authorize production generation.
+Chaining `internalStepPure_reaches` over the outer step count requires, before each
+internal step, that the instance's `der(x)` region is writable; after the previous
+internal step that region holds the previous derivative result. The shared prepared
+tensor-program execution contract `CTensor.Lowering.CallCorrect` (in `backend-c`,
+`RumocaC.TensorProgramCallContract`) previously concluded only that the output
+region reads the finite result and that every cell outside it is preserved, but not
+that the output region stays writable in the returned heap: the memory model's
+`load`/`convert` discard the writable flag, so a `Reads` fact cannot recover it.
+
+`CallCorrect` now carries the additive conclusion
+
+```
+Writable heap (locations (emit p plan layout).result) shape.volume →
+  Writable finalHeap (locations (emit p plan layout).result) shape.volume
+```
+
+i.e. writability of the emitted program's output region is preserved from entry to
+the returned heap. It is proved from two memory-model lemmas on the dense tensor
+store: `written_writable` (writing a whole tensor destination leaves its cells
+`float64`-writable, since each stored cell carries the writable flag) and
+`written_preserves_writable` (a store into any region leaves every previously
+writable region writable, because a stored cell stays writable and every other cell
+keeps its contents). The conclusion is threaded, additively and without weakening
+any existing conclusion, through `emit_correct`/`emit_refines`,
+`program_call_reaches`/`program_call_refines`, `CallCorrect`/`TypedCallCorrect` and
+`BodyCorrect` in `backend-c`, then through `TensorModelRhs.behaviors`/`events_reaches`,
+`TensorInstanceRhs.derivative_writes`/`derivative_writes_events` (which discharge the
+antecedent with `TensorInstance.writable_derivative`) and `TensorDoStep.derivative_run`
+(which discharges it with its `writableDx` premise) in `backend-fmi3`. Each of these
+now exposes that the derivative region is writable in the returned heap, and every
+prior user of these theorems continues to compile.
+
+With that fact available, `internalStepPure_reaches` additionally exposes that the
+step's returned heap keeps the derivative region writable and preserves the input
+region, and `stepLoop_reaches` iterates the declaration-free step `stepBody` `N`
+times inside the outer counted loop `loop "n" steps stepBody`, by induction on the
+number of completed steps. Its conclusion: the state region reads the `N`-fold
+finite Euler step `eulerIterate initial sums N`, the derivative region reads the
+last derivative result, the input region and every cell of every other instance are
+preserved, both the state and derivative regions remain readable and writable, and
+the outer loop reaches its exit under any saved caller. The per-step finite tensor
+derivative and cell addition are the explicit premises `executes` and `adds`, and
+`resolves` records the uniform direct resolution of the nested tensor helper calls.
+
+Open for `fmi3DoStep`: the independent per-internal-step time advance folded into the
+step body (currently `stepBody` advances the state only; advancing the instance's
+time region by one per step, hoisting the declaration, would carry the time cell
+forward by `N`), and the full guarded function body wrapping the handle and
+lifecycle guards, the scalar argument classification, the rounding and grid-policy
+checks reused from the model-independent `Runtime` helpers, `fmi3Discard` for a
+communication step that is off-grid or over the bound, and the bundled function
+contract (null and lifecycle rejections, the discard case, and the accepted case
+built on `stepLoop_reaches`). Binding any of these bodies to an emitted FMU wrapper
+with its lifecycle and numerical policy also remains open. This package product does
+not authorize production generation.

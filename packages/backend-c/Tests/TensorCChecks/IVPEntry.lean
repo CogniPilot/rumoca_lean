@@ -125,7 +125,7 @@ theorem initial_call_correct (definitions : CLoops.Calls.Definitions) (library :
       (Entry.locations base) (kernel shape).initialProgram
       (Named.Plan.erase _ (plan shape).initial.plan) (Named.Layout.erase (plan shape).initial.layout) heap := by
     exact ⟨writable, bounded, bound, (fun r => nomatch r), True.intro⟩
-  obtain ⟨finalHeap, reads, _, frame, behaviors⟩ :=
+  obtain ⟨finalHeap, reads, _, frame, _, behaviors⟩ :=
     program_call_refines (plan shape).initial.function (plan_valid shape).1 _ _ _
       (Named.function_matches _ _ _ _ _) definitions library found (Entry.args base shape)
       (initial_arguments base shape bounded) (Entry.locations base) Env.empty
@@ -170,7 +170,7 @@ theorem derivative_call_correct (definitions : CLoops.Calls.Definitions) (librar
     intro s r i hi j hj
     casesm* Ref _ _
     all_goals exact TensorRegion.member_separate base _ _ (by simp [plan, namedLayout, namedBuffer]) i j
-  obtain ⟨finalHeap, reads, _, frame, behaviors⟩ :=
+  obtain ⟨finalHeap, reads, _, frame, _, behaviors⟩ :=
     program_call_refines (plan shape).derivative.function (plan_valid shape).2.1 _ _ _
       (Named.function_matches _ _ _ _ _) definitions library found (Entry.args base shape)
       (derivative_arguments base shape bounded) (Entry.locations base) (ArrayProfile.environment state input)

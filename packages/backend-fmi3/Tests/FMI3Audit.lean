@@ -2412,3 +2412,9 @@ import RumocaFMI3.TensorDoStep
 #audit axioms Rumoca.FMI3.TensorDoStep.stepBody_closed
 #audit axioms Rumoca.FMI3.TensorDoStep.stepBody_noDecl
 #audit axioms Rumoca.FMI3.TensorDoStep.internalStepPure_reaches
+-- The N-fold Euler state iteration and the outer grid loop that iterates the
+-- declaration-free internal step over the symbolic state volume: the state region
+-- advances by the N-fold finite Euler step, the derivative region reads the last
+-- result, and the input region and every other instance are preserved.
+#audit axioms Rumoca.FMI3.TensorDoStep.eulerIterate_succ
+#audit axioms Rumoca.FMI3.TensorDoStep.stepLoop_reaches

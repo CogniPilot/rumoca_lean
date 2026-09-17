@@ -111,6 +111,7 @@ theorem derivative_writes {shape : Shape}
     (executed : Finite.Executes (kernel shape).derivative (ArrayProfile.environment state input) result) :
     ∃ finalHeap,
       Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
       (∀ q, Outside (locations pool i) (kernel shape).derivative
           (TensorModelRhs.derivativePlan (kernel shape) (plan shape)) q →
         finalHeap q = TensorInstance.store backing pool i shape oshape time state input output q) ∧
@@ -169,13 +170,17 @@ theorem derivative_writes {shape : Shape}
         exact TensorInstance.fields_separate pool i TensorInstance.derivativeName TensorInstance.inputName
           (by decide +kernel) i' j
       | there r => nomatch r
-  obtain ⟨finalHeap, reads, frame, behaviorsIff⟩ :=
+  obtain ⟨finalHeap, reads, frame, writableResult, behaviorsIff⟩ :=
     TensorModelRhs.behaviors (kernel shape) (plan shape) (derivative_valid shape)
       definitions target linked library found (args pool i shape) arguments
       (locations pool i) (ArrayProfile.environment state input) result H
       bound represented ready executed
-  refine ⟨finalHeap, ?_, frame, ?_, behaviorsIff⟩
+  refine ⟨finalHeap, ?_, ?_, frame, ?_, behaviorsIff⟩
   · rwa [derivativeBuffer_eq] at reads
+  · have writable : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume :=
+      TensorInstance.writable_derivative backing pool i shape oshape time state input output
+    rw [derivativeBuffer_eq] at writableResult
+    exact writableResult writable
   · intro j b k different
     have outside : Outside (locations pool i) (kernel shape).derivative
         (TensorModelRhs.derivativePlan (kernel shape) (plan shape)) ((TensorInstance.field pool j b).index k) := by
@@ -221,6 +226,7 @@ theorem derivative_writes_events {shape : Shape}
     (stack : CCalls.Typed.Continuation) :
     ∃ finalHeap,
       Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
       (∀ q, Outside (locations pool i) (kernel shape).derivative
           (TensorModelRhs.derivativePlan (kernel shape) (plan shape)) q →
         finalHeap q = TensorInstance.store backing pool i shape oshape time state input output q) ∧
@@ -279,13 +285,17 @@ theorem derivative_writes_events {shape : Shape}
         exact TensorInstance.fields_separate pool i TensorInstance.derivativeName TensorInstance.inputName
           (by decide +kernel) i' j
       | there r => nomatch r
-  obtain ⟨finalHeap, reads, frame, ran⟩ :=
+  obtain ⟨finalHeap, reads, frame, writableResult, ran⟩ :=
     TensorModelRhs.events_reaches (kernel shape) (plan shape) (derivative_valid shape)
       definitions program linked library found (args pool i shape) arguments
       (locations pool i) (ArrayProfile.environment state input) result H
       bound represented ready executed resolves stack
-  refine ⟨finalHeap, ?_, frame, ?_, ran⟩
+  refine ⟨finalHeap, ?_, ?_, frame, ?_, ran⟩
   · rwa [derivativeBuffer_eq] at reads
+  · have writable : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume :=
+      TensorInstance.writable_derivative backing pool i shape oshape time state input output
+    rw [derivativeBuffer_eq] at writableResult
+    exact writableResult writable
   · intro j b k different
     have outside : Outside (locations pool i) (kernel shape).derivative
         (TensorModelRhs.derivativePlan (kernel shape) (plan shape)) ((TensorInstance.field pool j b).index k) := by

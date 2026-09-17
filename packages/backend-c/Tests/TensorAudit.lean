@@ -13,6 +13,8 @@ import RumocaC.TypedEventsTransfer
 #audit axioms Rumoca.CMemory.TensorView.store_next
 #audit axioms Rumoca.CMemory.TensorView.written_reads
 #audit axioms Rumoca.CMemory.TensorView.written_frame
+#audit axioms Rumoca.CMemory.TensorView.written_writable
+#audit axioms Rumoca.CMemory.TensorView.written_preserves_writable
 #audit axioms Rumoca.CTensor.function_correct
 #audit axioms Rumoca.CTensor.Syntax.render_denotes
 #audit axioms Rumoca.CTensor.Syntax.denotes_unique

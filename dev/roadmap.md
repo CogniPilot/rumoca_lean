@@ -11,6 +11,24 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Output-region writability and the N-step tensor co-simulation loop (derived proofs):**
+
+The shared prepared tensor program contract `CTensor.Lowering.CallCorrect`
+now also concludes that the emitted program's output region remains writable
+from entry to the returned heap, proved from two memory lemmas (a whole-tensor
+write leaves its cells writable and a store preserves every writable region)
+and threaded additively through emission correctness, program calls, the typed
+contract and every consumer without weakening any conclusion. With it,
+`TensorDoStep.stepLoop_reaches` proves the outer grid loop of N internal steps
+by induction: the state region reads the N-fold finite Euler iteration, the
+derivative region reads the last result, inputs and every other instance are
+preserved, and both regions stay writable. The per-step time advance, the
+guarded `fmi3DoStep` body with its grid-policy discard and rejections, and its
+bundled contract remain open. Nothing is emitted by production. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 29m29s
+with the tensor and C certificates rebuilt (`build/tensor-fmi/full-gate-v13.log`).
+
 **Declaration-free co-simulation step kernel (derived proofs):**
 
 `TensorDoStep.derivative_run` restates the prepared derivative entry over any

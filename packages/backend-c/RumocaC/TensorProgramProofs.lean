@@ -31,9 +31,11 @@ theorem emit_correct (locals : CBody.Locals) (types : CLoops.Types) (locations :
       Reads finalHeap (locations (emit p plan layout).result)
         (p.eval Finite.ops Binary64.positiveZero Binary64.one values) ∧
       Bound locals locations (emit p plan layout).result ∧
-      ∀ q, Outside locations p plan q → finalHeap q = heap q := by
+      (∀ q, Outside locations p plan q → finalHeap q = heap q) ∧
+      (Writable heap (locations (emit p plan layout).result) shape.volume →
+        Writable finalHeap (locations (emit p plan layout).result) shape.volume) := by
   induction p generalizing heap with
-  | ret ref => exact ⟨heap, .refl _, represented ref, bound ref, fun _ _ => rfl⟩
+  | ret ref => exact ⟨heap, .refl _, represented ref, bound ref, fun _ _ => rfl, id⟩
   | fill s literal next ih =>
     rcases plan with ⟨destination, plan⟩
     rcases ready with ⟨writable, bounded, destBound, fresh, following⟩
@@ -42,7 +44,7 @@ theorem emit_correct (locals : CBody.Locals) (types : CLoops.Types) (locations :
     have tailReady := ready_written locals locations next plan (layout.push destination) heap following .here result
     have tailReads : Represents locations (layout.push destination) writtenHeap (Env.push result values) :=
       represents_written locations layout destination heap values result represented fresh
-    obtain ⟨finalHeap, ran, readResult, boundResult, frame⟩ :=
+    obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
       ih plan (layout.push destination) (Env.push result values) writtenHeap
         (bound_push locals locations layout destination bound destBound) tailReads tailReady domain
     have head := Fill.invoke_reaches definitions s (literal.eval Binary64.positiveZero Binary64.one)
@@ -51,9 +53,11 @@ theorem emit_correct (locals : CBody.Locals) (types : CLoops.Types) (locations :
       setup.fillDefined setup.fillHeader setup.fillUnshadowed
       (Fill.literal_eval literal locals heap setup.fillHeader.scalar)
       (destBound heap).1 (destBound heap).2 writable bounded
-    refine ⟨finalHeap, head.trans ran, readResult, boundResult, ?_⟩
-    intro q outside
-    exact (frame q outside.2).trans (written_frame heap (locations destination) result s.volume q outside.1)
+    refine ⟨finalHeap, head.trans ran, readResult, boundResult, ?_, ?_⟩
+    · intro q outside
+      exact (frame q outside.2).trans (written_frame heap (locations destination) result s.volume q outside.1)
+    · exact fun hw => writableResult (written_preserves_writable heap (locations destination) result s.volume
+        _ _ hw)
 
   | @binary _ s _ op left right next ih =>
     rcases plan with ⟨destination, plan⟩
@@ -64,7 +68,7 @@ theorem emit_correct (locals : CBody.Locals) (types : CLoops.Types) (locations :
     have tailReady := ready_written locals locations next plan (layout.push destination) heap following .here result
     have tailReads : Represents locations (layout.push destination) writtenHeap (Env.push result values) :=
       represents_written locations layout destination heap values result represented fresh
-    obtain ⟨finalHeap, ran, readResult, boundResult, frame⟩ :=
+    obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
       ih plan (layout.push destination) (Env.push result values) writtenHeap
         (bound_push locals locations layout destination bound destBound) tailReads tailReady domain
     have head := CTensor.invoke_reaches definitions op (values left) (values right) heap
@@ -74,9 +78,11 @@ theorem emit_correct (locals : CBody.Locals) (types : CLoops.Types) (locations :
       (setup.binaryDefined op) setup.binaryHeader (setup.binaryUnshadowed op)
       (bound left heap).1 (bound right heap).1 (destBound heap).1 (destBound heap).2
       (represented left) (represented right) writable (fresh left) (fresh right) arithmetic bounded
-    refine ⟨finalHeap, head.trans ran, readResult, boundResult, ?_⟩
-    intro q outside
-    exact (frame q outside.2).trans (written_frame heap (locations destination) result s.volume q outside.1)
+    refine ⟨finalHeap, head.trans ran, readResult, boundResult, ?_, ?_⟩
+    · intro q outside
+      exact (frame q outside.2).trans (written_frame heap (locations destination) result s.volume q outside.1)
+    · exact fun hw => writableResult (written_preserves_writable heap (locations destination) result s.volume
+        _ _ hw)
 
 /-- Whole-fragment semantic preservation against independent finite Solve
 execution. Every C behavior terminates, returns the source result buffer and
@@ -90,11 +96,13 @@ theorem emit_refines (locals : CBody.Locals) (types : CLoops.Types) (locations :
     ∃ finalHeap, Reads finalHeap (locations (emit p plan layout).result) result ∧
       Bound locals locations (emit p plan layout).result ∧
       (∀ q, Outside locations p plan q → finalHeap q = heap q) ∧
+      (Writable heap (locations (emit p plan layout).result) shape.volume →
+        Writable finalHeap (locations (emit p plan layout).result) shape.volume) ∧
       ∀ behavior, (CLoops.Calls.machine definitions).Behaves
         (.body (.running ((emit p plan layout).code ++ [.ret none]) locals types heap) .done) behavior ↔
         behavior = .terminates finalHeap := by
   obtain ⟨domain, resultEq⟩ := Finite.executes_sound executed
-  obtain ⟨finalHeap, ran, readResult, boundResult, frame⟩ :=
+  obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
     emit_correct locals types locations definitions setup p plan layout values heap bound represented ready domain
       [.ret none] .done
   have returned : Transition.Reaches (CLoops.Calls.machine definitions).step
@@ -102,7 +110,7 @@ theorem emit_refines (locals : CBody.Locals) (types : CLoops.Types) (locations :
     .next (t := .body (.returned ⟨.void, finalHeap⟩) .done) (by rfl)
       (.next (t := .returning finalHeap .done) (by simp [CLoops.Calls.machine, CLoops.Calls.next])
         (.next (by rfl) (.refl _)))
-  exact ⟨finalHeap, resultEq ▸ readResult, boundResult, frame,
+  exact ⟨finalHeap, resultEq ▸ readResult, boundResult, frame, writableResult,
     fun _ => (CLoops.Calls.machine definitions).behavior_iff (ran.trans returned) rfl⟩
 
 end Rumoca.CTensor.Lowering

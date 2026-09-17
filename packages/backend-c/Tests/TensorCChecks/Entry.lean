@@ -130,7 +130,7 @@ theorem call_correct (definitions : CLoops.Calls.Definitions) (library : Library
       ∀ behavior, (CLoops.Calls.machine definitions).Behaves
         (.calling profile.name (Arguments.values profile.parameters (args base shape))
           (initialHeap backing base state input) .done) behavior ↔ behavior = .terminates finalHeap := by
-  obtain ⟨finalHeap, readResult, _, frame, behaviors⟩ := program_call_refines profile valid
+  obtain ⟨finalHeap, readResult, _, frame, _, behaviors⟩ := program_call_refines profile valid
     (ArrayProfile.squareJacobianProgram shape).coefficients (plan shape) (layout shape) (body_matches shape)
     definitions library found (args base shape) (arguments_valid base shape bounded) (locations base)
     (ArrayProfile.environment state input) result (initialHeap backing base state input)
