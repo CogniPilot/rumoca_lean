@@ -42,7 +42,7 @@ def encodings (c : Time.Clock) : List (Option Value) :=
   [some (.finite c.time), some (.finite c.minimum),
    some (.finite c.eventTime), some (.finite c.lastCompleted)]
 
-def observe (count : Nat) (code : List Stmt) (env : Locals) (c : Time.Clock) :
+noncomputable def observe (count : Nat) (code : List Stmt) (env : Locals) (c : Time.Clock) :
     Option (Value × List (Option Value) × Option Value × Option Value × Option Value) := do
   let .returned r ← run count (.running code env (heap c)) | none
   return (r.value, fields r.heap, load r.heap (model.member "mode"),
@@ -115,7 +115,7 @@ theorem positional_cache_regression :
 def completed : List Stmt := Runtime.body prepared ⟨"fmi3Status", "fmi3CompletedIntegratorStep", []⟩
 def eventBody : List Stmt := Runtime.body prepared ⟨"fmi3Status", "fmi3EnterEventMode", []⟩
 
-def observeHeap (fuel : Nat) (code : List Stmt) (env : Locals) (h : Heap) : Option (Value × List (Option Value)) := do
+noncomputable def observeHeap (fuel : Nat) (code : List Stmt) (env : Locals) (h : Heap) : Option (Value × List (Option Value)) := do
   let .returned r ← run fuel (.running code env h) | none
   return (r.value, fields r.heap)
 
@@ -146,7 +146,7 @@ def changeOutput : Stmt → Stmt
   | .assign (.deref (.id "enterEventMode")) _ => Runtime.out "enterEventMode" (Runtime.n 1)
   | s => s
 
-def observeOutputs (body : List Stmt) : Option (Value × Option Value × Option Value) := do
+noncomputable def observeOutputs (body : List Stmt) : Option (Value × Option Value × Option Value) := do
   let h := replace (heap oldClock) (output.index 1) ⟨.boolean, true, some (.integer 1)⟩
   let .returned r ← run 11 (.running body
     (HistoryBodies.completedParameters model output (output.index 1) false) h) | none

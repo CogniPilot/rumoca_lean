@@ -14,6 +14,13 @@ def BinOp.render : BinOp → String
 inductive Expr where
   | id (name : String)
   | nat (value : Nat)
+  /-- A C floating constant whose exact base-ten value is
+  `(if negative then -1 else 1) * mantissa * 10 ^ exponent`. The magnitude is a
+  single preprocessing number (C11 6.4.4.2); a negative constant is the unary
+  negation of that magnitude, since C has no negative literal tokens. The target
+  binary64 value is the correctly rounded conversion of this content, specified
+  in the body semantics. -/
+  | decimal (negative : Bool) (mantissa : Nat) (exponent : Int)
   | str (value : String)
   | bin (op : BinOp) (a b : Expr)
   | not (a : Expr)
@@ -41,8 +48,16 @@ def quoteByte (b : UInt8) : String :=
 def quote (s : String) : String :=
   "\"" ++ String.join (s.toUTF8.data.toList.map quoteByte) ++ "\""
 
+/-- The magnitude of a decimal constant as a single preprocessing number:
+`<mantissa>e<exponent>`, the exponent carrying its own sign. -/
+def Expr.decimalMagnitude (mantissa : Nat) (exponent : Int) : String :=
+  toString mantissa ++ "e" ++ (if exponent < 0 then "-" else "") ++ toString exponent.natAbs
+
 def Expr.render : Expr → String
   | .id s => s | .nat n => toString n | .str s => quote s
+  | .decimal negative mantissa exponent =>
+    let magnitude := Expr.decimalMagnitude mantissa exponent
+    if negative then "(-" ++ magnitude ++ ")" else magnitude
   | .bin op a b => "(" ++ a.render ++ " " ++ op.render ++ " " ++ b.render ++ ")"
   | .not a => "(!" ++ a.render ++ ")"
   | .deref a => "(*" ++ a.render ++ ")"

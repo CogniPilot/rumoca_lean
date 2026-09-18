@@ -76,7 +76,7 @@ theorem heap_free (expr : Expr) :
         cases base <;> simp_all [heapFreeValue, lvalue]
       simp only [lvalue, (heap_free base).1 b env before after, (heap_free index).1 i env before after,
         lvNone]
-  | call | sizeof => simp [heapFreeValue, heapFreeAddress]
+  | call | decimal | sizeof => simp [heapFreeValue, heapFreeAddress]
 termination_by sizeOf expr
 
 end Rumoca.CBody.Footprint

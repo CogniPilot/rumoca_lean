@@ -15,6 +15,7 @@ inductive OriginList {Syntax : Type} (Trace : Syntax → Type) : List Syntax →
 inductive Expr.Origins (table : Table Site Rule) : Expr → Type where
   | id (name : Origin table) : Origins table (.id identifier)
   | nat (literal : Origin table) : Origins table (.nat value)
+  | decimal (literal : Origin table) : Origins table (.decimal negative mantissa exponent)
   | str (literal : Origin table) : Origins table (.str value)
   | bin (operation : Origin table) (left : Origins table lhs) (right : Origins table rhs) :
       Origins table (.bin op lhs rhs)
@@ -33,7 +34,7 @@ inductive Expr.Origins (table : Table Site Rule) : Expr → Type where
 
 def Expr.Origins.root : Expr.Origins table expr → Origin table
   | .id name => name
-  | .nat literal | .str literal => literal
+  | .nat literal | .decimal literal | .str literal => literal
   | .bin operation _ _ | .not operation _ | .deref operation _ | .address operation _ |
     .field operation _ _ | .index operation _ _ | .call operation _ _ |
     .cast operation _ _ | .sizeof operation _ => operation
@@ -44,6 +45,7 @@ storage access. This never supplies an unknown or absent origin. -/
 def Expr.Origins.uniform (origin : Origin table) : (expr : Expr) → Origins table expr
   | .id _ => .id origin
   | .nat _ => .nat origin
+  | .decimal _ _ _ => .decimal origin
   | .str _ => .str origin
   | .bin _ lhs rhs => .bin origin (uniform origin lhs) (uniform origin rhs)
   | .not expr => .not origin (uniform origin expr)
@@ -67,7 +69,7 @@ theorem Expr.Origins.uniform_root (origin : Origin table) (expr : Expr) :
 mutual
 def Expr.Origins.Every (check : Origin table → Prop) : Expr.Origins table expr → Prop
   | .id name => check name
-  | .nat literal | .str literal => check literal
+  | .nat literal | .decimal literal | .str literal => check literal
   | .bin operation left right | .index operation left right =>
       check operation ∧ left.Every check ∧ right.Every check
   | .not operation value | .deref operation value | .address operation value =>
@@ -88,7 +90,7 @@ mutual
 theorem Expr.Origins.uniform_every (origin : Origin table) (check : Origin table → Prop)
     (accepted : check origin) (expr : Expr) : (uniform origin expr).Every check := by
   cases expr with
-  | id | nat | str => simpa only [uniform, Every] using accepted
+  | id | nat | decimal | str => simpa only [uniform, Every] using accepted
   | bin _ lhs rhs | index lhs rhs =>
       simp only [uniform, Every]
       exact ⟨accepted, uniform_every origin check accepted lhs,

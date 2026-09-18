@@ -27,7 +27,7 @@ def heap : Heap := fun p =>
   else if p = output then some ⟨.float64, true, none⟩
   else none
 
-def observe (code : List Stmt) : Option (Value × Option Value × Option Value) := do
+noncomputable def observe (code : List Stmt) : Option (Value × Option Value × Option Value) := do
   let .returned result ← run 6 (.running code (parameters model output) heap) | none
   return (result.value, load result.heap output, load result.heap (stateAddress other))
 

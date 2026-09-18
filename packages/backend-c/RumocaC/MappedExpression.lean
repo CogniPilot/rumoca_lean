@@ -36,6 +36,8 @@ mutual
 def Expr.Origins.document : {expr : Expr} → Expr.Origins table expr → Document (Origin table)
   | .id name, .id origin => mark origin (text name)
   | .nat value, .nat origin => mark origin (text (toString value))
+  | .decimal negative mantissa exponent, .decimal origin =>
+      mark origin (text (Expr.render (.decimal negative mantissa exponent)))
   | .str value, .str origin => mark origin (text (quote value))
   | .bin op _ _, .bin origin left right =>
       mark origin (text "(" <+> left.document <+> text " " <+> text op.render <+>
@@ -72,7 +74,7 @@ every existing expression and every complete origin annotation. -/
 theorem Expr.Origins.document_render (origins : Expr.Origins table expr) :
     origins.document.render = expr.render := by
   cases origins with
-  | id | nat | str | sizeof => simp only [document, Document.render_mark,
+  | id | nat | decimal | str | sizeof => simp only [document, Document.render_mark,
       Document.render_append, Document.render_text, Expr.render]
   | bin origin left right | index origin left right =>
       simp only [document, Document.render_mark, Document.render_append, Document.render_text,
@@ -133,7 +135,7 @@ theorem Expr.Origins.document_every (origins : Expr.Origins table expr)
     (check : Origin table → Prop) :
     origins.document.body.EveryOrigin check ↔ origins.Every check := by
   cases origins with
-  | id | nat | str | sizeof =>
+  | id | nat | decimal | str | sizeof =>
       simp only [document, Document.mark, Document.text, Document.append, Doc.EveryOrigin,
         Every, and_true, true_and]
   | bin origin left right | index origin left right =>

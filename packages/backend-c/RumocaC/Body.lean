@@ -1,6 +1,7 @@
 import RumocaC.Tree
 import RumocaC.Interface
 import RumocaCore.Real.Comparison
+import RumocaCore.Real.ScaledRounding
 import RumocaCore.Transition
 
 /-! Small-step execution of the existing generated C tree's memory-access
@@ -100,10 +101,44 @@ def comparison (op : BinOp) (a b : Value) : Option Value :=
     floatComparison op bits y
   | _, _ => none
 
+/-- The positive denominator placing the decimal constant on the binary64 grid,
+matching the constant profile's `Decimal.scale`. -/
+def decimalScale (exponent : Int) : Nat := if exponent < 0 then 10 ^ (-exponent).toNat else 1
+
+/-- The integer numerator of the decimal constant measured in units of `2^-1074`,
+carrying the sign, matching the constant profile's `Decimal.numerator`. -/
+def decimalNumerator (negative : Bool) (mantissa : Nat) (exponent : Int) : Int :=
+  (if negative then -1 else 1) * (mantissa : Int) *
+    (if exponent < 0 then 1 else (10 : Int) ^ exponent.toNat) * (Binary64.oneUnits : Int)
+
+/-- The value of a C floating constant: the round-to-nearest-even of its exact
+base-ten content on the finite binary64 grid. Trusted boundary: a conforming C
+translator converts the constant to this same binary64 value (C11 6.4.4.2). The
+grid holds only finite values, so the result is always finite; a magnitude
+beyond the largest finite double rounds to that nearest finite value. -/
+noncomputable def decimalValue (negative : Bool) (mantissa : Nat) (exponent : Int) : Binary64.Value :=
+  Binary64.Scaled.round (decimalScale exponent) (decimalNumerator negative mantissa exponent)
+
+omit interface in
+/-- The stored value is the nearest-even rounding of the literal's exact content. -/
+theorem decimalValue_rounds (negative : Bool) (mantissa : Nat) (exponent : Int) :
+    Binary64.Scaled.RoundsNearestEven (decimalScale exponent)
+      (decimalNumerator negative mantissa exponent) (decimalValue negative mantissa exponent) :=
+  Binary64.Scaled.round_spec _ _
+
+omit interface in
+/-- Nearest-even rounding is unique, so the decimal value is the only binary64
+value meeting the literal's rounding specification. -/
+theorem decimalValue_unique {negative : Bool} {mantissa : Nat} {exponent : Int} {v : Binary64.Value}
+    (h : Binary64.Scaled.RoundsNearestEven (decimalScale exponent)
+      (decimalNumerator negative mantissa exponent) v) : v = decimalValue negative mantissa exponent :=
+  Binary64.Scaled.rounding_unique h (decimalValue_rounds negative mantissa exponent)
+
 mutual
-  def eval (env : Locals) (heap : Heap) : Expr → Option Value
+  noncomputable def eval (env : Locals) (heap : Heap) : Expr → Option Value
     | .id name => resolve env name
     | .nat n => some (.integer n)
+    | .decimal negative mantissa exponent => some (.finite (decimalValue negative mantissa exponent))
     | .str s => (interface.literals s).map (fun p => .pointer (some p))
     | .cast type a => do expressionCast type a (← eval env heap a)
     | .not a => do return boolean (!(← (← eval env heap a).truth))
@@ -126,7 +161,7 @@ mutual
     | .call (.id "isfinite") [a] => do return boolean (← (← eval env heap a).isFinite)
     | _ => none
 
-  def lvalue (env : Locals) (heap : Heap) : Expr → Option Address
+  noncomputable def lvalue (env : Locals) (heap : Heap) : Expr → Option Address
     | .deref a => do (← eval env heap a).address
     | .field a name pointer => do
       let p ← if pointer then do (← eval env heap a).address else lvalue env heap a
@@ -149,6 +184,28 @@ its represented object pointer through the array-decay fallback. -/
 @[simp] theorem lvalue_str (env : Locals) (heap : Heap) (s : String) :
     lvalue env heap (.str s) = none := rfl
 
+/-- A decimal constant evaluates to its rounded binary64 value, independent of
+the environment and heap. -/
+theorem eval_decimal (env : Locals) (heap : Heap)
+    (negative : Bool) (mantissa : Nat) (exponent : Int) :
+    eval env heap (.decimal negative mantissa exponent)
+      = some (.finite (decimalValue negative mantissa exponent)) := rfl
+
+/-- Evaluation of a decimal constant is deterministic: its result is a total
+function of the literal content alone, for every environment and heap. -/
+theorem eval_decimal_deterministic (env₁ env₂ : Locals) (heap₁ heap₂ : Heap)
+    (negative : Bool) (mantissa : Nat) (exponent : Int) :
+    eval env₁ heap₁ (.decimal negative mantissa exponent)
+      = eval env₂ heap₂ (.decimal negative mantissa exponent) := rfl
+
+/-- Evaluation of a decimal constant always yields a finite binary64 value. The
+grid holds no infinities, so an out-of-range magnitude saturates to the nearest
+finite value rather than producing a non-finite result. -/
+theorem eval_decimal_finite (env : Locals) (heap : Heap)
+    (negative : Bool) (mantissa : Nat) (exponent : Int) :
+    (eval env heap (.decimal negative mantissa exponent)).bind Value.isFinite = some true := by
+  rw [eval_decimal]; simp
+
 structure Result where
   value : Value
   heap : Heap
@@ -157,7 +214,7 @@ inductive State where
   | running (code : List Stmt) (locals : Locals) (heap : Heap)
   | returned (result : Result)
 
-def next : State → Option State
+noncomputable def next : State → Option State
   | .returned _ | .running [] _ _ => none
   | .running (.declare type name expr :: rest) env heap => do
     let value ← cast type (← eval env heap expr)
@@ -189,7 +246,7 @@ def machine : Transition.Machine State Result where
     intro s result hs t
     cases s <;> simp_all [next]
 
-def run : Nat → State → Option State
+noncomputable def run : Nat → State → Option State
   | 0, s => some s
   | n + 1, s => do run n (← next s)
 
