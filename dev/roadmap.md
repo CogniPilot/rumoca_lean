@@ -2830,7 +2830,9 @@ artifact rejection gate. A certificate for only `model.c` cannot close this.
 - [ ] Review theorem quantifiers, non-vacuity, all-behavior coverage and each
   premise (proved, checked, or external). Retain only `propext`, `Quot.sound`
   and `Classical.choice` in the audited roots. No placeholders, new axioms,
-  native-reduction proof axioms or weakened checks.
+  native-reduction proof axioms or weakened checks. The premise and trust ledger
+  drafted in [trust-ledger.md](trust-ledger.md) records the current
+  classification, coverage tables and open findings; the review stays open.
 - [ ] Reproduce the release in a fresh compatible workspace using normal
   trusted Lake/mathlib artifacts; record source, grammar, toolchain/options,
   checker identity, proof roots and actual outputs. Obtain independent review

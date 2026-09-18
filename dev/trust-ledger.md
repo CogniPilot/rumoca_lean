@@ -477,3 +477,196 @@ environment). All other 73 functions match the scalar coverage.
 | Production C | header contract, startup map, module lowering + render + denote, typed entry, per-method + startup heap behavior, both `CProtocol` trace directions | production C `bytes` | native C compiler, host scheduling |
 | Manifest XML | valid/identified/named documents, XML rendering, variable roster, mapped result/status | algorithm/production/content XML `bytes` | full XSD/prose conformance |
 | Archive `.efmu` | manifest contract, stored-ZIP `Format.Conforms` transport | member roster, pinned schema resources, archive `bytes` | native C compiler, physical I/O + atomic rename |
+
+---
+
+## 4. Quantifier and non-vacuity review
+
+### 4.1 What is universally quantified, per contract family
+
+- **Scalar C artifact / source-build.** `ArtifactContract` quantifies over all
+  finite IEEE inputs and 64-bit counters: `execution : ∀ x n`, `behaviors : ∀ f
+  x n b`, `call_termination/completion : ∀ f x n [s]`,
+  `real_solution_refinement : ∀ f x n y` (`Verified.lean:50-67`). The
+  source-build theorem `Rumoca.CheckedFMI3Files.source_to_build` is an
+  existential `∃ a : Artifact input, compile input = .ok a ∧ SourceBuildContract
+  …` whose witness is the *actual* compiled artifact (non-vacuity by
+  construction, section 4.3).
+- **Scalar adapter.** `AdapterContract` is `∃ sigs …` with the signature list
+  fixed to the real header; each per-function contract quantifies over heaps,
+  prepared pools, headers, objects, literal addresses, loggers, the `signed`
+  logging flag, and reason enumerations. `adapter_call_entry` quantifies over
+  all convertible argument lists (`FMI3AdapterProofs.lean:297-319`).
+- **Tensor adapter.** `TensorAdapter.Contract` quantifies `∀ [StaticLiterals]`,
+  `∀ (header : CFenv.Header) (objects) (literals)` for the seven
+  runtime-interface functions, and `∀ (E) (prog) (tag)` for factory/release
+  (`TensorAdapterContract.lean:63-97`); the symbolic tensor `shape` is a free
+  variable, so the bodies never enumerate elements.
+- **Tensor C kernel.** `IVPEntry.ArtifactContract` storage contracts quantify
+  `∀ [interface] (definitions) {shape} (heap) …` under resolution, header-type,
+  separation, readability, non-overflow and `< 2^64` hypotheses
+  (`Tests/TensorCChecks/IVPEntry.lean:242-259`).
+- **eFMI.** Algorithm quantifies `∀ x n` (samples) and `∀ before after events`
+  (lifecycle trace); production quantifies `∀ method heap p state` and both
+  `CProtocol` trace directions; archive is existential over the code bundle.
+
+### 4.2 Fixtures and native runs that instantiate the premises
+
+| Fixture | Instantiates | Premises exercised |
+|---|---|---|
+| `tests/fmi3.sh` + `tests/fmi3.py` | actual `Integrator.fmu` build, `validate`, `info`, me and cs `simulate`, CSV equality `(0,.5)(1,1.5)(2,2.5)(3,3.5)`, source-linked second model | success (me/cs run), argument rejection (`--mode invalid`), discard (`--step 0.5`), missing-FMU rejection, unsupported-profile admission rejection (`DrivenIntegrator` must not replace a valid FMU) |
+| `tests/tensor-c.sh` | actual tensor C emission; `verify_tensor_helper` for add/mul/fill/diagonal; `verify_tensor_ivp`; corrupted loop bound and corrupted IVP member rejected | tensor kernel checked byte identity + rejection |
+| `tests/efmi-algorithm.sh` | actual `model.alg` vs `UnitIntegrator.alg`; `verify-algorithm` on real source/grammars; LALR engine reuse; invalid-namespace rejection | algorithm `bytes`, grammar identities, generator reuse |
+| `tests/efmi-production.sh` | actual `model.efmu`; axiom-audited `source_to_archive`; cached `--check-only efmi-archive` reuse; foreign-identity and failed-tool rejections | production/archive `bytes`, roster, schema resources, cache identity |
+| `tests/verification-negative.sh` | mutated `Model.c`, mutated embedded source, renamed model, unapproved-axiom log | the checked byte/source premises and the axiom audit (negative direction) |
+| compiler test executable `packages/compiler/Tests/Audit.lean` and the per-package audit files | full kernel-checked axiom closure of every listed root | axiom-audit trust roots (section 5) |
+
+### 4.3 Non-vacuity
+
+The two source-build existentials are witnessed by real compiles, so the
+contracts are not vacuously true: `verify_fmi3_build_files` obtains the witness
+from `compile (.single sourceName source)` on the actual `Integrator` source
+(`FMI3BuildArtifactCheck.lean:37`), and `verify_tensor_fmi3_build_files` from
+`compileTensor input` on the actual `TensorSquare` source, pinned to `squareAst`
+/ `squareModel` by lexer/parser determinism (`TensorProduction.lean:112-158`).
+`compile_complete` / `compileTensor_complete` further show the parse/lower path
+is inhabited for every resolvable source, so the `∃ a` is populated rather than
+assumed.
+
+### 4.4 Conjuncts no test or fixture instantiates (flagged)
+
+1. **Tensor adapter has no native importer run.** The CLI rejects the array
+   profile (`TensorProduction.lean:20-23`), so no `fmu-runner` execution
+   instantiates any `TensorAdapter.Contract` behavior; only the Lean package
+   check (`TensorAdapterFixture`, `TensorMetadataFixture` audits) exercises it.
+   (Finding F2.)
+2. **Scalar adapter behaviors are proof-only beyond the unit run.** `fmi3.sh`
+   natively exercises only me/cs success, one argument rejection and one
+   discard for the unit profile. Suppressed and enabled logging, the 25
+   capability rejections, the 24 absent-typed accessors, and the FMUState /
+   serialize functions are proved universally but never instantiated by a native
+   importer. This is consistent with the proofs-over-tests policy but must not be
+   read as native evidence. (Finding F6.)
+3. **Two tensor `fmi3DoStep` behaviors are unproved and unexercised**: the
+   off-grid `fmi3Discard` composition and the header-aware floating-environment
+   interface (`TensorAdapterContract.lean:36-39`). (Finding F1.)
+
+### 4.5 Premises that could be unsatisfiable (flagged)
+
+These are genuine hypotheses (so the contracts are non-vacuous), but the
+guarantee does not extend to inputs that violate them:
+
+- **Finite Jacobian doubling.** `JacobianDiagStorageContract` assumes
+  `∀ i, Binary64.Adds values[i] values[i] (.finite result[i])`
+  (`Tests/TensorCChecks/IVPEntry.lean:249`): for coefficients whose doubling
+  overflows to infinity this premise is unsatisfiable, so the diagonal-storage
+  guarantee excludes overflowing Jacobians.
+- **Counter and region bounds.** `ExecutionContract.counter_safe` is guarded by
+  `n < 2^64` (`Verified.lean:25`) and the storage contracts by
+  `region.volume < 2^64` (`IVPEntry.lean:251`); beyond those bounds no guarantee
+  is claimed.
+- **External binding hypotheses.** `program.externals "floor"/"fegetround"/
+  "atomic_exchange"/"atomic_store" = some (…)` (`FMI3AtomicCalls.lean:33-35`,
+  `FMI3CSLifecycle.lean:27-30`) are satisfiable only when the importer binds
+  these to the modeled implementations; an importer that binds otherwise is
+  outside the guarantee. (Finding F4.)
+
+No premise reviewed here is unsatisfiable for *every* input (which would make its
+contract vacuous); each excludes a bounded numeric or environmental region that
+is recorded above.
+
+---
+
+## 5. Axiom audit summary
+
+The audit mechanism is `ProofAudit.audit` (`packages/verification/ProofAudit/Audit.lean:11`):
+`collectAxioms` walks the complete kernel-checked dependency closure of a named
+declaration and throws a Lean error unless every axiom is in
+`{propext, Classical.choice, Quot.sound}` (`:14`). The `#audit axioms`
+command (`:19`) applies it; the identical whitelist is embedded in every
+`verify_*` artifact checker (`FMI3BuildArtifactCheck.lean:114`,
+`TensorFMI3BuildArtifactCheck.lean:221`, `EFMIArchiveArtifactCheck.lean:78`,
+and the per-fragment tensor checks). `scripts/audit-lean.sh` re-checks the
+logged axiom lines at the shell boundary, and `tests/verification-negative.sh`
+confirms an injected `unapproved_axiom` is rejected there.
+
+The rejection direction is self-tested in
+`packages/verification/Tests/AuditChecks.lean`: `True.intro` audits clean, and
+`Lean.ofReduceBool` (the native-reduction axiom) is rejected, so
+native-reduction proof axioms cannot enter the trusted set.
+
+Audit roots per package (count of `#audit axioms` roots):
+
+| Package | Roots | Audit files |
+|---|---|---|
+| `backend-fmi3` | 2431 | `Tests/FMI3Audit.lean`, `CallChecks`, `FMI3CallPolicyAudit`, `HistoryChecks`, `MemoryChecks`, `TimeChecks` |
+| `backend-c` | 1156 | `Tests/CAudit.lean`, `CCallPolicyAudit`, `TensorAudit` |
+| `compiler` | 321 | `Tests/Audit.lean`, `EFMIChecks`, `FMI3SourceCallPolicyAudit`, `SemanticChecks`, `TensorAdapterFixture`, `TensorMetadataFixture` |
+| `core` | 317 | `Tests/CoreAudit.lean`, `FiniteChecks`, `TensorChecks` |
+| `parser` | 249 | `Tests/ParserAudit.lean`, `LALRChecks`, `LALRFirstChecks`, `LALRSafetyChecks` |
+| `backend-efmi` | 129 | `RumocaEFMISchemaCertificates.lean`, `Tests/ProductionChecks` |
+| `modelica-parser` | 82 | `Tests/ModelicaParserAudit.lean` |
+| `galec-parser` | 31 | `Tests/GALECParserAudit.lean` |
+| `sha1` | 17 | `Tests/SHA1Checks.lean` |
+| `xml` | 11 | `Tests/XMLChecks.lean` |
+| `lsp` | 4 | `Tests/LSPAudit.lean` |
+| `verification` | 2 | `Tests/AuditChecks.lean` (accept/reject self-test) |
+
+Total: roughly 4749 audited roots across 30 audit modules. The keystone roots
+for this ledger are `Rumoca.FMI3.sourceBuild_correct`,
+`Rumoca.tensorSourceBuild_correct`, `Rumoca.artifact_correct`,
+`Rumoca.compiler_semantic_preservation`, and the eFMI
+`source_to_archive` root; the `verify_*` checkers additionally audit the actual
+`source_to_build` / archive theorems that bind those to real bytes.
+
+---
+
+## 6. Findings and closure criteria
+
+Each finding is tagged with the roadmap package that owns its closure. This
+ledger ticks nothing.
+
+- **F1 (K05, F01).** Tensor `fmi3DoStep` leaves two behaviors open: the off-grid
+  `fmi3Discard` composition and the header-aware floating-environment interface
+  (`TensorAdapterContract.lean:36-39`). *Closure:* prove both inside
+  `TensorDoStep.contract` so the tensor DoStep row reaches full coverage.
+- **F2 (K05, F02).** The tensor FMI adapter is proof-only: the CLI excludes the
+  array profile, so no native `fmu-runner` run instantiates it. *Closure:* when
+  tensor production admission is authorized, add a tensor FMU native fixture
+  paralleling `tests/fmi3.sh`; until then record the coverage as proof-only.
+- **F3 (K03, K05, N01).** Finite-arithmetic outcome premises are conditional:
+  `JacobianDiagStorageContract` excludes coefficients whose doubling overflows,
+  and counter/region guarantees are bounded by `< 2^64`. *Closure:* record the
+  excluded numeric domain in `standards-review.md` and either prove the
+  saturation/overflow behavior or accept the bound explicitly in the R1 ledger.
+- **F4 (K05).** The external bindings `floor`, `fegetround`, `atomic_exchange`,
+  `atomic_store` and the host logger callback are universally quantified
+  assumptions about `program.externals`; no native gate validates the importer's
+  actual bindings. *Closure:* record the importer/runtime binding obligations in
+  the trust-boundary section of `docs/verification.md`.
+- **F5 (K05, C01).** The machine-compilation / host-ABI / IEEE-realisation
+  boundary (`Verified.lean:7-10`) is the largest external assumption for both C
+  kernels and is stated but not independently reviewed against a pinned
+  toolchain. *Closure:* K05 independent review of the authored C/IEEE semantics
+  against the pinned toolchain, with CompCert/Flocq as design references only.
+- **F6 (K05, A02).** Native behavioral coverage is thin relative to proved
+  coverage (section 4.4 item 2). *Closure:* state in the R1 assurance ledger that
+  logging, capability-rejection, absent-typed and FMUState behaviors are
+  proof-established and native-unexercised, so the assurance case does not
+  over-claim native evidence.
+- **F7 (K04, K05, eFMI E05–E06).** eFMI archive conformance is checked against a
+  pinned schema roster and the stored-ZIP format only; full XSD/prose-standard
+  conformance and the external C compiler are external. *Closure:* eFMI
+  E05/E06 standards-review closure.
+
+**Coverage summary.** Contracts: 10 mandatory actual-artifact contracts
+(section table). Conjuncts: scalar source-build 6 (expanding to 14 numerical +
+32 adapter + 4 recipe); tensor source-build 7; scalar C 14; tensor C 5; eFMI
+algorithm 11, production 6 groups, manifest 3 groups, archive 3. Premises by
+class: one checked byte-identity per emitted file plus checked grammar/roster/
+schema identities; all semantic content proved; the machine-compilation, header,
+library-binding, archive-I/O and external-standard layers external. Functions by
+coverage: 75/75 covered on the scalar adapter with no open cell; 73/75 fully
+covered on the tensor adapter with 2 open `fmi3DoStep` cells. Axioms: the only
+approved roots are `propext`, `Classical.choice`, `Quot.sound`, enforced at
+roughly 4749 audited roots and by each `verify_*` checker.
