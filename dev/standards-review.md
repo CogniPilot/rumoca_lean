@@ -73,6 +73,26 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Native all-behavior matrix over the 75 common functions: standards impact
+
+`tests/fmi3.py --matrix`, wired into `tests/fmi3.sh` for both `build/Integrator.fmu`
+and `build/TensorSquare.fmu`, drives the raw FMI 3 ABI over every one of the 75
+emitted public functions and asserts the documented status and logger callbacks
+for each behavior class. It instantiates natively, at least once on each adapter,
+the classes the trust ledger otherwise recorded as proof-only (findings F2 and
+F6). The importer/boundary-evidence rule already stated for this stage still
+holds: native compilation, ZIP transport and the FMPy/ctypes importer are
+boundaries outside the proof model, and the matrix is native boundary evidence,
+not a certificate. It fails the run on any status or callback that regresses from
+the proved behavior, and prints (but tolerates) the cells recorded as findings.
+
+| Standard | Impact |
+| --- | --- |
+| FMI 3.0.2, §2.2.3 Status Returned by Functions; common-function null and unsupported-capability handling | The matrix instantiates, per function, the `fmi3Error` return for a null instance (70 status functions, plus the factory's null-handle creation failure and a safe `fmi3FreeInstance(NULL)`), the 25 capability rejections (`fmi3Error` with the logged message "FMI capability is not supported" when logging is enabled and no callback when disabled), the 24 absent-typed accessors (`fmi3OK` on an empty request and `fmi3Error` with "No variables of this type exist" on a non-empty one), the argument rejections (non-finite set value, unknown value reference, mismatched `nValues`), the off-grid communication-step `fmi3Discard`, `fmi3SetDebugLogging` with valid and invalid category lists, and `fmi3GetVersion`. 75/75 functions and 514 behavior cells are exercised on each adapter. Observed statuses and messages match the proved behavior on both adapters. |
+| FMI 3.0.2, §2.3.1 State Machine of Calling Sequences (error state) | A function returning `fmi3Error` moves the instance to the terminal error state, in which only `fmi3FreeInstance` and `fmi3Reset` are permitted and final values remain readable. The matrix confirms this natively (a non-empty absent-typed get returns "No variables of this type exist" and a subsequent set is refused with "Call is not allowed in the current FMI state") and therefore runs each error-inducing cell on a fresh instance so the true first-error message is observed on all 24 absent-typed accessors. |
+| FMI 3.0.2, `fmi3Reset` (returns the FMU to the state directly after `fmi3Instantiate`) | Native evidence: the scalar adapter conforms; after a full initialization, `fmi3Reset` returns `fmi3OK` and a subsequent `fmi3EnterInitializationMode` succeeds, so the instance re-initializes and steps. The tensor adapter does not: once initialization has run, `fmi3Reset` returns `fmi3OK` but a following `fmi3EnterInitializationMode` is rejected with "Call is not allowed in the current FMI state", so the reset FMU cannot be re-initialized. This is a genuine conformance divergence, recorded as finding F8 in `dev/trust-ledger.md`; the matrix reports it as a recorded finding rather than a regression. `fmi3Reset` directly after `fmi3Instantiate` (before any initialization) restores the Instantiated state on both adapters. |
+| FMI 3.0.2, importer/boundary evidence | The matrix is exercised through `tests/fmi3.sh` on the actual published FMUs (the unit FMU from `Rumoca.compile`, the tensor FMU from the default CLI's `Rumoca.compileTensor` path). It supplements, and does not replace, the existing archive/schema/ABI checks and the FMPy Model Exchange and Co-Simulation runs. Native compilation, ZIP transport and the importer remain outside the proof model. |
+
 ### Stage record: unit and square Jacobian array profiles admitted to FMI 3 FMU output
 
 This record completes the recurring review for the enlarged admitted subset
