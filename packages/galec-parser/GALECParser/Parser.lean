@@ -13,7 +13,9 @@ def parseTree (tokens : List Token) : Except LALR.Failure LALR.Tree :=
 
 theorem in_grammar (b : Block) :
     EBNF.Accepts Generated.sourceGrammar (b.tokens.map Token.symbol) := by
-  simp [Generated.start_rule, Generated.rule_block, Generated.rule_startup,
+  rw [Generated.start_rule, Generated.rule_program, EBNF.Derives.alt_iff]
+  refine Or.inl ?_
+  simp [Generated.rule_block, Generated.rule_startup,
     Generated.rule_recalibrate, Generated.rule_do_step, Generated.rule_reference,
     EBNF.Derives.seq_iff, EBNF.Derives.terminal_iff, Block.tokens, Token.symbol]
 
@@ -69,6 +71,67 @@ theorem parse_complete (source : String) (b : Block)
         contradiction
       · rename_i ast he
         have heq := Option.some.inj ((decode_tokens b).symm.trans he)
+        subst ast
+        simp only [dif_pos resolved]
+
+set_option maxRecDepth 40000 in
+set_option maxHeartbeats 4000000 in
+theorem in_grammar_tensor (b : TensorBlock) :
+    EBNF.Accepts Generated.sourceGrammar (b.tokens.map Token.symbol) := by
+  rw [Generated.start_rule, Generated.rule_program, EBNF.Derives.alt_iff]
+  refine Or.inr ?_
+  simp [Generated.rule_tensor_block, Generated.rule_startup, Generated.rule_recalibrate,
+    Generated.rule_tensor_do_step, Generated.rule_product, Generated.rule_reference,
+    EBNF.Derives.seq_iff, EBNF.Derives.terminal_iff, TensorBlock.tokens, Token.symbol]
+
+theorem tree_complete_tensor (b : TensorBlock) : ∃ tree, parseTree b.tokens = .ok tree :=
+  (Generated.source_parse_correct _).2.1.mp (in_grammar_tensor b)
+
+/-- Independently checked tensor parse. The lexical, grammar and resolution
+certificates mirror the scalar `Parsed`, over the fixed-extent tensor scanner. -/
+structure TensorParsed (source : String) where
+  ast : TensorBlock
+  lexical : Scanner.Lexes tensorScanner source.toList ast.tokens
+  grammar : Generated.grammar.Accepts (ast.tokens.map encode)
+  resolved : ResolvedTensor ast
+
+def parseTensor (source : String) : Except Diagnostic (TensorParsed source) :=
+  match hl : Scanner.lex tensorScanner source with
+  | .error e => .error e
+  | .ok tokens => match ht : parseTree tokens with
+    | .error _ => .error ⟨"GALEC syntax", 0, "outside the certified tensor grammar profile"⟩
+    | .ok _tree => match ha : decodeTensor tokens with
+      | none => .error ⟨"GALEC action", 0, "outside the tensor square action profile"⟩
+      | some ast =>
+        if hr : ResolvedTensor ast then
+          .ok ⟨ast, tokens_of_decodeTensor ha ▸ (Scanner.lex_correct tensorScanner source tokens).mp hl,
+            tokens_of_decodeTensor ha ▸ tree_language ht, hr⟩
+        else .error ⟨"GALEC resolve", 0, "mismatched tensor block/state/input name"⟩
+
+theorem parseTensor_complete (source : String) (b : TensorBlock)
+    (lexical : Scanner.Lexes tensorScanner source.toList b.tokens) (resolved : ResolvedTensor b) :
+    ∃ p : TensorParsed source, parseTensor source = .ok p ∧ p.ast = b := by
+  obtain ⟨tree, ht⟩ := tree_complete_tensor b
+  have hl := (Scanner.lex_correct tensorScanner source b.tokens).mpr lexical
+  refine ⟨⟨b, lexical, tree_language ht, resolved⟩, ?_, rfl⟩
+  unfold parseTensor
+  split
+  · rename_i e he
+    rw [hl] at he
+    contradiction
+  · rename_i tokens he
+    have heq := Except.ok.inj (he.symm.trans hl)
+    subst tokens
+    split
+    · rename_i e he
+      rw [ht] at he
+      contradiction
+    · split
+      · rename_i he
+        rw [decodeTensor_tokens] at he
+        contradiction
+      · rename_i ast he
+        have heq := Option.some.inj ((decodeTensor_tokens b).symm.trans he)
         subst ast
         simp only [dif_pos resolved]
 

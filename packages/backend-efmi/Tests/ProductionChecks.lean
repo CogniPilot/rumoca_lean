@@ -1,5 +1,6 @@
 import RumocaEFMI.CInterface
 import RumocaEFMI.AlgorithmProofs
+import RumocaEFMI.TensorAlgorithmProofs
 import ProofAudit.Audit
 import RumocaEFMI.CSyntaxProofs
 import RumocaEFMI.CProtocol
@@ -159,3 +160,11 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.grammar_processed
 
 #audit axioms Rumoca.EFMI.render_denotes
+
+-- Tensor square Algorithm Code product: refinement of the prepared kernel and
+-- the actual grammar processing of the emitted derivative and Jacobian text.
+#audit axioms Rumoca.EFMI.square_derivative_refines
+#audit axioms Rumoca.EFMI.square_jacobian_coefficients
+#audit axioms Rumoca.EFMI.tensor_lexical
+#audit axioms Rumoca.EFMI.tensor_parsed
+#audit axioms Rumoca.EFMI.tensor_render_denotes

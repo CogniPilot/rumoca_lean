@@ -89,6 +89,32 @@ nearest-even binary64 value.
 | MLS 3.7 §2.4.2 Floating Point Numbers (lexical `UNSIGNED-REAL`) | The lexer recognizes the unsigned-real form (digits, an optional fraction, an optional `e`/`E` exponent with an optional sign) together with a leading unary sign, and records the exact base-ten content (`parseDecimal`). The admitted subset restricts a rate to a spelling the lexer distinguishes from a bare digit literal: it carries a sign, a decimal point or an exponent (the fixture uses `2.5` and `-1`). A bare single-digit rate keeps the existing `.literal` class and is not admitted here; a trailing point or a bare exponent is rejected by resolution. No change is made to how the admitted unit and array profiles lex their `'0'`, `'1'` and `'2'` literals. |
 | MLS 3.7 §3.7.2 Derivative and Special Purpose Operators (`der`) | Each equation has the form `der(state) = literal`, one per declared state. Resolution binds every `der` reference to a distinct declared state and requires the equation set to be a permutation of the declared states, so an unbound or uncovered state and a duplicate declaration are rejected with diagnostics. The written order of the `der` equations is immaterial (`Model.rateOf_perm`, `Model.lower_rates_perm`). |
 | MLS 3.7 §8.3.1 Simple Equations; §8.6 Initialization | The source system is a set of independent constant-rate states, each initialized at `+0` (no start modifier is admitted). The Solve lowering is a multi-state IVP whose per-state rate is the exactly rounded binary64 value of the literal; the lowering chain and initialization are proved (`Model.lowering_chain`, `Model.initialization_chain`), and the rounding is the round-to-nearest-even scaled-rounding spec (`Decimal.rate_rounds`), reusing the unit profile's decimal machinery rather than duplicating it. |
+### eFMI 1.0.0 Beta 1 GALEC arrays (Algorithm Code for the tensor square profile): standards impact
+
+Stage 1 of the tensor eFMI path (finding TF01) adds the GALEC Algorithm Code for
+the fixed extent array square profile as package products, with no change to CLI
+admission: the default CLI still rejects tensor eFMI output, and the array/tensor
+profile stays admitted only to FMI 3 FMU output. The GALEC grammar gains a
+`program` start rule admitting the unchanged scalar unit block and a
+`tensor_block` with extent-two array declarations, the elementwise product `.*`
+and a Jacobian output; the regenerated LALR table keeps every checked certificate
+and the scalar acceptance proof routes through the new alternative. The emitted
+derivative and Jacobian text is proved to lex and parse to the resolved tensor
+block that denotes the prepared pointwise square kernel
+(`Rumoca.EFMI.tensor_render_denotes`), the GALEC elementwise product is proved
+equal to the prepared kernel derivative and the Jacobian coefficients to the
+doubled-input diagonal (`square_derivative_refines`, `square_jacobian_coefficients`,
+universal in the state shape), and the compiler tie proves the pinned
+`TensorSquare` prepared kernel is that square kernel (`Rumoca.square_prepared_kernel`,
+`TensorAlgorithmArtifact.algorithm_correct`). `dev/efmi.md` documents the product
+and its theorems.
+
+| Standard | Impact |
+| --- | --- |
+| eFMI 1.0.0 Beta 1, §3.2.3 (lifecycle), §3.2.4 G-2 (declarations), G-3 (expressions), G-4 (statements) | The restricted GALEC profile now admits, beside the scalar unit block, a tensor block with fixed extent-two `Real[2]` and `Real[2, 2]` declarations, an elementwise-product derivative assignment and a Jacobian output statement applying the resolved `jacobian` built-in. This is a restriction of the published grammar, not a claim of full G-2/G-3/G-4 coverage; general extents, ranks, statements and expressions remain out of profile (TF04). |
+| eFMI 1.0.0 Beta 1, Algorithm Code semantics (method lifecycle, arithmetic) | The GALEC to Solve refinement is universal in rank, extent and arithmetic interpretation: the elementwise product denotes the prepared `PointwiseIVP` derivative and the Jacobian output denotes the prepared diagonal coefficient program (the doubled input). Binary64 is one interpretation, not a claim that eFMI mandates it. The refinement is instantaneous; a sampled method schedule and clock are carried structurally as in the scalar profile. |
+| eFMI 1.0.0 Beta 1, artifact conformance (manifests, Production Code, eFMU archive) | Not yet extended: this stage certifies the Algorithm Code product only. Tensor manifests, tensor Production C, the eFMU archive, the checker extension and CLI admission remain open, each blocked on its own contract and actual-artifact evidence. A green parse of the emitted `.alg` bytes in the compiler test executable is boundary evidence for the emitter, not eFMU conformance. |
+| eFMI 1.0.0 Beta 1, TF01 closure criteria | TF01 (tensor eFMI path) advances from "rejected with a diagnostic" to "Algorithm Code product certified; remaining stages open". Closure still requires the full tensor GALEC/Production Code path with contracts, or a documented decision to keep rejection. TF04 (fixed extent `2`, square kernel) is unchanged. |
 
 ### Native all-behavior matrix over the 75 common functions: standards impact
 

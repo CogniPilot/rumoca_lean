@@ -209,6 +209,68 @@ snapshot for this checkpoint. It is an inventory, not a semantic proof. E04–E0
 remain open: neither a generated Production C member nor a complete eFMU has
 been certified by this checkpoint.
 
+## Tensor square Algorithm Code product
+
+Stage 1 of the tensor eFMI path adds the GALEC Algorithm Code for the fixed
+extent array square profile (`examples/TensorSquare.mo`) as package products. It
+does not change CLI admission: the default CLI still rejects tensor eFMI output
+with its diagnostic, and the array/tensor profile remains admitted only to FMI 3
+FMU output. This is the eFMI analogue of the array profile's development FMI 3
+path; it certifies the Algorithm Code product, not a complete eFMU.
+
+The GALEC grammar gains a `program` start rule that admits the unchanged scalar
+unit block and a new `tensor_block` with extent-two array declarations, the
+elementwise product `.*` and a Jacobian output whose built-in name is resolved
+(not reserved), mirroring the Modelica array profile. The regenerated LALR table
+keeps its safety, first-set, item, fuel and progress certificates; the scalar
+acceptance proof routes through the new start alternative
+(`Rumoca.GALEC.Syntax.in_grammar`). The tensor syntax layer supplies the named
+`TensorBlock` AST, a total token decoder, name resolution and a scanner that
+adds bracket and comma punctuation and pairs `.` to `.*` only before `*` while
+keeping it a single symbol for `self.` references. Its lexer, grammar and
+location theorems mirror the scalar ones:
+`Rumoca.GALEC.Syntax.decodeTensor_tokens`, `tokens_of_decodeTensor`,
+`tensorUnit_resolved`, `in_grammar_tensor`, `tree_complete_tensor`,
+`parseTensor_complete`, `tensorScanner_preserves_text`, `tensorScanner_locations`
+and `TensorParsed.locations_exist` (in `packages/galec-parser`).
+
+The emitter and its refinement live in `packages/backend-efmi/RumocaEFMI`.
+`Rumoca.EFMI.squareKernel` names the prepared pointwise square kernel (zero
+initial state, the elementwise product derivative and the diagonal Jacobian
+coefficient program), and `renderTensorAlgorithm` emits the extent-two GALEC
+text from a `TensorModel` pinned to that kernel. The GALEC to Solve refinement is
+universal in the state shape: `square_derivative_refines` proves the GALEC
+elementwise product equals the prepared kernel's right-hand side for every rank,
+extent, arithmetic interpretation, state and input, and `square_jacobian_coefficients`
+proves the Jacobian output's coefficient program evaluates to the doubled input,
+i.e. the diagonal of the pointwise Jacobian. The actual grammar processing is
+checked on the emitted bytes: `tensor_lexical`, `tensor_parsed` and
+`tensor_render_denotes` show the emitted derivative and Jacobian text lexes and
+parses to the resolved tensor block that denotes the kernel.
+
+The compiler tie is `packages/compiler/Rumoca/EFMITensorAlgorithm.lean`.
+`Rumoca.square_prepared_kernel` proves the prepared kernel of the pinned
+`TensorSquare` array AST is exactly `EFMI.squareKernel`, so the array frontend
+and eFMI backend agree on the pointwise problem without either reconstructing
+it. `TensorAlgorithmArtifact.algorithm_correct` gives the parse-and-denote
+correctness for a prepared source whose kernel is the square kernel, and
+`squareAlgorithmArtifact` applies it to the actual development source case. The
+compiler test executable renders the tensor Algorithm Code for the parsed
+fixture, checks it parses to the resolved tensor block and writes
+`build/tensor-efmi/AlgorithmCode.alg`. Every check target stays green and the
+new roots are registered in the GALEC, eFMI and compiler audits.
+
+Remaining stages of the tensor eFMI path, each blocked on its own contract and
+actual-artifact evidence, are: the tensor eFMI manifests (Algorithm/Production
+Code identities and the `__content.xml` roster over the array declarations); the
+tensor Production C member generated from the prepared kernel with its printer
+and denotation contract; the eFMU archive assembling the tensor Algorithm Code,
+Production C and manifests; the checker extension recognizing the tensor archive;
+and, only after all of these carry their contracts, CLI admission of tensor eFMI
+output in place of the current diagnostic. Open finding TF01 in
+`dev/standards-review.md` tracks this path; TF04 records that the extent is
+fixed to `2` and the kernel is the square program.
+
 ## Production C work after the Algorithm Code checkpoint
 
 E04's implementation, proofs and required full repository gate have passed.

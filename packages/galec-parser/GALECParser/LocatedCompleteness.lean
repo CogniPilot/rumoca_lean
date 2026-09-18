@@ -22,4 +22,20 @@ theorem Parsed.locations_exist (parsed : Parsed source) :
     ∃ xs, Source.attach scanner.space source.startPos parsed.ast.tokens = some xs :=
   scanner_locations source parsed.ast.tokens ((Scanner.lex_correct scanner source _).mpr parsed.lexical)
 
+theorem tensorScanner_preserves_text (word : String) :
+    (tensorScanner.classify word).text = word := by
+  dsimp only [tensorScanner]
+  split <;> rfl
+
+/-- Every accepted tensor lexical sequence receives exact UTF-8 locations. -/
+theorem tensorScanner_locations (source : String) (tokens : List Token)
+    (accepted : Scanner.lex tensorScanner source = .ok tokens) :
+    ∃ xs, Source.attach tensorScanner.space source.startPos tokens = some xs :=
+  Scanner.lex_locations tensorScanner tensorScanner_preserves_text source tokens accepted
+
+theorem TensorParsed.locations_exist (parsed : TensorParsed source) :
+    ∃ xs, Source.attach tensorScanner.space source.startPos parsed.ast.tokens = some xs :=
+  tensorScanner_locations source parsed.ast.tokens
+    ((Scanner.lex_correct tensorScanner source _).mpr parsed.lexical)
+
 end Rumoca.GALEC.Syntax
