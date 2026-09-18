@@ -69,4 +69,36 @@ if "$compiler" "$task_tmp/invalid.mo" -o "$stage/model.alg" > "$task_tmp/rejecte
   echo 'invalid source unexpectedly published Algorithm Code' >&2; exit 1
 fi
 cmp "$stage/model.alg" "$task_tmp/preserved.alg"
+
+# --- Tensor eFMI Algorithm Code CLI publication, reuse and mutation control ---
+# The array/tensor profile is admitted for tensor eFMI Algorithm Code output.
+# Publish the pinned tensor square Algorithm Code through the CLI, gated by the
+# fixed tensor-algorithm certificate, require no-build certificate reuse over the
+# published bytes and source identity, and reject a mutated method.
+tensor_stage="$PWD/build/tensor-efmi-algorithm"
+rm -rf "$tensor_stage"
+mkdir -p "$tensor_stage"
+cp examples/TensorSquare.mo "$tensor_stage/Source.mo"
+"$compiler" "$tensor_stage/Source.mo" -o "$tensor_stage/model.alg" > "$tensor_stage/publish.log" 2>&1
+rg -q 'Rumoca.CheckedTensorEFMIFiles.source_to_algorithm depends on axioms:' "$tensor_stage/publish.log"
+# Require reuse of the native proof, not a fresh run, over the same bytes.
+lake run verify-artifact --check-only tensor-algorithm "$tensor_stage/Source.mo" "$tensor_stage/model.alg" \
+  packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+  > "$tensor_stage/cached.log"
+bash scripts/audit-lean.sh "$tensor_stage/cached.log"
+rg -q 'Rumoca.CheckedTensorEFMIFiles.source_to_algorithm depends on axioms:' "$tensor_stage/cached.log"
+# A mutated tensor Algorithm Code method must fail the fixed certificate.
+cp "$tensor_stage/model.alg" "$tensor_stage/original.alg"
+sed 's/self.samplePeriod := 1.0/self.samplePeriod := 0.0/' "$tensor_stage/original.alg" > "$tensor_stage/model.alg"
+if cmp -s "$tensor_stage/original.alg" "$tensor_stage/model.alg"; then
+  echo 'ineffective tensor Algorithm Code mutation' >&2; exit 1
+fi
+if lake run verify-artifact tensor-algorithm "$tensor_stage/Source.mo" "$tensor_stage/model.alg" \
+    packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+    > "$tensor_stage/rejected.log" 2>&1; then
+  echo 'accepted mutated tensor Algorithm Code' >&2; exit 1
+fi
+rg -q 'differs from the pinned tensor square profile' "$tensor_stage/rejected.log"
+rm -rf "$tensor_stage"
+
 echo 'GALEC EBNF freshness, reuse, actual-file certificate and mutation checks passed'
