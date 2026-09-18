@@ -492,4 +492,241 @@ theorem modelIdentifiers_decode (m : TensorFMI3Model shape) :
       = some (m.name, modelIdentifier m.name, modelIdentifier m.name) := by
   simp [decodeModelIdentifiers, modelDescription, guard, Build.only?, List.filter, List.lookup]
 
+/-! ### Constant-rate profile model description
+
+The constant-rate profile (`G01`) exposes no input tensor and no output tensor.
+Its states are a homogeneous vector of scalar states, and the profile keeps the
+state rank and extent symbolic: the model description declares one array state
+variable `x` of the state shape (one `Dimension` per extent) rather than
+enumerating one scalar variable per element, matching the record's contiguous
+state region and the compiler's rule against enumerating tensor coordinates.
+Value references are renumbered without the input: `0` time, `1` state, `2`
+derivative. The derivative `der(x)` is a signed decimal constant, so its
+`ContinuousStateDerivative` lists an empty dependency set. -/
+
+/-- The constant-rate model's instantiation token. -/
+def constantToken (name : String) : String := "lean-rumoca-constant-v1:" ++ name
+
+/-- State vector `x`, exact fixed-zero initialization, value reference `1`. -/
+def constantStateVar (shape : Shape) : Element :=
+  ⟨"Float64", [("name", "x"), ("valueReference", "1"),
+    ("causality", "local"), ("variability", "continuous"),
+    ("initial", "exact"), ("start", startValue shape)], dimensions shape, ""⟩
+
+/-- Derivative vector `der(x)`, referencing the state's value reference `1`. -/
+def constantDerivativeVar (shape : Shape) : Element :=
+  ⟨"Float64", [("name", "der(x)"), ("valueReference", "2"),
+    ("causality", "local"), ("variability", "continuous"),
+    ("initial", "calculated"), ("derivative", "1")], dimensions shape, ""⟩
+
+/-- Declared constant-rate model variables: the time base, the state vector and
+its derivative. -/
+def constantVariableNodes (shape : Shape) : List Element :=
+  [timeVar, constantStateVar shape, constantDerivativeVar shape]
+
+/-- The derivative is a constant, so it lists an empty dependency set. -/
+def constantContinuousStateDerivative : Element :=
+  ⟨"ContinuousStateDerivative", [("valueReference", "2"), ("dependencies", "")], [], ""⟩
+def constantInitialUnknownDerivative : Element :=
+  ⟨"InitialUnknown", [("valueReference", "2"), ("dependencies", "")], [], ""⟩
+
+/-- Constant-rate model structure: the continuous-state derivative and the initial
+unknown, each with an empty dependency set. -/
+def constantStructureNodes : List Element :=
+  [constantContinuousStateDerivative, constantInitialUnknownDerivative]
+
+/-- The constant-rate model description, universal in the state shape. -/
+def constantModelDescription (shape : Shape) (name : String) : Element :=
+  ⟨"fmiModelDescription", [("fmiVersion", "3.0"), ("modelName", name),
+    ("instantiationToken", constantToken name),
+    ("generationTool", "lean_rumoca")], [
+    ⟨"ModelExchange", [("modelIdentifier", modelIdentifier name)], [], ""⟩,
+    ⟨"CoSimulation", [("modelIdentifier", modelIdentifier name),
+      ("canHandleVariableCommunicationStepSize", "true"), ("fixedInternalStepSize", "1")], [], ""⟩,
+    ⟨"LogCategories", [], [⟨"Category", [("name", "logStatus")], [], ""⟩], ""⟩,
+    ⟨"DefaultExperiment", [("startTime", "0"), ("stopTime", "3"), ("stepSize", "1")], [], ""⟩,
+    ⟨"ModelVariables", [], constantVariableNodes shape, ""⟩,
+    ⟨"ModelStructure", [], constantStructureNodes, ""⟩], ""⟩
+
+theorem constantToken_attribute (shape : Shape) (name : String) :
+    (constantModelDescription shape name).attributes.lookup "instantiationToken"
+      = some (constantToken name) := rfl
+
+/-! #### Well-formedness -/
+
+theorem constantStateAttrs_valid (shape : Shape) :
+    XML.AttributesValid [("name", "x"), ("valueReference", "1"), ("causality", "local"),
+      ("variability", "continuous"), ("initial", "exact"), ("start", startValue shape)] := by
+  refine ⟨(by decide :
+    (["name", "valueReference", "causality", "variability", "initial", "start"] : List String).Nodup),
+    ?_⟩
+  intro a ha
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl | rfl
+  · exact ⟨by decide, by decide⟩
+  · exact ⟨by decide, by decide⟩
+  · exact ⟨by decide, by decide⟩
+  · exact ⟨by decide, by decide⟩
+  · exact ⟨by decide, by decide⟩
+  · exact ⟨(by decide : XML.Name "start"), startValue_text shape⟩
+
+theorem constantStateVar_valid (shape : Shape) : (constantStateVar shape).valid = true :=
+  float64_valid [("name", "x"), ("valueReference", "1"), ("causality", "local"),
+    ("variability", "continuous"), ("initial", "exact"), ("start", startValue shape)] (dimensions shape)
+    (constantStateAttrs_valid shape) (dimensions_valid shape)
+
+theorem constantDerivativeVar_valid (shape : Shape) : (constantDerivativeVar shape).valid = true :=
+  float64_valid [("name", "der(x)"), ("valueReference", "2"), ("causality", "local"),
+    ("variability", "continuous"), ("initial", "calculated"), ("derivative", "1")] (dimensions shape)
+    (by decide) (dimensions_valid shape)
+
+theorem constantVariableNodes_valid (shape : Shape) :
+    ((constantVariableNodes shape).map Element.valid).all id = true := by
+  refine Certificate.children_valid_cons _ _ timeVar_valid ?_
+  refine Certificate.children_valid_cons _ _ (constantStateVar_valid shape) ?_
+  exact Certificate.children_valid_cons _ _ (constantDerivativeVar_valid shape) rfl
+
+theorem constantStructureNodes_valid :
+    ((constantStructureNodes).map Element.valid).all id = true := by
+  apply all_valid_of_forall
+  intro e he
+  simp only [constantStructureNodes, List.mem_cons, List.not_mem_nil, or_false] at he
+  rcases he with rfl | rfl <;>
+    · apply Certificate.node_valid
+      · rw [decide_eq_true_eq]; exact ⟨by decide, by decide, by decide, Or.inl rfl⟩
+      · rfl
+
+/-- The constant-rate model description is a well-formed tree, given a printable
+model name. -/
+theorem constant_valid (shape : Shape) (name : String) (name_text : XML.Text name) :
+    (constantModelDescription shape name).valid = true := by
+  apply Certificate.node_valid
+  · rw [decide_eq_true_eq]
+    refine ⟨(by decide : XML.Name "fmiModelDescription"),
+      ⟨(by decide :
+        (["fmiVersion", "modelName", "instantiationToken", "generationTool"] : List String).Nodup),
+        ?_⟩,
+      (by decide : XML.Text ""), Or.inl rfl⟩
+    intro a ha
+    simp only [constantModelDescription, List.mem_cons, List.not_mem_nil, or_false] at ha
+    rcases ha with rfl | rfl | rfl | rfl
+    · exact ⟨by decide, by decide⟩
+    · exact ⟨(by decide : XML.Name "modelName"), name_text⟩
+    · exact ⟨(by decide : XML.Name "instantiationToken"),
+        text_append (by decide : XML.Text "lean-rumoca-constant-v1:") name_text⟩
+    · exact ⟨by decide, by decide⟩
+  · refine Certificate.children_valid_cons _ _ ?_ ?_
+    · apply Certificate.node_valid
+      · rw [decide_eq_true_eq]
+        refine ⟨(by decide : XML.Name "ModelExchange"),
+          ⟨(by decide : (["modelIdentifier"] : List String).Nodup), ?_⟩,
+          (by decide : XML.Text ""), Or.inl rfl⟩
+        intro a ha
+        simp only [List.mem_singleton] at ha
+        subst ha
+        exact ⟨(by decide : XML.Name "modelIdentifier"),
+          text_append (by decide : XML.Text "Rumoca_") name_text⟩
+      · rfl
+    refine Certificate.children_valid_cons _ _ ?_ ?_
+    · apply Certificate.node_valid
+      · rw [decide_eq_true_eq]
+        refine ⟨(by decide : XML.Name "CoSimulation"),
+          ⟨(by decide :
+            (["modelIdentifier", "canHandleVariableCommunicationStepSize",
+              "fixedInternalStepSize"] : List String).Nodup), ?_⟩,
+          (by decide : XML.Text ""), Or.inl rfl⟩
+        intro a ha
+        simp only [List.mem_cons, List.not_mem_nil, or_false] at ha
+        rcases ha with rfl | rfl | rfl
+        · exact ⟨(by decide : XML.Name "modelIdentifier"),
+            text_append (by decide : XML.Text "Rumoca_") name_text⟩
+        · exact ⟨by decide, by decide⟩
+        · exact ⟨by decide, by decide⟩
+      · rfl
+    refine Certificate.children_valid_cons _ _ ?_ ?_
+    · apply Certificate.node_valid
+      · rw [decide_eq_true_eq]; exact ⟨by decide, by decide, by decide, Or.inl rfl⟩
+      · refine Certificate.children_valid_cons _ _ ?_ rfl
+        apply Certificate.node_valid
+        · rw [decide_eq_true_eq]; exact ⟨by decide, by decide, by decide, Or.inl rfl⟩
+        · rfl
+    refine Certificate.children_valid_cons _ _ ?_ ?_
+    · apply Certificate.node_valid
+      · rw [decide_eq_true_eq]; exact ⟨by decide, by decide, by decide, Or.inl rfl⟩
+      · rfl
+    refine Certificate.children_valid_cons _ _ ?_ ?_
+    · apply Certificate.node_valid
+      · rw [decide_eq_true_eq]
+        exact ⟨(by decide : XML.Name "ModelVariables"),
+          (by decide : XML.AttributesValid ([] : List (String × String))),
+          (by decide : XML.Text ""), Or.inl rfl⟩
+      · exact constantVariableNodes_valid shape
+    refine Certificate.children_valid_cons _ _ ?_ rfl
+    · apply Certificate.node_valid
+      · rw [decide_eq_true_eq]
+        exact ⟨(by decide : XML.Name "ModelStructure"),
+          (by decide : XML.AttributesValid ([] : List (String × String))),
+          (by decide : XML.Text ""), Or.inl rfl⟩
+      · exact constantStructureNodes_valid
+
+/-- The constant-rate document is a well-formed XML tree accepted by the in-tree
+renderer and syntax proofs, given a printable model name. -/
+theorem constant_document (shape : Shape) (name : String) (name_text : XML.Text name) :
+    XML.Document (constantModelDescription shape name) (XML.document (constantModelDescription shape name)) :=
+  XML.document_correct (constantModelDescription shape name) (constant_valid shape name name_text)
+
+/-! #### Value references are pairwise distinct -/
+
+def constantValueReferences (shape : Shape) : List String :=
+  (constantVariableNodes shape).filterMap (fun v => v.attributes.lookup "valueReference")
+
+theorem constantValueReferences_eq (shape : Shape) :
+    constantValueReferences shape = (["0", "1", "2"] : List String) := rfl
+
+theorem constantValueReferences_nodup (shape : Shape) : (constantValueReferences shape).Nodup := by
+  rw [constantValueReferences_eq]; decide
+
+/-! #### Dimension starts multiply to the state element count -/
+
+theorem constantStateVar_dim_product (shape : Shape) :
+    (dimStarts (constantStateVar shape)).foldr (· * ·) 1 = shape.volume := by
+  rw [constantStateVar, dimStarts_dimensions]; rfl
+
+theorem constantDerivativeVar_dim_product (shape : Shape) :
+    (dimStarts (constantDerivativeVar shape)).foldr (· * ·) 1 = shape.volume := by
+  rw [constantDerivativeVar, dimStarts_dimensions]; rfl
+
+/-! #### The derivative attribute references the state -/
+
+theorem constant_derivative_references_state (shape : Shape) :
+    (constantDerivativeVar shape).attributes.lookup "derivative"
+      = (constantStateVar shape).attributes.lookup "valueReference" := rfl
+
+/-! #### Model-structure entries reference declared variables -/
+
+theorem constant_structure_references_declared (shape : Shape) :
+    ∀ node ∈ constantStructureNodes, ∃ ref,
+      node.attributes.lookup "valueReference" = some ref ∧ ref ∈ constantValueReferences shape := by
+  intro node hn
+  rw [constantValueReferences_eq]
+  simp only [constantStructureNodes, List.mem_cons, List.not_mem_nil, or_false] at hn
+  rcases hn with rfl | rfl
+  · exact ⟨"2", rfl, by decide⟩
+  · exact ⟨"2", rfl, by decide⟩
+
+/-- Each constant-rate structure entry lists an empty dependency set: the constant
+derivative depends on no variable. -/
+theorem constant_structure_dependencies_empty :
+    ∀ node ∈ constantStructureNodes, node.attributes.lookup "dependencies" = some "" := by
+  intro node hn
+  simp only [constantStructureNodes, List.mem_cons, List.not_mem_nil, or_false] at hn
+  rcases hn with rfl | rfl <;> rfl
+
+/-! #### Model identifiers decode exactly as the unit document -/
+
+theorem constant_modelIdentifiers_decode (shape : Shape) (name : String) :
+    decodeModelIdentifiers (constantModelDescription shape name)
+      = some (name, modelIdentifier name, modelIdentifier name) := by
+  simp [decodeModelIdentifiers, constantModelDescription, guard, Build.only?, List.filter, List.lookup]
+
 end Rumoca.FMI3.TensorMetadata

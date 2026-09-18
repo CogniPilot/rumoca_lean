@@ -2359,3 +2359,42 @@ rejects (`actual tensor FMI adapter differs from the complete prepared function
 list`). Tensor rank and extents stay symbolic; no tensor element is enumerated
 in lowering. `jacobian` remains an identified language extension. The enlarged
 admitted subset is recorded in `dev/standards-review.md`.
+
+## Record profile parameterization (Stage B1)
+
+The instance record's FMI-visible region set is parameterized by a record profile
+(`FMI3.TensorInstance.Profile`, with `hasInput` and `hasOutput`). The generic
+heaps `TensorInstance.coreOpt`/`storeOpt` take the input and output as options,
+and the generic renderers `TensorStorage.regionMembersG`/`membersG`/
+`recordRenderG`/`storageRenderG`/`declarationsG` take the presence flags. The
+tensor profile (`tensorProfile`, input present and output present) is one
+instance: the existing `TensorInstance.core`/`store`, `TensorStorage.regionMembers`/
+`members`/`declarations` and `TensorMetadata.modelDescription` are recovered as
+its specialization by `rfl` (`core_eq_opt`, `store_eq_opt`, `regionMembers_eq`,
+`members_eq`, `recordRender_eq`, `storageRender_eq`, `declarations_eq`), so every
+existing tensor theorem, the rendered adapter bytes and the tensor model
+description are unchanged.
+
+The constant-rate profile (`constantProfile`, `dev/constant-rates.md`) is the
+opposite instance: no input tensor and no output tensor. `TensorInstance.coreNoInput`/
+`constantStore` are the input-absent core and store, and their storage theorems
+mirror the tensor ones over one fewer region: the state region is readable
+(`constant_reads_state`), the derivative writable (`constant_writable_derivative`),
+distinct members and distinct instances never alias (`constant_fields_separate`,
+`constant_instances_separate`), and preparing one instance preserves every other
+(`constant_store_other_instance`). `TensorStorage.layout_names_constant` and
+`layout_state_extent_constant` prove the constant declarations agree with the
+addressed regions, and `recordG_printed`/`storageG_printed` tokenize the generic
+record under the shared scanner, so the constant record (`false false`) tokenizes
+as well. The reserved-record initializer is profile-independent: it writes the
+FMI lifecycle metadata, resets the time base and zero-fills the state region and
+never references an input, so `ConstantInstanceInit` reuses `TensorInstanceInit`
+verbatim (`initialized`, `reads_state`, `other_instance`). The constant model
+description (`TensorMetadata.constantModelDescription`) is developed under
+"Constant-rate profile model description" above.
+
+Value references for the constant profile are renumbered without the input: `0`
+time, `1` state, `2` derivative. The tensor profile keeps its numbering (`0`
+time, `1` input, `2` state, `3` derivative, `4` output). This stage is the record
+generalization only: the constant-rate C emission, FMI lifecycle bodies, adapter
+assembly and production admission remain later increments.

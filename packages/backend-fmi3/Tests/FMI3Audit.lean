@@ -262,6 +262,7 @@ import RumocaFMI3.TensorDoStep
 import RumocaFMI3.TensorFunctions
 import RumocaFMI3.TensorFamilyContracts
 import RumocaFMI3.TensorStorageCode
+import RumocaFMI3.ConstantInstanceInit
 import RumocaFMI3.TensorAdapterPrinter
 import RumocaFMI3.TensorAdapterContract
 
@@ -2574,3 +2575,54 @@ import RumocaFMI3.TensorAdapterContract
 -- every proved tensor behavioral function contract, and the declaration-preamble
 -- record-layout and identifier agreements, with `render_contract` proved.
 #audit axioms Rumoca.FMI3.TensorAdapter.render_contract
+
+-- Stage B1: the record profile and its constant-rate (no-input, no-output)
+-- instance. The generic storage recovers the tensor profile as its input-present
+-- instance and the constant profile as its input-absent, output-absent instance.
+#audit axioms Rumoca.FMI3.TensorInstance.core_eq_opt
+#audit axioms Rumoca.FMI3.TensorInstance.store_eq_opt
+#audit axioms Rumoca.FMI3.TensorInstance.coreOpt_none
+#audit axioms Rumoca.FMI3.TensorInstance.constantStore_eq_opt
+#audit axioms Rumoca.FMI3.TensorInstance.constant_reads_state
+#audit axioms Rumoca.FMI3.TensorInstance.constant_writable_derivative
+#audit axioms Rumoca.FMI3.TensorInstance.constant_fields_separate
+#audit axioms Rumoca.FMI3.TensorInstance.constant_instances_separate
+#audit axioms Rumoca.FMI3.TensorInstance.constant_store_other_instance
+
+-- Stage B1: the profile-generic storage declarations and the constant-rate
+-- layout and tokenization.
+#audit axioms Rumoca.FMI3.TensorStorage.regionMembers_eq
+#audit axioms Rumoca.FMI3.TensorStorage.members_eq
+#audit axioms Rumoca.FMI3.TensorStorage.recordRender_eq
+#audit axioms Rumoca.FMI3.TensorStorage.storageRender_eq
+#audit axioms Rumoca.FMI3.TensorStorage.declarations_eq
+#audit axioms Rumoca.FMI3.TensorStorage.layout_names_constant
+#audit axioms Rumoca.FMI3.TensorStorage.layout_state_extent_constant
+#audit axioms Rumoca.FMI3.TensorStorage.recordG_printed
+#audit axioms Rumoca.FMI3.TensorStorage.storageG_printed
+#audit axioms Rumoca.FMI3.TensorStorage.declarationsG_header
+
+-- Stage B1: the constant-rate reserved-record initializer reuses the shared
+-- tensor initializer, which is profile-independent.
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.code_closed
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.initialized
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.reads_state
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.other_instance
+
+-- Stage B1: the constant-rate profile model description, universal in the state
+-- shape, with one array state variable, no input and no output.
+#audit axioms Rumoca.FMI3.TensorMetadata.constantToken_attribute
+#audit axioms Rumoca.FMI3.TensorMetadata.constantStateVar_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constantDerivativeVar_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constantVariableNodes_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constantStructureNodes_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_document
+#audit axioms Rumoca.FMI3.TensorMetadata.constantValueReferences_eq
+#audit axioms Rumoca.FMI3.TensorMetadata.constantValueReferences_nodup
+#audit axioms Rumoca.FMI3.TensorMetadata.constantStateVar_dim_product
+#audit axioms Rumoca.FMI3.TensorMetadata.constantDerivativeVar_dim_product
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_derivative_references_state
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_structure_references_declared
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_structure_dependencies_empty
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_modelIdentifiers_decode

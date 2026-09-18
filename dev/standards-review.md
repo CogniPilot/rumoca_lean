@@ -73,6 +73,27 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Record profile parameterization and the constant-rate model variables: standards impact
+
+The FMI-visible instance record and the model description are parameterized by a
+record profile that records whether the input region `u` and the dense output
+region `J` are present. The tensor profile carries both; the constant-rate
+profile (`G01`) carries neither, keeping only the time base, the state vector and
+its derivative. The current tensor definitions are the input-present, output-present
+instance of the generic renderers, recovered by `rfl`, so the rendered adapter
+bytes, the tensor model description and every existing tensor theorem are
+unchanged (the compiler-rendered `build/tensor-fmi/adapter.c` and
+`modelDescription.xml` are byte-identical). This subsection covers only the
+constant-rate profile's model variables and value references; its C emission, FMI
+lifecycle bodies, artifacts and admission remain later increments.
+
+| Standard | Impact |
+| --- | --- |
+| FMI 3.0.2 §2.4.7 Definition of Model Variables (`ModelVariables`) | The constant-rate model description declares the independent `time` base and two continuous `Float64` variables: the state `x` and its derivative `der(x)`. No input variable and no output variable are declared, matching the profile's no-input, no-output record. Every variable node passes the in-tree restricted XML validator and the document is a well-formed tree accepted by the renderer/syntax relation (`TensorMetadata.constant_valid`, `constant_document`). |
+| FMI 3.0.2 §2.4.7 Dimension (array variables) | The homogeneous scalar-state vector is exposed as one array `Float64` variable `x` of the state shape carrying one `Dimension` per extent (with the extent as a constant `start`), rather than one scalar variable per element. This keeps the state rank and extent symbolic and enumerates no coordinate, matching the record's contiguous state region and the compiler rule against enumerating tensor elements. The `Dimension` starts multiply back to the state element count (`constantStateVar_dim_product`, `constantDerivativeVar_dim_product`), and the fixed-zero `start` list has one value per element per the array `start` rule. |
+| FMI 3.0.2 §2.4.7 Value reference (`valueReference`) | Value references are renumbered without the input region: `0` time, `1` state, `2` derivative. They are pairwise distinct (`constantValueReferences_nodup`), and the derivative's `derivative` attribute references the state's value reference (`constant_derivative_references_state`). |
+| FMI 3.0.2 §2.4.8 Definition of the Model Structure (`ModelStructure`) | The model structure lists the continuous-state derivative and the initial unknown for `der(x)`. Because `der(x)` is a signed decimal constant, each entry lists an empty dependency set (`constant_structure_dependencies_empty`); every structure entry still references a declared variable's value reference (`constant_structure_references_declared`). |
+
 ### G01 constant-rate development profile: standards impact
 
 The `constant_composition` production admits two or more scalar `Real` state

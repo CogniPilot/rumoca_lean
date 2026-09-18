@@ -163,6 +163,68 @@ def declarations (shape : Shape) (hasOutput : Bool) : String :=
   Runtime.declarationPrefix ++ storageRender shape hasOutput ++ kernelPrototype ++
     jacobianPrototype ++ "\n"
 
+/-! ### Record members generic in the input and output regions
+
+The record member set is parameterized by the profile presence flags `hasInput`
+and `hasOutput`: the tensor profile carries both regions, the constant-rate
+profile (`G01`) carries neither. The current tensor definitions are the
+`hasInput := true` instance of the generic renderers, recovered by `rfl`. -/
+
+/-- The tensor region members, generic in the input and output regions. The time
+base is always the scalar member; the state `x` and derivative `dx` are always
+present; the input `u` is present when `hasInput`; the Jacobian `J` is present
+when `hasOutput`. -/
+def regionMembersG (shape : Shape) (hasInput hasOutput : Bool) : List Member :=
+  [.scalar "double" TensorInstance.timeName,
+   .region TensorInstance.stateName shape.volume] ++
+  (if hasInput then [.region TensorInstance.inputName shape.volume] else []) ++
+  [.region TensorInstance.derivativeName shape.volume] ++
+  (if hasOutput then
+      [.region TensorInstance.outputName (matrixShape shape.volume shape.volume).volume]
+    else [])
+
+/-- All members of the profile-generic instance record, tensor regions first. -/
+def membersG (shape : Shape) (hasInput hasOutput : Bool) : List Member :=
+  regionMembersG shape hasInput hasOutput ++ bookkeepingMembers
+
+/-- The profile-generic instance record render. -/
+def recordRenderG (shape : Shape) (hasInput hasOutput : Bool) : String :=
+  "typedef struct {\n" ++
+    String.join ((membersG shape hasInput hasOutput).map fun m => "  " ++ m.render ++ "\n") ++
+    "} " ++ recordName ++ ";\n"
+
+/-- The profile-generic storage section. -/
+def storageRenderG (shape : Shape) (hasInput hasOutput : Bool) : String :=
+  recordRenderG shape hasInput hasOutput ++
+    (StaticStorage.instances StaticStorage.deploymentCapacity).render ++
+    (StaticStorage.flags StaticStorage.deploymentCapacity).render ++
+    (StaticStorage.count StaticStorage.deploymentCapacity).render
+
+/-- The profile-generic declaration preamble. -/
+def declarationsG (shape : Shape) (hasInput hasOutput : Bool) : String :=
+  Runtime.declarationPrefix ++ storageRenderG shape hasInput hasOutput ++ kernelPrototype ++
+    jacobianPrototype ++ "\n"
+
+/-- The tensor profile is the input-present instance of the generic region members. -/
+theorem regionMembers_eq (shape : Shape) (hasOutput : Bool) :
+    regionMembers shape hasOutput = regionMembersG shape true hasOutput := rfl
+
+/-- The tensor profile is the input-present instance of the generic members. -/
+theorem members_eq (shape : Shape) (hasOutput : Bool) :
+    members shape hasOutput = membersG shape true hasOutput := rfl
+
+/-- The tensor profile is the input-present instance of the generic record render. -/
+theorem recordRender_eq (shape : Shape) (hasOutput : Bool) :
+    recordRender shape hasOutput = recordRenderG shape true hasOutput := rfl
+
+/-- The tensor profile is the input-present instance of the generic storage render. -/
+theorem storageRender_eq (shape : Shape) (hasOutput : Bool) :
+    storageRender shape hasOutput = storageRenderG shape true hasOutput := rfl
+
+/-- The tensor profile is the input-present instance of the generic declarations. -/
+theorem declarations_eq (shape : Shape) (hasOutput : Bool) :
+    declarations shape hasOutput = declarationsG shape true hasOutput := rfl
+
 /-! ### Record layout agrees with the addressed tensor regions -/
 
 /-- The tensor region members carry exactly the member names `TensorInstance`
@@ -199,6 +261,26 @@ theorem layout_output_extent (shape : Shape) :
     (matrixShape shape.volume shape.volume).volume = shape.volume * shape.volume := by
   refine ⟨by simp [regionMembers], ?_⟩
   simp [matrixShape, Shape.volume]
+
+/-! ### Constant-rate profile layout
+
+The no-input, no-output profile declares the time base, the state vector and its
+derivative, matching `TensorInstance.fieldNames` without the `u` input and the
+`J` output. -/
+
+/-- The constant-rate region members carry the time base, the state and the
+derivative, in the field order `TensorInstance` addresses. -/
+theorem layout_names_constant (shape : Shape) :
+    (regionMembersG shape false false).map Member.baseName =
+      [TensorInstance.timeName, TensorInstance.stateName, TensorInstance.derivativeName] := by
+  simp [regionMembersG, Member.baseName]
+
+/-- The constant-rate state and derivative regions declare the state element count,
+the count `TensorInstance.coreNoInput` uses to `place` each region. -/
+theorem layout_state_extent_constant (shape : Shape) :
+    Member.region TensorInstance.stateName shape.volume ∈ regionMembersG shape false false ∧
+    Member.region TensorInstance.derivativeName shape.volume ∈ regionMembersG shape false false := by
+  refine ⟨?_, ?_⟩ <;> simp [regionMembersG]
 
 /-! ### Tokenization under the shared C scanner
 
@@ -410,6 +492,83 @@ theorem declarations_header (shape : Tensor.Shape) (hasOutput : Bool) :
       Runtime.declarationPrefix.toList ++
         (storageRender shape hasOutput ++ kernelPrototype ++ jacobianPrototype ++ "\n").toList := by
   simp [declarations, String.toList_append]
+
+/-! ### Profile-generic tokenization
+
+The same maximal-munch tokenization holds for the record generic in the input
+and output regions, so the constant-rate profile (`false false`) tokenizes into
+its member vocabulary as well. -/
+
+set_option maxHeartbeats 1000000 in
+/-- Every member of the profile-generic instance record has valid word-parts. The
+bookkeeping members are the fixed non-model fields; the region members are the
+time base, state, derivative and the optional input and output. -/
+private theorem membersG_wf (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
+    ∀ m ∈ membersG shape hasInput hasOutput, MemberWF m := by
+  intro m mem
+  rw [membersG, List.mem_append] at mem
+  rcases mem with hreg | hbook
+  · cases hasInput <;> cases hasOutput <;>
+      (simp only [regionMembersG, reduceIte, List.append_assoc, List.cons_append,
+        List.nil_append] at hreg
+       fin_cases hreg <;>
+         first
+           | exact ⟨parts_double, parts_time⟩ | exact parts_x | exact parts_u
+           | exact parts_dx | exact parts_J)
+  · fin_cases hbook <;>
+      first
+        | exact ⟨parts_double, parts_stop⟩ | exact ⟨parts_double, parts_timeMin⟩
+        | exact ⟨parts_double, parts_eventTime⟩ | exact ⟨parts_double, parts_lastCompleted⟩
+        | exact ⟨parts_int, parts_kind⟩ | exact ⟨parts_int, parts_mode⟩
+        | exact ⟨parts_boolean, parts_stopDefined⟩ | exact ⟨parts_boolean, parts_logging⟩
+        | exact ⟨parts_env, parts_environment⟩ | exact ⟨parts_cb, parts_logger⟩
+        | exact ⟨parts_size, parts_slot⟩
+
+/-- The profile-generic record scans into a concrete token sequence under the
+shared scanner. -/
+theorem recordG_printed (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
+    ∃ tokens, ∀ rest, CTokens.Prefix ((recordRenderG shape hasInput hasOutput).toList ++ rest) tokens rest := by
+  obtain ⟨bodyTokens, bodyPrefix⟩ :=
+    block_prefix (membersG shape hasInput hasOutput) (membersG_wf shape hasInput hasOutput)
+  refine ⟨[Token.word "typedef", .word "struct", .punctuator "{"] ++ bodyTokens ++
+    [.punctuator "}", .word "Instance", .punctuator ";"], fun rest => ?_⟩
+  have semicolon := (CTokens.separator_prefix (spelling := ";") (by simp) ('\n' :: rest)).append
+    (CTokens.Prefix.space (c := '\n') (by decide +kernel) .done)
+  have word := CTokens.word_prefix parts_Instance (marker := ';')
+    (by decide +kernel) (by decide +kernel) (by decide +kernel) ('\n' :: rest)
+  have close := CTokens.separator_prefix (spelling := "}") (by simp)
+    (' ' :: ("Instance".toList ++ ';' :: '\n' :: rest))
+  have tail := close.append (CTokens.Prefix.space (c := ' ') (by decide +kernel) (word.append semicolon))
+  have body := CTokens.Prefix.space (c := '\n') (by decide +kernel)
+    ((bodyPrefix _).append tail)
+  have opening := CTokens.separator_prefix (spelling := "{") (by simp)
+    ('\n' :: ((String.join ((membersG shape hasInput hasOutput).map fun m => "  " ++ m.render ++ "\n")).toList ++
+      '}' :: ' ' :: ("Instance".toList ++ ';' :: '\n' :: rest)))
+  simpa only [recordRenderG, recordName, String.toList_append, List.append_assoc, List.cons_append,
+    List.nil_append] using
+    (kw "typedef" parts_typedef _).append ((kw "struct" parts_struct _).append (opening.append body))
+
+/-- The profile-generic storage section scans into a concrete token sequence. -/
+theorem storageG_printed (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
+    ∃ tokens, ∀ rest, CTokens.Prefix ((storageRenderG shape hasInput hasOutput).toList ++ rest) tokens rest := by
+  obtain ⟨recordTokens, recordLex⟩ := recordG_printed shape hasInput hasOutput
+  obtain ⟨arrayTokens, arrayPhrase, arrayLex⟩ :=
+    CObject.array_renders (StaticStorage.instances_printable (capacity := StaticStorage.deploymentCapacity) (by decide +kernel))
+  obtain ⟨flagTokens, flagPhrase, flagLex⟩ :=
+    CObject.array_renders (StaticStorage.flags_printable (capacity := StaticStorage.deploymentCapacity) (by decide +kernel))
+  obtain ⟨countTokens, countPhrase, countLex⟩ :=
+    CObject.constant_renders (StaticStorage.count_printable StaticStorage.deploymentCapacity)
+  refine ⟨recordTokens ++ arrayTokens ++ flagTokens ++ countTokens, fun rest => ?_⟩
+  have composed := (recordLex _).append ((arrayLex _).append ((flagLex _).append (countLex rest)))
+  simpa only [storageRenderG, String.toList_append, List.append_assoc] using composed
+
+/-- The profile-generic declaration preamble exposes the shared header-inclusion
+prefix, identical to the scalar declarations' header block. -/
+theorem declarationsG_header (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
+    (declarationsG shape hasInput hasOutput).toList =
+      Runtime.declarationPrefix.toList ++
+        (storageRenderG shape hasInput hasOutput ++ kernelPrototype ++ jacobianPrototype ++ "\n").toList := by
+  simp [declarationsG, String.toList_append]
 
 end Tokenization
 

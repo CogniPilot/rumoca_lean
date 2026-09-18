@@ -131,6 +131,38 @@ compiler rejects the profile, and asserts the frontend rejects an unbound
 reference, a duplicate declaration, a mismatched end name and a non-numeric
 right-hand side.
 
+## FMI 3 record profile reuse (Stage B1)
+
+The FMI 3 tensor adapter storage, initializer and model description are
+parameterized by a record profile (`dev/tensor-ad.md`, "Record profile
+parameterization"). The constant-rate profile is the no-input, no-output
+instance, and this stage generalizes the record without emitting any adapter:
+
+- Storage: the constant instance heap (`FMI3.TensorInstance.constantStore`, the
+  input-absent instance of the generic `storeOpt`) holds the time base, the state
+  vector and its writable derivative. Its separation, other-instance preservation
+  and readability/writability theorems are proved
+  (`constant_reads_state`, `constant_writable_derivative`, `constant_fields_separate`,
+  `constant_instances_separate`, `constant_store_other_instance`). The eventual
+  constant adapter binds the kernel entries `rumoca_constant_rhs`,
+  `rumoca_constant_step` and `rumoca_constant_sample`
+  (`packages/backend-c/RumocaC/ConstantKernelCode.lean`) to these regions.
+- Declarations: `FMI3.TensorStorage.regionMembersG shape false false` declares the
+  time base, the state region and the derivative region (`layout_names_constant`),
+  and the generic record tokenizes under the shared C scanner (`recordG_printed`,
+  `storageG_printed`).
+- Initialization: the reserved-record initializer is profile-independent, so
+  `FMI3.ConstantInstanceInit` reuses `TensorInstanceInit` verbatim (fixed-zero
+  state fill, reset time base, FMI lifecycle metadata).
+- Model description: `FMI3.TensorMetadata.constantModelDescription`, universal in
+  the state shape, declares the independent `time`, one array state variable `x`
+  of the state shape (one `Dimension` per extent, no coordinate enumerated) and
+  its derivative `der(x)`, with value references `0` time, `1` state, `2`
+  derivative and an empty dependency set for the constant derivative. Its
+  well-formedness, value-reference distinctness, dimension-product and
+  model-identifier theorems are proved and recorded in
+  `dev/standards-review.md`.
+
 ## Open obligations
 
 The following are deferred to later increments, each with its own proofs and
