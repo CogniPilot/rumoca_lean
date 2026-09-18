@@ -13,6 +13,8 @@ import RumocaEFMI.ZIPCertificate
 import RumocaEFMI.ZIPArchiveCertificate
 import RumocaEFMISchemaCertificates
 import RumocaEFMI.StartupMapProofs
+import RumocaEFMI.TensorProductionProofs
+import RumocaEFMI.TensorManifestProofs
 
 namespace Rumoca.EFMI.ProductionChecks
 private local instance targetInterface : CInterface := cInterface
@@ -168,3 +170,19 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.tensor_lexical
 #audit axioms Rumoca.EFMI.tensor_parsed
 #audit axioms Rumoca.EFMI.tensor_render_denotes
+
+#audit axioms Rumoca.EFMI.TensorProduction.production_correct
+#audit axioms Rumoca.EFMI.TensorProduction.doStep_derivative_refines
+#audit axioms Rumoca.EFMI.TensorProduction.doStep_jacobian_refines
+
+#audit axioms Rumoca.EFMI.TensorManifest.documents_valid
+#audit axioms Rumoca.EFMI.TensorManifest.variable_declared
+#audit axioms Rumoca.EFMI.TensorManifest.jacobian_dimensions
+#audit axioms Rumoca.EFMI.TensorManifest.origin_reference
+#audit axioms Rumoca.EFMI.TensorManifest.representation_reference
+#audit axioms Rumoca.EFMI.TensorManifest.prepare_checksums
+#audit axioms Rumoca.EFMI.TensorManifest.dataMapping_refs
+#audit axioms Rumoca.EFMI.TensorManifest.statusMapping_refs
+#audit axioms Rumoca.EFMI.TensorManifest.functionMapping_refs
+#audit axioms Rumoca.EFMI.TensorManifest.data_present
+#audit axioms Rumoca.EFMI.TensorManifest.function_present

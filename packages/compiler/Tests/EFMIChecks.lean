@@ -3,6 +3,7 @@ import Rumoca.EFMIManifestProofs
 import Rumoca.EFMIArchiveProofs
 import Rumoca.EFMIInitializationProofs
 import Rumoca.EFMITensorAlgorithm
+import Rumoca.EFMITensorProduction
 
 #audit axioms Rumoca.EFMI.manifests_correct
 #audit axioms Rumoca.EFMI.manifests_correct_of_documents
@@ -61,6 +62,9 @@ theorem initial_state_and_period (old : GALEC.UnitProfile.State Nat) :
 #audit axioms Rumoca.square_prepared_kernel
 #audit axioms Rumoca.TensorAlgorithmArtifact.algorithm_correct
 #audit axioms Rumoca.squareAlgorithmArtifact
+#audit axioms Rumoca.TensorProductionArtifact.production_correct
+#audit axioms Rumoca.TensorProductionArtifact.manifests_correct
+#audit axioms Rumoca.squareProductionArtifact
 #audit axioms mismatched_reference
 #audit axioms aliased_declarations
 #audit axioms changed_period
