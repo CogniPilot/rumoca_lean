@@ -37,6 +37,10 @@ members with their dimensions. -/
 /-- The error word member, as in the scalar Production Code profile. -/
 def statusName : String := "errorSignalStatus"
 
+/-- The scalar sample-period constant member (the block clock), as in the scalar
+Production Code profile and the pinned tensor Algorithm Code. -/
+def clockName : String := "samplePeriod"
+
 /-- A logical array variable of the tensor square profile: its C member name and
 its fixed dimensions (row-major element count is the product of the extents). -/
 structure ArrayVar where
@@ -71,7 +75,7 @@ order. `rumoca_initialize` writes the zero state, `rumoca_rhs` writes the
 elementwise product `u .* u`, and `rumoca_square_jacobian_diag` writes the dense
 diagonal Jacobian `diag(2*u)` with no coefficient buffer. -/
 def kernelPieces : List String :=
-  ["#include <stddef.h>\n",
+  ["#include <stddef.h>\n#include <stdint.h>\n",
    Rumoca.CTensor.Fill.function.render,
    (Rumoca.CTensor.function .add).render,
    (Rumoca.CTensor.function .mul).render,
@@ -103,6 +107,7 @@ def header : String :=
   "typedef int32_t " ++ statusAlias ++ ";\n" ++
   "typedef struct {\n" ++
   String.join (modelVars.map memberDecl) ++
+  "  " ++ realAlias ++ " " ++ clockName ++ ";\n" ++
   "  " ++ statusAlias ++ " " ++ statusName ++ ";\n" ++
   "} Model;\n\n"
 
@@ -127,7 +132,8 @@ def doStepName : String := "TensorSquare_DoStep"
 initializer entry. -/
 def startupFunction : Function :=
   method startupName
-    [.eval (.call (.id "rumoca_initialize") [selfField squareVar.name, .nat squareVar.volume])]
+    [.eval (.call (.id "rumoca_initialize") [selfField squareVar.name, .nat squareVar.volume]),
+     .assign (selfField clockName) (.cast "double" (.nat 1))]
 
 /-- Recalibrate has no periodic clock work in the tensor square profile. -/
 def recalibrateFunction : Function := method recalibrateName []
