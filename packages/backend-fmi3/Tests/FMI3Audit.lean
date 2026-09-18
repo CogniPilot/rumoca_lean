@@ -265,6 +265,7 @@ import RumocaFMI3.TensorStorageCode
 import RumocaFMI3.ConstantInstanceInit
 import RumocaFMI3.ConstantFloat64Access
 import RumocaFMI3.ConstantDerivative
+import RumocaFMI3.ConstantDoStep
 import RumocaFMI3.TensorAdapterPrinter
 import RumocaFMI3.TensorAdapterContract
 
@@ -2651,3 +2652,12 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.ConstantDerivative.deriv_instance_delivers
 #audit axioms Rumoca.FMI3.ConstantDerivative.deriv_delivers_holds
 #audit axioms Rumoca.FMI3.ConstantDerivative.deriv_contract
+
+-- Stage B2: the constant-rate Co-Simulation do-step body, reusing the scalar
+-- guard prefix and calling `rumoca_constant_step(&(m->x[0]))` per internal step.
+#audit axioms Rumoca.FMI3.ConstantDoStep.doStepBody_prefix
+#audit axioms Rumoca.FMI3.ConstantDoStep.doStepBody_closed
+#audit axioms Rumoca.FMI3.ConstantDoStep.function_denotes
+#audit axioms Rumoca.FMI3.ConstantDoStep.null_behaviors
+#audit axioms Rumoca.FMI3.ConstantDoStep.lifecycle_behaviors
+#audit axioms Rumoca.FMI3.ConstantDoStep.contract
