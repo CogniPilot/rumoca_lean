@@ -325,3 +325,155 @@ conjuncts; eFMI algorithm 11 fields, production 6 groups, manifest 3 groups,
 archive 3 conjuncts. In every contract the emitted-file byte identity is the
 checked premise, the semantic content is proved, and the machine
 compilation / archive I/O / external-standard layer is external.
+
+---
+
+## 3. All-behavior coverage of the emitted interfaces
+
+Every one of the 75 emitted public functions is a member of exactly one contract
+family and is bound into the adapter by `PublicAPI.Covered sigs`
+(`PublicAPI.lean:124`), so `PublicAPI.every_export` (`:130`) upgrades the indexed
+per-family contract to a statement over every function in the actual signature
+list. The `PublicAPI.Entry` enumeration (`:38`) expands to 75: 26 model-facing
+entries, 24 absent-typed accessors (12 types x get/set), and 25 unsupported
+capability rejections (`CapabilityRejectionFamily.lean:13`, 25 signatures). The
+coverage marks below are read from each family's `FunctionContract` fields
+(section 1.5) and the corresponding `#audit`-rooted behavioral theorems in
+`packages/compiler/Tests/Audit.lean`; every function inherits its family row.
+
+Column key: **P** proved (governing theorem named in the family note); **n/a**
+the behavior does not exist for that function; **open** emitted but the behavior
+is not yet proved.
+
+### 3.1 Scalar FMI 3 adapter (`FMI3.AdapterContract`), all 75 functions
+
+| # | Family (functions) | Success | Null handle | Lifecycle rej. | Argument rej. | Discard | Suppressed log | Enabled log |
+|---|---|---|---|---|---|---|---|---|
+| 1 | Version `fmi3GetVersion` | P | n/a | n/a | n/a | n/a | n/a | n/a |
+| 1 | DebugLogging `fmi3SetDebugLogging` | P | P | n/a | n/a | n/a | n/a | n/a |
+| 4 | Instantiate/free `fmi3InstantiateModelExchange`, `…CoSimulation`, `…ScheduledExecution`, `fmi3FreeInstance` | P | P | P | P | n/a | P | P |
+| 2 | Initialization `fmi3EnterInitializationMode`, `fmi3ExitInitializationMode` | P | P | P | n/a | n/a | P | P |
+| 1 | Reset `fmi3Reset` | P | P | n/a | n/a | n/a | n/a | n/a |
+| 2 | Counts `fmi3GetNumberOfContinuousStates`, `fmi3GetNumberOfEventIndicators` | P | P | P | P | n/a | P | P |
+| 1 | Nominals `fmi3GetNominalsOfContinuousStates` | P | P | P | n/a | n/a | P | P |
+| 2 | Continuous states `fmi3GetContinuousStates`, `fmi3SetContinuousStates` | P | P | P | P | n/a | P | P |
+| 1 | Derivatives `fmi3GetContinuousStateDerivatives` | P | P | P | P | n/a | P | P |
+| 2 | Float64 `fmi3GetFloat64`, `fmi3SetFloat64` | P | P | P | P | n/a | P | P |
+| 1 | Terminate `fmi3Terminate` | P | P | P | n/a | n/a | P | P |
+| 1 | Time `fmi3SetTime` | P | P | P | n/a | n/a | P | P |
+| 2 | Mode entry `fmi3EnterEventMode`, `fmi3EnterContinuousTimeMode` | P | P | P | n/a | n/a | P | P |
+| 1 | Completed step `fmi3CompletedIntegratorStep` | P | P | P | n/a | n/a | P | P |
+| 1 | Discrete update `fmi3UpdateDiscreteStates` | P | P | P | n/a | n/a | P | P |
+| 1 | DoStep `fmi3DoStep` | P | P | P | P | P | P | P |
+| 1 | Event indicators `fmi3GetEventIndicators` | P | P | P | n/a | n/a | P | P |
+| 1 | Discrete evaluation `fmi3EvaluateDiscreteStates` | P | P | P | n/a | n/a | P | P |
+| 24 | Absent-typed get/set (float32,int8,uint8,int16,uint16,int32,uint32,int64,uint64,boolean,string,binary) | n/a | P | P | P | n/a | P | P |
+| 25 | Capability rejections (Clock, VariableDependencies, FMUState serialize/deserialize, Directional/Adjoint derivative, OutputDerivatives, Configuration/Step mode, ModelPartition, Interval/Shift decimal/fraction) | n/a | P | P | n/a | n/a | P | P |
+
+Governing theorems, by family (`packages/compiler/Tests/Audit.lean` roots and
+the `AdapterContract` conjunct `FMI3AdapterProofs.lean:61-119`):
+
+- Version: `FMI3.version_source`; `Version.FunctionContract`.
+- DebugLogging: `FMI3.debug_logging_source`; `DebugLogging.FunctionContract`.
+- Instantiate/free: `FMI3.adapter_static_create_release`,
+  `adapter_static_null_release`, `adapter_quiet_static_creation`,
+  `adapter_logged_static_creation`, `prepared_static_rejection`,
+  `adapter_quiet_static_rejection`, `adapter_logged_static_rejection`,
+  `StaticFactory.Created.source_default`,
+  `FactoryValidation.actual_adapter_admission`,
+  `scheduled_creation_source` (scheduled execution is a rejecting instantiation).
+- Initialization: `FMI3.initialization_source`,
+  `InitializationCalls.model_source_initialized`,
+  `InitializationCalls.exited_source_initialized`,
+  `InitializationCalls.QuietExecutionContract.source`;
+  `adapter_static_initialization`.
+- Reset: `FMI3.reset_source`, `reset_result`; `Reset.FunctionContract`
+  (`successful`, `null`).
+- Counts: `FMI3.counts_source`, `counts_failure_source`,
+  `counts_runtime_source`; `CountQueries.FunctionContract`
+  (`successful`, `null`, `rejected`, `missing`).
+- Nominals: `FMI3.nominals_source`, `nominals_runtime_source`.
+- Continuous states: `FMI3.state_access_source`; `StateCalls.FunctionsContract`.
+- Derivatives: `FMI3.derivative_source`, `derivative_value_source`,
+  `runtime_derivative_source`.
+- Float64: `FMI3.float64_source`, `float64_set_source`,
+  `float64_runtime_source`, `float64_set_runtime_source`,
+  `Float64Rejection.Returned.source_recovery`.
+- Terminate: `FMI3.adapter_termination`, `Termination.source_frame`,
+  `adapter_termination_release`.
+- Time: `FMI3.adapter_time`, `TimeCalls.source_frame`, `adapter_time_history`.
+- Mode entry / completed / discrete / indicators / evaluation:
+  `FMI3.adapter_me_calls`, `adapter_cs_calls`, `event_indicators_source`,
+  `event_indicators_me_source`, `discrete_evaluation_source`;
+  `EventEntry/Completed/Discrete/EventIndicator/DiscreteEvaluation.FunctionContract`.
+- DoStep: `FMI3.adapter_cs_run_history`, `adapter_logged_cs_run_history`;
+  `Step.FunctionContract` (`partition`, `cases` = null / accepted / discard /
+  reject reason, `logging`) — the only function with all seven columns proved.
+- Absent-typed: `FMI3.absent_variables_source`;
+  `AbsentVariables.FamilyContract` (`SuppressedContract`, `LoggedContract`,
+  per-reason rejection).
+- Capability rejections: `FMI3.capabilities_source`, `public_functions_source`;
+  `CapabilityRejection.AllContract` (`NullContract`, `SuppressedContract`,
+  `LoggedContract`) — the whole function is the modeled rejection, so the
+  "lifecycle rej." column is that unconditional rejection.
+
+**Scalar adapter coverage totals.** 75/75 functions carry a proved per-function
+contract and are accounted for by `PublicAPI.Covered`. Success is proved for the
+51 model-facing functions and is n/a for the 24 absent-typed and (of the
+remaining) not applicable where noted; null-handle behavior is proved for 74
+(n/a only for `fmi3GetVersion`, which has no instance argument); suppressed and
+enabled logging are proved for every function that logs. No scalar adapter cell
+is **open**.
+
+### 3.2 Tensor FMI 3 adapter (`FMI3.TensorAdapter.Contract`), all 75 functions
+
+The tensor adapter reproves the same 75-function coverage through the tensor
+family contracts (`TensorAdapterContract.lean:52-157`): `PublicAPI.Covered`,
+`TensorAbsentVariables.FamilyContract`, `TensorCapabilityRejection.FamilyContract`,
+and the per-function `Tensor*.Contract` lemmas. Coverage matches 3.1 with two
+exceptions, both inside `fmi3DoStep`:
+
+| Family | Difference from 3.1 |
+|---|---|
+| DoStep `fmi3DoStep` | Discard column and the header-aware floating-environment interface are **open**: `TensorDoStep.contract` leaves the off-grid `fmi3Discard` composition and the header-aware floating-environment interface unproved (`TensorAdapterContract.lean:36-39`). Success / null / lifecycle / argument / logging remain P. |
+| All others | Same marks as 3.1, discharged by `TensorVersion.contract`, `TensorReset.contract`, `TensorCountQueries.contract`, `TensorNominals.contract`, `TensorSetTime.contract`, `TensorLifecycleModes.contract`, `TensorFloat64.get_contract`/`set_contract`, `TensorContinuousStates.*_contract`, `TensorDiscreteUpdate.contract`, `TensorCompletedStep.contract`, `TensorEventIndicators.contract`, `TensorDiscreteEvaluation.contract`, `TensorFactory.contract`, `TensorFree.contract`, `TensorAbsentVariables.family_correct`, `TensorCapabilityRejection.family_correct`. |
+
+Tensor adapter open cells: **2** (DoStep discard, DoStep header-aware float
+environment). All other 73 functions match the scalar coverage.
+
+### 3.3 Scalar C numerical kernel (coarse)
+
+`Rumoca.ArtifactContract` (`Verified.lean:42`) covers the private kernel
+`model.c` by execution *behavior*, not by FMI function:
+
+| Behavior | Coverage | Theorem |
+|---|---|---|
+| Terminating binary64 execution of each sampled call | P | `execution_correct`, `call_termination`, `call_completion` |
+| Every emitted behavior is a source behavior and conversely | P | `behaviors`, `compiler_semantic_preservation` |
+| Model-exchange derivative and co-simulation step | P | `model_exchange`, `co_simulation` |
+| Real-ODE refinement bound | P | `real_solution_refinement`, `ExecutionContract.rounding_error` |
+| 64-bit counter safety | P | `counter_safe` |
+| Byte identity of the actual `model.c` | checked | `bytes` (kernel `decide`) |
+| Native compilation / host ABI / IEEE realisation | external | (trusted boundary) |
+
+### 3.4 Tensor C kernel (coarse)
+
+`IVPEntry.ArtifactContract` (`Tests/TensorCChecks/IVPEntry.lean:268`):
+
+| Member | Coverage | Theorem |
+|---|---|---|
+| Pointwise IVP program (`initial`, `derivative`, coefficients) | P | `program_correct` |
+| Initial-storage entry | P | `initial_call_correct` |
+| Derivative-storage entry (`rumoca_rhs`) | P | `derivative_call_correct` |
+| Square-Jacobian diagonal entry (`rumoca_square_jacobian_diag`) | P | `jacobianDiag_correct` (`helper_call_correct`, `output_reads`, `output_frame`) |
+| Byte identity of each actual fragment | checked | fragment reflexive checks (`tests/tensor-c.sh`) |
+| Native heap / header realisation | external | (trusted boundary) |
+
+### 3.5 eFMI artifacts (coarse)
+
+| Artifact | Behaviors proved | Checked bytes | External |
+|---|---|---|---|
+| Algorithm `model.alg` | lexing, EBNF, GALEC parse/denote, DAE admission, startup/recalibrate/doStep/samples, solve + lifecycle trace refinement | `bytes`, grammars | host scheduler, XML/ZIP/checksums |
+| Production C | header contract, startup map, module lowering + render + denote, typed entry, per-method + startup heap behavior, both `CProtocol` trace directions | production C `bytes` | native C compiler, host scheduling |
+| Manifest XML | valid/identified/named documents, XML rendering, variable roster, mapped result/status | algorithm/production/content XML `bytes` | full XSD/prose conformance |
+| Archive `.efmu` | manifest contract, stored-ZIP `Format.Conforms` transport | member roster, pinned schema resources, archive `bytes` | native C compiler, physical I/O + atomic rename |
