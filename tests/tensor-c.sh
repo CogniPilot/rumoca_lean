@@ -61,6 +61,40 @@ rg -q 'actual tensor IVP differs' build/tensor-c/ivp-rejection.log
 build/tensor-c/native
 echo 'Tensor C actual-file contracts, mutation rejection and native boundary check passed'
 
+# --- Constant-rate (G01) numerical C actual-file contract and native boundary ---
+# The emitter writes the certified numerical C for the fixture rates (der(x)=2.5,
+# der(y)=-1). The fixed checker binds the actual bytes to the constant-rate
+# execution and rounding contract and requires only the three foundational axioms.
+mkdir -p build/constant-c
+lake env lean --run packages/backend-c/Tests/EmitConstant.lean build/constant-c
+cat > build/constant-c/Check.lean <<'LEAN'
+import TensorCChecks.ConstantArtifactCheck
+verify_constant_kernel "build/constant-c/constant.c"
+LEAN
+if ! lake env lean build/constant-c/Check.lean > build/constant-c/contract.log 2>&1; then
+  cat build/constant-c/contract.log >&2
+  exit 1
+fi
+rg -q 'Rumoca.CConstant.CheckedFile.contract depends on axioms' build/constant-c/contract.log
+# Mutating one rate literal is rejected by the actual-file contract.
+sed 's/25e-1/26e-1/' build/constant-c/constant.c > build/constant-c/corrupt.c
+cat > build/constant-c/Reject.lean <<'LEAN'
+import TensorCChecks.ConstantArtifactCheck
+verify_constant_kernel "build/constant-c/corrupt.c"
+LEAN
+if lake env lean build/constant-c/Reject.lean > build/constant-c/rejection.log 2>&1; then
+  echo 'corrupted constant-rate C passed its actual-file contract' >&2
+  exit 1
+fi
+rg -q 'actual constant-rate C differs' build/constant-c/rejection.log
+# Native compilation and hardware remain boundaries outside the authored C semantics;
+# this step asserts the two states advance from zero to (7.5, -3) after three unit steps.
+"${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror -pedantic -fno-fast-math -ffp-contract=off \
+  build/constant-c/constant.c packages/backend-c/Tests/constant-native.c -lm \
+  -o build/constant-c/native
+build/constant-c/native
+echo 'Constant-rate C actual-file contract, mutation rejection and native boundary check passed'
+
 # --- Tensor FMI 3 adapter standalone-object boundary check ---
 # The compiler regression executable renders the development tensor adapter to
 # build/tensor-fmi/adapter.c. This step confirms that a C11 compiler, using the
