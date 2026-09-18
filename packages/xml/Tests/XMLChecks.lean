@@ -13,3 +13,9 @@ import ProofAudit.Audit
 #audit axioms XML.Certificate.document
 #audit axioms XML.Certificate.children_valid_cons
 #audit axioms XML.Certificate.node_valid
+#audit axioms XML.Certificate.render_pieces
+#audit axioms XML.Certificate.document_pieces
+#audit axioms XML.Certificate.pieces_children_cons
+#audit axioms XML.Certificate.pieces_node
+#audit axioms XML.Certificate.documentPieces_eq
+#audit axioms XML.Certificate.document_ofList
