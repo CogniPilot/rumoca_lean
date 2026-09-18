@@ -39,9 +39,20 @@ import RumocaFMI3.RuntimeStorage
 import RumocaFMI3.StateSetterPolicy
 import RumocaFMI3.RuntimeLinkage
 import RumocaFMI3.CallPolicy
+import RumocaFMI3.TensorCallPolicy
 import ProofAudit.Audit
 
 /-! Independently cached formal audits for the call policy; no example-based tests. -/
+
+#audit axioms Rumoca.FMI3.TensorCallPolicy.body_admits
+#audit axioms Rumoca.FMI3.TensorCallPolicy.funcs_acceptedT
+#audit axioms Rumoca.FMI3.TensorCallPolicy.acceptedT_noHeap
+#audit axioms Rumoca.FMI3.TensorCallPolicy.tensor_no_heap
+#audit axioms Rumoca.FMI3.TensorCallPolicy.classifiedT_rank
+#audit axioms Rumoca.FMI3.TensorCallPolicy.body_rankT
+#audit axioms Rumoca.FMI3.TensorCallPolicy.functions_rankT
+#audit axioms Rumoca.FMI3.TensorCallPolicy.functions_isSomeT
+#audit axioms Rumoca.FMI3.TensorCallPolicy.tensor_acyclic
 
 #audit axioms Rumoca.FMI3.CallPolicy.body_policy
 #audit axioms Rumoca.FMI3.CallPolicy.helpers_policy

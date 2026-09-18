@@ -1,4 +1,4 @@
-import RumocaC.CallPolicyProofs
+import RumocaC.NoHeapPolicy
 import RumocaFMI3.LiteralPreparation
 import RumocaFMI3.PublicAPI
 
@@ -191,5 +191,86 @@ theorem complete_program_no_cycle (model : Solve.FMI3Model source) (sigs : List 
     (first : ProgramEdge (LiteralPreparation.program model sigs) caller callee) :
     ¬ Transition.Reaches (ProgramEdge (LiteralPreparation.program model sigs)) callee caller :=
   program_no_cycle (program_rank model sigs covered) first
+
+/-! ### No-heap and acyclic policy over the scalar adapter function list -/
+
+/-- The named external boundary set of the scalar FMI adapter call graph: the
+generated helper/definition names, the declared numerical kernel entries, the
+non-allocating C library / math / atomic externals and the importer logger
+callback. There are no header-declared FMI callees: the adapter's public
+functions do not call one another. The logger callback is also reached through
+the instance record function pointer, an indirect callee the policy leaves to
+the separate function-pointer boundary. -/
+def bUnit : CCallPolicy.Externals where
+  generated := ["fail", "model_rhs", "model_advance",
+    "rumoca_valid_identity", "rumoca_reserve_slot"]
+  kernel := ["rumoca_rhs", "rumoca_step", "rumoca_sample"]
+  header := []
+  library := ["isfinite", "floor", "fegetround", "strlen", "strspn", "strcmp",
+    "atomic_exchange", "atomic_store"]
+  callback := ["logMessage"]
+
+/-- Every callee the scalar classification admits is admitted by the no-heap
+boundary set and is never an allocation entry point. Both policies inspect the
+same complete call inventory. -/
+theorem accepted_noHeap (funcs : List Function) (callee : Expr) (acc : accepted callee = true) :
+    NoHeapCallee funcs bUnit callee = true := by
+  cases callee with
+  | id name =>
+      simp only [accepted, classify] at acc
+      simp only [NoHeapCallee]
+      split at acc
+      · rename_i generated
+        simp only [List.contains_iff_mem, List.mem_cons, List.not_mem_nil, or_false] at generated
+        rcases generated with rfl | rfl | rfl | rfl | rfl | rfl | rfl
+        all_goals refine (Bool.and_eq_true _ _).mpr ⟨(Bool.or_eq_true _ _).mpr (Or.inr ?_), ?_⟩
+        all_goals decide +kernel
+      · split at acc
+        · rename_i library
+          simp only [List.contains_iff_mem, List.mem_cons, List.not_mem_nil, or_false] at library
+          rcases library with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl
+          all_goals refine (Bool.and_eq_true _ _).mpr ⟨(Bool.or_eq_true _ _).mpr (Or.inr ?_), ?_⟩
+          all_goals decide +kernel
+        · split at acc
+          · rename_i callback
+            subst callback
+            refine (Bool.and_eq_true _ _).mpr ⟨(Bool.or_eq_true _ _).mpr (Or.inr ?_), ?_⟩
+            all_goals decide +kernel
+          · simp at acc
+  | _ => rfl
+
+/-- The complete scalar adapter function list obeys the no-heap policy: no
+generated call graph reaches an allocation entry point, and every callee is a
+defined function, a declared kernel entry or a named external. -/
+theorem unit_no_heap (model : Solve.FMI3Model source) (sigs : List Signature) :
+    NoHeap (LiteralPreparation.functions model sigs) bUnit = true := by
+  simp only [NoHeap, List.all_eq_true]
+  intro fn member
+  exact checkFunction_mono (fun e h => accepted_noHeap _ e h) fn (functions_policy model sigs fn member)
+
+/-- Every scalar adapter function name carries a rank: the numerical kernel
+entries, the generated helpers and the ranked public functions. -/
+theorem functions_isSome (model : Solve.FMI3Model source) (sigs : List Signature)
+    (covered : PublicAPI.Covered sigs) :
+    ∀ fn ∈ LiteralPreparation.functions model sigs, (functionRank fn.signature.name).isSome = true := by
+  intro fn member
+  rcases List.mem_append.mp member with helper | exported
+  · simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at helper
+    rcases helper with rfl | rfl | rfl | rfl | rfl
+    all_goals decide +kernel
+  · obtain ⟨sig, sigMember, rfl⟩ := List.mem_map.mp exported
+    show (functionRank sig.name).isSome = true
+    rw [covered_ranks covered sig sigMember]
+    rfl
+
+/-- The complete scalar adapter direct-call graph is acyclic: the numerical
+kernel entries are leaves, the generated helpers precede them and the public
+functions precede the helpers, so no call cycle exists. -/
+theorem unit_acyclic (model : Solve.FMI3Model source) (sigs : List Signature)
+    (covered : PublicAPI.Covered sigs) :
+    Acyclic (LiteralPreparation.functions model sigs) :=
+  acyclic_of_ranked (rank := functionRank)
+    ((check_ranks_correct _ _).mp (functions_rank model sigs (covered_ranks covered)))
+    (functions_isSome model sigs covered)
 
 end Rumoca.FMI3.CallPolicy

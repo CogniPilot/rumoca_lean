@@ -30,6 +30,9 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.CallPolicy.actual_adapter_policy
 #audit axioms Rumoca.FMI3.CallPolicy.source_program_policy
 
+#audit axioms Rumoca.FMI3.CallPolicy.unit_no_heap
+#audit axioms Rumoca.FMI3.CallPolicy.unit_acyclic
+
 #audit axioms Rumoca.FMI3.RuntimeLinkage.source_logged_environment
 
 #audit axioms Rumoca.FMI3.RuntimeStorage.source_resource_environment

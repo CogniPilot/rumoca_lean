@@ -2,6 +2,7 @@ import Rumoca.Compiler
 import Rumoca.ArrayCompiler
 import RumocaCore.Solve.TensorFMI3
 import RumocaFMI3.TensorFunctions
+import RumocaFMI3.TensorCallPolicy
 import RumocaFMI3.TensorAdapterContract
 import RumocaFMI3.TensorMetadata
 import RumocaFMI3.BuildDescriptionProofs
@@ -219,6 +220,16 @@ structure TensorSourceBuildContract (a : TensorArtifact input)
     CTensor.ProgramFixture.IVPEntry.sources CTensor.ProgramFixture.IVPEntry.jacobianDiagSource
   /-- The source-build recipe agrees with the required profile for the model. -/
   build : FMI3.Build.ArtifactContract a.name buildDescription
+  /-- The complete rendered tensor call graph obeys the checked no-heap policy (no
+  callee is an allocation entry point; every callee is a defined function, a declared
+  kernel entry or a named external) and its direct-call relation among defined
+  functions is acyclic. This is a proved consequence of the mandatory tensor adapter
+  contract, carried as an explicit conjunct on the actual bytes. -/
+  no_heap_acyclic : ∃ (src : AST.Model) (w : Solve.FMI3Model src) (sigs : List CTree.Signature),
+    FMI3.TensorFunctions.render w a.tensorModel sigs = adapter ∧
+    CCallPolicy.NoHeap (FMI3.TensorFunctions.functions w a.tensorModel sigs)
+        FMI3.TensorCallPolicy.bTensor = true ∧
+    CCallPolicy.Acyclic (FMI3.TensorFunctions.functions w a.tensorModel sigs)
   /-- The rendered adapter satisfies the tensor adapter contract for a scalar
   witness sharing the model name, relative to any static literal table. -/
   adapter : ∃ (src : AST.Model) (w : Solve.FMI3Model src), src.name = a.name ∧
@@ -248,6 +259,14 @@ theorem tensorSourceBuild_correct (a : TensorArtifact input)
       = some (FMI3.TensorMetadata.token a.tensorModel))
     (metadataDocument : XML.Document (FMI3.TensorMetadata.modelDescription a.tensorModel) metadata) :
     TensorSourceBuildContract a modelC buildDescription adapter metadata :=
-  ⟨kernel, kernelContract, build, adapter', identifiers, token, metadataDocument⟩
+  ⟨kernel, kernelContract, build,
+    (by
+      obtain ⟨src, w, _, contractFn⟩ := adapter'
+      letI : FMI3.StaticLiterals := ⟨fun _ => none⟩
+      obtain ⟨sigs, _, renderEq, covered, _⟩ := contractFn
+      exact ⟨src, w, sigs, renderEq,
+        FMI3.TensorCallPolicy.tensor_no_heap w a.tensorModel sigs,
+        FMI3.TensorCallPolicy.tensor_acyclic w a.tensorModel sigs covered⟩),
+    adapter', identifiers, token, metadataDocument⟩
 
 end Rumoca

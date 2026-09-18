@@ -184,6 +184,15 @@ theorem adapter_correct (a : Artifact input) (sigs : List CTree.Signature)
     AbsentVariables.family_correct _ sigs unique absent,
     CapabilityRejection.all_correct _ sigs unique capabilities scheduled, covered⟩
 
+/-- Extract the mandatory header-coverage witness and the rendered-bytes
+identity from the certificate for the independently read adapter. This supplies
+the export-rank condition the no-heap and acyclicity consequences need. -/
+theorem adapter_covered (contract : AdapterContract a adapter) :
+    ∃ sigs, Runtime.render a.solve.prepareFMI3 sigs = adapter ∧ PublicAPI.Covered sigs := by
+  obtain ⟨sigs, _, _, printed, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,
+    _, _, _, _, _, _, _, _, _, covered⟩ := contract
+  exact ⟨sigs, printed, covered.2⟩
+
 /-- Extract the exact identity-helper fragment and its complete call contract
 from the certificate for the independently read adapter. The definition table
 is the one rendered into those same bytes. This does not prove creation or
