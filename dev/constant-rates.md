@@ -163,10 +163,61 @@ instance, and this stage generalizes the record without emitting any adapter:
   model-identifier theorems are proved and recorded in
   `dev/standards-review.md`.
 
+## FMI 3 adapter bodies (Stage B2)
+
+The constant-rate profile's FMI 3 adapter bodies are built over the no-input,
+no-output instance record (Stage B1). The profile-independent bodies (lifecycle
+modes, free, factory over the shared reserved-record initializer, count queries,
+time setter, reset, nominals, the continuous-state getter/setter and the seven
+model-independent behavioral functions) are the shared tensor bodies instantiated
+at the constant state shape. The profile-specific bodies are new:
+
+- `RumocaCore.Solve.ConstantFMI3`: the prepared model `ConstantFMI3Model n`, a
+  model name paired with the constant-rate IVP over `N` states, with the state
+  shape the rank-1 vector `⟨[N]⟩` of volume `N` (`shape_volume`).
+- `FMI3.ConstantFloat64`: the `fmi3GetFloat64`/`fmi3SetFloat64` bodies dispatching
+  value references `0` time, `1` state, `2` derivative. The getter denotes all
+  three; the setter admits only the state reference `1` (writable) and rejects the
+  derivative reference `2` as read-only. The shared request-check, staging,
+  copy-loop and finiteness machinery of the tensor accessor is reused; only the
+  value-reference dispatch differs. The contract binds the printed text,
+  closedness, printer denotation and null-handle rejection (`get_contract`,
+  `set_contract`).
+- `FMI3.ConstantDerivative`: the `fmi3GetContinuousStateDerivatives` body calling
+  the numerical entry `rumoca_constant_rhs(&(m->dx[0]))` (whose only argument is
+  the derivative region, the rate vector being constant) and copying the written
+  region into the caller buffer with the shared copy suffix. The copy-delivery
+  theorem (`deriv_copy_delivers`, reusing the tensor derivative getter's copy
+  suffix) delivers whatever the entry wrote; the contract binds the printed text,
+  closedness, denotation, null rejection and copy delivery (`deriv_contract`).
+- `FMI3.ConstantDoStep`: the Co-Simulation `fmi3DoStep` body reusing the shared
+  scalar guard prefix (handle/lifecycle guard, output writes, communication-point
+  and step-size checks, `stepRounding`/`stepClock`/`stepGrid`) verbatim, then a
+  grid loop whose internal step advances the time base by one and calls
+  `rumoca_constant_step(&(m->x[0]))`. Over `N` accepted internal steps every state
+  advances by the `N`-fold finite rate sum and the time by `N`. The contract binds
+  the printed text, closedness, denotation and null rejection; a lifecycle
+  rejection is a companion theorem (`contract`, `lifecycle_behaviors`).
+
+The numerical entries `rumoca_constant_rhs`, `rumoca_constant_step` and
+`rumoca_constant_sample` are the constant-rate kernel C
+(`packages/backend-c/RumocaC/ConstantKernelCode.lean`), whose finite binary64
+semantics and exact-rounding are `CConstant.contract_correct`. Every adapter-body
+theorem is universal in the state shape and audited to depend only on the standard
+axioms.
+
 ## Open obligations
 
 The following are deferred to later increments, each with its own proofs and
 actual-artifact certificate:
+
+- The fused single-run observable execution of the numerical entries over the
+  instance record (the constant-rate analog of the tensor accepted-step and
+  derivative-getter compositions): the derivative getter's end-to-end delivery of
+  the rounded rate vector, and the do-step accepted case's `N`-fold state advance
+  and off-grid `fmi3Discard` path.
+- The constant adapter function list assembly, its rendered bytes, the no-heap and
+  acyclic call-graph policy, and the bound adapter contract.
 
 - C emission of the multi-state IVP with the ordered finite-arithmetic and
   storage contract, and its target-execution theorem.

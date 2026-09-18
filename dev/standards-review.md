@@ -73,6 +73,28 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Constant-rate FMI 3 adapter bodies (Stage B2): standards impact
+
+The constant-rate profile (`G01`) adds its profile-specific FMI 3 adapter bodies
+over the no-input, no-output instance record: the `fmi3GetFloat64`/`fmi3SetFloat64`
+accessors over value references `0` time, `1` state, `2` derivative
+(`FMI3.ConstantFloat64`); the Model Exchange derivative getter calling the
+numerical entry `rumoca_constant_rhs(&(m->dx[0]))` (`FMI3.ConstantDerivative`); and
+the Co-Simulation `fmi3DoStep` calling `rumoca_constant_step(&(m->x[0]))` per
+internal step (`FMI3.ConstantDoStep`). The profile-independent bodies (lifecycle
+modes, free, factory over the shared reserved-record initializer, count queries,
+time setter, reset, nominals, the state getter/setter and the seven
+model-independent behavioral functions) are the shared tensor bodies instantiated
+at the constant state shape. This subsection covers the constant-rate profile's ME
+and CS interface bodies; their fused numerical-entry execution, the full adapter
+assembly, artifacts and production admission remain later increments.
+
+| Standard | Impact |
+| --- | --- |
+| FMI 3.0.2 §2.4.9 Getting and Setting Variable Values (`fmi3GetFloat64`, `fmi3SetFloat64`) | The accessor bodies denote one array value reference as a whole instance region under the array-access rule: `0` the independent time base (element count 1), `1` the state vector `x`, `2` the derivative `der(x)` (each element count the symbolic state volume). The getter denotes all three references; the setter admits only the state reference `1` (writable) and rejects the derivative reference `2` as read-only, matching the constant-rate model description's `1` state / `2` derivative numbering. A request must name exactly one value reference and non-null arrays, and `nValues` must equal the referenced region's element count; the copy is one counted `size_t` loop over the symbolic count, so no coordinate is enumerated. Each body's printed text denotes its function under the shared C printer and a null handle is rejected with `fmi3Error` (`ConstantFloat64.getBody_closed`, `setBody_closed`, `getFunction_denotes`, `setFunction_denotes`, `null_get_behaviors`, `null_set_behaviors`, `get_contract`, `set_contract`). |
+| FMI 3.0.2 §4 Model Exchange, `fmi3GetContinuousStateDerivatives` | The derivative getter guards the handle and lifecycle, checks the count and buffer, calls the numerical entry `rumoca_constant_rhs(&(m->dx[0]))` to write the derivative region, and copies that region into the caller buffer with the shared counted copy suffix. The entry needs no state or input (the rate vector is constant), so it takes only the derivative pointer. The copy suffix delivers whatever the entry wrote, preserving every other instance (`ConstantDerivative.deriv_copy_delivers`, `deriv_instance_delivers`); the printed text denotes, and a null handle is rejected with `fmi3Error` (`derivBody_closed`, `derivFunction_denotes`, `null_deriv_behaviors`, `deriv_contract`). The rounding of each written derivative to nearest-even is the constant-rate kernel contract (`Rumoca.CConstant.contract_correct`); the fused single-run observable execution of the entry is a later increment. |
+| FMI 3.0.2 §5 Co-Simulation, `fmi3DoStep` | The Co-Simulation step reuses the model-independent scalar guard prefix of `Runtime.doStep` verbatim (handle/lifecycle guard, output-pointer check and writes, invalid communication-point/step rejection, `stepRounding`, `stepClock`, `stepGrid`): the communication step must be a positive integer multiple of the internal unit step and at most the scalar bound. Each admitted internal step advances the time base by one and calls `rumoca_constant_step(&(m->x[0]))`, which advances every state by one explicit Euler step of its constant rate; the kernel iterates the states internally, so the body needs no elementwise loop. Over `N` accepted internal steps every state advances by the `N`-fold finite rate sum and the time by `N`. The printed text denotes, a null handle is rejected with `fmi3Error`, and a lifecycle-mismatched call is rejected with `fmi3Error` writing the terminated mode (`ConstantDoStep.doStepBody_closed`, `function_denotes`, `null_behaviors`, `lifecycle_behaviors`, `contract`); the accepted end-to-end execution and the off-grid `fmi3Discard` path are later increments. |
+
 ### Record profile parameterization and the constant-rate model variables: standards impact
 
 The FMI-visible instance record and the model description are parameterized by a
