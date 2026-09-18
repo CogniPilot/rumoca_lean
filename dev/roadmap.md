@@ -24,7 +24,10 @@ binary64 rounding of every literal and permutation invariance of the
 equation order. `ConstantCompiler.prepare` has `prepare_correct` and the
 compiler tests tie the `ConstantRates` fixture; production compilation still
 rejects the profile. C emission, artifacts and admission are later increments.
-See [constant rates](constant-rates.md).
+See [constant rates](constant-rates.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-18 in 65m12s
+on the merge of this profile with the no-heap call-graph policy for both
+adapters and the tensor Algorithm Code (`build/tensor-fmi/full-gate-v30.log`).
 
 **Array profile admitted to FMI 3 FMU output (production and stage record):**
 
