@@ -304,7 +304,8 @@ private def tensorCTest : ScriptM Unit := do
   -- The compiler regression executable renders build/tensor-fmi/adapter.c, which
   -- the script's tensor adapter pointer-type boundary check consumes.
   buildTargets ["check-c", "rumoca_c/RumocaC.TensorArtifactCheck",
-    "rumoca_c/TensorCChecks.ArtifactCheck", "rumoca_compiler/tests",
+    "rumoca_c/TensorCChecks.ArtifactCheck", "rumoca_c/TensorCChecks.ConstantArtifactCheck",
+    "rumoca_compiler/tests",
     "rumoca_compiler/tensor-fmu", "rumoca_compiler/Rumoca.TensorFMI3BuildArtifactCheck"]
   command "bash" #["tests/tensor-c.sh"]
 
