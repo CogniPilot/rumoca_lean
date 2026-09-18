@@ -104,7 +104,11 @@ Specific findings from the text, lifecycle diagram and official XSDs:
   manifest; Production Code references the Algorithm Code manifest and its
   variables. Checksums are SHA-1 over the unmodified file bytes, including
   line endings. They establish consistency, not semantic preservation or an
-  authenticity signature. A separate SHA-256 inventory may record our gate.
+  authenticity signature. A separate SHA-256 inventory may record our gate. The
+  SHA-1 checksum certificate reduces the compression function through a
+  structural message schedule over masked `Nat` words, so the kernel evaluates
+  it efficiently enough to certify the 7.4 KB tensor Production Code manifest;
+  the digest value is unchanged and the FIPS 180-4 vectors certify it.
 - An `.efmu` ZIP can contain the correlated Algorithm and Production Code
   representations. Embedding or exposing an FMI FMU is a separate arrangement
   under §1.2 and Chapter 2; it is not implied by containing Production C.

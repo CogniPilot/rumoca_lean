@@ -149,6 +149,31 @@ PY
   -Wno-unused-parameter -c "$efmi_root/ProductionCode.c" -o "$efmi_root/ProductionCode.o"
 echo 'Development tensor eFMI Production Code and manifest boundary check passed'
 
+# --- Tensor eFMI manifest actual-byte certificate ---
+# The tensor Algorithm/Production/container manifests certify against actual bytes
+# through the fixed `tensor-efmi-directory` checker: the XML serialization and
+# validity of all three documents and the SHA-1 checksum graph binding each code
+# file and each hashed manifest to the correlated tensor code products, composed
+# into the frozen tensor manifest contract (`source_to_manifests`). The tensor
+# Production Code manifest is 7.4 KB; the structural, masked-word SHA-1 schedule
+# keeps its checksum certificate within the kernel's budget. This is a directory
+# certificate; complete `.efmu` archive admission is a separate, still-open layer.
+manifest_root="$efmi_root/directory"
+rm -rf "$manifest_root"
+mkdir -p "$manifest_root/AlgorithmCode" "$manifest_root/ProductionCode"
+cp "$efmi_root/AlgorithmCode.alg" "$manifest_root/AlgorithmCode/model.alg"
+cp "$efmi_root/AlgorithmCode.xml" "$manifest_root/AlgorithmCode/manifest.xml"
+cp "$efmi_root/ProductionCode.c" "$manifest_root/ProductionCode/production.c"
+cp "$efmi_root/ProductionCode.xml" "$manifest_root/ProductionCode/manifest.xml"
+cp "$efmi_root/content.xml" "$manifest_root/__content.xml"
+lake run verify-artifact tensor-efmi-directory examples/development/TensorSquare.mo "$manifest_root" \
+  packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+  > build/tensor-efmi-manifest.log
+bash scripts/audit-lean.sh build/tensor-efmi-manifest.log
+rg 'Rumoca.CheckedTensorEFMIFiles.source_to_manifests depends on axioms:' build/tensor-efmi-manifest.log
+rm -rf "$manifest_root"
+echo 'Tensor eFMI manifest actual-byte certificate passed'
+
 # --- Development tensor FMU boundary run (NOT a production FMU) ---
 # Assemble a development FMU for the TensorSquare kernel from the already-produced
 # certified pieces and drive it through FMPy in Model Exchange and Co-Simulation.
