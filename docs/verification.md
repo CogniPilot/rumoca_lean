@@ -3635,13 +3635,25 @@ belong to the same explicit build trust boundary. See
 [artifact certificate caching](development.md#cached-artifact-certificates).
 Fresh eFMU identities and timestamps remain checked against their complete new
 XML and ZIP bytes. Native compilation and external compliance remain separate.
-The development `tensor-fmi3` certificate kind binds the same five staged files
+The `tensor-fmi3` certificate kind binds the same five staged files
 for the pointwise tensor profile: it compiles the source with `compileTensor`,
 kernel-checks the actual `model.c` against the certified tensor kernel text and
 the actual `fmi3.c` against the rendered tensor adapter, and emits
 `Rumoca.CheckedTensorFMI3Files.source_to_build` under the same axiom whitelist;
-it caches with the same inputs as `fmi3` but stays out of the CLI's production
-admission, which still rejects the array profile.
+it caches with the same inputs as `fmi3`. The pointwise tensor array profile
+(`examples/TensorSquare.mo`) is now admitted to production FMI 3 FMU output
+through this certificate: the array profile gained the total located-parse
+constructor `ParserActions.Parsed.parseLocated_eq` (the reusable mechanism the
+unit profile uses in `LocatedTotal`), so the certificate emits the existential
+`∃ a, compileTensor input = .ok a ∧ TensorSourceBuildContract a …` exactly like
+the scalar `fmi3` theorem, without kernel-evaluating the LR parser on the source
+text. The default `rumoca` CLI dispatches an array-profile source to
+`compileTensor` and the tensor source-build path, whose publication gate is this
+certificate; tensor eFMI export and tensor C emission stay rejected with a
+diagnostic, and the scalar driven profile `examples/DrivenIntegrator.mo` stays
+rejected. Tensor rank and extents remain symbolic; no tensor element is
+enumerated during lowering. `jacobian` is an identified language extension. The
+enlarged admitted subset is recorded in the recurring standards review.
 
 
 Run `nix develop .#verification --command lake test`. This checks Lean proofs,

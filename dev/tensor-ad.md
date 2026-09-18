@@ -36,8 +36,9 @@ equation
 end TensorSquare;
 ```
 
-This is accepted by the development array parser, and is the production
-admission target. The current production compiler rejects it.
+This is accepted by the array parser and, as of increment 1.29, is admitted to
+production FMI 3 FMU output through the `tensor-fmi3` certificate (see the
+production admission checkpoint below).
 The array input/state baseline precedes the nonlinear and Jacobian equations;
 source `+` is unnecessary until a model requires it, even though AD needs
 addition internally to accumulate cotangents.
@@ -127,8 +128,9 @@ three added roots pass the core audit in `build/tensor-builtin-audit.log`.
 Use `Rumoca.ArrayProfile.parseLocated` from `ModelicaParser.Array.Located` for
 the development frontend. It preserves other callee names for structured
 resolution errors; it does not silently interpret every call as a Jacobian.
-The production CLI/LSP still select the unit frontend. Array source-to-Solve
-lowering is now checked as described below. Static reverse transformation and
+The production LSP still selects the unit frontend; the production CLI now also
+admits the array profile for FMI 3 FMU output (increment 1.29 checkpoint below).
+Array source-to-Solve lowering is checked as described below. Static reverse transformation and
 finite tensor FMU/eFMU target certificates remain open. Parser acceptance does not authorize production
 generation.
 
@@ -2286,3 +2288,44 @@ located parse. It is registered as certificate kind `tensor-fmi3` in the root
 actual-file certificates. `tests/tensor-c.sh` builds the tensor FMU through this
 path and drives it in FMPy in Model Exchange and Co-Simulation
 (`x@t=3 = (3, 12)`, `J = (2, 0, 0, 4)`).
+
+## Tensor profile production admission checkpoint (increment 1.29)
+
+The pointwise tensor array profile (`examples/TensorSquare.mo`) is admitted to
+production FMI 3 FMU output through the `tensor-fmi3` certificate, alongside the
+unit profile. The admission mirrors the scalar path exactly:
+
+- The array profile gained the total located-parse constructor
+  `ParserActions.Parsed.parseLocated_eq` in
+  `ModelicaParser.ActionsLocatedTotal`, the reusable mechanism the unit profile
+  uses in `LocatedTotal`. It identifies the actual located frontend with a
+  computed attachment for an already certified parse; attachment failure is
+  impossible by lexer completeness (`ParserActions.Parsed.locations_exist`),
+  not hidden by a fallback. `ArrayCompiler.prepare_eq_parsed`,
+  `TensorArtifact.ofParsed`, `compileTensor_eq_parsed` and
+  `compileTensor_complete` lift it to the tensor artifact.
+- `verify_tensor_fmi3_build_files` now emits the existential
+  `Rumoca.CheckedTensorFMI3Files.source_to_build : Generated.source = ebnf ∧
+  ∃ a, compileTensor input = .ok a ∧ TensorSourceBuildContract a modelC buildXml
+  adapter md`, exactly like the scalar `fmi3` theorem, under the same
+  `propext, Classical.choice, Quot.sound` whitelist. The witness is built from
+  the pinned `squareAst` with `parseTokens_complete`, so the LR parser is not
+  kernel-evaluated on the source text; only the lexer runs by reflexivity.
+- The default `rumoca` CLI dispatches on the parsed profile: unit sources follow
+  the existing path unchanged, and an array-profile source is compiled with
+  `compileTensor` and published through the tensor `writeSources`/archive path,
+  whose publication gate is the `tensor-fmi3` certificate (FMU output). Tensor
+  eFMI export (`.alg`/`.efmu`) and tensor C emission are rejected with a
+  diagnostic; the tensor eFMI path is not built. The scalar driven profile
+  `examples/DrivenIntegrator.mo` stays rejected.
+
+`tests/fmi3.sh` now compiles `examples/TensorSquare.mo` through the default CLI,
+runs the in-tree runner (`validate`, `info`) and re-verifies the extracted
+sources through the cached `tensor-fmi3` certificate with `--check-only`
+(requiring the axiom audit lines), drives the FMU in FMPy in Model Exchange and
+Co-Simulation (`x@t=3 = (3, 12)`, `J = (2, 0, 0, 4)`), and adds one
+mutation-rejection control on the tensor adapter reset body that the certificate
+rejects (`actual tensor FMI adapter differs from the complete prepared function
+list`). Tensor rank and extents stay symbolic; no tensor element is enumerated
+in lowering. `jacobian` remains an identified language extension. The enlarged
+admitted subset is recorded in `dev/standards-review.md`.

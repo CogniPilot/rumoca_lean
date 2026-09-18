@@ -391,6 +391,9 @@ import Rumoca.TensorAdapterChars
 -- Development tensor artifact compiler path and its composed source-build contract.
 #audit axioms Rumoca.tensorSourceBuild_correct
 #audit axioms Rumoca.compileTensor_eq
+#audit axioms Rumoca.ArrayCompiler.prepare_eq_parsed
+#audit axioms Rumoca.compileTensor_eq_parsed
+#audit axioms Rumoca.compileTensor_complete
 #audit axioms Rumoca.TensorArtifact.ast_determined
 #audit axioms Rumoca.TensorArtifact.tensorModel_square
 #audit axioms Rumoca.TensorArtifact.name_square

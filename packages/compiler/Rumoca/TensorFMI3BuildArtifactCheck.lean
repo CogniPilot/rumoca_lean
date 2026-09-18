@@ -186,13 +186,19 @@ elab "verify_tensor_fmi3_build_files" : command => do
   let theoremId := mkIdent theoremName
   elabCommand (← `(command|
     theorem $theoremId:ident : Generated.source = $ebnf ∧
-        ∀ a : Rumoca.TensorArtifact $inputTerm, Rumoca.compileTensor $inputTerm = .ok a →
+        ∃ a : Rumoca.TensorArtifact $inputTerm, Rumoca.compileTensor $inputTerm = .ok a ∧
           Rumoca.TensorSourceBuildContract a (String.ofList $modelChars) $buildLit
             (String.ofList $adapterChars) $mdLit := by
       refine ⟨by rfl, ?_⟩
-      intro a _ha
-      have hast : a.prepared.parsed.parsed.ast = Rumoca.squareAst :=
-        Rumoca.TensorArtifact.ast_determined a Rumoca.squareAst (by rfl)
+      let parsed : Rumoca.ArrayProfile.Parsed $src :=
+        ⟨Rumoca.squareAst.tokens, Rumoca.squareAst, by rfl,
+          Rumoca.ParserActions.parseTokens_complete Rumoca.ArrayProfile.actions Rumoca.squareAst⟩
+      let a : Rumoca.TensorArtifact $inputTerm :=
+        Rumoca.TensorArtifact.ofParsed $inputTerm parsed Rumoca.squareAst_resolved
+      have hc : Rumoca.compileTensor $inputTerm = .ok a :=
+        Rumoca.compileTensor_eq_parsed $inputTerm parsed Rumoca.squareAst_resolved
+      refine ⟨a, hc, ?_⟩
+      have hast : a.prepared.parsed.parsed.ast = Rumoca.squareAst := rfl
       have hmodel : a.tensorModel = Rumoca.squareModel := Rumoca.TensorArtifact.tensorModel_square a hast
       have hname : a.name = "TensorSquare" := Rumoca.TensorArtifact.name_square a hast
       refine Rumoca.tensorSourceBuild_correct a (String.ofList $modelChars) $buildLit

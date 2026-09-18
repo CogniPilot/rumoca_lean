@@ -6,6 +6,7 @@ import ModelicaParser.ParserProofs
 import ModelicaParser.LocatedProofs
 import ModelicaParser.OriginProofs
 import ModelicaParser.LocatedTotal
+import ModelicaParser.ActionsLocatedTotal
 import ProofAudit.Audit
 
 #audit axioms Rumoca.Generated.source_read_checked
@@ -46,6 +47,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ArrayProfile.LocatedCall.arguments_contained
 #audit axioms Rumoca.ArrayProfile.LocatedParsed.callLocation
 #audit axioms Rumoca.ArrayProfile.LocatedParsed.resolve_complete
+#audit axioms Rumoca.ParserActions.Parsed.locations_exist
+#audit axioms Rumoca.ParserActions.Parsed.located_parsed
+#audit axioms Rumoca.ParserActions.Parsed.parseLocated_eq
+#audit axioms Rumoca.ParserActions.parseLocated_complete
 #audit axioms Rumoca.located_lex_sound
 #audit axioms Rumoca.LocatedParsed.erases
 #audit axioms Rumoca.LocatedParsed.location_count

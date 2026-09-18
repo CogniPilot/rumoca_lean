@@ -3,26 +3,55 @@ import Rumoca.EFMIExport
 import Rumoca.EFMICheck
 import Rumoca.ParseFiles
 import Rumoca.InitializationDiagnostics
+import Rumoca.TensorFMU
 
 open _root_.Parser
 
 namespace Rumoca.CLI
 open Cli
 
+/-- Publish an admitted array/tensor-profile source. The array profile is
+admitted only for FMI 3 FMU output, whose publication gate is the fixed
+`tensor-fmi3` source-build certificate that `TensorFMU.build` runs. Tensor C
+emission and tensor eFMI export are not built and are rejected with a diagnostic. -/
+private def runTensorCompiler {input : Source.InputRef} (name : String)
+    (tensor : TensorArtifact input) (output : Option String) : IO UInt32 := do
+  match output with
+  | some path =>
+    if path.endsWith ".fmu" then
+      TensorFMU.build tensor path
+      return 0
+    else if path.endsWith ".alg" || path.endsWith ".efmu" then
+      IO.eprintln s!"{name}: tensor eFMI export is not built; the array/tensor profile is admitted only for FMI 3 FMU output (-o out.fmu)"
+      return 1
+    else
+      IO.eprintln s!"{name}: the array/tensor profile is admitted only for FMI 3 FMU output (-o out.fmu); tensor C emission is not built"
+      return 1
+  | none =>
+    IO.eprintln s!"{name}: the array/tensor profile is admitted only for FMI 3 FMU output (-o out.fmu); tensor C emission is not built"
+    return 1
+
 private def runCompiler (p : Cli.Parsed) : IO UInt32 := do
   let input := p.positionalArg! "model" |>.as! String
   let source ← IO.FS.readFile input
-  match compile (.single input source) with
+  let inputRef : Source.InputRef := .single input source
+  let output := (p.flag? "output").map (·.as! String)
+  match compile inputRef with
   | .error error =>
-    IO.eprintln (Diagnostics.render input error)
-    return 1
+    -- The unit profile rejects the source. Admit the array/tensor profile if the
+    -- source is the array-profile shape the fixed tensor certificate certifies;
+    -- otherwise report the unit diagnostic and neither publish nor replace.
+    match compileTensor inputRef with
+    | .ok tensor => runTensorCompiler input tensor output
+    | .error _ =>
+      IO.eprintln (Diagnostics.render input error)
+      return 1
   | .ok artifact =>
     for notice in artifact.initializationDiagnostics do
       IO.eprintln (Diagnostics.renderWarning input notice)
-    match p.flag? "output" with
+    match output with
     | none => IO.print artifact.cSource
-    | some flag =>
-      let path := flag.as! String
+    | some path =>
       if path.endsWith ".fmu" then FMU.build artifact path
       else if path.endsWith ".alg" then EFMIExport.writeAlgorithm artifact path
       else if path.endsWith ".efmu" then EFMIExport.writeArchive artifact path

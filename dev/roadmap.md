@@ -11,6 +11,24 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Array profile admitted to FMI 3 FMU output (production and stage record):**
+
+`ParserActions.Parsed.located` lifts the total located-parse construction to
+every action profile, so `compileTensor_complete` gives the existential
+composition and the fixed checker emits
+`∃ a, compileTensor input = .ok a ∧ TensorSourceBuildContract ...` like the
+scalar theorem. The `rumoca` CLI dispatches array-profile sources to the
+tensor artifact and the tensor FMU build gated by the `tensor-fmi3`
+certificate; tensor eFMI and C output are rejected with a diagnostic, and the
+driven profile stays rejected. `examples/TensorSquare.mo` is the admitted
+example; `tests/fmi3.sh` publishes it through the CLI, requires certificate
+reuse with no build, rejects an altered adapter byte and runs the FMU. The
+recurring stage record for the enlarged subset is in the standards review with
+findings TF01 to TF06 carried forward. Further grammar growth remains blocked
+by K02 to K05. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-18 in 24m33s
+(`build/tensor-fmi/full-gate-v29.log`).
+
 **Tensor source-to-build certificate through the compiler (actual-artifact checks):**
 
 `Rumoca.compileTensor` builds a tensor artifact from the array profile through

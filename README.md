@@ -39,13 +39,35 @@ the declaration. Scalar Flat/DAE/Solve models carry mandatory checked provenance
 for those decisions. See [initialization coverage](dev/initialization.md) for
 the proofs and remaining adapter obligations.
 
-The next, still incomplete path adds an input and a fixed-start output state.
-Its parser and tensor IR lowering are under verification; the production CLI
-continues to reject it until the target and artifact proofs are complete.
-See the [IR alignment review](dev/ir-review.md) and
-[FMI 3 proof obligations](dev/fmi3/contracts.md). The existing unit profile can
-be packaged as one FMI 3 FMU containing both Model Exchange and Co-Simulation.
-The numerical kernel is formally checked; full FMI adapter verification remains open.
+The production compiler also admits the pointwise tensor array profile shown in
+`examples/TensorSquare.mo`:
+
+```modelica
+model TensorSquare
+  input Real u[2];
+  output Real x[2](each start=0, each fixed=true);
+  output Real J[2,2];
+equation
+  der(x) = u .* u;
+  J = jacobian (u .* u, u);
+end TensorSquare;
+```
+
+It carries a two-element input, a fixed-start output state, the elementwise
+product `.*` and a square `jacobian` output (`jacobian` is an identified
+language extension). This profile is admitted **only for FMI 3 FMU output**,
+whose publication gate is the fixed `tensor-fmi3` source-build certificate; the
+default `rumoca` CLI dispatches the array profile to `compileTensor` and the
+tensor source-build path, while tensor eFMI export and tensor C emission are
+rejected with a diagnostic and the scalar driven profile
+(`examples/DrivenIntegrator.mo`) stays rejected. Tensor rank and extents remain
+symbolic in the shape parameter; no tensor element is enumerated during
+lowering. See the [IR alignment review](dev/ir-review.md),
+[tensor AD notes](dev/tensor-ad.md) and
+[FMI 3 proof obligations](dev/fmi3/contracts.md). Either admitted profile can be
+packaged as one FMI 3 FMU containing both Model Exchange and Co-Simulation. The
+numerical kernels are formally checked; full FMI adapter execution verification
+remains open.
 
 ## Run
 

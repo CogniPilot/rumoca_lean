@@ -71,6 +71,35 @@ theorem compileTensor_eq (input : Source.InputRef) (prepared : ArrayCompiler.Pre
   simp only [compileTensor, parsed, bind, Except.bind]
   rfl
 
+/-- Total construction of a tensor artifact from an already certified array parse
+and its resolution, mirroring the unit profile's `Artifact.ofParsed`. -/
+def TensorArtifact.ofParsed (input : Source.InputRef) (parsed : ArrayProfile.Parsed input.source)
+    (resolved : parsed.ast.Resolved) : TensorArtifact input :=
+  ⟨ArrayCompiler.prepareParsed parsed.located resolved⟩
+
+/-- The array driver implements the same successful parse and resolution for a
+pinned AST. As in the unit profile's `compile_eq_parsed`, there is no additional
+location-success assumption and the LR parser is not kernel-evaluated. -/
+theorem compileTensor_eq_parsed (input : Source.InputRef) (parsed : ArrayProfile.Parsed input.source)
+    (resolved : parsed.ast.Resolved) :
+    compileTensor input = .ok (TensorArtifact.ofParsed input parsed resolved) := by
+  simp only [compileTensor, TensorArtifact.ofParsed, bind, Except.bind,
+    ArrayCompiler.prepare_eq_parsed parsed resolved]
+  rfl
+
+/-- Every resolvable array-profile source in the existing lexical/AST
+specification compiles, with its parsed AST pinned to the given model. This is
+the array analogue of the unit profile's `compile_complete`. -/
+theorem compileTensor_complete (input : Source.InputRef) (m : ArrayProfile.Model)
+    (syntaxValid : Lexes input.source.toList (ArrayProfile.actions.tokens m))
+    (resolved : m.Resolved) :
+    ∃ a, compileTensor input = .ok a ∧ a.prepared.parsed.parsed.ast = m :=
+  let parsed : ArrayProfile.Parsed input.source :=
+    ⟨ArrayProfile.actions.tokens m, m, (lex_correct input.source _).mpr syntaxValid,
+      ParserActions.parseTokens_complete ArrayProfile.actions m⟩
+  ⟨TensorArtifact.ofParsed input parsed resolved,
+    compileTensor_eq_parsed input parsed resolved, rfl⟩
+
 /-! ### The development `TensorSquare` instance
 
 The array profile admits a single development source case, `TensorSquare`. Its

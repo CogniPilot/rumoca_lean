@@ -1,7 +1,8 @@
 // Selected from Rumoca's modelica.par at a1daf47556c1a6ffd7f4b203235ff09711089a85.
 // See README.md for the exact upstream path and every deliberate restriction.
-// The first production is the start symbol. The array profiles are frontend
-// development cases; production compilation still admits only the unit case.
+// The first production is the start symbol. The unit case and the square
+// Jacobian array profile (array_composition with jacobian_body) are admitted to
+// production FMI 3 FMU output; the driven compositions remain development cases.
 // Attribute and function identifiers are checked by name resolution.
 
 stored_definition
