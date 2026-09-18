@@ -73,6 +73,37 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### eFMI 1.0.0 Beta 1 Production Code and manifest array variables (tensor square profile): standards impact
+
+Stage 2 of the tensor eFMI path (finding TF01) adds the eFMI Production Code
+translation unit and the Algorithm/Production/container manifests for the fixed
+extent array square profile as package products, with no change to CLI admission:
+the default CLI still rejects tensor eFMI output, and the array/tensor profile
+stays admitted only to FMI 3 FMU output. The Production Code method functions
+reuse the certified tensor kernel entries (`rumoca_rhs`,
+`rumoca_square_jacobian_diag` and the shared helpers) rather than re-emitting the
+numerical bodies; the `Model` record and the manifests describe the logical
+variables `u`, `x` and `J` as fixed-extent array members with dimensions. The
+derivative method is proved to compute the prepared derivative `u .* u` and the
+Jacobian output the doubled input `u + u` (`doStep_derivative_refines`,
+`doStep_jacobian_refines`, universal in the state shape); the manifests are proved
+well-formed in the in-tree XML output grammar with the checksum and reference
+correlations (`documents_valid`, `variable_declared`, `origin_reference`,
+`prepare_checksums`, the data/function reference lemmas), and the compiler tie
+proves the Production contract and the manifest well-formedness for the pinned
+`TensorSquare` fixture (`TensorProductionArtifact.production_correct`,
+`TensorProductionArtifact.manifests_correct`, `squareProductionArtifact`). The
+emitted manifests are validated against the vendored eFMI XSDs at the boundary,
+and the Production C compiles as C11. `dev/efmi.md` documents the products and
+their theorems.
+
+| Standard | Impact |
+| --- | --- |
+| eFMI 1.0.0 Beta 1, Algorithm Code manifest variables (`efmiVariable` with `Dimensions`) | The Algorithm Code manifest declares `u`, `x` and `J` as `RealVariable`s carrying a `Dimensions` child with the fixed one-based `number`/`size` extents, beside the scalar `samplePeriod` clock constant the required `Clock` element references. This is a restriction to fixed extents `2` and `2, 2`; general extents and ranks remain out of profile (TF04). Membership in the vendored `efmiAlgorithmCodeManifest.xsd` is checked at the boundary. |
+| eFMI 1.0.0 Beta 1, Production Code manifest typedefs and variables (`efmiTypeDefs` Components with `Dimensions`, `efmiVariables`/`efmiDimensions`) | The Production Code manifest declares the `Model` struct as a `Typedef` whose `Components` carry the same fixed dimensions, the three method `Function`s and the `TargetTypes`/`Typedefs` for the 64-bit real and 32-bit status types. Membership in the vendored `efmiProductionCodeManifest.xsd` is checked at the boundary. |
+| eFMI 1.0.0 Beta 1, §5.1.5 (logical data mapping) | Each method's `LogicalData` `DataReference` maps an Algorithm Code variable, and the error anchor, through the method's own instance formal parameter and the named struct component; `FunctionReference`s correlate the block method identifiers with the C function identifiers. The origin `ManifestReference` and the container `ModelRepresentation`s hash the serialized dependency bytes (SHA-1), proved by the checksum-correlation lemmas. |
+| MISRA C:2025 Dir 4.12 (no dynamic memory) and Rule 21.3 (no `malloc`/`calloc`/`free`) | The emitted Production C allocates nothing: each method function clears its status word, calls the prepared kernel entries with the `Model` record's array-member pointers and stack-fixed element/cell counts, and returns the status. The kernel entries themselves run counted loops over caller-provided storage. No dynamic allocation and no standard-library memory management appear in the emitted C, which compiles clean under `-std=c11 -Wall -Wextra -Werror -pedantic`. |
+
 ### eFMI 1.0.0 Beta 1 GALEC arrays (Algorithm Code for the tensor square profile): standards impact
 
 Stage 1 of the tensor eFMI path (finding TF01) adds the GALEC Algorithm Code for

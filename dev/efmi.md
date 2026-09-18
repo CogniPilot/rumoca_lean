@@ -261,15 +261,84 @@ fixture, checks it parses to the resolved tensor block and writes
 new roots are registered in the GALEC, eFMI and compiler audits.
 
 Remaining stages of the tensor eFMI path, each blocked on its own contract and
-actual-artifact evidence, are: the tensor eFMI manifests (Algorithm/Production
-Code identities and the `__content.xml` roster over the array declarations); the
-tensor Production C member generated from the prepared kernel with its printer
-and denotation contract; the eFMU archive assembling the tensor Algorithm Code,
-Production C and manifests; the checker extension recognizing the tensor archive;
-and, only after all of these carry their contracts, CLI admission of tensor eFMI
-output in place of the current diagnostic. Open finding TF01 in
+actual-artifact evidence, are: the eFMU archive assembling the tensor Algorithm
+Code, Production C and manifests; the checker extension recognizing the tensor
+archive; and, only after all of these carry their contracts, CLI admission of
+tensor eFMI output in place of the current diagnostic. Open finding TF01 in
 `dev/standards-review.md` tracks this path; TF04 records that the extent is
 fixed to `2` and the kernel is the square program.
+
+## Tensor square Production Code and manifest product
+
+Stage 2 of the tensor eFMI path adds the eFMI Production Code translation unit
+and the Algorithm/Production/container manifests for the fixed-extent tensor
+square profile as package products. It does not change CLI admission: the
+default CLI still rejects tensor eFMI output with its diagnostic.
+
+The Production Code emitter is `packages/backend-efmi/RumocaEFMI/`
+`TensorProductionCode.lean`. It reuses the certified tensor kernel entries the
+way the FMI 3 side does: the numerical code is the certified kernel text
+(`rumoca_initialize`, `rumoca_rhs`, `rumoca_square_jacobian_diag` and the shared
+`rumoca_tensor_fill`/`add`/`mul`/`diagonal` helpers, `TensorProduction`
+`.kernelText`), and the status-returning method functions `TensorSquare_Startup`,
+`TensorSquare_Recalibrate` and `TensorSquare_DoStep` call those prepared entries
+against the array members of the `Model` record rather than re-emitting the
+numerical bodies. The interface conventions of the scalar Production Code path
+(a fixed 32-bit status return cleared on entry, the `Model *self` formal, the
+logical-to-C variable mapping) are generalized to array variables: `Model`
+declares `u`, `x` and `J` as fixed-extent array members alongside the scalar
+`samplePeriod` clock and the error word. `DoStep` calls `rumoca_rhs` with the
+readable input register supplied for the square right-hand side's unused state
+slot, so the written value is `u .* u`, then `rumoca_square_jacobian_diag` to
+write `diag(2*u)` into `J`.
+
+`TensorProductionProofs.lean` proves the refinement to the tensor Algorithm Code
+semantics, universal in the state shape. `doStep_derivative_refines` shows the
+prepared derivative right-hand side the `DoStep` entry computes equals the tensor
+Algorithm Code derivative method's denotation `u .* u`; `doStep_jacobian_refines`
+shows the prepared Jacobian coefficient program evaluates to the doubled input
+`u + u`, the diagonal the scratch-free entry materializes. `TensorProduction`
+`.Contract` bundles the emitted byte identity, the certified tensor C artifact
+contract `IVPEntry.ArtifactContract` (the kernel entries' tokenization, finite
+IEEE execution and whole-tensor storage under the shared C tokenizer and machine)
+and both refinements; `production_correct` discharges it for the emitted bytes.
+The shared eFMI straight-line C printer (`CSyntax`) covers only scalar assignment
+programs, so the tensor translation unit's "tokenizes and denotes" evidence is
+the RumocaC tokenization/parse/execution the certified kernel entries carry,
+bundled through `IVPEntry.ArtifactContract`, together with the method-function
+render bytes; native C compilation stays an explicitly reviewed boundary.
+
+The manifests are `TensorManifest.lean`. The Algorithm Code manifest declares
+`u` (input), `x` (output) and `J` (output) as `RealVariable`s with a `Dimensions`
+child carrying the fixed extents per the vendored AlgorithmCode variable schema,
+plus the `samplePeriod` clock constant the required `Clock` element references.
+The Production Code manifest declares the `Model` struct as a `Typedef` whose
+`Components` carry the same dimensions per the vendored ProductionCode typedef and
+dimension schemas, the three method `Function`s, and the `LogicalData` references
+correlating each Algorithm Code variable and the error anchor to the C formal
+parameter and component. `TensorManifestProofs.lean` proves well-formedness
+through the in-tree XML output grammar (`documents_valid`: a valid tree serializes
+to bytes the grammar relates back to that tree) and the checksum and reference
+correlations universal in the model name and identity: `variable_declared` and
+`jacobian_dimensions` for the array declarations, `origin_reference`,
+`representation_reference` and `prepare_checksums` for the SHA-1 of the serialized
+dependencies, and `dataMapping_refs`/`statusMapping_refs`/`functionMapping_refs`
+with `data_present`/`function_present` for the logical data cross-references.
+
+The compiler tie is `packages/compiler/Rumoca/EFMITensorProduction.lean`.
+`TensorProductionArtifact` builds on the tensor Algorithm Code artifact and
+exposes `productionSource` and the manifest `documents`;
+`TensorProductionArtifact.production_correct` gives the Production contract and
+`TensorProductionArtifact.manifests_correct` gives the manifest well-formedness
+and origin-reference checksum from a document validity hypothesis;
+`squareProductionArtifact` applies both to the actual `TensorSquare` fixture. The
+compiler test executable emits `build/tensor-efmi/ProductionCode.c` and the three
+manifest documents for the fixture, and `tests/tensor-c.sh` validates the
+manifests against the vendored eFMI XSDs with the same lxml check
+`tests/efmi-production.sh` uses, confirms the code-file and origin-reference
+checksums and the declared array dimensions, and compiles the Production C as a
+C11 translation unit. Every check target stays green and the new roots are
+registered in the eFMI and compiler audits.
 
 ## Production C work after the Algorithm Code checkpoint
 
