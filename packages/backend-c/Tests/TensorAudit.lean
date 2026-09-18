@@ -3,9 +3,11 @@ import RumocaC.TensorCallContract
 import RumocaC.TensorFillContract
 import RumocaC.TensorDiagonalContract
 import RumocaC.TensorSquareDiagonal
+import RumocaC.ConstantKernelProgram
 import TensorCChecks.Entry
 import TensorCChecks.DiagonalEntry
 import TensorCChecks.IVPEntry
+import TensorCChecks.ConstantEntry
 import RumocaC.TypedEventsTransfer
 
 #audit axioms Rumoca.CArithmetic.floatMul_finite
@@ -226,3 +228,21 @@ import RumocaC.TypedEventsTransfer
 #audit axioms Rumoca.CTensor.SquareDiagonal.output_frame
 #audit axioms Rumoca.CTensor.SquareDiagonal.diagonal_nearest
 #audit axioms Rumoca.CTensor.SquareDiagonal.matrix_diagonal_nearest
+
+-- Executable constant-rate (G01) kernel program: rounded-rate write, finite
+-- whole-vector Euler step, its counted iteration, and the artifact contract.
+#audit axioms Rumoca.CConstant.rate_rounds
+#audit axioms Rumoca.CConstant.rhs_reaches
+#audit axioms Rumoca.CConstant.step_reaches
+#audit axioms Rumoca.CConstant.step_next
+#audit axioms Rumoca.CConstant.sample_body_reaches
+#audit axioms Rumoca.CConstant.rhs_behaves
+#audit axioms Rumoca.CConstant.step_behaves
+#audit axioms Rumoca.CConstant.sample_behaves
+#audit axioms Rumoca.CConstant.rhs_executes
+#audit axioms Rumoca.CConstant.step_executes
+#audit axioms Rumoca.CConstant.sample_executes
+#audit axioms Rumoca.CConstant.contract_correct
+#audit axioms Rumoca.CConstant.Fixture.rhs_denotes
+#audit axioms Rumoca.CConstant.Fixture.step_denotes
+#audit axioms Rumoca.CConstant.Fixture.sample_denotes
