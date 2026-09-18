@@ -15,6 +15,17 @@ import GALECParser.LocatedCompleteness
 #audit axioms Rumoca.GALEC.Syntax.in_grammar
 #audit axioms Rumoca.GALEC.Syntax.tree_complete
 #audit axioms Rumoca.GALEC.Syntax.parse_complete
+
+-- Tensor square profile: array declarations, elementwise product and Jacobian.
+#audit axioms Rumoca.GALEC.Syntax.decodeTensor_tokens
+#audit axioms Rumoca.GALEC.Syntax.tokens_of_decodeTensor
+#audit axioms Rumoca.GALEC.Syntax.tensorUnit_resolved
+#audit axioms Rumoca.GALEC.Syntax.in_grammar_tensor
+#audit axioms Rumoca.GALEC.Syntax.tree_complete_tensor
+#audit axioms Rumoca.GALEC.Syntax.parseTensor_complete
+#audit axioms Rumoca.GALEC.Syntax.tensorScanner_preserves_text
+#audit axioms Rumoca.GALEC.Syntax.tensorScanner_locations
+#audit axioms Rumoca.GALEC.Syntax.TensorParsed.locations_exist
 #audit axioms Rumoca.GALEC.Generated.safety_checked
 #audit axioms Rumoca.GALEC.Generated.execution_safe
 #audit axioms Rumoca.GALEC.Generated.first_checked
