@@ -4999,6 +4999,22 @@ are unchanged. General standards correspondence, coding guidelines and the
 other release obligations remain open.
 No full eFMI conformance claim follows from the authored byte grammar alone.
 
+The array/tensor profile adds tensor eFMI certificate kinds to the required gate.
+The `tensor-algorithm` kind is delivered: it reads the Modelica source, both
+EBNFs and the Algorithm Code bytes, compiles the source through `compileTensor`,
+and emits the axiom-audited `Rumoca.CheckedTensorEFMIFiles.source_to_algorithm`
+binding the pinned tensor square Algorithm Code to the compiled tensor artifact.
+The CLI stages this member for `-o out.alg` and requires the certificate before
+publication; `tests/efmi-algorithm.sh` checks the publication, no-build reuse and
+a mutation-rejection control with only the usual three axioms. The two remaining
+tensor eFMI certificate kinds, `tensor-efmi-directory` and `tensor-efmi-archive`
+(emitting `source_to_manifests` and `source_to_archive`), and CLI admission of
+complete tensor eFMU output, are blocked on the tensor Production C actual-byte
+certificate and are not yet in the gate; the tensor archive assembly and its
+`TensorArchiveContract` (roster, checksums, container correlation and stored-ZIP
+bytes, universal in identity and model name) are already proven for that checker
+to compose.
+
 ## Binary64 and real refinement
 
 The development tensor profile additionally uses `Real.ScaledRounding`,
