@@ -1243,11 +1243,13 @@ reads `result`, and every cell of every other instance preserved.
 | The guard prefix is exactly the scalar `Runtime.doStep` prefix through `stepGrid` | `TensorDoStep.doStepBody_prefix` |
 | Every cell of an instance record shares the pool block; caller buffers frame across the step writes | `TensorDoStep.field_index_block`, `TensorDoStep.cell_block_ne` |
 | The model-dependent numerical tail as one observable execution (declarations, grid loop, publish, return) | `TensorDoStep.tensorSolve_reaches` |
+| The output-aware numerical tail: the grid loop, the square-Jacobian diagonal entry, then publish and return | `TensorDoStep.tensorSolveOutput_reaches` |
 | The reused model-independent guard prefix as a `CBody.run 9` over the tensor instance heap | `TensorDoStep.front_run` |
 | The accepted end-to-end reach and its sole terminating behavior | `TensorDoStep.accepted_reaches`, `TensorDoStep.accepted_behaviors` |
+| The output-aware accepted reach/behavior, adding the `J = diag(2*u)` conjunct | `TensorDoStep.accepted_output_reaches`, `TensorDoStep.accepted_output_behaviors` |
 | The null-handle and lifecycle rejections over the tensor record | `TensorDoStep.null_behaviors`, `TensorDoStep.lifecycle_behaviors` |
 | The printed-text denotation of the guarded body under the shared C printer | `TensorDoStep.signature_printable`, `TensorDoStep.body_printable`, `TensorDoStep.function_denotes` |
-| The bundled tensor-native `fmi3DoStep` contract | `TensorDoStep.contract` |
+| The bundled tensor-native `fmi3DoStep` contract, selecting the output execution by `cond hasOutput` | `TensorDoStep.contract`, `TensorDoStep.execution_free`, `TensorDoStep.execution_output` |
 
 The added roots pass the FMI package axiom audit on the three permitted
 foundational axioms. These are package-checked products only: no production
@@ -2134,7 +2136,52 @@ Every new theorem is on the three permitted foundational axioms.
 
 Boundary. `tests/tensor-c.sh` now asserts `fmi3GetFloat64(J) = (2, 0, 0, 4)` in
 Model Exchange after `fmi3GetContinuousStateDerivatives` (`diag(2*u)` for
-`u = (1, 2)`). The Co-Simulation assertion is left at zeros with a comment: the
-accepted `fmi3DoStep` does not yet run the entry, so calling it once per accepted
-step in `TensorDoStep` and extending `TensorDoStep.Contract` (and the adapter
-contract's Co-Simulation conjunct) with the same `J` read is the remaining stage.
+`u = (1, 2)`). The Co-Simulation half of the entry wiring is completed in
+increment 1.26 below.
+
+### Adapter step wiring (increment 1.26): Co-Simulation output complete
+
+The Co-Simulation half of the entry wiring is now done: the accepted tensor
+`fmi3DoStep` runs the prepared square-Jacobian diagonal entry once per accepted
+step, so `fmi3GetFloat64(J)` reads the dense Jacobian in a Co-Simulation instance
+after stepping.
+
+Output-aware numerical tail (`TensorDoStep.lean`). `function`/`doStepBody`/
+`tensorStepSolve`/`Contract` are parameterized on the output presence, exactly as
+the getter is. `jacobianTail shape false = stepPublishTail` is the unchanged
+output-free tail (the advanced-time publication and the `fmi3OK` return), and
+`jacobianTail shape true` inserts `TensorContinuousStates.jacobianCall` after the
+outer grid loop and before the publication. The output-free body and every
+output-free theorem (`tensorSolve_reaches`, `accepted_reaches`,
+`accepted_behaviors`) are identical, now taken at `false`.
+
+The output-aware run `tensorSolveOutput_reaches` threads the seven function-scope
+declarations, the outer grid loop `stepLoopT_reaches`, then
+`TensorInstanceJacobian.jacobian_writes_events` on the post-loop heap under the
+explicit `Resolves`, definition (`SquareDiagonal.function`) and no-overflow
+(`jacAdds`) premises, then the advanced-time publication and the `fmi3OK` return.
+Output-region writability across the loop is recovered by threading a member frame
+through `internalStepPureT_reaches` and `stepLoopT_reaches`: an instance member
+other than `x`, `dx` or `time` is preserved by each internal step (the step touches
+only those three), so the post-loop `J` region is still writable from the
+pre-step heap. `accepted_reaches`/`accepted_behaviors` gain output companions
+`accepted_output_reaches`/`accepted_output_behaviors` whose conclusion adds the
+conjunct `Reads finalHeap (field pool i outputName) (Diagonal.matrix
+(SquareDiagonal.doubled u))`. `Contract shape hasOutput` selects the output-free or
+output execution by `cond hasOutput` over `ExecutionFree` / `ExecutionOutput`; the
+output-free case is identical to before. Closedness, printability and denotation
+(`doStepBody_closed`, `body_printable`, `function_denotes`) are re-proved over both
+cases.
+
+Dispatch and consumers. `TensorFunctions.tensorDispatch` selects `function shape
+m.hasOutput`; `TensorAdapterPrinter` prints `body_printable shape m.hasOutput`;
+`TensorAdapter.Contract` binds `contract shape m.hasOutput`; the
+`TensorLifecycleHistory.lifecycle_cs_step` history threads the output-free step
+(`function shape false`), unchanged. Every new theorem is on the three permitted
+foundational axioms.
+
+Boundary. `tests/tensor-c.sh` now asserts `fmi3GetFloat64(J) = (2, 0, 0, 4)` in
+Co-Simulation after three unit `fmi3DoStep` calls with the constant input
+`u = (1, 2)` (`diag(2*u) = diag(2, 4)`, row-major `(2, 0, 0, 4)`), matching the
+Model Exchange assertion. The native adapter reads `J = (2, 0, 0, 4)` in both
+Model Exchange and Co-Simulation.

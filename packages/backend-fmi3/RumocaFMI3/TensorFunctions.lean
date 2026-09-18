@@ -75,7 +75,7 @@ def tensorDispatch (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model s
   | "fmi3GetContinuousStates" => TensorContinuousStates.getFunction shape
   | "fmi3SetContinuousStates" => TensorContinuousStates.setFunction shape
   | "fmi3GetContinuousStateDerivatives" => TensorContinuousStates.derivFunction shape m.hasOutput
-  | "fmi3DoStep" => TensorDoStep.function shape
+  | "fmi3DoStep" => TensorDoStep.function shape m.hasOutput
   | _ => Runtime.function model sig
 
 /-- The emitted tensor function for one pinned header signature: the dispatched

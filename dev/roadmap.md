@@ -11,6 +11,23 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Jacobian output after the co-simulation step (derived proofs and boundary run):**
+
+The accepted tensor `fmi3DoStep` now calls the prepared Jacobian diagonal
+entry once per step after the grid loop when the record carries the output;
+the loop invariants preserve every instance member outside the state,
+derivative and time regions, so the output region stays writable, and
+`accepted_output_behaviors` adds to the step contract that the output region
+reads the dense matrix with twice the input on the diagonal. The output-free
+body and its theorems are unchanged. The native development FMU run reads
+`J = (2, 0, 0, 4)` after the derivative evaluation in Model Exchange and after
+three co-simulation steps, alongside the unchanged derivative and state
+values. The remaining explicit items in the tensor contract are the off-grid
+discard composition and the floating-environment interface premise. Nothing
+is emitted by production. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 11m07s
+(`build/tensor-fmi/full-gate-v26.log`).
+
 **Jacobian output through the tensor derivative getter (derived proofs and boundary run):**
 
 The tensor preamble declares the prepared `rumoca_square_jacobian_diag`

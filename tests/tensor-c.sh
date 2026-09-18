@@ -218,10 +218,10 @@ print("CS x@t=3 =", cs_x)
 assert approx(cs_x, [3.0, 12.0]), "CS x@t=3 != (3, 12)"
 cs_J = list(cs.getFloat64([vr["J"]], 4))
 print("CS J =", cs_J)
-# J still reads the zero-initialized output region in Co-Simulation: the accepted
-# fmi3DoStep does not yet run the square-Jacobian diagonal entry (only the Model
-# Exchange derivative getter does). Wiring the step call is the next stage.
-assert approx(cs_J, [0.0, 0.0, 0.0, 0.0]), "CS J != (0, 0, 0, 0)"
+# The accepted fmi3DoStep now runs the prepared square-Jacobian diagonal entry
+# rumoca_square_jacobian_diag once per accepted step, so J holds the dense Jacobian
+# diag(2*u) = diag(2, 4), row-major (2, 0, 0, 4), for the constant input u = (1, 2).
+assert approx(cs_J, [2.0, 0.0, 0.0, 4.0]), "CS J != (2, 0, 0, 4)"
 cs.terminate(); cs.freeInstance()
 print("DEV TENSOR FMU BOUNDARY RUN OK")
 PY
@@ -231,4 +231,4 @@ if ! grep -q 'DEV TENSOR FMU BOUNDARY RUN OK' build/tensor-fmi/fmu-run.log; then
   exit 1
 fi
 cat build/tensor-fmi/fmu-run.log
-echo 'Development tensor FMU boundary run passed (ME and CS x@t=3 = (3, 12); ME J = (2, 0, 0, 4); CS J = zeros is the next-stage step wiring)'
+echo 'Development tensor FMU boundary run passed (ME and CS x@t=3 = (3, 12); ME and CS J = (2, 0, 0, 4))'

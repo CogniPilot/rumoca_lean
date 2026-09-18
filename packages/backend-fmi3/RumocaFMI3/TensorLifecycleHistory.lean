@@ -313,7 +313,7 @@ theorem lifecycle_cs_step (shape : Tensor.Shape) (types : StepEntry.Types) (head
     (xiDef : program.internal.definitions
       (TensorLifecycleModes.signature .exitInitialization).name =
         some (.tree (TensorLifecycleModes.function .exitInitialization)))
-    (stepDef : program.internal.definitions "fmi3DoStep" = some (.tree (TensorDoStep.function shape)))
+    (stepDef : program.internal.definitions "fmi3DoStep" = some (.tree (TensorDoStep.function shape false)))
     -- created Co-Simulation instance record cells (the factory postcondition)
     (hk0 : load H0 ((TensorInstance.record pool i).member "kind") = some (.integer Kind.cs.code))
     (hm0 : H0 ((TensorInstance.record pool i).member "mode") =

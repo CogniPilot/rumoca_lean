@@ -2464,14 +2464,19 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorDoStep.field_index_block
 #audit axioms Rumoca.FMI3.TensorDoStep.cell_block_ne
 #audit axioms Rumoca.FMI3.TensorDoStep.tensorSolve_reaches
+#audit axioms Rumoca.FMI3.TensorDoStep.tensorSolveOutput_reaches
 #audit axioms Rumoca.FMI3.TensorDoStep.front_run
 #audit axioms Rumoca.FMI3.TensorDoStep.accepted_reaches
 #audit axioms Rumoca.FMI3.TensorDoStep.accepted_behaviors
+#audit axioms Rumoca.FMI3.TensorDoStep.accepted_output_reaches
+#audit axioms Rumoca.FMI3.TensorDoStep.accepted_output_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.null_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.lifecycle_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.signature_printable
 #audit axioms Rumoca.FMI3.TensorDoStep.body_printable
 #audit axioms Rumoca.FMI3.TensorDoStep.function_denotes
+#audit axioms Rumoca.FMI3.TensorDoStep.execution_free
+#audit axioms Rumoca.FMI3.TensorDoStep.execution_output
 #audit axioms Rumoca.FMI3.TensorDoStep.contract
 
 -- Tensor FMI 3 adapter function list (package-checked product; no production

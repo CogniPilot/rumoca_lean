@@ -109,7 +109,7 @@ theorem tensorFunction_printable (model : Solve.FMI3Model source)
       | exact TensorContinuousStates.getBody_printable shape
       | exact TensorContinuousStates.setBody_printable shape
       | exact TensorContinuousStates.derivBody_printable shape m.hasOutput
-      | exact TensorDoStep.body_printable shape
+      | exact TensorDoStep.body_printable shape m.hasOutput
       | exact (RuntimePrinter.function_printable model sig valid).2
 
 /-- Every function of the tensor adapter list is printable, given the shared

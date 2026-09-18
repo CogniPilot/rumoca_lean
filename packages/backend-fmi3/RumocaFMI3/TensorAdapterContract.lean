@@ -81,7 +81,7 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (∀ events, TensorCountQueries.Contract shape events (TensorCountQueries.function shape events).render) ∧
     TensorSetTime.Contract (TensorSetTime.function).render ∧
     (∀ ph, TensorLifecycleModes.Contract ph (TensorLifecycleModes.function ph).render) ∧
-    TensorDoStep.Contract shape (TensorDoStep.function shape).render ∧
+    TensorDoStep.Contract shape m.hasOutput (TensorDoStep.function shape m.hasOutput).render ∧
     -- Float64 and continuous-state accessors over the ambient static literal table.
     TensorFloat64.GetContract shape (outputShape m) (TensorFloat64.getFunction shape (outputShape m)).render ∧
     TensorFloat64.SetContract shape (TensorFloat64.setFunction shape).render ∧
@@ -179,7 +179,7 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     (fun events => TensorCountQueries.contract shape events),
     TensorSetTime.contract,
     (fun ph => TensorLifecycleModes.contract ph),
-    TensorDoStep.contract shape,
+    TensorDoStep.contract shape m.hasOutput,
     TensorFloat64.get_contract shape (outputShape m),
     TensorFloat64.set_contract shape,
     TensorContinuousStates.get_contract shape,
