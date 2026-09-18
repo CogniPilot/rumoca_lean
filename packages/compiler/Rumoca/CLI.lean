@@ -11,9 +11,11 @@ namespace Rumoca.CLI
 open Cli
 
 /-- Publish an admitted array/tensor-profile source. The array profile is
-admitted only for FMI 3 FMU output, whose publication gate is the fixed
-`tensor-fmi3` source-build certificate that `TensorFMU.build` runs. Tensor C
-emission and tensor eFMI export are not built and are rejected with a diagnostic. -/
+admitted for FMI 3 FMU output, whose publication gate is the fixed `tensor-fmi3`
+source-build certificate that `TensorFMU.build` runs, and for tensor eFMI
+Algorithm Code (`.alg`) output, whose publication gate is the fixed
+`tensor-algorithm` certificate. Tensor C emission on stdout is not built and is
+rejected with a diagnostic. -/
 private def runTensorCompiler {input : Source.InputRef} (name : String)
     (tensor : TensorArtifact input) (output : Option String) : IO UInt32 := do
   match output with
@@ -21,14 +23,17 @@ private def runTensorCompiler {input : Source.InputRef} (name : String)
     if path.endsWith ".fmu" then
       TensorFMU.build tensor path
       return 0
-    else if path.endsWith ".alg" || path.endsWith ".efmu" then
-      IO.eprintln s!"{name}: tensor eFMI export is not built; the array/tensor profile is admitted only for FMI 3 FMU output (-o out.fmu)"
+    else if path.endsWith ".alg" then
+      EFMIExport.writeTensorAlgorithm tensor path
+      return 0
+    else if path.endsWith ".efmu" then
+      IO.eprintln s!"{name}: tensor eFMU archive export is not built; the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu) and tensor eFMI Algorithm Code (-o out.alg) output"
       return 1
     else
-      IO.eprintln s!"{name}: the array/tensor profile is admitted only for FMI 3 FMU output (-o out.fmu); tensor C emission is not built"
+      IO.eprintln s!"{name}: the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu) and tensor eFMI Algorithm Code (-o out.alg) output; tensor eFMU archive export and tensor C emission are not built"
       return 1
   | none =>
-    IO.eprintln s!"{name}: the array/tensor profile is admitted only for FMI 3 FMU output (-o out.fmu); tensor C emission is not built"
+    IO.eprintln s!"{name}: the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu) and tensor eFMI Algorithm Code (-o out.alg) output; tensor eFMU archive export and tensor C emission are not built"
     return 1
 
 private def runCompiler (p : Cli.Parsed) : IO UInt32 := do

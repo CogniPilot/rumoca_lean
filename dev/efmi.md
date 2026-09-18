@@ -260,13 +260,14 @@ fixture, checks it parses to the resolved tensor block and writes
 `build/tensor-efmi/AlgorithmCode.alg`. Every check target stays green and the
 new roots are registered in the GALEC, eFMI and compiler audits.
 
-Remaining stages of the tensor eFMI path, each blocked on its own contract and
-actual-artifact evidence, are: the eFMU archive assembling the tensor Algorithm
-Code, Production C and manifests; the checker extension recognizing the tensor
-archive; and, only after all of these carry their contracts, CLI admission of
-tensor eFMI output in place of the current diagnostic. Open finding TF01 in
-`dev/standards-review.md` tracks this path; TF04 records that the extent is
-fixed to `2` and the kernel is the square program.
+Stage 3 of the tensor eFMI path (below) adds the tensor eFMU archive assembly
+and its composed contract, the tensor Algorithm Code actual-file checker, and CLI
+admission of tensor eFMI Algorithm Code (`.alg`) output. The tensor eFMU archive
+byte checker and CLI admission of complete eFMU (`.efmu`) output remain, blocked
+on the tensor Production C actual-byte certificate; the CLI still rejects `.efmu`
+tensor output with a diagnostic. Open finding TF01 in `dev/standards-review.md`
+tracks this path; TF04 records that the extent is fixed to `2` and the kernel is
+the square program.
 
 ## Tensor square Production Code and manifest product
 
@@ -339,6 +340,77 @@ manifests against the vendored eFMI XSDs with the same lxml check
 checksums and the declared array dimensions, and compiles the Production C as a
 C11 translation unit. Every check target stays green and the new roots are
 registered in the eFMI and compiler audits.
+
+## Tensor square eFMU archive and Algorithm Code CLI admission
+
+Stage 3 of the tensor eFMI path adds the tensor eFMU archive assembly with its
+composed contract, the tensor Algorithm Code actual-file checker, and CLI
+admission of tensor eFMI Algorithm Code output.
+
+The archive assembly is `packages/compiler/Rumoca/EFMITensorArchive.lean`. It
+reuses the shared stored-ZIP generator (`RumocaEFMI.Archive`) over the same fixed
+member roster the scalar path uses: `TensorArtifact.efmiCode` populates the shared
+`Archive.Code` with the pinned tensor square Algorithm Code (`tensorUnitSource`),
+the certified-kernel tensor Production Code (`TensorProduction.render`), and the
+three serialized manifests (`TensorManifest.prepare` for the artifact's model name
+and packaging identity); `TensorArtifact.efmuArchive` packs them with the pinned
+schema resources. No lowering or solver selection happens in this layer.
+
+`EFMITensorArchiveProofs.lean` proves the composed contracts, universal in the
+packaging identity and the model name. `TensorAlgorithmContract`,
+`TensorProductionContract` and `TensorManifestContract` bundle the pinned
+Algorithm Code parse-and-denote, the certified Production Code `Contract`, and the
+manifest well-formedness, validity and origin-reference checksum; `TensorArchive`
+`Contract` bundles the manifest contract with the complete stored-ZIP byte
+conformance. `tensor_archive_correct` builds it, and `TensorArchiveContract.roster`,
+`.code_members` and `.schema_members` recover the certified member roster, the
+per-member local records and byte offsets, and the pinned-schema membership from
+the reusable `Archive` proofs. The new roots are registered in the compiler audit.
+
+The tensor Algorithm Code checker is `EFMITensorArtifactCheck.lean` (Tools entry
+`CheckTensorEFMIAlgorithm.lean`). It independently reads the Modelica source, the
+Algorithm Code bytes and both EBNFs, compiles the source through the array/tensor
+path (`compileTensor`), rejects any Algorithm Code text that is not the pinned
+tensor square profile, and emits the axiom-audited theorem
+`Rumoca.CheckedTensorEFMIFiles.source_to_algorithm`: the actual grammar sources
+match the certified ones and the compiled tensor artifact's pinned Algorithm Code
+satisfies `TensorAlgorithmContract`. It is registered as the `tensor-algorithm`
+kind of `lake run verify-artifact`, with the same inputs as the scalar `algorithm`
+kind so it caches.
+
+CLI admission is `EFMIExport.writeTensorAlgorithm` and the `.alg` branch of the
+compiler's tensor path. A tensor source published with `-o out.alg` writes the
+pinned tensor Algorithm Code and gates publication on the fixed `tensor-algorithm`
+certificate over the staged bytes, mirroring `writeAlgorithm` including its
+failure-preservation behavior (a failed checker preserves any earlier published
+member and leaves no destination or staging directory). `tests/efmi-algorithm.sh`
+exercises the CLI publication, the no-build certificate reuse with `--check-only`,
+and a mutation-rejection control on the tensor Algorithm Code.
+
+The tensor Production C actual-byte checker is in place. Unlike the scalar
+Production C, whose renderer reduces to a pinned string literal
+(`CSyntax.render_unit`), the tensor `TensorProduction.render` is the join of
+certified kernel-entry renders, a computed interface header and the
+method-function renders, so `RumocaEFMI.TensorProduction.render_chars` exposes it
+as those fragments and `EFMITensorProductionArtifactCheck.lean` binds a read file
+to it one certified fragment at a time (each kernel-entry render, the interface
+header and each method-function render checked against its delaborated tree, and
+the concatenation against the read bytes), exactly as the FMI 3 tensor build
+checker binds `model.c` (`Rumoca.TensorKernel.chars`). It extends the tensor
+Algorithm Code theorem and emits the axiom-audited
+`Rumoca.CheckedTensorEFMIFiles.source_to_production`, validated on the pinned
+`TensorSquare` Production C with only the three approved foundational axioms.
+
+The `tensor-efmi-directory` and `tensor-efmi-archive` checker kinds (emitting
+`source_to_manifests` and `source_to_archive`), their gate registration and CLI
+admission of complete eFMU (`.efmu`) output remain. Composing the Production C
+byte certificate with the manifest XML, SHA-1 and stored-ZIP certificates over the
+concrete tensor artifacts (a 2258-byte Production C and a 7.4 KB Production Code
+manifest) is the open work: a prototype of the directory checker certificate
+elaborates but at a memory cost (roughly 18 GB) impractical for the shared gate,
+so making that composition affordable, not any missing contract, is what is left.
+The archive assembly and its `TensorArchiveContract` above are already in place
+for that checker to compose.
 
 ## Production C work after the Algorithm Code checkpoint
 

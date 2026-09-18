@@ -231,6 +231,7 @@ private def certificateRequest (args : List String) : IO CertificateRequest := d
           directory / "AlgorithmCode/model.alg", directory / "ProductionCode/production.c",
           directory / "AlgorithmCode/manifest.xml", directory / "ProductionCode/manifest.xml",
           directory / "__content.xml"])
+      | "tensor-algorithm" => pure ("CheckTensorEFMIAlgorithm.lean", "algorithm", #[directory])
       | _ => throw (IO.userError s!"unknown artifact kind: {kind}")
     return {
       kind, sourceName := name, entry := tools / entry,
@@ -304,7 +305,8 @@ private def tensorCTest : ScriptM Unit := do
   -- The compiler regression executable renders build/tensor-fmi/adapter.c, which
   -- the script's tensor adapter pointer-type boundary check consumes.
   buildTargets ["check-c", "rumoca_c/RumocaC.TensorArtifactCheck",
-    "rumoca_c/TensorCChecks.ArtifactCheck", "rumoca_compiler/tests",
+    "rumoca_c/TensorCChecks.ArtifactCheck", "rumoca_c/TensorCChecks.ConstantArtifactCheck",
+    "rumoca_compiler/tests",
     "rumoca_compiler/tensor-fmu", "rumoca_compiler/Rumoca.TensorFMI3BuildArtifactCheck"]
   command "bash" #["tests/tensor-c.sh"]
 
@@ -315,7 +317,8 @@ private def fmiTest : ScriptM Unit := do
 
 private def efmiAlgorithmTest : ScriptM Unit := do
   IO.println "Checking actual GALEC artifacts"
-  buildTargets ["parser/lalrgen", "rumoca_compiler/rumoca", "rumoca_compiler/Rumoca.EFMIArtifactCheck"]
+  buildTargets ["parser/lalrgen", "rumoca_compiler/rumoca", "rumoca_compiler/Rumoca.EFMIArtifactCheck",
+    "rumoca_compiler/Rumoca.EFMITensorArtifactCheck"]
   command "bash" #["tests/efmi-algorithm.sh"]
 
 private def efmiProductionTest : ScriptM Unit := do

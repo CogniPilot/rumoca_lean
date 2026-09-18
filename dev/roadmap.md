@@ -11,6 +11,48 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor eFMU archive theorem, Algorithm Code admission and production checker (merged):**
+
+`tensor_archive_correct` assembles the tensor eFMU through the shared archive
+generator and proves the member roster, checksums, container correlation and
+stored ZIP bytes universally in the identity and model name; the fixed
+`tensor-algorithm` certificate kind admits tensor sources to Algorithm Code
+output through the CLI with certificate reuse and a mutation control, and the
+tensor Production C actual-byte checker binds the read bytes per fragment.
+The composed manifest and archive certificates were found to cost fifteen to
+eighteen gigabytes with the per-element XML and per-byte SHA-1 machinery, so
+tensor eFMU archive output stays rejected until the certificate machinery
+scales; that work is in progress. The required `nix develop .#verification
+--command lake test` passed on 2026-09-18 in 22m31s
+(`build/tensor-fmi/full-gate-v35.log`).
+
+**G01 constant-rate numerical C (certified kernel):**
+
+`CConstant.contract_correct` emits the constant-rate IVP kernel universally in
+the number of states: each rate is rendered as the exact base-ten content of
+its literal and proved to round to nearest even, the Euler step is the finite
+binary64 addition of the rate, and the counted sample executes each state's
+independent trajectory. A fixed checker binds the actual bytes, a mutation of
+a rate literal is rejected, and the native run gives `(7.5, -3)` after three
+unit steps from zero. The required `nix develop .#verification --command lake
+test` passed on 2026-09-18 in 69m16s under load
+(`build/tensor-fmi/full-gate-v33.log`). The multi-state FMI adapter, its
+certificate and admission follow in staged increments.
+
+**Tensor reset conformance and tensor Production Code (merged batch):**
+
+The native behavior matrix in `tests/fmi3.py` exercises 514 behavior cells
+over all 75 functions of both FMUs and found that the tensor `fmi3Reset`
+left an initialized instance unable to re-initialize; the tensor reset body
+now restores the mode and every bookkeeping cell the scalar reset restores,
+with `reset_mode_instantiated` and the `reinitializes` conjunct carried into
+the adapter contract, and both matrices report no discrepancies. The tensor
+eFMI path gained its Production Code with kernel refinement and the three
+manifests with array dimensions, checksum and reference correlation, tied to
+the compiler fixture and validated against the vendored schemas. The required
+`nix develop .#verification --command lake test` passed on 2026-09-18 in
+44m50s on this merge (`build/tensor-fmi/full-gate-v31.log`).
+
 **G01 constant-rate development profile (derived proofs):**
 
 A `constant_composition` production admits two or more scalar Real states
