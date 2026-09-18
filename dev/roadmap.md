@@ -2806,6 +2806,10 @@ artifact rejection gate. A certificate for only `model.c` cannot close this.
   C11 is supported; Rule 15.5 is Disapplied, so the primary baseline requires
   no single-exit rewrite. Track withdrawn IDs. Map eFMI's MISRA AC AGC and
   C:2012 references separately; the newer book does not discharge them.
+  The 223-row ledger is drafted in [misra-c-2025.md](misra-c-2025.md): every row
+  stays open (four strong-partials, Rule 10.1 a deviation candidate, Rule 15.5
+  Disapplied) pending independent predicates, the essential-type model and
+  reviewer sign-off, so this item is not yet complete.
 - [ ] For each guideline record its category, applicability/scope, independent
   predicate and proof or analyzer/manual evidence, actual-file binding, open
   finding/approved deviation and reviewer. Start formal work with Dir 4.12

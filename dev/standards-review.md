@@ -3576,6 +3576,12 @@ remain open, so grammar expansion remains blocked by the stage gate.
 
 ### MISRA C:2025 and static storage review
 
+The full 223-guideline enforcement ledger (per-row category, applicability,
+byte-level evidence, status and closure) lives in [misra-c-2025.md](misra-c-2025.md).
+The MC01-MC10 findings below remain the finding-level record; MC02's `calloc`/`free`
+observation is superseded there, since the current default emission uses the
+static instance pool and no allocator call site remains.
+
 Reviewed 2026-09-13 against the user-supplied **MISRA C:2025, March 2025** PDF,
 SHA-256
 `42d1f700d83506566964131c6b618f4eba14782ea8fa7b7355924bb7c4b882aa`.
