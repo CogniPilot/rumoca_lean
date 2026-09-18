@@ -81,6 +81,7 @@ import Rumoca.InitializationDiagnosticProofs
 import Rumoca.TensorProduction
 import Rumoca.TensorAdapterChars
 import Rumoca.ConstantProofs
+import Rumoca.EFMITensorArchiveProofs
 
 #audit axioms Rumoca.Artifact.source_identity
 #audit axioms Rumoca.FMI3.adapter_me_calls
@@ -400,6 +401,15 @@ import Rumoca.ConstantProofs
 #audit axioms Rumoca.TensorArtifact.name_square
 #audit axioms Rumoca.TensorKernel.chars
 #audit axioms Rumoca.FMI3.TensorFunctions.tensor_adapter_chars
+
+-- Development tensor eFMU archive assembly and its composed contracts.
+#audit axioms Rumoca.tensor_algorithm_correct
+#audit axioms Rumoca.tensor_production_correct
+#audit axioms Rumoca.tensor_manifests_correct_of_documents
+#audit axioms Rumoca.tensor_archive_correct
+#audit axioms Rumoca.TensorArchiveContract.code_members
+#audit axioms Rumoca.TensorArchiveContract.schema_members
+#audit axioms Rumoca.TensorArchiveContract.roster
 
 -- G01 constant-rate development profile: preparation and its instantaneous contract.
 #audit axioms Rumoca.ConstantCompiler.Prepared.source_correct

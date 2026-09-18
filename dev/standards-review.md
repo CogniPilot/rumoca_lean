@@ -73,6 +73,52 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### eFMI 1.0.0 Beta 1 Chapter 2 container and manifests (tensor eFMU archive and Algorithm Code admission): standards impact
+
+Stage 3 of the tensor eFMI path (finding TF01) adds the tensor eFMU archive
+assembly with its composed contract, the tensor Algorithm Code actual-file
+checker, and CLI admission of tensor eFMI Algorithm Code (`.alg`) output. The
+archive reuses the shared stored-ZIP generator over the same fixed member roster
+the scalar path uses: the pinned tensor square Algorithm Code, the certified-kernel
+tensor Production Code, the three serialized manifests for the model name and
+packaging identity, and the pinned vendored schemas (`TensorArtifact.efmiCode`,
+`efmuArchive`). `TensorArchiveContract` and `tensor_archive_correct` prove the
+member roster, per-member checksums, container-manifest correlation and complete
+stored-ZIP bytes, universal in the packaging identity and the model name
+(`TensorArchiveContract.roster`, `.code_members`, `.schema_members`). The
+`tensor-algorithm` `verify-artifact` kind emits the axiom-audited
+`Rumoca.CheckedTensorEFMIFiles.source_to_algorithm` from the independently read
+source, EBNFs and Algorithm Code bytes compiled through `compileTensor`, and the
+CLI gates `-o out.alg` publication on it (`EFMIExport.writeTensorAlgorithm`,
+`tests/efmi-algorithm.sh`). The tensor Production C actual-byte checker is also
+implemented (`EFMITensorProductionArtifactCheck`, binding a read Production C file
+to the certified translation unit per fragment via `render_chars` and emitting
+`source_to_production`, validated standalone with the three approved axioms).
+Complete tensor eFMU (`.efmu`) archive publication and the
+`tensor-efmi-directory`/`tensor-efmi-archive` checker kinds remain: composing the
+Production C byte certificate with the manifest XML, SHA-1 and stored-ZIP
+certificates over the concrete tensor artifacts elaborates in a prototype but at a
+memory cost impractical for the shared gate, so the open work is making that
+composition affordable rather than any missing contract. The CLI still rejects
+`.efmu` tensor output with a diagnostic.
+
+| Standard | Impact |
+| --- | --- |
+| eFMI 1.0.0 Beta 1, Chapter 2 container manifest (`efmiContainerManifest.xsd`, `__content.xml`) and archive layout (`schemas` at the archive root) | The tensor eFMU is assembled through the shared stored-ZIP generator, so its member roster, `__content.xml` container manifest, stored-ZIP transport and pinned-schema membership are the same authored profile the scalar archive certificate covers, proved for the tensor members universal in identity and model name (`TensorArchiveContract`). The complete archive byte checker and CLI `.efmu` admission that would exercise this against actual archive bytes remain open (the Production C byte certificate is in place; the open work is making the composed manifest/SHA-1/stored-ZIP certificate over the concrete tensor artifacts affordable for the shared gate). |
+| eFMI 1.0.0 Beta 1, Algorithm Code manifest and Chapter 2 identities (UUID layout, distinctness, UTC generation time) | The tensor Algorithm Code manifest and the three container identities are the pinned `TensorManifest.prepare` documents for the model name and packaging identity, reused unchanged from Stage 2; the archive contract carries their well-formedness, validity and origin-reference checksum. The `tensor-algorithm` certificate binds the compiled tensor source to the pinned Algorithm Code member bytes, and CLI publication requires it. |
+| eFMI 1.0.0 Beta 1, §3.2 Algorithm Code admission through the toolchain | Tensor eFMI Algorithm Code output is admitted through the CLI for the fixed tensor square profile only, gated by the fixed `tensor-algorithm` certificate with the usual three foundational axioms; any Algorithm Code text that is not the pinned tensor square profile is rejected at the checker (`differs from the pinned tensor square profile`), exercised by a mutation control. This is a restriction to the fixed extent `2` square kernel (TF04), not a claim of general eFMI Algorithm Code admission. |
+
+TF01 is not closed. It advances from "Algorithm Code, Production Code and
+manifests certified as package products; CLI still rejects" to "tensor eFMU
+archive assembly and contract proved, tensor Algorithm Code output admitted
+through the CLI, tensor Production C actual-byte checker implemented and validated;
+complete eFMU archive/directory checker kinds and `.efmu` CLI admission open".
+Closure still requires the tensor eFMU archive/directory byte checkers composing
+the Production C, manifest, SHA-1 and stored-ZIP certificates at a cost affordable
+for the shared gate, and CLI admission of complete tensor eFMU output, or a
+documented decision to keep rejection. TF04 (fixed extent `2`, square kernel) is
+unchanged.
+
 ### G01 constant-rate development profile: standards impact
 
 The `constant_composition` production admits two or more scalar `Real` state

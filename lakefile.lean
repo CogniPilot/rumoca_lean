@@ -231,6 +231,7 @@ private def certificateRequest (args : List String) : IO CertificateRequest := d
           directory / "AlgorithmCode/model.alg", directory / "ProductionCode/production.c",
           directory / "AlgorithmCode/manifest.xml", directory / "ProductionCode/manifest.xml",
           directory / "__content.xml"])
+      | "tensor-algorithm" => pure ("CheckTensorEFMIAlgorithm.lean", "algorithm", #[directory])
       | _ => throw (IO.userError s!"unknown artifact kind: {kind}")
     return {
       kind, sourceName := name, entry := tools / entry,
@@ -316,7 +317,8 @@ private def fmiTest : ScriptM Unit := do
 
 private def efmiAlgorithmTest : ScriptM Unit := do
   IO.println "Checking actual GALEC artifacts"
-  buildTargets ["parser/lalrgen", "rumoca_compiler/rumoca", "rumoca_compiler/Rumoca.EFMIArtifactCheck"]
+  buildTargets ["parser/lalrgen", "rumoca_compiler/rumoca", "rumoca_compiler/Rumoca.EFMIArtifactCheck",
+    "rumoca_compiler/Rumoca.EFMITensorArtifactCheck"]
   command "bash" #["tests/efmi-algorithm.sh"]
 
 private def efmiProductionTest : ScriptM Unit := do

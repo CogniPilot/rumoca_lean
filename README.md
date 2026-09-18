@@ -55,11 +55,13 @@ end TensorSquare;
 
 It carries a two-element input, a fixed-start output state, the elementwise
 product `.*` and a square `jacobian` output (`jacobian` is an identified
-language extension). This profile is admitted **only for FMI 3 FMU output**,
-whose publication gate is the fixed `tensor-fmi3` source-build certificate; the
-default `rumoca` CLI dispatches the array profile to `compileTensor` and the
-tensor source-build path, while tensor eFMI export and tensor C emission are
-rejected with a diagnostic and the scalar driven profile
+language extension). This profile is admitted for FMI 3 FMU output, whose
+publication gate is the fixed `tensor-fmi3` source-build certificate, and for
+tensor eFMI Algorithm Code (`.alg`) output, whose publication gate is the fixed
+`tensor-algorithm` certificate; the default `rumoca` CLI dispatches the array
+profile to `compileTensor` and the corresponding checked publication path.
+Tensor complete eFMU (`.efmu`) archive export and tensor C emission are rejected
+with a diagnostic, and the scalar driven profile
 (`examples/DrivenIntegrator.mo`) stays rejected. Tensor rank and extents remain
 symbolic in the shape parameter; no tensor element is enumerated during
 lowering. See the [IR alignment review](dev/ir-review.md),

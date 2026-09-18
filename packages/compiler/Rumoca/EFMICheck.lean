@@ -11,6 +11,8 @@ open System
 inductive Product where
   | algorithm
   | efmi
+  | tensorAlgorithm
+  | tensorEfmi
 
 def run (product : Product) (input source : FilePath)
     (grammar galecGrammar : Option FilePath := none) (sourceName : Option String := none) : IO String := do
@@ -23,6 +25,8 @@ def run (product : Product) (input source : FilePath)
   let kind : String ← match product with
     | .algorithm => pure "algorithm"
     | .efmi => do if ← input.isDir then pure "efmi-directory" else pure "efmi-archive"
+    | .tensorAlgorithm => pure "tensor-algorithm"
+    | .tensorEfmi => do if ← input.isDir then pure "tensor-efmi-directory" else pure "tensor-efmi-archive"
   -- The native Lake job builds imports and traces the actual bytes, including
   -- both grammars. Its product is the checked .olean, never a producer's proof.
   FMI3.Package.command "lake" #["run", "verify-artifact", kind, source.toString,
