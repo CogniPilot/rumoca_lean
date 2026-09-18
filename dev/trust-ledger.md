@@ -9,13 +9,13 @@ claim.
 
 Premise classes used throughout:
 
-- **proved** — discharged by a Lean theorem over the universally quantified
+- **proved**: discharged by a Lean theorem over the universally quantified
   model; the discharging theorem is named.
-- **checked** — decided by a fixed artifact checker on the *actual* bytes of the
+- **checked**: decided by a fixed artifact checker on the *actual* bytes of the
   emitted file (a `verify_*` elaborator or `#audit`), reducing by `decide`,
   `rfl`, `Eq.refl`, or a certificate that reads the real file; the check is
   named. Candidate bytes are never proof authority: the checker only rejects.
-- **external** — assumed of the platform, importer, toolchain, headers, or
+- **external**: assumed of the platform, importer, toolchain, headers, or
   library/runtime, outside the Lean model. The exact assumption is stated.
 
 The trusted foundational axiom set for every gate is
@@ -116,7 +116,7 @@ is `decide +kernel` on the actual `fmi3.c` bytes (`:83-85`), guarded by
 Discharged as `⟨mdTree, XML.document_correct mdTree …, identifiers⟩`. The
 document-rendering theorem `XML.document_correct` is **proved**; the decode
 `FMI3.decodeModelIdentifiers mdTree = some (name, modelIdentifier, modelIdentifier)`
-is `decide +kernel` (`:62-64`) — **checked**; the identity of `mdTree` with the
+is `decide +kernel` (`:62-64`): **checked**; the identity of `mdTree` with the
 actual `modelDescription.xml` bytes is **checked** via `metadata_bytes`
 (`:57-58`).
 
@@ -127,14 +127,14 @@ signature list with 32 conjuncts. It is discharged by the adapter certificate
 `FMI3AdapterCertificate.certify` (`FMI3BuildArtifactCheck.lean:74`), which runs
 `adapter_correct` (`FMI3AdapterProofs.lean:121`).
 
-- **checked** — the byte identity `Runtime.render a.solve.prepareFMI3 sigs =
+- **checked**: the byte identity `Runtime.render a.solve.prepareFMI3 sigs =
   adapter` (`:66`) is established by `adapter_chars` (`:47`), which binds the
   independently read `fmi3.c` bytes to the concatenation of the per-function
   renders; the signature list `sigs` itself is **checked** to be the actual
   `fmi3FunctionTypes.h` signatures via `FMI3.Header.signatures header`
   (`FMI3BuildArtifactCheck.lean:73`); `CTree.Preprocessing.Stable adapter.toList`
   (`:64`) is proved over those checked bytes.
-- **proved** — the remaining 30 conjuncts: `Nodup` of names (`:62`),
+- **proved**: the remaining 30 conjuncts: `Nodup` of names (`:62`),
   `Reset.signature ∈ sigs` (`:65`), `AdapterPrinter.FunctionsContract` (`:68`),
   per-function readiness `CCalls.Signature.Ready` (`:69`), and every per-function
   render contract (`Reset`, `CountQueries`, `Version`, `Logging`, `Nominals`,
@@ -145,7 +145,7 @@ signature list with 32 conjuncts. It is discharged by the adapter certificate
   `CapabilityRejection.AllContract`), each from its `*.rendered_contract`
   theorem, and `PublicAPI.Covered sigs` (`:119`) from the kernel-checked
   `fmi_public_coverage` tactic.
-- **external** — native ABI and call convention, whole-C preprocessing/macro
+- **external**: native ABI and call convention, whole-C preprocessing/macro
   expansion, included-header (`model.c`, `<stddef.h>`, `fmi3*.h`) interpretation,
   and the implementation of native library routines are explicitly retained as
   separate boundaries (`FMI3AdapterProofs.lean:32-35, 187-190, 244-245,
@@ -161,7 +161,7 @@ signature list with 32 conjuncts. It is discharged by the adapter certificate
 
 Discharged by `XML.document_correct mdTree mdValid` after substituting the
 checked artifact identity `a = artifact` (`FMI3BuildArtifactCheck.lean:108`).
-The XML validity is `certifyValidity` (`:59`, `decide`) — **checked**; the
+The XML validity is `certifyValidity` (`:59`, `decide`): **checked**; the
 actual `modelDescription.xml` bytes are **checked** (`:44`, `:57-58`); the
 document law is **proved**.
 
@@ -211,7 +211,7 @@ header-aware floating-environment interface (`TensorAdapterContract.lean:36-39`)
 The seven runtime-interface behavioral functions carry their own
 floating-environment header, objects and literal addresses as universally
 quantified premises (external instantiation), and the factory/release contracts
-are stated over an arbitrary event program `prog` and tag (`:94-97`) — the
+are stated over an arbitrary event program `prog` and tag (`:94-97`): the
 importer's atomic runtime. The private kernel `model.c` shares the scalar
 machine-compilation/ABI/`<stddef.h>` boundary. The tensor path is deliberately
 excluded from CLI production admission (`TensorProduction.lean:20-23`).
@@ -253,7 +253,7 @@ per-operation `verify_tensor_helper` checks driven by `tests/tensor-c.sh`.
 `CLoops.Calls.Definitions` in which the helper names resolve
 (`SquareDiagonal.function.signature.name`, `Fill.function.signature.name`),
 `CTensor.HeaderTypes`/`Fill.HeaderTypes` hold, and the write region is
-`< 2^64` and non-overlapping — the native heap and header realisation are
+`< 2^64` and non-overlapping: the native heap and header realisation are
 external. `tests/tensor-c.sh` corrupts a loop bound (`k < count` to `k <=
 count`) and a single IVP member and confirms rejection.
 
@@ -284,16 +284,16 @@ host lifecycle scheduler are explicitly not certified here (`:11-12`).
 discharged by `production_correct` (`:60`), bound to the actual production C by
 `verify_efmi_production_files` (`Tools/CheckEFMIProduction.lean`).
 
-- **checked** — `bytes : a.productionSource = .ok c` (the actual production C
+- **checked**: `bytes : a.productionSource = .ok c` (the actual production C
   member reduces to the lowered module render; `production_source_is_unit`
   `:55` fixes the module).
-- **proved** — `algorithm_contract` (the AlgorithmContract), `algorithm_names`,
+- **proved**: `algorithm_contract` (the AlgorithmContract), `algorithm_names`,
   `header : CHeader.Contract c`, `startup_map : Production.StartupMap.Contract`,
   and the `target` existential: the lowered `Production.Module`, its render, its
   `CSyntax.Denotes`, the typed parameter/return conversions, `Metadata.Contract`,
   the per-method heap-behavior equivalence, the startup-initialization behavior,
   and both directions of the `CProtocol` trace refinement.
-- **external** — the physical C compiler, host scheduling, and the archive/XML
+- **external**: the physical C compiler, host scheduling, and the archive/XML
   layer (`:9-14`).
 
 ### 2.6 eFMI manifest and archive contracts
@@ -312,11 +312,11 @@ bytes`, discharged by `efmu_archive_correct` (`:46`) via `archive_code_correct`
 and `Archive.encode_correct`, bound by `verify_efmi_archive`
 (`EFMIArchiveArtifactCheck.lean:14`).
 
-- **checked** — the eFMU member roster (`:21`), each pinned schema resource
+- **checked**: the eFMU member roster (`:21`), each pinned schema resource
   (`:24`, byte compare against the pinned release), and the actual archive bytes
   (`String.fromUTF8?` on the read members, `:27`).
-- **proved** — `ManifestContract` and the ZIP `Format.Conforms` transport.
-- **external** — the external C compiler, full XSD/prose-standard conformance,
+- **proved**: `ManifestContract` and the ZIP `Format.Conforms` transport.
+- **external**: the external C compiler, full XSD/prose-standard conformance,
   and the physical archive file I/O and atomic rename (`:9`,
   `EFMIExport.lean:7`).
 
@@ -408,13 +408,13 @@ the `AdapterContract` conjunct `FMI3AdapterProofs.lean:61-119`):
   `EventEntry/Completed/Discrete/EventIndicator/DiscreteEvaluation.FunctionContract`.
 - DoStep: `FMI3.adapter_cs_run_history`, `adapter_logged_cs_run_history`;
   `Step.FunctionContract` (`partition`, `cases` = null / accepted / discard /
-  reject reason, `logging`) — the only function with all seven columns proved.
+  reject reason, `logging`): the only function with all seven columns proved.
 - Absent-typed: `FMI3.absent_variables_source`;
   `AbsentVariables.FamilyContract` (`SuppressedContract`, `LoggedContract`,
   per-reason rejection).
 - Capability rejections: `FMI3.capabilities_source`, `public_functions_source`;
   `CapabilityRejection.AllContract` (`NullContract`, `SuppressedContract`,
-  `LoggedContract`) — the whole function is the modeled rejection, so the
+  `LoggedContract`): the whole function is the modeled rejection, so the
   "lifecycle rej." column is that unconditional rejection.
 
 **Scalar adapter coverage totals.** 75/75 functions carry a proved per-function
