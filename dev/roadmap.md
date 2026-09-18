@@ -11,6 +11,29 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor source-to-build certificate through the compiler (actual-artifact checks):**
+
+`Rumoca.compileTensor` builds a tensor artifact from the array profile through
+the proved lowering and carries the certified tensor kernel C, the rendered
+adapter, the model description and the build description;
+`tensorSourceBuild_correct` bundles the tensor IVP artifact contract, the
+adapter contract, the build-description, identifier and XML contracts in the
+shape of the scalar source-build contract, stated as an implication from a
+successful compilation because the array profile has no total located-parse
+constructor yet; reachability is exercised operationally by the development
+`tensor-fmu` command. The fixed checker `verify_tensor_fmi3_build_files` reads
+the same five actual files, kernel-checks the actual kernel and adapter bytes
+against the rendered texts with the scalar certificate's byte machinery, and
+emits `Rumoca.CheckedTensorFMI3Files.source_to_build` on the three permitted
+axioms; it is registered as the cached `tensor-fmi3` certificate kind.
+`tests/tensor-c.sh` builds the production-shaped tensor FMU, certifies its
+extracted sources and runs it in FMPy with the proved values. The default CLI
+still rejects the array and driven profiles; admission, the existential
+composition and the enlarged-subset standards review remain the next
+obligations. See [tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-18 in 19m19s
+with the tensor certificate built cold (`build/tensor-fmi/full-gate-v28.log`).
+
 **Co-simulation step contract without interface assumptions (derived proofs):**
 
 The tensor co-simulation numerical chain and accepted-step theorems are

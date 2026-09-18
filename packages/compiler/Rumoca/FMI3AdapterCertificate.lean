@@ -19,7 +19,7 @@ deriving instance ToExpr for CTree.Parameter
 deriving instance ToExpr for CTree.Signature
 deriving instance ToExpr for CTree.Function
 
-private def characterBlockSize : Nat := 256
+def characterBlockSize : Nat := 256
 
 def quoteCharacters (name : Name) (input : String) : CommandElabM Ident := do
   let chars := input.toList.toArray
@@ -41,12 +41,12 @@ def quoteCharacters (name : Name) (input : String) : CommandElabM Ident := do
 -- A cursor refers to the independently quoted input, sharing its unconsumed
 -- tail. Each kernel equality then reduces only the current segment, rather
 -- than comparing the complete translation unit with recursive DecidableEq.
-private def remainingCharacters (actual : Ident) (offset : Nat) : CommandElabM (TSyntax `term) := do
+def remainingCharacters (actual : Ident) (offset : Nat) : CommandElabM (TSyntax `term) := do
   let block := mkIdent (actual.getId.getPrefix.str s!"part_{offset / characterBlockSize}")
   let skip := Syntax.mkNumLit (toString (offset % characterBlockSize))
   `(term| List.drop $skip $block)
 
-private def checkCharacterEquality (name : Ident) (left right : TSyntax `term) :
+def checkCharacterEquality (name : Ident) (left right : TSyntax `term) :
     CommandElabM Unit := do
   liftTermElabM do
     let type ← Term.elabType (← `(term| $left = $right))
@@ -62,7 +62,7 @@ private def checkCharacterEquality (name : Ident) (left right : TSyntax `term) :
 /-- Prove exact concatenation, including EOF, by composing checked segments.
 Lengths only propose input cursors: the kernel checks every split against the
 actual input. No length calculation or candidate renderer is trusted. -/
-private def certifyConcatenation (name : Name) (actual : Ident)
+def certifyConcatenation (name : Name) (actual : Ident)
     (pieces : Array Ident) (lengths : Array Nat) : CommandElabM Ident := do
   unless pieces.size == lengths.size do throwError "missing adapter segment length"
   let mut splits : Array Ident := #[]
@@ -102,7 +102,7 @@ private def certifyConcatenation (name : Name) (actual : Ident)
     throwError "invalid adapter concatenation certificate: {collected.toList}"
   return joined
 
-private def quoteSignature (sig : CTree.Signature) : CommandElabM (TSyntax `term) := do
+def quoteSignature (sig : CTree.Signature) : CommandElabM (TSyntax `term) := do
   let result := Syntax.mkStrLit sig.result
   let name := Syntax.mkStrLit sig.name
   let params ← sig.parameters.toArray.mapM fun p => do

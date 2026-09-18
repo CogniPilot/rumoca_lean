@@ -729,3 +729,23 @@ The required full gate passed in `build/c-literal-events/full-gate.log`, with
 all 651 inputs unchanged and both target archives checked. Their C, header
 and GALEC members match `d529b5d`; artifacts and comparison evidence are retained
 in `build/c-literal-events/`. This does not close F02/F03.
+
+## Development tensor source-build checker
+
+The pointwise tensor profile adds a parallel fixed actual-file checker,
+`verify_tensor_fmi3_build_files`, kept out of the CLI's production admission. It
+reads the same five staged files (`sources/model.c`, `sources/fmi3.c`,
+`sources/buildDescription.xml`, `modelDescription.xml` and the source snapshot),
+compiles the source with `compileTensor`, and discharges the obligations of
+`Rumoca.TensorSourceBuildContract`: the actual `model.c` bytes equal the
+certified tensor kernel text and carry the pointwise IVP artifact contract; the
+build and model-description bytes are the prepared XML documents; the actual
+`fmi3.c` satisfies `FMI3.TensorAdapter.Contract` for a scalar witness sharing the
+model name, kernel-checked against `TensorFunctions.render` with the same
+per-function tree-equality and maximal-munch tokenization machinery as the scalar
+adapter certificate, generalized over the tensor function list; and the model
+identifiers and instantiation token agree with the tensor model description. It
+emits `Rumoca.CheckedTensorFMI3Files.source_to_build` under the same
+`propext, Classical.choice, Quot.sound` whitelist and is registered as the
+`tensor-fmi3` certificate kind. Native compilation, ZIP transport and the FMPy
+importer remain the same boundaries as for the scalar path.

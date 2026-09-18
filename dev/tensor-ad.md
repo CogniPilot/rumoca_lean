@@ -2233,3 +2233,56 @@ mirrors every represented logger-callback result. Both are added to
 `TensorDoStep.Contract` as the `discarded` field alongside the null-handle `rejected`
 field and the `lifecycle_behaviors` companion, and flow through `TensorAdapter.Contract`.
 Every new theorem is on the three permitted foundational axioms.
+
+## Tensor artifact compiler path and the `tensor-fmi3` source-build certificate
+
+The pointwise tensor profile now has a production-shaped source-to-build path,
+kept out of the CLI's default admission. `Rumoca.compileTensor`
+(`packages/compiler/Rumoca/TensorProduction.lean`) parses the array profile
+through `ArrayProfile.parseLocated`/`ArrayCompiler.prepare` and packages the
+result as a `TensorArtifact` owning the executable `Solve.TensorFMI3Model`
+(`⟨name, kernel⟩`). It is not reachable from the default compiler, which still
+rejects the array profile and `examples/DrivenIntegrator.mo`.
+
+`TensorKernel.modelC` is the certified private kernel `model.c`: the tensor
+helper renders (`fill`, `add`, `mul`, `diagonal`), the pointwise IVP sources
+(initial, derivative and the square-Jacobian coefficient program) and the
+scratch-free square-Jacobian diagonal entry `rumoca_square_jacobian_diag`, with
+`<stddef.h>` prepended so `size_t` is in scope at the adapter's
+`#include "model.c"`. Every fragment is the same emission the tensor C artifact
+checks certify.
+
+`TensorSourceBuildContract a modelC buildXml adapter md` mirrors
+`FMI3.SourceBuildContract`: it bundles the byte identity of `model.c` with the
+certified kernel text and the pointwise IVP artifact contract, the
+build-description contract, the rendered tensor adapter contract
+(`TensorAdapter.Contract` over a scalar witness sharing the model name and any
+static literal table), the model-identifier and instantiation-token agreements,
+and the tensor model-description XML document. `tensorSourceBuild_correct`
+bundles independently checked obligations, exactly as the scalar
+`sourceBuild_correct` does.
+
+The tensor `writeSources` (`packages/compiler/Rumoca/TensorFMU.lean`) writes the
+same FMU layout as the scalar driver (`sources/model.c`, `sources/fmi3.c`,
+`sources/buildDescription.xml`, `modelDescription.xml`,
+`extra/org.cognipilot.rumoca/Source.mo`) and `TensorFMU.build` runs the fixed
+tensor checker and the native archive step. The `tensor-fmu` development command
+(`packages/compiler/Tools/TensorFMU.lean`) drives it.
+
+The fixed checker branch `verify_tensor_fmi3_build_files`
+(`packages/compiler/Rumoca/TensorFMI3BuildArtifactCheck.lean`, entry
+`packages/compiler/Tools/CheckTensorFMI3Build.lean`) reads the same five actual
+files, compiles the source with `compileTensor`, checks the build and
+model-description bytes against the prepared documents, kernel-checks the actual
+`model.c` against the certified kernel text and the actual `fmi3.c` against
+`TensorFunctions.render` (reusing the per-function tree-equality, tokenization
+and character-concatenation machinery of the scalar adapter certificate,
+generalized over the tensor function list), and emits
+`Rumoca.CheckedTensorFMI3Files.source_to_build` with the same axiom audit. The
+actual parsed AST is bound to the pinned development model by lexer/parser
+determinism (`TensorArtifact.ast_determined`), rather than by reconstructing the
+located parse. It is registered as certificate kind `tensor-fmi3` in the root
+`verify-artifact` (same inputs as `fmi3`), so it caches like the other
+actual-file certificates. `tests/tensor-c.sh` builds the tensor FMU through this
+path and drives it in FMPy in Model Exchange and Co-Simulation
+(`x@t=3 = (3, 12)`, `J = (2, 0, 0, 4)`).

@@ -1,0 +1,5 @@
+import Rumoca.TensorFMI3BuildArtifactCheck
+set_option maxRecDepth 1000000
+set_option maxHeartbeats 8000000
+open Rumoca.TensorFMI3BuildArtifactCheck
+verify_tensor_fmi3_build_files

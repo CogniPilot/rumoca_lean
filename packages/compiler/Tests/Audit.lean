@@ -78,6 +78,8 @@ import Rumoca.ParseFilesProofs
 import Rumoca.Provenance
 import Rumoca.Initialization
 import Rumoca.InitializationDiagnosticProofs
+import Rumoca.TensorProduction
+import Rumoca.TensorAdapterChars
 
 #audit axioms Rumoca.Artifact.source_identity
 #audit axioms Rumoca.FMI3.adapter_me_calls
@@ -385,3 +387,12 @@ import Rumoca.InitializationDiagnosticProofs
 #audit axioms Rumoca.FMI3.scheduled_creation_source
 #audit axioms Rumoca.FMI3.adapter_public_contracts
 #audit axioms Rumoca.FMI3.public_functions_source
+
+-- Development tensor artifact compiler path and its composed source-build contract.
+#audit axioms Rumoca.tensorSourceBuild_correct
+#audit axioms Rumoca.compileTensor_eq
+#audit axioms Rumoca.TensorArtifact.ast_determined
+#audit axioms Rumoca.TensorArtifact.tensorModel_square
+#audit axioms Rumoca.TensorArtifact.name_square
+#audit axioms Rumoca.TensorKernel.chars
+#audit axioms Rumoca.FMI3.TensorFunctions.tensor_adapter_chars

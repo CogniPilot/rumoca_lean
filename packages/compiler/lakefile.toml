@@ -50,6 +50,10 @@ root = "Certify"
 name = "tests"
 root = "Tests.Main"
 
+[[lean_exe]]
+name = "tensor-fmu"
+root = "Tools.TensorFMU"
+
 [[require]]
 name = "proof_audit"
 path = "../verification"

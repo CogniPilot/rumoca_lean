@@ -205,6 +205,19 @@ private def certificateRequest (args : List String) : IO CertificateRequest := d
         directory / "sources/buildDescription.xml", directory / "modelDescription.xml", mGrammar,
         "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"],
       options := #[s!"-Drumoca.fmi3.root={root}"] }
+  | "tensor-fmi3" :: root :: names => do
+    let directory : System.FilePath := root
+    let source := directory / "extra/org.cognipilot.rumoca/Source.mo"
+    let name ← match names with
+      | [] => pure source.toString
+      | [name] => pure name
+      | _ => throw (IO.userError "expected tensor-fmi3 ROOT [SOURCE_NAME]")
+    return {
+      kind := "tensor-fmi3", sourceName := name, entry := tools / "CheckTensorFMI3Build.lean",
+      inputs := #[source, directory / "sources/model.c", directory / "sources/fmi3.c",
+        directory / "sources/buildDescription.xml", directory / "modelDescription.xml", mGrammar,
+        "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"],
+      options := #[s!"-Drumoca.tensorFmi3.root={root}"] }
   | kind :: source :: input :: grammar :: galecGrammar :: names => do
     let name ← match names with
       | [] => pure source
@@ -224,7 +237,7 @@ private def certificateRequest (args : List String) : IO CertificateRequest := d
       inputs := #[source, grammar, galecGrammar].map System.FilePath.mk ++ files,
       options := #[s!"-Drumoca.efmi.source={source}", s!"-Drumoca.efmi.{option}={input}",
         s!"-Drumoca.efmi.grammar={grammar}", s!"-Drumoca.efmi.galecGrammar={galecGrammar}"] }
-  | _ => throw (IO.userError "expected c SOURCE C GRAMMAR; fmi3 ROOT [SOURCE_NAME]; or {algorithm|efmi-archive|efmi-directory} SOURCE INPUT GRAMMAR GALEC [SOURCE_NAME]")
+  | _ => throw (IO.userError "expected c SOURCE C GRAMMAR; fmi3 ROOT [SOURCE_NAME]; tensor-fmi3 ROOT [SOURCE_NAME]; or {algorithm|efmi-archive|efmi-directory} SOURCE INPUT GRAMMAR GALEC [SOURCE_NAME]")
 
 /-- Kernel-check actual artifact bytes, reusing native Lake proof products. -/
 script «verify-artifact» args do
@@ -291,7 +304,8 @@ private def tensorCTest : ScriptM Unit := do
   -- The compiler regression executable renders build/tensor-fmi/adapter.c, which
   -- the script's tensor adapter pointer-type boundary check consumes.
   buildTargets ["check-c", "rumoca_c/RumocaC.TensorArtifactCheck",
-    "rumoca_c/TensorCChecks.ArtifactCheck", "rumoca_compiler/tests"]
+    "rumoca_c/TensorCChecks.ArtifactCheck", "rumoca_compiler/tests",
+    "rumoca_compiler/tensor-fmu", "rumoca_compiler/Rumoca.TensorFMI3BuildArtifactCheck"]
   command "bash" #["tests/tensor-c.sh"]
 
 private def fmiTest : ScriptM Unit := do

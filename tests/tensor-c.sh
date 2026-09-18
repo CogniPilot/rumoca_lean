@@ -232,3 +232,77 @@ if ! grep -q 'DEV TENSOR FMU BOUNDARY RUN OK' build/tensor-fmi/fmu-run.log; then
 fi
 cat build/tensor-fmi/fmu-run.log
 echo 'Development tensor FMU boundary run passed (ME and CS x@t=3 = (3, 12); ME and CS J = (2, 0, 0, 4))'
+
+# --- Production-shaped development tensor FMU via compileTensor + writeSources ---
+# Assemble the tensor FMU through the development command `tensor-fmu`, which runs
+# compileTensor, the tensor writeSources, the fixed tensor source-build checker and
+# the native archive step. This is a development command, not the default CLI path:
+# the default compiler still rejects the array profile (asserted in tests/fmi3.sh and
+# the Lean regression executable). Native compilation, ZIP transport and the FMPy
+# importer remain boundaries outside the proof model.
+tensor_compiler=packages/compiler/.lake/build/bin/tensor-fmu
+prod_fmu=build/tensor-fmi/TensorSquare.fmu
+"$tensor_compiler" examples/development/TensorSquare.mo "$prod_fmu"
+# Re-verify the extracted sources through the cached `tensor-fmi3` certificate and
+# require the certificate's axiom audit lines.
+prod_root=build/tensor-fmi/prod-extracted
+rm -rf "$prod_root"; mkdir -p "$prod_root"
+python - "$prod_fmu" "$prod_root" <<'PY'
+from zipfile import ZipFile
+import sys
+with ZipFile(sys.argv[1]) as archive:
+    archive.extractall(sys.argv[2])
+PY
+lake run verify-artifact tensor-fmi3 "$prod_root" examples/development/TensorSquare.mo \
+  > build/tensor-fmi/prod-cert.log
+bash scripts/audit-lean.sh build/tensor-fmi/prod-cert.log
+rg -q 'Rumoca.CheckedTensorFMI3Files.source_to_build depends on axioms' build/tensor-fmi/prod-cert.log
+# Drive the production-shaped FMU in ME and CS exactly as the development boundary run does.
+python3 - "$prod_fmu" > build/tensor-fmi/prod-run.log 2>&1 <<'PY'
+import sys, ctypes
+from fmpy import read_model_description, extract
+from fmpy.fmi3 import FMU3Model, FMU3Slave
+path = sys.argv[1]
+md = read_model_description(path)
+vr = {v.name: v.valueReference for v in md.modelVariables}
+udir = extract(path)
+TOKEN = "lean-rumoca-tensor-v1:TensorSquare"
+def arr(vals): return (ctypes.c_double * len(vals))(*vals)
+def approx(a, b): return all(abs(x - y) < 1e-12 for x, y in zip(a, b))
+me = FMU3Model(guid=TOKEN, modelIdentifier=md.modelExchange.modelIdentifier,
+               unzipDirectory=udir, instanceName="me")
+me.instantiate(loggingOn=False)
+me.enterInitializationMode(startTime=0.0)
+me.setFloat64([vr["u"]], [1.0, 2.0])
+me.exitInitializationMode()
+me.enterContinuousTimeMode()
+x = [0.0, 0.0]
+for _ in range(3):
+    me.setContinuousStates(arr(x), 2)
+    d = (ctypes.c_double * 2)()
+    me.getContinuousStateDerivatives(d, 2)
+    x = [x[i] + 1.0 * d[i] for i in range(2)]
+assert approx(x, [3.0, 12.0]), "ME-driven Euler x@t=3 != (3, 12)"
+me_J = list(me.getFloat64([vr["J"]], 4))
+assert approx(me_J, [2.0, 0.0, 0.0, 4.0]), "ME J != (2, 0, 0, 4)"
+me.terminate(); me.freeInstance()
+cs = FMU3Slave(guid=TOKEN, modelIdentifier=md.coSimulation.modelIdentifier,
+               unzipDirectory=udir, instanceName="cs")
+cs.instantiate(loggingOn=False)
+cs.enterInitializationMode(startTime=0.0)
+cs.setFloat64([vr["u"]], [1.0, 2.0])
+cs.exitInitializationMode()
+t = 0.0
+for _ in range(3):
+    cs.doStep(t, 1.0); t += 1.0
+assert approx(list(cs.getFloat64([vr["x"]], 2)), [3.0, 12.0]), "CS x@t=3 != (3, 12)"
+assert approx(list(cs.getFloat64([vr["J"]], 4)), [2.0, 0.0, 0.0, 4.0]), "CS J != (2, 0, 0, 4)"
+cs.terminate(); cs.freeInstance()
+print("PROD TENSOR FMU BOUNDARY RUN OK")
+PY
+if ! grep -q 'PROD TENSOR FMU BOUNDARY RUN OK' build/tensor-fmi/prod-run.log; then
+  echo 'production-shaped tensor FMU boundary run failed' >&2
+  cat build/tensor-fmi/prod-run.log >&2
+  exit 1
+fi
+echo 'Production-shaped tensor FMU (compileTensor + writeSources + tensor-fmi3 certificate) boundary run passed'

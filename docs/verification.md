@@ -3635,6 +3635,13 @@ belong to the same explicit build trust boundary. See
 [artifact certificate caching](development.md#cached-artifact-certificates).
 Fresh eFMU identities and timestamps remain checked against their complete new
 XML and ZIP bytes. Native compilation and external compliance remain separate.
+The development `tensor-fmi3` certificate kind binds the same five staged files
+for the pointwise tensor profile: it compiles the source with `compileTensor`,
+kernel-checks the actual `model.c` against the certified tensor kernel text and
+the actual `fmi3.c` against the rendered tensor adapter, and emits
+`Rumoca.CheckedTensorFMI3Files.source_to_build` under the same axiom whitelist;
+it caches with the same inputs as `fmi3` but stays out of the CLI's production
+admission, which still rejects the array profile.
 
 
 Run `nix develop .#verification --command lake test`. This checks Lean proofs,
