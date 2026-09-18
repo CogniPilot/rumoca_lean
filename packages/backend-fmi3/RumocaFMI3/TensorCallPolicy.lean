@@ -33,7 +33,8 @@ theorem statementAdmits_mono {p q : Expr → Prop} (imp : ∀ e, p e → q e) (s
     (fun callee mem => imp callee ((statement_calls_complete p stmt).mpr h callee mem))
 
 macro "tadmit" : tactic => `(tactic| (
-  simp only [TensorReset.function, TensorReset.body, TensorReset.resetTail, TensorReset.zeroBody,
+  simp only [TensorReset.function, TensorReset.body, TensorReset.resetTail, TensorReset.bookkeepingTail,
+    TensorReset.zeroBody,
     TensorNominals.function, TensorNominals.body, TensorNominals.nominalTail, TensorNominals.oneBody,
     TensorNominals.countReject,
     TensorCountQueries.function, TensorCountQueries.body, TensorCountQueries.rest,
@@ -74,8 +75,8 @@ macro "tadmit" : tactic => `(tactic| (
     Runtime.finite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
     Runtime.any, Runtime.all, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
     Runtime.lt, Runtime.le, Runtime.gt, Runtime.ge, Runtime.negate, Runtime.region, Runtime.x,
-    Runtime.field, Runtime.mode, Runtime.v, Runtime.n, Runtime.call, Runtime.out, Runtime.put,
-    Runtime.pointerCheck, Runtime.scalarAccessCheck, Runtime.countLoop,
+    Runtime.field, Runtime.setMode, Runtime.mode, Runtime.v, Runtime.n, Runtime.call, Runtime.out,
+    Runtime.put, Runtime.pointerCheck, Runtime.scalarAccessCheck, Runtime.countLoop,
     CLoops.loop, CLoops.counterStep]
   done))
 

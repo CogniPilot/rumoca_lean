@@ -78,16 +78,9 @@ NULL_SWEEP = MODEL_STATUS + ABSENT_FUNCS + CAPABILITY  # 70 of the 75
 # behavior and are recorded as findings in dev/trust-ledger.md. A cell listed
 # here is still exercised and reported, but does not fail the run; any divergence
 # not listed here is a regression and does fail the run. Keyed by matrix label.
-KNOWN_DISCREPANCIES = {
-    "TensorSquare.fmu": {
-        # F8: on the tensor adapter fmi3Reset returns fmi3OK but does not restore
-        # the Instantiated lifecycle state once initialization has run, so a later
-        # fmi3EnterInitializationMode is rejected. The scalar adapter re-initializes
-        # as FMI 3.0.2 section 2.3.1 requires.
-        "re-initialization after reset",
-        "a step after reset and re-initialization succeeds",
-    },
-}
+# Both adapters now conform on every exercised cell, so the allowlist is empty:
+# the matrix asserts conforming behavior on the scalar and the tensor FMU alike.
+KNOWN_DISCREPANCIES = {}
 
 
 def _matrix_config(md):

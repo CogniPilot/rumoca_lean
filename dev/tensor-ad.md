@@ -913,16 +913,30 @@ every other cell (`preserves_other_instances`); a non-finite value returns
 `GuardedCalls.FailurePrefix.silent_behaviors`) and a null handle returns
 `fmi3Error` changing nothing.
 
-`fmi3Reset` restores the fixed-zero initialization of the state region `x` with a
-counted `size_t` loop bounded by the symbolic volume, and resets the time cell to
-zero. Its sole terminating behavior writes exactly those cells of instance `i` to
-`+0` and preserves every other cell of every other instance
+`fmi3Reset` returns the tensor instance to the state directly after
+`fmi3Instantiate` (FMI 3.0.2, `fmi3Reset`), restoring exactly what the scalar reset
+restores. It re-establishes the fixed-zero initialization of the state region `x`
+with a counted `size_t` loop bounded by the symbolic volume, then resets the time
+base and the lifecycle bookkeeping cells `timeMin`, `eventTime`, `lastCompleted`,
+`stop`, `stopDefined` to zero and writes the lifecycle `mode` cell to Instantiated,
+in the same order as the scalar `Reset.tail` (`TensorReset.bookkeepingTail`). Its
+sole terminating behavior writes exactly those cells of instance `i` to their reset
+values and preserves every other cell of every other instance
 (`preserves_other_instances`); a null handle returns `fmi3Error` changing nothing.
+The bookkeeping tail is discharged universally in the post-fill heap by
+`TensorReset.bookkeeping_reaches`, whose single reusable write step
+`TensorReset.putZero_step` targets each distinct scalar member (state-region
+disjointness follows from `TensorReset.state_ne_member`).
 `reads_initialization` proves the post-reset state region reads the fixed-zero
 fill, and `initialization_is_zero` identifies that fill with the evaluation of the
 prepared IVP's initialization program `fill shape .zero` for the admitted kernel
 (`TensorInstanceRhs.kernel`), so the reset re-establishes the initialization
-program's value.
+program's value. `TensorReset.reset_mode_instantiated` proves the post-reset `mode`
+cell reads Instantiated (`Mode.instantiated.code`), which is the guard input a
+following `fmi3EnterInitializationMode` requires, so a reset tensor instance
+re-initializes exactly as the scalar adapter's does (finding F8, closed). The
+`mode`-reads-Instantiated conjunct is carried by `TensorReset.Contract`
+(`reinitializes`).
 
 | Obligation | Checked theorem |
 | --- | --- |
@@ -930,8 +944,9 @@ program's value.
 | The `size_t` count conversion stays symbolic against `2 ^ 64` | `TensorCountQueries.store_count`, `CMemory.store_of_convert` |
 | Time setter writes the time cell and preserves everything else | `TensorSetTime.call_behaviors`, `preserves_other_instances` |
 | Non-finite and null time rejections | `TensorSetTime.nonfinite_behaviors`, `null_behaviors` |
-| Reset fills the state region with `+0` and resets time; null returns `fmi3Error` | `TensorReset.reset_behaviors`, `null_behaviors` |
+| Reset fills the state region with `+0`, resets time and the lifecycle bookkeeping cells, and sets mode to Instantiated; null returns `fmi3Error` | `TensorReset.reset_behaviors`, `bookkeeping_reaches`, `null_behaviors` |
 | The post-reset state region reads the initialization program's value | `TensorReset.reads_initialization`, `initialization_is_zero` |
+| The post-reset lifecycle mode reads Instantiated, so re-initialization is admitted | `TensorReset.reset_mode_instantiated` |
 | Reset preserves every cell of every other instance | `TensorReset.preserves_other_instances` |
 | Each body prints its C token grammar and denotes itself | `*.body_printable`, `*.signature_printable`, `*.function_denotes` |
 | Printed text, closedness, denotation and behaviors as a contract | `TensorCountQueries.contract`, `TensorSetTime.contract`, `TensorReset.contract` |
