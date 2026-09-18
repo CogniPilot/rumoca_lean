@@ -73,6 +73,22 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Conforming tensor `fmi3Reset` lifecycle restoration: standards impact
+
+The tensor adapter's `fmi3Reset` body now restores exactly what the scalar reset
+restores, returning the instance to the state directly after `fmi3Instantiate`.
+The body (`FMI3.TensorReset.bookkeepingTail`) keeps the symbolic zero-fill of the
+state region and additionally resets the time base and the lifecycle bookkeeping
+cells `timeMin`, `eventTime`, `lastCompleted`, `stop`, `stopDefined` to zero and
+writes the lifecycle `mode` cell to Instantiated, mirroring the scalar
+`Reset.tail`. This closes finding F8 in `dev/trust-ledger.md` with proofs and
+native evidence; the F8 allowlist entries are removed from `tests/fmi3.py`.
+
+| Standard | Impact |
+| --- | --- |
+| FMI 3.0.2, `fmi3Reset` (returns the FMU to the state directly after `fmi3Instantiate`) | `FMI3.TensorReset.reset_behaviors` proves the tensor reset runs to the result heap `finalHeap`, and `FMI3.TensorReset.bookkeeping_reaches` discharges the bookkeeping tail universally in the post-fill heap: the time base and the clock/stop bookkeeping cells become `+0`, `stopDefined` false and the lifecycle `mode` cell Instantiated. `reads_initialization` keeps the state region at the prepared fixed-zero fill (`initialization_is_zero`) and `preserves_other_instances` keeps every other pool instance untouched, so the reset returns the instance to the post-instantiation state. |
+| FMI 3.0.2, §2.3.1 State Machine of Calling Sequences (Instantiated state; `fmi3EnterInitializationMode` from Instantiated) | `FMI3.TensorReset.reset_mode_instantiated` proves the post-reset `mode` cell reads Instantiated (`Mode.instantiated.code`), which is the guard input `fmi3EnterInitializationMode` requires (its single permitted mode is Instantiated). A reset tensor instance therefore re-enters Initialization Mode and re-initializes exactly as the scalar adapter's does. The `mode`-reads-Instantiated conjunct is carried by `TensorReset.Contract` (`reinitializes`) into `TensorAdapter.Contract`. Native evidence: with the allowlist removed, the all-behavior matrix over the regenerated `TensorSquare.fmu` reports 0 recorded-finding discrepancies and 0 unexpected, and re-initialization plus a step after reset succeed on both adapters. |
+
 ### Checked no-heap and acyclic call-graph policy over the generated call graph: standards impact
 
 | Standard | Impact |

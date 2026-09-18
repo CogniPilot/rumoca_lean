@@ -461,12 +461,12 @@ scalar run. This closes the native gap recorded in finding F2 for every class th
 tensor adapter shares with the scalar one. Two native observations of note. (i)
 The `fmi3DoStep` off-grid discard cell, which is **open** in proof, is
 instantiated natively and returns `fmi3Discard`, matching the scalar behavior:
-positive native evidence for an otherwise-open cell. (ii) `fmi3Reset` diverges
-from the scalar adapter and from FMI 3.0.2: after initialization has run,
-`fmi3Reset` returns `fmi3OK` but a subsequent `fmi3EnterInitializationMode` is
-rejected ("Call is not allowed in the current FMI state"), so the reset instance
-cannot be re-initialized (finding F8). The matrix records F8 as a known finding
-and fails only on unrecorded regressions; otherwise 0 unexpected discrepancies.
+positive native evidence for an otherwise-open cell. (ii) `fmi3Reset` now conforms
+to the scalar adapter and to FMI 3.0.2 (finding F8, closed): after initialization
+has run, `fmi3Reset` returns `fmi3OK`, a subsequent `fmi3EnterInitializationMode`
+succeeds and a step runs, so the reset instance re-initializes. The matrix carries
+no recorded findings; 0 recorded-finding discrepancies and 0 unexpected on both
+FMUs.
 
 ### 3.3 Scalar C numerical kernel (coarse)
 
@@ -542,7 +542,7 @@ and fails only on unrecorded regressions; otherwise 0 unexpected discrepancies.
 | Fixture | Instantiates | Premises exercised |
 |---|---|---|
 | `tests/fmi3.sh` + `tests/fmi3.py` | actual `Integrator.fmu` build, `validate`, `info`, me and cs `simulate`, CSV equality `(0,.5)(1,1.5)(2,2.5)(3,3.5)`, source-linked second model | success (me/cs run), argument rejection (`--mode invalid`), discard (`--step 0.5`), missing-FMU rejection, unsupported-profile admission rejection (`DrivenIntegrator` must not replace a valid FMU) |
-| `tests/fmi3.py --matrix` on `Integrator.fmu` and `TensorSquare.fmu` (from `tests/fmi3.sh`) | raw FMI ABI over all 75 public functions of both adapters | null handle (all 74 handle-taking functions + factory null + `fmi3FreeInstance(NULL)`), lifecycle rejection, argument rejection (non-finite set, unknown reference, mismatched `nValues`), off-grid `fmi3Discard`, suppressed-versus-enabled logging split, 25 capability rejections (message + callback split), 24 absent-typed empty (`fmi3OK`) and non-empty (`fmi3Error`) accessors, `fmi3SetDebugLogging` valid/invalid, `fmi3Reset` + re-init, `fmi3GetVersion`. 75/75 functions, 514 cells per FMU; surfaces finding F8 |
+| `tests/fmi3.py --matrix` on `Integrator.fmu` and `TensorSquare.fmu` (from `tests/fmi3.sh`) | raw FMI ABI over all 75 public functions of both adapters | null handle (all 74 handle-taking functions + factory null + `fmi3FreeInstance(NULL)`), lifecycle rejection, argument rejection (non-finite set, unknown reference, mismatched `nValues`), off-grid `fmi3Discard`, suppressed-versus-enabled logging split, 25 capability rejections (message + callback split), 24 absent-typed empty (`fmi3OK`) and non-empty (`fmi3Error`) accessors, `fmi3SetDebugLogging` valid/invalid, `fmi3Reset` + re-init (re-initialization and a step after reset succeed on both adapters), `fmi3GetVersion`. 75/75 functions, 514 cells per FMU; 0 recorded-finding discrepancies, 0 unexpected (finding F8 closed) |
 | `tests/tensor-c.sh` | actual tensor C emission; `verify_tensor_helper` for add/mul/fill/diagonal; `verify_tensor_ivp`; corrupted loop bound and corrupted IVP member rejected | tensor kernel checked byte identity + rejection |
 | `tests/efmi-algorithm.sh` | actual `model.alg` vs `UnitIntegrator.alg`; `verify-algorithm` on real source/grammars; LALR engine reuse; invalid-namespace rejection | algorithm `bytes`, grammar identities, generator reuse |
 | `tests/efmi-production.sh` | actual `model.efmu`; axiom-audited `source_to_archive`; cached `--check-only efmi-archive` reuse; foreign-identity and failed-tool rejections | production/archive `bytes`, roster, schema resources, cache identity |
@@ -570,7 +570,7 @@ assumed.
    cells). What remains proof-only for the tensor path is the Lean-internal
    binding of `TensorAdapter.Contract` to specific heaps/headers; the native run
    observes the emitted ABI, not the contract witnesses. (Finding F2, largely
-   discharged; see also F8.)
+   discharged; F8 closed.)
 2. **Scalar and tensor behaviors are now natively instantiated (updated).**
    `tests/fmi3.py --matrix` natively exercises, on both adapters, the classes that
    were previously proof-only: the suppressed and enabled logging split, the 25
@@ -670,7 +670,8 @@ ledger ticks nothing.
   The tensor FMU native fixture paralleling `tests/fmi3.sh` now exists.
   *Remaining:* the native run is boundary evidence, not proof, and the tensor
   `fmi3DoStep` header-aware floating-environment interface stays open in proof
-  (F1); the reset divergence F8 was surfaced by this run.
+  (F1); the reset divergence F8 was surfaced by this run and is now closed (the
+  tensor reset restores the Instantiated state; re-initialization succeeds).
 - **F3 (K03, K05, N01).** Finite-arithmetic outcome premises are conditional:
   `JacobianDiagStorageContract` excludes coefficients whose doubling overflows,
   and counter/region guarantees are bounded by `< 2^64`. *Closure:* record the
@@ -696,19 +697,30 @@ ledger ticks nothing.
   these behaviors are proof-established and additionally native-instantiated as
   boundary evidence, without reading the native matrix as proof authority.
 
-- **F8 (K05, A02).** *New finding, surfaced by the native matrix.* The tensor
-  adapter's `fmi3Reset` does not conform to FMI 3.0.2 (`fmi3Reset` must return the
-  FMU to the state directly after `fmi3Instantiate`): once initialization has run,
-  `fmi3Reset` returns `fmi3OK` but a subsequent `fmi3EnterInitializationMode` is
-  rejected with "Call is not allowed in the current FMI state", so the reset
-  instance cannot be re-initialized. The scalar adapter conforms (re-initialization
-  succeeds). `fmi3Reset` directly after `fmi3Instantiate` (before initialization)
-  restores the Instantiated state on both. The matrix records this as a known
-  finding (`tests/fmi3.py` `KNOWN_DISCREPANCIES`) so the gate flags only new
-  regressions. *Closure:* correct the tensor adapter's reset lifecycle so a reset
-  instance returns to Instantiated (matching the scalar `Reset` contract and the
-  standard), or prove and document the restricted tensor reset semantics; then
-  remove the allowlist entry.
+- **F8 (K05, A02). CLOSED.** *Surfaced by the native matrix; fixed with proofs.*
+  The tensor adapter's `fmi3Reset` now restores exactly what the scalar reset
+  restores, returning the instance to the state directly after `fmi3Instantiate`
+  (FMI 3.0.2, `fmi3Reset`). The body (`Rumoca.FMI3.TensorReset.bookkeepingTail`)
+  keeps the symbolic zero-fill of the state region and additionally resets the time
+  base and the lifecycle bookkeeping cells `timeMin`, `eventTime`,
+  `lastCompleted`, `stop`, `stopDefined` to zero and writes the lifecycle `mode`
+  cell to Instantiated, mirroring the scalar `Reset.tail`. Proof: the reset runs to
+  the result heap `finalHeap` in `TensorReset.reset_reaches`/`reset_behaviors`,
+  whose bookkeeping tail is discharged universally in the post-fill heap by
+  `TensorReset.bookkeeping_reaches`; `TensorReset.reset_mode_instantiated` proves
+  the `mode` cell reads Instantiated after reset (`Mode.instantiated.code`), which
+  is the guard input `fmi3EnterInitializationMode` requires; `reads_initialization`
+  keeps the state region at the prepared fixed-zero fill and
+  `preserves_other_instances` keeps every other pool instance untouched. The
+  `mode`-reads-Instantiated conjunct is carried by `TensorReset.Contract`
+  (`reinitializes` field, discharged by `TensorReset.contract`) into
+  `TensorAdapter.Contract`. *Native evidence:* with the allowlist removed
+  (`tests/fmi3.py` `KNOWN_DISCREPANCIES = {}`), the all-behavior matrix over the
+  regenerated `TensorSquare.fmu` reports "75/75 functions, 514 behavior cells
+  exercised, 0 recorded-finding discrepancies, 0 unexpected": after a full
+  initialization, `fmi3Reset` returns `fmi3OK`, a subsequent
+  `fmi3EnterInitializationMode` succeeds and a step runs, so the reset tensor
+  instance re-initializes exactly as the scalar adapter's does.
 - **F7 (K04, K05, eFMI E05–E06).** eFMI archive conformance is checked against a
   pinned schema roster and the stored-ZIP format only; full XSD/prose-standard
   conformance and the external C compiler are external. *Closure:* eFMI
@@ -726,8 +738,8 @@ covered on the tensor adapter with 2 open `fmi3DoStep` cells. Native
 instantiation: the all-behavior matrix (`tests/fmi3.py --matrix`, from
 `tests/fmi3.sh`) exercises 75/75 functions and 514 behavior cells on each of
 `Integrator.fmu` and `TensorSquare.fmu`, matching the proved statuses and
-messages with 0 unexpected discrepancies; one genuine divergence is recorded as
-finding F8 (tensor `fmi3Reset` does not restore the Instantiated state, so a reset
-tensor instance cannot be re-initialized). Axioms: the only
+messages with 0 recorded-finding discrepancies and 0 unexpected on both FMUs; the
+former reset divergence (finding F8) is closed, so the tensor `fmi3Reset` restores
+the Instantiated state and a reset tensor instance re-initializes. Axioms: the only
 approved roots are `propext`, `Classical.choice`, `Quot.sound`, enforced at
 roughly 4749 audited roots and by each `verify_*` checker.

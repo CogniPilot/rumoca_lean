@@ -4,13 +4,20 @@ import RumocaFMI3.TensorSetTime
 package-checked product.
 
 The body validates the instance handle and lifecycle guard exactly as the scalar
-body does (`Runtime.require` with the `reset` command), then restores the fixed-zero
-initialization of the prepared IVP: a counted `size_t` loop whose bound is the
-symbolic state volume writes zero into every cell of the state region `x`, and the
-independent time base is reset to zero. The loop bound is the symbolic volume, so
-no tensor coordinate is enumerated. The post-reset state region reads the same
-value as the prepared initialization program `fill shape .zero` of the admitted
-kernel.
+body does (`Runtime.require` with the `reset` command), then restores the state the
+scalar reset restores, returning the instance to the state directly after
+instantiation (FMI 3.0.2, `fmi3Reset`). It re-establishes the fixed-zero
+initialization of the prepared IVP through a counted `size_t` loop whose bound is
+the symbolic state volume, writing zero into every cell of the state region `x`;
+then it resets the independent time base and the lifecycle bookkeeping cells the
+scalar body resets, in the same order: `time`, `timeMin`, `eventTime`,
+`lastCompleted`, `stop` and `stopDefined` to zero, and the lifecycle `mode` cell to
+Instantiated. Because the mode cell reads Instantiated after reset, a following
+`fmi3EnterInitializationMode` is admitted (its guard requires the Instantiated
+mode), so a reset instance re-initializes exactly as the scalar adapter's does. The
+loop bound is the symbolic volume, so no tensor coordinate is enumerated. The
+post-reset state region reads the same value as the prepared initialization program
+`fill shape .zero` of the admitted kernel.
 
 This is a package-checked product only: no production artifact is emitted, no CLI
 or grammar case is added, and the scalar adapter, `Runtime.lean` and every existing
@@ -35,6 +42,15 @@ def zeroBody : List Stmt := [.assign dstCell (Runtime.n 0)]
 theorem zeroBody_closed : zeroBody.all CLoops.noDeclarations = true := by
   simp [zeroBody, dstCell, CLoops.noDeclarations]
 
+/-- An indexed cell of the state region is never a scalar bookkeeping member
+whose name differs from the state region name. This lets every lifecycle
+bookkeeping cell reset by the body stay disjoint from the zero-filled state
+region without a per-cell separation premise. -/
+theorem state_ne_member (p : Address) (name : String) (h : stateName ≠ name) (a : Nat) :
+    (p.member stateName).index a ≠ p.member name := by
+  intro heq
+  exact absurd (congrArg Address.members heq) (by simp [Address.index, Address.member, h])
+
 section
 variable [interface : CInterface]
 
@@ -54,6 +70,24 @@ theorem zeroCopy_step (env : Locals) (types : Types) (heap : Heap) (regionBase :
   simp only [dstCell] at address
   simp [zeroBody, dstCell, CLoops.next, address, rhs, CMemory.store, regionStore, convert,
     Binary64.exactInteger_zero, Value.finite, StateProofs.written]
+
+/-- One scalar bookkeeping write `m->name = 0;` in the call scheduler, resolving
+the instance pointer and storing the integer literal `0` converted to the cell's
+type. The result replaces exactly the addressed member cell. This is the single
+step reused for the time reset and every lifecycle bookkeeping reset. -/
+theorem putZero_step (env : Locals) (types : Types) (heap : Heap) (p : Address) (name : String)
+    (result : Value) (t : CType) (old : Option Value) (rest : List Stmt)
+    (hne : t ≠ .atomicBoolean)
+    (mBound : resolve env "m" = some (.pointer (some p)))
+    (cell : heap (p.member name) = some ⟨t, true, old⟩)
+    (hconv : convert t (.integer 0) = some result) :
+    CLoops.next (.running (Runtime.put name (Runtime.n 0) :: rest) env types heap) =
+      some (.running rest env types (replace heap (p.member name) ⟨t, true, some result⟩)) := by
+  have hstore : CMemory.store heap (p.member name) (.integer 0) =
+      some (replace heap (p.member name) ⟨t, true, some result⟩) :=
+    store_of_convert heap (p.member name) old (.integer 0) result t hne cell hconv
+  simp [Runtime.put, Runtime.field, Runtime.v, Runtime.n, CLoops.next, CLoops.eval, CBody.eval,
+    CBody.lvalue, mBound, Value.address, hstore]
 
 end
 
@@ -106,31 +140,53 @@ def parameters (handle : Option Address) : Locals := bind (fun _ => none) "insta
 
 def guardEnv (p : Address) : Locals := bind (parameters (some p)) "m" (.pointer (some p))
 
+/-- The statements after the zero-fill loop: reset the time base and every
+lifecycle bookkeeping cell the scalar reset restores, set the lifecycle mode to
+Instantiated, and return. This mirrors the scalar `Reset.tail`. -/
+def bookkeepingTail : List Stmt :=
+  Runtime.put "time" (Runtime.n 0) :: Runtime.put "timeMin" (Runtime.n 0) ::
+  Runtime.put "eventTime" (Runtime.n 0) :: Runtime.put "lastCompleted" (Runtime.n 0) ::
+  Runtime.put "stop" (Runtime.n 0) :: Runtime.put "stopDefined" (Runtime.n 0) ::
+  Runtime.setMode .instantiated :: [Runtime.ok]
+
 /-- The statements after the guard: stage the region pointer and count, run the
-zero-fill loop, reset the time base, and return. -/
+zero-fill loop, then the bookkeeping tail. -/
 def resetTail (shape : Tensor.Shape) : List Stmt :=
   .declare "fmi3Float64 *" "dst" ((Runtime.region stateName)) ::
   .declare "size_t" "expected" (Runtime.n shape.volume) ::
   .declare "size_t" "k" (Runtime.n 0) ::
-  loop "k" (Runtime.v "expected") zeroBody ::
-  Runtime.put "time" (Runtime.n 0) :: [Runtime.ok]
+  loop "k" (Runtime.v "expected") zeroBody :: bookkeepingTail
 
 def body (shape : Tensor.Shape) : List Stmt := Runtime.require .reset ++ resetTail shape
 
 def function (shape : Tensor.Shape) : CTree.Function := ⟨signature, body shape, false⟩
 
-/-- The reset result heap: exactly the state region of instance `p` is `+0`-filled
-and the time cell is `+0`; every other cell is preserved. -/
+/-- The lifecycle bookkeeping writes applied to a post-fill heap `F`: the time
+base and the clock bookkeeping cells (`timeMin`, `eventTime`, `lastCompleted`,
+`stop`) become `+0`, `stopDefined` becomes false and the lifecycle `mode` cell
+reads Instantiated (code `0`). The order matches `bookkeepingTail`. -/
+def bookHeap (F : Heap) (p : Address) : Heap :=
+  replace (replace (replace (replace (replace (replace (replace F
+    (p.member "time")          ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
+    (p.member "timeMin")       ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
+    (p.member "eventTime")     ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
+    (p.member "lastCompleted") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
+    (p.member "stop")          ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
+    (p.member "stopDefined")   ⟨.boolean, true, some (boolean false)⟩)
+    (p.member "mode")          ⟨.int32, true, some (.integer 0)⟩
+
+/-- The reset result heap: the state region of instance `p` is `+0`-filled and the
+lifecycle bookkeeping cells are restored by `bookHeap`; every other cell is
+preserved. This mirrors the scalar `Reset.finalHeap`. -/
 def finalHeap (heap : Heap) (p : Address) (shape : Tensor.Shape) : Heap :=
-  replace (written heap (p.member stateName) (zeroValues shape) shape.volume)
-    (p.member "time") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩
+  bookHeap (written heap (p.member stateName) (zeroValues shape) shape.volume) p
 
 theorem body_closed (shape : Tensor.Shape) :
     (function shape).body.all CBodyEmbedding.closedBlocks = true := by
-  simp [function, body, resetTail, zeroBody, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
-    Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.put, Runtime.field,
-    Runtime.v, dstCell, CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop,
-    CLoops.counterStep]
+  simp [function, body, resetTail, bookkeepingTail, zeroBody, Runtime.require, Runtime.instancePrefix,
+    Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.put,
+    Runtime.field, Runtime.v, Runtime.setMode, Runtime.mode, dstCell, CBodyEmbedding.closedBlocks,
+    CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
 
 section
 variable [static : StaticLiterals]
@@ -149,20 +205,105 @@ def stagedTypes (types0 : Types) : Types :=
 section
 variable (program : CCalls.Events.Program E)
 
+/-- The bookkeeping tail over any post-fill heap `F`: it resets the time base and
+the clock/stop bookkeeping cells to `+0`, sets `stopDefined` false and the
+lifecycle `mode` cell to Instantiated, then returns `fmi3OK`. Each write targets a
+distinct scalar member, so the cell read before each write frames back to `F`. -/
+theorem bookkeeping_reaches (F : Heap) (p : Address) (env : Locals) (types : Types)
+    (stack : CCalls.Typed.Continuation)
+    (timeOld minOld eventOld completedOld stopOld stopDefinedOld modeOld : Option Value)
+    (mBound : resolve env "m" = some (.pointer (some p))) (fmiOk : env "fmi3OK" = none)
+    (timeCell : F (p.member "time") = some ⟨.float64, true, timeOld⟩)
+    (minCell : F (p.member "timeMin") = some ⟨.float64, true, minOld⟩)
+    (eventCell : F (p.member "eventTime") = some ⟨.float64, true, eventOld⟩)
+    (completedCell : F (p.member "lastCompleted") = some ⟨.float64, true, completedOld⟩)
+    (stopCell : F (p.member "stop") = some ⟨.float64, true, stopOld⟩)
+    (stopDefinedCell : F (p.member "stopDefined") = some ⟨.boolean, true, stopDefinedOld⟩)
+    (modeCell : F (p.member "mode") = some ⟨.int32, true, modeOld⟩) :
+    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+      (.body (.running bookkeepingTail env types F) "fmi3Status" stack)
+      (.returning (.integer 0) (bookHeap F p) stack) := by
+  have hF : convert .float64 (.integer 0) = some (.finite Binary64.positiveZero) := by
+    simp [convert, Binary64.exactInteger_zero, Option.map_some]
+  have hB : convert .boolean (.integer 0) = some (boolean false) := by decide
+  have hI : convert .int32 (.integer 0) = some (.integer 0) := by decide
+  refine .next (CCalls.Events.body_step program
+    (putZero_step env types F p "time" (.finite Binary64.positiveZero) .float64 timeOld _
+      (by decide) mBound timeCell hF) "fmi3Status" stack) ?_
+  refine .next (CCalls.Events.body_step program
+    (putZero_step env types _ p "timeMin" (.finite Binary64.positiveZero) .float64 minOld _
+      (by decide) mBound
+      (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]; exact minCell)
+      hF) "fmi3Status" stack) ?_
+  refine .next (CCalls.Events.body_step program
+    (putZero_step env types _ p "eventTime" (.finite Binary64.positiveZero) .float64 eventOld _
+      (by decide) mBound
+      (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]
+          exact eventCell)
+      hF) "fmi3Status" stack) ?_
+  refine .next (CCalls.Events.body_step program
+    (putZero_step env types _ p "lastCompleted" (.finite Binary64.positiveZero) .float64 completedOld _
+      (by decide) mBound
+      (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]
+          exact completedCell)
+      hF) "fmi3Status" stack) ?_
+  refine .next (CCalls.Events.body_step program
+    (putZero_step env types _ p "stop" (.finite Binary64.positiveZero) .float64 stopOld _
+      (by decide) mBound
+      (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]
+          exact stopCell)
+      hF) "fmi3Status" stack) ?_
+  refine .next (CCalls.Events.body_step program
+    (putZero_step env types _ p "stopDefined" (boolean false) .boolean stopDefinedOld _
+      (by decide) mBound
+      (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]
+          exact stopDefinedCell)
+      hB) "fmi3Status" stack) ?_
+  refine .next (CCalls.Events.body_step program
+    (putZero_step env types _ p "mode" (.integer 0) .int32 modeOld _
+      (by decide) mBound
+      (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
+             replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]
+          exact modeCell)
+      hI) "fmi3Status" stack) ?_
+  exact DerivativeCalls.finish program (bookHeap F p) env types stack fmiOk
+
 /-- The complete reset: it fills the instance state region with `+0`, resets the
-time base to `+0`, and changes no other cell. -/
+time base and every lifecycle bookkeeping cell the scalar reset restores, and sets
+the lifecycle mode to Instantiated, changing no other cell. -/
 theorem reset_reaches (shape : Tensor.Shape) (heap : Heap) (p : Address) (kind : Kind) (mode : Mode)
-    (timeOld : Option Value) (stack : CCalls.Typed.Continuation) (bounded : shape.volume < 2 ^ 64)
+    (timeOld minOld eventOld completedOld stopOld stopDefinedOld : Option Value)
+    (stack : CCalls.Typed.Continuation) (bounded : shape.volume < 2 ^ 64)
     (defined : program.internal.definitions "fmi3Reset" = some (.tree (function shape)))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (modeStore : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
     (allowed : Reference.Allowed .reset kind mode)
     (writable : Writable heap (p.member stateName) shape.volume)
     (timeCell : heap (p.member "time") = some ⟨.float64, true, timeOld⟩)
-    (separate : ∀ a < shape.volume, (p.member stateName).index a ≠ p.member "time") :
+    (minCell : heap (p.member "timeMin") = some ⟨.float64, true, minOld⟩)
+    (eventCell : heap (p.member "eventTime") = some ⟨.float64, true, eventOld⟩)
+    (completedCell : heap (p.member "lastCompleted") = some ⟨.float64, true, completedOld⟩)
+    (stopCell : heap (p.member "stop") = some ⟨.float64, true, stopOld⟩)
+    (stopDefinedCell : heap (p.member "stopDefined") = some ⟨.boolean, true, stopDefinedOld⟩) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.calling "fmi3Reset" (arguments (some p)) heap stack)
       (.returning (.integer 0) (finalHeap heap p shape) stack) := by
+  have hm : load heap (p.member "mode") = some (.integer mode.code) := by
+    cases mode <;> simp [load, modeStore, convert, Mode.code]
   have accepted : CBody.run 3 (.running (body shape) (parameters (some p)) heap) =
       some (.running (resetTail shape) (guardEnv p) heap) := by
     rw [body]
@@ -176,8 +317,7 @@ theorem reset_reaches (shape : Tensor.Shape) (heap : Heap) (p : Address) (kind :
   -- stage `dst`, `expected`
   have s_dst : CLoops.next (.running (resetTail shape) (guardEnv p) types0 heap) =
       some (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
-        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody ::
-        Runtime.put "time" (Runtime.n 0) :: [Runtime.ok])
+        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: bookkeepingTail)
         (bind (guardEnv p) "dst" (.pointer (some (p.member stateName)))) (bindType types0 "dst" .pointer) heap) :=
     declare_step_e (guardEnv p) types0 heap "fmi3Float64 *" "dst"
       ((Runtime.region stateName)) .pointer (.pointer (some (p.member stateName)))
@@ -186,11 +326,10 @@ theorem reset_reaches (shape : Tensor.Shape) (heap : Heap) (p : Address) (kind :
           simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, guardEnv,
             parameters, CBody.bind, CBody.resolve, mBound, Value.address]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
-        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody ::
-        Runtime.put "time" (Runtime.n 0) :: [Runtime.ok])
+        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: bookkeepingTail)
         (bind (guardEnv p) "dst" (.pointer (some (p.member stateName)))) (bindType types0 "dst" .pointer) heap) =
       some (.running (.declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody ::
-        Runtime.put "time" (Runtime.n 0) :: [Runtime.ok]) (stagedEnv p shape) (stagedTypes types0) heap) :=
+        bookkeepingTail) (stagedEnv p shape) (stagedTypes types0) heap) :=
     declare_step_e _ _ heap "size_t" "expected" (Runtime.n shape.volume) .size
       (.integer shape.volume) (.integer shape.volume) _ (by simp [guardEnv, parameters, CBody.bind])
       rfl (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
@@ -208,50 +347,54 @@ theorem reset_reaches (shape : Tensor.Shape) (heap : Heap) (p : Address) (kind :
   -- initialize the counter, run the zero-fill loop
   refine .next (CCalls.Events.body_step program
     (CLoops.counter_initialize env (stagedTypes types0) heap "k"
-      (loop "k" (Runtime.v "expected") zeroBody :: Runtime.put "time" (Runtime.n 0) :: [Runtime.ok])
+      (loop "k" (Runtime.v "expected") zeroBody :: bookkeepingTail)
       fresh_k rfl) _ stack) ?_
   refine (zeroCopy_reaches program env (CLoops.bindType (stagedTypes types0) "k" .size) heap
-    (p.member stateName) (Runtime.put "time" (Runtime.n 0) :: [Runtime.ok]) _ stack bounded
+    (p.member stateName) bookkeepingTail _ stack bounded
     (by simp [CLoops.bindType]) expBound dstBound writable).trans ?_
-  -- the time reset, then return
-  set filled := written heap (p.member stateName) (zeroValues shape) shape.volume with hfilled
-  have timeStore : filled (p.member "time") = some ⟨.float64, true, timeOld⟩ := by
-    rw [hfilled, written_frame heap (p.member stateName) (zeroValues shape) shape.volume (p.member "time")
-      (fun a ha => (separate a ha).symm)]
-    exact timeCell
-  have timeResolve : resolve (counterEnv env "k" shape.volume) "m" = some (.pointer (some p)) := by
+  -- the bookkeeping tail, then return
+  have filledAt : ∀ nm : String, stateName ≠ nm →
+      written heap (p.member stateName) (zeroValues shape) shape.volume (p.member nm) = heap (p.member nm) := by
+    intro nm hnm
+    exact written_frame heap (p.member stateName) (zeroValues shape) shape.volume (p.member nm)
+      (fun a _ => (state_ne_member p nm hnm a).symm)
+  have mEE : resolve (counterEnv env "k" shape.volume) "m" = some (.pointer (some p)) := by
     simpa [counterEnv, CBody.bind, resolve] using mBound'
-  have s_time : CLoops.next (.running (Runtime.put "time" (Runtime.n 0) :: [Runtime.ok])
-      (counterEnv env "k" shape.volume) (CLoops.bindType (stagedTypes types0) "k" .size) filled) =
-      some (.running [Runtime.ok] (counterEnv env "k" shape.volume)
-        (CLoops.bindType (stagedTypes types0) "k" .size) (finalHeap heap p shape)) := by
-    have hconv : convert .float64 (.integer 0) = some (.finite Binary64.positiveZero) := by
-      simp [convert, Binary64.exactInteger_zero, Option.map_some]
-    have hstore : CMemory.store filled (p.member "time") (.integer 0) =
-        some (finalHeap heap p shape) := by
-      rw [finalHeap, ← hfilled]
-      exact store_of_convert filled (p.member "time") timeOld (.integer 0)
-        (.finite Binary64.positiveZero) .float64 (by decide) timeStore hconv
-    simp [Runtime.put, Runtime.field, Runtime.v, Runtime.n, CLoops.next, CLoops.eval, CBody.eval,
-      CBody.lvalue, timeResolve, Value.address, hstore]
-  refine .next (CCalls.Events.body_step program s_time "fmi3Status" stack) ?_
-  exact DerivativeCalls.finish program _ (counterEnv env "k" shape.volume)
-    (CLoops.bindType (stagedTypes types0) "k" .size) stack (by simp [counterEnv, CBody.bind, fmiok])
+  have fmiEE : (counterEnv env "k" shape.volume) "fmi3OK" = none := by
+    simp [counterEnv, CBody.bind, fmiok]
+  exact bookkeeping_reaches program (written heap (p.member stateName) (zeroValues shape) shape.volume) p
+    (counterEnv env "k" shape.volume) (CLoops.bindType (stagedTypes types0) "k" .size) stack
+    timeOld minOld eventOld completedOld stopOld stopDefinedOld (some (.integer mode.code)) mEE fmiEE
+    ((filledAt "time" (by decide)).trans timeCell)
+    ((filledAt "timeMin" (by decide)).trans minCell)
+    ((filledAt "eventTime" (by decide)).trans eventCell)
+    ((filledAt "lastCompleted" (by decide)).trans completedCell)
+    ((filledAt "stop" (by decide)).trans stopCell)
+    ((filledAt "stopDefined" (by decide)).trans stopDefinedCell)
+    ((filledAt "mode" (by decide)).trans modeStore)
 
 theorem reset_behaviors (shape : Tensor.Shape) (heap : Heap) (p : Address) (kind : Kind) (mode : Mode)
-    (timeOld : Option Value) (bounded : shape.volume < 2 ^ 64)
+    (timeOld minOld eventOld completedOld stopOld stopDefinedOld : Option Value)
+    (bounded : shape.volume < 2 ^ 64)
     (defined : program.internal.definitions "fmi3Reset" = some (.tree (function shape)))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (modeStore : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
     (allowed : Reference.Allowed .reset kind mode)
     (writable : Writable heap (p.member stateName) shape.volume)
     (timeCell : heap (p.member "time") = some ⟨.float64, true, timeOld⟩)
-    (separate : ∀ a < shape.volume, (p.member stateName).index a ≠ p.member "time") (behavior) :
+    (minCell : heap (p.member "timeMin") = some ⟨.float64, true, minOld⟩)
+    (eventCell : heap (p.member "eventTime") = some ⟨.float64, true, eventOld⟩)
+    (completedCell : heap (p.member "lastCompleted") = some ⟨.float64, true, completedOld⟩)
+    (stopCell : heap (p.member "stop") = some ⟨.float64, true, stopOld⟩)
+    (stopDefinedCell : heap (p.member "stopDefined") = some ⟨.boolean, true, stopDefinedOld⟩)
+    (behavior) :
     (CCalls.Events.machine program).Behaves
       (.calling "fmi3Reset" (arguments (some p)) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, finalHeap heap p shape⟩ :=
-  (CCalls.Events.internal_prefix program (reset_reaches program shape heap p kind mode timeOld .done
-    bounded defined hk hm allowed writable timeCell separate)
+  (CCalls.Events.internal_prefix program (reset_reaches program shape heap p kind mode
+    timeOld minOld eventOld completedOld stopOld stopDefinedOld .done
+    bounded defined hk modeStore allowed writable timeCell minCell eventCell completedCell stopCell
+    stopDefinedCell)
     (CCalls.Events.return_forced program _ _)).behaviors behavior
 
 theorem null_behaviors (shape : Tensor.Shape) (heap : Heap)
@@ -266,23 +409,37 @@ theorem null_behaviors (shape : Tensor.Shape) (heap : Heap)
   all_goals simp [parameters, CBody.bind]
 
 /-- The post-reset state region reads the prepared initialization program's value:
-`fill shape .zero`, i.e. the fixed-zero fill. -/
+`fill shape .zero`, i.e. the fixed-zero fill. The bookkeeping writes target scalar
+members disjoint from every state-region cell. -/
 theorem reads_initialization (shape : Tensor.Shape) (heap : Heap) (p : Address) :
     Reads (finalHeap heap p shape) (p.member stateName) (zeroValues shape) := by
   intro i
-  have distinct : (p.member stateName).index i.val ≠ p.member "time" := by
-    have hne : stateName ≠ "time" := by decide +kernel
-    intro h
-    exact absurd (congrArg Address.members h) (by
-      simp [Address.index, Address.member, hne])
   have frame : written heap (p.member stateName) (zeroValues shape) shape.volume
       ((p.member stateName).index i.val) = some ⟨.float64, true, some (.finite (zeroValues shape)[i])⟩ := by
     have := written_at heap (p.member stateName) (zeroValues shape) shape.volume (le_refl _) i
     simpa [i.isLt] using this
   have cell : finalHeap heap p shape ((p.member stateName).index i.val) =
       some ⟨.float64, true, some (.finite (zeroValues shape)[i])⟩ := by
-    rw [finalHeap, replace_other _ _ _ _ distinct]; exact frame
+    rw [finalHeap, bookHeap,
+      replace_other _ _ _ _ (state_ne_member p "mode" (by decide) i.val),
+      replace_other _ _ _ _ (state_ne_member p "stopDefined" (by decide) i.val),
+      replace_other _ _ _ _ (state_ne_member p "stop" (by decide) i.val),
+      replace_other _ _ _ _ (state_ne_member p "lastCompleted" (by decide) i.val),
+      replace_other _ _ _ _ (state_ne_member p "eventTime" (by decide) i.val),
+      replace_other _ _ _ _ (state_ne_member p "timeMin" (by decide) i.val),
+      replace_other _ _ _ _ (state_ne_member p "time" (by decide) i.val)]
+    exact frame
   simp [load, cell, convert, Value.finite]
+
+/-- After reset the lifecycle `mode` cell reads Instantiated. This is the guard
+input a following `fmi3EnterInitializationMode` requires (its permitted mode is
+Instantiated), so a reset instance re-initializes exactly as the scalar adapter's
+does. -/
+theorem reset_mode_instantiated (shape : Tensor.Shape) (heap : Heap) (p : Address) :
+    load (finalHeap heap p shape) (p.member "mode") = some (.integer Mode.instantiated.code) := by
+  have cell : finalHeap heap p shape (p.member "mode") = some ⟨.int32, true, some (.integer 0)⟩ := by
+    simp [finalHeap, bookHeap, replace]
+  simp [load, cell, convert, Mode.code]
 
 /-- The prepared IVP initialization program of the admitted kernel evaluates to
 the fixed-zero fill that reset restores. -/
@@ -302,15 +459,24 @@ theorem preserves_other_instances (heap : Heap) (pool : Address) (i j : Nat) (sh
     (b : String) (k : Nat) (different : j ≠ i) :
     finalHeap heap (TensorInstance.record pool i) shape ((TensorInstance.field pool j b).index k) =
       heap ((TensorInstance.field pool j b).index k) := by
-  have time_ne : (TensorInstance.field pool j b).index k ≠ (TensorInstance.record pool i).member "time" := by
-    have sep := Address.instances_separate pool j i different b timeName k 0
+  have mem_ne : ∀ name : String,
+      (TensorInstance.field pool j b).index k ≠ (TensorInstance.record pool i).member name := by
+    intro name
+    have sep := Address.instances_separate pool j i different b name k 0
     simpa [TensorInstance.field, TensorInstance.record] using sep
   have state_ne : ∀ a < shape.volume,
       (TensorInstance.field pool j b).index k ≠ ((TensorInstance.record pool i).member stateName).index a := by
     intro a _
     have sep := Address.instances_separate pool j i different b stateName k a
     simpa [TensorInstance.field, TensorInstance.record] using sep
-  rw [finalHeap, replace_other _ _ _ _ time_ne,
+  rw [finalHeap, bookHeap,
+    replace_other _ _ _ _ (mem_ne "mode"),
+    replace_other _ _ _ _ (mem_ne "stopDefined"),
+    replace_other _ _ _ _ (mem_ne "stop"),
+    replace_other _ _ _ _ (mem_ne "lastCompleted"),
+    replace_other _ _ _ _ (mem_ne "eventTime"),
+    replace_other _ _ _ _ (mem_ne "timeMin"),
+    replace_other _ _ _ _ (mem_ne "time"),
     written_frame heap _ (zeroValues shape) shape.volume _ (fun a ha => state_ne a ha)]
 
 /-! ### Printed text and denotation -/
@@ -333,11 +499,12 @@ theorem body_printable (shape : Tensor.Shape) :
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [function, body, resetTail, zeroBody, dstCell, Runtime.region, Runtime.require,
+  simp only [function, body, resetTail, bookkeepingTail, zeroBody, dstCell, Runtime.region, Runtime.require,
       Runtime.instancePrefix,
       Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.reject, Runtime.branch,
       Runtime.fail, Runtime.ret, Runtime.ok, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
-      Runtime.eqv, Runtime.both, Runtime.either, Runtime.negate, Runtime.any, Runtime.mode, Runtime.call,
+      Runtime.eqv, Runtime.both, Runtime.either, Runtime.negate, Runtime.any, Runtime.setMode, Runtime.mode,
+      Runtime.call,
       CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append, List.nil_append,
       forall_eq] <;>
@@ -388,19 +555,26 @@ structure Contract (shape : Tensor.Shape) (text : String) : Prop where
   closed : (function shape).body.all CBodyEmbedding.closedBlocks = true
   denotes : FunctionDenotes RuntimePrinter.typedefs text (function shape)
   successful : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (p : Address)
-    (kind : Kind) (mode : Mode) (timeOld : Option Value),
+    (kind : Kind) (mode : Mode)
+    (timeOld minOld eventOld completedOld stopOld stopDefinedOld : Option Value),
     shape.volume < 2 ^ 64 →
     program.internal.definitions "fmi3Reset" = some (.tree (function shape)) →
     load heap (p.member "kind") = some (.integer kind.code) →
-    load heap (p.member "mode") = some (.integer mode.code) →
+    heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
     Reference.Allowed .reset kind mode →
     Writable heap (p.member stateName) shape.volume →
     heap (p.member "time") = some ⟨.float64, true, timeOld⟩ →
-    (∀ a < shape.volume, (p.member stateName).index a ≠ p.member "time") →
+    heap (p.member "timeMin") = some ⟨.float64, true, minOld⟩ →
+    heap (p.member "eventTime") = some ⟨.float64, true, eventOld⟩ →
+    heap (p.member "lastCompleted") = some ⟨.float64, true, completedOld⟩ →
+    heap (p.member "stop") = some ⟨.float64, true, stopOld⟩ →
+    heap (p.member "stopDefined") = some ⟨.boolean, true, stopDefinedOld⟩ →
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling "fmi3Reset" (arguments (some p)) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 0, finalHeap heap p shape⟩
   restores : ∀ heap p, Reads (finalHeap heap p shape) (p.member stateName) (zeroValues shape)
+  reinitializes : ∀ heap p,
+    load (finalHeap heap p shape) (p.member "mode") = some (.integer Mode.instantiated.code)
   null : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap),
     program.internal.definitions "fmi3Reset" = some (.tree (function shape)) →
     ∀ behavior, (CCalls.Events.machine program).Behaves
@@ -411,10 +585,14 @@ theorem contract (shape : Tensor.Shape) : Contract shape (function shape).render
   printed := rfl
   closed := body_closed shape
   denotes := function_denotes shape
-  successful program heap p kind mode timeOld bounded defined hk hm allowed writable timeCell separate :=
-    reset_behaviors program shape heap p kind mode timeOld bounded defined hk hm allowed writable
-      timeCell separate
+  successful program heap p kind mode timeOld minOld eventOld completedOld stopOld stopDefinedOld
+      bounded defined hk modeStore allowed writable timeCell minCell eventCell completedCell stopCell
+      stopDefinedCell :=
+    reset_behaviors program shape heap p kind mode timeOld minOld eventOld completedOld stopOld
+      stopDefinedOld bounded defined hk modeStore allowed writable timeCell minCell eventCell
+      completedCell stopCell stopDefinedCell
   restores heap p := reads_initialization shape heap p
+  reinitializes heap p := reset_mode_instantiated shape heap p
   null program heap defined := null_behaviors program shape heap defined
 
 end
