@@ -15,6 +15,23 @@ open Lean Elab Command
 open Rumoca.FMI3AdapterCertificate (quoteCharacters certifyConcatenation checkCharacterEquality)
 open Rumoca Rumoca.EFMI Rumoca.EFMI.TensorProduction Rumoca.CTensor
 
+/-- Kernel-check one plain-string fragment's characters by reflexivity. Unlike the
+pure `List Char` splits of the concatenation, a string fragment's type references
+`String.toList` and the fragment definition, which carry the three approved
+foundational axioms; the proof term itself is still `Eq.refl`. -/
+private def checkStringPiece (name : Ident) (left right : TSyntax `term) : CommandElabM Unit := do
+  liftTermElabM do
+    let type ← Term.elabType (← `(term| $left = $right))
+    let rhs ← Term.elabTerm (← `(term| ($right : List Char))) none
+    Term.synthesizeSyntheticMVarsNoPostponing
+    let type ← instantiateMVars type
+    let proof ← Meta.mkEqRefl (← instantiateMVars rhs)
+    addDecl (.thmDecl { name := name.getId, levelParams := [], type, value := proof })
+  let collected ← collectAxioms name.getId
+  for dependency in collected do
+    unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
+      throwError "invalid tensor Production string fragment certificate: {dependency}"
+
 /-- Certify one certified-kernel or method fragment: define its delaborated tree,
 prove the render function's tree by reflexivity, and reduce its rendered bytes to
 the quoted characters. Mirrors the FMI 3 tensor build checker's fragment check. -/
@@ -62,10 +79,10 @@ def certifyRender (c : String) : CommandElabM (Ident × Ident) := do
   let literalPiece := "#include <stddef.h>\n#include <stdint.h>\n"
   let chars0 ← quoteCharacters (base.str "piece_0") literalPiece
   let eq0 := mkIdent (base.str "piece_0_eq")
-  checkCharacterEquality eq0 (← `(term| ("#include <stddef.h>\n#include <stdint.h>\n").toList)) (← `(term| $chars0))
+  checkStringPiece eq0 (← `(term| ("#include <stddef.h>\n#include <stdint.h>\n").toList)) (← `(term| $chars0))
   let headerChars ← quoteCharacters (base.str "piece_8") TensorProduction.header
   let eq8 := mkIdent (base.str "piece_8_eq")
-  checkCharacterEquality eq8 (← `(term| Rumoca.EFMI.TensorProduction.header.toList)) (← `(term| $headerChars))
+  checkStringPiece eq8 (← `(term| Rumoca.EFMI.TensorProduction.header.toList)) (← `(term| $headerChars))
   let funcTerms : Array (TSyntax `term) := #[
     ← `(term| Rumoca.CTensor.Fill.function),
     ← `(term| (Rumoca.CTensor.function Rumoca.Tensor.BinaryOp.add)),
@@ -90,7 +107,8 @@ def certifyRender (c : String) : CommandElabM (Ident × Ident) := do
   let mut methodChars : Array Ident := #[]
   for j in [:funcTerms.size] do
     let idx := if j < 7 then j + 1 else j + 2
-    let chars ← certifyFunctionPiece base idx funcTerms[j]! funcVals[j]!
+    let some funcVal := funcVals[j]? | throwError "missing tensor Production fragment"
+    let chars ← certifyFunctionPiece base idx funcTerms[j]! funcVal
     if j < 7 then kernelChars := kernelChars.push chars
     else methodChars := methodChars.push chars
   -- Assemble the chunk list in `renderPieces` order and the piece equalities.
