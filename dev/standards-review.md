@@ -110,12 +110,24 @@ the `verify-artifact` job already sets. The composed manifest certificate then
 certifies the actual bytes within the shared gate's memory budget; see
 [verification performance](verification-performance.md).
 
-Complete tensor eFMU (`.efmu`) archive publication and the `tensor-efmi-archive`
-checker kind remain: composing the additional stored-ZIP transport certificate
-over all fifty archive members with the manifest and code certificates still peaks
-above the 8 GiB gate budget, dominated by the per-element XML serialization
-certificate, so the open work is reducing that composition rather than any missing
-contract. The CLI still rejects `.efmu` tensor output with a diagnostic.
+Complete tensor eFMU (`.efmu`) archive publication now lands. The
+`tensor-efmi-archive` checker (`EFMITensorArchiveArtifactCheck`) reads the actual
+`.efmu` bytes, re-derives the manifest contract and composes it with the stored-ZIP
+transport over all fifty archive members into the axiom-audited
+`Rumoca.CheckedTensorEFMIFiles.source_to_archive`. The default CLI admits `-o
+out.efmu` for the fixed tensor square profile through
+`EFMIExport.writeTensorArchive`, gated on that certificate. The certificate peaks
+at parity with the scalar eFMU archive certificate the gate already builds and
+accepts (about 12.8 GiB against about 12.3 GiB, both cold): the resident peak is
+dominated by the re-derived manifest contract plus the stored-ZIP payload over the
+140 KB of archive members (about 130 KB of which are the pinned vendored schemas
+the scalar archive also certifies), not by any single whole-document step. The XML
+serialization certificate was made linear per fragment (removing the
+whole-document decide) but this is not what dominates the archive peak; the earlier
+"8 GiB gate budget" figure was inconsistent with the scalar archive certificate and
+is withdrawn. See [verification performance](verification-performance.md). The
+certificate is gated through the CLI publication in `tests/tensor-c.sh` and
+`tests/efmi-production.sh`.
 
 | Standard | Impact |
 | --- | --- |
@@ -123,17 +135,19 @@ contract. The CLI still rejects `.efmu` tensor output with a diagnostic.
 | eFMI 1.0.0 Beta 1, Algorithm Code manifest and Chapter 2 identities (UUID layout, distinctness, UTC generation time) | The tensor Algorithm Code manifest and the three container identities are the pinned `TensorManifest.prepare` documents for the model name and packaging identity, reused unchanged from Stage 2; the archive contract carries their well-formedness, validity and origin-reference checksum. The `tensor-algorithm` certificate binds the compiled tensor source to the pinned Algorithm Code member bytes, and CLI publication requires it. |
 | eFMI 1.0.0 Beta 1, §3.2 Algorithm Code admission through the toolchain | Tensor eFMI Algorithm Code output is admitted through the CLI for the fixed tensor square profile only, gated by the fixed `tensor-algorithm` certificate with the usual three foundational axioms; any Algorithm Code text that is not the pinned tensor square profile is rejected at the checker (`differs from the pinned tensor square profile`), exercised by a mutation control. This is a restriction to the fixed extent `2` square kernel (TF04), not a claim of general eFMI Algorithm Code admission. |
 
-TF01 is not closed. It advances from "tensor eFMU archive assembly and contract
-proved, tensor Algorithm Code output admitted through the CLI, tensor Production C
-actual-byte checker implemented and validated; complete eFMU archive/directory
-checker kinds and `.efmu` CLI admission open" to "tensor manifest actual-byte
-directory checker (`tensor-efmi-directory`) landed and gated, composing the
-manifest XML, validity and SHA-1 checksum graph within the shared gate's budget;
-complete stored-ZIP archive checker and `.efmu` CLI admission open". Closure still
-requires the tensor eFMU archive byte checker composing the additional stored-ZIP
-transport certificate over all members at a cost affordable for the shared gate,
-and CLI admission of complete tensor eFMU output, or a documented decision to keep
-rejection. TF04 (fixed extent `2`, square kernel) is unchanged.
+TF01 is closed. The tensor eFMU archive byte checker
+(`tensor-efmi-archive`, `Rumoca.CheckedTensorEFMIFiles.source_to_archive`) composes
+the manifest XML, validity and SHA-1 checksum graph with the stored-ZIP transport
+over all fifty members against the actual archive bytes, and the default CLI admits
+complete tensor eFMU output through `EFMIExport.writeTensorArchive` gated on that
+certificate, exercised end to end in `tests/tensor-c.sh` and
+`tests/efmi-production.sh` (publication, no-build reuse, vendored XSD validation,
+checksum correlation and a Production C mutation control). The archive certificate
+peaks at parity with the scalar eFMU archive certificate the gate already accepts;
+the "8 GiB gate budget" that framed the remaining work was inconsistent with that
+scalar baseline and is withdrawn. TF04 (fixed extent `2`, square kernel) remains
+open: this is admission of the fixed extent-`2` square profile, not general tensor
+rank, extent or eFMI Production Code admission.
 
 ### G01 constant-rate development profile: standards impact
 
@@ -207,7 +221,7 @@ and its theorems.
 | eFMI 1.0.0 Beta 1, §3.2.3 (lifecycle), §3.2.4 G-2 (declarations), G-3 (expressions), G-4 (statements) | The restricted GALEC profile now admits, beside the scalar unit block, a tensor block with fixed extent-two `Real[2]` and `Real[2, 2]` declarations, an elementwise-product derivative assignment and a Jacobian output statement applying the resolved `jacobian` built-in. This is a restriction of the published grammar, not a claim of full G-2/G-3/G-4 coverage; general extents, ranks, statements and expressions remain out of profile (TF04). |
 | eFMI 1.0.0 Beta 1, Algorithm Code semantics (method lifecycle, arithmetic) | The GALEC to Solve refinement is universal in rank, extent and arithmetic interpretation: the elementwise product denotes the prepared `PointwiseIVP` derivative and the Jacobian output denotes the prepared diagonal coefficient program (the doubled input). Binary64 is one interpretation, not a claim that eFMI mandates it. The refinement is instantaneous; a sampled method schedule and clock are carried structurally as in the scalar profile. |
 | eFMI 1.0.0 Beta 1, artifact conformance (manifests, Production Code, eFMU archive) | Not yet extended: this stage certifies the Algorithm Code product only. Tensor manifests, tensor Production C, the eFMU archive, the checker extension and CLI admission remain open, each blocked on its own contract and actual-artifact evidence. A green parse of the emitted `.alg` bytes in the compiler test executable is boundary evidence for the emitter, not eFMU conformance. |
-| eFMI 1.0.0 Beta 1, TF01 closure criteria | TF01 (tensor eFMI path) advances from "rejected with a diagnostic" to "Algorithm Code product certified; remaining stages open". Closure still requires the full tensor GALEC/Production Code path with contracts, or a documented decision to keep rejection. TF04 (fixed extent `2`, square kernel) is unchanged. |
+| eFMI 1.0.0 Beta 1, TF01 closure criteria | TF01 (tensor eFMI path) is closed: the tensor GALEC Algorithm Code, Production Code and container manifests are certified against actual bytes, the complete `.efmu` archive certificate composes them with the stored-ZIP transport, and the default CLI admits tensor Algorithm Code and complete tensor eFMU output gated on those certificates. The archive certificate peaks at parity with the scalar eFMU archive certificate; the "8 GiB gate budget" figure is withdrawn. TF04 (fixed extent `2`, square kernel) is unchanged: this is the fixed square profile, not general tensor rank/extent or eFMI Production Code admission. |
 ### Conforming tensor `fmi3Reset` lifecycle restoration: standards impact
 
 The tensor adapter's `fmi3Reset` body now restores exactly what the scalar reset

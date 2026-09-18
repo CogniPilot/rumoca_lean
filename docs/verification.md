@@ -3681,9 +3681,10 @@ unit profile uses in `LocatedTotal`), so the certificate emits the existential
 the scalar `fmi3` theorem, without kernel-evaluating the LR parser on the source
 text. The default `rumoca` CLI dispatches an array-profile source to
 `compileTensor` and the tensor source-build path, whose publication gate is this
-certificate; tensor eFMI export and tensor C emission stay rejected with a
-diagnostic, and the scalar driven profile `examples/DrivenIntegrator.mo` stays
-rejected. Tensor rank and extents remain symbolic; no tensor element is
+certificate; complete tensor eFMU (`.efmu`) output is admitted through its own
+`tensor-efmi-archive` certificate (below), and only tensor C emission on stdout
+stays rejected with a diagnostic, and the scalar driven profile
+`examples/DrivenIntegrator.mo` stays rejected. Tensor rank and extents remain symbolic; no tensor element is
 enumerated during lowering. `jacobian` is an identified language extension. The
 enlarged admitted subset is recorded in the recurring standards review.
 
@@ -5011,17 +5012,25 @@ actual-byte checker is also implemented: `EFMITensorProductionArtifactCheck`
 binds a read Production C file to the certified translation unit one certified
 fragment at a time (via `RumocaEFMI.TensorProduction.render_chars`) and emits
 `source_to_production`, validated standalone on the pinned `TensorSquare`
-Production C with only the three approved axioms. The two remaining tensor eFMI
-certificate kinds, `tensor-efmi-directory` and `tensor-efmi-archive` (emitting
-`source_to_manifests` and `source_to_archive`), their gate registration and CLI
-admission of complete tensor eFMU output remain open: composing the Production C
-byte certificate with the manifest XML, SHA-1 and stored-ZIP certificates over
-the concrete tensor artifacts elaborates in a prototype but at a memory cost
-impractical for the shared gate, so the open work is making that composition
-affordable, not any missing contract. The tensor archive assembly and its
+Production C with only the three approved axioms. Both remaining tensor eFMI
+certificate kinds are now delivered. The `tensor-efmi-directory` kind
+(`EFMITensorManifestArtifactCheck`) reads the three manifests, the Algorithm Code
+and the Production C from a directory and composes their XML serialization and
+validity and the SHA-1 checksum graph into `source_to_manifests`, gated in
+`tests/tensor-c.sh`. The `tensor-efmi-archive` kind
+(`EFMITensorArchiveArtifactCheck`) reads the actual `.efmu` bytes, re-derives that
+manifest contract and composes it with the stored-ZIP transport over all fifty
+members into `source_to_archive`; the tensor archive assembly and its
 `TensorArchiveContract` (roster, checksums, container correlation and stored-ZIP
-bytes, universal in identity and model name) are already proven for that checker
-to compose.
+bytes, universal in identity and model name) supply the composition. The default
+CLI admits `-o out.efmu` for the fixed tensor square profile through
+`EFMIExport.writeTensorArchive` gated on that certificate, exercised in
+`tests/tensor-c.sh` and `tests/efmi-production.sh`. The archive certificate peaks
+at parity with the scalar eFMU archive certificate the gate already builds and
+accepts; the XML serialization certificate was made linear per fragment, but the
+archive peak is dominated by the re-derived manifest contract plus the stored-ZIP
+payload over all members (mostly the pinned schemas), not by any single
+whole-document step. See [verification performance](../dev/verification-performance.md).
 
 ## Binary64 and real refinement
 

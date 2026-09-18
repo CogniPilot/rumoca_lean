@@ -267,11 +267,18 @@ new roots are registered in the GALEC, eFMI and compiler audits.
 Stage 3 of the tensor eFMI path (below) adds the tensor eFMU archive assembly
 and its composed contract, the tensor Algorithm Code actual-file checker, and CLI
 admission of tensor eFMI Algorithm Code (`.alg`) output. The tensor eFMU archive
-byte checker and CLI admission of complete eFMU (`.efmu`) output remain, blocked
-on the tensor Production C actual-byte certificate; the CLI still rejects `.efmu`
-tensor output with a diagnostic. Open finding TF01 in `dev/standards-review.md`
-tracks this path; TF04 records that the extent is fixed to `2` and the kernel is
-the square program.
+byte checker (`tensor-efmi-archive`, `source_to_archive`) and CLI admission of
+complete eFMU (`.efmu`) output now land: the archive checker reads the actual
+`.efmu` bytes, re-derives the manifest contract and composes it with the stored-ZIP
+transport over all fifty members, and the default CLI publishes `-o out.efmu`
+through `EFMIExport.writeTensorArchive` gated on that certificate. The archive
+certificate peaks at parity with the scalar eFMU archive certificate the gate
+already accepts (dominated by the re-derived manifest contract and the stored-ZIP
+payload over all members, not by any single whole-document step; the XML
+serialization certificate was made linear per fragment separately). It is gated
+in `tests/tensor-c.sh` and `tests/efmi-production.sh`. Finding TF01 in
+`dev/standards-review.md` is closed; TF04 records that the extent is fixed to `2`
+and the kernel is the square program.
 
 ## Tensor square Production Code and manifest product
 
