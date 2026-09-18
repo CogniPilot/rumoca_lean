@@ -236,6 +236,7 @@ private def certificateRequest (args : List String) : IO CertificateRequest := d
           directory / "AlgorithmCode/model.alg", directory / "ProductionCode/production.c",
           directory / "AlgorithmCode/manifest.xml", directory / "ProductionCode/manifest.xml",
           directory / "__content.xml"])
+      | "tensor-efmi-archive" => pure ("CheckTensorEFMIArchive.lean", "root", #[directory])
       | _ => throw (IO.userError s!"unknown artifact kind: {kind}")
     return {
       kind, sourceName := name, entry := tools / entry,
