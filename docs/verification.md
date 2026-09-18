@@ -771,9 +771,17 @@ library externals `isfinite`, `floor`, `fegetround`, `strlen`, `strspn`,
 `strcmp`, `atomic_exchange`, `atomic_store`; and the importer logger callback
 `logMessage`. This is carried as the `no_heap_acyclic` conjunct of
 `FMI3.SourceBuildContract`, a proved consequence of the mandatory adapter
-contract required on the actual bytes. The static-declaration layout/size/
-alignment binding to bytes and the tensor adapter/kernel body-level discharge
-remain open.
+contract required on the actual bytes. The same policy is instantiated for the
+tensor adapter function list (`TensorFunctions.functions`): its 19 shape-dependent
+bodies, reused static-factory/release helpers and scalar fallback bodies are
+proved to obey both policies (`TensorCallPolicy.tensor_no_heap`/`tensor_acyclic`)
+universally in the tensor shape, scalar witness model and header signature list,
+with the boundary set `TensorCallPolicy.bTensor` (the scalar externals plus the
+second prepared kernel entry `rumoca_square_jacobian_diag`). This is carried as
+the `no_heap_acyclic` conjunct of `Rumoca.TensorSourceBuildContract`, a proved
+consequence of the mandatory tensor adapter contract on the actual bytes. The
+static-declaration layout/size/alignment binding to bytes and the numerical
+kernel body-level discharge remain open.
 
 The affected package checks passed at 14:22:06 UTC on 2026-09-15. The required
 `nix develop .#verification --command lake test` passed at 15:09:42 UTC

@@ -1484,6 +1484,21 @@ those open items.
 | The absent-type family contract over the tensor list | `TensorAbsentVariables.family_correct` |
 | The unsupported-capability family contract over the tensor list | `TensorCapabilityRejection.family_correct` |
 | The first tensor adapter contract bound to the rendered text | `TensorAdapter.render_contract` |
+| The tensor list obeys the no-heap boundary policy | `TensorCallPolicy.tensor_no_heap` |
+| The tensor list's direct-call graph is acyclic | `TensorCallPolicy.tensor_acyclic` |
+
+The reusable no-heap and acyclic call-graph policy (`RumocaC/NoHeapPolicy.lean`) is
+instantiated for the tensor list in `RumocaFMI3/TensorCallPolicy.lean`. The tensor
+boundary set `TensorCallPolicy.bTensor` is the scalar externals (`CallPolicy.bUnit`)
+plus the second prepared kernel entry `rumoca_square_jacobian_diag`; `tensor_no_heap`
+and `tensor_acyclic` are universal in the shape, the scalar witness model and the
+header signature list, and are carried as the `no_heap_acyclic` conjunct of
+`Rumoca.TensorSourceBuildContract`. Every dispatched tensor body admits only
+tensor-boundary callees (`body_admits`), reusing the scalar body-policy tactic for
+the model-independent fallback bodies and a call-inventory tactic for the 19 tensor
+bodies; the two numerical kernel entries are unranked leaves, so the direct-call
+graph among defined tensor functions carries the shared topological rank without a
+cycle.
 
 The added roots pass the FMI package axiom audit on the three permitted
 foundational axioms (`propext`, `Quot.sound`, `Classical.choice`) in
