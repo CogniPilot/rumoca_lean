@@ -259,3 +259,87 @@ cp "$archive" build/Integrator.efmu
 cp "$stage/checked.log" build/efmi-publication-artifact.log
 sha256sum build/Integrator.efmu
 echo 'eFMU: checked CLI publication, failure preservation, independent extraction, official schemas/checksums, native C and mutation controls passed'
+
+# --- Tensor eFMU: checked CLI publication, reuse, schemas and mutation control ---
+# The default CLI admits the fixed TensorSquare array profile to complete tensor
+# eFMU output through EFMIExport.writeTensorArchive, gated by the fixed
+# tensor-efmi-archive certificate (Rumoca.CheckedTensorEFMIFiles.source_to_archive).
+# This certificate peaks at parity with the scalar eFMU archive certificate above,
+# dominated by the composed manifest and stored-ZIP payload over all members; it is
+# not cheaper. SOURCE_DATE_EPOCH is already exported, and the tensor source identity
+# is fixed, so the certificate is reused across this script and tests/tensor-c.sh.
+tstage="$PWD/build/efmi tensor"
+rm -rf "$tstage"; mkdir -p "$tstage"
+tarchive="$tstage/model.efmu"
+"$compiler" examples/development/TensorSquare.mo -o "$tarchive" > "$tstage/checked.log"
+bash scripts/audit-lean.sh "$tstage/checked.log"
+rg 'Rumoca.CheckedTensorEFMIFiles.source_to_archive depends on axioms:' "$tstage/checked.log"
+# The published ZIP moved out of staging; require reuse of the native proof.
+lake run verify-artifact --check-only tensor-efmi-archive examples/development/TensorSquare.mo "$tarchive" \
+  packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+  > "$tstage/cached-archive.log"
+bash scripts/audit-lean.sh "$tstage/cached-archive.log"
+(cd packages/backend-efmi/vendor/efmi && sha256sum --quiet -c SHA256SUMS)
+troot="$tstage/extracted"
+python - "$tarchive" "$troot" <<'PY'
+from pathlib import Path
+from hashlib import sha1
+from lxml import etree
+from zipfile import ZipFile
+import sys
+stage = Path(sys.argv[2])
+with ZipFile(sys.argv[1]) as archive:
+    assert len(archive.namelist()) == 50
+    assert len(set(archive.namelist())) == 50
+    assert archive.testzip() is None
+    archive.extractall(stage)
+schemas = stage / 'schemas'
+upstream = Path('packages/backend-efmi/vendor/efmi/schemas')
+assert {p.relative_to(schemas) for p in schemas.rglob('*') if p.is_file()} == {
+    p.relative_to(upstream) for p in upstream.rglob('*') if p.is_file()}
+for path in schemas.rglob('*'):
+    if path.is_file():
+        assert path.read_bytes() == (upstream / path.relative_to(schemas)).read_bytes()
+for name, schema in [
+    ('AlgorithmCode/manifest.xml', 'AlgorithmCode/efmiAlgorithmCodeManifest.xsd'),
+    ('ProductionCode/manifest.xml', 'ProductionCode/efmiProductionCodeManifest.xsd'),
+    ('__content.xml', 'efmiContainerManifest.xsd'),
+]:
+    etree.XMLSchema(etree.parse(str(schemas / schema))).assertValid(etree.parse(str(stage / name)))
+algorithm = etree.parse(str(stage / 'AlgorithmCode/manifest.xml'))
+production = etree.parse(str(stage / 'ProductionCode/manifest.xml'))
+assert algorithm.find("Files/File[@role='Code']").get('checksum') == \
+    sha1((stage / 'AlgorithmCode/model.alg').read_bytes()).hexdigest()
+assert production.find("Files/File[@role='Code']").get('checksum') == \
+    sha1((stage / 'ProductionCode/production.c').read_bytes()).hexdigest()
+assert production.find('ManifestReferences/ManifestReference').get('checksum') == \
+    sha1((stage / 'AlgorithmCode/manifest.xml').read_bytes()).hexdigest()
+dims = {v.get('name'): [d.get('size') for d in v.findall('Dimensions/Dimension')]
+        for v in algorithm.findall('Variables/RealVariable')}
+assert dims['u'] == ['2'] and dims['x'] == ['2'] and dims['J'] == ['2', '2'], dims
+print('tensor eFMU: 50 members, schemas match, XSD-valid, checksums correlated, array dimensions declared')
+PY
+# One Production C mutation control: the extracted directory with a mutated
+# Production C must be rejected by the tensor directory checker (before any kernel
+# certificate work) and must not certify.
+tmut="$tstage/mutant"
+rm -rf "$tmut"; mkdir -p "$tmut/AlgorithmCode" "$tmut/ProductionCode"
+cp "$troot/AlgorithmCode/model.alg" "$tmut/AlgorithmCode/model.alg"
+cp "$troot/AlgorithmCode/manifest.xml" "$tmut/AlgorithmCode/manifest.xml"
+cp "$troot/ProductionCode/manifest.xml" "$tmut/ProductionCode/manifest.xml"
+cp "$troot/__content.xml" "$tmut/__content.xml"
+sed 's/rumoca_tensor_mul(u, u/rumoca_tensor_add(u, u/' \
+  "$troot/ProductionCode/production.c" > "$tmut/ProductionCode/production.c"
+if cmp -s "$troot/ProductionCode/production.c" "$tmut/ProductionCode/production.c"; then
+  echo 'ineffective tensor Production C mutation' >&2; exit 1
+fi
+if lake run verify-artifact tensor-efmi-directory examples/development/TensorSquare.mo "$tmut" \
+    packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+    > "$tstage/rejected-production.log" 2>&1; then
+  echo 'accepted mutated tensor Production C' >&2; exit 1
+fi
+rg -q 'actual tensor Production C differs from the certified translation unit' "$tstage/rejected-production.log"
+cp "$tarchive" build/TensorSquare.efmu
+sha256sum build/TensorSquare.efmu
+rm -rf "$tstage"
+echo 'Tensor eFMU: checked CLI publication, certificate reuse, official schemas/checksums, array dimensions and Production C mutation control passed'
