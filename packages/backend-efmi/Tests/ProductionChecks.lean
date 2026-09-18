@@ -14,6 +14,7 @@ import RumocaEFMI.ZIPArchiveCertificate
 import RumocaEFMISchemaCertificates
 import RumocaEFMI.StartupMapProofs
 import RumocaEFMI.TensorProductionProofs
+import RumocaEFMI.TensorProductionText
 import RumocaEFMI.TensorManifestProofs
 
 namespace Rumoca.EFMI.ProductionChecks
@@ -174,6 +175,7 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.TensorProduction.production_correct
 #audit axioms Rumoca.EFMI.TensorProduction.doStep_derivative_refines
 #audit axioms Rumoca.EFMI.TensorProduction.doStep_jacobian_refines
+#audit axioms Rumoca.EFMI.TensorProduction.render_chars
 
 #audit axioms Rumoca.EFMI.TensorManifest.documents_valid
 #audit axioms Rumoca.EFMI.TensorManifest.variable_declared
