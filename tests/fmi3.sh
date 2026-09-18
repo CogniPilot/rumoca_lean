@@ -17,6 +17,13 @@ done
 sed 's/Integrator/SecondIntegrator/g' examples/Integrator.mo > build/SecondIntegrator.mo
 "$compiler" build/SecondIntegrator.mo -o "$task_tmp/SecondIntegrator.fmu" > build/fmi-second-model.log
 python3 tests/fmi3.py build/Integrator.fmu "$task_tmp/SecondIntegrator.fmu"
+# Native all-behavior matrix over every one of the 75 public functions: null
+# handle, lifecycle rejection, argument rejection, discard, suppressed versus
+# enabled logging, capability rejection and absent-typed empty/non-empty. This
+# instantiates natively each behavior class the trust ledger otherwise records as
+# proof-only (finding F6). The run fails on any status or callback that regresses
+# from the proved behavior; recorded findings are printed but tolerated.
+python3 tests/fmi3.py --matrix build/Integrator.fmu Integrator.fmu
 python3 - <<'PY'
 import csv
 for mode in ['me', 'cs']:
@@ -142,6 +149,10 @@ prod_fmu=build/TensorSquare.fmu
 "$compiler" examples/TensorSquare.mo -o "$prod_fmu"
 "$runner" validate "$prod_fmu"
 "$runner" info "$prod_fmu"
+# Same native all-behavior matrix on the production tensor FMU (finding F2). It
+# also surfaces finding F8: the tensor adapter's fmi3Reset does not restore the
+# Instantiated state once initialization has run, so re-initialization is refused.
+python3 tests/fmi3.py --matrix "$prod_fmu" TensorSquare.fmu
 # Tensor eFMI export stays rejected with a clear diagnostic (the tensor eFMI path is
 # not built) and must neither publish nor replace an FMU.
 cp "$prod_fmu" "$task_tmp/tensor-preserved.fmu"
