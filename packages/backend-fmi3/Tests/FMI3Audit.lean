@@ -264,6 +264,7 @@ import RumocaFMI3.TensorFamilyContracts
 import RumocaFMI3.TensorStorageCode
 import RumocaFMI3.ConstantInstanceInit
 import RumocaFMI3.ConstantFloat64Access
+import RumocaFMI3.ConstantDerivative
 import RumocaFMI3.TensorAdapterPrinter
 import RumocaFMI3.TensorAdapterContract
 
@@ -2639,3 +2640,14 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.ConstantFloat64.null_set_behaviors
 #audit axioms Rumoca.FMI3.ConstantFloat64.get_contract
 #audit axioms Rumoca.FMI3.ConstantFloat64.set_contract
+
+-- Stage B2: the constant-rate derivative getter body, calling the numerical
+-- entry `rumoca_constant_rhs(&(m->dx[0]))` and copying the written derivative
+-- region into the caller buffer.
+#audit axioms Rumoca.FMI3.ConstantDerivative.derivBody_closed
+#audit axioms Rumoca.FMI3.ConstantDerivative.derivFunction_denotes
+#audit axioms Rumoca.FMI3.ConstantDerivative.null_deriv_behaviors
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_copy_delivers
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_instance_delivers
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_delivers_holds
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_contract
