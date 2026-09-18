@@ -73,6 +73,28 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### G01 constant-rate executable kernel program (Stage 2): standards impact
+
+The constant-rate profile's numerical C is now an executable program
+(`packages/backend-c/RumocaC/ConstantKernelProgram.lean`, `dev/constant-rates.md`
+"Executable kernel program"): `rumoca_constant_rhs`, `rumoca_constant_step` and
+`rumoca_constant_sample` are `CTree.Function` definitions over the source rate
+list, universal in the number of states and in the rates, executed by the
+loop-call machine over the caller-owned array. Each rate emits as a decimal
+floating constant whose target binary64 value is the correctly rounded conversion
+of its exact base-ten content, and the three loop-machine execution theorems, the
+per-rate rounding certificate and the rendered-byte contract are audited to depend
+only on the three foundational axioms. The development fixture renders the two-rate
+program (`2.5`, `-1`), certifies each function's token grammar, binds the actual
+file bytes to the rendered functions, and `tests/tensor-c.sh` compiles and runs the
+kernel natively (three unit steps advance the two states from zero to `(7.5, -3)`).
+
+| Standard | Impact |
+| --- | --- |
+| C11 6.4.4.2 Floating constants | Each rate is a decimal floating constant printed as the significand `<mantissa>e<exponent>` (a single preprocessing number, C11 6.4.4.1); the exponent carries its own sign so the constant closes before it. A negative rate is the unary minus of the unsigned magnitude, since C has no negative literal tokens; the printer parenthesizes it (`(-1e0)`). The target binary64 value is the correctly rounded conversion of the constant's exact base-ten content under the current (round-to-nearest-even) rounding mode, specified by `CBody.decimalValue` and certified per rate by `CConstant.rate_rounds` from `CBody.decimalValue_rounds`; the emitted preamble's `FLT_EVAL_METHOD == 0` guard keeps evaluation at `double`. Each rendered function tokenizes under the shared C scanner to its independent token grammar (`Fixture.rhs_denotes`, `step_denotes`, `sample_denotes`), where `25e-1` lexes as `25e`, `-`, `1`. |
+| MLS 3.7 Real literals (unsigned-number / exponent form) | The source rate spellings (`2.5`, `-1`) are MLS 3.7 real literals; `ModelicaParser.Constant.parseDecimal` records their exact base-ten `Decimal` content (`sign`, `mantissa`, `power`), and the executable kernel emits a C floating constant with the same content (`CConstant.rateLit`). Source-to-content fidelity is proved in the compiler package (`Prepared.rate_exact`); the target rounding of that content is the C body contract above, so the source literal and the emitted constant denote the same binary64 rate. |
+| MISRA C:2025 Rule 7.1 (octal constants shall not be used) | The printed magnitude is a base-ten significand with a mandatory `e` exponent, so it is a floating constant, never an octal integer constant: a zero magnitude prints as `0e0` (an exponent-bearing floating constant), not a bare leading-zero token, and a non-zero magnitude has no leading zero. No rate literal is an integer constant, so Rules 7.2 (unsigned suffix) and 7.3 (lowercase `l` suffix) do not apply to the emitted constants; the counted sample loop uses the shared unsigned `size_t` counter and bound already covered by the tensor loop review. |
+
 ### Constant-rate FMI 3 adapter bodies (Stage B2): standards impact
 
 The constant-rate profile (`G01`) adds its profile-specific FMI 3 adapter bodies

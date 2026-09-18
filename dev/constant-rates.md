@@ -146,7 +146,7 @@ instance, and this stage generalizes the record without emitting any adapter:
   `constant_instances_separate`, `constant_store_other_instance`). The eventual
   constant adapter binds the kernel entries `rumoca_constant_rhs`,
   `rumoca_constant_step` and `rumoca_constant_sample`
-  (`packages/backend-c/RumocaC/ConstantKernelCode.lean`) to these regions.
+  (`packages/backend-c/RumocaC/ConstantKernelProgram.lean`) to these regions.
 - Declarations: `FMI3.TensorStorage.regionMembersG shape false false` declares the
   time base, the state region and the derivative region (`layout_names_constant`),
   and the generic record tokenizes under the shared C scanner (`recordG_printed`,
@@ -200,11 +200,55 @@ at the constant state shape. The profile-specific bodies are new:
   rejection is a companion theorem (`contract`, `lifecycle_behaviors`).
 
 The numerical entries `rumoca_constant_rhs`, `rumoca_constant_step` and
-`rumoca_constant_sample` are the constant-rate kernel C
-(`packages/backend-c/RumocaC/ConstantKernelCode.lean`), whose finite binary64
-semantics and exact-rounding are `CConstant.contract_correct`. Every adapter-body
-theorem is universal in the state shape and audited to depend only on the standard
-axioms.
+`rumoca_constant_sample` are the executable constant-rate kernel program
+(`packages/backend-c/RumocaC/ConstantKernelProgram.lean`, "Executable kernel
+program" below), whose finite binary64 semantics and exact rounding are
+`CConstant.contract_correct`. Every adapter-body theorem is universal in the state
+shape and audited to depend only on the standard axioms.
+
+## Executable kernel program (Stage 2)
+
+`packages/backend-c/RumocaC/ConstantKernelProgram.lean` promotes the constant-rate
+kernel from rendered text to an executable program. The three entries are
+`CTree.Function` definitions over the source rate list, universal in the number of
+states and in the rates, each executed by the loop-call machine over the
+caller-owned array (no dynamic allocation):
+
+- `rumoca_constant_rhs(double *der)` writes the exactly rounded rate vector, one
+  declaration-order store `der[i] = rate;` per source rate. `rhs_behaves` proves
+  the ordinary call terminates in the heap holding the rounded rates
+  (`place base 0 heap (rateVals rates)`), and `rhs_executes` bundles that with the
+  written-region readback (`place_cells`) and the whole-heap frame (`place_frame`).
+- `rumoca_constant_step(double *x)` advances every state cell by the finite
+  binary64 addition of its rate, one declaration-order update
+  `x[i] = (x[i] + rate);` per source rate. `step_next` reuses the shared float-add
+  evaluation (`CArithmetic.floatAdd_finite`) under an explicit per-cell
+  finite-addition premise (`CExecution.finiteRoundDomain`), and `step_behaves`
+  reaches the whole-vector Euler step (`euler rates xs`).
+- `rumoca_constant_sample(double *x, size_t n)` iterates the whole-vector step `n`
+  times as a counted `size_t` loop reusing `CLoops.loop_reaches`; `sample_behaves`
+  reaches the `n`-fold trajectory `stateAfter rates xs0 n`, proved by induction on
+  the loop count. The rate literals are the source data, so listing them is not
+  tensor-coordinate enumeration; the loop bound remains a runtime count.
+
+Each rate enters as a C floating constant `CTree.Expr.decimal` whose exact base-ten
+content is `|sign| * mantissa * 10 ^ power`, negated for a negative sign; its
+target binary64 value is the round-to-nearest-even of that content
+(`CBody.decimalValue`), and `rate_rounds` supplies the `Scaled.RoundsNearestEven`
+certificate for each rate from `CBody.decimalValue_rounds`.
+
+`CConstant.Contract`/`contract_correct` restate the actual-artifact contract over
+this program: the emitted bytes are the three rendered functions (`programText`),
+each rate is nearest-even rounded, and the three execution conjuncts are the rhs,
+step and sample theorems above. The development fixture
+(`packages/backend-c/Tests/TensorCChecks/ConstantEntry.lean`, rates `2.5`, `-1`)
+carries the rendered token grammars and their `render_denotes` certificates
+(`rhs_denotes`, `step_denotes`, `sample_denotes`), and
+`ConstantArtifactCheck.verify_constant_kernel` binds the actual file bytes to the
+rendered function list before applying the fixed contract. `tests/tensor-c.sh`
+emits the fixture C, runs the checker and its mutation control, and compiles and
+runs the kernel natively: from zero the two states advance to `(7.5, -3)` after
+three unit steps.
 
 ## Open obligations
 
@@ -219,8 +263,11 @@ actual-artifact certificate:
 - The constant adapter function list assembly, its rendered bytes, the no-heap and
   acyclic call-graph policy, and the bound adapter contract.
 
-- C emission of the multi-state IVP with the ordered finite-arithmetic and
-  storage contract, and its target-execution theorem.
+- Binding the executable kernel entries (Stage 2 above) to the FMI 3 instance
+  record: the fused single-run observable execution of `rumoca_constant_rhs`,
+  `rumoca_constant_step` and `rumoca_constant_sample` over the constant instance
+  heap, and the constant adapter function list, no-heap and acyclic call-graph
+  policy and bound adapter contract.
 - FMI 3 Model Exchange and Co-Simulation artifacts and the eFMI Algorithm and
   Production Code artifacts, bound to actual bytes.
 - Production admission of the profile through the CLI.
