@@ -17,17 +17,35 @@ def pad (bytes : List UInt8) : List UInt8 :=
 
 def rol (x n : UInt32) : UInt32 := (x <<< n) ||| (x >>> (32 - n))
 
-def word (bytes : Array UInt8) (index : Nat) : UInt32 :=
-  (List.range 4).foldl (fun acc i => (acc <<< 8) + (bytes[index * 4 + i]?.getD 0).toUInt32) 0
+/-- One big-endian 32-bit message word from four bytes (FIPS 180-4 §5.1). -/
+def messageWord (a b c d : UInt8) : UInt32 :=
+  (a.toUInt32 <<< 24) ||| (b.toUInt32 <<< 16) ||| (c.toUInt32 <<< 8) ||| d.toUInt32
 
-def schedule (bytes : List UInt8) : Array UInt32 := Id.run do
-  let block := bytes.toArray
-  let mut words := (List.range 16).toArray.map (word block)
-  for t in [16:80] do
-    let w := words[t - 3]?.getD 0 ^^^ words[t - 8]?.getD 0 ^^^
-      words[t - 14]?.getD 0 ^^^ words[t - 16]?.getD 0
-    words := words.push (rol w 1)
-  return words
+/-- The sixteen big-endian block words, consumed four bytes at a time. A short
+final group (only present for a non-aligned block) contributes no word; the
+callers only pass exact 64-byte blocks. -/
+def blockWords : List UInt8 → List UInt32
+  | a :: b :: c :: d :: rest => messageWord a b c d :: blockWords rest
+  | _ => []
+
+/-- One scheduled word W(t) from the sixteen most recent words, newest first:
+positions 2, 7, 13 and 15 hold W(t-3), W(t-8), W(t-14) and W(t-16), per the
+FIPS 180-4 §6.1.2 recurrence W(t) = ROTL1(W(t-3) ⊕ W(t-8) ⊕ W(t-14) ⊕ W(t-16)). -/
+def scheduleWord : List UInt32 → UInt32
+  | _ :: _ :: w3 :: _ :: _ :: _ :: _ :: w8 :: _ :: _ :: _ :: _ :: _ :: w14 :: _ :: w16 :: _ =>
+    rol (w3 ^^^ w8 ^^^ w14 ^^^ w16) 1
+  | _ => 0
+
+/-- Extend the newest-first word list by `count` scheduled words. -/
+def extendSchedule : Nat → List UInt32 → List UInt32
+  | 0, acc => acc
+  | count + 1, acc => extendSchedule count (scheduleWord acc :: acc)
+
+/-- The eighty FIPS 180-4 schedule words in round order. The construction is a
+plain structural recurrence over lists so the schedule reduces efficiently in
+the kernel when a checksum is certified against actual bytes. -/
+def schedule (bytes : List UInt8) : List UInt32 :=
+  (extendSchedule 64 (blockWords bytes).reverse).reverse
 
 structure State where
   a : UInt32
@@ -49,8 +67,7 @@ def round (s : State) (t : Nat) (w : UInt32) : State :=
   ⟨rol s.a 5 + f + s.e + k + w, s.a, rol s.b 30, s.c, s.d⟩
 
 def compress (state : State) (block : List UInt8) : State :=
-  let words := schedule block
-  let result := (List.range 80).foldl (fun s t => round s t (words[t]?.getD 0)) state
+  let result := (schedule block).zipIdx.foldl (fun s p => round s p.2 p.1) state
   ⟨state.a + result.a, state.b + result.b, state.c + result.c,
     state.d + result.d, state.e + result.e⟩
 
