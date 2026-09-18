@@ -11,6 +11,20 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor reset conformance and tensor Production Code (merged batch):**
+
+The native behavior matrix in `tests/fmi3.py` exercises 514 behavior cells
+over all 75 functions of both FMUs and found that the tensor `fmi3Reset`
+left an initialized instance unable to re-initialize; the tensor reset body
+now restores the mode and every bookkeeping cell the scalar reset restores,
+with `reset_mode_instantiated` and the `reinitializes` conjunct carried into
+the adapter contract, and both matrices report no discrepancies. The tensor
+eFMI path gained its Production Code with kernel refinement and the three
+manifests with array dimensions, checksum and reference correlation, tied to
+the compiler fixture and validated against the vendored schemas. The required
+`nix develop .#verification --command lake test` passed on 2026-09-18 in
+44m50s on this merge (`build/tensor-fmi/full-gate-v31.log`).
+
 **G01 constant-rate development profile (derived proofs):**
 
 A `constant_composition` production admits two or more scalar Real states
