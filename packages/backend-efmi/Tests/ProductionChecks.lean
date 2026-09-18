@@ -13,6 +13,7 @@ import RumocaEFMI.ZIPCertificate
 import RumocaEFMI.ZIPArchiveCertificate
 import RumocaEFMISchemaCertificates
 import RumocaEFMI.StartupMapProofs
+import RumocaEFMI.TensorProductionProofs
 
 namespace Rumoca.EFMI.ProductionChecks
 private local instance targetInterface : CInterface := cInterface
@@ -168,3 +169,7 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.tensor_lexical
 #audit axioms Rumoca.EFMI.tensor_parsed
 #audit axioms Rumoca.EFMI.tensor_render_denotes
+
+#audit axioms Rumoca.EFMI.TensorProduction.production_correct
+#audit axioms Rumoca.EFMI.TensorProduction.doStep_derivative_refines
+#audit axioms Rumoca.EFMI.TensorProduction.doStep_jacobian_refines
