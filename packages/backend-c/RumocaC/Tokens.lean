@@ -79,6 +79,20 @@ theorem natural_prefix (n : Nat) (stop : CPPNumber.character marker = false) (re
   have number := CPPNumber.natural_consumes n stop rest
   exact .token (.number number.spelling number.input_eq number.longest) .done
 
+/-- Any preprocessing-number spelling, followed by a character that cannot occur
+in a preprocessing number, scans to a single number token. This covers the
+floating-constant magnitudes `<digits>e<exponent>`, which the value relation for
+plain decimals does not, and is the shared boundary used by the printer. -/
+theorem number_prefix (spelling : String) (spelled : CPPNumber.Spells spelling.toList)
+    (stop : CPPNumber.character marker = false) (rest : List Char) :
+    Prefix (spelling.toList ++ marker :: rest) [.number spelling] (marker :: rest) := by
+  refine .token (.number spelled rfl ?_) .done
+  intro candidate cand starts
+  apply Scanner.prefix_before_delimiter starts
+  intro member
+  have present := cand.characters marker member
+  simp [stop] at present
+
 theorem string_prefix (source : String) (rest : List Char) :
     Prefix ((CTree.quote source).toList ++ rest)
       [.string (source.toUTF8.data.toList ++ [0])] rest :=
