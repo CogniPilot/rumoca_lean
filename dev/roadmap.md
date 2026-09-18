@@ -11,6 +11,19 @@ percentage of semantic coverage.
 
 ## Current position
 
+**G01 constant-rate numerical C (certified kernel):**
+
+`CConstant.contract_correct` emits the constant-rate IVP kernel universally in
+the number of states: each rate is rendered as the exact base-ten content of
+its literal and proved to round to nearest even, the Euler step is the finite
+binary64 addition of the rate, and the counted sample executes each state's
+independent trajectory. A fixed checker binds the actual bytes, a mutation of
+a rate literal is rejected, and the native run gives `(7.5, -3)` after three
+unit steps from zero. The required `nix develop .#verification --command lake
+test` passed on 2026-09-18 in 69m16s under load
+(`build/tensor-fmi/full-gate-v33.log`). The multi-state FMI adapter, its
+certificate and admission follow in staged increments.
+
 **Tensor reset conformance and tensor Production Code (merged batch):**
 
 The native behavior matrix in `tests/fmi3.py` exercises 514 behavior cells
