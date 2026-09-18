@@ -80,4 +80,72 @@ theorem node_valid (e : Element)
   rw [Element.valid, h, b]
   rfl
 
+/-! Fragment decomposition. Each element's rendered document is the flattening of
+a pre-order list of small character pieces: its own opening piece, then each
+child's fragment list, then its own closing piece. This lets an actual-byte
+certificate bind every fragment to a bounded literal and join the fragments
+against a block-structured input by cursor equalities, rather than reducing the
+whole document in one kernel step. -/
+
+/-- The pre-order list of an element's own and its descendants' character
+pieces. Flattening it yields the element's rendered characters. -/
+def pieces (e : Element) (depth : Nat) : List (List Char) :=
+  match e with
+  | ⟨name, attrs, children, text⟩ =>
+    leading ⟨name, attrs, children, text⟩ depth ::
+      ((children.map fun c => pieces c (depth + 1)).flatten ++ [trailing ⟨name, attrs, children, text⟩ depth])
+
+theorem render_pieces (e : Element) (depth : Nat) :
+    (e.render depth).toList = (pieces e depth).flatten := by
+  refine Element.rec
+    (motive_1 := fun e => ∀ depth, (e.render depth).toList = (pieces e depth).flatten)
+    (motive_2 := fun es => ∀ depth,
+      (es.flatMap fun c => (c.render depth).toList) = ((es.map fun c => pieces c depth).flatten).flatten)
+    ?_ ?_ ?_ e depth
+  · intro name attrs children value ih depth
+    rw [render_parts, ih (depth + 1)]
+    simp only [pieces, List.flatten_cons, List.flatten_append, List.flatten_nil, List.append_nil,
+      List.append_assoc]
+  · intro depth; rfl
+  · intro c cs ihc ihcs depth
+    simp only [List.flatMap_cons, List.map_cons, List.flatten_cons, List.flatten_append,
+      ihc depth, ihcs depth]
+
+/-- Prepend the document header piece to the root element's piece list. -/
+def documentPieces (e : Element) : List (List Char) := header :: pieces e 0
+
+theorem document_pieces (e : Element) :
+    (XML.document e).toList = (documentPieces e).flatten := by
+  rw [documentPieces, List.flatten_cons]
+  exact document e _ (render_pieces e 0)
+
+theorem pieces_children_cons (c : Element) (children : List Element) (depth : Nat)
+    (head rest : List (List Char))
+    (h : pieces c depth = head) (t : (children.map fun c => pieces c depth).flatten = rest) :
+    ((c :: children).map fun c => pieces c depth).flatten = head ++ rest := by
+  simp only [List.map_cons, List.flatten_cons, h, t]
+
+theorem pieces_node (e : Element) (depth : Nat)
+    (lead trail : List Char) (childPieces : List (List Char))
+    (hl : leading e depth = lead) (ht : trailing e depth = trail)
+    (hc : (e.children.map fun c => pieces c (depth + 1)).flatten = childPieces) :
+    pieces e depth = lead :: (childPieces ++ [trail]) := by
+  obtain ⟨name, attrs, children, text⟩ := e
+  simp only [pieces, hl, ht, hc]
+
+theorem documentPieces_eq (e : Element) (headerPiece : List Char) (rest : List (List Char))
+    (hh : header = headerPiece) (hp : pieces e 0 = rest) :
+    documentPieces e = headerPiece :: rest := by
+  rw [documentPieces, hh, hp]
+
+/-- Bind an element's document string to a byte list from a proof that the
+element's piece list equals a chunk list and that the chunks flatten to the
+bytes. Neither side reduces the whole document; the chunk equalities and their
+join are supplied separately. -/
+theorem document_ofList (e : Element) (chunks : List (List Char)) (bytes : List Char)
+    (hpieces : documentPieces e = chunks) (joined : chunks.flatten = bytes) :
+    XML.document e = String.ofList bytes := by
+  apply String.toList_injective
+  rw [document_pieces, hpieces, joined, String.toList_ofList]
+
 end XML.Certificate

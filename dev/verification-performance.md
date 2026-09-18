@@ -131,9 +131,63 @@ within the shared gate's budget:
 | Array/`Id.run` `UInt32` schedule (before) | did not finish | over 7.5 GiB (killed) |
 | Structural masked-`Nat` schedule (after) | ~2.4 min | ~6.75 GiB |
 
-Peak RSS was sampled by summing the process tree's `VmHWM`. The dominant
-remaining cost is the per-element XML serialization certificate, not the
-checksums. Composing the additional stored-ZIP transport certificate over all
-fifty archive members (`tensor-efmi-archive`) still peaks above the 8 GiB gate
-budget, so the complete `.efmu` archive certificate and its CLI admission remain
-deferred; see [the tensor eFMU standards impact](standards-review.md).
+Peak RSS was sampled by summing the process tree's resident set.
+
+## XML serialization certificate: fragment cursor vs whole-document decide
+
+The XML document certificate (`XML.CertificateCheck.certify`) previously reduced
+the whole composed character list against a flat literal in one `decide +kernel`
+step. Profiling that certificate on the 7.4 KB tensor Production manifest in
+isolation (`lean -s 65536`, cold) attributed one kernel type-check of about 6.3 s
+to that single whole-document decide, with the remaining time in bounded
+per-element opening/closing decides (200 to 450 ms each) and the metaprogram that
+builds the syntax. The whole-document decide is a large transient term that is
+freed once checked; it is not the resident peak.
+
+The certificate now decomposes each document into a pre-order list of per-element
+character pieces, proved once and universally to flatten to the rendered document
+(`XML.Certificate.pieces`, `render_pieces`, `documentPieces`, `document_pieces`),
+certifies every element's opening and closing pieces against bounded literals by
+reflexivity, and binds their concatenation to the actual bytes through a
+block-structured cursor. No single kernel step reduces the whole document, so the
+kernel work is linear in the document with a bounded per-fragment peak.
+
+| Production manifest XML certificate, cold, `-s 65536` | Wall | Peak RSS | Dominant term |
+| --- | ---: | ---: | --- |
+| Whole-document `decide +kernel` (before) | ~41.7 s | ~5.42 GiB | one whole-document list-equality decide (transient) |
+| Fragment cursor (after) | ~37.7 s | ~5.33 GiB | bounded per-fragment reflexivity + cursor splits |
+
+For this document size the two are within noise on resident peak; the redesign
+removes the super-linear whole-document decide so the cost stays linear as
+documents grow. Composed into the tensor manifest certificate the two are also
+within noise (6.75 GiB before, 6.90 GiB after).
+
+## Tensor eFMU archive certificate
+
+The complete tensor eFMU archive certificate (`tensor-efmi-archive`,
+`Rumoca.CheckedTensorEFMIFiles.source_to_archive`) reads the actual `.efmu` bytes,
+re-derives the manifest contract, and composes it with the stored-ZIP transport
+over all fifty archive members. Measured cold, `-s 65536`, summing the process
+tree's resident set:
+
+| Archive certificate, cold | Wall | Peak RSS |
+| --- | ---: | ---: |
+| Scalar eFMU (`efmi-archive`, gated in `tests/efmi-production.sh`) | ~7.9 min | ~12.28 GiB |
+| Tensor eFMU (`tensor-efmi-archive`) | ~8.5 min | ~12.79 GiB |
+
+The tensor archive certificate peaks at parity with the scalar eFMU archive
+certificate that the gate already builds and accepts. The resident peak is
+dominated by accumulated declarations: the re-derived manifest contract (about
+6.75 GiB on its own) plus the stored-ZIP payload certificates over all 140 KB of
+archive members, roughly 130 KB of which are the pinned vendored schemas that the
+scalar archive certificate also certifies. It is not dominated by any single
+whole-document step, so reducing the XML serialization certificate does not lower
+it materially; the earlier "8 GiB gate budget" figure was inconsistent with the
+scalar archive certificate's actual cost and is withdrawn. The budget for the
+tensor archive certificate is parity with the scalar archive certificate.
+
+The certificate is gated through the default CLI publication in
+`tests/tensor-c.sh` (next to the tensor manifest certificate) and
+`tests/efmi-production.sh`, both under the fixed `SOURCE_DATE_EPOCH` and the same
+tensor source identity, so it is built once and reused across the two scripts and
+across gate runs. See [the tensor eFMU standards impact](standards-review.md).

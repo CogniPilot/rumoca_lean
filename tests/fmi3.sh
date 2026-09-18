@@ -142,7 +142,8 @@ echo "FMU archive, independent ME/CS importer, ABI, runner and failure checks pa
 # output: unit sources follow the existing path unchanged, and an array-profile
 # source is compiled with compileTensor and published through the tensor
 # writeSources/archive path whose publication gate is the fixed `tensor-fmi3`
-# source-build certificate. Tensor eFMI export and tensor C emission are rejected.
+# source-build certificate. Complete tensor eFMU output is admitted separately
+# (tests/efmi-production.sh); only tensor C emission on stdout stays rejected.
 # Native compilation, ZIP transport and the FMPy importer remain boundaries outside
 # the proof model, exactly as in the development tensor run (tests/tensor-c.sh).
 prod_fmu=build/TensorSquare.fmu
