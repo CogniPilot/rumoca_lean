@@ -11,6 +11,7 @@ import RumocaFMI3.BuildDescription
 import RumocaFMI3.Header
 import Tests.TensorMetadataFixture
 import Tests.TensorAdapterFixture
+import Rumoca.EFMITensorAlgorithm
 
 open _root_.Parser
 
@@ -60,6 +61,19 @@ def main : IO Unit := do
         expect "parsed square and Jacobian reach executable Solve IR"
           ((kernel.problem.rhs ops 0 1 state input).data.toArray == #[4, 9] &&
             (matrix.eval ops 0 1 (kernel.problem.environment state input)).data.toArray == #[4, 0, 0, 6])
+        -- Development tensor eFMI Algorithm Code product. The array/tensor
+        -- profile is not admitted to CLI eFMI output; this renders the actual
+        -- GALEC text for the prepared square kernel and checks it parses to the
+        -- resolved tensor block, the boundary the Lean product proves.
+        let algorithmSource := EFMI.renderTensorAlgorithm
+          (⟨EFMI.squareKernel ArrayProfile.stateShape, rfl⟩ : EFMI.TensorModel ArrayProfile.stateShape)
+        match GALEC.Syntax.parseTensor algorithmSource with
+        | .error e => throw (IO.userError s!"tensor Algorithm Code rejected: {e}")
+        | .ok algParsed =>
+          expect "tensor Algorithm Code parses to the resolved tensor square block"
+            (algParsed.ast == GALEC.Syntax.tensorUnit)
+        IO.FS.createDirAll "build/tensor-efmi"
+        IO.FS.writeFile "build/tensor-efmi/AlgorithmCode.alg" algorithmSource
         let preparedModel : Solve.TensorFMI3Model ArrayProfile.stateShape := ⟨"TensorSquare", kernel⟩
         expect "prepared TensorSquare renders the fixture's well-formed tensor model description"
           (preparedModel.hasOutput &&
