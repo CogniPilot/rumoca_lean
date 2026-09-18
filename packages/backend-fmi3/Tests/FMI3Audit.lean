@@ -263,6 +263,7 @@ import RumocaFMI3.TensorFunctions
 import RumocaFMI3.TensorFamilyContracts
 import RumocaFMI3.TensorStorageCode
 import RumocaFMI3.ConstantInstanceInit
+import RumocaFMI3.ConstantFloat64Access
 import RumocaFMI3.TensorAdapterPrinter
 import RumocaFMI3.TensorAdapterContract
 
@@ -2626,3 +2627,15 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorMetadata.constant_structure_references_declared
 #audit axioms Rumoca.FMI3.TensorMetadata.constant_structure_dependencies_empty
 #audit axioms Rumoca.FMI3.TensorMetadata.constant_modelIdentifiers_decode
+
+-- Stage B2: the constant-rate Float64 accessor bodies over references 0..2
+-- (time, state, derivative), the state reference writable and the derivative
+-- read-only, with no input and no output.
+#audit axioms Rumoca.FMI3.ConstantFloat64.getBody_closed
+#audit axioms Rumoca.FMI3.ConstantFloat64.setBody_closed
+#audit axioms Rumoca.FMI3.ConstantFloat64.getFunction_denotes
+#audit axioms Rumoca.FMI3.ConstantFloat64.setFunction_denotes
+#audit axioms Rumoca.FMI3.ConstantFloat64.null_get_behaviors
+#audit axioms Rumoca.FMI3.ConstantFloat64.null_set_behaviors
+#audit axioms Rumoca.FMI3.ConstantFloat64.get_contract
+#audit axioms Rumoca.FMI3.ConstantFloat64.set_contract
