@@ -11,6 +11,21 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Kernel-efficient SHA-1 and the tensor manifest certificate (merged):**
+
+The independent SHA-1 implementation now uses a structural schedule over
+masked natural-number words, so the kernel reduces one hundred seventeen
+compression blocks in fifteen seconds instead of exhausting memory, with the
+digest and every certificate proposition unchanged; the fixed checker jobs
+already run with the enlarged thread stack. The tensor eFMI manifest
+directory certificate `Rumoca.CheckedTensorEFMIFiles.source_to_manifests`
+now completes in about two and a half minutes within seven gigabytes and is
+gated in the tensor C script; the tensor archive certificate is built but
+still exceeds the budget because of the per-element XML serialization
+certificate, so tensor eFMU output stays rejected while that step is being
+restructured. The required `nix develop .#verification --command lake test`
+passed on 2026-09-18 in 66m18s under load (`build/tensor-fmi/full-gate-v36.log`).
+
 **Tensor eFMU archive theorem, Algorithm Code admission and production checker (merged):**
 
 `tensor_archive_correct` assembles the tensor eFMU through the shared archive
