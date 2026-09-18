@@ -11,6 +11,21 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor eFMU archive theorem, Algorithm Code admission and production checker (merged):**
+
+`tensor_archive_correct` assembles the tensor eFMU through the shared archive
+generator and proves the member roster, checksums, container correlation and
+stored ZIP bytes universally in the identity and model name; the fixed
+`tensor-algorithm` certificate kind admits tensor sources to Algorithm Code
+output through the CLI with certificate reuse and a mutation control, and the
+tensor Production C actual-byte checker binds the read bytes per fragment.
+The composed manifest and archive certificates were found to cost fifteen to
+eighteen gigabytes with the per-element XML and per-byte SHA-1 machinery, so
+tensor eFMU archive output stays rejected until the certificate machinery
+scales; that work is in progress. The required `nix develop .#verification
+--command lake test` passed on 2026-09-18 in 22m31s
+(`build/tensor-fmi/full-gate-v35.log`).
+
 **G01 constant-rate numerical C (certified kernel):**
 
 `CConstant.contract_correct` emits the constant-rate IVP kernel universally in
