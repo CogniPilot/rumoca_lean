@@ -142,7 +142,8 @@ echo "FMU archive, independent ME/CS importer, ABI, runner and failure checks pa
 # output: unit sources follow the existing path unchanged, and an array-profile
 # source is compiled with compileTensor and published through the tensor
 # writeSources/archive path whose publication gate is the fixed `tensor-fmi3`
-# source-build certificate. Tensor eFMI export and tensor C emission are rejected.
+# source-build certificate. Complete tensor eFMU output is admitted separately
+# (tests/efmi-production.sh); only tensor C emission on stdout stays rejected.
 # Native compilation, ZIP transport and the FMPy importer remain boundaries outside
 # the proof model, exactly as in the development tensor run (tests/tensor-c.sh).
 prod_fmu=build/TensorSquare.fmu
@@ -153,13 +154,6 @@ prod_fmu=build/TensorSquare.fmu
 # also surfaces finding F8: the tensor adapter's fmi3Reset does not restore the
 # Instantiated state once initialization has run, so re-initialization is refused.
 python3 tests/fmi3.py --matrix "$prod_fmu" TensorSquare.fmu
-# Tensor eFMI export stays rejected with a clear diagnostic (the tensor eFMI path is
-# not built) and must neither publish nor replace an FMU.
-cp "$prod_fmu" "$task_tmp/tensor-preserved.fmu"
-if "$compiler" examples/TensorSquare.mo -o "$task_tmp/tensor-preserved.efmu" > build/fmi-tensor-efmi.log 2>&1; then
-  echo "compiler admitted tensor eFMI export" >&2; exit 1
-fi
-rg -q 'tensor eFMI export is not built' build/fmi-tensor-efmi.log
 # Re-verify the extracted sources through the cached `tensor-fmi3` certificate with
 # no build, requiring certificate reuse and the approved axiom audit lines.
 tensor_root="$task_tmp/tensor-extracted"

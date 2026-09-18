@@ -174,6 +174,26 @@ rg 'Rumoca.CheckedTensorEFMIFiles.source_to_manifests depends on axioms:' build/
 rm -rf "$manifest_root"
 echo 'Tensor eFMI manifest actual-byte certificate passed'
 
+# --- Tensor eFMU archive actual-byte certificate ---
+# Publish the complete tensor eFMU through the default CLI under the fixed
+# SOURCE_DATE_EPOCH. The publication gate is the fixed tensor-efmi-archive checker
+# (lake run verify-artifact tensor-efmi-archive), which composes the three manifest
+# documents' XML serialization and validity and the SHA-1 checksum graph with the
+# stored-ZIP transport over all archive members into the axiom-audited
+# Rumoca.CheckedTensorEFMIFiles.source_to_archive contract. This certificate peaks
+# at parity with the scalar eFMU archive certificate (tests/efmi-production.sh),
+# dominated by the composed manifest and stored-ZIP payload over all members, not
+# by any single whole-document step. ZIP transport and file I/O are boundaries
+# outside the proof model. The fixed epoch and source identity keep the certificate
+# reusable across this script and tests/efmi-production.sh.
+tensor_efmu=build/tensor-efmi/model.efmu
+rm -f "$tensor_efmu"
+SOURCE_DATE_EPOCH=1700000000 packages/compiler/.lake/build/bin/rumoca \
+  examples/development/TensorSquare.mo -o "$tensor_efmu" > build/tensor-efmi-archive.log
+bash scripts/audit-lean.sh build/tensor-efmi-archive.log
+rg 'Rumoca.CheckedTensorEFMIFiles.source_to_archive depends on axioms:' build/tensor-efmi-archive.log
+echo 'Tensor eFMU archive actual-byte certificate passed'
+
 # --- Development tensor FMU boundary run (NOT a production FMU) ---
 # Assemble a development FMU for the TensorSquare kernel from the already-produced
 # certified pieces and drive it through FMPy in Model Exchange and Co-Simulation.
