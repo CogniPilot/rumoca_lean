@@ -751,6 +751,30 @@ named calls to that graph, and numerical-kernel execution is proved unable to
 issue a scheduler call. The source consequence derives the policy from the
 mandatory actual adapter/header contract without an extra rank assumption.
 
+The shared C package additionally has a reusable decidable no-heap and acyclic
+policy (`RumocaC/NoHeapPolicy.lean`) over a list of function definitions and a
+named external boundary set. `NoHeap` requires every callee name in every body
+to be a defined function, a declared kernel entry, a header-declared FMI
+function or a named external, and never one of the explicitly listed allocation
+entry points (`malloc`, `calloc`, `realloc`, `free`, `aligned_alloc` and the
+others); `Acyclic` states the direct-call relation among defined functions has
+no cycle, discharged by a decidable topological rank. `noHeap_no_alloc_call`
+proves that a call actually scheduled by the shared eventful resolver from a
+policy-checked body names no allocation entry point, stated over the machine's
+own call step rather than a text search, and `noHeap_execution_no_alloc` lifts
+this across the body's reachable loop states. The scalar adapter function list
+is proved to obey both policies (`CallPolicy.unit_no_heap`/`unit_acyclic`), with
+the named boundary set `CallPolicy.bUnit`: the generated helpers `fail`,
+`model_rhs`, `model_advance`, `rumoca_valid_identity`, `rumoca_reserve_slot`;
+the declared kernel entries `rumoca_rhs`, `rumoca_step`, `rumoca_sample`; the
+library externals `isfinite`, `floor`, `fegetround`, `strlen`, `strspn`,
+`strcmp`, `atomic_exchange`, `atomic_store`; and the importer logger callback
+`logMessage`. This is carried as the `no_heap_acyclic` conjunct of
+`FMI3.SourceBuildContract`, a proved consequence of the mandatory adapter
+contract required on the actual bytes. The static-declaration layout/size/
+alignment binding to bytes and the tensor adapter/kernel body-level discharge
+remain open.
+
 The affected package checks passed at 14:22:06 UTC on 2026-09-15. The required
 `nix develop .#verification --command lake test` passed at 15:09:42 UTC
 on 2026-09-15, with 1114 unchanged inputs and all 33 selected roots.

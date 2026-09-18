@@ -37,6 +37,7 @@ import RumocaC.CallPolicyExecution
 import RumocaC.CallLinkage
 import RumocaC.CallDepth
 import RumocaC.CallPolicyProofs
+import RumocaC.NoHeapPolicy
 import ProofAudit.Audit
 
 /-! Independently cached formal audits for the call policy; no example-based tests. -/
@@ -60,6 +61,14 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCallPolicy.kernel_no_call
 #audit axioms Rumoca.CCallPolicy.function_inventory_ready
 #audit axioms Rumoca.CCallPolicy.resolved_named_edge
+
+#audit axioms Rumoca.CCallPolicy.checkFunction_mono
+#audit axioms Rumoca.CCallPolicy.noHeap_callee_named
+#audit axioms Rumoca.CCallPolicy.noHeap_body_ready
+#audit axioms Rumoca.CCallPolicy.noHeap_no_alloc_call
+#audit axioms Rumoca.CCallPolicy.noHeap_execution_no_alloc
+#audit axioms Rumoca.CCallPolicy.definedEdge_decreases
+#audit axioms Rumoca.CCallPolicy.acyclic_of_ranked
 
 #audit axioms Rumoca.CCallDepth.Frames.depth_bound
 #audit axioms Rumoca.CCallDepth.Frames.weaken

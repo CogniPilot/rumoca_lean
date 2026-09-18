@@ -73,6 +73,15 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Checked no-heap and acyclic call-graph policy over the generated call graph: standards impact
+
+| Standard | Impact |
+| --- | --- |
+| MISRA C:2025 Dir 4.12 (no dynamic memory) | The reusable decidable policy `CCallPolicy.NoHeap` (`packages/backend-c/RumocaC/NoHeapPolicy.lean`) requires every callee name in every generated function body to be a defined function, a declared kernel entry, a header-declared FMI function or a named external, and rejects an explicit list of allocation entry points. `noHeap_no_alloc_call` proves, over the shared machine's own scheduled call step, that a call issued from a policy-checked body never names an allocation symbol, and `noHeap_execution_no_alloc` lifts this across the body's reachable loop states. The guarantee is therefore a checked contract, not a `malloc` text search. It is discharged for the scalar adapter (`CallPolicy.unit_no_heap`) and carried as the `no_heap_acyclic` conjunct of `FMI3.SourceBuildContract` on the actual bytes. |
+| MISRA C:2025 Rule 21.3 (no `malloc`/`calloc`/`realloc`/`free`) | The named allocation set `CCallPolicy.allocationNames` lists `malloc`, `calloc`, `realloc`, `reallocarray`, `free`, `aligned_alloc`, `posix_memalign`, `memalign`, `valloc`, `pvalloc`, `strdup`, `strndup`; `NoHeap` excludes every one of them from the admitted callees, and the scalar adapter list is proved to satisfy the policy. |
+| MISRA C:2025 Rule 17.2 (no direct or indirect recursion) | `CCallPolicy.Acyclic` states that the direct-call relation among defined functions has no cycle; `acyclic_of_ranked` discharges it from a decidable topological rank (`FMI3.CallPolicy.functionRank`), and `CallPolicy.unit_acyclic` proves it for the complete scalar adapter function list. Direct and indirect recursion among the generated defined functions is thereby excluded; indirect calls through a function pointer remain a separate resolution boundary. |
+| FMI 3.0.2, §2.2.2 Platform Dependent Definitions | The header-declared FMI functions and the named library/callback externals (`isfinite`, `floor`, `fegetround`, `strlen`, `strspn`, `strcmp`, `atomic_exchange`, `atomic_store`, `logMessage`) are recorded as explicit named boundaries in `CallPolicy.bUnit` rather than resolved to generated bodies; the FMI headers and platform types stay external. The policy classifies these boundaries and asserts nothing about the native implementation of the header-declared routines. |
+
 ### Stage record: unit and square Jacobian array profiles admitted to FMI 3 FMU output
 
 This record completes the recurring review for the enlarged admitted subset
