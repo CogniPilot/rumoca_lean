@@ -12,6 +12,7 @@ import RumocaFMI3.Header
 import Tests.TensorMetadataFixture
 import Tests.TensorAdapterFixture
 import Rumoca.EFMITensorAlgorithm
+import Rumoca.EFMITensorProduction
 
 open _root_.Parser
 
@@ -74,6 +75,19 @@ def main : IO Unit := do
             (algParsed.ast == GALEC.Syntax.tensorUnit)
         IO.FS.createDirAll "build/tensor-efmi"
         IO.FS.writeFile "build/tensor-efmi/AlgorithmCode.alg" algorithmSource
+        -- Development tensor eFMI Production Code and manifest product. The
+        -- array/tensor profile is not admitted to CLI eFMI output; this renders
+        -- the certified-kernel Production translation unit and the Algorithm/
+        -- Production/container manifests for the prepared square kernel and
+        -- retains them under build/tensor-efmi/ for the boundary XSD check.
+        let tensorIdentity := EFMIIdentity.derivedIdentity "TensorSquare" arraySquare 1700000000
+        let tensorDocs := EFMI.TensorManifest.prepare "TensorSquare" tensorIdentity algorithmSource
+        expect "tensor eFMI manifests lie in the checked XML output profile"
+          tensorDocs.valid
+        IO.FS.writeFile "build/tensor-efmi/ProductionCode.c" EFMI.TensorProduction.render
+        IO.FS.writeFile "build/tensor-efmi/AlgorithmCode.xml" (XML.document tensorDocs.algorithm)
+        IO.FS.writeFile "build/tensor-efmi/ProductionCode.xml" (XML.document tensorDocs.production)
+        IO.FS.writeFile "build/tensor-efmi/content.xml" (XML.document tensorDocs.content)
         let preparedModel : Solve.TensorFMI3Model ArrayProfile.stateShape := ⟨"TensorSquare", kernel⟩
         expect "prepared TensorSquare renders the fixture's well-formed tensor model description"
           (preparedModel.hasOutput &&

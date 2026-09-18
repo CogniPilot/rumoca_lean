@@ -99,6 +99,56 @@ if [ "$status" -ne 0 ] || [ -s build/tensor-fmi/adapter-cc.log ]; then
 fi
 echo 'Tensor FMI 3 adapter standalone-object boundary check passed'
 
+# --- Development tensor eFMI Production Code and manifest boundary check ---
+# The compiler regression executable renders the development tensor eFMI
+# Production Code (build/tensor-efmi/ProductionCode.c) and the Algorithm/
+# Production/container manifests (build/tensor-efmi/*.xml) for the prepared square
+# kernel. This is a development product only: the default CLI still rejects the
+# array profile (asserted in the Lean regression executable and tests/fmi3.sh).
+# This step validates the manifests against the vendored eFMI XSDs with the same
+# lxml check tests/efmi-production.sh uses, confirms the code-file checksums and
+# the origin reference correlate with the emitted bytes, that every array variable
+# carries its declared dimensions, and that the Production C is a well-formed C11
+# translation unit. XSD validation and native compilation are boundaries outside
+# the proof model.
+efmi_root=build/tensor-efmi
+if [ ! -f "$efmi_root/ProductionCode.xml" ] || [ ! -f "$efmi_root/ProductionCode.c" ]; then
+  packages/compiler/.lake/build/bin/tests
+fi
+(cd packages/backend-efmi/vendor/efmi && sha256sum --quiet -c SHA256SUMS)
+python3 - "$efmi_root" <<'PY'
+from pathlib import Path
+from hashlib import sha1
+from lxml import etree
+import sys
+root = Path(sys.argv[1])
+vendor = Path('packages/backend-efmi/vendor/efmi/schemas')
+for name, schema in [
+    ('AlgorithmCode.xml', 'AlgorithmCode/efmiAlgorithmCodeManifest.xsd'),
+    ('ProductionCode.xml', 'ProductionCode/efmiProductionCodeManifest.xsd'),
+    ('content.xml', 'efmiContainerManifest.xsd'),
+]:
+    etree.XMLSchema(etree.parse(str(vendor / schema))).assertValid(etree.parse(str(root / name)))
+algorithm = etree.parse(str(root / 'AlgorithmCode.xml'))
+production = etree.parse(str(root / 'ProductionCode.xml'))
+assert algorithm.find("Files/File[@role='Code']").get('checksum') == \
+    sha1((root / 'AlgorithmCode.alg').read_bytes()).hexdigest()
+assert production.find("Files/File[@role='Code']").get('checksum') == \
+    sha1((root / 'ProductionCode.c').read_bytes()).hexdigest()
+assert production.find('ManifestReferences/ManifestReference').get('checksum') == \
+    sha1((root / 'AlgorithmCode.xml').read_bytes()).hexdigest()
+dims = {v.get('name'): [d.get('size') for d in v.findall('Dimensions/Dimension')]
+        for v in algorithm.findall('Variables/RealVariable')}
+assert dims['u'] == ['2'] and dims['x'] == ['2'] and dims['J'] == ['2', '2'], dims
+components = {c.get('name'): [d.get('size') for d in c.findall('Dimensions/Dimension')]
+             for c in production.findall("CodeContainer/CodeFiles/CodeFile/Typedefs/Typedef[@id='TD_Model']/Components/Component")}
+assert components['u'] == ['2'] and components['x'] == ['2'] and components['J'] == ['2', '2'], components
+print('tensor eFMI manifests: XSD-valid, checksum-correlated, array dimensions declared')
+PY
+"${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror -pedantic -fno-fast-math -ffp-contract=off \
+  -Wno-unused-parameter -c "$efmi_root/ProductionCode.c" -o "$efmi_root/ProductionCode.o"
+echo 'Development tensor eFMI Production Code and manifest boundary check passed'
+
 # --- Development tensor FMU boundary run (NOT a production FMU) ---
 # Assemble a development FMU for the TensorSquare kernel from the already-produced
 # certified pieces and drive it through FMPy in Model Exchange and Co-Simulation.
