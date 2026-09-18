@@ -5006,11 +5006,19 @@ and emits the axiom-audited `Rumoca.CheckedTensorEFMIFiles.source_to_algorithm`
 binding the pinned tensor square Algorithm Code to the compiled tensor artifact.
 The CLI stages this member for `-o out.alg` and requires the certificate before
 publication; `tests/efmi-algorithm.sh` checks the publication, no-build reuse and
-a mutation-rejection control with only the usual three axioms. The two remaining
-tensor eFMI certificate kinds, `tensor-efmi-directory` and `tensor-efmi-archive`
-(emitting `source_to_manifests` and `source_to_archive`), and CLI admission of
-complete tensor eFMU output, are blocked on the tensor Production C actual-byte
-certificate and are not yet in the gate; the tensor archive assembly and its
+a mutation-rejection control with only the usual three axioms. The tensor Production C
+actual-byte checker is also implemented: `EFMITensorProductionArtifactCheck`
+binds a read Production C file to the certified translation unit one certified
+fragment at a time (via `RumocaEFMI.TensorProduction.render_chars`) and emits
+`source_to_production`, validated standalone on the pinned `TensorSquare`
+Production C with only the three approved axioms. The two remaining tensor eFMI
+certificate kinds, `tensor-efmi-directory` and `tensor-efmi-archive` (emitting
+`source_to_manifests` and `source_to_archive`), their gate registration and CLI
+admission of complete tensor eFMU output remain open: composing the Production C
+byte certificate with the manifest XML, SHA-1 and stored-ZIP certificates over
+the concrete tensor artifacts elaborates in a prototype but at a memory cost
+impractical for the shared gate, so the open work is making that composition
+affordable, not any missing contract. The tensor archive assembly and its
 `TensorArchiveContract` (roster, checksums, container correlation and stored-ZIP
 bytes, universal in identity and model name) are already proven for that checker
 to compose.

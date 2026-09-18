@@ -387,19 +387,30 @@ member and leaves no destination or staging directory). `tests/efmi-algorithm.sh
 exercises the CLI publication, the no-build certificate reuse with `--check-only`,
 and a mutation-rejection control on the tensor Algorithm Code.
 
-The tensor eFMU archive byte checker (the `tensor-efmi-archive` and
-`tensor-efmi-directory` kinds emitting `Rumoca.CheckedTensorEFMIFiles`
-`.source_to_archive` and `.source_to_manifests`) and CLI admission of complete
-eFMU (`.efmu`) output remain. They are blocked on the tensor Production C
-actual-byte certificate: unlike the scalar Production C, whose renderer reduces to
-a pinned string literal (`CSyntax.render_unit`), the tensor `TensorProduction`
-`.render` is the join of certified kernel-entry renders, a computed interface
-header and the method-function renders, so binding a read file to it needs the
-per-fragment character certificate the FMI 3 tensor build checker uses for
-`model.c` (`Rumoca.TensorKernel.chars` and the reflected fragment renders in
-`TensorFMI3BuildArtifactCheck.lean`), extended over the Production Code fragments.
-The archive assembly and its contract above are already in place for that checker
-to compose.
+The tensor Production C actual-byte checker is in place. Unlike the scalar
+Production C, whose renderer reduces to a pinned string literal
+(`CSyntax.render_unit`), the tensor `TensorProduction.render` is the join of
+certified kernel-entry renders, a computed interface header and the
+method-function renders, so `RumocaEFMI.TensorProduction.render_chars` exposes it
+as those fragments and `EFMITensorProductionArtifactCheck.lean` binds a read file
+to it one certified fragment at a time (each kernel-entry render, the interface
+header and each method-function render checked against its delaborated tree, and
+the concatenation against the read bytes), exactly as the FMI 3 tensor build
+checker binds `model.c` (`Rumoca.TensorKernel.chars`). It extends the tensor
+Algorithm Code theorem and emits the axiom-audited
+`Rumoca.CheckedTensorEFMIFiles.source_to_production`, validated on the pinned
+`TensorSquare` Production C with only the three approved foundational axioms.
+
+The `tensor-efmi-directory` and `tensor-efmi-archive` checker kinds (emitting
+`source_to_manifests` and `source_to_archive`), their gate registration and CLI
+admission of complete eFMU (`.efmu`) output remain. Composing the Production C
+byte certificate with the manifest XML, SHA-1 and stored-ZIP certificates over the
+concrete tensor artifacts (a 2258-byte Production C and a 7.4 KB Production Code
+manifest) is the open work: a prototype of the directory checker certificate
+elaborates but at a memory cost (roughly 18 GB) impractical for the shared gate,
+so making that composition affordable, not any missing contract, is what is left.
+The archive assembly and its `TensorArchiveContract` above are already in place
+for that checker to compose.
 
 ## Production C work after the Algorithm Code checkpoint
 
