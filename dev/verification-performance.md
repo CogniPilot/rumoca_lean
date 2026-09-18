@@ -96,3 +96,44 @@ Evidence is in `build/certificate-cache/efmi-reproducible-v1.log` and
 `efmi-reproducible-warm-v1.log`.
 
 See [the dependency and trust boundary](../docs/development.md#cached-artifact-certificates).
+
+## Kernel-affordable checksum and tensor manifest certification
+
+The tensor eFMI Production Code manifest is 7.4 KB (117 SHA-1 blocks), an order
+of magnitude larger than the scalar manifests. Certifying it exposed two costs
+in the checksum certificate that were negligible at the scalar sizes.
+
+First, the SHA-1 compression function previously built its 80-word message
+schedule with an array and an `Id.run` mutation loop, and worked over the
+`Fin`-wrapped `UInt32` operations. The kernel reduces those poorly: one
+`compress` step cost about 2.5 GiB, and 117 sequential per-block certificates
+accumulated past 7.5 GiB. The schedule is now a plain structural list recurrence
+(`blockWords`, `scheduleWord`, `extendSchedule`), and the working state and words
+are masked `Nat` values below `2^32`, so the kernel uses its accelerated `Nat`
+bitwise and arithmetic operations. The same 117 per-block certificates then cost
+about 15 s and stay near 4 GiB. The digest value is unchanged; the FIPS 180-4
+vectors still certify by kernel evaluation.
+
+Second, a certificate over the whole 7.4 KB byte or character list overflows the
+kernel's C reduction stack at the interpreter default thread stack. The fixed
+checking entry points already run with a 64 MB thread stack (`lean -s 65536`, set
+by the `verify-artifact` job), which is sufficient; no whole-content reduction is
+weakened.
+
+With both in place, the composed tensor manifest certificate
+(`tensor-efmi-directory`: the three manifest documents' XML serialization and
+validity, and the four SHA-1 code/manifest checksums, into
+`Rumoca.CheckedTensorEFMIFiles.source_to_manifests`) certifies the actual bytes
+within the shared gate's budget:
+
+| Tensor manifest certificate (7.4 KB Production manifest), cold, `-s 65536` | Wall | Peak RSS |
+| --- | ---: | ---: |
+| Array/`Id.run` `UInt32` schedule (before) | did not finish | over 7.5 GiB (killed) |
+| Structural masked-`Nat` schedule (after) | ~2.4 min | ~6.75 GiB |
+
+Peak RSS was sampled by summing the process tree's `VmHWM`. The dominant
+remaining cost is the per-element XML serialization certificate, not the
+checksums. Composing the additional stored-ZIP transport certificate over all
+fifty archive members (`tensor-efmi-archive`) still peaks above the 8 GiB gate
+budget, so the complete `.efmu` archive certificate and its CLI admission remain
+deferred; see [the tensor eFMU standards impact](standards-review.md).

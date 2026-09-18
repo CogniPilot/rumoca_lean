@@ -16,7 +16,7 @@ private def quoteBytes (bytes : List UInt8) : CommandElabM (TSyntax `term) := do
 
 private def quoteState (state : State) : CommandElabM (TSyntax `term) := do
   let words := #[state.a, state.b, state.c, state.d, state.e]
-    |>.map fun w => Syntax.mkNumLit (toString w.toNat)
+    |>.map fun w => Syntax.mkNumLit (toString w)
   `(term| (State.mk $(words[0]!) $(words[1]!) $(words[2]!) $(words[3]!) $(words[4]!) : State))
 
 /-- Certify the exact UTF-8 bytes, original length and SHA-1 padding. The
