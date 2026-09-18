@@ -326,7 +326,6 @@ theorem lifecycle_cs_step (shape : Tensor.Shape) (types : StepEntry.Types) (head
       ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
     (floorBound : program.externals "floor" = some (CMathCalls.floorExternal rfl))
     (macroBound : historyInterface.constants "FE_TONEAREST" = some (.integer header.nearest))
-    (okBound : historyInterface.constants "fmi3OK" = some (.integer 0))
     (timeCell : stepHeap ((TensorInstance.record pool i).member "time") =
       some ⟨.float64, true, some (.finite (times 0))⟩)
     (same : Binary64.value point = Binary64.value (times 0))
@@ -413,9 +412,10 @@ theorem lifecycle_cs_step (shape : Tensor.Shape) (types : StepEntry.Types) (head
     exact LifecycleBodies.write_mode (writeMode H0 (TensorInstance.record pool i) .initialization)
       (TensorInstance.record pool i) .step
   obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, _lastFinal, _othersFinal, stepBehaviors⟩ :=
-    TensorDoStep.accepted_behaviors program shape types header definitions linked library found stepHeap pool i buffers
+    TensorDoStep.accepted_behaviors program shape types header TensorDoStep.cInterface_fenv macroBound
+      definitions linked library found stepHeap pool i buffers
       point step flag stop oldOutput initial input results sums times count bounded matched rounding floorBound
-      macroBound okBound stepDef kindStep modeStep timeCell same enabled limit admitted progress withinStop readsState
+      stepDef kindStep modeStep timeCell same enabled limit admitted progress withinStop readsState
       readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly
       outsideLast executes adds timeAdds resolves
   exact ⟨duration, finalHeap, ei, xi, dpos, dbound, ddur, stateFinal, timeFinal, stepBehaviors⟩

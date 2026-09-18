@@ -3,6 +3,7 @@ import RumocaFMI3.TensorInstanceRhs
 import RumocaFMI3.StepEntry
 import RumocaFMI3.StepGuards
 import RumocaFMI3.StepAdmission
+import RumocaFMI3.StepDiscard
 import RumocaC.AdditionResults
 import RumocaC.TensorFillProofs
 
@@ -164,6 +165,130 @@ theorem euler_reaches (program : CCalls.Events.Program E) (env : Locals) (types 
       simp [written, dif_pos inside, StateProofs.written, Value.finite]
     rw [next] at step
     exact .next (CCalls.Events.body_step program step resultType stack) (.refl _)
+
+end
+
+/-! ### Interface-independent `fmi3OK` return
+
+The final `return fmi3OK` statement resolves the status constant from the ambient
+C interface's `fmi3OK` binding, so its reached-return holds under any interface
+that binds `fmi3OK` to zero (the scalar `cInterface` table and the header-aware
+floating-environment interface both do). -/
+section
+variable [interface : CInterface]
+
+open CTree CMemory CBody in
+/-- The trailing `return fmi3OK` reaches a `fmi3OK`-status return over the same
+heap under any interface binding `fmi3OK` to zero. -/
+theorem finishOK (program : CCalls.Events.Program E) (heap : Heap) (env : Locals)
+    (types : CLoops.Types) (stack : CCalls.Typed.Continuation) (ok : env "fmi3OK" = none)
+    (status : interface.types "fmi3Status" = some .int32)
+    (okBound : interface.constants "fmi3OK" = some (.integer 0)) :
+    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+      (.body (.running [Runtime.ok] env types heap) "fmi3Status" stack)
+      (.returning (.integer 0) heap stack) := by
+  refine .next (t := .body (.returned ⟨.integer 0, heap⟩) "fmi3Status" stack) ?_ (.next ?_ (.refl _))
+  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
+      Runtime.ok, Runtime.ret, Runtime.v, CBody.eval, CBody.resolve, CBody.constants, ok, okBound]
+  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.returnCast, CBody.cast,
+      status, convert]
+
+end
+
+/-! ### The header-aware tensor floating-environment interface
+
+The tensor Co-Simulation step body reads the `FE_TONEAREST` rounding macro in its
+guard prefix, so its proofs run in the floating-environment interface
+`CFenv.Header.interface header (cInterface static.addresses)`: the pinned tensor C
+interface extended with the header's round-to-nearest constant. Only that constant
+is added; every type spelling and every other constant coincides with the pinned
+`cInterface`, so the numerical tail's status and helper resolutions are unchanged. -/
+/-- The pinned type spellings and helper/status constants the tensor Co-Simulation
+step body resolves, stated once for any C interface. `cInterface` and the
+header-aware floating-environment interface both satisfy it: the tensor numerical
+tail carries this as a single premise instead of the individual bindings. -/
+structure TensorFenv (interface : CInterface) : Prop where
+  intType : interface.types "int" = some .int32
+  doubleType : interface.types "double" = some .float64
+  statusType : interface.types "fmi3Status" = some .int32
+  floatPointerType : interface.types "fmi3Float64 *" = some .pointer
+  sizeType : interface.types "size_t" = some .size
+  fmi3OK : interface.constants "fmi3OK" = some (.integer 0)
+  fegetround : interface.constants "fegetround" = none
+  floorConstant : interface.constants "floor" = none
+  rhs : interface.constants "rumoca_rhs" = none
+  jacobian : interface.constants "rumoca_square_jacobian_diag" = none
+
+section
+variable [static : StaticLiterals]
+
+/-- The floating-environment tensor interface: `cInterface` plus the header's
+`FE_TONEAREST` rounding macro. -/
+abbrev fenvInterface (header : CFenv.Header) : CInterface :=
+  CFenv.Header.interface header (cInterface static.addresses)
+
+@[simp] theorem fenvInterface_types (header : CFenv.Header) (name : String) :
+    (fenvInterface (static := static) header).types name = cTypes name := rfl
+
+@[simp] theorem fenvInterface_nearest (header : CFenv.Header) :
+    (fenvInterface (static := static) header).constants "FE_TONEAREST" = some (.integer header.nearest) :=
+  CFenv.Header.nearest_binding header _
+
+theorem fenvInterface_constant (header : CFenv.Header) (name : String) (other : name ≠ "FE_TONEAREST") :
+    (fenvInterface (static := static) header).constants name = cConstants name := by
+  rw [CFenv.Header.other_binding header _ name other]; rfl
+
+/-- The pinned tensor C interface supplies every pinned tensor type spelling and
+helper/status constant (`FE_TONEAREST` is carried separately when the guard runs). -/
+theorem cInterface_fenv : TensorFenv (cInterface static.addresses) where
+  intType := rfl
+  doubleType := rfl
+  statusType := rfl
+  floatPointerType := rfl
+  sizeType := rfl
+  fmi3OK := rfl
+  fegetround := rfl
+  floorConstant := rfl
+  rhs := rfl
+  jacobian := rfl
+
+/-- The error context whose target is the pinned tensor C interface: reuses the
+shared `StepDiscard`/error-callback machinery over the tensor instance record's
+`logging`/`environment`/`logger` cells. -/
+def cErrorContext : ErrorContext static.addresses where
+  target := cInterface static.addresses
+  types := rfl
+  bytes := rfl
+  helper := by
+    simp [CLiteral.Interface.CodeAgrees, CLiteral.Interface.StmtAgrees, CLiteral.Interface.ExprAgrees,
+      CLiteral.Interface.names, Runtime.helpers,
+      Runtime.setMode, Runtime.put, Runtime.mode, Runtime.log, Runtime.branch,
+      Runtime.ret, Runtime.v, Runtime.n, Runtime.field, Runtime.both]
+  error := rfl
+  ordinary := rfl
+
+/-- The header-aware error context: the pinned tensor interface extended with the
+round-to-nearest macro, so its target is `fenvInterface header`. -/
+abbrev fenvErrorContext (header : CFenv.Header) : ErrorContext static.addresses :=
+  (cErrorContext (static := static)).withRounding header
+
+@[simp] theorem fenvErrorContext_target (header : CFenv.Header) :
+    (fenvErrorContext (static := static) header).target = fenvInterface header := rfl
+
+/-- The header-aware floating-environment interface supplies every pinned tensor
+type spelling and helper/status constant. -/
+theorem fenvInterface_fenv (header : CFenv.Header) :
+    TensorFenv (fenvInterface (static := static) header) where
+  intType := rfl
+  doubleType := rfl
+  statusType := rfl
+  floatPointerType := rfl
+  sizeType := rfl
+  fmi3OK := fenvInterface_constant header "fmi3OK" (by decide)
+  fegetround := fenvInterface_constant header "fegetround" (by decide)
+  floorConstant := fenvInterface_constant header "floor" (by decide)
+  rhs := fenvInterface_constant header "rumoca_rhs" (by decide)
+  jacobian := fenvInterface_constant header "rumoca_square_jacobian_diag" (by decide)
 
 end
 
@@ -431,8 +556,7 @@ are exactly what `TensorModelRhs.events_reaches` needs; every other premise of t
 prepared entry (argument validity, layout bounds, member separation) is structural
 in the instance record and holds for any heap. -/
 section
-variable [static : StaticLiterals]
-private local instance runInterface : CInterface := cInterface static.addresses
+variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
@@ -557,8 +681,7 @@ theorem stepBody_noDecl : stepBody.all CLoops.noDeclarations = true := by
     CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
 
 section
-variable [static : StaticLiterals]
-private local instance pureInterface : CInterface := cInterface static.addresses
+variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
@@ -602,7 +725,7 @@ theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Ca
       (.calling (TensorInstanceRhs.plan shape).derivative.function.name
         (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
           (TensorInstanceRhs.args pool i shape)) H .done) w →
-      CCalls.Events.Resolves program w) :
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
     ∃ derivHeap,
       Reads derivHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
       Writable derivHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
@@ -633,7 +756,7 @@ theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Ca
       CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
       Runtime.v, CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve,
       CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments, mBound, countBound,
-      CBody.resolve, CBody.constants, Value.address, hcont, freshRhs]
+      CBody.resolve, CBody.constants, Value.address, hcont, freshRhs, fenv.rhs]
   have argsEq : [Value.pointer (some (m.member TensorInstance.stateName)),
       .pointer (some (m.member TensorInstance.inputName)),
       .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] =
@@ -825,8 +948,7 @@ direct-resolution of the nested tensor helper calls, exactly as one internal ste
 requires. Universal in the tensor shape, the instance index, the heap and the step
 count. -/
 section
-variable [static : StaticLiterals]
-private local instance loopInterface : CInterface := cInterface static.addresses
+variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
@@ -863,7 +985,7 @@ theorem stepLoop_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Defi
       (.calling (TensorInstanceRhs.plan shape).derivative.function.name
         (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
           (TensorInstanceRhs.args pool i shape)) Hn .done) w →
-      CCalls.Events.Resolves program w) :
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
     ∃ finalHeap,
       Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName) (eulerIterate initial sums N) ∧
       Reads finalHeap (TensorInstance.field pool i TensorInstance.inputName) input ∧
@@ -933,7 +1055,7 @@ theorem stepLoop_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Defi
         ((resolve_loopEnv env0 shape.volume k "src" (by decide) (by decide)).trans srcBound)
         ((resolve_loopEnv env0 shape.volume k "expected" (by decide) (by decide)).trans expBound)
         ((loopEnv_get env0 shape.volume k "rumoca_rhs" (by decide) (by decide)).trans freshRhs)
-        stateK inputK wStateK wDerivK (executes k hk) (adds k hk) (resolves Hk)
+        stateK inputK wStateK wDerivK (executes k hk) (adds k hk) (resolves Hk) fenv
     -- Increment the outer counter.
     have commute : counterEnv (counterEnv (loopLocals env0 shape.volume k) "n" k) "k" shape.volume =
         counterEnv (loopLocals env0 shape.volume (k + 1)) "n" k :=
@@ -1045,8 +1167,7 @@ theorem stepBodyT_noDecl : stepBodyT.all CLoops.noDeclarations = true := by
   exact ⟨timeAdvance_noDecl, stepBody_noDecl⟩
 
 section
-variable [static : StaticLiterals]
-private local instance pureTInterface : CInterface := cInterface static.addresses
+variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
@@ -1094,7 +1215,7 @@ theorem internalStepPureT_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       (.calling (TensorInstanceRhs.plan shape).derivative.function.name
         (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
           (TensorInstanceRhs.args pool i shape)) Hn .done) w →
-      CCalls.Events.Resolves program w) :
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
     ∃ finalHeap,
       Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName) sum ∧
       Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
@@ -1121,7 +1242,7 @@ theorem internalStepPureT_reaches (shape : Tensor.Shape) (definitions : CLoops.C
     rw [← tfield]; simp [load, timeStored, convert, Value.finite]
   have timeTrans : CLoops.next (.running (timeAdvance ++ (stepBody ++ rest)) env types0 H) =
       some (.running (stepBody ++ rest) env types0 H1) :=
-    timeStep env types0 H p t t' (some (.finite t)) (stepBody ++ rest) rfl
+    timeStep env types0 H p t t' (some (.finite t)) (stepBody ++ rest) fenv.doubleType
       mBound clockLoad (by rw [← tfield]; exact timeStored) timeAdds
   -- The time cell coincides with the scalar `p.member "time"` cell, separate from
   -- every other tensor member; framing carries the tensor reads/writability across
@@ -1152,7 +1273,7 @@ theorem internalStepPureT_reaches (shape : Tensor.Shape) (definitions : CLoops.C
     internalStepPure_reaches program shape definitions linked library found H1 pool i
       state input result sum count v0 env types0 resultType stack rest bounded matched
       mBound countBound kBound typedK dstBound srcBound expBound freshRhs
-      readsStateH1 readsInputH1 writableStateH1 writableDxH1 executed adds (resolves H1)
+      readsStateH1 readsInputH1 writableStateH1 writableDxH1 executed adds (resolves H1) fenv
   refine ⟨written D (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume,
     written_reads D _ sum, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · exact reads_written D _ _ sum result shape.volume
@@ -1225,8 +1346,7 @@ and one (the explicit per-step premise `timeAdds`). The derivative region reads 
 last result, the input region and every cell of every other instance are preserved,
 and the state, derivative and time cells stay readable/writable throughout. -/
 section
-variable [static : StaticLiterals]
-private local instance loopTInterface : CInterface := cInterface static.addresses
+variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
@@ -1266,7 +1386,7 @@ theorem stepLoopT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Def
       (.calling (TensorInstanceRhs.plan shape).derivative.function.name
         (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
           (TensorInstanceRhs.args pool i shape)) Hn .done) w →
-      CCalls.Events.Resolves program w) :
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
     ∃ finalHeap,
       Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName) (eulerIterate initial sums N) ∧
       Reads finalHeap (TensorInstance.field pool i TensorInstance.inputName) input ∧
@@ -1349,7 +1469,7 @@ theorem stepLoopT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Def
         ((resolve_loopEnv env0 shape.volume k "src" (by decide) (by decide)).trans srcBound)
         ((resolve_loopEnv env0 shape.volume k "expected" (by decide) (by decide)).trans expBound)
         ((loopEnv_get env0 shape.volume k "rumoca_rhs" (by decide) (by decide)).trans freshRhs)
-        stateK inputK wStateK wDerivK timeK (executes k hk) (adds k hk) (timeAdds k hk) resolves
+        stateK inputK wStateK wDerivK timeK (executes k hk) (adds k hk) (timeAdds k hk) resolves fenv
     have commute : counterEnv (counterEnv (loopLocals env0 shape.volume k) "n" k) "k" shape.volume =
         counterEnv (loopLocals env0 shape.volume (k + 1)) "n" k :=
       counterEnv_reset_comm (loopLocals env0 shape.volume k) k shape.volume
@@ -1494,8 +1614,7 @@ its time cell and the caller's `lastSuccessfulTime` both read `times N`, and eve
 cell of every other instance is preserved. Universal in the tensor shape, the
 instance index, the heap and the saved caller. -/
 section
-variable [static : StaticLiterals]
-private local instance solveInterface : CInterface := cInterface static.addresses
+variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
@@ -1535,7 +1654,7 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
       (.calling (TensorInstanceRhs.plan shape).derivative.function.name
         (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
           (TensorInstanceRhs.args pool i shape)) Hn .done) w →
-      CCalls.Events.Resolves program w) :
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
     ∃ finalHeap,
       Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
         (eulerIterate initial sums duration.val) ∧
@@ -1567,7 +1686,7 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
     have base : CBody.resolve env4 "communicationStepSize" = some (.finite step) := by
       simp [CBody.resolve, henv4, henv3, henv2, henv1, CBody.bind, stepValue]
     simp [CLoops.eval, CBody.eval, base, CBody.expressionCast, Runtime.v, CBody.zeroLiteral,
-      CBody.cast, stepCast]
+      CBody.cast, stepCast, fenv.sizeType]
   set env5 := bind env4 "steps" (.integer duration.val) with henv5
   set types5 := bindType types4 "steps" .size with htypes5
   have freshK5 : env5 "k" = none := by simp [henv5, henv4, henv3, henv2, henv1, CBody.bind, freshK]
@@ -1585,7 +1704,7 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
     refine .next (CCalls.Events.body_step program
       (TensorFloat64.declare_step_e env types0 H "fmi3Float64 *" "dst"
         ((Runtime.region TensorInstance.stateName)) .pointer
-        (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst rfl
+        (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst fenv.floatPointerType
         (by apply CBodyEmbedding.eval_refines
             simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]) rfl)
       "fmi3Status" stack)
@@ -1593,32 +1712,32 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
         (TensorFloat64.declare_step_e env1 types1 H "fmi3Float64 *" "src"
           ((Runtime.region TensorInstance.derivativeName)) .pointer
           (.pointer (some (p.member TensorInstance.derivativeName))) _ _
-          (by simp [henv1, CBody.bind, freshSrc]) rfl
+          (by simp [henv1, CBody.bind, freshSrc]) fenv.floatPointerType
           (by apply CBodyEmbedding.eval_refines
               simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]) rfl)
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env2 types2 H "size_t" "nContinuousStates"
           (Runtime.n shape.volume) .size (.integer shape.volume) _ _
-          (by simp [henv2, henv1, CBody.bind, freshCount]) rfl
+          (by simp [henv2, henv1, CBody.bind, freshCount]) fenv.sizeType
           (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env3 types3 H "size_t" "expected"
           (Runtime.n shape.volume) .size (.integer shape.volume) _ _
-          (by simp [henv3, henv2, henv1, CBody.bind, freshExpected]) rfl
+          (by simp [henv3, henv2, henv1, CBody.bind, freshExpected]) fenv.sizeType
           (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env4 types4 H "size_t" "steps"
           (.cast "size_t" (Runtime.v "communicationStepSize")) .size (.integer duration.val) _ _
-          (by simp [henv4, henv3, henv2, henv1, CBody.bind, freshSteps]) rfl stepEval
+          (by simp [henv4, henv3, henv2, henv1, CBody.bind, freshSteps]) fenv.sizeType stepEval
           (CLoops.convert_size_nat _ duration.isLt))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
-        (CLoops.counter_initialize env5 types5 H "k" _ freshK5 rfl) "fmi3Status" stack)
+        (CLoops.counter_initialize env5 types5 H "k" _ freshK5 fenv.sizeType) "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
-        (CLoops.counter_initialize env6 types6 H "n" _ freshN6 rfl) "fmi3Status" stack)
+        (CLoops.counter_initialize env6 types6 H "n" _ freshN6 fenv.sizeType) "fmi3Status" stack)
         (.refl _)))))))
   -- The loop's entry environment `env6` carries every prepared binding.
   have kInit6 : env6 "k" = some (.integer 0) := by simp [henv6, counterEnv, CBody.bind]
@@ -1648,7 +1767,7 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
       (Runtime.out "lastSuccessfulTime" (Runtime.field "time") :: [Runtime.ok])
       bounded matched nBoundD mBound6 countBound6 typedK7 typedN7 kInit6 dstBound6 srcBound6 expBound6
       stepsBound6 freshRhs6 readsState readsInput writableState writableDeriv timeInit
-      (fun n _ => executes n) (fun n _ => adds n) (fun n _ => timeAdds n) resolves
+      (fun n _ => executes n) (fun n _ => adds n) (fun n _ => timeAdds n) resolves fenv
   -- The environment at the `out`/`ok` tail.
   set tailEnv := counterEnv (loopLocals env6 shape.volume duration.val) "n" duration.val with htailEnv
   have mTail : tailEnv "m" = some (.pointer (some p)) := by
@@ -1691,7 +1810,7 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
       simp [CBody.lvalue, Runtime.v, CBody.eval, lastTail, Value.address]
     simp [Runtime.out, CLoops.next, leftEval, addr, Value.finite,
       store_float64 loopHeap buffers.last oldLast _ lastLoop, hfinal, StateProofs.written]
-  have okReach := DerivativeCalls.finish program finalHeap tailEnv types7 stack okTail
+  have okReach := finishOK program finalHeap tailEnv types7 stack okTail fenv.statusType fenv.fmi3OK
   refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_⟩
   · -- state region reads the N-fold Euler iterate
     intro a
@@ -1775,7 +1894,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       (.calling SquareDiagonal.function.signature.name
         (Diagonal.argumentValues (TensorInstance.field pool i TensorInstance.inputName)
           (TensorInstance.field pool i TensorInstance.outputName) shape) H' .done) w →
-      CCalls.Events.Resolves program w) :
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
     ∃ finalHeap,
       Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
         (eulerIterate initial sums duration.val) ∧
@@ -1812,7 +1931,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
     have base : CBody.resolve env4 "communicationStepSize" = some (.finite step) := by
       simp [CBody.resolve, henv4, henv3, henv2, henv1, CBody.bind, stepValue]
     simp [CLoops.eval, CBody.eval, base, CBody.expressionCast, Runtime.v, CBody.zeroLiteral,
-      CBody.cast, stepCast]
+      CBody.cast, stepCast, fenv.sizeType]
   set env5 := bind env4 "steps" (.integer duration.val) with henv5
   set types5 := bindType types4 "steps" .size with htypes5
   have freshK5 : env5 "k" = none := by simp [henv5, henv4, henv3, henv2, henv1, CBody.bind, freshK]
@@ -1828,7 +1947,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
     refine .next (CCalls.Events.body_step program
       (TensorFloat64.declare_step_e env types0 H "fmi3Float64 *" "dst"
         ((Runtime.region TensorInstance.stateName)) .pointer
-        (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst rfl
+        (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst fenv.floatPointerType
         (by apply CBodyEmbedding.eval_refines
             simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]) rfl)
       "fmi3Status" stack)
@@ -1836,32 +1955,32 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
         (TensorFloat64.declare_step_e env1 types1 H "fmi3Float64 *" "src"
           ((Runtime.region TensorInstance.derivativeName)) .pointer
           (.pointer (some (p.member TensorInstance.derivativeName))) _ _
-          (by simp [henv1, CBody.bind, freshSrc]) rfl
+          (by simp [henv1, CBody.bind, freshSrc]) fenv.floatPointerType
           (by apply CBodyEmbedding.eval_refines
               simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]) rfl)
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env2 types2 H "size_t" "nContinuousStates"
           (Runtime.n shape.volume) .size (.integer shape.volume) _ _
-          (by simp [henv2, henv1, CBody.bind, freshCount]) rfl
+          (by simp [henv2, henv1, CBody.bind, freshCount]) fenv.sizeType
           (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env3 types3 H "size_t" "expected"
           (Runtime.n shape.volume) .size (.integer shape.volume) _ _
-          (by simp [henv3, henv2, henv1, CBody.bind, freshExpected]) rfl
+          (by simp [henv3, henv2, henv1, CBody.bind, freshExpected]) fenv.sizeType
           (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env4 types4 H "size_t" "steps"
           (.cast "size_t" (Runtime.v "communicationStepSize")) .size (.integer duration.val) _ _
-          (by simp [henv4, henv3, henv2, henv1, CBody.bind, freshSteps]) rfl stepEval
+          (by simp [henv4, henv3, henv2, henv1, CBody.bind, freshSteps]) fenv.sizeType stepEval
           (CLoops.convert_size_nat _ duration.isLt))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
-        (CLoops.counter_initialize env5 types5 H "k" _ freshK5 rfl) "fmi3Status" stack)
+        (CLoops.counter_initialize env5 types5 H "k" _ freshK5 fenv.sizeType) "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
-        (CLoops.counter_initialize env6 types6 H "n" _ freshN6 rfl) "fmi3Status" stack)
+        (CLoops.counter_initialize env6 types6 H "n" _ freshN6 fenv.sizeType) "fmi3Status" stack)
         (.refl _)))))))
   -- The loop's entry environment `env6` carries every prepared binding.
   have kInit6 : env6 "k" = some (.integer 0) := by simp [henv6, counterEnv, CBody.bind]
@@ -1890,7 +2009,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       count duration.val env6 types7 "fmi3Status" stack tail
       bounded matched nBoundD mBound6 countBound6 typedK7 typedN7 kInit6 dstBound6 srcBound6 expBound6
       stepsBound6 freshRhs6 readsState readsInput writableState writableDeriv timeInit
-      (fun n _ => executes n) (fun n _ => adds n) (fun n _ => timeAdds n) resolves
+      (fun n _ => executes n) (fun n _ => adds n) (fun n _ => timeAdds n) resolves fenv
   -- The environment at the tail (Jacobian call, publish, return).
   set tailEnv := counterEnv (loopLocals env6 shape.volume duration.val) "n" duration.val with htailEnv
   have mTail : tailEnv "m" = some (.pointer (some p)) := by
@@ -1936,7 +2055,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       CLoops.next, CLoops.eval, TensorContinuousStates.jacobianEntryArgs, Runtime.call, Runtime.region,
       Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CCalls.Events.enterCall,
       CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments,
-      CBody.bind, CBody.resolve, CBody.constants, Value.address, mTail, countTail, freshJacTail]
+      CBody.bind, CBody.resolve, CBody.constants, Value.address, mTail, countTail, freshJacTail, fenv.jacobian]
   -- output writability survives the loop (the loop touches only x, dx and time).
   have writableOutputLoop : Writable loopHeap (TensorInstance.field pool i TensorInstance.outputName)
       (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume := by
@@ -1995,7 +2114,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       simp [CBody.lvalue, Runtime.v, CBody.eval, lastTail, Value.address]
     simp [Runtime.out, CLoops.next, leftEval, addr, Value.finite,
       store_float64 jacHeap buffers.last oldLast _ lastLoopJac, hfinal, StateProofs.written]
-  have okReach := DerivativeCalls.finish program finalHeap tailEnv types7 stack okTail
+  have okReach := finishOK program finalHeap tailEnv types7 stack okTail fenv.statusType fenv.fmi3OK
   refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · -- state region reads the N-fold Euler iterate
     intro a
@@ -2126,12 +2245,12 @@ advanced time base, and every cell of every other instance is preserved. -/
 section
 open CTree.Printer StepGuards
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile Rumoca.CTensor
-variable [static : StaticLiterals]
-private local instance acceptedInterface : CInterface := cInterface static.addresses
+variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 set_option maxRecDepth 100000 in
 theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
     (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
@@ -2140,11 +2259,9 @@ theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (heade
     (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
     (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
     (count : UInt64) (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
-    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
       ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
-    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal rfl))
-    (macroBound : acceptedInterface.constants "FE_TONEAREST" = some (.integer header.nearest))
-    (okBound : acceptedInterface.constants "fmi3OK" = some (.integer 0))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
     (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape false)))
     (kindValue : load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1))
     (modeValue : load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4))
@@ -2238,10 +2355,10 @@ theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (heade
   have first := StepGuards.rounding_path program header later localTypes after header.nearest
     ⟨by have positive := header.nonnegative; omega, header.bounded⟩
     (Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape false) "fmi3Status" .done
-    rfl (fresh _ (by simp)) (fresh _ (by simp)) (fresh _ (by simp)) (by simp) macroBound rounding
+    fenv.intType (fresh _ (by simp)) (fresh _ (by simp)) (fresh _ (by simp)) fenv.fegetround nearest rounding
   simp only at first
   have second := StepGuards.clock_path program roundingEnv roundingTypes after p (times 0) step stop
-    (Runtime.stepGrid ++ tensorStepSolve shape false) "fmi3Status" .done rfl
+    (Runtime.stepGrid ++ tensorStepSolve shape false) "fmi3Status" .done fenv.doubleType
     (by simpa [roundingEnv, CBody.bind] using fresh "next" (by simp))
     (by simpa [roundingEnv, CBody.bind] using instanceValue)
     (by simpa [roundingEnv, CBody.bind] using stepBound) ((loaded "time").trans
@@ -2259,8 +2376,8 @@ theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (heade
     simpa [StepAdmission.duration_sum (times 0) step admitted, StepGuards.clockDestination, noStop,
       StepGuards.Progress, progress, rounded, clockEnv, clockTypes, Value.finite] using second
   have third := StepGuards.grid_path program clockEnv clockTypes after step (tensorStepSolve shape false)
-    "fmi3Status" .done rfl (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floored" (by simp))
-    (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floor" (by simp)) (by simp)
+    "fmi3Status" .done fenv.doubleType (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floored" (by simp))
+    (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floor" (by simp)) fenv.floorConstant
     (by simpa [clockEnv, roundingEnv, CBody.bind] using stepBound) admitted.1 floorBound
   have third' : Transition.Events.Prefix (CCalls.Events.machine program)
       (.body (.running (Runtime.stepGrid ++ tensorStepSolve shape false) clockEnv clockTypes after) "fmi3Status" .done) []
@@ -2311,7 +2428,7 @@ theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (heade
         StepEntry.bindings, CBody.bind])
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters,
         StepEntry.bindings, CBody.bind]) readsStateAfter readsInputAfter writableStateAfter writableDerivAfter
-      timeAfter lastAfter outsideLast executes adds timeAdds resolves
+      timeAfter lastAfter outsideLast executes adds timeAdds resolves fenv
   refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, ?_, ?_⟩
   · intro j b k different
     have frameAfter : after ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k) :=
@@ -2322,6 +2439,7 @@ theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (heade
     exact CCalls.Events.internal_path program solveReach
 
 theorem accepted_behaviors (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
     (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
@@ -2330,11 +2448,9 @@ theorem accepted_behaviors (shape : Tensor.Shape) (types : StepEntry.Types) (hea
     (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
     (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
     (count : UInt64) (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
-    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
       ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
-    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal rfl))
-    (macroBound : acceptedInterface.constants "FE_TONEAREST" = some (.integer header.nearest))
-    (okBound : acceptedInterface.constants "fmi3OK" = some (.integer 0))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
     (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape false)))
     (kindValue : load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1))
     (modeValue : load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4))
@@ -2384,15 +2500,16 @@ theorem accepted_behaviors (shape : Tensor.Shape) (types : StepEntry.Types) (hea
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
         behavior = .terminates [] ⟨.integer 0, finalHeap⟩ := by
   obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal, reach⟩ :=
-    accepted_reaches program shape types header definitions linked library found heap pool i buffers point step
-      flag stop oldOutput initial input results sums times count bounded matched rounding floorBound macroBound
-      okBound defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
+    accepted_reaches program shape types header fenv nearest definitions linked library found heap pool i buffers point step
+      flag stop oldOutput initial input results sums times count bounded matched rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
       readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate
       outsideEarly outsideLast executes adds timeAdds resolves
   exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal,
     fun behavior => (reach.forced (CCalls.Events.return_forced program (.integer 0) finalHeap)).behaviors behavior⟩
 
 theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
     (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
@@ -2403,11 +2520,9 @@ theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types)
     (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
     (count : UInt64) (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
     (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
-    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
       ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
-    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal rfl))
-    (macroBound : acceptedInterface.constants "FE_TONEAREST" = some (.integer header.nearest))
-    (okBound : acceptedInterface.constants "fmi3OK" = some (.integer 0))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
     (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape true)))
     (kindValue : load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1))
     (modeValue : load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4))
@@ -2512,10 +2627,10 @@ theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types)
   have first := StepGuards.rounding_path program header later localTypes after header.nearest
     ⟨by have positive := header.nonnegative; omega, header.bounded⟩
     (Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape true) "fmi3Status" .done
-    rfl (fresh _ (by simp)) (fresh _ (by simp)) (fresh _ (by simp)) (by simp) macroBound rounding
+    fenv.intType (fresh _ (by simp)) (fresh _ (by simp)) (fresh _ (by simp)) fenv.fegetround nearest rounding
   simp only at first
   have second := StepGuards.clock_path program roundingEnv roundingTypes after p (times 0) step stop
-    (Runtime.stepGrid ++ tensorStepSolve shape true) "fmi3Status" .done rfl
+    (Runtime.stepGrid ++ tensorStepSolve shape true) "fmi3Status" .done fenv.doubleType
     (by simpa [roundingEnv, CBody.bind] using fresh "next" (by simp))
     (by simpa [roundingEnv, CBody.bind] using instanceValue)
     (by simpa [roundingEnv, CBody.bind] using stepBound) ((loaded "time").trans
@@ -2533,8 +2648,8 @@ theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types)
     simpa [StepAdmission.duration_sum (times 0) step admitted, StepGuards.clockDestination, noStop,
       StepGuards.Progress, progress, rounded, clockEnv, clockTypes, Value.finite] using second
   have third := StepGuards.grid_path program clockEnv clockTypes after step (tensorStepSolve shape true)
-    "fmi3Status" .done rfl (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floored" (by simp))
-    (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floor" (by simp)) (by simp)
+    "fmi3Status" .done fenv.doubleType (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floored" (by simp))
+    (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floor" (by simp)) fenv.floorConstant
     (by simpa [clockEnv, roundingEnv, CBody.bind] using stepBound) admitted.1 floorBound
   have third' : Transition.Events.Prefix (CCalls.Events.machine program)
       (.body (.running (Runtime.stepGrid ++ tensorStepSolve shape true) clockEnv clockTypes after) "fmi3Status" .done) []
@@ -2592,7 +2707,7 @@ theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types)
         StepEntry.bindings, CBody.bind])
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters,
         StepEntry.bindings, CBody.bind]) readsStateAfter readsInputAfter writableStateAfter writableDerivAfter writableOutputAfter
-      timeAfter lastAfter outsideLast executes adds timeAdds jacAdds resolves jacResolves
+      timeAfter lastAfter outsideLast executes adds timeAdds jacAdds resolves jacResolves fenv
   refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, ?_, ?_⟩
   · intro j b k different
     have frameAfter : after ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k) :=
@@ -2603,6 +2718,7 @@ theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types)
     exact CCalls.Events.internal_path program solveReach
 
 theorem accepted_output_behaviors (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
     (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
@@ -2613,11 +2729,9 @@ theorem accepted_output_behaviors (shape : Tensor.Shape) (types : StepEntry.Type
     (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
     (count : UInt64) (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
     (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
-    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
       ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
-    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal rfl))
-    (macroBound : acceptedInterface.constants "FE_TONEAREST" = some (.integer header.nearest))
-    (okBound : acceptedInterface.constants "fmi3OK" = some (.integer 0))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
     (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape true)))
     (kindValue : load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1))
     (modeValue : load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4))
@@ -2678,13 +2792,15 @@ theorem accepted_output_behaviors (shape : Tensor.Shape) (types : StepEntry.Type
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
         behavior = .terminates [] ⟨.integer 0, finalHeap⟩ := by
   obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, othersFinal, reach⟩ :=
-    accepted_output_reaches program shape types header definitions linked library found jacFound heap pool i buffers point step
-      flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound macroBound
-      okBound defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
+    accepted_output_reaches program shape types header fenv nearest definitions linked library found jacFound heap pool i buffers point step
+      flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
       readsInput writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate
       outsideEarly outsideLast executes adds timeAdds jacAdds resolves jacResolves
   exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, othersFinal,
     fun behavior => (reach.forced (CCalls.Events.return_forced program (.integer 0) finalHeap)).behaviors behavior⟩
+
+end
 
 /-! ### The pre-guard rejections
 
@@ -2694,7 +2810,12 @@ rejects them: a null handle returns `fmi3Error` leaving the heap unchanged; a ca
 in a disallowed FMI state returns `fmi3Error` after writing the terminated mode and,
 with logging suppressed, changing nothing else. Both are reached before any tensor
 declaration, and reuse the shared `GuardedCalls` rejection lemmas over the tensor
-`fmi3DoStep` body. -/
+`fmi3DoStep` body. These stay in the pinned `cInterface`; the pre-guard fmi3Error
+return does not read the floating-environment header. -/
+section
+variable [static : StaticLiterals]
+private local instance rejectionInterface : CInterface := cInterface static.addresses
+variable (program : CCalls.Events.Program E)
 
 /-- A null instance handle is rejected with `fmi3Error`, changing nothing. -/
 theorem null_behaviors (shape : Tensor.Shape) (hasOutput : Bool) (types : StepEntry.Types) (heap : Heap)
@@ -2736,6 +2857,268 @@ theorem lifecycle_behaviors (shape : Tensor.Shape) (hasOutput : Bool) (types : S
     helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind]) messageBound hk hm hl hg rejected
+
+end
+
+/-! ### The off-grid / over-bound `fmi3Discard` rejection
+
+An admitted-rounding call whose communication step does not lie on the unit internal
+time grid (off-grid) or exceeds the internal-step bound (over-bound) but still makes
+clock progress inside any stop window reaches the shared `Runtime.stepDiscard` block
+before any tensor declaration, via the reused `StepGuards.rounding_path`/`clock_path`
+guard sections and the rejected `grid_path` branch. The whole call then returns
+`fmi3Discard` with the heap unchanged apart from the output-cell initialization the
+scalar prefix documents, reusing the scalar `StepDiscard` logging-callback composition
+over the tensor instance record's `logging`/`environment`/`logger` cells: the reached
+prefix is silent, so the suppressed outcome terminates with `fmi3Discard`, and the
+enabled outcome mirrors every represented logger callback result. -/
+section
+open CTree.Printer StepGuards
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile Rumoca.CTensor
+variable [static : StaticLiterals]
+
+set_option linter.constructorNameAsVariable false in
+set_option maxRecDepth 100000 in
+/-- The reused guard prefix over the tensor instance heap reaches the shared
+`Runtime.stepDiscard` block for an off-grid or over-bound admitted step. -/
+theorem discard_prefix (shape : Tensor.Shape) (hasOutput : Bool)
+    (header : CFenv.Header) :
+    letI : CInterface := fenvInterface (static := static) header
+    ∀ {E} (program : CCalls.Events.Program E) (types : StepEntry.Types) (heap : Heap) (pool : Address) (i : Nat)
+      (buffers : StepEntry.Buffers) (point step time : Binary64.Value) (flag : Bool)
+      (stop : Option Binary64.Value) (oldOutput : Option Value),
+      program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
+        ⟨by have positive := header.nonnegative; omega, header.bounded⟩) →
+      program.externals "floor" = some (CMathCalls.floorExternal rfl) →
+      program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)) →
+      load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1) →
+      load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4) →
+      heap ((TensorInstance.record pool i).member "time") = some ⟨.float64, true, some (.finite time)⟩ →
+      Binary64.value point = Binary64.value time →
+      load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome) →
+      (∀ value, stop = some value →
+        load heap ((TensorInstance.record pool i).member "stop") = some (.finite value)) →
+      HistoryBodies.BoolWritable heap buffers.event → HistoryBodies.BoolWritable heap buffers.terminate →
+      HistoryBodies.BoolWritable heap buffers.early → heap buffers.last = some ⟨.float64, true, oldOutput⟩ →
+      (∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block) →
+      0 < Binary64.value step →
+      StepGuards.Progress time (Binary64.addResult time step) →
+      ¬ StepGuards.AboveStop (Binary64.addResult time step) stop →
+      ¬ StepAdmission.AdmittedDuration step →
+      StepDiscard.Path program
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done)
+        (StepEntry.outputHeap heap buffers time) (TensorInstance.record pool i) := by
+  letI : CInterface := fenvInterface header
+  have fenv : TensorFenv (fenvInterface header) := fenvInterface_fenv header
+  have nearest : (fenvInterface (static := static) header).constants "FE_TONEAREST" =
+    some (.integer header.nearest) := fenvInterface_nearest header
+  intro E program types heap pool i buffers point step time flag stop oldOutput rounding floorBound defined
+    kindValue modeValue timeCell same enabled limit event terminate early last outsideEvent outsideTerminate
+    outsideEarly outsideLast positive progress noStop offGrid
+  set p := TensorInstance.record pool i with hp
+  set params := StepEntry.parameters (some p) (Binary64.toBits point).val (Binary64.toBits step).val flag
+    buffers.outputs with hparams
+  set after := StepEntry.outputHeap heap buffers time with hafter
+  have front9 := front_run shape hasOutput types params heap p buffers point time step oldOutput
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind]) kindValue modeValue
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, Value.finite])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, Value.finite])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+    (by simp [load, timeCell, convert, Value.finite]) same positive event terminate early last
+    (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i)
+  obtain ⟨localTypes, entered⟩ := CCalls.Events.body_prefix_reaches program (function shape hasOutput)
+    (StepEntry.arguments (some p) (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs)
+    params (StepEntry.locals params p) heap after
+    (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput) .done 9
+    defined (StepEntry.parameters_bound types _ _ _ _ _) (doStepBody_closed shape hasOutput) front9
+  have loaded (name : String) : load after (p.member name) = load heap (p.member name) := by
+    simp only [load, hafter, StepEntry.output_instance heap buffers time p (p.member name)
+      (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl]
+  set later := StepEntry.locals params p with hlater
+  have instanceValue : later "m" = some (.pointer (some p)) := by simp [hlater, StepEntry.locals, CBody.bind]
+  have stepBound : later "communicationStepSize" = some (.finite step) := by
+    simp [hlater, StepEntry.locals, hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, Value.finite]
+  have fresh (name) (member : name ∈ ["rounding", "next", "floored", "fegetround", "floor",
+      "FE_TONEAREST", "model_advance", "fmi3OK"]) : later name = none := by
+    fin_cases member <;>
+      simp [hlater, StepEntry.locals, hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind]
+  let candidate := Binary64.addResult time step
+  let roundingEnv := CBody.bind later "rounding" (.integer header.nearest)
+  let roundingTypes := CLoops.bindType localTypes "rounding" .int32
+  let clockEnv := CBody.bind roundingEnv "next" (.float64 candidate.encode)
+  let clockTypes := CLoops.bindType roundingTypes "next" .float64
+  let gridEnv := CBody.bind clockEnv "floored" (.finite (Binary64.floorValue step))
+  let gridTypes := CLoops.bindType clockTypes "floored" .float64
+  have first := StepGuards.rounding_path program header later localTypes after header.nearest
+    ⟨by have positive := header.nonnegative; omega, header.bounded⟩
+    (Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput) "fmi3Status" .done
+    fenv.intType (fresh _ (by simp)) (fresh _ (by simp)) (fresh _ (by simp)) fenv.fegetround nearest rounding
+  simp only at first
+  have second := StepGuards.clock_path program roundingEnv roundingTypes after p time step stop
+    (Runtime.stepGrid ++ tensorStepSolve shape hasOutput) "fmi3Status" .done fenv.doubleType
+    (by simpa [roundingEnv, CBody.bind] using fresh "next" (by simp))
+    (by simpa [roundingEnv, CBody.bind] using instanceValue)
+    (by simpa [roundingEnv, CBody.bind] using stepBound) ((loaded "time").trans
+      (by simp [load, timeCell, convert, Value.finite]))
+    ((loaded "stopDefined").trans enabled) (fun v c => (loaded "stop").trans (limit v c))
+  have second' : Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running (Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput)
+        roundingEnv roundingTypes after) "fmi3Status" .done) []
+      (.body (.running (Runtime.stepGrid ++ tensorStepSolve shape hasOutput) clockEnv clockTypes after)
+        "fmi3Status" .done) := by
+    simpa only [StepGuards.clockDestination, noStop, progress, ↓reduceIte, List.nil_append,
+      clockEnv, clockTypes, candidate] using second
+  have third := StepGuards.grid_path program clockEnv clockTypes after step (tensorStepSolve shape hasOutput)
+    "fmi3Status" .done fenv.doubleType (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floored" (by simp))
+    (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floor" (by simp)) fenv.floorConstant
+    (by simpa [clockEnv, roundingEnv, CBody.bind] using stepBound) positive floorBound
+  have third' : Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running (Runtime.stepGrid ++ tensorStepSolve shape hasOutput) clockEnv clockTypes after) "fmi3Status" .done) []
+      (.body (.running (Runtime.stepDiscard ++ tensorStepSolve shape hasOutput) gridEnv gridTypes after) "fmi3Status" .done) := by
+    simpa [offGrid, gridEnv, gridTypes] using third
+  refine ⟨gridEnv, gridTypes, tensorStepSolve shape hasOutput,
+    (CCalls.Events.internal_path program entered).trans (first.trans (second'.trans third')), ?_, ?_⟩
+  · simp [gridEnv, clockEnv, roundingEnv, CBody.bind, CBody.resolve, hlater, StepEntry.locals, hparams,
+      StepEntry.parameters, StepEntry.bindings, hp]
+  · simp [gridEnv, clockEnv, roundingEnv, CBody.bind, CBody.resolve, hlater, StepEntry.locals, hparams,
+      StepEntry.parameters, StepEntry.bindings, CBody.constants,
+      fenvInterface_constant header "fmi3Discard" (by decide)]
+
+/-- With logging suppressed, an off-grid or over-bound admitted step returns
+`fmi3Discard`, leaving the heap unchanged apart from the scalar output-cell
+initialization. -/
+def DiscardSuppressed (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Header) : Prop :=
+    letI : CInterface := fenvInterface (static := static) header
+    ∀ {E} (program : CCalls.Events.Program E) (types : StepEntry.Types) (heap : Heap) (pool : Address) (i : Nat)
+      (buffers : StepEntry.Buffers) (point step time : Binary64.Value) (flag : Bool)
+      (stop : Option Binary64.Value) (oldOutput : Option Value) (logger : Option Address) (logging : Bool),
+      program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
+        ⟨by have positive := header.nonnegative; omega, header.bounded⟩) →
+      program.externals "floor" = some (CMathCalls.floorExternal rfl) →
+      program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)) →
+      load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1) →
+      load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4) →
+      heap ((TensorInstance.record pool i).member "time") = some ⟨.float64, true, some (.finite time)⟩ →
+      Binary64.value point = Binary64.value time →
+      load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome) →
+      (∀ value, stop = some value →
+        load heap ((TensorInstance.record pool i).member "stop") = some (.finite value)) →
+      HistoryBodies.BoolWritable heap buffers.event → HistoryBodies.BoolWritable heap buffers.terminate →
+      HistoryBodies.BoolWritable heap buffers.early → heap buffers.last = some ⟨.float64, true, oldOutput⟩ →
+      (∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block) →
+      0 < Binary64.value step →
+      StepGuards.Progress time (Binary64.addResult time step) →
+      ¬ StepGuards.AboveStop (Binary64.addResult time step) stop →
+      ¬ StepAdmission.AdmittedDuration step →
+      load heap ((TensorInstance.record pool i).member "logger") = some (.pointer logger) →
+      load heap ((TensorInstance.record pool i).member "logging") = some (boolean logging) →
+      (logger = none ∨ logging = false) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 2, StepEntry.outputHeap heap buffers time⟩
+
+set_option maxRecDepth 100000 in
+theorem discard_suppressed_behaviors (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Header) :
+    DiscardSuppressed shape hasOutput header := by
+  letI : CInterface := fenvInterface (static := static) header
+  intro E program types heap pool i buffers point step time flag stop oldOutput logger logging rounding floorBound
+    defined kindValue modeValue timeCell same enabled limit event terminate early last outsideEvent outsideTerminate
+    outsideEarly outsideLast positive progress noStop offGrid loggerValue loggingValue suppressed behavior
+  set p := TensorInstance.record pool i with hp
+  have loaded (name : String) :
+      load (StepEntry.outputHeap heap buffers time) (p.member name) = load heap (p.member name) := by
+    simp only [load, StepEntry.output_instance heap buffers time p (p.member name)
+      (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl]
+  obtain ⟨env, gtypes, rest, reached, instanceValue, statusValue⟩ :=
+    discard_prefix shape hasOutput header program types heap pool i buffers point step time flag stop oldOutput
+      rounding floorBound defined kindValue modeValue timeCell same enabled limit event terminate early last
+      outsideEvent outsideTerminate outsideEarly outsideLast positive progress noStop offGrid
+  have result := StepDiscard.suppressed_behaviors (fenvErrorContext header) program env gtypes rest
+    (StepEntry.outputHeap heap buffers time) p logger logging instanceValue statusValue
+    ((loaded "logger").trans loggerValue) ((loaded "logging").trans loggingValue) suppressed
+  exact (reached.silent_finite_behaviors (by intro history divergent; have impossible := (result (.diverges history)).mp divergent; simp at impossible) behavior).trans (result behavior)
+
+/-- With logging enabled, an off-grid or over-bound admitted step returns
+`fmi3Discard` after invoking the logging callback, mirroring every represented
+callback outcome; the heap is unchanged apart from the scalar output-cell
+initialization and the callback's own writes. -/
+def DiscardLogged (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Header) : Prop :=
+    letI : CInterface := fenvInterface (static := static) header
+    ∀ {E} (program : CCalls.Events.Program E) (types : StepEntry.Types) (heap : Heap) (pool : Address) (i : Nat)
+      (buffers : StepEntry.Buffers) (point step time : Binary64.Value) (flag : Bool)
+      (stop : Option Binary64.Value) (oldOutput : Option Value)
+      (text category logger : Address) (environment : Option Address) (name : String)
+      (foreign : CCalls.Events.External E),
+      program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
+        ⟨by have positive := header.nonnegative; omega, header.bounded⟩) →
+      program.externals "floor" = some (CMathCalls.floorExternal rfl) →
+      program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)) →
+      static.addresses "logStatus" = some category → static.addresses StepDiscard.message = some text →
+      program.addresses logger = some name → program.externals name = some foreign →
+      foreign.signature = Logging.signature name →
+      load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1) →
+      load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4) →
+      heap ((TensorInstance.record pool i).member "time") = some ⟨.float64, true, some (.finite time)⟩ →
+      Binary64.value point = Binary64.value time →
+      load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome) →
+      (∀ value, stop = some value →
+        load heap ((TensorInstance.record pool i).member "stop") = some (.finite value)) →
+      HistoryBodies.BoolWritable heap buffers.event → HistoryBodies.BoolWritable heap buffers.terminate →
+      HistoryBodies.BoolWritable heap buffers.early → heap buffers.last = some ⟨.float64, true, oldOutput⟩ →
+      (∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block) →
+      (∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block) →
+      0 < Binary64.value step →
+      StepGuards.Progress time (Binary64.addResult time step) →
+      ¬ StepGuards.AboveStop (Binary64.addResult time step) stop →
+      ¬ StepAdmission.AdmittedDuration step →
+      load heap ((TensorInstance.record pool i).member "logger") = some (.pointer (some logger)) →
+      load heap ((TensorInstance.record pool i).member "logging") = some (.integer 1) →
+      load heap ((TensorInstance.record pool i).member "environment") = some (.pointer environment) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
+      (∃ events value after, foreign.execute (StepDiscard.arguments environment category text)
+        (StepEntry.outputHeap heap buffers time) events value after ∧
+        behavior = .terminates events ⟨.integer 2, after⟩) ∨
+      ((∀ events value after, ¬ foreign.execute (StepDiscard.arguments environment category text)
+        (StepEntry.outputHeap heap buffers time) events value after) ∧ behavior = .wrong [])
+
+set_option maxRecDepth 100000 in
+theorem discard_logged_behaviors (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Header) :
+    DiscardLogged shape hasOutput header := by
+  letI : CInterface := fenvInterface (static := static) header
+  intro E program types heap pool i buffers point step time flag stop oldOutput text category logger environment name
+    foreign rounding floorBound defined categoryBound textBound address external prototype kindValue modeValue timeCell
+    same enabled limit event terminate early last outsideEvent outsideTerminate outsideEarly outsideLast positive
+    progress noStop offGrid loggerValue loggingValue environmentValue behavior
+  set p := TensorInstance.record pool i with hp
+  have loaded (name : String) :
+      load (StepEntry.outputHeap heap buffers time) (p.member name) = load heap (p.member name) := by
+    simp only [load, StepEntry.output_instance heap buffers time p (p.member name)
+      (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl]
+  obtain ⟨env, gtypes, rest, reached, instanceValue, statusValue⟩ :=
+    discard_prefix shape hasOutput header program types heap pool i buffers point step time flag stop oldOutput
+      rounding floorBound defined kindValue modeValue timeCell same enabled limit event terminate early last
+      outsideEvent outsideTerminate outsideEarly outsideLast positive progress noStop offGrid
+  have result := StepDiscard.all_behaviors (fenvErrorContext header) program env gtypes rest
+    (StepEntry.outputHeap heap buffers time) p text category logger environment name foreign instanceValue statusValue
+    ((loaded "logger").trans loggerValue) ((loaded "logging").trans loggingValue)
+    ((loaded "environment").trans environmentValue) address categoryBound textBound external prototype
+  exact (reached.silent_finite_behaviors (by intro history divergent; have impossible := (result (.diverges history)).mp divergent; simp at impossible) behavior).trans (result behavior)
 
 end
 
@@ -2835,13 +3218,16 @@ section
 open CTree.Printer
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile Rumoca.CTensor
 variable [static : StaticLiterals]
-private local instance contractInterface : CInterface := cInterface static.addresses
 
 /-- The accepted end-to-end behavior of the output-free tensor `fmi3DoStep`.
 It advances the state by the admitted number of unit Euler steps and publishes the
-advanced time, preserving every other instance. -/
-def ExecutionFree (shape : Tensor.Shape) : Prop :=
-    ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types) (header : CFenv.Header)
+advanced time, preserving every other instance. The C floating-environment
+interface is the header-aware tensor interface, so the round-to-nearest guard and
+`fmi3OK` return resolve; the only remaining external premise is the modeled
+`fegetround`/`floor` platform returns. -/
+def ExecutionFree (shape : Tensor.Shape) (header : CFenv.Header) : Prop :=
+    letI : CInterface := fenvInterface header
+    ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types)
     (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
@@ -2853,8 +3239,6 @@ def ExecutionFree (shape : Tensor.Shape) : Prop :=
     program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
       ⟨by have positive := header.nonnegative; omega, header.bounded⟩) →
     program.externals "floor" = some (CMathCalls.floorExternal rfl) →
-    contractInterface.constants "FE_TONEAREST" = some (.integer header.nearest) →
-    contractInterface.constants "fmi3OK" = some (.integer 0) →
     program.internal.definitions "fmi3DoStep" = some (.tree (function shape false)) →
     load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1) →
     load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4) →
@@ -2905,8 +3289,9 @@ def ExecutionFree (shape : Tensor.Shape) : Prop :=
 /-- The accepted end-to-end behavior of the output-aware tensor `fmi3DoStep`.
 Alongside the output-free behavior it writes the dense Jacobian `diag(2*u)` into the
 instance's `J` region on every accepted step, preserving every other instance. -/
-def ExecutionOutput (shape : Tensor.Shape) : Prop :=
-    ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types) (header : CFenv.Header)
+def ExecutionOutput (shape : Tensor.Shape) (header : CFenv.Header) : Prop :=
+    letI : CInterface := fenvInterface header
+    ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types)
     (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
@@ -2920,8 +3305,6 @@ def ExecutionOutput (shape : Tensor.Shape) : Prop :=
     program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
       ⟨by have positive := header.nonnegative; omega, header.bounded⟩) →
     program.externals "floor" = some (CMathCalls.floorExternal rfl) →
-    contractInterface.constants "FE_TONEAREST" = some (.integer header.nearest) →
-    contractInterface.constants "fmi3OK" = some (.integer 0) →
     program.internal.definitions "fmi3DoStep" = some (.tree (function shape true)) →
     load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1) →
     load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4) →
@@ -2982,53 +3365,63 @@ def ExecutionOutput (shape : Tensor.Shape) : Prop :=
 /-- The tensor `fmi3DoStep` function contract, parameterized on whether the record
 carries the dense observation. The accepted execution carries the extra Jacobian
 conjunct exactly in the output case. -/
-structure Contract (shape : Tensor.Shape) (hasOutput : Bool) (text : String) : Prop where
+structure Contract (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Header) (text : String) : Prop where
   printed : text = (function shape hasOutput).render
   closed : (function shape hasOutput).body.all CBodyEmbedding.closedBlocks = true
   denotes : FunctionDenotes RuntimePrinter.typedefs text (function shape hasOutput)
-  rejected : ∀ {E} (program : CCalls.Events.Program E) (types : StepEntry.Types) (heap : Heap)
+  rejected : letI : CInterface := cInterface static.addresses
+    ∀ {E} (program : CCalls.Events.Program E) (types : StepEntry.Types) (heap : Heap)
     (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs),
     program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)) →
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling "fmi3DoStep" (StepEntry.arguments none point step flag outputs) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩
-  execution : cond hasOutput (ExecutionOutput shape) (ExecutionFree shape)
+  execution : cond hasOutput (ExecutionOutput shape header) (ExecutionFree shape header)
+  discarded : DiscardSuppressed shape hasOutput header ∧ DiscardLogged shape hasOutput header
 
-theorem execution_free (shape : Tensor.Shape) : ExecutionFree shape :=
-  fun program ptypes header definitions linked library found heap pool i buffers point step flag stop
-      oldOutput initial input results sums times count bounded matched rounding floorBound macroBound okBound
+theorem execution_free (shape : Tensor.Shape) (header : CFenv.Header) : ExecutionFree shape header := by
+  letI : CInterface := fenvInterface header
+  intro E program ptypes definitions linked library found heap pool i buffers point step flag stop
+      oldOutput initial input results sums times count bounded matched rounding floorBound
       defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput
       writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly outsideLast
-      executes adds timeAdds resolves =>
-    accepted_behaviors program shape ptypes header definitions linked library found heap pool i buffers point step
-      flag stop oldOutput initial input results sums times count bounded matched rounding floorBound macroBound
-      okBound defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
+      executes adds timeAdds resolves
+  exact accepted_behaviors program shape ptypes header (fenvInterface_fenv header) (fenvInterface_nearest header)
+      definitions linked library found heap pool i buffers point step
+      flag stop oldOutput initial input results sums times count bounded matched rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
       readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly
       outsideLast executes adds timeAdds resolves
 
-theorem execution_output (shape : Tensor.Shape) : ExecutionOutput shape :=
-  fun program ptypes header definitions linked library found jacFound heap pool i buffers point step flag stop
-      oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound macroBound okBound
+theorem execution_output (shape : Tensor.Shape) (header : CFenv.Header) : ExecutionOutput shape header := by
+  letI : CInterface := fenvInterface header
+  intro E program ptypes definitions linked library found jacFound heap pool i buffers point step flag stop
+      oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound
       defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput
       writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate outsideEarly
-      outsideLast executes adds timeAdds jacAdds resolves jacResolves =>
-    accepted_output_behaviors program shape ptypes header definitions linked library found jacFound heap pool i buffers
+      outsideLast executes adds timeAdds jacAdds resolves jacResolves
+  exact accepted_output_behaviors program shape ptypes header (fenvInterface_fenv header) (fenvInterface_nearest header)
+      definitions linked library found jacFound heap pool i buffers
       point step flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound
-      macroBound okBound defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
       readsInput writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate
       outsideEarly outsideLast executes adds timeAdds jacAdds resolves jacResolves
 
-theorem contract (shape : Tensor.Shape) (hasOutput : Bool) :
-    Contract shape hasOutput (function shape hasOutput).render where
+theorem contract (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Header) :
+    Contract shape hasOutput header (function shape hasOutput).render where
   printed := rfl
   closed := doStepBody_closed shape hasOutput
   denotes := function_denotes shape hasOutput
-  rejected program types heap point step flag outputs defined :=
-    null_behaviors program shape hasOutput types heap point step flag outputs defined
+  rejected := by
+    letI : CInterface := cInterface static.addresses
+    intro E program types heap point step flag outputs defined
+    exact null_behaviors program shape hasOutput types heap point step flag outputs defined
   execution := by
     cases hasOutput
-    · exact execution_free shape
-    · exact execution_output shape
+    · exact execution_free shape header
+    · exact execution_output shape header
+  discarded := ⟨discard_suppressed_behaviors shape hasOutput header,
+    discard_logged_behaviors shape hasOutput header⟩
 
 end
 

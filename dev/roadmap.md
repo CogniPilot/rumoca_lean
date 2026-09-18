@@ -11,6 +11,25 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Co-simulation step contract without interface assumptions (derived proofs):**
+
+The tensor co-simulation numerical chain and accepted-step theorems are
+generic over the C interface with the pinned type spellings and constants
+bundled in one premise, and the contract instantiates the header-aware
+floating-environment interface, so the round-to-nearest constant and the
+`fmi3OK` return are now theorems rather than assumptions; the scalar path and
+the unit FMU bytes are unchanged. The off-grid and over-bound `fmi3Discard`
+behavior is proved for both logging outcomes by running the reused guard
+prefix to the shared discard block and composing the scalar discard logging
+over the tensor record, and it joins the null and lifecycle rejections in the
+step contract and the adapter contract. The tensor contract's remaining
+external premises are exactly the scalar path's: the modeled `fegetround` and
+`floor` library returns, the kernel entry resolution facts and the finite
+arithmetic premises. Nothing is emitted by production. See
+[tensor arrays and AD](tensor-ad.md). The required
+`nix develop .#verification --command lake test` passed on 2026-09-17 in 12m15s
+(`build/tensor-fmi/full-gate-v27.log`).
+
 **Jacobian output after the co-simulation step (derived proofs and boundary run):**
 
 The accepted tensor `fmi3DoStep` now calls the prepared Jacobian diagonal

@@ -2472,6 +2472,20 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorDoStep.accepted_output_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.null_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.lifecycle_behaviors
+
+-- The pinned tensor floating-environment interface (`cInterface` plus the header
+-- round-to-nearest macro) supplies the round-to-nearest guard constant and every
+-- helper/status spelling the numerical tail resolves, so the accepted execution and
+-- contract carry only the modeled `fegetround`/`floor` platform returns; and the
+-- whole-call `fmi3Discard` for an off-grid or over-bound admitted step reaches the
+-- shared discard block and returns `fmi3Discard` under both the suppressed and the
+-- enabled logging outcomes, reusing the scalar `StepDiscard` composition.
+#audit axioms Rumoca.FMI3.TensorDoStep.finishOK
+#audit axioms Rumoca.FMI3.TensorDoStep.cInterface_fenv
+#audit axioms Rumoca.FMI3.TensorDoStep.fenvInterface_fenv
+#audit axioms Rumoca.FMI3.TensorDoStep.discard_prefix
+#audit axioms Rumoca.FMI3.TensorDoStep.discard_suppressed_behaviors
+#audit axioms Rumoca.FMI3.TensorDoStep.discard_logged_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.signature_printable
 #audit axioms Rumoca.FMI3.TensorDoStep.body_printable
 #audit axioms Rumoca.FMI3.TensorDoStep.function_denotes

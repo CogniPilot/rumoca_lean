@@ -2185,3 +2185,51 @@ Co-Simulation after three unit `fmi3DoStep` calls with the constant input
 `u = (1, 2)` (`diag(2*u) = diag(2, 4)`, row-major `(2, 0, 0, 4)`), matching the
 Model Exchange assertion. The native adapter reads `J = (2, 0, 0, 4)` in both
 Model Exchange and Co-Simulation.
+
+### Contract closure (increment 1.27): floating-environment interface and discard
+
+The two items that remained inside `TensorDoStep.contract` are now closed, so the
+tensor `fmi3DoStep` contract is instantiable without external floating-environment
+assumptions beyond the modeled platform library returns.
+
+Floating-environment interface. The tensor Co-Simulation numerical chain and the
+accepted end-to-end theorems are rebased from the bare `cInterface static.addresses`
+onto the header-aware `fenvInterface header = CFenv.Header.interface header
+(cInterface static.addresses)`: the pinned tensor C interface extended with the
+header's round-to-nearest macro. Only the `FE_TONEAREST` constant is added; every
+type spelling is definitionally the pinned `cTypes` (a structure update leaves the
+`types` field unchanged) and every other constant coincides with `cConstants`, so the
+numerical tail's `size_t`/`fmi3Float64 *`/`fmi3Status` spellings and the `fmi3OK`
+return resolve unchanged. `TensorFenv` bundles those pinned type spellings and
+helper/status constants as one premise; `cInterface_fenv` and `fenvInterface_fenv`
+discharge it for the pinned and header-aware interfaces respectively. The reused
+`StepGuards.rounding_path` reads the macro through `fenvInterface_nearest`. The
+trailing `return fmi3OK` reaches its status return through the interface-generic
+`finishOK` (an `fmi3OK = 0` premise) instead of the scalar-fixed
+`DerivativeCalls.finish`, so no scalar theorem statement changes. `accepted_reaches`,
+`accepted_behaviors`, `accepted_output_reaches`, `accepted_output_behaviors`,
+`execution_free`, `execution_output` and `TensorDoStep.contract` no longer carry the
+`FE_TONEAREST` or `fmi3OK` premise; the remaining external premises are exactly the
+scalar path's modeled `fegetround` return (`program.externals "fegetround" = some
+(CMathCalls.roundingExternal ... header.nearest ...)`) and `floor` return, together
+with the tensor kernel `Resolves` obligations. `TensorAdapter.Contract` binds the
+`fmi3DoStep` contract per floating-environment header, mirroring the seven
+runtime-interface behavioral functions. The scalar adapter and the unit FMU bytes are
+unchanged (the native boundary run reads the same `x@t=3 = (3, 12)` and
+`J = (2, 0, 0, 4)` in Model Exchange and Co-Simulation).
+
+`fmi3Discard` off-grid / over-bound behavior. `discard_prefix` runs the reused guard
+prefix (`front_run`, then `StepGuards.rounding_path`/`clock_path` and the rejected
+`grid_path` branch) over the tensor instance record to the shared
+`Runtime.stepDiscard` block, before any tensor declaration, for an admitted-rounding
+step that makes clock progress inside any stop window but does not lie on the unit
+grid or exceeds the internal-step bound. `discard_suppressed_behaviors` and
+`discard_logged_behaviors` compose that silent prefix with the scalar `StepDiscard`
+suppressed and enabled-logging behaviors over the tensor record's
+`logging`/`environment`/`logger` cells (through `fenvErrorContext header`, whose
+target is `fenvInterface header`): the whole call returns `fmi3Discard` with the heap
+unchanged apart from the scalar output-cell initialization, and the enabled outcome
+mirrors every represented logger-callback result. Both are added to
+`TensorDoStep.Contract` as the `discarded` field alongside the null-handle `rejected`
+field and the `lifecycle_behaviors` companion, and flow through `TensorAdapter.Contract`.
+Every new theorem is on the three permitted foundational axioms.
