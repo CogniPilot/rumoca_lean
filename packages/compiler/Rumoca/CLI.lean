@@ -30,10 +30,10 @@ private def runTensorCompiler {input : Source.InputRef} (name : String)
       IO.eprintln s!"{name}: tensor eFMU archive export is not built; the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu) and tensor eFMI Algorithm Code (-o out.alg) output"
       return 1
     else
-      IO.eprintln s!"{name}: the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu), tensor eFMI Algorithm Code (-o out.alg) and tensor eFMU (-o out.efmu) output; tensor C emission is not built"
+      IO.eprintln s!"{name}: the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu) and tensor eFMI Algorithm Code (-o out.alg) output; tensor eFMU archive export and tensor C emission are not built"
       return 1
   | none =>
-    IO.eprintln s!"{name}: the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu), tensor eFMI Algorithm Code (-o out.alg) and tensor eFMU (-o out.efmu) output; tensor C emission is not built"
+    IO.eprintln s!"{name}: the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu) and tensor eFMI Algorithm Code (-o out.alg) output; tensor eFMU archive export and tensor C emission are not built"
     return 1
 
 private def runCompiler (p : Cli.Parsed) : IO UInt32 := do

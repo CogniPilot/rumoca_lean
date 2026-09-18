@@ -159,7 +159,7 @@ cp "$prod_fmu" "$task_tmp/tensor-preserved.fmu"
 if "$compiler" examples/TensorSquare.mo -o "$task_tmp/tensor-preserved.efmu" > build/fmi-tensor-efmi.log 2>&1; then
   echo "compiler admitted tensor eFMI export" >&2; exit 1
 fi
-rg -q 'tensor eFMI export is not built' build/fmi-tensor-efmi.log
+rg -q 'tensor eFMU archive export is not built' build/fmi-tensor-efmi.log
 # Re-verify the extracted sources through the cached `tensor-fmi3` certificate with
 # no build, requiring certificate reuse and the approved axiom audit lines.
 tensor_root="$task_tmp/tensor-extracted"
