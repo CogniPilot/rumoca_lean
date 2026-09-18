@@ -13,7 +13,9 @@ def parseTree (tokens : List Token) : Except LALR.Failure LALR.Tree :=
 
 theorem in_grammar (b : Block) :
     EBNF.Accepts Generated.sourceGrammar (b.tokens.map Token.symbol) := by
-  simp [Generated.start_rule, Generated.rule_block, Generated.rule_startup,
+  rw [Generated.start_rule, Generated.rule_program, EBNF.Derives.alt_iff]
+  refine Or.inl ?_
+  simp [Generated.rule_block, Generated.rule_startup,
     Generated.rule_recalibrate, Generated.rule_do_step, Generated.rule_reference,
     EBNF.Derives.seq_iff, EBNF.Derives.terminal_iff, Block.tokens, Token.symbol]
 

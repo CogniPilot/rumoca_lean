@@ -3,6 +3,11 @@
 // References: 3.2.3 (lifecycle), 3.2.4 G-2 (declarations), G-3 (expressions),
 // G-4 (statements). This is a restriction, not the full published grammar.
 // Declaration/reference names and matching end names require checked actions.
+// The first production is the start symbol; it admits the scalar unit profile
+// and the fixed-extent tensor square profile (elementwise product and Jacobian
+// output). The scalar block productions below are unchanged.
+
+program = block | tensor_block;
 
 block = "block", IDENT,
     "output", "Real", IDENT, ";",
@@ -21,3 +26,17 @@ do_step = "method", "DoStep", "algorithm",
     "end", "DoStep", ";";
 
 reference = "self", ".", IDENT;
+
+tensor_block = "block", IDENT,
+    "input", "Real", "[", "2", "]", IDENT, ";",
+    "output", "Real", "[", "2", "]", IDENT, ";",
+    "output", "Real", "[", "2", ",", "2", "]", IDENT, ";",
+    "protected", "constant", "Real", IDENT, ";",
+    "public", startup, recalibrate, tensor_do_step, "end", IDENT, ";";
+
+tensor_do_step = "method", "DoStep", "algorithm",
+    reference, ":=", product, ";",
+    reference, ":=", IDENT, "(", product, ",", reference, ")", ";",
+    "end", "DoStep", ";";
+
+product = reference, ".*", reference;
