@@ -32,7 +32,7 @@ def Block.tokens (b : Block) : List Token :=
    .literal "end", .ident b.endName, .literal ";"]
 
 def identifiers (ts : List Token) : List String :=
-  ts.filterMap fun t => match t with | .ident name => some name | .literal _ => none
+  ts.filterMap fun t => match t with | .ident name => some name | _ => none
 
 /-- A linear token equality check avoids a large nested literal-match tree.
 The fields are still explicit, and every punctuation/literal is checked. -/

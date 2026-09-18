@@ -10,11 +10,16 @@ inductive Symbol where
 inductive Token where
   | ident (name : String)
   | literal (text : String)
+  /-- A numeric literal spelling. Its grammar symbol is the value-erasing
+  `ident`, so productions match it through the `IDENT` terminal, but it is a
+  distinct token so a number is never mistaken for a name. -/
+  | number (text : String)
   deriving Repr, BEq, DecidableEq
 
 def Token.symbol : Token → Symbol
   | .ident _ => .ident
   | .literal s => .literal s
+  | .number _ => .ident
 
 /-- Character offsets, not UTF-8 byte offsets. -/
 structure Diagnostic where
@@ -34,6 +39,6 @@ def identRest (c : Char) : Bool := identStart c || c.isDigit
 def asciiSpace (c : Char) : Bool := c == ' ' || c == '\t' || c == '\r' || c == '\n'
 
 def Token.text : Token → String
-  | .ident s | .literal s => s
+  | .ident s | .literal s | .number s => s
 
 end Parser

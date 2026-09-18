@@ -73,6 +73,23 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### G01 constant-rate development profile: standards impact
+
+The `constant_composition` production admits two or more scalar `Real` state
+declarations followed by one `der(state) = literal` equation per state whose
+right-hand side is a signed decimal literal. It is a development profile: the
+production compiler still rejects it, and only the frontend, source semantics
+and Solve lowering are built (see `dev/constant-rates.md`). C emission, FMI/eFMI
+artifacts and admission are later increments. Each rate literal is recognized as
+a single value-erasing number token and its base-ten content is rounded to the
+nearest-even binary64 value.
+
+| Standard | Impact |
+| --- | --- |
+| MLS 3.7 §2.4.2 Floating Point Numbers (lexical `UNSIGNED-REAL`) | The lexer recognizes the unsigned-real form (digits, an optional fraction, an optional `e`/`E` exponent with an optional sign) together with a leading unary sign, and records the exact base-ten content (`parseDecimal`). The admitted subset restricts a rate to a spelling the lexer distinguishes from a bare digit literal: it carries a sign, a decimal point or an exponent (the fixture uses `2.5` and `-1`). A bare single-digit rate keeps the existing `.literal` class and is not admitted here; a trailing point or a bare exponent is rejected by resolution. No change is made to how the admitted unit and array profiles lex their `'0'`, `'1'` and `'2'` literals. |
+| MLS 3.7 §3.7.2 Derivative and Special Purpose Operators (`der`) | Each equation has the form `der(state) = literal`, one per declared state. Resolution binds every `der` reference to a distinct declared state and requires the equation set to be a permutation of the declared states, so an unbound or uncovered state and a duplicate declaration are rejected with diagnostics. The written order of the `der` equations is immaterial (`Model.rateOf_perm`, `Model.lower_rates_perm`). |
+| MLS 3.7 §8.3.1 Simple Equations; §8.6 Initialization | The source system is a set of independent constant-rate states, each initialized at `+0` (no start modifier is admitted). The Solve lowering is a multi-state IVP whose per-state rate is the exactly rounded binary64 value of the literal; the lowering chain and initialization are proved (`Model.lowering_chain`, `Model.initialization_chain`), and the rounding is the round-to-nearest-even scaled-rounding spec (`Decimal.rate_rounds`), reusing the unit profile's decimal machinery rather than duplicating it. |
+
 ### Native all-behavior matrix over the 75 common functions: standards impact
 
 `tests/fmi3.py --matrix`, wired into `tests/fmi3.sh` for both `build/Integrator.fmu`

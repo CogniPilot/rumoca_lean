@@ -80,6 +80,7 @@ import Rumoca.Initialization
 import Rumoca.InitializationDiagnosticProofs
 import Rumoca.TensorProduction
 import Rumoca.TensorAdapterChars
+import Rumoca.ConstantProofs
 
 #audit axioms Rumoca.Artifact.source_identity
 #audit axioms Rumoca.FMI3.adapter_me_calls
@@ -399,3 +400,12 @@ import Rumoca.TensorAdapterChars
 #audit axioms Rumoca.TensorArtifact.name_square
 #audit axioms Rumoca.TensorKernel.chars
 #audit axioms Rumoca.FMI3.TensorFunctions.tensor_adapter_chars
+
+-- G01 constant-rate development profile: preparation and its instantaneous contract.
+#audit axioms Rumoca.ConstantCompiler.Prepared.source_correct
+#audit axioms Rumoca.ConstantCompiler.Prepared.equation_correct
+#audit axioms Rumoca.ConstantCompiler.Prepared.initialization_correct
+#audit axioms Rumoca.ConstantCompiler.Prepared.rate_exact
+#audit axioms Rumoca.ConstantCompiler.prepare_correct
+#audit axioms Rumoca.ConstantCompiler.prepare_eq_parsed
+#audit axioms Rumoca.ConstantCompiler.prepare_perm_invariant

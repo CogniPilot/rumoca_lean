@@ -33,7 +33,7 @@ def Model.tokens (m : Model) : List Token :=
 This avoids the large native decision tree generated for a 30-token nested
 constructor/literal pattern. Equality checks are linear and fully checked. -/
 def identifiers (ts : List Token) : List String :=
-  ts.filterMap fun t => match t with | .ident name => some name | .literal _ => none
+  ts.filterMap fun t => match t with | .ident name => some name | _ => none
 
 def decode (ts : List Token) : Option Model :=
   match identifiers ts with

@@ -20,7 +20,11 @@ theorem lexed_name (h : Rumoca.Lexes chars tokens) (mem : Token.ident name ∈ t
         subst name
         exact ⟨c, cs.takeWhile identRest, String.toList_ofList, hi, List.all_takeWhile⟩
     · exact ih hm
-  | number _ _ _ _ ih | punct _ _ _ _ _ ih | dotmul _ ih =>
+  | number _ _ _ _ ih =>
+    rcases List.mem_cons.mp mem with hm | hm
+    · exact absurd hm (by unfold numberToken; split <;> simp)
+    · exact ih hm
+  | punct _ _ _ _ _ ih | dotmul _ ih =>
     rcases List.mem_cons.mp mem with hm | hm
     · cases hm
     · exact ih hm

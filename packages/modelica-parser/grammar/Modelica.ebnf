@@ -24,7 +24,7 @@ standard_class_specifier
     : ident composition end ident
     ;
 composition
-    : unit_composition | driven_composition | array_composition
+    : unit_composition | driven_composition | array_composition | constant_composition
     ;
 
 // A.2.4: one unmodified Real declaration for the unit regression profile.
@@ -115,6 +115,29 @@ jacobian_body
     : output type_specifier ident '[' subscript ',' subscript ']' ';'
       equation der '(' component_reference ')' '=' term ';'
       component_reference '=' component_reference function_call_args ';'
+    ;
+
+// G01: two or more scalar Real states, each with one der equation whose
+// right-hand side is a signed decimal literal recognized as one number token.
+constant_composition
+    : component_clause ';' constant_component_list constant_equation_section
+    ;
+constant_component_list
+    : component_clause ';'
+    | constant_component_list component_clause ';'
+    ;
+constant_equation_section
+    : equation constant_equation_list
+    ;
+constant_equation_list
+    : constant_equation ';'
+    | constant_equation_list constant_equation ';'
+    ;
+constant_equation
+    : der '(' component_reference ')' '=' real_literal
+    ;
+real_literal
+    : IDENT
     ;
 
 // A.2.7: one pointwise product and an ordinary two-argument call. `jacobian`

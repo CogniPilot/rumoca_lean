@@ -21,7 +21,7 @@ private def candidate (ids : List String) : Option Model :=
     | _ => none
 
 def decode (ts : List Token) : Option Model :=
-  match candidate (ts.filterMap fun t => match t with | .ident n => some n | .literal _ => none) with
+  match candidate (ts.filterMap fun t => match t with | .ident n => some n | _ => none) with
   | none => none
   | some model => if ts = model.tokens then some model else none
 

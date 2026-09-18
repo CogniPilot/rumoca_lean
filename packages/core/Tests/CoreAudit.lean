@@ -12,6 +12,7 @@ import RumocaCore.GALEC.UnitProfile
 import RumocaCore.Solve.AlgorithmProofs
 import RumocaCore.GALEC.Semantics
 import ProofAudit.Audit
+import RumocaCore.Constant.Permutation
 import RumocaCore.Driven.IR
 import RumocaCore.Driven.Lowering
 import RumocaCore.FMI3.History
@@ -313,3 +314,10 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.FMI3.variable_setter_terminated
 #audit axioms Rumoca.FMI3.state_assignment_endpoint
 #audit axioms Rumoca.FMI3.cs_empty_setter_endpoint
+
+#audit axioms Rumoca.ConstantProfile.Decimal.rate_rounds
+#audit axioms Rumoca.ConstantProfile.Model.lowering_chain
+#audit axioms Rumoca.ConstantProfile.Model.initialization_chain
+#audit axioms Rumoca.ConstantProfile.Model.rateOf_perm
+#audit axioms Rumoca.ConstantProfile.Model.decimalOf_perm
+#audit axioms Rumoca.ConstantProfile.Model.lower_rates_perm

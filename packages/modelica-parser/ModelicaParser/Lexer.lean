@@ -23,6 +23,23 @@ def classifyWord (s : String) : Token :=
 
 def punctuation (c : Char) : Bool := [';', '(', ')', '=', ',', '[', ']'].contains c
 
+/-- Characters of a signed decimal literal: digits, the fraction point, the
+exponent letter and a sign. A leading digit or sign begins a number. -/
+def numberChar (c : Char) : Bool :=
+  c.isDigit || c == '.' || c == 'e' || c == 'E' || c == '+' || c == '-'
+
+def numberStart (c : Char) : Bool := c.isDigit || c == '+' || c == '-'
+
+/-- A pure digit run keeps the exact literal-terminal spelling the admitted
+profiles match (`'0'`, `'1'`, `'2'`); a spelling that carries a sign, point or
+exponent becomes a value-erasing number token that resolution parses. Every
+existing source uses only single-digit literals, whose class is unchanged. -/
+def numberToken (cs : List Char) : Token :=
+  if cs.all Char.isDigit then .literal (String.ofList cs) else .number (String.ofList cs)
+
+theorem numberToken_text (cs : List Char) : (numberToken cs).text = String.ofList cs := by
+  unfold numberToken; split <;> rfl
+
 /-- Declarative maximal-munch lexical rules for the admitted ASCII slice.
 The first character chooses the token class; takeWhile/dropWhile specify the
 maximal remaining word. Comments and quoted identifiers are outside this core. -/
@@ -32,10 +49,10 @@ inductive Lexes : List Char → List Token → Prop where
   | ident : modelicaSpace c = false → identStart c = true →
       Lexes (cs.dropWhile identRest) ts →
       Lexes (c :: cs) (classifyWord (String.ofList (c :: cs.takeWhile identRest)) :: ts)
-  | number : modelicaSpace c = false → identStart c = false → c.isDigit = true →
-      Lexes (cs.dropWhile Char.isDigit) ts →
-      Lexes (c :: cs) (.literal (String.ofList (c :: cs.takeWhile Char.isDigit)) :: ts)
-  | punct : modelicaSpace c = false → identStart c = false → c.isDigit = false →
+  | number : modelicaSpace c = false → identStart c = false → numberStart c = true →
+      Lexes (cs.dropWhile numberChar) ts →
+      Lexes (c :: cs) (numberToken (c :: cs.takeWhile numberChar) :: ts)
+  | punct : modelicaSpace c = false → identStart c = false → numberStart c = false →
       punctuation c = true → Lexes cs ts →
       Lexes (c :: cs) (.literal (String.singleton c) :: ts)
   | dotmul : Lexes cs ts → Lexes ('.' :: '*' :: cs) (.literal ".*" :: ts)
@@ -59,9 +76,9 @@ def scan (total : Nat) : Nat → List Char → Except Diagnostic (List Token)
     else if identStart c then
       prepend (classifyWord (String.ofList (c :: rest.takeWhile identRest)))
         (scan total fuel (rest.dropWhile identRest))
-    else if c.isDigit then
-      prepend (.literal (String.ofList (c :: rest.takeWhile Char.isDigit)))
-        (scan total fuel (rest.dropWhile Char.isDigit))
+    else if numberStart c then
+      prepend (numberToken (c :: rest.takeWhile numberChar))
+        (scan total fuel (rest.dropWhile numberChar))
     else if punctuation c then
       prepend (.literal (String.singleton c)) (scan total fuel rest)
     else if c = '.' ∧ rest.head? = some '*' then
@@ -91,10 +108,10 @@ theorem scan_sound (total fuel : Nat) (cs : List Char) (ts : List Token)
           · obtain ⟨tail, ht, rfl⟩ := prepend_ok _ _ _ h
             exact .number hs' hi' (by assumption) (ih _ _ ht)
           · rename_i hd
-            have hd' : c.isDigit = false := Bool.eq_false_iff.mpr hd
+            have hns : numberStart c = false := Bool.eq_false_iff.mpr hd
             split at h
             · obtain ⟨tail, ht, rfl⟩ := prepend_ok _ _ _ h
-              exact .punct hs' hi' hd' (by assumption) (ih _ _ ht)
+              exact .punct hs' hi' hns (by assumption) (ih _ _ ht)
             · split at h
               · rename_i hop
                 obtain ⟨hc, hhead⟩ := hop
@@ -127,7 +144,7 @@ theorem scan_complete (h : Lexes cs ts) (total fuel : Nat) (bound : cs.length < 
     cases fuel with
     | zero => omega
     | succ fuel =>
-      have hl := congrArg List.length (List.takeWhile_append_dropWhile (p := Char.isDigit) (l := cs))
+      have hl := congrArg List.length (List.takeWhile_append_dropWhile (p := numberChar) (l := cs))
       simp only [List.length_append] at hl
       simp [scan, hs, hi, hd, ih fuel (by simp only [List.length_cons] at bound; omega), prepend]
   | punct hs hi hd hp h ih =>
@@ -140,9 +157,9 @@ theorem scan_complete (h : Lexes cs ts) (total fuel : Nat) (bound : cs.length < 
     | succ fuel =>
       have hs : modelicaSpace '.' = false := by decide
       have hi : identStart '.' = false := by decide
-      have hd : '.'.isDigit = false := by decide
+      have hn : numberStart '.' = false := by decide
       have hp : punctuation '.' = false := by decide
-      simp [scan, hs, hi, hd, hp,
+      simp [scan, hs, hi, hn, hp,
         ih fuel (by simp only [List.length_cons] at bound; omega), prepend]
 
 def lex (source : String) : Except Diagnostic (List Token) :=

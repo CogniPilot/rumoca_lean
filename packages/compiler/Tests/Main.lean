@@ -2,6 +2,7 @@ import Rumoca.Compiler
 import Parser.LALR.EBNF
 import ModelicaParser.Driven
 import Rumoca.ArrayCompiler
+import Rumoca.ConstantCompiler
 import RumocaCore.Solve.IVP
 import RumocaCore.Solve.Tensor.Reverse
 import Rumoca.EFMIIdentity
@@ -123,6 +124,39 @@ def main : IO Unit := do
   | .ok p => match ArrayProfile.LocatedParsed.resolve p with
     | .ok _ => throw (IO.userError "unrecognized builtin was resolved")
     | .error e => expect "unknown function diagnosed at its own source range" (e.span.text == "other")
+  -- G01 constant-rate development profile: two states with signed decimal rates.
+  let constantRates ← IO.FS.readFile "examples/development/ConstantRates.mo"
+  expect "constant-rate profile not admitted by the production C compiler" (!accepted constantRates)
+  match ConstantCompiler.prepare constantRates with
+  | .error e => throw (IO.userError s!"constant frontend: {e.message}")
+  | .ok prepared =>
+    let ast := prepared.parsed.parsed.ast
+    expect "constant frontend recovers two declared states" (ast.states == ["x", "y"])
+    expect "constant frontend recovers each der reference"
+      (ast.equations.map (·.derivative) == ["x", "y"])
+    expect "constant frontend recovers the signed decimal rate spellings"
+      (ast.equations.map (·.rate) == ["2.5", "-1"])
+    expect "prepared literal content of the fraction rate"
+      (decide (ast.decimalOf "x" = ⟨1, 25, -1⟩))
+    expect "prepared literal content of the signed integer rate"
+      (decide (ast.decimalOf "y" = ⟨-1, 1, 0⟩))
+  -- Reordering the two equations must not change the recovered rates.
+  match ConstantCompiler.prepare (constantRates.replace "der(x) = 2.5;\n  der(y) = -1;"
+      "der(y) = -1;\n  der(x) = 2.5;") with
+  | .error e => throw (IO.userError s!"reordered constant frontend: {e.message}")
+  | .ok reordered =>
+    expect "reordered constant equations keep the declared state order"
+      (reordered.parsed.parsed.ast.states == ["x", "y"])
+    expect "reordered constant equations keep each state's rate"
+      (reordered.parsed.parsed.ast.equations.map (·.derivative) == ["y", "x"])
+  -- Malformed and unresolved constant sources are rejected by the frontend.
+  for bad in [constantRates.replace "der(y) = -1" "der(z) = -1",
+      constantRates.replace "Real y;" "Real x;",
+      constantRates.replace "end ConstantRates" "end Other",
+      constantRates.replace "= 2.5" "= notanumber"] do
+    match ConstantCompiler.prepare bad with
+    | .error _ => pure ()
+    | .ok _ => throw (IO.userError "constant frontend admitted an unresolved source")
   expect "attribute names are identifiers" (drivenAccepted
     "model M input Real fixed; output Real start(start=0, fixed=true); equation der(start)=fixed; end M;")
   for bad in [driven.replace "der(x)" "der(u)", driven.replace "=u;" "=x;",

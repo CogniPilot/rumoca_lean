@@ -11,6 +11,21 @@ percentage of semantic coverage.
 
 ## Current position
 
+**G01 constant-rate development profile (derived proofs):**
+
+A `constant_composition` production admits two or more scalar Real states
+with one equation per state whose right-hand side is a signed decimal literal,
+lexed as a value-erasing number token through the existing identifier
+terminal so the LALR tables stay unchanged in kind; typed actions, AST and
+located parse have soundness and completeness theorems. The source semantics,
+resolution with duplicate and unbound-name rejection, and the Flat, DAE and
+Solve lowering to a multi-state constant-rate IVP are proved, with exact
+binary64 rounding of every literal and permutation invariance of the
+equation order. `ConstantCompiler.prepare` has `prepare_correct` and the
+compiler tests tie the `ConstantRates` fixture; production compilation still
+rejects the profile. C emission, artifacts and admission are later increments.
+See [constant rates](constant-rates.md).
+
 **Array profile admitted to FMI 3 FMU output (production and stage record):**
 
 `ParserActions.Parsed.located` lifts the total located-parse construction to

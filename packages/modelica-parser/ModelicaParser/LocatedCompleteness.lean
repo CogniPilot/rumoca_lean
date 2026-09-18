@@ -22,8 +22,8 @@ theorem Lexes.spelled (lexical : Lexes cs ts) : Source.Spelled modelicaSpace cs 
       have result := Source.Spelled.cons (gap := []) (by rfl) text hs ih
       simpa only [List.nil_append, text, List.cons_append, List.takeWhile_append_dropWhile] using result
   | @number c ts cs hs hi hd _ ih =>
-      have text : (Token.literal (String.ofList (c :: cs.takeWhile Char.isDigit))).text.toList =
-          c :: cs.takeWhile Char.isDigit := by simp [Token.text]
+      have text : (numberToken (c :: cs.takeWhile numberChar)).text.toList =
+          c :: cs.takeWhile numberChar := by simp [numberToken_text]
       have result := Source.Spelled.cons (gap := []) (by rfl) text hs ih
       simpa only [List.nil_append, text, List.cons_append, List.takeWhile_append_dropWhile] using result
   | @punct c cs ts hs hi hd hp _ ih =>

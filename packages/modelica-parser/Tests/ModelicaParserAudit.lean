@@ -2,6 +2,7 @@ import ModelicaParser
 import ModelicaParser.ActionsProofs
 import ModelicaParser.Driven
 import ModelicaParser.Array.Located
+import ModelicaParser.Constant.Located
 import ModelicaParser.ParserProofs
 import ModelicaParser.LocatedProofs
 import ModelicaParser.OriginProofs
@@ -91,3 +92,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Generated.located_fuel
 #audit axioms Rumoca.Generated.source_parseLocated_correct
 #audit axioms Rumoca.Generated.parseLocated_erases
+
+#audit axioms Rumoca.ConstantProfile.decode_sound
+#audit axioms Rumoca.ConstantProfile.decode_complete
+#audit axioms Rumoca.ConstantProfile.in_grammar
+#audit axioms Rumoca.ConstantProfile.LocatedParsed.resolve_complete
