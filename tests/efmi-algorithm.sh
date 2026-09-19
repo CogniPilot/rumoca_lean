@@ -14,17 +14,18 @@ mkdir -p "$stage"
 generator=packages/parser/.lake/build/bin/lalrgen
 compiler=packages/compiler/.lake/build/bin/rumoca
 
-"$generator" --namespace Rumoca.GALEC.Generated packages/galec-parser/grammar/GALEC.ebnf "$task_tmp/GALEC.lean"
+"$generator" --namespace Rumoca.GALEC.Generated --module GALECParser.Generated packages/galec-parser/grammar/GALEC.ebnf "$task_tmp/GALEC.lean"
 cmp "$task_tmp/GALEC.lean" packages/galec-parser/GALECParser/Generated.lean
+diff -r "$task_tmp/GALEC" packages/galec-parser/GALECParser/Generated
 lake env lean --run packages/galec-parser/Tests/GALECNative.lean
 
 # Both grammar instances use the same engine, without colliding declarations.
 printf '%s\n' "s : '(' s ')' s | '';" > "$task_tmp/other.ebnf"
-"$generator" --namespace AnotherGrammar "$task_tmp/other.ebnf" "$task_tmp/Other.lean"
+"$generator" --single --namespace AnotherGrammar "$task_tmp/other.ebnf" "$task_tmp/Other.lean"
 sed -i '1i import GALECParser.Generated' "$task_tmp/Other.lean"
 lake env lean "$task_tmp/Other.lean"
 cp "$task_tmp/Other.lean" "$task_tmp/preserved.lean"
-if "$generator" --namespace 'Bad; end' "$task_tmp/other.ebnf" "$task_tmp/Other.lean" > "$task_tmp/namespace.log" 2>&1; then
+if "$generator" --single --namespace 'Bad; end' "$task_tmp/other.ebnf" "$task_tmp/Other.lean" > "$task_tmp/namespace.log" 2>&1; then
   echo 'invalid namespace accepted' >&2; exit 1
 fi
 rg -q 'namespace' "$task_tmp/namespace.log"
