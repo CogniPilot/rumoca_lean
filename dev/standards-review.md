@@ -73,6 +73,38 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Constant-rate FMI 3 adapter assembly (Stage B4): standards impact
+
+The constant-rate adapter function list, families, call policy, printability and bound
+contract are now assembled (`FMI3.ConstantFunctions`, `ConstantFamilyContracts`,
+`ConstantCallPolicy`, `ConstantAdapterPrinter`, `ConstantAdapterContract`,
+`dev/constant-rates.md` "Constant adapter assembly"). Each pinned header signature
+renders a constant-specific body (the Float64 accessors, the derivative getter and the
+do-step), a profile-independent tensor body at the constant state shape, or the shared
+scalar body, over the reused helper prefix. The declaration preamble carries the
+no-input/no-output constant instance record and the three constant kernel prototypes;
+no tensor kernel or Jacobian prototype is emitted. The compiler fixture renders the
+`ConstantRates` adapter under the function-section grammar check, the native regression
+executable ties it to the actual `ConstantCompiler.prepare` kernel and retains the
+bytes under `build/constant-fmi/adapter.c`, and `tests/tensor-c.sh` compiles the whole
+adapter to a standalone C11 object with zero diagnostics under the strict flags. This is
+a package-checked product only: no production artifact, CLI or grammar change, and the
+tensor and scalar adapters and every existing contract are unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The constant-rate profile remains a development case. |
+| FMI 3.0.2 §2.2.2 (source-code FMU, C API and header files) | Every emitted function carries the pinned prototype for its name from the vendored `fmi3FunctionTypes.h` header (`ConstantFunctions.functions_signatures`), one function per pinned signature and per reused helper; the source prefix `#define FMI3_FUNCTION_PREFIX Rumoca_ConstantRates_` precedes the official FMI header selection, and the adapter's function-prefix names exactly the model identifier the model description decodes to (`constant_modelIdentifiers_decode`). The whole translation unit compiles as a standalone C11 object with zero diagnostics under the strict flags, the three `rumoca_constant_*` kernel entries staying undefined externs declared in the preamble. |
+| FMI 3.0.2 §2.4.1 (instantiation) and naming | The reserved-record factory validates exactly the token `lean-rumoca-constant-v1:ConstantRates` the constant model description declares as its `instantiationToken` attribute (`ConstantAdapter.Contract` carries `constantToken_attribute`). |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic memory allocation) | The complete constant adapter call graph is checked no-heap against the boundary set `bConstant` (`ConstantCallPolicy.constant_no_heap`): every callee is a defined function, a declared constant kernel entry or a named non-allocating C library / math / atomic external, and no generated call graph reaches an allocation entry point. |
+| MISRA C:2025 Rule 17.2 (no recursion) | The complete constant adapter direct-call graph is checked acyclic (`ConstantCallPolicy.constant_acyclic`): the three constant kernel entries are unranked numerical-kernel leaves, the reused helpers precede them and the public functions precede the helpers, so no function calls itself directly or indirectly. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+Every theorem is universal in the state count, the scalar witness model and the header
+signature list. Binding the sample entry `rumoca_constant_sample` to its own
+observable-machine execution, the FMI 3 artifacts bound to actual bytes, and production
+CLI admission remain open. **Stage decision: open; no grammar expansion.**
+
 ### FMI 3.0.2 §4.2.1 Computation (`fmi3DoStep`) accepted and discard cases for the constant profile (Stage 3c): standards impact
 
 The constant-rate Co-Simulation `fmi3DoStep` body now runs end to end over the

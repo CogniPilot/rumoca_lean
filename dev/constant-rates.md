@@ -339,17 +339,79 @@ denotation, null rejection and lifecycle rejection. Every theorem is universal i
 state shape, the instance index and the heap, and audited to depend only on the
 standard axioms.
 
+## Constant adapter assembly (Stage B4)
+
+`ConstantFunctions` assembles the constant-rate adapter function list, the constant
+analog of `TensorFunctions`. `constantDispatch` maps each pinned header signature to
+a body: the four constant-specific bodies (`ConstantFloat64.getFunction`/
+`setFunction`, `ConstantDerivative.derivFunction`, `ConstantDoStep.function`) for the
+Float64 accessors, the derivative getter and the do-step, the profile-independent
+tensor bodies at the constant state shape (`TensorReset`/`TensorNominals`/
+`TensorCountQueries`/`TensorSetTime`/`TensorLifecycleModes`/`TensorFree`, the
+reserved-record factory `TensorFactory.function` carrying the constant token
+`TensorMetadata.constantToken m.name`, and the continuous-state copies) for the
+remaining shape-dependent names, and the scalar body `Runtime.function model sig` for
+every model-independent and unsupported/absent-type name. The helper prefix reuses
+`TensorFunctions.helpers` (`fail`, the two static-factory helpers) verbatim. The
+declaration preamble (`ConstantFunctions.declarations`) is the shared header inclusion
+block, the no-input/no-output constant instance record layout
+(`TensorStorage.storageRenderG shape false false`) and the three constant kernel
+prototypes (`kernelPrototypes`); no tensor kernel or Jacobian prototype is emitted.
+
+The list facts follow the tensor and scalar development: name distinctness
+(`functions_nodup`, from the reused helper sublist and the identical dispatched
+header names), position-by-position signature agreement (`functions_signatures`),
+the located renderings (`rendered_functions`/`rendered_member`/`rendered_helper`),
+the definition table (`function_bound`/`helpers_bound`/`program_covered`), the
+literal-pool coverage (`text_bound`/`pool_complete`/`header_fresh`), the constant
+kernel-entry resolution (`kernel_entry_resolves`, and `kernel_entry_rhs`/`step`/
+`sample` resolving each entry to the tree `ConstantInstanceRhs.kernelDefinitions`
+names, bundled as `program_extends_kernel`), and prototype agreement with the passed
+arguments (`rhs_prototype_matches_args` for `ConstantDerivative.entryArgs`,
+`step_prototype_matches_args` for the state-region pointer).
+
+Reused tensor body contracts instantiate at the constant profile with no re-proof:
+the reset, nominals, count-query, set-time, lifecycle, continuous-state copy, factory
+and free contracts are universal in the state shape and address only the time, state
+and derivative record members common to both records, so they follow by
+instantiation at `m.shape`; the factory contract is reused with the constant token in
+place of the tensor token. Only the four constant-specific bodies carry
+constant-specific contracts (`ConstantFloat64.GetContract`/`SetContract`,
+`ConstantDerivative.DerivContract`, `ConstantDoStep.Contract`); no reused contract
+needed re-proof because the input and output members those bodies never touch are the
+only record members that differ between the profiles.
+
+`ConstantFamilyContracts` re-plumbs the two model-agnostic family cores
+(`ConstantAbsentVariables`, `ConstantCapabilityRejection`) over the constant list,
+reusing the shared execution proofs and only re-threading the definition-table and
+literal-pool facts. `ConstantCallPolicy` classifies every call in the constant list
+against the constant boundary set `bConstant` (the shared helper/library/atomic
+externals and the three constant kernel entries in the kernel role) and instantiates
+the reusable no-heap and acyclic policies (`constant_no_heap`, `constant_acyclic`):
+no generated call graph names an allocation entry point. `ConstantAdapterPrinter`
+proves every dispatched constant (and reused tensor) function printable and the whole
+function section tokenizes maximally as the constant function list
+(`rendered_contract`). `ConstantAdapter.Contract`/`render_contract` binds the rendered
+text to the model-free public-API coverage, both family contracts, every per-function
+contract, the no-input/no-output record layout and identifier agreements, the
+`constantToken_attribute` instantiation-token agreement, and the constant kernel
+prototype fragments and resolution.
+
+The compiler fixture `Tests.ConstantAdapterFixture` renders the `ConstantRates`
+adapter and runs the function-section grammar check; the native regression executable
+ties the actual `ConstantCompiler.prepare` kernel to that rendering, retains the full
+rendered adapter bytes under `build/constant-fmi/adapter.c`, and `tests/tensor-c.sh`
+compiles the whole adapter to a standalone C11 object with zero diagnostics under the
+strict flags, the three constant kernel entries staying undefined externs.
+
 ## Open obligations
 
 The following are deferred to later increments, each with its own proofs and
 actual-artifact certificate:
 
-- The constant adapter function list assembly, its rendered bytes, the no-heap and
-  acyclic call-graph policy, and the bound adapter contract.
-
 - Binding the executable sample entry `rumoca_constant_sample` to the FMI 3
-  instance record, and the constant adapter function list, no-heap and acyclic
-  call-graph policy and bound adapter contract.
+  instance record with its own observable-machine execution proof (the adapter
+  already forward-declares its prototype and resolves it in the definition table).
 - FMI 3 Model Exchange and Co-Simulation artifacts and the eFMI Algorithm and
   Production Code artifacts, bound to actual bytes.
 - Production admission of the profile through the CLI.
