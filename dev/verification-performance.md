@@ -789,3 +789,39 @@ the `fmi3`, `tensor-fmi3` and `constant-fmi3` certificate kinds are unchanged in
 statement and axiom set; certificate wall time is unchanged, since the kernel
 work per profile (its actual adapter bytes) is the same, and a new profile adds
 a record value and a contract discharge rather than a certificate metaprogram.
+
+## CS step-argument pointer check, generic instead of enumerated, 2026-09-19
+
+The CS `fmi3DoStep` entry checks its four caller output pointers with a single
+`Runtime.pointerCheck` over the `any`-of-negations condition
+(`eventHandlingNeeded`, `terminateSimulation`, `earlyReturn`, `lastSuccessfulTime`),
+rejecting with the "Missing output pointer" failure when any is null. The
+`outputs_prefix` certificate proved the one-step rejection by destructuring the
+output record and casing over the four pointer options, sixteen branches each
+closed by an unrestricted `simp_all` over the whole execution (`run`, `next`,
+the check, `eval`, the environment fold, and the value predicates). The
+sixteen whole-execution simplifications dominated the module: the profiler
+attributed about 78 s of simplification, in sixteen pairs of roughly 4.0 s and
+1.1 s, to that single case split, out of a cold module near 102 s.
+
+The rejection is now proved once, generically. Three small denotation lemmas
+give the pieces: reading a bound pointer parameter and negating it yields the
+pointer's nullness (`negate_pointer`), short-circuit disjunction over two
+computed boolean operands (`eval_either`), and the disjunction seed is the false
+boolean (`eval_zero`). `outputCheck_run` chains these along the fixed
+four-element condition to show the check evaluates to the true boolean whenever
+any supplied pointer is null, and takes the failure branch in one `run 1` step,
+with the four pointers abstracted through the environment. `outputs_prefix`
+destructures the output record once, resolves the four parameter reads with a
+directed environment-fold simplification, and applies `outputCheck_run`; no
+whole-execution simplification is repeated per null combination. `input_prefix`
+was already delegated to the shared prefix-run lemma and is unchanged. Every
+theorem name and statement other modules cite is identical.
+
+| `RumocaFMI3.StepArguments` | Cold module | Driver |
+| --- | ---: | --- |
+| Sixteen-branch `simp_all` over the whole execution (before) | ~102 s | null-combination case split, repeated simplification |
+| Generic pointer-check denotation lemmas + directed resolution (after) | ~3.5 s | one-step reduction, directed rewrite |
+
+The audited axioms stay within `propext`, `Quot.sound` and `Classical.choice`,
+and the FMI 3 and compiler checks continue to pass.

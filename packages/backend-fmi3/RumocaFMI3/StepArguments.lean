@@ -11,6 +11,64 @@ set_option maxHeartbeats 1000000
 def MissingOutput (outputs : StepEntry.Outputs) : Prop :=
   outputs.event = none ∨ outputs.terminate = none ∨ outputs.early = none ∨ outputs.last = none
 
+section Generic
+variable [interface : CInterface]
+
+/-- Reading a bound pointer parameter and negating it yields the nullness of
+that pointer, independent of the heap. -/
+private theorem negate_pointer (env : Locals) (heap : Heap) (name : String) (a : Option Address)
+    (bound : eval env heap (Runtime.v name) = some (.pointer a)) :
+    eval env heap (Runtime.negate (Runtime.v name)) = some (boolean a.isNone) := by
+  have e : eval env heap (Runtime.negate (Runtime.v name))
+      = (eval env heap (Runtime.v name)).bind
+          (fun x => x.truth.bind (fun b => some (boolean (!b)))) := rfl
+  rw [e, bound]
+  cases a <;> rfl
+
+/-- Short-circuit disjunction over two operands with known boolean values. -/
+private theorem eval_either (env : Locals) (heap : Heap) (a b : Expr) (x y : Bool)
+    (ha : eval env heap a = some (boolean x)) (hb : eval env heap b = some (boolean y)) :
+    eval env heap (Runtime.either a b) = some (boolean (x || y)) := by
+  have e : eval env heap (Runtime.either a b)
+      = (eval env heap a).bind (fun u => u.truth.bind (fun c =>
+          if c then some (boolean true)
+          else (eval env heap b).bind (fun w => w.truth.bind (fun d => some (boolean d))))) := rfl
+  rw [e, ha, hb]
+  cases x <;> simp [Value.truth, boolean]
+
+/-- The disjunction seed evaluates to the false boolean. -/
+private theorem eval_zero (env : Locals) (heap : Heap) :
+    eval env heap (Runtime.n 0) = some (boolean false) := rfl
+
+/-- The single output-pointer check rejects with the missing-pointer failure
+whenever any of the four caller output pointers is null. The four caller
+pointers are supplied through the environment, so this is proved once over the
+`any`-of-negations condition rather than by enumerating the sixteen null
+combinations under whole-execution simplification. -/
+private theorem outputCheck_run (env : Locals) (heap : Heap) (tail : List Stmt)
+    (e t r l : Option Address)
+    (he : eval env heap (Runtime.v "eventHandlingNeeded") = some (.pointer e))
+    (ht : eval env heap (Runtime.v "terminateSimulation") = some (.pointer t))
+    (hr : eval env heap (Runtime.v "earlyReturn") = some (.pointer r))
+    (hl : eval env heap (Runtime.v "lastSuccessfulTime") = some (.pointer l))
+    (missing : e = none ∨ t = none ∨ r = none ∨ l = none) :
+    run 1 (.running (Runtime.pointerCheck
+        ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"] :: tail) env heap)
+      = some (.running (Runtime.fail "Missing output pointer" :: tail) env heap) := by
+  have hcond : eval env heap (Runtime.any
+      (["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"].map
+        fun p => Runtime.negate (Runtime.v p))) = some (boolean true) := by
+    simp only [List.map_cons, List.map_nil, Runtime.any, List.foldr_cons, List.foldr_nil]
+    rw [eval_either _ _ _ _ _ _ (negate_pointer _ _ _ _ he)
+          (eval_either _ _ _ _ _ _ (negate_pointer _ _ _ _ ht)
+            (eval_either _ _ _ _ _ _ (negate_pointer _ _ _ _ hr)
+              (eval_either _ _ _ _ _ _ (negate_pointer _ _ _ _ hl) (eval_zero env heap))))]
+    rcases missing with h | h | h | h <;> simp [h]
+  simp only [run, next, Runtime.pointerCheck, Runtime.reject, Runtime.branch, hcond]
+  rfl
+
+end Generic
+
 /-- Missing outputs are rejected before any output access or numeric check.
 This prefix needs no output-buffer storage and preserves the whole heap. -/
 theorem outputs_prefix (context : ErrorContext literals) (model : Solve.FMI3Model source)
@@ -33,11 +91,10 @@ theorem outputs_prefix (context : ErrorContext literals) (model : Solve.FMI3Mode
   have checked : run 1 (.running (StepEntry.outputCode ++ StepEntry.inputGuard :: Runtime.doStep.drop 9)
       later heap) = some (.running (Runtime.fail "Missing output pointer" :: rest) later heap) := by
     rcases outputs with ⟨event, terminate, early, last⟩
-    cases event <;> cases terminate <;> cases early <;> cases last <;>
-      simp_all [MissingOutput, run, next, StepEntry.outputCode, Runtime.pointerCheck,
-        Runtime.reject, Runtime.branch, Runtime.any, Runtime.negate, Runtime.v, Runtime.n,
-        Runtime.either, eval, resolve, later, env, StepEntry.locals, StepEntry.parameters,
-        StepEntry.bindings, CBody.bind, Value.truth, boolean, rest]
+    simp only [MissingOutput] at missing
+    refine outputCheck_run later heap _ event terminate early last ?_ ?_ ?_ ?_ missing <;>
+      simp [later, env, StepEntry.locals, StepEntry.parameters, StepEntry.bindings,
+        CBody.bind, Runtime.v, eval, resolve]
   refine ⟨rfl, BodyEmbedding.body_closed model StepEntry.signature,
     env, later, rest, 4, StepEntry.parameters_bound (StepErrors.types context) _ _ _ _ _, ?_, ?_, ?_⟩
   · change run 4 (.running (Runtime.body model StepEntry.signature) env heap) = _
