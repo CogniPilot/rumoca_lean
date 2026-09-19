@@ -645,7 +645,14 @@ Audit roots per package (count of `#audit axioms` roots):
 | `lsp` | 4 | `Tests/LSPAudit.lean` |
 | `verification` | 2 | `Tests/AuditChecks.lean` (accept/reject self-test) |
 
-Total: roughly 4749 audited roots across 30 audit modules. The keystone roots
+Total: roughly 4749 audited roots. The eight heaviest axiom audits are each
+partitioned into one audit file per source module under a directory beside the
+listed library root, which imports them all: `FMI3Audit` and
+`FMI3CallPolicyAudit` (`backend-fmi3`), `CAudit`, `CCallPolicyAudit` and
+`TensorAudit` (`backend-c`), `Audit` and `FMI3SourceCallPolicyAudit`
+(`compiler`), and `CoreAudit` (`core`). Lake elaborates those files as
+independent parallel jobs; the library root names and the audited-root set are
+unchanged. The keystone roots
 for this ledger are `Rumoca.FMI3.sourceBuild_correct`,
 `Rumoca.tensorSourceBuild_correct`, `Rumoca.artifact_correct`,
 `Rumoca.compiler_semantic_preservation`, and the eFMI
