@@ -12,6 +12,9 @@ import RumocaFMI3.BuildDescription
 import RumocaFMI3.Header
 import Tests.TensorMetadataFixture
 import Tests.TensorAdapterFixture
+import Tests.ConstantAdapterFixture
+import RumocaCore.Solve.ConstantFMI3
+import RumocaFMI3.ConstantFunctions
 import Rumoca.EFMITensorAlgorithm
 import Rumoca.EFMITensorProduction
 
@@ -168,6 +171,42 @@ def main : IO Unit := do
       (decide (ast.decimalOf "x" = ⟨1, 25, -1⟩))
     expect "prepared literal content of the signed integer rate"
       (decide (ast.decimalOf "y" = ⟨-1, 1, 0⟩))
+    -- Render the constant-rate FMI 3 adapter for the actual prepared kernel and
+    -- retain it under build/constant-fmi/. The prepared multi-state IVP is the
+    -- constant model kernel witness; the model-independent bodies reuse the scalar
+    -- witness. This ties the actual ConstantCompiler.prepare rates to the
+    -- ConstantAdapterFixture rendering the function-section grammar check certifies.
+    let preparedConstantModel : Solve.ConstantFMI3Model ast.states.length :=
+      ⟨"ConstantRates", prepared.ivp⟩
+    expect "prepared ConstantRates renders the fixture's constant adapter bytes"
+      (FMI3.ConstantFunctions.render Tests.ConstantAdapterFixture.scalarModel preparedConstantModel
+          Tests.ConstantAdapterFixture.signatures
+        == Tests.ConstantAdapterFixture.adapterBytes)
+    let header ← IO.FS.readFile "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"
+    match FMI3.Header.signatures header with
+    | .error e => throw (IO.userError s!"FMI header signatures: {e}")
+    | .ok fullSignatures =>
+      let full := FMI3.ConstantFunctions.render Tests.ConstantAdapterFixture.scalarModel
+        preparedConstantModel fullSignatures
+      expect "full pinned header signature list has the expected count"
+        (fullSignatures.length == 75)
+      -- The whole rendered text is the fixed preamble (model prefix, private kernel
+      -- inclusion and the constant declaration block with the three constant kernel
+      -- prototypes) followed by the constant function list, one function per reused
+      -- helper and per pinned signature. This is the concrete instance of
+      -- `ConstantFunctions.rendered_functions`, whose function section is certified
+      -- against the maximal-munch grammar by `ConstantAdapterPrinter.rendered_contract`.
+      expect "full constant adapter is the fixed preamble followed by the constant function list"
+        (full == FMI3.functionPrefix preparedConstantModel.name ++ "#include \"model.c\"\n" ++
+            FMI3.ConstantFunctions.declarations preparedConstantModel.shape
+              (FMI3.ConstantFunctions.rates preparedConstantModel) ++
+            String.join ((FMI3.ConstantFunctions.functions Tests.ConstantAdapterFixture.scalarModel
+                preparedConstantModel fullSignatures).map CTree.Function.render))
+      expect "the full constant function list has one function per reused helper and pinned signature"
+        ((FMI3.ConstantFunctions.functions Tests.ConstantAdapterFixture.scalarModel
+            preparedConstantModel fullSignatures).length == FMI3.ConstantFunctions.helpers.length + 75)
+      IO.FS.createDirAll "build/constant-fmi"
+      IO.FS.writeFile "build/constant-fmi/adapter.c" full
   -- Reordering the two equations must not change the recovered rates.
   match ConstantCompiler.prepare (constantRates.replace "der(x) = 2.5;\n  der(y) = -1;"
       "der(y) = -1;\n  der(x) = 2.5;") with
