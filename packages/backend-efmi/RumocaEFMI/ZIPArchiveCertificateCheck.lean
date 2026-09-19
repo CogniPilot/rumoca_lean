@@ -1,12 +1,15 @@
 import RumocaEFMI.ZIPArchiveCertificate
 import RumocaEFMI.ZIPCertificateCheck
 
-/-! Fixed byte-to-proposition adapter for stored ZIP archives. Each quoted
-segment is taken from the actual input at a monotonically advancing cursor;
-the final segment contains the entire remainder. Expected sizes only choose
-segment boundaries. They never supply archive bytes. Bounded equalities are
-checked by the kernel and composed into the complete `Format.Conforms` claim.
-The caller must bind the resulting entry list to its semantic contract. -/
+/-! Fixed byte-to-proposition adapter for stored ZIP archives. Headers, central
+records and the ending are quoted from the actual input at a monotonically
+advancing cursor; the final segment contains the entire remainder. Each member
+payload region is read from the actual input at the same cursor and compared,
+byte for byte, with the bytes of that member's payload certificate before the
+certified bytes stand in for it; a differing region is rejected. Expected sizes
+only choose segment boundaries. Bounded equalities are checked by the kernel
+and composed into the complete `Format.Conforms` claim. The caller must bind
+the resulting entry list to its semantic contract. -/
 namespace Rumoca.EFMI.StoredZIP.ArchiveCertificateCheck
 open Lean Elab Command
 
