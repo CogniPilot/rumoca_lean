@@ -3,6 +3,7 @@
 -- 135 canonical states; 117 LALR states.
 import Parser.LALR.SafetyProofs
 import Parser.LALR.MaskedSafety
+import Parser.LALR.RowSafety
 import Parser.LALR.FirstProofs
 import Parser.LALR.Progress
 import Parser.Token
@@ -2671,10 +2672,197 @@ private theorem acceptance_checked :
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
+private theorem chunk_0_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (0 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_10_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (10 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_20_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (20 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_30_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (30 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_40_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (40 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_50_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (50 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_60_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (60 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_70_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (70 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_80_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (80 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_90_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (90 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_100_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (100 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_110_checked :
+    ∀ i : Fin 7, LALR.Safety.rowValid grammar tables edges reductions acceptance (110 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
 theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by
-  unfold LALR.Safety.validate
+  apply LALR.Safety.validate_iff.mpr
+  unfold LALR.Safety.Conditions
   rw [reductions_checked, acceptance_checked]
-  decide +kernel
+  apply LALR.Safety.safety_of_rows
+  · decide +kernel
+  · decide +kernel
+  · exact gotos_size_eq
+  · decide +kernel
+  · intro q
+    rcases q with ⟨q, bound⟩
+    change q < 117 at bound
+    match q with
+    | 0 => exact chunk_0_checked ⟨0, by decide⟩
+    | 1 => exact chunk_0_checked ⟨1, by decide⟩
+    | 2 => exact chunk_0_checked ⟨2, by decide⟩
+    | 3 => exact chunk_0_checked ⟨3, by decide⟩
+    | 4 => exact chunk_0_checked ⟨4, by decide⟩
+    | 5 => exact chunk_0_checked ⟨5, by decide⟩
+    | 6 => exact chunk_0_checked ⟨6, by decide⟩
+    | 7 => exact chunk_0_checked ⟨7, by decide⟩
+    | 8 => exact chunk_0_checked ⟨8, by decide⟩
+    | 9 => exact chunk_0_checked ⟨9, by decide⟩
+    | 10 => exact chunk_10_checked ⟨0, by decide⟩
+    | 11 => exact chunk_10_checked ⟨1, by decide⟩
+    | 12 => exact chunk_10_checked ⟨2, by decide⟩
+    | 13 => exact chunk_10_checked ⟨3, by decide⟩
+    | 14 => exact chunk_10_checked ⟨4, by decide⟩
+    | 15 => exact chunk_10_checked ⟨5, by decide⟩
+    | 16 => exact chunk_10_checked ⟨6, by decide⟩
+    | 17 => exact chunk_10_checked ⟨7, by decide⟩
+    | 18 => exact chunk_10_checked ⟨8, by decide⟩
+    | 19 => exact chunk_10_checked ⟨9, by decide⟩
+    | 20 => exact chunk_20_checked ⟨0, by decide⟩
+    | 21 => exact chunk_20_checked ⟨1, by decide⟩
+    | 22 => exact chunk_20_checked ⟨2, by decide⟩
+    | 23 => exact chunk_20_checked ⟨3, by decide⟩
+    | 24 => exact chunk_20_checked ⟨4, by decide⟩
+    | 25 => exact chunk_20_checked ⟨5, by decide⟩
+    | 26 => exact chunk_20_checked ⟨6, by decide⟩
+    | 27 => exact chunk_20_checked ⟨7, by decide⟩
+    | 28 => exact chunk_20_checked ⟨8, by decide⟩
+    | 29 => exact chunk_20_checked ⟨9, by decide⟩
+    | 30 => exact chunk_30_checked ⟨0, by decide⟩
+    | 31 => exact chunk_30_checked ⟨1, by decide⟩
+    | 32 => exact chunk_30_checked ⟨2, by decide⟩
+    | 33 => exact chunk_30_checked ⟨3, by decide⟩
+    | 34 => exact chunk_30_checked ⟨4, by decide⟩
+    | 35 => exact chunk_30_checked ⟨5, by decide⟩
+    | 36 => exact chunk_30_checked ⟨6, by decide⟩
+    | 37 => exact chunk_30_checked ⟨7, by decide⟩
+    | 38 => exact chunk_30_checked ⟨8, by decide⟩
+    | 39 => exact chunk_30_checked ⟨9, by decide⟩
+    | 40 => exact chunk_40_checked ⟨0, by decide⟩
+    | 41 => exact chunk_40_checked ⟨1, by decide⟩
+    | 42 => exact chunk_40_checked ⟨2, by decide⟩
+    | 43 => exact chunk_40_checked ⟨3, by decide⟩
+    | 44 => exact chunk_40_checked ⟨4, by decide⟩
+    | 45 => exact chunk_40_checked ⟨5, by decide⟩
+    | 46 => exact chunk_40_checked ⟨6, by decide⟩
+    | 47 => exact chunk_40_checked ⟨7, by decide⟩
+    | 48 => exact chunk_40_checked ⟨8, by decide⟩
+    | 49 => exact chunk_40_checked ⟨9, by decide⟩
+    | 50 => exact chunk_50_checked ⟨0, by decide⟩
+    | 51 => exact chunk_50_checked ⟨1, by decide⟩
+    | 52 => exact chunk_50_checked ⟨2, by decide⟩
+    | 53 => exact chunk_50_checked ⟨3, by decide⟩
+    | 54 => exact chunk_50_checked ⟨4, by decide⟩
+    | 55 => exact chunk_50_checked ⟨5, by decide⟩
+    | 56 => exact chunk_50_checked ⟨6, by decide⟩
+    | 57 => exact chunk_50_checked ⟨7, by decide⟩
+    | 58 => exact chunk_50_checked ⟨8, by decide⟩
+    | 59 => exact chunk_50_checked ⟨9, by decide⟩
+    | 60 => exact chunk_60_checked ⟨0, by decide⟩
+    | 61 => exact chunk_60_checked ⟨1, by decide⟩
+    | 62 => exact chunk_60_checked ⟨2, by decide⟩
+    | 63 => exact chunk_60_checked ⟨3, by decide⟩
+    | 64 => exact chunk_60_checked ⟨4, by decide⟩
+    | 65 => exact chunk_60_checked ⟨5, by decide⟩
+    | 66 => exact chunk_60_checked ⟨6, by decide⟩
+    | 67 => exact chunk_60_checked ⟨7, by decide⟩
+    | 68 => exact chunk_60_checked ⟨8, by decide⟩
+    | 69 => exact chunk_60_checked ⟨9, by decide⟩
+    | 70 => exact chunk_70_checked ⟨0, by decide⟩
+    | 71 => exact chunk_70_checked ⟨1, by decide⟩
+    | 72 => exact chunk_70_checked ⟨2, by decide⟩
+    | 73 => exact chunk_70_checked ⟨3, by decide⟩
+    | 74 => exact chunk_70_checked ⟨4, by decide⟩
+    | 75 => exact chunk_70_checked ⟨5, by decide⟩
+    | 76 => exact chunk_70_checked ⟨6, by decide⟩
+    | 77 => exact chunk_70_checked ⟨7, by decide⟩
+    | 78 => exact chunk_70_checked ⟨8, by decide⟩
+    | 79 => exact chunk_70_checked ⟨9, by decide⟩
+    | 80 => exact chunk_80_checked ⟨0, by decide⟩
+    | 81 => exact chunk_80_checked ⟨1, by decide⟩
+    | 82 => exact chunk_80_checked ⟨2, by decide⟩
+    | 83 => exact chunk_80_checked ⟨3, by decide⟩
+    | 84 => exact chunk_80_checked ⟨4, by decide⟩
+    | 85 => exact chunk_80_checked ⟨5, by decide⟩
+    | 86 => exact chunk_80_checked ⟨6, by decide⟩
+    | 87 => exact chunk_80_checked ⟨7, by decide⟩
+    | 88 => exact chunk_80_checked ⟨8, by decide⟩
+    | 89 => exact chunk_80_checked ⟨9, by decide⟩
+    | 90 => exact chunk_90_checked ⟨0, by decide⟩
+    | 91 => exact chunk_90_checked ⟨1, by decide⟩
+    | 92 => exact chunk_90_checked ⟨2, by decide⟩
+    | 93 => exact chunk_90_checked ⟨3, by decide⟩
+    | 94 => exact chunk_90_checked ⟨4, by decide⟩
+    | 95 => exact chunk_90_checked ⟨5, by decide⟩
+    | 96 => exact chunk_90_checked ⟨6, by decide⟩
+    | 97 => exact chunk_90_checked ⟨7, by decide⟩
+    | 98 => exact chunk_90_checked ⟨8, by decide⟩
+    | 99 => exact chunk_90_checked ⟨9, by decide⟩
+    | 100 => exact chunk_100_checked ⟨0, by decide⟩
+    | 101 => exact chunk_100_checked ⟨1, by decide⟩
+    | 102 => exact chunk_100_checked ⟨2, by decide⟩
+    | 103 => exact chunk_100_checked ⟨3, by decide⟩
+    | 104 => exact chunk_100_checked ⟨4, by decide⟩
+    | 105 => exact chunk_100_checked ⟨5, by decide⟩
+    | 106 => exact chunk_100_checked ⟨6, by decide⟩
+    | 107 => exact chunk_100_checked ⟨7, by decide⟩
+    | 108 => exact chunk_100_checked ⟨8, by decide⟩
+    | 109 => exact chunk_100_checked ⟨9, by decide⟩
+    | 110 => exact chunk_110_checked ⟨0, by decide⟩
+    | 111 => exact chunk_110_checked ⟨1, by decide⟩
+    | 112 => exact chunk_110_checked ⟨2, by decide⟩
+    | 113 => exact chunk_110_checked ⟨3, by decide⟩
+    | 114 => exact chunk_110_checked ⟨4, by decide⟩
+    | 115 => exact chunk_110_checked ⟨5, by decide⟩
+    | 116 => exact chunk_110_checked ⟨6, by decide⟩
+    | n+117 => omega
 
 noncomputable def fuelBudget : LALR.Fuel.Budget := ⟨1, #[17, 8, 3, 1, 3, 1, 15, 10, 3, 16]⟩
 

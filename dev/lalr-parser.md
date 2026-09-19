@@ -219,6 +219,19 @@ builder support other AST representations without changing the LR engine.
   reduces the masked form. The edge-source bound, goto-table shape and state count
   are established once and reused by every certificate. Certificate meanings are
   unchanged; only the proof route differs.
+  The whole-table structural-safety obligation is now discharged per state.
+  `Parser.LALR.RowSafety` defines `rowValid`, the action/goto obligation of one
+  state reading only that state's extracted rows, and `safety_of_rows` proves
+  `Safety.TableConditions` equivalent to the four prefix conditions plus
+  `rowValid` at every state, through `entryRowOK_iff`/`gotoRowOK_iff` and the
+  `action_eq_row`/`goto_eq_row` row-lookup equalities. The generator emits one
+  certificate per fixed-size chunk of states and joins them through
+  `safety_of_rows`, so the earlier single whole-table `decide +kernel` is
+  replaced by per-chunk decisions whose transient is bounded by the chunk rather
+  than the whole table. The `safety_checked` statement and its certified
+  `Safety.validate ... = true` conclusion are unchanged; only the proof route
+  differs. Measurements are in
+  [verification-performance.md](verification-performance.md#lalr-per-row-safety-certificates-2026-09-19).
   Both parser packages passed their audits in
   `build/tensor-sharded-parser-gate.log`. Generated-file freshness and the
   complete LALR certificate/mutation gate passed in

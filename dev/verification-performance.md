@@ -235,6 +235,55 @@ state-length result vector, not the goto lookup. Progress credit validation
 (`progress_checked`) is about 16 s in isolation and was left on its existing
 `decide +kernel` route.
 
+## LALR per-row safety certificates, 2026-09-19
+
+The generated tables previously closed the whole-table structural-safety
+obligation with a single `safety_checked` decision: after rewriting the
+reduction and acceptance summaries to literal arrays, one `decide +kernel`
+reduced `Safety.TableConditions` over every state and symbol at once. That
+predicate reads the literal reduction/acceptance vectors, which the kernel
+represents as lists, so a lookup at state `q` costs `O(q)` and the whole
+decision grows about `states^2 x symbols`. On the 222-state Modelica table it
+was the module's largest single transient.
+
+`Parser.LALR.RowSafety` isolates the obligation of one state into `rowValid`,
+reading only that state's already-extracted action and goto rows.
+`safety_of_rows` proves the whole-table `TableConditions` equivalent to the four
+grammar/table prefix conditions plus `rowValid` at every state, through
+`entryRowOK_iff`/`gotoRowOK_iff` (which relate the row lookups to the table
+lookups via `action_eq_row`/`goto_eq_row`). The generator emits one certificate
+per fixed-size chunk of states and joins them through `safety_of_rows`, so no
+single kernel term covers the whole table. The `safety_checked` statement and
+the certified `Safety.validate ... = true` conclusion are byte-identical; only
+the proof route changed.
+
+Measured with `lake env lean -s 65536`, summing the process tree's resident set,
+over the isolated safety obligation for the 222-state Modelica table (the same
+literal reduction/acceptance arrays feed each variant):
+
+| Modelica safety obligation | Wall | Peak RSS |
+| --- | ---: | ---: |
+| Prior whole-table `TableConditions` decision | 156 s | ~18.76 GiB |
+| Per-state rows, one certificate per state (222) | 110 s | ~14.15 GiB |
+| Per-state rows, one certificate per 10 states (23) | 108 s | ~6.82 GiB |
+
+Chunking amortizes the per-certificate decision term that the elaborator retains
+across the module, so the ten-state chunk brings the isolated safety obligation
+under 8 GiB and below the reduction group's ~7.71 GiB peak, while individual
+per-state certificates stay dominated by that retained-term growth. The chunk
+size of ten is used by the generator.
+
+The whole `ModelicaParser.Generated` module still exceeds a single measurement
+window (its wall is set by the 99 reduction certificates) and its resident peak
+is now set by the cumulative retention of the reduction and item certificates
+rather than a single whole-table transient; a partial cold build reaches about
+22.7 GiB before the window closes, against about 24 GiB for the prior route.
+Reducing the whole-module peak further is item-certificate and cross-module work,
+not the safety obligation. The `GALECParser.Generated` module (117 states) checks
+whole in 49 s at ~7.18 GiB with the per-row route; at that smaller scale the
+whole-table decision was already cheap, so the per-chunk certificates are a small
+net increase over the prior ~5.95 GiB, still under 8 GiB.
+
 ## Cold gate hot-spot inventory, 2026-09-19
 
 Measured from the cold full-gate log in which the LALR tables rebuilt cold
@@ -244,7 +293,7 @@ resident sets are the `-s 65536` process-tree sums recorded above.
 
 | Hot spot | Cold wall | Peak RSS | Scales with |
 | --- | --: | --: | --- |
-| ModelicaParser.Generated (LALR tables, 222 states) | 456 s | ~24 GiB (whole-table `safety_checked`) | states x symbols, superlinear |
+| ModelicaParser.Generated (LALR tables, 222 states) | 456 s | ~22.7 GiB (cumulative reduction + item + row certificates) | states x symbols, superlinear |
 | Tests.FMI3Audit (~2312 roots, one serial module) | 367 s | n/a | roots x profiles, serial |
 | RumocaC.PrinterProofs | 165 s | n/a | printer proof size |
 | Tests.Audit | 136 s | n/a | roots |
