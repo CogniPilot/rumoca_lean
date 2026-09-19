@@ -125,7 +125,7 @@ a `Prepared` value carrying the located parse and the multi-state IVP.
   equations.
 
 The compiler regression executable (`packages/compiler/Tests/Main.lean`) parses
-`examples/development/ConstantRates.mo`, checks the recovered states, derivative
+`examples/ConstantRates.mo`, checks the recovered states, derivative
 references and rate spellings, checks a reordered source, asserts the production
 compiler rejects the profile, and asserts the frontend rejects an unbound
 reference, a duplicate declaration, a mismatched end name and a non-numeric

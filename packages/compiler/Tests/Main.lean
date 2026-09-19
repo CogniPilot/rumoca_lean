@@ -156,7 +156,7 @@ def main : IO Unit := do
     | .ok _ => throw (IO.userError "unrecognized builtin was resolved")
     | .error e => expect "unknown function diagnosed at its own source range" (e.span.text == "other")
   -- G01 constant-rate development profile: two states with signed decimal rates.
-  let constantRates ← IO.FS.readFile "examples/development/ConstantRates.mo"
+  let constantRates ← IO.FS.readFile "examples/ConstantRates.mo"
   expect "constant-rate profile not admitted by the production C compiler" (!accepted constantRates)
   match ConstantCompiler.prepare constantRates with
   | .error e => throw (IO.userError s!"constant frontend: {e.message}")
