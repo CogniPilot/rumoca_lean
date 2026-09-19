@@ -27,29 +27,39 @@ def Program.differential : Program Γ s → SpecEnv ℝ Γ → LinearEnv input �
         (tangent.push ((AD.differential op (env left) (env right)).comp
           ((tangent left).prod (tangent right))))
 
+/-- Every binary node's operands are regular at the primal denotation. Only a
+division node constrains its divisor; the smooth operators impose nothing. -/
+def Program.RegularAt : (p : Program Γ s) → SpecEnv ℝ Γ → Prop
+  | .ret _, _ => True
+  | .fill _ value next, env => next.RegularAt (SpecEnv.push (fun _ => value.eval 0 1) env)
+  | .binary op left right next, env =>
+      AD.Regular op (env left) (env right) ∧
+        next.RegularAt (SpecEnv.push (op.denote AD.realOps (env left) (env right)) env)
+
 /-- A chain-rule theorem for the entire program, relative to arbitrary
-differentiable register functions at its entry. -/
+differentiable register functions at its entry. Division nodes require a
+nonzero divisor at the linearization point, recorded by `RegularAt`. -/
 theorem Program.hasFDerivAt (p : Program Γ s) (f : AD.Space input → SpecEnv ℝ Γ)
-    (df : LinearEnv input Γ) (x : AD.Space input)
+    (df : LinearEnv input Γ) (x : AD.Space input) (hreg : p.RegularAt (f x))
     (h : ∀ {t} (r : Ref Γ t), HasFDerivAt (fun x => f x r) (df r) x) :
     HasFDerivAt (fun x => p.denote AD.realOps 0 1 (f x))
       (p.differential (f x) df) x := by
   induction p with
   | ret r => exact h r
   | fill shape value next ih =>
-    apply ih (fun x => SpecEnv.push (fun _ => value.eval 0 1) (f x)) (df.push 0)
+    refine ih (fun x => SpecEnv.push (fun _ => value.eval 0 1) (f x)) (df.push 0) hreg ?_
     intro t r
     cases r with
     | here => exact hasFDerivAt_const _ _
     | there r => exact h r
   | binary op left right next ih =>
-    apply ih (fun x => SpecEnv.push (op.denote AD.realOps (f x left) (f x right)) (f x))
+    refine ih (fun x => SpecEnv.push (op.denote AD.realOps (f x left) (f x right)) (f x))
       (df.push ((AD.differential op (f x left) (f x right)).comp
-        ((df left).prod (df right))))
+        ((df left).prod (df right)))) hreg.2 ?_
     intro t r
     cases r with
     | here =>
-      exact (AD.hasFDerivAt op (f x left) (f x right)).comp x
+      exact (AD.hasFDerivAt op (f x left) (f x right) hreg.1).comp x
         ((h left).prodMk (h right))
     | there r => exact h r
 
@@ -121,14 +131,14 @@ derivative. Entry registers may themselves be differentiable functions; the
 statement covers the complete chain from their input to the final result. -/
 theorem Program.forward_derivative (p : Program Γ s) (primal tangent : Ren Γ Δ)
     (env : Env ℝ Δ) (f : AD.Space input → SpecEnv ℝ Γ) (df : LinearEnv input Γ)
-    (x dx : AD.Space input)
+    (x dx : AD.Space input) (hreg : p.RegularAt (f x))
     (hf : ∀ {t} (r : Ref Γ t), HasFDerivAt (fun x => f x r) (df r) x)
     (hp : ∀ {t} (r : Ref Γ t) (i : Fin t.volume), (env (primal r))[i] = f x r i)
     (ht : ∀ {t} (r : Ref Γ t) (i : Fin t.volume), (env (tangent r))[i] = df r dx i) :
     ∃ derivative : AD.Space input →L[ℝ] AD.Space s,
       HasFDerivAt (fun x => p.denote AD.realOps 0 1 (f x)) derivative x ∧
       ∀ i, ((p.forward primal tangent .tangent).eval AD.realOps 0 1 env)[i] = derivative dx i := by
-  refine ⟨p.differential (f x) df, p.hasFDerivAt f df x hf, ?_⟩
+  refine ⟨p.differential (f x) df, p.hasFDerivAt f df x hreg hf, ?_⟩
   have hd := p.evalForward_tangent (fun r => env (primal r)) (fun r => env (tangent r)) df dx ht
   have he : (Env.denote (fun r => env (primal r)) : SpecEnv ℝ Γ) =
       (fun {t} (r : Ref Γ t) => f x r) := by

@@ -91,7 +91,7 @@ theorem Program.reverse_differential (p : Program Γ s) (env tangent : Env ℝ �
 Fréchet derivative, for arbitrary entry functions and output cotangents. -/
 theorem Program.reverse_derivative (p : Program Γ s) (env tangent : Env ℝ Γ)
     (f : AD.Space input → SpecEnv ℝ Γ) (df : LinearEnv input Γ)
-    (x dx : AD.Space input) (seed : Value ℝ s)
+    (x dx : AD.Space input) (seed : Value ℝ s) (hreg : p.RegularAt (f x))
     (hf : ∀ {t} (r : Ref Γ t), HasFDerivAt (fun x => f x r) (df r) x)
     (hp : ∀ {t} (r : Ref Γ t) (i : Fin t.volume), (env r)[i] = f x r i)
     (ht : ∀ {t} (r : Ref Γ t) (i : Fin t.volume), (tangent r)[i] = df r dx i) :
@@ -99,7 +99,7 @@ theorem Program.reverse_derivative (p : Program Γ s) (env tangent : Env ℝ Γ)
       HasFDerivAt (fun x => p.denote AD.realOps 0 1 (f x)) derivative x ∧
       dotProduct (fun i => seed[i]) (derivative dx) =
         Env.pair ((p.reverse AD.realOps 0 1 env).pullback seed) tangent.denote := by
-  refine ⟨p.differential (f x) df, p.hasFDerivAt f df x hf, ?_⟩
+  refine ⟨p.differential (f x) df, p.hasFDerivAt f df x hreg hf, ?_⟩
   have hd := p.reverse_differential env tangent df dx seed ht
   have he : (env.denote : SpecEnv ℝ Γ) = (fun {t} (r : Ref Γ t) => f x r) := by
     funext t r i

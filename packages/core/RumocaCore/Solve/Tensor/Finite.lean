@@ -1,5 +1,7 @@
 import RumocaCore.Solve.Tensor
 import RumocaCore.Real.Multiplication
+import RumocaCore.Real.Subtraction
+import RumocaCore.Real.Division
 
 /-! Ordered finite binary64 execution of typed tensor programs. Every binary
 instruction checks all of its coordinates before execution continues. The
@@ -13,23 +15,32 @@ open Rumoca.Tensor
 
 abbrev Number := Binary64.Value
 
-def ops : ScalarOps Number := ⟨Binary64.roundedAdd, Binary64.roundedMul⟩
+def ops : ScalarOps Number :=
+  ⟨Binary64.roundedAdd, Binary64.roundedMul, Binary64.roundedSub, Binary64.roundedDiv, Binary64.negate⟩
 
 def Domain (op : BinaryOp) (a b : Number) : Prop :=
   match op with
   | .add => -Binary64.overflowUnits < Binary64.units a + Binary64.units b ∧
       Binary64.units a + Binary64.units b < Binary64.overflowUnits
   | .mul => Binary64.finiteProduct a b
+  | .sub => -Binary64.overflowUnits < Binary64.units a - Binary64.units b ∧
+      Binary64.units a - Binary64.units b < Binary64.overflowUnits
+  | .div => Binary64.finiteQuotient a b
 
-/-- Addition's only negative-zero result is the sum of two negative zeros.
-Exact cancellation otherwise uses the canonical nearest/even specification.
-Multiplication uses its separate proved product and zero-sign relation. -/
+/-- Addition's only negative-zero result is the sum of two negative zeros;
+subtraction's is `(-0) - (+0)`. Exact cancellation otherwise uses the canonical
+nearest/even specification. Multiplication and division use their separate
+proved product/quotient and zero-sign relations. -/
 def Result (op : BinaryOp) (a b result : Number) : Prop :=
   Domain op a b ∧ match op with
     | .add => if a = Binary64.negativeZero ∧ b = Binary64.negativeZero then
         result = Binary64.negativeZero
       else Binary64.RoundsNearestEven (Binary64.units a + Binary64.units b) result
     | .mul => Binary64.ProductRoundsNearestEven a b result
+    | .sub => if a = Binary64.negativeZero ∧ b = Binary64.positiveZero then
+        result = Binary64.negativeZero
+      else Binary64.RoundsNearestEven (Binary64.units a - Binary64.units b) result
+    | .div => Binary64.QuotientRoundsNearestEven a b result
 
 theorem result_iff (op : BinaryOp) (a b result : Number) :
     Result op a b result ↔ Domain op a b ∧ result = op.scalar ops a b := by
@@ -45,6 +56,15 @@ theorem result_iff (op : BinaryOp) (a b result : Number) :
   | mul =>
     exact ⟨fun h => Binary64.product_rounding_unique h (Binary64.roundedMul_spec a b),
       fun h => h ▸ Binary64.roundedMul_spec a b⟩
+  | sub =>
+    by_cases hz : a = Binary64.negativeZero ∧ b = Binary64.positiveZero
+    · simp only [BinaryOp.scalar, ops, Binary64.roundedSub, if_pos hz]
+    · simp only [BinaryOp.scalar, ops, Binary64.roundedSub, if_neg hz]
+      exact ⟨fun h => Binary64.rounding_unique h (Binary64.round_spec _),
+        fun h => h ▸ Binary64.round_spec _⟩
+  | div =>
+    exact ⟨fun h => Binary64.quotient_rounding_unique h (Binary64.roundedDiv_spec a b),
+      fun h => h ▸ Binary64.roundedDiv_spec a b⟩
 
 def Pointwise (op : BinaryOp) (a b result : Value Number shape) : Prop :=
   ∀ i : Fin shape.volume, Result op a[i] b[i] result[i]

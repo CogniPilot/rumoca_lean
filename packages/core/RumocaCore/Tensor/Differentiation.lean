@@ -13,7 +13,7 @@ source built-in lowering and target execution remain separate obligations. -/
 noncomputable section
 namespace Rumoca.Tensor.AD
 
-def realOps : ScalarOps ℝ := ⟨(· + ·), (· * ·)⟩
+def realOps : ScalarOps ℝ := ⟨(· + ·), (· * ·), (· - ·), (· / ·), (- ·)⟩
 abbrev Space (s : Shape) := Denotation ℝ s
 
 def leftCoord (i : Fin s.volume) : (Space s × Space s) →L[ℝ] ℝ :=
@@ -22,12 +22,23 @@ def leftCoord (i : Fin s.volume) : (Space s × Space s) →L[ℝ] ℝ :=
 def rightCoord (i : Fin s.volume) : (Space s × Space s) →L[ℝ] ℝ :=
   (ContinuousLinearMap.proj i).comp (ContinuousLinearMap.snd ℝ _ _)
 
+/-- The four field operators have shape-preserving pointwise derivatives.
+Division is differentiable only where the divisor is nonzero; the coefficients
+are the standard quotient rule and equal the junk-value derivative elsewhere. -/
 def differential (op : BinaryOp) (x y : Space s) : (Space s × Space s) →L[ℝ] Space s :=
   ContinuousLinearMap.pi fun i => match op with
   | .add => leftCoord i + rightCoord i
   | .mul => x i • rightCoord i + y i • leftCoord i
+  | .sub => leftCoord i - rightCoord i
+  | .div => (1 / y i) • leftCoord i + (-(x i) / (y i * y i)) • rightCoord i
 
-theorem hasFDerivAt (op : BinaryOp) (x y : Space s) :
+/-- Regularity of the operands. Only division constrains its divisor; the
+other operators are everywhere differentiable. -/
+def Regular : BinaryOp → Space s → Space s → Prop
+  | .div, _, y => ∀ i, y i ≠ 0
+  | _, _, _ => True
+
+theorem hasFDerivAt (op : BinaryOp) (x y : Space s) (hreg : Regular op x y) :
     HasFDerivAt (fun p : Space s × Space s => op.denote realOps p.1 p.2)
       (differential op x y) (x, y) := by
   apply hasFDerivAt_pi.mpr
@@ -35,11 +46,38 @@ theorem hasFDerivAt (op : BinaryOp) (x y : Space s) :
   cases op
   · exact (leftCoord i).hasFDerivAt.add (rightCoord i).hasFDerivAt
   · exact (leftCoord i).hasFDerivAt (x := (x, y)) |>.mul ((rightCoord i).hasFDerivAt (x := (x, y)))
+  · exact (leftCoord i).hasFDerivAt.sub (rightCoord i).hasFDerivAt
+  · show HasFDerivAt (fun p : Space s × Space s => leftCoord i p / rightCoord i p)
+        ((1 / y i) • leftCoord i + (-(x i) / (y i * y i)) • rightCoord i) (x, y)
+    have hy : y i ≠ 0 := hreg i
+    have hR : HasFDerivAt (fun p : Space s × Space s => rightCoord i p) (rightCoord i) (x, y) :=
+      (rightCoord i).hasFDerivAt
+    have hinv := (hasFDerivAt_inv' (show (y i) ≠ 0 from hy)).comp (x, y) hR
+    have hmul := (leftCoord i).hasFDerivAt (x := (x, y)) |>.mul hinv
+    refine hmul.congr_fderiv (ContinuousLinearMap.ext fun p => ?_)
+    simp only [ContinuousLinearMap.add_apply, ContinuousLinearMap.smul_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.neg_apply,
+      ContinuousLinearMap.mulLeftRight_apply, smul_eq_mul, leftCoord, rightCoord,
+      ContinuousLinearMap.proj_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
+      Function.comp_apply]
+    field_simp
+    ring
 
 theorem jvp_correct (op : BinaryOp) (x y dx dy : Value ℝ s) (i : Fin s.volume) :
     (op.jvp realOps x y dx dy)[i] =
       differential op (fun j => x[j]) (fun j => y[j]) ((fun j => dx[j]), (fun j => dy[j])) i := by
-  cases op <;> simp [BinaryOp.jvp, BinaryOp.eval, BinaryOp.scalar, realOps, differential, leftCoord, rightCoord]
+  cases op
+  · simp [BinaryOp.jvp, BinaryOp.eval, BinaryOp.scalar, realOps, differential, leftCoord, rightCoord]
+  · simp [BinaryOp.jvp, BinaryOp.eval, BinaryOp.scalar, realOps, differential, leftCoord, rightCoord]
+  · simp [BinaryOp.jvp, BinaryOp.eval, BinaryOp.scalar, realOps, differential, leftCoord, rightCoord]
+  · simp only [BinaryOp.jvp, BinaryOp.eval, BinaryOp.scalar, realOps, differential, leftCoord,
+      rightCoord, Value.getElem_zipWith, Fin.getElem_fin, ContinuousLinearMap.pi_apply,
+      ContinuousLinearMap.add_apply, ContinuousLinearMap.smul_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.proj_apply, ContinuousLinearMap.coe_fst', ContinuousLinearMap.coe_snd',
+      smul_eq_mul]
+    by_cases hy : y[(i : Nat)] = 0
+    · rw [hy]; simp
+    · field_simp <;> ring
 
 theorem vjp_correct (op : BinaryOp) (x y seed : Value ℝ s) (dx dy : Space s) :
     dotProduct (fun i => seed[i]) (differential op (fun i => x[i]) (fun i => y[i]) (dx, dy)) =
@@ -48,9 +86,19 @@ theorem vjp_correct (op : BinaryOp) (x y seed : Value ℝ s) (dx dy : Space s) :
   simp only [dotProduct, ← Finset.sum_add_distrib]
   apply Finset.sum_congr rfl
   intro i _
-  cases op <;>
-    simp [BinaryOp.vjp, BinaryOp.eval, BinaryOp.scalar, realOps,
-      differential, leftCoord, rightCoord] <;> ring
+  cases op
+  · simp [BinaryOp.vjp, BinaryOp.eval, BinaryOp.scalar, realOps, differential, leftCoord, rightCoord]; ring
+  · simp [BinaryOp.vjp, BinaryOp.eval, BinaryOp.scalar, realOps, differential, leftCoord, rightCoord]; ring
+  · simp [BinaryOp.vjp, BinaryOp.eval, Value.getElem_mapWith, BinaryOp.scalar, realOps, differential,
+      leftCoord, rightCoord]; ring
+  · simp only [BinaryOp.vjp, BinaryOp.eval, Value.getElem_zipWith, Value.getElem_mapWith,
+      BinaryOp.scalar, realOps, differential, leftCoord, rightCoord, Fin.getElem_fin,
+      ContinuousLinearMap.pi_apply, ContinuousLinearMap.add_apply, ContinuousLinearMap.smul_apply,
+      ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply, ContinuousLinearMap.coe_fst',
+      ContinuousLinearMap.coe_snd', smul_eq_mul]
+    by_cases hy : y[(i : Nat)] = 0
+    · rw [hy]; simp
+    · field_simp <;> ring
 
 /-- Duplicating an input in a nonlinear expression contributes along both edges. -/
 def squareDifferential (x : Space s) : Space s →L[ℝ] Space s :=
@@ -59,7 +107,7 @@ def squareDifferential (x : Space s) : Space s →L[ℝ] Space s :=
 theorem square_hasFDerivAt (x : Space s) :
     HasFDerivAt (fun v : Space s => BinaryOp.denote realOps .mul v v)
       (squareDifferential x) x := by
-  exact (hasFDerivAt .mul x x).comp (f := fun v : Space s => (v, v)) x
+  exact (hasFDerivAt .mul x x trivial).comp (f := fun v : Space s => (v, v)) x
     ((hasFDerivAt_id x).prodMk (hasFDerivAt_id x))
 
 def squarePullback (x seed : Value ℝ s) : Value ℝ s :=

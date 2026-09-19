@@ -72,6 +72,26 @@ def Program.forward (p : Program Γ s) (primal tangent : Ren Γ Δ)
                   (fun r => .there (.there (.there (.there (primal r))))))
                 (Ren.push .here (fun r => .there (.there (.there (.there (tangent r))))))
                 projection))))
+  | .binary .sub left right next =>
+      .binary .sub (primal left) (primal right)
+        (.binary .sub (.there (tangent left)) (.there (tangent right))
+          (next.forward
+            (Ren.push (.there .here) (fun r => .there (.there (primal r))))
+            (Ren.push .here (fun r => .there (.there (tangent r)))) projection))
+  | .binary .div left right next =>
+      .binary .div (primal left) (primal right)
+        (.binary .mul (.there (tangent left)) (.there (primal right))
+          (.binary .mul (.there (.there (primal left))) (.there (.there (tangent right)))
+            (.binary .sub (.there .here) .here
+              (.binary .mul (.there (.there (.there (.there (primal right)))))
+                  (.there (.there (.there (.there (primal right)))))
+                (.binary .div (.there .here) .here
+                  (next.forward
+                    (Ren.push (.there (.there (.there (.there (.there .here)))))
+                      (fun r => .there (.there (.there (.there (.there (.there (primal r))))))))
+                    (Ren.push .here
+                      (fun r => .there (.there (.there (.there (.there (.there (tangent r))))))))
+                    projection))))))
 
 /-- Translation is correct for arbitrary scalar operations, so it preserves
 the exact expression ordering even when the chosen arithmetic is rounded. -/
@@ -89,7 +109,8 @@ theorem Program.forward_correct (p : Program Γ s) (ops : ScalarOps α) (zero on
     congr 3 <;> funext t r <;> cases r <;> rfl
   | binary op left right next ih =>
     cases op <;> simp only [forward, eval, ih, evalForward]
-    all_goals congr 3 <;> funext t r <;> cases r <;> rfl
+    all_goals congr 3 <;> funext t r <;> cases r <;>
+      first | rfl | simp only [Env.push, Ren.push, BinaryOp.jvp]
 
 theorem Program.forward_primal (p : Program Γ s) (ops : ScalarOps α) (zero one : α)
     (primal tangent : Ren Γ Δ) (env : Env α Δ) :
@@ -98,10 +119,11 @@ theorem Program.forward_primal (p : Program Γ s) (ops : ScalarOps α) (zero one
   rw [forward_correct]
   exact p.evalForward_primal ops zero one _ _
 
-/-- A constant instruction-count bound, independent of every tensor extent. -/
+/-- A constant instruction-count bound, independent of every tensor extent.
+The division quotient rule is the widest expansion, so the constant is six. -/
 theorem Program.forward_compact (p : Program Γ s) (primal tangent : Ren Γ Δ)
     (projection : Projection) :
-    (p.forward primal tangent projection).nodeCount ≤ 4 * p.nodeCount := by
+    (p.forward primal tangent projection).nodeCount ≤ 6 * p.nodeCount := by
   induction p generalizing Δ with
   | ret => simp [forward, nodeCount]
   | fill shape value next ih =>
@@ -117,6 +139,14 @@ theorem Program.forward_compact (p : Program Γ s) (primal tangent : Ren Γ Δ)
     · have h := ih (Δ := shape :: shape :: shape :: shape :: Δ) (Ren.push (.there (.there (.there .here)))
           (fun r => .there (.there (.there (.there (primal r))))))
         (Ren.push .here (fun r => .there (.there (.there (.there (tangent r))))))
+      omega
+    · have h := ih (Δ := shape :: shape :: Δ) (Ren.push (.there .here) (fun r => .there (.there (primal r))))
+        (Ren.push .here (fun r => .there (.there (tangent r))))
+      omega
+    · have h := ih (Δ := shape :: shape :: shape :: shape :: shape :: shape :: Δ)
+          (Ren.push (.there (.there (.there (.there (.there .here)))))
+            (fun r => .there (.there (.there (.there (.there (.there (primal r))))))))
+        (Ren.push .here (fun r => .there (.there (.there (.there (.there (.there (tangent r))))))))
       omega
 
 end Rumoca.Solve.Tensor
