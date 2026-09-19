@@ -40,6 +40,7 @@ import RumocaFMI3.StateSetterPolicy
 import RumocaFMI3.RuntimeLinkage
 import RumocaFMI3.CallPolicy
 import RumocaFMI3.TensorCallPolicy
+import RumocaFMI3.ConstantCallPolicy
 import ProofAudit.Audit
 
 /-! Independently cached formal audits for the call policy; no example-based tests. -/
@@ -53,6 +54,18 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorCallPolicy.functions_rankT
 #audit axioms Rumoca.FMI3.TensorCallPolicy.functions_isSomeT
 #audit axioms Rumoca.FMI3.TensorCallPolicy.tensor_acyclic
+
+-- Stage B4: the constant-rate adapter call graph is no-heap and acyclic over the
+-- constant boundary set (the three constant kernel entries in the kernel role).
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.body_admits
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.funcs_acceptedC
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.acceptedC_noHeap
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.constant_no_heap
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.classifiedC_rank
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.body_rankC
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.functions_rankC
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.functions_isSomeC
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.constant_acyclic
 
 #audit axioms Rumoca.FMI3.CallPolicy.body_policy
 #audit axioms Rumoca.FMI3.CallPolicy.helpers_policy

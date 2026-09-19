@@ -25,7 +25,7 @@ variable {source : AST.Model} {n : Nat}
 
 /-- Every absent-type family signature falls through the tensor dispatch to the
 scalar body. -/
-theorem absent_function (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
+theorem constant_absent_function (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (ty : AbsentVariables.VariableType) (write : Bool) :
     constantFunction model m (AbsentVariables.signature ty write)
       = Runtime.function model (AbsentVariables.signature ty write) := by
@@ -33,19 +33,19 @@ theorem absent_function (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3
 
 /-- Every unsupported-capability signature falls through the tensor dispatch to
 the scalar body. -/
-theorem capability_function (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n) :
+theorem constant_capability_function (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n) :
     ∀ sig ∈ CapabilityRejection.signatures, constantFunction model m sig = Runtime.function model sig := by
   intro sig member
   fin_cases member <;> rfl
 
 /-- `fmi3InstantiateScheduledExecution` falls through the tensor dispatch to the
 scalar body. -/
-theorem scheduled_function (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n) :
+theorem constant_scheduled_function (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n) :
     constantFunction model m ScheduledCreation.signature
       = Runtime.function model ScheduledCreation.signature := rfl
 
 /-- Definition-table fact for any signature that renders the scalar body. -/
-theorem scalar_bound (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
+theorem constant_scalar_bound (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (sigs : List Signature)
     (unique : ((functions model m sigs).map (fun fn => fn.signature.name)).Nodup)
     (sig : Signature) (member : sig ∈ sigs)
@@ -54,7 +54,7 @@ theorem scalar_bound (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Mod
   rw [← routed]; exact ConstantFunctions.function_bound model m sigs unique sig member
 
 /-- List membership of a scalar body rendered by the constant adapter list. -/
-theorem scalar_member (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
+theorem constant_scalar_member (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (sigs : List Signature) (sig : Signature) (member : sig ∈ sigs)
     (routed : constantFunction model m sig = Runtime.function model sig) :
     Runtime.function model sig ∈ functions model m sigs := by
@@ -99,27 +99,27 @@ theorem prepared_correct (model : Solve.FMI3Model source) (m : Solve.ConstantFMI
     (member : signature ty write ∈ sigs)
     {pool : Pool (LiteralPreparation.excluded ++ (functions model m sigs).flatMap functionNames)}
     (made : prepare model m sigs = some pool) : PreparedContract model m sigs ty write pool := by
-  have routed := absent_function model m ty write
+  have routed := constant_absent_function model m ty write
   constructor
   · intro header E objects firstBlock
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     intro prog actual
     apply AbsentVariables.quiet_correct header objects (pool.addresses firstBlock) model ty write prog
     rw [actual]
-    exact scalar_bound model m sigs unique (signature ty write) member routed
+    exact constant_scalar_bound model m sigs unique (signature ty write) member routed
   · intro E objects firstBlock
     letI : CInterface := executionInterface objects (pool.addresses firstBlock)
     intro prog actual
     apply AbsentVariables.quiet_static_correct objects (pool.addresses firstBlock) model ty write prog
     rw [actual]
-    exact scalar_bound model m sigs unique (signature ty write) member routed
+    exact constant_scalar_bound model m sigs unique (signature ty write) member routed
   · intro header before firstBlock signed objects heap frame
     obtain ⟨category, categoryBound⟩ := ConstantFunctions.text_bound model m sigs made Runtime.helpers[0]
       (List.mem_append_left _ (by simp [ConstantFunctions.helpers, TensorFunctions.helpers])) "logStatus" Logging.category_collected firstBlock
     have available : ∀ reason, ∃ message, pool.addresses firstBlock (failureMessage reason) = some message := by
       intro reason
       exact ConstantFunctions.text_bound model m sigs made (Runtime.function model (signature ty write))
-        (scalar_member model m sigs (signature ty write) member routed)
+        (constant_scalar_member model m sigs (signature ty write) member routed)
         (failureMessage reason) (AbsentVariables.message_collected model ty write reason) firstBlock
     choose messages messageBound using available
     have categoryStored := (pool.storage_valid before firstBlock signed "logStatus" category categoryBound).preserved frame
@@ -134,7 +134,7 @@ theorem prepared_correct (model : Solve.FMI3Model source) (m : Solve.ConstantFMI
         prog.internal.definitions "fail" = some (.tree Runtime.helpers[0]) := by
       intro E prog actual
       refine ⟨?_, ?_⟩
-      · rw [actual]; exact scalar_bound model m sigs unique (signature ty write) member routed
+      · rw [actual]; exact constant_scalar_bound model m sigs unique (signature ty write) member routed
       · rw [actual]; exact ConstantFunctions.helpers_bound model m sigs Runtime.helpers[0] (by simp [ConstantFunctions.helpers, TensorFunctions.helpers])
     refine ⟨category, messages, categoryBound, messageBound, categoryStored, messageStored, ?_, ?_⟩
     · intro E prog actual reason
@@ -210,19 +210,19 @@ theorem prepared_correct (model : Solve.FMI3Model source) (m : Solve.ConstantFMI
     intro prog actual inputs outputs arguments heap observed
     apply CapabilityRejection.null_call header objects (pool.addresses firstBlock) model profile routed arguments prog heap
     rw [actual]
-    exact scalar_bound model m sigs unique sig member fallthrough
+    exact constant_scalar_bound model m sigs unique sig member fallthrough
   · intro header before firstBlock signed objects heap frame
     obtain ⟨category, categoryBound⟩ := ConstantFunctions.text_bound model m sigs made Runtime.helpers[0]
       (List.mem_append_left _ (by simp [ConstantFunctions.helpers, TensorFunctions.helpers])) "logStatus" Logging.category_collected firstBlock
     obtain ⟨text, bound⟩ := ConstantFunctions.text_bound model m sigs made (Runtime.function model sig)
-      (scalar_member model m sigs sig member fallthrough) message (CapabilityRejection.message_collected model routed) firstBlock
+      (constant_scalar_member model m sigs sig member fallthrough) message (CapabilityRejection.message_collected model routed) firstBlock
     have categoryStored := (pool.storage_valid before firstBlock signed "logStatus" category categoryBound).preserved frame
     have textStored := (pool.storage_valid before firstBlock signed message text bound).preserved frame
     refine ⟨category, text, categoryBound, bound, categoryStored, textStored, ?_⟩
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     intro E prog actual
     apply CapabilityRejection.failures_correct header objects (pool.addresses firstBlock) model profile routed prog heap category text signed
-    · rw [actual]; exact scalar_bound model m sigs unique sig member fallthrough
+    · rw [actual]; exact constant_scalar_bound model m sigs unique sig member fallthrough
     · rw [actual]; exact ConstantFunctions.helpers_bound model m sigs Runtime.helpers[0] (by simp [ConstantFunctions.helpers, TensorFunctions.helpers])
     · exact bound
     · exact categoryBound
@@ -261,7 +261,7 @@ theorem family_correct (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3M
     (members : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs) : FamilyContract model m sigs := by
   intro sig member
   exact rendered_contract model m sigs (CapabilityRejection.profiles sig member)
-    (CapabilityRejection.routing model sig member) (capability_function model m sig member)
+    (CapabilityRejection.routing model sig member) (constant_capability_function model m sig member)
     (CapabilityRejection.signatures_printable sig member) unique (members sig member)
 
 end ConstantCapabilityRejection
