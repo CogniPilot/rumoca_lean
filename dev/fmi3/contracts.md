@@ -424,6 +424,29 @@ metaprogram of its own. The base scalar certificate keeps its own entry because
 its witness artifact is the compiled scalar source itself rather than a
 reconstructed witness.
 
+### One build-artifact driver for the kernel profiles
+
+The tensor and constant-rate build-artifact checks share one driver,
+`Rumoca.FMI3ProfileBuildCheck.run`, driven by a `ProfileBuildInputs` record. The
+driver independently reads the five staged files, checks the build description,
+model description, private `model.c` kernel text and adapter source prefix
+against the compiler output, certifies the `model.c` byte assembly from its
+render fragments, calls the profile's adapter-bytes certificate, and runs the
+final axiom audit. The record supplies what stays per profile: the rejection
+label, the checked-namespace base, a compilation closure returning the model
+name, model-description tree and kernel `model.c` bytes, the prepared-metadata
+identity, the adapter certificate entry, the `model.c` render fragments (the
+tensor profile supplies eight, the constant-rate profile three), the kernel
+`pieces`/`modelC`/`chars` terms, and an `emitFinal` closure that states and
+proves the profile's fixed `source_to_build` contract. The produced theorem
+names and statements (`Rumoca.CheckedTensorFMI3Files.source_to_build` and
+`Rumoca.CheckedConstantFMI3Files.source_to_build`), the
+`verify_tensor_fmi3_build_files` and `verify_constant_fmi3_build_files`
+commands, and the axiom whitelist are unchanged. The base scalar build check
+keeps its own driver: it certifies the compiled scalar source directly through
+the numerical `source_to_c` certificate and carries no private `model.c` render
+assembly, so it shares no body with the kernel-profile driver.
+
 ### Parameter coverage and actual call entry
 
 The follow-on increment adds all adjusted pointer spellings missing in the

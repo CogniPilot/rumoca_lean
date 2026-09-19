@@ -825,3 +825,34 @@ theorem name and statement other modules cite is identical.
 
 The audited axioms stay within `propext`, `Quot.sound` and `Classical.choice`,
 and the FMI 3 and compiler checks continue to pass.
+
+## One build-artifact driver for the kernel profiles, 2026-09-19
+
+The tensor and constant-rate build-artifact checks are now invocations of one
+shared driver, `Rumoca.FMI3ProfileBuildCheck.run`, driven by a
+`ProfileBuildInputs` record, instead of two near-identical copies of the
+file-read, build-description and model-description certificates, `model.c`
+fragment assembly and axiom audit. The shared file read, the XML build and
+model-description certificates, the `model.c` render-fragment loop and byte
+concatenation, and the final axiom audit are written once in the driver
+(`packages/compiler/Rumoca/FMI3ProfileBuildCheck.lean`). What stays per profile
+is the compilation closure, the prepared-metadata and kernel identities, the
+`model.c` render fragments, and the `emitFinal` closure that states and proves
+the profile's fixed `source_to_build` contract, since the two contract proofs
+differ in their lemmas and subgoals.
+
+The two profile drivers
+(`packages/compiler/Rumoca/TensorFMI3BuildArtifactCheck.lean` and
+`ConstantFMI3BuildArtifactCheck.lean`) shrank from 225 and 225 lines to 86 and
+84 lines; the shared driver is 239 lines written once. The produced
+`Rumoca.CheckedTensorFMI3Files.source_to_build` and
+`Rumoca.CheckedConstantFMI3Files.source_to_build` theorems are unchanged in
+statement and axiom set, the `verify_tensor_fmi3_build_files` and
+`verify_constant_fmi3_build_files` commands and the `tensor-fmi3` and
+`constant-fmi3` certificate kinds are unchanged, and certificate wall time is
+unchanged, since the kernel work per profile (its actual `model.c` and adapter
+bytes) is the same. The base scalar build check keeps its own driver: it
+certifies the compiled scalar source directly through the numerical
+`source_to_c` certificate and carries no private `model.c` render assembly. A
+further kernel profile that fits these shapes adds a `ProfileBuildInputs` value
+and its contract discharge rather than a third build-artifact driver.
