@@ -90,13 +90,108 @@ private structure EbnfPieces where
   /-- Proofs placed in the source module. -/
   proofs : String
 
+/-- Split a token stream into blocks of whole rules near a rule target. Each
+`.punct ';'` is a top-level rule terminator, so a block boundary after one is a
+clean parse boundary and the block grammars concatenate to the whole grammar. -/
+private def ruleBlocks (tokens : List Parser.EBNF.Lexeme) (target : Nat := 8) :
+    Array (List Parser.EBNF.Lexeme) := Id.run do
+  let mut blocks : Array (List Parser.EBNF.Lexeme) := #[]
+  let mut current : List Parser.EBNF.Lexeme := []
+  let mut rules : Nat := 0
+  for t in tokens do
+    current := t :: current
+    if t == Parser.EBNF.Lexeme.punct ';' then
+      rules := rules + 1
+      if rules ≥ target then
+        blocks := blocks.push current.reverse
+        current := []
+        rules := 0
+  if !current.isEmpty then
+    blocks := blocks.push current.reverse
+  return blocks
+
 /-- Bind the actual grammar text and generated CFG through a finite structural
 witness. These constants are proof-only; the runtime retains its token alphabet
-and the ordinary LR tables. -/
-private def ebnfCertificates (tokens : List Parser.EBNF.Lexeme)
+and the ordinary LR tables. The lexing and parsing certificates are composed
+from per-block certificates, so no single kernel decision term ranges over the
+whole source text or token stream: each block is checked on its own bounded
+input, and the reusable `Lexes.append`/`Rules.append` engine lemmas join them
+against the unchanged final statements. -/
+private def ebnfCertificates (source : String) (tokens : List Parser.EBNF.Lexeme)
     (sourceGrammar : Parser.EBNF.Grammar)
-    (certificate : Frontend.Certified sourceGrammar) : EbnfPieces :=
-  { data :=
+    (certificate : Frontend.Certified sourceGrammar) : Except String EbnfPieces := do
+  -- Character blocks shared with the source-text certificate, and their tokens.
+  let charBlocks := Parser.EBNF.Emission.sourceBlocks source
+  let mut lexToks : Array (List Parser.EBNF.Lexeme) := #[]
+  for block in charBlocks do
+    match Parser.EBNF.Reader.tokenize (block.length + 1) block with
+    | .ok toks => lexToks := lexToks.push toks
+    | .error e => throw s!"source block failed to tokenize: {e}"
+  if lexToks.toList.flatten != tokens then
+    throw "source blocks do not compose to the token stream"
+  -- Rule blocks and their grammars.
+  let tokBlocks := ruleBlocks tokens
+  let mut ruleGrammars : Array Parser.EBNF.Grammar := #[]
+  for block in tokBlocks do
+    match Parser.EBNF.Reader.rules (block.length + 1) block with
+    | .ok g => ruleGrammars := ruleGrammars.push g
+    | .error e => throw s!"rule block failed to parse: {e}"
+  if ruleGrammars.toList.flatten != sourceGrammar then
+    throw "rule blocks do not compose to the grammar"
+  let lexCount := charBlocks.size
+  let ruleCount := tokBlocks.size
+  -- Per-block lexer certificates.
+  let mut lexBody := ""
+  for i in [:lexCount] do
+    let block := charBlocks[i]!
+    let toks := lexToks[i]!
+    lexBody := lexBody ++ s!"private def lexToks{i} : List Parser.EBNF.Lexeme := {reprStr toks}\n\n" ++
+      options ++ s!"private theorem lexBlock{i}_lexes : " ++
+        s!"Parser.EBNF.Metalanguage.Lexes sourceChars{i} lexToks{i} := by\n" ++
+      s!"  apply Parser.EBNF.Reader.tokenize_sound (fuel := {block.length + 1})\n" ++
+      "  decide +kernel\n\n"
+  -- Fold the block certificates into the whole-text lexer certificate. The join
+  -- is left-nested to match the left-associative list append, so each appended
+  -- block is a single literal whose newline lead discharges the boundary.
+  let mut lexTerm := "lexBlock0_lexes"
+  for i in [1:lexCount] do
+    lexTerm := s!"Parser.EBNF.Metalanguage.Lexes.append ({lexTerm}) lexBlock{i}_lexes (Or.inl (by decide))"
+  let lexJoin := String.intercalate " ++ " ((List.range lexCount).map fun i => s!"lexToks{i}")
+  lexBody := lexBody ++
+    options ++ "private theorem lexes_source : Parser.EBNF.Metalanguage.Lexes sourceChars sourceTokens := by\n" ++
+    s!"  have h := {lexTerm}\n" ++
+    s!"  have ht : {lexJoin} = sourceTokens := by decide +kernel\n" ++
+    "  rw [ht] at h\n  exact h\n\n" ++
+    options ++ "private theorem lexing_checked : Parser.EBNF.lex source = .ok sourceTokens := by\n" ++
+    "  unfold Parser.EBNF.lex\n  rw [source_toList]\n" ++
+    "  exact Parser.EBNF.Reader.tokenize_complete lexes_source (Nat.le_refl _)\n\n"
+  -- Per-block parser certificates.
+  let mut ruleBody := ""
+  for i in [:ruleCount] do
+    let block := tokBlocks[i]!
+    let g := ruleGrammars[i]!
+    ruleBody := ruleBody ++
+      s!"private def ruleToks{i} : List Parser.EBNF.Lexeme := {reprStr block}\n\n" ++
+      s!"private def ruleGrammar{i} : Parser.EBNF.Grammar := {reprStr g}\n\n" ++
+      options ++ s!"private theorem ruleBlock{i}_rules : " ++
+        s!"Parser.EBNF.Metalanguage.Rules ruleGrammar{i} ruleToks{i} :=\n" ++
+      s!"  (Parser.EBNF.Reader.rules_sound (fuel := {block.length + 1}) (by decide +kernel)).1\n\n"
+  let mut ruleTerm := "ruleBlock0_rules"
+  for i in [1:ruleCount] do
+    ruleTerm := s!"Parser.EBNF.Metalanguage.Rules.append ({ruleTerm}) ruleBlock{i}_rules"
+  let gJoin := String.intercalate " ++ " ((List.range ruleCount).map fun i => s!"ruleGrammar{i}")
+  let rtJoin := String.intercalate " ++ " ((List.range ruleCount).map fun i => s!"ruleToks{i}")
+  ruleBody := ruleBody ++
+    options ++ "private theorem rules_source : Parser.EBNF.Metalanguage.Rules sourceGrammar sourceTokens := by\n" ++
+    s!"  have h := {ruleTerm}\n" ++
+    s!"  have hg : {gJoin} = sourceGrammar := by decide +kernel\n" ++
+    s!"  have ht : {rtJoin} = sourceTokens := by decide +kernel\n" ++
+    "  rw [hg, ht] at h\n  exact h\n\n" ++
+    options ++ "private theorem source_names_valid : Parser.EBNF.Metalanguage.NamesValid sourceGrammar := by\n" ++
+    "  unfold Parser.EBNF.Metalanguage.NamesValid\n  exact (by decide +kernel)\n\n" ++
+    options ++ "private theorem parsing_checked : Parser.EBNF.parseTokens sourceTokens = .ok sourceGrammar :=\n" ++
+    "  Parser.EBNF.parseTokens_complete ⟨rules_source, source_names_valid, by decide +kernel⟩\n\n"
+  let dataBody :=
       "noncomputable def sourceGrammar : Parser.EBNF.Grammar := " ++ reprStr sourceGrammar ++ "\n\n" ++
       "noncomputable def prepared : LALR.Frontend.Prepared := ⟨alphabet, " ++
         reprStr certificate.prepared.names ++ ", grammar⟩\n\n" ++
@@ -106,12 +201,9 @@ private def ebnfCertificates (tokens : List Parser.EBNF.Lexeme)
         reprStr certificate.witness.rules ++ "⟩\n\n" ++
       "noncomputable def sourceTokens : List Parser.EBNF.Lexeme := " ++ reprStr tokens ++ "\n\n" ++
       "def encode (symbol : Parser.Symbol) : Nat :=\n" ++
-        "  (alphabet.findIdx? (· == symbol)).getD (alphabet.size + 1)\n\n",
-    proofs :=
-      options ++ "private theorem lexing_checked : Parser.EBNF.lex source = .ok sourceTokens := by\n" ++
-        "  unfold Parser.EBNF.lex\n  rw [source_toList]\n  decide +kernel\n\n" ++
-      options ++ "private theorem parsing_checked : Parser.EBNF.parseTokens sourceTokens = .ok sourceGrammar :=\n" ++
-        "  by decide +kernel\n\n" ++
+        "  (alphabet.findIdx? (· == symbol)).getD (alphabet.size + 1)\n\n"
+  let proofBody :=
+      lexBody ++ ruleBody ++
       "theorem source_read_checked : Parser.EBNF.parse source = .ok sourceGrammar :=\n" ++
         "  (Parser.EBNF.parse_of_lex lexing_checked).trans parsing_checked\n\n" ++
       "theorem source_notation_checked : Parser.EBNF.Metalanguage.Denotes source sourceGrammar :=\n" ++
@@ -121,7 +213,8 @@ private def ebnfCertificates (tokens : List Parser.EBNF.Lexeme)
       "theorem ebnf_correct (word : List Parser.Symbol) :\n" ++
         "    Parser.EBNF.Accepts sourceGrammar word ↔ grammar.Accepts (word.map encode) :=\n" ++
         "  loweringWitness.accepts_iff (LALR.Frontend.Witness.validate_iff.mp lowering_checked)\n" ++
-        "    (by decide +kernel) word\n\n" }
+        "    (by decide +kernel) word\n\n"
+  return ⟨dataBody, proofBody⟩
 
 private def sourceParserContract : String :=
   "def parseSymbols (word : List Parser.Symbol) : Except LALR.Failure LALR.Tree :=\n" ++
@@ -420,7 +513,7 @@ private def generatedParts (source : String) : Except String GeneratedParts := d
   if !Fuel.validate g budget then throw "candidate failed linear fuel validation"
   if !Progress.validate c.tables c.collection.edges.toList budget resources.credits then
     throw "candidate failed total parsing progress validation"
-  let ebnf := ebnfCertificates sourceTokens sourceGrammar lowering
+  let ebnf ← ebnfCertificates source sourceTokens sourceGrammar lowering
   let items := itemCertificates c.collection.states
   let safety := safetyCertificates g c.tables c.collection.edges.toList
   let budgetPieces := budgetCertificates budget resources.credits

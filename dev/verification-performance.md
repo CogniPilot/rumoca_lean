@@ -474,3 +474,62 @@ isolated numbers above.
 The GALEC `GALECParser.Generated` prefix (117 LALR states, 11 reduction
 certificates) is small; every module stays under ~3.1 GiB (largest
 `Generated/Safety` ~3.07 GiB) and the whole target builds in 36 s.
+
+## LALR source, lexing and parsing certificates: block cursors, 2026-09-19
+
+The generated data module (`Generated/Tables`) and source-proof module
+(`Generated/Source`) each still closed a fact about the whole embedded grammar
+text or token stream in one kernel decision term. Three certificates dominated:
+the source length (`source_length`, a whole `decide +kernel` over the flattened
+character list), the lexer certificate (`lexing_checked`, a whole `decide +kernel`
+tokenizing every source character), and the token-parser certificate
+(`parsing_checked`, a whole `decide +kernel` over the token stream). Profiling
+the Modelica modules in isolation attributed about 23.9 s of kernel type-checking
+to `source_length` and about 18.2 s to `lexing_checked`; `parsing_checked` was
+about 1.2 s. Each grows with the source, in one term.
+
+The source text is now split into newline-aligned character blocks near a target
+size (`Parser.EBNF.Emission.sourceBlocks`). A newline is always a top-level
+lexical boundary: it closes a line comment and cannot extend an identifier, so a
+block boundary before a newline is a clean token boundary. `source_length` sums
+the per-block lengths through `List.length_append` and per-block `decide`s, rather
+than measuring the whole list once. `lexing_checked` certifies each block's
+tokenization on its own bounded input (`tokenize_sound`) and joins the blocks with
+the reusable engine lemma `Parser.EBNF.Metalanguage.Lexes.append`
+(`Parser/EBNF/Lexical.lean`), which composes lexical notation across a
+newline-led boundary; the whole certificate then follows from `tokenize_complete`.
+`parsing_checked` splits the token stream into blocks of whole rules (each `;`
+is a rule terminator), certifies each block with `rules_sound`, and joins them
+with `Parser.EBNF.Metalanguage.Rules.append` (`Parser/EBNF/Metalanguage.lean`),
+which composes rule notation by concatenation with no boundary condition; the
+whole certificate then follows from `parseTokens_complete`. The certified
+statements (`lexing_checked`, `parsing_checked`, `source_length`, and the
+downstream `source_read_checked`, `source_notation_checked`,
+`source_parseLocated_correct`) are unchanged; only the proof route changed. No
+single kernel step now ranges over the whole text or token stream: the tokenizer
+and length work is split into per-block terms, each bounded by one block.
+
+`source_ofList` (`source = String.ofList sourceChars`) stays one reflexivity
+step. The source is kept as a single string literal because a downstream artifact
+certificate compares an embedded grammar literal against `Generated.source` by
+reflexivity, which needs a single-literal normal form; relating that one literal
+to its characters is inherently one whole reduction, taken in the cheaper
+`String.ofList` direction (about 15 s) rather than the far more expensive
+`String.toList` decode.
+
+Single-module cold builds on this host (peak resident measured for the module's
+own `lean` process; wall carries some variance from a concurrent build sharing
+the machine):
+
+| Modelica module | Before wall | Before peak | After wall | After peak |
+| --- | ---: | ---: | ---: | ---: |
+| `Generated/Tables` (source text + table literals) | ~82 s | ~4.24 GiB | ~57 s | ~2.65 GiB |
+| `Generated/Source` (lexer, parser, rule certificates) | ~35 s | ~5.79 GiB | ~31 s | ~5.26 GiB |
+
+`Generated/Tables` improves most, since the removed whole-list `source_length`
+decide was its largest transient. `Generated/Source` improves less in wall and
+peak because it is dominated by the unchanged lowering and per-rule derivation
+certificates; the eliminated 18 s whole-source tokenize term was a large transient
+freed once checked, not the resident peak. The Modelica source splits into 22
+character/lexer blocks and 9 rule blocks; both grammars regenerate and pass
+`check-generated`, `tests/lalr.sh` and `tests/efmi-algorithm.sh`.

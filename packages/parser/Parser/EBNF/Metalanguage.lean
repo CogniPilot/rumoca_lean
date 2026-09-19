@@ -56,6 +56,18 @@ inductive Rules : Grammar → List Lexeme → Prop where
       Rules ((name, expr) :: grammar)
         (.name name :: .punct sep :: tokens ++ .punct ';' :: suffix)
 
+/-- Rule notation composes by concatenation: each rule is delimited by its
+terminating `;`, so a grammar read from a block of rules and a grammar read from
+the following block join without a boundary condition. A long token stream can
+then be certified one rule block at a time and composed. -/
+theorem Rules.append {g1 t1 g2 t2} (ha : Rules g1 t1) (hb : Rules g2 t2) :
+    Rules (g1 ++ g2) (t1 ++ t2) := by
+  induction ha with
+  | nil => simpa using hb
+  | @cons sep expr tokens grammar suffix name separator body _ ih =>
+      simp only [List.cons_append, List.append_assoc, List.cons_append]
+      exact Rules.cons separator body ih
+
 def NamesValid (grammar : Grammar) : Prop :=
   (grammar.map Prod.fst).Nodup ∧ ∀ rule ∈ grammar, rule.1 ≠ "IDENT"
 

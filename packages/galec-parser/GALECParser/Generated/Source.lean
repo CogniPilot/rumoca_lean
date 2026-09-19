@@ -8,17 +8,838 @@ namespace Rumoca.GALEC.Generated
 set_option maxRecDepth 100000
 set_option maxHeartbeats 8000000
 
+private def lexToks0 : List Parser.EBNF.Lexeme := []
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem lexBlock0_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars0 lexToks0 := by
+  apply Parser.EBNF.Reader.tokenize_sound (fuel := 310)
+  decide +kernel
+
+private def lexToks1 : List Parser.EBNF.Lexeme := []
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem lexBlock1_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars1 lexToks1 := by
+  apply Parser.EBNF.Reader.tokenize_sound (fuel := 301)
+  decide +kernel
+
+private def lexToks2 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "program",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.name "block",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.name "tensor_block",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "block",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "block",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "protected",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "constant",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "public",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "startup",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "recalibrate",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "do_step",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "startup",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Startup",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "0.0",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',']
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem lexBlock2_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars2 lexToks2 := by
+  apply Parser.EBNF.Reader.tokenize_sound (fuel := 284)
+  decide +kernel
+
+private def lexToks3 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "1.0",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Startup",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "recalibrate",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Recalibrate",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Recalibrate",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "do_step",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "(",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "+",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "1.0",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ")",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';']
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem lexBlock3_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars3 lexToks3 := by
+  apply Parser.EBNF.Reader.tokenize_sound (fuel := 270)
+  decide +kernel
+
+private def lexToks4 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "self",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ".",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "tensor_block",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "block",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "input",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ",",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "protected",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "constant",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',']
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem lexBlock4_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars4 lexToks4 := by
+  apply Parser.EBNF.Reader.tokenize_sound (fuel := 271)
+  decide +kernel
+
+private def lexToks5 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.text "public",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "startup",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "recalibrate",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "tensor_do_step",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "tensor_do_step",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "product",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "(",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "product",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ",",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ")",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "product",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ".*",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ';']
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem lexBlock5_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars5 lexToks5 := by
+  apply Parser.EBNF.Reader.tokenize_sound (fuel := 291)
+  decide +kernel
+
+private def lexToks6 : List Parser.EBNF.Lexeme := []
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem lexBlock6_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars6 lexToks6 := by
+  apply Parser.EBNF.Reader.tokenize_sound (fuel := 2)
+  decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem lexes_source : Parser.EBNF.Metalanguage.Lexes sourceChars sourceTokens := by
+  have h := Parser.EBNF.Metalanguage.Lexes.append (Parser.EBNF.Metalanguage.Lexes.append (Parser.EBNF.Metalanguage.Lexes.append (Parser.EBNF.Metalanguage.Lexes.append (Parser.EBNF.Metalanguage.Lexes.append (Parser.EBNF.Metalanguage.Lexes.append (lexBlock0_lexes) lexBlock1_lexes (Or.inl (by decide))) lexBlock2_lexes (Or.inl (by decide))) lexBlock3_lexes (Or.inl (by decide))) lexBlock4_lexes (Or.inl (by decide))) lexBlock5_lexes (Or.inl (by decide))) lexBlock6_lexes (Or.inl (by decide))
+  have ht : lexToks0 ++ lexToks1 ++ lexToks2 ++ lexToks3 ++ lexToks4 ++ lexToks5 ++ lexToks6 = sourceTokens := by decide +kernel
+  rw [ht] at h
+  exact h
+
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem lexing_checked : Parser.EBNF.lex source = .ok sourceTokens := by
   unfold Parser.EBNF.lex
   rw [source_toList]
-  decide +kernel
+  exact Parser.EBNF.Reader.tokenize_complete lexes_source (Nat.le_refl _)
+
+private def ruleToks0 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "program",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.name "block",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.name "tensor_block",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "block",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "block",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "protected",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "constant",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "public",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "startup",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "recalibrate",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "do_step",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "startup",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Startup",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "0.0",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "1.0",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Startup",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "recalibrate",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Recalibrate",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Recalibrate",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "do_step",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "(",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "+",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "1.0",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ")",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "self",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ".",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "tensor_block",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "block",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "input",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ",",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "protected",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "constant",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "public",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "startup",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "recalibrate",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "tensor_do_step",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "tensor_do_step",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "product",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "(",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "product",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ",",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ")",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';']
+
+private def ruleGrammar0 : Parser.EBNF.Grammar := [("program", Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "block") (Parser.EBNF.Expr.ref "tensor_block")),
+ ("block",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "block"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "output"))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+          (Parser.EBNF.Expr.seq
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+            (Parser.EBNF.Expr.seq
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+              (Parser.EBNF.Expr.seq
+                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "protected"))
+                (Parser.EBNF.Expr.seq
+                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "constant"))
+                  (Parser.EBNF.Expr.seq
+                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+                    (Parser.EBNF.Expr.seq
+                      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                      (Parser.EBNF.Expr.seq
+                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                        (Parser.EBNF.Expr.seq
+                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "public"))
+                          (Parser.EBNF.Expr.seq
+                            (Parser.EBNF.Expr.ref "startup")
+                            (Parser.EBNF.Expr.seq
+                              (Parser.EBNF.Expr.ref "recalibrate")
+                              (Parser.EBNF.Expr.seq
+                                (Parser.EBNF.Expr.ref "do_step")
+                                (Parser.EBNF.Expr.seq
+                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
+                                  (Parser.EBNF.Expr.seq
+                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))))))))))))))),
+ ("startup",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "method"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Startup"))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "algorithm"))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.ref "reference")
+          (Parser.EBNF.Expr.seq
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
+            (Parser.EBNF.Expr.seq
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "0.0"))
+              (Parser.EBNF.Expr.seq
+                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                (Parser.EBNF.Expr.seq
+                  (Parser.EBNF.Expr.ref "reference")
+                  (Parser.EBNF.Expr.seq
+                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
+                    (Parser.EBNF.Expr.seq
+                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "1.0"))
+                      (Parser.EBNF.Expr.seq
+                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                        (Parser.EBNF.Expr.seq
+                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
+                          (Parser.EBNF.Expr.seq
+                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Startup"))
+                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))))))))))),
+ ("recalibrate",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "method"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Recalibrate"))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "algorithm"))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
+          (Parser.EBNF.Expr.seq
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Recalibrate"))
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))),
+ ("do_step",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "method"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "DoStep"))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "algorithm"))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.ref "reference")
+          (Parser.EBNF.Expr.seq
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
+            (Parser.EBNF.Expr.seq
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+              (Parser.EBNF.Expr.seq
+                (Parser.EBNF.Expr.ref "reference")
+                (Parser.EBNF.Expr.seq
+                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "+"))
+                  (Parser.EBNF.Expr.seq
+                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "1.0"))
+                    (Parser.EBNF.Expr.seq
+                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))
+                      (Parser.EBNF.Expr.seq
+                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                        (Parser.EBNF.Expr.seq
+                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
+                          (Parser.EBNF.Expr.seq
+                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "DoStep"))
+                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))))))))))),
+ ("reference",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "self"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "."))
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident)))),
+ ("tensor_block",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "block"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "input"))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+          (Parser.EBNF.Expr.seq
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+            (Parser.EBNF.Expr.seq
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+              (Parser.EBNF.Expr.seq
+                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+                (Parser.EBNF.Expr.seq
+                  (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                  (Parser.EBNF.Expr.seq
+                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                    (Parser.EBNF.Expr.seq
+                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "output"))
+                      (Parser.EBNF.Expr.seq
+                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+                        (Parser.EBNF.Expr.seq
+                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+                          (Parser.EBNF.Expr.seq
+                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                            (Parser.EBNF.Expr.seq
+                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+                              (Parser.EBNF.Expr.seq
+                                (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                                (Parser.EBNF.Expr.seq
+                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                                  (Parser.EBNF.Expr.seq
+                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "output"))
+                                    (Parser.EBNF.Expr.seq
+                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+                                      (Parser.EBNF.Expr.seq
+                                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+                                        (Parser.EBNF.Expr.seq
+                                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                                          (Parser.EBNF.Expr.seq
+                                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
+                                            (Parser.EBNF.Expr.seq
+                                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                                              (Parser.EBNF.Expr.seq
+                                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+                                                (Parser.EBNF.Expr.seq
+                                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                                                  (Parser.EBNF.Expr.seq
+                                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                                                    (Parser.EBNF.Expr.seq
+                                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "protected"))
+                                                      (Parser.EBNF.Expr.seq
+                                                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "constant"))
+                                                        (Parser.EBNF.Expr.seq
+                                                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+                                                          (Parser.EBNF.Expr.seq
+                                                            (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                                                            (Parser.EBNF.Expr.seq
+                                                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                                                              (Parser.EBNF.Expr.seq
+                                                                (Parser.EBNF.Expr.terminal
+                                                                  (Parser.Symbol.literal "public"))
+                                                                (Parser.EBNF.Expr.seq
+                                                                  (Parser.EBNF.Expr.ref "startup")
+                                                                  (Parser.EBNF.Expr.seq
+                                                                    (Parser.EBNF.Expr.ref "recalibrate")
+                                                                    (Parser.EBNF.Expr.seq
+                                                                      (Parser.EBNF.Expr.ref "tensor_do_step")
+                                                                      (Parser.EBNF.Expr.seq
+                                                                        (Parser.EBNF.Expr.terminal
+                                                                          (Parser.Symbol.literal "end"))
+                                                                        (Parser.EBNF.Expr.seq
+                                                                          (Parser.EBNF.Expr.terminal
+                                                                            (Parser.Symbol.ident))
+                                                                          (Parser.EBNF.Expr.terminal
+                                                                            (Parser.Symbol.literal
+                                                                              ";")))))))))))))))))))))))))))))))))))))),
+ ("tensor_do_step",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "method"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "DoStep"))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "algorithm"))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.ref "reference")
+          (Parser.EBNF.Expr.seq
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
+            (Parser.EBNF.Expr.seq
+              (Parser.EBNF.Expr.ref "product")
+              (Parser.EBNF.Expr.seq
+                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                (Parser.EBNF.Expr.seq
+                  (Parser.EBNF.Expr.ref "reference")
+                  (Parser.EBNF.Expr.seq
+                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
+                    (Parser.EBNF.Expr.seq
+                      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                      (Parser.EBNF.Expr.seq
+                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+                        (Parser.EBNF.Expr.seq
+                          (Parser.EBNF.Expr.ref "product")
+                          (Parser.EBNF.Expr.seq
+                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
+                            (Parser.EBNF.Expr.seq
+                              (Parser.EBNF.Expr.ref "reference")
+                              (Parser.EBNF.Expr.seq
+                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))
+                                (Parser.EBNF.Expr.seq
+                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+                                  (Parser.EBNF.Expr.seq
+                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
+                                    (Parser.EBNF.Expr.seq
+                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "DoStep"))
+                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))))))))))))))))]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem ruleBlock0_rules : Parser.EBNF.Metalanguage.Rules ruleGrammar0 ruleToks0 :=
+  (Parser.EBNF.Reader.rules_sound (fuel := 243) (by decide +kernel)).1
+
+private def ruleToks1 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "product",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ".*",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct ';']
+
+private def ruleGrammar1 : Parser.EBNF.Grammar := [("product",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.ref "reference")
+    (Parser.EBNF.Expr.seq (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ".*")) (Parser.EBNF.Expr.ref "reference")))]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem ruleBlock1_rules : Parser.EBNF.Metalanguage.Rules ruleGrammar1 ruleToks1 :=
+  (Parser.EBNF.Reader.rules_sound (fuel := 9) (by decide +kernel)).1
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem rules_source : Parser.EBNF.Metalanguage.Rules sourceGrammar sourceTokens := by
+  have h := Parser.EBNF.Metalanguage.Rules.append (ruleBlock0_rules) ruleBlock1_rules
+  have hg : ruleGrammar0 ++ ruleGrammar1 = sourceGrammar := by decide +kernel
+  have ht : ruleToks0 ++ ruleToks1 = sourceTokens := by decide +kernel
+  rw [hg, ht] at h
+  exact h
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem source_names_valid : Parser.EBNF.Metalanguage.NamesValid sourceGrammar := by
+  unfold Parser.EBNF.Metalanguage.NamesValid
+  exact (by decide +kernel)
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem parsing_checked : Parser.EBNF.parseTokens sourceTokens = .ok sourceGrammar :=
-  by decide +kernel
+  Parser.EBNF.parseTokens_complete ⟨rules_source, source_names_valid, by decide +kernel⟩
 
 theorem source_read_checked : Parser.EBNF.parse source = .ok sourceGrammar :=
   (Parser.EBNF.parse_of_lex lexing_checked).trans parsing_checked
