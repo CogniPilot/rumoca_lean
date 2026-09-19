@@ -1,5 +1,6 @@
 import RumocaFMI3.Metadata
 import RumocaFMI3.SourceLinkageProofs
+import RumocaFMI3.TensorInstanceStorage
 import RumocaCore.Solve.TensorFMI3
 import RumocaC.Decimal
 import XML.Certificate
@@ -391,6 +392,16 @@ theorem valueReferences_nodup (m : TensorFMI3Model shape) : (valueReferences m).
   rw [valueReferences_eq]
   cases hm : m.hasOutput <;> decide
 
+/-- The declared value references are exactly the tensor profile's Float64
+getter references, in order: the profile record's `references.get` is the single
+source of truth the model description's value-reference table is checked against.
+Holds for the dense-output tensor profile (the tensor profile carries an
+output). -/
+theorem valueReferences_profile (m : TensorFMI3Model shape) (hasOutput : m.hasOutput = true) :
+    valueReferences m
+      = (Rumoca.FMI3.TensorInstance.tensorProfile.references.get).map toString := by
+  rw [valueReferences_eq, hasOutput]; rfl
+
 /-! ### Dimension starts multiply to the tensor element count -/
 
 /-- The extents read back from a variable's `Dimension` start attributes. -/
@@ -685,6 +696,14 @@ theorem constantValueReferences_eq (shape : Shape) :
 
 theorem constantValueReferences_nodup (shape : Shape) : (constantValueReferences shape).Nodup := by
   rw [constantValueReferences_eq]; decide
+
+/-- The declared constant-rate value references are exactly the constant profile's
+Float64 getter references, in order: the profile record's `references.get` is the
+single source of truth the constant model description's value-reference table is
+checked against. -/
+theorem constantValueReferences_profile (shape : Shape) :
+    constantValueReferences shape
+      = (Rumoca.FMI3.TensorInstance.constantProfile.references.get).map toString := rfl
 
 /-! #### Dimension starts multiply to the state element count -/
 
