@@ -11,6 +11,20 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Tensor eFMU output admitted (merged):**
+
+The XML serialization certificate now works by fragment cursor rather than a
+whole-document decision, keeping kernel work linear; the tensor eFMU archive
+certificate `Rumoca.CheckedTensorEFMIFiles.source_to_archive` completes in
+about nine minutes at a peak near thirteen gigabytes, at parity with the
+scalar archive certificate the gate already builds, and is gated. The CLI
+admits tensor sources to eFMU output through the tensor archive certificate
+under the reproducible identity mode, `tests/efmi-production.sh` publishes the
+tensor fixture with certificate reuse, schema validation and a Production C
+mutation control, and finding TF01 is closed. The required `nix develop
+.#verification --command lake test` passed on 2026-09-18 in 81m28s with the
+tensor archive certificate built cold (`build/tensor-fmi/full-gate-v37.log`).
+
 **Kernel-efficient SHA-1 and the tensor manifest certificate (merged):**
 
 The independent SHA-1 implementation now uses a structural schedule over
