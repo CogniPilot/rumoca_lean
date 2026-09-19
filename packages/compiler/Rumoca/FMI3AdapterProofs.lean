@@ -28,6 +28,7 @@ import RumocaFMI3.CountContract
 import RumocaFMI3.Version
 import RumocaFMI3.LoggingContract
 import RumocaFMI3.LiteralEvents
+import RumocaFMI3.AdapterRenderPlan
 
 /-! Complete adapter byte identity, independent function-section grammar and
 typed public/helper call entry, together with the reset execution/source consequence. Other function execution,
@@ -35,12 +36,25 @@ whole-C preprocessing, scope/types, official-header meanings and native ABI rema
 separate obligations. Exact renderer identity is not their substitute. -/
 namespace Rumoca.FMI3
 
-private theorem function_chunks (functions : List CTree.Function) (chunks : List (List Char))
-    (matched : List.Forall₂ (fun fn chars => fn.render.toList = chars) functions chunks) :
-    functions.flatMap (fun fn => fn.render.toList) = chunks.flatten := by
-  induction matched with
-  | nil => rfl
-  | cons head tail ih => simp only [List.flatMap_cons, List.flatten_cons, head, ih]
+/-- The base scalar adapter render plan: the model name (fixing the source-link
+prefix), the scalar declaration preamble, the scalar helper prefix and the
+per-signature scalar body builder. The base scalar `Runtime.render` and
+`LiteralPreparation.functions` are definitionally this plan's `render` and
+`functions`, so the base render-identity lemma is an instance of the
+profile-generic `RenderPlan` development shared with the tensor and constant
+adapters. -/
+def basePlan (m : Solve.FMI3Model source) : RenderPlan where
+  name := m.name
+  preamble := Runtime.declarations
+  helpers := Runtime.helpers
+  body := Runtime.function m
+
+/-- The base scalar render is exactly the generic `RenderPlan.render` applied to
+the base render plan, and `LiteralPreparation.functions` is its function list;
+the base render-identity lemma is therefore an instance of the shared
+development. -/
+theorem base_render_eq_plan (m : Solve.FMI3Model source) (sigs : List CTree.Signature) :
+    Runtime.render m sigs = (basePlan m).render sigs := rfl
 
 /-- The checker can certify each function separately, then join character
 chunks and bind them to the independently read complete file. -/
@@ -51,12 +65,8 @@ theorem adapter_chars (m : Solve.FMI3Model source) (sigs : List CTree.Signature)
     (matched : List.Forall₂ (fun fn chars => fn.render.toList = chars)
       (LiteralPreparation.functions m sigs) chunks)
     (bytes : before ++ chunks.flatten = actual) :
-    Runtime.render m sigs = String.ofList actual := by
-  apply String.toList_injective
-  rw [LiteralPreparation.rendered_functions]
-  rw [String.toList_append, preamble, CString.join_toList, List.flatMap_map,
-    function_chunks _ _ matched, String.toList_ofList]
-  exact bytes
+    Runtime.render m sigs = String.ofList actual :=
+  RenderPlan.render_chars (basePlan m) sigs before chunks actual preamble matched bytes
 
 def AdapterContract (a : Artifact input) (adapter : String) : Prop :=
   ∃ sigs : List CTree.Signature,

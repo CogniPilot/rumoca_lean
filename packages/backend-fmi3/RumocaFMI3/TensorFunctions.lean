@@ -11,6 +11,7 @@ import RumocaFMI3.TensorContinuousStates
 import RumocaFMI3.TensorDoStep
 import RumocaFMI3.TensorStorageCode
 import RumocaFMI3.TensorMetadata
+import RumocaFMI3.AdapterRenderPlan
 
 /-! The tensor FMI 3 adapter function list. This is the tensor analog of
 `LiteralPreparation.functions`: each pinned header signature renders either its
@@ -180,6 +181,16 @@ theorem functions_nodup (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
 
 /-! ### Renderer identity -/
 
+/-- The tensor adapter render plan: the model name (fixing the source-link
+prefix), the tensor declaration preamble, the reused helper prefix and the
+per-signature tensor body builder. Every render-identity fact for the tensor
+adapter is an instance of the profile-generic `RenderPlan` development. -/
+def tensorPlan (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape) : RenderPlan where
+  name := m.name
+  preamble := TensorStorage.declarations shape m.hasOutput
+  helpers := helpers
+  body := tensorFunction model m
+
 /-- The tensor adapter render: the fixed preamble (model prefix, `model.c`
 include and the shared declaration block) followed by the concatenated helper
 and dispatched-function renderings, in header order. -/
@@ -189,40 +200,31 @@ def render (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     String.join (helpers.map Function.render) ++
     String.join (signatures.map fun sig => (tensorFunction model m sig).render)
 
+/-- The tensor render is exactly the generic `RenderPlan.render` applied to the
+tensor render plan; every render-identity fact below is an instance of the
+profile-generic development. -/
+theorem render_eq_plan (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
+    (signatures : List Signature) :
+    render model m signatures = (tensorPlan model m).render signatures := rfl
+
 theorem rendered_functions (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (signatures : List Signature) :
     render model m signatures = functionPrefix m.name ++ "#include \"model.c\"\n" ++
-      TensorStorage.declarations shape m.hasOutput ++ String.join ((functions model m signatures).map Function.render) := by
-  apply String.toList_injective
-  simp [render, functions, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+      TensorStorage.declarations shape m.hasOutput ++ String.join ((functions model m signatures).map Function.render) :=
+  (tensorPlan model m).rendered_functions signatures
 
 /-- Each header signature is rendered exactly once at its actual list slot. -/
 theorem rendered_member (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (sigs : List Signature) (sig : Signature) (member : sig ∈ sigs) :
     ∃ before after : String,
-      render model m sigs = before ++ (tensorFunction model m sig).render ++ after := by
-  obtain ⟨left, right, rfl⟩ := List.mem_iff_append.mp member
-  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ TensorStorage.declarations shape m.hasOutput ++
-    String.join (helpers.map Function.render) ++
-    String.join (left.map fun sig => (tensorFunction model m sig).render),
-    String.join (right.map fun sig => (tensorFunction model m sig).render), ?_⟩
-  apply String.toList_injective
-  simp [render, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+      render model m sigs = before ++ (tensorFunction model m sig).render ++ after :=
+  (tensorPlan model m).rendered_member sigs sig member
 
 /-- Every helper is a concrete fragment of the same emitted function list. -/
 theorem rendered_helper (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (sigs : List Signature) (fn : Function) (member : fn ∈ helpers) :
-    ∃ before after : String, render model m sigs = before ++ fn.render ++ after := by
-  obtain ⟨left, right, same⟩ := List.mem_iff_append.mp member
-  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ TensorStorage.declarations shape m.hasOutput ++
-    String.join (left.map Function.render),
-    String.join (right.map Function.render) ++
-      String.join (sigs.map fun sig => (tensorFunction model m sig).render), ?_⟩
-  apply String.toList_injective
-  simp [render, same, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+    ∃ before after : String, render model m sigs = before ++ fn.render ++ after :=
+  (tensorPlan model m).rendered_helper sigs fn member
 
 /-! ### Definition table and literal pool -/
 
