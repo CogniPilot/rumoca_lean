@@ -400,38 +400,50 @@ private theorem block_prefix (ms : List Member) (wf : ∀ m ∈ ms, MemberWF m) 
     simpa only [List.map_cons, CString.join_toList, List.flatMap_cons, List.flatMap_nil,
       String.toList_append, List.append_assoc] using composed
 
+/-- The fixed bookkeeping members have valid word-parts. These fields are the
+same for every profile, so the obligation is discharged once, and the membership
+quantifier is reduced to a fixed conjunction of member obligations rather than
+enumerated by case analysis inside each profile's member proof. -/
+private theorem bookkeeping_wf : ∀ m ∈ bookkeepingMembers, MemberWF m := by
+  simp only [bookkeepingMembers, MemberWF, List.forall_mem_cons]
+  exact ⟨⟨parts_double, parts_stop⟩, ⟨parts_double, parts_timeMin⟩,
+    ⟨parts_double, parts_eventTime⟩, ⟨parts_double, parts_lastCompleted⟩,
+    ⟨parts_int, parts_kind⟩, ⟨parts_int, parts_mode⟩,
+    ⟨parts_boolean, parts_stopDefined⟩, ⟨parts_boolean, parts_logging⟩,
+    ⟨parts_env, parts_environment⟩, ⟨parts_cb, parts_logger⟩,
+    ⟨parts_size, parts_slot⟩, by simp⟩
+
 set_option maxHeartbeats 1000000 in
-/-- Every member of the tensor instance record has valid word-parts. -/
-private theorem members_wf (shape : Tensor.Shape) (hasOutput : Bool) :
-    ∀ m ∈ members shape hasOutput, MemberWF m := by
+/-- The profile-generic tensor region members have valid word-parts. The region
+list is at most five short members, so the case analysis stays over the small
+region list and is independent of the fixed bookkeeping fields. -/
+private theorem regionMembersG_wf (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
+    ∀ m ∈ regionMembersG shape hasInput hasOutput, MemberWF m := by
   intro m mem
-  cases hasOutput
-  case false =>
-    simp only [members, regionMembers, bookkeepingMembers, reduceIte, List.append_assoc,
-      List.cons_append, List.nil_append] at mem
-    fin_cases mem <;>
-      first
-        | exact ⟨parts_double, parts_time⟩ | exact ⟨parts_double, parts_stop⟩
-        | exact ⟨parts_double, parts_timeMin⟩ | exact ⟨parts_double, parts_eventTime⟩
-        | exact ⟨parts_double, parts_lastCompleted⟩
-        | exact ⟨parts_int, parts_kind⟩ | exact ⟨parts_int, parts_mode⟩
-        | exact ⟨parts_boolean, parts_stopDefined⟩ | exact ⟨parts_boolean, parts_logging⟩
-        | exact ⟨parts_env, parts_environment⟩ | exact ⟨parts_cb, parts_logger⟩
-        | exact ⟨parts_size, parts_slot⟩
-        | exact parts_x | exact parts_u | exact parts_dx | exact parts_J
-  case true =>
-    simp only [members, regionMembers, bookkeepingMembers, reduceIte, List.append_assoc,
-      List.cons_append, List.nil_append] at mem
-    fin_cases mem <;>
-      first
-        | exact ⟨parts_double, parts_time⟩ | exact ⟨parts_double, parts_stop⟩
-        | exact ⟨parts_double, parts_timeMin⟩ | exact ⟨parts_double, parts_eventTime⟩
-        | exact ⟨parts_double, parts_lastCompleted⟩
-        | exact ⟨parts_int, parts_kind⟩ | exact ⟨parts_int, parts_mode⟩
-        | exact ⟨parts_boolean, parts_stopDefined⟩ | exact ⟨parts_boolean, parts_logging⟩
-        | exact ⟨parts_env, parts_environment⟩ | exact ⟨parts_cb, parts_logger⟩
-        | exact ⟨parts_size, parts_slot⟩
-        | exact parts_x | exact parts_u | exact parts_dx | exact parts_J
+  cases hasInput <;> cases hasOutput <;>
+    (simp only [regionMembersG, reduceIte, List.append_assoc, List.cons_append,
+      List.nil_append] at mem
+     fin_cases mem <;>
+       first
+         | exact ⟨parts_double, parts_time⟩ | exact parts_x | exact parts_u
+         | exact parts_dx | exact parts_J)
+
+/-- Every member of the profile-generic instance record has valid word-parts,
+composed from the small region obligation and the fixed bookkeeping obligation. -/
+private theorem membersG_wf (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
+    ∀ m ∈ membersG shape hasInput hasOutput, MemberWF m := by
+  intro m mem
+  rw [membersG, List.mem_append] at mem
+  rcases mem with hreg | hbook
+  · exact regionMembersG_wf shape hasInput hasOutput m hreg
+  · exact bookkeeping_wf m hbook
+
+/-- Every member of the tensor instance record has valid word-parts. The tensor
+profile is the input-present instance of the profile-generic record, so the
+obligation is exactly the profile-generic one. -/
+private theorem members_wf (shape : Tensor.Shape) (hasOutput : Bool) :
+    ∀ m ∈ members shape hasOutput, MemberWF m :=
+  membersG_wf shape true hasOutput
 
 /-- A leading keyword word token followed by one separating space. -/
 private theorem kw (name : String) (parts : CIdentifierToken.WordParts name) (rest : List Char) :
@@ -497,32 +509,8 @@ theorem declarations_header (shape : Tensor.Shape) (hasOutput : Bool) :
 
 The same maximal-munch tokenization holds for the record generic in the input
 and output regions, so the constant-rate profile (`false false`) tokenizes into
-its member vocabulary as well. -/
-
-set_option maxHeartbeats 1000000 in
-/-- Every member of the profile-generic instance record has valid word-parts. The
-bookkeeping members are the fixed non-model fields; the region members are the
-time base, state, derivative and the optional input and output. -/
-private theorem membersG_wf (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
-    ∀ m ∈ membersG shape hasInput hasOutput, MemberWF m := by
-  intro m mem
-  rw [membersG, List.mem_append] at mem
-  rcases mem with hreg | hbook
-  · cases hasInput <;> cases hasOutput <;>
-      (simp only [regionMembersG, reduceIte, List.append_assoc, List.cons_append,
-        List.nil_append] at hreg
-       fin_cases hreg <;>
-         first
-           | exact ⟨parts_double, parts_time⟩ | exact parts_x | exact parts_u
-           | exact parts_dx | exact parts_J)
-  · fin_cases hbook <;>
-      first
-        | exact ⟨parts_double, parts_stop⟩ | exact ⟨parts_double, parts_timeMin⟩
-        | exact ⟨parts_double, parts_eventTime⟩ | exact ⟨parts_double, parts_lastCompleted⟩
-        | exact ⟨parts_int, parts_kind⟩ | exact ⟨parts_int, parts_mode⟩
-        | exact ⟨parts_boolean, parts_stopDefined⟩ | exact ⟨parts_boolean, parts_logging⟩
-        | exact ⟨parts_env, parts_environment⟩ | exact ⟨parts_cb, parts_logger⟩
-        | exact ⟨parts_size, parts_slot⟩
+its member vocabulary as well. The word-parts obligation `membersG_wf` is shared
+with the tensor profile above. -/
 
 /-- The profile-generic record scans into a concrete token sequence under the
 shared scanner. -/

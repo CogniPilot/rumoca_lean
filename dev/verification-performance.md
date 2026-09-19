@@ -664,3 +664,73 @@ constraint. `expression_render` and `module_render` keep their statements and
 depend only on `propext`, `Quot.sound` and `Classical.choice`; the C, FMI 3 and
 compiler axiom audits, and the tensor and constant-rate actual-file and
 standalone-object boundary checks, continue to pass.
+
+## FMI 3 adapter tokenization proof cost, 2026-09-19
+
+The heaviest FMI 3 backend modules in the cold gate are the adapter storage and
+call-policy tokenization proofs. Their cost is set by how each proves that a
+fixed C declaration or call site scans into a concrete token sequence: the size
+that grows is the adapter storage record (its member count) and the number of
+fixed call sites, not the tensor rank or extents, which stay symbolic.
+
+Per-module cold elaboration is the wall time Lake reports for the single module
+after its `.olean` is removed and rebuilt with every dependency already present.
+
+### `RumocaFMI3.TensorStorageCode`
+
+The tensor instance record's word-parts obligation was proved per profile by
+`fin_cases` over the whole rendered member list, then a backtracking `first |
+exact ...` chain that retried every member alternative on each enumerated goal.
+The fixed bookkeeping fields (the eleven lifecycle, host and slot members shared
+by every profile) were re-enumerated three times: once in each of the tensor
+profile's two output cases and once in the profile-generic proof. Enumerating a
+member list whose elements carry long string literals is what `fin_cases` pays
+for, so the cost grew with the record member count and was multiplied by the
+duplicated case analysis.
+
+The obligation is now factored: the fixed bookkeeping fields are proved once, the
+membership quantifier reduced to a fixed conjunction of member obligations by
+`List.forall_mem_cons` and discharged by one explicit tuple of the pre-proved
+per-member word-parts, with no member enumeration. The small tensor region list
+keeps its case analysis. The tensor profile's obligation is the input-present
+instance of the profile-generic one, so it reuses that proof instead of
+re-enumerating. `record_printed`, `storage_printed`, `declarations_header` and
+the profile-generic theorems keep their statements.
+
+| `RumocaFMI3.TensorStorageCode` | Cold module | Driver |
+| --- | ---: | --- |
+| `fin_cases` over the member list, duplicated per profile case (before) | ~85 s | record member count x cases |
+| Fixed bookkeeping proved once, membership reduced to a conjunction (after) | ~12 s | one member conjunction |
+
+Bounded restructuring: the single-module cost no longer scales with the number
+of profile cases, only with the one-time member conjunction. The audited axioms
+stay within `propext`, `Quot.sound` and `Classical.choice`, and the tensor and
+constant adapter standalone-object and actual-file boundary checks continue to
+pass.
+
+### `RumocaFMI3.LiteralPreparation`
+
+Three theorems relate the actual adapter renderer to a decomposed function list:
+`rendered_functions` gives the whole render as prefix, declarations and the joined
+function list; `rendered_member` and `rendered_helper` expose one exported
+function or one helper as a fragment at its list slot. Each proved its string
+equality with an unrestricted `simp` over `Runtime.render`, `String.toList_append`,
+`CString.join_toList`, `List.flatMap_map` and `List.append_assoc`. The
+unrestricted simp set produced a large rewrite proof whose kernel type-check
+dominated the module: the kernel type-checking split was about 86 s of the cold
+build, in three events of roughly 41 s, 23 s and 23 s, one per theorem. The cost
+grew with the size of the rendered function scaffold.
+
+The three proofs now use `simp only` with exactly the append, join and flat-map
+lemmas the normalization needs (`List.flatMap_append`, `List.flatMap_cons` added
+to reach the member and helper split), so each produces a small, directed rewrite
+proof instead of the unrestricted one. `rendered_functions`, `rendered_member`
+and `rendered_helper` keep their statements.
+
+| `RumocaFMI3.LiteralPreparation` | Cold module | Driver |
+| --- | ---: | --- |
+| Unrestricted `simp` over the whole render (before) | ~120 s | rendered scaffold size, kernel type-check |
+| `simp only` with the directed append/join/flat-map lemmas (after) | ~17 s | directed rewrite |
+
+The audited axioms stay within `propext`, `Quot.sound` and `Classical.choice`,
+and the FMI 3 and compiler checks continue to pass.
