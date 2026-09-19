@@ -234,3 +234,35 @@ per-certificate cost is the edge fold over the reduction symbols and the
 state-length result vector, not the goto lookup. Progress credit validation
 (`progress_checked`) is about 16 s in isolation and was left on its existing
 `decide +kernel` route.
+
+## Cold gate hot-spot inventory, 2026-09-19
+
+Measured from the cold full-gate log in which the LALR tables rebuilt cold
+(`ModelicaParser.Generated` at 456 s). Per-module figures are single-module
+cold elaboration wall times from the `Built X (N s)` lines; certificate peak
+resident sets are the `-s 65536` process-tree sums recorded above.
+
+| Hot spot | Cold wall | Peak RSS | Scales with |
+| --- | --: | --: | --- |
+| ModelicaParser.Generated (LALR tables, 222 states) | 456 s | ~24 GiB (whole-table `safety_checked`) | states x symbols, superlinear |
+| Tests.FMI3Audit (~2312 roots, one serial module) | 367 s | n/a | roots x profiles, serial |
+| RumocaC.PrinterProofs | 165 s | n/a | printer proof size |
+| Tests.Audit | 136 s | n/a | roots |
+| RumocaFMI3.TensorStorageCode | 96 s | n/a | tensor extents |
+| RumocaFMI3.LiteralPreparation | 93 s | n/a | adapter functions |
+| RumocaFMI3.StepArguments | 88 s | n/a | adapter functions |
+| LALR reductions, all 99, masked pop | 548.7 s | ~7.71 GiB | productions x states |
+| FMI 3 source-build certificate (unit) | 566.5 s / 2.96 s warm | ~106 MiB product | adapter bytes |
+| Tensor eFMU archive certificate | ~8.5 min | ~12.79 GiB | archive bytes |
+| Scalar eFMU archive certificate | ~7.9 min | ~12.28 GiB | archive bytes |
+| Tensor manifest certificate (7.4 KB) | ~2.4 min | ~6.75 GiB | manifest blocks |
+| XML document certificate (fragment cursor) | ~37.7 s | ~5.33 GiB | document bytes |
+| SHA-1 checksum, 117 blocks, masked-Nat | ~15 s | ~4 GiB | blocks |
+
+Audit modules, each a single serial Lake job: FMI3Audit 367 s, Audit 136 s,
+CAudit 56 s, FMI3CallPolicyAudit 47 s, CoreAudit 33 s, TensorAudit 24 s.
+
+Per-profile proof-family cold elaboration: the tensor family is 30 modules and
+467 s; the constant family is 10 modules and 130 s. `TensorDoStep` (48 s),
+`ConstantDoStep` (27 s) and the base DoStep are one proof template instantiated
+per profile.
