@@ -263,6 +263,7 @@ import RumocaFMI3.TensorFunctions
 import RumocaFMI3.TensorFamilyContracts
 import RumocaFMI3.TensorStorageCode
 import RumocaFMI3.ConstantInstanceInit
+import RumocaFMI3.ConstantInstanceRhs
 import RumocaFMI3.ConstantFloat64Access
 import RumocaFMI3.ConstantDerivative
 import RumocaFMI3.ConstantDoStep
@@ -2604,6 +2605,29 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.TensorStorage.recordG_printed
 #audit axioms Rumoca.FMI3.TensorStorage.storageG_printed
 #audit axioms Rumoca.FMI3.TensorStorage.declarationsG_header
+
+-- Stage 3: the executable constant-rate kernel entries bound to the static
+-- constant instance record. The list-indexed kernel view is bridged to the dense
+-- tensor view, and the proved loop-call behaviors embed into the observable call
+-- machine through the typed-to-observable transfer. Universal in the state shape,
+-- the source rates and the pool index.
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.valueGet
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.ratesVec_get
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.eulerVec_get
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.stateList_get
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.cells_index
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.cells_reads
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.cells_writable
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.cells_of
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.reads_writable_cell
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.reads_writable_cells
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.writableN_of
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.ratesVec_agree
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.kernelDefinitions_rhs
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.kernelDefinitions_step
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.kernelDefinitions_sample
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.rhs_writes_events
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.step_writes_events
 
 -- Stage B1: the constant-rate reserved-record initializer reuses the shared
 -- tensor initializer, which is profile-independent.
