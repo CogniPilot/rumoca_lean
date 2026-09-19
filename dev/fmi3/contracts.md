@@ -397,6 +397,33 @@ supplies one profile record; the render plan, the dispatch table and the admitte
 callees are read from that record rather than restated per profile.
 
 
+### One adapter-bytes certificate for every profile
+
+The tensor and constant-rate adapter certificates share one certification
+metaprogram, `FMI3AdapterCertificate.certifyAdapterBytes`. It takes a
+`ProfileCertInputs` record naming the profile's witness model and source,
+its render, function-list and helper definitions, its render-identity lemma
+(`tensor_adapter_chars` or `constant_adapter_chars`), the rendered declaration
+preamble, and a `dischargeContract` step that proves the profile's own
+`Contract` from the shared render identity. The shared part certifies the actual
+adapter bytes exactly as before: every emitted function gets its own tree and
+byte certificate in 256-character blocks, the block-structured concatenation
+cursor binds the joined chunks to the independently read file, and the reused
+helper prefix and the per-signature bodies are checked against the profile's
+function list. What stays per profile is the `Contract` discharge over the
+pinned signature list (public API coverage, absent-variable and capability
+rejection signatures, and the profile's kernel name exclusions), supplied as a
+closure of about twenty lines. `TensorFMI3AdapterCertificate.certify` and
+`ConstantFMI3AdapterCertificate.certify` are call sites of the shared entry;
+the produced theorem names and statements (`...adapter.contract`,
+`Rumoca.CheckedTensorFMI3Files.source_to_build`,
+`Rumoca.CheckedConstantFMI3Files.source_to_build`) and the axiom whitelist are
+unchanged. A further profile whose adapter fits the shared render shape adds a
+`ProfileCertInputs` value and its contract discharge, and no certificate
+metaprogram of its own. The base scalar certificate keeps its own entry because
+its witness artifact is the compiled scalar source itself rather than a
+reconstructed witness.
+
 ### Parameter coverage and actual call entry
 
 The follow-on increment adds all adjusted pointer spellings missing in the

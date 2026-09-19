@@ -648,3 +648,16 @@ render, dispatch or call-policy proof family of its own. The three `verify-artif
 certificate kinds (`fmi3`, `tensor-fmi3`, `constant-fmi3`) and the tensor and
 constant adapter standalone-object boundary checks continue to pass, each within
 the `propext`, `Quot.sound`, `Classical.choice` axiom whitelist.
+
+## One adapter-bytes certificate metaprogram, 2026-09-19
+
+The tensor and constant-rate adapter certificates are call sites of one shared
+`certifyAdapterBytes` metaprogram (`ProfileCertInputs` plus a per-profile
+contract discharge) instead of two copies of the per-function tree and byte
+certification loop and concatenation cursor. The compiler-side certificate
+modules shrank from 352, 160 and 158 lines to 484, 67 and 67 lines in total,
+with the shared loop written once. The produced `source_to_build` theorems and
+the `fmi3`, `tensor-fmi3` and `constant-fmi3` certificate kinds are unchanged in
+statement and axiom set; certificate wall time is unchanged, since the kernel
+work per profile (its actual adapter bytes) is the same, and a new profile adds
+a record value and a contract discharge rather than a certificate metaprogram.
