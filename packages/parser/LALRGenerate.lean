@@ -8,7 +8,14 @@ import Parser.LALR.Resources
 /-! Grammar-parametric table emitter. All implementation is Lean and lives in the
 parser package. It does not publish the complete source `CertifiedParser`:
 Frontend actions still need their own contracts. The generated token parser
-has checked EBNF preservation, safety, completeness and resource bounds. -/
+has checked EBNF preservation, safety, completeness and resource bounds.
+
+The certificates are split across a directory of modules per grammar so that
+each obligation group elaborates in its own Lean process (kernel decision terms
+are reclaimed per module) and Lake builds the groups in parallel. A data module
+carries the table literals and source; independent certificate modules import
+only the data module; the umbrella module imports them all and states the final
+theorems, whose names and statements are unchanged for downstream consumers. -/
 open Parser.LALR
 
 namespace LALRGenerator
@@ -36,6 +43,30 @@ private def firstFact (f : First) : String :=
 
 private def item (i : Item) : String := s!"⟨{i.production}, {i.dot}, {i.lookahead}⟩"
 
+/-- Parser-package modules every generated module transitively needs. Only the
+data module imports them directly; certificate modules import the data module. -/
+private def parserImports : List String :=
+  ["Parser.LALR.SafetyProofs", "Parser.LALR.MaskedSafety", "Parser.LALR.RowSafety",
+   "Parser.LALR.FirstProofs", "Parser.LALR.Progress", "Parser.Token",
+   "Parser.LALR.LocatedCompleteness", "Parser.LALR.EBNFEncoding",
+   "Parser.EBNF.ReaderCorrectness", "Parser.EBNF.Rules", "Parser.LALR.Actions"]
+
+/-- Wrap one module's declaration text with its lead comment, imports, the shared
+`open`/`namespace` and the module-level elaboration options. -/
+private def moduleText (moduleNamespace leadComment : String) (imports : List String)
+    (body : String) : String :=
+  leadComment ++
+  String.join (imports.map (fun m => s!"import {m}\n")) ++
+  "\nopen Parser\n\n" ++
+  s!"namespace {moduleNamespace}\n\n" ++
+  "set_option maxRecDepth 100000\nset_option maxHeartbeats 8000000\n\n" ++
+  body ++
+  s!"end {moduleNamespace}\n"
+
+/-! Per-declaration elaboration options reused throughout the certificates. -/
+private def options : String :=
+  "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n"
+
 /-- One-step source equations support language-owned AST proofs, including
 inductive proofs for recursive grammars. They are deliberately not global simp
 rules: a recursive rule must only unfold when its frontend requests it. -/
@@ -53,37 +84,44 @@ private def ruleCertificates (grammar : Parser.EBNF.Grammar) : String := Id.run 
       s!"  Parser.EBNF.accepts_iff_of_head (body := {reprStr body}) (by decide +kernel) word\n\n"
   return text
 
+private structure EbnfPieces where
+  /-- Data placed in the shared module: grammar/witness literals and `encode`. -/
+  data : String
+  /-- Proofs placed in the source module. -/
+  proofs : String
+
 /-- Bind the actual grammar text and generated CFG through a finite structural
 witness. These constants are proof-only; the runtime retains its token alphabet
 and the ordinary LR tables. -/
 private def ebnfCertificates (tokens : List Parser.EBNF.Lexeme)
     (sourceGrammar : Parser.EBNF.Grammar)
-    (certificate : Frontend.Certified sourceGrammar) : String :=
-  let options := "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n"
-  "noncomputable def sourceGrammar : Parser.EBNF.Grammar := " ++ reprStr sourceGrammar ++ "\n\n" ++
-  "private noncomputable def prepared : LALR.Frontend.Prepared := ⟨alphabet, " ++
-    reprStr certificate.prepared.names ++ ", grammar⟩\n\n" ++
-  "private noncomputable def loweringWitness : LALR.Frontend.Witness := ⟨" ++
-    reprStr certificate.witness.meanings ++ ",\n" ++
-    reprStr certificate.witness.roots ++ ",\n" ++
-    reprStr certificate.witness.rules ++ "⟩\n\n" ++
-  "private noncomputable def sourceTokens : List Parser.EBNF.Lexeme := " ++ reprStr tokens ++ "\n\n" ++
-  options ++ "private theorem lexing_checked : Parser.EBNF.lex source = .ok sourceTokens := by\n" ++
-    "  unfold Parser.EBNF.lex\n  rw [source_toList]\n  decide +kernel\n\n" ++
-  options ++ "private theorem parsing_checked : Parser.EBNF.parseTokens sourceTokens = .ok sourceGrammar :=\n" ++
-    "  by decide +kernel\n\n" ++
-  "theorem source_read_checked : Parser.EBNF.parse source = .ok sourceGrammar :=\n" ++
-    "  (Parser.EBNF.parse_of_lex lexing_checked).trans parsing_checked\n\n" ++
-  "theorem source_notation_checked : Parser.EBNF.Metalanguage.Denotes source sourceGrammar :=\n" ++
-    "  Parser.EBNF.parse_sound source_read_checked\n\n" ++
-  options ++ "theorem lowering_checked : loweringWitness.validate sourceGrammar prepared = true :=\n" ++
-    "  by decide +kernel\n\n" ++
-  "def encode (symbol : Parser.Symbol) : Nat :=\n" ++
-    "  (alphabet.findIdx? (· == symbol)).getD (alphabet.size + 1)\n\n" ++
-  "theorem ebnf_correct (word : List Parser.Symbol) :\n" ++
-    "    Parser.EBNF.Accepts sourceGrammar word ↔ grammar.Accepts (word.map encode) :=\n" ++
-    "  loweringWitness.accepts_iff (LALR.Frontend.Witness.validate_iff.mp lowering_checked)\n" ++
-    "    (by decide +kernel) word\n\n"
+    (certificate : Frontend.Certified sourceGrammar) : EbnfPieces :=
+  { data :=
+      "noncomputable def sourceGrammar : Parser.EBNF.Grammar := " ++ reprStr sourceGrammar ++ "\n\n" ++
+      "noncomputable def prepared : LALR.Frontend.Prepared := ⟨alphabet, " ++
+        reprStr certificate.prepared.names ++ ", grammar⟩\n\n" ++
+      "noncomputable def loweringWitness : LALR.Frontend.Witness := ⟨" ++
+        reprStr certificate.witness.meanings ++ ",\n" ++
+        reprStr certificate.witness.roots ++ ",\n" ++
+        reprStr certificate.witness.rules ++ "⟩\n\n" ++
+      "noncomputable def sourceTokens : List Parser.EBNF.Lexeme := " ++ reprStr tokens ++ "\n\n" ++
+      "def encode (symbol : Parser.Symbol) : Nat :=\n" ++
+        "  (alphabet.findIdx? (· == symbol)).getD (alphabet.size + 1)\n\n",
+    proofs :=
+      options ++ "private theorem lexing_checked : Parser.EBNF.lex source = .ok sourceTokens := by\n" ++
+        "  unfold Parser.EBNF.lex\n  rw [source_toList]\n  decide +kernel\n\n" ++
+      options ++ "private theorem parsing_checked : Parser.EBNF.parseTokens sourceTokens = .ok sourceGrammar :=\n" ++
+        "  by decide +kernel\n\n" ++
+      "theorem source_read_checked : Parser.EBNF.parse source = .ok sourceGrammar :=\n" ++
+        "  (Parser.EBNF.parse_of_lex lexing_checked).trans parsing_checked\n\n" ++
+      "theorem source_notation_checked : Parser.EBNF.Metalanguage.Denotes source sourceGrammar :=\n" ++
+        "  Parser.EBNF.parse_sound source_read_checked\n\n" ++
+      options ++ "theorem lowering_checked : loweringWitness.validate sourceGrammar prepared = true :=\n" ++
+        "  by decide +kernel\n\n" ++
+      "theorem ebnf_correct (word : List Parser.Symbol) :\n" ++
+        "    Parser.EBNF.Accepts sourceGrammar word ↔ grammar.Accepts (word.map encode) :=\n" ++
+        "  loweringWitness.accepts_iff (LALR.Frontend.Witness.validate_iff.mp lowering_checked)\n" ++
+        "    (by decide +kernel) word\n\n" }
 
 private def sourceParserContract : String :=
   "def parseSymbols (word : List Parser.Symbol) : Except LALR.Failure LALR.Tree :=\n" ++
@@ -138,16 +176,21 @@ private def locatedParserContract : String :=
   "    encodeLocatedTokens, List.map_map, List.length_map, Function.comp_def] using erased\n" ++
   "\n"
 
+private structure ItemPieces where
+  /-- The `itemStates` literal for the data module. -/
+  data : String
+  /-- The chunked item obligations and their join, for the items module. -/
+  proofs : String
 
 /-- Item obligations are grouped into fixed-size chunks, one certificate per
 chunk, so the elaborator retains a handful of decision terms rather than one per
 state; the final theorem composes all chunks against the unchanged
 grammar-parametric item validator. -/
-private def itemCertificates (states : Array ItemSet) : String := Id.run do
-  let options := "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n"
+private def itemCertificates (states : Array ItemSet) : ItemPieces := Id.run do
   let chunkSize := 10
-  let mut text := "noncomputable def itemStates : Array LALR.ItemSet := " ++
+  let data := "noncomputable def itemStates : Array LALR.ItemSet := " ++
     array (states.map fun state => "[" ++ String.intercalate ", " (state.map item) ++ "]") ++ "\n\n"
+  let mut text := ""
   let mut base := 0
   while base < states.size do
     let c := min chunkSize (states.size - base)
@@ -162,7 +205,7 @@ private def itemCertificates (states : Array ItemSet) : String := Id.run do
   for q in [:states.size] do
     let b := (q / chunkSize) * chunkSize
     cases := cases ++ s!"    | {q} => exact items_chunk_{b}_checked ⟨{q - b}, by decide⟩\n"
-  return text ++ options ++ "theorem items_checked :\n" ++
+  text := text ++ options ++ "theorem items_checked :\n" ++
     "    LALR.ItemCheck.validate grammar tables firstFacts itemStates = true := by\n" ++
     "  apply LALR.ItemCheck.validate_iff.mpr\n" ++
     "  refine ⟨by decide +kernel, by decide +kernel, first_checked, by decide +kernel, ?_⟩\n" ++
@@ -170,58 +213,82 @@ private def itemCertificates (states : Array ItemSet) : String := Id.run do
     "  rcases q with ⟨q, bound⟩\n" ++
     s!"  change q < {states.size} at bound\n" ++
     "  match q with\n" ++ cases ++ s!"    | n+{states.size} => omega\n\n"
+  return { data, proofs := text }
+
+private structure BudgetPieces where
+  /-- Budget/credit literals for the data module. -/
+  data : String
+  /-- `budget_checked` and `progress_checked` for the progress module. -/
+  progress : String
+  /-- Runtime parse contracts joining every group, for the umbrella module. -/
+  rest : String
 
 /-- Only the two scalar budget coefficients are used by runtime parsing.
 The complete per-production credit witness remains proof-only metadata. -/
-private def budgetCertificates (budget : Fuel.Budget) (credits : Progress.Credits) : String :=
-  "noncomputable def fuelBudget : LALR.Fuel.Budget := ⟨" ++
-    toString budget.perToken ++ ", " ++ reprStr budget.nonterminals ++ "⟩\n\n" ++
-  "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
-  "theorem budget_checked : LALR.Fuel.validate grammar fuelBudget = true := by decide +kernel\n\n" ++
-  "noncomputable def progressCredits : LALR.Progress.Credits := ⟨" ++
-    reprStr credits.states ++ ", " ++ toString credits.ceiling ++ "⟩\n\n" ++
-  "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
-  "theorem progress_checked : LALR.Progress.validate tables edges fuelBudget progressCredits = true :=\n" ++
-  "  by decide +kernel\n\n" ++
-  "def fuelForLength (count : Nat) : Nat := " ++ toString budget.perToken ++
-    " * count + " ++ toString credits.ceiling ++ " + 1\n\n" ++
-  "def fuel (input : List Nat) : Nat := fuelForLength input.length\n\n" ++
-  "theorem fuel_eq (input : List Nat) :\n" ++
-  "    fuel input = LALR.Progress.bound fuelBudget progressCredits input := by rfl\n\n" ++
-  "theorem accepts_iff_parse_bounded (word : List Nat) :\n" ++
-  "    grammar.Accepts word ↔ ∃ tree, LALR.parse grammar tables (fuel word) word = .ok tree := by\n" ++
-  "  rw [fuel_eq]\n" ++
-  "  exact LALR.Progress.accepts_iff_parse items_checked budget_checked safety_checked progress_checked word\n\n" ++
-  "theorem parse_terminates (word : List Nat) :\n" ++
-  "    (∃ tree, LALR.parse grammar tables (fuel word) word = .ok tree) ∨\n" ++
-  "      LALR.parse grammar tables (fuel word) word = .error .rejected := by\n" ++
-  "  rw [fuel_eq]\n" ++
-  "  exact LALR.Progress.parse_terminates budget_checked safety_checked progress_checked word\n\n" ++
-  "def parse (input : List Nat) : Except LALR.Failure LALR.Tree :=\n" ++
-  "  LALR.parse grammar tables (fuel input) input\n\n" ++
-  "theorem parse_correct (word : List Nat) :\n" ++
-  "    (grammar.Accepts word ↔ ∃ tree, parse word = .ok tree) ∧\n" ++
-  "    ((∃ tree, parse word = .ok tree) ∨ parse word = .error .rejected) :=\n" ++
-  "  ⟨accepts_iff_parse_bounded word, parse_terminates word⟩\n\n" ++
-  "theorem parsed_tree (word : List Nat) (tree : LALR.Tree) (parsed : parse word = .ok tree) :\n" ++
-  "    LALR.checkTree grammar word tree = true :=\n" ++
-  "  LALR.RuntimeProofs.run_checked (LALR.RuntimeProofs.initial grammar word)\n" ++
-  "    (by simpa only [parse, LALR.parse_eq_run] using parsed)\n\n"
+private def budgetCertificates (budget : Fuel.Budget) (credits : Progress.Credits) : BudgetPieces :=
+  { data :=
+      "noncomputable def fuelBudget : LALR.Fuel.Budget := ⟨" ++
+        toString budget.perToken ++ ", " ++ reprStr budget.nonterminals ++ "⟩\n\n" ++
+      "noncomputable def progressCredits : LALR.Progress.Credits := ⟨" ++
+        reprStr credits.states ++ ", " ++ toString credits.ceiling ++ "⟩\n\n",
+    progress :=
+      "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
+      "theorem budget_checked : LALR.Fuel.validate grammar fuelBudget = true := by decide +kernel\n\n" ++
+      "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
+      "theorem progress_checked : LALR.Progress.validate tables edges fuelBudget progressCredits = true :=\n" ++
+      "  by decide +kernel\n\n",
+    rest :=
+      "def fuelForLength (count : Nat) : Nat := " ++ toString budget.perToken ++
+        " * count + " ++ toString credits.ceiling ++ " + 1\n\n" ++
+      "def fuel (input : List Nat) : Nat := fuelForLength input.length\n\n" ++
+      "theorem fuel_eq (input : List Nat) :\n" ++
+      "    fuel input = LALR.Progress.bound fuelBudget progressCredits input := by rfl\n\n" ++
+      "theorem accepts_iff_parse_bounded (word : List Nat) :\n" ++
+      "    grammar.Accepts word ↔ ∃ tree, LALR.parse grammar tables (fuel word) word = .ok tree := by\n" ++
+      "  rw [fuel_eq]\n" ++
+      "  exact LALR.Progress.accepts_iff_parse items_checked budget_checked safety_checked progress_checked word\n\n" ++
+      "theorem parse_terminates (word : List Nat) :\n" ++
+      "    (∃ tree, LALR.parse grammar tables (fuel word) word = .ok tree) ∨\n" ++
+      "      LALR.parse grammar tables (fuel word) word = .error .rejected := by\n" ++
+      "  rw [fuel_eq]\n" ++
+      "  exact LALR.Progress.parse_terminates budget_checked safety_checked progress_checked word\n\n" ++
+      "def parse (input : List Nat) : Except LALR.Failure LALR.Tree :=\n" ++
+      "  LALR.parse grammar tables (fuel input) input\n\n" ++
+      "theorem parse_correct (word : List Nat) :\n" ++
+      "    (grammar.Accepts word ↔ ∃ tree, parse word = .ok tree) ∧\n" ++
+      "    ((∃ tree, parse word = .ok tree) ∨ parse word = .error .rejected) :=\n" ++
+      "  ⟨accepts_iff_parse_bounded word, parse_terminates word⟩\n\n" ++
+      "theorem parsed_tree (word : List Nat) (tree : LALR.Tree) (parsed : parse word = .ok tree) :\n" ++
+      "    LALR.checkTree grammar word tree = true :=\n" ++
+      "  LALR.RuntimeProofs.run_checked (LALR.RuntimeProofs.initial grammar word)\n" ++
+      "    (by simpa only [parse, LALR.parse_eq_run] using parsed)\n\n" }
+
+private structure SafetyPieces where
+  /-- Shared reduction premises for the data module (public across reductions). -/
+  shared : String
+  /-- One body per reduction module, each about `fileSize` reduction certificates. -/
+  reductionFiles : Array String
+  /-- The reduction join, row chunks and `safety_checked` for the safety module. -/
+  join : String
 
 /-- Check each reduction summary separately, then substitute the proved
-equalities into the unchanged validator. Separate declarations avoid one
-monolithic normalization of all the reduction computations. -/
-private def safetyCertificates (g : Grammar) (tables : Tables) (edges : List Edge) : String := Id.run do
+equalities into the unchanged validator. The reduction certificates are spread
+across several modules so no single process retains every masked-pop decision
+term; the row-safety chunks and the join stay in the safety module. -/
+private def safetyCertificates (g : Grammar) (tables : Tables) (edges : List Edge)
+    (fileSize : Nat := 20) : SafetyPieces := Id.run do
   let rows := Safety.reductionStates g tables edges
-  let options := "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n"
   -- Shared premises, established once and reused by every reduction certificate.
   -- The masked pop equivalence needs the edge-source bound and the goto-table
   -- shape; the literal state count keeps the kernel from re-measuring the table.
   let shared := options ++
-    "private theorem edge_source_bound : ∀ e ∈ edges, e.source < tables.actions.size := by decide +kernel\n\n" ++
-    "private theorem gotos_size_eq : tables.gotos.size = tables.actions.size := rfl\n\n" ++
-    s!"private theorem state_count : tables.actions.size = {tables.actions.size} := rfl\n\n"
-  let mut declarations := ""
+    "theorem edge_source_bound : ∀ e ∈ edges, e.source < tables.actions.size := by decide +kernel\n\n" ++
+    "theorem gotos_size_eq : tables.gotos.size = tables.actions.size := rfl\n\n" ++
+    s!"theorem state_count : tables.actions.size = {tables.actions.size} := rfl\n\n"
+  -- Emit each reduction certificate's declaration text, then group them into
+  -- files. Every reduction constant is public so the safety module's join can
+  -- reference the equalities proved in the reduction modules.
+  let mut certs : Array String := #[]
   let mut names : Array String := #[]
   let mut cases := ""
   for i in [:rows.size] do
@@ -232,13 +299,22 @@ private def safetyCertificates (g : Grammar) (tables : Tables) (edges : List Edg
     -- Rewrite the array pop into the masked pop, replace the goto vector's mask
     -- with the single-pass goto fold, and pin the state count before the kernel
     -- reduces the machine-word bit operations.
-    declarations := declarations ++ s!"private noncomputable def {name} : Array Bool := {repr rows[i]!}\n\n" ++
-      options ++ s!"private theorem {name}_checked : {expression} = {name} := by\n" ++
+    certs := certs.push (s!"noncomputable def {name} : Array Bool := {repr rows[i]!}\n\n" ++
+      options ++ s!"theorem {name}_checked : {expression} = {name} := by\n" ++
       "  rw [LALR.Safety.popStates_eq edge_source_bound (by rw [LALR.Safety.gotoStates, Array.size_ofFn]),\n" ++
       "    LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]\n" ++
-      "  decide +kernel\n\n"
+      "  decide +kernel\n\n")
     names := names.push name
     cases := cases ++ s!"    | {i} => exact {name}_checked\n"
+  let mut reductionFiles : Array String := #[]
+  let mut base := 0
+  while base < certs.size do
+    let stop := min (base + fileSize) certs.size
+    let mut body := ""
+    for j in [base:stop] do
+      body := body ++ certs[j]!
+    reductionFiles := reductionFiles.push body
+    base := base + fileSize
   -- One structural-safety certificate per state, reading only that state's action
   -- and goto rows. Joined by the engine lemma `safety_of_rows`, so no single
   -- kernel term covers the whole table; the transient is bounded by one row.
@@ -248,18 +324,18 @@ private def safetyCertificates (g : Grammar) (tables : Tables) (edges : List Edg
   -- caps the module's cumulative peak, while each chunk's transient stays small.
   let chunkSize := 10
   let mut rowCases := ""
-  let mut base := 0
-  while base < count do
-    let c := min chunkSize (count - base)
+  let mut rbase := 0
+  while rbase < count do
+    let c := min chunkSize (count - rbase)
     rowCases := rowCases ++ options ++
-      s!"private theorem chunk_{base}_checked :\n" ++
-      s!"    ∀ i : Fin {c}, LALR.Safety.rowValid grammar tables edges reductions acceptance ({base} + i.val) := by decide +kernel\n\n"
-    base := base + chunkSize
+      s!"private theorem chunk_{rbase}_checked :\n" ++
+      s!"    ∀ i : Fin {c}, LALR.Safety.rowValid grammar tables edges reductions acceptance ({rbase} + i.val) := by decide +kernel\n\n"
+    rbase := rbase + chunkSize
   let mut rowDispatch := ""
   for q in [:count] do
     let b := (q / chunkSize) * chunkSize
     rowDispatch := rowDispatch ++ s!"    | {q} => exact chunk_{b}_checked ⟨{q - b}, by decide⟩\n"
-  return shared ++ declarations ++ "private noncomputable def reductions : Array (Array Bool) := " ++ array names ++ "\n\n" ++
+  let join := "private noncomputable def reductions : Array (Array Bool) := " ++ array names ++ "\n\n" ++
     options ++ "private theorem reductions_checked :\n" ++
     "    LALR.Safety.reductionStates grammar tables edges = reductions := by\n" ++
     "  apply Array.ext\n" ++
@@ -286,8 +362,22 @@ private def safetyCertificates (g : Grammar) (tables : Tables) (edges : List Edg
     "    rcases q with ⟨q, bound⟩\n" ++
     s!"    change q < {count} at bound\n" ++
     "    match q with\n" ++ rowDispatch ++ s!"    | n+{count} => omega\n\n"
+  return { shared, reductionFiles, join }
 
-def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") : Except String String := do
+/-- The relative file name and content for one emitted module. `name` is the
+module-name suffix under the grammar's `Generated` prefix; the umbrella module
+uses the empty suffix. -/
+structure EmittedModule where
+  name : String
+  text : String
+
+/-- All modules emitted for one grammar: the umbrella plus its submodules. -/
+structure Emission where
+  umbrella : String
+  submodules : Array EmittedModule
+
+def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated")
+    (modulePrefix : String := "Parser.LALRGenerated") : Except String Emission := do
   if !(moduleNamespace.splitOn ".").all (fun part =>
       !part.isEmpty && part.toList.all (fun c => Parser.identRest c) &&
         (part.toList.head?).any Parser.identStart) then
@@ -310,31 +400,45 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
   if !Fuel.validate g budget then throw "candidate failed linear fuel validation"
   if !Progress.validate c.tables c.collection.edges.toList budget resources.credits then
     throw "candidate failed total parsing progress validation"
-  return "-- LALR(1) tables with checked token-language and execution contracts.\n" ++
-    "-- Generated by the in-tree Lean lalrgen; do not edit.\n" ++
-    s!"-- {c.canonicalStates} canonical states; {c.collection.states.size} LALR states.\n" ++
-    "import Parser.LALR.SafetyProofs\nimport Parser.LALR.MaskedSafety\nimport Parser.LALR.RowSafety\nimport Parser.LALR.FirstProofs\nimport Parser.LALR.Progress\n" ++
-    "import Parser.Token\nimport Parser.LALR.LocatedCompleteness\nimport Parser.LALR.EBNFEncoding\n" ++
-    "import Parser.EBNF.ReaderCorrectness\nimport Parser.EBNF.Rules\nimport Parser.LALR.Actions\n\nopen Parser\n\n" ++
-    s!"namespace {moduleNamespace}\n\n" ++
-    "set_option maxRecDepth 100000\nset_option maxHeartbeats 8000000\n\n" ++
+  let ebnf := ebnfCertificates sourceTokens sourceGrammar lowering
+  let items := itemCertificates c.collection.states
+  let safety := safetyCertificates g c.tables c.collection.edges.toList
+  let budgetPieces := budgetCertificates budget resources.credits
+  let noEdit := "-- Generated by the in-tree Lean lalrgen; do not edit.\n"
+  -- The data module: table literals, source, and the shared reduction premises.
+  let tablesBody :=
     Parser.EBNF.Emission.sourceCertificate source ++
     s!"def alphabet : Array Parser.Symbol := {repr p.alphabet}\n\n" ++
     s!"def grammar : LALR.Grammar := ⟨{g.terminals}, {g.nonterminals}, {g.start}, " ++
-    array (g.productions.map production) ++ "⟩\n\n" ++
-    ebnfCertificates sourceTokens sourceGrammar lowering ++
-    ruleCertificates sourceGrammar ++
+      array (g.productions.map production) ++ "⟩\n\n" ++
+    ebnf.data ++
     "def tables : LALR.Tables := ⟨" ++ array (c.tables.actions.map fun row => array (row.map action)) ++
-    ", " ++ array (c.tables.gotos.map fun row => array (row.map fun n =>
-      n.map (fun n => s!"some {n}") |>.getD "none")) ++ "⟩\n\n" ++
+      ", " ++ array (c.tables.gotos.map fun row => array (row.map fun n =>
+        n.map (fun n => s!"some {n}") |>.getD "none")) ++ "⟩\n\n" ++
     "def edges : List LALR.Edge := [" ++
       String.intercalate ", " (c.collection.edges.toList.map edge) ++ "]\n\n" ++
     "def firstFacts : Array LALR.First := " ++ array (facts.map firstFact) ++ "\n\n" ++
+    items.data ++
+    safety.shared ++
+    budgetPieces.data
+  -- The source/EBNF certificate module.
+  let sourceBody := ebnf.proofs ++ ruleCertificates sourceGrammar
+  -- The item-coverage certificate module.
+  let itemsBody :=
     "-- Proof-producing normalization; all resulting terms are kernel checked.\n" ++
     "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
     "set_option cbv.warning false in\n" ++
     "theorem first_checked : LALR.FirstCheck.validate grammar firstFacts = true := by cbv\n\n" ++
-    itemCertificates c.collection.states ++
+    items.proofs
+  -- The progress/budget certificate module.
+  let progressBody := budgetPieces.progress
+  -- Reduction certificate modules and their import names.
+  let reductionNames := (Array.range safety.reductionFiles.size).map fun k => s!"Reductions{k}"
+  let reductionImports := reductionNames.toList.map fun n => s!"{modulePrefix}.{n}"
+  -- The safety module imports the data module and every reduction module.
+  let safetyBody := safety.join
+  -- The umbrella module states the cross-group runtime contracts.
+  let umbrellaBody :=
     "theorem accepts_iff_parse (word : List Nat) :\n" ++
     "    grammar.Accepts word ↔ ∃ fuel tree, LALR.parse grammar tables fuel word = .ok tree :=\n" ++
     "  LALR.Completeness.accepts_iff_parse items_checked\n\n" ++
@@ -346,16 +450,40 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
     "    (h : grammar.semantics.Derives symbols (word.map _root_.Symbol.terminal)) :\n" ++
     "    word.headD following ∈ LALR.lookaheads firstFacts symbols following :=\n" ++
     "  LALR.FirstProofs.lookahead_complete first_checked h\n\n" ++
-    "-- Typed frontend actions remain a separate obligation.\n" ++
-    safetyCertificates g c.tables c.collection.edges.toList ++
-    budgetCertificates budget resources.credits ++
+    budgetPieces.rest ++
     sourceParserContract ++
     "theorem execution_safe (fuel : Nat) (input : List Nat) (error : LALR.Failure)\n" ++
     "    (h : LALR.parse grammar tables fuel input = .error error) :\n" ++
     "    error = .exhausted ∨ error = .rejected :=\n" ++
     "  LALR.Safety.validated_parse_safe safety_checked h\n\n" ++
-    locatedParserContract ++
-    s!"end {moduleNamespace}\n"
+    locatedParserContract
+  -- Assemble the modules.
+  let dataImport := s!"{modulePrefix}.Tables"
+  let mut submodules : Array EmittedModule := #[]
+  submodules := submodules.push
+    ⟨"Tables", moduleText moduleNamespace noEdit parserImports tablesBody⟩
+  submodules := submodules.push
+    ⟨"Source", moduleText moduleNamespace noEdit [dataImport] sourceBody⟩
+  submodules := submodules.push
+    ⟨"Items", moduleText moduleNamespace noEdit [dataImport] itemsBody⟩
+  for name in reductionNames, body in safety.reductionFiles do
+    submodules := submodules.push
+      ⟨name, moduleText moduleNamespace noEdit [dataImport] body⟩
+  submodules := submodules.push
+    ⟨"Safety", moduleText moduleNamespace noEdit (dataImport :: reductionImports) safetyBody⟩
+  submodules := submodules.push
+    ⟨"Progress", moduleText moduleNamespace noEdit [dataImport] progressBody⟩
+  let umbrellaImports :=
+    [dataImport, s!"{modulePrefix}.Source", s!"{modulePrefix}.Items"] ++
+      reductionImports ++ [s!"{modulePrefix}.Safety", s!"{modulePrefix}.Progress"]
+  let umbrellaComment :=
+    "-- LALR(1) tables with checked token-language and execution contracts.\n" ++
+    "-- Generated by the in-tree Lean lalrgen; do not edit.\n" ++
+    s!"-- {c.canonicalStates} canonical states; {c.collection.states.size} LALR states.\n" ++
+    "-- Certificates are split across the Generated/ directory; this umbrella\n" ++
+    "-- imports them and states the final theorems.\n"
+  let umbrella := moduleText moduleNamespace umbrellaComment umbrellaImports umbrellaBody
+  return { umbrella, submodules }
 
 end LALRGenerator
 
@@ -363,14 +491,27 @@ def main (args : List String) : IO UInt32 := do
   let (moduleNamespace, args) := match args with
     | "--namespace" :: ns :: rest => (ns, rest)
     | _ => ("Parser.LALRGenerated", args)
+  let (modulePrefix, args) := match args with
+    | "--module" :: mp :: rest => (mp, rest)
+    | _ => (moduleNamespace, args)
   match args with
   | [input, output] =>
     try
       let source ← IO.FS.readFile input
-      match LALRGenerator.emit source moduleNamespace with
+      match LALRGenerator.emit source moduleNamespace modulePrefix with
       | .error error => IO.eprintln error; return (1 : UInt32)
-      | .ok text => IO.FS.writeFile output text; return (0 : UInt32)
+      | .ok emission =>
+        let outputPath : System.FilePath := output
+        IO.FS.writeFile outputPath emission.umbrella
+        -- Submodules live in the directory named by the umbrella without its
+        -- extension; recreate it so removed modules never linger.
+        let directory := outputPath.withExtension ""
+        if ← directory.pathExists then IO.FS.removeDirAll directory
+        IO.FS.createDirAll directory
+        for m in emission.submodules do
+          IO.FS.writeFile (directory / (m.name ++ ".lean")) m.text
+        return (0 : UInt32)
     catch e => IO.eprintln (toString e); return (1 : UInt32)
   | _ =>
-    IO.eprintln "usage: lalrgen [--namespace Name] grammar.ebnf Candidate.lean"
+    IO.eprintln "usage: lalrgen [--namespace Name] [--module Prefix] grammar.ebnf Umbrella.lean"
     return (2 : UInt32)

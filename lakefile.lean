@@ -263,23 +263,32 @@ private def modelicaGrammar := "packages/modelica-parser/grammar/Modelica.ebnf"
 private def galecGrammar := "packages/galec-parser/grammar/GALEC.ebnf"
 private def generatedGrammar := "packages/modelica-parser/ModelicaParser/Generated.lean"
 private def generatedGALEC := "packages/galec-parser/GALECParser/Generated.lean"
+-- The certificate submodules for each grammar live in a directory named by the
+-- umbrella module without its extension.
+private def generatedGrammarDir := "packages/modelica-parser/ModelicaParser/Generated"
+private def generatedGALECDir := "packages/galec-parser/GALECParser/Generated"
+private def modelicaModule := "ModelicaParser.Generated"
+private def galecModule := "GALECParser.Generated"
 
-/-- Regenerate the checked-in Modelica and GALEC candidate tables. -/
+/-- Regenerate the checked-in Modelica and GALEC candidate tables. The generator
+emits an umbrella module plus a directory of certificate submodules per grammar. -/
 script generate args do
   noArgs args
   buildTargets ["parser/lalrgen"]
-  command lalrgen #["--namespace", "Rumoca.Generated", modelicaGrammar, generatedGrammar]
-  command lalrgen #["--namespace", "Rumoca.GALEC.Generated", galecGrammar, generatedGALEC]
+  command lalrgen #["--namespace", "Rumoca.Generated", "--module", modelicaModule, modelicaGrammar, generatedGrammar]
+  command lalrgen #["--namespace", "Rumoca.GALEC.Generated", "--module", galecModule, galecGrammar, generatedGALEC]
   return 0
 
 private def checkGenerated : ScriptM Unit := do
   IO.println "Checking generated grammars"
   buildTargets ["parser/lalrgen"]
   buildDir
-  command lalrgen #["--namespace", "Rumoca.Generated", modelicaGrammar, "build/ModelicaGenerated.check.lean"]
+  command lalrgen #["--namespace", "Rumoca.Generated", "--module", modelicaModule, modelicaGrammar, "build/ModelicaGenerated.check.lean"]
   command "cmp" #["build/ModelicaGenerated.check.lean", generatedGrammar]
-  command lalrgen #["--namespace", "Rumoca.GALEC.Generated", galecGrammar, "build/GALECGenerated.check.lean"]
+  command "diff" #["-r", "build/ModelicaGenerated.check", generatedGrammarDir]
+  command lalrgen #["--namespace", "Rumoca.GALEC.Generated", "--module", galecModule, galecGrammar, "build/GALECGenerated.check.lean"]
   command "cmp" #["build/GALECGenerated.check.lean", generatedGALEC]
+  command "diff" #["-r", "build/GALECGenerated.check", generatedGALECDir]
 
 private def lalrTest : ScriptM Unit := do
   IO.println "Checking LALR artifacts and execution"
