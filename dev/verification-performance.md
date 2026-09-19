@@ -210,9 +210,9 @@ measurement window:
 
 | Modelica reduction certificates | Wall | Peak RSS |
 | --- | ---: | ---: |
-| First 50, prior array pop | 528.8 s | ~9.17 GiB |
-| First 50, masked pop | 220.7 s | ~6.84 GiB |
-| All 99, masked pop | 548.7 s | ~8.08 GiB |
+| First 50, prior array pop | 528.8 s | ~8.75 GiB |
+| First 50, masked pop | 220.7 s | ~6.52 GiB |
+| All 99, masked pop | 548.7 s | ~7.71 GiB |
 
 The prior all-99 reduction group was previously profiled near 980 s; the masked
 all-99 group now costs less than the prior route spends on its first 50. The
@@ -226,8 +226,8 @@ certificates) is small enough to measure whole:
 
 | GALEC module | Wall | Peak RSS |
 | --- | ---: | ---: |
-| Prior array pop | 88.1 s | ~6.47 GiB |
-| Masked pop | 43.2 s | ~6.24 GiB |
+| Prior array pop | 88.1 s | ~6.17 GiB |
+| Masked pop | 43.2 s | ~5.95 GiB |
 
 `gotoMask` reduction alone costs about 0.1 s per distinct input, so the residual
 per-certificate cost is the edge fold over the reduction symbols and the
