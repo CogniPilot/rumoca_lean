@@ -125,7 +125,7 @@ a `Prepared` value carrying the located parse and the multi-state IVP.
   equations.
 
 The compiler regression executable (`packages/compiler/Tests/Main.lean`) parses
-`examples/development/ConstantRates.mo`, checks the recovered states, derivative
+`examples/ConstantRates.mo`, checks the recovered states, derivative
 references and rate spellings, checks a reordered source, asserts the production
 compiler rejects the profile, and asserts the frontend rejects an unbound
 reference, a duplicate declaration, a mismatched end name and a non-numeric
@@ -295,27 +295,164 @@ instance preserved. `deriv_contract` now bundles this fused execution
 rejection and copy-suffix delivery. Every theorem is universal in the state shape
 and audited to depend only on the standard axioms.
 
+## Accepted and discard do-step execution (Stage 3c)
+
+`packages/backend-fmi3/RumocaFMI3/ConstantDoStep.lean` now runs the constant-rate
+Co-Simulation `fmi3DoStep` body end to end over the constant instance record, in the
+shape of the tensor do-step but without a derivative call or an elementwise Euler
+loop:
+
+- `internalStep_reaches` is one internal step as one observable-machine execution:
+  the per-step time advance (`m->time = m->time + 1.0`) composed with the bridged
+  state-step entry `rumoca_constant_step(&(m->x[0]))` (`step_writes_events`). It
+  reaches a heap whose state region reads `eulerVec rates state len`, whose time cell
+  reads the finite sum `t + 1`, with every other instance and every cell outside the
+  record preserved.
+- `stepLoop_reaches` iterates it over the outer unit-grid loop `loop "n" steps
+  stepBodyT` by induction on the completed step count. Because the constant step
+  declares nothing and resets no inner counter, the per-iteration environment is
+  exactly `counterEnv env0 "n" k`; over `N` steps the state region advances by the
+  `N`-fold finite rate sum (`states N`, with `states (n+1) = eulerVec rates (states
+  n) len`) and the time base to the `N`-fold finite sum `times N`.
+- `solve_reaches` wraps the loop with the `steps`/`n` `size_t` declarations (the
+  step count is the `size_t` cast of the admitted communication step), the
+  last-successful-time publish and the `fmi3OK` return.
+- `accepted_reaches`/`accepted_behaviors` reuse the model-independent scalar guard
+  prefix (`front_run`, then the shared `stepRounding`/`stepClock`/`stepGrid` guard
+  sections) and compose it with the numerical tail: an admitted communication step's
+  sole terminating behavior returns `fmi3OK` with the state region advanced by the
+  `N`-fold finite rate sum, the instance time cell and the caller's
+  `lastSuccessfulTime` reading the advanced time base, and every other instance
+  preserved. The proofs run under the header-aware floating-environment interface
+  `ConstantFenv` (the pinned C interface extended with the header's `FE_TONEAREST`
+  round-to-nearest constant), so the rounding guard and the `fmi3OK` return resolve
+  as theorems; the `double *` region-pointer typing the numerical entry needs is
+  carried separately (`ptrTy`).
+- The off-grid / over-bound `fmi3Discard` path (`discard_prefix`,
+  `discard_suppressed_behaviors`, `discard_logged_behaviors`) reuses the scalar guard
+  prefix and the shared `StepDiscard` logging composition over the constant record's
+  `logging`/`environment`/`logger` cells.
+
+`ConstantDoStep.contract` now bundles the accepted execution (`ExecutionFree`) and
+the suppressed/enabled discard behaviors alongside the printed text, closedness,
+denotation, null rejection and lifecycle rejection. Every theorem is universal in the
+state shape, the instance index and the heap, and audited to depend only on the
+standard axioms.
+
+## Constant adapter assembly (Stage B4)
+
+`ConstantFunctions` assembles the constant-rate adapter function list, the constant
+analog of `TensorFunctions`. `constantDispatch` maps each pinned header signature to
+a body: the four constant-specific bodies (`ConstantFloat64.getFunction`/
+`setFunction`, `ConstantDerivative.derivFunction`, `ConstantDoStep.function`) for the
+Float64 accessors, the derivative getter and the do-step, the profile-independent
+tensor bodies at the constant state shape (`TensorReset`/`TensorNominals`/
+`TensorCountQueries`/`TensorSetTime`/`TensorLifecycleModes`/`TensorFree`, the
+reserved-record factory `TensorFactory.function` carrying the constant token
+`TensorMetadata.constantToken m.name`, and the continuous-state copies) for the
+remaining shape-dependent names, and the scalar body `Runtime.function model sig` for
+every model-independent and unsupported/absent-type name. The helper prefix reuses
+`TensorFunctions.helpers` (`fail`, the two static-factory helpers) verbatim. The
+declaration preamble (`ConstantFunctions.declarations`) is the shared header inclusion
+block, the no-input/no-output constant instance record layout
+(`TensorStorage.storageRenderG shape false false`) and the three constant kernel
+prototypes (`kernelPrototypes`); no tensor kernel or Jacobian prototype is emitted.
+
+The list facts follow the tensor and scalar development: name distinctness
+(`functions_nodup`, from the reused helper sublist and the identical dispatched
+header names), position-by-position signature agreement (`functions_signatures`),
+the located renderings (`rendered_functions`/`rendered_member`/`rendered_helper`),
+the definition table (`function_bound`/`helpers_bound`/`program_covered`), the
+literal-pool coverage (`text_bound`/`pool_complete`/`header_fresh`), the constant
+kernel-entry resolution (`kernel_entry_resolves`, and `kernel_entry_rhs`/`step`/
+`sample` resolving each entry to the tree `ConstantInstanceRhs.kernelDefinitions`
+names, bundled as `program_extends_kernel`), and prototype agreement with the passed
+arguments (`rhs_prototype_matches_args` for `ConstantDerivative.entryArgs`,
+`step_prototype_matches_args` for the state-region pointer).
+
+Reused tensor body contracts instantiate at the constant profile with no re-proof:
+the reset, nominals, count-query, set-time, lifecycle, continuous-state copy, factory
+and free contracts are universal in the state shape and address only the time, state
+and derivative record members common to both records, so they follow by
+instantiation at `m.shape`; the factory contract is reused with the constant token in
+place of the tensor token. Only the four constant-specific bodies carry
+constant-specific contracts (`ConstantFloat64.GetContract`/`SetContract`,
+`ConstantDerivative.DerivContract`, `ConstantDoStep.Contract`); no reused contract
+needed re-proof because the input and output members those bodies never touch are the
+only record members that differ between the profiles.
+
+`ConstantFamilyContracts` re-plumbs the two model-agnostic family cores
+(`ConstantAbsentVariables`, `ConstantCapabilityRejection`) over the constant list,
+reusing the shared execution proofs and only re-threading the definition-table and
+literal-pool facts. `ConstantCallPolicy` classifies every call in the constant list
+against the constant boundary set `bConstant` (the shared helper/library/atomic
+externals and the three constant kernel entries in the kernel role) and instantiates
+the reusable no-heap and acyclic policies (`constant_no_heap`, `constant_acyclic`):
+no generated call graph names an allocation entry point. `ConstantAdapterPrinter`
+proves every dispatched constant (and reused tensor) function printable and the whole
+function section tokenizes maximally as the constant function list
+(`rendered_contract`). `ConstantAdapter.Contract`/`render_contract` binds the rendered
+text to the model-free public-API coverage, both family contracts, every per-function
+contract, the no-input/no-output record layout and identifier agreements, the
+`constantToken_attribute` instantiation-token agreement, and the constant kernel
+prototype fragments and resolution.
+
+The compiler fixture `Tests.ConstantAdapterFixture` renders the `ConstantRates`
+adapter and runs the function-section grammar check; the native regression executable
+ties the actual `ConstantCompiler.prepare` kernel to that rendering, retains the full
+rendered adapter bytes under `build/constant-fmi/adapter.c`, and `tests/tensor-c.sh`
+compiles the whole adapter to a standalone C11 object with zero diagnostics under the
+strict flags, the three constant kernel entries staying undefined externs.
+
+## FMI 3 FMU admission (Stage C)
+
+The constant-rate profile is admitted to production FMI 3 FMU output.
+`compileConstant`/`ConstantArtifact` (`packages/compiler/Rumoca/ConstantProduction.lean`)
+parse the constant profile and prepare its constant-rate IVP, and carry the
+certified constant kernel C text (`ConstantKernel.modelC`, the preamble and the
+three rendered `rumoca_constant_*` entries, equal to `CConstant.programText` over
+the source rates), the rendered constant adapter, the constant model description
+and the shared build description. `ConstantSourceBuildContract` bundles the
+executable kernel contract (`CConstant.contract_correct`), the constant adapter
+contract (`ConstantAdapter.Contract`, whose call graph is checked no-heap and
+acyclic), the build-description contract, the identifier and instantiation-token
+agreements and the constant model-description XML document; `constantSourceBuild_correct`
+assembles them in existential form through the constant profile's total
+located-parse constructor (`ParserActions.Parsed.located`), exactly like the
+scalar `fmi3` and the `tensor-fmi3` certificates and without kernel-evaluating
+the LR parser on the source text.
+
+`ConstantFMU.writeSources`/`build` stage the FMU in the shared layout and run the
+fixed checker `verify_constant_fmi3_build_files`
+(`packages/compiler/Rumoca/ConstantFMI3BuildArtifactCheck.lean`), which
+independently reads the five staged files, compiles the source with
+`compileConstant`, kernel-checks the actual `model.c` and `fmi3.c` bytes against
+the rendered texts with the shared byte machinery, and emits
+`Rumoca.CheckedConstantFMI3Files.source_to_build` on the three approved axioms.
+It is registered as the cached `constant-fmi3` kind of `lake run verify-artifact`
+with the same inputs as `fmi3`. The default `rumoca` CLI dispatches a
+constant-profile source to `compileConstant` and this publication path for
+`.fmu` output; constant eFMI, eFMU and C output are rejected with a diagnostic.
+`tests/fmi3.sh` publishes `examples/ConstantRates.mo` through the CLI, reuses the
+cached certificate with no build, exercises one adapter mutation control, runs
+the native all-behavior matrix over the constant variable set, and drives the
+FMU through FMPy in both interfaces, asserting the two states reach `(7.5, -3)`
+after three unit steps from zero.
+
 ## Open obligations
 
 The following are deferred to later increments, each with its own proofs and
 actual-artifact certificate:
 
-- The fused accepted `fmi3DoStep` execution over the constant instance record: the
-  `N`-fold state advance and time advance over the outer unit-grid loop composing
-  `step_writes_events` (Stage 3 above) with the shared scalar guard prefix, the
-  publish tail, and the off-grid `fmi3Discard` path. The per-internal-step
-  numerical entry is bridged (`ConstantInstanceRhs.step_writes_events`); the
-  current `ConstantDoStep.contract` proves the guard prefix, printed text,
-  closedness, denotation, null rejection and lifecycle rejection.
-- The constant adapter function list assembly, its rendered bytes, the no-heap and
-  acyclic call-graph policy, and the bound adapter contract.
-
 - Binding the executable sample entry `rumoca_constant_sample` to the FMI 3
-  instance record, and the constant adapter function list, no-heap and acyclic
-  call-graph policy and bound adapter contract.
-- FMI 3 Model Exchange and Co-Simulation artifacts and the eFMI Algorithm and
-  Production Code artifacts, bound to actual bytes.
-- Production admission of the profile through the CLI.
+  instance record with its own observable-machine execution proof (the adapter
+  already forward-declares its prototype and resolves it in the definition table).
+- The eFMI Algorithm and Production Code artifacts, bound to actual bytes
+  (constant eFMI export stays rejected with a diagnostic).
+- A source-general constant FMU certificate: the CLI admits any resolvable
+  constant source, but the fixed `constant-fmi3` certificate binds the two-state
+  `ConstantRates` instance, so a constant source of a different state count or
+  rate fails the checker before any FMU is produced.
 - A bare unsigned-integer rate (no sign, point or exponent) and an
   exponent-form rate at the token level; these are recognized lexically but a
   bare integer keeps the existing literal class and is not admitted as a rate,

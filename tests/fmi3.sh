@@ -243,3 +243,111 @@ if ! grep -q 'PROD TENSOR FMU BOUNDARY RUN OK' build/fmi-tensor-run.log; then
   exit 1
 fi
 echo "Production array/tensor FMU (default CLI admission, tensor-fmi3 certificate, ME/CS x@t=3=(3,12), J=(2,0,0,4)) checks passed"
+
+# --- Production constant-rate profile via the default CLI ---
+# The default `rumoca` CLI also admits the ConstantRates constant-rate profile to
+# FMI 3 FMU output: unit and array sources follow their existing paths unchanged,
+# and a constant-rate source is compiled with compileConstant and published through
+# the constant writeSources/archive path whose publication gate is the fixed
+# `constant-fmi3` source-build certificate. Constant eFMI/eFMU export and C emission
+# are rejected. Native compilation, ZIP transport and the FMPy importer remain
+# boundaries outside the proof model.
+prod_constant_fmu=build/ConstantRates.fmu
+"$compiler" examples/ConstantRates.mo -o "$prod_constant_fmu"
+"$runner" validate "$prod_constant_fmu"
+"$runner" info "$prod_constant_fmu"
+# Native all-behavior matrix on the production constant FMU over the constant
+# variable set (references 0..2, no input, no output).
+python3 tests/fmi3.py --matrix "$prod_constant_fmu" ConstantRates.fmu
+# Constant eFMU archive export stays rejected with a clear diagnostic and must
+# neither publish nor replace an FMU.
+cp "$prod_constant_fmu" "$task_tmp/constant-preserved.fmu"
+if "$compiler" examples/ConstantRates.mo -o "$task_tmp/constant-preserved.efmu" > build/fmi-constant-efmi.log 2>&1; then
+  echo "compiler admitted constant eFMU export" >&2; exit 1
+fi
+rg -q 'constant eFMI/eFMU archive export and C emission are not built' build/fmi-constant-efmi.log
+# Re-verify the extracted sources through the cached `constant-fmi3` certificate
+# with no build, requiring certificate reuse and the approved axiom audit lines.
+constant_root="$task_tmp/constant-extracted"
+rm -rf "$constant_root"; mkdir -p "$constant_root"
+python - "$prod_constant_fmu" "$constant_root" <<'PY'
+from zipfile import ZipFile
+import sys
+with ZipFile(sys.argv[1]) as archive:
+    archive.extractall(sys.argv[2])
+PY
+lake run verify-artifact --check-only constant-fmi3 "$constant_root" examples/ConstantRates.mo \
+  > "$task_tmp/cached-constant-fmi3.log"
+bash scripts/audit-lean.sh "$task_tmp/cached-constant-fmi3.log"
+rg -q 'Rumoca.CheckedConstantFMI3Files.source_to_build depends on axioms' \
+  "$task_tmp/cached-constant-fmi3.log"
+# Mutation-rejection control on the constant adapter: preserve the certified
+# numerical kernel and API prefix while altering one byte of the reset body. The
+# complete constant adapter contract must reject the read file, and must not
+# replace the previously valid FMU.
+python - "$prod_constant_fmu" "$task_tmp/constant-changed" <<'PY'
+from pathlib import Path
+from zipfile import ZipFile
+import sys
+root = Path(sys.argv[2])
+with ZipFile(sys.argv[1]) as archive:
+    archive.extractall(root)
+path = root / 'sources/fmi3.c'
+text = path.read_text()
+start = text.index('fmi3Status fmi3Reset(')
+stop = text.index('\n}\n\n', start) + 4
+body = text[start:stop]
+changed = body.replace('dst[k] = 0;', 'dst[k] = 2;', 1)
+assert changed != body
+path.write_text(text[:start] + changed + text[stop:])
+PY
+if lake run verify-artifact constant-fmi3 "$task_tmp/constant-changed" examples/ConstantRates.mo > build/fmi-constant-adapter-rejection.log 2>&1; then
+  echo 'constant adapter certificate accepted an altered reset value' >&2; exit 1
+fi
+rg -q 'actual constant FMI adapter differs from the complete prepared function list' \
+  build/fmi-constant-adapter-rejection.log
+# Drive the production constant FMU through FMPy in ME and CS: three unit steps
+# from a zero state reach the exact constant-rate trajectory (7.5, -3).
+python3 - "$prod_constant_fmu" > build/fmi-constant-run.log 2>&1 <<'PY'
+import sys, ctypes
+from fmpy import read_model_description, extract
+from fmpy.fmi3 import FMU3Model, FMU3Slave
+path = sys.argv[1]
+md = read_model_description(path)
+vr = {v.name: v.valueReference for v in md.modelVariables}
+udir = extract(path)
+TOKEN = "lean-rumoca-constant-v1:ConstantRates"
+def arr(vals): return (ctypes.c_double * len(vals))(*vals)
+def approx(a, b): return all(abs(x - y) < 1e-12 for x, y in zip(a, b))
+me = FMU3Model(guid=TOKEN, modelIdentifier=md.modelExchange.modelIdentifier,
+               unzipDirectory=udir, instanceName="me")
+me.instantiate(loggingOn=False)
+me.enterInitializationMode(startTime=0.0)
+me.exitInitializationMode()
+me.enterContinuousTimeMode()
+x = [0.0, 0.0]
+for _ in range(3):
+    me.setContinuousStates(arr(x), 2)
+    d = (ctypes.c_double * 2)()
+    me.getContinuousStateDerivatives(d, 2)
+    x = [x[i] + 1.0 * d[i] for i in range(2)]
+assert approx(x, [7.5, -3.0]), "ME-driven Euler x@t=3 != (7.5, -3)"
+me.terminate(); me.freeInstance()
+cs = FMU3Slave(guid=TOKEN, modelIdentifier=md.coSimulation.modelIdentifier,
+               unzipDirectory=udir, instanceName="cs")
+cs.instantiate(loggingOn=False)
+cs.enterInitializationMode(startTime=0.0)
+cs.exitInitializationMode()
+t = 0.0
+for _ in range(3):
+    cs.doStep(t, 1.0); t += 1.0
+assert approx(list(cs.getFloat64([vr["x"]], 2)), [7.5, -3.0]), "CS x@t=3 != (7.5, -3)"
+cs.terminate(); cs.freeInstance()
+print("PROD CONSTANT FMU BOUNDARY RUN OK")
+PY
+if ! grep -q 'PROD CONSTANT FMU BOUNDARY RUN OK' build/fmi-constant-run.log; then
+  echo 'production constant FMU boundary run failed' >&2
+  cat build/fmi-constant-run.log >&2
+  exit 1
+fi
+echo "Production constant-rate FMU (default CLI admission, constant-fmi3 certificate, ME/CS state@t=3=(7.5,-3)) checks passed"

@@ -269,6 +269,11 @@ import RumocaFMI3.ConstantDerivative
 import RumocaFMI3.ConstantDoStep
 import RumocaFMI3.TensorAdapterPrinter
 import RumocaFMI3.TensorAdapterContract
+import RumocaFMI3.ConstantFunctions
+import RumocaFMI3.ConstantFamilyContracts
+import RumocaFMI3.ConstantCallPolicy
+import RumocaFMI3.ConstantAdapterPrinter
+import RumocaFMI3.ConstantAdapterContract
 
 #audit axioms Rumoca.FMI3.CountQueries.body_eq
 #audit axioms Rumoca.FMI3.CountQueries.parameters_bound
@@ -2692,4 +2697,68 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.ConstantDoStep.function_denotes
 #audit axioms Rumoca.FMI3.ConstantDoStep.null_behaviors
 #audit axioms Rumoca.FMI3.ConstantDoStep.lifecycle_behaviors
+-- Stage 3c: the accepted and discard cases as one observable execution.
+#audit axioms Rumoca.FMI3.ConstantDoStep.cInterface_fenv
+#audit axioms Rumoca.FMI3.ConstantDoStep.fenvInterface_fenv
+#audit axioms Rumoca.FMI3.ConstantDoStep.constant_step_enter
+#audit axioms Rumoca.FMI3.ConstantDoStep.internalStep_reaches
+#audit axioms Rumoca.FMI3.ConstantDoStep.stepLoop_reaches
+#audit axioms Rumoca.FMI3.ConstantDoStep.solve_reaches
+#audit axioms Rumoca.FMI3.ConstantDoStep.front_run
+#audit axioms Rumoca.FMI3.ConstantDoStep.accepted_reaches
+#audit axioms Rumoca.FMI3.ConstantDoStep.accepted_behaviors
+#audit axioms Rumoca.FMI3.ConstantDoStep.execution_free
+#audit axioms Rumoca.FMI3.ConstantDoStep.discard_prefix
+#audit axioms Rumoca.FMI3.ConstantDoStep.discard_suppressed_behaviors
+#audit axioms Rumoca.FMI3.ConstantDoStep.discard_logged_behaviors
 #audit axioms Rumoca.FMI3.ConstantDoStep.contract
+
+-- Stage B4: the constant-rate adapter assembly. The dispatch maps each pinned
+-- header signature to a constant-specific body or the profile-independent tensor
+-- body at the constant state shape, over the reused helper prefix; the definition
+-- table binds the listed functions and the three constant kernel entries.
+#audit axioms Rumoca.FMI3.ConstantFunctions.constantFunction_signature
+#audit axioms Rumoca.FMI3.ConstantFunctions.constantFunction_name
+#audit axioms Rumoca.FMI3.ConstantFunctions.functions_names
+#audit axioms Rumoca.FMI3.ConstantFunctions.functions_signatures
+#audit axioms Rumoca.FMI3.ConstantFunctions.functions_nodup
+#audit axioms Rumoca.FMI3.ConstantFunctions.rendered_functions
+#audit axioms Rumoca.FMI3.ConstantFunctions.rendered_member
+#audit axioms Rumoca.FMI3.ConstantFunctions.rendered_helper
+#audit axioms Rumoca.FMI3.ConstantFunctions.definition_bound
+#audit axioms Rumoca.FMI3.ConstantFunctions.function_bound
+#audit axioms Rumoca.FMI3.ConstantFunctions.program_covered
+#audit axioms Rumoca.FMI3.ConstantFunctions.helpers_bound
+#audit axioms Rumoca.FMI3.ConstantFunctions.helpers_subset
+#audit axioms Rumoca.FMI3.ConstantFunctions.header_fresh
+#audit axioms Rumoca.FMI3.ConstantFunctions.text_bound
+#audit axioms Rumoca.FMI3.ConstantFunctions.pool_complete
+#audit axioms Rumoca.FMI3.ConstantFunctions.kernel_entry_resolves
+#audit axioms Rumoca.FMI3.ConstantFunctions.kernel_entry_rhs
+#audit axioms Rumoca.FMI3.ConstantFunctions.kernel_entry_step
+#audit axioms Rumoca.FMI3.ConstantFunctions.kernel_entry_sample
+#audit axioms Rumoca.FMI3.ConstantFunctions.program_extends_kernel
+#audit axioms Rumoca.FMI3.ConstantFunctions.rhs_prototype_matches_args
+#audit axioms Rumoca.FMI3.ConstantFunctions.step_prototype_matches_args
+
+-- Stage B4: the two unsupported/absent-type family contracts over the constant
+-- adapter list, re-plumbing the model-agnostic execution cores.
+#audit axioms Rumoca.FMI3.constant_absent_function
+#audit axioms Rumoca.FMI3.constant_capability_function
+#audit axioms Rumoca.FMI3.constant_scheduled_function
+#audit axioms Rumoca.FMI3.constant_scalar_bound
+#audit axioms Rumoca.FMI3.constant_scalar_member
+#audit axioms Rumoca.FMI3.ConstantAbsentVariables.prepared_correct
+#audit axioms Rumoca.FMI3.ConstantAbsentVariables.rendered_contract
+#audit axioms Rumoca.FMI3.ConstantAbsentVariables.family_correct
+#audit axioms Rumoca.FMI3.ConstantCapabilityRejection.prepared_correct
+#audit axioms Rumoca.FMI3.ConstantCapabilityRejection.rendered_contract
+#audit axioms Rumoca.FMI3.ConstantCapabilityRejection.family_correct
+
+-- Stage B4: the constant adapter function-section grammar and the adapter contract
+-- binding the rendered text to every per-function contract, both families, the
+-- coverage, the call policy witnesses and the layout/identifier/token agreements.
+#audit axioms Rumoca.FMI3.ConstantAdapterPrinter.constantFunction_printable
+#audit axioms Rumoca.FMI3.ConstantAdapterPrinter.functions_printable
+#audit axioms Rumoca.FMI3.ConstantAdapterPrinter.rendered_contract
+#audit axioms Rumoca.FMI3.ConstantAdapter.render_contract

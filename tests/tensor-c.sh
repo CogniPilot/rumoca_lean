@@ -133,6 +133,41 @@ if [ "$status" -ne 0 ] || [ -s build/tensor-fmi/adapter-cc.log ]; then
 fi
 echo 'Tensor FMI 3 adapter standalone-object boundary check passed'
 
+# --- Constant-rate (G01) FMI 3 adapter standalone-object boundary check ---
+# The compiler regression executable renders the development constant-rate adapter
+# for the actual ConstantCompiler.prepare kernel to build/constant-fmi/adapter.c.
+# This step confirms that a C11 compiler, using the vendored FMI 3 headers, compiles
+# the whole constant adapter to a standalone object with zero diagnostics under the
+# strict flags below: every emitted function carries the pinned FMI prototype for its
+# name (parameters a body ignores are unused, so -Wno-unused-parameter is kept), the
+# no-input/no-output constant instance record declares the time base, state and
+# derivative regions the constant bodies address, and the constant derivative getter
+# and do-step call the three constant kernel entries
+# void rumoca_constant_rhs(double *), void rumoca_constant_step(double *) and
+# void rumoca_constant_sample(double *, size_t) declared in the preamble. Header
+# preprocessing, native compilation and hardware remain boundaries outside the
+# authored C semantics; this step asserts only that the rendered adapter is a
+# well-formed C11 translation unit.
+constant_adapter=build/constant-fmi/adapter.c
+if [ ! -f "$constant_adapter" ]; then
+  packages/compiler/.lake/build/bin/tests
+fi
+# The adapter includes "model.c" (empty here) and declares the constant kernel
+# prototypes itself, so an object-only compile needs no kernel definition; the
+# three rumoca_constant_* entries stay undefined externs.
+: > build/constant-fmi/model.c
+"${CC:-cc}" -std=c11 -O2 -Wall -Wextra -Werror -pedantic -fno-fast-math -ffp-contract=off \
+  -Wno-unused-parameter -I packages/backend-fmi3/vendor/fmi3 -I build/constant-fmi \
+  -c "$constant_adapter" -o build/constant-fmi/adapter.o \
+  > build/constant-fmi/adapter-cc.log 2>&1
+status=$?
+if [ "$status" -ne 0 ] || [ -s build/constant-fmi/adapter-cc.log ]; then
+  echo 'constant adapter did not compile cleanly as a standalone object' >&2
+  cat build/constant-fmi/adapter-cc.log >&2
+  exit 1
+fi
+echo 'Constant-rate FMI 3 adapter standalone-object boundary check passed'
+
 # --- Development tensor eFMI Production Code and manifest boundary check ---
 # The compiler regression executable renders the development tensor eFMI
 # Production Code (build/tensor-efmi/ProductionCode.c) and the Algorithm/

@@ -73,6 +73,91 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Stage record: constant-rate profile admitted to FMI 3 FMU output
+
+This record completes the recurring review for the enlarged admitted subset at
+the revision that admits the constant-rate profile to production FMU output.
+
+| Required record | Evidence |
+| --- | --- |
+| Scope and identity | Production entry point: `Rumoca.compileConstant`, dispatched by the `rumoca` CLI after the unit and array profiles reject the source; the FMU publication gate is the `constant-fmi3` certificate kind of `lake run verify-artifact`. Admitted EBNF production: `constant_composition` (two or more scalar `Real` states, each with one `der(state) = literal` equation whose right-hand side is a signed decimal literal). The pinned certificate binds the single admitted development source `examples/ConstantRates.mo` (`der(x) = 2.5`, `der(y) = -1`); a constant source of a different state count or different rates fails the fixed checker before any FMU is produced. Rejected forms: constant sources for eFMI Algorithm Code, eFMU archive or C output (diagnostic, no publication). Reviewed artifact: `build/ConstantRates.fmu` produced by `tests/fmi3.sh`. |
+| Architecture continuity | The constant profile uses the shared LALR engine and typed actions, the constant-rate lowering to `ConstantIVP`, the executable constant kernel (`rumoca_constant_rhs`/`rumoca_constant_step`/`rumoca_constant_sample`, universal in the state count and rates), the static instance pool, and the same fixed-checker structure as the unit and array profiles; the state count stays symbolic in the model's shape parameter and no rate coordinate is enumerated during lowering. `ParserActions.Parsed.located` in `ActionsLocatedTotal` lifts the total located-parse construction to the constant actions, so `constantSourceBuild_correct` is existential like the scalar and tensor certificates without kernel-evaluating the parser. |
+| Normative baseline | MLS 3.7; FMI 3.0.2 ME and CS with the pinned `fmi3FunctionTypes.h` and the in-tree model-description conventions; eFMI 1.0.0 Beta 1 unchanged (constant eFMI not built). |
+| MLS coverage | Real declarations of two or more scalar states, and one `der(state) = signed decimal literal` equation per state whose written order is immaterial (the resolution requires the derivative names to be a permutation of the declared states). Each rate is the round-to-nearest-even of its literal's exact base-ten content. Resolution, equation meaning and initialization are the constant-rate lowering theorems (`ConstantCompiler.prepare_correct`, `equation_correct`, `initialization_correct`, `rate_exact`, `prepare_perm_invariant`); numeric interpretation is the finite binary64 kernel execution with explicit finite-arithmetic premises. |
+| FMI coverage | Both interfaces: model description with the state and derivative `Dimension` elements, the two-element state start list, an empty derivative dependency set and identical identifier decoding (`TensorMetadata.constantModelDescription`, `constant_modelIdentifiers_decode`, `constantToken_attribute`); creation, initialization, mode transitions, termination and release over the static constant pool; Float64 access with the value references `0` (time), `1` (the writable state) and `2` (the read-only derivative); continuous-state access, the constant derivative getter calling `rumoca_constant_rhs`, the co-simulation step calling `rumoca_constant_step`, count queries, time and reset; the two capability families for the remaining functions; `ConstantAdapter.Contract` binding the rendered text, whose call graph is checked no-heap and acyclic (`ConstantCallPolicy.constant_no_heap`, `constant_acyclic`); the `constant-fmi3` certificate `Rumoca.CheckedConstantFMI3Files.source_to_build` on the actual bytes. |
+| eFMI coverage | Not extended: constant sources are rejected for Algorithm Code and eFMU output with a diagnostic. Open finding CF01 below. |
+| Proof correspondence | Per-function contracts in `packages/backend-fmi3/RumocaFMI3/Constant*.lean` and the reused `Tensor*.lean`, the executable kernel contract `Rumoca.CConstant.contract_correct`, and the compiler composition `constantSourceBuild_correct`; roots audited in `Tests/Audit.lean` on the three permitted axioms. Explicit premises retained, as for the scalar and array paths: the modeled round-to-nearest floating-environment constant, kernel entry resolution, and the per-cell finite-addition premises of the Euler step. |
+| Boundary evidence | The required `lake test` at this revision; `tests/fmi3.sh` (constant block: CLI publication, constant eFMU rejection, `constant-fmi3` certificate reuse with no build, adapter mutation rejection, the native all-behavior matrix over the constant variable set, and FMPy runs asserting the two states reach `(7.5, -3)` after three unit steps from zero in both interfaces). Native compilation, ZIP transport and the importer remain outside the proof model. |
+| Decision | The constant-rate profile is admitted to FMI 3 FMU output. Open findings carried forward with closure criteria: CF01 constant eFMI path (build the constant GALEC/Production Code path with its contracts or keep rejection documented); CF02 general state count and rates in the certificate (the grammar admits any state count, but the fixed checker binds the two-state `ConstantRates` instance; extension needs a source-general constant checker or a per-instance certificate); CF03 Euler-step finite-addition premises are explicit (overflow of the rate accumulation is not modeled); CF04 native ABI, floating-environment and callback correspondence, shared with the unit and array profiles; CF05 MISRA C:2025 inventory for the constant adapter, shared with K05. **Stage decision for further growth: open until K02 to K05 close for the unit profile.** |
+
+### Constant-rate FMI 3 adapter assembly (Stage B4): standards impact
+
+The constant-rate adapter function list, families, call policy, printability and bound
+contract are now assembled (`FMI3.ConstantFunctions`, `ConstantFamilyContracts`,
+`ConstantCallPolicy`, `ConstantAdapterPrinter`, `ConstantAdapterContract`,
+`dev/constant-rates.md` "Constant adapter assembly"). Each pinned header signature
+renders a constant-specific body (the Float64 accessors, the derivative getter and the
+do-step), a profile-independent tensor body at the constant state shape, or the shared
+scalar body, over the reused helper prefix. The declaration preamble carries the
+no-input/no-output constant instance record and the three constant kernel prototypes;
+no tensor kernel or Jacobian prototype is emitted. The compiler fixture renders the
+`ConstantRates` adapter under the function-section grammar check, the native regression
+executable ties it to the actual `ConstantCompiler.prepare` kernel and retains the
+bytes under `build/constant-fmi/adapter.c`, and `tests/tensor-c.sh` compiles the whole
+adapter to a standalone C11 object with zero diagnostics under the strict flags. This is
+a package-checked product only: no production artifact, CLI or grammar change, and the
+tensor and scalar adapters and every existing contract are unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The constant-rate profile remains a development case. |
+| FMI 3.0.2 §2.2.2 (source-code FMU, C API and header files) | Every emitted function carries the pinned prototype for its name from the vendored `fmi3FunctionTypes.h` header (`ConstantFunctions.functions_signatures`), one function per pinned signature and per reused helper; the source prefix `#define FMI3_FUNCTION_PREFIX Rumoca_ConstantRates_` precedes the official FMI header selection, and the adapter's function-prefix names exactly the model identifier the model description decodes to (`constant_modelIdentifiers_decode`). The whole translation unit compiles as a standalone C11 object with zero diagnostics under the strict flags, the three `rumoca_constant_*` kernel entries staying undefined externs declared in the preamble. |
+| FMI 3.0.2 §2.4.1 (instantiation) and naming | The reserved-record factory validates exactly the token `lean-rumoca-constant-v1:ConstantRates` the constant model description declares as its `instantiationToken` attribute (`ConstantAdapter.Contract` carries `constantToken_attribute`). |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic memory allocation) | The complete constant adapter call graph is checked no-heap against the boundary set `bConstant` (`ConstantCallPolicy.constant_no_heap`): every callee is a defined function, a declared constant kernel entry or a named non-allocating C library / math / atomic external, and no generated call graph reaches an allocation entry point. |
+| MISRA C:2025 Rule 17.2 (no recursion) | The complete constant adapter direct-call graph is checked acyclic (`ConstantCallPolicy.constant_acyclic`): the three constant kernel entries are unranked numerical-kernel leaves, the reused helpers precede them and the public functions precede the helpers, so no function calls itself directly or indirectly. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+Every theorem is universal in the state count, the scalar witness model and the header
+signature list. Binding the sample entry `rumoca_constant_sample` to its own
+observable-machine execution, the FMI 3 artifacts bound to actual bytes, and production
+CLI admission remain open. **Stage decision: open; no grammar expansion.**
+
+### FMI 3.0.2 §4.2.1 Computation (`fmi3DoStep`) accepted and discard cases for the constant profile (Stage 3c): standards impact
+
+The constant-rate Co-Simulation `fmi3DoStep` body now runs end to end over the
+constant instance record (`FMI3.ConstantDoStep`, `dev/constant-rates.md` "Accepted
+and discard do-step execution"). `internalStep_reaches` composes the per-step time
+advance with the bridged state-step entry `rumoca_constant_step(&(m->x[0]))`
+(`step_writes_events`) as one observable-machine execution; `stepLoop_reaches`
+iterates it over the outer unit-grid loop by induction, advancing the state region by
+the `N`-fold finite rate sum and the time base by `N`; `solve_reaches` wraps the loop
+with the step-count/counter declarations, the last-successful-time publish and the
+`fmi3OK` return. The reused model-independent scalar guard prefix (`front_run`, then
+the shared `stepRounding`/`stepClock`/`stepGrid` guard sections) composes with the
+numerical tail in `accepted_reaches`/`accepted_behaviors`, and the off-grid /
+over-bound `fmi3Discard` path reuses the shared `StepDiscard` logging composition
+(`discard_prefix`, `discard_suppressed_behaviors`, `discard_logged_behaviors`).
+`ConstantDoStep.contract` now bundles the accepted execution (`ExecutionFree`) and
+the suppressed/enabled discard behaviors alongside the printed text, closedness,
+denotation and null rejection. This is a package-checked product only: no production
+artifact, CLI or grammar change, and the tensor and scalar adapters and every
+existing contract are unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The constant-rate profile remains a development case. |
+| FMI 3.0.2 §4.2.1 Computation (`fmi3DoStep`), Co-Simulation accepted step | A communication step that is a positive integer multiple of the internal unit step and at most the scalar bound is accepted: the body initializes the event/terminate/early-return output flags to zero and `*lastSuccessfulTime` to the current time, runs `N` internal steps (each advancing the time base by one and calling `rumoca_constant_step(&(m->x[0]))`, which advances every state cell by the finite binary64 addition of its rate), publishes the advanced time base to `*lastSuccessfulTime` and returns `fmi3OK`. Its sole terminating behavior advances the state region by the `N`-fold finite rate sum, sets the instance time cell and the caller's `lastSuccessfulTime` to the `N`-fold finite time sum, and preserves every other instance (`accepted_reaches`, `accepted_behaviors`, `execution_free`). |
+| FMI 3.0.2 §4.2.1 Computation, off-grid / over-bound step (`fmi3Discard`) | A step that makes clock progress inside any stop window but does not lie on the unit internal time grid (off-grid) or exceeds the internal-step bound (over-bound) reaches the shared `Runtime.stepDiscard` block before any numerical declaration, via the reused rounding/clock guard sections and the rejected grid branch. With logging suppressed the call returns `fmi3Discard` leaving the heap unchanged apart from the output-cell initialization (`discard_suppressed_behaviors`); with logging enabled it invokes the logging callback and mirrors every represented callback outcome (`discard_logged_behaviors`). |
+| FMI 3.0.2, function-call resolution across the interface | Each internal step enters `rumoca_constant_step` resolved directly by name (the entry is not a bound interface constant); the `resolves` premise records the direct resolution of the nested state-step call, carried uniformly as for the derivative and tensor entries. |
+| C11 / interface typing | The proofs run under the header-aware floating-environment interface (`ConstantFenv`: the pinned C interface extended with the header's `FE_TONEAREST` round-to-nearest constant), so the rounding guard and the `fmi3OK` return resolve; the `double *` region-pointer typing the numerical entry needs is carried separately (`ptrTy`), the constant analog of the derivative getter's. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The whole body executes over caller-owned instance regions with no dynamic allocation; the step count and loop counter are ordinary `size_t` locals and the grid loop is a counted `size_t` loop. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+Every theorem is universal in the state shape, the instance index and the heap. The
+constant adapter function list assembly with its no-heap and acyclic call-graph
+policy, and binding to actual FMU bytes, remain open. **Stage decision: open; no
+grammar expansion.**
+
 ### Constant-rate kernel bridge, fused derivative getter and step entry (Stage 3): standards impact
 
 The executable constant-rate kernel entries are now bound to the static constant

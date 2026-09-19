@@ -54,13 +54,17 @@ root = "Tests.Main"
 name = "tensor-fmu"
 root = "Tools.TensorFMU"
 
+[[lean_exe]]
+name = "constant-fmu"
+root = "Tools.ConstantFMU"
+
 [[require]]
 name = "proof_audit"
 path = "../verification"
 
 [[lean_lib]]
 name = "RumocaCompilerChecks"
-roots = ["Tests.Audit", "Tests.FMI3SourceCallPolicyAudit", "Tests.SemanticChecks", "Tests.EFMIChecks", "Tests.TensorMetadataFixture", "Tests.TensorAdapterFixture"]
+roots = ["Tests.Audit", "Tests.FMI3SourceCallPolicyAudit", "Tests.SemanticChecks", "Tests.EFMIChecks", "Tests.TensorMetadataFixture", "Tests.TensorAdapterFixture", "Tests.ConstantAdapterFixture"]
 
 [[require]]
 name = "sha1"

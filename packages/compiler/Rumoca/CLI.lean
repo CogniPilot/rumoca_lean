@@ -4,6 +4,7 @@ import Rumoca.EFMICheck
 import Rumoca.ParseFiles
 import Rumoca.InitializationDiagnostics
 import Rumoca.TensorFMU
+import Rumoca.ConstantFMU
 
 open _root_.Parser
 
@@ -38,6 +39,24 @@ private def runTensorCompiler {input : Source.InputRef} (name : String)
     IO.eprintln s!"{name}: the array/tensor profile is admitted for FMI 3 FMU (-o out.fmu) and tensor eFMI Algorithm Code (-o out.alg) output; tensor eFMU archive export and tensor C emission are not built"
     return 1
 
+/-- Publish an admitted constant-rate profile source. The constant profile is
+admitted for FMI 3 FMU output, whose publication gate is the fixed `constant-fmi3`
+source-build certificate that `ConstantFMU.build` runs. Constant eFMI and C
+emission are not built and are rejected with a diagnostic. -/
+private def runConstantCompiler {input : Source.InputRef} (name : String)
+    (constant : ConstantArtifact input) (output : Option String) : IO UInt32 := do
+  match output with
+  | some path =>
+    if path.endsWith ".fmu" then
+      ConstantFMU.build constant path
+      return 0
+    else
+      IO.eprintln s!"{name}: the constant-rate profile is admitted for FMI 3 FMU (-o out.fmu) output; constant eFMI/eFMU archive export and C emission are not built"
+      return 1
+  | none =>
+    IO.eprintln s!"{name}: the constant-rate profile is admitted for FMI 3 FMU (-o out.fmu) output; constant eFMI/eFMU archive export and C emission are not built"
+    return 1
+
 private def runCompiler (p : Cli.Parsed) : IO UInt32 := do
   let input := p.positionalArg! "model" |>.as! String
   let source ← IO.FS.readFile input
@@ -51,8 +70,14 @@ private def runCompiler (p : Cli.Parsed) : IO UInt32 := do
     match compileTensor inputRef with
     | .ok tensor => runTensorCompiler input tensor output
     | .error _ =>
-      IO.eprintln (Diagnostics.render input error)
-      return 1
+      -- Admit the constant-rate profile if the source is that development
+      -- shape; otherwise report the unit diagnostic and neither publish nor
+      -- replace.
+      match compileConstant inputRef with
+      | .ok constant => runConstantCompiler input constant output
+      | .error _ =>
+        IO.eprintln (Diagnostics.render input error)
+        return 1
   | .ok artifact =>
     for notice in artifact.initializationDiagnostics do
       IO.eprintln (Diagnostics.renderWarning input notice)

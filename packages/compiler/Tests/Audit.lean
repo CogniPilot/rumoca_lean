@@ -81,6 +81,8 @@ import Rumoca.InitializationDiagnosticProofs
 import Rumoca.TensorProduction
 import Rumoca.TensorAdapterChars
 import Rumoca.ConstantProofs
+import Rumoca.ConstantProduction
+import Rumoca.ConstantAdapterChars
 import Rumoca.EFMITensorArchiveProofs
 
 #audit axioms Rumoca.Artifact.source_identity
@@ -419,3 +421,13 @@ import Rumoca.EFMITensorArchiveProofs
 #audit axioms Rumoca.ConstantCompiler.prepare_correct
 #audit axioms Rumoca.ConstantCompiler.prepare_eq_parsed
 #audit axioms Rumoca.ConstantCompiler.prepare_perm_invariant
+
+-- Development constant-rate artifact compiler path and its composed source-build contract.
+#audit axioms Rumoca.constantSourceBuild_correct
+#audit axioms Rumoca.compileConstant_eq
+#audit axioms Rumoca.compileConstant_eq_parsed
+#audit axioms Rumoca.compileConstant_complete
+#audit axioms Rumoca.ConstantArtifact.name_rates
+#audit axioms Rumoca.ConstantKernel.chars
+#audit axioms Rumoca.ConstantKernel.modelC_programText
+#audit axioms Rumoca.FMI3.ConstantFunctions.constant_adapter_chars

@@ -1,0 +1,5 @@
+import Rumoca.ConstantFMI3BuildArtifactCheck
+set_option maxRecDepth 1000000
+set_option maxHeartbeats 8000000
+open Rumoca.ConstantFMI3BuildArtifactCheck
+verify_constant_fmi3_build_files

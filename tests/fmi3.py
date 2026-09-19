@@ -90,6 +90,12 @@ def _matrix_config(md):
         return dict(input_vr=1, input_n=1, start=[0.5], n_states=1, get_vr=1, get_n=1)
     if name == "TensorSquare":
         return dict(input_vr=1, input_n=2, start=[1.0, 2.0], n_states=2, get_vr=2, get_n=2)
+    if name == "ConstantRates":
+        # The constant-rate profile exposes no input and no output: the value
+        # references are 0 (time), 1 (the writable two-element state) and 2 (the
+        # read-only derivative). The state reference 1 is both the writable and
+        # the observed cell for the matrix, set to zero at initialization.
+        return dict(input_vr=1, input_n=2, start=[0.0, 0.0], n_states=2, get_vr=1, get_n=2)
     raise SystemExit("behavior matrix: unsupported model " + name)
 
 
