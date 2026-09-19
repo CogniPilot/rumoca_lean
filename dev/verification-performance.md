@@ -606,3 +606,61 @@ body-length reproof. `ConstantFloat64.get_contract` and `set_contract` keep thei
 statements and depend only on `propext`, `Quot.sound` and `Classical.choice`;
 the three `verify-artifact` certificate kinds and the two adapter standalone-object
 boundary checks continue to pass.
+
+## Numerical C printer denotation: reflexive side conditions and a scaffold reduced once
+
+`RumocaC.PrinterProofs` connects the rendered numerical C to the independent
+`CSyntax` grammar. `expression_render` is a structural induction over an arbitrary
+expression tree with an abstract continuation; `module_render` proves that every
+module in the profile renders to text the grammar accepts, by advancing the
+lexical constructors one token at a time over the emitted function scaffold and
+delegating each expression slot to `expression_render`. Both keep their
+statements.
+
+The single-token advance is driven by one tactic that tries the grammar's
+constructors in turn. It discharges each character-class side condition
+(`asciiSpace`, `identStart`, `identRest`, `numberRest`, `punctuation`,
+`Char.isDigit`, single-character equalities) by definitional reflexivity on the
+concrete leading character. The `expression_render` proof works over an abstract
+continuation, so its cost is a small constant per expression constructor. The
+`module_render` proof, however, walks the concrete function scaffold: the fixed
+declaration specifiers, signatures, `return`, the loop guard, the unsigned
+decrement and the closing braces.
+
+Two costs dominated `module_render` before this change. Each side condition was
+discharged by `decide +kernel`, which for every token synthesized a `Decidable`
+instance and then ran a kernel decision procedure; over the scaffold this
+accumulated tens of seconds of `Decidable` typeclass search and kernel
+type-checking that the closed character facts do not need. Second, the scaffold
+was lexed directly over the rendered string literals as `"literal".toList`, and
+that `String.toList` was re-reduced at every advance to expose the next
+character, so the fixed scaffold cost grew with its own length in the expensive
+`String.toList` direction.
+
+The proof now discharges every side condition by reflexivity, reduces the
+scaffold's rendered literals to explicit character lists once with the
+`String.toList` simproc before lexing them, and tries the single-character
+punctuator and `!=` constructors before the maximal-munch word and number
+constructors so a punctuator never forces a scan it does not need. The scaffold
+is then lexed as an already-reduced character list with reflexive side
+conditions, so its cost is bounded by the fixed scaffold and does not grow with
+the repeated `String.toList` unfolding. Expression slots continue through
+`expression_render` with its abstract continuation, so the whole proof's cost is
+the fixed scaffold plus a small constant per rendered expression constructor.
+
+Per-module cold elaboration (Lake's reported per-module seconds, dependencies
+already built, the module olean removed and rebuilt), and the single-module
+elaboration profile in isolation:
+
+| `RumocaC.PrinterProofs` | Cold module | `Decidable` search | Kernel type-check | Tactic execution |
+| --- | ---: | ---: | ---: | ---: |
+| `decide +kernel` over rendered `String.toList` (before) | ~165 s | ~71.6 s | ~43.4 s | ~37.9 s |
+| Reflexive side conditions, scaffold reduced once (after) | ~11 s | ~0.01 s | ~1.2 s | ~5.6 s |
+
+Peak resident memory for this module is dominated by loading its transitive
+imports: a bare module that only imports `RumocaC.Syntax` already peaks near the
+same figure, so the proof's own contribution to the peak is not the binding
+constraint. `expression_render` and `module_render` keep their statements and
+depend only on `propext`, `Quot.sound` and `Classical.choice`; the C, FMI 3 and
+compiler axiom audits, and the tensor and constant-rate actual-file and
+standalone-object boundary checks, continue to pass.
