@@ -6,7 +6,7 @@ native execution. Its success status is not cached.
 
 ## Initial measurement, 2026-09-16
 
-The baseline revision `0bea31d` passed the full gate in 2790.9 seconds
+The baseline revision the previous checkpoint passed the full gate in 2790.9 seconds
 (46.5 minutes). Its owning package proofs were already cached; repeated
 file-specific certificates dominated the gate.
 

@@ -37,7 +37,7 @@ be attributed to the current production parser.
 
 Baseline identity:
 
-- Compiler revision: `c2dd147d93f329a7a341a35da82176e19d706ae5`; no compiler
+- Compiler revision: the previous checkpoint; no compiler
   semantic changes in the measurement checkout.
 - Executable: `packages/compiler/.lake/build/bin/rumoca`, SHA-256
   `61b4bb6de3f54f1134519b57293b13e51f1e3d0e3592e37f81ba8591ab392539`.
@@ -123,7 +123,7 @@ the stack setting. The tables above retain the original failing baseline.
 | PA10 / P2 | Actual artifact certificates, hashing and ZIP construction have separate materialization costs that this frontend benchmark does not measure. | Record emit, native compile, kernel certificate, hash and archive costs separately on each admitted slice. Reuse native Lake module caches; do not cache acceptance of changed external artifact bytes or weaken integrity checks. |
 
 The measurements above predate the LALR source cutover and describe the
-retired parser at revision `c2dd147d93f329a7a341a35da82176e19d706ae5`.
+retired parser at revision the previous checkpoint.
 They are historical evidence for the listed allocation and span-attachment
 findings, not throughput measurements of the current parser. Production
 Modelica and GALEC now both use the shared LALR engine; see

@@ -76,7 +76,7 @@ UTF-16 ranges, conditional on the client's related-information capability.
 `diagnostics_without_related` proves omission for clients without support.
 These three roots and the existing LSP/parallel integration checks pass in
 `build/diagnostic-locations-frontend.log`. No additional test suite was added.
-The complete local gate passed at `df382d0` in
+The complete local gate passed at the previous checkpoint in
 `build/diagnostic-locations-full-gate.log`, including FMI and eFMU artifacts.
 
 ## Parallel frontend
@@ -262,7 +262,7 @@ in `build/origin-tables/source.sha256` remained unchanged throughout the gate.
 The [standards record](standards-review.md#shared-source-origins-standards-impact)
 records the final FMU/eFMU identities.
 The preceding located-driver checkpoint passed the complete gate before being
-committed as `ff6cc7e`; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34612287910)
+committed as the previous checkpoint; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34612287910)
 also passed. That evidence does not certify subsequent IR-origin or
 initialization work. No grammar, numerical lowering or target interface changes
 in this origin-table increment.

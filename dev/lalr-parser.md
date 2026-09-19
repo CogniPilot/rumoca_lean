@@ -677,7 +677,7 @@ These are semantic properties, not a measured memory bound. Record peak and
 retained memory, allocations and merge overhead on batches of the current
 subset before claiming a saving. Interning does not eliminate source buffers,
 character-list lexing or retained predecessor IRs. Track implementation under
-[E03](roadmap.md#maintainability-and-efficiency); it adds no language cases and
+[E03]; it adds no language cases and
 does not substitute for the open FMI/eFMI core obligations.
 
 ## Previous checked working snapshot

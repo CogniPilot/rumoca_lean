@@ -218,7 +218,7 @@ on the retained FMU in `build/fmi-functions/actual-fmi.log`. The required full
 gate passed in `build/fmi-functions/full-gate.log`, with all 625 inventoried
 inputs unchanged throughout. Exact archives and SHA-256 identities are retained
 in `build/fmi-functions/artifacts/`. All C, header and GALEC members compare
-byte-for-byte with `9751823` (`code-member-comparison.log`). No source grammar,
+byte-for-byte with the previous checkpoint (`code-member-comparison.log`). No source grammar,
 runtime emitter or example-based suite is added.
 
 The review also made the next execution gap concrete: 57 of the pinned

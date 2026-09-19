@@ -17,7 +17,7 @@ the XML and a separate loader process to catch unresolved symbols. Six new
 axiom roots and the targeted artifact gate pass in `build/fmi-build-package.log`
 and `build/fmi-build-artifact-gate.log`. The required full gate passed in
 `build/fmi-build-full-gate.log` and
-[CI for f1ce838](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582).
 Native compiler/linker behavior and the other
 metadata/runtime/archive obligations below remain outside this increment.
 
@@ -233,7 +233,7 @@ actual declarations or type meanings, and the other public calls still need
 their execution contracts.
 
 The same review inspected adjusted parameter spellings from the actual pinned
-header. At `fe4ebef`, 57 of its 75 collected signatures had an unmapped parameter in
+header. At the previous checkpoint, 57 of its 75 collected signatures had an unmapped parameter in
 `FMI3.cTypes`, spanning 43 spellings (`build/fmi-functions/signature-types.log`).
 These include `size_t *`, `fmi3Boolean *`, value-reference pointers and callback
 aliases. The isolated universal result in `unmapped-call-v2.log` confirms that
@@ -323,7 +323,7 @@ zero missing parameter types among 75 APIs. The strengthened actual-file checker
 passes in `build/fmi-types/actual-fmi.log`. The required full artifact gate passed
 in `build/fmi-types/full-gate.log`, with all 629 inventoried inputs unchanged and
 both actual archives checked. Exact artifacts and hashes are retained in
-`build/fmi-types/artifacts/`. The C and GALEC members match `fe4ebef`; only the
+`build/fmi-types/artifacts/`. The C and GALEC members match the previous checkpoint; only the
 authored target semantics and mandatory proof contract are strengthened.
 
 ### Count calls and correlated metadata
@@ -358,7 +358,7 @@ passes in `build/fmi-counts/actual-fmi-v2.log`. The required full gate passed in
 `build/fmi-counts/full-gate.log`, with all 634
 inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
-GALEC members match `d147774` (`code-member-comparison.log`).
+GALEC members match the previous checkpoint (`code-member-comparison.log`).
 
 ### Version call and metadata agreement
 
@@ -379,7 +379,7 @@ All 11 new audit roots and affected packages pass
 `build/fmi-version/full-gate.log`, with all 637
 inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
-GALEC members match `f9702f9` (`code-member-comparison.log`).
+GALEC members match the previous checkpoint (`code-member-comparison.log`).
 
 ### Observable enabled logging
 
@@ -410,7 +410,7 @@ All 58 added audit roots and affected packages pass in
 `build/c-events/package-audit-v1.log`. The required full artifact gate passed
 in `build/c-events/full-gate.log`, with all 646 inventoried inputs unchanged
 and both actual archives checked. Retained archives and hashes are in
-`build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
+`build/c-events/artifacts/`; their C, header and GALEC members match the previous checkpoint
 (`code-member-comparison.log`). This does not close F02/F03 or permit grammar expansion.
 
 ### Complete initialization calls
@@ -452,7 +452,7 @@ with all 706 source inputs and the complete file set unchanged. All 13 existing
 native FMI groups pass, including the extended argument/atomicity group;
 no new test suite was added. Both actual archives are retained in
 `build/c-initialization/artifacts/`. Only the FMI initialization-entry body
-changes relative to `d519438`; all other C/header/GALEC members match.
+changes relative to the previous checkpoint; all other C/header/GALEC members match.
 
 | Retained artifact | SHA-256 |
 | --- | --- |
@@ -478,7 +478,7 @@ roots and affected package checks pass in `build/c-float64-set/package-v1.log`;
 the required full artifact gate passed in `build/c-float64-set/full-gate.log`.
 All 694 source inputs remained unchanged throughout the run. Both actual
 archives are retained in `build/c-float64-set/artifacts/`; their C, header and
-GALEC members match the published `636264f` outputs. No source grammar or
+GALEC members match the published the previous checkpoint outputs. No source grammar or
 emitted code changes accompany this proof increment.
 
 Independent argument classification covers null instances, empty requests,
@@ -522,7 +522,7 @@ remain required. All 58 added roots and affected package checks pass in
 `build/c-float64-get/package-v2.log`. The required full artifact gate passed in
 `build/c-float64-get/full-gate.log`, with all 686 source inputs and the complete
 file set unchanged. Both actual archives are retained in its `artifacts/`
-directory; all C/H/ALG members match the published `8346cad` checkpoint.
+directory; all C/H/ALG members match the published the previous checkpoint checkpoint.
 
 The proof executes both counted loops, including nested numerical C calls, for
 arbitrary UInt64 request sizes within the authored size_t semantics. Independent
@@ -591,7 +591,7 @@ All 41 added roots and affected package checks pass in
 `build/c-derivatives/package-v1.log`. The required full artifact gate passed in
 `build/c-derivatives/full-gate.log`, with all 675 inventoried inputs unchanged.
 Both actual archives and hashes are retained in `build/c-derivatives/artifacts/`;
-their C, header and GALEC members match `035ad1d` (`artifacts.log`).
+their C, header and GALEC members match the previous checkpoint (`artifacts.log`).
 No source, renderer, metadata or initialization policy changes; no new test suite
 is added. Native headers/ABI, ownership/allocation, complete initialization and
 remaining public APIs still block the whole-adapter claim and grammar growth.
@@ -633,7 +633,7 @@ All 39 new roots and affected package checks pass in
 The required full artifact gate passed in `build/c-state-calls/full-gate.log`,
 with all 667 inventoried inputs unchanged and both actual archives checked.
 Retained archives and hashes are in `build/c-state-calls/artifacts/` and
-`artifacts.log`; every C, header and GALEC member matches `ca178d0`.
+`artifacts.log`; every C, header and GALEC member matches the previous checkpoint.
 Native header/ABI correspondence, allocation,
 complete initialization, callback realization and the remaining public APIs
 still block the whole-adapter claim and grammar growth. See the
@@ -667,7 +667,7 @@ All 33 new audit roots and affected packages pass in
 `build/c-nominals/package-v2.log`. The required full `lake test` gate passed in
 `build/c-nominals/full-gate.log`, with all 660 inventoried inputs unchanged.
 Both actual archives are retained in `build/c-nominals/artifacts/`; their C,
-header and GALEC members are unchanged from `54618eb`. Writable output
+header and GALEC members are unchanged from the previous checkpoint. Writable output
 storage, well-formed instance fields, admissible logger bindings and atomic host
 effects remain explicit premises. Native header/ABI correspondence, allocation,
 host ownership and remaining public APIs still block F02/F03 and grammar growth.
@@ -704,7 +704,7 @@ every earlier audit root is retained. The required full artifact gate passed in
 `build/c-logging-choices/full-gate.log`, with all 654 source inputs unchanged
 throughout the run and both actual archives checked. Retained archives and
 hashes are in `build/c-logging-choices/artifacts/`; their C, header and GALEC
-members match `7004a3e` (`artifact-retention.log`).
+members match the previous checkpoint (`artifact-retention.log`).
 No grammar, emitted code or test suite changes.
 F02/F03 remain open.
 
@@ -727,7 +727,7 @@ public-entry/foreign-execution gaps above remain separate. All 37 new roots
 and affected package checks pass in `build/c-events/literal-package-audit-v1.log`.
 The required full gate passed in `build/c-literal-events/full-gate.log`, with
 all 651 inputs unchanged and both target archives checked. Their C, header
-and GALEC members match `d529b5d`; artifacts and comparison evidence are retained
+and GALEC members match the previous checkpoint; artifacts and comparison evidence are retained
 in `build/c-literal-events/`. This does not close F02/F03.
 
 ## Development tensor source-build checker

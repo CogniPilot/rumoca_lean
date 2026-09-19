@@ -182,7 +182,7 @@ grow with register depth. A packed register store needs a simulation theorem
 before replacing this evaluator. No claim of CasADi-level performance is made.
 
 The full gate passed locally in `build/tensor-program-full-gate.log` and in
-[CI for 8e20731](https://github.com/CogniPilot/rumoca_lean/actions/runs/34459149967).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34459149967).
 This includes the production unit profile's actual C/FMU/eFMU checks.
 
 ## Array source-to-Solve checkpoint
@@ -225,7 +225,7 @@ and dense Jacobian storage. The universal mathematical theorems, rather than
 these examples, establish the Real contract.
 
 The full gate passed locally in `build/array-source-full-gate.log` and in
-[CI for c4c4286](https://github.com/CogniPilot/rumoca_lean/actions/runs/34462561010),
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34462561010),
 including the unchanged production unit C/FMU/eFMU artifacts and rejection
 checks. It does not certify production generation for the array examples.
 
@@ -273,7 +273,7 @@ program roots live in the independently cached `Tests.FiniteChecks`; the four
 array corollaries live in `Tests.TensorChecks`.
 
 This checkpoint also passed
-[CI for 1413110](https://github.com/CogniPilot/rumoca_lean/actions/runs/34465555340).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34465555340).
 
 ## Counted production C helpers
 
@@ -315,7 +315,7 @@ outside the authored C semantics.
 The gate passed in `build/c-tensor-artifact-gate.log`; both actual-file theorem
 audits list only `propext`, `Quot.sound` and `Classical.choice`. The complete
 repository gate passed in
-[CI for 1007286](https://github.com/CogniPilot/rumoca_lean/actions/runs/34469374951).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34469374951).
 
 Alignment with the Rust typed Solve program is retained: the source/IR contains
 one pointwise tensor instruction, while execution traverses storage at runtime.
@@ -366,10 +366,10 @@ fill contract; all three actual files passed `build/c-tensor-call-fill-gate.log`
 One signed-zero fill assertion was added to the existing native boundary check;
 no new example model or test matrix was introduced. The earlier local full
 gate encountered subsequent in-progress call code; it is not a successful
-full-gate record. The hosted run for the fixed `1007286` checkpoint passed.
+full-gate record. The hosted run for the fixed the previous checkpoint checkpoint passed.
 The required full gate for the call/fill increment passed locally in
 `build/c-tensor-call-fill-full-gate.log` and in
-[CI for e89e4f4](https://github.com/CogniPilot/rumoca_lean/actions/runs/34471779750).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34471779750).
 
 Next, compile the complete prepared instruction sequence with a checked map
 from shape-indexed references to disjoint intermediate buffers and a result
@@ -416,7 +416,7 @@ All 22 new roots pass the unchanged axiom audit in
 coefficient execution with externally supplied helper prototypes. The exact
 file theorem is audited in `build/tensor-c/program-contract.log`. The full
 repository gate passed in `build/c-tensor-program-full-gate.log` and in
-[CI for 08b8a7d](https://github.com/CogniPilot/rumoca_lean/actions/runs/34476481293).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34476481293).
 
 Review against Rust's `typed_program/program.rs` confirms the shared design:
 typed tensor registers, explicit destinations and a result register. Rust also
@@ -454,7 +454,7 @@ certificate, altered-operator rejection and the existing native boundary check;
 no new native test case was needed. The exact file root is audited in
 `build/tensor-c/program-contract.log`. The required full gate for this increment
 passed in `build/c-tensor-entry-full-gate.log` and in
-[CI for 6d4ec7c](https://github.com/CogniPilot/rumoca_lean/actions/runs/34479402664).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34479402664).
 
 ## Diagonal C output
 
@@ -484,7 +484,7 @@ passed in `build/c-diagonal-gate.log`; the exact root is audited in
 its actual AD coefficients as `[[4, 0], [0, 6]]` and checks the output boundary.
 No new source model, grammar case or negative-test matrix was added.
 The full gate for this increment passed in `build/c-diagonal-full-gate.log`
-and in [CI for 8a3b902](https://github.com/CogniPilot/rumoca_lean/actions/runs/34483284726).
+and in [the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34483284726).
 
 Review against Rust's `typed_program/program.rs` again confirms a compact
 `Diagonal { destination, operand }` operation, with its operand and destination
@@ -520,7 +520,7 @@ All 23 added roots and the actual-file/native gate pass in
 `build/c-diagonal-model-gate.log` with the unchanged axiom policy. The exact file
 root is audited in `build/tensor-c/program-contract.log`; the full gate passed in
 `build/c-diagonal-model-full-gate.log` and in
-[CI for f63d69a](https://github.com/CogniPilot/rumoca_lean/actions/runs/34487668082).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34487668082).
 This is the Jacobian function, not yet
 the complete IVP: RHS/initialization output binding, finite overflow/error
 policy, FMI storage/metadata/lifecycle and source-to-archive composition remain
@@ -556,7 +556,7 @@ The package build passes in `build/c-ivp-package.log`. All 22 added roots and
 the actual-file/native gate pass in `build/c-ivp-gate.log`; the exact three-file
 theorem is audited in `build/tensor-c/ivp-contract.log`. The required full gate
 passed in `build/c-ivp-full-gate.log` and in
-[CI for e1a734b](https://github.com/CogniPilot/rumoca_lean/actions/runs/34491283172).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34491283172).
 
 ## Typed calls and caller composition
 
@@ -586,7 +586,7 @@ native boundary check pass in `build/c-typed-gate.log`, using the unchanged
 axiom whitelist. The file root is audited in `build/tensor-c/ivp-contract.log`;
 the package build passes in `build/c-typed-package.log`. The required complete
 gate passed in `build/c-typed-full-gate.log` and in
-[CI for 2e53e66](https://github.com/CogniPilot/rumoca_lean/actions/runs/34494402729).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34494402729).
 
 ## Tensor model right-hand-side contract
 

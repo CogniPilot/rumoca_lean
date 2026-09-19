@@ -57,7 +57,7 @@ scripts/                      Reusable artifact-verification and audit commands
 examples/                     Modelica example and tested C host
 nix/                          Packaged editor, configuration and LSP check
 docs/                         Current contracts and design references
-dev/                          Compiler review and authoritative roadmap
+dev/                          Compiler review and standards evidence
 ```
 
 Every package has a `lakefile.toml`, dependency manifest, toolchain pin and

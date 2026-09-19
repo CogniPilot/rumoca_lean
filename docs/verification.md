@@ -42,7 +42,7 @@ Draft, dependency-isolation and semantic-review evidence is in
 standards/upstream review and retained artifacts are under
 `build/c-controlled-initialization/`.
 
-Every FMU member is unchanged from `d304f4d`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -93,7 +93,7 @@ Draft, dependency-isolation and semantic-review evidence is in
 Integration, package, full-gate, standards/upstream review and retained
 artifacts are under `build/c-private-retention/`.
 
-Every FMU member is unchanged from `6f169ea`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -138,7 +138,7 @@ Draft, dependency-isolation and semantic-review evidence is in
 `resource-c-reuse-v2.json`. Integration, package, full-gate, standards/upstream
 review and retained artifacts are under `build/c-resource-histories/`.
 
-Every FMU member is unchanged from `d67ad60`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -189,7 +189,7 @@ Draft, dependency-isolation and semantic-review evidence is in
 `authority-c-reuse-v2.json`. Integration, package, full-gate, standards review
 and retained artifacts are under `build/c-instance-authority/`.
 
-Every FMU member is unchanged from `380cb59`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -250,7 +250,7 @@ Draft and dependency-isolation evidence is in `build/c-private-initialization/`:
 standards/upstream review and retained artifact records are under
 `build/c-publication-history/`.
 
-Every FMU member is unchanged from `93192e8`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -308,7 +308,7 @@ Draft and dependency-isolation evidence is in `build/c-reservation-registry/`:
 standards/upstream review and retained artifact records are under
 `build/c-private-initialization/`.
 
-Every FMU member is unchanged from `88b8f7c`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -371,7 +371,7 @@ Draft and dependency-isolation evidence is in `build/c-factory-history/`:
 standards/upstream review and retained artifact records are under
 `build/c-reservation-registry/`.
 
-Every FMU member is unchanged from `af477e9`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -423,7 +423,7 @@ Draft and dependency-isolation evidence is in `build/c-scan-context/`:
 Integration, package, full-gate, standards/upstream review and retained artifact
 records are under `build/c-factory-history/`.
 
-Every FMU member is unchanged from `eb412f9`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -473,7 +473,7 @@ and `claims-context-extracted-v1.json`. Integration, package, full-gate,
 standards/upstream review and retained artifact records are under
 `build/c-scan-context/`.
 
-Every FMU member is unchanged from `57d361c`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public interface emission are
 unchanged. Existing artifact, native and mutation checks pass. Only these three
@@ -521,7 +521,7 @@ Evidence is in `build/c-host-boundary/`: `integration-v1.json`, `package-v1.*`,
 `build/c-release-frames/`. The combined gate covers its pre-publication EOF
 cleanup as well as all new host/recording/origin modules.
 
-Every FMU member is unchanged from `4b55612`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public interface emission are
 unchanged. Existing artifact, native and mutation checks pass. Only these
@@ -568,7 +568,7 @@ suite was added. Evidence is in `build/c-release-frames/`:
 `integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
 `standards-review-v1.json`, `upstream-review-v1.json` and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `4b55612`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public interface emission are
 unchanged. Existing artifact, native and mutation checks pass. Three evidence documents were updated after that frozen gate. A later
@@ -612,7 +612,7 @@ suite was added. Evidence is in `build/c-reservation-bounds/`:
 `integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
 `standards-review-v1.json` and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `00a235c`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public interface emission are
 unchanged. Existing artifact, native and mutation checks pass. Only these
@@ -652,7 +652,7 @@ drift were found. No test suite was added. Evidence is in
 `full-gate-v1.*`, `standards-review-v1.json`, `upstream-review-v1.json`
 and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `fdb6bc8`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -691,7 +691,7 @@ test suite was added. Evidence is in `build/c-runtime-resources/`:
 `integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
 `standards-review-v1.json` and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `026bc92`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public-call emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -726,7 +726,7 @@ found. The existing separate package audits retain every prior root. Evidence
 is in `build/c-call-depth/`: `integration-v1.json`, `package-v1.*`,
 `full-gate-v1.*`, `upstream-review-v2.json` and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `f0694e8`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public-call emission are unchanged.
 The existing artifact, native and mutation checks pass; no test suite was added.
@@ -792,7 +792,7 @@ unrelated audits retain Lake's normal cache. Evidence is in
 `build/c-call-policy/`: `integration-v3.json`, `package-v3.*`,
 `full-gate-v1.*`, `upstream-review-v2.json` and `artifacts-v1.*`.
 
-Every FMU member, including its native library, is unchanged from `d757659`.
+Every FMU member, including its native library, is unchanged from the previous checkpoint.
 The eFMU changes only generation identities and dependent references/checksums
 in three manifests. Numerical C, GALEC, Production C, grammars, solver policy,
 metadata and lifecycle emission are unchanged. The existing artifact, native
@@ -827,7 +827,7 @@ no unexpected axioms, changed-module warnings or input drift. Evidence is in
 and `artifacts-v1.*`.
 
 The actual FMU changes exactly 13 setter guard lines and its native library;
-every other member is byte-identical to `4db587a`'s retained FMU. The eFMU
+every other member is byte-identical to the previous checkpoint's retained FMU. The eFMU
 changes only generation identities and dependent references/checksums in three
 manifests. Numerical C, GALEC, Production C and metadata behavior are unchanged.
 The existing native boundary check now includes terminated empty setters for
@@ -1427,7 +1427,7 @@ changed-module warnings. Only the three verification/roadmap documents change
 after the frozen gate. Grammars, source/Solve/C machine semantics, emitters,
 mandatory artifact propositions and boundary tests are unchanged.
 [GitHub run 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
-passed the full `lake test` gate for the earlier `fc02a22` revision at 18:15:01
+passed the full `lake test` gate for the earlier the previous checkpoint revision at 18:15:01
 UTC. This increment still needs its own full-artifact acceptance. Remaining
 public-call coverage, native/concurrent correspondence and K02–K05 prevent a
 whole-compiler or full-standard claim; grammar expansion remains blocked.
@@ -1489,7 +1489,7 @@ warnings in new/changed modules. Publication subsequently changes only the
 three verification/roadmap documents. The admitted grammars, source/Solve/C
 machine semantics, emitters, mandatory artifact propositions and boundary tests
 are unchanged. [GitHub run 34868166166](https://github.com/CogniPilot/rumoca_lean/actions/runs/34868166166)
-passed `nix develop .#verification --command lake test` for `baeb7bd` at
+passed `nix develop .#verification --command lake test` for the previous checkpoint at
 17:24:44 UTC. That full artifact result belongs to an earlier revision; this
 package pass is not a new full-artifact acceptance.
 
@@ -1562,7 +1562,7 @@ All 33 new roots and affected existing roots passed
 unexpected axioms were reported. Source/runtime semantics, emitters, mandatory
 artifact propositions and boundary tests are unchanged; derived certificates
 were strengthened. The package gate is distinct from the retained 869-input
-local full gate. GitHub run `34856771664` passed the complete gate for `b0eb94e`
+local full gate. GitHub run `34856771664` passed the complete gate for the previous checkpoint
 at 15:47:48 UTC; that is a separate revision, not full acceptance of this change.
 
 A single source-bound theorem still needs to compose repeated simulation and
@@ -1604,7 +1604,7 @@ unchanged and the new modules have no warnings. Source/runtime semantics,
 emitters, mandatory artifact propositions and boundary tests are unchanged;
 only derived storage contracts were strengthened. This package pass is
 distinct from the retained 869-input local full-artifact gate and successful
-GitHub run `34853259941` for `83b725c`; it is not a new full-gate result.
+GitHub run `34853259941` for the previous checkpoint; it is not a new full-gate result.
 
 Later simulation restarts still use contiguous reset/enter/exit calls and the
 Solve default. Access interleavings at those restarts, remaining public calls,
@@ -1647,7 +1647,7 @@ Lean audit reports bare names and checks every required root. No Lean rerun or
 axiom-policy change was needed. Only derived proofs/audit imports were added;
 semantics, emission, mandatory artifact propositions and boundary tests retain
 the distinct 869-input local full gate. GitHub run `34853259941` passed the full
-gate for `83b725c`, a distinct revision. This is not a new full-artifact result.
+gate for the previous checkpoint, a distinct revision. This is not a new full-artifact result.
 K02–K05 and the remaining standards/MISRA findings still block grammar growth.
 
 **Rejected Float64 calls and recovery initialization (2026-09-14):**
@@ -1690,7 +1690,7 @@ The 31 new roots and existing affected roots passed
 `build/c-factory/float64-rejection-package-v2.log`; the axiom whitelist is
 unchanged. Existing semantics, emission, mandatory artifact propositions and
 boundary tests retain the separate 869-input local full gate. GitHub run
-`34848939187` passed the full gate for `9ad935e`, a distinct revision. Neither
+`34848939187` passed the full gate for the previous checkpoint, a distinct revision. Neither
 is a new full-gate result for these additions. No tests were added.
 
 The new rejection/recovery operations still need integration into the created
@@ -1771,7 +1771,7 @@ Ten new roots and the strengthened creation root passed
 `build/c-factory/initialization-cs-run-package-v1.log`. Existing semantics,
 emission, mandatory artifact contracts and boundary tests are unchanged;
 their separate 869-input local full gate is retained. GitHub run `34842923078`
-also passed the full gate for `9186829`, a distinct earlier revision. Neither
+also passed the full gate for the previous checkpoint, a distinct earlier revision. Neither
 result is a new full-gate pass for these additions. No grammar or test suite
 was added. Rejected initialization accesses, ME continuation, interleaved
 accesses at later restarts and other public interactions remain open, alongside
@@ -2376,7 +2376,7 @@ and `static-public-consequences-packages-v1.log` under `build/c-factory/`.
 The latter check covered 798 unchanged inputs; the full artifact gate was not
 rerun for these proof-only additions. Every earlier emitter, semantic
 definition and mandatory contract field was retained. The earlier published
-`2628f35` checkpoint used the allocating emitter.
+the previous checkpoint checkpoint used the allocating emitter.
 
 Seventeen further audit roots now connect creation to both complete public
 initialization calls in the same execution interface. A shared body
@@ -3064,7 +3064,7 @@ correspondence. All 26 new roots and affected packages pass
 passes in `build/fmi-types/actual-fmi.log`. The required full gate passed in
 `build/fmi-types/full-gate.log`, with all 629 inventoried inputs unchanged and
 both actual archives checked. Exact archives and hashes are retained in
-`build/fmi-types/artifacts/`; their C and GALEC members match `fe4ebef`. No source
+`build/fmi-types/artifacts/`; their C and GALEC members match the previous checkpoint. No source
 grammar or runtime emitter changes.
 
 The next count-query increment requires complete calls for both existing ME
@@ -3085,7 +3085,7 @@ passes in `build/fmi-counts/actual-fmi-v2.log`. The required full gate passed in
 `build/fmi-counts/full-gate.log`, with all 634
 inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
-GALEC members match `d147774` (`code-member-comparison.log`).
+GALEC members match the previous checkpoint (`code-member-comparison.log`).
 
 The version-query increment now requires the actual `fmi3GetVersion` function's
 grammar, constructed static storage and complete behavior in `AdapterContract`.
@@ -3098,7 +3098,7 @@ All 11 new audit roots and affected packages pass
 `build/fmi-version/full-gate.log`, with all 637
 inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
-GALEC members match `f9702f9` (`code-member-comparison.log`).
+GALEC members match the previous checkpoint (`code-member-comparison.log`).
 
 The callback increment uses a shared `Typed.nextWith` scheduler and labeled
 execution with finite/infinite histories. Existing internal-call, literal and
@@ -3120,7 +3120,7 @@ packages pass `build/c-events/package-audit-v1.log`. The required full gate
 passed in `build/c-events/full-gate.log`, with all 646 inventoried inputs
 unchanged and both actual target archives checked. Exact archives and hashes
 are retained in `build/c-events/artifacts/`; their C, header and GALEC members
-match `c522107` (`code-member-comparison.log`).
+match the previous checkpoint (`code-member-comparison.log`).
 
 The subsequent eventful literal pass preserves and reflects every authored C
 behavior, including callback arguments/effects, faults and finite or infinite
@@ -3136,7 +3136,7 @@ All 37 new audit roots and affected package checks pass in
 `build/c-events/literal-package-audit-v1.log`. The required full artifact gate
 passed in `build/c-literal-events/full-gate.log`, with all 651 inputs unchanged
 throughout the run. Both target archives are retained in its `artifacts/`
-directory; their C, header and GALEC members match `d529b5d`
+directory; their C, header and GALEC members match the previous checkpoint
 (`code-member-comparison.log`). See
 [the pass contract](../dev/fmi3/contracts.md#eventful-literal-lowering).
 
@@ -3157,7 +3157,7 @@ The required full artifact gate passed in
 `build/c-logging-choices/full-gate.log`, with all 654 inputs unchanged and both
 actual archives checked. Retained archives and hashes are in
 `build/c-logging-choices/artifacts/`; their C, header and GALEC members match
-`7004a3e` (`artifact-retention.log`). This does not prove execution
+the previous checkpoint (`artifact-retention.log`). This does not prove execution
 inside host calls, native ABI, allocation, host ownership or all public entries.
 FMI's prohibition on log-callback reentry is an admissible-host obligation at
 that boundary. See [the exact contract](../dev/fmi3/contracts.md#all-failure-helper-outcomes).
@@ -3173,7 +3173,7 @@ All 33 new audit roots and affected packages pass in
 `build/c-nominals/package-v2.log`; the required full `lake test` gate passed in
 `build/c-nominals/full-gate.log`, with all 660 inventoried inputs unchanged.
 Both actual archives are retained in `build/c-nominals/artifacts/`; their C,
-header and GALEC members match `54618eb`. Valid memory, host
+header and GALEC members match the previous checkpoint. Valid memory, host
 bindings, native ABI, allocation and remaining public-call obligations remain
 explicit. See [the exact scope](../dev/fmi3/contracts.md#complete-nominal-queries).
 
@@ -3186,7 +3186,7 @@ API proofs. All 39 additional roots and affected packages pass in
 `build/c-state-calls/package-v1.log`; the required full artifact gate passed in
 `build/c-state-calls/full-gate.log`, with all 667 inventoried inputs unchanged.
 Both actual archives are retained in `build/c-state-calls/artifacts/`; their
-C, header and GALEC members match `ca178d0`. Native storage/ABI, initialization
+C, header and GALEC members match the previous checkpoint. Native storage/ABI, initialization
 and remaining adapter obligations are still open. See
 [the state contract](../dev/fmi3/contracts.md#continuous-state-getter-and-setter).
 
@@ -3202,7 +3202,7 @@ actual header candidates. All 41 added roots and affected packages pass in
 `build/c-derivatives/package-v1.log`; the required full artifact gate passed in
 `build/c-derivatives/full-gate.log`, with all 675 inventoried inputs unchanged.
 Both actual archives are retained in `build/c-derivatives/artifacts/`; their C,
-header and GALEC members match `035ad1d`.
+header and GALEC members match the previous checkpoint.
 No grammar, emitter or solver policy changes. See
 [the derivative contract](../dev/fmi3/contracts.md#complete-continuous-state-derivative-query).
 
@@ -3217,7 +3217,7 @@ adding array variables to the production grammar. All 58 added roots and affecte
 package checks pass in `build/c-float64-get/package-v2.log`. The required full
 artifact gate passed in `build/c-float64-get/full-gate.log`, with all 686 inputs
 unchanged. Both actual archives are retained in its `artifacts/` directory;
-all C/H/ALG members match `8346cad`. Current state/time representation, complete initialization,
+all C/H/ALG members match the previous checkpoint. Current state/time representation, complete initialization,
 native ABI and remaining public APIs retain their existing open boundaries. See
 [the Float64 getter contract](../dev/fmi3/contracts.md#complete-float64-getter).
 
@@ -3234,7 +3234,7 @@ prior fields. All 51 new roots and affected package checks pass in
 `build/c-float64-set/package-v1.log`. The required full artifact gate passed in
 `build/c-float64-set/full-gate.log`, with all 694 source inputs unchanged.
 Both actual archives are retained in `build/c-float64-set/artifacts/`; all C,
-header and GALEC members match the published `636264f` outputs.
+header and GALEC members match the published the previous checkpoint outputs.
 Initialization histories, native ABI,
 ownership and remaining APIs keep the whole-stage claim open. See
 [the setter contract](../dev/fmi3/contracts.md#complete-float64-setter).
@@ -3252,7 +3252,7 @@ roots and affected package checks pass in `build/c-initialization/package-v1.log
 The required full artifact gate passed in `build/c-initialization/full-gate.log`,
 with all 706 inventoried source inputs and the complete file set unchanged.
 Both actual archives are retained in `build/c-initialization/artifacts/`.
-Compared with `d519438`, only the initialization-entry body in `sources/fmi3.c`
+Compared with the previous checkpoint, only the initialization-entry body in `sources/fmi3.c`
 changed; every other C/header/GALEC member is identical. The inclusive `atLeast_iff`
 replaces the retired strict-order policy root; every other earlier root and the
 axiom whitelist are retained. No source grammar is added. Allocation, arbitrary
@@ -3269,7 +3269,7 @@ Essential types, pointer guards, allocation and concurrency require
 further proof and artifact coverage. Rule 15.5 is Disapplied; C11 is supported.
 No MISRA compliance or approved deviations are claimed.
 See [the rule review](../dev/standards-review.md#misra-c2025-and-static-storage-review)
-and [K02–K05](../dev/roadmap.md#closure-checklist-before-grammar-growth).
+and [K02–K05].
 
 The explicit-null increment supplies shared C null equality/inequality semantics
 and independently checked printing for `((void *)0)`. It changes the actual
@@ -3281,7 +3281,7 @@ Existing actual-function and artifact contracts remain required. The 44 new
 roots retain every earlier root and the unchanged axiom policy. The required
 full gate passed in `build/c-static-storage/full-gate.log`, including both
 actual target archives with all 710 inventoried inputs unchanged. Only the
-70 shared instance guards in the FMI adapter differ from `784f45b`; every
+70 shared instance guards in the FMI adapter differ from the previous checkpoint; every
 other C/header/GALEC byte is unchanged. Exact archives are retained in
 `build/c-static-storage/artifacts/`. Other implicit pointer tests and whole
 MISRA/adapter compliance remain open.
@@ -3303,7 +3303,7 @@ affected C/FMI/eFMI/compiler package checks pass in
 `build/c-static-storage/address-package-v3.log`. The required main artifact
 gate passed in `build/c-subobjects/full-gate.log`, including both actual
 target archives with all 711 inventoried inputs unchanged. Every C/header/GALEC
-member is byte-identical to `b478606`; exact archives are retained in
+member is byte-identical to the previous checkpoint; exact archives are retained in
 `build/c-subobjects/artifacts/`. The ten new roots retain all earlier roots
 and the unchanged axiom policy. No source grammar or Solve operation changes.
 These are structural cell facts; native bounds, layout, effective types,
@@ -3326,7 +3326,7 @@ All affected packages and 38 added audit roots pass in
 retained. The required main artifact gate passed in
 `build/c-atomics/full-gate.log`, with all 720 source inputs unchanged,
 both actual target archives checked and every C/header/GALEC member
-unchanged from `a1ceae5`. Exact archives and the comparison evidence are
+unchanged from the previous checkpoint. Exact archives and the comparison evidence are
 retained under `build/c-atomics/`. Production still uses
 `calloc`/`free`: the helper is not yet emitted into the FMI adapter. Native
 atomic/header bindings, declarations, overlapping calls, ownership, reuse
@@ -3351,7 +3351,7 @@ unchanged axiom policy. The required full artifact gate passed in
 the existing mutation/native boundary checks, with all 743 inputs unchanged.
 The retained code-member comparison under `build/c-factory/identity-artifacts/`
 shows only the new helper and its two factory call sites in FMI `sources/fmi3.c`;
-numerical C and eFMI C/GALEC are unchanged from `00de05b`.
+numerical C and eFMI C/GALEC are unchanged from the previous checkpoint.
 
 This increment also includes checked storage-frame and interleaving foundations
 for the planned static instance slots. These describe the authored C scheduler
@@ -3384,7 +3384,7 @@ The C/FMI/eFMI/compiler package checks pass in
 removed roots or axiom-policy changes. The required full artifact gate passed
 in `build/c-factory/factory-full-gate-v2.log`, with all 760 source inputs and the
 complete file set unchanged. Both archives are retained under
-`build/c-factory/factory-artifacts/`; their C/header/GALEC members match `13fb2a6`.
+`build/c-factory/factory-artifacts/`; their C/header/GALEC members match the previous checkpoint.
 The first gate attempt rejected a failed signature-membership elaboration;
 structural membership proofs fixed it without changing the contract or audit.
 No emitter, source grammar, numerical IR or capability changes. Successful
@@ -3432,14 +3432,14 @@ values. `ArrayCompiler.prepare_correct` also binds the stored kernel to the
 actual parsed source, its EBNF membership and its complete source equations.
 The source-to-Solve checkpoint passed the complete local gate in
 `build/array-source-full-gate.log` and
-[CI for c4c4286](https://github.com/CogniPilot/rumoca_lean/actions/runs/34462561010).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34462561010).
 The next numerical increment now specifies exact binary64 product rounding,
 overflow rejection and signed underflow. `Solve.Tensor.Finite.executes_iff`
 characterizes ordered finite program execution, including every intermediate
 instruction. `Array.Finite` proves nearest-value bounds for the actual square
 RHS and AD-generated Jacobian coefficients against their mathematical Real
 values. These 26 new roots pass the core audit in `build/finite-array-audit.log`,
-and the checkpoint passed [CI for 1413110](https://github.com/CogniPilot/rumoca_lean/actions/runs/34465555340).
+and the checkpoint passed [the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34465555340).
 The next C increment proves the complete counted helper bodies for addition
 and multiplication over arbitrary tensor shapes. `CTensor.artifact_correct`
 binds independently specified C tokens to all body behaviors, finite Solve
@@ -3459,7 +3459,7 @@ file-literal contracts. The gate also rejects a changed loop bound and checks
 native shared-input execution, output boundaries, signed underflow and empty
 execution. It runs as `lake run tensor-c-test` and is included in `lake test`.
 The complete gate passed in
-[CI for 1007286](https://github.com/CogniPilot/rumoca_lean/actions/runs/34469374951).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34469374951).
 These helper certificates do not establish the remaining tensor FMU/eFMU chain.
 
 The subsequent call/fill increment strengthens the actual-file checker to
@@ -3478,7 +3478,7 @@ checkpoint; ordinary calls are now covered, while whole-program allocation,
 result storage, error policy and source-to-FMU composition remain open.
 The required full gate for the call/fill increment passed locally in
 `build/c-tensor-call-fill-full-gate.log` and in
-[CI for e89e4f4](https://github.com/CogniPilot/rumoca_lean/actions/runs/34471779750).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34471779750).
 
 The complete prepared-program increment introduces a shape-indexed storage
 plan with one destination per tensor instruction. `CTensor.Lowering.emit_refines`
@@ -3505,7 +3505,7 @@ added audit roots and the actual-file/native gate pass in
 The native check additionally requires external helper declarations; header
 preprocessing and native linkage are still boundary checks. The full repository
 gate for this increment passed in `build/c-tensor-program-full-gate.log` and in
-[CI for 08b8a7d](https://github.com/CogniPilot/rumoca_lean/actions/runs/34476481293).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34476481293).
 
 The next increment closes the authored outer-function entry and return:
 `Lowering.program_call_refines` proves every complete call behavior against
@@ -3528,7 +3528,7 @@ certificate, operator-mutation rejection and the existing native boundary check.
 `build/tensor-c/program-contract.log` audits the exact file theorem with only
 `propext`, `Quot.sound` and `Classical.choice`. The required full gate for this
 increment passed in `build/c-tensor-entry-full-gate.log` and in
-[CI for 6d4ec7c](https://github.com/CogniPilot/rumoca_lean/actions/runs/34479402664).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34479402664).
 
 The diagonal output helper now has `CTensor.Diagonal.ArtifactContract`. It binds
 the complete actual C text to ordinary call entry, the existing zero-fill call,
@@ -3547,7 +3547,7 @@ All 35 added roots and the actual-file/native gate pass in
 exact file theorem. One assertion group extends the existing native AD fixture
 to its dense matrix output; no additional example model or rejection matrix
 was added. The full gate passed in `build/c-diagonal-full-gate.log` and in
-[CI for 8a3b902](https://github.com/CogniPilot/rumoca_lean/actions/runs/34483284726).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34483284726).
 This helper checkpoint does not compose coefficient production and diagonal
 output into the actual whole model function. FMI storage/metadata/lifecycle binding,
 overflow/error policy and tensor source-to-archive certificates remain open.
@@ -3574,7 +3574,7 @@ Its 23 added roots and the actual-file/native gate pass in
 `build/c-diagonal-model-gate.log`. The exact file theorem is audited in
 `build/tensor-c/program-contract.log`; the required full gate passed in
 `build/c-diagonal-model-full-gate.log` and in
-[CI for f63d69a](https://github.com/CogniPilot/rumoca_lean/actions/runs/34487668082).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34487668082).
 
 The next increment constructs C functions through `Lowering.Named` and groups
 them in `PointwisePlan`, indexed by one prepared `Solve.PointwiseIVP`.
@@ -3595,7 +3595,7 @@ finite Solve result. Each call preserves every cell outside its output range.
 All 22 added roots and the actual-file/native gate pass in `build/c-ivp-gate.log`.
 `build/tensor-c/ivp-contract.log` audits the exact three-file theorem. The
 required full gate passed in `build/c-ivp-full-gate.log` and in
-[CI for e1a734b](https://github.com/CogniPilot/rumoca_lean/actions/runs/34491283172).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34491283172).
 
 `CCalls.Typed` now executes the same typed tensor loop bodies with ordinary
 return values, saved local types and call destinations. `loop_step` and
@@ -3621,7 +3621,7 @@ the existing native boundary check pass in `build/c-typed-gate.log`. The exact
 file root is audited in `build/tensor-c/ivp-contract.log`; the package build
 passes in `build/c-typed-package.log`. No new source model or native test matrix
 is introduced. The required full gate passed in `build/c-typed-full-gate.log`
-and in [CI for 2e53e66](https://github.com/CogniPilot/rumoca_lean/actions/runs/34494402729).
+and in [the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34494402729).
 
 These remain instantaneous C contracts. The existing FMI body proofs must still
 be connected to the typed machine's statement/scope rules and composed with
@@ -3637,7 +3637,7 @@ stored-value contract is the separate binary64 numerical profile. Refinement
 to an unbounded ideal trajectory does not claim that such a trajectory is
 itself a sequence of valid stored Real values.
 
-For the tracked path beyond this baseline, see [the roadmap](../dev/roadmap.md).
+For the tracked path beyond this baseline, see [the roadmap].
 The newly authorized eFMI unit profile and its standards review are tracked
 in [the eFMI roadmap](../dev/efmi.md). Its DAE-derived GALEC product and tensor
 Solve algorithm are separate from the numerical IVP path. The Algorithm Code
@@ -3811,7 +3811,7 @@ the client's related-information capability; `diagnostics_without_related`
 proves those extra locations are omitted when support is disabled. The three
 new roots pass the unchanged axiom audit, and the existing real LSP/parallel
 frontend checks pass in `build/diagnostic-locations-frontend.log`.
-The required full local gate passed at `df382d0` in
+The required full local gate passed at the previous checkpoint in
 `build/diagnostic-locations-full-gate.log`, including FMI ME/CS and the complete
 eFMU artifact gate. This is evidence for the unchanged authored contracts.
 Compiler failure-only reparsing has now been removed: the driver returns
@@ -4170,7 +4170,7 @@ library from concealing a missing dependency. These are build-recipe and file
 proofs plus a native boundary check; they do not prove GCC, linking, runtime
 floating-point settings, the actual FMI adapter/model-description XML or the
 complete FMU ZIP. The required full gate passed in `build/fmi-build-full-gate.log`.
-[CI for f1ce838](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582)
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582)
 also passed.
 
 The SR02 linkage increment generalizes the existing complete numerical
@@ -4200,7 +4200,7 @@ passes in `build/fmi-linkage-artifact-gate.log`, retaining thirteen native test
 groups and adding one prefix mutation. Both source FMUs compile from their own
 XML recipes, link together and expose only their declared FMI APIs. Failed
 native builds preserve earlier FMUs. The required full local gate passed in
-`build/fmi-linkage-full-gate.log` at `efb5c80`;
+`build/fmi-linkage-full-gate.log` at the previous checkpoint;
 [CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34509004071) also passed.
 
 `Solve.FMI3Model` carries the original Solve model, source names and a prepared
@@ -4449,7 +4449,7 @@ check rejects the old FMU, and the corrected artifact passes all thirteen native
 groups plus the actual-file/source-link/mutation gate in
 `build/fmi-nominals-artifact-gate.log`. The required full gate passed in
 `build/fmi-nominals-full-gate.log` and in
-[CI for 904e9bd](https://github.com/CogniPilot/rumoca_lean/actions/runs/34512618273).
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34512618273).
 Production language acceptance is unchanged.
 
 The subsequent setter refactor hoists the instance declaration and shares the
@@ -4466,7 +4466,7 @@ all generated FMI bodies, with no setter exclusion and the unchanged nested
 declaration restriction. Nine new roots pass `build/fmi-setter-scope-audit.log`;
 all thirteen existing native groups and the actual-file/source-link/mutation
 gate pass in `build/fmi-setter-scope-artifact-gate.log`. The required full gate
-passed in `build/fmi-setter-scope-full-gate.log` at `1a53884`, and
+passed in `build/fmi-setter-scope-full-gate.log` at the previous checkpoint, and
 [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34516914151)
 passed. That full run's FMU has SHA-256
 `765662ef91d429089b4a22fd12dd29ec885f375a39a173c02bd4c8c35343a56f`.
@@ -4495,7 +4495,7 @@ separate obligations. All twelve added roots and the full package audit pass
 in `build/fmi-array-call-audit.log`, with the unchanged axiom whitelist. The
 FMI actual-file/source-build/mutation gate and all thirteen existing native
 groups also pass in `build/fmi-array-call-full-gate.log`. That required full
-local run passed at `30ef448`, including the complete GALEC/eFMU archive,
+local run passed at the previous checkpoint, including the complete GALEC/eFMU archive,
 extracted-manifest and mutation checks;
 [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34521375057)
 also passed. Its FMU has SHA-256
@@ -4640,7 +4640,7 @@ status store and return; the header contract describes all three fields.
 Nine new roots pass the unchanged axiom audit in `build/efmi-status-package.log`.
 The required complete artifact gate passed in `build/efmi-status-full-gate.log`,
 including the actual archive theorem and redirected-status rejection.
-[CI for feb57a9](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
 also passed.
 The unit profile still has no exposed error signals. This correction neither
 adds general GALEC error handling nor establishes full eFMI standards compliance.
@@ -4711,7 +4711,7 @@ Four new public roots pass the unchanged axiom audit in
 uses the actual expression printer on the formerly corrupted `??/n` payload
 and passes strict C11 compilation and byte observation in
 `build/c-string-trigraph-after.log`. The required full local gate passed at
-`a0327a1` in `build/c-string-printer-full-gate.log`, including both artifact
+the previous checkpoint in `build/c-string-printer-full-gate.log`, including both artifact
 paths; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34527453846)
 also passed. The decoder in the proof module is not a compiler pass.
 The proposition describes literal object bytes, not allocation,

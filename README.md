@@ -11,7 +11,7 @@ adapter execution and complete artifact/compliance obligations remain open.
 No further grammar expansion is allowed until the current admitted subset has
 that complete end-to-end guarantee; passing individual proofs or CI is not
 sufficient. See the [verification contract](docs/verification.md) and
-[remaining obligations](dev/roadmap.md).
+[remaining obligations].
 
 This repository is an experimental home for Rumoca's formally verified core.
 The plan is to merge it back into [Rumoca](https://github.com/CogniPilot/rumoca)
@@ -162,7 +162,7 @@ The FMU also contains C sources and `buildDescription.xml`. Binary compatibility
 is with the build host's architecture and libc; this is not a universal binary.
 ME state/derivative access and internal numerical helper calls have body proofs.
 The remaining FMI lifecycle, time, lifetime and complete archive binding still
-need proofs; see [the roadmap](dev/roadmap.md#fmi-3-architecture-requested-during-this-review).
+need proofs; see [the roadmap].
 
 The same unit profile can produce a checked eFMU containing GALEC Algorithm
 Code, Production C, correlated manifests and the pinned eFMI schemas:
@@ -308,7 +308,7 @@ finite sets, integer arithmetic and real analysis. See
 [design and references](docs/design.md) for the package survey and Rumoca specs.
 
 Track assurance gaps, pass contracts, release gates and verified language
-expansion in the [compiler roadmap](dev/roadmap.md). Completed baseline proofs
+expansion in the [compiler roadmap]. Completed baseline proofs
 are distinguished from the open work required for broader assurance claims.
 
 GitHub Actions runs the package audits and full verification gate on pushes and

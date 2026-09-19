@@ -4,7 +4,7 @@ Review date: 2026-09-08. Scope: the local Lean working tree, including parser,
 all four IRs, C rendering/parsing and execution, arithmetic, driver capstones,
 actual-file checking and required tests. This is a first-party engineering
 review, not an independent certification. Follow-up work is tracked in
-[roadmap.md](roadmap.md).
+the closure checklist.
 
 The later [certified-printer checkpoint](efmi.md#certified-printers-and-shared-c-ownership)
 replaces this review's C-reader round-trip path with structural printing and

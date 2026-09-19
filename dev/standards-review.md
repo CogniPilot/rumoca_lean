@@ -984,7 +984,7 @@ Draft, dependency-isolation and semantic-review evidence is in
 standards/upstream review and retained artifacts are under
 `build/c-controlled-initialization/`.
 
-Every FMU member is unchanged from `d304f4d`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1037,7 +1037,7 @@ Draft, dependency-isolation and semantic-review evidence is in
 Integration, package, full-gate, standards/upstream review and retained
 artifacts are under `build/c-private-retention/`.
 
-Every FMU member is unchanged from `6f169ea`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1084,7 +1084,7 @@ Draft, dependency-isolation and semantic-review evidence is in
 `resource-c-reuse-v2.json`. Integration, package, full-gate, standards/upstream
 review and retained artifacts are under `build/c-resource-histories/`.
 
-Every FMU member is unchanged from `d67ad60`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1137,7 +1137,7 @@ Draft, dependency-isolation and semantic-review evidence is in
 `authority-c-reuse-v2.json`. Integration, package, full-gate, standards review
 and retained artifacts are under `build/c-instance-authority/`.
 
-Every FMU member is unchanged from `380cb59`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1200,7 +1200,7 @@ Draft and dependency-isolation evidence is in `build/c-private-initialization/`:
 standards/upstream review and retained artifact records are under
 `build/c-publication-history/`.
 
-Every FMU member is unchanged from `93192e8`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1260,7 +1260,7 @@ Draft and dependency-isolation evidence is in `build/c-reservation-registry/`:
 standards/upstream review and retained artifact records are under
 `build/c-private-initialization/`.
 
-Every FMU member is unchanged from `88b8f7c`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1325,7 +1325,7 @@ Draft and dependency-isolation evidence is in `build/c-factory-history/`:
 standards/upstream review and retained artifact records are under
 `build/c-reservation-registry/`.
 
-Every FMU member is unchanged from `af477e9`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1379,7 +1379,7 @@ Draft and dependency-isolation evidence is in `build/c-scan-context/`:
 Integration, package, full-gate, standards/upstream review and retained artifact
 records are under `build/c-factory-history/`.
 
-Every FMU member is unchanged from `eb412f9`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1431,7 +1431,7 @@ and `claims-context-extracted-v1.json`. Integration, package, full-gate,
 standards/upstream review and retained artifact records are under
 `build/c-scan-context/`.
 
-Every FMU member is unchanged from `57d361c`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public interface emission are
 unchanged. Existing artifact, native and mutation checks pass. Only these three
@@ -1481,7 +1481,7 @@ Evidence is in `build/c-host-boundary/`: `integration-v1.json`, `package-v1.*`,
 `build/c-release-frames/`. The combined gate covers its pre-publication EOF
 cleanup as well as all new host/recording/origin modules.
 
-Every FMU member is unchanged from `4b55612`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public interface emission are
 unchanged. Existing artifact, native and mutation checks pass. Only these
@@ -1530,7 +1530,7 @@ suite was added. Evidence is in `build/c-release-frames/`:
 `integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
 `standards-review-v1.json`, `upstream-review-v1.json` and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `4b55612`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public interface emission are
 unchanged. Existing artifact, native and mutation checks pass. Three evidence documents were updated after that frozen gate. A later
@@ -1576,7 +1576,7 @@ suite was added. Evidence is in `build/c-reservation-bounds/`:
 `integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
 `standards-review-v1.json` and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `00a235c`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public interface emission are
 unchanged. Existing artifact, native and mutation checks pass. Only these
@@ -1618,7 +1618,7 @@ drift were found. No test suite was added. Evidence is in
 `full-gate-v1.*`, `standards-review-v1.json`, `upstream-review-v1.json`
 and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `fdb6bc8`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and interface emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1659,7 +1659,7 @@ test suite was added. Evidence is in `build/c-runtime-resources/`:
 `integration-v1.json`, `package-v1.*`, `full-gate-v1.*`,
 `standards-review-v1.json` and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `026bc92`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public-call emission are unchanged.
 Existing artifact, native and mutation checks pass. Only these three evidence
@@ -1696,7 +1696,7 @@ found. The existing separate package audits retain every prior root. Evidence
 is in `build/c-call-depth/`: `integration-v1.json`, `package-v1.*`,
 `full-gate-v1.*`, `upstream-review-v2.json` and `artifacts-v1.*`.
 
-Every FMU member is unchanged from `f0694e8`. The eFMU changes only generation
+Every FMU member is unchanged from the previous checkpoint. The eFMU changes only generation
 identities and dependent references/checksums in three manifests. Numerical C,
 GALEC, Production C, grammars, metadata and public-call emission are unchanged.
 The existing artifact, native and mutation checks pass; no test suite was added.
@@ -1732,7 +1732,7 @@ unrelated audits retain Lake's normal cache. Evidence is in
 `build/c-call-policy/`: `integration-v3.json`, `package-v3.*`,
 `full-gate-v1.*`, `upstream-review-v2.json` and `artifacts-v1.*`.
 
-Every FMU member, including its native library, is unchanged from `d757659`.
+Every FMU member, including its native library, is unchanged from the previous checkpoint.
 The eFMU changes only generation identities and dependent references/checksums
 in three manifests. Numerical C, GALEC, Production C, grammars, solver policy,
 metadata and lifecycle emission are unchanged. The existing artifact, native
@@ -1783,7 +1783,7 @@ no unexpected axioms, changed-module warnings or input drift. Evidence is in
 and `artifacts-v1.*`.
 
 The actual FMU changes exactly 13 setter guard lines and its native library;
-every other member is byte-identical to `4db587a`'s retained FMU. The eFMU
+every other member is byte-identical to the previous checkpoint's retained FMU. The eFMU
 changes only generation identities and dependent references/checksums in three
 manifests. Numerical C, GALEC, Production C and metadata behavior are unchanged.
 The existing native boundary check now includes terminated empty setters for
@@ -2417,7 +2417,7 @@ this is not blanket permission to return Error for every optional function.
 Twenty new and six affected roots passed the existing FMI/compiler gate on
 1007 unchanged inputs in `build/c-factory/me-cycles-package-v1.log` at 18:37:14
 UTC, with no unexpected axioms or changed-module warnings. Only three documents
-change after that frozen gate. The earlier `fc02a22` revision passed the full
+change after that frozen gate. The earlier the previous checkpoint revision passed the full
 [GitHub gate 34871354671](https://github.com/CogniPilot/rumoca_lean/actions/runs/34871354671)
 at 18:15:01 UTC; this increment still needs its own full-artifact acceptance.
 **Stage decision: recurring ME composition is proved for the admitted plans;
@@ -2466,7 +2466,7 @@ gate on 998 unchanged inputs in `build/c-factory/stopped-source-package-v1.log`.
 The axiom whitelist and existing tests are unchanged. Publication changes only
 three documentation files after that frozen gate.
 [GitHub run 34868166166](https://github.com/CogniPilot/rumoca_lean/actions/runs/34868166166)
-passed the full gate for `baeb7bd` at 17:24:44 UTC, a distinct earlier revision;
+passed the full gate for the previous checkpoint at 17:24:44 UTC, a distinct earlier revision;
 its log includes the actual ME/CS and eFMU boundary checks. The current change
 still needs its own full-artifact acceptance. K02–K05 remain open.
 **Stage decision: no grammar expansion.**
@@ -2528,7 +2528,7 @@ Thirty-three new roots and affected existing roots passed the C/FMI/compiler
 package gate on 984 unchanged inputs in
 `build/c-factory/simulation-restart-package-v1.log`; the axiom whitelist is
 unchanged. No new tests were added. The retained local 869-input full gate and
-successful GitHub run `34856771664` for `b0eb94e` remain distinct evidence for
+successful GitHub run `34856771664` for the previous checkpoint remain distinct evidence for
 earlier revisions. The latter's complete gate ended at 15:47:48 UTC.
 
 One source-bound repeating simulation/initialization/release theorem, remaining
@@ -2563,7 +2563,7 @@ The 23 new roots and affected existing roots passed the C/FMI/compiler package
 gate on 977 unchanged inputs in `build/c-factory/created-protocol-package-v1.log`.
 No axiom-policy change or test suite was added. The unchanged runtime/emitter/
 mandatory-artifact boundary retains its distinct local 869-input full gate;
-GitHub run `34853259941` passed the full gate for `83b725c`, a separate revision.
+GitHub run `34853259941` passed the full gate for the previous checkpoint, a separate revision.
 No full-gate pass for this increment or whole-standard conformance is claimed.
 Remaining public calls, native ABI/concurrency, complete artifacts/provenance,
 K02–K05 and standards/MISRA findings remain open.
@@ -2596,7 +2596,7 @@ Thirty-five roots passed the FMI/compiler package gate on 970 unchanged inputs
 in `build/c-factory/initialization-protocol-package-v1.log`; the accompanying
 review records all roots from the existing unquoted ProofAudit output. The
 axiom whitelist is unchanged. Earlier full-artifact evidence remains distinct:
-the local 869-input gate and successful GitHub run `34853259941` for `83b725c`.
+the local 869-input gate and successful GitHub run `34853259941` for the previous checkpoint.
 The new source-bound factory/protocol/simulation/release composition is still
 required. **Stage decision: no grammar expansion.**
 
@@ -2629,7 +2629,7 @@ package gate on 963 unchanged inputs in
 `build/c-factory/float64-rejection-package-v2.log`. The axiom whitelist is
 unchanged. The separate 869-input local full gate retains unchanged semantics,
 emission, mandatory contracts and boundary-test evidence. GitHub run
-`34848939187` passed the full gate for `9ad935e`, a distinct earlier revision;
+`34848939187` passed the full gate for the previous checkpoint, a distinct earlier revision;
 no full-gate pass for this increment is claimed.
 
 Created initialization and repeating mixed histories still need these new
@@ -2703,7 +2703,7 @@ package gate on 951 unchanged inputs in
 `build/c-factory/initialization-cs-run-package-v1.log`. The axiom whitelist is
 unchanged. Existing semantics, emission, mandatory artifact propositions and
 boundary tests retain the earlier 869-input local full gate. GitHub run
-`34842923078` passed the full gate for `9186829`; it is a distinct revision.
+`34842923078` passed the full gate for the previous checkpoint; it is a distinct revision.
 No new full-gate pass is claimed for these additions. K02–K05 remain open.
 **Stage decision: no grammar expansion.**
 
@@ -2793,7 +2793,7 @@ expansion.**
 
 ### Float64 getter and common accessor runtime: 2026-09-14
 
-This derived follow-up to `9a5d98d` preserves the existing getter behavior in
+This derived follow-up to the previous checkpoint preserves the existing getter behavior in
 the shared static runtime. `float64_runtime_source` supplies both accessor
 contracts from one source/numerical C/metadata/table/pool. No source grammar,
 GALEC lowering, numerical semantics, runtime policy or emitted member changes.
@@ -2822,7 +2822,7 @@ obligations remain open. **Stage decision: open; no grammar expansion.**
 
 ### Float64 setter runtime bridge: 2026-09-14
 
-This derived follow-up to `bc575bf` reuses the existing batched setter proofs in
+This derived follow-up to the previous checkpoint reuses the existing batched setter proofs in
 the shared static runtime. `float64_set_runtime_source` binds the same numerical
 C, actual setter fragment, writable XML state, function-section tokenization and
 prepared literal pool. No source/GALEC grammar, emission or admission policy changes.
@@ -2851,7 +2851,7 @@ initialization-history composition, remaining APIs and K02–K05 remain open.
 
 ### Created mixed ME lifetime: 2026-09-14
 
-This derived follow-up to `d2f8e9f` connects original static creation storage
+This derived follow-up to the previous checkpoint connects original static creation storage
 and ownership to initialization, the existing mixed ME success/error/reset
 history and release. The actual factory chooses the handle, compiler-selected
 finite Solve default and lease before the importer chooses its history. Initial caller buffers
@@ -2886,7 +2886,7 @@ public APIs and K02–K05 remain open.
 
 ### Mixed ME error/recovery histories: 2026-09-14
 
-This derived follow-up to `1fc7fb5` composes admitted numerical/control calls,
+This derived follow-up to the previous checkpoint composes admitted numerical/control calls,
 the represented rejection families and reset/reinitialization in one branching
 ME history. Raw importer buffer stores, including non-finite IEEE inputs, are
 proved from original writable storage. Rejection selection is independent of
@@ -2922,7 +2922,7 @@ accesses, remaining APIs, native callback correspondence and K02–K05 remain op
 
 ### ME rejection and recovery contracts: 2026-09-14
 
-This derived follow-up to `1608ad8` gives the existing state/derivative, time,
+This derived follow-up to the previous checkpoint gives the existing state/derivative, time,
 event/continuous entry, completion and discrete-update rejection contracts one
 request interface. It retains actual public arguments, guard priorities,
 memory-bound time windows and diagnostics from one compiled table/pool. Both
@@ -2964,7 +2964,7 @@ standards closure is claimed. K02–K05 and the grammar gate remain open/blocked
 
 ### Mixed ME numerical/reset lifetime: 2026-09-14
 
-This derived follow-up to `2f035d4` composes accepted ME operations and repeated
+This derived follow-up to the previous checkpoint composes accepted ME operations and repeated
 reset/reinitialization from actual creation through release. Writable recovery
 storage survives every numerical operation, including inactive stop fields.
 Each restart exposes three actual calls and records its actual post-initialization
@@ -3001,7 +3001,7 @@ and blocked, respectively.
 
 ### Created ME numerical lifetime: 2026-09-14
 
-This derived follow-up to `bc19ec0` connects actual creation, initialization,
+This derived follow-up to the previous checkpoint connects actual creation, initialization,
 accepted mixed control/state/derivative histories, termination and release in
 one header/object/literal environment. Creation establishes the handle, source
 default and lease before the importer chooses its history. Caller storage is
@@ -3036,7 +3036,7 @@ correspondence keep K02–K05 and grammar expansion open and blocked, respective
 
 ### Mixed ME control and numerical histories: 2026-09-14
 
-This derived follow-up to `ac3b5b5` uses one actual function table/pool for
+This derived follow-up to the previous checkpoint uses one actual function table/pool for
 controls, continuous-state access and derivative queries. The history derives
 typed importer buffer writes, subsequent storage, control outputs and read-only
 diagnostic preservation. The actual execution relation records arbitrary
@@ -3074,7 +3074,7 @@ K02–K05 and the grammar gate remain open.
 
 ### ME control runtime bridge: 2026-09-14
 
-This derived follow-up to `fedf3dd` transports the existing ME control contracts
+This derived follow-up to the previous checkpoint transports the existing ME control contracts
 to the explicit header/object/literal interface. The reviewed policy and actual
 function bodies are unchanged. Reuse the clause/evidence records under
 "Mandatory ME control histories" and "ME derivative queries and source
@@ -3100,7 +3100,7 @@ the grammar gate remain open.
 
 ### ME derivative queries and source equations: 2026-09-14
 
-This derived follow-up to `896ed51` supplies state-access and derivative-access
+This derived follow-up to the previous checkpoint supplies state-access and derivative-access
 contracts from one actual function table and literal pool. The public derivative
 getter follows the existing guard, actual `model_rhs`, numerical C kernel,
 output write and status return in the header/object/literal runtime used by
@@ -3144,7 +3144,7 @@ full-gate pass is claimed. **Stage decision: open; no grammar expansion.**
 
 ### ME state access in the shared runtime: 2026-09-14
 
-This derived follow-up to `a8e4d95` connects the existing complete state-access
+This derived follow-up to the previous checkpoint connects the existing complete state-access
 contracts to the same header/object/literal interface used by actual creation
 and lifecycle calls. The actual source-bound accessor fragments and pool are
 retained. Arbitrary later heaps may be used: valid typed caller/instance storage
@@ -3182,7 +3182,7 @@ No new test suite or full-gate pass is claimed.
 
 ### Created callback-enabled CS lifetime and observed statuses: 2026-09-14
 
-This derived follow-up to `0afdea3` connects the actual factory and initialization
+This derived follow-up to the previous checkpoint connects the actual factory and initialization
 to callback-enabled mixed step/rejection/reset histories. Original available
 storage supplies all created-state and lease premises. The branching contract
 retains every modeled outcome; for every completed actual C script, its status
@@ -3214,7 +3214,7 @@ review are still required. **Stage decision: open; no grammar expansion.**
 
 ### Callback-enabled mixed CS histories: 2026-09-14
 
-This derived follow-up to `938987a` proves branching accepted/rejected step and
+This derived follow-up to the previous checkpoint proves branching accepted/rejected step and
 reset/reinitialization histories using the actual prepared adapter. Complete
 call alternatives preserve callback symbols/arguments and all returning effects;
 a callback with no modeled return retains the existing `wrong` alternative.
@@ -3248,7 +3248,7 @@ still require work. **Stage decision: open; no grammar expansion.**
 
 ### Created mixed CS lifetime with logging suppressed: 2026-09-14
 
-This derived follow-up to `eb0d3a0` connects actual creation and initialization
+This derived follow-up to the previous checkpoint connects actual creation and initialization
 to mixed CS steps/rejections/reset histories and final release. It derives the
 selected handle and all later storage from available initial storage, preserves
 successful outputs and the source/numerical invariant, and restores the original
@@ -3278,7 +3278,7 @@ this scoped review. **Stage decision: open; no grammar expansion.**
 
 ### Mixed CS steps and recovery with logging suppressed: 2026-09-14
 
-This derived-proof follow-up to `4d0d79e` adds 25 audit roots. An independent
+This derived-proof follow-up to the previous checkpoint adds 25 audit roots. An independent
 reference relation tracks lifecycle mode, source initial value/time origin,
 rounded communication time and cumulative solver duration within each run.
 The actual-adapter theorem composes finite accepted/rejected step histories
@@ -3314,7 +3314,7 @@ are carried forward; this scoped FMI follow-up is not a repeated full review.
 
 ### CS rejection, reset and reinitialization: 2026-09-14
 
-This derived-proof follow-up to `d331349` adds 16 audit roots. The actual
+This derived-proof follow-up to the previous checkpoint adds 16 audit roots. The actual
 required CS rejection contract now composes with reset and both initialization
 calls in one header/object/literal environment. Original writable storage
 supplies the later storage; the result retains the Solve default and a new
@@ -3348,7 +3348,7 @@ coding-guideline correspondence still block expansion. **Stage decision: open.**
 
 ### Actual creation through accepted CS lifetime: 2026-09-14
 
-This derived-proof follow-up to `0979ebd` adds nine audit roots. The actual
+This derived-proof follow-up to the previous checkpoint adds nine audit roots. The actual
 CS factory, source identity validation, initialization, accepted numerical
 history, termination and release now share one prepared program and explicit
 header/object/literal interface. Available static storage supplies the handle,
@@ -3378,7 +3378,7 @@ whole-standard conformance. **Stage decision: open; no grammar expansion.**
 
 ### Mandatory CS calls and initialized CS lifetimes: 2026-09-14
 
-This increment follows `9f85945`. Eighteen added roots make the complete CS
+This increment follows the previous checkpoint. Eighteen added roots make the complete CS
 step-call contract mandatory for actual adapter certification. It covers all
 eight raw admission cases and suppressed/supplied logging in the prepared
 static interface. The required full artifact gate passed in
@@ -3422,7 +3422,7 @@ whole-standard correspondence. **Stage decision: open; no grammar expansion.**
 
 ### Complete CS discard calls and raw-input partition: 2026-09-14
 
-This derived-proof increment follows `f1113bb`. Sixteen added roots cover
+This derived-proof increment follows the previous checkpoint. Sixteen added roots cover
 complete public discard calls and exhaustive, disjoint raw-input admission.
 The core/C/FMI/eFMI/compiler package audit passed in
 `build/c-factory/cs-cases-package-v1.log` with all 863 inputs unchanged. The
@@ -3451,7 +3451,7 @@ expansion.**
 
 ### Complete CS rounding and stop-limit errors: 2026-09-13
 
-This derived-proof increment follows `095323c`. Eleven new roots compose
+This derived-proof increment follows the previous checkpoint. Eleven new roots compose
 public output/input admission, ordinary rounding observations and stop-limit
 rejection with the actual error helper. Suppressed logging and every represented
 callback outcome are retained. The core/C/FMI/eFMI/compiler package audit passed
@@ -3477,7 +3477,7 @@ no grammar expansion.**
 
 ### Complete CS argument-error calls: 2026-09-13
 
-This proof-only increment follows `a5967dd`. Twelve added roots cover the
+This proof-only increment follows the previous checkpoint. Twelve added roots cover the
 complete missing-output and raw-numerical-input rejection calls, including
 suppressed logging and every represented callback outcome. Shared direct-prefix
 bridges also simplify existing error/lifecycle proofs without changing their
@@ -3504,7 +3504,7 @@ expansion.**
 
 ### Explicit error contexts and complete CS lifecycle rejection: 2026-09-13
 
-This proof increment follows `0d4fe05`. Checked local interface requirements
+This proof increment follows the previous checkpoint. Checked local interface requirements
 allow the existing error-helper proofs to serve both static objects and an
 explicit rounding header. Fourteen existing roots are generalized; sixteen
 caller sites retain their public contract statements. Eleven added roots
@@ -3532,7 +3532,7 @@ findings are unchanged. **Stage decision: open; no grammar expansion.**
 
 ### Public CS entry and raw-input classification: 2026-09-13
 
-This derived-proof increment follows `8ac1292`. Sixteen new `StepEntry` roots
+This derived-proof increment follows the previous checkpoint. Sixteen new `StepEntry` roots
 cover typed public arguments, every raw point/step input encoding, lifecycle
 and output setup, complete successful/null calls, output values and memory
 frames. They passed the FMI/compiler package audit in
@@ -3559,7 +3559,7 @@ MLS/eFMI initialization, coding-guideline and MISRA findings are unchanged.
 
 ### Ordinary CS calls and guarded numerical execution: 2026-09-13
 
-This increment follows `aa5ef00` and changes the emitted CS body. Rounding
+This increment follows the previous checkpoint and changes the emitted CS body. Rounding
 and floor calls now initialize explicit function-scope locals. The guard
 destination proofs cover all supplied int32 rounding observations and every
 finite clock/duration operand, including overflowing sums. The successful
@@ -3594,7 +3594,7 @@ histories. Existing MLS/eFMI initialization and MISRA findings are unchanged.
 
 ### Explicit rounding header and shared execution environment: 2026-09-13
 
-This derived-proof increment follows `3818eec`. Fourteen C/FMI/compiler roots
+This derived-proof increment follows the previous checkpoint. Fourteen C/FMI/compiler roots
 supply a header-parametric rounding binding, the ordinary observation/branch
 prefix, reusable local body-call transfer, and actual-adapter consequences for
 ME quiet-time calls, their history/source frame and the numerical helper.
@@ -3623,7 +3623,7 @@ eFMI or MISRA finding is closed. **Stage decision: open; no grammar expansion.**
 
 ### CS duration and ordinary call continuations: 2026-09-13
 
-This derived-proof increment follows `d80cdce`. Fourteen shared C/FMI roots
+This derived-proof increment follows the previous checkpoint. Fourteen shared C/FMI roots
 connect ordinary floor/rounding calls to fresh local declarations, mathematical
 duration admission to the actual comparisons and bounded solver count, and the
 actual solver/time/output suffix to its nested execution and memory frame.
@@ -3644,7 +3644,7 @@ No standards or MISRA finding is closed. **Stage decision: open.**
 
 ### Finite-operand addition overflow: 2026-09-13
 
-This checkpoint follows `5c06e00`. Shared C addition now represents overflow
+This checkpoint follows the previous checkpoint. Shared C addition now represents overflow
 from two finite operands as signed infinity. The independent Real result
 relation retains strict finite bounds, nearest/even rounding and signed zero;
 its two threshold ties overflow. Encoding/decoding, result correspondence,
@@ -3684,7 +3684,7 @@ generated member changes. No MISRA, FMI or other standards finding is closed.
 
 ### CS math calls and numerical helper: 2026-09-13
 
-This derived-proof increment follows `2051db5`. Five owning core/C/FMI/compiler
+This derived-proof increment follows the previous checkpoint. Five owning core/C/FMI/compiler
 modules integrate finite floor, ordinary math-library call contracts, actual
 `model_advance` execution and Solve duration/reported-time consequences.
 The 27 new audit roots passed the core/C/FMI/eFMI/compiler package audit in
@@ -3710,7 +3710,7 @@ generated member changes. No MISRA or other standards finding is closed.
 
 ### Exact integer and Float64 conversions: 2026-09-13
 
-This C-semantic checkpoint follows `cb94270`. It replaces integer `0`/`1`
+This C-semantic checkpoint follows the previous checkpoint. It replaces integer `0`/`1`
 special cases with an exact binary64 encoder for magnitudes below `2^53`, and
 adds finite Float64→unsigned-size conversion with truncation and range checks.
 The 32 core/C roots connect encoding fields, mathematical values, mathlib
@@ -3738,7 +3738,7 @@ existing explicit boundaries. **Stage decision: open; no grammar expansion.**
 
 ### Creation through ME release: 2026-09-13
 
-This five-root derived-proof checkpoint follows `8dc9e46`. The actual public
+This five-root derived-proof checkpoint follows the previous checkpoint. The actual public
 factory now supplies the handle, source default, ownership and caller-buffer
 premises for initialization, admitted ME controls, termination and release.
 The final lease map equals the original owners, and the combined frame
@@ -3759,7 +3759,7 @@ No cross-standard or MISRA finding is closed. **Stage decision: open.**
 
 ### Initialization, ME controls and release: 2026-09-13
 
-This derived-proof checkpoint follows `d054449`. One actual adapter witness
+This derived-proof checkpoint follows the previous checkpoint. One actual adapter witness
 connects initialization, finite ME control histories, termination and release.
 Initialization supplies the control invariant; ordinary typed writes preserve
 atomic reservations, so the original lease supplies the later release without
@@ -3783,7 +3783,7 @@ the unchanged artifact evidence. **Stage decision: open.**
 
 ### Mandatory ME control histories: 2026-09-13
 
-This checkpoint follows `afb93ac`. It retains all earlier mandatory contracts
+This checkpoint follows the previous checkpoint. It retains all earlier mandatory contracts
 and adds event/continuous entry, completed integrator steps and discrete-state
 updates with exact signatures, independent tokenization and complete represented
 success/null/rejection/logging cases. The compiler consequence ties the calls
@@ -3815,7 +3815,7 @@ blocked.
 
 ### Mandatory ME trial time: 2026-09-13
 
-This checkpoint follows `c9cc627`. It adds the exact `fmi3SetTime` signature,
+This checkpoint follows the previous checkpoint. It adds the exact `fmi3SetTime` signature,
 independent tokenization and complete represented call cases to the mandatory
 actual-adapter contract. Every prior conjunct and audit root is retained.
 The 25 new roots passed the FMI/compiler package gate in
@@ -3844,7 +3844,7 @@ introduced.
 
 ### Mandatory termination and release: 2026-09-13
 
-This increment follows `e0658fa`. It retains every previous adapter-contract
+This increment follows the previous checkpoint. It retains every previous adapter-contract
 conjunct and requires the actual termination signature, printed tokenization
 and complete represented call cases in the static object interface. No grammar,
 emitter, numerical semantics, native check or axiom policy changes. The 15
@@ -3878,7 +3878,7 @@ about arbitrary intervening simulation histories.
 
 ### Reset in the static runtime: 2026-09-13
 
-On top of `5fc250c`, fifteen derived proof roots connect the actual adapter's
+On top of the previous checkpoint, fifteen derived proof roots connect the actual adapter's
 reset definition to the static object interface and then to both initialization
 calls. The FMI/compiler package gate passed with 806 unchanged inputs in
 `build/c-factory/static-reset-package-gate-v1.log`. The prior full artifact gate
@@ -4006,11 +4006,11 @@ Analyzer/manual/platform evidence fills boundaries not yet formalized. The
 RTOS numerical kernel must use supplied storage, have explicit operation and
 storage bounds, and avoid OS services, heap calls, hidden locks and incidental
 I/O. Bounded object activation/release and its concurrency proof remain K02 in
-[the roadmap](roadmap.md#k02--replace-heap-allocation-with-proved-static-instance-storage).
+[the roadmap].
 
 ### Explicit null comparison and storage prerequisites
 
-This increment follows `784f45b`. It changes only the shared FMI instance guard
+This increment follows the previous checkpoint. It changes only the shared FMI instance guard
 from `!m` to `m == ((void *)0)`. Rule 11.9 permits the explicitly cast zero
 constant; a `NULL` macro is not required for this spelling. The independent
 C expression grammar and null-value proof bind the printed expression to the
@@ -4039,7 +4039,7 @@ The required actual-artifact gate passed in
 `build/c-static-storage/full-gate.log`, including all 13 existing native FMI
 groups and the eFMU checks. All 710 source inputs and the file set remained
 unchanged throughout the gate. Both archives are retained under
-`build/c-static-storage/artifacts/`. Compared with `784f45b`, only the
+`build/c-static-storage/artifacts/`. Compared with the previous checkpoint, only the
 70 shared instance guards in `sources/fmi3.c` changed; all other C, header
 and GALEC bytes are identical (`build/c-static-storage/artifacts.log`).
 No MISRA finding other than the named shared guard is
@@ -4047,7 +4047,7 @@ closed, no grammar is added, and no full compliance claim follows.
 
 ### Atomic reservation helper: standards impact
 
-This increment follows `a1ceae5` and leaves source grammars, numerical IRs and
+This increment follows the previous checkpoint and leaves source grammars, numerical IRs and
 production emitters unchanged. C11 7.17.1p5, 7.17.7.1 and 7.17.7.3 supply the
 selected non-explicit store/exchange value and ordering contracts; 7.17.3p6/p12
 specify their SC ordering and preceding modification. Static atomic Boolean
@@ -4075,7 +4075,7 @@ The required main artifact gate passed in `build/c-atomics/full-gate.log`,
 including the existing native FMI and eFMU checks. All 720 source inputs
 and the complete file set remained unchanged throughout the run. Both
 archives are retained in `build/c-atomics/artifacts/`; every C/header/GALEC
-member is byte-identical to `a1ceae5` (`build/c-atomics/artifacts.log`).
+member is byte-identical to the previous checkpoint (`build/c-atomics/artifacts.log`).
 
 MC05/MC06 and K02 remain open: production uses `calloc`/`free`, and this helper
 is not yet emitted by its factory. Complete native object declarations,
@@ -4089,7 +4089,7 @@ requires its existing K04 evidence. No MLS/FMI/eFMI expansion is authorized.
 
 ### Identity validator and storage foundations: standards impact
 
-This increment follows `00de05b`. It retains the existing name/token acceptance
+This increment follows the previous checkpoint. It retains the existing name/token acceptance
 condition and moves its string calls into an explicitly sequenced private
 helper. C11 7.24.6.3 specifies length before the terminating null character;
 7.24.5.6 specifies the maximal accepted prefix; 7.24.4 and 7.24.4.2 specify
@@ -4123,12 +4123,12 @@ full artifact gate passed in `build/c-factory/identity-full-gate.log`, including
 both actual archives, with all 743 source inputs unchanged. The retained
 code-member comparison under `build/c-factory/identity-artifacts/` shows only
 the identity helper and its two factory call sites changed in FMI C; numerical
-C and eFMI C/GALEC are unchanged from `00de05b`. No source grammar, numerical behavior or
+C and eFMI C/GALEC are unchanged from the previous checkpoint. No source grammar, numerical behavior or
 FMI/eFMI capability is expanded; the recurring standards gate remains closed.
 
 ### Public factory admission: standards impact
 
-This increment follows `13fb2a6` and changes proofs/certification without changing
+This increment follows the previous checkpoint and changes proofs/certification without changing
 the emitter. ME and CS retain the pinned header signatures. The shared typed-call
 semantics performs fresh parameter binding; CS's unsupported-capability guard
 precedes identity validation. The name/token predicate, diagnostics and public
@@ -4148,7 +4148,7 @@ C/FMI/eFMI/compiler package checks pass in
 removed and unchanged axiom auditing. The required full artifact gate passed
 in `build/c-factory/factory-full-gate-v2.log`, with all 760 inputs unchanged.
 The retained FMU and eFMU under `build/c-factory/factory-artifacts/` have identical
-C/header/GALEC members to `13fb2a6`. An earlier generated membership-proof error
+C/header/GALEC members to the previous checkpoint. An earlier generated membership-proof error
 was rejected by the audit and corrected before this successful gate.
 
 FMI 3.0.2 [§2.3.1](https://fmi-standard.org/docs/3.0.2/#fmi3InstantiateModelExchange)
@@ -4166,7 +4166,7 @@ standards gate remains closed.
 
 ### Hierarchical subobject correction: standards impact
 
-This increment follows `b478606`. Each `Address.member` preserves its containing
+This increment follows the previous checkpoint. Each `Address.member` preserves its containing
 element's index in the member path. The next array offset is local to that
 member, so it cannot be confused with an outer instance index.
 `member_index_eq_iff` recovers both indices and the member name; `InRecord`
@@ -4193,14 +4193,14 @@ directory. The required main artifact gate passed in
 eFMU checks. All 711 source inputs and the complete file set remained
 unchanged throughout the gate. Exact archives are retained in
 `build/c-subobjects/artifacts/`; all C/header/GALEC members are byte-identical
-to `b478606` (`build/c-subobjects/artifacts.log`). Numerical operations,
+to the previous checkpoint (`build/c-subobjects/artifacts.log`). Numerical operations,
 IR lowering, emitters and metadata are unchanged. Actual static declarations,
 creation/release, concurrency, native layout and whole-stage compliance remain
 open; no dynamic-allocation removal is claimed.
 
 ### Complete initialization calls: standards impact
 
-This correction follows `d519438`. Source/GALEC grammars, indexed IRs, numerical
+This correction follows the previous checkpoint. Source/GALEC grammars, indexed IRs, numerical
 Solve programs and eFMI emitters are unchanged. The FMI unit adapter now admits
 equal start/stop and ignores unused tolerance. Its full-call and source
 contracts become mandatory in the actual-file certificate; this is not a
@@ -4227,7 +4227,7 @@ The required full artifact gate passed in `build/c-initialization/full-gate.log`
 with all 706 inputs and the complete file set unchanged. Both archives are
 retained in `build/c-initialization/artifacts/`; their hashes are recorded in
 [the FMI contracts](fmi3/contracts.md#complete-initialization-calls). Compared
-with `d519438`, only the FMI initialization-entry body changed; every other
+with the previous checkpoint, only the FMI initialization-entry body changed; every other
 C/header/GALEC member is identical. All 13 native FMI groups pass, including
 the extended argument/atomicity group, with no new suite.
 The strict `above_iff` policy root is replaced by the inclusive proof; all other
@@ -4236,7 +4236,7 @@ grammar growth remains blocked.**
 
 ### FMI parameter types and typed call entry: standards impact
 
-This increment follows `fe4ebef`. Both EBNFs, LALR admission, IR lowering,
+This increment follows the previous checkpoint. Both EBNFs, LALR admission, IR lowering,
 initialization and emitted C/GALEC/XML remain unchanged. The reusable mechanisms
 are width-parametric unsigned conversion and parameter-list-parametric typed
 call entry. The FMI dictionary adds the missing adjusted pointer spellings and
@@ -4256,13 +4256,13 @@ missing parameter types among the 75 APIs. The strengthened actual-file checker
 passes in `build/fmi-types/actual-fmi.log`. The required full gate passed in
 `build/fmi-types/full-gate.log`, with all 629 inventoried inputs unchanged and
 both actual archives checked. Exact archives and hashes are retained in
-`build/fmi-types/artifacts/`; C and GALEC members match `fe4ebef`
+`build/fmi-types/artifacts/`; C and GALEC members match the previous checkpoint
 (`code-member-comparison.log`). No new example-based suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
 ### Float64 setter: standards impact
 
-This increment follows `636264f` and changes proofs and mandatory actual-file
+This increment follows the previous checkpoint and changes proofs and mandatory actual-file
 contracts. The source EBNFs, admitted unit profile, IRs, initialization policy,
 C/GALEC/XML emitters and archive layout are unchanged. Pinned FMI 3.0.2 clauses
 and its schema were reviewed for the state setter.
@@ -4274,7 +4274,7 @@ and its schema were reviewed for the state setter.
 | FMI §§2.3.5 and 3.2.1, ME state writes | Event Mode permits continuous states with reinit=false; Continuous-Time Mode permits setting continuous states. The XML judgment follows ModelStructure to the same declaration selected by numeric reference, without assuming unique names. It checks the exact/local attributes and interprets omitted reinit as false under the pinned [FMI 3.0.2 schema](https://raw.githubusercontent.com/modelica/fmi-standard/v3.0.2/schema/fmi3AttributeGroups.xsd). |
 | FMI §§2.2.4 and 2.3.1, errors and logging | Null instances return Error defensively; empty requests permit null arrays. Lifecycle/array/first-entry failures reach the actual helper before state writes. Unknown references do not require a value load. All represented returning logger outcomes/absence and disabled logging are covered. Actual host storage, callback effects/reentry, ownership and native ABI remain explicit boundaries. |
 | MLS 3.7 | No source grammar or initialization syntax is added. The setter supplies a finite state to the existing mathematical Real equation; the same Flat/DAE/Solve numerical consequence is retained. Complete source/initialization histories remain open. |
-| eFMI 1.0.0 Beta 1 | The reusable memory overwrite lemma and FMI adapter proofs add no eFMI behavior. Prior GALEC/Production C/XML/archive contracts remain required. The full gate passes and actual C/header/GALEC members match `636264f`. |
+| eFMI 1.0.0 Beta 1 | The reusable memory overwrite lemma and FMI adapter proofs add no eFMI behavior. Prior GALEC/Production C/XML/archive contracts remain required. The full gate passes and actual C/header/GALEC members match the previous checkpoint. |
 
 The setter uses the state-specific permissions despite the broader
 local-variable restriction in §2.4.7.1. This cross-clause interpretation remains
@@ -4294,13 +4294,13 @@ per-element IR lowering. All 51 new roots and affected packages pass in
 `build/c-float64-set/package-v1.log`. The required full artifact gate passed in
 `build/c-float64-set/full-gate.log`, with all 694 source inputs unchanged and
 both actual archives checked. Retained artifacts are in its `artifacts/`
-directory; all C/header/GALEC members match `636264f`.
+directory; all C/header/GALEC members match the previous checkpoint.
 No new test suite is added.
 **Stage decision: open; grammar growth remains blocked.**
 
 ### Float64 getter: standards impact
 
-This integration follows `8346cad`. The source EBNFs, admitted unit profile,
+This integration follows the previous checkpoint. The source EBNFs, admitted unit profile,
 IRs, initialization policy, C/GALEC/XML emitters and archive layout are unchanged.
 The pinned FMI 3.0.2 text was reviewed for the applicable getter obligations.
 
@@ -4321,12 +4321,12 @@ per-element IR lowering or solver selection. All 58 added roots and affected
 packages pass in `build/c-float64-get/package-v2.log`. The required full gate
 passed in `build/c-float64-get/full-gate.log`, with all 686 inputs unchanged.
 Both actual archives are retained in its `artifacts/` directory, and all
-C/H/ALG members match `8346cad`. No new test suite is added. **Stage decision: open;
+C/H/ALG members match the previous checkpoint. No new test suite is added. **Stage decision: open;
 grammar growth remains blocked.**
 
 ### Continuous-state derivative query: standards impact
 
-This proof integration follows `035ad1d`. The EBNFs, production admission,
+This proof integration follows the previous checkpoint. The EBNFs, production admission,
 IRs, initialization, emitters and archive layout are unchanged. Pinned FMI 3.0.2
 §§3.2.1 and 2.4.7 were reviewed directly for the getter and derivative order.
 
@@ -4347,12 +4347,12 @@ reused. All 41 additional roots and affected packages pass in
 `build/c-derivatives/package-v1.log`; the required full artifact gate passed in
 `build/c-derivatives/full-gate.log`, with all 675 inventoried inputs unchanged.
 Both actual archives are retained in `build/c-derivatives/artifacts/`; their C,
-header and GALEC members match `035ad1d` (`artifacts.log`).
+header and GALEC members match the previous checkpoint (`artifacts.log`).
 No new test suite is added. **Stage decision: open; grammar growth remains blocked.**
 
 ### Continuous-state access: standards impact
 
-This proof increment follows `ca178d0`. Production grammar, source semantics,
+This proof increment follows the previous checkpoint. Production grammar, source semantics,
 IR lowering, C/GALEC emitters, metadata and archive layout are unchanged.
 
 | Baseline | Correspondence and remaining obligations |
@@ -4373,11 +4373,11 @@ All 39 additional roots and affected package checks pass in
 `build/c-state-calls/package-v1.log`; the required full artifact gate passed
 in `build/c-state-calls/full-gate.log`, with all 667 inventoried inputs unchanged.
 Both actual archives are retained in `build/c-state-calls/artifacts/`; their C,
-header and GALEC members match `ca178d0`. No new test suite is added. **Stage decision: open; grammar growth remains blocked.**
+header and GALEC members match the previous checkpoint. No new test suite is added. **Stage decision: open; grammar growth remains blocked.**
 
 ### Nominal queries: standards impact
 
-This proof integration follows `54618eb`. Both EBNFs, LALR admission, source
+This proof integration follows the previous checkpoint. Both EBNFs, LALR admission, source
 and Solve semantics, initialization policy and emitted members are unchanged.
 The generic C partial-body theorem and failure-statement contracts are reused
 for public-call composition. The pinned FMI 3.0.2 clauses below were checked
@@ -4396,12 +4396,12 @@ All 33 added audit roots and affected packages pass in
 `build/c-nominals/full-gate.log`, including both actual archives and the existing
 native, extraction and mutation checks. All 660 inventoried inputs remained
 unchanged. Retained archives and hashes are in `build/c-nominals/artifacts/`
-and `artifacts.log`; all C, header and GALEC members match `54618eb`.
+and `artifacts.log`; all C, header and GALEC members match the previous checkpoint.
 No test suite is added. **Stage decision: open; grammar growth remains blocked.**
 
 ### All failure-helper outcomes: standards impact
 
-This increment follows `7004a3e`; it changes proofs and mandatory artifact
+This increment follows the previous checkpoint; it changes proofs and mandatory artifact
 contracts. The admitted subset, generated code and boundary checks are unchanged.
 
 | Obligation | Coverage and boundary |
@@ -4418,12 +4418,12 @@ The required full artifact gate passed in
 `build/c-logging-choices/full-gate.log`, with all 654 inputs unchanged and both
 actual archives checked. Archives and hashes are retained in
 `build/c-logging-choices/artifacts/`; their C, header and GALEC members match
-`7004a3e` (`artifact-retention.log`). **Stage decision: open;
+the previous checkpoint (`artifact-retention.log`). **Stage decision: open;
 grammar growth remains blocked.**
 
 ### Eventful literal lowering: standards impact
 
-This proof increment follows `d529b5d`. The admitted grammars, source/IR
+This proof increment follows the previous checkpoint. The admitted grammars, source/IR
 semantics, renderers and tests are unchanged.
 
 | Obligation | Coverage and boundary |
@@ -4437,12 +4437,12 @@ alongside every earlier field. All 37 added audit roots and affected package
 checks pass in `build/c-events/literal-package-audit-v1.log`. The required full
 artifact gate passed in `build/c-literal-events/full-gate.log`, with all 651
 inputs unchanged and both target archives checked. Their C, header and GALEC
-members match `d529b5d`; artifacts and comparison evidence are retained in
+members match the previous checkpoint; artifacts and comparison evidence are retained in
 `build/c-literal-events/`. **Stage decision: open; grammar growth remains blocked.**
 
 ### Enabled failure-helper callback: standards impact
 
-This increment follows `c522107`. MLS 3.7 and eFMI 1.0.0 Beta 1 syntax,
+This increment follows the previous checkpoint. MLS 3.7 and eFMI 1.0.0 Beta 1 syntax,
 initialization, tensor/IR products, numerical policy and emitted C/GALEC/XML
 are unchanged. Existing S01/SR07/SR08 findings continue to block grammar growth.
 
@@ -4458,13 +4458,13 @@ to every earlier field. All 58 new audit roots and affected packages pass
 `build/c-events/package-audit-v1.log`. The required full artifact gate passed
 in `build/c-events/full-gate.log`, with all 646 inventoried inputs unchanged
 and both actual archives checked. Retained artifacts and hashes are in
-`build/c-events/artifacts/`; their C, header and GALEC members match `c522107`
+`build/c-events/artifacts/`; their C, header and GALEC members match the previous checkpoint
 (`code-member-comparison.log`). **Stage decision: open; grammar growth remains
 blocked.**
 
 ### Version call and XML agreement: standards impact
 
-This increment follows `f9702f9`. Source syntax, initialization, lowering,
+This increment follows the previous checkpoint. Source syntax, initialization, lowering,
 numerical policy, generated C/GALEC and XML renderers are unchanged.
 
 | Baseline | Correspondence and remaining obligations |
@@ -4478,12 +4478,12 @@ No new example suite is added. All 11 new audit roots and affected packages pass
 `build/fmi-version/full-gate.log`, with all 637
 inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-version/artifacts/`; their C and
-GALEC members match `f9702f9` (`code-member-comparison.log`). **Stage decision:
+GALEC members match the previous checkpoint (`code-member-comparison.log`). **Stage decision:
 open; grammar growth remains blocked.**
 
 ### ME count queries and complete metadata binding: standards impact
 
-This increment follows `d147774`. The source EBNFs, LALR admission, IR lowering,
+This increment follows the previous checkpoint. The source EBNFs, LALR admission, IR lowering,
 initialization, numerical policy, runtime C, metadata renderer and archive
 layouts are unchanged. Two existing count getters instantiate reusable typed
 call, lifecycle, printer, definition lookup and literal-pool proofs. No new
@@ -4512,12 +4512,12 @@ checker passes on the retained FMU in `actual-fmi-v2.log`. The required full gat
 passed in `build/fmi-counts/full-gate.log`, with all 634
 inventoried inputs unchanged and both actual target archives checked. Exact
 archives and hashes are retained in `build/fmi-counts/artifacts/`; their C and
-GALEC members match `d147774` (`code-member-comparison.log`). **Stage decision:
+GALEC members match the previous checkpoint (`code-member-comparison.log`). **Stage decision:
 open; grammar growth remains blocked.**
 
 ### Complete FMI function-section grammar: standards impact
 
-This increment follows `9751823`. Both source EBNFs, LALR admission, IR
+This increment follows the previous checkpoint. Both source EBNFs, LALR admission, IR
 lowering, initialization, runtime emission, metadata and archive layouts are
 unchanged. The shared extension is a list-parametric C printer theorem and a
 caller-parametric Lean candidate builder for signature spelling proofs. No new
@@ -4535,7 +4535,7 @@ All nine new roots and affected packages pass
 in `build/fmi-functions/actual-fmi.log`. The required full gate passed in
 `build/fmi-functions/full-gate.log`, with all 625 inventoried inputs unchanged
 and both actual archives checked. Exact archives and hashes are retained in
-`build/fmi-functions/artifacts/`; their C/header/GALEC members match `9751823`.
+`build/fmi-functions/artifacts/`; their C/header/GALEC members match the previous checkpoint.
 The type-coverage review found 57 of 75 collected signatures with an adjusted
 parameter spelling absent from `FMI3.cTypes` (43 spellings). The universal
 count-getter result confirms a concrete entry failure in the authored typed
@@ -4546,7 +4546,7 @@ proof-coverage finding; it is not a new native standards failure. See
 
 ### C maximal tokenization and concatenation: standards impact
 
-This increment follows `3497310` and changes proof relations and the required
+This increment follows the previous checkpoint and changes proof relations and the required
 reset artifact contract. Both source EBNFs, parser/lowering behavior, emitted
 C bytes, numeric initialization, metadata and archive layouts are unchanged.
 The shared mechanism is a suffix-parametric refinement of token judgments,
@@ -4571,7 +4571,7 @@ both actual archives checked. Exact artifacts and SHA-256 identities are in
 
 ### Shared C token and function grammar: standards impact
 
-This increment follows `95cb4bc` and keeps the production subset and both EBNF
+This increment follows the previous checkpoint and keeps the production subset and both EBNF
 files unchanged. It adds shared proof rules and strengthens the actual reset
 artifact contract; it changes no IR semantics, initialization, generated C,
 FMI metadata, GALEC or archive layout.
@@ -4593,7 +4593,7 @@ retained in `build/c-token/artifacts/`. No new example-based suite is added.
 
 ### Prior unit-stage baseline
 
-Reviewed implementation: `df382d05287449d2c987f7414482b4edb562c28f`.
+Reviewed implementation: the previous checkpoint.
 The normative baselines are [MLS 3.7](https://specification.modelica.org/maint/3.7/MLS.html),
 [FMI 3.0.2](https://fmi-standard.org/docs/3.0.2/) and the pinned
 [eFMI 1.0.0 Beta 1 archive](https://www.efmi-standard.org/media/resources/eFMI-Standard-1.0.0-Beta-1.zip).
@@ -4639,7 +4639,7 @@ also passed. **Stage decision: open; grammar growth is blocked.**
 
 ### Independent EBNF reader: standards impact
 
-This candidate follows `e9f41c7`. The Modelica and GALEC EBNF hashes still match
+This candidate follows the previous checkpoint. The Modelica and GALEC EBNF hashes still match
 the unit-stage table above. No source production, lexer policy, initialization,
 IR lowering, numerical behavior, interface or archive layout changes.
 
@@ -4687,7 +4687,7 @@ This is partial assurance progress; the remaining findings still block growth.
 ### C literal-printer increment: standards impact
 
 The subsequent shared-printer correction is tracked under C01/F03 in
-[the roadmap](roadmap.md). It escapes question marks and proves exact literal
+[the roadmap]. It escapes question marks and proves exact literal
 bytes after the selected C11 preprocessing rewrites. MLS source admission,
 resolution, equation semantics and both EBNFs are unchanged. The FMI impact is
 its emitted literals for version/token/category/error handling; correct literal
@@ -4696,7 +4696,7 @@ The current eFMI Production C profile contains no string expressions; its
 GALEC method, mapping and initialization obligations remain the same.
 
 The C package audit and disposable native reproduction pass. The complete local
-gate for `a0327a1785b50d9cc4b10e4ce29134fc27cc632b` passed in
+gate for the previous checkpoint passed in
 `build/c-string-printer-full-gate.log`, including both artifact paths. The log
 now records their SHA-256 identities:
 
@@ -4746,12 +4746,12 @@ The log records this run's retained artifacts:
 These identities supersede the preceding snapshot for this run. **Stage decision: open.**
 This increment does not close any existing compliance finding or authorize
 grammar growth.
-The [hosted run for 1bbafeb](https://github.com/CogniPilot/rumoca_lean/actions/runs/34533601963)
+The [the hosted run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34533601963)
 also passed.
 
 ### C literal-pointer and rejected-call increment: standards impact
 
-Reviewed checkpoint: `f3ad41dac6b150bff03b79fbdf5ab76f8bde82fe`.
+Reviewed checkpoint: the previous checkpoint.
 
 The next SR04/C01/F03 increment replaces abstract C string values with an
 explicit literal-address map, typed pointer conversion and a storage/printing
@@ -4796,7 +4796,7 @@ This run retained the following artifacts:
 These hashes identify this increment's local artifacts, not those from its
 preceding storage checkpoint. **Stage decision: open; grammar growth remains
 blocked.** The new function-tree proof is not a whole-adapter certificate.
-The [hosted run for f3ad41d](https://github.com/CogniPilot/rumoca_lean/actions/runs/34536535660)
+The [the hosted run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34536535660)
 also passed.
 
 ### Named string-storage preparation: standards impact
@@ -4825,7 +4825,7 @@ schemas, native C and mutation controls. The retained artifacts are:
 
 **Stage decision: open.** This preparation does not close actual global storage,
 the whole adapter or any existing compliance finding.
-The [hosted run for 9ea13be](https://github.com/CogniPilot/rumoca_lean/actions/runs/34539932871)
+The [the hosted run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34539932871)
 also passed.
 
 ### Typed loop/call string-storage preparation: standards impact
@@ -4859,7 +4859,7 @@ were rechecked and are unchanged. The retained artifact identities are:
 closes the conditional loop/call lowering obligation, not the actual global
 setup or complete compiler chain. SR04, SR05, SR07 and SR08 remain open; SR06's
 separate disposition resolves only the standalone packaging question.
-The [hosted run for 6be8fb6](https://github.com/CogniPilot/rumoca_lean/actions/runs/34543106088)
+The [the hosted run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34543106088)
 also passed.
 
 ### Checked literal pool and interface extension: standards impact
@@ -5092,7 +5092,7 @@ block grammar growth. This change introduces no new test suite or axiom policy.
 
 ### Required GALEC/Algorithm origins: standards impact
 
-This increment follows `6c842847c2c1534d146f954afaa41f46d1598bb4`. It changes
+This increment follows the previous checkpoint. It changes
 required provenance in the existing DAE → GALEC → Solve Algorithm chain;
 source admission, equation/initialization semantics, the unit sampling policy,
 both EBNFs, and FMI/eFMI interface or archive layouts are unchanged.
@@ -5124,7 +5124,7 @@ this provenance checkpoint.
 
 ### Required unit FMI IVP origins: standards impact
 
-This increment follows `475f0a5` and strengthens preparation metadata for the
+This increment follows the previous checkpoint and strengthens preparation metadata for the
 existing unit profile. Canonical source-table preservation is required through
 Flat, DAE and Solve. The prepared FMI IVP requires every operation/operand
 origin, including explicit rules for the empty input channel, state observation
@@ -5154,7 +5154,7 @@ whole-adapter/compliance obligations. No grammar expansion follows this checkpoi
 
 ### Shared C initialization origins: standards impact
 
-This increment follows `59c538a`. It strengthens independent checking of the
+This increment follows the previous checkpoint. It strengthens independent checking of the
 actual GALEC block annotations and requires origins on the shared C initializer
 consumed by FMI creation/reset. Its theorem combines exact source ancestry and
 the annotation contract with all C-body behaviors under supplied writable
@@ -5182,7 +5182,7 @@ and unresolved standards findings continue to block grammar expansion.
 
 ### Shared initializer printer map: standards impact
 
-This increment follows `22c44f7`. It adds exact maps for the shared C
+This increment follows the previous checkpoint. It adds exact maps for the shared C
 initialization fragment, with unchanged production printers, grammar admission,
 numerical policy, public interfaces and archive layout. The existing MLS 3.7,
 FMI 3.0.2 and eFMI Beta 1 clause maps and unresolved findings carry forward.
@@ -5210,7 +5210,7 @@ and standards obligations continue to block grammar expansion.
 
 ### Shared statement/function maps: standards impact
 
-This increment follows `f13710e`. It adds required annotations and mapped
+This increment follows the previous checkpoint. It adds required annotations and mapped
 printers for existing C syntax and migrates the shared initializer to that
 statement path. Exact output bytes and all prior initializer execution/map
 contracts are preserved. No source admission, numerical policy, public
@@ -5238,7 +5238,7 @@ This run produced the retained artifacts:
 
 ### eFMI Startup maps: standards impact
 
-This increment follows `798aec4`. Production and archive export now use the
+This increment follows the previous checkpoint. Production and archive export now use the
 Startup map renderer; a theorem proves that the complete C bytes remain
 unchanged. Its origins come from the prepared Solve trace, with separate shared
 C instruction and eFMI interface rules. The production contract additionally
@@ -5266,7 +5266,7 @@ adapter/artifact and compliance findings continue to block grammar expansion.
 
 ### FMI reset and adapter-byte binding: standards impact
 
-The candidate on top of `a40022e` leaves both EBNFs, production admission,
+The candidate on top of the previous checkpoint leaves both EBNFs, production admission,
 emitted C, metadata and archive contents unchanged. The header reader's
 accumulator implementation preserves its earlier behavior by theorem. MLS 3.7
 and eFMI Beta 1 clause mappings above remain applicable to this unit profile;
@@ -5294,7 +5294,7 @@ See [the precise contract](fmi3/contracts.md#reset-and-complete-adapter-bytes).
 
 ## Original FMI/eFMI snapshot and evidence
 
-Reviewed source revision: `2e53e6629cbc5053711c059fd87135e4b88e02a1`.
+Reviewed source revision: the previous checkpoint.
 The production profile remains one state with `der(x) = 1`. The development
 array/Jacobian kernels have separate proofs; the production CLI still rejects
 those models. This review does not establish conformance for that future slice.
@@ -5371,7 +5371,7 @@ libm. The actual-file, official-schema, native and mutation checks pass in
 capstone remains open.
 The checked FMU has SHA-256
 `c3019d6e316b65f8de3a279d48b66276433cbec151ac566322b46af37337d70f`.
-[CI for f1ce838](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582)
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34502115582)
 also passed.
 
 ### SR02 — P1: two source FMUs collide at the numerical C symbols
@@ -5432,10 +5432,10 @@ only their distinct FMI APIs exported, and fresh-process symbol resolution.
 A changed source prefix is rejected before native compilation, and a failed
 native build preserves the existing FMU. The complete targeted gate passed in
 `build/fmi-linkage-artifact-gate.log`. The required full local gate passed in
-`build/fmi-linkage-full-gate.log` at `efb5c8030b807822fab69ed7817b321835be1a95`.
+`build/fmi-linkage-full-gate.log` at the previous checkpoint.
 Its checked FMU has SHA-256
 `780186d9d0694b2da60d06e55e55c4a8100d2fafca86b2198026b9adc21902ea`.
-[CI for efb5c80](https://github.com/CogniPilot/rumoca_lean/actions/runs/34509004071)
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34509004071)
 also passed. This closes the checked source-linkage correction;
 the broader FMI capstone remains open.
 
@@ -5477,7 +5477,7 @@ native C observations and three official schemas pass. The required full gate
 passed in `build/efmi-status-full-gate.log`, including the actual archive
 certificate and redirected-status rejection. The checked eFMU has SHA-256
 `712a9819677fad8fef65a672fffbbe8ca038540126a6d56fc2cd2071e63ed646`.
-[CI for feb57a9](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34499145712)
 also passed.
 The reviewed snapshots above describe the earlier artifact that exposed the
 omission. Broader eFMI compliance and release obligations remain open.
@@ -5535,9 +5535,9 @@ fails on the preceding FMU (`build/fmi-nominals-before.log`, OK instead of
 Error), and the corrected FMU passes all thirteen groups and the actual-file,
 source-link, mutation and publication-failure gate in
 `build/fmi-nominals-artifact-gate.log`. The required full gate passed in
-`build/fmi-nominals-full-gate.log` at `904e9bd`; its checked FMU has SHA-256
+`build/fmi-nominals-full-gate.log` at the previous checkpoint; its checked FMU has SHA-256
 `1de662a5191c62573f146fc47781473d81400432b0a5a646ce1681bee4468e0f`.
-[CI for 904e9bd](https://github.com/CogniPilot/rumoca_lean/actions/runs/34512618273)
+[the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34512618273)
 also passed. This validates the guard correction while its full failed-call
 proof obligations remain open.
 No additional grammar case is admitted.
@@ -5556,7 +5556,7 @@ block scopes have not been added. Nine new roots pass
 actual-file/source-link/mutation gate pass in
 `build/fmi-setter-scope-artifact-gate.log`. The existing argument/atomicity group
 also checks null setter calls and empty-call state preservation. The required
-full gate passed in `build/fmi-setter-scope-full-gate.log` at `1a53884`, and
+full gate passed in `build/fmi-setter-scope-full-gate.log` at the previous checkpoint, and
 [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34516914151)
 passed. The full-run FMU has SHA-256
 `765662ef91d429089b4a22fd12dd29ec885f375a39a173c02bd4c8c35343a56f`.
@@ -5575,7 +5575,7 @@ All twelve new roots and the full package audit pass in
 `build/fmi-array-call-audit.log`. The FMI actual-file/source-build/mutation gate
 and all thirteen existing native groups pass in `build/fmi-array-call-full-gate.log`.
 The full run also passed its GALEC/eFMU archive, extracted-manifest and mutation
-checks at `30ef448`; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34521375057)
+checks at the previous checkpoint; [its CI](https://github.com/CogniPilot/rumoca_lean/actions/runs/34521375057)
 passed. These are selected function-tree call theorems with
 explicit definition-table and storage premises, not an official-header parser,
 actual adapter-byte or native ABI certificate. Remaining public signatures,
@@ -5592,7 +5592,7 @@ global setup and complete printed adapter binding still prevent SR04 closure.
 
 ### SR05 — resolved for the unit initialization policy
 
-At `d519438`, [Runtime.body](../packages/backend-fmi3/RumocaFMI3/Runtime.lean) rejected enabled
+At the previous checkpoint, [Runtime.body](../packages/backend-fmi3/RumocaFMI3/Runtime.lean) rejected enabled
 `stopTime <= startTime` and `tolerance <= 0` for both interfaces. On the actual
 binary, zero-duration and zero-tolerance initialization each return Error;
 ordinary initialization returned OK. The theorem at that revision correctly

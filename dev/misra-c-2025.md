@@ -7,7 +7,7 @@ current evidence bound to the actual emitted bytes, a status, and a closure
 criterion for open rows. It complements, and does not replace, the finding-level
 review in
 [standards-review.md](standards-review.md#misra-c2025-and-static-storage-review)
-and the K05 checklist in [roadmap.md](roadmap.md#k05--close-standards-misra-and-assurance-review).
+and the K05 checklist in the closure checklist.
 
 **Normative text and provenance.** The normative guideline text is the
 user-supplied *MISRA C:2025, March 2025* PDF pinned by SHA-256 in the standards
