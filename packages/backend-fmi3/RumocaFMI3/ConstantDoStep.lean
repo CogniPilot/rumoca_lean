@@ -654,6 +654,407 @@ theorem solve_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates
 end
 
 
+/-! ### The reused model-independent guard prefix
+
+`front_run` runs the first nine statements of the constant `fmi3DoStep` body, which are
+exactly the scalar prefix of `Runtime.doStep` (`doStepBody_prefix`): the
+handle/lifecycle guard, the output-pointer check and the zero/last-time output writes,
+and the invalid communication-point/step rejection. It reaches the
+`stepRounding`/`stepClock`/`stepGrid` guard sections followed by the constant numerical
+tail, with the record pointer bound and the output cells initialized. Because these
+guard statements are model-independent, the scalar lemmas apply verbatim; only the
+trailing numerical section is constant-rate specific. -/
+section
+variable [interface : CInterface]
+
+theorem front_run (types : StepEntry.Types) (env : Locals) (heap : Heap)
+    (p : Address) (buffers : StepEntry.Buffers) (point time step : Binary64.Value) (oldOutput : Option Value)
+    (handle : env "instance" = some (.pointer (some p))) (fresh : env "m" = none)
+    (kindValue : load heap (p.member "kind") = some (.integer 1))
+    (modeValue : load heap (p.member "mode") = some (.integer 4))
+    (pointValue : env "currentCommunicationPoint" = some (.finite point))
+    (stepValue : env "communicationStepSize" = some (.finite step))
+    (eventValue : env "eventHandlingNeeded" = some (.pointer (some buffers.event)))
+    (terminateValue : env "terminateSimulation" = some (.pointer (some buffers.terminate)))
+    (earlyValue : env "earlyReturn" = some (.pointer (some buffers.early)))
+    (lastValue : env "lastSuccessfulTime" = some (.pointer (some buffers.last)))
+    (clock : load heap (p.member "time") = some (.finite time))
+    (same : Binary64.value point = Binary64.value time) (positive : 0 < Binary64.value step)
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, oldOutput⟩)
+    (outsideEvent : buffers.event.block ≠ p.block) (outsideTerminate : buffers.terminate.block ≠ p.block)
+    (outsideEarly : buffers.early.block ≠ p.block) (outsideLast : buffers.last.block ≠ p.block) :
+    CBody.run 9 (.running doStepBody env heap) =
+      some (.running (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve)
+        (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time)) := by
+  set tail := Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve with htail
+  have entered := StepEntry.lifecycle_run types env heap p .cs .step
+    (StepEntry.outputCode ++ StepEntry.inputGuard :: tail) handle fresh kindValue modeValue
+  simp only [allowed, permittedModes] at entered
+  have setup := StepEntry.outputs_run (StepEntry.locals env p) heap p buffers time oldOutput
+    (StepEntry.inputGuard :: tail) (by simp [StepEntry.locals, CBody.bind])
+    (by simpa [StepEntry.locals, CBody.bind] using eventValue)
+    (by simpa [StepEntry.locals, CBody.bind] using terminateValue)
+    (by simpa [StepEntry.locals, CBody.bind] using earlyValue)
+    (by simpa [StepEntry.locals, CBody.bind] using lastValue) clock event terminate early last
+    outsideEvent outsideTerminate outsideEarly
+  have clockAfter : load (StepEntry.outputHeap heap buffers time) (p.member "time") = some (.finite time) := by
+    simpa only [load, StepEntry.output_instance heap buffers time p (p.member "time")
+      outsideEvent outsideTerminate outsideEarly outsideLast rfl] using clock
+  have condition := StepEntry.input_condition (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time) p
+    point time step (by simp [StepEntry.locals, CBody.bind])
+    (by simpa [StepEntry.locals, CBody.bind] using pointValue)
+    (by simpa [StepEntry.locals, CBody.bind] using stepValue) clockAfter same positive
+  have checked : CBody.run 1 (.running (StepEntry.inputGuard :: tail)
+      (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time)) =
+      some (.running tail (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time)) := by
+    simp [CBody.run, CBody.next, StepEntry.inputGuard, Runtime.reject, Runtime.branch, condition,
+      boolean, Value.truth]
+  have decomp : doStepBody = Runtime.require .doStep ++ StepEntry.outputCode ++
+      StepEntry.inputGuard :: tail := rfl
+  have remaining : CBody.run 6 (.running (StepEntry.outputCode ++ StepEntry.inputGuard :: tail)
+      (StepEntry.locals env p) heap) =
+      some (.running tail (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time)) := by
+    rw [show (6:Nat) = 5 + 1 from rfl, CBody.run_add, setup]; exact checked
+  rw [decomp, List.append_assoc, show (9:Nat) = 3 + 6 from rfl, CBody.run_add, entered]
+  exact remaining
+
+end
+
+/-! ### The accepted constant `fmi3DoStep` call
+
+`accepted_reaches`/`accepted_behaviors` compose the reused guard prefix (`front_run`,
+then `StepGuards.rounding_path`/`clock_path`/`grid_path` under the admitted-duration
+premises) with the constant numerical tail (`solve_reaches`). For a request that passes
+the guard prefix over the constant instance record's metadata and time cells, the
+observable machine's sole terminating behavior initializes the output cells, runs the
+outer grid loop for the admitted step count, publishes the advanced time to
+`*lastSuccessfulTime`, and returns `fmi3OK`; the state region equals the N-fold Euler
+iterate, the instance time cell and the caller's `lastSuccessfulTime` read the advanced
+time base, and every cell of every other instance is preserved. -/
+section
+open CTree.Printer StepGuards
+variable [interface : CInterface]
+variable (program : CCalls.Events.Program E)
+
+set_option maxRecDepth 100000 in
+theorem accepted_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates.length = shape.volume)
+    (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : ConstantFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
+    (ptrTy : interface.types "double *" = some .pointer)
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (found : definitions "rumoca_constant_step" = some (Rumoca.CConstant.stepFunction rates))
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (states : Nat → Values shape) (times : Nat → Binary64.Value)
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree function))
+    (kindValue : load heap ((record pool i).member "kind") = some (.integer 1))
+    (modeValue : load heap ((record pool i).member "mode") = some (.integer 4))
+    (timeCell : heap ((record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (same : Binary64.value point = Binary64.value (times 0))
+    (enabled : load heap ((record pool i).member "stopDefined") = some (boolean stop.isSome))
+    (limit : ∀ value, stop = some value →
+      load heap ((record pool i).member "stop") = some (.finite value))
+    (admitted : StepAdmission.AdmittedDuration step)
+    (progress : Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step))
+    (withinStop : ∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value)
+    (readsState : Reads heap (field pool i stateName) (states 0))
+    (writableState : Writable heap (field pool i stateName) shape.volume)
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, oldOutput⟩)
+    (outsideEvent : ∀ j : Nat, buffers.event.block ≠ (record pool j).block)
+    (outsideTerminate : ∀ j : Nat, buffers.terminate.block ≠ (record pool j).block)
+    (outsideEarly : ∀ j : Nat, buffers.early.block ≠ (record pool j).block)
+    (outsideLast : ∀ j : Nat, buffers.last.block ≠ (record pool j).block)
+    (stateStep : ∀ n, states (n + 1) = ConstantInstanceRhs.eulerVec rates (states n) len)
+    (finite : ∀ n, ∀ (k : Fin shape.volume),
+      CExecution.finiteRoundDomain (Binary64.units (states n)[k]
+        + Binary64.units (rateVal (rates[k.val]'(ConstantInstanceRhs.idxLt len k)))))
+    (timeAdds : ∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling "rumoca_constant_step" [.pointer (some (field pool i stateName))] Hn .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (field pool i stateName) (states duration.val) ∧
+      finalHeap (field pool i timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((field pool j b).index k) = heap ((field pool j b).index k)) ∧
+      Transition.Events.Prefix (CCalls.Events.machine program)
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) []
+        (.returning (.integer 0) finalHeap .done) := by
+  set p := record pool i with hp
+  set params := StepEntry.parameters (some p) (Binary64.toBits point).val (Binary64.toBits step).val flag
+    buffers.outputs with hparams
+  set after := StepEntry.outputHeap heap buffers (times 0) with hafter
+  obtain ⟨duration, dpos, dbound, ddur, dcast⟩ := StepAdmission.duration_count step admitted
+  have front9 := front_run types params heap p buffers point (times 0) step oldOutput
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind]) kindValue modeValue
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, Value.finite])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, Value.finite])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+    (by simp [hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+    (by simp [load, timeCell, convert, Value.finite]) same admitted.1 event terminate early last
+    (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i)
+  obtain ⟨localTypes, entered⟩ := CCalls.Events.body_prefix_reaches program function
+    (StepEntry.arguments (some p) (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs)
+    params (StepEntry.locals params p) heap after
+    (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve) .done 9
+    defined (StepEntry.parameters_bound types _ _ _ _ _) doStepBody_closed front9
+  have loaded (name : String) : load after (p.member name) = load heap (p.member name) := by
+    simp only [load, hafter, StepEntry.output_instance heap buffers (times 0) p (p.member name)
+      (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl]
+  set later := StepEntry.locals params p with hlater
+  have instanceValue : later "m" = some (.pointer (some p)) := by simp [hlater, StepEntry.locals, CBody.bind]
+  have stepBound : later "communicationStepSize" = some (.finite step) := by
+    simp [hlater, StepEntry.locals, hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind, Value.finite]
+  have fresh (name) (member : name ∈ ["rounding", "next", "floored", "fegetround", "floor",
+      "FE_TONEAREST", "model_advance", "fmi3OK"]) : later name = none := by
+    fin_cases member <;>
+      simp [hlater, StepEntry.locals, hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind]
+  let rounded := Binary64.roundedAdd (times 0) step
+  let roundingEnv := CBody.bind later "rounding" (.integer header.nearest)
+  let roundingTypes := CLoops.bindType localTypes "rounding" .int32
+  let clockEnv := CBody.bind roundingEnv "next" (.finite rounded)
+  let clockTypes := CLoops.bindType roundingTypes "next" .float64
+  let gridEnv := CBody.bind clockEnv "floored" (.finite (Binary64.floorValue step))
+  let gridTypes := CLoops.bindType clockTypes "floored" .float64
+  have first := StepGuards.rounding_path program header later localTypes after header.nearest
+    ⟨by have positive := header.nonnegative; omega, header.bounded⟩
+    (Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve) "fmi3Status" .done
+    fenv.intType (fresh _ (by simp)) (fresh _ (by simp)) (fresh _ (by simp)) fenv.fegetround nearest rounding
+  simp only at first
+  have second := StepGuards.clock_path program roundingEnv roundingTypes after p (times 0) step stop
+    (Runtime.stepGrid ++ stepSolve) "fmi3Status" .done fenv.doubleType
+    (by simpa [roundingEnv, CBody.bind] using fresh "next" (by simp))
+    (by simpa [roundingEnv, CBody.bind] using instanceValue)
+    (by simpa [roundingEnv, CBody.bind] using stepBound) ((loaded "time").trans
+      (by simp [load, timeCell, convert, Value.finite]))
+    ((loaded "stopDefined").trans enabled) (fun v c => (loaded "stop").trans (limit v c))
+  have noStop : ¬ StepGuards.AboveStop (.finite rounded) stop := by
+    cases stop with
+    | none => simp [StepGuards.AboveStop]
+    | some v => exact not_lt.mpr (withinStop v rfl)
+  have second' : Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running (Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve)
+        roundingEnv roundingTypes after) "fmi3Status" .done) []
+      (.body (.running (Runtime.stepGrid ++ stepSolve) clockEnv clockTypes after)
+        "fmi3Status" .done) := by
+    simpa [StepAdmission.duration_sum (times 0) step admitted, StepGuards.clockDestination, noStop,
+      StepGuards.Progress, progress, rounded, clockEnv, clockTypes, Value.finite] using second
+  have third := StepGuards.grid_path program clockEnv clockTypes after step stepSolve
+    "fmi3Status" .done fenv.doubleType (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floored" (by simp))
+    (by simpa [clockEnv, roundingEnv, CBody.bind] using fresh "floor" (by simp)) fenv.floorConstant
+    (by simpa [clockEnv, roundingEnv, CBody.bind] using stepBound) admitted.1 floorBound
+  have third' : Transition.Events.Prefix (CCalls.Events.machine program)
+      (.body (.running (Runtime.stepGrid ++ stepSolve) clockEnv clockTypes after) "fmi3Status" .done) []
+      (.body (.running stepSolve gridEnv gridTypes after) "fmi3Status" .done) := by
+    simpa [admitted, gridEnv, gridTypes] using third
+  have frameCell : ∀ (nm : String) (a : Nat), after ((field pool i nm).index a) =
+      heap ((field pool i nm).index a) := fun nm a =>
+    StepEntry.output_instance heap buffers (times 0) p ((field pool i nm).index a)
+      (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl
+  have readsStateAfter : Reads after (field pool i stateName) (states 0) := fun a => by
+    simp only [load, frameCell stateName a.val]; exact readsState a
+  have writableStateAfter : Writable after (field pool i stateName) shape.volume :=
+    fun a ha => by
+      obtain ⟨old, ho⟩ := writableState a ha
+      exact ⟨old, by rw [frameCell stateName a]; exact ho⟩
+  have timeAfter : after (field pool i timeName) =
+      some ⟨.float64, true, some (.finite (times 0))⟩ := by
+    rw [show field pool i timeName = p.member "time" from rfl, hafter,
+      StepEntry.output_instance heap buffers (times 0) p (p.member "time")
+        (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl]; exact timeCell
+  obtain ⟨_e, _t, _ea, lastAfter⟩ := StepEntry.output_values heap buffers (times 0) oldOutput event terminate early last
+  obtain ⟨finalHeap, stateFinal, timeFinal, lastFinal, othersFinal, solveReach⟩ :=
+    solve_reaches program rates len definitions linked found ptrTy after pool i states times duration step
+      gridEnv gridTypes .done buffers (some (.finite (times 0)))
+      (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, instanceValue, hp])
+      (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, stepBound]) dcast
+      (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters,
+        StepEntry.bindings, CBody.bind, StepEntry.Buffers.outputs])
+      (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters,
+        StepEntry.bindings, CBody.bind]) (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals,
+        hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind]) (by simp [gridEnv, clockEnv, roundingEnv,
+        CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters, StepEntry.bindings, CBody.bind])
+      (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters,
+        StepEntry.bindings, CBody.bind]) readsStateAfter writableStateAfter timeAfter lastAfter outsideLast
+      stateStep finite timeAdds resolves fenv
+  refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, ?_, ?_⟩
+  · intro j b k different
+    have frameAfter : after ((field pool j b).index k) = heap ((field pool j b).index k) :=
+      StepEntry.output_instance heap buffers (times 0) p ((field pool j b).index k)
+        (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl
+    rw [othersFinal j b k different, frameAfter]
+  · refine (CCalls.Events.internal_path program entered).trans (first.trans (second'.trans (third'.trans ?_)))
+    exact CCalls.Events.internal_path program solveReach
+
+set_option maxRecDepth 100000 in
+theorem accepted_behaviors {shape : Tensor.Shape} (rates : List Decimal) (len : rates.length = shape.volume)
+    (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : ConstantFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
+    (ptrTy : interface.types "double *" = some .pointer)
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (found : definitions "rumoca_constant_step" = some (Rumoca.CConstant.stepFunction rates))
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (states : Nat → Values shape) (times : Nat → Binary64.Value)
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree function))
+    (kindValue : load heap ((record pool i).member "kind") = some (.integer 1))
+    (modeValue : load heap ((record pool i).member "mode") = some (.integer 4))
+    (timeCell : heap ((record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (same : Binary64.value point = Binary64.value (times 0))
+    (enabled : load heap ((record pool i).member "stopDefined") = some (boolean stop.isSome))
+    (limit : ∀ value, stop = some value →
+      load heap ((record pool i).member "stop") = some (.finite value))
+    (admitted : StepAdmission.AdmittedDuration step)
+    (progress : Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step))
+    (withinStop : ∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value)
+    (readsState : Reads heap (field pool i stateName) (states 0))
+    (writableState : Writable heap (field pool i stateName) shape.volume)
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, oldOutput⟩)
+    (outsideEvent : ∀ j : Nat, buffers.event.block ≠ (record pool j).block)
+    (outsideTerminate : ∀ j : Nat, buffers.terminate.block ≠ (record pool j).block)
+    (outsideEarly : ∀ j : Nat, buffers.early.block ≠ (record pool j).block)
+    (outsideLast : ∀ j : Nat, buffers.last.block ≠ (record pool j).block)
+    (stateStep : ∀ n, states (n + 1) = ConstantInstanceRhs.eulerVec rates (states n) len)
+    (finite : ∀ n, ∀ (k : Fin shape.volume),
+      CExecution.finiteRoundDomain (Binary64.units (states n)[k]
+        + Binary64.units (rateVal (rates[k.val]'(ConstantInstanceRhs.idxLt len k)))))
+    (timeAdds : ∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling "rumoca_constant_step" [.pointer (some (field pool i stateName))] Hn .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (field pool i stateName) (states duration.val) ∧
+      finalHeap (field pool i timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((field pool j b).index k) = heap ((field pool j b).index k)) ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, finalHeap⟩ := by
+  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal, reach⟩ :=
+    accepted_reaches program rates len types header fenv nearest ptrTy definitions linked found heap pool i buffers
+      point step flag stop oldOutput states times rounding floorBound defined kindValue modeValue timeCell same
+      enabled limit admitted progress withinStop readsState writableState event terminate early last outsideEvent
+      outsideTerminate outsideEarly outsideLast stateStep finite timeAdds resolves
+  exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal,
+    fun behavior => (reach.forced (CCalls.Events.return_forced program (.integer 0) finalHeap)).behaviors behavior⟩
+
+end
+
+
+/-! ### The accepted end-to-end constant execution
+
+`ExecutionFree` is the accepted end-to-end behavior of the constant `fmi3DoStep`: it
+advances the state by the admitted number of unit Euler steps (each state cell by the
+finite binary64 addition of its constant rate) and publishes the advanced time,
+preserving every other instance. The C floating-environment interface is the
+header-aware constant interface, so the round-to-nearest guard and `fmi3OK` return
+resolve; the `double *` header-typing premise records the interface obligation the
+numerical entry needs, carried like the constant derivative getter's, and the only
+remaining external premise is the modeled `fegetround`/`floor` platform returns. -/
+section
+open CTree.Printer
+variable [static : StaticLiterals]
+
+def ExecutionFree (header : CFenv.Header) : Prop :=
+    letI : CInterface := TensorDoStep.fenvInterface header
+    ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types) {shape : Tensor.Shape}
+    (rates : List Decimal) (len : rates.length = shape.volume)
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (found : definitions "rumoca_constant_step" = some (Rumoca.CConstant.stepFunction rates))
+    (ptrTy : (TensorDoStep.fenvInterface header).types "double *" = some .pointer)
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (states : Nat → Values shape) (times : Nat → Binary64.Value),
+    program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩) →
+    program.externals "floor" = some (CMathCalls.floorExternal rfl) →
+    program.internal.definitions "fmi3DoStep" = some (.tree function) →
+    load heap ((record pool i).member "kind") = some (.integer 1) →
+    load heap ((record pool i).member "mode") = some (.integer 4) →
+    heap ((record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩ →
+    Binary64.value point = Binary64.value (times 0) →
+    load heap ((record pool i).member "stopDefined") = some (boolean stop.isSome) →
+    (∀ value, stop = some value →
+      load heap ((record pool i).member "stop") = some (.finite value)) →
+    StepAdmission.AdmittedDuration step →
+    Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step) →
+    (∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value) →
+    Reads heap (field pool i stateName) (states 0) →
+    Writable heap (field pool i stateName) shape.volume →
+    HistoryBodies.BoolWritable heap buffers.event → HistoryBodies.BoolWritable heap buffers.terminate →
+    HistoryBodies.BoolWritable heap buffers.early → heap buffers.last = some ⟨.float64, true, oldOutput⟩ →
+    (∀ j : Nat, buffers.event.block ≠ (record pool j).block) →
+    (∀ j : Nat, buffers.terminate.block ≠ (record pool j).block) →
+    (∀ j : Nat, buffers.early.block ≠ (record pool j).block) →
+    (∀ j : Nat, buffers.last.block ≠ (record pool j).block) →
+    (∀ n, states (n + 1) = ConstantInstanceRhs.eulerVec rates (states n) len) →
+    (∀ n, ∀ (k : Fin shape.volume),
+      CExecution.finiteRoundDomain (Binary64.units (states n)[k]
+        + Binary64.units (rateVal (rates[k.val]'(ConstantInstanceRhs.idxLt len k))))) →
+    (∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1)))) →
+    (∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling "rumoca_constant_step" [.pointer (some (field pool i stateName))] Hn .done) w →
+      CCalls.Events.Resolves program w) →
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (field pool i stateName) (states duration.val) ∧
+      finalHeap (field pool i timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((field pool j b).index k) = heap ((field pool j b).index k)) ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, finalHeap⟩
+
+theorem execution_free (header : CFenv.Header) : ExecutionFree header := by
+  letI : CInterface := TensorDoStep.fenvInterface header
+  intro E program ptypes shape rates len definitions linked found ptrTy heap pool i buffers point step flag stop
+      oldOutput states times rounding floorBound defined kindValue modeValue timeCell same enabled limit admitted
+      progress withinStop readsState writableState event terminate early last outsideEvent outsideTerminate
+      outsideEarly outsideLast stateStep finite timeAdds resolves
+  exact accepted_behaviors program rates len ptypes header (fenvInterface_fenv header)
+      (TensorDoStep.fenvInterface_nearest header) ptrTy definitions linked found heap pool i buffers point step flag stop
+      oldOutput states times rounding floorBound defined kindValue modeValue timeCell same enabled limit admitted
+      progress withinStop readsState writableState event terminate early last outsideEvent outsideTerminate
+      outsideEarly outsideLast stateStep finite timeAdds resolves
+
+end
+
+
 /-! ### Consumable function contract
 
 This mirrors the pre-execution conjuncts of the tensor `fmi3DoStep` contract: the
