@@ -2675,6 +2675,14 @@ import RumocaFMI3.TensorAdapterContract
 #audit axioms Rumoca.FMI3.ConstantDerivative.deriv_copy_delivers
 #audit axioms Rumoca.FMI3.ConstantDerivative.deriv_instance_delivers
 #audit axioms Rumoca.FMI3.ConstantDerivative.deriv_delivers_holds
+-- Stage 3: the fused single-run derivative getter over the constant instance
+-- record, composing the guard prefix, the constant kernel entry through the
+-- typed-to-observable transfer, and the copy suffix into the getter's sole
+-- terminating behavior.
+#audit axioms Rumoca.FMI3.ConstantDerivative.constant_deriv_enter
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_reaches
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_behaviors
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_execution_holds
 #audit axioms Rumoca.FMI3.ConstantDerivative.deriv_contract
 
 -- Stage B2: the constant-rate Co-Simulation do-step body, reusing the scalar
