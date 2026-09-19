@@ -358,6 +358,72 @@ supplies its reference list and the printability of its arms; it adds no
 value-reference printability or denotation proof of its own.
 
 
+### Profile record as the single source of truth
+
+One storage `Profile` record carries the per-profile render and call-policy data
+of an FMI 3 adapter profile in a single place: the presence of the FMI-visible
+input and output regions of an instance record (`hasInput`, `hasOutput`), the
+prepared kernel entries the adapter calls with their prototype parameter
+spellings (`kernels`), the Float64 getter and setter value-reference dispatch
+table (`references`), the extra callees the profile's call policy admits beyond
+the shared scalar classification (`extraCallees`), and whether the profile exports
+eFMI production artifacts (`hasEFMI`). The tensor profile carries both regions,
+the two kernels `rumoca_rhs` and `rumoca_square_jacobian_diag`, getter references
+`0..4` and setter references `1,2`, the square-Jacobian-diagonal callee and eFMI;
+the constant-rate profile carries neither region, the three kernels
+`rumoca_constant_rhs`/`_step`/`_sample`, getter references `0..2` and the single
+writable setter reference `1`, the three constant callees and no eFMI. Every extra
+callee a profile declares is one of its own declared kernel entries.
+
+`planOf` pairs a profile with the model-derived render inputs (the model name, the
+declaration preamble, the reused helper prefix and the per-signature body builder)
+to produce that profile's `RenderPlan`. `TensorFunctions.tensorPlan` and
+`ConstantFunctions.constantPlan` are definitionally `planOf` of the tensor and
+constant profiles, so every render-identity fact continues to flow through the one
+shared `RenderPlan` development. The declaration preamble stays a model-derived
+rendered string rather than a value recomputed from the profile flags, because the
+adapter preamble's byte structure is fixed by the emitted C text, not by the
+presence flags alone.
+
+The dispatch table and admitted callees are checked against the profile record.
+Each profile's Float64 getter and setter dispatch over exactly the numeric value
+references the profile's `references` field declares, in order: the reference
+projections of `TensorFloat64.getArms`/`setArms` and
+`ConstantFloat64.getArms`/`setArms` equal `referencesOf` of the tensor and
+constant profiles. Every extra callee the profile declares (`calleesOf`) is
+admitted by that profile's call policy (`acceptedT` for the tensor kernels,
+`acceptedC` for the constant kernels). A profile whose adapter fits these shapes
+supplies one profile record; the render plan, the dispatch table and the admitted
+callees are read from that record rather than restated per profile.
+
+
+### One adapter-bytes certificate for every profile
+
+The tensor and constant-rate adapter certificates share one certification
+metaprogram, `FMI3AdapterCertificate.certifyAdapterBytes`. It takes a
+`ProfileCertInputs` record naming the profile's witness model and source,
+its render, function-list and helper definitions, its render-identity lemma
+(`tensor_adapter_chars` or `constant_adapter_chars`), the rendered declaration
+preamble, and a `dischargeContract` step that proves the profile's own
+`Contract` from the shared render identity. The shared part certifies the actual
+adapter bytes exactly as before: every emitted function gets its own tree and
+byte certificate in 256-character blocks, the block-structured concatenation
+cursor binds the joined chunks to the independently read file, and the reused
+helper prefix and the per-signature bodies are checked against the profile's
+function list. What stays per profile is the `Contract` discharge over the
+pinned signature list (public API coverage, absent-variable and capability
+rejection signatures, and the profile's kernel name exclusions), supplied as a
+closure of about twenty lines. `TensorFMI3AdapterCertificate.certify` and
+`ConstantFMI3AdapterCertificate.certify` are call sites of the shared entry;
+the produced theorem names and statements (`...adapter.contract`,
+`Rumoca.CheckedTensorFMI3Files.source_to_build`,
+`Rumoca.CheckedConstantFMI3Files.source_to_build`) and the axiom whitelist are
+unchanged. A further profile whose adapter fits the shared render shape adds a
+`ProfileCertInputs` value and its contract discharge, and no certificate
+metaprogram of its own. The base scalar certificate keeps its own entry because
+its witness artifact is the compiled scalar source itself rather than a
+reconstructed witness.
+
 ### Parameter coverage and actual call entry
 
 The follow-on increment adds all adjusted pointer spellings missing in the

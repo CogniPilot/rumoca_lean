@@ -189,17 +189,81 @@ derivative. The generic heaps `coreOpt`/`storeOpt` take the input and output as
 options: the current tensor definitions are the both-present instance and the
 constant definitions are the both-absent instance, each recovered by `rfl`. -/
 
-/-- Presence of the FMI-visible input and output regions of an instance record. -/
+/-- A prepared numerical kernel entry the adapter calls directly: its C entry
+name and the ordered parameter type spellings of its prototype. The tensor
+profile carries `rumoca_rhs` and `rumoca_square_jacobian_diag`; the constant-rate
+profile carries `rumoca_constant_rhs`, `rumoca_constant_step` and
+`rumoca_constant_sample`. -/
+structure KernelDecl where
+  name : String
+  params : List String
+deriving DecidableEq, Repr
+
+/-- The value-reference dispatch table of a profile's Float64 accessors: the
+ordered getter references (every readable region) and the ordered writable setter
+references. These are the numeric references the dispatch chain in
+`Float64Dispatch.dispatchChain` branches on, in order. -/
+structure References where
+  get : List Nat
+  set : List Nat
+deriving DecidableEq, Repr
+
+/-- The per-profile render and call-policy data of an FMI 3 adapter profile, in
+one record. It carries the presence of the FMI-visible input and output regions
+of an instance record (`hasInput`/`hasOutput`), the prepared kernel entries the
+adapter calls (`kernels`), the Float64 getter/setter value-reference dispatch
+table (`references`), the extra callees the profile's call policy admits beyond
+the shared scalar classification (`extraCallees`), and whether the profile exports
+eFMI production artifacts (`hasEFMI`). This is the single source of truth every
+per-profile adapter definition is checked against. -/
 structure Profile where
   hasInput : Bool
   hasOutput : Bool
+  kernels : List KernelDecl
+  references : References
+  extraCallees : List String
+  hasEFMI : Bool
 deriving DecidableEq, Repr
 
-/-- The tensor profile: input `u` present, dense output `J` present. -/
-def tensorProfile : Profile := { hasInput := true, hasOutput := true }
+/-- The tensor profile: input `u` present, dense output `J` present. It calls the
+prepared right-hand-side and square-Jacobian-diagonal kernels, dispatches Float64
+gets over references `0..4` and Float64 sets over references `1..2`, admits the
+square-Jacobian-diagonal callee, and exports eFMI production artifacts. -/
+def tensorProfile : Profile :=
+  { hasInput := true
+    hasOutput := true
+    kernels :=
+      [{ name := "rumoca_rhs", params := ["const double *", "const double *", "double *", "size_t"] },
+       { name := "rumoca_square_jacobian_diag", params := ["const double *", "double *", "size_t", "size_t"] }]
+    references := { get := [0, 1, 2, 3, 4], set := [1, 2] }
+    extraCallees := ["rumoca_square_jacobian_diag"]
+    hasEFMI := true }
 
-/-- The constant-rate profile: no input tensor and no output tensor. -/
-def constantProfile : Profile := { hasInput := false, hasOutput := false }
+/-- The constant-rate profile: no input tensor and no output tensor. It calls the
+three prepared constant kernels, dispatches Float64 gets over references `0..2`
+(time, state, derivative) and Float64 sets over the single writable state
+reference `1`, admits the three constant callees, and exports no eFMI artifacts. -/
+def constantProfile : Profile :=
+  { hasInput := false
+    hasOutput := false
+    kernels :=
+      [{ name := "rumoca_constant_rhs", params := ["double *"] },
+       { name := "rumoca_constant_step", params := ["double *"] },
+       { name := "rumoca_constant_sample", params := ["double *", "size_t"] }]
+    references := { get := [0, 1, 2], set := [1] }
+    extraCallees := ["rumoca_constant_rhs", "rumoca_constant_step", "rumoca_constant_sample"]
+    hasEFMI := false }
+
+/-- Every extra callee a profile's call policy admits is one of its prepared
+kernel entries: the profile's admitted-callee extension is drawn from its own
+declared kernels. -/
+theorem tensorProfile_extraCallees_kernels :
+    ∀ name ∈ tensorProfile.extraCallees, name ∈ tensorProfile.kernels.map KernelDecl.name := by
+  decide
+
+theorem constantProfile_extraCallees_kernels :
+    ∀ name ∈ constantProfile.extraCallees, name ∈ constantProfile.kernels.map KernelDecl.name := by
+  decide
 
 /-- The core instance heap, generic in the presence of the input region. When the
 input is present the read-only tensor `u` is placed between the state and the

@@ -26,6 +26,12 @@ def acceptedT : Expr → Bool
 theorem accepted_acceptedT (e : Expr) (acc : accepted e = true) : acceptedT e = true := by
   cases e <;> simp_all [acceptedT]
 
+/-- Every extra callee the tensor profile declares is admitted by the tensor call
+policy: the profile's admitted-callee extension (`calleesOf tensorProfile`) and the
+call policy agree on the tensor kernel entries. -/
+theorem calleesOf_acceptedT :
+    ∀ name ∈ calleesOf TensorInstance.tensorProfile, acceptedT (.id name) = true := by decide
+
 /-- Monotonicity of the syntactic admission predicate along the call inventory. -/
 theorem statementAdmits_mono {p q : Expr → Prop} (imp : ∀ e, p e → q e) (stmt : Stmt)
     (h : StatementAdmits p stmt) : StatementAdmits q stmt :=

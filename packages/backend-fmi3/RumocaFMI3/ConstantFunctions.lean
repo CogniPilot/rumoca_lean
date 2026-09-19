@@ -3,6 +3,7 @@ import RumocaFMI3.ConstantFloat64Access
 import RumocaFMI3.ConstantDerivative
 import RumocaFMI3.ConstantDoStep
 import RumocaFMI3.ConstantInstanceRhs
+import RumocaFMI3.AdapterProfile
 import RumocaCore.Solve.ConstantFMI3
 
 /-! The constant-rate (`G01`) FMI 3 adapter function list, the constant analog of
@@ -156,11 +157,16 @@ prefix), the constant declaration preamble, the reused tensor helper prefix and
 the per-signature constant body builder. Every render-identity fact for the
 constant adapter is an instance of the profile-generic `RenderPlan`
 development. -/
-def constantPlan (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n) : RenderPlan where
-  name := m.name
-  preamble := declarations m.shape (rates m)
-  helpers := helpers
-  body := constantFunction model m
+def constantPlan (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n) : RenderPlan :=
+  planOf TensorInstance.constantProfile m.name (declarations m.shape (rates m))
+    helpers (constantFunction model m)
+
+/-- The constant render plan is the constant profile's plan over the model-derived
+render inputs: the model name, the constant declaration preamble, the reused
+helper prefix and the per-signature constant body builder. -/
+theorem constantPlan_planOf (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n) :
+    constantPlan model m = planOf TensorInstance.constantProfile m.name
+      (declarations m.shape (rates m)) helpers (constantFunction model m) := rfl
 
 /-- The constant adapter render: the fixed preamble (model prefix, `model.c`
 include and the constant declaration block) followed by the concatenated helper

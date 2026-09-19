@@ -12,6 +12,7 @@ import RumocaFMI3.TensorDoStep
 import RumocaFMI3.TensorStorageCode
 import RumocaFMI3.TensorMetadata
 import RumocaFMI3.AdapterRenderPlan
+import RumocaFMI3.AdapterProfile
 
 /-! The tensor FMI 3 adapter function list. This is the tensor analog of
 `LiteralPreparation.functions`: each pinned header signature renders either its
@@ -185,11 +186,16 @@ theorem functions_nodup (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
 prefix), the tensor declaration preamble, the reused helper prefix and the
 per-signature tensor body builder. Every render-identity fact for the tensor
 adapter is an instance of the profile-generic `RenderPlan` development. -/
-def tensorPlan (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape) : RenderPlan where
-  name := m.name
-  preamble := TensorStorage.declarations shape m.hasOutput
-  helpers := helpers
-  body := tensorFunction model m
+def tensorPlan (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape) : RenderPlan :=
+  planOf TensorInstance.tensorProfile m.name (TensorStorage.declarations shape m.hasOutput)
+    helpers (tensorFunction model m)
+
+/-- The tensor render plan is the tensor profile's plan over the model-derived
+render inputs: the model name, the tensor declaration preamble, the reused helper
+prefix and the per-signature tensor body builder. -/
+theorem tensorPlan_planOf (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape) :
+    tensorPlan model m = planOf TensorInstance.tensorProfile m.name
+      (TensorStorage.declarations shape m.hasOutput) helpers (tensorFunction model m) := rfl
 
 /-- The tensor adapter render: the fixed preamble (model prefix, `model.c`
 include and the shared declaration block) followed by the concatenated helper
