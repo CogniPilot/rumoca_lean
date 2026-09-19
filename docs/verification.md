@@ -3701,6 +3701,19 @@ preserved across temporary staging locations and remain part of the proposition.
 File I/O, this dependency inventory and the integrity of imported build products
 belong to the same explicit build trust boundary. See
 [artifact certificate caching](development.md#cached-artifact-certificates).
+Each certificate is a directory
+`packages/compiler/.lake/build/certificates/<kind>/<trace-hash>/` holding the
+kernel-checked `.olean`, the audit report, the certified identity, the freshness
+trace and one input snapshot per read file; the snapshots let `--check-only`
+reconfirm that the actual inputs still equal the certified bytes. The root Lake
+file is part of every trace, so any input, checker or Lake-file edit adds a new
+trace-hash directory and never deletes the old one. `lake run certificate-usage`
+reports per-kind counts and sizes, and `lake run prune-certificates [KEEP]`
+keeps the `KEEP` most-recently-used directories per kind (default two) and
+removes the rest; last use is stamped on reuse as well as on build, and the
+verification gate never prunes. Pruning only reclaims disk: a kept certificate
+still reuses under `--check-only`, and a removed one rebuilds to the same
+directory on its next use, under the same checker and axiom whitelist.
 Fresh eFMU identities and timestamps remain checked against their complete new
 XML and ZIP bytes. Native compilation and external compliance remain separate.
 The `tensor-fmi3` certificate kind binds the same five staged files

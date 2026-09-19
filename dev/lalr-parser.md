@@ -58,6 +58,28 @@ Modelica generated file is compared byte-for-byte with newly generated output;
 Lake reuses its already checked/audited module instead of re-elaborating that
 same large theorem set under a second namespace on every test invocation.
 
+### Block-cursor source, lexing and parsing certificates
+
+The lexer and token-parser certificates are established block by block rather
+than in one kernel decision term. The generator splits the embedded source into
+newline-aligned character blocks (`Parser.EBNF.Emission.sourceBlocks`); a newline
+is always a top-level lexical boundary, so a block break before one is a clean
+token boundary. Each block's tokenization is certified on its own bounded input
+with `Parser.EBNF.Reader.tokenize_sound`, and the blocks are joined by the
+reusable engine lemma `Parser.EBNF.Metalanguage.Lexes.append`, which composes
+the independent lexical relation across a newline-led boundary. The whole-source
+lexer certificate `lexing_checked` then follows from `tokenize_complete`. The
+token stream is likewise split into blocks of whole rules -- each `;` terminates
+a rule -- certified with `Parser.EBNF.Reader.rules_sound` and joined by
+`Parser.EBNF.Metalanguage.Rules.append`, which composes the rule relation by
+concatenation; `parsing_checked` then follows from `parseTokens_complete`. The
+source length is summed over the same blocks through `List.length_append`. The
+certified statements and every downstream consumer are unchanged; only the proof
+route is per-block, so no single kernel term ranges over the whole text or token
+stream. The source itself stays one exact string literal, since a downstream
+artifact certificate compares an embedded grammar literal against it by
+reflexivity.
+
 Initial evidence: `build/source-cutover/build/modelica-actions.log` (770 jobs)
 and `galec-cutover.log` (780 jobs). Final parser package checks passed in
 `build/source-cutover/build/parser-cutover-gate.log` (1525 generic/generator jobs,

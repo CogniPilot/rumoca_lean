@@ -181,6 +181,12 @@ private def certificateJob (request : CertificateRequest) : FetchM (Job System.F
       unless (← IO.FS.readBinFile path) == before do
         removeFileIfExists traceFile
         error s!"verification input changed during certification: {path}"
+    -- Stamp last use now, on a fresh build and on cache reuse alike (this tail
+    -- runs on both). Bounded retention (lake run prune-certificates) ranks by
+    -- this stamp so a warm gate keeps the certificates it just exercised rather
+    -- than evicting them by build age. The stamp is not a certificate output,
+    -- so it never participates in freshness or byte-for-byte input matching.
+    (IO.FS.writeFile (directory / "Certificate.used") "" : IO Unit)
     return outputs.audit
 
 private def certificateRequest (args : List String) : IO CertificateRequest := do
@@ -265,6 +271,112 @@ script «verify-artifact» args do
   if request.sourceName.isEmpty then throw (IO.userError "source identity must not be empty")
   let report ← runBuild (certificateJob request) {verbosity := .quiet, noBuild := checkOnly}
   IO.print (← IO.FS.readFile report)
+  return 0
+
+-- Bounded retention for the actual-artifact certificate cache. Every hash
+-- directory is dominated by the kernel-checked `.olean`; each edit of an input,
+-- checker import or this coordinating file produces a new hash directory, and
+-- nothing removes the superseded ones. Retention caps directories per kind so
+-- the cache size stays O(kept certificates x kinds) rather than O(edits x kinds).
+private def certificatesRoot : ScriptM System.FilePath := do
+  let some compiler := (← getWorkspace).findPackageByName? `rumoca_compiler
+    | throw (IO.userError "missing compiler package")
+  return compiler.buildDir / "certificates"
+
+/-- Total bytes of the regular files beneath a directory. -/
+private def treeByteSize (root : System.FilePath) : IO Nat := do
+  let mut total : Nat := 0
+  for entry in (← root.walkDir) do
+    match (← entry.metadata.toBaseIO) with
+    | .ok md => if md.type == .file then total := total + md.byteSize.toNat
+    | .error _ => pure ()
+  return total
+
+/-- Last-use time of one certificate directory: the newest of its used stamp,
+its trace file and the directory itself. Reuse refreshes the stamp, so this
+tracks use rather than build age. -/
+private def certUsedTime (dir : System.FilePath) : IO IO.FS.SystemTime := do
+  let mut best : IO.FS.SystemTime := ⟨0, 0⟩
+  for name in #[".", "Certificate.trace", "Certificate.used"] do
+    match (← (dir / name).metadata.toBaseIO) with
+    | .ok md => if best < md.modified then best := md.modified
+    | .error _ => pure ()
+  return best
+
+private structure CertEntry where
+  dir : System.FilePath
+  name : String
+  size : Nat
+  used : IO.FS.SystemTime
+
+private def kindEntries (kindDir : System.FilePath) : IO (Array CertEntry) := do
+  let mut out : Array CertEntry := #[]
+  for e in (← kindDir.readDir) do
+    match (← e.path.metadata.toBaseIO) with
+    | .ok md =>
+      if md.type == .dir then
+        out := out.push {
+          dir := e.path, name := e.fileName,
+          size := (← treeByteSize e.path), used := (← certUsedTime e.path) }
+    | .error _ => pure ()
+  return out
+
+/-- Newest-first, breaking ties by directory name for determinism. -/
+private def certNewerFirst (a b : CertEntry) : Bool :=
+  b.used < a.used || (a.used == b.used && a.name < b.name)
+
+private def formatMiB (n : Nat) : String :=
+  let hundredths := n * 100 / 1048576
+  let whole := hundredths / 100
+  let frac := hundredths % 100
+  let fracStr := if frac < 10 then s!"0{frac}" else toString frac
+  s!"{whole}.{fracStr} MiB"
+
+/-- Print per-kind certificate counts and sizes without deleting anything. -/
+script «certificate-usage» args do
+  noArgs args
+  let root ← certificatesRoot
+  unless (← root.pathExists) do
+    IO.println s!"No certificate cache at {root}"
+    return 0
+  IO.println s!"Certificate cache: {root}"
+  let mut totalDirs := 0
+  let mut totalBytes := 0
+  for kd in (← root.readDir) do
+    if (← kd.path.isDir) then
+      let entries ← kindEntries kd.path
+      let bytes := entries.foldl (fun acc e => acc + e.size) 0
+      totalDirs := totalDirs + entries.size
+      totalBytes := totalBytes + bytes
+      IO.println s!"  {kd.fileName}: {entries.size} directory(ies), {formatMiB bytes}"
+  IO.println s!"Total: {totalDirs} directory(ies), {formatMiB totalBytes}"
+  return 0
+
+/-- Keep the KEEP (default 2) most-recently-used certificate directories per
+kind and delete the rest, printing what was removed and the bytes freed. The
+verification gate never invokes this; run it manually to bound the cache. -/
+script «prune-certificates» args do
+  let keep ← match args with
+    | [] => pure 2
+    | [n] => match n.toNat? with
+      | some k => pure k
+      | none => throw (IO.userError s!"expected a non-negative integer KEEP, got: {n}")
+    | _ => throw (IO.userError "usage: lake run prune-certificates [KEEP]")
+  let root ← certificatesRoot
+  unless (← root.pathExists) do
+    IO.println s!"No certificate cache at {root}; nothing to prune."
+    return 0
+  let mut removed := 0
+  let mut freed := 0
+  for kd in (← root.readDir) do
+    if (← kd.path.isDir) then
+      let entries := (← kindEntries kd.path).qsort certNewerFirst
+      for victim in entries.extract keep entries.size do
+        IO.FS.removeDirAll victim.dir
+        IO.println s!"removed {kd.fileName}/{victim.name} ({formatMiB victim.size})"
+        removed := removed + 1
+        freed := freed + victim.size
+  IO.println s!"Pruned {removed} certificate directory(ies), freed {formatMiB freed}; kept up to {keep} most-recently-used per kind."
   return 0
 
 private def buildDir : ScriptM Unit := do
