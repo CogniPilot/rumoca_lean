@@ -263,7 +263,7 @@ def emit (source : String) (moduleNamespace : String := "Parser.LALRGenerated") 
     "import Parser.Token\nimport Parser.LALR.LocatedCompleteness\nimport Parser.LALR.EBNFEncoding\n" ++
     "import Parser.EBNF.ReaderCorrectness\nimport Parser.EBNF.Rules\nimport Parser.LALR.Actions\n\nopen Parser\n\n" ++
     s!"namespace {moduleNamespace}\n\n" ++
-    "set_option maxRecDepth 10000\nset_option maxHeartbeats 8000000\n\n" ++
+    "set_option maxRecDepth 100000\nset_option maxHeartbeats 8000000\n\n" ++
     Parser.EBNF.Emission.sourceCertificate source ++
     s!"def alphabet : Array Parser.Symbol := {repr p.alphabet}\n\n" ++
     s!"def grammar : LALR.Grammar := ⟨{g.terminals}, {g.nonterminals}, {g.start}, " ++
