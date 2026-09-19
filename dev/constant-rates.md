@@ -295,18 +295,55 @@ instance preserved. `deriv_contract` now bundles this fused execution
 rejection and copy-suffix delivery. Every theorem is universal in the state shape
 and audited to depend only on the standard axioms.
 
+## Accepted and discard do-step execution (Stage 3c)
+
+`packages/backend-fmi3/RumocaFMI3/ConstantDoStep.lean` now runs the constant-rate
+Co-Simulation `fmi3DoStep` body end to end over the constant instance record, in the
+shape of the tensor do-step but without a derivative call or an elementwise Euler
+loop:
+
+- `internalStep_reaches` is one internal step as one observable-machine execution:
+  the per-step time advance (`m->time = m->time + 1.0`) composed with the bridged
+  state-step entry `rumoca_constant_step(&(m->x[0]))` (`step_writes_events`). It
+  reaches a heap whose state region reads `eulerVec rates state len`, whose time cell
+  reads the finite sum `t + 1`, with every other instance and every cell outside the
+  record preserved.
+- `stepLoop_reaches` iterates it over the outer unit-grid loop `loop "n" steps
+  stepBodyT` by induction on the completed step count. Because the constant step
+  declares nothing and resets no inner counter, the per-iteration environment is
+  exactly `counterEnv env0 "n" k`; over `N` steps the state region advances by the
+  `N`-fold finite rate sum (`states N`, with `states (n+1) = eulerVec rates (states
+  n) len`) and the time base to the `N`-fold finite sum `times N`.
+- `solve_reaches` wraps the loop with the `steps`/`n` `size_t` declarations (the
+  step count is the `size_t` cast of the admitted communication step), the
+  last-successful-time publish and the `fmi3OK` return.
+- `accepted_reaches`/`accepted_behaviors` reuse the model-independent scalar guard
+  prefix (`front_run`, then the shared `stepRounding`/`stepClock`/`stepGrid` guard
+  sections) and compose it with the numerical tail: an admitted communication step's
+  sole terminating behavior returns `fmi3OK` with the state region advanced by the
+  `N`-fold finite rate sum, the instance time cell and the caller's
+  `lastSuccessfulTime` reading the advanced time base, and every other instance
+  preserved. The proofs run under the header-aware floating-environment interface
+  `ConstantFenv` (the pinned C interface extended with the header's `FE_TONEAREST`
+  round-to-nearest constant), so the rounding guard and the `fmi3OK` return resolve
+  as theorems; the `double *` region-pointer typing the numerical entry needs is
+  carried separately (`ptrTy`).
+- The off-grid / over-bound `fmi3Discard` path (`discard_prefix`,
+  `discard_suppressed_behaviors`, `discard_logged_behaviors`) reuses the scalar guard
+  prefix and the shared `StepDiscard` logging composition over the constant record's
+  `logging`/`environment`/`logger` cells.
+
+`ConstantDoStep.contract` now bundles the accepted execution (`ExecutionFree`) and
+the suppressed/enabled discard behaviors alongside the printed text, closedness,
+denotation, null rejection and lifecycle rejection. Every theorem is universal in the
+state shape, the instance index and the heap, and audited to depend only on the
+standard axioms.
+
 ## Open obligations
 
 The following are deferred to later increments, each with its own proofs and
 actual-artifact certificate:
 
-- The fused accepted `fmi3DoStep` execution over the constant instance record: the
-  `N`-fold state advance and time advance over the outer unit-grid loop composing
-  `step_writes_events` (Stage 3 above) with the shared scalar guard prefix, the
-  publish tail, and the off-grid `fmi3Discard` path. The per-internal-step
-  numerical entry is bridged (`ConstantInstanceRhs.step_writes_events`); the
-  current `ConstantDoStep.contract` proves the guard prefix, printed text,
-  closedness, denotation, null rejection and lifecycle rejection.
 - The constant adapter function list assembly, its rendered bytes, the no-heap and
   acyclic call-graph policy, and the bound adapter contract.
 

@@ -73,6 +73,42 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### FMI 3.0.2 §4.2.1 Computation (`fmi3DoStep`) accepted and discard cases for the constant profile (Stage 3c): standards impact
+
+The constant-rate Co-Simulation `fmi3DoStep` body now runs end to end over the
+constant instance record (`FMI3.ConstantDoStep`, `dev/constant-rates.md` "Accepted
+and discard do-step execution"). `internalStep_reaches` composes the per-step time
+advance with the bridged state-step entry `rumoca_constant_step(&(m->x[0]))`
+(`step_writes_events`) as one observable-machine execution; `stepLoop_reaches`
+iterates it over the outer unit-grid loop by induction, advancing the state region by
+the `N`-fold finite rate sum and the time base by `N`; `solve_reaches` wraps the loop
+with the step-count/counter declarations, the last-successful-time publish and the
+`fmi3OK` return. The reused model-independent scalar guard prefix (`front_run`, then
+the shared `stepRounding`/`stepClock`/`stepGrid` guard sections) composes with the
+numerical tail in `accepted_reaches`/`accepted_behaviors`, and the off-grid /
+over-bound `fmi3Discard` path reuses the shared `StepDiscard` logging composition
+(`discard_prefix`, `discard_suppressed_behaviors`, `discard_logged_behaviors`).
+`ConstantDoStep.contract` now bundles the accepted execution (`ExecutionFree`) and
+the suppressed/enabled discard behaviors alongside the printed text, closedness,
+denotation and null rejection. This is a package-checked product only: no production
+artifact, CLI or grammar change, and the tensor and scalar adapters and every
+existing contract are unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The constant-rate profile remains a development case. |
+| FMI 3.0.2 §4.2.1 Computation (`fmi3DoStep`), Co-Simulation accepted step | A communication step that is a positive integer multiple of the internal unit step and at most the scalar bound is accepted: the body initializes the event/terminate/early-return output flags to zero and `*lastSuccessfulTime` to the current time, runs `N` internal steps (each advancing the time base by one and calling `rumoca_constant_step(&(m->x[0]))`, which advances every state cell by the finite binary64 addition of its rate), publishes the advanced time base to `*lastSuccessfulTime` and returns `fmi3OK`. Its sole terminating behavior advances the state region by the `N`-fold finite rate sum, sets the instance time cell and the caller's `lastSuccessfulTime` to the `N`-fold finite time sum, and preserves every other instance (`accepted_reaches`, `accepted_behaviors`, `execution_free`). |
+| FMI 3.0.2 §4.2.1 Computation, off-grid / over-bound step (`fmi3Discard`) | A step that makes clock progress inside any stop window but does not lie on the unit internal time grid (off-grid) or exceeds the internal-step bound (over-bound) reaches the shared `Runtime.stepDiscard` block before any numerical declaration, via the reused rounding/clock guard sections and the rejected grid branch. With logging suppressed the call returns `fmi3Discard` leaving the heap unchanged apart from the output-cell initialization (`discard_suppressed_behaviors`); with logging enabled it invokes the logging callback and mirrors every represented callback outcome (`discard_logged_behaviors`). |
+| FMI 3.0.2, function-call resolution across the interface | Each internal step enters `rumoca_constant_step` resolved directly by name (the entry is not a bound interface constant); the `resolves` premise records the direct resolution of the nested state-step call, carried uniformly as for the derivative and tensor entries. |
+| C11 / interface typing | The proofs run under the header-aware floating-environment interface (`ConstantFenv`: the pinned C interface extended with the header's `FE_TONEAREST` round-to-nearest constant), so the rounding guard and the `fmi3OK` return resolve; the `double *` region-pointer typing the numerical entry needs is carried separately (`ptrTy`), the constant analog of the derivative getter's. |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The whole body executes over caller-owned instance regions with no dynamic allocation; the step count and loop counter are ordinary `size_t` locals and the grid loop is a counted `size_t` loop. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+Every theorem is universal in the state shape, the instance index and the heap. The
+constant adapter function list assembly with its no-heap and acyclic call-graph
+policy, and binding to actual FMU bytes, remain open. **Stage decision: open; no
+grammar expansion.**
+
 ### Constant-rate kernel bridge, fused derivative getter and step entry (Stage 3): standards impact
 
 The executable constant-rate kernel entries are now bound to the static constant
