@@ -38,38 +38,18 @@ private def certifyCore (name : Name) (input : ByteArray) (items : Array Candida
     cursor := cursor + actualHeader.size
     let quoted ← CertificateCheck.quoteBytes actualHeader.data.toList
     elabCommand (← `(command| def $header:ident : List UInt8 := $quoted))
-    let chars := item.text.toList.toArray
-    let count := (chars.size + 63) / 64
-    for j in [:count] do
-      let width := ((chars.extract (64*j) (64*(j+1))).toList.flatMap String.utf8EncodeChar).length
-      let actual := input.extract cursor (cursor + width)
-      cursor := cursor + actual.size
-      let block := part (name.str s!"payload_{i}") "block" j
-      let expected := part item.certificate "byte_block" j
-      let eq := part (name.str s!"payload_{i}") "block_eq" j
-      let quoted ← CertificateCheck.quoteBytes actual.data.toList
-      elabCommand (← `(command| def $block:ident : List UInt8 := $quoted))
-      elabCommand (← `(command| theorem $eq:ident : $block = $expected := by decide +kernel))
-    let payloadEnd := part (name.str s!"payload_{i}") "bytes" count
-    let payloadEndEq := part (name.str s!"payload_{i}") "eq" count
-    let expectedEnd := part item.certificate "bytes" count
-    elabCommand (← `(command| def $payloadEnd:ident : List UInt8 := []))
-    elabCommand (← `(command| theorem $payloadEndEq:ident : $payloadEnd = $expectedEnd := rfl))
-    for j in [:count] do
-      let k := count - 1 - j
-      let block := part (name.str s!"payload_{i}") "block" k
-      let tail := part (name.str s!"payload_{i}") "bytes" (k+1)
-      let bytes := part (name.str s!"payload_{i}") "bytes" k
-      let expected := part item.certificate "bytes" k
-      let headEq := part (name.str s!"payload_{i}") "block_eq" k
-      let tailEq := part (name.str s!"payload_{i}") "eq" (k+1)
-      let eq := part (name.str s!"payload_{i}") "eq" k
-      elabCommand (← `(command| def $bytes:ident : List UInt8 := $block ++ $tail))
-      elabCommand (← `(command| theorem $eq:ident : $bytes = $expected :=
-        Certificate.append_equal _ _ _ _ $headEq:ident $tailEq:ident))
-    let payload := part (name.str s!"payload_{i}") "bytes" 0
-    let payloadEq := part (name.str s!"payload_{i}") "eq" 0
-    let payloadLength := part item.certificate "length" 0
+    -- The member payload is already certified once, by name, in the payload
+    -- certificate (`($text)`): its exact bytes, length and CRC. Rather than
+    -- re-decide the whole payload against those cached bytes block by block, the
+    -- checker reads the actual payload region here and confirms it equals the
+    -- certified bytes; the reused payload facts then bind it to this archive.
+    -- Identity is established by this checker reading the same file, never by
+    -- trusting an earlier run.
+    let payloadWidth := item.text.toUTF8.size
+    let actualPayload := input.extract cursor (cursor + payloadWidth)
+    cursor := cursor + actualPayload.size
+    unless actualPayload == item.text.toUTF8 do
+      throwError "archive payload differs from the certified bytes: {item.name}"
     let record := part name "local" i
     let recordEq := part name "local_eq" i
     let recordSize := part name "local_size" i
@@ -77,18 +57,18 @@ private def certifyCore (name : Name) (input : ByteArray) (items : Array Candida
     let nameBytes ← CertificateCheck.quoteBytes item.name.toUTF8.data.toList
     let headerEq := part name "header_eq" i
     let totalSize := numeral (headerSize + item.text.toUTF8.size)
-    elabCommand (← `(command| def $record:ident : List UInt8 := $header ++ $payload))
+    elabCommand (← `(command| def $record:ident : List UInt8 := $header ++ ($text).bytes))
     elabCommand (← `(command| theorem $headerEq:ident :
       Certificate.localPrefix ($text).crc.toNat ($text).size $nameBytes = $header := by decide +kernel))
     if (← get).messages.hasErrors then throwError "ZIP local header certificate failed: {item.name}"
     elabCommand (← `(command| theorem $recordEq:ident : Format.localRecord $entry = $record :=
       (Certificate.localRecord_parts $entry $nameBytes ($text).bytes ($text).crc ($text).size
         (by decide +kernel) ($text).encoding ($text).checksum ($text).length).trans
-          (Certificate.append_equal _ _ _ _ $headerEq:ident ($payloadEq:ident).symm)))
+          (Certificate.append_equal _ _ _ _ $headerEq:ident rfl)))
     if (← get).messages.hasErrors then throwError "ZIP local record composition failed: {item.name}"
     elabCommand (← `(command| theorem $recordSize:ident : ($record).length = $totalSize := by
-      change ($header ++ $payload).length = $totalSize
-      rw [List.length_append, $payloadEq:ident, $payloadLength:ident]
+      change ($header ++ ($text).bytes).length = $totalSize
+      rw [List.length_append, ($text).length]
       decide +kernel))
     if (← get).messages.hasErrors then throwError "ZIP local length certificate failed: {item.name}"
     elabCommand (← `(command| theorem $fits:ident : Format.entryFits $entry = true :=

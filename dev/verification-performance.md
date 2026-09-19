@@ -192,6 +192,62 @@ The certificate is gated through the default CLI publication in
 tensor source identity, so it is built once and reused across the two scripts and
 across gate runs. See [the tensor eFMU standards impact](standards-review.md).
 
+## eFMU archive certificate: sharing the pinned payload certificates, 2026-09-19
+
+The scalar `efmi-archive` and tensor `tensor-efmi-archive` certificates read the
+actual `.efmu` bytes, re-derive the manifest contract, and compose it with the
+stored-ZIP transport over all fifty members. The transport previously re-decided
+every member's payload bytes block by block against that member's payload
+certificate, so each archive re-certified roughly 130 KB of pinned vendored schema
+payload, and each model-specific code payload twice (once building the payload
+certificate in `certifyCRC`, once again in the transport). The pinned schema
+payloads are already certified once as the Lake-cached
+`Rumoca.EFMI.SchemaCertificates.resource_i.payload` products.
+
+The transport (`StoredZIP.ArchiveCertificateCheck.certifyCore`) now consumes each
+member's payload certificate by name instead of re-deciding it: it reads the
+actual payload region, confirms at check time that it equals the certified bytes
+(`actualPayload == item.text.toUTF8`), and builds the local record from the
+certified `Certificate.Text` fields (`bytes`, `encoding`, `length`, `checksum`)
+directly. Identity with the actual file is established by the checker reading the
+archive bytes and comparing them, never by trusting an earlier run. The
+`StoredZIP.Format.Conforms` and `source_to_archive` statements are unchanged; only
+the proof route changed.
+
+Measured cold with a /proc process-tree resident poller sampling every 0.2 s, on
+the fixtures the scripts produce (the scalar eFMU compiled under the fixed
+`SOURCE_DATE_EPOCH`, the tensor eFMU via the tensor path), reported both as the
+whole `lake run verify-artifact` process-tree sum and as the pure certificate
+(lean) process. A shared full gate was running on the machine, so wall figures
+carry CPU-contention noise; the per-tree resident peak is unaffected by other
+processes:
+
+| Archive certificate, cold | Wall | Peak (process tree) | Peak (lean process) |
+| --- | ---: | ---: | ---: |
+| Scalar `efmi-archive`, before | 502 s | 12.19 GiB | - |
+| Scalar `efmi-archive`, after | ~340 s | 8.95 GiB | 7.32 GiB |
+| Tensor `tensor-efmi-archive`, before | 513 s | 13.27 GiB | - |
+| Tensor `tensor-efmi-archive`, after | ~340 s | 8.15 GiB | 6.52 GiB |
+
+The whole-tree sum includes the `lake` orchestrator process (about 1.6 GiB); the
+previously documented pre-change baselines (12.28 GiB scalar, 12.79 GiB tensor)
+match the before rows. Measured as the docs' pure-lean certificate process, the
+post-change certificate peaks well under 8 GiB.
+
+Attribution, by bounded probe: the manifest-only `efmi-directory` certificate for
+the same scalar fixture peaks at 8.74 GiB (tree) on its own in 197 s. The
+post-change archive certificate sits at parity with it, so the payload sharing
+removed essentially all of the stored-ZIP contribution to the peak; what remains
+is the manifest contract re-derivation plus the fixed cost of loading the compiler
+proof chain that every one of these certificates pays. The archive still
+re-derives `source_to_manifests` in its own process because the `efmi-directory`
+and `efmi-archive` kinds are separate certificate products with no shared olean;
+sharing that derivation across the two products would need a
+certificate-infrastructure change and would not lower the peak below the manifest
+floor. The certificate wall (cold, via `lake run`) is about 5.6 min scalar and
+5.5 min tensor, down from 8.4 and 8.6 min; a large fixed fraction is Lake
+dependency replay and the shared manifest re-derivation, not the stored-ZIP work.
+
 ## LALR reduction certificate reformulation, 2026-09-19
 
 The generated LALR tables prove one reduction summary per grammar production.
