@@ -273,8 +273,10 @@ complete eFMU (`.efmu`) output now land: the archive checker reads the actual
 transport over all fifty members, and the default CLI publishes `-o out.efmu`
 through `EFMIExport.writeTensorArchive` gated on that certificate. The archive
 certificate peaks at parity with the scalar eFMU archive certificate the gate
-already accepts (dominated by the re-derived manifest contract and the stored-ZIP
-payload over all members, not by any single whole-document step; the XML
+already accepts (dominated by the manifest contract re-derivation shared with the
+directory certificate, not by any single whole-document step and no longer by the
+pinned stored-ZIP schema payload, which is now certified once and reused by name,
+see "Sharing the pinned payload certificates across archives" below; the XML
 serialization certificate was made linear per fragment separately). It is gated
 in `tests/tensor-c.sh` and `tests/efmi-production.sh`. Finding TF01 in
 `dev/standards-review.md` is closed; TF04 records that the extent is fixed to `2`
@@ -1012,6 +1014,34 @@ in under a second, including its kernel check, and uses the same axiom whitelist
 now uses that proof construction. The original slow diagnostic was explicitly
 interrupted after this measured improvement, with exit 130; its log is retained
 in `build/efmi-full-zip-slow-probe.log`. No timeout was treated as completion.
+
+### Sharing the pinned payload certificates across archives
+
+Every archive member's payload bytes are certified once, by name, as a
+`StoredZIP.Certificate.Text` value carrying its exact bytes, UTF-8 encoding,
+length and CRC-32. For the pinned schema resources these payload certificates are
+the cached `Rumoca.EFMI.SchemaCertificates.resource_i.payload` products that
+`RumocaEFMISchemaCertificates` builds once as a Lake-cached library; for the
+model-specific code and manifest members they are built once in the archive
+checker by `StoredZIP.CertificateCheck.certifyCRC`. The archive checker
+(`StoredZIP.ArchiveCertificateCheck.certifyCore`) no longer re-decides those
+payload bytes block by block against the certificate. It reads the actual payload
+region from the input archive, confirms at check time that it equals the certified
+bytes (`actualPayload == item.text.toUTF8`), and composes the member's local
+record from the certified `($text).bytes`, `($text).encoding`, `($text).length`
+and `($text).checksum` directly. Payload identity with the actual file is
+established by this checker reading the archive bytes and comparing them, never by
+trusting an earlier run. The reused fact is the same one the cached schema library
+and the per-code payload certificate already prove, so the archive no longer
+re-derives roughly 130 KB of pinned schema payload per archive, and each code
+payload is reduced once rather than twice. The `Format.Conforms` and
+`Rumoca.CheckedEFMIFiles.source_to_archive` statements are unchanged; only the
+proof route changed. Measured cold with a process-tree resident poller, this drops
+the scalar `efmi-archive` certificate process from about 12.3 GiB to about 7.3 GiB
+and the tensor `tensor-efmi-archive` process from about 12.8 GiB to about 6.5 GiB,
+with the certificate wall falling by roughly a third. The residual peak is the
+manifest contract re-derivation, at parity with the `efmi-directory` certificate,
+not the stored-ZIP payload.
 
 The revised complete 50-member check passed in `build/efmi-full-zip-probe.log`,
 including the exact `FullZIPProbe.conforms` root audit with only `propext`,

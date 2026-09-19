@@ -5086,9 +5086,9 @@ CLI admits `-o out.efmu` for the fixed tensor square profile through
 `tests/tensor-c.sh` and `tests/efmi-production.sh`. The archive certificate peaks
 at parity with the scalar eFMU archive certificate the gate already builds and
 accepts; the XML serialization certificate was made linear per fragment, but the
-archive peak is dominated by the re-derived manifest contract plus the stored-ZIP
-payload over all members (mostly the pinned schemas), not by any single
-whole-document step. See [verification performance](../dev/verification-performance.md).
+archive peak is dominated by the re-derived manifest contract, not by any single
+whole-document step; the pinned schema payloads are certified once and reused
+by name across the scalar and tensor archives. See [verification performance](../dev/verification-performance.md).
 
 ## Binary64 and real refinement
 
