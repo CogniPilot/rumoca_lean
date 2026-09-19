@@ -3462,6 +3462,27 @@ The complete gate passed in
 [the hosted CI run](https://github.com/CogniPilot/rumoca_lean/actions/runs/34469374951).
 These helper certificates do not establish the remaining tensor FMU/eFMU chain.
 
+The finite arithmetic now covers all four field operators. Alongside
+round-to-nearest-even addition and multiplication, `Binary64.roundedSub` and
+`Binary64.roundedDiv` specify subtraction and division on the same
+integer-unit grid through the shared scaled-rounding machinery.
+`roundedSub_eq_add_negate` proves rounded subtraction equals rounded addition
+of the exact negation, since negation is a sign flip with no rounding; its only
+negative-zero result is `(-0) - (+0)`. `roundedDiv` scales the exact quotient
+`value a / value b` by the divisor's magnitude and sign, rounds it, and rejects
+a zero or non-finite divisor and overflow through `finiteQuotient`;
+`roundedDiv_nearest` gives the nearest-value error bound where the divisor is
+nonzero. Determinism, uniqueness and the nearest/even/signed-zero relations are
+proved for both, mirroring the addition and multiplication contracts.
+`Solve.Tensor.Finite` executes the four operators over arbitrary tensor shapes,
+and the counted C helpers `rumoca_tensor_sub` and `rumoca_tensor_div` carry the
+same per-element finite-arithmetic contract as `rumoca_tensor_add` and
+`rumoca_tensor_mul`. Because division is not differentiable at a zero divisor,
+the tensor forward and reverse derivative theorems that assert a Fréchet
+derivative record a nonzero-divisor regularity premise for division nodes,
+while the smooth operators impose nothing; the executable Jacobian-vector and
+adjoint rules and finite execution remain unconditional.
+
 The subsequent call/fill increment strengthens the actual-file checker to
 `CTensor.CallArtifactContract` for add/multiply and `CTensor.Fill.ArtifactContract`
 for fill. It executes parameter conversions, fresh callee scopes, the actual

@@ -101,9 +101,20 @@ Rust's `rumoca-eval-solve/src/sparsity.rs` is a design reference for deriving
 patterns from the owned Solve program and conservatively retaining dependencies.
 
 Current implementation: `Tensor.Operators` provides dense-array addition,
-pointwise multiplication and JVP/VJP rules with an explicit scalar arithmetic
-interface. `Tensor.Differentiation` proves those rules for arbitrary shapes
-using mathlib's Fréchet derivative and finite dot-product pairing. It also
+pointwise multiplication, subtraction and division with their JVP/VJP rules,
+over an explicit scalar arithmetic interface that now carries subtraction,
+division and negation as well. The subtraction adjoint negates the right
+operand's cotangent; the division rule uses the quotient rule
+`d(a / b) = (da * b - a * db) / (b * b)` with adjoints `seed / b` and
+`-(a * seed) / (b * b)`. `Tensor.Differentiation` proves the forward and
+reverse rules for arbitrary shapes using mathlib's Fréchet derivative and
+finite dot-product pairing. Because division is not differentiable at a zero
+divisor, its `HasFDerivAt` case carries an `AD.Regular` divisor-nonzero premise
+that the program-level chain records per node through `Program.RegularAt`;
+the executable Jacobian-vector and adjoint rules hold unconditionally under the
+junk-value convention `x / 0 = 0`. The forward source-to-source transformation
+emits the quotient rule as six ordinary tensor instructions, so the
+instruction-count bound `Program.forward_compact` is `6 * nodeCount`. It also
 proves the derivative, accumulated pullback and diagonal Jacobian of `x .* x`.
 `lake build check-core` passed in `build/tensor-ad-package.log` with eight new
 audited roots and no additional example tests. All roots use only the existing

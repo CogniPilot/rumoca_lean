@@ -73,6 +73,37 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### G02 rounded subtraction and division for the tensor arithmetic ring: standards impact
+
+The finite binary64 model and the tensor arithmetic IR now provide all four
+field operators. `Binary64.roundedSub` and `Binary64.roundedDiv` round the
+exact real difference and quotient on the shared integer-unit grid through the
+scaled-rounding machinery, with determinism, uniqueness, nearest/even and
+signed-zero relations proved in parallel with the addition and multiplication
+contracts; `roundedSub_eq_add_negate` records the exact-negation identity, and
+`finiteQuotient` rejects a zero or non-finite divisor and overflow. The tensor
+IR `BinaryOp` gains `sub` and `div` with their forward (JVP) and reverse (VJP)
+rules, finite execution (`Solve.Tensor.Finite`), and Fréchet-derivative
+correctness; division's analytic derivative carries an `AD.Regular`
+nonzero-divisor premise. The C backend adds the counted helpers
+`rumoca_tensor_sub` and `rumoca_tensor_div` with the same per-element finite
+contract, printer and actual-file certificate as `rumoca_tensor_add` and
+`rumoca_tensor_mul`. This is a package-checked numerical increment only: no new
+admitted source syntax, CLI admission or FMU/eFMU artifact.
+
+| Standard | Impact |
+| --- | --- |
+| MLS 3.7 (operators and expressions, arithmetic operators `+ - * /`) | The finite model and tensor IR now interpret all four arithmetic operators over the element type. Element-wise subtraction and division follow the same round-to-nearest-even numeric interpretation already used for `+` and `*`; the acyclic algebraic-equation grammar for G02 landed separately, and no new source is admitted to production by this increment. |
+| IEEE 754-2019 §4.3.1 (roundTiesToEven) and §5.4.1 (arithmetic operations) | Rounded subtraction and division are specified as the correctly rounded (round-to-nearest, ties-to-even) results of the exact real difference and quotient, matching the addition and multiplication specifications. Division excludes a zero or non-finite divisor by the finiteness predicate; subtraction equals addition of the exact negation because negation is a sign flip with no rounding. Exception flags, traps and the host floating environment remain outside the modeled semantics. |
+| C11 §6.5.6 (Additive operators) and §6.5.5 (Multiplicative operators), Annex F (IEC 60559 floating-point arithmetic) | The counted C helpers evaluate `left[k] - right[k]` and `left[k] / right[k]` under the authored finite-arithmetic contract, one element per loop iteration, and `floatSub_finite` / `floatDiv_finite` tie the modeled evaluation of the `-` and `/` operators to the finite Solve results. The trusted boundary between the authored C subset and host compilation is unchanged; native ABI, the floating environment and overflow/error paths remain host-tested rather than proved. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The new roots are registered in the core arithmetic audit
+(`Tests/FiniteChecks`, `Tests/TensorChecks`) and the C tensor helper audit.
+Static reverse transformation, whole-program C simulation and tensor FMU/eFMU
+certificates for the enlarged ring remain open, as for the existing operators.
+**Stage decision: open; no grammar expansion by this numerical increment.**
+
 ### Stage record: constant-rate profile admitted to FMI 3 FMU output
 
 This record completes the recurring review for the enlarged admitted subset at
