@@ -330,3 +330,59 @@ Per-profile proof-family cold elaboration: the tensor family is 30 modules and
 467 s; the constant family is 10 modules and 130 s. `TensorDoStep` (48 s),
 `ConstantDoStep` (27 s) and the base DoStep are one proof template instantiated
 per profile.
+
+## LALR certificate module split, 2026-09-19
+
+The generated certificates are split across a directory of modules per grammar
+(see [lalr-parser.md](lalr-parser.md#generated-certificate-module-layout-2026-09-19)).
+Each obligation group elaborates in its own Lean process, so the kernel decision
+terms are reclaimed per module instead of accumulating in one process, and Lake
+builds the independent groups in parallel. The final theorem names, statements
+and audited axioms are unchanged.
+
+Per-module peak resident set is the GNU `time -v` maximum resident set size of
+`lake env lean -s 65536` compiling that one module with its dependencies already
+built. Each module is a single lean process, so the maximum resident set is the
+module's own peak. The Modelica `ModelicaParser.Generated` prefix (222 LALR
+states, 99 reduction certificates) measures, in isolation:
+
+| Modelica module | Wall | Peak RSS |
+| --- | ---: | ---: |
+| Generated/Tables | 39.2 s | ~4.21 GiB |
+| Generated/Source | 31.7 s | ~5.80 GiB |
+| Generated/Items | 76.7 s | ~5.47 GiB |
+| Generated/Reductions0 (20) | 81.6 s | ~4.07 GiB |
+| Generated/Reductions1 (20) | 83.1 s | ~4.41 GiB |
+| Generated/Reductions2 (20) | 84.2 s | ~4.22 GiB |
+| Generated/Reductions3 (20) | 89.6 s | ~4.14 GiB |
+| Generated/Reductions4 (19) | 80.9 s | ~4.03 GiB |
+| Generated/Safety | 93.0 s | ~4.98 GiB |
+| Generated/Progress | 7.8 s | ~2.80 GiB |
+| Generated (umbrella) | 3.8 s | ~1.85 GiB |
+
+No module exceeds 8 GiB; the largest is `Generated/Source` at ~5.80 GiB, against
+the prior single module's cumulative ~22.7 GiB. The reduction certificates that
+alone summed to ~7.71 GiB now sit in five modules of ~4 GiB each, and the row and
+item chunks that peaked at ~6.82 GiB and ~7.05 GiB are in their own processes.
+
+The whole target built clean with Lake parallelism (default job count on the
+32-core host; this Lake exposes no job-count flag) from removed generated oleans:
+
+| Whole target, clean parallel build | Wall |
+| --- | ---: |
+| `modelica_parser/ModelicaParser.Generated` | 272 s |
+| `galec_parser/GALECParser.Generated` | 36 s |
+
+The Modelica target is 4 m 32 s, under the five-minute goal, against the prior
+monolith whose wall was set by the 99 reduction certificates in one process and
+exceeded ten minutes (the cold gate recorded it at 456 s). In the parallel run
+`Generated/Tables` builds first (71 s, a dependency of every other module); the
+independent groups then run together (`Generated/Progress` 13 s, `Generated/Source`
+48 s, `Generated/Items` 101 s, the five reduction modules 96 to 104 s), and
+`Generated/Safety` (91 s) starts once its reduction dependencies finish and
+completes the target. Contended per-module walls run a little longer than the
+isolated numbers above.
+
+The GALEC `GALECParser.Generated` prefix (117 LALR states, 11 reduction
+certificates) is small; every module stays under ~3.1 GiB (largest
+`Generated/Safety` ~3.07 GiB) and the whole target builds in 36 s.
