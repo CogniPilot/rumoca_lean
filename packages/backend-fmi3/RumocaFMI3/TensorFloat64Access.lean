@@ -1,6 +1,7 @@
 import RumocaFMI3.TensorFloat64Copy
 import RumocaFMI3.Float64Get
 import RumocaFMI3.DerivativeCalls
+import RumocaFMI3.Float64Dispatch
 
 /-! Tensor `fmi3GetFloat64` / `fmi3SetFloat64` bodies over a static tensor
 instance record, as package-checked products.
@@ -172,6 +173,18 @@ def getDispatch1 (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : Li
 def getDispatch (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : Stmt :=
   Runtime.branch (Runtime.eqv vr0 (Runtime.n 0)) (getArm timeName 1) (getDispatch1 shape outputShape)
 
+/-- The ordered getter dispatch arms as a value-reference list: references
+`0..4` staging the time, input, state, derivative and (conditionally) output
+regions. The tensor getter is the generic `Float64Dispatch.dispatchChain` over
+this list; `getDispatch_chain` records the identity. -/
+def getArms (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List (Nat × List Stmt) :=
+  [(0, getArm timeName 1), (1, getArm inputName shape.volume), (2, getArm stateName shape.volume),
+    (3, getArm derivativeName shape.volume), (4, getOutputArm outputShape)]
+
+theorem getDispatch_chain (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
+    Float64Dispatch.dispatchChain vr0 (getArms shape outputShape)
+        [Runtime.fail "Unknown value reference"] = [getDispatch shape outputShape] := rfl
+
 theorem getArm_noDecl (member : String) (count : Nat) :
     (getArm member count).all CLoops.noDeclarations = true := by
   simp [getArm, CLoops.noDeclarations]
@@ -224,6 +237,15 @@ def getBody (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List St
 
 def getFunction (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : CTree.Function :=
   ⟨Float64Calls.signature false, getBody shape outputShape, false⟩
+
+/-- The getter body around an abstract value-reference dispatch statement, shared
+by every adapter profile: only the dispatch differs. Each profile's `getBody`
+is definitionally `getBodyFor` of its own dispatch, so the shared printability
+proof below is reused by instantiation rather than re-proved per profile. -/
+def getBodyFor (dispatch : Stmt) : List Stmt :=
+  Runtime.require .get ++ (basicReject ::
+    [.declare "fmi3Float64 *" "src" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
+      dispatch, countReject] ++ getLoopSuffix)
 
 theorem getBody_closed (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
     (getFunction shape outputShape).body.all CBodyEmbedding.closedBlocks = true := by
@@ -903,6 +925,16 @@ def setDispatch2 (shape : Tensor.Shape) : List Stmt :=
 def setDispatch (shape : Tensor.Shape) : Stmt :=
   Runtime.branch (Runtime.eqv vr0 (Runtime.n 1)) (setArm inputName shape.volume) (setDispatch2 shape)
 
+/-- The ordered setter dispatch arms as a value-reference list: the writable
+input `u` (reference `1`) and state `x` (reference `2`). The tensor setter is the
+generic `Float64Dispatch.dispatchChain` over this list. -/
+def setArms (shape : Tensor.Shape) : List (Nat × List Stmt) :=
+  [(1, setArm inputName shape.volume), (2, setArm stateName shape.volume)]
+
+theorem setDispatch_chain (shape : Tensor.Shape) :
+    Float64Dispatch.dispatchChain vr0 (setArms shape)
+        [Runtime.fail "Unknown or read-only value reference"] = [setDispatch shape] := rfl
+
 def setRest (shape : Tensor.Shape) : List Stmt :=
   [.declare "fmi3Float64 *" "dst" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
     setDispatch shape, countReject] ++ setLoopSuffix
@@ -912,6 +944,14 @@ def setBody (shape : Tensor.Shape) : List Stmt :=
 
 def setFunction (shape : Tensor.Shape) : CTree.Function :=
   ⟨Float64Calls.signature true, setBody shape, false⟩
+
+/-- The setter body around an abstract value-reference dispatch statement, shared
+by every adapter profile: only the writable-region dispatch differs. Each
+profile's `setBody` is definitionally `setBodyFor` of its own dispatch. -/
+def setBodyFor (dispatch : Stmt) : List Stmt :=
+  Runtime.require .setStart ++ (basicReject ::
+    [.declare "fmi3Float64 *" "dst" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
+      dispatch, countReject] ++ setLoopSuffix)
 
 theorem setArm_noDecl (member : String) (count : Nat) :
     (setArm member count).all CLoops.noDeclarations = true := by simp [setArm, CLoops.noDeclarations]
@@ -1277,74 +1317,78 @@ end
 section
 open CTree.Printer CTree.Syntax
 
-set_option maxHeartbeats 4000000 in
-/-- Every statement of the getter body prints its intended C token grammar. -/
-theorem getBody_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    ∀ stmt ∈ (getFunction shape outputShape).body, ItemPrintable RuntimePrinter.typedefs stmt := by
-  have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
-    .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
-  have fType : TypeSpelling RuntimePrinter.typedefs "fmi3Float64 *" :=
-    .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
-  have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
-    .named (.typedefName (by decide +kernel) (by decide +kernel))
-  cases outputShape <;>
-    (simp only [getFunction, getBody, getRest, getDispatch, getDispatch1, getDispatch2, getDispatch3,
-        getDispatch4, getArm, getOutputArm, getLoopSuffix, memberPointer, Runtime.region,
-        timeName, stateName, inputName, derivativeName, outputName, basicReject, countReject, vr0,
-        Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
-        permittedModes, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok,
-        Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
-        Runtime.negate, Runtime.any, Runtime.mode, Runtime.lt, Runtime.call, getCopyBody, srcCell, output,
-        CLoops.loop, CLoops.counterStep,
-        List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil, List.mem_append, List.mem_cons,
-        List.not_mem_nil, List.forall_mem_nil, or_false, or_imp, forall_and, List.cons_append,
-        List.nil_append, forall_eq] <;>
-      repeat first
-        | exact CNull.literal_printable _
-        | exact iType
-        | exact fType
-        | exact sType
-        | apply And.intro
-        | apply ItemPrintable.declare
-        | apply ItemPrintable.assign
-        | apply ItemPrintable.branch
-        | apply ItemPrintable.whileLoop
-        | apply ItemPrintable.returnValue
-        | apply Printable.cast
-        | apply Printable.binary
-        | apply Printable.not
-        | apply Printable.address
-        | apply Printable.call
-        | apply Printable.field
-        | apply Printable.index
-        | exact Printable.natural
-        | exact Printable.string
-        | apply Printable.identifier
-        | solve | intro stmt impossible; cases impossible
-        | decide +kernel
-        | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
-            Postfix, FieldBase])
+/-- The `Runtime.fail` rejection statement prints its intended C token grammar,
+independent of the diagnostic message. Every dispatch fallback is one of these. -/
+theorem fail_printable (msg : String) : ItemPrintable RuntimePrinter.typedefs (Runtime.fail msg) := by
+  simp only [Runtime.fail, Runtime.ret, Runtime.call, Runtime.v]
+  refine ItemPrintable.returnValue (Printable.call (Printable.identifier (by decide +kernel)) ?_ ?_)
+  · simp [Postfix]
+  · intro arg harg
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at harg
+    rcases harg with rfl | rfl
+    · exact Printable.identifier (by decide +kernel)
+    · exact Printable.string
+
+/-- The compared reference expression `valueReferences[0]` prints its intended C
+token grammar; every dispatch guard compares it with a literal. -/
+theorem vr0_printable : Printable RuntimePrinter.typedefs vr0 := by
+  simp only [vr0, Runtime.v, Runtime.n]
+  exact Printable.index (Printable.identifier (by decide +kernel)) (by simp [Postfix]) Printable.natural
+
+/-- A staged record-member pointer prints its intended C token grammar for any
+member whose declared name is a valid C identifier. -/
+theorem memberPointer_printable (member : String) (hv : CIdentifier.valid [] member = true) :
+    Printable RuntimePrinter.typedefs (memberPointer member) := by
+  simp only [memberPointer, Runtime.region, Runtime.field, Runtime.v, Runtime.n]
+  split
+  · exact Printable.address
+      (Printable.field (Printable.identifier (by decide +kernel)) (by simp [Postfix]) (by simp [FieldBase]) hv)
+  · exact Printable.address (Printable.index
+      (Printable.field (Printable.identifier (by decide +kernel)) (by simp [Postfix]) (by simp [FieldBase]) hv)
+      (by simp [Postfix]) Printable.natural)
+
+/-- Every statement of a getter dispatch arm prints its intended C token grammar. -/
+theorem getArm_printable (member : String) (count : Nat) (hv : CIdentifier.valid [] member = true) :
+    ∀ stmt ∈ getArm member count, ItemPrintable RuntimePrinter.typedefs stmt := by
+  intro stmt hs
+  simp only [getArm, List.mem_cons, List.not_mem_nil, or_false] at hs
+  rcases hs with rfl | rfl
+  · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) (memberPointer_printable member hv)
+  · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) Printable.natural
+
+/-- Every statement of a setter dispatch arm prints its intended C token grammar. -/
+theorem setArm_printable (member : String) (count : Nat) (hv : CIdentifier.valid [] member = true) :
+    ∀ stmt ∈ setArm member count, ItemPrintable RuntimePrinter.typedefs stmt := by
+  intro stmt hs
+  simp only [setArm, List.mem_cons, List.not_mem_nil, or_false] at hs
+  rcases hs with rfl | rfl
+  · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) (memberPointer_printable member hv)
+  · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) Printable.natural
 
 set_option maxHeartbeats 4000000 in
-/-- Every statement of the setter body prints its intended C token grammar. -/
-theorem setBody_printable (shape : Tensor.Shape) :
-    ∀ stmt ∈ (setFunction shape).body, ItemPrintable RuntimePrinter.typedefs stmt := by
+/-- Every statement of the getter body around an abstract dispatch prints its
+intended C token grammar, once the dispatch statement does. This is the shared
+printability proof: every profile's `getBody` is definitionally `getBodyFor` of
+its own dispatch, so the two per-profile getters cite this by instantiation. -/
+theorem getBodyFor_printable (dispatch : Stmt)
+    (hd : ItemPrintable RuntimePrinter.typedefs dispatch) :
+    ∀ stmt ∈ getBodyFor dispatch, ItemPrintable RuntimePrinter.typedefs stmt := by
   have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
     .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have fType : TypeSpelling RuntimePrinter.typedefs "fmi3Float64 *" :=
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [setFunction, setBody, setRest, setDispatch, setDispatch2, setArm, setLoopSuffix, validateBody,
-      memberPointer, Runtime.region, timeName, stateName, inputName, derivativeName, outputName,
-      basicReject, countReject, vr0, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
-      Runtime.allowedExpression, permittedModes, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
-      Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
-      Runtime.negate, Runtime.any, Runtime.mode, Runtime.lt, Runtime.call, Runtime.finite, setCopyBody,
-      dstCell, output, CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons,
-      List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp,
-      forall_and, List.cons_append, List.nil_append, forall_eq] <;>
+  simp only [getBodyFor, getLoopSuffix, basicReject, countReject, Runtime.require,
+      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+      Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
+      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
+      Runtime.mode, Runtime.lt, Runtime.call, getCopyBody, srcCell, output, CLoops.loop,
+      CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil, List.mem_append,
+      List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp, forall_and,
+      List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
+      | exact hd
       | exact CNull.literal_printable _
       | exact iType
       | exact fType
@@ -1369,6 +1413,128 @@ theorem setBody_printable (shape : Tensor.Shape) :
       | decide +kernel
       | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
           Postfix, FieldBase]
+
+set_option maxHeartbeats 4000000 in
+/-- Every statement of the setter body around an abstract dispatch prints its
+intended C token grammar, once the dispatch statement does. Shared by every
+profile's setter through `setBodyFor`. -/
+theorem setBodyFor_printable (dispatch : Stmt)
+    (hd : ItemPrintable RuntimePrinter.typedefs dispatch) :
+    ∀ stmt ∈ setBodyFor dispatch, ItemPrintable RuntimePrinter.typedefs stmt := by
+  have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
+    .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
+  have fType : TypeSpelling RuntimePrinter.typedefs "fmi3Float64 *" :=
+    .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
+  have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
+    .named (.typedefName (by decide +kernel) (by decide +kernel))
+  simp only [setBodyFor, setLoopSuffix, validateBody, basicReject, countReject, Runtime.require,
+      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+      Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
+      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
+      Runtime.mode, Runtime.lt, Runtime.call, Runtime.finite, setCopyBody, dstCell, output, CLoops.loop,
+      CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil, List.mem_append,
+      List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp, forall_and,
+      List.cons_append, List.nil_append, forall_eq] <;>
+    repeat first
+      | exact hd
+      | exact CNull.literal_printable _
+      | exact iType
+      | exact fType
+      | exact sType
+      | apply And.intro
+      | apply ItemPrintable.declare
+      | apply ItemPrintable.assign
+      | apply ItemPrintable.branch
+      | apply ItemPrintable.whileLoop
+      | apply ItemPrintable.returnValue
+      | apply Printable.cast
+      | apply Printable.binary
+      | apply Printable.not
+      | apply Printable.address
+      | apply Printable.call
+      | apply Printable.field
+      | apply Printable.index
+      | exact Printable.natural
+      | exact Printable.string
+      | apply Printable.identifier
+      | solve | intro stmt impossible; cases impossible
+      | decide +kernel
+      | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
+          Postfix, FieldBase]
+
+/-- Each getter dispatch arm prints its intended C token grammar; supplied to the
+generic `dispatchChain_printable`. -/
+theorem getArms_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
+    ∀ a ∈ getArms shape outputShape, ∀ stmt ∈ a.2, ItemPrintable RuntimePrinter.typedefs stmt := by
+  intro a ha
+  simp only [getArms, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl | rfl | rfl
+  · exact getArm_printable timeName 1 (by decide +kernel)
+  · exact getArm_printable inputName shape.volume (by decide +kernel)
+  · exact getArm_printable stateName shape.volume (by decide +kernel)
+  · exact getArm_printable derivativeName shape.volume (by decide +kernel)
+  · cases outputShape with
+    | none =>
+      intro stmt hs
+      simp only [getOutputArm, List.mem_cons, List.not_mem_nil, or_false] at hs
+      subst hs; exact fail_printable _
+    | some os => exact getArm_printable outputName os.volume (by decide +kernel)
+
+/-- Each setter dispatch arm prints its intended C token grammar; supplied to the
+generic `dispatchChain_printable`. -/
+theorem setArms_printable (shape : Tensor.Shape) :
+    ∀ a ∈ setArms shape, ∀ stmt ∈ a.2, ItemPrintable RuntimePrinter.typedefs stmt := by
+  intro a ha
+  simp only [setArms, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl
+  · exact setArm_printable inputName shape.volume (by decide +kernel)
+  · exact setArm_printable stateName shape.volume (by decide +kernel)
+
+/-- The getter dispatch fallback prints its intended C token grammar. -/
+theorem getFallback_printable :
+    ∀ stmt ∈ [Runtime.fail "Unknown value reference"], ItemPrintable RuntimePrinter.typedefs stmt := by
+  intro stmt hs
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
+  subst hs
+  exact fail_printable _
+
+/-- The setter dispatch fallback prints its intended C token grammar. -/
+theorem setFallback_printable :
+    ∀ stmt ∈ [Runtime.fail "Unknown or read-only value reference"],
+      ItemPrintable RuntimePrinter.typedefs stmt := by
+  intro stmt hs
+  simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
+  subst hs
+  exact fail_printable _
+
+/-- The getter dispatch prints its intended C token grammar, obtained from the
+generic dispatch-chain lemma over the getter reference list rather than a
+per-branch reproof. -/
+theorem getDispatch_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
+    ItemPrintable RuntimePrinter.typedefs (getDispatch shape outputShape) := by
+  have h := Float64Dispatch.dispatchChain_printable RuntimePrinter.typedefs vr0
+    (getArms shape outputShape) [Runtime.fail "Unknown value reference"] vr0_printable
+    getFallback_printable (getArms_printable shape outputShape)
+  exact h _ (by rw [getDispatch_chain]; simp)
+
+/-- The setter dispatch prints its intended C token grammar, obtained from the
+generic dispatch-chain lemma over the writable-reference list. -/
+theorem setDispatch_printable (shape : Tensor.Shape) :
+    ItemPrintable RuntimePrinter.typedefs (setDispatch shape) := by
+  have h := Float64Dispatch.dispatchChain_printable RuntimePrinter.typedefs vr0
+    (setArms shape) [Runtime.fail "Unknown or read-only value reference"] vr0_printable
+    setFallback_printable (setArms_printable shape)
+  exact h _ (by rw [setDispatch_chain]; simp)
+
+/-- Every statement of the getter body prints its intended C token grammar. -/
+theorem getBody_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
+    ∀ stmt ∈ (getFunction shape outputShape).body, ItemPrintable RuntimePrinter.typedefs stmt :=
+  getBodyFor_printable (getDispatch shape outputShape) (getDispatch_printable shape outputShape)
+
+/-- Every statement of the setter body prints its intended C token grammar. -/
+theorem setBody_printable (shape : Tensor.Shape) :
+    ∀ stmt ∈ (setFunction shape).body, ItemPrintable RuntimePrinter.typedefs stmt :=
+  setBodyFor_printable (setDispatch shape) (setDispatch_printable shape)
 
 /-- The accessor signature prints its intended C token grammar. -/
 theorem signature_printable (write : Bool) :

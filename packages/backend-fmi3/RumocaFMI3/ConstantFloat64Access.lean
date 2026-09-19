@@ -44,6 +44,16 @@ def getDispatch1 (shape : Tensor.Shape) : List Stmt :=
 def getDispatch (shape : Tensor.Shape) : Stmt :=
   Runtime.branch (Runtime.eqv vr0 (Runtime.n 0)) (getArm timeName 1) (getDispatch1 shape)
 
+/-- The constant-rate getter dispatch arms as a value-reference list: references
+`0..2` staging the time, state and derivative regions. The constant getter is the
+generic `Float64Dispatch.dispatchChain` over this list. -/
+def getArms (shape : Tensor.Shape) : List (Nat × List Stmt) :=
+  [(0, getArm timeName 1), (1, getArm stateName shape.volume), (2, getArm derivativeName shape.volume)]
+
+theorem getDispatch_chain (shape : Tensor.Shape) :
+    Float64Dispatch.dispatchChain vr0 (getArms shape)
+        [Runtime.fail "Unknown value reference"] = [getDispatch shape] := rfl
+
 /-- The statements after the guard, run in the typed machine. -/
 def getRest (shape : Tensor.Shape) : List Stmt :=
   [.declare "fmi3Float64 *" "src" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
@@ -71,6 +81,16 @@ def setDispatch (shape : Tensor.Shape) : Stmt :=
   Runtime.branch (Runtime.eqv vr0 (Runtime.n 1)) (setArm stateName shape.volume)
     [Runtime.fail "Unknown or read-only value reference"]
 
+/-- The constant-rate setter dispatch arms: only the state `x` (reference `1`) is
+writable. The constant setter is the generic `Float64Dispatch.dispatchChain` over
+this single-arm list. -/
+def setArms (shape : Tensor.Shape) : List (Nat × List Stmt) :=
+  [(1, setArm stateName shape.volume)]
+
+theorem setDispatch_chain (shape : Tensor.Shape) :
+    Float64Dispatch.dispatchChain vr0 (setArms shape)
+        [Runtime.fail "Unknown or read-only value reference"] = [setDispatch shape] := rfl
+
 def setRest (shape : Tensor.Shape) : List Stmt :=
   [.declare "fmi3Float64 *" "dst" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
     setDispatch shape, countReject] ++ setLoopSuffix
@@ -93,95 +113,56 @@ theorem setBody_closed (shape : Tensor.Shape) :
 section
 open CTree.Printer CTree.Syntax
 
-set_option maxHeartbeats 4000000 in
-/-- Every statement of the getter body prints its intended C token grammar. -/
-theorem getBody_printable (shape : Tensor.Shape) :
-    ∀ stmt ∈ (getFunction shape).body, ItemPrintable RuntimePrinter.typedefs stmt := by
-  have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
-    .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
-  have fType : TypeSpelling RuntimePrinter.typedefs "fmi3Float64 *" :=
-    .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
-  have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
-    .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [getFunction, getBody, getRest, getDispatch, getDispatch1, getDispatch2, getArm,
-      getLoopSuffix, memberPointer, Runtime.region, timeName, stateName, inputName, derivativeName,
-      outputName, basicReject, countReject, vr0, Runtime.require, Runtime.instancePrefix,
-      Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.reject, Runtime.branch,
-      Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv,
-      Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any, Runtime.mode, Runtime.lt,
-      Runtime.call, getCopyBody, srcCell, output, CLoops.loop, CLoops.counterStep, List.foldr_cons,
-      List.foldr_nil, List.map_cons, List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil,
-      List.forall_mem_nil, or_false, or_imp, forall_and, List.cons_append, List.nil_append, forall_eq] <;>
-    repeat first
-      | exact CNull.literal_printable _
-      | exact iType
-      | exact fType
-      | exact sType
-      | apply And.intro
-      | apply ItemPrintable.declare
-      | apply ItemPrintable.assign
-      | apply ItemPrintable.branch
-      | apply ItemPrintable.whileLoop
-      | apply ItemPrintable.returnValue
-      | apply Printable.cast
-      | apply Printable.binary
-      | apply Printable.not
-      | apply Printable.address
-      | apply Printable.call
-      | apply Printable.field
-      | apply Printable.index
-      | exact Printable.natural
-      | exact Printable.string
-      | apply Printable.identifier
-      | solve | intro stmt impossible; cases impossible
-      | decide +kernel
-      | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
-          Postfix, FieldBase]
+/-- Each constant-rate getter dispatch arm prints its intended C token grammar;
+supplied to the generic `dispatchChain_printable`. -/
+theorem getArms_printable (shape : Tensor.Shape) :
+    ∀ a ∈ getArms shape, ∀ stmt ∈ a.2, ItemPrintable RuntimePrinter.typedefs stmt := by
+  intro a ha
+  simp only [getArms, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl | rfl | rfl
+  · exact TensorFloat64.getArm_printable timeName 1 (by decide +kernel)
+  · exact TensorFloat64.getArm_printable stateName shape.volume (by decide +kernel)
+  · exact TensorFloat64.getArm_printable derivativeName shape.volume (by decide +kernel)
 
-set_option maxHeartbeats 4000000 in
-/-- Every statement of the setter body prints its intended C token grammar. -/
+/-- The constant-rate setter dispatch arm prints its intended C token grammar. -/
+theorem setArms_printable (shape : Tensor.Shape) :
+    ∀ a ∈ setArms shape, ∀ stmt ∈ a.2, ItemPrintable RuntimePrinter.typedefs stmt := by
+  intro a ha
+  simp only [setArms, List.mem_cons, List.not_mem_nil, or_false] at ha
+  rcases ha with rfl
+  exact TensorFloat64.setArm_printable stateName shape.volume (by decide +kernel)
+
+/-- The constant-rate getter dispatch prints its intended C token grammar,
+obtained from the generic dispatch-chain lemma over references `0..2`. -/
+theorem getDispatch_printable (shape : Tensor.Shape) :
+    ItemPrintable RuntimePrinter.typedefs (getDispatch shape) := by
+  have h := Float64Dispatch.dispatchChain_printable RuntimePrinter.typedefs vr0 (getArms shape)
+    [Runtime.fail "Unknown value reference"] TensorFloat64.vr0_printable
+    TensorFloat64.getFallback_printable (getArms_printable shape)
+  exact h _ (by rw [getDispatch_chain]; simp)
+
+/-- The constant-rate setter dispatch prints its intended C token grammar,
+obtained from the generic dispatch-chain lemma over the single writable state
+reference. -/
+theorem setDispatch_printable (shape : Tensor.Shape) :
+    ItemPrintable RuntimePrinter.typedefs (setDispatch shape) := by
+  have h := Float64Dispatch.dispatchChain_printable RuntimePrinter.typedefs vr0 (setArms shape)
+    [Runtime.fail "Unknown or read-only value reference"] TensorFloat64.vr0_printable
+    TensorFloat64.setFallback_printable (setArms_printable shape)
+  exact h _ (by rw [setDispatch_chain]; simp)
+
+/-- Every statement of the getter body prints its intended C token grammar. The
+body is the shared `TensorFloat64.getBodyFor` around the constant-rate dispatch,
+so its printability is the shared proof instantiated at this profile's dispatch. -/
+theorem getBody_printable (shape : Tensor.Shape) :
+    ∀ stmt ∈ (getFunction shape).body, ItemPrintable RuntimePrinter.typedefs stmt :=
+  TensorFloat64.getBodyFor_printable (getDispatch shape) (getDispatch_printable shape)
+
+/-- Every statement of the setter body prints its intended C token grammar, as the
+shared `TensorFloat64.setBodyFor` proof instantiated at the constant-rate dispatch. -/
 theorem setBody_printable (shape : Tensor.Shape) :
-    ∀ stmt ∈ (setFunction shape).body, ItemPrintable RuntimePrinter.typedefs stmt := by
-  have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
-    .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
-  have fType : TypeSpelling RuntimePrinter.typedefs "fmi3Float64 *" :=
-    .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
-  have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
-    .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [setFunction, setBody, setRest, setDispatch, setArm, setLoopSuffix, validateBody,
-      memberPointer, Runtime.region, timeName, stateName, inputName, derivativeName, outputName,
-      basicReject, countReject, vr0, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
-      Runtime.allowedExpression, permittedModes, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
-      Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
-      Runtime.negate, Runtime.any, Runtime.mode, Runtime.lt, Runtime.call, Runtime.finite, setCopyBody,
-      dstCell, output, CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons,
-      List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp,
-      forall_and, List.cons_append, List.nil_append, forall_eq] <;>
-    repeat first
-      | exact CNull.literal_printable _
-      | exact iType
-      | exact fType
-      | exact sType
-      | apply And.intro
-      | apply ItemPrintable.declare
-      | apply ItemPrintable.assign
-      | apply ItemPrintable.branch
-      | apply ItemPrintable.whileLoop
-      | apply ItemPrintable.returnValue
-      | apply Printable.cast
-      | apply Printable.binary
-      | apply Printable.not
-      | apply Printable.address
-      | apply Printable.call
-      | apply Printable.field
-      | apply Printable.index
-      | exact Printable.natural
-      | exact Printable.string
-      | apply Printable.identifier
-      | solve | intro stmt impossible; cases impossible
-      | decide +kernel
-      | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
-          Postfix, FieldBase]
+    ∀ stmt ∈ (setFunction shape).body, ItemPrintable RuntimePrinter.typedefs stmt :=
+  TensorFloat64.setBodyFor_printable (setDispatch shape) (setDispatch_printable shape)
 
 /-- The rendered getter denotes its function under the shared C printer. -/
 theorem getFunction_denotes (shape : Tensor.Shape) :

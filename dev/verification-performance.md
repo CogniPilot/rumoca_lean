@@ -509,3 +509,41 @@ adapter certificates still produce with identical statements and depend only on
 `verify-artifact` for the `fmi3`, `tensor-fmi3` and `constant-fmi3` kinds over
 the actual extracted FMU sources, and the tensor and constant adapter
 standalone-object boundary checks in `tests/tensor-c.sh` still pass.
+
+
+## Profile-generic Float64 value-reference dispatch, 2026-09-19
+
+The tensor and constant-rate `fmi3GetFloat64` / `fmi3SetFloat64` bodies share one
+value-reference dispatch shape (see
+[fmi3/contracts.md](fmi3/contracts.md#profile-generic-float64-value-reference-dispatch)).
+The printability of that dispatch is now proved once, by induction over the
+reference list, in `RumocaFMI3.Float64Dispatch`, and the printability of the
+getter and setter body around an abstract dispatch is proved once in
+`RumocaFMI3.TensorFloat64Access`. Each profile obtains the printed-text
+denotation of its accessors by instantiating those shared results at its own
+reference list, instead of re-walking the whole body under a raised heartbeat
+budget. The two `set_option maxHeartbeats 4000000` printability reproofs that the
+constant-rate accessor carried are removed; the equivalent shared proofs run once
+and are cited by both profiles.
+
+Per-module cold elaboration (Lake's reported per-module seconds, dependencies
+already built, module oleans removed and rebuilt) before and after:
+
+| Module | Before | After |
+| --- | ---: | ---: |
+| `RumocaFMI3.Float64Dispatch` (new) | n/a | 1.7 s |
+| `RumocaFMI3.TensorFloat64Access` | 23 s | 20 s |
+| `RumocaFMI3.ConstantFloat64Access` | 15 s | 3.1 s |
+
+The constant-rate accessor drops from about fifteen seconds to about three because
+its two raised-budget printability reproofs are replaced by citation of the
+shared proofs; its dispatch printability is a short induction over the reference
+list. The tensor accessor drops a few seconds as the value-reference printability
+moves off its per-profile path; the remainder is intrinsic behavioral machine-
+execution semantics that stays per profile. The decisive effect is that the
+value-reference printability no longer scales per profile: a further profile that
+fits this accessor shape pays the small constant-rate-like cost, not a fresh
+body-length reproof. `ConstantFloat64.get_contract` and `set_contract` keep their
+statements and depend only on `propext`, `Quot.sound` and `Classical.choice`;
+the three `verify-artifact` certificate kinds and the two adapter standalone-object
+boundary checks continue to pass.

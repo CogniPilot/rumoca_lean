@@ -326,6 +326,38 @@ whose adapter fits the five-piece shape supplies a plan value; it adds no
 renderer and no render-identity proof family of its own.
 
 
+### Profile-generic Float64 value-reference dispatch
+
+Every adapter profile's `fmi3GetFloat64` and `fmi3SetFloat64` body shares one
+shape: the instance-handle and lifecycle guard, the single-reference request
+check, a staged region pointer and element count, a value-reference dispatch,
+the count check, and the counted copy loop. Only the dispatch differs between
+profiles, and the dispatch itself is one shape: a right-nested chain of equality
+guards `if valueReferences[0] == j then <arm> else <next>` over an ordered list
+of `(reference number, dispatch arm)` pairs, ending in an "unknown reference"
+fallback. The tensor getter covers references `0..4` (time, input, state,
+derivative, output), the constant-rate getter references `0..2` (time, state,
+derivative), and each setter its writable subset (tensor references `1,2`;
+constant-rate reference `1`).
+
+`Float64Dispatch.dispatchChain` builds that chain from the reference list, and
+`Float64Dispatch.dispatchChain_printable` proves once, by induction over the
+list, that every statement of the chain prints its intended C token grammar,
+given that the compared reference expression prints, each arm's statements print,
+and the fallback prints. The getter and setter body around an abstract dispatch
+statement are `TensorFloat64.getBodyFor` and `setBodyFor`, and the shared
+printability of those bodies (`getBodyFor_printable`, `setBodyFor_printable`) is
+proved once over an arbitrary dispatch statement. Each profile's `getBody` and
+`setBody` are definitionally these shared bodies around the profile's own
+dispatch, so per-profile printability and printed-text denotation are the shared
+results instantiated at the profile's reference list rather than a body-length
+reproof per profile. The constant-rate accessor's function contracts
+`ConstantFloat64.get_contract` and `set_contract` keep their statements and are
+now discharged by this instantiation. A profile whose accessors fit this shape
+supplies its reference list and the printability of its arms; it adds no
+value-reference printability or denotation proof of its own.
+
+
 ### Parameter coverage and actual call entry
 
 The follow-on increment adds all adjusted pointer spellings missing in the
