@@ -46,6 +46,34 @@ def check (operand : Indirect.Operand) : Bool := decide (Permitted operand)
 theorem check_correct (operand : Indirect.Operand) : check operand = true ↔ Permitted operand := by
   exact decide_eq_true_iff
 
+/-- The scheduler-operand admission predicate is monotone in the operand
+restriction: a weaker per-operand policy is admitted wherever a stronger one is.
+This lets a subordinate operand policy instantiate the shared body/helper
+classification instead of re-classifying every call site. -/
+theorem admits_mono {p q : Indirect.Operand → Prop} (imp : ∀ operand, p operand → q operand)
+    (stmt : Stmt) (h : Admits p stmt) : Admits q stmt := by
+  revert h
+  induction stmt using Stmt.rec
+      (motive_2 := fun code => (∀ s ∈ code, Admits p s) → ∀ s ∈ code, Admits q s) with
+  | declare | assign | eval | ret =>
+      intro hp
+      simp only [Admits] at hp ⊢
+      exact ⟨fun operand occurs => imp operand (hp.1 operand occurs), trivial⟩
+  | branch _ _ _ hy hn =>
+      intro hp
+      simp only [Admits] at hp ⊢
+      exact ⟨fun operand occurs => imp operand (hp.1 operand occurs), hy hp.2.1, hn hp.2.2⟩
+  | whileLoop _ _ hb =>
+      intro hp
+      simp only [Admits] at hp ⊢
+      exact ⟨fun operand occurs => imp operand (hp.1 operand occurs), hb hp.2⟩
+  | nil => simp_all
+  | cons s rest hs hrest =>
+      rename_i hall s' member
+      rcases List.mem_cons.mp member with rfl | tail
+      · exact hs (hall s' List.mem_cons_self)
+      · exact hrest (fun x hx => hall x (List.mem_cons_of_mem _ hx)) s' tail
+
 def ValidCall (name : String) (values : List Value) : Prop :=
   ∀ busy, desired name = some busy → ∃ pointer, values = [pointer, CAtomicBoolean.value busy]
 

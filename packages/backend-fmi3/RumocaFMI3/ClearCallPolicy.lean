@@ -1,4 +1,4 @@
-import RumocaFMI3.CallPolicy
+import RumocaFMI3.AtomicCallPolicy
 import RumocaFMI3.RuntimeLinkage
 import RumocaC.HostCallSites
 
@@ -14,21 +14,36 @@ def Permitted (operand : Indirect.Operand) : Prop :=
 def Arguments (name : String) (args : List Value) : Prop :=
   name = "atomic_store" → ∃ address, args = [address, CAtomicBoolean.value false]
 
-macro "check_clear_calls" : tactic => `(tactic| (
-  try fmi_literal_calls
-  all_goals try simp_all [Admits, Indirect.operand, Permitted]))
+/-- The clear-store policy is the atomic reservation policy restricted to the
+store direction: an atomically stored `false` is exactly a released reservation.
+Every operand the atomic policy admits is therefore admitted here, so the clear
+policy instantiates the shared body and helper classification instead of
+re-classifying every emitted call site. -/
+theorem permitted_of_atomic (operand : Indirect.Operand)
+    (atomic : AtomicCallPolicy.Permitted operand) : Permitted operand := by
+  intro store
+  simp only [AtomicCallPolicy.Permitted, store, AtomicCallPolicy.desired,
+    AtomicCallPolicy.DesiredArguments, AtomicCallPolicy.DesiredValue,
+    String.reduceEq, reduceIte] at atomic
+  split at atomic
+  · rename_i head value _
+    split at atomic
+    · rename_i type k _
+      obtain ⟨rfl, rfl⟩ := atomic
+      exact ⟨head, by assumption⟩
+    · exact atomic.elim
+  · exact atomic.elim
 
 set_option maxHeartbeats 1000000 in
 theorem body_policy (model : Solve.FMI3Model source) (sig : Signature) :
-    ∀ stmt ∈ Runtime.body model sig, Admits Permitted stmt := by
-  unfold Runtime.body
-  split <;> check_clear_calls
-  all_goals split <;> check_clear_calls
+    ∀ stmt ∈ Runtime.body model sig, Admits Permitted stmt := fun stmt member =>
+  AtomicCallPolicy.admits_mono permitted_of_atomic stmt
+    (AtomicCallPolicy.body_policy model sig stmt member)
 
 theorem helpers_policy (fn : Function) (member : fn ∈ Runtime.helpers) :
-    ∀ stmt ∈ fn.body, Admits Permitted stmt := by
-  simp only [Runtime.helpers, List.mem_cons, List.not_mem_nil, or_false] at member
-  rcases member with rfl | rfl | rfl | rfl | rfl <;> check_clear_calls
+    ∀ stmt ∈ fn.body, Admits Permitted stmt := fun stmt smember =>
+  AtomicCallPolicy.admits_mono permitted_of_atomic stmt
+    (AtomicCallPolicy.helpers_policy fn member stmt smember)
 
 theorem program_policy (model : Solve.FMI3Model source) (sigs : List Signature) :
     ProgramAdmits Permitted (LiteralPreparation.program model sigs) := by

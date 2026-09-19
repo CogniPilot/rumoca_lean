@@ -825,3 +825,37 @@ theorem name and statement other modules cite is identical.
 
 The audited axioms stay within `propext`, `Quot.sound` and `Classical.choice`,
 and the FMI 3 and compiler checks continue to pass.
+
+## Operand call policy classified once, reused by the store policy, 2026-09-19
+
+The clear-store call policy (`RumocaFMI3.ClearCallPolicy`) classified every emitted
+scheduler operand of the scalar FMI adapter with the same thirty-arm `Runtime.body`
+enumeration the atomic reservation policy (`RumocaFMI3.AtomicCallPolicy`) already runs:
+each unfolded the whole body and simplified every call site per emitted function, so
+the two operand policies paid the identical body traversal twice. The clear policy's
+`body_policy` and `helpers_policy` were the whole of its cold cost.
+
+The clear policy is the atomic reservation policy restricted to the store direction:
+an atomically stored Boolean `false` is exactly a released reservation, so every
+operand the atomic policy admits the clear policy admits. A single operand-predicate
+monotonicity lemma, `AtomicCallPolicy.admits_mono`, lifts a per-operand implication
+through the recursive scheduler-operand admission predicate `Admits`, proved once by
+structural induction on the statement tree. `ClearCallPolicy.permitted_of_atomic`
+supplies the implication: the atomic reservation shape of a stored operand forces the
+cleared-`false` argument list. The clear policy's `body_policy` and `helpers_policy`
+now instantiate the atomic classification through `admits_mono` instead of
+re-classifying every call site. Every theorem name and statement other modules cite is
+unchanged.
+
+| Module | Cold module | Driver |
+| --- | ---: | --- |
+| `RumocaFMI3.ClearCallPolicy` per-policy body enumeration (before) | ~60 s | thirty-arm `Runtime.body` classification |
+| `RumocaFMI3.ClearCallPolicy` instantiating the atomic classification (after) | ~2 s | monotonicity instantiation |
+
+The atomic reservation policy remains the single payer of the scalar-body operand
+classification; its cold time is unchanged, since the added monotonicity lemma is
+negligible. Merging or narrowing that policy's two-pass simplification (a directed
+`simp only` set, or a single full `simp`) was measured slower than the existing
+unfold-then-classify two pass, so the two-pass full simplification is kept as the
+efficient form. The audited axioms stay within `propext`, `Quot.sound` and
+`Classical.choice`, and the FMI 3 and compiler checks continue to pass.
