@@ -358,6 +358,45 @@ supplies its reference list and the printability of its arms; it adds no
 value-reference printability or denotation proof of its own.
 
 
+### Profile record as the single source of truth
+
+One storage `Profile` record carries the per-profile render and call-policy data
+of an FMI 3 adapter profile in a single place: the presence of the FMI-visible
+input and output regions of an instance record (`hasInput`, `hasOutput`), the
+prepared kernel entries the adapter calls with their prototype parameter
+spellings (`kernels`), the Float64 getter and setter value-reference dispatch
+table (`references`), the extra callees the profile's call policy admits beyond
+the shared scalar classification (`extraCallees`), and whether the profile exports
+eFMI production artifacts (`hasEFMI`). The tensor profile carries both regions,
+the two kernels `rumoca_rhs` and `rumoca_square_jacobian_diag`, getter references
+`0..4` and setter references `1,2`, the square-Jacobian-diagonal callee and eFMI;
+the constant-rate profile carries neither region, the three kernels
+`rumoca_constant_rhs`/`_step`/`_sample`, getter references `0..2` and the single
+writable setter reference `1`, the three constant callees and no eFMI. Every extra
+callee a profile declares is one of its own declared kernel entries.
+
+`planOf` pairs a profile with the model-derived render inputs (the model name, the
+declaration preamble, the reused helper prefix and the per-signature body builder)
+to produce that profile's `RenderPlan`. `TensorFunctions.tensorPlan` and
+`ConstantFunctions.constantPlan` are definitionally `planOf` of the tensor and
+constant profiles, so every render-identity fact continues to flow through the one
+shared `RenderPlan` development. The declaration preamble stays a model-derived
+rendered string rather than a value recomputed from the profile flags, because the
+adapter preamble's byte structure is fixed by the emitted C text, not by the
+presence flags alone.
+
+The dispatch table and admitted callees are checked against the profile record.
+Each profile's Float64 getter and setter dispatch over exactly the numeric value
+references the profile's `references` field declares, in order: the reference
+projections of `TensorFloat64.getArms`/`setArms` and
+`ConstantFloat64.getArms`/`setArms` equal `referencesOf` of the tensor and
+constant profiles. Every extra callee the profile declares (`calleesOf`) is
+admitted by that profile's call policy (`acceptedT` for the tensor kernels,
+`acceptedC` for the constant kernels). A profile whose adapter fits these shapes
+supplies one profile record; the render plan, the dispatch table and the admitted
+callees are read from that record rather than restated per profile.
+
+
 ### Parameter coverage and actual call entry
 
 The follow-on increment adds all adjusted pointer spellings missing in the

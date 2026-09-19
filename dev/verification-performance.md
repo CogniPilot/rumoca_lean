@@ -606,3 +606,45 @@ body-length reproof. `ConstantFloat64.get_contract` and `set_contract` keep thei
 statements and depend only on `propext`, `Quot.sound` and `Classical.choice`;
 the three `verify-artifact` certificate kinds and the two adapter standalone-object
 boundary checks continue to pass.
+
+
+## Profile record as the single source of truth, 2026-09-19
+
+The per-profile render and call-policy data of each FMI 3 adapter profile now
+lives in one storage `Profile` record (the region-presence flags, the prepared
+kernel entries, the Float64 value-reference dispatch table, the admitted extra
+callees and the eFMI capability); see
+[fmi3/contracts.md](fmi3/contracts.md#profile-record-as-the-single-source-of-truth).
+`planOf` pairs a profile with the model-derived render inputs to produce its
+`RenderPlan`, and `TensorFunctions.tensorPlan` and `ConstantFunctions.constantPlan`
+are definitionally `planOf` of the tensor and constant profiles. The dispatch
+table and admitted callees are checked against the record: each profile's Float64
+getter and setter dispatch over exactly the references the record declares, and
+every declared extra callee is admitted by that profile's call policy.
+
+Per-module cold elaboration (single-file `lean` check against built dependencies,
+wall time including import deserialization; the shared host carries variance from
+a concurrent build) before and after:
+
+| Module | Before | After |
+| --- | ---: | ---: |
+| `RumocaFMI3.TensorInstanceStorage` | 4.0 s | 5.9 s |
+| `RumocaFMI3.AdapterProfile` (new) | n/a | 5.8 s |
+| `RumocaFMI3.TensorFunctions` | 4.8 s | 6.4 s |
+| `RumocaFMI3.ConstantFunctions` | 4.8 s | 6.7 s |
+| `RumocaFMI3.TensorCallPolicy` | 23.9 s | 26.2 s |
+| `RumocaFMI3.ConstantCallPolicy` | 23.0 s | 20.3 s |
+
+The render and plan modules take a small fixed increase, dominated by the larger
+import surface the new profile module pulls into their transitive closure rather
+than by proof work: the added definitions are the profile fields, `planOf` and the
+reflexivity-level equalities relating the render plans, dispatch tables and
+admitted callees to the profile record. The call-policy modules are dominated by
+their intrinsic call-classification proofs and move within measurement noise once
+the single admitted-callee agreement lemma is added. Nothing scales per profile:
+a further profile whose adapter fits these shapes supplies one profile record and
+reads its render plan, dispatch table and admitted callees from it, adding no new
+render, dispatch or call-policy proof family of its own. The three `verify-artifact`
+certificate kinds (`fmi3`, `tensor-fmi3`, `constant-fmi3`) and the tensor and
+constant adapter standalone-object boundary checks continue to pass, each within
+the `propext`, `Quot.sound`, `Classical.choice` axiom whitelist.

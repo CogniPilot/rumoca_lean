@@ -29,6 +29,12 @@ def acceptedC : Expr → Bool
 theorem accepted_acceptedC (e : Expr) (acc : accepted e = true) : acceptedC e = true := by
   cases e <;> simp_all [acceptedC]
 
+/-- Every extra callee the constant profile declares is admitted by the constant
+call policy: the profile's admitted-callee extension (`calleesOf constantProfile`)
+and the call policy agree on the three constant kernel entries. -/
+theorem calleesOf_acceptedC :
+    ∀ name ∈ calleesOf TensorInstance.constantProfile, acceptedC (.id name) = true := by decide
+
 /-- Monotonicity of the syntactic admission predicate along the call inventory. -/
 theorem statementAdmits_mono {p q : Expr → Prop} (imp : ∀ e, p e → q e) (stmt : Stmt)
     (h : StatementAdmits p stmt) : StatementAdmits q stmt :=
