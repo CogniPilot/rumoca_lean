@@ -119,7 +119,10 @@ The full gate is the root package's native Lake test driver. Individual
 integration stages are Lake scripts: `lake run verify-c`,
 `lake run lalr-test`, `lake run fmi-test`, `lake run efmi-algorithm-test`, and
 `lake run efmi-production-test`. `lake run demo` and `lake run fmu` retain the
-example workflows. These scripts propagate failures and run their boundary
+example workflows. `lake run certificate-usage` and
+`lake run prune-certificates [KEEP]` report and bound the actual-artifact
+certificate cache; see [cached artifact certificates](#cached-artifact-certificates).
+These scripts propagate failures and run their boundary
 checks on each invocation; a passing stamp is never used to skip them.
 
 The artifact verification CLI uses a native Lake build job for the fixed checking
@@ -172,6 +175,37 @@ trust boundary; native Lake freshness hashes are not cryptographic authenticity
 proofs. The existing CI package cache retains these products between commits.
 Deleting `build/` preserves them; deleting the compiler's `.lake/build` removes
 them. Different inputs retain separate products using Lake's dependency hash.
+
+#### On-disk layout
+
+Each certificate lives at
+`packages/compiler/.lake/build/certificates/<kind>/<trace-hash>/`. The directory
+holds the kernel-checked `<Checker>.olean` object, `audit.log` (the axiom
+report), `identity.json` (the certified `[kind, sourceName]` label),
+`Certificate.trace` (the freshness trace that authorizes reuse), and one
+`input-i.bin` per independently read input file. The `.olean` object dominates
+the directory; the input snapshots are a few kilobytes each and are load-bearing
+for reuse, because `--check-only` reverifies that every actual input file still
+equals its certified bytes before it accepts a cache hit. A `Certificate.used`
+stamp records when the certificate was last built or reused.
+
+#### Bounded retention
+
+The root coordinating `lakefile.lean` is part of every certificate's trace, so
+any edit to an input, a checker import, or the root Lake file produces a new
+trace-hash directory and never removes the superseded one. Without bounds the
+cache grows as (edits x kinds). Two Lake scripts bound it:
+
+- `lake run certificate-usage` prints per-kind directory counts and sizes and a
+  total, and deletes nothing.
+- `lake run prune-certificates [KEEP]` keeps the `KEEP` most-recently-used
+  directories per kind (default `2`) and deletes the rest, printing each removed
+  directory and the bytes freed. "Recently used" comes from the
+  `Certificate.used` stamp, which is refreshed on cache reuse as well as on a
+  fresh build, so pruning does not evict a certificate that a warm run just
+  exercised. The verification gate never prunes; run `prune-certificates`
+  manually to reclaim space. A kept certificate is still reused by
+  `--check-only`; a pruned one rebuilds to the same directory on its next use.
 
 By default, eFMU generation draws its three manifest identities from the
 operating system (RFC 9562 version 4 UUIDs) and stamps the wall-clock
