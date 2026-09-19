@@ -73,6 +73,41 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Constant-rate kernel bridge, fused derivative getter and step entry (Stage 3): standards impact
+
+The executable constant-rate kernel entries are now bound to the static constant
+instance record (`FMI3.ConstantInstanceRhs`, `dev/constant-rates.md` "Constant
+kernel bridge and fused derivative getter"). The list-indexed kernel view
+(`CConstant.place`/`cells`/`writableN` over the declaration-order rate list) is
+matched to the dense tensor view (`Reads`/`Writable`/`Values`), and the proved
+loop-call behaviors (`CConstant.rhs_behaves`, `step_behaves`) embed into the
+observable call machine through the shared typed-to-observable transfer
+(`CCalls.Events.loop_call_reaches_events`). `rhs_writes_events` writes the exactly
+rounded rate vector into instance `i`'s derivative region, and `step_writes_events`
+advances each state cell by the finite binary64 addition of its rate; each
+preserves every other cell of every other instance, universal in the state shape,
+the source rates and the pool index. Building on the derivative bridge,
+`FMI3.ConstantDerivative.deriv_reaches`/`deriv_behaviors` prove the fused
+single-run `fmi3GetContinuousStateDerivatives` over the constant instance record,
+and `deriv_contract` bundles it as a consumable contract. These are
+package-checked products only: no production artifact, CLI or grammar change, and
+the tensor and scalar adapters and every existing contract are unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The constant-rate profile remains a development case. |
+| FMI 3.0.2, Model Exchange interface, evaluating state derivatives (`fmi3GetContinuousStateDerivatives`) | The constant getter now runs in one observable-machine execution: it guards the handle/lifecycle, checks that `nContinuousStates` equals the symbolic state volume and the buffer is non-null, invokes the constant kernel entry `rumoca_constant_rhs(&(m->dx[0]))` (resolved directly by name) which writes the exactly rounded rate vector into `der(x)`, then copies that region into the caller buffer. Its sole terminating behavior returns `fmi3OK` with the rounded rate vector delivered to the caller buffer, the instance's `der(x)` region holding the same values, and every other cell of every other instance preserved (`deriv_reaches`, `deriv_behaviors`, `deriv_contract`). A null handle returns `fmi3Error` changing nothing (`null_deriv_behaviors`). |
+| FMI 3.0.2 §4.2.1 Computation (`fmi3DoStep`) | The Co-Simulation do-step's per-internal-step numerical entry `rumoca_constant_step(&(m->x[0]))` is now bridged over the instance record: `step_writes_events` runs it as one observable-machine execution advancing each state cell by the finite binary64 addition of its rate and preserving every other instance, under the explicit per-cell finite-addition premises. The full accepted `fmi3DoStep` execution over the outer unit-grid loop (the `N`-fold state advance and time advance, the publish tail and the off-grid `fmi3Discard` path) composes this entry with the shared scalar guard prefix and remains an open item; the current `ConstantDoStep.contract` proves the guard prefix, printed text, closedness, denotation, null rejection and lifecycle rejection. |
+| FMI 3.0.2, function-call resolution across the interface | The typed and observable call schedulers share the `CCalls.Typed.nextWith` scheduler and differ only in call-site resolution; the transfer lemma (`loop_call_reaches_events`) discharges the difference under `CCalls.Events.Resolves`. The constant kernel bodies contain only assignments and a return with no nested calls, so no reachable loop-call state is poised on an `eval`-call and the premise holds definitionally at every reachable state; it is carried as a hypothesis only to mirror the tensor entry theorems and keep the adapter composition uniform. |
+| C11 / interface typing | The numerical entries take `double *` region pointers; the fused derivative getter carries the `double *` header-typing premise the entry needs (`(cInterface ...).types "double *" = some .pointer`), the constant-rate analog of the tensor getter's `Library` premise, satisfied by the eventual adapter's header dictionary rather than the pinned FMI runtime typedefs. The rendered getter prints its intended C token grammar and denotes itself under the shared printer (`derivFunction_denotes`). |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The bridged entries execute over the caller-owned instance regions with no dynamic allocation, and the transfer lemma changes neither machine definition; the fused getter stages each region base pointer and the element count into ordinary locals and copies with a counted `size_t` loop over the static instance pool. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The theorems hold for arbitrary state shape, instance index, request length and
+heap. The full accepted `fmi3DoStep` grid-loop execution, the constant adapter
+function list assembly with its no-heap and acyclic call-graph policy, and binding
+to actual FMU bytes remain open. **Stage decision: open; no grammar expansion.**
+
 ### G01 constant-rate executable kernel program (Stage 2): standards impact
 
 The constant-rate profile's numerical C is now an executable program

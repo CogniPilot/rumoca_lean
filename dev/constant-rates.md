@@ -250,24 +250,69 @@ emits the fixture C, runs the checker and its mutation control, and compiles and
 runs the kernel natively: from zero the two states advance to `(7.5, -3)` after
 three unit steps.
 
+## Constant kernel bridge and fused derivative getter (Stage 3)
+
+`packages/backend-fmi3/RumocaFMI3/ConstantInstanceRhs.lean` binds the executable
+constant-rate kernel entries (Stage 2) to the static constant instance record of
+`FMI3.TensorInstance`. The list-indexed kernel view (`CConstant.place`,
+`CConstant.cells`, `CConstant.writableN` over the declaration-order rate list) is
+matched to the dense tensor view of the record (`Reads`, `Writable`, `Values`):
+
+- `ratesVec`/`eulerVec` are the rounded rate vector and the finite whole-vector
+  Euler step read as dense tensor values; `cells_index`, `cells_reads`,
+  `cells_writable`, `cells_of` and `reads_writable_cells` translate between the
+  list-indexed and the dense views, and `writableN_of` recovers the list-indexed
+  writability from a dense-region `Writable`.
+- `rhs_writes_events` runs `rumoca_constant_rhs` on instance `i`: it writes the
+  exactly rounded rate vector into that instance's derivative region and preserves
+  every other cell, including every tensor cell of every other instance in the
+  pool. `step_writes_events` runs `rumoca_constant_step`: under explicit per-cell
+  finite-addition premises it advances every state cell by the finite binary64
+  addition of its rate and preserves everything else. Both are universal in the
+  state shape, the source rates and the pool index, obtained from the proved
+  loop-call behaviors (`CConstant.rhs_behaves`, `step_behaves`) through the shared
+  typed-to-observable transfer (`CCalls.Events.loop_call_reaches_events`), the
+  same bridge the tensor entries use.
+
+The constant kernel bodies contain only assignments and a return with no nested
+calls, so no reachable loop-call state is poised on an `eval`-call and the
+transfer's `Resolves` premise holds definitionally at every reachable state; it is
+carried as a hypothesis only to mirror the tensor entry theorems and keep the
+adapter composition uniform. The numerical entries take `double *` region
+pointers, so the bridge carries the `double *` header-typing obligation
+(`interface.types "double *" = some .pointer`) that the eventual adapter's header
+dictionary satisfies, the constant-rate analog of the tensor entries' `Library`
+premise.
+
+Building on the derivative bridge, `FMI3.ConstantDerivative.deriv_reaches` and
+`deriv_behaviors` compose the shared guard/count prefix, the `rumoca_constant_rhs`
+run through the transfer lemma, and the copy suffix into one observable-machine
+execution of `fmi3GetContinuousStateDerivatives`: its sole terminating behavior
+returns `fmi3OK` with the exactly rounded rate vector delivered to the caller
+buffer, the instance's `der(x)` region holding the same values, and every other
+instance preserved. `deriv_contract` now bundles this fused execution
+(`DerivExecution`) alongside the printed text, closedness, denotation, null
+rejection and copy-suffix delivery. Every theorem is universal in the state shape
+and audited to depend only on the standard axioms.
+
 ## Open obligations
 
 The following are deferred to later increments, each with its own proofs and
 actual-artifact certificate:
 
-- The fused single-run observable execution of the numerical entries over the
-  instance record (the constant-rate analog of the tensor accepted-step and
-  derivative-getter compositions): the derivative getter's end-to-end delivery of
-  the rounded rate vector, and the do-step accepted case's `N`-fold state advance
-  and off-grid `fmi3Discard` path.
+- The fused accepted `fmi3DoStep` execution over the constant instance record: the
+  `N`-fold state advance and time advance over the outer unit-grid loop composing
+  `step_writes_events` (Stage 3 above) with the shared scalar guard prefix, the
+  publish tail, and the off-grid `fmi3Discard` path. The per-internal-step
+  numerical entry is bridged (`ConstantInstanceRhs.step_writes_events`); the
+  current `ConstantDoStep.contract` proves the guard prefix, printed text,
+  closedness, denotation, null rejection and lifecycle rejection.
 - The constant adapter function list assembly, its rendered bytes, the no-heap and
   acyclic call-graph policy, and the bound adapter contract.
 
-- Binding the executable kernel entries (Stage 2 above) to the FMI 3 instance
-  record: the fused single-run observable execution of `rumoca_constant_rhs`,
-  `rumoca_constant_step` and `rumoca_constant_sample` over the constant instance
-  heap, and the constant adapter function list, no-heap and acyclic call-graph
-  policy and bound adapter contract.
+- Binding the executable sample entry `rumoca_constant_sample` to the FMI 3
+  instance record, and the constant adapter function list, no-heap and acyclic
+  call-graph policy and bound adapter contract.
 - FMI 3 Model Exchange and Co-Simulation artifacts and the eFMI Algorithm and
   Production Code artifacts, bound to actual bytes.
 - Production admission of the profile through the CLI.
