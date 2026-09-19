@@ -60,7 +60,7 @@ def heap (stop : Bool) : Heap := fun p =>
   else if p = StateProofs.stateAddress model then some ⟨.float64, true, some (.finite Binary64.negativeZero)⟩
   else none
 
-def observe (body : List Stmt) (stop : Bool) (time : Binary64.Value) : Option (Value × Option Value × Option Value) := do
+noncomputable def observe (body : List Stmt) (stop : Bool) (time : Binary64.Value) : Option (Value × Option Value × Option Value) := do
   let .returned result ← run 6 (.running body
     (TimeProofs.parameters model (Binary64.toBits time).val) (heap stop)) | none
   return (result.value, load result.heap (model.member "time"),
@@ -78,7 +78,7 @@ theorem stop_equality_allowed :
     observe setter true Binary64.threeHalves =
       some (.integer 0, some (.finite Binary64.threeHalves), some (.finite Binary64.negativeZero)) := by decide +kernel
 
-def guard (stop : Bool) (raw : Nat) : Option Value :=
+noncomputable def guard (stop : Bool) (raw : Nat) : Option Value :=
   eval (TimeProofs.locals model (BitVec.ofNat 64 raw)) (heap stop) Runtime.invalidTime
 
 theorem history_lower_bound_rejects : guard false 0 = some (boolean true) := by decide +kernel

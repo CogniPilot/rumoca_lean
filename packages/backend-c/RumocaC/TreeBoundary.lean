@@ -13,7 +13,7 @@ by the surrounding context. Member names use the separate C member namespace.
 This predicate deliberately says nothing about raw type spellings. -/
 def IdentifierInputs (typedefs : List String) : Expr → Prop
   | .id name => CIdentifier.valid typedefs name = true
-  | .nat _ | .str _ | .sizeof _ => True
+  | .nat _ | .decimal _ _ _ | .str _ | .sizeof _ => True
   | .bin _ a b | .index a b => IdentifierInputs typedefs a ∧ IdentifierInputs typedefs b
   | .not a | .deref a | .address a | .cast _ a => IdentifierInputs typedefs a
   | .field a name _ => IdentifierInputs typedefs a ∧ CIdentifier.valid [] name = true
@@ -54,6 +54,14 @@ theorem expression_start (expr : Expr) (valid : IdentifierInputs typedefs expr) 
       simpa only [Expr.render] using identifier_start
         (name := name) (by simpa only [IdentifierInputs] using valid)
   | nat n => simpa only [Expr.render] using natural_start n
+  | decimal negative mantissa exponent =>
+      cases negative with
+      | true =>
+          simp only [Expr.render, ↓reduceIte, String.toList_append]
+          exact ⟨'(', _, rfl, Or.inr (Or.inl rfl)⟩
+      | false =>
+          simpa only [Expr.render, Bool.false_eq_true, ↓reduceIte, Expr.decimalMagnitude,
+            String.toList_append, List.append_assoc] using (natural_start mantissa).append _
   | str s =>
       simp only [Expr.render, quote, String.toList_append]
       exact ⟨'"', _, rfl, Or.inr (Or.inr rfl)⟩

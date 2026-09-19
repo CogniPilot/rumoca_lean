@@ -12,7 +12,7 @@ theorem expression_calls_complete (permitted : Expr → Prop) (expr : Expr) :
   induction expr using Expr.rec (motive_2 := fun args =>
       (∀ callee ∈ args.flatMap expressionCalls, permitted callee) ↔
         ∀ arg ∈ args, ExpressionAdmits permitted arg) with
-  | id | nat | str | sizeof => simp [expressionCalls, ExpressionAdmits]
+  | id | nat | decimal | str | sizeof => simp [expressionCalls, ExpressionAdmits]
   | bin _ _ _ ha hb | index _ _ ha hb =>
       simp only [expressionCalls, ExpressionAdmits, List.forall_mem_append, ha, hb]
   | not _ ha | deref _ ha | address _ ha | field _ _ _ ha | cast _ _ ha =>
@@ -40,7 +40,7 @@ theorem checkExpression_correct (check : Expr → Bool) (expr : Expr) :
   induction expr using Expr.rec (motive_2 := fun args =>
       args.all (checkExpression check) = true ↔
         ∀ arg ∈ args, ExpressionAdmits (fun e => check e = true) arg) with
-  | id | nat | str | sizeof => simp [checkExpression, ExpressionAdmits]
+  | id | nat | decimal | str | sizeof => simp [checkExpression, ExpressionAdmits]
   | bin _ _ _ ha hb | index _ _ ha hb =>
       simp only [checkExpression, ExpressionAdmits, Bool.and_eq_true, ha, hb]
   | not _ ha | deref _ ha | address _ ha | field _ _ _ ha | cast _ _ ha =>

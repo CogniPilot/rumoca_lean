@@ -30,7 +30,7 @@ def valueTarget : Value → Option Target
 
 variable [interface : CInterface]
 
-def resolve (env : CBody.Locals) (heap : Heap) : Expr → Option Target
+noncomputable def resolve (env : CBody.Locals) (heap : Heap) : Expr → Option Target
   | .id name =>
       match CBody.resolve env name with
       | none => some (.named name)

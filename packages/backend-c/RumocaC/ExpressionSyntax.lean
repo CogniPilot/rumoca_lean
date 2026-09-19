@@ -44,6 +44,11 @@ inductive Expression (typedefs : List String) : Category → List CTokens.Token 
       Expression typedefs .primary [.word name] (.id name)
   | natural : CDecimal.Denotes spelling.toList n →
       Expression typedefs .primary [.number spelling] (.nat n)
+  | decimalMagnitude : Expression typedefs .primary
+      [.number (Expr.decimalMagnitude mantissa exponent)] (.decimal false mantissa exponent)
+  | decimalNegative : Expression typedefs .primary
+      [.punctuator "(", .punctuator "-", .number (Expr.decimalMagnitude mantissa exponent),
+        .punctuator ")"] (.decimal true mantissa exponent)
   | string : Expression typedefs .primary [.string (value.toUTF8.data.toList ++ [0])] (.str value)
   | widen : lower.rank ≤ upper.rank → Expression typedefs lower tokens expr →
       Expression typedefs upper tokens expr

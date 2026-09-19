@@ -12,7 +12,7 @@ def expressionTexts : Expr → List String
   | .bin _ a b | .index a b => expressionTexts a ++ expressionTexts b
   | .not a | .deref a | .address a | .field a _ _ | .cast _ a => expressionTexts a
   | .call fn args => expressionTexts fn ++ args.flatMap expressionTexts
-  | .id _ | .nat _ | .sizeof _ => []
+  | .id _ | .nat _ | .decimal _ _ _ | .sizeof _ => []
 
 def statementTexts : Stmt → List String
   | .declare _ _ value | .eval value | .ret (some value) => expressionTexts value
@@ -34,6 +34,7 @@ theorem expressionTexts_lowered (symbols : Lowering.Symbols) (expr : Expr) :
         (args.flatMap expressionTexts).filter (fun text => (symbols text).isNone)) with
   | str text => cases found : symbols text <;> simp [Lowering.expression, expressionTexts, found]
   | id name | nat name | sizeof name => simp [Lowering.expression, expressionTexts]
+  | decimal negative mantissa exponent => simp [Lowering.expression, expressionTexts]
   | bin op a b ha hb | index a b ha hb =>
       simp [Lowering.expression, expressionTexts, ha, hb, List.filter_append]
   | not a ha | deref a ha | address a ha | cast _ a ha | field a _ _ ha =>

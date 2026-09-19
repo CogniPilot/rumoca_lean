@@ -23,6 +23,7 @@ def expression (symbols : Symbols) : Expr → Expr
   | .cast type value => .cast type (expression symbols value)
   | .id name => .id name
   | .nat n => .nat n
+  | .decimal negative mantissa exponent => .decimal negative mantissa exponent
   | .sizeof type => .sizeof type
 
 def statement (symbols : Symbols) : Stmt → Stmt
@@ -92,6 +93,7 @@ theorem expression_correct (bound : Bound symbols env) (safe : NoIntrinsic symbo
       CBody.lvalue env heap (expression symbols a) = CBody.lvalue env heap a) with
   | id name => simp [expression]
   | nat n => simp [expression]
+  | decimal negative mantissa exponent => simp [expression]
   | str text =>
       cases found : symbols text with
       | none => simp [expression, found]

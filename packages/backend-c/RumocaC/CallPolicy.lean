@@ -8,7 +8,7 @@ def expressionCalls : Expr → List Expr
   | .call fn args => fn :: (expressionCalls fn ++ args.flatMap expressionCalls)
   | .bin _ a b | .index a b => expressionCalls a ++ expressionCalls b
   | .not a | .deref a | .address a | .field a _ _ | .cast _ a => expressionCalls a
-  | .id _ | .nat _ | .str _ | .sizeof _ => []
+  | .id _ | .nat _ | .decimal _ _ _ | .str _ | .sizeof _ => []
 
 def statementCalls : Stmt → List Expr
   | .declare _ _ e | .eval e | .ret (some e) => expressionCalls e
@@ -24,7 +24,7 @@ def ExpressionAdmits (permitted : Expr → Prop) : Expr → Prop
       ∀ arg ∈ args, ExpressionAdmits permitted arg
   | .bin _ a b | .index a b => ExpressionAdmits permitted a ∧ ExpressionAdmits permitted b
   | .not a | .deref a | .address a | .field a _ _ | .cast _ a => ExpressionAdmits permitted a
-  | .id _ | .nat _ | .str _ | .sizeof _ => True
+  | .id _ | .nat _ | .decimal _ _ _ | .str _ | .sizeof _ => True
 
 def StatementAdmits (permitted : Expr → Prop) : Stmt → Prop
   | .declare _ _ e | .eval e | .ret (some e) => ExpressionAdmits permitted e
@@ -43,7 +43,7 @@ def checkExpression (check : Expr → Bool) : Expr → Bool
       args.attach.all (fun item => checkExpression check item.val)
   | .bin _ a b | .index a b => checkExpression check a && checkExpression check b
   | .not a | .deref a | .address a | .field a _ _ | .cast _ a => checkExpression check a
-  | .id _ | .nat _ | .str _ | .sizeof _ => true
+  | .id _ | .nat _ | .decimal _ _ _ | .str _ | .sizeof _ => true
 termination_by expr => sizeOf expr
 decreasing_by
   all_goals simp_wf

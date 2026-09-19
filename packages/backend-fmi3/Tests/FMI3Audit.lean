@@ -262,6 +262,11 @@ import RumocaFMI3.TensorDoStep
 import RumocaFMI3.TensorFunctions
 import RumocaFMI3.TensorFamilyContracts
 import RumocaFMI3.TensorStorageCode
+import RumocaFMI3.ConstantInstanceInit
+import RumocaFMI3.ConstantInstanceRhs
+import RumocaFMI3.ConstantFloat64Access
+import RumocaFMI3.ConstantDerivative
+import RumocaFMI3.ConstantDoStep
 import RumocaFMI3.TensorAdapterPrinter
 import RumocaFMI3.TensorAdapterContract
 
@@ -2574,3 +2579,117 @@ import RumocaFMI3.TensorAdapterContract
 -- every proved tensor behavioral function contract, and the declaration-preamble
 -- record-layout and identifier agreements, with `render_contract` proved.
 #audit axioms Rumoca.FMI3.TensorAdapter.render_contract
+
+-- Stage B1: the record profile and its constant-rate (no-input, no-output)
+-- instance. The generic storage recovers the tensor profile as its input-present
+-- instance and the constant profile as its input-absent, output-absent instance.
+#audit axioms Rumoca.FMI3.TensorInstance.core_eq_opt
+#audit axioms Rumoca.FMI3.TensorInstance.store_eq_opt
+#audit axioms Rumoca.FMI3.TensorInstance.coreOpt_none
+#audit axioms Rumoca.FMI3.TensorInstance.constantStore_eq_opt
+#audit axioms Rumoca.FMI3.TensorInstance.constant_reads_state
+#audit axioms Rumoca.FMI3.TensorInstance.constant_writable_derivative
+#audit axioms Rumoca.FMI3.TensorInstance.constant_fields_separate
+#audit axioms Rumoca.FMI3.TensorInstance.constant_instances_separate
+#audit axioms Rumoca.FMI3.TensorInstance.constant_store_other_instance
+
+-- Stage B1: the profile-generic storage declarations and the constant-rate
+-- layout and tokenization.
+#audit axioms Rumoca.FMI3.TensorStorage.regionMembers_eq
+#audit axioms Rumoca.FMI3.TensorStorage.members_eq
+#audit axioms Rumoca.FMI3.TensorStorage.recordRender_eq
+#audit axioms Rumoca.FMI3.TensorStorage.storageRender_eq
+#audit axioms Rumoca.FMI3.TensorStorage.declarations_eq
+#audit axioms Rumoca.FMI3.TensorStorage.layout_names_constant
+#audit axioms Rumoca.FMI3.TensorStorage.layout_state_extent_constant
+#audit axioms Rumoca.FMI3.TensorStorage.recordG_printed
+#audit axioms Rumoca.FMI3.TensorStorage.storageG_printed
+#audit axioms Rumoca.FMI3.TensorStorage.declarationsG_header
+
+-- Stage 3: the executable constant-rate kernel entries bound to the static
+-- constant instance record. The list-indexed kernel view is bridged to the dense
+-- tensor view, and the proved loop-call behaviors embed into the observable call
+-- machine through the typed-to-observable transfer. Universal in the state shape,
+-- the source rates and the pool index.
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.valueGet
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.ratesVec_get
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.eulerVec_get
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.stateList_get
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.cells_index
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.cells_reads
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.cells_writable
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.cells_of
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.reads_writable_cell
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.reads_writable_cells
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.writableN_of
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.ratesVec_agree
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.kernelDefinitions_rhs
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.kernelDefinitions_step
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.kernelDefinitions_sample
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.rhs_writes_events
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.step_writes_events
+
+-- Stage B1: the constant-rate reserved-record initializer reuses the shared
+-- tensor initializer, which is profile-independent.
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.code_closed
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.initialized
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.reads_state
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.other_instance
+
+-- Stage B1: the constant-rate profile model description, universal in the state
+-- shape, with one array state variable, no input and no output.
+#audit axioms Rumoca.FMI3.TensorMetadata.constantToken_attribute
+#audit axioms Rumoca.FMI3.TensorMetadata.constantStateVar_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constantDerivativeVar_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constantVariableNodes_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constantStructureNodes_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_valid
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_document
+#audit axioms Rumoca.FMI3.TensorMetadata.constantValueReferences_eq
+#audit axioms Rumoca.FMI3.TensorMetadata.constantValueReferences_nodup
+#audit axioms Rumoca.FMI3.TensorMetadata.constantStateVar_dim_product
+#audit axioms Rumoca.FMI3.TensorMetadata.constantDerivativeVar_dim_product
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_derivative_references_state
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_structure_references_declared
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_structure_dependencies_empty
+#audit axioms Rumoca.FMI3.TensorMetadata.constant_modelIdentifiers_decode
+
+-- Stage B2: the constant-rate Float64 accessor bodies over references 0..2
+-- (time, state, derivative), the state reference writable and the derivative
+-- read-only, with no input and no output.
+#audit axioms Rumoca.FMI3.ConstantFloat64.getBody_closed
+#audit axioms Rumoca.FMI3.ConstantFloat64.setBody_closed
+#audit axioms Rumoca.FMI3.ConstantFloat64.getFunction_denotes
+#audit axioms Rumoca.FMI3.ConstantFloat64.setFunction_denotes
+#audit axioms Rumoca.FMI3.ConstantFloat64.null_get_behaviors
+#audit axioms Rumoca.FMI3.ConstantFloat64.null_set_behaviors
+#audit axioms Rumoca.FMI3.ConstantFloat64.get_contract
+#audit axioms Rumoca.FMI3.ConstantFloat64.set_contract
+
+-- Stage B2: the constant-rate derivative getter body, calling the numerical
+-- entry `rumoca_constant_rhs(&(m->dx[0]))` and copying the written derivative
+-- region into the caller buffer.
+#audit axioms Rumoca.FMI3.ConstantDerivative.derivBody_closed
+#audit axioms Rumoca.FMI3.ConstantDerivative.derivFunction_denotes
+#audit axioms Rumoca.FMI3.ConstantDerivative.null_deriv_behaviors
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_copy_delivers
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_instance_delivers
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_delivers_holds
+-- Stage 3: the fused single-run derivative getter over the constant instance
+-- record, composing the guard prefix, the constant kernel entry through the
+-- typed-to-observable transfer, and the copy suffix into the getter's sole
+-- terminating behavior.
+#audit axioms Rumoca.FMI3.ConstantDerivative.constant_deriv_enter
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_reaches
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_behaviors
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_execution_holds
+#audit axioms Rumoca.FMI3.ConstantDerivative.deriv_contract
+
+-- Stage B2: the constant-rate Co-Simulation do-step body, reusing the scalar
+-- guard prefix and calling `rumoca_constant_step(&(m->x[0]))` per internal step.
+#audit axioms Rumoca.FMI3.ConstantDoStep.doStepBody_prefix
+#audit axioms Rumoca.FMI3.ConstantDoStep.doStepBody_closed
+#audit axioms Rumoca.FMI3.ConstantDoStep.function_denotes
+#audit axioms Rumoca.FMI3.ConstantDoStep.null_behaviors
+#audit axioms Rumoca.FMI3.ConstantDoStep.lifecycle_behaviors
+#audit axioms Rumoca.FMI3.ConstantDoStep.contract

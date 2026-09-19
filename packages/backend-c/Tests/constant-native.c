@@ -2,6 +2,7 @@
 #include <float.h>
 #include <fenv.h>
 #include <math.h>
+#include <stddef.h>
 #include <stdint.h>
 
 _Static_assert(FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 &&
@@ -12,7 +13,7 @@ _Static_assert(FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 &&
    separately compiled constant.c translation unit. */
 void rumoca_constant_rhs(double *der);
 void rumoca_constant_step(double *x);
-void rumoca_constant_sample(double *x, uint64_t n);
+void rumoca_constant_sample(double *x, size_t n);
 
 /* One native boundary check complements the universal Lean proofs: the emitted
    constant-rate kernel writes the exactly rounded rates (2.5, -1) and advances

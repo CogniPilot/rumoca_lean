@@ -73,6 +73,106 @@ proofs for compiler properties and keep tests to the existing external boundarie
 
 ## Current unit-stage follow-up
 
+### Constant-rate kernel bridge, fused derivative getter and step entry (Stage 3): standards impact
+
+The executable constant-rate kernel entries are now bound to the static constant
+instance record (`FMI3.ConstantInstanceRhs`, `dev/constant-rates.md` "Constant
+kernel bridge and fused derivative getter"). The list-indexed kernel view
+(`CConstant.place`/`cells`/`writableN` over the declaration-order rate list) is
+matched to the dense tensor view (`Reads`/`Writable`/`Values`), and the proved
+loop-call behaviors (`CConstant.rhs_behaves`, `step_behaves`) embed into the
+observable call machine through the shared typed-to-observable transfer
+(`CCalls.Events.loop_call_reaches_events`). `rhs_writes_events` writes the exactly
+rounded rate vector into instance `i`'s derivative region, and `step_writes_events`
+advances each state cell by the finite binary64 addition of its rate; each
+preserves every other cell of every other instance, universal in the state shape,
+the source rates and the pool index. Building on the derivative bridge,
+`FMI3.ConstantDerivative.deriv_reaches`/`deriv_behaviors` prove the fused
+single-run `fmi3GetContinuousStateDerivatives` over the constant instance record,
+and `deriv_contract` bundles it as a consumable contract. These are
+package-checked products only: no production artifact, CLI or grammar change, and
+the tensor and scalar adapters and every existing contract are unchanged.
+
+| Standard | Impact |
+| --- | --- |
+| MLS, admitted subset | No admission, grammar, source semantics or provenance change. The constant-rate profile remains a development case. |
+| FMI 3.0.2, Model Exchange interface, evaluating state derivatives (`fmi3GetContinuousStateDerivatives`) | The constant getter now runs in one observable-machine execution: it guards the handle/lifecycle, checks that `nContinuousStates` equals the symbolic state volume and the buffer is non-null, invokes the constant kernel entry `rumoca_constant_rhs(&(m->dx[0]))` (resolved directly by name) which writes the exactly rounded rate vector into `der(x)`, then copies that region into the caller buffer. Its sole terminating behavior returns `fmi3OK` with the rounded rate vector delivered to the caller buffer, the instance's `der(x)` region holding the same values, and every other cell of every other instance preserved (`deriv_reaches`, `deriv_behaviors`, `deriv_contract`). A null handle returns `fmi3Error` changing nothing (`null_deriv_behaviors`). |
+| FMI 3.0.2 §4.2.1 Computation (`fmi3DoStep`) | The Co-Simulation do-step's per-internal-step numerical entry `rumoca_constant_step(&(m->x[0]))` is now bridged over the instance record: `step_writes_events` runs it as one observable-machine execution advancing each state cell by the finite binary64 addition of its rate and preserving every other instance, under the explicit per-cell finite-addition premises. The full accepted `fmi3DoStep` execution over the outer unit-grid loop (the `N`-fold state advance and time advance, the publish tail and the off-grid `fmi3Discard` path) composes this entry with the shared scalar guard prefix and remains an open item; the current `ConstantDoStep.contract` proves the guard prefix, printed text, closedness, denotation, null rejection and lifecycle rejection. |
+| FMI 3.0.2, function-call resolution across the interface | The typed and observable call schedulers share the `CCalls.Typed.nextWith` scheduler and differ only in call-site resolution; the transfer lemma (`loop_call_reaches_events`) discharges the difference under `CCalls.Events.Resolves`. The constant kernel bodies contain only assignments and a return with no nested calls, so no reachable loop-call state is poised on an `eval`-call and the premise holds definitionally at every reachable state; it is carried as a hypothesis only to mirror the tensor entry theorems and keep the adapter composition uniform. |
+| C11 / interface typing | The numerical entries take `double *` region pointers; the fused derivative getter carries the `double *` header-typing premise the entry needs (`(cInterface ...).types "double *" = some .pointer`), the constant-rate analog of the tensor getter's `Library` premise, satisfied by the eventual adapter's header dictionary rather than the pinned FMI runtime typedefs. The rendered getter prints its intended C token grammar and denotes itself under the shared printer (`derivFunction_denotes`). |
+| MISRA C:2025 Dir 4.12 and Rule 21.3 (no dynamic allocation) | The bridged entries execute over the caller-owned instance regions with no dynamic allocation, and the transfer lemma changes neither machine definition; the fused getter stages each region base pointer and the element count into ordinary locals and copies with a counted `size_t` loop over the static instance pool. |
+| eFMI 1.0.0 Beta 1 | No GALEC, Production Code, manifest or archive change. |
+
+The theorems hold for arbitrary state shape, instance index, request length and
+heap. The full accepted `fmi3DoStep` grid-loop execution, the constant adapter
+function list assembly with its no-heap and acyclic call-graph policy, and binding
+to actual FMU bytes remain open. **Stage decision: open; no grammar expansion.**
+
+### G01 constant-rate executable kernel program (Stage 2): standards impact
+
+The constant-rate profile's numerical C is now an executable program
+(`packages/backend-c/RumocaC/ConstantKernelProgram.lean`, `dev/constant-rates.md`
+"Executable kernel program"): `rumoca_constant_rhs`, `rumoca_constant_step` and
+`rumoca_constant_sample` are `CTree.Function` definitions over the source rate
+list, universal in the number of states and in the rates, executed by the
+loop-call machine over the caller-owned array. Each rate emits as a decimal
+floating constant whose target binary64 value is the correctly rounded conversion
+of its exact base-ten content, and the three loop-machine execution theorems, the
+per-rate rounding certificate and the rendered-byte contract are audited to depend
+only on the three foundational axioms. The development fixture renders the two-rate
+program (`2.5`, `-1`), certifies each function's token grammar, binds the actual
+file bytes to the rendered functions, and `tests/tensor-c.sh` compiles and runs the
+kernel natively (three unit steps advance the two states from zero to `(7.5, -3)`).
+
+| Standard | Impact |
+| --- | --- |
+| C11 6.4.4.2 Floating constants | Each rate is a decimal floating constant printed as the significand `<mantissa>e<exponent>` (a single preprocessing number, C11 6.4.4.1); the exponent carries its own sign so the constant closes before it. A negative rate is the unary minus of the unsigned magnitude, since C has no negative literal tokens; the printer parenthesizes it (`(-1e0)`). The target binary64 value is the correctly rounded conversion of the constant's exact base-ten content under the current (round-to-nearest-even) rounding mode, specified by `CBody.decimalValue` and certified per rate by `CConstant.rate_rounds` from `CBody.decimalValue_rounds`; the emitted preamble's `FLT_EVAL_METHOD == 0` guard keeps evaluation at `double`. Each rendered function tokenizes under the shared C scanner to its independent token grammar (`Fixture.rhs_denotes`, `step_denotes`, `sample_denotes`), where `25e-1` lexes as `25e`, `-`, `1`. |
+| MLS 3.7 Real literals (unsigned-number / exponent form) | The source rate spellings (`2.5`, `-1`) are MLS 3.7 real literals; `ModelicaParser.Constant.parseDecimal` records their exact base-ten `Decimal` content (`sign`, `mantissa`, `power`), and the executable kernel emits a C floating constant with the same content (`CConstant.rateLit`). Source-to-content fidelity is proved in the compiler package (`Prepared.rate_exact`); the target rounding of that content is the C body contract above, so the source literal and the emitted constant denote the same binary64 rate. |
+| MISRA C:2025 Rule 7.1 (octal constants shall not be used) | The printed magnitude is a base-ten significand with a mandatory `e` exponent, so it is a floating constant, never an octal integer constant: a zero magnitude prints as `0e0` (an exponent-bearing floating constant), not a bare leading-zero token, and a non-zero magnitude has no leading zero. No rate literal is an integer constant, so Rules 7.2 (unsigned suffix) and 7.3 (lowercase `l` suffix) do not apply to the emitted constants; the counted sample loop uses the shared unsigned `size_t` counter and bound already covered by the tensor loop review. |
+
+### Constant-rate FMI 3 adapter bodies (Stage B2): standards impact
+
+The constant-rate profile (`G01`) adds its profile-specific FMI 3 adapter bodies
+over the no-input, no-output instance record: the `fmi3GetFloat64`/`fmi3SetFloat64`
+accessors over value references `0` time, `1` state, `2` derivative
+(`FMI3.ConstantFloat64`); the Model Exchange derivative getter calling the
+numerical entry `rumoca_constant_rhs(&(m->dx[0]))` (`FMI3.ConstantDerivative`); and
+the Co-Simulation `fmi3DoStep` calling `rumoca_constant_step(&(m->x[0]))` per
+internal step (`FMI3.ConstantDoStep`). The profile-independent bodies (lifecycle
+modes, free, factory over the shared reserved-record initializer, count queries,
+time setter, reset, nominals, the state getter/setter and the seven
+model-independent behavioral functions) are the shared tensor bodies instantiated
+at the constant state shape. This subsection covers the constant-rate profile's ME
+and CS interface bodies; their fused numerical-entry execution, the full adapter
+assembly, artifacts and production admission remain later increments.
+
+| Standard | Impact |
+| --- | --- |
+| FMI 3.0.2 §2.4.9 Getting and Setting Variable Values (`fmi3GetFloat64`, `fmi3SetFloat64`) | The accessor bodies denote one array value reference as a whole instance region under the array-access rule: `0` the independent time base (element count 1), `1` the state vector `x`, `2` the derivative `der(x)` (each element count the symbolic state volume). The getter denotes all three references; the setter admits only the state reference `1` (writable) and rejects the derivative reference `2` as read-only, matching the constant-rate model description's `1` state / `2` derivative numbering. A request must name exactly one value reference and non-null arrays, and `nValues` must equal the referenced region's element count; the copy is one counted `size_t` loop over the symbolic count, so no coordinate is enumerated. Each body's printed text denotes its function under the shared C printer and a null handle is rejected with `fmi3Error` (`ConstantFloat64.getBody_closed`, `setBody_closed`, `getFunction_denotes`, `setFunction_denotes`, `null_get_behaviors`, `null_set_behaviors`, `get_contract`, `set_contract`). |
+| FMI 3.0.2 §4 Model Exchange, `fmi3GetContinuousStateDerivatives` | The derivative getter guards the handle and lifecycle, checks the count and buffer, calls the numerical entry `rumoca_constant_rhs(&(m->dx[0]))` to write the derivative region, and copies that region into the caller buffer with the shared counted copy suffix. The entry needs no state or input (the rate vector is constant), so it takes only the derivative pointer. The copy suffix delivers whatever the entry wrote, preserving every other instance (`ConstantDerivative.deriv_copy_delivers`, `deriv_instance_delivers`); the printed text denotes, and a null handle is rejected with `fmi3Error` (`derivBody_closed`, `derivFunction_denotes`, `null_deriv_behaviors`, `deriv_contract`). The rounding of each written derivative to nearest-even is the constant-rate kernel contract (`Rumoca.CConstant.contract_correct`); the fused single-run observable execution of the entry is a later increment. |
+| FMI 3.0.2 §5 Co-Simulation, `fmi3DoStep` | The Co-Simulation step reuses the model-independent scalar guard prefix of `Runtime.doStep` verbatim (handle/lifecycle guard, output-pointer check and writes, invalid communication-point/step rejection, `stepRounding`, `stepClock`, `stepGrid`): the communication step must be a positive integer multiple of the internal unit step and at most the scalar bound. Each admitted internal step advances the time base by one and calls `rumoca_constant_step(&(m->x[0]))`, which advances every state by one explicit Euler step of its constant rate; the kernel iterates the states internally, so the body needs no elementwise loop. Over `N` accepted internal steps every state advances by the `N`-fold finite rate sum and the time by `N`. The printed text denotes, a null handle is rejected with `fmi3Error`, and a lifecycle-mismatched call is rejected with `fmi3Error` writing the terminated mode (`ConstantDoStep.doStepBody_closed`, `function_denotes`, `null_behaviors`, `lifecycle_behaviors`, `contract`); the accepted end-to-end execution and the off-grid `fmi3Discard` path are later increments. |
+
+### Record profile parameterization and the constant-rate model variables: standards impact
+
+The FMI-visible instance record and the model description are parameterized by a
+record profile that records whether the input region `u` and the dense output
+region `J` are present. The tensor profile carries both; the constant-rate
+profile (`G01`) carries neither, keeping only the time base, the state vector and
+its derivative. The current tensor definitions are the input-present, output-present
+instance of the generic renderers, recovered by `rfl`, so the rendered adapter
+bytes, the tensor model description and every existing tensor theorem are
+unchanged (the compiler-rendered `build/tensor-fmi/adapter.c` and
+`modelDescription.xml` are byte-identical). This subsection covers only the
+constant-rate profile's model variables and value references; its C emission, FMI
+lifecycle bodies, artifacts and admission remain later increments.
+
+| Standard | Impact |
+| --- | --- |
+| FMI 3.0.2 §2.4.7 Definition of Model Variables (`ModelVariables`) | The constant-rate model description declares the independent `time` base and two continuous `Float64` variables: the state `x` and its derivative `der(x)`. No input variable and no output variable are declared, matching the profile's no-input, no-output record. Every variable node passes the in-tree restricted XML validator and the document is a well-formed tree accepted by the renderer/syntax relation (`TensorMetadata.constant_valid`, `constant_document`). |
+| FMI 3.0.2 §2.4.7 Dimension (array variables) | The homogeneous scalar-state vector is exposed as one array `Float64` variable `x` of the state shape carrying one `Dimension` per extent (with the extent as a constant `start`), rather than one scalar variable per element. This keeps the state rank and extent symbolic and enumerates no coordinate, matching the record's contiguous state region and the compiler rule against enumerating tensor elements. The `Dimension` starts multiply back to the state element count (`constantStateVar_dim_product`, `constantDerivativeVar_dim_product`), and the fixed-zero `start` list has one value per element per the array `start` rule. |
+| FMI 3.0.2 §2.4.7 Value reference (`valueReference`) | Value references are renumbered without the input region: `0` time, `1` state, `2` derivative. They are pairwise distinct (`constantValueReferences_nodup`), and the derivative's `derivative` attribute references the state's value reference (`constant_derivative_references_state`). |
+| FMI 3.0.2 §2.4.8 Definition of the Model Structure (`ModelStructure`) | The model structure lists the continuous-state derivative and the initial unknown for `der(x)`. Because `der(x)` is a signed decimal constant, each entry lists an empty dependency set (`constant_structure_dependencies_empty`); every structure entry still references a declared variable's value reference (`constant_structure_references_declared`). |
+
 ### eFMI 1.0.0 Beta 1 Chapter 2 container and manifests (tensor eFMU archive and Algorithm Code admission): standards impact
 
 Stage 3 of the tensor eFMI path (finding TF01) adds the tensor eFMU archive

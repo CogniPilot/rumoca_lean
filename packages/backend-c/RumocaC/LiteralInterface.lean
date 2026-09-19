@@ -11,7 +11,7 @@ def names : Expr → List String
   | .bin _ a b | .index a b => names a ++ names b
   | .not a | .deref a | .address a | .field a _ _ | .cast _ a => names a
   | .call fn args => names fn ++ args.flatMap names
-  | .nat _ | .str _ | .sizeof _ => []
+  | .nat _ | .decimal _ _ _ | .str _ | .sizeof _ => []
 
 private theorem other_call (interface : CInterface) (env : CBody.Locals) (heap : Heap)
     (fn a : Expr) (other : fn ≠ .id "isfinite") :
@@ -33,7 +33,7 @@ theorem expression_agreement (before after : CInterface)
       intro agree
       simp [CBody.eval, CBody.lvalue, CBody.resolve, CBody.constants,
         agree name (by simp [names])]
-  | nat | sizeof => intro agree; simp [CBody.eval, CBody.lvalue]
+  | nat | decimal | sizeof => intro agree; simp [CBody.eval, CBody.lvalue]
   | str text => intro agree; simp [CBody.eval, CBody.lvalue, literals]
   | bin op a b ha hb =>
       intro agree

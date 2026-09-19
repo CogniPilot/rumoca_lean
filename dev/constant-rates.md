@@ -131,13 +131,188 @@ compiler rejects the profile, and asserts the frontend rejects an unbound
 reference, a duplicate declaration, a mismatched end name and a non-numeric
 right-hand side.
 
+## FMI 3 record profile reuse (Stage B1)
+
+The FMI 3 tensor adapter storage, initializer and model description are
+parameterized by a record profile (`dev/tensor-ad.md`, "Record profile
+parameterization"). The constant-rate profile is the no-input, no-output
+instance, and this stage generalizes the record without emitting any adapter:
+
+- Storage: the constant instance heap (`FMI3.TensorInstance.constantStore`, the
+  input-absent instance of the generic `storeOpt`) holds the time base, the state
+  vector and its writable derivative. Its separation, other-instance preservation
+  and readability/writability theorems are proved
+  (`constant_reads_state`, `constant_writable_derivative`, `constant_fields_separate`,
+  `constant_instances_separate`, `constant_store_other_instance`). The eventual
+  constant adapter binds the kernel entries `rumoca_constant_rhs`,
+  `rumoca_constant_step` and `rumoca_constant_sample`
+  (`packages/backend-c/RumocaC/ConstantKernelProgram.lean`) to these regions.
+- Declarations: `FMI3.TensorStorage.regionMembersG shape false false` declares the
+  time base, the state region and the derivative region (`layout_names_constant`),
+  and the generic record tokenizes under the shared C scanner (`recordG_printed`,
+  `storageG_printed`).
+- Initialization: the reserved-record initializer is profile-independent, so
+  `FMI3.ConstantInstanceInit` reuses `TensorInstanceInit` verbatim (fixed-zero
+  state fill, reset time base, FMI lifecycle metadata).
+- Model description: `FMI3.TensorMetadata.constantModelDescription`, universal in
+  the state shape, declares the independent `time`, one array state variable `x`
+  of the state shape (one `Dimension` per extent, no coordinate enumerated) and
+  its derivative `der(x)`, with value references `0` time, `1` state, `2`
+  derivative and an empty dependency set for the constant derivative. Its
+  well-formedness, value-reference distinctness, dimension-product and
+  model-identifier theorems are proved and recorded in
+  `dev/standards-review.md`.
+
+## FMI 3 adapter bodies (Stage B2)
+
+The constant-rate profile's FMI 3 adapter bodies are built over the no-input,
+no-output instance record (Stage B1). The profile-independent bodies (lifecycle
+modes, free, factory over the shared reserved-record initializer, count queries,
+time setter, reset, nominals, the continuous-state getter/setter and the seven
+model-independent behavioral functions) are the shared tensor bodies instantiated
+at the constant state shape. The profile-specific bodies are new:
+
+- `RumocaCore.Solve.ConstantFMI3`: the prepared model `ConstantFMI3Model n`, a
+  model name paired with the constant-rate IVP over `N` states, with the state
+  shape the rank-1 vector `⟨[N]⟩` of volume `N` (`shape_volume`).
+- `FMI3.ConstantFloat64`: the `fmi3GetFloat64`/`fmi3SetFloat64` bodies dispatching
+  value references `0` time, `1` state, `2` derivative. The getter denotes all
+  three; the setter admits only the state reference `1` (writable) and rejects the
+  derivative reference `2` as read-only. The shared request-check, staging,
+  copy-loop and finiteness machinery of the tensor accessor is reused; only the
+  value-reference dispatch differs. The contract binds the printed text,
+  closedness, printer denotation and null-handle rejection (`get_contract`,
+  `set_contract`).
+- `FMI3.ConstantDerivative`: the `fmi3GetContinuousStateDerivatives` body calling
+  the numerical entry `rumoca_constant_rhs(&(m->dx[0]))` (whose only argument is
+  the derivative region, the rate vector being constant) and copying the written
+  region into the caller buffer with the shared copy suffix. The copy-delivery
+  theorem (`deriv_copy_delivers`, reusing the tensor derivative getter's copy
+  suffix) delivers whatever the entry wrote; the contract binds the printed text,
+  closedness, denotation, null rejection and copy delivery (`deriv_contract`).
+- `FMI3.ConstantDoStep`: the Co-Simulation `fmi3DoStep` body reusing the shared
+  scalar guard prefix (handle/lifecycle guard, output writes, communication-point
+  and step-size checks, `stepRounding`/`stepClock`/`stepGrid`) verbatim, then a
+  grid loop whose internal step advances the time base by one and calls
+  `rumoca_constant_step(&(m->x[0]))`. Over `N` accepted internal steps every state
+  advances by the `N`-fold finite rate sum and the time by `N`. The contract binds
+  the printed text, closedness, denotation and null rejection; a lifecycle
+  rejection is a companion theorem (`contract`, `lifecycle_behaviors`).
+
+The numerical entries `rumoca_constant_rhs`, `rumoca_constant_step` and
+`rumoca_constant_sample` are the executable constant-rate kernel program
+(`packages/backend-c/RumocaC/ConstantKernelProgram.lean`, "Executable kernel
+program" below), whose finite binary64 semantics and exact rounding are
+`CConstant.contract_correct`. Every adapter-body theorem is universal in the state
+shape and audited to depend only on the standard axioms.
+
+## Executable kernel program (Stage 2)
+
+`packages/backend-c/RumocaC/ConstantKernelProgram.lean` promotes the constant-rate
+kernel from rendered text to an executable program. The three entries are
+`CTree.Function` definitions over the source rate list, universal in the number of
+states and in the rates, each executed by the loop-call machine over the
+caller-owned array (no dynamic allocation):
+
+- `rumoca_constant_rhs(double *der)` writes the exactly rounded rate vector, one
+  declaration-order store `der[i] = rate;` per source rate. `rhs_behaves` proves
+  the ordinary call terminates in the heap holding the rounded rates
+  (`place base 0 heap (rateVals rates)`), and `rhs_executes` bundles that with the
+  written-region readback (`place_cells`) and the whole-heap frame (`place_frame`).
+- `rumoca_constant_step(double *x)` advances every state cell by the finite
+  binary64 addition of its rate, one declaration-order update
+  `x[i] = (x[i] + rate);` per source rate. `step_next` reuses the shared float-add
+  evaluation (`CArithmetic.floatAdd_finite`) under an explicit per-cell
+  finite-addition premise (`CExecution.finiteRoundDomain`), and `step_behaves`
+  reaches the whole-vector Euler step (`euler rates xs`).
+- `rumoca_constant_sample(double *x, size_t n)` iterates the whole-vector step `n`
+  times as a counted `size_t` loop reusing `CLoops.loop_reaches`; `sample_behaves`
+  reaches the `n`-fold trajectory `stateAfter rates xs0 n`, proved by induction on
+  the loop count. The rate literals are the source data, so listing them is not
+  tensor-coordinate enumeration; the loop bound remains a runtime count.
+
+Each rate enters as a C floating constant `CTree.Expr.decimal` whose exact base-ten
+content is `|sign| * mantissa * 10 ^ power`, negated for a negative sign; its
+target binary64 value is the round-to-nearest-even of that content
+(`CBody.decimalValue`), and `rate_rounds` supplies the `Scaled.RoundsNearestEven`
+certificate for each rate from `CBody.decimalValue_rounds`.
+
+`CConstant.Contract`/`contract_correct` restate the actual-artifact contract over
+this program: the emitted bytes are the three rendered functions (`programText`),
+each rate is nearest-even rounded, and the three execution conjuncts are the rhs,
+step and sample theorems above. The development fixture
+(`packages/backend-c/Tests/TensorCChecks/ConstantEntry.lean`, rates `2.5`, `-1`)
+carries the rendered token grammars and their `render_denotes` certificates
+(`rhs_denotes`, `step_denotes`, `sample_denotes`), and
+`ConstantArtifactCheck.verify_constant_kernel` binds the actual file bytes to the
+rendered function list before applying the fixed contract. `tests/tensor-c.sh`
+emits the fixture C, runs the checker and its mutation control, and compiles and
+runs the kernel natively: from zero the two states advance to `(7.5, -3)` after
+three unit steps.
+
+## Constant kernel bridge and fused derivative getter (Stage 3)
+
+`packages/backend-fmi3/RumocaFMI3/ConstantInstanceRhs.lean` binds the executable
+constant-rate kernel entries (Stage 2) to the static constant instance record of
+`FMI3.TensorInstance`. The list-indexed kernel view (`CConstant.place`,
+`CConstant.cells`, `CConstant.writableN` over the declaration-order rate list) is
+matched to the dense tensor view of the record (`Reads`, `Writable`, `Values`):
+
+- `ratesVec`/`eulerVec` are the rounded rate vector and the finite whole-vector
+  Euler step read as dense tensor values; `cells_index`, `cells_reads`,
+  `cells_writable`, `cells_of` and `reads_writable_cells` translate between the
+  list-indexed and the dense views, and `writableN_of` recovers the list-indexed
+  writability from a dense-region `Writable`.
+- `rhs_writes_events` runs `rumoca_constant_rhs` on instance `i`: it writes the
+  exactly rounded rate vector into that instance's derivative region and preserves
+  every other cell, including every tensor cell of every other instance in the
+  pool. `step_writes_events` runs `rumoca_constant_step`: under explicit per-cell
+  finite-addition premises it advances every state cell by the finite binary64
+  addition of its rate and preserves everything else. Both are universal in the
+  state shape, the source rates and the pool index, obtained from the proved
+  loop-call behaviors (`CConstant.rhs_behaves`, `step_behaves`) through the shared
+  typed-to-observable transfer (`CCalls.Events.loop_call_reaches_events`), the
+  same bridge the tensor entries use.
+
+The constant kernel bodies contain only assignments and a return with no nested
+calls, so no reachable loop-call state is poised on an `eval`-call and the
+transfer's `Resolves` premise holds definitionally at every reachable state; it is
+carried as a hypothesis only to mirror the tensor entry theorems and keep the
+adapter composition uniform. The numerical entries take `double *` region
+pointers, so the bridge carries the `double *` header-typing obligation
+(`interface.types "double *" = some .pointer`) that the eventual adapter's header
+dictionary satisfies, the constant-rate analog of the tensor entries' `Library`
+premise.
+
+Building on the derivative bridge, `FMI3.ConstantDerivative.deriv_reaches` and
+`deriv_behaviors` compose the shared guard/count prefix, the `rumoca_constant_rhs`
+run through the transfer lemma, and the copy suffix into one observable-machine
+execution of `fmi3GetContinuousStateDerivatives`: its sole terminating behavior
+returns `fmi3OK` with the exactly rounded rate vector delivered to the caller
+buffer, the instance's `der(x)` region holding the same values, and every other
+instance preserved. `deriv_contract` now bundles this fused execution
+(`DerivExecution`) alongside the printed text, closedness, denotation, null
+rejection and copy-suffix delivery. Every theorem is universal in the state shape
+and audited to depend only on the standard axioms.
+
 ## Open obligations
 
 The following are deferred to later increments, each with its own proofs and
 actual-artifact certificate:
 
-- C emission of the multi-state IVP with the ordered finite-arithmetic and
-  storage contract, and its target-execution theorem.
+- The fused accepted `fmi3DoStep` execution over the constant instance record: the
+  `N`-fold state advance and time advance over the outer unit-grid loop composing
+  `step_writes_events` (Stage 3 above) with the shared scalar guard prefix, the
+  publish tail, and the off-grid `fmi3Discard` path. The per-internal-step
+  numerical entry is bridged (`ConstantInstanceRhs.step_writes_events`); the
+  current `ConstantDoStep.contract` proves the guard prefix, printed text,
+  closedness, denotation, null rejection and lifecycle rejection.
+- The constant adapter function list assembly, its rendered bytes, the no-heap and
+  acyclic call-graph policy, and the bound adapter contract.
+
+- Binding the executable sample entry `rumoca_constant_sample` to the FMI 3
+  instance record, and the constant adapter function list, no-heap and acyclic
+  call-graph policy and bound adapter contract.
 - FMI 3 Model Exchange and Co-Simulation artifacts and the eFMI Algorithm and
   Production Code artifacts, bound to actual bytes.
 - Production admission of the profile through the CLI.

@@ -12,7 +12,7 @@ theorem Expr.Origins.every_mono (origins : Expr.Origins table expr)
     (before after : Origin table → Prop) (implies : ∀ ref, before ref → after ref)
     (checked : origins.Every before) : origins.Every after := by
   cases origins with
-  | id ref | nat ref | str ref =>
+  | id ref | nat ref | decimal ref | str ref =>
     simp only [Every] at checked ⊢
     exact implies ref checked
   | bin operation left right | index operation left right =>

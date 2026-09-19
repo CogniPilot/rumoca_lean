@@ -14,6 +14,7 @@ def Postfix (expr : Expr) : Prop := match expr with
 
 def FieldBase (expr : Expr) : Prop := match expr with
   | .nat _ => False
+  | .decimal _ _ _ => False
   | _ => True
 
 /-- Only bare words/numbers can absorb a following character. Every other
@@ -21,6 +22,7 @@ expression emitted by CTree ends with a closing punctuator or a quoted token. -/
 def TailSafe : Expr → Char → Prop
   | .id _, marker => CLexical.identifierCharacter marker = false ∧ marker ≠ '"' ∧ marker ≠ '\''
   | .nat _, marker => CPPNumber.character marker = false
+  | .decimal negative _ _, marker => if negative then True else CPPNumber.character marker = false
   | _, _ => True
 
 structure Derivation (typedefs : List String) (expr : Expr) (tokens : List CTokens.Token) : Prop where
@@ -44,7 +46,7 @@ theorem tail_safe_separator (expr : Expr) (member : marker ∈ [' ', ')', ']', '
     TailSafe expr marker := by
   simp only [List.mem_cons, List.not_mem_nil, or_false] at member
   cases expr <;> rcases member with rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
-    simp only [TailSafe] <;> decide +kernel
+    simp only [TailSafe] <;> first | decide +kernel | (split <;> decide +kernel)
 
 open CTokens (separator_prefix)
 
@@ -64,6 +66,82 @@ theorem natural_renders (n : Nat) : Renders typedefs (.nat n) := by
   refine ⟨[.number (toString n)], of_primary (.natural (CDecimal.render_denotes n)), ?_⟩
   intro marker rest safe
   simpa only [Expr.render] using CTokens.natural_prefix n safe rest
+
+private theorem toString_digits (k : Nat) : (toString k).toList.all Char.isDigit = true := by
+  rw [Nat.toString_eq_ofList_toDigits, String.toList_ofList]
+  apply List.all_eq_true.mpr
+  intro c member
+  exact Nat.isDigit_of_mem_toDigits (by decide +kernel) (by decide +kernel) member
+
+/-- The printed magnitude of a decimal constant is a single preprocessing
+number. Its value relation is not the plain-decimal one, but the boundary
+theorems need only the spelling grammar. -/
+theorem decimalMagnitude_spells (m : Nat) (exp : Int) :
+    CPPNumber.Spells (Expr.decimalMagnitude m exp).toList := by
+  have allExp := toString_digits exp.natAbs
+  have he : ("e" : String).toList = ['e'] := rfl
+  have hm : ("-" : String).toList = ['-'] := rfl
+  have hz : ("" : String).toList = [] := rfl
+  rw [Expr.decimalMagnitude]
+  by_cases h : exp < 0
+  · simp only [h, ↓reduceIte, String.toList_append, he, hm]
+    rw [List.append_assoc (toString m).toList ['e'] ['-']]
+    exact CPPNumber.Spells.append_digits
+      ((CPPNumber.natural_spells m).exponent (by decide +kernel) (by decide +kernel)) _ allExp
+  · simp only [h, Bool.false_eq_true, ↓reduceIte, String.toList_append, he, hz, List.append_nil]
+    exact CPPNumber.Spells.append_digits
+      ((CPPNumber.natural_spells m).appendNondigit (.basic (by decide +kernel))) _ allExp
+
+/-- A printed decimal magnitude begins with a digit, an identifier-rest
+character; the leading unary minus of a negative constant therefore stops. -/
+theorem decimalMagnitude_starts_digit (m : Nat) (exp : Int) :
+    ∃ d cs, (Expr.decimalMagnitude m exp).toList = d :: cs ∧ _root_.Parser.identRest d = true := by
+  have hpos := Nat.length_toDigits_pos (b := 10) (n := m)
+  cases hd : Nat.toDigits 10 m with
+  | nil => simp [hd] at hpos
+  | cons c cs =>
+      have digit : c.isDigit = true := Nat.isDigit_of_mem_toDigits (b := 10) (n := m) (by decide +kernel)
+        (by decide +kernel) (by rw [hd]; exact List.mem_cons_self)
+      have shape : (Expr.decimalMagnitude m exp).toList
+          = c :: (cs ++ ("e" ++ (if exp < 0 then "-" else "") ++ toString exp.natAbs).toList) := by
+        simp only [Expr.decimalMagnitude, String.toList_append, Nat.toString_eq_ofList_toDigits,
+          String.toList_ofList, hd, List.cons_append, List.append_assoc]
+      have identDigit : _root_.Parser.identRest c = true := by
+        simp [_root_.Parser.identRest, digit]
+      exact ⟨c, _, shape, identDigit⟩
+
+theorem decimal_renders (negative : Bool) (mantissa : Nat) (exponent : Int) :
+    Renders typedefs (.decimal negative mantissa exponent) := by
+  cases negative with
+  | false =>
+      refine ⟨[.number (Expr.decimalMagnitude mantissa exponent)],
+        of_primary Expression.decimalMagnitude, ?_⟩
+      intro marker rest safe
+      simp only [TailSafe, Bool.false_eq_true, ↓reduceIte] at safe
+      simpa only [Expr.render, Bool.false_eq_true, ↓reduceIte] using
+        CTokens.number_prefix (Expr.decimalMagnitude mantissa exponent)
+          (decimalMagnitude_spells mantissa exponent) safe rest
+  | true =>
+      refine ⟨[.punctuator "(", .punctuator "-", .number (Expr.decimalMagnitude mantissa exponent),
+        .punctuator ")"], of_primary Expression.decimalNegative, ?_⟩
+      intro marker rest safe
+      obtain ⟨d, cs, magEq, digit⟩ := decimalMagnitude_starts_digit mantissa exponent
+      have close := separator_prefix (spelling := ")") (by simp) (marker :: rest)
+      have number := CTokens.number_prefix (Expr.decimalMagnitude mantissa exponent)
+        (decimalMagnitude_spells mantissa exponent) (marker := ')') (by decide +kernel) (marker :: rest)
+      have minus : CTokens.Prefix ('-' :: ((Expr.decimalMagnitude mantissa exponent).toList
+          ++ ')' :: marker :: rest)) [.punctuator "-"]
+          ((Expr.decimalMagnitude mantissa exponent).toList ++ ')' :: marker :: rest) := by
+        rw [magEq]
+        exact CTokens.punctuator_prefix
+          (CPunctuator.consumes_before_word (spelling := "-") (next := d) (by decide +kernel) digit
+            (cs ++ ')' :: marker :: rest))
+          (by simp [CTokens.PunctuationSafe])
+      have openParen := separator_prefix (spelling := "(") (by simp)
+        ('-' :: ((Expr.decimalMagnitude mantissa exponent).toList ++ ')' :: marker :: rest))
+      simpa only [Expr.render, ↓reduceIte, String.toList_append, List.append_assoc,
+        List.cons_append, List.nil_append] using
+        openParen.append (minus.append (number.append close))
 
 theorem string_renders (value : String) : Renders typedefs (.str value) := by
   refine ⟨[.string (value.toUTF8.data.toList ++ [0])], of_primary .string, ?_⟩
@@ -302,6 +380,7 @@ also C-type-invalid. No field/call/index is licensed by syntax alone for executi
 inductive Printable (typedefs : List String) : Expr → Prop where
   | identifier : CIdentifier.valid typedefs name = true → Printable typedefs (.id name)
   | natural : Printable typedefs (.nat n)
+  | decimal : Printable typedefs (.decimal negative mantissa exponent)
   | string : Printable typedefs (.str value)
   | binary : Printable typedefs a → Printable typedefs b → Printable typedefs (.bin op a b)
   | not : Printable typedefs expr → Printable typedefs (.not expr)
@@ -322,6 +401,7 @@ theorem expression_renders (valid : Printable typedefs expr) : Renders typedefs 
   induction valid with
   | identifier name => exact identifier_renders name
   | natural => exact natural_renders _
+  | decimal => exact decimal_renders _ _ _
   | string => exact string_renders _
   | binary left right hl hr => exact binary_renders _ hl hr
   | not child ih => exact unary_renders .not ih

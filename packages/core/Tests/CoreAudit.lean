@@ -13,6 +13,7 @@ import RumocaCore.Solve.AlgorithmProofs
 import RumocaCore.GALEC.Semantics
 import ProofAudit.Audit
 import RumocaCore.Constant.Permutation
+import RumocaCore.Solve.ConstantFMI3
 import RumocaCore.Driven.IR
 import RumocaCore.Driven.Lowering
 import RumocaCore.FMI3.History
@@ -321,3 +322,5 @@ import RumocaCore.Solve.FMI3OriginProofs
 #audit axioms Rumoca.ConstantProfile.Model.rateOf_perm
 #audit axioms Rumoca.ConstantProfile.Model.decimalOf_perm
 #audit axioms Rumoca.ConstantProfile.Model.lower_rates_perm
+
+#audit axioms Rumoca.Solve.ConstantFMI3Model.shape_volume

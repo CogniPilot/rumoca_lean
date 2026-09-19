@@ -2359,3 +2359,103 @@ rejects (`actual tensor FMI adapter differs from the complete prepared function
 list`). Tensor rank and extents stay symbolic; no tensor element is enumerated
 in lowering. `jacobian` remains an identified language extension. The enlarged
 admitted subset is recorded in `dev/standards-review.md`.
+
+## Record profile parameterization (Stage B1)
+
+The instance record's FMI-visible region set is parameterized by a record profile
+(`FMI3.TensorInstance.Profile`, with `hasInput` and `hasOutput`). The generic
+heaps `TensorInstance.coreOpt`/`storeOpt` take the input and output as options,
+and the generic renderers `TensorStorage.regionMembersG`/`membersG`/
+`recordRenderG`/`storageRenderG`/`declarationsG` take the presence flags. The
+tensor profile (`tensorProfile`, input present and output present) is one
+instance: the existing `TensorInstance.core`/`store`, `TensorStorage.regionMembers`/
+`members`/`declarations` and `TensorMetadata.modelDescription` are recovered as
+its specialization by `rfl` (`core_eq_opt`, `store_eq_opt`, `regionMembers_eq`,
+`members_eq`, `recordRender_eq`, `storageRender_eq`, `declarations_eq`), so every
+existing tensor theorem, the rendered adapter bytes and the tensor model
+description are unchanged.
+
+The constant-rate profile (`constantProfile`, `dev/constant-rates.md`) is the
+opposite instance: no input tensor and no output tensor. `TensorInstance.coreNoInput`/
+`constantStore` are the input-absent core and store, and their storage theorems
+mirror the tensor ones over one fewer region: the state region is readable
+(`constant_reads_state`), the derivative writable (`constant_writable_derivative`),
+distinct members and distinct instances never alias (`constant_fields_separate`,
+`constant_instances_separate`), and preparing one instance preserves every other
+(`constant_store_other_instance`). `TensorStorage.layout_names_constant` and
+`layout_state_extent_constant` prove the constant declarations agree with the
+addressed regions, and `recordG_printed`/`storageG_printed` tokenize the generic
+record under the shared scanner, so the constant record (`false false`) tokenizes
+as well. The reserved-record initializer is profile-independent: it writes the
+FMI lifecycle metadata, resets the time base and zero-fills the state region and
+never references an input, so `ConstantInstanceInit` reuses `TensorInstanceInit`
+verbatim (`initialized`, `reads_state`, `other_instance`). The constant model
+description (`TensorMetadata.constantModelDescription`) is developed under
+"Constant-rate profile model description" above.
+
+Value references for the constant profile are renumbered without the input: `0`
+time, `1` state, `2` derivative. The tensor profile keeps its numbering (`0`
+time, `1` input, `2` state, `3` derivative, `4` output). This stage is the record
+generalization only: the constant-rate C emission, FMI lifecycle bodies, adapter
+assembly and production admission remain later increments.
+
+## Constant-rate adapter bodies (Stage B2)
+
+Over the no-input, no-output record (Stage B1), the constant-rate profile adds its
+profile-specific FMI 3 adapter bodies. The profile-independent bodies (lifecycle
+modes, free, factory over the shared reserved-record initializer, count queries,
+time setter, reset, nominals, the continuous-state getter/setter and the seven
+model-independent behavioral functions) are the shared tensor bodies instantiated
+at the constant state shape; only the input- and kernel-dependent bodies are new.
+
+`RumocaCore.Solve.ConstantFMI3` prepares the model `ConstantFMI3Model n`: a name
+paired with the constant-rate IVP over `N` states, whose state shape is the rank-1
+vector `⟨[N]⟩` of volume `N` (`shape_volume`).
+
+`FMI3.ConstantFloat64` renumbers the `fmi3GetFloat64`/`fmi3SetFloat64` dispatch
+without the input region: `0` time, `1` state, `2` derivative. The getter denotes
+all three references; the setter admits only the writable state reference `1` and
+rejects the read-only derivative reference `2`. The shared request-check, staging,
+copy-loop and finiteness machinery of the tensor accessor
+(`FMI3.TensorFloat64`) is reused verbatim; only the value-reference dispatch
+differs. The consumable contracts `get_contract`/`set_contract` bind the printed
+text, declaration closedness, printer denotation and null-handle rejection, in the
+shape of the tensor accessor contracts.
+
+`FMI3.ConstantDerivative` is the `fmi3GetContinuousStateDerivatives` body. The
+constant rate vector needs no state or input, so the numerical entry
+`rumoca_constant_rhs(&(m->dx[0]))` takes only the derivative region pointer, in
+place of the tensor `rumoca_rhs(x, u, dx, count)`. The body guards, checks the
+count and buffer, calls the entry to write `der(x)`, and copies that region into
+the caller buffer with the tensor derivative getter's copy suffix
+(`TensorContinuousStates.derivCopyTail`), reused verbatim. The copy-delivery
+theorem `deriv_copy_delivers` (the constant-rate instance of
+`TensorContinuousStates.deriv_delivers`) delivers whatever the entry wrote into
+`der(x)`, preserving every other instance. The consumable contract `deriv_contract`
+binds the printed text, closedness, denotation, null rejection and the copy
+delivery. The rounding of each written derivative to nearest-even is the
+constant-rate kernel contract `CConstant.contract_correct`; the fused single-run
+observable execution of the entry over the instance record (the constant-rate
+analog of `TensorInstanceRhs.derivative_writes_events`) is a later increment.
+
+`FMI3.ConstantDoStep` is the Co-Simulation `fmi3DoStep` body. It reuses the
+model-independent scalar guard prefix of `Runtime.doStep` verbatim
+(`doStepBody_prefix`: the same 16 statements up to and including `stepGrid`), so
+the null-handle and lifecycle rejections reuse the shared `GuardedCalls` lemmas
+over the constant body (`null_behaviors`, `lifecycle_behaviors`). The numerical
+tail runs the outer grid loop over the admitted internal step count; each internal
+step advances the time base by one and calls `rumoca_constant_step(&(m->x[0]))`,
+which advances every state by one explicit Euler step of its constant rate. The
+constant kernel iterates the states internally, so the body needs no elementwise
+Euler loop and no element count, and the body is shape-independent. Over `N`
+accepted internal steps every state advances by the `N`-fold finite rate sum and
+the time by `N`. The consumable contract `contract` binds the printed text,
+closedness, denotation and null rejection; the accepted end-to-end execution and
+the off-grid `fmi3Discard` path are later increments.
+
+The numerical entries `rumoca_constant_rhs`, `rumoca_constant_step` and
+`rumoca_constant_sample` are the constant-rate kernel C
+(`packages/backend-c/RumocaC/ConstantKernelCode.lean`). This stage delivers the
+constant-rate adapter bodies; the constant adapter function-list assembly, the
+rendered adapter bytes, the no-heap and acyclic call-graph policy, the bound
+adapter contract and production admission remain later increments.

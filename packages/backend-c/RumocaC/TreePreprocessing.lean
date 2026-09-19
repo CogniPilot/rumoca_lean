@@ -135,7 +135,7 @@ theorem binOp_stable (op : BinOp) : Stable op.render.toList := by
 It is deliberately weaker than C lexical, name-resolution or typing validity. -/
 def ExprInputs : Expr → Prop
   | .id name | .sizeof name => Plain name.toList
-  | .nat _ | .str _ => True
+  | .nat _ | .decimal _ _ _ | .str _ => True
   | .bin _ a b | .index a b => ExprInputs a ∧ ExprInputs b
   | .not a | .deref a | .address a => ExprInputs a
   | .field a name _ | .cast name a => ExprInputs a ∧ Plain name.toList
@@ -154,6 +154,18 @@ theorem expression_stable (expr : Expr) (valid : ExprInputs expr) :
       ∀ arg ∈ args, ExprInputs arg → Stable arg.render.toList) with
   | id name => simpa only [Expr.render] using plain_stable (by simpa only [ExprInputs] using valid)
   | nat n => simpa only [Expr.render] using natural_stable n
+  | decimal negative mantissa exponent =>
+      have signStable : Stable (if exponent < 0 then "-" else "").toList := by
+        split <;> exact plain_stable (by simp [Plain])
+      have mag : Stable (Expr.decimalMagnitude mantissa exponent).toList := by
+        simp only [Expr.decimalMagnitude, String.toList_append]
+        exact (((natural_stable mantissa).append (plain_stable (by simp [Plain]))).append
+          signStable).append (natural_stable exponent.natAbs)
+      cases negative with
+      | false => simpa only [Expr.render, Bool.false_eq_true, ↓reduceIte] using mag
+      | true =>
+          simpa only [Expr.render, ↓reduceIte, String.toList_append] using
+            ((plain_stable (by simp [Plain])).append mag).append (plain_stable (by simp [Plain]))
   | str s => simpa only [Expr.render] using quote_stable s
   | bin op a b ha hb =>
       simp only [ExprInputs] at valid

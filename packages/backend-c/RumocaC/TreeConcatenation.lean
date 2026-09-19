@@ -24,6 +24,11 @@ theorem Expression.separated (tree : Expression typedefs category tokens expr) :
   induction tree using Expression.rec (motive_2 := fun tokens _ _ => Separated tokens) with
   | identifier valid => exact .single _
   | natural value => exact .single _
+  | decimalMagnitude => exact .single _
+  | decimalNegative =>
+      exact (((Separated.single (.number _)).prepend (token := .punctuator "-") trivial).prepend
+        (token := .punctuator "(") trivial).append_separator Separated.empty
+        (token := .punctuator ")") trivial
   | string => exact .single _
   | widen bound child ih => exact ih
   | parenthesized child ih =>

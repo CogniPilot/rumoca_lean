@@ -2556,6 +2556,21 @@ Only these three status documents changed after the full gate. Emitted code,
 grammar and mandatory contracts are unchanged. This is a prerequisite for
 complete CS stepping, not a complete `fmi3DoStep` or native-cast guarantee.
 
+The C body semantics also evaluate a decimal floating-constant expression node.
+Its value is the round-to-nearest-even of the literal's exact base-ten content
+(`(if negative then -1 else 1) * mantissa * 10 ^ exponent`) on the finite
+binary64 grid, defined through the shared scaled-rounding specification, so
+evaluation is total, deterministic and always finite: the grid holds no
+infinities, and an out-of-range magnitude saturates to the nearest finite value.
+The magnitude prints as a single C11 6.4.4.2 floating constant
+(`<mantissa>e<exponent>`, the exponent carrying its own sign) and a negative
+constant prints as its parenthesized unary negation, because C has no negative
+literal tokens. Trusted boundary: a conforming C11 translator converts each such
+floating constant to this same correctly rounded binary64 value; this rounding
+assumption was already implicit for the integer `0`/`1` casts that print `1.0`,
+and is now stated explicitly for decimal literals. No further floating
+arithmetic is added to the body machine; `isfinite` remains its only intrinsic.
+
 A derived stepping prerequisite now adds computed floor for all finite
 binary64 encodings, including negative zero, and ordinary typed external-call
 contracts for finite `floor` and a supplied int32 `fegetround` observation.
