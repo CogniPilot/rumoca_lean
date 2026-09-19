@@ -1,248 +1,50 @@
-import ProofAudit.Audit
-import RumocaC.TensorCallContract
-import RumocaC.TensorFillContract
-import RumocaC.TensorDiagonalContract
-import RumocaC.TensorSquareDiagonal
-import RumocaC.ConstantKernelProgram
-import TensorCChecks.Entry
-import TensorCChecks.DiagonalEntry
-import TensorCChecks.IVPEntry
-import TensorCChecks.ConstantEntry
-import RumocaC.TypedEventsTransfer
-
-#audit axioms Rumoca.CArithmetic.floatMul_finite
-#audit axioms Rumoca.CLoops.increment_exact
-#audit axioms Rumoca.CLoops.loop_reaches
-#audit axioms Rumoca.CMemory.TensorView.store_next
-#audit axioms Rumoca.CMemory.TensorView.written_reads
-#audit axioms Rumoca.CMemory.TensorView.written_frame
-#audit axioms Rumoca.CMemory.TensorView.written_writable
-#audit axioms Rumoca.CMemory.TensorView.written_preserves_writable
-#audit axioms Rumoca.CTensor.function_correct
-#audit axioms Rumoca.CTensor.Syntax.render_denotes
-#audit axioms Rumoca.CTensor.Syntax.denotes_unique
-#audit axioms Rumoca.CTensor.body_correct
-#audit axioms Rumoca.CTensor.artifact_correct
-#audit axioms Rumoca.CLoops.Calls.body_reaches
-#audit axioms Rumoca.CLoops.Calls.call_reaches
-#audit axioms Rumoca.CLoops.Calls.call_behaviors
-#audit axioms Rumoca.CLoops.Calls.resume_caller
-#audit axioms Rumoca.CTensor.bind_parameters
-#audit axioms Rumoca.CTensor.bind_types
-#audit axioms Rumoca.CTensor.helper_call_reaches
-#audit axioms Rumoca.CTensor.helper_call_correct
-#audit axioms Rumoca.CTensor.invoke_reaches
-#audit axioms Rumoca.CTensor.call_artifact_correct
-#audit axioms Rumoca.CTensor.writer_reaches
-#audit axioms Rumoca.CTensor.function_reaches
-#audit axioms Rumoca.CTensor.Fill.function_reaches
-#audit axioms Rumoca.CTensor.Fill.bind_parameters
-#audit axioms Rumoca.CTensor.Fill.bind_types
-#audit axioms Rumoca.CTensor.Fill.helper_call_correct
-#audit axioms Rumoca.CTensor.Fill.invoke_reaches
-#audit axioms Rumoca.CTensor.Fill.literal_eval
-#audit axioms Rumoca.CTensor.Fill.solve_fill_correct
-#audit axioms Rumoca.CTensor.Fill.Syntax.render_denotes
-#audit axioms Rumoca.CTensor.Fill.artifact_correct
-#audit axioms Rumoca.CIdentifier.word_parts
-#audit axioms Rumoca.CIdentifier.lex_word
-#audit axioms Rumoca.CTensor.Lowering.emit_code_count
-#audit axioms Rumoca.CTensor.Lowering.bound_push
-#audit axioms Rumoca.CTensor.Lowering.represents_written
-#audit axioms Rumoca.CTensor.Lowering.writable_written
-#audit axioms Rumoca.CTensor.Lowering.ready_written
-#audit axioms Rumoca.CTensor.Lowering.emit_correct
-#audit axioms Rumoca.CTensor.Lowering.emit_refines
-#audit axioms Rumoca.CTensor.Lowering.Syntax.statement_render
-#audit axioms Rumoca.CTensor.Lowering.Syntax.parameter_render
-#audit axioms Rumoca.CTensor.Lowering.Syntax.parameters_render
-#audit axioms Rumoca.CTensor.Lowering.Syntax.statements_render
-#audit axioms Rumoca.CTensor.Lowering.Syntax.render_denotes
-#audit axioms Rumoca.CTensor.Lowering.body_correct
-#audit axioms Rumoca.CTensor.Lowering.artifact_correct
-#audit axioms Rumoca.CTensor.ProgramFixture.body_matches
-#audit axioms Rumoca.CTensor.ProgramFixture.function_tree
-#audit axioms Rumoca.CTensor.ProgramFixture.result_buffer
-#audit axioms Rumoca.CTensor.ProgramFixture.six_calls
-#audit axioms Rumoca.CTensor.ProgramFixture.valid
-#audit axioms Rumoca.CTensor.ProgramFixture.artifact_correct
-#audit axioms Rumoca.CTensor.Lowering.Arguments.locals_absent
-#audit axioms Rumoca.CTensor.Lowering.Arguments.locals_present
-#audit axioms Rumoca.CTensor.Lowering.Arguments.types_absent
-#audit axioms Rumoca.CTensor.Lowering.Arguments.header_type
-#audit axioms Rumoca.CTensor.Lowering.Arguments.cast_admissible
-#audit axioms Rumoca.CTensor.Lowering.Arguments.bind_parameters
-#audit axioms Rumoca.CTensor.Lowering.Arguments.bind_types
-#audit axioms Rumoca.CTensor.Lowering.valid_nodup
-#audit axioms Rumoca.CTensor.Lowering.helper_absent
-#audit axioms Rumoca.CTensor.Lowering.Library.setup
-#audit axioms Rumoca.CTensor.Lowering.program_call_reaches
-#audit axioms Rumoca.CTensor.Lowering.program_call_refines
-#audit axioms Rumoca.CTensor.Lowering.call_artifact_correct
-#audit axioms Rumoca.CMemory.TensorRegion.contains_index
-#audit axioms Rumoca.CMemory.TensorRegion.contains_iff
-#audit axioms Rumoca.CMemory.TensorRegion.place_at
-#audit axioms Rumoca.CMemory.TensorRegion.place_frame
-#audit axioms Rumoca.CMemory.TensorRegion.place_writable
-#audit axioms Rumoca.CMemory.TensorRegion.place_reads
-#audit axioms Rumoca.CMemory.TensorRegion.member_separate
-#audit axioms Rumoca.CMemory.TensorRegion.place_other_member
-#audit axioms Rumoca.CMemory.TensorRegion.place_other_instance
-#audit axioms Rumoca.CMemory.TensorRegion.separate_instances
-#audit axioms Rumoca.CMemory.TensorRegion.scratch_other
-#audit axioms Rumoca.CMemory.TensorRegion.scratch_at
-#audit axioms Rumoca.CMemory.TensorRegion.scratch_writable
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.reads_input
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.reads_state
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.writable
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.arguments_valid
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.named_bound
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.layout_bound
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.represented
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.ready
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.call_correct
-#audit axioms Rumoca.CTensor.ProgramFixture.Entry.artifact_correct
-#audit axioms Rumoca.CLoops.sizeAdd_exact
-#audit axioms Rumoca.CLoops.eval_sizeAdd
-#audit axioms Rumoca.CLoops.declare_local
-#audit axioms Rumoca.CTensor.Diagonal.matrix_get
-#audit axioms Rumoca.CTensor.Diagonal.matrix_index
-#audit axioms Rumoca.CTensor.Diagonal.position_index
-#audit axioms Rumoca.CTensor.Diagonal.position_bound
-#audit axioms Rumoca.CTensor.Diagonal.position_injective
-#audit axioms Rumoca.CTensor.Diagonal.counter_bounds
-#audit axioms Rumoca.CTensor.Diagonal.position_bounded
-#audit axioms Rumoca.CTensor.Diagonal.scatter_at
-#audit axioms Rumoca.CTensor.Diagonal.scatter_frame
-#audit axioms Rumoca.CTensor.Diagonal.scatter_store_next
-#audit axioms Rumoca.CTensor.Diagonal.zero_writable
-#audit axioms Rumoca.CTensor.Diagonal.result_reads
-#audit axioms Rumoca.CTensor.Diagonal.result_frame
-#audit axioms Rumoca.CTensor.Diagonal.input_reads
-#audit axioms Rumoca.CTensor.Diagonal.solve_matrix
-#audit axioms Rumoca.CTensor.Diagonal.bind_valid
-#audit axioms Rumoca.CTensor.Diagonal.copy_step
-#audit axioms Rumoca.CTensor.Diagonal.offset_eval
-#audit axioms Rumoca.CTensor.Diagonal.offset_step
-#audit axioms Rumoca.CTensor.Diagonal.loop_reaches
-#audit axioms Rumoca.CTensor.Diagonal.initialize_reaches
-#audit axioms Rumoca.CTensor.Diagonal.tail_reaches
-#audit axioms Rumoca.CTensor.Diagonal.bind_parameters
-#audit axioms Rumoca.CTensor.Diagonal.bind_types
-#audit axioms Rumoca.CTensor.Diagonal.function_reaches
-#audit axioms Rumoca.CTensor.Diagonal.helper_call_reaches
-#audit axioms Rumoca.CTensor.Diagonal.helper_call_correct
-#audit axioms Rumoca.CTensor.Diagonal.invoke_reaches
-#audit axioms Rumoca.CTensor.Diagonal.Syntax.render_denotes
-#audit axioms Rumoca.CTensor.Diagonal.execution_correct
-#audit axioms Rumoca.CTensor.Diagonal.solve_correct
-#audit axioms Rumoca.CTensor.Diagonal.artifact_correct
-#audit axioms Rumoca.CTensor.Lowering.emitDiagonal_code_count
-#audit axioms Rumoca.CTensor.Lowering.fresh_push
-#audit axioms Rumoca.CTensor.Lowering.reserved_result
-#audit axioms Rumoca.CTensor.Lowering.reserved_writable
-#audit axioms Rumoca.CTensor.Lowering.emitDiagonal_correct
-#audit axioms Rumoca.CTensor.Lowering.diagonal_call_reaches
-#audit axioms Rumoca.CTensor.Lowering.diagonal_call_refines
-#audit axioms Rumoca.CTensor.Lowering.diagonal_artifact_correct
-#audit axioms Rumoca.CTensor.Lowering.Syntax.diagonal_statement_render
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.arguments_valid
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.output_writable
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.represented
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.reserved
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.named_bound
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.output_bound
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.layout_bound
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.ready
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.body_matches
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.function_tree
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.valid
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.scope
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.call_correct
-#audit axioms Rumoca.CTensor.ProgramFixture.DiagonalEntry.artifact_correct
-#audit axioms Rumoca.CTensor.Lowering.Named.Layout.erase_push
-#audit axioms Rumoca.CTensor.Lowering.Named.emit_correct
-#audit axioms Rumoca.CTensor.Lowering.Named.function_matches
-#audit axioms Rumoca.CTensor.Lowering.Named.diagonal_matches
-#audit axioms Rumoca.CTensor.Lowering.Named.artifact_correct
-#audit axioms Rumoca.CTensor.Lowering.Named.diagonal_artifact_correct
-#audit axioms Rumoca.CTensor.Lowering.ProgramEntry.correct
-#audit axioms Rumoca.CTensor.Lowering.DiagonalEntry.correct
-#audit axioms Rumoca.CTensor.Lowering.OptionalDiagonalEntry.correct
-#audit axioms Rumoca.CTensor.Lowering.PointwisePlan.correct
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.plan_valid
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.initial_result
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.derivative_result
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.jacobian_function
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.sources_shape
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.program_correct
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.initial_arguments
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.derivative_arguments
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.parameter_bound
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.initial_call_correct
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.derivative_call_correct
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.artifact_correct
-#audit axioms Rumoca.CTensor.ProgramFixture.IVPEntry.jacobianDiag_correct
-#audit axioms Rumoca.CCalls.Typed.enter_loop_call
-#audit axioms Rumoca.CCalls.Typed.loop_step
-#audit axioms Rumoca.CCalls.Typed.loop_reaches
-#audit axioms Rumoca.CCalls.Typed.loop_behaviors
-#audit axioms Rumoca.CCalls.Typed.enter_append
-#audit axioms Rumoca.CCalls.Typed.resume_append
-#audit axioms Rumoca.CCalls.Typed.append_step
-#audit axioms Rumoca.CCalls.Typed.append_reaches
-#audit axioms Rumoca.CCalls.Typed.loop_call_reaches
-#audit axioms Rumoca.CCalls.Typed.body_step
-#audit axioms Rumoca.CCalls.Typed.body_reaches
-#audit axioms Rumoca.CCalls.Typed.kernel_step
-#audit axioms Rumoca.CCalls.Typed.kernel_reaches
-#audit axioms Rumoca.CCalls.Typed.tree_entry
-#audit axioms Rumoca.CCalls.Typed.loop_terminates_reaches
-#audit axioms Rumoca.CCalls.Typed.loop_terminates_context
-#audit axioms Rumoca.CCalls.Typed.loop_call_result
-#audit axioms Rumoca.CCalls.Typed.invoke_step
-#audit axioms Rumoca.CCalls.Typed.invoke_reaches
-#audit axioms Rumoca.CCalls.Typed.invoke_return_reaches
-#audit axioms Rumoca.CTensor.Lowering.typed_call_correct
-#audit axioms Rumoca.CTensor.Lowering.typed_diagonal_call_correct
-
-#audit axioms Rumoca.CCalls.Events.enter_loop_call_events
-#audit axioms Rumoca.CCalls.Events.loop_step_events
-#audit axioms Rumoca.CCalls.Events.loop_reaches_events
-#audit axioms Rumoca.CCalls.Events.loop_terminates_reaches_events
-#audit axioms Rumoca.CCalls.Events.enter_append_events
-#audit axioms Rumoca.CCalls.Events.append_step_events
-#audit axioms Rumoca.CCalls.Events.append_reaches_events
-#audit axioms Rumoca.CCalls.Events.loop_call_reaches_events
-#audit axioms Rumoca.CCalls.Events.loop_call_behaviors_events
-
--- Reusable scratch-free square-Jacobian materializer diag(2*u).
-#audit axioms Rumoca.CTensor.SquareDiagonal.copy_step
-#audit axioms Rumoca.CTensor.SquareDiagonal.coeff_reads
-#audit axioms Rumoca.CTensor.SquareDiagonal.loop_reaches
-#audit axioms Rumoca.CTensor.SquareDiagonal.function_reaches
-#audit axioms Rumoca.CTensor.SquareDiagonal.helper_call_reaches
-#audit axioms Rumoca.CTensor.SquareDiagonal.helper_call_correct
-#audit axioms Rumoca.CTensor.SquareDiagonal.invoke_reaches
-#audit axioms Rumoca.CTensor.SquareDiagonal.output_reads
-#audit axioms Rumoca.CTensor.SquareDiagonal.output_frame
-#audit axioms Rumoca.CTensor.SquareDiagonal.diagonal_nearest
-#audit axioms Rumoca.CTensor.SquareDiagonal.matrix_diagonal_nearest
-
--- Executable constant-rate (G01) kernel program: rounded-rate write, finite
--- whole-vector Euler step, its counted iteration, and the artifact contract.
-#audit axioms Rumoca.CConstant.rate_rounds
-#audit axioms Rumoca.CConstant.rhs_reaches
-#audit axioms Rumoca.CConstant.step_reaches
-#audit axioms Rumoca.CConstant.step_next
-#audit axioms Rumoca.CConstant.sample_body_reaches
-#audit axioms Rumoca.CConstant.rhs_behaves
-#audit axioms Rumoca.CConstant.step_behaves
-#audit axioms Rumoca.CConstant.sample_behaves
-#audit axioms Rumoca.CConstant.rhs_executes
-#audit axioms Rumoca.CConstant.step_executes
-#audit axioms Rumoca.CConstant.sample_executes
-#audit axioms Rumoca.CConstant.contract_correct
-#audit axioms Rumoca.CConstant.Fixture.rhs_denotes
-#audit axioms Rumoca.CConstant.Fixture.step_denotes
-#audit axioms Rumoca.CConstant.Fixture.sample_denotes
+-- Aggregator for the per-source-module axiom audits (TensorAudit).
+-- Each imported module audits exactly the roots of one source module,
+-- so Lake elaborates them as independent parallel jobs while this
+-- aggregator keeps its check-library root name unchanged.
+import Tests.TensorAudit.RumocaC_Arithmetic
+import Tests.TensorAudit.RumocaC_ConstantKernelProgram
+import Tests.TensorAudit.RumocaC_Identifier
+import Tests.TensorAudit.RumocaC_LoopCalls
+import Tests.TensorAudit.RumocaC_LoopProofs
+import Tests.TensorAudit.RumocaC_Loops
+import Tests.TensorAudit.RumocaC_TensorCallContract
+import Tests.TensorAudit.RumocaC_TensorCalls
+import Tests.TensorAudit.RumocaC_TensorContract
+import Tests.TensorAudit.RumocaC_TensorDiagonalCalls
+import Tests.TensorAudit.RumocaC_TensorDiagonalContract
+import Tests.TensorAudit.RumocaC_TensorDiagonalMemory
+import Tests.TensorAudit.RumocaC_TensorDiagonalProgramCalls
+import Tests.TensorAudit.RumocaC_TensorDiagonalProgramCode
+import Tests.TensorAudit.RumocaC_TensorDiagonalProgramContract
+import Tests.TensorAudit.RumocaC_TensorDiagonalProgramMemory
+import Tests.TensorAudit.RumocaC_TensorDiagonalProgramProofs
+import Tests.TensorAudit.RumocaC_TensorDiagonalProofs
+import Tests.TensorAudit.RumocaC_TensorDiagonalSyntax
+import Tests.TensorAudit.RumocaC_TensorFillContract
+import Tests.TensorAudit.RumocaC_TensorFillProofs
+import Tests.TensorAudit.RumocaC_TensorFillSyntax
+import Tests.TensorAudit.RumocaC_TensorIVPContract
+import Tests.TensorAudit.RumocaC_TensorMemory
+import Tests.TensorAudit.RumocaC_TensorNamedProofs
+import Tests.TensorAudit.RumocaC_TensorProgramCallContract
+import Tests.TensorAudit.RumocaC_TensorProgramCalls
+import Tests.TensorAudit.RumocaC_TensorProgramCode
+import Tests.TensorAudit.RumocaC_TensorProgramContract
+import Tests.TensorAudit.RumocaC_TensorProgramMemory
+import Tests.TensorAudit.RumocaC_TensorProgramParameters
+import Tests.TensorAudit.RumocaC_TensorProgramPrinter
+import Tests.TensorAudit.RumocaC_TensorProgramProofs
+import Tests.TensorAudit.RumocaC_TensorProofs
+import Tests.TensorAudit.RumocaC_TensorRegions
+import Tests.TensorAudit.RumocaC_TensorSquareDiagonal
+import Tests.TensorAudit.RumocaC_TensorSyntax
+import Tests.TensorAudit.RumocaC_TensorTypedContract
+import Tests.TensorAudit.RumocaC_TensorWriter
+import Tests.TensorAudit.RumocaC_TypedCallProofs
+import Tests.TensorAudit.RumocaC_TypedEventsTransfer
+import Tests.TensorAudit.TensorCChecks_ConstantEntry
+import Tests.TensorAudit.TensorCChecks_DiagonalEntry
+import Tests.TensorAudit.TensorCChecks_Entry
+import Tests.TensorAudit.TensorCChecks_Fixture
+import Tests.TensorAudit.TensorCChecks_IVPEntry

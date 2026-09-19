@@ -53,6 +53,38 @@ in 11m57s (`build/certificate-cache/full-gate-v4-warm.log`), against the
 46.5-minute baseline. The remaining time is Lake dependency checking, native C
 compilation, importer runs, mutation rejections and the boundary scripts.
 
+## Parallel axiom audits, 2026-09-19
+
+The axiom audit for the heavier packages is partitioned into one audit file per
+source module under a directory beside the check library's root
+(`Tests/FMI3Audit/`, `Tests/FMI3CallPolicyAudit/`, `Tests/CAudit/`,
+`Tests/CCallPolicyAudit/`, `Tests/TensorAudit/`, `Tests/Audit/`,
+`Tests/FMI3SourceCallPolicyAudit/` and `Tests/CoreAudit/`). Each per-source file
+imports only its own source module and the `ProofAudit.Audit` command, and holds
+exactly the `#audit axioms` roots of that source module. The former root file
+(for example `Tests/FMI3Audit.lean`) becomes a thin aggregator that imports every
+per-source file, so the check library keeps its root name and its complete
+audited-root set while Lake elaborates the audit as independent parallel jobs
+instead of one serial module.
+
+The previous single-file audits were each one serial Lake job on the critical
+path of their check target; the largest, `Tests.FMI3Audit`, elaborated as one
+job in about 381 seconds. Rebuilding only the audit files, with the package
+sources cached, on a 32-core host now measures:
+
+| Check target | Audit files rebuilt | Warm audit rebuild | Slowest single audit file |
+| --- | ---: | ---: | --- |
+| `check-core` | 56 | 13.5 s | `CoreAudit/RumocaCore_Initialization_Real`, 7.7 s |
+| `check-c` | 234 | 36.3 s | `CAudit/RumocaC_InitializationMap`, 10.0 s |
+| `check-fmi3` | 464 | 96.0 s | `FMI3Audit/ConstantFunctions`, 19.0 s |
+| `check-compiler` | 132 | 42.2 s | `Audit/FMI3CSProtocol`, 19.0 s |
+
+The audit-file count is the per-source files plus their aggregators. The warm
+rebuild removes the audit build products and rebuilds the check target with the
+package sources still cached, so it isolates audit elaboration. The critical path
+of each target's audit is now its slowest single source-module file rather than
+the whole audit, and the files fan out across available cores.
+
 ## Development loop
 
 Use the smallest owning package/module build during proof development. Group
