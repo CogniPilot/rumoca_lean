@@ -207,6 +207,31 @@ builder support other AST representations without changing the LR engine.
   [16 GB GitHub runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
   This changes certificate evaluation, not the validation conditions or the
   runtime parser, and does not establish a bound for arbitrary grammars.
+  Each reduction summary is now proved through a bitmask reformulation of the
+  pop computation. `Parser.LALR.MaskedSafety` represents a state-set vector as a
+  `Nat` bitmask and folds over the edge and goto lists once with machine-word bit
+  operations, instead of re-expanding an `Array.ofFn` over the states at every
+  reduction symbol. `popStates_eq` relates `Safety.popStates` to a `maskToArray`
+  of the masked pop, and `gotoMask_eq` folds the goto table's rows once into the
+  successor mask rather than re-running a goto lookup per state. The generated
+  `reduction_N_checked` theorems keep their exact statements and rewrite through
+  these equivalences, pinning a shared literal state count, before the kernel
+  reduces the masked form. The edge-source bound, goto-table shape and state count
+  are established once and reused by every certificate. Certificate meanings are
+  unchanged; only the proof route differs.
+  The whole-table structural-safety obligation is now discharged per state.
+  `Parser.LALR.RowSafety` defines `rowValid`, the action/goto obligation of one
+  state reading only that state's extracted rows, and `safety_of_rows` proves
+  `Safety.TableConditions` equivalent to the four prefix conditions plus
+  `rowValid` at every state, through `entryRowOK_iff`/`gotoRowOK_iff` and the
+  `action_eq_row`/`goto_eq_row` row-lookup equalities. The generator emits one
+  certificate per fixed-size chunk of states and joins them through
+  `safety_of_rows`, so the earlier single whole-table `decide +kernel` is
+  replaced by per-chunk decisions whose transient is bounded by the chunk rather
+  than the whole table. The `safety_checked` statement and its certified
+  `Safety.validate ... = true` conclusion are unchanged; only the proof route
+  differs. Measurements are in
+  [verification-performance.md](verification-performance.md#lalr-per-row-safety-certificates-2026-09-19).
   Both parser packages passed their audits in
   `build/tensor-sharded-parser-gate.log`. Generated-file freshness and the
   complete LALR certificate/mutation gate passed in
@@ -265,8 +290,12 @@ item obligations, independent of candidate construction. The shared `Item`
 module now owns item identities and augmentation. `closure_lookahead` derives
 closure coverage from an actual suffix derivation using the existing universal
 FIRST theorem. Both current EBNFs pass native validation and their emitted item
-certificates pass kernel checking. Item arrays are proof-only definitions;
-each state has a separate kernel obligation. This checkpoint preceded the
+certificates pass kernel checking. Item arrays are proof-only definitions. The
+emitted item obligations are grouped into fixed-size chunks of states, one kernel
+certificate per chunk joined through `ItemCheck.validate_iff`, so the elaborator
+retains a handful of decision terms rather than one per state; measurements are
+in [verification-performance.md](verification-performance.md#lalr-per-row-safety-certificates-2026-09-19).
+This checkpoint preceded the
 source cutover described at the top of this document.
 
 `DerivationTrees` proves that every accepted word in mathlib's CFG semantics has
@@ -740,3 +769,43 @@ propagation, parser completeness/progress, frontend/action preservation or the
 whole-FMU proof. The Modelica/GALEC workload and parallel batch decisions above
 are design constraints; no additional syntax, worker implementation or
 performance comparison was introduced in this increment.
+
+## Generated certificate module layout, 2026-09-19
+
+The generator emits a directory of modules per grammar instead of one module
+holding every certificate. A single Lean process retained all of a grammar's
+decision terms at once (the masked reduction certificates, the chunked row and
+item certificates, the source region and the progress certificate), so the
+Modelica `ModelicaParser.Generated` module peaked near 23 GiB and exceeded a
+ten-minute build. Splitting the obligations across modules lets each group
+elaborate in its own process, so the kernel decision terms are reclaimed per
+module, and Lake builds the independent groups in parallel.
+
+Each grammar's `Generated` prefix now names:
+
+- `Generated/Tables`: the table literals and `source`, the grammar and lowering
+  witnesses, `encode`, `firstFacts`, `itemStates`, the fuel/credit literals, and
+  the shared reduction premises (`edge_source_bound`, `gotos_size_eq`,
+  `state_count`). It imports the parser package; every other module imports only
+  this data module.
+- `Generated/Source`: the EBNF text-reader and lowering certificates
+  (`source_read_checked`, `source_notation_checked`, `lowering_checked`,
+  `ebnf_correct`) and the per-rule source equations.
+- `Generated/Items`: `first_checked`, the item-coverage chunks and `items_checked`.
+- `Generated/Reductions0..N`: about twenty masked reduction certificates each.
+  The reduction constants are public so the join can reference them.
+- `Generated/Safety`: the reduction join (`reductions_checked`), the acceptance
+  summary, the per-state row-safety chunks and `safety_checked`. It imports the
+  data module and every reduction module.
+- `Generated/Progress`: `budget_checked` and `progress_checked`.
+- The umbrella `Generated` module imports them all and states the cross-group
+  runtime contracts (`accepts_iff_parse`, the bounded parse contracts,
+  `parse_correct`, `parsed_tree`, the token and located parser APIs,
+  `execution_safe`).
+
+The split touches only module boundaries and declaration visibility. Every final
+theorem keeps its namespace, name and statement; the language audits list the
+same certificate names and report the same standard axioms. `lake run generate`
+emits the whole set (recreating the `Generated/` directory so removed modules do
+not linger) and `lake run check-generated` compares the umbrella and, through
+`diff -r`, every emitted submodule for byte identity.

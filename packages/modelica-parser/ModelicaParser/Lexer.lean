@@ -21,7 +21,7 @@ def reserved : List String :=
 def classifyWord (s : String) : Token :=
   if reserved.contains s then .literal s else .ident s
 
-def punctuation (c : Char) : Bool := [';', '(', ')', '=', ',', '[', ']'].contains c
+def punctuation (c : Char) : Bool := [';', '(', ')', '=', ',', '[', ']', '*', '/'].contains c
 
 /-- Characters of a signed decimal literal: digits, the fraction point, the
 exponent letter and a sign. A leading digit or sign begins a number. -/
@@ -30,15 +30,23 @@ def numberChar (c : Char) : Bool :=
 
 def numberStart (c : Char) : Bool := c.isDigit || c == '+' || c == '-'
 
-/-- A pure digit run keeps the exact literal-terminal spelling the admitted
-profiles match (`'0'`, `'1'`, `'2'`); a spelling that carries a sign, point or
-exponent becomes a value-erasing number token that resolution parses. Every
-existing source uses only single-digit literals, whose class is unchanged. -/
+/-- A lone sign with no following digits is an additive operator token (binary
+or unary `+`/`-` in an arithmetic expression); it carries the operator spelling
+as a literal terminal. A pure digit run keeps the exact literal-terminal
+spelling the admitted profiles match (`'0'`, `'1'`, `'2'`); a spelling that
+carries a sign, point or exponent alongside digits becomes a value-erasing
+number token that resolution parses. Every existing source uses only
+single-digit literals or full signed literals, whose class is unchanged. -/
 def numberToken (cs : List Char) : Token :=
-  if cs.all Char.isDigit then .literal (String.ofList cs) else .number (String.ofList cs)
+  if cs = ['+'] ∨ cs = ['-'] then .literal (String.ofList cs)
+  else if cs.all Char.isDigit then .literal (String.ofList cs)
+  else .number (String.ofList cs)
 
 theorem numberToken_text (cs : List Char) : (numberToken cs).text = String.ofList cs := by
-  unfold numberToken; split <;> rfl
+  unfold numberToken
+  split
+  · rfl
+  · split <;> rfl
 
 /-- Declarative maximal-munch lexical rules for the admitted ASCII slice.
 The first character chooses the token class; takeWhile/dropWhile specify the

@@ -14,6 +14,7 @@ path = "../verification"
 [[lean_lib]]
 name = "ModelicaParser"
 globs = ["ModelicaParser", "ModelicaParser.+"]
+moreLeanArgs = ["-s", "65536"]
 
 [[lean_lib]]
 name = "ModelicaParserChecks"

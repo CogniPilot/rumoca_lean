@@ -288,6 +288,27 @@ lifecycle bodies, artifacts and admission remain later increments.
 | FMI 3.0.2 §2.4.7 Dimension (array variables) | The homogeneous scalar-state vector is exposed as one array `Float64` variable `x` of the state shape carrying one `Dimension` per extent (with the extent as a constant `start`), rather than one scalar variable per element. This keeps the state rank and extent symbolic and enumerates no coordinate, matching the record's contiguous state region and the compiler rule against enumerating tensor elements. The `Dimension` starts multiply back to the state element count (`constantStateVar_dim_product`, `constantDerivativeVar_dim_product`), and the fixed-zero `start` list has one value per element per the array `start` rule. |
 | FMI 3.0.2 §2.4.7 Value reference (`valueReference`) | Value references are renumbered without the input region: `0` time, `1` state, `2` derivative. They are pairwise distinct (`constantValueReferences_nodup`), and the derivative's `derivative` attribute references the state's value reference (`constant_derivative_references_state`). |
 | FMI 3.0.2 §2.4.8 Definition of the Model Structure (`ModelStructure`) | The model structure lists the continuous-state derivative and the initial unknown for `der(x)`. Because `der(x)` is a signed decimal constant, each entry lists an empty dependency set (`constant_structure_dependencies_empty`); every structure entry still references a declared variable's value reference (`constant_structure_references_declared`). |
+### G02 expression development profile: standards impact
+
+The `expression_composition` production admits one or more `parameter Real p =
+literal;` declarations, one or more `Real` state declarations, zero or more
+`Real` algebraic-variable declarations (states and algebraic variables share the
+plain `Real` declaration form and are distinguished by name resolution, not
+syntax), and an equation section whose equations are `der(state) = expr` or
+`alg = expr`. Each right-hand side `expr` is an MLS 3.7 arithmetic expression
+restricted to `+ - * /` with unary minus, parentheses, decimal literals and
+declared-name references. This increment lands the lexer and the admitted
+grammar; the typed frontend, source semantics (including acyclic scheduling of
+the algebraic equations), Solve lowering and numerical refinement, C emission,
+artifacts and production admission are later slices (see `dev/expressions.md`).
+The production compiler still rejects the profile.
+
+| Standard | Impact |
+| --- | --- |
+| MLS 3.7 Operators (arithmetic `+ - * /`, unary minus) | The source lexer emits `*` and `/` as their own literal terminals and a lone `+`/`-` (a sign with no following digits) as an additive operator literal; a signed decimal spelling with digits stays a single value-erasing number token, so the admitted unit, driven, array and constant profiles lex unchanged (`numberToken`, `scan_sound`, `scan_complete`). The grammar admits only the four arithmetic operators and unary minus; no relational, logical, exponent or function-call forms are in the subset. |
+| MLS 3.7 Operator Precedence and Associativity | The expression grammar is stratified into additive (`expr`), multiplicative (`arith_term`) and factor (`arith_factor`) levels, so `*`/`/` bind tighter than `+`/`-` and every binary operator is left associative, matching the standard precedence table; parentheses (`arith_factor : '(' expr ')'`) override precedence. The generated LALR(1) tables (268 canonical, 222 LALR states) recognize the stratified grammar with no shift/reduce or reduce/reduce conflict, and the reusable engine's acceptance and execution certificates are re-established for the extended grammar (`Rumoca.Generated.*`), audited to the three foundational axioms. |
+| MLS 3.7 Component Declarations (parameter variability; predefined type `Real`) | A parameter is a `Real` component with a literal binding (`parameter Real p = literal`); states and algebraic variables are unbound `Real` components. The subset admits one variable per clause, `Real` only, with no other prefixes, dimensions or modifiers. The classification of a name as a parameter, state or algebraic variable is a resolution obligation of the later semantics slice. |
+| MLS 3.7 Simple Equations; Derivative Operator `der` | Each equation is a scalar simple equation: `der(state) = expr` (a state derivative equation) or `alg = expr` (an algebraic equation defining an algebraic variable). Acyclic scheduling of the algebraic equations and rejection of a cyclic algebraic dependency, an unbound name and a duplicated name are obligations of the later source-semantics slice, not yet built. |
 
 ### eFMI 1.0.0 Beta 1 Chapter 2 container and manifests (tensor eFMU archive and Algorithm Code admission): standards impact
 

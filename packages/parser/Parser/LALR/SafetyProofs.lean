@@ -1,4 +1,5 @@
 import Parser.LALR.Safety
+import Parser.LALR.MaskedSafety
 import Parser.LALR.RuntimeProofs
 
 /-! Structural safety of the actual shift/reduce interpreter. The concrete

@@ -25,7 +25,7 @@ standard_class_specifier
     : ident composition end ident
     ;
 composition
-    : unit_composition | driven_composition | array_composition | constant_composition
+    : unit_composition | driven_composition | array_composition | constant_composition | expression_composition
     ;
 
 // A.2.4: one unmodified Real declaration for the unit regression profile.
@@ -141,6 +141,55 @@ real_literal
     : IDENT
     ;
 
+// G02: parameters, states and algebraic variables with acyclic arithmetic
+// equations. Parameters carry a literal binding; states and algebraic variables
+// share the plain Real declaration form and are separated by resolution. Each
+// equation's right-hand side is an MLS 3.7 arithmetic expression restricted to
+// + - * / with unary minus and parentheses (A.2.7, MLS 3.7 3.4 precedence).
+expression_composition
+    : expr_parameter_list expr_variable_list expr_equation_section
+    ;
+expr_parameter_list
+    : expr_parameter ';'
+    | expr_parameter_list expr_parameter ';'
+    ;
+expr_parameter
+    : parameter type_specifier ident '=' real_literal
+    ;
+expr_variable_list
+    : component_clause ';'
+    | expr_variable_list component_clause ';'
+    ;
+expr_equation_section
+    : equation expr_equation_list
+    ;
+expr_equation_list
+    : expr_equation ';'
+    | expr_equation_list expr_equation ';'
+    ;
+expr_equation
+    : der '(' component_reference ')' '=' expr
+    | component_reference '=' expr
+    ;
+expr
+    : expr '+' arith_term
+    | expr '-' arith_term
+    | arith_term
+    ;
+arith_term
+    : arith_term '*' arith_factor
+    | arith_term '/' arith_factor
+    | arith_factor
+    ;
+arith_factor
+    : '(' expr ')'
+    | '-' arith_factor
+    | arith_atom
+    ;
+arith_atom
+    : IDENT
+    ;
+
 // A.2.7: one pointwise product and an ordinary two-argument call. `jacobian`
 // is an IDENT here, never a reserved token. Resolution selects the built-in.
 term
@@ -170,6 +219,9 @@ model
     ;
 input
     : 'input'
+    ;
+parameter
+    : 'parameter'
     ;
 output
     : 'output'

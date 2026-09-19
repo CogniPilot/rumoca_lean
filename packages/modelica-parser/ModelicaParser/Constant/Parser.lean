@@ -99,7 +99,7 @@ theorem in_grammar (m : Model) :
   rw [layout]
   apply Rumoca.Grammar.accepts_composition
   rw [Generated.rule_composition]
-  refine .altRight (.altRight (.altRight ((rule_constant_composition _).mpr ?_)))
+  refine .altRight (.altRight (.altRight (.altLeft ((rule_constant_composition _).mpr ?_))))
   -- constant_composition: component_clause ';' constant_component_list constant_equation_section.
   -- The states split as the first clause plus the (nonempty) list of the rest.
   have hstates : m.states.flatMap declTokens =
