@@ -66,6 +66,46 @@ theorem parameters_bound (types : EntryTypes) (handle : Option Address) (enabled
   simpa only [signature, arguments, CCalls.Signature.locals_cons, CCalls.Signature.locals,
     List.map_nil, List.zip_nil_left, List.lookup_nil, parameters] using bound
 
+/-- The mode-membership disjunction evaluates to the decidable membership of the
+current mode in the permitted list, proved once by induction on the list rather
+than by enumerating modes. -/
+private theorem modes_eval (env : Locals) (heap : Heap) (p : Address) (current : Mode)
+    (hm : resolve env "m" = some (.pointer (some p)))
+    (hc : load heap (p.member "mode") = some (.integer current.code)) (modes : List Mode) :
+    CBody.eval env heap (Runtime.any (modes.map fun m =>
+      Runtime.eqv (Runtime.field "mode") (Runtime.mode m))) =
+      some (boolean (modes.contains current)) := by
+  induction modes with
+  | nil => rfl
+  | cons head tail ih =>
+    have hhead : CBody.eval env heap (Runtime.eqv (Runtime.field "mode") (Runtime.mode head)) =
+        some (boolean (current == head)) := by
+      simp [Runtime.eqv, Runtime.field, Runtime.mode, Runtime.v, Runtime.n,
+        CBody.eval, hm, hc, Value.address, CBody.comparison, LifecycleGuard.mode_code_beq]
+    simpa [Runtime.any, List.contains_cons] using BoolProofs.eval_or hhead ih
+
+/-- The generated lifecycle guard expression evaluates to the authored
+allowed-command predicate, proved once from the mode-membership evaluation and a
+case on the instance kind, without enumerating the mode. -/
+private theorem guard_eval (env : Locals) (heap : Heap) (p : Address)
+    (cmd : Command) (kind : Kind) (mode : Mode)
+    (hp : resolve env "m" = some (.pointer (some p)))
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code)) :
+    CBody.eval env heap (Runtime.allowedExpression cmd) = some (boolean (allowed cmd kind mode)) := by
+  have hme : CBody.eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n 0)) =
+      some (boolean (kind.code == 0)) := by
+    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
+      hp, hk, Value.address, CBody.comparison, Kind.code, boolean]
+  have hcs : CBody.eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n 1)) =
+      some (boolean (kind.code == 1)) := by
+    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
+      hp, hk, Value.address, CBody.comparison, Kind.code, boolean]
+  have h := BoolProofs.eval_or
+    (BoolProofs.eval_and hme (modes_eval env heap p mode hp hm (permittedModes cmd .me)))
+    (BoolProofs.eval_and hcs (modes_eval env heap p mode hp hm (permittedModes cmd .cs)))
+  cases kind <;> simpa [Runtime.allowedExpression, Runtime.either, Runtime.both, allowed, Kind.code] using h
+
 set_option maxHeartbeats 1000000 in
 /-- Logging is allowed in every represented common ME/CS lifecycle mode. -/
 theorem logging_guard_run (types : EntryTypes) (env : Locals) (heap : Heap) (p : Address)
@@ -75,15 +115,15 @@ theorem logging_guard_run (types : EntryTypes) (env : Locals) (heap : Heap) (p :
     (modeValue : load heap (p.member "mode") = some (.integer mode.code)) :
     CBody.run 3 (.running (Runtime.require .logging ++ rest) env heap) =
       some (.running rest (CBody.bind env "m" (.pointer (some p))) heap) := by
-  cases kind <;> cases mode <;>
-    simp [CBody.run, CBody.next, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
-      Runtime.reject, Runtime.branch, Runtime.ret, Runtime.negate, Runtime.v,
-      Runtime.allowedExpression, Runtime.either, Runtime.both, Runtime.eqv,
-      Runtime.field, Runtime.any, Runtime.mode, Runtime.n, permittedModes,
-      Mode.code, Kind.code, CBody.bind, CBody.eval, resolve, constants,
-      Expr.nullPointer, expressionCast, zeroLiteral, CBody.cast, types.instancePointer,
-      types.nullPointer, convert, handle, fresh, kindValue, modeValue, CBody.comparison,
-      boolean, Value.truth, Value.address]
+  have hg := guard_eval (CBody.bind env "m" (.pointer (some p))) heap p .logging kind mode
+    (by simp [CBody.bind, resolve]) kindValue modeValue
+  have hallowed : allowed .logging kind mode = true := by cases kind <;> cases mode <;> rfl
+  rw [hallowed] at hg
+  simp [CBody.run, CBody.next, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
+    Runtime.reject, Runtime.branch, Runtime.ret, Runtime.negate, Runtime.v,
+    CBody.bind, CBody.eval, resolve, constants, Expr.nullPointer, expressionCast,
+    zeroLiteral, CBody.cast, types.instancePointer, types.nullPointer, convert,
+    handle, fresh, hg, boolean, Value.truth]
 
 theorem entry_run (types : EntryTypes) (heap : Heap) (p : Address) (enabled : Bool)
     (count : UInt64) (categories : Option Address) (kind : Kind) (mode : Mode)
