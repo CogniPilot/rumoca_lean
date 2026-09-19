@@ -151,6 +151,17 @@ theorem functions_nodup (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3
 
 /-! ### Renderer identity -/
 
+/-- The constant adapter render plan: the model name (fixing the source-link
+prefix), the constant declaration preamble, the reused tensor helper prefix and
+the per-signature constant body builder. Every render-identity fact for the
+constant adapter is an instance of the profile-generic `RenderPlan`
+development. -/
+def constantPlan (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n) : RenderPlan where
+  name := m.name
+  preamble := declarations m.shape (rates m)
+  helpers := helpers
+  body := constantFunction model m
+
 /-- The constant adapter render: the fixed preamble (model prefix, `model.c`
 include and the constant declaration block) followed by the concatenated helper
 and dispatched-function renderings, in header order. -/
@@ -160,38 +171,29 @@ def render (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     String.join (helpers.map Function.render) ++
     String.join (signatures.map fun sig => (constantFunction model m sig).render)
 
+/-- The constant render is exactly the generic `RenderPlan.render` applied to the
+constant render plan; every render-identity fact below is an instance of the
+profile-generic development. -/
+theorem render_eq_plan (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
+    (signatures : List Signature) :
+    render model m signatures = (constantPlan model m).render signatures := rfl
+
 theorem rendered_functions (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (signatures : List Signature) :
     render model m signatures = functionPrefix m.name ++ "#include \"model.c\"\n" ++
-      declarations m.shape (rates m) ++ String.join ((functions model m signatures).map Function.render) := by
-  apply String.toList_injective
-  simp [render, functions, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+      declarations m.shape (rates m) ++ String.join ((functions model m signatures).map Function.render) :=
+  (constantPlan model m).rendered_functions signatures
 
 theorem rendered_member (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (sigs : List Signature) (sig : Signature) (member : sig ∈ sigs) :
     ∃ before after : String,
-      render model m sigs = before ++ (constantFunction model m sig).render ++ after := by
-  obtain ⟨left, right, rfl⟩ := List.mem_iff_append.mp member
-  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ declarations m.shape (rates m) ++
-    String.join (helpers.map Function.render) ++
-    String.join (left.map fun sig => (constantFunction model m sig).render),
-    String.join (right.map fun sig => (constantFunction model m sig).render), ?_⟩
-  apply String.toList_injective
-  simp [render, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+      render model m sigs = before ++ (constantFunction model m sig).render ++ after :=
+  (constantPlan model m).rendered_member sigs sig member
 
 theorem rendered_helper (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (sigs : List Signature) (fn : Function) (member : fn ∈ helpers) :
-    ∃ before after : String, render model m sigs = before ++ fn.render ++ after := by
-  obtain ⟨left, right, same⟩ := List.mem_iff_append.mp member
-  refine ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ declarations m.shape (rates m) ++
-    String.join (left.map Function.render),
-    String.join (right.map Function.render) ++
-      String.join (sigs.map fun sig => (constantFunction model m sig).render), ?_⟩
-  apply String.toList_injective
-  simp [render, same, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+    ∃ before after : String, render model m sigs = before ++ fn.render ++ after :=
+  (constantPlan model m).rendered_helper sigs fn member
 
 /-! ### Definition table and literal pool -/
 

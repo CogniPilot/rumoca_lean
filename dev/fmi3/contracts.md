@@ -296,6 +296,36 @@ and artifact contract; textual substitution alone cannot inherit correctness.
 That extension is deferred and must not complicate the current FMI milestone.
 
 
+### Profile-generic render plan
+
+The base scalar, tensor and constant FMI 3 adapters render the same five-piece
+C source: the model source-link prefix, the `#include "model.c"` line, a
+per-profile declaration preamble, the concatenated helper renderings, and the
+concatenated per-signature function renderings in header order. A single
+`RenderPlan` structure captures exactly the per-profile inputs of that shape:
+the model name (which fixes the source-link prefix), the declaration preamble,
+the helper prefix and the per-signature body builder. The generic
+`RenderPlan.render` renders a plan, and the render-identity facts are proved once
+over an arbitrary plan: `RenderPlan.rendered_functions` (the render equals its
+preamble followed by the concatenated rendering of the full function list),
+`RenderPlan.rendered_member` and `RenderPlan.rendered_helper` (each signature and
+each helper is a located fragment at its actual slot), and
+`RenderPlan.render_chars` (the checker certifies each emitted function
+separately, joins the character chunks and binds them to the independently read
+complete file).
+
+Each profile supplies one concrete plan value: `basePlan` for the scalar profile,
+`TensorFunctions.tensorPlan` for the tensor profile and
+`ConstantFunctions.constantPlan` for the constant profile. Every profile's
+`render` is definitionally that plan's `render`, and the `Runtime`,
+`LiteralPreparation`, `TensorFunctions` and `ConstantFunctions` render-identity
+theorems, together with the byte-for-byte `adapter_chars`, `tensor_adapter_chars`
+and `constant_adapter_chars` lemmas each adapter-bytes certificate instantiates,
+are corollaries of this shared development rather than separate copies. A profile
+whose adapter fits the five-piece shape supplies a plan value; it adds no
+renderer and no render-identity proof family of its own.
+
+
 ### Parameter coverage and actual call entry
 
 The follow-on increment adds all adjusted pointer spellings missing in the

@@ -474,3 +474,38 @@ isolated numbers above.
 The GALEC `GALECParser.Generated` prefix (117 LALR states, 11 reduction
 certificates) is small; every module stays under ~3.1 GiB (largest
 `Generated/Safety` ~3.07 GiB) and the whole target builds in 36 s.
+
+## Profile-generic adapter render plan, 2026-09-19
+
+The base scalar, tensor and constant FMI 3 adapters share one render plan and one
+render-identity proof family (see
+[fmi3/contracts.md](fmi3/contracts.md#profile-generic-render-plan)). The
+five-piece renderer identity, the located-fragment facts and the byte-for-byte
+character-identity lemma are now proved once over an arbitrary `RenderPlan`; each
+profile supplies a plan value and its render-identity theorems and adapter-bytes
+character lemma become corollaries. Two duplicated helper lemmas (the per-profile
+`function_chunks`) and three copies of each render-identity proof are removed.
+
+Per-module cold elaboration (Lake's reported per-module seconds, dependencies
+already built, module oleans removed and rebuilt) before and after the shared
+plan:
+
+| Module | Before | After |
+| --- | ---: | ---: |
+| `RumocaFMI3.AdapterRenderPlan` (new) | n/a | 1.1 s |
+| `RumocaFMI3.TensorFunctions` | 4.6 s | 2.5 s |
+| `RumocaFMI3.ConstantFunctions` | 4.5 s | 2.5 s |
+| `Rumoca.FMI3AdapterProofs` | 2.6 s | 2.6 s |
+| `Rumoca.TensorAdapterChars` | 2.1 s | 2.1 s |
+| `Rumoca.ConstantAdapterChars` | 2.1 s | 2.1 s |
+
+The two per-profile function modules each drop about two seconds because their
+renderer, member and helper identities are single generic corollaries instead of
+three separate rewriting proofs. The character-identity modules are unchanged in
+cost. The added generic module is about one second, so the touched-module total
+falls even with the new module included. The three profiles' `source_to_build`
+adapter certificates still produce with identical statements and depend only on
+`propext`, `Quot.sound` and `Classical.choice`, confirmed by running
+`verify-artifact` for the `fmi3`, `tensor-fmi3` and `constant-fmi3` kinds over
+the actual extracted FMU sources, and the tensor and constant adapter
+standalone-object boundary checks in `tests/tensor-c.sh` still pass.
