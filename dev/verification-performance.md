@@ -191,3 +191,46 @@ The certificate is gated through the default CLI publication in
 `tests/efmi-production.sh`, both under the fixed `SOURCE_DATE_EPOCH` and the same
 tensor source identity, so it is built once and reused across the two scripts and
 across gate runs. See [the tensor eFMU standards impact](standards-review.md).
+
+## LALR reduction certificate reformulation, 2026-09-19
+
+The generated LALR tables prove one reduction summary per grammar production.
+Each such `reduction_N_checked` certificate previously reduced `Safety.popStates`
+directly: an `Array.ofFn` over the states with an inner `edges.all`, re-expanded
+at every reduction symbol, which the kernel walks as a list with per-index cost.
+The certificates now rewrite through the bitmask reformulation in
+`Parser.LALR.MaskedSafety` (`popStates_eq`, `gotoMask_eq`) and let the kernel
+reduce a `Nat`-bitmask fold with machine-word bit operations. Statements and
+certified conditions are unchanged.
+
+Measured with `lake env lean -s 65536`, summing the process tree's resident set.
+The Modelica module `ModelicaParser.Generated` (222 LALR states, 99 reduction
+certificates) is measured by group, since the whole module exceeds a single
+measurement window:
+
+| Modelica reduction certificates | Wall | Peak RSS |
+| --- | ---: | ---: |
+| First 50, prior array pop | 528.8 s | ~9.17 GiB |
+| First 50, masked pop | 220.7 s | ~6.84 GiB |
+| All 99, masked pop | 548.7 s | ~8.08 GiB |
+
+The prior all-99 reduction group was previously profiled near 980 s; the masked
+all-99 group now costs less than the prior route spends on its first 50. The
+whole changed safety region (shared premises, all reduction certificates, and the
+`reductions_checked`/`acceptance_checked`/`safety_checked` aggregation) checks
+green together in 591 s; its resident peak is set by the unchanged whole-table
+`safety_checked` decision, not by the reductions.
+
+The GALEC module `GALECParser.Generated` (117 LALR states, 11 reduction
+certificates) is small enough to measure whole:
+
+| GALEC module | Wall | Peak RSS |
+| --- | ---: | ---: |
+| Prior array pop | 88.1 s | ~6.47 GiB |
+| Masked pop | 43.2 s | ~6.24 GiB |
+
+`gotoMask` reduction alone costs about 0.1 s per distinct input, so the residual
+per-certificate cost is the edge fold over the reduction symbols and the
+state-length result vector, not the goto lookup. Progress credit validation
+(`progress_checked`) is about 16 s in isolation and was left on its existing
+`decide +kernel` route.

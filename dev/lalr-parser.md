@@ -207,6 +207,18 @@ builder support other AST representations without changing the LR engine.
   [16 GB GitHub runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners).
   This changes certificate evaluation, not the validation conditions or the
   runtime parser, and does not establish a bound for arbitrary grammars.
+  Each reduction summary is now proved through a bitmask reformulation of the
+  pop computation. `Parser.LALR.MaskedSafety` represents a state-set vector as a
+  `Nat` bitmask and folds over the edge and goto lists once with machine-word bit
+  operations, instead of re-expanding an `Array.ofFn` over the states at every
+  reduction symbol. `popStates_eq` relates `Safety.popStates` to a `maskToArray`
+  of the masked pop, and `gotoMask_eq` folds the goto table's rows once into the
+  successor mask rather than re-running a goto lookup per state. The generated
+  `reduction_N_checked` theorems keep their exact statements and rewrite through
+  these equivalences, pinning a shared literal state count, before the kernel
+  reduces the masked form. The edge-source bound, goto-table shape and state count
+  are established once and reused by every certificate. Certificate meanings are
+  unchanged; only the proof route differs.
   Both parser packages passed their audits in
   `build/tensor-sharded-parser-gate.log`. Generated-file freshness and the
   complete LALR certificate/mutation gate passed in
