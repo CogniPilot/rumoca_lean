@@ -19,7 +19,9 @@ diff -r "$task_tmp/Modelica" packages/modelica-parser/ModelicaParser/Generated
 # Readable recursive EBNF, emitted Lean tables, and kernel execution of those
 # actual tables. The emitted completeness consequence quantifies over all words.
 printf '%s\n' "s : '(' s ')' s | '';" > "$task_tmp/recursive.ebnf"
-"$generator" "$task_tmp/recursive.ebnf" "$task_tmp/Recursive.lean"
+# Single-file mode keeps every certificate group in one module so `lake env lean`
+# and the `sed` mutation controls below act on one standalone file.
+"$generator" --single "$task_tmp/recursive.ebnf" "$task_tmp/Recursive.lean"
 cat >> "$task_tmp/Recursive.lean" <<'LEAN'
 set_option maxRecDepth 10000 in
 example : (Parser.LALR.parse Parser.LALRGenerated.grammar
@@ -97,7 +99,7 @@ rg -q 'accepts_iff_parse_bounded.*sorryAx' "$task_tmp/bad-fuel.log"
 
 # Keep table proofs intact while corrupting only the source-to-CFG witness.
 # This must invalidate the composed source parser contract itself.
-sed '/^private noncomputable def loweringWitness /s/:= ⟨/:= ⟨#[Parser.EBNF.Expr.ref "missing"] ++/' \
+sed '/^noncomputable def loweringWitness /s/:= ⟨/:= ⟨#[Parser.EBNF.Expr.ref "missing"] ++/' \
   "$task_tmp/Recursive.lean" > "$task_tmp/BadLowering.lean"
 if lake env lean "$task_tmp/BadLowering.lean" > "$task_tmp/bad-lowering.log" 2>&1; then
   echo 'corrupted EBNF meanings passed their lowering certificate' >&2; exit 1
@@ -117,13 +119,13 @@ rg -q 'source_parse_correct.*sorryAx' "$task_tmp/bad-source.log"
 # A conflict or undefined reference must not replace an existing output.
 cp "$task_tmp/Recursive.lean" "$task_tmp/preserved.lean"
 printf '%s\n' "s : s '+' s | 'id';" > "$task_tmp/conflict.ebnf"
-if "$generator" "$task_tmp/conflict.ebnf" "$task_tmp/Recursive.lean" > "$task_tmp/conflict.log" 2>&1; then
+if "$generator" --single "$task_tmp/conflict.ebnf" "$task_tmp/Recursive.lean" > "$task_tmp/conflict.log" 2>&1; then
   echo 'ambiguous grammar unexpectedly generated tables' >&2; exit 1
 fi
 rg -q 'LALR conflict in state' "$task_tmp/conflict.log"
 cmp "$task_tmp/Recursive.lean" "$task_tmp/preserved.lean"
 printf '%s\n' 's : undefined;' > "$task_tmp/undefined.ebnf"
-if "$generator" "$task_tmp/undefined.ebnf" "$task_tmp/Recursive.lean" > "$task_tmp/undefined.log" 2>&1; then
+if "$generator" --single "$task_tmp/undefined.ebnf" "$task_tmp/Recursive.lean" > "$task_tmp/undefined.log" 2>&1; then
   echo 'undefined grammar rule unexpectedly generated tables' >&2; exit 1
 fi
 rg -q 'undefined rule undefined' "$task_tmp/undefined.log"

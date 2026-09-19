@@ -809,3 +809,31 @@ same certificate names and report the same standard axioms. `lake run generate`
 emits the whole set (recreating the `Generated/` directory so removed modules do
 not linger) and `lake run check-generated` compares the umbrella and, through
 `diff -r`, every emitted submodule for byte identity.
+
+### Split and single-file emission modes
+
+The generator has two output modes over the same certificates.
+
+- Default (split) mode writes the umbrella module and its `Generated/` directory
+  of per-group submodules described above. This is the mode `lake run generate`
+  and `lake run check-generated` use for the checked-in Modelica and GALEC tables,
+  because Lake elaborates the groups in parallel processes and reclaims each
+  group's kernel decision terms per module.
+- `--single` mode writes one self-contained module instead: the same namespace,
+  the same theorem names and statements, and the same mutation-sensitive
+  definitions (`edges`, `firstFacts`, `itemStates`, `fuel`, `loweringWitness`,
+  `source`, and the table constants), with every group concatenated under one
+  namespace and no imports between groups. Each group's body is the exact text
+  the split mode wraps into its module, so the two modes never drift. The single
+  file imports only the parser package and can be checked with `lake env lean`
+  directly, and `lalrgen --single` writes only that file (removing any split
+  directory a previous run left beside it).
+
+The two modes share one validator and one set of per-group body emitters, so a
+grammar that a conflict or undefined rule rejects fails identically in either
+mode without replacing an existing output. The boundary script `tests/lalr.sh`
+uses `--single` for the recursive-grammar audit, the `sed` mutation controls, and
+the conflict and preservation checks, since those load and mutate a single
+standalone file; it keeps the split mode for the production comparison, where it
+regenerates the Modelica umbrella and directory and compares them against the
+checked-in module with `cmp` and `diff -r`.
