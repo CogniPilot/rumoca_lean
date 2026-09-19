@@ -11,6 +11,19 @@ percentage of semantic coverage.
 
 ## Current position
 
+**Executable constant-rate kernel and fused derivative getter (merged):**
+
+The executable C semantics gained a decimal floating-constant expression whose
+value is the exactly rounded binary64 of its content, with tokenization and
+printer certificates and the translator's correctly rounded conversion stated
+as an explicit trusted boundary. The constant-rate kernel is now three
+`CTree.Function` definitions executed by the loop-call machine, with the
+artifact contract restated over the executable program, the fixed checker
+binding the actual bytes and the native run giving `(7.5, -3)`. The constant
+profile's instance record, bridge and fused derivative getter follow the tensor
+templates. The required `nix develop .#verification --command lake test`
+passed on 2026-09-18 in 93m08s under load (`build/tensor-fmi/full-gate-v38.log`).
+
 **Tensor eFMU output admitted (merged):**
 
 The XML serialization certificate now works by fragment cursor rather than a
