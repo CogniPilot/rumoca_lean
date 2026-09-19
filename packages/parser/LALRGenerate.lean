@@ -139,20 +139,29 @@ private def locatedParserContract : String :=
   "\n"
 
 
-/-- Each state gets a small kernel obligation; the final theorem composes all
-rows against the unchanged grammar-parametric item validator. -/
+/-- Item obligations are grouped into fixed-size chunks, one certificate per
+chunk, so the elaborator retains a handful of decision terms rather than one per
+state; the final theorem composes all chunks against the unchanged
+grammar-parametric item validator. -/
 private def itemCertificates (states : Array ItemSet) : String := Id.run do
   let options := "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n"
+  let chunkSize := 10
   let mut text := "noncomputable def itemStates : Array LALR.ItemSet := " ++
     array (states.map fun state => "[" ++ String.intercalate ", " (state.map item) ++ "]") ++ "\n\n"
+  let mut base := 0
+  while base < states.size do
+    let c := min chunkSize (states.size - base)
+    let stateExpr := s!"({base} + j.val)"
+    let row := s!"(LALR.ItemCheck.items itemStates {stateExpr})"
+    text := text ++ options ++ s!"private theorem items_chunk_{base}_checked :\n" ++
+      s!"    ∀ j : Fin {c}, ∀ i ∈ {row}, LALR.ItemCheck.Valid grammar i ∧\n" ++
+      s!"      LALR.ItemCheck.Closed grammar firstFacts {row} i ∧\n" ++
+      s!"      LALR.ItemCheck.Advances grammar tables itemStates {stateExpr} i := by decide +kernel\n\n"
+    base := base + chunkSize
   let mut cases := ""
   for q in [:states.size] do
-    let row := s!"(LALR.ItemCheck.items itemStates {q})"
-    text := text ++ options ++ s!"private theorem items_{q}_checked :\n" ++
-      s!"    ∀ i ∈ {row}, LALR.ItemCheck.Valid grammar i ∧\n" ++
-      s!"      LALR.ItemCheck.Closed grammar firstFacts {row} i ∧\n" ++
-      s!"      LALR.ItemCheck.Advances grammar tables itemStates {q} i := by decide +kernel\n\n"
-    cases := cases ++ s!"    | {q} => exact items_{q}_checked\n"
+    let b := (q / chunkSize) * chunkSize
+    cases := cases ++ s!"    | {q} => exact items_chunk_{b}_checked ⟨{q - b}, by decide⟩\n"
   return text ++ options ++ "theorem items_checked :\n" ++
     "    LALR.ItemCheck.validate grammar tables firstFacts itemStates = true := by\n" ++
     "  apply LALR.ItemCheck.validate_iff.mpr\n" ++

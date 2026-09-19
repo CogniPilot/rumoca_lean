@@ -1496,822 +1496,87 @@ noncomputable def itemStates : Array LALR.ItemSet := #[[⟨0, 0, 28⟩, ⟨1, 0,
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_0_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 0), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 0) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 0 i := by decide +kernel
+private theorem items_chunk_0_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (0 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (0 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (0 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_1_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 1), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 1) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 1 i := by decide +kernel
+private theorem items_chunk_10_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (10 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (10 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (10 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_2_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 2), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 2) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 2 i := by decide +kernel
+private theorem items_chunk_20_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (20 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (20 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (20 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_3_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 3), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 3) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 3 i := by decide +kernel
+private theorem items_chunk_30_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (30 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (30 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (30 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_4_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 4), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 4) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 4 i := by decide +kernel
+private theorem items_chunk_40_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (40 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (40 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (40 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_5_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 5), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 5) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 5 i := by decide +kernel
+private theorem items_chunk_50_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (50 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (50 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (50 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_6_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 6), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 6) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 6 i := by decide +kernel
+private theorem items_chunk_60_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (60 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (60 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (60 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_7_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 7), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 7) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 7 i := by decide +kernel
+private theorem items_chunk_70_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (70 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (70 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (70 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_8_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 8), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 8) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 8 i := by decide +kernel
+private theorem items_chunk_80_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (80 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (80 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (80 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_9_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 9), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 9) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 9 i := by decide +kernel
+private theorem items_chunk_90_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (90 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (90 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (90 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_10_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 10), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 10) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 10 i := by decide +kernel
+private theorem items_chunk_100_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (100 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (100 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (100 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
-private theorem items_11_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 11), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 11) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 11 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_12_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 12), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 12) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 12 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_13_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 13), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 13) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 13 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_14_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 14), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 14) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 14 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_15_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 15), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 15) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 15 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_16_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 16), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 16) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 16 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_17_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 17), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 17) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 17 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_18_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 18), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 18) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 18 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_19_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 19), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 19) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 19 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_20_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 20), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 20) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 20 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_21_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 21), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 21) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 21 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_22_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 22), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 22) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 22 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_23_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 23), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 23) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 23 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_24_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 24), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 24) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 24 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_25_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 25), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 25) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 25 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_26_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 26), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 26) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 26 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_27_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 27), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 27) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 27 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_28_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 28), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 28) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 28 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_29_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 29), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 29) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 29 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_30_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 30), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 30) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 30 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_31_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 31), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 31) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 31 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_32_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 32), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 32) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 32 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_33_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 33), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 33) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 33 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_34_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 34), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 34) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 34 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_35_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 35), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 35) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 35 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_36_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 36), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 36) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 36 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_37_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 37), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 37) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 37 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_38_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 38), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 38) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 38 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_39_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 39), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 39) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 39 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_40_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 40), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 40) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 40 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_41_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 41), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 41) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 41 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_42_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 42), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 42) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 42 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_43_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 43), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 43) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 43 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_44_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 44), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 44) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 44 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_45_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 45), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 45) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 45 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_46_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 46), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 46) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 46 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_47_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 47), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 47) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 47 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_48_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 48), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 48) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 48 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_49_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 49), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 49) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 49 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_50_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 50), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 50) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 50 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_51_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 51), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 51) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 51 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_52_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 52), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 52) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 52 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_53_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 53), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 53) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 53 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_54_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 54), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 54) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 54 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_55_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 55), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 55) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 55 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_56_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 56), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 56) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 56 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_57_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 57), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 57) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 57 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_58_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 58), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 58) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 58 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_59_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 59), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 59) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 59 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_60_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 60), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 60) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 60 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_61_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 61), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 61) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 61 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_62_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 62), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 62) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 62 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_63_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 63), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 63) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 63 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_64_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 64), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 64) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 64 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_65_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 65), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 65) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 65 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_66_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 66), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 66) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 66 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_67_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 67), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 67) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 67 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_68_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 68), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 68) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 68 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_69_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 69), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 69) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 69 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_70_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 70), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 70) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 70 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_71_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 71), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 71) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 71 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_72_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 72), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 72) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 72 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_73_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 73), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 73) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 73 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_74_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 74), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 74) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 74 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_75_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 75), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 75) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 75 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_76_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 76), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 76) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 76 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_77_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 77), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 77) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 77 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_78_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 78), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 78) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 78 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_79_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 79), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 79) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 79 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_80_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 80), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 80) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 80 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_81_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 81), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 81) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 81 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_82_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 82), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 82) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 82 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_83_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 83), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 83) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 83 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_84_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 84), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 84) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 84 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_85_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 85), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 85) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 85 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_86_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 86), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 86) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 86 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_87_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 87), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 87) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 87 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_88_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 88), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 88) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 88 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_89_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 89), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 89) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 89 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_90_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 90), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 90) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 90 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_91_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 91), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 91) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 91 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_92_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 92), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 92) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 92 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_93_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 93), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 93) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 93 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_94_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 94), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 94) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 94 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_95_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 95), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 95) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 95 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_96_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 96), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 96) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 96 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_97_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 97), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 97) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 97 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_98_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 98), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 98) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 98 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_99_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 99), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 99) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 99 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_100_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 100), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 100) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 100 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_101_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 101), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 101) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 101 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_102_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 102), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 102) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 102 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_103_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 103), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 103) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 103 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_104_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 104), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 104) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 104 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_105_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 105), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 105) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 105 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_106_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 106), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 106) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 106 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_107_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 107), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 107) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 107 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_108_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 108), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 108) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 108 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_109_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 109), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 109) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 109 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_110_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 110), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 110) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 110 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_111_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 111), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 111) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 111 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_112_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 112), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 112) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 112 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_113_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 113), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 113) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 113 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_114_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 114), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 114) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 114 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_115_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 115), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 115) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 115 i := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem items_116_checked :
-    ∀ i ∈ (LALR.ItemCheck.items itemStates 116), LALR.ItemCheck.Valid grammar i ∧
-      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates 116) i ∧
-      LALR.ItemCheck.Advances grammar tables itemStates 116 i := by decide +kernel
+private theorem items_chunk_110_checked :
+    ∀ j : Fin 7, ∀ i ∈ (LALR.ItemCheck.items itemStates (110 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (110 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (110 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -2323,123 +1588,123 @@ theorem items_checked :
   rcases q with ⟨q, bound⟩
   change q < 117 at bound
   match q with
-    | 0 => exact items_0_checked
-    | 1 => exact items_1_checked
-    | 2 => exact items_2_checked
-    | 3 => exact items_3_checked
-    | 4 => exact items_4_checked
-    | 5 => exact items_5_checked
-    | 6 => exact items_6_checked
-    | 7 => exact items_7_checked
-    | 8 => exact items_8_checked
-    | 9 => exact items_9_checked
-    | 10 => exact items_10_checked
-    | 11 => exact items_11_checked
-    | 12 => exact items_12_checked
-    | 13 => exact items_13_checked
-    | 14 => exact items_14_checked
-    | 15 => exact items_15_checked
-    | 16 => exact items_16_checked
-    | 17 => exact items_17_checked
-    | 18 => exact items_18_checked
-    | 19 => exact items_19_checked
-    | 20 => exact items_20_checked
-    | 21 => exact items_21_checked
-    | 22 => exact items_22_checked
-    | 23 => exact items_23_checked
-    | 24 => exact items_24_checked
-    | 25 => exact items_25_checked
-    | 26 => exact items_26_checked
-    | 27 => exact items_27_checked
-    | 28 => exact items_28_checked
-    | 29 => exact items_29_checked
-    | 30 => exact items_30_checked
-    | 31 => exact items_31_checked
-    | 32 => exact items_32_checked
-    | 33 => exact items_33_checked
-    | 34 => exact items_34_checked
-    | 35 => exact items_35_checked
-    | 36 => exact items_36_checked
-    | 37 => exact items_37_checked
-    | 38 => exact items_38_checked
-    | 39 => exact items_39_checked
-    | 40 => exact items_40_checked
-    | 41 => exact items_41_checked
-    | 42 => exact items_42_checked
-    | 43 => exact items_43_checked
-    | 44 => exact items_44_checked
-    | 45 => exact items_45_checked
-    | 46 => exact items_46_checked
-    | 47 => exact items_47_checked
-    | 48 => exact items_48_checked
-    | 49 => exact items_49_checked
-    | 50 => exact items_50_checked
-    | 51 => exact items_51_checked
-    | 52 => exact items_52_checked
-    | 53 => exact items_53_checked
-    | 54 => exact items_54_checked
-    | 55 => exact items_55_checked
-    | 56 => exact items_56_checked
-    | 57 => exact items_57_checked
-    | 58 => exact items_58_checked
-    | 59 => exact items_59_checked
-    | 60 => exact items_60_checked
-    | 61 => exact items_61_checked
-    | 62 => exact items_62_checked
-    | 63 => exact items_63_checked
-    | 64 => exact items_64_checked
-    | 65 => exact items_65_checked
-    | 66 => exact items_66_checked
-    | 67 => exact items_67_checked
-    | 68 => exact items_68_checked
-    | 69 => exact items_69_checked
-    | 70 => exact items_70_checked
-    | 71 => exact items_71_checked
-    | 72 => exact items_72_checked
-    | 73 => exact items_73_checked
-    | 74 => exact items_74_checked
-    | 75 => exact items_75_checked
-    | 76 => exact items_76_checked
-    | 77 => exact items_77_checked
-    | 78 => exact items_78_checked
-    | 79 => exact items_79_checked
-    | 80 => exact items_80_checked
-    | 81 => exact items_81_checked
-    | 82 => exact items_82_checked
-    | 83 => exact items_83_checked
-    | 84 => exact items_84_checked
-    | 85 => exact items_85_checked
-    | 86 => exact items_86_checked
-    | 87 => exact items_87_checked
-    | 88 => exact items_88_checked
-    | 89 => exact items_89_checked
-    | 90 => exact items_90_checked
-    | 91 => exact items_91_checked
-    | 92 => exact items_92_checked
-    | 93 => exact items_93_checked
-    | 94 => exact items_94_checked
-    | 95 => exact items_95_checked
-    | 96 => exact items_96_checked
-    | 97 => exact items_97_checked
-    | 98 => exact items_98_checked
-    | 99 => exact items_99_checked
-    | 100 => exact items_100_checked
-    | 101 => exact items_101_checked
-    | 102 => exact items_102_checked
-    | 103 => exact items_103_checked
-    | 104 => exact items_104_checked
-    | 105 => exact items_105_checked
-    | 106 => exact items_106_checked
-    | 107 => exact items_107_checked
-    | 108 => exact items_108_checked
-    | 109 => exact items_109_checked
-    | 110 => exact items_110_checked
-    | 111 => exact items_111_checked
-    | 112 => exact items_112_checked
-    | 113 => exact items_113_checked
-    | 114 => exact items_114_checked
-    | 115 => exact items_115_checked
-    | 116 => exact items_116_checked
+    | 0 => exact items_chunk_0_checked ⟨0, by decide⟩
+    | 1 => exact items_chunk_0_checked ⟨1, by decide⟩
+    | 2 => exact items_chunk_0_checked ⟨2, by decide⟩
+    | 3 => exact items_chunk_0_checked ⟨3, by decide⟩
+    | 4 => exact items_chunk_0_checked ⟨4, by decide⟩
+    | 5 => exact items_chunk_0_checked ⟨5, by decide⟩
+    | 6 => exact items_chunk_0_checked ⟨6, by decide⟩
+    | 7 => exact items_chunk_0_checked ⟨7, by decide⟩
+    | 8 => exact items_chunk_0_checked ⟨8, by decide⟩
+    | 9 => exact items_chunk_0_checked ⟨9, by decide⟩
+    | 10 => exact items_chunk_10_checked ⟨0, by decide⟩
+    | 11 => exact items_chunk_10_checked ⟨1, by decide⟩
+    | 12 => exact items_chunk_10_checked ⟨2, by decide⟩
+    | 13 => exact items_chunk_10_checked ⟨3, by decide⟩
+    | 14 => exact items_chunk_10_checked ⟨4, by decide⟩
+    | 15 => exact items_chunk_10_checked ⟨5, by decide⟩
+    | 16 => exact items_chunk_10_checked ⟨6, by decide⟩
+    | 17 => exact items_chunk_10_checked ⟨7, by decide⟩
+    | 18 => exact items_chunk_10_checked ⟨8, by decide⟩
+    | 19 => exact items_chunk_10_checked ⟨9, by decide⟩
+    | 20 => exact items_chunk_20_checked ⟨0, by decide⟩
+    | 21 => exact items_chunk_20_checked ⟨1, by decide⟩
+    | 22 => exact items_chunk_20_checked ⟨2, by decide⟩
+    | 23 => exact items_chunk_20_checked ⟨3, by decide⟩
+    | 24 => exact items_chunk_20_checked ⟨4, by decide⟩
+    | 25 => exact items_chunk_20_checked ⟨5, by decide⟩
+    | 26 => exact items_chunk_20_checked ⟨6, by decide⟩
+    | 27 => exact items_chunk_20_checked ⟨7, by decide⟩
+    | 28 => exact items_chunk_20_checked ⟨8, by decide⟩
+    | 29 => exact items_chunk_20_checked ⟨9, by decide⟩
+    | 30 => exact items_chunk_30_checked ⟨0, by decide⟩
+    | 31 => exact items_chunk_30_checked ⟨1, by decide⟩
+    | 32 => exact items_chunk_30_checked ⟨2, by decide⟩
+    | 33 => exact items_chunk_30_checked ⟨3, by decide⟩
+    | 34 => exact items_chunk_30_checked ⟨4, by decide⟩
+    | 35 => exact items_chunk_30_checked ⟨5, by decide⟩
+    | 36 => exact items_chunk_30_checked ⟨6, by decide⟩
+    | 37 => exact items_chunk_30_checked ⟨7, by decide⟩
+    | 38 => exact items_chunk_30_checked ⟨8, by decide⟩
+    | 39 => exact items_chunk_30_checked ⟨9, by decide⟩
+    | 40 => exact items_chunk_40_checked ⟨0, by decide⟩
+    | 41 => exact items_chunk_40_checked ⟨1, by decide⟩
+    | 42 => exact items_chunk_40_checked ⟨2, by decide⟩
+    | 43 => exact items_chunk_40_checked ⟨3, by decide⟩
+    | 44 => exact items_chunk_40_checked ⟨4, by decide⟩
+    | 45 => exact items_chunk_40_checked ⟨5, by decide⟩
+    | 46 => exact items_chunk_40_checked ⟨6, by decide⟩
+    | 47 => exact items_chunk_40_checked ⟨7, by decide⟩
+    | 48 => exact items_chunk_40_checked ⟨8, by decide⟩
+    | 49 => exact items_chunk_40_checked ⟨9, by decide⟩
+    | 50 => exact items_chunk_50_checked ⟨0, by decide⟩
+    | 51 => exact items_chunk_50_checked ⟨1, by decide⟩
+    | 52 => exact items_chunk_50_checked ⟨2, by decide⟩
+    | 53 => exact items_chunk_50_checked ⟨3, by decide⟩
+    | 54 => exact items_chunk_50_checked ⟨4, by decide⟩
+    | 55 => exact items_chunk_50_checked ⟨5, by decide⟩
+    | 56 => exact items_chunk_50_checked ⟨6, by decide⟩
+    | 57 => exact items_chunk_50_checked ⟨7, by decide⟩
+    | 58 => exact items_chunk_50_checked ⟨8, by decide⟩
+    | 59 => exact items_chunk_50_checked ⟨9, by decide⟩
+    | 60 => exact items_chunk_60_checked ⟨0, by decide⟩
+    | 61 => exact items_chunk_60_checked ⟨1, by decide⟩
+    | 62 => exact items_chunk_60_checked ⟨2, by decide⟩
+    | 63 => exact items_chunk_60_checked ⟨3, by decide⟩
+    | 64 => exact items_chunk_60_checked ⟨4, by decide⟩
+    | 65 => exact items_chunk_60_checked ⟨5, by decide⟩
+    | 66 => exact items_chunk_60_checked ⟨6, by decide⟩
+    | 67 => exact items_chunk_60_checked ⟨7, by decide⟩
+    | 68 => exact items_chunk_60_checked ⟨8, by decide⟩
+    | 69 => exact items_chunk_60_checked ⟨9, by decide⟩
+    | 70 => exact items_chunk_70_checked ⟨0, by decide⟩
+    | 71 => exact items_chunk_70_checked ⟨1, by decide⟩
+    | 72 => exact items_chunk_70_checked ⟨2, by decide⟩
+    | 73 => exact items_chunk_70_checked ⟨3, by decide⟩
+    | 74 => exact items_chunk_70_checked ⟨4, by decide⟩
+    | 75 => exact items_chunk_70_checked ⟨5, by decide⟩
+    | 76 => exact items_chunk_70_checked ⟨6, by decide⟩
+    | 77 => exact items_chunk_70_checked ⟨7, by decide⟩
+    | 78 => exact items_chunk_70_checked ⟨8, by decide⟩
+    | 79 => exact items_chunk_70_checked ⟨9, by decide⟩
+    | 80 => exact items_chunk_80_checked ⟨0, by decide⟩
+    | 81 => exact items_chunk_80_checked ⟨1, by decide⟩
+    | 82 => exact items_chunk_80_checked ⟨2, by decide⟩
+    | 83 => exact items_chunk_80_checked ⟨3, by decide⟩
+    | 84 => exact items_chunk_80_checked ⟨4, by decide⟩
+    | 85 => exact items_chunk_80_checked ⟨5, by decide⟩
+    | 86 => exact items_chunk_80_checked ⟨6, by decide⟩
+    | 87 => exact items_chunk_80_checked ⟨7, by decide⟩
+    | 88 => exact items_chunk_80_checked ⟨8, by decide⟩
+    | 89 => exact items_chunk_80_checked ⟨9, by decide⟩
+    | 90 => exact items_chunk_90_checked ⟨0, by decide⟩
+    | 91 => exact items_chunk_90_checked ⟨1, by decide⟩
+    | 92 => exact items_chunk_90_checked ⟨2, by decide⟩
+    | 93 => exact items_chunk_90_checked ⟨3, by decide⟩
+    | 94 => exact items_chunk_90_checked ⟨4, by decide⟩
+    | 95 => exact items_chunk_90_checked ⟨5, by decide⟩
+    | 96 => exact items_chunk_90_checked ⟨6, by decide⟩
+    | 97 => exact items_chunk_90_checked ⟨7, by decide⟩
+    | 98 => exact items_chunk_90_checked ⟨8, by decide⟩
+    | 99 => exact items_chunk_90_checked ⟨9, by decide⟩
+    | 100 => exact items_chunk_100_checked ⟨0, by decide⟩
+    | 101 => exact items_chunk_100_checked ⟨1, by decide⟩
+    | 102 => exact items_chunk_100_checked ⟨2, by decide⟩
+    | 103 => exact items_chunk_100_checked ⟨3, by decide⟩
+    | 104 => exact items_chunk_100_checked ⟨4, by decide⟩
+    | 105 => exact items_chunk_100_checked ⟨5, by decide⟩
+    | 106 => exact items_chunk_100_checked ⟨6, by decide⟩
+    | 107 => exact items_chunk_100_checked ⟨7, by decide⟩
+    | 108 => exact items_chunk_100_checked ⟨8, by decide⟩
+    | 109 => exact items_chunk_100_checked ⟨9, by decide⟩
+    | 110 => exact items_chunk_110_checked ⟨0, by decide⟩
+    | 111 => exact items_chunk_110_checked ⟨1, by decide⟩
+    | 112 => exact items_chunk_110_checked ⟨2, by decide⟩
+    | 113 => exact items_chunk_110_checked ⟨3, by decide⟩
+    | 114 => exact items_chunk_110_checked ⟨4, by decide⟩
+    | 115 => exact items_chunk_110_checked ⟨5, by decide⟩
+    | 116 => exact items_chunk_110_checked ⟨6, by decide⟩
     | n+117 => omega
 
 theorem accepts_iff_parse (word : List Nat) :

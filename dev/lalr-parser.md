@@ -290,8 +290,12 @@ item obligations, independent of candidate construction. The shared `Item`
 module now owns item identities and augmentation. `closure_lookahead` derives
 closure coverage from an actual suffix derivation using the existing universal
 FIRST theorem. Both current EBNFs pass native validation and their emitted item
-certificates pass kernel checking. Item arrays are proof-only definitions;
-each state has a separate kernel obligation. This checkpoint preceded the
+certificates pass kernel checking. Item arrays are proof-only definitions. The
+emitted item obligations are grouped into fixed-size chunks of states, one kernel
+certificate per chunk joined through `ItemCheck.validate_iff`, so the elaborator
+retains a handful of decision terms rather than one per state; measurements are
+in [verification-performance.md](verification-performance.md#lalr-per-row-safety-certificates-2026-09-19).
+This checkpoint preceded the
 source cutover described at the top of this document.
 
 `DerivationTrees` proves that every accepted word in mathlib's CFG semantics has

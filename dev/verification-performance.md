@@ -273,16 +273,31 @@ under 8 GiB and below the reduction group's ~7.71 GiB peak, while individual
 per-state certificates stay dominated by that retained-term growth. The chunk
 size of ten is used by the generator.
 
+Once the whole-table safety transient is gone, the module's resident peak is set
+by the cumulative retention of the per-state certificates the elaborator keeps in
+one process: the 99 reduction certificates and the 222 item certificates. The
+item certificates use the same per-state `decide +kernel` pattern, so they were
+chunked the same way (`itemCertificates`, ten states per certificate joined
+through `ItemCheck.validate_iff`). Isolated on the 222-state Modelica table:
+
+| Modelica item obligation | Wall | Peak RSS |
+| --- | ---: | ---: |
+| One certificate per state (222) | 107 s | ~11.48 GiB |
+| One certificate per 10 states (23) | 85 s | ~7.05 GiB |
+
 The whole `ModelicaParser.Generated` module still exceeds a single measurement
-window (its wall is set by the 99 reduction certificates) and its resident peak
-is now set by the cumulative retention of the reduction and item certificates
-rather than a single whole-table transient; a partial cold build reaches about
-22.7 GiB before the window closes, against about 24 GiB for the prior route.
-Reducing the whole-module peak further is item-certificate and cross-module work,
-not the safety obligation. The `GALECParser.Generated` module (117 states) checks
-whole in 49 s at ~7.18 GiB with the per-row route; at that smaller scale the
-whole-table decision was already cheap, so the per-chunk certificates are a small
-net increase over the prior ~5.95 GiB, still under 8 GiB.
+window (its wall is set by the 99 reduction certificates), and its resident peak
+remains set by the cumulative retention of the reduction and now-chunked item and
+row certificates rather than a single whole-table transient; a partial cold build
+of the pre-item-chunk state reached about 22.7 GiB, against about 24 GiB for the
+prior whole-table route. Bringing the whole module under 8 GiB would require
+splitting the certificates across modules so each process reclaims independently,
+or chunking the reduction certificates; both are separate from the safety
+obligation. The `GALECParser.Generated` module (117 states) checks whole in 49 s;
+its peak moves from ~5.95 GiB on the prior route to ~7.18 GiB with per-row safety
+alone and back to ~6.44 GiB once the item certificates are also chunked. At that
+smaller scale the per-chunk certificates are a small net change, still under
+8 GiB.
 
 ## Cold gate hot-spot inventory, 2026-09-19
 
