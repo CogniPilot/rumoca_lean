@@ -16,11 +16,11 @@ The Lean EBNF reader also accepts the `name = ...` / comma dialect.
 | Reference production family | Restriction in this file |
 | --- | --- |
 | Stored/class definition | Exactly one long model; no within, final, encapsulated, partial, inheritance or class descriptions |
-| Composition | Unit, scalar driven, array driven, or array square/Jacobian profile; their declaration and equation forms remain separate |
+| Composition | Unit, scalar driven, array driven, array square/Jacobian, constant-rate, or expression profile; their declaration and equation forms remain separate |
 | Component clause/declaration | Only Real, one variable per clause; the array profile requires `[2]` input/state and its Jacobian output requires `[2,2]`; no bindings or conditional components |
 | Modification | Exactly two identifiers in order, with values `0` and `true`; arrays require `each` on both; resolution requires `start` and `fixed` |
 | Equation | Unit `der(IDENT)=1`, driven `der(IDENT)=IDENT`, or one pointwise product plus a Jacobian output equation |
-| Expressions/calls | Exactly `IDENT .* IDENT` and `IDENT(IDENT .* IDENT, IDENT)` in the array square profile; no general functions, recursive expressions, indexing or matrix products |
+| Expressions/calls | Exactly `IDENT .* IDENT` and `IDENT(IDENT .* IDENT, IDENT)` in the array square profile; the expression profile adds recursive arithmetic over `+ - * /` with unary minus and parentheses, stratified for the MLS operator precedence; no general functions, relations, indexing or matrix products |
 | Identifier | Existing checked ASCII unquoted identifier lexer; no parol regex directive or quoted identifier alternative |
 
 Parol `%...` directives, Rust type annotations, `@...` action labels and `^`
