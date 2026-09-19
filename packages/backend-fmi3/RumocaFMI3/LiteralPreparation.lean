@@ -19,8 +19,8 @@ theorem rendered_functions (m : Solve.FMI3Model source) (signatures : List Signa
     Runtime.render m signatures = functionPrefix m.name ++ "#include \"model.c\"\n" ++
       Runtime.declarations ++ String.join ((functions m signatures).map Function.render) := by
   apply String.toList_injective
-  simp [Runtime.render, functions, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+  simp only [Runtime.render, functions, String.toList_append, CString.join_toList,
+    List.flatMap_map, List.flatMap_append, List.flatMap_cons, List.append_assoc]
 
 /-- The existing renderer contains the certified function fragment at its
 actual list slot. This uses shared lookup/printing; headers and ABI are open. -/
@@ -34,8 +34,8 @@ theorem rendered_member (m : Solve.FMI3Model source) (sigs : List Signature) (si
     String.join (left.map fun sig => (Runtime.function m sig).render),
     String.join (right.map fun sig => (Runtime.function m sig).render), ?_⟩
   apply String.toList_injective
-  simp [Runtime.render, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+  simp only [Runtime.render, String.toList_append, CString.join_toList,
+    List.flatMap_map, List.flatMap_append, List.flatMap_cons, List.append_assoc]
 
 /-- Every helper is a concrete fragment of the same emitted function list. -/
 theorem rendered_helper (m : Solve.FMI3Model source) (sigs : List Signature)
@@ -47,8 +47,8 @@ theorem rendered_helper (m : Solve.FMI3Model source) (sigs : List Signature)
     String.join (right.map Function.render) ++
       String.join (sigs.map fun sig => (Runtime.function m sig).render), ?_⟩
   apply String.toList_injective
-  simp [Runtime.render, same, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.append_assoc]
+  simp only [Runtime.render, same, String.toList_append, CString.join_toList,
+    List.flatMap_map, List.flatMap_append, List.flatMap_cons, List.append_assoc]
 
 /-- Constants interpreted by the authored FMI C interface. This is not the
 complete macro/typedef namespace of an implementation's standard headers. -/

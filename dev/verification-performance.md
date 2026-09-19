@@ -707,3 +707,30 @@ of profile cases, only with the one-time member conjunction. The audited axioms
 stay within `propext`, `Quot.sound` and `Classical.choice`, and the tensor and
 constant adapter standalone-object and actual-file boundary checks continue to
 pass.
+
+### `RumocaFMI3.LiteralPreparation`
+
+Three theorems relate the actual adapter renderer to a decomposed function list:
+`rendered_functions` gives the whole render as prefix, declarations and the joined
+function list; `rendered_member` and `rendered_helper` expose one exported
+function or one helper as a fragment at its list slot. Each proved its string
+equality with an unrestricted `simp` over `Runtime.render`, `String.toList_append`,
+`CString.join_toList`, `List.flatMap_map` and `List.append_assoc`. The
+unrestricted simp set produced a large rewrite proof whose kernel type-check
+dominated the module: the kernel type-checking split was about 86 s of the cold
+build, in three events of roughly 41 s, 23 s and 23 s, one per theorem. The cost
+grew with the size of the rendered function scaffold.
+
+The three proofs now use `simp only` with exactly the append, join and flat-map
+lemmas the normalization needs (`List.flatMap_append`, `List.flatMap_cons` added
+to reach the member and helper split), so each produces a small, directed rewrite
+proof instead of the unrestricted one. `rendered_functions`, `rendered_member`
+and `rendered_helper` keep their statements.
+
+| `RumocaFMI3.LiteralPreparation` | Cold module | Driver |
+| --- | ---: | --- |
+| Unrestricted `simp` over the whole render (before) | ~120 s | rendered scaffold size, kernel type-check |
+| `simp only` with the directed append/join/flat-map lemmas (after) | ~17 s | directed rewrite |
+
+The audited axioms stay within `propext`, `Quot.sound` and `Classical.choice`,
+and the FMI 3 and compiler checks continue to pass.
