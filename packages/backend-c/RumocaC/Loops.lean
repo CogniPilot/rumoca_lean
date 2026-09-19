@@ -37,6 +37,8 @@ def eval (env : CBody.Locals) (types : Types) (heap : Heap) : Expr → Option Va
       else CArithmetic.floatAdd (← CBody.eval env heap (.id left)) (← CBody.eval env heap (.id right))
   | .bin .add a b => do CArithmetic.floatAdd (← CBody.eval env heap a) (← CBody.eval env heap b)
   | .bin .mul a b => do CArithmetic.floatMul (← CBody.eval env heap a) (← CBody.eval env heap b)
+  | .bin .sub a b => do CArithmetic.floatSub (← CBody.eval env heap a) (← CBody.eval env heap b)
+  | .bin .div a b => do CArithmetic.floatDiv (← CBody.eval env heap a) (← CBody.eval env heap b)
   | e => CBody.eval env heap e
 
 def noDeclarations : Stmt → Bool

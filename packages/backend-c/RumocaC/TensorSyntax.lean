@@ -1,7 +1,7 @@
 import RumocaC.TensorCode
 import Parser.Scanner
 
-/-! Independent concrete syntax for the two counted tensor helpers. The token
+/-! Independent concrete syntax for the four counted tensor helpers. The token
 grammar spells out their parameters, unsigned local, loop, indexed assignment,
 increment and return. It does not call the emitter. Header preprocessing and
 the meanings of `size_t` and `double` remain the declared target boundary. -/
@@ -13,17 +13,19 @@ def config : Scanner.Config where
   wordRest := identRest
   numberRest := fun c => identRest c || c == '.'
   classify := Token.literal
-  single := fun c => ['(', ')', '{', '}', '[', ']', '*', ';', '=', '+', '<', ','].contains c
+  single := fun c => ['(', ')', '{', '}', '[', ']', '*', '/', '-', ';', '=', '+', '<', ','].contains c
   pair := fun _ => none
 
 def tokens (op : Tensor.BinaryOp) : List Token :=
-  (["void", match op with | .add => "rumoca_tensor_add" | .mul => "rumoca_tensor_mul",
+  (["void", match op with
+      | .add => "rumoca_tensor_add" | .mul => "rumoca_tensor_mul"
+      | .sub => "rumoca_tensor_sub" | .div => "rumoca_tensor_div",
     "(", "const", "double", "*", "left", ",", "const", "double", "*", "right", ",",
     "double", "*", "out", ",", "size_t", "count", ")", "{",
     "size_t", "k", "=", "0", ";",
     "while", "(", "(", "k", "<", "count", ")", ")", "{",
     "out", "[", "k", "]", "=", "(", "left", "[", "k", "]",
-    match op with | .add => "+" | .mul => "*",
+    match op with | .add => "+" | .mul => "*" | .sub => "-" | .div => "/",
     "right", "[", "k", "]", ")", ";",
     "k", "=", "(", "k", "+", "1", ")", ";", "}", "return", ";", "}"] : List String).map Token.literal
 

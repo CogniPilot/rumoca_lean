@@ -10,6 +10,8 @@ open CTree
 def binaryOp : Tensor.BinaryOp → CTree.BinOp
   | .add => .add
   | .mul => .mul
+  | .sub => .sub
+  | .div => .div
 
 def indexed (name : String) : Expr := .index (.id name) (.id "k")
 
@@ -20,7 +22,9 @@ def body (op : Tensor.BinaryOp) : List Stmt :=
   CLoops.counted "k" (.id "count") (operation op) ++ [.ret none]
 
 def function (op : Tensor.BinaryOp) : Function where
-  signature := ⟨"void", match op with | .add => "rumoca_tensor_add" | .mul => "rumoca_tensor_mul",
+  signature := ⟨"void", match op with
+      | .add => "rumoca_tensor_add" | .mul => "rumoca_tensor_mul"
+      | .sub => "rumoca_tensor_sub" | .div => "rumoca_tensor_div",
     [⟨"const double *", "left", false⟩, ⟨"const double *", "right", false⟩,
       ⟨"double *", "out", false⟩, ⟨"size_t", "count", false⟩]⟩
   body := body op

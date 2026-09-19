@@ -14,9 +14,11 @@ elab "verify_tensor_helper " path:str " as " operation:ident : command => do
   let expected ← match operation.getId with
     | `add => pure (function .add).render
     | `mul => pure (function .mul).render
+    | `sub => pure (function .sub).render
+    | `div => pure (function .div).render
     | `fill => pure Fill.function.render
     | `diagonal => pure Diagonal.function.render
-    | _ => throwError "expected tensor helper add, mul, fill or diagonal"
+    | _ => throwError "expected tensor helper add, mul, sub, div, fill or diagonal"
   let source ← IO.FS.readFile path.getString
   -- Early rejection is only a convenience. Kernel-checked literal equality
   -- below is the sole authorization for applying the artifact theorem.
@@ -26,6 +28,8 @@ elab "verify_tensor_helper " path:str " as " operation:ident : command => do
   let statement ← match operation.getId with
     | `add => `(term| CallArtifactContract $literal Tensor.BinaryOp.add)
     | `mul => `(term| CallArtifactContract $literal Tensor.BinaryOp.mul)
+    | `sub => `(term| CallArtifactContract $literal Tensor.BinaryOp.sub)
+    | `div => `(term| CallArtifactContract $literal Tensor.BinaryOp.div)
     | `diagonal => `(term| Diagonal.ArtifactContract $literal)
     | _ => `(term| Fill.ArtifactContract $literal)
   let proof ← match operation.getId with

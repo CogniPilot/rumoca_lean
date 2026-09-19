@@ -90,11 +90,15 @@ theorem loop_expression_agreement (before after : CInterface)
         (fun name member => agree name (by simp [names, member]))).1
       have right := (expression_agreement before after types literals env heap b
         (fun name member => agree name (by simp [names, member]))).1
-      cases op <;> try simpa only [CLoops.eval] using whole
-      · cases a <;> cases b <;> simp [CLoops.eval, left, right]
+      cases op
+      case add =>
+        cases a <;> cases b <;> simp [CLoops.eval, left, right]
         rename_i name value
         by_cases unit : value = 1 <;> simp_all
-      · simp [CLoops.eval, left, right]
+      case mul => simp [CLoops.eval, left, right]
+      case sub => simp [CLoops.eval, left, right]
+      case div => simp [CLoops.eval, left, right]
+      all_goals simpa only [CLoops.eval] using whole
   | _ => simpa only [CLoops.eval] using whole
 
 /-- Preserve the supplied header dictionary, using the additional data

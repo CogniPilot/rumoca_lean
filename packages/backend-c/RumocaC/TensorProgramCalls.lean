@@ -22,13 +22,13 @@ theorem valid_nodup (f : Syntax.Function) (valid : f.valid = true) :
 
 omit interface in
 theorem helper_absent (f : Syntax.Function) (valid : f.valid = true) (name : String)
-    (helper : name ∈ ["rumoca_tensor_add", "rumoca_tensor_mul", "rumoca_tensor_fill"]) :
+    (helper : name ∈ ["rumoca_tensor_add", "rumoca_tensor_mul", "rumoca_tensor_sub", "rumoca_tensor_div", "rumoca_tensor_fill"]) :
     name ∉ f.parameters.map Syntax.Parameter.name := by
   intro member
   obtain ⟨p, hp, rfl⟩ := List.mem_map.mp member
   simp only [Syntax.Function.valid, Bool.and_eq_true] at valid
   have excluded := List.all_eq_true.mp valid.1.2 p hp
-  have absent : p.name ∉ ["rumoca_tensor_add", "rumoca_tensor_mul", "rumoca_tensor_fill"] := by
+  have absent : p.name ∉ ["rumoca_tensor_add", "rumoca_tensor_mul", "rumoca_tensor_sub", "rumoca_tensor_div", "rumoca_tensor_fill"] := by
     simpa using excluded
   exact absent helper
 

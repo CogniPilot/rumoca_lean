@@ -17,6 +17,14 @@ omit interface in
 private theorem mul_comparison_none (a b : Value) : CBody.comparison .mul a b = none := by
   cases a <;> cases b <;> simp [CBody.comparison, CBody.floatComparison, convert, Value.finite]
 
+omit interface in
+private theorem sub_comparison_none (a b : Value) : CBody.comparison .sub a b = none := by
+  cases a <;> cases b <;> simp [CBody.comparison, CBody.floatComparison, convert, Value.finite]
+
+omit interface in
+private theorem div_comparison_none (a b : Value) : CBody.comparison .div a b = none := by
+  cases a <;> cases b <;> simp [CBody.comparison, CBody.floatComparison, convert, Value.finite]
+
 theorem eval_refines (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
     (e : Expr) (value : Value) (h : CBody.eval env heap e = some value) :
     CLoops.eval env types heap e = some value := by
@@ -28,7 +36,8 @@ theorem eval_refines (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
       cases ha : CBody.eval env heap a <;> simp only [ha, bind, Option.bind_none, Option.bind_some] at h
       all_goals try contradiction
       all_goals cases hb : CBody.eval env heap b <;>
-        simp_all only [Option.bind_none, Option.bind_some, add_comparison_none, mul_comparison_none]
+        simp_all only [Option.bind_none, Option.bind_some, add_comparison_none, mul_comparison_none,
+          sub_comparison_none, div_comparison_none]
       all_goals contradiction
   | _ => exact h
 

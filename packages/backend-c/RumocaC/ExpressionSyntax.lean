@@ -27,6 +27,7 @@ def Category.rank : Category → Nat
 independently of `BinOp.render`. The left category is also the result category. -/
 inductive BinarySyntax : BinOp → Category → Category → String → Prop where
   | mul : BinarySyntax .mul .multiplicative .cast "*"
+  | div : BinarySyntax .div .multiplicative .cast "/"
   | add : BinarySyntax .add .additive .multiplicative "+"
   | sub : BinarySyntax .sub .additive .multiplicative "-"
   | lt : BinarySyntax .lt .relational .shift "<"
@@ -97,6 +98,7 @@ theorem binary_render_syntax (op : BinOp) :
       Category.cast.rank ≤ left.rank ∧ Category.cast.rank ≤ right.rank := by
   cases op with
   | mul => exact ⟨_, _, .mul, by decide +kernel, by decide +kernel⟩
+  | div => exact ⟨_, _, .div, by decide +kernel, by decide +kernel⟩
   | add => exact ⟨_, _, .add, by decide +kernel, by decide +kernel⟩
   | sub => exact ⟨_, _, .sub, by decide +kernel, by decide +kernel⟩
   | lt => exact ⟨_, _, .lt, by decide +kernel, by decide +kernel⟩

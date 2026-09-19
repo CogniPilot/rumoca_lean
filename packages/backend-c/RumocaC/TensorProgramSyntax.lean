@@ -41,6 +41,8 @@ def readable (params : List Parameter) (name : String) : Bool :=
 def binaryName : Tensor.BinaryOp → String
   | .add => "rumoca_tensor_add"
   | .mul => "rumoca_tensor_mul"
+  | .sub => "rumoca_tensor_sub"
+  | .div => "rumoca_tensor_div"
 
 inductive Statement where
   | fill (value : Literal) (output count : String)
@@ -91,8 +93,8 @@ structure Function where
 def Function.valid (f : Function) : Bool :=
   identifier f.name && f.parameters.all (fun p => identifier p.name) &&
     decide (f.parameters.map Parameter.name).Nodup &&
-    !["rumoca_tensor_add", "rumoca_tensor_mul", "rumoca_tensor_fill"].contains f.name &&
-    f.parameters.all (fun p => !["rumoca_tensor_add", "rumoca_tensor_mul", "rumoca_tensor_fill"].contains p.name) &&
+    !["rumoca_tensor_add", "rumoca_tensor_mul", "rumoca_tensor_sub", "rumoca_tensor_div", "rumoca_tensor_fill"].contains f.name &&
+    f.parameters.all (fun p => !["rumoca_tensor_add", "rumoca_tensor_mul", "rumoca_tensor_sub", "rumoca_tensor_div", "rumoca_tensor_fill"].contains p.name) &&
     f.statements.all (Statement.valid f.parameters)
 
 def Function.tree (f : Function) : CTree.Function :=

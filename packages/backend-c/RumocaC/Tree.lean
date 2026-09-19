@@ -6,11 +6,11 @@ numerical C language remains RumocaC. No arbitrary statement-text escape is
 provided here. External type names come from the pinned FMI headers. -/
 namespace Rumoca.CTree
 
-inductive BinOp where | eq | ne | lt | le | gt | ge | and | or | add | sub | mul
+inductive BinOp where | eq | ne | lt | le | gt | ge | and | or | add | sub | mul | div
   deriving Repr
 def BinOp.render : BinOp → String
   | .eq => "==" | .ne => "!=" | .lt => "<" | .le => "<=" | .gt => ">" | .ge => ">="
-  | .and => "&&" | .or => "||" | .add => "+" | .sub => "-" | .mul => "*"
+  | .and => "&&" | .or => "||" | .add => "+" | .sub => "-" | .mul => "*" | .div => "/"
 inductive Expr where
   | id (name : String)
   | nat (value : Nat)

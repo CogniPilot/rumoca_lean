@@ -106,9 +106,12 @@ theorem loop_expression_correct (bound : Bound symbols env) (fresh : FreshLocals
   have he := ev e
   cases e with
   | bin op a b =>
-      cases op <;> try simpa only [expression, CLoops.eval] using he
-      · simpa only [expression] using add_correct bound fresh safe types heap a b
-      · simp only [expression, CLoops.eval, ev]
+      cases op
+      case add => simpa only [expression] using add_correct bound fresh safe types heap a b
+      case mul => simp only [expression, CLoops.eval, ev]
+      case sub => simp only [expression, CLoops.eval, ev]
+      case div => simp only [expression, CLoops.eval, ev]
+      all_goals simpa only [expression, CLoops.eval] using he
   | str text =>
       cases found : symbols text with
       | none => simp [expression, found]

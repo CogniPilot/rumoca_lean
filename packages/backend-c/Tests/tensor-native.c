@@ -23,6 +23,15 @@ int main(void) {
   rumoca_tensor_add(input, input, output + 1, 2);
   assert(output[0] == 17.0 && output[1] == 4.0 && output[2] == 6.0 && output[3] == 19.0);
   assert(input[0] == 2.0 && input[1] == 3.0);
+  /* Subtraction and division on the two-wide operands. */
+  const double lhs[2] = {3.0, 1.0}, rhs[2] = {2.0, 4.0};
+  rumoca_tensor_sub(lhs, rhs, output + 1, 2);
+  assert(output[0] == 17.0 && output[1] == 1.0 && output[2] == -3.0 && output[3] == 19.0);
+  rumoca_tensor_div(lhs, rhs, output + 1, 2);
+  assert(output[0] == 17.0 && output[1] == 1.5 && output[2] == 0.25 && output[3] == 19.0);
+  assert(lhs[0] == 3.0 && lhs[1] == 1.0 && rhs[0] == 2.0 && rhs[1] == 4.0);
+  rumoca_tensor_sub(NULL, NULL, NULL, 0);
+  rumoca_tensor_div(NULL, NULL, NULL, 0);
   const double tiny = -DBL_TRUE_MIN, half = 0.5;
   rumoca_tensor_mul(&tiny, &half, output + 1, 1);
   assert(output[1] == 0.0 && signbit(output[1]));

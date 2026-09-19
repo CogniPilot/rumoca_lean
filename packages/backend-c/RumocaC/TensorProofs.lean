@@ -38,6 +38,12 @@ theorem operation_eval (op : Tensor.BinaryOp) (env : CBody.Locals) (heap : Heap)
   | mul =>
     simpa only [binaryOp, indexed, CLoops.eval, left, right, bind, Option.bind_some,
       Tensor.BinaryOp.scalar, Finite.ops] using CArithmetic.floatMul_finite a b domain
+  | sub =>
+    simpa only [binaryOp, indexed, CLoops.eval, left, right, bind, Option.bind_some,
+      Tensor.BinaryOp.scalar, Finite.ops] using CArithmetic.floatSub_finite a b domain
+  | div =>
+    simpa only [binaryOp, indexed, CLoops.eval, left, right, bind, Option.bind_some,
+      Tensor.BinaryOp.scalar, Finite.ops] using CArithmetic.floatDiv_finite a b domain
 
 private theorem operation_eval_written (op : Tensor.BinaryOp) (a b : Values shape)
     (heap : Heap) (left right output : Address) (i : Fin shape.volume)

@@ -11,6 +11,8 @@ def main (args : List String) : IO Unit := do
   let root : System.FilePath := directory
   IO.FS.writeFile (root / "add.c") (Rumoca.CTensor.function .add).render
   IO.FS.writeFile (root / "mul.c") (Rumoca.CTensor.function .mul).render
+  IO.FS.writeFile (root / "sub.c") (Rumoca.CTensor.function .sub).render
+  IO.FS.writeFile (root / "div.c") (Rumoca.CTensor.function .div).render
   IO.FS.writeFile (root / "fill.c") Rumoca.CTensor.Fill.function.render
   IO.FS.writeFile (root / "diagonal.c") Rumoca.CTensor.Diagonal.function.render
   IO.FS.writeFile (root / "jacobian-diag.c") Rumoca.CTensor.SquareDiagonal.function.render

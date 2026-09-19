@@ -1,5 +1,7 @@
 import RumocaC.Calls
 import RumocaCore.Real.AdditionResult
+import RumocaCore.Real.Subtraction
+import RumocaCore.Real.Division
 
 /-! The straight-line C arithmetic extension needed by Solve register code.
 Other statements retain the existing object-memory semantics. The arithmetic
@@ -38,6 +40,28 @@ def floatMul (left right : Value) : Option Value := do
 theorem floatMul_finite (x y : Binary64.Value) (h : Binary64.finiteProduct x y) :
     floatMul (.finite x) (.finite y) = some (.finite (Binary64.roundedMul x y)) := by
   simp only [floatMul, CCalls.finiteValue_finite, Binary64.multiply?, if_pos h,
+    bind, Option.bind_some, pure]
+
+def floatSub (left right : Value) : Option Value := do
+  let x ← CCalls.finiteValue left
+  let y ← CCalls.finiteValue right
+  return .float64 (Binary64.subResult x y).encode
+
+theorem floatSub_finite (x y : Binary64.Value)
+    (h : Rumoca.CExecution.finiteRoundDomain (Binary64.units x - Binary64.units y)) :
+    floatSub (.finite x) (.finite y) = some (.finite (Binary64.roundedSub x y)) := by
+  simp only [floatSub, CCalls.finiteValue_finite, bind, Option.bind_some, pure]
+  exact congrArg (fun result : Float64.Number => some (Value.float64 result.encode))
+    (Binary64.subResult_finite x y h)
+
+def floatDiv (left right : Value) : Option Value := do
+  let x ← CCalls.finiteValue left
+  let y ← CCalls.finiteValue right
+  return .finite (← Binary64.divide? x y)
+
+theorem floatDiv_finite (x y : Binary64.Value) (h : Binary64.finiteQuotient x y) :
+    floatDiv (.finite x) (.finite y) = some (.finite (Binary64.roundedDiv x y)) := by
+  simp only [floatDiv, CCalls.finiteValue_finite, Binary64.divide?, if_pos h,
     bind, Option.bind_some, pure]
 
 variable [interface : CInterface]
