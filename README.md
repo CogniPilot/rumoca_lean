@@ -71,6 +71,30 @@ packaged as one FMI 3 FMU containing both Model Exchange and Co-Simulation. The
 numerical kernels are formally checked; full FMI adapter execution verification
 remains open.
 
+The production compiler also admits the constant-rate profile shown in
+`examples/ConstantRates.mo`:
+
+```modelica
+model ConstantRates
+  Real x;
+  Real y;
+equation
+  der(x) = 2.5;
+  der(y) = -1;
+end ConstantRates;
+```
+
+It carries two or more scalar states, each with one `der(state) = literal`
+equation whose right-hand side is a signed decimal literal; the equation order
+is immaterial. Each rate is the round-to-nearest-even of its literal's exact
+base-ten content. This profile is admitted for FMI 3 FMU output, whose
+publication gate is the fixed `constant-fmi3` source-build certificate; the
+default `rumoca` CLI dispatches the constant profile to `compileConstant` and
+the corresponding checked publication path. Constant eFMI Algorithm Code, eFMU
+archive export and C emission are rejected with a diagnostic. The state count
+stays symbolic in the model's shape parameter; no rate coordinate is enumerated
+during lowering.
+
 ## Run
 
 The default `nix develop` shell includes configured Neovim with Lean syntax

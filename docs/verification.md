@@ -3702,6 +3702,28 @@ rejected. Tensor rank and extents remain symbolic; no tensor element is
 enumerated during lowering. `jacobian` is an identified language extension. The
 enlarged admitted subset is recorded in the recurring standards review.
 
+The `constant-fmi3` certificate kind binds the same five staged files for the
+constant-rate profile: it compiles the source with `compileConstant`,
+kernel-checks the actual `model.c` against the certified constant kernel text
+(the preamble and the three rendered `rumoca_constant_*` entries) and the actual
+`fmi3.c` against the rendered constant adapter, and emits
+`Rumoca.CheckedConstantFMI3Files.source_to_build` under the same axiom
+whitelist; it caches with the same inputs as `fmi3`. The constant-rate profile
+(`examples/ConstantRates.mo`) is now admitted to production FMI 3 FMU output
+through this certificate: the constant profile uses the same total located-parse
+constructor `ParserActions.Parsed.located`, so the certificate emits the
+existential `∃ a, compileConstant input = .ok a ∧ ConstantSourceBuildContract a …`
+exactly like the scalar `fmi3` and the `tensor-fmi3` theorems, without
+kernel-evaluating the LR parser on the source text. The default `rumoca` CLI
+dispatches a constant-profile source to `compileConstant` and the constant
+source-build path, whose publication gate is this certificate; constant eFMI
+export and constant C emission stay rejected with a diagnostic. The state count
+stays symbolic in the model's shape parameter; no rate coordinate is enumerated
+during lowering. The pinned certificate binds the two-state `ConstantRates`
+instance, so a constant source of a different state count or rate fails the
+fixed checker before any FMU is produced. The enlarged admitted subset is
+recorded in the recurring standards review.
+
 
 Run `nix develop .#verification --command lake test`. This checks Lean proofs,
 grammar freshness, axiom dependencies, actual source/C contracts, mutation

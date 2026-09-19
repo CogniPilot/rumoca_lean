@@ -404,6 +404,41 @@ rendered adapter bytes under `build/constant-fmi/adapter.c`, and `tests/tensor-c
 compiles the whole adapter to a standalone C11 object with zero diagnostics under the
 strict flags, the three constant kernel entries staying undefined externs.
 
+## FMI 3 FMU admission (Stage C)
+
+The constant-rate profile is admitted to production FMI 3 FMU output.
+`compileConstant`/`ConstantArtifact` (`packages/compiler/Rumoca/ConstantProduction.lean`)
+parse the constant profile and prepare its constant-rate IVP, and carry the
+certified constant kernel C text (`ConstantKernel.modelC`, the preamble and the
+three rendered `rumoca_constant_*` entries, equal to `CConstant.programText` over
+the source rates), the rendered constant adapter, the constant model description
+and the shared build description. `ConstantSourceBuildContract` bundles the
+executable kernel contract (`CConstant.contract_correct`), the constant adapter
+contract (`ConstantAdapter.Contract`, whose call graph is checked no-heap and
+acyclic), the build-description contract, the identifier and instantiation-token
+agreements and the constant model-description XML document; `constantSourceBuild_correct`
+assembles them in existential form through the constant profile's total
+located-parse constructor (`ParserActions.Parsed.located`), exactly like the
+scalar `fmi3` and the `tensor-fmi3` certificates and without kernel-evaluating
+the LR parser on the source text.
+
+`ConstantFMU.writeSources`/`build` stage the FMU in the shared layout and run the
+fixed checker `verify_constant_fmi3_build_files`
+(`packages/compiler/Rumoca/ConstantFMI3BuildArtifactCheck.lean`), which
+independently reads the five staged files, compiles the source with
+`compileConstant`, kernel-checks the actual `model.c` and `fmi3.c` bytes against
+the rendered texts with the shared byte machinery, and emits
+`Rumoca.CheckedConstantFMI3Files.source_to_build` on the three approved axioms.
+It is registered as the cached `constant-fmi3` kind of `lake run verify-artifact`
+with the same inputs as `fmi3`. The default `rumoca` CLI dispatches a
+constant-profile source to `compileConstant` and this publication path for
+`.fmu` output; constant eFMI, eFMU and C output are rejected with a diagnostic.
+`tests/fmi3.sh` publishes `examples/ConstantRates.mo` through the CLI, reuses the
+cached certificate with no build, exercises one adapter mutation control, runs
+the native all-behavior matrix over the constant variable set, and drives the
+FMU through FMPy in both interfaces, asserting the two states reach `(7.5, -3)`
+after three unit steps from zero.
+
 ## Open obligations
 
 The following are deferred to later increments, each with its own proofs and
@@ -412,9 +447,12 @@ actual-artifact certificate:
 - Binding the executable sample entry `rumoca_constant_sample` to the FMI 3
   instance record with its own observable-machine execution proof (the adapter
   already forward-declares its prototype and resolves it in the definition table).
-- FMI 3 Model Exchange and Co-Simulation artifacts and the eFMI Algorithm and
-  Production Code artifacts, bound to actual bytes.
-- Production admission of the profile through the CLI.
+- The eFMI Algorithm and Production Code artifacts, bound to actual bytes
+  (constant eFMI export stays rejected with a diagnostic).
+- A source-general constant FMU certificate: the CLI admits any resolvable
+  constant source, but the fixed `constant-fmi3` certificate binds the two-state
+  `ConstantRates` instance, so a constant source of a different state count or
+  rate fails the checker before any FMU is produced.
 - A bare unsigned-integer rate (no sign, point or exponent) and an
   exponent-form rate at the token level; these are recognized lexically but a
   bare integer keeps the existing literal class and is not admitted as a rate,
