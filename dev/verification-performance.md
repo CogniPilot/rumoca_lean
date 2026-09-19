@@ -856,3 +856,77 @@ certifies the compiled scalar source directly through the numerical
 `source_to_c` certificate and carries no private `model.c` render assembly. A
 further kernel profile that fits these shapes adds a `ProfileBuildInputs` value
 and its contract discharge rather than a third build-artifact driver.
+
+## One family-contract and printer core for every profile, 2026-09-19
+
+The two per-profile FMI 3 function families (the absent-type variable accessors
+and the unsupported-capability rejections) and the per-profile function-section
+grammar are now instantiations of one shared core, instead of near-identical
+clones for the tensor and constant-rate profiles.
+
+What became generic. The prepared, function and family contracts of both
+families are proved once over a profile-generic `AdapterFamily` record in
+`packages/backend-fmi3/RumocaFMI3/FamilyContracts.lean`: the record bundles the
+per-signature dispatched function, the helper prefix, the emitted list, the
+definition table, the literal-pool preparation, the render, the
+definition-table and literal-pool facts, and the profile's fallthrough routing
+of every family signature to the scalar body, and the family proofs are stated
+over it. The reserved-record public factory printability and the
+section-tokenization contract are proved once in
+`packages/backend-fmi3/RumocaFMI3/AdapterFunctionsPrinter.lean` over an abstract
+preamble string and function list. The declared value-reference table of each
+model description is tied to the profile record by `rfl`, so `references.get` is
+the single source of truth for the model description's value references.
+
+What stays per profile. Each profile supplies one `AdapterFamily` value
+(`tensorFamily`, `constantFamily`) built by projection from its function module,
+one printer instance at its own preamble and list, and the per-signature
+dispatched-body printability, since the dispatched bodies genuinely differ. The
+model-specific metadata (concrete dimensions and per-model value references)
+stays as authored.
+
+Line counts. The four per-profile modules shrank; the shared logic is written
+once.
+
+| Module | Before | After |
+| --- | ---: | ---: |
+| `RumocaFMI3.TensorFamilyContracts` | 270 | 173 |
+| `RumocaFMI3.ConstantFamilyContracts` | 270 | 173 |
+| `RumocaFMI3.TensorAdapterPrinter` | 145 | 98 |
+| `RumocaFMI3.ConstantAdapterPrinter` | 145 | 95 |
+| `RumocaFMI3.FamilyContracts` (shared, once) | -- | 311 |
+| `RumocaFMI3.AdapterFunctionsPrinter` (shared, once) | -- | 102 |
+
+Cold compile seconds (same machine, oleans of the listed modules deleted and
+rebuilt).
+
+| Module | Before | After |
+| --- | ---: | ---: |
+| `TensorFamilyContracts` | ~11 s | ~11 s |
+| `ConstantFamilyContracts` | ~11 s | ~11 s |
+| `FamilyContracts` (shared, once) | -- | ~4 s |
+| `TensorAdapterPrinter` | ~23 s | ~7.8 s |
+| `ConstantAdapterPrinter` | ~24 s | ~7.6 s |
+| `AdapterFunctionsPrinter` (shared, once) | -- | ~28 s |
+
+The family-contract per-profile modules stay near their prior cold time: the
+thin instantiation still elaborates the `AdapterFamily` record and the contract
+wrappers, so the win there is proof de-duplication (the family execution proofs
+live once in the ~4 s shared module) rather than compile time. The printer
+per-profile modules dropped from about 23-24 s to about 7.7 s each, because the
+heavy reserved-record factory printability proof is now compiled once (~28 s in
+the shared module) instead of once per profile. The two bridging value-reference
+lemmas added to `RumocaFMI3.TensorMetadata` are `rfl`/`decide` over three- and
+five-element lists and add negligible cold time (that module stays near ~5 s).
+
+The audited axioms stay within `propext`, `Quot.sound` and `Classical.choice`;
+`lake build check-fmi3` and `lake build check-compiler` pass, and the
+`tensor-fmi3` and `constant-fmi3` source-build certificates recertify with the
+approved axiom lines. A new kernel profile now adds a `Profile` value, a
+`ProfileCertInputs` value, a `ProfileBuildInputs` value, one behavioral contract
+discharge and its own semantics only: no new family-contract proof, no new
+reserved-record factory printability proof, and no new certificate metaprogram,
+render plan or build driver. The one remaining per-profile clone is the call
+policy's accepted-callee disjunction chain, which the profile record's
+`extraCallees` field is meant to replace; that unification is deferred so the
+call-policy modules can be edited independently.

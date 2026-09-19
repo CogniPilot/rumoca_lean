@@ -447,6 +447,50 @@ keeps its own driver: it certifies the compiled scalar source directly through
 the numerical `source_to_c` certificate and carries no private `model.c` render
 assembly, so it shares no body with the kernel-profile driver.
 
+### One family-contract and printer core for every profile
+
+The two unsupported/absent-type function families (the absent-type variable
+accessors and the unsupported-capability rejections) are proved once over a
+profile-generic `AdapterFamily` record in `RumocaFMI3.FamilyContracts`. The
+record bundles exactly the per-profile pieces the families are checked against:
+the per-signature dispatched function, the reused helper prefix, the emitted
+function list, the definition table, the literal-pool preparation, the render,
+the definition-table and literal-pool facts about them, and the profile's
+fallthrough routing of every family signature to the scalar body. The prepared,
+function and family contracts (`AbsentFamily`/`CapabilityFamily`) and their
+correctness proofs are stated and proved once over an `AdapterFamily`. Each
+profile supplies one `AdapterFamily` value (`tensorFamily`, `constantFamily`)
+built by projection from its function module, and every per-profile family
+contract is that generic contract instantiated at the value. The produced
+contract names and statements (`TensorAbsentVariables.family_correct`,
+`TensorCapabilityRejection.FamilyContract`, the constant analogues, and the
+audited `prepared_correct`/`rendered_contract`/`family_correct` roots) are
+unchanged.
+
+The function-section grammar shares the same treatment in
+`RumocaFMI3.AdapterFunctionsPrinter`: the reserved-record public factory body is
+identical across profiles, so its printability (`factory_printable`) is proved
+once, and the section-tokenization contract (`FunctionsContract`) and its
+discharge (`functionsContract_of`) are stated once over an abstract preamble
+string and function list. Each profile printer instantiates them at its own
+preamble and list; only the per-signature dispatched-body printability stays per
+profile, because the dispatched bodies genuinely differ. The declared
+value-reference tables of the model descriptions are tied back to the profile
+record by `rfl`: the tensor and constant `valueReferences` are exactly the
+profile's Float64 getter references (`references.get`) rendered as decimals, so
+the profile record is the single source of truth the model description's
+value-reference table is checked against. Model-specific metadata (the concrete
+dimensions and the per-model value references) stays as authored.
+
+Adding a new kernel profile now supplies a `Profile` value, a `ProfileCertInputs`
+value, a `ProfileBuildInputs` value, one behavioral contract discharge and its
+own semantics only: no new family-contract proof, no new reserved-record factory
+printability proof, and no new certificate metaprogram, render plan or build
+driver. The one remaining per-profile clone is the call policy's accepted-callee
+disjunction chain (`acceptedT`/`acceptedC`), which the profile record's
+`extraCallees` field is meant to replace; that unification is deferred so the
+call-policy modules can be edited independently.
+
 ### Parameter coverage and actual call entry
 
 The follow-on increment adds all adjusted pointer spellings missing in the
