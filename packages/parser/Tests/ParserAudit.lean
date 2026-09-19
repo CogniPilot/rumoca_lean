@@ -128,6 +128,9 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Safety.run_safe
 #audit axioms Parser.LALR.Safety.validated_run_safe
 #audit axioms Parser.LALR.Safety.validated_parse_safe
+#audit axioms Parser.LALR.Safety.popStates_eq
+#audit axioms Parser.LALR.Safety.gotoMask_eq
+#audit axioms Parser.LALR.Safety.rowsToMask_char
 #audit axioms Parser.LALR.RuntimeProofs.step_effect
 #audit axioms Parser.LALR.RuntimeProofs.Effect.preserves
 #audit axioms Parser.LALR.RuntimeProofs.Effect.accepts
