@@ -1,5 +1,34 @@
 # Development handoff — 2026-09-22
 
+## Signed parser resource repair integrated — owner passed; full gate next
+
+Fuel.nonterminals is Array Int; only the valid-tree start allowance uses toNat.
+All old universal Fuel/Progress proofs recheck with unchanged contracts. Three
+new audited roots:repeat_iff/named_repeat_iff/nonnegative_named_repeat_impossible.
+Generator retains the legacy nonnegative search; generateSignedBudgetAt supplies
+a bounded heuristic fallback. Resources preserves old state retries, then
+recomputes signed grammar/state candidates at each larger token allowance.
+No search-completeness claim or production import cycles.
+
+Owner23431 terminal0:1553jobs/312completewhitelist reports/all3newroots.
+Actual generator cmp/diff of both production umbrella/split directories passed
+byte-for-byte under build/galec-signed-budget-draft/{modelica,galec}.
+Existing tests/lalr.sh now uses named repetition and nonvacuous negative-credit
+corruption. Reviewer found the selector omitted `noncomputable`; main fixed it.
+The required full gate must run for this change; no grammar/admission/emitter
+or artifact-contract changes. The a7b854a gate below does not cover this edit.
+
+Prospective loop grammar generation V3 succeeds (603canonical/183LALR states),
+but standalone kernel check14433 reported unresolved item-closure normalization
+at nullable lookaheads (List.mergeSort in firstSequence/lookaheads is a lead,
+not a proved diagnosis). Main stopped this already-failing scratch check to
+avoid further resource use; terminal143 is NOT a certificate pass. No full
+gate was interrupted. Do not poll/restart14433;
+do not treat candidate validator success as a kernel certificate. Logs:
+build/galec-loop-grammar-draft/{generate-v3,kernel-v1}.log.
+Generic resource fix is independently checked; larger grammar/AST integration
+and actual-body/artifact work remain. No GJ01/GJ03/N01 finding closes.
+
 ## Typed bodies full gate passed; reusable parser resource repair next
 
 Implementation `a7b854a` (including `c9843b1`) passed full gate92788 and

@@ -1,22 +1,46 @@
 import Parser.LALR.Completeness
 
 /-! A grammar-level certificate for a linear fuel bound on valid words.
-Nonterminal credits account for unit/empty productions, so the bound does not
-assume that every reduction consumes a token. Candidate credits have no proof
+Signed nonterminal credits account for unit/empty productions and token
+allowances carried by named phrases. The bound does not assume that every
+reduction consumes a token. Candidate credits have no proof
 authority; every production must satisfy the checked inequality. -/
 namespace Parser.LALR.Fuel
 
 structure Budget where
   perToken : Nat
-  nonterminals : Array Nat
+  nonterminals : Array Int
   deriving Repr
 
 def Budget.weight (b : Budget) : Atom → Int
   | .terminal _ => (b.perToken : Int) - 1
-  | .nonterminal n => -((b.nonterminals[n]?.getD 0 : Nat) : Int)
+  | .nonterminal n => -(b.nonterminals[n]?.getD 0)
 
 def RuleOK (b : Budget) (p : Production) : Prop :=
   1 + b.weight (.nonterminal p.input) ≤ (p.output.map b.weight).sum
+
+/-- A repeated phrase pays for its reduction independently of the recursive
+nonterminal's credit. This includes phrases represented by named rules. -/
+theorem repeat_iff (b : Budget) (n : Nat) (body : List Atom) :
+    RuleOK b ⟨n, body ++ [.nonterminal n]⟩ ↔ 1 ≤ (body.map b.weight).sum := by
+  simp only [RuleOK, List.map_append, List.map_singleton, List.sum_append,
+    List.sum_singleton]
+  omega
+
+/-- Named repetition requires a positive symbol weight, hence a negative
+credit. Restricting credits to Nat excludes this ordinary grammar form. -/
+theorem named_repeat_iff (b : Budget) (n body : Nat) :
+    RuleOK b ⟨n, [.nonterminal body, .nonterminal n]⟩ ↔
+      b.nonterminals[body]?.getD 0 ≤ -1 := by
+  simp only [RuleOK, List.map_cons, List.map_nil, List.sum_cons, List.sum_nil,
+    Budget.weight]
+  omega
+
+theorem nonnegative_named_repeat_impossible (b : Budget) (n body : Nat)
+    (nonnegative : 0 ≤ b.nonterminals[body]?.getD 0) :
+    ¬ RuleOK b ⟨n, [.nonterminal body, .nonterminal n]⟩ := by
+  rw [named_repeat_iff]
+  omega
 
 def Conditions (g : Grammar) (b : Budget) : Prop :=
   0 < b.perToken ∧ b.nonterminals.size = g.nonterminals ∧
@@ -72,7 +96,7 @@ theorem tree_bound (checked : validate g b = true) (tree : Tree) :
     omega
 
 def bound (g : Grammar) (b : Budget) (input : List Nat) : Nat :=
-  b.perToken * input.length + b.nonterminals[g.start]?.getD 0 + 1
+  b.perToken * input.length + (b.nonterminals[g.start]?.getD 0).toNat + 1
 
 theorem sufficient (checked : validate g b = true) (tree : Tree)
     (valid : tree.valid g = true) (start : tree.symbol = .nonterminal g.start) :

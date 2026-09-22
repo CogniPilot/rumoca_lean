@@ -193,9 +193,25 @@ def generateBudget (g : Grammar) (attempts : Nat := 20) : Except String Fuel.Bud
         let required := (1 - (p.output.map budget.weight).sum).toNat
         let old := budget.nonterminals[p.input]?.getD 0
         budget := { budget with nonterminals :=
-          budget.nonterminals.setIfInBounds p.input (max old required) }
+          budget.nonterminals.setIfInBounds p.input (max old (required : Int)) }
       if Fuel.validate g budget then return budget
     perToken := perToken * 2
   throw "linear parsing budget search exhausted its bound"
+
+/-- Bounded signed-credit candidate search at a fixed token allowance.
+Named phrases can retain token credit. Failure is only search exhaustion,
+not grammar infeasibility. The sweep bound and initial floor are heuristics;
+success still requires the independent validator and emitted kernel proof. -/
+def generateSignedBudgetAt (g : Grammar) (perToken : Nat) : Option Fuel.Budget := Id.run do
+  let mut budget : Fuel.Budget :=
+    ⟨perToken, Array.replicate g.nonterminals (-(perToken : Int))⟩
+  for _ in [:g.nonterminals + 1] do
+    for p in g.productions do
+      let required := 1 - (p.output.map budget.weight).sum
+      let old := budget.nonterminals[p.input]?.getD 0
+      budget := { budget with nonterminals :=
+        budget.nonterminals.setIfInBounds p.input (max old required) }
+    if Fuel.validate g budget then return some budget
+  return none
 
 end Parser.LALR

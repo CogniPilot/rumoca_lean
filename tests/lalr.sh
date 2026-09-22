@@ -18,7 +18,9 @@ diff -r "$task_tmp/Modelica" packages/modelica-parser/ModelicaParser/Generated
 
 # Readable recursive EBNF, emitted Lean tables, and kernel execution of those
 # actual tables. The emitted completeness consequence quantifies over all words.
-printf '%s\n' "s : '(' s ')' s | '';" > "$task_tmp/recursive.ebnf"
+# Named repetition requires signed nonterminal credits. Keep the existing
+# recursive native/mutation boundary, now exercising this generic mechanism.
+printf '%s\n' 's = { item }; item = "(", s, ")";' > "$task_tmp/recursive.ebnf"
 # Single-file mode keeps every certificate group in one module so `lake env lean`
 # and the `sed` mutation controls below act on one standalone file.
 "$generator" --single "$task_tmp/recursive.ebnf" "$task_tmp/Recursive.lean"
@@ -152,6 +154,17 @@ if lake env lean "$task_tmp/BadFuel.lean" > "$task_tmp/bad-fuel.log" 2>&1; then
 fi
 rg -q 'fuel_eq.*sorryAx' "$task_tmp/bad-fuel.log"
 rg -q 'accepts_iff_parse_bounded.*sorryAx' "$task_tmp/bad-fuel.log"
+
+# Named-body token credit is checked, not an unchecked generator annotation.
+sed '/^noncomputable def fuelBudget /s/-[0-9][0-9]*/0/g' \
+  "$task_tmp/Recursive.lean" > "$task_tmp/BadSignedCredit.lean"
+if cmp -s "$task_tmp/Recursive.lean" "$task_tmp/BadSignedCredit.lean"; then
+  echo 'signed-credit mutation did not change the generated budget' >&2; exit 1
+fi
+if lake env lean "$task_tmp/BadSignedCredit.lean" > "$task_tmp/bad-signed-credit.log" 2>&1; then
+  echo 'corrupted signed credits passed their budget certificate' >&2; exit 1
+fi
+rg -q 'budget_checked.*sorryAx' "$task_tmp/bad-signed-credit.log"
 
 # Keep table proofs intact while corrupting only the source-to-CFG witness.
 # This must invalidate the composed source parser contract itself.

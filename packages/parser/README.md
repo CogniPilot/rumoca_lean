@@ -41,6 +41,16 @@ their proofs and a `parse_correct` contract tied to its actual `parse` entry
 point, with a separate `parsed_tree` guarantee. Only two scalar budget
 coefficients are used at runtime; credit arrays are proof-only metadata.
 
+Nonterminal credits are signed: a named token-consuming phrase can carry a
+positive weight into a repetition rule. `Fuel.repeat_iff` and
+`named_repeat_iff` characterize this requirement universally; nonnegative-only
+credits cannot certify named repetition. Existing tree-bound and all-input
+progress theorems retain their contracts. Candidate discovery preserves the
+old nonnegative search first, then retries both signed grammar and state
+credits. Search is bounded and heuristic; failure is a preprocessing error,
+not a syntax rejection or a proof that no certificate exists. Every success
+still needs the independent validators and generated kernel proofs.
+
 `EBNF.Derives` gives independent recursive expression semantics. A finite
 structural witness accounts for every source branch and every actual CFG rule;
 `Frontend.lower_correct` and `compile_correct` prove language preservation for

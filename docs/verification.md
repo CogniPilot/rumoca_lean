@@ -1,5 +1,30 @@
 # Exact verification contract
 
+**Signed LALR resource credits (owner passed; full gate pending):**
+The reusable parser can now carry positive symbol weights through named
+token-consuming rules. Three universal lemmas characterize repetition and
+the old nonnegative-credit obstruction. The existing valid-tree bound,
+all-input termination, safety and membership equivalence retain their premises
+and guarantees; no validator or axiom policy is weakened. Runtime fuel still
+uses only token allowance and state-credit ceiling. The old resource search
+is tried first; bounded signed fallback recomputes grammar and state credits
+on every attempt, without claiming search completeness.
+
+Owner `lake build check-parser parser/lalrgen` passed 1,553 jobs and 312
+complete whitelisted reports, including all three new roots. Actual generation
+and full directory comparisons preserve both production grammars' generated
+bytes. Independent review found one mutation-selector bug, corrected before
+the required full gate; no semantic weakening was found. Existing recursive
+native/mutation checks now use a named repeated body and nonvacuously corrupt
+its negative credits. Their gate remains pending. Evidence:
+`build/galec-signed-budget-owner-v1.*` and production regeneration under
+`build/galec-signed-budget-draft/{modelica,galec}/`.
+No production grammar, accepted source, emitted algorithm/C or artifact
+contract changes. A larger prospective loop grammar's separate scratch
+certificate check has unresolved item-closure normalization errors; it is
+not a checked grammar or production cutover. The full gate below certifies
+the preceding `a7b854a`, not this newer parser change.
+
 **Typed square/Jacobian loop bodies (combined full gate passed):**
 Concrete pointwise and clear-then-scatter bodies now execute through the typed
 statement semantics. The complete square body has exact partial finite

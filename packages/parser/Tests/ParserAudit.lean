@@ -178,6 +178,9 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Completeness.parse_complete
 #audit axioms Parser.LALR.Completeness.accepts_iff_parse
 #audit axioms Parser.LALR.Fuel.validate_iff
+#audit axioms Parser.LALR.Fuel.repeat_iff
+#audit axioms Parser.LALR.Fuel.named_repeat_iff
+#audit axioms Parser.LALR.Fuel.nonnegative_named_repeat_impossible
 #audit axioms Parser.LALR.Fuel.tree_bound
 #audit axioms Parser.LALR.Fuel.sufficient
 #audit axioms Parser.LALR.parse_more_fuel

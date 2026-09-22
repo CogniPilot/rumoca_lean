@@ -12,6 +12,21 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Signed parser resource prerequisite — 2026-09-22; stage OPEN
+
+The generic LALR budget now permits signed nonterminal credits, with the same
+independent rule/edge validators and universal valid-tree/all-input bounds.
+Three repetition lemmas prove why named repeated bodies require negative
+credits. Legacy successful search is preserved; bounded fallback retries both
+credit sets and makes no discovery-completeness claim. Owner1553jobs/312reports
+and all3roots pass the unchanged whitelist. Actual regeneration leaves both
+production grammars' complete generated directories byte-identical. Independent
+review's mutation-selector finding is corrected; full integration gate pending.
+No source grammar, admission, numerical semantics, emitter or artifact-contract
+change; the whole-subset review below remains applicable. The scratch larger
+loop grammar has unresolved item-closure certificate normalization, not a new
+production guarantee. All R1–R5 and GJ01/GJ03/N01/MISRA/native limits remain.
+
 ### Prospective indexed-loop GALEC repair — 2026-09-22; stage OPEN
 
 Adopted from the independently reviewed prospective draft; main checked the
