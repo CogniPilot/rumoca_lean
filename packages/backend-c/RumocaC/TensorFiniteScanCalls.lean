@@ -50,7 +50,7 @@ theorem body_field_free : CDeclaredMembers.FieldFree.AdmittedBody function.body 
   simp [CDeclaredMembers.FieldFree.AdmittedBody, CDeclaredMembers.FieldFree.body,
     CDeclaredMembers.FieldFree.expressions, CDeclaredMembers.FieldFree.sites,
     CDeclaredMembers.FieldFree.expression, CDeclaredMembers.FieldFree.argumentList,
-    function, iteration, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep]
+    function, iteration, iterationFor, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep]
 
 theorem call_reaches (declarations : CDeclaredMembers.Declarations)
     (objects : CDeclaredMembers.Objects) (p : CCalls.Program)

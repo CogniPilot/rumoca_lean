@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 mkdir -p build/tensor-c
 
 lake env lean --run packages/backend-c/Tests/EmitTensor.lean build/tensor-c
-for operation in add mul sub div fill diagonal finite; do
+for operation in add mul sub div fill diagonal finite product_finite; do
   cat > "build/tensor-c/Check-$operation.lean" <<EOF
 import RumocaC.TensorArtifactCheck
 verify_tensor_helper "build/tensor-c/$operation.c" as $operation
@@ -47,6 +47,17 @@ if lake env lean build/tensor-c/Reject-finite.lean > build/tensor-c/finite-rejec
 fi
 rg -q 'actual tensor C file differs' build/tensor-c/finite-rejection.log
 
+sed 's/left\[k\] \* right\[k\]/left[k] + right[k]/' build/tensor-c/product_finite.c > build/tensor-c/corrupt-product_finite.c
+cat > build/tensor-c/Reject-product_finite.lean <<'LEAN'
+import RumocaC.TensorArtifactCheck
+verify_tensor_helper "build/tensor-c/corrupt-product_finite.c" as product_finite
+LEAN
+if lake env lean build/tensor-c/Reject-product_finite.lean > build/tensor-c/product_finite-rejection.log 2>&1; then
+  echo 'corrupted tensor product preflight passed its actual-file contract' >&2
+  exit 1
+fi
+rg -q 'actual tensor C file differs' build/tensor-c/product_finite-rejection.log
+
 # Change one operation in the complete IVP; other members remain valid.
 mkdir -p build/tensor-c/corrupt-ivp
 cp build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian-diag.c build/tensor-c/corrupt-ivp/
@@ -67,7 +78,7 @@ rg -q 'actual tensor IVP differs' build/tensor-c/ivp-rejection.log
   -Wno-unused-parameter -include packages/backend-c/Tests/tensor-native.h \
   build/tensor-c/add.c build/tensor-c/mul.c build/tensor-c/sub.c build/tensor-c/div.c \
   build/tensor-c/fill.c build/tensor-c/diagonal.c \
-  build/tensor-c/finite.c \
+  build/tensor-c/finite.c build/tensor-c/product_finite.c \
   build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian.c \
   build/tensor-c/jacobian-diag.c \
   packages/backend-c/Tests/tensor-native.c -lm -o build/tensor-c/native

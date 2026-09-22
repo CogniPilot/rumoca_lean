@@ -12,6 +12,7 @@ void rumoca_tensor_div(const double *left, const double *right, double *out, siz
 void rumoca_tensor_fill(double value, double *out, size_t count);
 void rumoca_tensor_diagonal(const double *coeff, double *out, size_t count, size_t cells);
 int32_t rumoca_tensor_all_finite(const double *values, size_t count);
+int32_t rumoca_tensor_mul_finite(const double *left, const double *right, size_t count);
 void rumoca_square_jacobian(const double *x, const double *u,
     double *zero, double *one, double *primal, double *left, double *right,
     double *result, size_t count, double *J, size_t cells);

@@ -96,6 +96,21 @@ int main(void) {
 
 ## Closure criteria and next implementation
 
+Read-only product preflight now has owner-checked Lean proofs and an actual-file
+contract (`RumocaC.TensorProductPreflightContract`). It computes into one scalar
+local, classifies the product immediately, and returns Solve's exact finiteness
+decision with the entire heap unchanged. This is needed to preserve FMI instance
+state on numerical Discard without tightening existing caller-buffer aliasing
+premises. Public-method invocation, logging/status behavior and production
+artifact linkage remain to be implemented; N01 is not closed. The required full
+gate passed (exit 0, observed 2026-09-22 at 11:09 UTC), with 2,464 frozen inputs,
+7,711 permitted printed axiom reports, all 14 new roots and four retained FMU
+roots checked. Existing actual-helper/native/mutation and FMI/eFMI checks passed;
+bounded independent review found no issue. See `build/tensor-preflight-full-gate-v1.log`.
+The scalar initializer is not itself a dead-code candidate under MISRA C:2025
+Rule 2.2, Notes 3 (printed p. 43); this narrow check does not close the other
+coding-guideline or integration obligations.
+
 1. Specify numerical outcomes and detection in the prepared Solve/algorithm
    contract, retaining tensor shape and the independent real refinement on
    successful finite results. Do not weaken finite contracts or reinterpret

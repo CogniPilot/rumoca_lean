@@ -6,9 +6,11 @@ extents; there is one return and no allocation or tensor scalarization. -/
 namespace Rumoca.CTensor.FiniteScan
 open CTree
 
-def iteration : List Stmt :=
-  [.branch (.not (.call (.id "isfinite") [indexed "values"]))
+def iterationFor (value : Expr) : List Stmt :=
+  [.branch (.not (.call (.id "isfinite") [value]))
     [.assign (.id "valid") (.nat 0)] []]
+
+def iteration : List Stmt := iterationFor (indexed "values")
 
 def function : Function where
   signature := ⟨"int32_t", "rumoca_tensor_all_finite",

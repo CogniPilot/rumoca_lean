@@ -1,5 +1,41 @@
 # Exact verification contract
 
+**Read-only tensor product preflight (full gate passed):**
+
+The shared C backend now has a reusable counted-expression finiteness proof
+and a multiplication preflight. Each iteration computes into one scalar local
+and immediately classifies it; no tensor scratch buffer or element enumeration
+is introduced. On finite input encodings, the canonical contextual C call
+returns exactly Solve's encoded product classifier and preserves the entire
+heap, without writable-storage or input-separation assumptions. Empty inputs
+may be null. The independent finite-product domain and square specialization
+give the old finite Solve execution boundary and a real overflow witness.
+
+The fixed actual-file checker requires emitted bytes, independent token syntax,
+call execution, unique behavior and those numerical characterizations together.
+The existing helper integration script now checks the new file, rejects a
+changed arithmetic operator and exercises native overflow/underflow, aliasing,
+empty-input and byte-preservation boundaries. Owner checks passed 2,155 jobs;
+all 29 printed axiom reports, including 14 new roots and the existing scanner
+roots, passed the unchanged whitelist. Evidence:
+`build/tensor-preflight-owner-v7.log`. The old scanner's bytes and theorem
+statements are retained. Bounded independent review found no issues. The required
+`nix develop .#verification --command lake test` passed (exit 0, observed
+2026-09-22 at 11:09 UTC), with all 2,464 frozen input hashes unchanged. All
+7,711 printed axiom reports (wrapped lists included), all 14 new roots and four
+retained FMU roots passed the unchanged whitelist. All three FMI matrices passed
+75 functions and 526 cells each with zero discrepancies; actual-helper mutation
+rejection/native checks and scalar/tensor eFMI artifact checks passed. Evidence:
+`build/tensor-preflight-full-gate-v1.log`. Only three evidence documents changed
+after the frozen gate. Existing warnings remain; none occurred in the new
+modules in the final owner build.
+
+This prepares the state-preserving FMI numerical-failure path; production
+methods do not yet invoke it. Source admission, grammar and public failure
+policy are unchanged. Floating exception flags/traps, native correspondence,
+public status/logging composition, CS Euler overflow, N01, K02–K05 and MISRA
+closure remain open. No grammar expansion is authorized by this helper result.
+
 **Total prepared tensor RHS outcomes (full gate passed):**
 
 The prepared square RHS wrapper now has a total finite-input execution proof,

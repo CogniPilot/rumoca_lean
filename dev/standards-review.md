@@ -12,6 +12,27 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Read-only tensor product preflight (2026-09-22; full gate passed):**
+No grammar/admission or production-interface expansion. The N01 review's pinned
+MLS finite-real distinction, eFMI Beta 1 overflow/signal constraints, FMI 3.0.2
+§2.2.4 instance-preservation requirement and §3.2.1 numerical-failure note,
+and MISRA C:2025 Dir 4.15 remain applicable and unresolved. A new shared helper
+checks each product before any instance write, using a scalar local and the
+existing C arithmetic rules. Its universal call theorem preserves the entire
+heap and permits input aliasing and null zero-length inputs. The actual helper
+contract includes syntax, execution and independent numerical characterization.
+Owner/audit checks and bounded independent review passed. The required full gate
+passed with all 2,464 frozen inputs unchanged, all 7,711 permitted printed axiom
+reports, all 14 new roots and four permitted retained FMU roots. All three FMI
+matrices, helper actual-byte/mutation/native checks and scalar/tensor eFMI checks
+passed. Evidence: `build/tensor-preflight-full-gate-v1.log`. A focused check of
+MISRA C:2025 Rule 2.2, printed p. 43, Notes 3, confirms that initialization is
+excluded from dead-code candidates; the scalar sample initializer alone is not
+a new finding under that rule. This is not an all-rule compliance review. This is
+a prerequisite for public failure handling, not proof that FMI/eFMI methods
+perform detection. All-path detection/consumer composition, logging/status
+policy and the other open findings continue to block grammar expansion.
+
 **Total prepared tensor RHS outcomes (2026-09-22; full gate passed):**
 No source grammar/admission, emitted C, GALEC text or interface-policy expansion.
 The pinned MLS 3.7 finite-real derivative distinction, eFMI Beta 1 §3.2.5 §2

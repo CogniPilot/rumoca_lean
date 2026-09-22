@@ -25,7 +25,7 @@ def tokens : List Token :=
 def Denotes (source : String) : Prop := Scanner.Lexes config source.toList tokens
 
 macro "tensor_expand_finite_scan_printer" : tactic => `(tactic|
-  simp [FiniteScan.function, FiniteScan.iteration, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep,
+  simp [FiniteScan.function, FiniteScan.iteration, FiniteScan.iterationFor, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep,
     CTree.Function.render, CTree.Signature.render, CTree.Parameter.render,
     CTree.Stmt.render, CTree.Expr.render, CTree.BinOp.render])
 

@@ -95,21 +95,21 @@ def localTypes : CLoops.Types :=
 
 variable [interface : CInterface]
 
-theorem iteration_reaches (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
+theorem iterationFor_reaches (value : Expr) (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
     (rest : List Stmt) (bits : BitVec 64) (before : Bool)
-    (loaded : CBody.eval env heap (indexed "values") = some (.float64 bits))
+    (loaded : CBody.eval env heap value = some (.float64 bits))
     (flag : env "valid" = some (CBody.boolean before))
     (typed : types "valid" = some .int32) :
     Transition.Reaches CLoops.machine.step
-      (.running (iteration ++ rest) env types heap)
+      (.running (iterationFor value ++ rest) env types heap)
       (.running rest (CBody.bind env "valid" (CBody.boolean (before && Float64.finiteBits bits)))
         types heap) := by
   have classified := CMemory.Value.isFinite_bits bits
   cases finite : Float64.finiteBits bits with
   | false =>
-    have branch : CLoops.next (.running (iteration ++ rest) env types heap) =
+    have branch : CLoops.next (.running (iterationFor value ++ rest) env types heap) =
         some (.running (.assign (.id "valid") (.nat 0) :: rest) env types heap) := by
-      simp [iteration, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      simp [iterationFor, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
         CLoops.noDeclarations, CBody.eval, CBody.evalWith, loaded, classified, finite,
         CBody.boolean, Value.truth]
     have assigned := CLoops.assign_local env types heap "valid" (.nat 0) rest
@@ -122,13 +122,24 @@ theorem iteration_reaches (env : CBody.Locals) (types : CLoops.Types) (heap : He
       by_cases same : name = "valid"
       · subst name; simp [CBody.bind, flag]
       · simp [CBody.bind, same]
-    have branch : CLoops.next (.running (iteration ++ rest) env types heap) =
+    have branch : CLoops.next (.running (iterationFor value ++ rest) env types heap) =
         some (.running rest env types heap) := by
-      simp [iteration, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      simp [iterationFor, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
         CLoops.noDeclarations, CBody.eval, CBody.evalWith, loaded, classified, finite,
         CBody.boolean, Value.truth]
     rw [Bool.and_true, unchanged]
     exact .next branch (.refl _)
+
+theorem iteration_reaches (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
+    (rest : List Stmt) (bits : BitVec 64) (before : Bool)
+    (loaded : CBody.eval env heap (indexed "values") = some (.float64 bits))
+    (flag : env "valid" = some (CBody.boolean before))
+    (typed : types "valid" = some .int32) :
+    Transition.Reaches CLoops.machine.step
+      (.running (iteration ++ rest) env types heap)
+      (.running rest (CBody.bind env "valid" (CBody.boolean (before && Float64.finiteBits bits)))
+        types heap) :=
+  iterationFor_reaches (indexed "values") env types heap rest bits before loaded flag typed
 
 theorem function_reaches (input : Option Address) (values : Bits shape) (heap : Heap)
     (readable : Readable heap input values) (bounded : shape.volume < 2 ^ 64)
@@ -147,7 +158,7 @@ theorem function_reaches (input : Option Address) (values : Bits shape) (heap : 
     (by simp [locals, CBody.bind, parameters]) size_type
   have loop := CLoops.loop_reaches "k" (.id "count") iteration [.ret (some (.id "valid"))]
     (locals input values) localTypes (fun _ => heap) shape.volume
-    (by simp [localTypes, CLoops.bindType]) bounded (by simp [iteration, CLoops.noDeclarations])
+    (by simp [localTypes, CLoops.bindType]) bounded (by simp [iteration, iterationFor, CLoops.noDeclarations])
     (by
       intro i _
       simp [CBody.eval, CBody.evalWith, CBody.resolve, CLoops.counterEnv, CBody.bind,

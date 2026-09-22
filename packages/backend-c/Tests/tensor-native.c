@@ -51,6 +51,24 @@ int main(void) {
   memcpy(guarded_before, guarded, sizeof guarded_before);
   assert(rumoca_tensor_all_finite(guarded + 1, 4) == 0);
   assert(memcmp(guarded_before, guarded, sizeof guarded_before) == 0);
+  /* Read-only operation preflight: inputs can alias, including at overflow.
+     Exception flags/traps are outside the heap-preservation theorem. */
+  assert(rumoca_tensor_mul_finite(NULL, NULL, 0) == 1);
+  const double product_left[6] = {17.0, 0.0, -0.0, DBL_TRUE_MIN, DBL_MAX, 19.0};
+  const double product_right[6] = {23.0, -DBL_MAX, DBL_MAX, 0.5, 0.5, 29.0};
+  uint64_t left_before[6], right_before[6];
+  memcpy(left_before, product_left, sizeof left_before);
+  memcpy(right_before, product_right, sizeof right_before);
+  assert(rumoca_tensor_mul_finite(product_left + 1, product_right + 1, 4) == 1);
+  assert(memcmp(left_before, product_left, sizeof left_before) == 0);
+  assert(memcmp(right_before, product_right, sizeof right_before) == 0);
+  assert(rumoca_tensor_mul_finite(product_left + 1, product_left + 1, 4) == 0);
+  assert(memcmp(left_before, product_left, sizeof left_before) == 0);
+  const double overflow_left[4] = {DBL_MAX, 1.0, 2.0, -DBL_MAX};
+  const double overflow_right[4] = {-2.0, 1.0, 1.0, -2.0};
+  assert(rumoca_tensor_mul_finite(overflow_left, overflow_right, 1) == 0);
+  assert(rumoca_tensor_mul_finite(overflow_left + 1, overflow_right + 1, 3) == 0);
+  assert(rumoca_tensor_mul_finite(overflow_left + 1, overflow_right + 1, 2) == 1);
   const double input[2] = {2.0, 3.0};
   double output[4] = {17.0, 0.0, 0.0, 19.0};
   rumoca_tensor_fill(-0.0, output + 1, 2);
