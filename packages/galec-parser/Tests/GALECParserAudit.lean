@@ -1,6 +1,8 @@
 import GALECParser
 import GALECParser.GrammarProofs
 import GALECParser.ScannerProofs
+import GALECParser.StructuralParser
+import GALECParser.SourceCompatibility
 import ProofAudit.Audit
 
 import GALECParser.LocatedCompleteness
@@ -52,3 +54,29 @@ import GALECParser.LocatedCompleteness
 #audit axioms Rumoca.GALEC.Generated.located_fuel
 #audit axioms Rumoca.GALEC.Generated.source_parseLocated_correct
 #audit axioms Rumoca.GALEC.Generated.parseLocated_erases
+
+#audit axioms Rumoca.GALEC.StructureBridge.total
+#audit axioms Rumoca.GALEC.StructureBridge.sound
+#audit axioms Rumoca.GALEC.StructureBridge.source_accepts_iff
+#audit axioms Rumoca.GALEC.StructureBridge.classifier_compatible
+#audit axioms Rumoca.GALEC.StructureBridge.syntax_sound
+#audit axioms Rumoca.GALEC.StructureBridge.parse_eq_build
+#audit axioms Rumoca.GALEC.StructureBridge.build_total
+#audit axioms Rumoca.GALEC.StructureBridge.build_sound
+#audit axioms Rumoca.GALEC.StructureBridge.root_valid
+#audit axioms Rumoca.GALEC.Structural.build_iff
+#audit axioms Rumoca.GALEC.Structural.build_total
+#audit axioms Rumoca.GALEC.Structural.build_sound
+#audit axioms Rumoca.GALEC.Structural.covered
+#audit axioms Rumoca.GALEC.Structural.licensed
+#audit axioms Rumoca.GALEC.Structural.program_total
+#audit axioms Rumoca.GALEC.Structural.program_domain
+#audit axioms Rumoca.GALEC.Structural.program_correct
+#audit axioms Rumoca.GALEC.ProfileProjection.scalar_retraction
+#audit axioms Rumoca.GALEC.ProfileProjection.tensor_retraction
+#audit axioms Rumoca.GALEC.ProfileProjection.scalar_projection_exact
+#audit axioms Rumoca.GALEC.ProfileProjection.tensor_projection_exact
+#audit axioms Rumoca.GALEC.ProfileProjection.scalar_projection_iff
+#audit axioms Rumoca.GALEC.ProfileProjection.tensor_projection_iff
+#audit axioms Rumoca.GALEC.Syntax.Compatibility.scalar_reference_exact
+#audit axioms Rumoca.GALEC.Syntax.Compatibility.tensor_reference_exact

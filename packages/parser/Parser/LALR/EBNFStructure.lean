@@ -361,6 +361,26 @@ inductive Valid (source : EBNF.Grammar) (symbol : α → Parser.Symbol) : Value 
   | manyCons (head : Valid source symbol x) (tail : Valid source symbol y)
       (same : y.expr = .many x.expr) : Valid source symbol (.manyCons x y)
 
+/-- Classifier transport is local to the actual retained payloads. -/
+theorem Valid.congr (h : Structure.Valid g f v)
+    (agree : ∀ t ∈ v.tokens, f t = k t) : Structure.Valid g k v := by
+  induction h with
+  | empty => exact .empty
+  | terminal same nonempty =>
+    exact .terminal ((agree _ (by simp [Structure.Value.tokens])).symm.trans same) nonempty
+  | named rule _ ih => exact .named rule (ih agree)
+  | seq _ _ ih ih' =>
+    exact .seq (ih (fun t ht => agree t (List.mem_append_left _ ht)))
+      (ih' (fun t ht => agree t (List.mem_append_right _ ht)))
+  | altLeft _ ih => exact .altLeft (ih agree)
+  | altRight _ ih => exact .altRight (ih agree)
+  | optionalEmpty => exact .optionalEmpty
+  | optionalSome _ ih => exact .optionalSome (ih agree)
+  | manyEmpty => exact .manyEmpty
+  | manyCons _ _ same ih ih' =>
+    exact .manyCons (ih (fun t ht => agree t (List.mem_append_left _ ht)))
+      (ih' (fun t ht => agree t (List.mem_append_right _ ht))) same
+
 theorem Valid.derives (h : Valid source symbol v) :
     EBNF.Derives source v.expr (v.tokens.map symbol) := by
   induction h with

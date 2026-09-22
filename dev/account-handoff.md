@@ -1,5 +1,28 @@
 # Development handoff — 2026-09-22
 
+## In progress: package-owned GALEC structural cutover
+
+The frontend AST, all nine typed rule bodies, exhaustive coverage/licensing,
+direct profile projections and actual-CST bridge/builder are now package-owned.
+Generic `Structure.Valid.congr` supplies payload-local classifier transport.
+The bridge does not import the source entrypoint, avoiding a cutover cycle.
+Proof-only noncomputable source references capture a11e030 behavior; baseline
+exact Except equalities passed before changing the public parser.
+The public source parser is still unchanged at this foundation checkpoint.
+Owner checks passed 823 jobs and 365 complete reports, including all 26 new roots,
+under the unchanged whitelist. Evidence: `build/galec-cutover-baseline-v1.log`
+and `.axioms`, `build/galec-cutover-foundation-roots.txt`. No full gate yet.
+
+Main is preparing `ProfileBuild.lean` (not checked yet; awaits ProfileSemantics).
+Ptolemy Astra `01a0c9d1-d6e5-7b63-abee-db60e05adda8` is active only under
+`build/galec-direct-profile-draft/`, proving direct generic-action Words/yield
+and arbitrary-tree profile equivalence without the superseded finite engine.
+Earlier scratch is frozen; main may edit tracked integration files.
+Next: integrate those proofs, change the two source entrypoints to consume
+their already accepted CST once, prove exact Except reference equality, audit,
+review and run the required full gate. No grammar or C changes are authorized
+by this cutover. Older terminal gate evidence follows.
+
 ## Latest full gate: recursive action engine passed
 
 `packages/parser/Parser/LALR/EBNFActions.lean` now owns typed recursive rule

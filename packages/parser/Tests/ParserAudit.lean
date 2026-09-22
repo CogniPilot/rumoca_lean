@@ -264,6 +264,7 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Frontend.Structure.read_total
 #audit axioms Parser.LALR.Frontend.Structure.applyRule_total
 #audit axioms Parser.LALR.Frontend.Structure.Valid.derives
+#audit axioms Parser.LALR.Frontend.Structure.Valid.congr
 #audit axioms Parser.LALR.Frontend.Structure.Reads.valid
 #audit axioms Parser.LALR.Frontend.Structure.Applies.valid
 #audit axioms Parser.LALR.Frontend.Structure.convert_iff
