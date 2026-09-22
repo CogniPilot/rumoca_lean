@@ -11,6 +11,10 @@ import Tests.CoreAudit.RumocaCore_FMI3_Initialization
 import Tests.CoreAudit.RumocaCore_FMI3_Lifecycle
 import Tests.CoreAudit.RumocaCore_FMI3_Time
 import Tests.CoreAudit.RumocaCore_GALEC_OriginLowering
+import Tests.CoreAudit.RumocaCore_GALEC_BoundedIteration
+import Tests.CoreAudit.RumocaCore_GALEC_TensorWrites
+import Tests.CoreAudit.RumocaCore_GALEC_CoefficientRealization
+import Tests.CoreAudit.RumocaCore_GALEC_SquareRealization
 import Tests.CoreAudit.RumocaCore_GALEC_OriginProofs
 import Tests.CoreAudit.RumocaCore_GALEC_Origins
 import Tests.CoreAudit.RumocaCore_GALEC_Protocol

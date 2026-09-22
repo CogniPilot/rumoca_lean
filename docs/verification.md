@@ -1,5 +1,16 @@
 # Exact verification contract
 
+**GALEC bounded tensor realization (semantic prerequisites; full gate pending):**
+Four new core modules supply universal bounded-loop/write correspondence,
+shape-preserving pointwise and diagonal execution, and proof-bearing prepared
+coefficient realization. The finite square instance reuses existing AD proofs,
+preserves exact encodings and retains the original primal-square domain.
+Independent scalar rounding and write relations compose to the prepared
+result. See [the scope and evidence record](../dev/galec-realization.md).
+No production grammar, accepted source case, emitter or artifact contract
+changes. GJ01/GJ03/N01 and other standards/native/MISRA findings remain open;
+the required full artifact gate is not yet claimed for these additions.
+
 **GJ02 declaration placement repair (full gate passed; positional finding closed):**
 
 Implementation `4371eb3` passed the required

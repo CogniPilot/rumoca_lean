@@ -12,6 +12,20 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### GJ01/GJ03 semantic preparation — 2026-09-22; stage OPEN
+
+New core loop, shaped-write and prepared-coefficient realization proofs are
+prerequisites only; see [galec-realization.md](galec-realization.md). MLS 3.7,
+FMI 3.0.2 ME/CS and eFMI 1.0.0 Beta 1 admitted profiles, grammar and artifacts
+are unchanged. All findings from the last whole-subset review carry forward.
+Finite scalar execution retains the source primal-square domain and does not
+pretend that ordinary GALEC Real overflow automatically raises a signal.
+Mathematical bounds and zero-volume proofs do not settle G-3 surface ranges,
+index conversions, Integer representability or zero-extent licensing.
+No MISRA or native-machine claim changes; numerical C is not edited.
+The full recurring checklist must be completed before the subsequent repair
+grammar expansion. GJ01/GJ03/N01 are not closed by these semantic prerequisites.
+
 ### GJ02 repair review — 2026-09-22, positional finding closed; stage OPEN
 
 Implementation `4371eb3` passed the required full gate V1 (exit0), with all

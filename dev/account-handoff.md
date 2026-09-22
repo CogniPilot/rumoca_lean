@@ -1,5 +1,32 @@
 # Development handoff — 2026-09-22
 
+## GALEC tensor realization prerequisites — owner passed; full gate next
+
+Four core modules plus per-module audits now prove bounded/guarded iteration,
+shaped writes, pointwise/diagonal realization and the prepared square instance.
+See `dev/galec-realization.md` for exact quantifiers and limits. All 66 new
+declarations audited; owner V5 passed 2290jobs/478complete reports under the
+unchanged whitelist, no new-module warnings. Independent Astra review found
+no issue; it did not run duplicate builds. V1/V2/V4 failed elaboration, V3
+passed an earlier diagonal-only integration; only V5 covers final additions.
+The earlier TensorWrites V3 failed and V4 passed before this integration.
+
+Ptolemy's coefficient scratch was reviewed and integrated into the core. Both
+agents are complete; no scratch result is treated as artifact evidence.
+New `square_rhs_loop_iff` preserves finite multiplication exactly;
+`square_materializes_from_rhs` supplies finite coefficient domains from the
+original RHS while preserving the retained primal-square condition. Shapes
+and signed zeros are not weakened. No grammar/emitter/admission change.
+GJ01/GJ03/N01 and other standards/native/MISRA findings remain open.
+
+Next run the required full gate on the frozen implementation, audit all66
+new roots and retained FMU roots, compare actual scalar/tensor Algorithm Code
+and Production C against `build/galec-realization-before-members.sha256`.
+Post-check orchestration is `build/audit-galec-realization-v1.sh`; owner logs
+are `build/galec-realization-owner-v5.*`. Gate status must be revalidated from
+the actual process/exit files before restarting anything. The full gate has
+not yet been claimed for this checkpoint.
+
 ## GJ02 positional repair fully gated and closed — GJ01/GJ03 next
 
 Implementation4371eb3 passed the required full gate V1. Shell3446 and post-
