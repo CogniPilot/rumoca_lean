@@ -1,5 +1,42 @@
 # Development handoff — 2026-09-22
 
+## Typed loop bodies/source composition — owner passed; combined full gate next
+
+Seven new core modules: StoreIteration, CoefficientTerms, VectorBodies,
+MatrixClear, MatrixBodies, VectorDiagonal, SquareBodies. Existing Environment
+adds update_self/twice; BoundedIteration adds shape-preserving bound reindexing;
+TensorWrites factors scatter induction into scatterWith, preserving every old
+public statement. CoefficientRealization adds explicit beta reduction only.
+See dev/galec-realization.md for quantifiers and limits.
+
+SquareBodies.body_executes binds the whole typed body to the ORIGINAL finite
+square RHS plus an exact two-update finalEnv. Coefficient domains follow from
+existing square_from_finite_rhs; no omitted primal condition or extra caller
+addition premise. body_outputs preserves finite RHS, exact prepared AD matrix
+at rank-aware coordinates, and every unrelated binding. Ordinary partial
+failure/signals and native/parsed/artifact semantics are not claimed here.
+
+Owner V1/session38505 TERMINAL exit0:2312jobs/584completewhitelist reports,
+all62new+44prior roots present, no new-module warnings. Final independent Astra
+review found no semantic/adoption issue and reconciled all62new audit entries.
+Worker15root rectangular clear draft was reviewed/adopted; both agents closed.
+All earlier owner/component failures remain logged, not treated as passes.
+
+Next combined required full gate covers this change plus c9843b1. Frozen input
+and gate files use build/galec-typed-bodies-full-gate-v1.*; post checker is
+build/audit-galec-typed-bodies-v1.sh, requiring106roots, complete report audit,
+4retainedFMUroots and unchanged actual Algorithm/ProductionC member hashes.
+Revalidate the live tool session/process before restarting anything. Previous
+gate21657 and post98157 are terminal0 for8f9034b only. No grammar/emitter/source
+admission change; all open GJ01/GJ03/N01/standards/native/MISRA findings remain.
+
+After the combined gate: adopt build/galec-loop-stage-review-draft.md's
+whole-subset checklist into the recurring ledger BEFORE grammar changes, then
+implement generic indexed-reference/loop/dimension-query LALR syntax/actions,
+typed elaboration and actual parsed-body semantics through rendering/target/
+artifact contracts. No canonical token matcher or resolved-profile-only
+substitute for body execution. Actual outputs still contain old jacobian/.*.
+
 ## Typed coordinates/statements integrated — owner passed; realization next
 
 New modules: Tensor.Coordinates, Solve.Tensor.Environment, GALEC.IndexSyntax,

@@ -1,5 +1,59 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Typed loop bodies and prepared square composition — owner passed
+
+The concrete typed pointwise, nested rectangular-clear, diagonal-scatter and
+whole square/Jacobian bodies now instantiate the reusable statement semantics.
+They are parameterized by extents, typed input/output references, iterator
+contexts and arbitrary initial stores. Loop bodies are constructed once, not
+per tensor element. The pointwise/coefficient templates are explicitly rank
+one; clearing is rectangular rank two. No all-rank renderer is claimed.
+
+`StoreIteration` lifts arbitrary partial/nondeterministic tensor executions to
+the existing typed environment, with a sufficient and necessary whole-store
+frame. `CoefficientTerms` reifies the certified immutable expression into
+ordinary reads/operators without AD or arithmetic rewrites. `MatrixClear`
+proves exact row/nested prefixes and all-cell clearing; `MatrixBodies` connects
+the literal-only nested body to it without assuming scalar arithmetic total.
+`VectorBodies` proves exact finite execution of pointwise and scatter bodies;
+`VectorDiagonal` composes clearing/scattering, retaining every expression domain.
+
+`SquareBodies.body_executes` is an iff between the actual typed body execution
+and the original prepared square RHS finite execution plus the exact final
+two-update store. Existing `square_from_finite_rhs` supplies coefficient domains:
+the primal multiplication is not dropped merely because doubling is finite.
+`jacobian_value_prepared` relates each matrix coordinate to the actual
+AD-generated `DiagonalProgram.eval`, with a proved vector-coordinate bridge.
+`body_outputs` retains the finite RHS, prepared matrix and every unrelated
+binding. Vector and matrix destinations are distinct by rank, even at equal
+volume. Output equality is exact Binary64.Value equality, including signed zero;
+off-diagonal clearing uses positive zero. Evaluator equality alone is explicitly
+not a successful-execution or signal-handling claim.
+
+The old public `scatter_prefix` statement is unchanged: its induction proof is
+factored into the more general `scatterWith_prefix`, and the old theorem is a
+wrapper. Existing `scatter` execution remains definitionally the same. One
+dependent proof needs explicit beta reduction; no theorem or contract is weakened.
+Generic bound reindexing changes only a proved-equal Fin bound, not tensor shape.
+
+Owner V1 passed `lake build check-core` (2,312 jobs): 584 complete whitelisted
+reports, all 62 new roots plus all 44 preceding typed-statement roots, no
+new-module warnings. Independent Astra review found no semantic/adoption issue
+and reconciled the 62 new roots. The matrix-clear sidecar's 15 roots were checked
+and reviewed before adoption; main added independent loop-relation consequences.
+Evidence: `build/galec-typed-bodies-owner-v1.*`,
+`build/galec-typed-bodies-{new,required}-roots.txt`, and
+`build/galec-matrix-clear-draft/`. Earlier failed elaboration logs remain separate.
+
+The combined full gate is next. The earlier 8f9034b gate does not cover these
+changes or the c9843b1 statement addition. No grammar, emitter, production source
+case or actual-artifact contract has changed. Parsed/elaborated GALEC linkage,
+surface/target Integer bounds, signal/failure-state behavior, native aliasing
+and repaired artifact evidence remain open. Adopt the prepared recurring review
+before grammar edits, then connect these typed bodies through LALR actions,
+elaboration, rendering, target refinement and actual-file/archive contracts.
+GJ01/GJ03/N01 and all retained standards/MISRA findings remain open.
+
 ## Typed statement integration — owner passed; full repair gate pending
 
 The next core prerequisite adds four modules, without grammar, source

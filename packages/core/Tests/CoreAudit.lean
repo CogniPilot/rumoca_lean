@@ -12,6 +12,13 @@ import Tests.CoreAudit.RumocaCore_FMI3_Lifecycle
 import Tests.CoreAudit.RumocaCore_FMI3_Time
 import Tests.CoreAudit.RumocaCore_GALEC_OriginLowering
 import Tests.CoreAudit.RumocaCore_GALEC_BoundedIteration
+import Tests.CoreAudit.RumocaCore_GALEC_StoreIteration
+import Tests.CoreAudit.RumocaCore_GALEC_CoefficientTerms
+import Tests.CoreAudit.RumocaCore_GALEC_VectorBodies
+import Tests.CoreAudit.RumocaCore_GALEC_MatrixClear
+import Tests.CoreAudit.RumocaCore_GALEC_MatrixBodies
+import Tests.CoreAudit.RumocaCore_GALEC_VectorDiagonal
+import Tests.CoreAudit.RumocaCore_GALEC_SquareBodies
 import Tests.CoreAudit.RumocaCore_Tensor_Coordinates
 import Tests.CoreAudit.RumocaCore_Solve_Tensor_Environment
 import Tests.CoreAudit.RumocaCore_GALEC_IndexSyntax

@@ -75,4 +75,17 @@ theorem Env.update_correct (before : Env α context) (ref : Ref context shape) (
   · rintro rfl
     exact ⟨Env.update_same before ref value, fun other different => Env.update_other before ref value other different⟩
 
+theorem Env.update_self (env : Env α context) (ref : Ref context shape) :
+    @Env.update α context shape env ref (env ref) = @env :=
+  ((Env.update_correct env ref (env ref) env).mp ⟨rfl, fun _ _ => rfl⟩).symm
+
+theorem Env.update_twice (env : Env α context) (ref : Ref context shape)
+    (first second : Value α shape) :
+    @Env.update α context shape (Env.update env ref first) ref second =
+      @Env.update α context shape env ref second := by
+  apply ((Env.update_correct (Env.update env ref first) ref second (Env.update env ref second)).mp ?_).symm
+  exact ⟨Env.update_same env ref second, fun other different =>
+    (Env.update_other env ref second other different).trans
+      (Env.update_other env ref first other different).symm⟩
+
 end Rumoca.Solve.Tensor

@@ -95,27 +95,34 @@ theorem binary_correct (ops : ScalarOps α) (op : BinaryOp)
   exact (overwrite_get _ initial ⟨i, hi⟩).trans
     (op.eval_correct ops left right ⟨i, hi⟩).symm
 
+/-- Semantic diagonal iteration over an immutable coefficient interpretation.
+This function is not a callback-bearing IR; typed callers retain their input
+shapes and scalar expression syntax. -/
+def scatterWith (coefficients : Fin size → α)
+    (initial : Value α (matrixShape size size)) : Value α (matrixShape size size) :=
+  run (fun i state => write state (matrixIndex (i, i)) (coefficients i)) initial
+
 /-- Scatter one shaped coefficient vector along its square matrix diagonal.
 This executes a loop; it does not construct a list of scalar instructions. -/
 def scatter (coefficients : Value α shape)
     (initial : Value α (matrixShape shape.volume shape.volume)) :
     Value α (matrixShape shape.volume shape.volume) :=
-  run (fun i state => write state (matrixIndex (i, i)) coefficients[i]) initial
+  scatterWith (fun i => coefficients[i]) initial
 
-theorem scatter_prefix (coefficients : Value α shape)
-    (initial : Value α (matrixShape shape.volume shape.volume))
-    (count : Nat) (within : count ≤ shape.volume) (row column : Fin shape.volume) :
-    (runPrefix (fun i state => write state (matrixIndex (i, i)) coefficients[i])
+theorem scatterWith_prefix (coefficients : Fin size → α)
+    (initial : Value α (matrixShape size size))
+    (count : Nat) (within : count ≤ size) (row column : Fin size) :
+    (runPrefix (fun i state => write state (matrixIndex (i, i)) (coefficients i))
       count within initial)[matrixIndex (row, column)] =
-      if row = column ∧ row.val < count then coefficients[row]
+      if row = column ∧ row.val < count then coefficients row
       else initial[matrixIndex (row, column)] := by
   induction count with
   | zero => simp [runPrefix]
   | succ count ih =>
     rw [runPrefix, read_write]
-    by_cases sameRow : (⟨count, Nat.lt_of_succ_le within⟩ : Fin shape.volume) = row
+    by_cases sameRow : (⟨count, Nat.lt_of_succ_le within⟩ : Fin size) = row
     · subst row
-      by_cases sameColumn : (⟨count, Nat.lt_of_succ_le within⟩ : Fin shape.volume) = column
+      by_cases sameColumn : (⟨count, Nat.lt_of_succ_le within⟩ : Fin size) = column
       · subst column
         simp
       · have different : matrixIndex (⟨count, Nat.lt_of_succ_le within⟩,
@@ -134,12 +141,35 @@ theorem scatter_prefix (coefficients : Value α shape)
       have bounds : row.val < count ↔ row.val < count + 1 := by omega
       simp only [bounds]
 
+theorem scatter_prefix (coefficients : Value α shape)
+    (initial : Value α (matrixShape shape.volume shape.volume))
+    (count : Nat) (within : count ≤ shape.volume) (row column : Fin shape.volume) :
+    (runPrefix (fun i state => write state (matrixIndex (i, i)) coefficients[i])
+      count within initial)[matrixIndex (row, column)] =
+      if row = column ∧ row.val < count then coefficients[row]
+      else initial[matrixIndex (row, column)] :=
+  scatterWith_prefix (fun i => coefficients[i]) initial count within row column
+
 theorem scatter_get (coefficients : Value α shape)
     (initial : Value α (matrixShape shape.volume shape.volume)) (row column : Fin shape.volume) :
     (scatter coefficients initial)[matrixIndex (row, column)] =
       if row = column then coefficients[row] else initial[matrixIndex (row, column)] := by
-  simpa only [scatter, run, row.isLt, and_true] using
+  simpa only [scatter, scatterWith, run, row.isLt, and_true] using
     scatter_prefix coefficients initial shape.volume (Nat.le_refl _) row column
+
+theorem scatterWith_get (coefficients : Fin size → α)
+    (initial : Value α (matrixShape size size)) (row column : Fin size) :
+    (scatterWith coefficients initial)[matrixIndex (row, column)] =
+      if row = column then coefficients row else initial[matrixIndex (row, column)] := by
+  simpa only [scatterWith, run, row.isLt, and_true] using
+    scatterWith_prefix coefficients initial size (Nat.le_refl _) row column
+
+theorem scatterWith_executes (coefficients : Fin size → α)
+    (initial final : Value α (matrixShape size size)) :
+    Executes (fun i before after => Writes before (matrixIndex (i, i)) (coefficients i) after)
+      size initial final ↔ final = scatterWith coefficients initial :=
+  run_correct _ _ (fun i before after => write_correct before (matrixIndex (i, i)) (coefficients i) after)
+    initial final
 
 theorem scatter_executes (coefficients : Value α shape)
     (initial final : Value α (matrixShape shape.volume shape.volume)) :

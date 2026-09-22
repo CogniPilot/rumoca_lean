@@ -37,6 +37,15 @@ theorem Executes.bounded {step : Fin bound → σ → σ → Prop}
   | zero => omega
   | next within _ _ => omega
 
+/-- A proved equality of index bounds changes only the index representation;
+the state type (and hence any nominal tensor shape) remains unchanged. -/
+theorem executes_reindex (equal : firstBound = secondBound)
+    (step : Fin firstBound → σ → σ → Prop) (initial final : σ) :
+    Executes step firstBound initial final ↔
+      Executes (fun i => step ((finCongr equal).symm i)) secondBound initial final := by
+  subst secondBound
+  rfl
+
 /-- Refinement for every body whose execution relation is implemented by the
 given total function, all initial states and every in-bounds prefix. -/
 theorem prefix_correct (body : Fin bound → σ → σ)

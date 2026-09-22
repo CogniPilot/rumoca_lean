@@ -9,3 +9,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Solve.Tensor.Ref.position_agrees
 #audit axioms Rumoca.Solve.Tensor.Env.Updates
 #audit axioms Rumoca.Solve.Tensor.Env.update_correct
+#audit axioms Rumoca.Solve.Tensor.Env.update_self
+#audit axioms Rumoca.Solve.Tensor.Env.update_twice

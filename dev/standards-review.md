@@ -12,6 +12,18 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Typed prepared square body — 2026-09-22; stage OPEN
+
+The typed pointwise, rectangular clearing and diagonal-scatter bodies now have
+independent execution/store-frame proofs, composed to the original finite
+square RHS and exact prepared AD matrix. The source primal domain remains;
+this does not add overflow signaling or failure-state behavior. No grammar,
+source admission, numerical C, emission or artifact contract changed. Owner V1
+passed 2312jobs/584complete whitelisted reports/all62new+44prior roots; independent
+review found no issue. The combined full gate remains pending. The prospective
+whole-subset checklist must be adopted before any grammar edit; no findings
+close from these prerequisites. Exact scope is in dev/galec-realization.md.
+
 ### Typed loop/index prerequisite — 2026-09-22; stage OPEN
 
 Generic resolved statements, per-axis indices, row-major coordinates and typed

@@ -15,6 +15,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.TensorWrites.binary
 #audit axioms Rumoca.GALEC.TensorWrites.binary_correct
 #audit axioms Rumoca.GALEC.TensorWrites.scatter
+#audit axioms Rumoca.GALEC.TensorWrites.scatterWith
+#audit axioms Rumoca.GALEC.TensorWrites.scatterWith_prefix
+#audit axioms Rumoca.GALEC.TensorWrites.scatterWith_get
+#audit axioms Rumoca.GALEC.TensorWrites.scatterWith_executes
 #audit axioms Rumoca.GALEC.TensorWrites.scatter_prefix
 #audit axioms Rumoca.GALEC.TensorWrites.scatter_get
 #audit axioms Rumoca.GALEC.TensorWrites.scatter_executes

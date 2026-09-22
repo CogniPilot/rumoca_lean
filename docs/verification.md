@@ -1,5 +1,18 @@
 # Exact verification contract
 
+**Typed square/Jacobian loop bodies (owner passed; combined full gate next):**
+Concrete pointwise and clear-then-scatter bodies now execute through the typed
+statement semantics. The complete square body has exact partial finite
+execution correspondence to the original prepared square RHS and a final store
+whose Jacobian cells equal the existing AD-generated prepared matrix. The
+original primal domain, signed zeros and unrelated binding frames are retained.
+No new arithmetic-totality premise is imposed. Owner V1 passed 2,312jobs and
+584 complete whitelisted reports, including 62 new and the prior 44 roots;
+independent semantic/adoption review found no issue. The combined full gate
+must still cover these changes and c9843b1. No grammar, admission, emission or
+artifact contract changes; GJ01/GJ03/N01 remain open. See
+[the precise scope and evidence](../dev/galec-realization.md).
+
 **Typed GALEC statement prerequisite (owner passed; full repair gate pending):**
 Rank-preserving coordinate/one-based conversion, typed Solve environment
 updates, scoped per-axis indices and generic assignment/sequence/bounded-loop

@@ -118,6 +118,7 @@ theorem ScalarExpr.scatter_executes_iff (e : ScalarExpr)
   apply Iteration.run_guarded_correct
   intro i before after
   change e.Writes input[i] (matrixIndex (i, i)) before after ↔ _
+  dsimp only
   rw [ScalarExpr.pointwise_get]
   exact e.write_iff input[i] (matrixIndex (i, i)) before after
 
