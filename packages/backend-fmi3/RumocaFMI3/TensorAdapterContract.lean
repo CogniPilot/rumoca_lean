@@ -1,5 +1,6 @@
 import RumocaFMI3.TensorFamilyContracts
 import RumocaFMI3.PreparedStepContract
+import RumocaFMI3.PreparedDerivativeContract
 import RumocaFMI3.PublicAPICertificate
 import RumocaFMI3.TensorVersion
 import RumocaFMI3.TensorDebugLogging
@@ -163,7 +164,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (TensorFunctions.program model m sigs).definitions Identity.function.signature.name
         = some (.tree Identity.function) ∧
     (TensorFunctions.program model m sigs).definitions CAtomicScan.function.signature.name
-        = some (.tree CAtomicScan.function)
+        = some (.tree CAtomicScan.function) ∧
+    PreparedDerivative.Contract model m sigs
 
 /-- The tensor adapter contract holds for the rendered text of the function list,
 given the located and distinct header signatures and the model-free coverage. -/
@@ -175,7 +177,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     (absentMembers : ∀ ty write, AbsentVariables.signature ty write ∈ sigs)
     (capMembers : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs)
     (freshKernel : ∀ sig ∈ sigs, sig.name ≠ "rumoca_rhs")
-    (poolReady : (TensorFunctions.prepare model m sigs).isSome = true) :
+    (poolReady : (TensorFunctions.prepare model m sigs).isSome = true)
+    (derivative : DerivativeCalls.signature ∈ sigs) :
     Contract model m (render model m sigs) :=
   ⟨sigs, unique, rfl, step, poolReady, PreparedStep.tensor_contract model m sigs step unique,
     TensorFunctions.doStep_bound model m sigs unique step,
@@ -239,7 +242,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     TensorFunctions.helpers_bound model m sigs Identity.function
       (by simp [TensorFunctions.helpers]),
     TensorFunctions.helpers_bound model m sigs CAtomicScan.function
-      (by simp [TensorFunctions.helpers])⟩
+      (by simp [TensorFunctions.helpers]),
+    PreparedDerivative.contract model m sigs derivative unique⟩
 
 end Rumoca.FMI3.TensorAdapter
 end

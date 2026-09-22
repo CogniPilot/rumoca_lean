@@ -340,6 +340,87 @@ def behavior_matrix(fmu_path, label):
     free(quiet)
     free(loud)
 
+    evaluate = fn("EvaluateDiscreteStates", [P])
+    update = fn("UpdateDiscreteStates", [P] + [C.POINTER(B)] * 5 + [C.POINTER(D)])
+
+    # -- TensorSquare ME derivative overflow preserves public state and output --
+    if md.modelName == "TensorSquare":
+        derivative_message = b"Non-finite continuous state derivative"
+
+        def tensor_float64_snapshot(handle, value_reference, n_values, description):
+            values = (D * n_values)()
+            status = get_f64(handle, (VR * 1)(value_reference), 1, values, n_values)
+            check(status == OK, description + " getter succeeds")
+            return C.string_at(C.byref(values), C.sizeof(values))
+
+        for logging, callback in [(False, logger), (True, logger), (False, LOG()), (True, LOG())]:
+            handle = me(logging, callback=callback)
+            check(bool(handle), "tensor overflow ME instantiation")
+            if not handle:
+                continue
+            check(enter_init(handle, False, 0.0, 0.0, False, 0.0) == OK,
+                  "tensor overflow ME initialization entry")
+            check(set_f64(handle, (VR * 1)(1), 1, (D * 2)(1.0, 2.0), 2) == OK,
+                  "tensor overflow ME finite input setup")
+            check(exit_init(handle) == OK, "tensor overflow ME initialization exit")
+            check(evaluate(handle) == OK, "tensor overflow ME discrete evaluation")
+            overflow_flags = [B() for _ in range(5)]
+            overflow_time = D()
+            check(update(handle, *map(C.byref, overflow_flags), C.byref(overflow_time)) == OK,
+                  "tensor overflow ME discrete update")
+            check(enter_ctm(handle) == OK, "tensor overflow ME continuous mode")
+            check(set_time(handle, 1.0) == OK, "tensor overflow ME time setup")
+
+            baseline = (D * 2)()
+            check(get_deriv(handle, baseline, 2) == OK and list(baseline) == [1.0, 4.0],
+                  "tensor overflow ME finite baseline derivative")
+            tensor_float64_snapshot(handle, 3, 2, "tensor overflow ME baseline derivative")
+            tensor_float64_snapshot(handle, 4, 4, "tensor overflow ME baseline Jacobian")
+
+            check(set_f64(handle, (VR * 1)(1), 1,
+                          (D * 2)(sys.float_info.max, -sys.float_info.max), 2) == OK,
+                  "tensor overflow ME max input setup")
+            snapshot = b"".join([
+                tensor_float64_snapshot(handle, 0, 1, "tensor overflow ME time"),
+                tensor_float64_snapshot(handle, 1, 2, "tensor overflow ME input"),
+                tensor_float64_snapshot(handle, 2, 2, "tensor overflow ME state"),
+                tensor_float64_snapshot(handle, 3, 2, "tensor overflow ME derivative"),
+                tensor_float64_snapshot(handle, 4, 4, "tensor overflow ME Jacobian"),
+            ])
+            sentinel = (D * 2)(-123.25, 456.5)
+            sentinel_before = C.string_at(C.byref(sentinel), C.sizeof(sentinel))
+            messages.clear()
+            check(get_deriv(handle, sentinel, 2) == DISCARD,
+                  "tensor overflow ME derivative getter discards")
+            check(C.string_at(C.byref(sentinel), C.sizeof(sentinel)) == sentinel_before,
+                  "tensor overflow ME derivative buffer is unchanged")
+            after = b"".join([
+                tensor_float64_snapshot(handle, 0, 1, "tensor overflow ME time after discard"),
+                tensor_float64_snapshot(handle, 1, 2, "tensor overflow ME input after discard"),
+                tensor_float64_snapshot(handle, 2, 2, "tensor overflow ME state after discard"),
+                tensor_float64_snapshot(handle, 3, 2, "tensor overflow ME derivative after discard"),
+                tensor_float64_snapshot(handle, 4, 4, "tensor overflow ME Jacobian after discard"),
+            ])
+            check(after == snapshot, "tensor overflow ME public snapshot is unchanged")
+            expected_log = (123, DISCARD, b"logStatus", derivative_message)
+            if logging and callback:
+                check(messages == [expected_log],
+                      "tensor overflow ME enabled logging is exact")
+            else:
+                check(messages == [], "tensor overflow ME overflow logging is suppressed")
+
+            messages.clear()
+            check(set_f64(handle, (VR * 1)(1), 1, (D * 2)(1.0, 2.0), 2) == OK,
+                  "tensor overflow ME finite input recovery")
+            recovered = (D * 2)()
+            check(get_deriv(handle, recovered, 2) == OK and list(recovered) == [1.0, 4.0],
+                  "tensor overflow ME recovers derivative mode")
+            check(tensor_float64_snapshot(handle, 4, 4, "tensor overflow ME recovered Jacobian")
+                  == bytes((D * 4)(2.0, 0.0, 0.0, 4.0)),
+                  "tensor overflow ME recovers Jacobian values")
+            check(messages == [], "tensor overflow ME recovery emits no callback")
+            free(handle)
+
     # -- co-simulation success path --
     handle = cs(False)
     check(enter_init(handle, False, 0.0, 0.0, False, 0.0) == OK, "co-simulation EnterInitializationMode")
@@ -362,8 +443,6 @@ def behavior_matrix(fmu_path, label):
     set_states = fn("SetContinuousStates", [P, C.POINTER(D), N])
     get_nominals = fn("GetNominalsOfContinuousStates", [P, C.POINTER(D), N])
     get_indicators = fn("GetEventIndicators", [P, C.POINTER(D), N])
-    evaluate = fn("EvaluateDiscreteStates", [P])
-    update = fn("UpdateDiscreteStates", [P] + [C.POINTER(B)] * 5 + [C.POINTER(D)])
     completed = fn("CompletedIntegratorStep", [P, B, C.POINTER(B), C.POINTER(B)])
     enter_event = fn("EnterEventMode", [P])
     check(get_ncs(handle, C.byref(count)) == OK and count.value == n_states,

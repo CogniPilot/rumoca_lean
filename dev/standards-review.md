@@ -12,6 +12,35 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Tensor FMI derivative numerical Discard (2026-09-22; full gate passed):**
+No grammar/admission expansion. The pinned MLS 3.7 real/encoded distinction
+and eFMI Beta 1 signal constraints remain unchanged. FMI 3.0.2 §2.2.4
+instance-preserving Discard/logging requirements and §3.2.1 derivative numerical
+failure guidance now have a production tensor-getter instantiation: finite-input
+square overflow is detected before instance or caller-output writes. Lean proves
+the exact original heap at logging entry and through suppressed logging;
+enabled foreign callbacks retain explicit effects and outcomes, not an invented
+heap frame. Finite success retains the previous contracts and aliasing domain.
+Prepared message storage, exact function lookup and rendered bytes are mandatory
+actual-artifact obligations.
+
+MISRA C:2025 Dir 4.15 motivates the pre-consumer detection boundary. Focused
+Rule 10.1 review (printed pp. 98–99) found integer `!valid` inappropriate;
+the emitted rejection condition is now `valid == 0`. The first gate was stopped
+for this repair and is not pass evidence. This narrow review and the independent
+proof/linkage review do not establish all-rule MISRA compliance. The corrected
+full gate passed with all 2,482 frozen inputs unchanged, all 7,750 printed axiom
+reports, all 34 new roots and four retained FMU roots within the unchanged
+whitelist. Matrices passed 75 functions each, 650 TensorSquare cells and 526
+cells each for Integrator/ConstantRates, with zero discrepancies. Existing
+native checks cover overflow, untouched state/output, logging and recovery;
+reset/preflight mutations fail actual certification. Shared-helper and
+scalar/tensor eFMI checks also passed. Evidence:
+`build/fmi-preflight-full-gate-v2.log`. N01's eFMI detection obligation, CS Euler
+overflow, histories, native floating-environment correspondence, K02–K05 and
+MISRA closure remain open and continue to block grammar expansion. This is
+progress within the frozen subset, not a completed recurring stage review.
+
 **Read-only tensor product preflight (2026-09-22; full gate passed):**
 No grammar/admission or production-interface expansion. The N01 review's pinned
 MLS finite-real distinction, eFMI Beta 1 overflow/signal constraints, FMI 3.0.2

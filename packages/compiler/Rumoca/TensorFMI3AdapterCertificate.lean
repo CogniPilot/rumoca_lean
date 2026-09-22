@@ -50,7 +50,7 @@ def certify (adapter : String) (sigs : List CTree.Signature) (actualChars : Iden
             FMI3.TensorAdapter.Contract $witnessModel $mTerm (String.ofList $actualChars) := by
           intro static
           rw [← $rendered:ident]
-          refine FMI3.TensorAdapter.render_contract $witnessModel $mTerm $signatures ?_ ?_ ?_ ?_ ?_ ?_ ?_
+          refine FMI3.TensorAdapter.render_contract $witnessModel $mTerm $signatures ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
           · rw [FMI3.TensorFunctions.functions_names]; decide +kernel
           · change FMI3.StepEntry.signature ∈ [$sigTerms,*]
             simp [FMI3.StepEntry.signature]
@@ -64,7 +64,9 @@ def certify (adapter : String) (sigs : List CTree.Signature) (actualChars : Iden
             simp [FMI3.CapabilityRejection.signatures]
           · change ∀ sig ∈ [$sigTerms,*], sig.name ≠ "rumoca_rhs"
             decide +kernel
-          · exact $poolReady:ident))
+          · exact $poolReady:ident
+          · change FMI3.DerivativeCalls.signature ∈ [$sigTerms,*]
+            simp [FMI3.DerivativeCalls.signature]))
   } adapter sigs actualChars
 
 end Rumoca.TensorFMI3AdapterCertificate

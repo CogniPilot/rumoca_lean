@@ -1,5 +1,42 @@
 # Exact verification contract
 
+**Tensor FMI derivative numerical Discard (full gate passed):**
+
+The production tensor derivative getter now runs the shared read-only product
+preflight before RHS, Jacobian or caller-output writes. For finite encoded
+inputs, a universal dichotomy supplies either the existing finite execution
+and finite Jacobian additions, or an independent real square-overflow witness.
+The latter reaches numerical `fmi3Discard` with the original heap. Disabled or
+absent logging preserves that heap through return; enabled callback execution
+retains every modeled foreign outcome and its explicit post-callback heap.
+No callback frame or native floating-environment correspondence is assumed.
+The old success theorem statements and caller-buffer aliasing premises remain.
+
+The shared segment uses scalar locals, not tensor scratch storage. Mandatory
+adapter contracts connect failure execution, prepared message storage, function
+lookup and rendered code to the actual source-build checker. The existing native
+matrix checks overflow, untouched state/output, logging configurations and finite
+recovery; both reset and preflight mutations are rejected by that checker.
+Focused owner checks passed 2,563 jobs. The required
+`nix develop .#verification --command lake test` passed (exit 0), with all 2,482
+frozen input hashes unchanged. All 7,750 printed axiom reports (wrapped lists
+included), all 34 new roots and four retained FMU roots passed the unchanged
+whitelist. All three FMI matrices passed 75 functions: TensorSquare exercised
+650 cells, Integrator and ConstantRates 526 each, with zero discrepancies.
+Shared-helper and scalar/tensor eFMI artifact/native/mutation checks passed.
+Evidence: `build/fmi-preflight-full-gate-v2.log`. Existing warnings remain;
+none occurred in the new modules. Only three evidence documents changed after
+the frozen gate.
+
+Bounded independent proof/linkage review found no issue, but did not establish
+MISRA compliance. Subsequent focused Rule 10.1 review replaced integer `!valid`
+with `valid == 0`; the earlier V1 gate was deliberately stopped, not passed.
+Grammar and source admission are unchanged. This closes the modeled finite-input
+ME getter failure path, not eFMI N01, CS Euler overflow, complete histories,
+K02–K05, native correspondence or MISRA closure. Those findings still block
+grammar expansion. Earlier checkpoint statements below describe their own
+revisions, not the current production invocation status.
+
 **Read-only tensor product preflight (full gate passed):**
 
 The shared C backend now has a reusable counted-expression finiteness proof

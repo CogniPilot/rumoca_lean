@@ -399,3 +399,10 @@ import Tests.FMI3Audit.TensorAcceptedLinked
 import Tests.FMI3Audit.TensorAcceptedRuntime
 import Tests.FMI3Audit.TensorAcceptedContract
 import Tests.FMI3Audit.TensorHeader
+import Tests.FMI3Audit.Discard
+import Tests.FMI3Audit.TensorDerivativePreflight
+import Tests.FMI3Audit.TensorDerivativeContinuation
+import Tests.FMI3Audit.TensorDerivativeAdmission
+import Tests.FMI3Audit.TensorDerivativeSuccess
+import Tests.FMI3Audit.TensorDerivativeDiscard
+import Tests.FMI3Audit.PreparedDerivativeContract

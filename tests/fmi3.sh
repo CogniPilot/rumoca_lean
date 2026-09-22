@@ -169,31 +169,36 @@ lake run verify-artifact --check-only tensor-fmi3 "$tensor_root" examples/Tensor
 bash scripts/audit-lean.sh "$task_tmp/cached-tensor-fmi3.log"
 rg -q 'Rumoca.CheckedTensorFMI3Files.source_to_build depends on axioms' \
   "$task_tmp/cached-tensor-fmi3.log"
-# Mutation-rejection control on the tensor adapter (mirrors the scalar reset-body
-# control): preserve the certified numerical kernel and API prefix while altering one
-# byte of the reset body. The complete tensor adapter contract must reject the read
-# file, and must not replace the previously valid FMU.
+# Mutation-rejection controls on the tensor adapter: preserve the certified
+# numerical kernel and API prefix while changing the reset value or bypassing
+# the derivative preflight's overflow rejection. Neither read file is certified.
 python - "$prod_fmu" "$task_tmp/tensor-changed" <<'PY'
 from pathlib import Path
 from zipfile import ZipFile
 import sys
-root = Path(sys.argv[2])
-with ZipFile(sys.argv[1]) as archive:
-    archive.extractall(root)
-path = root / 'sources/fmi3.c'
-text = path.read_text()
-start = text.index('fmi3Status fmi3Reset(')
-stop = text.index('\n}\n\n', start) + 4
-body = text[start:stop]
-changed = body.replace('dst[k] = 0;', 'dst[k] = 2;', 1)
-assert changed != body
-path.write_text(text[:start] + changed + text[stop:])
+for mutation, signature, before, after in [
+    ('reset', 'fmi3Status fmi3Reset(', 'dst[k] = 0;', 'dst[k] = 2;'),
+    ('preflight', 'fmi3Status fmi3GetContinuousStateDerivatives(', 'valid = 0;', 'valid = 1;'),
+]:
+    root = Path(sys.argv[2]) / mutation
+    with ZipFile(sys.argv[1]) as archive:
+        archive.extractall(root)
+    path = root / 'sources/fmi3.c'
+    text = path.read_text()
+    start = text.index(signature)
+    stop = text.index('\n}\n\n', start) + 4
+    body = text[start:stop]
+    changed = body.replace(before, after, 1)
+    assert changed != body, mutation
+    path.write_text(text[:start] + changed + text[stop:])
 PY
-if lake run verify-artifact tensor-fmi3 "$task_tmp/tensor-changed" examples/TensorSquare.mo > build/fmi-tensor-adapter-rejection.log 2>&1; then
-  echo 'tensor adapter certificate accepted an altered reset value' >&2; exit 1
-fi
-rg -q 'actual tensor FMI adapter differs from the complete prepared function list' \
-  build/fmi-tensor-adapter-rejection.log
+for mutation in reset preflight; do
+  if lake run verify-artifact tensor-fmi3 "$task_tmp/tensor-changed/$mutation" examples/TensorSquare.mo > "build/fmi-tensor-adapter-$mutation-rejection.log" 2>&1; then
+    echo "tensor adapter certificate accepted altered $mutation behavior" >&2; exit 1
+  fi
+  rg -q 'actual tensor FMI adapter differs from the complete prepared function list' \
+    "build/fmi-tensor-adapter-$mutation-rejection.log"
+done
 # Drive the production FMU through FMPy in ME and CS with the tensor-c.sh assertions.
 python3 - "$prod_fmu" > build/fmi-tensor-run.log 2>&1 <<'PY'
 import sys, ctypes

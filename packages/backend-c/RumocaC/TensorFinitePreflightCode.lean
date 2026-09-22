@@ -8,9 +8,12 @@ open CTree
 def iteration (value : Expr) : List Stmt :=
   [.assign (.id "sample") value] ++ FiniteScan.iterationFor (.id "sample")
 
-def body (value : Expr) : List Stmt :=
-  [.declare "double" "sample" (.decimal false 0 0), .declare "int32_t" "valid" (.nat 1)] ++
-    CLoops.counted "k" (.id "count") (iteration value) ++
-    [.ret (some (.id "valid"))]
+def segmentWith (flagType : String) (value : Expr) : List Stmt :=
+  [.declare "double" "sample" (.decimal false 0 0), .declare flagType "valid" (.nat 1)] ++
+    CLoops.counted "k" (.id "count") (iteration value)
+
+def segment (value : Expr) : List Stmt := segmentWith "int32_t" value
+
+def body (value : Expr) : List Stmt := segment value ++ [.ret (some (.id "valid"))]
 
 end Rumoca.CTensor.FinitePreflight

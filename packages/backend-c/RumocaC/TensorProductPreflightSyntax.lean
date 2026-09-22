@@ -20,7 +20,8 @@ def Denotes (source : String) : Prop :=
   Scanner.Lexes FiniteScan.Syntax.config source.toList tokens
 
 macro "tensor_expand_product_preflight_printer" : tactic => `(tactic|
-  simp [ProductPreflight.function, ProductPreflight.value, FinitePreflight.body,
+  simp [ProductPreflight.function, ProductPreflight.value, FinitePreflight.body, FinitePreflight.segment,
+    FinitePreflight.segmentWith,
     FinitePreflight.iteration, FiniteScan.iterationFor, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep,
     CTree.Function.render, CTree.Signature.render, CTree.Parameter.render,
     CTree.Stmt.render, CTree.Expr.render, CTree.BinOp.render])

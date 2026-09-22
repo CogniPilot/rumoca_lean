@@ -1,10 +1,11 @@
 # Numerical outcomes and error detection — 2026-09-22
 
 Status: **open; blocks grammar growth**. This focused follow-up reviews the
-existing tensor profile at `20d6da9`, not a new language case or a completed
-three-standard stage review. Compiler semantics, admission and artifacts are
-unchanged. The previous full gate remains evidence for its stated finite-source
-and total-helper contracts, not for MISRA compliance.
+existing tensor profile initially at `20d6da9`, not a new language case or a
+completed three-standard stage review. That initial review changed no compiler
+semantics, admission or artifacts. Subsequent implementation evidence is recorded
+below; source admission remains frozen. A full gate establishes its stated
+contracts, not MISRA compliance.
 
 ## Normative distinction
 
@@ -96,20 +97,28 @@ int main(void) {
 
 ## Closure criteria and next implementation
 
-Read-only product preflight now has owner-checked Lean proofs and an actual-file
-contract (`RumocaC.TensorProductPreflightContract`). It computes into one scalar
-local, classifies the product immediately, and returns Solve's exact finiteness
-decision with the entire heap unchanged. This is needed to preserve FMI instance
-state on numerical Discard without tightening existing caller-buffer aliasing
-premises. Public-method invocation, logging/status behavior and production
-artifact linkage remain to be implemented; N01 is not closed. The required full
-gate passed (exit 0, observed 2026-09-22 at 11:09 UTC), with 2,464 frozen inputs,
-7,711 permitted printed axiom reports, all 14 new roots and four retained FMU
-roots checked. Existing actual-helper/native/mutation and FMI/eFMI checks passed;
-bounded independent review found no issue. See `build/tensor-preflight-full-gate-v1.log`.
-The scalar initializer is not itself a dead-code candidate under MISRA C:2025
-Rule 2.2, Notes 3 (printed p. 43); this narrow check does not close the other
-coding-guideline or integration obligations.
+Read-only product preflight is now invoked by the production tensor FMI ME
+derivative getter, before any instance or output writes. Universal Lean proofs
+classify every finite encoded input into the existing finite RHS/Jacobian domain
+or an independent real square-overflow witness. Numerical Discard preserves
+the original heap up to logging; suppressed/absent logging preserves it through
+return. Enabled callbacks retain explicit foreign effects and all modeled
+outcomes. The success contracts retain their previous aliasing premises.
+Mandatory actual-adapter contracts bind the failure proofs, prepared message
+storage and exact emitted function. This does not close eFMI N01 or CS Euler
+overflow, and does not prove native floating-environment correspondence.
+
+The corrected required full gate passed (exit 0), with 2,482 frozen input hashes,
+7,750 permitted printed axiom reports, all 34 new roots and four retained FMU
+roots checked. The TensorSquare matrix passed 650 cells; the other two matrices
+passed 526 each, all with zero discrepancies. Existing artifact/native/mutation
+checks passed, including numerical failure/logging/recovery and rejection of
+reset/preflight mutations. See `build/fmi-preflight-full-gate-v2.log`.
+Bounded independent review covered proofs/linkage, not all-rule compliance.
+A later focused MISRA C:2025 Rule 10.1 check replaced integer `!valid` with
+`valid == 0`; V1 was stopped for that repair and is not pass evidence. Rule 2.2,
+Notes 3 (printed p. 43) excludes initialization from dead-code candidates.
+Neither narrow check closes the remaining coding/integration obligations.
 
 1. Specify numerical outcomes and detection in the prepared Solve/algorithm
    contract, retaining tensor shape and the independent real refinement on
@@ -148,7 +157,8 @@ The local eFMI HTML was byte-compared with its member in the pinned release ZIP.
 Dir 4.15 was freshly extracted from the hashed user PDF with `pdftotext`; no
 normative PDF is redistributed. The native observation used a temporary
 extraction and diagnostic, not a rebuilt or republished eFMU. This documentation-
-only review does not rerun or claim a new full artifact gate.
+only initial review did not rerun or claim a new full artifact gate; later
+implementation gates are recorded separately above.
 A bounded independent documentation review confirmed the normative distinction
 and requested the target-configuration and all-path detection qualifications
 above. This is not independent MISRA compliance sign-off.

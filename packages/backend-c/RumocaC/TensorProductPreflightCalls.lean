@@ -46,7 +46,8 @@ theorem body_field_free : CDeclaredMembers.FieldFree.AdmittedBody function.body 
   simp [CDeclaredMembers.FieldFree.AdmittedBody, CDeclaredMembers.FieldFree.body,
     CDeclaredMembers.FieldFree.expressions, CDeclaredMembers.FieldFree.sites,
     CDeclaredMembers.FieldFree.expression, CDeclaredMembers.FieldFree.argumentList,
-    function, value, FinitePreflight.body, FinitePreflight.iteration, FiniteScan.iterationFor, indexed,
+    function, value, FinitePreflight.body, FinitePreflight.segment, FinitePreflight.segmentWith,
+    FinitePreflight.iteration, FiniteScan.iterationFor, indexed,
     CLoops.counted, CLoops.loop, CLoops.counterStep]
 
 theorem call_reaches (declarations : CDeclaredMembers.Declarations)

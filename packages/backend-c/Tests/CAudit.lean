@@ -189,3 +189,4 @@ import Tests.CAudit.RumocaC_TreeTable
 import Tests.CAudit.RumocaC_TensorFiniteScan
 import Tests.CAudit.RumocaC_TensorProductPreflight
 import Tests.CAudit.RumocaC_TensorSquareRhsTotal
+import Tests.CAudit.RumocaC_TensorProductPreflightInline
