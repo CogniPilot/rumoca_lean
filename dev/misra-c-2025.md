@@ -40,8 +40,10 @@ paths below are from a local regeneration into `build/k05/` and `build/tensor-fm
 
 - **Unit profile numerical kernel** `model.c` (`packages/compiler/.lake/build/bin/rumoca examples/Integrator.mo -o model.c`): three pure functions `rumoca_rhs`, `rumoca_step`, `rumoca_sample`.
 - **Unit profile FMI 3 adapter** `sources/fmi3.c` inside `build/Integrator.fmu` (retained by `tests/fmi3.sh`; or `lake run fmu`). It `#include`s `model.c` and implements the full FMI 3.0 Model Exchange / Co-Simulation entry-point set over a fixed static instance pool.
-- **Tensor profile adapter** `build/tensor-fmi/adapter.c` and kernel bodies `build/tensor-c/*.c` (`add`, `mul`, `fill`, `diagonal`, `initial`, `derivative`, `jacobian`, `jacobian-diag`), rendered by the compiler regression executable and `tests/tensor-c.sh`; assembled into the development FMU `build/tensor-fmi/TensorSquare.fmu`. The tensor path is a development artifact, not a default-CLI production FMU.
-- **eFMI Production Code** `ProductionCode/production.c` inside the eFMU (`rumoca Source.mo -o model.efmu`; `tests/efmi-production.sh`): `UnitIntegrator_Startup`, `UnitIntegrator_Recalibrate`, `UnitIntegrator_DoStep` over a plain `Model` record.
+- **Tensor profile FMI 3 adapter and kernel** `sources/fmi3.c` and `sources/model.c` inside the production `build/TensorSquare.fmu` (`rumoca examples/TensorSquare.mo -o build/TensorSquare.fmu`; `tests/fmi3.sh`). The default CLI publishes this profile through the `tensor-fmi3` actual-artifact certificate. `build/tensor-fmi/adapter.c` and the individual helpers in `build/tensor-c/*.c` remain development inspection products from `tests/tensor-c.sh`; they do not replace review of the complete production translation unit.
+- **Constant-rate FMI 3 adapter and kernel** `sources/fmi3.c` and `sources/model.c` inside `build/ConstantRates.fmu` (`rumoca examples/ConstantRates.mo -o build/ConstantRates.fmu`; `tests/fmi3.sh`), published through the `constant-fmi3` actual-artifact certificate. The pinned source has two states and rates `2.5` and `-1`. Rule-by-rule evidence must cover this product too; prior unit/tensor scans do not establish its compliance. Constant eFMI output remains rejected.
+- **Unit eFMI Production Code** `ProductionCode/production.c` inside the eFMU (`rumoca Source.mo -o model.efmu`; `tests/efmi-production.sh`): `UnitIntegrator_Startup`, `UnitIntegrator_Recalibrate`, `UnitIntegrator_DoStep` over a plain `Model` record.
+- **Tensor eFMI Production Code** in `build/TensorSquare.efmu`, published through the `tensor-efmi-archive` actual-artifact certificate and checked by `tests/efmi-production.sh`. `build/tensor-efmi/ProductionCode.c` is a development inspection product. The tensor translation unit, generated headers and manifests must be included in the remaining product-level review; the unit eFMI evidence is not a substitute.
 
 **Adopted headers (compliance boundary, not authored here).** The FMI 3 headers
 `fmi3Functions.h`, `fmi3FunctionTypes.h`, `fmi3PlatformTypes.h`
@@ -152,9 +154,18 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   (`communicationStepSize <= 0`, `> 1000000`). Rule 10.1 is a Deviation
   candidate; an epsilon repair is not an equivalent fix, and the exact FMI time
   semantics must be preserved.
-- **Pointer comparisons (Rule 11.11, Rule 11.9).** All null-pointer guards are
-  explicit: 75 `(ptr == ((void *)0))` / `!=` comparisons in unit `fmi3.c`, 77 in
-  the tensor adapter, and **zero implicit `if (!ptr)` / `if (ptr)` tests**. The
+- **Pointer comparisons (Rule 11.11, Rule 11.9).** The earlier scan counted
+  75 `(ptr == ((void *)0))` / `!=` comparisons in unit `fmi3.c`, 77 in
+  the tensor adapter, and zero direct `if (!ptr)` / `if (ptr)` tests. That scan
+  missed the implicit pointer operand in the logger's `&&` expression and does
+  not establish that all guards are explicit. The regenerated development tensor
+  adapter now uses an explicit logger comparison at all three shared logger
+  sites, and its standalone-object boundary check passes. Known implicit tests
+  remain: `Runtime.pointerCheck` emits, for example, `!nEventIndicators` and
+  `!eventHandlingNeeded` inside disjunctions; tensor Float64 guards also emit
+  `!valueReferences` and `!values`. The logger repair passed the required full
+  artifact gate in `build/logger-contract-full-gate-v2.log`; the later
+  numerical-linkage gate retains it. This does not close the residual violations. The
   null constant is `((void *)0)` in comparisons and `NULL` in `return NULL;`; no
   integer zero is used as a null pointer constant. Lean: the null value and
   comparison semantics are `CNull.literal_contract` and `CNull.comparison_iff`
@@ -173,7 +184,8 @@ default emission uses the static pool and no allocator call site remains (see Di
 4.12 / Rule 21.3 rows). MC03 is Rule 15.5 (Disapplied). MC04 is Rules 10.1-10.8
 (Deviation candidate at 10.1). MC05 is Rule 9.1/9.7 and the lifetime rows. MC06
 is Rules 13.2/13.5, 17.2 and Dir 5.1-5.3. MC07 is Rules 5.x, 11.x, 18.x, Dir 3.1.
-MC09 is Rule 11.11 (now with no residual implicit guard in the emitted bytes).
+MC09 is Rule 11.11 (the earlier scan missed logical operands: the logger is
+repaired locally, while output/accessor pointer negations remain known violations).
 MC01 is Rule 1.1 and Dir 1.1; MC08 is the eFMI mapping below; MC10 is the nested
 aggregate address correction underlying Rule 18.x. None of these findings is
 closed by this ledger; the ledger records where each stands against the actual
@@ -385,7 +397,7 @@ closure criterion for open rows.
 | Rule 11.8 | Required | A cast shall not remove any const or volatile qualification from the pointed-to type | Applicable: None (inventory only; no independent predicate yet) | Open | Author an independent Lean predicate or named analyzer/manual check bound to the actual bytes; see the enforcement plan. |
 | Rule 11.9 | Required | The macro NULL shall be the only permitted form of integer null pointer constant | Applicable: Manual inspection: the null pointer constant is written `((void *)0)` in comparisons and `NULL` in `return NULL;` (fmi3InstantiateModelExchange). Rule 11.9 permits `NULL` or an explicit `(void*)0`; no integer 0 is used as a null pointer constant. | Open (partial) | Fold into the pointer essential-type predicate; verify the NULL/(void*)0 usage is the only null-constant spelling emitted. |
 | Rule 11.10 | Required | The _Bool and void types shall not be used inappropriately with pointers | Applicable: None (inventory only; no independent predicate yet) | Open | Author an independent Lean predicate or named analyzer/manual check bound to the actual bytes; see the enforcement plan. |
-| Rule 11.11 | Required | A pointer shall be compared explicitly, not implicitly, with the null pointer constant | Applicable: grep of the actual bytes: 75 explicit `(ptr == ((void *)0))` / `(ptr != ((void *)0))` comparisons in build/k05/unit-fmu/sources/fmi3.c and 77 in build/tensor-fmi/adapter.c; zero implicit `if (!ptr)` / `if (ptr)` pointer truth tests were found. The shared instancePrefix null-value spelling is recorded in MC09 (standards-review) and printed by the runtime printer. | Open (strong partial) | Independent essential-type/pointer predicate binding the explicit-comparison spelling over the whole emitter; confirm no residual implicit guard in every profile and slice. |
+| Rule 11.11 | Required | A pointer shall be compared explicitly, not implicitly, with the null pointer constant | Applicable: MISRA C:2025 p.120 includes logical operands. `Runtime.log` now compares the logger with `Expr.nullPointer`; `CNull.and_unequal_null_eval` proves lazy-evaluation equivalence. Regenerated `build/tensor-fmi/adapter.c` uses `((m->logger) != ((void *)0))` at all three shared logger sites and passes the standalone-object boundary check (`build/logger-contract-full-gate.log`). That initial full gate later failed at header-membership proof elaboration. After the structural proof repair, the required full gate passed on 2026-09-21 (exit 0; `build/logger-contract-full-gate-v2.log`), including all production FMI and eFMI artifact/mutation checks. Known residual violations in that same file include `!nEventIndicators`, `!nContinuousStates`, `!eventHandlingNeeded`, `!lastSuccessfulTime`, `!valueReferences` and `!values`, emitted by pointer-output/accessor guards. | Open (known residual violations) | Replace the residual implicit tests with proved explicit comparisons and preserve short-circuit/guard ordering. Complete an independent pointer/type predicate across all profiles, including logical operands, conditional/loop guards and Boolean conversions. No whole-rule compliance or native correspondence is claimed. |
 
 ### Rules 12.x - Expressions
 

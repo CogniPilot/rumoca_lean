@@ -7,6 +7,36 @@ the axiom-audit trust roots. It is the premise and trust ledger required by
 roadmap package K05. It ticks nothing: it is a review record, not a closure
 claim.
 
+**Numerical applicability repair (2026-09-21, full gate passed):** The prior FMI type
+dictionary omitted the shared numerical helpers' `double *` and `const double *`
+parameter spellings. The Lean diagnostics `NumericalHeaderGap.fenv_header_missing`
+and `fenv_library_missing` prove, universally over literal tables, fenv headers
+and definition tables, that that standard tensor fenv interface could not satisfy
+the binary header/full-library premise. Both roots passed the whitelist in
+`build/kernel-header-gap-diagnostic.log`. Thus the conditional accepted-step
+products are not evidence of executable tensor linkage in that interface.
+The reviewed actual numerical table also omits unused sub/div definitions, so
+repair requires both real header bindings and instruction-restricted library
+contracts, followed by mandatory same-source tree-table execution composition.
+The combined repair is now promoted: actual pointer bindings, restricted
+canonical proofs, exact numerical trees, and mandatory compiled-IVP/actual-byte/
+prepared-rejection/accepted-runtime composition. The accepted product derives
+its internal header/library/lookup/resolution facts; original memory, finite
+arithmetic and external math assumptions remain. Its concrete dictionary and
+source instantiation passed the coherent package rebuild (4,163 jobs; all 150 new
+roots and 4,857 printed axiom lists permitted). A proof-elaboration repair made
+the event-type binder explicit without changing any statement. The required full
+artifact gate passed (exit 0, observed 22:12 UTC) with unchanged implementation
+inputs, all 150 new roots, and all 6,753 printed axiom lists permitted. The four
+retained FMU source/C/build roots also use only permitted axioms. All three FMI
+matrices and the scalar/tensor eFMI publication/reuse/mutation controls passed.
+This validates the repair, not full coverage or native correspondence. In
+particular, tensor eFMI's native boundary here compiles its C but does not execute
+its complete public methods. Existing warnings remain. Evidence is
+tracked in `build/numerical-linkage-checkpoint.md` and
+`/tmp/rumoca-numerical-promotion.KRyn7b/README.md`. The earlier step-composition
+gate and this new numerical-linkage gate are separate validation checkpoints.
+
 Premise classes used throughout:
 
 - **proved**: discharged by a Lean theorem over the universally quantified
@@ -29,9 +59,9 @@ Contracts and file:line (Lean names):
 | `Rumoca.ArtifactContract` (scalar C) | `Verified.lean:42` | `Rumoca.artifact_correct` `Verified.lean:75` | `ArtifactCheck.check` / `verify_artifact` (`Tools/CheckArtifact.lean`) |
 | `FMI3.SourceBuildContract` (scalar) | `FMI3BuildProofs.lean:14` | `FMI3.sourceBuild_correct` `FMI3BuildProofs.lean:22` | `verify_fmi3_build_files` (`Tools/CheckFMI3Build.lean`) |
 | `FMI3.AdapterContract` | `FMI3AdapterProofs.lean:61` | `FMI3.adapter_correct` `FMI3AdapterProofs.lean:121` | via `FMI3AdapterCertificate.certify` |
-| `Rumoca.TensorSourceBuildContract` | `TensorProduction.lean:211` | `Rumoca.tensorSourceBuild_correct` `TensorProduction.lean:237` | `verify_tensor_fmi3_build_files` (`Tools/CheckTensorFMI3Build.lean`) |
+| `Rumoca.TensorSourceBuildContract` | `TensorProduction.lean:293` | `Rumoca.tensorSourceBuild_correct` `TensorProduction.lean:332` | `verify_tensor_fmi3_build_files` (`Tools/CheckTensorFMI3Build.lean`) |
 | `FMI3.TensorAdapter.Contract` | `TensorAdapterContract.lean:52` | `FMI3.TensorAdapter.render_contract` `TensorAdapterContract.lean:160` | via `TensorFMI3AdapterCertificate.certify` |
-| `IVPEntry.ArtifactContract` (tensor C) | `Tests/TensorCChecks/IVPEntry.lean:268` | `IVPEntry.artifact_correct` `:271` | `verify_tensor_ivp` (`Tests/TensorCChecks/ArtifactCheck.lean`) |
+| `IVPEntry.ArtifactContract` (tensor C) | `RumocaC/TensorSquareIVPEntry.lean:270` | `IVPEntry.artifact_correct` `:274` | `verify_tensor_ivp` (`Tests/TensorCChecks/ArtifactCheck.lean`) |
 | `EFMI.AlgorithmContract` | `EFMIProofs.lean:13` | `EFMI.algorithm_correct` `:38` | `verify_efmi_algorithm_files` |
 | `EFMI.ProductionContract` | `EFMIProductionProofs.lean:16` | `EFMI.production_correct` `:60` | `verify_efmi_production_files` |
 | `EFMI.ManifestContract` | `EFMIManifestProofs.lean:13` | `EFMI.manifests_correct` `:52` | `verify_efmi_manifest_files` |
@@ -443,25 +473,26 @@ the 24 absent-typed empty (`fmi3OK`) and non-empty (`fmi3Error`) accessors,
 The tensor adapter reproves the same 75-function coverage through the tensor
 family contracts (`TensorAdapterContract.lean:52-157`): `PublicAPI.Covered`,
 `TensorAbsentVariables.FamilyContract`, `TensorCapabilityRejection.FamilyContract`,
-and the per-function `Tensor*.Contract` lemmas. Coverage matches 3.1 with two
-exceptions, both inside `fmi3DoStep`:
+and the per-function `Tensor*.Contract` lemmas. The earlier DoStep summary below
+was stale; its corrected scope is:
 
 | Family | Difference from 3.1 |
 |---|---|
-| DoStep `fmi3DoStep` | Discard column and the header-aware floating-environment interface are **open**: `TensorDoStep.contract` leaves the off-grid `fmi3Discard` composition and the header-aware floating-environment interface unproved (`TensorAdapterContract.lean:36-39`). Success / null / lifecycle / argument / logging remain P. |
+| DoStep `fmi3DoStep` | `TensorDoStep.Contract` retains accepted execution, null rejection and off-grid discard, and requires lifecycle, argument, rounding, stop and full-discard products including missing callbacks. Same-table step/helper bindings, prepared literal calls and accepted output/mode observations are mandatory. These increments and the subsequent concrete numerical-table/runtime linkage passed their full gates, as recorded above. Finite-arithmetic outcomes, complete source histories and native correspondence remain open; do not infer complete scalar parity. |
 | All others | Same marks as 3.1, discharged by `TensorVersion.contract`, `TensorReset.contract`, `TensorCountQueries.contract`, `TensorNominals.contract`, `TensorSetTime.contract`, `TensorLifecycleModes.contract`, `TensorFloat64.get_contract`/`set_contract`, `TensorContinuousStates.*_contract`, `TensorDiscreteUpdate.contract`, `TensorCompletedStep.contract`, `TensorEventIndicators.contract`, `TensorDiscreteEvaluation.contract`, `TensorFactory.contract`, `TensorFree.contract`, `TensorAbsentVariables.family_correct`, `TensorCapabilityRejection.family_correct`. |
 
-Tensor adapter open cells: **2** (DoStep discard, DoStep header-aware float
-environment). All other 73 functions match the scalar coverage.
+The former count of two open tensor cells is withdrawn: it named already-proved
+cases and omitted the remaining DoStep rejection/composition obligations. The
+other family marks above are carried forward, not newly re-established here.
 
 **Native instantiation (tensor).** The same all-behavior matrix now runs on the
 actual `build/TensorSquare.fmu` (produced by the default CLI's tensor path) from
-`tests/fmi3.sh`: 75/75 functions and 514 behavior cells, the same classes as the
+`tests/fmi3.sh`: the preceding recorded run covered 75/75 functions and 514
+behavior cells, the same classes as the
 scalar run. This closes the native gap recorded in finding F2 for every class the
 tensor adapter shares with the scalar one. Two native observations of note. (i)
-The `fmi3DoStep` off-grid discard cell, which is **open** in proof, is
-instantiated natively and returns `fmi3Discard`, matching the scalar behavior:
-positive native evidence for an otherwise-open cell. (ii) `fmi3Reset` now conforms
+The `fmi3DoStep` off-grid discard cell is instantiated natively and returns
+`fmi3Discard`, matching its proved suppressed/logged composition. (ii) `fmi3Reset` now conforms
 to the scalar adapter and to FMI 3.0.2 (finding F8, closed): after initialization
 has run, `fmi3Reset` returns `fmi3OK`, a subsequent `fmi3EnterInitializationMode`
 succeeds and a step runs, so the reset instance re-initializes. The matrix carries
@@ -666,18 +697,69 @@ for this ledger are `Rumoca.FMI3.sourceBuild_correct`,
 Each finding is tagged with the roadmap package that owns its closure. This
 ledger ticks nothing.
 
-- **F1 (K05, F01).** Tensor `fmi3DoStep` leaves two behaviors open: the off-grid
-  `fmi3Discard` composition and the header-aware floating-environment interface
-  (`TensorAdapterContract.lean:36-39`). *Closure:* prove both inside
-  `TensorDoStep.contract` so the tensor DoStep row reaches full coverage.
+- **F1 (K05, F01).** The formerly missing tensor off-grid discard and
+  floating-environment header coverage are present in `TensorDoStep.Contract.discarded`
+  and the header-quantified `TensorAdapter.Contract`. Lifecycle rejection now also
+  appears in the mandatory tensor and constant step contracts as `lifecycleSilent`
+  and `lifecycleLogged`; the latter retains external callback effects and the
+  no-outcome case. The combined follow-up adds `lifecycleMissing` and binds the
+  actual step/helper definitions to the certified adapter table. The initial
+  targeted audits passed; the preliminary full gate in
+  `build/step-lifecycle-full-gate.log` was deliberately stopped (exit 143) before
+  integrating those follow-ups and the explicit logger null comparison.
+  Combined targeted checks passed (`build/logger-contract-package-v2.log`);
+  `build/logger-contract-full-gate.log` later failed when the actual tensor
+  certificate attempted an unavailable signature equality decision procedure.
+  The repaired tensor and constant actual-file rechecks passed; each native
+  matrix passed 75/75 functions and 526 cells with zero discrepancies. The required
+  full gate passed on 2026-09-21 (exit 0;
+  `build/logger-contract-full-gate-v2.log`), including the three production FMI
+  matrices and scalar/tensor eFMI actual-artifact and mutation checks. A subsequent
+  proof-only increment integrates mandatory missing-output and invalid-input
+  contracts; package validation passed (`build/step-argument-contract-package.log`,
+  exit 0, 4,045 jobs) and its required full gate passed on 2026-09-21 (exit 0) in
+  `build/step-argument-contract-full-gate.log`, with unchanged implementation
+  fingerprints and all three 75-function/526-cell matrices passing. Retained FMU
+  source-build audits use only the permitted axioms; scalar/tensor eFMI actual
+  artifacts and mutation controls passed. A subsequent proof-only increment adds
+  mandatory `roundingRejected`, `stopRejected` and `discardRejected`, covering
+  non-nearest rounding, stop limits, nonprogress/nonfinite-next-clock and
+  off-grid/over-bound discard with all three logging cases. Its 22 audit roots
+  passed scratch rehearsals and integrated package validation (exit 0, 3,795 jobs,
+  `build/step-numeric-contract-package.log`). Its required full gate passed on
+  2026-09-21 (exit 0, observed 19:22:37 UTC) in
+  `build/step-numeric-contract-full-gate.log`, with unchanged implementation
+  fingerprints. All three 75-function/526-cell FMI matrices and scalar/tensor
+  eFMI artifact/mutation controls passed. Retained FMU source-build audits use
+  only the permitted axioms; evidence and artifact identities are in
+  `build/step-numeric-contract-checkpoint.md`.
+  The older `discarded` field still assumes `StepGuards.Progress`; the new
+  `discardRejected` also covers that earlier branch without floor premises.
+  The next combined proof-only increment now requires successful preparation and
+  six prepared logged-rejection calls per profile, deriving exact literal
+  addresses/contents at callback entry. Existing accepted execution products
+  require three false Boolean outputs and selected-mode preservation on the
+  same final heap, with all earlier premises and guarantees retained. Independent
+  review, isolated owner compilation and 58 selected audits passed. Integrated
+  package validation passed all 4,055 jobs (exit 0) in
+  `build/step-composition-package-v3.log`, including all 39 new roots. Its
+  required full gate passed (exit 0, observed 2026-09-21 at 20:47:09 UTC) in
+  `build/step-composition-full-gate-v3.log`; its frozen inputs and artifact evidence
+  are recorded in `build/step-composition-checkpoint-v3.md`. The subsequent
+  numerical-linkage checkpoint above additionally establishes the mandatory
+  same-source numerical table and concrete runtime composition. Full step coverage
+  still needs finite-arithmetic outcomes and complete source/clock histories.
+  Literal installation/initial frames, external callbacks and native correspondence
+  stay explicit; these increments do not close the whole step or MISRA finding.
 - **F2 (K05, F02).** *Native evidence added.* The default CLI now admits the
   array profile and publishes `build/TensorSquare.fmu`, and `tests/fmi3.sh` runs
-  the all-behavior matrix (`tests/fmi3.py --matrix`) on it: 75/75 functions and
-  514 behavior cells, every class the tensor adapter shares with the scalar one.
+  the all-behavior matrix (`tests/fmi3.py --matrix`) on it. The latest recorded
+  numerical-linkage gate passed 75/75 functions and 526 behavior cells;
+  the preceding matrix covered 514 cells.
   The tensor FMU native fixture paralleling `tests/fmi3.sh` now exists.
-  *Remaining:* the native run is boundary evidence, not proof, and the tensor
-  `fmi3DoStep` header-aware floating-environment interface stays open in proof
-  (F1); the reset divergence F8 was surfaced by this run and is now closed (the
+  *Remaining:* the native run is boundary evidence, not proof of native header
+  correspondence, complete numerical outcomes or source histories (F1).
+  The reset divergence F8 was surfaced by this run and is now closed (the
   tensor reset restores the Instantiated state; re-initialization succeeds).
 - **F3 (K03, K05, N01).** Finite-arithmetic outcome premises are conditional:
   `JacobianDiagStorageContract` excludes coefficients whose doubling overflows,
