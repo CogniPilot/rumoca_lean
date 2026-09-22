@@ -1,5 +1,50 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Static and indexed source elaboration — core owner passed
+
+`RumocaCore.GALEC.Elaboration` now contains the reviewed generic prerequisite
+chain, with the scratch implementations moved by import/namespace changes only:
+
+- `IteratorNames`, `IteratorIndices`, `Subscripts`: lexical first-match lookup
+  precedes exact extent checking. Non-iterator barriers stop lookup without
+  adding an intrinsic iterator slot. Independent source Integer evaluation is
+  exactly the one-based intrinsic coordinate; ordered bounds and actual checked
+  decoding preserve every axis. Rank traversal does not enumerate tensor cells.
+- `Bindings`, `Path`: immutable original Solve references retain shape and
+  method capabilities. Qualified keys remain component lists. State paths
+  preserve final indices and reject indexed intermediate components. Lookup
+  never falls through to a duplicate binding after a shape/capability failure.
+- `Static.Dimensions`, `Static.Naturals`, `Static.Bounded`: metadata-only shape
+  queries, unsigned decimal literal Tokens and parentheses. Independent
+  relational semantics gives executable soundness/completeness. The explicit
+  Integer ceiling is checked for every nested axis and selected result.
+- `Parser.DecimalNat`: reusable ASCII decimal semantics, exact parsing and
+  canonical rendering for every Nat. Leading zeros denote decimal, not octal.
+  The parser package owns this helper; it imports neither frontend nor backend.
+
+The core owner check passed 2,333 jobs and 672 complete whitelisted reports,
+including all 88 new public declarations registered in existing per-module
+audits. The parser owner passed 954 jobs and 322 complete whitelisted reports,
+including all seven decimal roots; its source matches the reviewed scratch
+helper byte-for-byte (`build/decimal-adoption/`). Scratch static final-v1 passed
+five modules/26 selected roots after
+repairing only `fit_iff` equality substitution with omega. Earlier failed logs
+remain distinct. Evidence: `build/galec-static-elaboration-owner-v1.*`,
+`-post-owner-v1.*`, `-required-roots.txt`, and `build/galec-static-draft/`.
+Independent Astra adoption review confirmed mechanical identity of all eight
+core modules and complete public-root registration, with no substantive finding:
+`build/galec-index-elaboration-adoption-review.md` (main read in full).
+The full artifact gate for this adoption remains pending.
+
+No production grammar, accepted source, emitter or actual-artifact predicate
+changes. This does not validate arbitrary declaration tables, source shadowing,
+direction rules, target widths or counter increments. Zero-sized mathematical
+shapes/iterator contexts do not establish source admission. General signed
+Integer expressions, indexed intermediate record paths, loop AST lowering and
+its complete actual-artifact correspondence remain open. The eFMI loop syntax
+in the pinned text is TODO-labelled; this change does not assume a normative
+omitted-step default. Retain GJ01/GJ03/N01 and all standards/native/MISRA findings.
+
 ## Typed loop bodies and prepared square composition — full gate passed
 
 The concrete typed pointwise, nested rectangular-clear, diagonal-scatter and

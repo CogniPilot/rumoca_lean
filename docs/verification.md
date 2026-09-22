@@ -1,5 +1,35 @@
 # Exact verification contract
 
+**Static/indexed GALEC elaboration prerequisites (core owner passed; full gate pending):**
+The core now owns immutable shaped read/write binding metadata, retained AST
+state paths, lexical iterator resolution with non-iterator barriers, exact
+per-axis subscript elaboration and static decimal/dimension-query evaluation.
+Every executable classifier is related to an independent source judgment;
+iterator values correspond exactly to one-based coordinates with per-axis
+Integer bounds. Shape queries use declared metadata, not runtime tensor values.
+The bounded static evaluator checks every nested query axis and result against
+an explicit caller-supplied ceiling, not only the final value. Decimal spelling
+and universal rendering proofs live in the generic parser package, without a
+backend dependency. No tensor elements are enumerated during elaboration.
+
+`lake build check-core` passed 2,333 jobs; all 672 complete axiom reports pass
+the unchanged whitelist, including all 88 new public core roots. The parser
+owner passed 954 jobs and 322 complete whitelisted reports, including all seven
+decimal roots; its adopted source is byte-identical to the reviewed scratch
+helper (`build/decimal-adoption/`). The preceding
+scratch static chain passed five module checks and 26 selected roots. Evidence:
+`build/galec-static-elaboration-owner-v1.*`, `-post-owner-v1.*`,
+`-required-roots.txt`, and `build/galec-static-draft/*-final-v1.*`.
+Independent Astra adoption review found no substantive issue and confirmed
+the eight core modules differ from checked scratch only in namespaces/imports
+(`build/galec-index-elaboration-adoption-review.md`).
+These are prerequisites, not a production syntax/admission cutover. Validated
+declaration/table construction, lexical scope projection, zero-size policy,
+target Integer/counter execution, actual parsed body execution and artifact
+linkage remain required. Method capabilities are not blanket eFMI direction
+rules. General Integer expressions and arbitrary indexed intermediate record
+components are not admitted. See [scope](../dev/galec-realization.md).
+
 **Combined parser/indexed-AST gate (passed, frozen `e08ddef`):**
 The required `nix develop .#verification --command lake test` and its V2
 post-audit both terminated with exit 0. All 2,546 tracked input hashes stayed

@@ -1,4 +1,5 @@
 import Parser
+import Parser.DecimalNat
 import Parser.LocatedCompleteness
 import Parser.LALR.LocatedCompleteness
 import Parser.LALR.EBNF
@@ -27,6 +28,14 @@ import Parser.ScannerRefinement
 import Parser.LocatedProofs
 import ProofAudit.Audit
 import Parser.Scanner.Prefix
+
+#audit axioms Parser.DecimalNat.value
+#audit axioms Parser.DecimalNat.Denotes
+#audit axioms Parser.DecimalNat.parse
+#audit axioms Parser.DecimalNat.parse_iff
+#audit axioms Parser.DecimalNat.denotes_unique
+#audit axioms Parser.DecimalNat.render_denotes
+#audit axioms Parser.DecimalNat.parse_render
 
 #audit axioms Parser.Scanner.Prefix.append
 #audit axioms Parser.Scanner.Prefix.finish
