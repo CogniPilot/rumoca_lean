@@ -104,8 +104,11 @@ items, recorded here as the current state, all still open for completion:
   checks array lengths, requires round-to-nearest (`fegetround() ==
   FE_TONEAREST`), and returns `fmi3Error`/`fmi3Discard` on the rejected paths;
   it performs no dynamic allocation, so there is no allocation-failure path.
-  Floating-point error evaluation (Dir 4.15) beyond the round-mode check and the
-  `isfinite` guards is not yet argued.
+  Exceptional-result detection (Dir 4.15) beyond the round-mode check and the
+  `isfinite` guards is not yet argued. In particular, tensor eFMI DoStep returns
+  unchecked infinite outputs for some finite inputs; see the byte-bound
+  [N01 review](numerical-outcomes-review.md). Ordinary eFMI infinity propagation
+  does not by itself supply the MISRA detection/integration argument.
 - **Integration interface.** The user integrates through the FMI 3.0 C API with
   the pinned vendored headers; the host supplies the `fmi3InstanceEnvironment`,
   the `fmi3LogMessageCallback` logger, and (Co-Simulation) the intermediate/clock
@@ -269,7 +272,7 @@ closure criterion for open rows.
 | Dir 4.12 | Required | Dynamic memory allocation shall not be used | Applicable: grep of the actual bytes: no allocator call site `(malloc\|calloc\|realloc\|free\|aligned_alloc)(` in build/k05/unit-fmu/sources/fmi3.c, build/k05/model.c, build/tensor-fmi/adapter.c, the build/tensor-c/*.c kernel, or build/k05/efmi/.../ProductionCode/production.c; no <stdlib.h> included. Storage is a fixed `static Instance rumoca_instances[32]` pool (StaticStorageCode.render, packages/backend-fmi3/RumocaFMI3/StaticStorageCode.lean). | Open (strong partial) | Bind a transitive whole-call-graph no-dynamic-memory predicate (including libm/atomics/string.h and the host logger callback) to the emitted adapter; document RTOS/native heap assumptions. Native compilation stays a boundary. |
 | Dir 4.13 | Advisory | Functions that operate on a resource should be a coherent set | Applicable: None (inventory only; no independent predicate yet) | Open | Author an independent Lean predicate or named analyzer/manual check bound to the actual bytes; see the enforcement plan. |
 | Dir 4.14 | Required | Validity of values received from external sources shall be checked | Applicable: None (inventory only; no independent predicate yet) | Open | Author an independent Lean predicate or named analyzer/manual check bound to the actual bytes; see the enforcement plan. |
-| Dir 4.15 | Required | Floating-point exceptions/error conditions shall be evaluated | Applicable: None (inventory only; no independent predicate yet) | Open | Author an independent Lean predicate or named analyzer/manual check bound to the actual bytes; see the enforcement plan. |
+| Dir 4.15 | Required | Detect generated infinities and NaNs before unprepared consumers | Applicable: [N01](numerical-outcomes-review.md) binds the actual tensor eFMI bytes to missing output detection; finite `DBL_MAX` inputs produce infinite outputs with zero status in the native observation. Category and scope checked against the user PDF, pp. 32–33. | Open — concrete finding | Prove exceptional-result detection and propagation safety at the chosen boundary, with coherent GALEC/Production C and FMI failure contracts; bind the proof to actual artifacts. No deviation approved. |
 | Dir 5.1 | Required | There shall be no data races between threads | Applicable: None (inventory only; no independent predicate yet) | Open | Author an independent Lean predicate or named analyzer/manual check bound to the actual bytes; see the enforcement plan. |
 | Dir 5.2 | Required | There shall be no deadlocks between threads | Applicable: None (inventory only; no independent predicate yet) | Open | Author an independent Lean predicate or named analyzer/manual check bound to the actual bytes; see the enforcement plan. |
 | Dir 5.3 | Required | No dynamic thread creation | Applicable: None (inventory only; no independent predicate yet) | Open | Author an independent Lean predicate or named analyzer/manual check bound to the actual bytes; see the enforcement plan. |

@@ -12,6 +12,16 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Numerical error-detection follow-up (2026-09-22; open):**
+[N01](numerical-outcomes-review.md) records actual tensor eFMI DoStep returning
+zero status with infinite square/Jacobian outputs for finite inputs. The pinned
+eFMI ordinary-overflow semantics do not themselves mandate automatic OVERFLOW
+signaling; MISRA C:2025 Dir 4.15 independently requires a detection/propagation
+argument. The review corrects that ledger paraphrase and records exact artifact
+identities, a native observation and closure criteria. No compiler, admission,
+artifact or deviation changes; no new full gate or compliance claim. This
+finding and the existing open obligations continue to block grammar growth.
+
 **Finite-input multiplication outcomes (2026-09-22; full gate passed):**
 No grammar, source admission, emitted C or solver-policy expansion. The existing
 pinned MLS/FMI/eFMI clause reviews carry forward; the authored C numerical model
