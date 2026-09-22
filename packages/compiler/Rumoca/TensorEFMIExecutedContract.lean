@@ -1,5 +1,6 @@
 import Rumoca.TensorEFMISourceMethod
 import Rumoca.TensorEFMIFiniteJacobian
+import RumocaC.TensorSquareDiagonalTotalContract
 import RumocaEFMI.TensorStartup
 
 /-! Source-bound execution products for the existing tensor eFMI slice.
@@ -18,6 +19,13 @@ structure TensorExecutedProductionContract (a : TensorArtifact source)
     (algorithm c : String) : Prop extends TensorProductionContract a algorithm c where
   /-- Finite RHS execution suffices; no independent Jacobian-addition premise. -/
   finiteSourceDoStep : SourceMethod.FiniteDoStep a c
+  /-- Total encoded helper outcomes, including overflow; all old finite public
+  method and source derivative contracts remain separate and unchanged. -/
+  jacobianOutcomes :
+    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+      String.join (numericalFunctions.map CTree.Function.render) ++
+      TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+    CTensor.SquareDiagonal.Total.ArtifactContract CTensor.SquareDiagonal.function.render
   sourceDoStep (unusedKernel : CSyntax.Program)
       (values : String → Values stateShape) (objects : CDeclaredMembers.Objects)
       (heap : Heap) (base : Address) (rhs result : Values stateShape)
@@ -72,6 +80,8 @@ theorem tensor_executed_production_correct (a : TensorArtifact source)
     TensorExecutedProductionContract a algorithm c where
   toTensorProductionContract := base
   finiteSourceDoStep := SourceMethod.finiteDoStep a base
+  jacobianOutcomes := ⟨JacobianObservation.actual_trees a base,
+    CTensor.SquareDiagonal.Total.artifact_correct _ rfl⟩
   sourceDoStep := SourceMethod.doStep a base
   allocatedStartup := AllocatedMethods.startup
   allocatedRecalibrate := AllocatedMethods.recalibrate

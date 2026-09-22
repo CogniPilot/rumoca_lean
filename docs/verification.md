@@ -1,5 +1,35 @@
 # Exact verification contract
 
+**Encoded Jacobian overflow outcomes (full gate passed):**
+
+The unchanged scratch-free square-Jacobian helper now has a total encoded-result
+proof for arbitrary finite inputs, including positive/negative infinity when
+doubling overflows. Its generic bit-preserving diagonal storage view specializes
+exactly to the old finite heap. Execution, matrix reads and the outside frame
+share one final heap; shape bounds, disjoint input/output storage and explicit
+header/function bindings remain. The independent `Binary64.Adds` relation fixes
+rounding, signed zero and both overflow signs. No NaN result arises from finite
+inputs. The FMI source-build and eFMI production/manifest/archive products now
+mandate these helper outcomes and the same actual numerical C text; all old
+fields and finite source/public-method theorems remain unchanged.
+
+Owning-package checks passed in `build/jacobian-overflow-package-v1.log` (3,675
+jobs), with 24 new audited roots. The extended existing native boundary driver
+passed on a fresh extraction of the retained production archive, including both
+overflow signs and adjacent finite/overflow inputs. Focused independent review
+found no issues. The required `nix develop .#verification --command lake test`
+then passed (exit 0, observed 2026-09-22 at 05:41 UTC), with all 2,429 input
+fingerprints unchanged. All 24 new roots, all 7,530 printed axiom reports
+(including wrapped lists) and four retained FMU roots passed the unchanged
+whitelist. Each FMI matrix passed 75 functions and 526 cells with zero
+discrepancies; eFMI actual-byte/reuse/mutation checks and the extended native
+overflow boundary passed. Evidence: `build/jacobian-overflow-full-gate-v1.log`
+and `build/jacobian-overflow-checkpoint.md`. Only the three evidence documents
+were updated after the gate; existing warnings remain. This does not prove
+overflowing source RHS or public DoStep behavior, nonfinite-input
+arithmetic, exception flags/traps, native correspondence or MISRA compliance.
+No grammar, admission, emitter or solver changes; expansion stays frozen.
+
 **Finite-square Jacobian domain (full gate passed):**
 
 The universal binary64 proof `ADExact.finite_square_doubling` establishes that

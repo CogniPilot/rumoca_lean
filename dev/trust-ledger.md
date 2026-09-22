@@ -1,5 +1,21 @@
 # Trust and premise ledger (K05)
 
+**Encoded Jacobian helper outcomes (2026-09-22; full gate passed):**
+`SquareDiagonal.Total.storage_correct` removes the finite-output premise for
+the unchanged helper on arbitrary finite inputs. The result is the independently
+specified nearest-even finite/infinite encoding, with exact finite-heap
+specialization, matrix reads and outside frame. Mandatory `jacobianOutcomes`
+fields bind this result to actual numerical text in both FMI and eFMI products.
+Legacy fields remain. Package checks (3,675 jobs, 24 new roots) and a native
+rehearsal and focused independent review passed. The required full artifact
+gate then passed with all 2,429 inputs unchanged, all 24 new roots, 7,530
+permitted printed axiom reports (wrapped lists included), and four permitted
+retained FMU roots. All three FMI matrices and eFMI actual-byte/reuse/mutation/
+native checks passed. See `build/jacobian-overflow-checkpoint.md`.
+F3 is only narrowed: source RHS/public-method overflow, nonfinite
+inputs, size bounds, exceptions/traps and native correspondence remain open.
+No K05 closure follows.
+
 **Finite-square derivative premise (2026-09-22; full gate passed):** The new
 mandatory `TensorExecutedProductionContract.finiteSourceDoStep` derives the
 Jacobian coefficients and their finite additions from finite square RHS

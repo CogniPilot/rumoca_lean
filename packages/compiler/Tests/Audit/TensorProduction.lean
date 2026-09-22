@@ -4,6 +4,7 @@ import ProofAudit.Audit
 -- Axiom audit for the roots defined in Rumoca.TensorProduction.
 
 #audit axioms Rumoca.tensorSourceBuild_correct
+#audit axioms Rumoca.TensorSourceBuildContract.jacobianOutcomes
 #audit axioms Rumoca.compileTensor_eq
 #audit axioms Rumoca.compileTensor_eq_parsed
 #audit axioms Rumoca.compileTensor_complete

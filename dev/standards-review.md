@@ -12,6 +12,19 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Encoded Jacobian helper outcomes (2026-09-22; full gate passed):** No grammar,
+source admission, emitted C or solver-policy change. The existing pinned
+MLS/FMI/eFMI clause reviews carry forward. Mandatory actual-byte products now
+include the helper's finite-input overflow outcomes, without treating infinity
+as a valid real derivative or claiming total source/public-method behavior.
+Package checks, focused review and the extended existing native driver passed.
+The required full artifact gate passed with unchanged inputs, all 24 new roots,
+7,530 permitted printed axiom reports and four permitted retained FMU roots.
+All three FMI matrices and eFMI actual-byte/reuse/mutation/native checks passed;
+see `build/jacobian-overflow-checkpoint.md`. Native overflow checks are only
+host-boundary evidence, not MISRA or IEEE-platform correspondence. K02–K05,
+remaining arithmetic/size-domain restrictions and normative findings stay open.
+
 **Finite-square derivative premise (2026-09-22; full gate passed):** No grammar,
 source admission, emitted C or solver-policy change. Existing pinned MLS/FMI/eFMI
 clause reviews carry forward without a new conformance claim. The existing

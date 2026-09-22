@@ -1,4 +1,7 @@
 import Tests.CAudit.LedgerFreshness
+import Tests.CAudit.RumocaC_TensorEncodedDiagonal
+import Tests.CAudit.RumocaC_TensorSquareDiagonalTotal
+import Tests.CAudit.RumocaC_TensorSquareDiagonalTotalContract
 import Tests.CAudit.QuotationFactor
 import Tests.CAudit.RumocaC_AddressedIVP
 import Tests.CAudit.RumocaC_AssignmentFootprint

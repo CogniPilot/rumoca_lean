@@ -1,9 +1,10 @@
 /* Native boundary check for the existing tensor eFMI profile, not a proof of
- * the host compiler, C ABI, nonfinite outcomes, or MISRA conformance. The code
+ * the host compiler, C ABI, exception flags/traps, or MISRA conformance. The code
  * under test is the Production C member extracted from the checked archive. */
 #include <assert.h>
 #include <fenv.h>
 #include <float.h>
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 #include "production.c"
@@ -79,11 +80,40 @@ static void one_case(double first, double second, double square_first,
   assert(guarded.after == UINT64_C(0xfedcba9876543210));
 }
 
+/* Exercise the actual helper separately: overflowing squares are not admitted
+ * by the finite RHS/public-method theorem. This checks helper result encodings
+ * only, and must not be read as source-level DoStep overflow coverage. */
+static void jacobian_case(double first, double second, uint64_t first_bits,
+                          uint64_t second_bits) {
+  const double input[2] = {first, second};
+  struct {
+    uint64_t before;
+    double output[4];
+    uint64_t after;
+  } guarded = {UINT64_C(0x123456789abcdef0), {17.0, 19.0, 23.0, 29.0},
+               UINT64_C(0xfedcba9876543210)};
+  rumoca_square_jacobian_diag(input, guarded.output, 2, 4);
+  assert(bits(guarded.output[0]) == first_bits);
+  assert(bits(guarded.output[1]) == UINT64_C(0));
+  assert(bits(guarded.output[2]) == UINT64_C(0));
+  assert(bits(guarded.output[3]) == second_bits);
+  assert(bits(input[0]) == bits(first));
+  assert(bits(input[1]) == bits(second));
+  assert(guarded.before == UINT64_C(0x123456789abcdef0));
+  assert(guarded.after == UINT64_C(0xfedcba9876543210));
+}
+
 int main(void) {
   assert(fesetround(FE_TONEAREST) == 0);
   one_case(2.0, -3.0, 4.0, 9.0, 4.0, -6.0);
   one_case(1.5, -0.5, 2.25, 0.25, 3.0, -1.0);
   /* Exact bits distinguish negative diagonal zero from off-diagonal +0. */
   one_case(-0.0, 0.0, 0.0, 0.0, -0.0, 0.0);
+  jacobian_case(DBL_MAX, -DBL_MAX, UINT64_C(0x7ff0000000000000),
+                UINT64_C(0xfff0000000000000));
+  jacobian_case(DBL_MAX / 2.0, -DBL_MAX / 2.0, bits(DBL_MAX), bits(-DBL_MAX));
+  double above_half = nextafter(DBL_MAX / 2.0, DBL_MAX);
+  jacobian_case(above_half, -above_half, UINT64_C(0x7ff0000000000000),
+                UINT64_C(0xfff0000000000000));
   return 0;
 }
