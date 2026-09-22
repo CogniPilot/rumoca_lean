@@ -35,8 +35,14 @@ in 2.2 seconds; Lean elaboration took 7.2 seconds. Evidence:
 The scratch-only measurement was 3,917 lines / 94,391 bytes and does not include
 the imported embeddings; it is not substituted for the owner measurement.
 These are host build measurements, not model execution throughput, whole-build
-speedups, embedded WCET or a full artifact-gate pass. Full-gate closure remains
-pending. Scratch evidence is under `build/galec-projection-factor-draft/`.
+speedups or embedded WCET. The required full artifact gate for `acf3046`
+subsequently passed (V2, exit0), with 2,513 frozen inputs unchanged, all 8,006
+complete reports and 126 added roots within the unchanged whitelist, plus four
+separately audited retained FMU roots. PA11's observed build failure is repaired;
+no asymptotic, whole-MSL or target-C conformance claim follows. Evidence:
+`build/galec-cutover-full-gate-v2.*` and
+`build/galec-cutover-fmu-retained-v2.*`.
+Scratch evidence is under `build/galec-projection-factor-draft/`.
 
 The current implementation is not ready for MSL-scale workloads. Identifier
 interning is necessary, but the first measured release blocker was native stack

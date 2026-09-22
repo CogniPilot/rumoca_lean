@@ -1,5 +1,33 @@
 # Development handoff — 2026-09-22
 
+## Cutover + PA11 full gate passed — standards repair next
+
+Implementation `acf3046` passed the required `nix develop .#verification
+--command lake test`. Gate V2/session84939 and post-audit/session18202 are
+TERMINAL exit0; do not poll/restart either. No build or agent remains active.
+All 2,513 frozen inputs were unchanged; all 8,006 complete reports passed the
+unchanged whitelist, including all 62 cutover and 64 factor roots. The four
+roots retained in Integrator/TensorSquare/ConstantRates FMUs were separately
+audited and the archives hashed. All three FMI matrices passed 75functions and
+526/650/526cells with zero discrepancies/unexpected results; parser/LSP,
+source/C/helper/FMI/eFMI actual-artifact, native and mutation gates passed.
+
+Evidence: `build/galec-cutover-full-gate-v2.log`, `.exit`, `.axioms`,
+`-inputs.sha256`, `-post-audit.log`/`.exit`, and
+`build/galec-cutover-fmu-retained-v2.axioms`/`.sha256`.
+Only evidence documents change after this frozen run. No grammar/admission
+changed, and GJ01/GJ02/N01, other standards/native and MISRA findings stay open.
+
+Next authorized repair: GJ02 GALEC dimension placement. Inventory:
+`build/gj02-repair-inventory.md`. Ptolemy completed a nine-row recurring
+whole-subset review draft at `build/gj02-stage-review-draft.md` and was closed.
+Main has read its first130lines, but must finish and independently inspect cited
+dependencies before adopting it. The draft's live-gate wording is historical;
+this completed baseline gate is not evidence for a future grammar repair.
+Keep the stage OPEN; ordinary grammar expansion remains blocked. Do not
+misrepresent post-repair reference/decoder theorems as equality to the old
+grammar: the intentionally rejected old dimension syntax changes acceptance.
+
 ## PA11 repair integrated — next full gate V2
 
 The current checkpoint factors `GALECParser/ProfileProjection.lean` into small

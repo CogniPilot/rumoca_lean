@@ -12,6 +12,22 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**GALEC cutover and PA11 repair (2026-09-22; full gate passed):**
+Implementation `acf3046` passed the required full gate V2 (exit0). All 2,513
+frozen inputs were unchanged; all 8,006 complete printed reports, including
+62 cutover and 64 repair roots, passed the unchanged whitelist. Four roots
+retained inside the three FMUs were separately audited. All three FMI matrices
+passed 75functions and 526/650/526cells, zero recorded-finding discrepancies or
+unexpected results. Existing parser/LSP, source/C/helper and scalar/tensor
+FMI/eFMI artifact, native and mutation gates passed. Evidence:
+`build/galec-cutover-full-gate-v2.*`,
+`build/galec-cutover-fmu-retained-v2.*`.
+Neither grammar nor admitted subset, emitted model C or normative coverage
+changes. This closes the parser cutover's artifact-gate obligation, not
+GJ01/GJ02/N01 or any whole-standard/MISRA finding. The recurring stage remains
+OPEN; the next authorized positional GALEC repair needs its own reviewed
+proof/artifact chain. V1 remains deliberately stopped failed evidence.
+
 **PA11 projection repair (2026-09-22; full gate pending):**
 Proof-preserving host compiler repair only; no EBNF, admitted subset, emitted
 model C, standards clause coverage or formal contract changes. Compositional

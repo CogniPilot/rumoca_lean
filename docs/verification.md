@@ -1,6 +1,27 @@
 # Exact verification contract
 
-**PA11 projection repair (owner/native checks passed; full gate pending):**
+**GALEC structural cutover and PA11 repair (full gate passed):**
+
+Implementation `acf3046` passed the required
+`nix develop .#verification --command lake test` (V2, exit 0). All 2,513 frozen
+tracked inputs were unchanged. All 8,006 complete printed axiom reports passed
+the unchanged whitelist, including all 62 cutover and 64 projection-repair roots.
+The four certificates retained inside the three actual FMUs were independently
+audited. FMI matrices passed 75 functions each and 526/650/526 behavior cells
+for Integrator/TensorSquare/ConstantRates, with zero recorded-finding
+discrepancies or unexpected results. Parser/LSP, actual source/C, tensor/helper,
+scalar/tensor FMI/eFMI, native-boundary and mutation checks passed.
+
+Evidence: `build/galec-cutover-full-gate-v2.log`, `.exit`, `.axioms`,
+`-inputs.sha256`, `-post-audit.log`/`.exit`, and
+`build/galec-cutover-fmu-retained-v2.axioms`/`.sha256`.
+Session84939 and post-audit session18202 are terminal exit0. V1 below remains a
+deliberately stopped failed run; it is not relabeled as pass evidence.
+This closes the cutover's missing artifact gate and PA11's observed host-build
+failure. It does not close GJ01/GJ02/N01, native correspondence, the other
+standards findings or MISRA compliance. No grammar/source admission changed.
+
+**PA11 projection repair (owner/native evidence preceding full gate):**
 
 The GALEC structural cutover now uses compositional `@[noinline]` AST checks,
 with unchanged embeddings and six public projection/retraction theorem
@@ -19,7 +40,8 @@ The integrated host C is 5,159 lines / 142,920 bytes; its native object built
 successfully in 2.2 seconds (`build/galec-projection-factor-native-v1.log`,
 `.exit`). These measurements repair the observed PA11 build-cost problem,
 not the model-C trusted boundary or standards findings. The required full
-artifact gate remains pending; stopped cutover V1 below remains failed evidence.
+artifact gate subsequently passed as recorded above; stopped cutover V1 below
+remains failed evidence.
 No grammar, admission, lowering, emitted model C or contract weakening occurred.
 
 **GALEC structural action cutover (owner checks passed; full gate pending):**
