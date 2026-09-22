@@ -1,6 +1,33 @@
 # Exact verification contract
 
-**GJ02 declaration placement repair (owner checks passed; full gate pending):**
+**GJ02 declaration placement repair (full gate passed; positional finding closed):**
+
+Implementation `4371eb3` passed the required
+`nix develop .#verification --command lake test` (V1, exit0). All 2,514 frozen
+tracked inputs were unchanged. All 8,012 complete printed axiom reports passed
+the unchanged whitelist; all 18 selected roots, including the five new
+rejection roots, were present. Four roots retained in the three FMUs were
+separately audited. FMI matrices passed 75functions each and 526/650/526cells,
+with zero recorded-finding discrepancies or unexpected results. Existing
+parser/LSP, source/C/helper and scalar/tensor FMI/eFMI artifact, native and
+mutation boundaries passed, including all three new old-order mutations.
+
+Main inspected `AlgorithmCode/model.alg` in the actual `build/TensorSquare.efmu`:
+all three declarations place dimensions after names. Its SHA-256 is
+`69c3fc4e3dd6800a558404f7a5d8d369c2d26d610eec9f7b76d12be47b127b36`;
+the archive SHA-256 is
+`f359de826bf6fa468194db794e1d5e6e7490f4bd4554fe48cb69406b85140f5c`.
+Scalar Algorithm Code and both scalar/tensor Production C members are
+byte-for-byte unchanged against the pre-repair archive hashes.
+Evidence: `build/gj02-full-gate-v1.*`, `build/gj02-fmu-retained-v1.*`,
+`build/gj02-{before,after}-{algorithm,production-c}.sha256` and
+`build/gj02-efmu-v1.sha256`. Gate3446 and post-audit69453 are terminal exit0.
+
+This closes only GJ02's dimensional-position mismatch, not whole GALEC
+declaration conformance. The separate block-direction ambiguity remains. Main
+also confirmed GJ03: the current `.*` spelling is absent from the pinned G-3
+arithmetic-operator production. GJ01/GJ03/N01 and other standards/native/MISRA
+findings remain open; no new Modelica case is admitted.
 
 The tensor GALEC grammar, generated Lean LALR tables, typed action slots,
 `TensorBlock.tokens` specification and emitted Algorithm Code now put constant
@@ -25,13 +52,12 @@ renderer audit entry. Evidence: `build/gj02-owner-v3.log`, `.exit`, `.axioms`,
 `build/gj02-required-roots.txt`. Bounded independent Astra review found no
 positional, proof-scope or mutation issue; it did not run builds. The existing
 tensor actual-file boundary now includes three independent nonvacuous old-order
-mutations; script syntax passed, execution awaits the full gate.
+mutations; both script syntax and full-gate execution passed.
 
 The nine-row whole-subset review is recorded in `dev/standards-review.md`.
-GJ02 closure awaits corrected actual artifacts and the required
-`nix develop .#verification --command lake test`. The previous passed gate does
-not certify this grammar repair. Block-direction ambiguity, GJ01/N01 and other
-standards/native/MISRA findings remain open; no new Modelica case is admitted.
+The repair's own corrected artifacts and required gate establish the bounded
+GJ02 closure recorded above; the previous baseline gate was not substituted
+for repair evidence. Block-direction ambiguity and the other findings remain.
 
 **GALEC structural cutover and PA11 repair (full gate passed):**
 

@@ -12,15 +12,29 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
-### GJ02 repair review — 2026-09-22, baseline e35c2f9, OPEN
+### GJ02 repair review — 2026-09-22, positional finding closed; stage OPEN
 
-Implementation follow-up: the positional repair and universal old-order
-rejection proofs are now implemented. Owner V3 passed 2314jobs and456complete
-audited reports, all18selectedroots including5new; existing renderer-completeness
-now has an explicit audit root. Independent Astra review found no issue. Three
-actual-file old-order mutations are wired into the existing boundary but have
-not run yet. GJ02 remains OPEN pending the corrected actual-artifact/full-gate
-evidence. The preimplementation scope review below is retained.
+Implementation `4371eb3` passed the required full gate V1 (exit0), with all
+2,514 frozen inputs unchanged and all 8,012 complete reports under the unchanged
+whitelist. All 18 selected roots (five new) were present; four retained FMU
+roots were separately audited. All three FMI matrices passed 75functions and
+526/650/526cells, zero discrepancies/unexpected results. Parser, source/C/helper,
+FMI/eFMI artifact/native/mutation gates passed, including the three independent
+old-order declaration mutations. Owner V3 had passed 2314jobs/456reports, and
+bounded independent Astra review found no issue.
+
+Actual `TensorSquare.efmu` Algorithm Code was inspected: `Real u[2]`,
+`Real x[2]`, `Real J[2, 2]`. Algorithm member SHA-256:
+`69c3fc4e3dd6800a558404f7a5d8d369c2d26d610eec9f7b76d12be47b127b36`;
+archive SHA-256:
+`f359de826bf6fa468194db794e1d5e6e7490f4bd4554fe48cb69406b85140f5c`.
+Scalar Algorithm Code and scalar/tensor Production C member hashes match the
+pre-repair archives. Evidence: `build/gj02-full-gate-v1.*`,
+`build/gj02-fmu-retained-v1.*`, `build/gj02-{before,after}-{algorithm,production-c}.sha256`
+and `build/gj02-efmu-v1.sha256`. GJ02's positional finding is closed. GJ01,
+newly confirmed GJ03, N01, block directions and other findings keep the stage
+OPEN. The preimplementation scope review (baseline e35c2f9) follows as history;
+its prospective boundary/decision rows are superseded only by this evidence.
 
 This is the authorized correction of GALEC declaration dimension placement,
 not a new Modelica case or ordinary grammar expansion. Main independently read
@@ -151,23 +165,52 @@ repair-only GALEC grammar changes for existing undeclared-jacobian and numerical
 error findings. No new Modelica cases are authorized, and no repair is
 implemented by this finding.
 
-### GJ02 — open: GALEC array declaration dimension placement
+### GJ02 — closed: GALEC array declaration dimension placement
 
 Pinned eFMI Beta 1 §3.2.4 G-2 declaration productions place optional constant
 dimensions after the variable name. Local evidence:
-`build/standards-review/efmi.txt`, lines 1878–1898. The tensor emitter, authored
-grammar and token reconstruction instead use `input Real[2] u;`,
-`output Real[2] x;` and `output Real[2,2] J;`. Internal parser/artifact agreement
-does not establish conformity with the declaration production.
+`build/standards-review/efmi.txt`, lines 1878–1898. The pre-repair emitter,
+authored grammar and token specification instead placed dimensions before
+names. Internal parser/artifact agreement did not establish conformity with
+the declaration production.
 
-Closure requires corrected rendering and grammar, structural actions,
-syntax/refinement proofs and actual-artifact binding, retaining tensor
-rank/extents in indexed IR. Do not extend canonical-token recognition as the
-repair mechanism. Beta 1's block-state direction grammar also contains TODOs;
-retain that ambiguity rather than claiming full declaration conformance from
-dimension placement alone. GJ01 and N01 remain separate open findings. In
-particular, a signal sets flags without automatically aborting, and checking a
-signal clears the tested flag; no zero-substitution failure policy is adopted.
+Implementation `4371eb3` repairs rendering, authored/generated grammar,
+typed structural actions and token specifications without changing the AST or
+indexed tensor rank/extents. Universal corrected acceptance, arbitrary-tree
+profile/build proofs, renderer/refinement and target/artifact contracts passed
+the required gate. New universal parser-rejection proofs cover each old slot
+and combinations; three nonvacuous actual-file mutants were rejected. The
+actual archive and unchanged Production C comparison are recorded above.
+No token-pattern parser or decoder fallback was introduced.
+
+Beta 1's block-state direction grammar still contains TODOs. This bounded
+positional closure does not establish full declaration conformance. GJ01,
+GJ03 and N01 remain separate findings; no failure policy is changed.
+
+### GJ03 — open: nonstandard GALEC pointwise operator spelling
+
+Main independently inspected the pinned Beta 1 §3.2.4 G-3.5–G-3.10 arithmetic
+production (`build/standards-review/efmi.txt`, lines2458–2470): its alternatives
+are `+`, `-`, `*`, `/`, `^`, not `.*`. Current `GALEC.ebnf`'s `product`,
+`StructuralActions.product`, `Syntax.TensorBlock.tokens` and the actual tensor
+Algorithm Code still use `self.u .* self.u`. Ordinary dotted state references
+do not supply that binary operator. This is a GALEC finding, not a claim that
+Modelica's source `.*` operator is invalid.
+
+Closure requires a standard-compatible realization of the already prepared
+pointwise operation, preserving tensor shape, exact numerical order/domain and
+source meaning, with universal lowering/execution and actual-artifact proofs.
+Do not replace the spelling with `*` without establishing its meaning on the
+shaped operands. Bounded runtime loops are a candidate that avoids compiler-time
+element enumeration; source AD, name resolution and shape inference stay
+upstream. Removing the undeclared `jacobian` call alone does not close GJ03.
+
+The GJ01 prepared-diagonal loop proposal is recorded for future review in
+`build/gj01-lowering-design-review.md`; it is not implemented or proved. Main
+read its full text and independently checked the cited G-3 operators, loop/
+indexed-reference grammar and dimension restrictions. No grammar changed for
+this finding. N01 detection, block-direction ambiguity, native correspondence
+and whole-product MISRA obligations remain separate and open.
 
 **Generic CST payload attachment (2026-09-22; full gate passed):**
 This reusable parser prerequisite changes neither language EBNF, production

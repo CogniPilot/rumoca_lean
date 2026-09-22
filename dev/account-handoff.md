@@ -1,5 +1,45 @@
 # Development handoff — 2026-09-22
 
+## GJ02 positional repair fully gated and closed — GJ01/GJ03 next
+
+Implementation4371eb3 passed the required full gate V1. Shell3446 and post-
+audit69453 are TERMINAL exit0; do not poll/restart. No build/agent remains live.
+All2514frozeninputs unchanged; all8012complete reports under unchanged whitelist;
+18selectedroots present (5new),4retainedFMUroots separately audited. Matrices
+75functions each,526/650/526cells,0discrepancies/unexpected. Existing parser/LSP,
+source/C/helper and scalar/tensor FMI/eFMI artifact/native/mutation checks passed.
+All three new old-order declaration mutations were independently nonvacuous and
+rejected. Actual archived declarations inspected; scalarAlgorithmCode and both
+scalar/tensorProductionC members are byte-for-byte unchanged. GJ02 closed only
+for dimension placement; no broader conformance or new Modelica admission.
+
+Evidence: build/gj02-full-gate-v1.{log,exit,axioms}, -inputs.sha256,
+-post-audit.{log,exit}; build/gj02-fmu-retained-v1.{axioms,sha256};
+build/gj02-{before,after}-{algorithm,production-c}.sha256;
+build/gj02-efmu-v1.sha256. Actual tensor algorithm/member and archive hashes in
+docs/verification.md and dev/standards-review.md. Only evidence docs changed
+after the frozen gate.
+
+New GJ03: pinned eFMI G-3 lists +,-,*,/,^ but not emitted `.*`; main independently
+confirmed exact grammar and current archived text. Recorded in standards ledger;
+build/gj03-pointwise-finding.md is the read-only preparation. This is separate
+from GJ01's undeclared jacobian call and N01 numerical detection; all remain open.
+
+Next design preparation: build/gj01-lowering-design-review.md (266lines), by
+closed Ptolemy Astra. Main read completely and independently inspected cited
+G-3, loop/index grammar, dimension restrictions and termination guidance.
+Proposal (NOT implemented/proved): typed prepared-operation realization via
+ordinary bounded loops; zero-fill matrix then scatter already-prepared diagonal
+coefficients. Keep source AD upstream; square's u+u realization requires existing
+signed-zero-aware bridge and retains primal-square finite-execution premise.
+Preserve positive off-diagonal zero, shapes, bounds and exact target correspondence.
+No fake jacobian(y,x), unsupported diagonal builtin, element enumeration, backend
+AD/name/shape inference, or numerical C change. GJ03's pointwise realization may
+share the same generic loop/index semantics but needs its own proof obligation.
+Before another repair grammar edit, record the recurring whole-subset review.
+See proposal for missing independent GALEC loop semantics, realization and
+actual-artifact obligations. Ordinary grammar expansion remains blocked.
+
 ## GJ02 implementation — owner passed; full gate next
 
 Authorized type/name/dimensions repair implemented across GALEC EBNF, generated
