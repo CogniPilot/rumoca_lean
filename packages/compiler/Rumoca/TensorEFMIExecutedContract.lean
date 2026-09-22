@@ -1,4 +1,5 @@
 import Rumoca.TensorEFMISourceMethod
+import Rumoca.TensorEFMIFiniteJacobian
 import RumocaEFMI.TensorStartup
 
 /-! Source-bound execution products for the existing tensor eFMI slice.
@@ -15,6 +16,8 @@ open EFMI.TensorProduction EFMI.TensorNumericalLinkage
 same source and independently checked Algorithm/Production Code bytes. -/
 structure TensorExecutedProductionContract (a : TensorArtifact source)
     (algorithm c : String) : Prop extends TensorProductionContract a algorithm c where
+  /-- Finite RHS execution suffices; no independent Jacobian-addition premise. -/
+  finiteSourceDoStep : SourceMethod.FiniteDoStep a c
   sourceDoStep (unusedKernel : CSyntax.Program)
       (values : String → Values stateShape) (objects : CDeclaredMembers.Objects)
       (heap : Heap) (base : Address) (rhs result : Values stateShape)
@@ -68,6 +71,7 @@ theorem tensor_executed_production_correct (a : TensorArtifact source)
     (base : TensorProductionContract a algorithm c) :
     TensorExecutedProductionContract a algorithm c where
   toTensorProductionContract := base
+  finiteSourceDoStep := SourceMethod.finiteDoStep a base
   sourceDoStep := SourceMethod.doStep a base
   allocatedStartup := AllocatedMethods.startup
   allocatedRecalibrate := AllocatedMethods.recalibrate

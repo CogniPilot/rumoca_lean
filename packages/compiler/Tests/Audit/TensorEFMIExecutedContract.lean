@@ -8,6 +8,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.TensorExecutedProductionContract.allocatedRecalibrate
 #audit axioms Rumoca.TensorExecutedProductionContract.allocatedStartup
 #audit axioms Rumoca.TensorExecutedProductionContract.sourceDoStep
+#audit axioms Rumoca.TensorExecutedProductionContract.finiteSourceDoStep
 #audit axioms Rumoca.TensorExecutedProductionContract.toTensorProductionContract
 #audit axioms Rumoca.tensor_executed_archive_correct
 #audit axioms Rumoca.tensor_executed_manifests_correct

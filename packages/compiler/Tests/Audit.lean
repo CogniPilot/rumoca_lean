@@ -1,5 +1,6 @@
 import Tests.Audit.TensorArtifact
 import Tests.Audit.TensorEFMIExecutedContract
+import Tests.Audit.TensorEFMIFiniteJacobian
 import Tests.Audit.TensorEFMISourceJacobian
 import Tests.Audit.TensorEFMISourceMethod
 import Tests.Audit.TensorEFMISourceObservation

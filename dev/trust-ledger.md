@@ -1,5 +1,20 @@
 # Trust and premise ledger (K05)
 
+**Finite-square derivative premise (2026-09-22; full gate passed):** The new
+mandatory `TensorExecutedProductionContract.finiteSourceDoStep` derives the
+Jacobian coefficients and their finite additions from finite square RHS
+execution. `Binary64.ADExact.finite_square_doubling` proves the domain implication
+universally, and `ArrayProfile.ADExact.coefficient_adds_from_finite_rhs` retains
+exact encodings. This premise is proved, not external. The old `sourceDoStep`
+field remains unchanged. Source/actual-byte/final-heap bindings and storage
+premises remain; primal overflow and other numerical/history/native obligations
+are not discharged. Package checks and focused independent review passed. The
+required full artifact gate passed with unchanged inputs, all seven new roots,
+7,378 permitted printed axiom reports and four permitted retained FMU roots.
+All three FMI matrices and eFMI actual-byte/reuse/mutation/native boundary checks
+passed; see `build/finite-square-checkpoint.md`. No K05 closure or grammar
+expansion follows.
+
 **Canonical-context integration, full gate passed (2026-09-22):** The tensor eFMI actual-file
 products now retain the old contracts and additionally require the public-method
 execution/source-Jacobian products on the same source, bytes and final heap.

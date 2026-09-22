@@ -1,5 +1,31 @@
 # Exact verification contract
 
+**Finite-square Jacobian domain (full gate passed):**
+
+The universal binary64 proof `ADExact.finite_square_doubling` establishes that
+a finite square implies finite doubling. The ordered square forward-AD program
+therefore needs no additional addition-domain assumption. Its canonical result
+preserves exact encodings, including signed zero; the unused primal square is
+still checked. `TensorExecutedProductionContract.finiteSourceDoStep` now requires
+source-bound public DoStep execution from finite RHS execution alone, retaining
+source/Jacobian observations, actual C bytes and one common final heap. All old
+contract fields remain. The fixed production/manifest/archive checkers require
+the strengthened product, not a separate optional certificate.
+
+Owning-package checks passed in `build/finite-square-package-v1.log`, and a
+focused independent review found no issues. The required
+`nix develop .#verification --command lake test` passed (exit 0, observed
+2026-09-22 at 04:49 UTC), with all 2,423 input fingerprints unchanged. All seven
+new roots were present; all 7,378 printed axiom reports and four retained FMU
+roots passed the unchanged whitelist. The three FMI matrices each passed all
+75 functions and 526 cells with zero discrepancies; eFMI actual-byte, reuse,
+mutation and native finite/signed-zero checks passed. Existing warnings remain.
+Evidence: `build/finite-square-full-gate-v1.log` and
+`build/finite-square-checkpoint.md`. Only these evidence documents were updated
+after the gate. No source case, grammar, emission, solver or boundary suite
+changes. Square overflow, complete histories, native correspondence, MISRA and
+K02–K05 remain open; grammar stays frozen.
+
 **Canonical tensor execution (full artifact gate passed):**
 
 Shared C now has one context-parameterized expression evaluator and scheduler

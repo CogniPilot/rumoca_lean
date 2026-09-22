@@ -12,6 +12,19 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Finite-square derivative premise (2026-09-22; full gate passed):** No grammar,
+source admission, emitted C or solver-policy change. Existing pinned MLS/FMI/eFMI
+clause reviews carry forward without a new conformance claim. The existing
+tensor eFMI actual-byte product is strengthened: finite square RHS execution
+now suffices for the exact Jacobian and public DoStep, without an independent
+finite-addition premise. This is a universal Lean domain implication, not a
+successful-example argument. Package checks, focused independent review and the
+required full artifact gate passed with unchanged inputs. All seven new roots,
+7,378 printed axiom reports and four retained FMU roots passed the whitelist;
+all three FMI matrices and eFMI actual-byte/reuse/mutation/native checks passed.
+See `build/finite-square-checkpoint.md`. K02–K05, MISRA and all unresolved
+normative findings remain open; native checks do not prove toolchain correspondence.
+
 **Canonical-context integration, full gate passed (2026-09-22):** No grammar/admission, emitted C
 or solver-policy expansion is included. The existing MLS/FMI/eFMI clause review
 therefore carries forward without new conformance claims. The tensor eFMI fixed
