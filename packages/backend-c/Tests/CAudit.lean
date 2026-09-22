@@ -186,3 +186,4 @@ import Tests.CAudit.RumocaC_Unsigned
 import Tests.CAudit.RumocaC_UnsignedMemory
 import Tests.CAudit.RumocaC_LiteralPoolContents
 import Tests.CAudit.RumocaC_TreeTable
+import Tests.CAudit.RumocaC_TensorFiniteScan

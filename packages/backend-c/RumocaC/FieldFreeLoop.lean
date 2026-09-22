@@ -85,4 +85,26 @@ theorem loop_free_next (free : LoopFree before)
     LoopFree, AdmittedBody, body, CDeclaredMembers.FieldFree.expressions, sites_flatMap,
     List.flatMap_cons, List.flatMap_append, List.all_append, Bool.and_eq_true])
 
+/-- Transport an actual field-free loop computation, including a non-void
+result, into the canonical scheduler's arbitrary declared-object context. -/
+theorem body_reaches_context (declarations : CDeclaredMembers.Declarations)
+    (objects : CDeclaredMembers.Objects) (p : CCalls.Program)
+    (ran : Transition.Reaches CLoops.machine.step before after) (type stack) :
+    LoopFree before → Transition.Reaches (machine (declared declarations objects) p).step
+      (.body before type stack) (.body after type stack) := by
+  induction ran with
+  | refl => intro _; exact .refl _
+  | @next before middle after step _ ih =>
+    intro free
+    change CLoops.next before = some middle at step
+    have same := loop_next_agreement declarations objects before free
+    have stepped : next (declared declarations objects) p (.body before type stack) =
+        some (.body middle type stack) := by
+      cases before with
+      | returned => simp [CLoops.next, CLoops.nextWith] at step
+      | running =>
+        simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions,
+          same, step]
+    exact .next stepped (ih (loop_free_next free step))
+
 end Rumoca.CContextMachine.FieldFree

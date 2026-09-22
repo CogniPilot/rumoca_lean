@@ -2,17 +2,55 @@
 #include <float.h>
 #include <fenv.h>
 #include <math.h>
+#include <string.h>
 #include <stddef.h>
 #include <stdint.h>
 #include "tensor-native.h"
 
 _Static_assert(sizeof(size_t) == 8, "authored tensor target uses 64-bit size_t");
+_Static_assert(sizeof(double) == sizeof(uint64_t), "binary64 object storage required");
 _Static_assert(FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 &&
                DBL_MIN_EXP == -1021 && FLT_EVAL_METHOD == 0, "binary64 target required");
 
 /* One native boundary check complements the universal Lean proofs. */
 int main(void) {
   assert(fesetround(FE_TONEAREST) == 0);
+  /* Empty tensors have no dereference, including a null data pointer. */
+  assert(rumoca_tensor_all_finite(NULL, 0) == 1);
+  const double finite_values[] = {0.0, -0.0, DBL_TRUE_MIN, -DBL_TRUE_MIN, DBL_MAX, -DBL_MAX};
+  uint64_t finite_bits[6];
+  memcpy(finite_bits, finite_values, sizeof finite_bits);
+  assert(rumoca_tensor_all_finite(finite_values, 6) == 1);
+  uint64_t after_bits[6];
+  memcpy(after_bits, finite_values, sizeof after_bits);
+  assert(memcmp(finite_bits, after_bits, sizeof finite_bits) == 0);
+  /* Quiet NaNs include a nonzero payload; the scanner must not alter input. */
+  uint64_t nan_bits = UINT64_C(0x7ff8000000000042);
+  double quiet_nan;
+  memcpy(&quiet_nan, &nan_bits, sizeof quiet_nan);
+  const double first_failure[] = {quiet_nan, 1.0, 2.0};
+  const double middle_failure[] = {1.0, quiet_nan, 2.0};
+  const double last_failure[] = {1.0, 2.0, quiet_nan};
+  assert(rumoca_tensor_all_finite(first_failure, 3) == 0);
+  assert(rumoca_tensor_all_finite(middle_failure, 3) == 0);
+  assert(rumoca_tensor_all_finite(last_failure, 3) == 0);
+  assert(rumoca_tensor_all_finite((const double[]){INFINITY}, 1) == 0);
+  assert(rumoca_tensor_all_finite((const double[]){-INFINITY}, 1) == 0);
+  uint64_t negative_nan_bits = UINT64_C(0xfff8000000000081);
+  double negative_nan;
+  memcpy(&negative_nan, &negative_nan_bits, sizeof negative_nan);
+  assert(rumoca_tensor_all_finite(&negative_nan, 1) == 0);
+  assert(memcmp(&negative_nan_bits, &negative_nan, sizeof negative_nan_bits) == 0);
+  double guarded[6] = {17.0, 1.0, 2.0, 3.0, 4.0, 19.0};
+  uint64_t guarded_before[6];
+  memcpy(guarded_before, guarded, sizeof guarded_before);
+  assert(rumoca_tensor_all_finite(guarded + 1, 4) == 1);
+  assert(memcmp(guarded_before, guarded, sizeof guarded_before) == 0);
+  assert(guarded[0] == 17.0 && guarded[5] == 19.0);
+  guarded[3] = quiet_nan;
+  memcpy(guarded_before, guarded, sizeof guarded_before);
+  assert(rumoca_tensor_all_finite(guarded + 1, 4) == 0);
+  assert(memcmp(guarded_before, guarded, sizeof guarded_before) == 0);
   const double input[2] = {2.0, 3.0};
   double output[4] = {17.0, 0.0, 0.0, 19.0};
   rumoca_tensor_fill(-0.0, output + 1, 2);

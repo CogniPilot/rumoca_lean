@@ -1,5 +1,41 @@
 # Exact verification contract
 
+**Runtime tensor finiteness scanner (full gate passed):**
+
+The shared C backend now emits a reusable, read-only counted scanner and proves
+that its returned `int32_t` flag is exactly Solve's whole-tensor encoded
+finiteness classifier. The universal result includes every binary64 pattern,
+all coordinates and zero-volume shapes (including a null input for an empty
+tensor). Readable input storage, the 64-bit count bound, explicit header types
+and the actual function definition remain premises. The canonical contextual C
+machine executes the body and return conversion under arbitrary caller stacks
+and declared-object contexts, preserving the entire heap. A reusable field-free
+body transport theorem supports nonvoid results without a second scheduler.
+
+The fixed actual-file checker requires exact emitted bytes, independent token
+syntax, typed call execution, unique behavior and the finite-bit characterization
+together. Owning-module builds, bounded independent proof review, actual-file
+certification, deliberate detector mutation rejection and the extended existing
+native tensor driver passed. The native checks cover signed zeros, subnormals,
+finite extrema, both infinities, signed quiet-NaN payloads, failure positions,
+empty/null input and unchanged guarded storage; these are host-boundary checks,
+not universal native correspondence. The required
+`nix develop .#verification --command lake test` passed (exit 0, observed
+2026-09-22 at 09:28 UTC), with all 2,450 frozen input hashes unchanged. All
+7,640 printed axiom reports (wrapped lists included), all 16 new roots and
+four retained FMU roots passed the unchanged whitelist. Each FMI matrix passed
+75 functions and 526 cells with zero discrepancies; scalar/tensor eFMI
+actual-byte, publication/reuse/mutation and native checks passed. Evidence:
+`build/tensor-finite-scan-full-gate-v1.log`. Only the three evidence documents
+were updated after the frozen gate. Existing warnings remain; none occurred
+in the new scanner modules.
+
+This helper is not yet invoked by production FMI/eFMI methods. Source admission,
+grammar and public failure policy are unchanged. Native `isfinite`, headers,
+signaling-NaN/trap/exception behavior, all-path detection/consumer composition,
+N01, K02–K05 and MISRA compliance remain open. Evidence is tracked in
+`build/tensor-finite-scan-checkpoint.md`; grammar expansion remains blocked.
+
 **Numerical classification foundation (full gate passed):**
 
 Solve now owns rank-preserving numerical multiplication outcomes and a total

@@ -1,6 +1,7 @@
 import RumocaC.TensorCode
 import RumocaC.TensorFillCode
 import RumocaC.TensorDiagonalCode
+import RumocaC.TensorFiniteScanCode
 import RumocaC.TensorSquareDiagonal
 import TensorCChecks.IVPEntry
 
@@ -15,6 +16,7 @@ def main (args : List String) : IO Unit := do
   IO.FS.writeFile (root / "div.c") (Rumoca.CTensor.function .div).render
   IO.FS.writeFile (root / "fill.c") Rumoca.CTensor.Fill.function.render
   IO.FS.writeFile (root / "diagonal.c") Rumoca.CTensor.Diagonal.function.render
+  IO.FS.writeFile (root / "finite.c") Rumoca.CTensor.FiniteScan.function.render
   IO.FS.writeFile (root / "jacobian-diag.c") Rumoca.CTensor.SquareDiagonal.function.render
   let sources := Rumoca.CTensor.ProgramFixture.IVPEntry.sources
   IO.FS.writeFile (root / "initial.c") sources.initial

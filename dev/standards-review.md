@@ -12,6 +12,28 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Runtime tensor finiteness scanner (2026-09-22; full gate passed):**
+This is a shared-backend prerequisite within the frozen subset, not a grammar
+expansion or completed recurring stage review. The pinned MLS 3.7 source and
+real-derivative clause coverage is unchanged. The N01 review's eFMI Beta 1
+§3.2.5 §2 propagation and §1.3/§1.6 exposed-signal requirements, FMI 3.0.2
+§2.2.4 status/frame distinctions and §3.2.1 numerical-failure note, and MISRA
+C:2025 Dir 4.15 detection/consumer obligation carry forward without a new
+interpretation. No backend-only status bit or unapproved delayed-detection
+assumption is introduced. Formal coverage now includes runtime whole-tensor
+scanning, typed canonical calls, exact classifier results and heap preservation.
+The fixed actual-helper checker binds those proofs to emitted bytes; independent
+review, actual-file certification, detector mutation rejection and the extended
+existing native boundary passed. The required full gate passed with all 2,450
+inputs unchanged, all 7,640 permitted printed axiom reports (wrapped lists
+included), all 16 new roots and four permitted retained FMU roots. All three
+FMI matrices and scalar/tensor eFMI actual-byte, publication/reuse/mutation and
+native checks passed. Production
+methods do not yet invoke the helper, so all-path/consumer composition and
+interface failure handling remain open. N01 and every other unresolved finding
+continue to block grammar growth and standards-compliance claims. Evidence:
+`build/tensor-finite-scan-checkpoint.md`.
+
 **Numerical classification foundation (2026-09-22; full gate passed):**
 No grammar, admission, emitted C or interface policy change. The N01 normative
 review carries forward: core tensor/bit classification and its actual-helper

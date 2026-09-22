@@ -1,5 +1,25 @@
 # Trust and premise ledger (K05)
 
+**Runtime tensor finiteness scanner (2026-09-22; full gate passed):**
+The emitted scanner now executes the core all-finite classifier in the authored
+C semantics, including typed parameter/return conversion and canonical contextual
+calls. Its complete heap is unchanged. Nonempty input requires all indexed
+cells readable; empty input may be null. Count bounds, explicit header types
+and exact function lookup are retained. The fixed development actual-file
+certificate binds bytes, independent syntax, exact returned flag and execution;
+it does not assert that public FMI/eFMI methods call this helper. Owning builds,
+bounded independent review, actual-file certification, mutation rejection and
+the existing native driver passed. The required full gate passed with all
+2,450 inputs unchanged, all 7,640 printed axiom reports (wrapped lists included),
+all 16 new roots and four retained FMU roots passing the unchanged whitelist.
+All three FMI matrices and scalar/tensor eFMI actual-byte, publication/reuse,
+mutation and native checks passed. Only three evidence documents changed after
+the frozen gate. Native
+headers/`isfinite`, exception configuration and machine correspondence remain
+outside the Lean model. No axiom or audit policy changed. N01, all-path detection
+and interface failure protocols, source histories, MISRA and K02–K05 remain
+open. See `build/tensor-finite-scan-checkpoint.md`.
+
 **Numerical classification foundation (2026-09-22; full gate passed):**
 The core detector is proved against all finite/nonfinite encoding classes, and
 its tensor lift covers all coordinates. The square detector accepts exactly
