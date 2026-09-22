@@ -7,6 +7,8 @@ import Parser.EBNF.ReaderCorrectness
 import Parser.LALR.Actions
 import Parser.LALR.Payloads
 import Parser.LALR.EBNFStructure
+import Parser.LALR.EBNFActions
+import Tests.StructuralActions
 import Parser.LALR.FirstProofs
 import Parser.LALR.ItemCheck
 import Parser.LALR.Execution
@@ -272,4 +274,22 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Frontend.Structure.parse_total
 #audit axioms Parser.LALR.Frontend.Structure.parse_sound
 #audit axioms Parser.LALR.Frontend.Structure.parse_accepts_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.denotes_run
+#audit axioms Parser.LALR.Frontend.StructuralActions.run_sound
+#audit axioms Parser.LALR.Frontend.StructuralActions.run_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.total
+#audit axioms Parser.LALR.Frontend.StructuralActions.denotes_expr
+#audit axioms Parser.LALR.Frontend.StructuralActions.denotes_valid
+#audit axioms Parser.LALR.Frontend.StructuralActions.domain
+#audit axioms Parser.LALR.Frontend.StructuralActions.unique
+#audit axioms Parser.LALR.Frontend.StructuralActions.parse_total
+#audit axioms Parser.LALR.Frontend.StructuralActions.parse_sound
+#audit axioms Parser.LALR.Frontend.StructuralActions.parse_accepts_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.covered
+#audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.licensed
+#audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.meaning
+#audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.arbitrary_depth
+#audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.source_valid
+#audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.nullable_meaning
+#audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.nullable_depth
 #audit axioms Parser.Scanner.prefix_before_delimiter

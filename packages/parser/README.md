@@ -83,6 +83,23 @@ unchanged and both target archives checked.
 
 Richer LR rejection diagnostics remain open.
 
+`LALR.Frontend.StructuralActions` provides typed actions over the actual EBNF
+structural tree, with rule-table references rather than inline rule expansion.
+Recursive delegation consumes a named child; semantic maps consume a smaller
+action. Empty, optional and repeated structures are supported, including
+nullable repeated bodies, without another fuel limit or acyclic-rule premise.
+Each name has one typed action: distinct alternative bodies belong in that
+rule's EBNF alternative, not separate entries with the same name.
+
+Independent `Denotes` semantics, whole-table coverage and rule licensing give
+soundness, totality, unique results and an exact valid-tree domain. Composition
+with the checked structural bridge preserves the actual LALR parser's entire
+accepted language. The runtime takes computable annotations and actions, never
+the proof-only lowering witness. The symbol contract is still `decode ∘ encode`;
+each frontend must connect it to its independent token classifier and prove
+the intended AST semantics. Universal recursive/nullable instantiations live in
+`Tests.StructuralActions`. This engine does not itself cut over either frontend.
+
 `Scanner.Prefix` provides compositional scanning judgments with the actual
 unconsumed suffix present. Its composition and full-input equivalence proofs
 preserve the existing scanner's word, number and symbol boundaries. It is a

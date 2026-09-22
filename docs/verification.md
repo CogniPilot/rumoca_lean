@@ -1,5 +1,27 @@
 # Exact verification contract
 
+**Recursive structural actions (package checks passed; full gate pending):**
+
+`Parser.LALR.EBNFActions` adds reusable typed rule-table delegation over the
+actual structural tree, including empty, optional and repeated expressions.
+Lexicographic structural termination permits recursive source rules and nullable
+repetitions without another fuel parameter. Independent denotation, exhaustive
+source-rule coverage and rule licensing prove soundness, totality, unique
+results and exact valid-tree domains. The executable composition with the
+existing structural bridge preserves the actual LALR parser's complete language.
+One body per rule name is required; alternatives reside inside that body.
+Runtime inputs contain no proof-only lowering witness. The classifier boundary
+remains `decode ∘ encode`; meaningful frontend AST semantics remain obligations.
+
+Universal heterogeneous-rule recursion and nullable-repetition instantiations
+are package-owned proofs, not bounded acceptance examples. Standalone checks
+passed 18 roots. Owner checks passed 798 jobs and 297 complete axiom reports,
+including all 18 new roots, under the unchanged whitelist; no new-module
+warnings. Evidence: `build/recursive-actions-owner-v2.log` and `.axioms`.
+The earlier V1 package run failed on missing proof-module registration and is
+not pass evidence. Frontend cutover, grammar/source admission and emitted C
+are unchanged. Existing standards and numerical findings remain open.
+
 **Fixed-rate Euler interval preflight (full gate passed):**
 
 Solve now specifies independent scalar and shape-indexed tensor finite prefixes

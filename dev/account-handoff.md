@@ -1,5 +1,17 @@
 # Development handoff — 2026-09-22
 
+## Recursive action engine — integrated; full gate pending
+
+`packages/parser/Parser/LALR/EBNFActions.lean` now owns typed recursive rule
+delegation, independent denotation and universal soundness/completeness, plus
+whole-language composition with the actual LALR structural parser. No frontend,
+grammar, source admission or C output changes. `Tests/StructuralActions.lean`
+proves arbitrary-depth heterogeneous recursion and nullable repetition.
+Owner V2 passed 798 jobs/297 complete audited reports, including all 18 new roots;
+standalone check15 passed. V1 failed on now-fixed proof-module registration.
+Evidence: `build/recursive-actions-owner-v2.log`, `.axioms`,
+`build/recursive-actions-new-roots.txt`. The required full gate is pending.
+
 ## Latest full gate: Euler prerequisite passed
 
 Implementation checkpoint `a2fb25f` passed the required

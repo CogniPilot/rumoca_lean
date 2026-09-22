@@ -18,7 +18,7 @@ globs = ["Parser", "Parser.+"]
 
 [[lean_lib]]
 name = "ParserChecks"
-roots = ["Tests.ParserAudit", "Tests.LALRChecks", "Tests.LALRSafetyChecks", "Tests.LALRFirstChecks"]
+roots = ["Tests.ParserAudit", "Tests.LALRChecks", "Tests.LALRSafetyChecks", "Tests.LALRFirstChecks", "Tests.StructuralActions"]
 
 [[lean_exe]]
 name = "lalrgen"
