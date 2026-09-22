@@ -2,6 +2,21 @@
 
 ## GALEC structural cutover — owner checks passed; full gate pending
 
+Current HEAD `0f1fecc` implements the cutover after foundation `a363701`.
+Full gate V1/session71897 is TERMINAL exit1: main deliberately stopped the
+pathological ProfileProjection host compilation after 529s, at observed RSS
+12,206,916KiB. Generated host C was 54,459,127bytes/1,651,291lines. No OOM claim,
+no artifact-gate pass. All 2,513 frozen tracked inputs remained unchanged.
+See PA11 in `dev/performance-audit.md` and `build/galec-cutover-full-gate-v1.*`.
+Do not poll/restart that terminal handle. No full gate is live.
+
+Ptolemy Astra `01a0c9d1-d6e5-7b63-abee-db60e05adda8` is ACTIVE only under
+`build/galec-projection-factor-draft/`: compositional projection helpers,
+exact equality to both old projectors for every AST (including malformed
+rejection), and generated host-C size measurement. No tracked edits, package
+builds or gate interaction are authorized to the worker. Main will review and
+integrate the proved factor, verify native compilation cost, then run gate V2.
+
 The public scalar/tensor source entrypoints now consume their already accepted
 CST once via package-owned structural conversion, generic typed rule dispatch
 and direct AST projection. The old token decoders are noncomputable proof-only
@@ -16,15 +31,15 @@ proof-only old decoder specifications. No grammar/source admission/C change.
 Owner V2 passed 829 jobs/401 complete audited reports, all 62 new roots present,
 no new-module warnings. V1 failed only on a doubled documentation comment.
 Evidence: `build/galec-cutover-owner-v2.log`, `.axioms`,
-`build/galec-cutover-new-roots.txt`. Required full gate not started yet.
+`build/galec-cutover-new-roots.txt`. The first full-gate attempt is described above.
 
 Bounded Astra review found no direct Words/profile/runtime contract issue and
 verified that source reference bodies match a11e030. It preceded successful
 elaboration of the final source equality script and the noncomputable labels on
 old decoder definitions; the latter change no reference bodies. Final equality
-proofs and decoder retirement passed the owner check. Both agents are CLOSED;
-no agent or build is live. Next: commit this cutover, freeze tracked inputs,
-run the required full gate once, audit reports and retain artifact evidence.
+proofs and decoder retirement passed the owner check. The bounded reviewer is
+CLOSED; Ptolemy has the new PA11 task above. The cutover is committed, but its
+actual-artifact gate must be completed after the projection build-cost repair.
 
 ### Earlier foundation checkpoint
 

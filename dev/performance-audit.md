@@ -1,5 +1,28 @@
 # Compiler performance audit — 2026-09-10
 
+## PA11 — GALEC profile projection host-code expansion (2026-09-22)
+
+The structural-parser cutover at `0f1fecc` passed Lean owner checks, but its
+large nested AST profile patterns generated 1,651,291 lines / 54,459,127 bytes
+in `packages/galec-parser/.lake/build/ir/GALECParser/ProfileProjection.c`.
+This is Lean's native compiler implementation, **not emitted model C**.
+
+During the required full gate, GCC's `cc1` was still active at 8:48 with 99.3%
+CPU and 12,206,916 KiB resident memory. Main deliberately terminated that exact
+owned compilation process to repair the measured expansion. The gate records
+529 seconds and a termination failure (exit 1), not an OOM or a passing gate.
+All 2,513 frozen tracked inputs were unchanged. Evidence:
+`build/galec-cutover-full-gate-v1.log`, `.exit`, `-inputs.sha256`.
+
+Required repair: compositional AST projections with small helpers, preserving
+exact `toScalar`/`toTensor` results for **all** ASTs, including malformed
+rejection and raw token categories. Do not flatten/reconstruct tokens, rerun
+the parser, assume a valid AST, or weaken the profile predicate. Prove equality
+through the existing exact projection/retraction contracts, measure generated
+host C and native compilation separately, and rerun the full artifact gate.
+Scratch work is under `build/galec-projection-factor-draft/`; no repair or
+full-gate closure is claimed yet.
+
 The current implementation is not ready for MSL-scale workloads. Identifier
 interning is necessary, but the first measured release blocker was native stack
 exhaustion in token-span attachment. Its checked accumulator refinement and

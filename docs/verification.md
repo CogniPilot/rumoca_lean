@@ -22,7 +22,13 @@ and 401 complete printed axiom reports, including all 62 new roots, under the
 unchanged whitelist, with no new-module warnings. Evidence:
 `build/galec-cutover-owner-v2.log` and `.axioms`. V1 failed on a duplicated
 documentation comment, fixed before V2; earlier source-proof iterations were
-not pass evidence. The required full gate is pending.
+not pass evidence. The first required full gate was deliberately stopped during
+native compilation: the nested AST projection generated 54,459,127 bytes of
+host C, and GCC reached 529 seconds / 12,206,916 KiB observed RSS. This was
+host compiler code, not emitted model C. Gate V1 exited 1 after that targeted
+termination; all 2,513 frozen inputs were unchanged. It is not pass evidence.
+PA11 in `dev/performance-audit.md` records the required proof-preserving
+projection refactor. The actual-artifact gate remains incomplete.
 
 No grammar, source-admission, lowering, emitted-C or artifact-contract change.
 This is an architectural prerequisite for authorized repairs, not closure of
