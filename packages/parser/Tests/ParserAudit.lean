@@ -6,6 +6,7 @@ import Parser.EBNF.Rules
 import Parser.EBNF.ReaderCorrectness
 import Parser.LALR.Actions
 import Parser.LALR.Payloads
+import Parser.LALR.EBNFStructure
 import Parser.LALR.FirstProofs
 import Parser.LALR.ItemCheck
 import Parser.LALR.Execution
@@ -252,4 +253,23 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.PayloadTree.attach_iff
 #audit axioms Parser.LALR.PayloadTree.attach_checked
 #audit axioms Parser.LALR.TokenParser.attach_total
+#audit axioms Parser.LALR.Frontend.Structure.Value.prependTokens_eq
+#audit axioms Parser.LALR.Frontend.Structure.read_iff
+#audit axioms Parser.LALR.Frontend.Structure.Reads.exact
+#audit axioms Parser.LALR.Frontend.Structure.Reads.leaves
+#audit axioms Parser.LALR.Frontend.Structure.applyRule_iff
+#audit axioms Parser.LALR.Frontend.Structure.Applies.exact
+#audit axioms Parser.LALR.Frontend.Structure.read_total
+#audit axioms Parser.LALR.Frontend.Structure.applyRule_total
+#audit axioms Parser.LALR.Frontend.Structure.Valid.derives
+#audit axioms Parser.LALR.Frontend.Structure.Reads.valid
+#audit axioms Parser.LALR.Frontend.Structure.Applies.valid
+#audit axioms Parser.LALR.Frontend.Structure.convert_iff
+#audit axioms Parser.LALR.Frontend.Structure.Converts.exact
+#audit axioms Parser.LALR.Frontend.Structure.Converts.good
+#audit axioms Parser.LALR.Frontend.Structure.convert_total
+#audit axioms Parser.LALR.Frontend.Structure.build_total
+#audit axioms Parser.LALR.Frontend.Structure.parse_total
+#audit axioms Parser.LALR.Frontend.Structure.parse_sound
+#audit axioms Parser.LALR.Frontend.Structure.parse_accepts_iff
 #audit axioms Parser.Scanner.prefix_before_delimiter

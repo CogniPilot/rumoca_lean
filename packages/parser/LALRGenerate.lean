@@ -111,8 +111,8 @@ private def ruleBlocks (tokens : List Parser.EBNF.Lexeme) (target : Nat := 8) :
   return blocks
 
 /-- Bind the actual grammar text and generated CFG through a finite structural
-witness. These constants are proof-only; the runtime retains its token alphabet
-and the ordinary LR tables. The lexing and parsing certificates are composed
+witness. Roots and meanings remain proof-only; a separate computable rule
+projection retains the annotations for runtime consumers. The lexing and parsing certificates are composed
 from per-block certificates, so no single kernel decision term ranges over the
 whole source text or token stream: each block is checked on its own bounded
 input, and the reusable `Lexes.append`/`Rules.append` engine lemmas join them
@@ -199,6 +199,10 @@ private def ebnfCertificates (source : String) (tokens : List Parser.EBNF.Lexeme
         reprStr certificate.witness.meanings ++ ",\n" ++
         reprStr certificate.witness.roots ++ ",\n" ++
         reprStr certificate.witness.rules ++ "⟩\n\n" ++
+      "-- Executable annotations; no runtime dependency on the proof-only witness.\n" ++
+      "def runtimeRules : Array LALR.Frontend.AnnotatedRule := " ++
+        reprStr certificate.witness.rules ++ "\n\n" ++
+      "theorem runtimeRules_eq : runtimeRules = loweringWitness.rules := rfl\n\n" ++
       "noncomputable def sourceTokens : List Parser.EBNF.Lexeme := " ++ reprStr tokens ++ "\n\n" ++
       "def encode (symbol : Parser.Symbol) : Nat :=\n" ++
         "  (alphabet.findIdx? (· == symbol)).getD (alphabet.size + 1)\n\n"
@@ -210,6 +214,11 @@ private def ebnfCertificates (source : String) (tokens : List Parser.EBNF.Lexeme
         "  Parser.EBNF.parse_sound source_read_checked\n\n" ++
       options ++ "theorem lowering_checked : loweringWitness.validate sourceGrammar prepared = true :=\n" ++
         "  by decide +kernel\n\n" ++
+      "-- Align annotations with the exact grammar consumed by the checked LR tables.\n" ++
+      "theorem runtimeRules_productions :\n" ++
+        "    grammar.productions = runtimeRules.map LALR.Frontend.AnnotatedRule.production := by\n" ++
+        "  rw [runtimeRules_eq]\n" ++
+        "  exact (LALR.Frontend.Witness.validate_iff.mp lowering_checked).2.2.2.2.2.2.2\n\n" ++
       "theorem ebnf_correct (word : List Parser.Symbol) :\n" ++
         "    Parser.EBNF.Accepts sourceGrammar word ↔ grammar.Accepts (word.map encode) :=\n" ++
         "  loweringWitness.accepts_iff (LALR.Frontend.Witness.validate_iff.mp lowering_checked)\n" ++

@@ -2218,6 +2218,913 @@ noncomputable def loweringWitness : LALR.Frontend.Witness := ⟨#[Parser.EBNF.Ex
     "each"
     (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "each") 25)]⟩
 
+-- Executable annotations; no runtime dependency on the proof-only witness.
+def runtimeRules : Array LALR.Frontend.AnnotatedRule := #[Parser.LALR.Frontend.AnnotatedRule.named
+    0
+    "stored_definition"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "class_definition" 1)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    1
+    "class_definition"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "class_prefixes" 2)
+      (Parser.LALR.Frontend.Fragment.ref "class_specifier" 3)),
+  Parser.LALR.Frontend.AnnotatedRule.named 2 "class_prefixes" (Parser.LALR.Frontend.Fragment.ref "model" 56),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    3
+    "class_specifier"
+    (Parser.LALR.Frontend.Fragment.ref "long_class_specifier" 4),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    4
+    "long_class_specifier"
+    (Parser.LALR.Frontend.Fragment.ref "standard_class_specifier" 5),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    5
+    "standard_class_specifier"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "ident" 55)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "composition" 6)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "end" 61)
+          (Parser.LALR.Frontend.Fragment.ref "ident" 55)))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    65
+    (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+    (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    65
+    (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+    (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    66
+    (Parser.LALR.Frontend.Fragment.ref "array_composition" 26)
+    (Parser.LALR.Frontend.Fragment.alt
+      65
+      (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+      (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39)),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    66
+    (Parser.LALR.Frontend.Fragment.ref "array_composition" 26)
+    (Parser.LALR.Frontend.Fragment.alt
+      65
+      (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+      (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39)),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    67
+    (Parser.LALR.Frontend.Fragment.ref "driven_composition" 17)
+    (Parser.LALR.Frontend.Fragment.alt
+      66
+      (Parser.LALR.Frontend.Fragment.ref "array_composition" 26)
+      (Parser.LALR.Frontend.Fragment.alt
+        65
+        (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+        (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    67
+    (Parser.LALR.Frontend.Fragment.ref "driven_composition" 17)
+    (Parser.LALR.Frontend.Fragment.alt
+      66
+      (Parser.LALR.Frontend.Fragment.ref "array_composition" 26)
+      (Parser.LALR.Frontend.Fragment.alt
+        65
+        (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+        (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    68
+    (Parser.LALR.Frontend.Fragment.ref "unit_composition" 7)
+    (Parser.LALR.Frontend.Fragment.alt
+      67
+      (Parser.LALR.Frontend.Fragment.ref "driven_composition" 17)
+      (Parser.LALR.Frontend.Fragment.alt
+        66
+        (Parser.LALR.Frontend.Fragment.ref "array_composition" 26)
+        (Parser.LALR.Frontend.Fragment.alt
+          65
+          (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+          (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39)))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    68
+    (Parser.LALR.Frontend.Fragment.ref "unit_composition" 7)
+    (Parser.LALR.Frontend.Fragment.alt
+      67
+      (Parser.LALR.Frontend.Fragment.ref "driven_composition" 17)
+      (Parser.LALR.Frontend.Fragment.alt
+        66
+        (Parser.LALR.Frontend.Fragment.ref "array_composition" 26)
+        (Parser.LALR.Frontend.Fragment.alt
+          65
+          (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+          (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    6
+    "composition"
+    (Parser.LALR.Frontend.Fragment.alt
+      68
+      (Parser.LALR.Frontend.Fragment.ref "unit_composition" 7)
+      (Parser.LALR.Frontend.Fragment.alt
+        67
+        (Parser.LALR.Frontend.Fragment.ref "driven_composition" 17)
+        (Parser.LALR.Frontend.Fragment.alt
+          66
+          (Parser.LALR.Frontend.Fragment.ref "array_composition" 26)
+          (Parser.LALR.Frontend.Fragment.alt
+            65
+            (Parser.LALR.Frontend.Fragment.ref "constant_composition" 33)
+            (Parser.LALR.Frontend.Fragment.ref "expression_composition" 39))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    7
+    "unit_composition"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)
+        (Parser.LALR.Frontend.Fragment.ref "equation_section" 13))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    8
+    "component_clause"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "type_specifier" 9)
+      (Parser.LALR.Frontend.Fragment.ref "component_list" 10)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    9
+    "type_specifier"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 1),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    10
+    "component_list"
+    (Parser.LALR.Frontend.Fragment.ref "component_declaration" 11),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    11
+    "component_declaration"
+    (Parser.LALR.Frontend.Fragment.ref "declaration" 12),
+  Parser.LALR.Frontend.AnnotatedRule.named 12 "declaration" (Parser.LALR.Frontend.Fragment.ref "ident" 55),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    13
+    "equation_section"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "equation" 60)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "some_equation" 14)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.named 14 "some_equation" (Parser.LALR.Frontend.Fragment.ref "simple_equation" 15),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    15
+    "simple_equation"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "der" 62)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1") 5)))))),
+  Parser.LALR.Frontend.AnnotatedRule.named 16 "component_reference" (Parser.LALR.Frontend.Fragment.ref "ident" 55),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    17
+    "driven_composition"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "input" 57)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "output" 59)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.ref "initialized_component_clause" 18)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)
+                (Parser.LALR.Frontend.Fragment.ref "driven_equation_section" 24))))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    18
+    "initialized_component_clause"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "type_specifier" 9)
+      (Parser.LALR.Frontend.Fragment.ref "initialized_declaration" 19)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    19
+    "initialized_declaration"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "ident" 55)
+      (Parser.LALR.Frontend.Fragment.ref "class_modification" 20)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    20
+    "class_modification"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "argument_list" 21)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    21
+    "argument_list"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "zero_modification" 22)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 6)
+        (Parser.LALR.Frontend.Fragment.ref "fixed_modification" 23))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    22
+    "zero_modification"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "ident" 55)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "0") 7))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    23
+    "fixed_modification"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "ident" 55)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+        (Parser.LALR.Frontend.Fragment.ref "true" 63))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    24
+    "driven_equation_section"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "equation" 60)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "driven_equation" 25)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    25
+    "driven_equation"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "der" 62)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+              (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    26
+    "array_composition"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "input" 57)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "array_component_clause" 27)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "output" 59)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.ref "initialized_array_clause" 30)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)
+                (Parser.LALR.Frontend.Fragment.ref "array_body" 31))))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    27
+    "array_component_clause"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "type_specifier" 9)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "ident" 55)
+        (Parser.LALR.Frontend.Fragment.ref "array_subscripts" 28))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    28
+    "array_subscripts"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 8)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "subscript" 29)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 9))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    29
+    "subscript"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 10),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    30
+    "initialized_array_clause"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "type_specifier" 9)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "ident" 55)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "array_subscripts" 28)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.ref "each" 64)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.ref "zero_modification" 22)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 6)
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.ref "each" 64)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.ref "fixed_modification" 23)
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    69
+    (Parser.LALR.Frontend.Fragment.ref "driven_equation_section" 24)
+    (Parser.LALR.Frontend.Fragment.ref "jacobian_body" 32),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    69
+    (Parser.LALR.Frontend.Fragment.ref "driven_equation_section" 24)
+    (Parser.LALR.Frontend.Fragment.ref "jacobian_body" 32),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    31
+    "array_body"
+    (Parser.LALR.Frontend.Fragment.alt
+      69
+      (Parser.LALR.Frontend.Fragment.ref "driven_equation_section" 24)
+      (Parser.LALR.Frontend.Fragment.ref "jacobian_body" 32)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    32
+    "jacobian_body"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "output" 59)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "type_specifier" 9)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "ident" 55)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 8)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.ref "subscript" 29)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 6)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.ref "subscript" 29)
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 9)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)
+                      (Parser.LALR.Frontend.Fragment.seq
+                        (Parser.LALR.Frontend.Fragment.ref "equation" 60)
+                        (Parser.LALR.Frontend.Fragment.seq
+                          (Parser.LALR.Frontend.Fragment.ref "der" 62)
+                          (Parser.LALR.Frontend.Fragment.seq
+                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+                            (Parser.LALR.Frontend.Fragment.seq
+                              (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+                              (Parser.LALR.Frontend.Fragment.seq
+                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)
+                                (Parser.LALR.Frontend.Fragment.seq
+                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+                                  (Parser.LALR.Frontend.Fragment.seq
+                                    (Parser.LALR.Frontend.Fragment.ref "term" 50)
+                                    (Parser.LALR.Frontend.Fragment.seq
+                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)
+                                      (Parser.LALR.Frontend.Fragment.seq
+                                        (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+                                        (Parser.LALR.Frontend.Fragment.seq
+                                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+                                          (Parser.LALR.Frontend.Fragment.seq
+                                            (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+                                            (Parser.LALR.Frontend.Fragment.seq
+                                              (Parser.LALR.Frontend.Fragment.ref "function_call_args" 53)
+                                              (Parser.LALR.Frontend.Fragment.terminal
+                                                (Parser.Symbol.literal ";")
+                                                0)))))))))))))))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    33
+    "constant_composition"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "constant_component_list" 34)
+          (Parser.LALR.Frontend.Fragment.ref "constant_equation_section" 35)))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    70
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "constant_component_list" 34)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    70
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "constant_component_list" 34)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    34
+    "constant_component_list"
+    (Parser.LALR.Frontend.Fragment.alt
+      70
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "constant_component_list" 34)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    35
+    "constant_equation_section"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "equation" 60)
+      (Parser.LALR.Frontend.Fragment.ref "constant_equation_list" 36)),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    71
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "constant_equation" 37)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "constant_equation_list" 36)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "constant_equation" 37)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    71
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "constant_equation" 37)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "constant_equation_list" 36)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "constant_equation" 37)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    36
+    "constant_equation_list"
+    (Parser.LALR.Frontend.Fragment.alt
+      71
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "constant_equation" 37)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "constant_equation_list" 36)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "constant_equation" 37)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    37
+    "constant_equation"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "der" 62)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+              (Parser.LALR.Frontend.Fragment.ref "real_literal" 38)))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    38
+    "real_literal"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 11),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    39
+    "expression_composition"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_parameter_list" 40)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_variable_list" 42)
+        (Parser.LALR.Frontend.Fragment.ref "expr_equation_section" 43))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    72
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_parameter" 41)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_parameter_list" 40)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_parameter" 41)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    72
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_parameter" 41)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_parameter_list" 40)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_parameter" 41)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    40
+    "expr_parameter_list"
+    (Parser.LALR.Frontend.Fragment.alt
+      72
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_parameter" 41)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_parameter_list" 40)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expr_parameter" 41)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    41
+    "expr_parameter"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "parameter" 58)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "type_specifier" 9)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "ident" 55)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+            (Parser.LALR.Frontend.Fragment.ref "real_literal" 38))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    73
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_variable_list" 42)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    73
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_variable_list" 42)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    42
+    "expr_variable_list"
+    (Parser.LALR.Frontend.Fragment.alt
+      73
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_variable_list" 42)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_clause" 8)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    43
+    "expr_equation_section"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "equation" 60)
+      (Parser.LALR.Frontend.Fragment.ref "expr_equation_list" 44)),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    74
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_equation" 45)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_equation_list" 44)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_equation" 45)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    74
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_equation" 45)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr_equation_list" 44)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_equation" 45)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    44
+    "expr_equation_list"
+    (Parser.LALR.Frontend.Fragment.alt
+      74
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_equation" 45)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0))
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr_equation_list" 44)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expr_equation" 45)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 0)))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    75
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "der" 62)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+              (Parser.LALR.Frontend.Fragment.ref "expr" 46))))))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+        (Parser.LALR.Frontend.Fragment.ref "expr" 46))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    75
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "der" 62)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+              (Parser.LALR.Frontend.Fragment.ref "expr" 46))))))
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+        (Parser.LALR.Frontend.Fragment.ref "expr" 46))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    45
+    "expr_equation"
+    (Parser.LALR.Frontend.Fragment.alt
+      75
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "der" 62)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+                (Parser.LALR.Frontend.Fragment.ref "expr" 46))))))
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_reference" 16)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "=") 4)
+          (Parser.LALR.Frontend.Fragment.ref "expr" 46)))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    76
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+        (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)))
+    (Parser.LALR.Frontend.Fragment.ref "arith_term" 47),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    76
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+        (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)))
+    (Parser.LALR.Frontend.Fragment.ref "arith_term" 47),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    77
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 12)
+        (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)))
+    (Parser.LALR.Frontend.Fragment.alt
+      76
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+          (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)))
+      (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    77
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 12)
+        (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)))
+    (Parser.LALR.Frontend.Fragment.alt
+      76
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+          (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)))
+      (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    46
+    "expr"
+    (Parser.LALR.Frontend.Fragment.alt
+      77
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 12)
+          (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)))
+      (Parser.LALR.Frontend.Fragment.alt
+        76
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+            (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)))
+        (Parser.LALR.Frontend.Fragment.ref "arith_term" 47))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    78
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "/") 15)
+        (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)))
+    (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    78
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "/") 15)
+        (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)))
+    (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    79
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "*") 14)
+        (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)))
+    (Parser.LALR.Frontend.Fragment.alt
+      78
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "/") 15)
+          (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)))
+      (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    79
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "*") 14)
+        (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)))
+    (Parser.LALR.Frontend.Fragment.alt
+      78
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "/") 15)
+          (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)))
+      (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    47
+    "arith_term"
+    (Parser.LALR.Frontend.Fragment.alt
+      79
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "*") 14)
+          (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)))
+      (Parser.LALR.Frontend.Fragment.alt
+        78
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "arith_term" 47)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "/") 15)
+            (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48)))
+        (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    80
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+      (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48))
+    (Parser.LALR.Frontend.Fragment.ref "arith_atom" 49),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    80
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+      (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48))
+    (Parser.LALR.Frontend.Fragment.ref "arith_atom" 49),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    81
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)))
+    (Parser.LALR.Frontend.Fragment.alt
+      80
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+        (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48))
+      (Parser.LALR.Frontend.Fragment.ref "arith_atom" 49)),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    81
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)))
+    (Parser.LALR.Frontend.Fragment.alt
+      80
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+        (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48))
+      (Parser.LALR.Frontend.Fragment.ref "arith_atom" 49)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    48
+    "arith_factor"
+    (Parser.LALR.Frontend.Fragment.alt
+      81
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expr" 46)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3)))
+      (Parser.LALR.Frontend.Fragment.alt
+        80
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "-") 13)
+          (Parser.LALR.Frontend.Fragment.ref "arith_factor" 48))
+        (Parser.LALR.Frontend.Fragment.ref "arith_atom" 49))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    49
+    "arith_atom"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 11),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    50
+    "term"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "factor" 51)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "mul_operator" 52)
+        (Parser.LALR.Frontend.Fragment.ref "factor" 51))),
+  Parser.LALR.Frontend.AnnotatedRule.named 51 "factor" (Parser.LALR.Frontend.Fragment.ref "component_reference" 16),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    52
+    "mul_operator"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".*") 16),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    53
+    "function_call_args"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 2)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "function_arguments" 54)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 3))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    54
+    "function_arguments"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "term" 50)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 6)
+        (Parser.LALR.Frontend.Fragment.ref "component_reference" 16))),
+  Parser.LALR.Frontend.AnnotatedRule.named 55 "ident" (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 11),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    56
+    "model"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "model") 17),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    57
+    "input"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 18),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    58
+    "parameter"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "parameter") 19),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    59
+    "output"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 20),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    60
+    "equation"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "equation") 21),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    61
+    "end"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 22),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    62
+    "der"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "der") 23),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    63
+    "true"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "true") 24),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    64
+    "each"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "each") 25)]
+
+theorem runtimeRules_eq : runtimeRules = loweringWitness.rules := rfl
+
 noncomputable def sourceTokens : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "stored_definition",
  Parser.EBNF.Lexeme.punct ':',
  Parser.EBNF.Lexeme.name "class_definition",

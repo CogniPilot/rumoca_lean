@@ -924,6 +924,299 @@ noncomputable def loweringWitness : LALR.Frontend.Witness := ⟨#[Parser.EBNF.Ex
         (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".*") 27)
         (Parser.LALR.Frontend.Fragment.ref "reference" 5)))]⟩
 
+-- Executable annotations; no runtime dependency on the proof-only witness.
+def runtimeRules : Array LALR.Frontend.AnnotatedRule := #[Parser.LALR.Frontend.AnnotatedRule.altLeft
+    9
+    (Parser.LALR.Frontend.Fragment.ref "block" 1)
+    (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    9
+    (Parser.LALR.Frontend.Fragment.ref "block" 1)
+    (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    0
+    "program"
+    (Parser.LALR.Frontend.Fragment.alt
+      9
+      (Parser.LALR.Frontend.Fragment.ref "block" 1)
+      (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    1
+    "block"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "block") 0)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "protected") 5)
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+                      (Parser.LALR.Frontend.Fragment.seq
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                        (Parser.LALR.Frontend.Fragment.seq
+                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                          (Parser.LALR.Frontend.Fragment.seq
+                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "public") 7)
+                            (Parser.LALR.Frontend.Fragment.seq
+                              (Parser.LALR.Frontend.Fragment.ref "startup" 2)
+                              (Parser.LALR.Frontend.Fragment.seq
+                                (Parser.LALR.Frontend.Fragment.ref "recalibrate" 3)
+                                (Parser.LALR.Frontend.Fragment.seq
+                                  (Parser.LALR.Frontend.Fragment.ref "do_step" 4)
+                                  (Parser.LALR.Frontend.Fragment.seq
+                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
+                                    (Parser.LALR.Frontend.Fragment.seq
+                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                                      (Parser.LALR.Frontend.Fragment.terminal
+                                        (Parser.Symbol.literal ";")
+                                        4)))))))))))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    2
+    "startup"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Startup") 10)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "0.0") 13)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+                      (Parser.LALR.Frontend.Fragment.seq
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1.0") 14)
+                        (Parser.LALR.Frontend.Fragment.seq
+                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                          (Parser.LALR.Frontend.Fragment.seq
+                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
+                            (Parser.LALR.Frontend.Fragment.seq
+                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Startup") 10)
+                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    3
+    "recalibrate"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Recalibrate") 15)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Recalibrate") 15)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    4
+    "do_step"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 17)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 18)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1.0") 14)
+                      (Parser.LALR.Frontend.Fragment.seq
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 19)
+                        (Parser.LALR.Frontend.Fragment.seq
+                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                          (Parser.LALR.Frontend.Fragment.seq
+                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
+                            (Parser.LALR.Frontend.Fragment.seq
+                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
+                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    5
+    "reference"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "self") 20)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 21)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    6
+    "tensor_block"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "block") 0)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 22)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 25)
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                      (Parser.LALR.Frontend.Fragment.seq
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
+                        (Parser.LALR.Frontend.Fragment.seq
+                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+                          (Parser.LALR.Frontend.Fragment.seq
+                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
+                            (Parser.LALR.Frontend.Fragment.seq
+                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
+                              (Parser.LALR.Frontend.Fragment.seq
+                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 25)
+                                (Parser.LALR.Frontend.Fragment.seq
+                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                                  (Parser.LALR.Frontend.Fragment.seq
+                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                                    (Parser.LALR.Frontend.Fragment.seq
+                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
+                                      (Parser.LALR.Frontend.Fragment.seq
+                                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+                                        (Parser.LALR.Frontend.Fragment.seq
+                                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
+                                          (Parser.LALR.Frontend.Fragment.seq
+                                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
+                                            (Parser.LALR.Frontend.Fragment.seq
+                                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 26)
+                                              (Parser.LALR.Frontend.Fragment.seq
+                                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
+                                                (Parser.LALR.Frontend.Fragment.seq
+                                                  (Parser.LALR.Frontend.Fragment.terminal
+                                                    (Parser.Symbol.literal "]")
+                                                    25)
+                                                  (Parser.LALR.Frontend.Fragment.seq
+                                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                                                    (Parser.LALR.Frontend.Fragment.seq
+                                                      (Parser.LALR.Frontend.Fragment.terminal
+                                                        (Parser.Symbol.literal ";")
+                                                        4)
+                                                      (Parser.LALR.Frontend.Fragment.seq
+                                                        (Parser.LALR.Frontend.Fragment.terminal
+                                                          (Parser.Symbol.literal "protected")
+                                                          5)
+                                                        (Parser.LALR.Frontend.Fragment.seq
+                                                          (Parser.LALR.Frontend.Fragment.terminal
+                                                            (Parser.Symbol.literal "constant")
+                                                            6)
+                                                          (Parser.LALR.Frontend.Fragment.seq
+                                                            (Parser.LALR.Frontend.Fragment.terminal
+                                                              (Parser.Symbol.literal "Real")
+                                                              3)
+                                                            (Parser.LALR.Frontend.Fragment.seq
+                                                              (Parser.LALR.Frontend.Fragment.terminal
+                                                                (Parser.Symbol.ident)
+                                                                1)
+                                                              (Parser.LALR.Frontend.Fragment.seq
+                                                                (Parser.LALR.Frontend.Fragment.terminal
+                                                                  (Parser.Symbol.literal ";")
+                                                                  4)
+                                                                (Parser.LALR.Frontend.Fragment.seq
+                                                                  (Parser.LALR.Frontend.Fragment.terminal
+                                                                    (Parser.Symbol.literal "public")
+                                                                    7)
+                                                                  (Parser.LALR.Frontend.Fragment.seq
+                                                                    (Parser.LALR.Frontend.Fragment.ref "startup" 2)
+                                                                    (Parser.LALR.Frontend.Fragment.seq
+                                                                      (Parser.LALR.Frontend.Fragment.ref
+                                                                        "recalibrate"
+                                                                        3)
+                                                                      (Parser.LALR.Frontend.Fragment.seq
+                                                                        (Parser.LALR.Frontend.Fragment.ref
+                                                                          "tensor_do_step"
+                                                                          7)
+                                                                        (Parser.LALR.Frontend.Fragment.seq
+                                                                          (Parser.LALR.Frontend.Fragment.terminal
+                                                                            (Parser.Symbol.literal "end")
+                                                                            8)
+                                                                          (Parser.LALR.Frontend.Fragment.seq
+                                                                            (Parser.LALR.Frontend.Fragment.terminal
+                                                                              (Parser.Symbol.ident)
+                                                                              1)
+                                                                            (Parser.LALR.Frontend.Fragment.terminal
+                                                                              (Parser.Symbol.literal ";")
+                                                                              4))))))))))))))))))))))))))))))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    7
+    "tensor_do_step"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.ref "product" 8)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+                      (Parser.LALR.Frontend.Fragment.seq
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                        (Parser.LALR.Frontend.Fragment.seq
+                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 17)
+                          (Parser.LALR.Frontend.Fragment.seq
+                            (Parser.LALR.Frontend.Fragment.ref "product" 8)
+                            (Parser.LALR.Frontend.Fragment.seq
+                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 26)
+                              (Parser.LALR.Frontend.Fragment.seq
+                                (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+                                (Parser.LALR.Frontend.Fragment.seq
+                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 19)
+                                  (Parser.LALR.Frontend.Fragment.seq
+                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                                    (Parser.LALR.Frontend.Fragment.seq
+                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
+                                      (Parser.LALR.Frontend.Fragment.seq
+                                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
+                                        (Parser.LALR.Frontend.Fragment.terminal
+                                          (Parser.Symbol.literal ";")
+                                          4))))))))))))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    8
+    "product"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".*") 27)
+        (Parser.LALR.Frontend.Fragment.ref "reference" 5)))]
+
+theorem runtimeRules_eq : runtimeRules = loweringWitness.rules := rfl
+
 noncomputable def sourceTokens : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "program",
  Parser.EBNF.Lexeme.punct '=',
  Parser.EBNF.Lexeme.name "block",

@@ -22,6 +22,7 @@ printf '%s\n' "s : '(' s ')' s | '';" > "$task_tmp/recursive.ebnf"
 # Single-file mode keeps every certificate group in one module so `lake env lean`
 # and the `sed` mutation controls below act on one standalone file.
 "$generator" --single "$task_tmp/recursive.ebnf" "$task_tmp/Recursive.lean"
+sed -i '1i import Parser.LALR.EBNFStructure' "$task_tmp/Recursive.lean"
 cat >> "$task_tmp/Recursive.lean" <<'LEAN'
 set_option maxRecDepth 10000 in
 example : (Parser.LALR.parse Parser.LALRGenerated.grammar
@@ -31,6 +32,8 @@ cat >> "$task_tmp/Recursive.lean" <<'LEAN'
 #print axioms Parser.LALRGenerated.source_read_checked
 #print axioms Parser.LALRGenerated.source_notation_checked
 #print axioms Parser.LALRGenerated.lowering_checked
+#print axioms Parser.LALRGenerated.runtimeRules_eq
+#print axioms Parser.LALRGenerated.runtimeRules_productions
 #print axioms Parser.LALRGenerated.ebnf_correct
 #print axioms Parser.LALRGenerated.source_parse_correct
 #print axioms Parser.LALRGenerated.located_fuel
@@ -50,9 +53,62 @@ cat >> "$task_tmp/Recursive.lean" <<'LEAN'
 #print axioms Parser.LALRGenerated.parse_terminates
 #print axioms Parser.LALRGenerated.parse_correct
 #print axioms Parser.LALRGenerated.parsed_tree
+
+-- Compile the same emitted annotations, tables and structural bridge into a
+-- native executable. Proof-only grammar/witness constants are not evaluated.
+def main : IO UInt32 := do
+  let rules := Parser.LALRGenerated.runtimeRules
+  let aligned := decide (Parser.LALRGenerated.grammar.productions =
+    rules.map Parser.LALR.Frontend.AnnotatedRule.production)
+  let named := rules.any fun rule => match rule with
+    | .named _ name _ => name == "s"
+    | _ => false
+  let parsed := (Parser.LALR.parse Parser.LALRGenerated.grammar
+    Parser.LALRGenerated.tables 100 [0, 0, 1, 1]).isOk
+  let tokens : List Parser.Symbol := [.literal "(", .literal "(", .literal ")", .literal ")"]
+  let decode := fun code => Parser.LALRGenerated.alphabet[code]?.getD .ident
+  let structured := match Parser.LALR.Frontend.Structure.parse
+      Parser.LALRGenerated.tokenParser decode rules tokens with
+    | none => false
+    | some value => value.expr == .ref "s" && value.prependTokens [] == tokens
+  return if aligned && named && parsed && structured then 0 else 1
 LEAN
 lake env lean "$task_tmp/Recursive.lean" > "$task_tmp/recursive-audit.txt"
 bash scripts/audit-lean.sh "$task_tmp/recursive-audit.txt"
+# Reuse the workspace dependency graph to link the standalone generated module
+# and its imports. The extra executable exists only in this temporary config.
+cp lakefile.lean "$task_tmp/native.lakefile.lean"
+printf '\nlean_exe «lalr-recursive-native» where\n  root := `Recursive\n  srcDir := "%s"\n' \
+  "$task_tmp" >> "$task_tmp/native.lakefile.lean"
+lake -f "$task_tmp/native.lakefile.lean" build lalr-recursive-native
+.lake/build/bin/lalr-recursive-native
+
+# Change only source names in runtime metadata: production projection still
+# agrees, but the exact annotation equality must reject the changed meanings.
+sed '/^def runtimeRules /,/^$/s/"s"/"changed"/g' \
+  "$task_tmp/Recursive.lean" > "$task_tmp/BadRuntimeNames.lean"
+if lake env lean "$task_tmp/BadRuntimeNames.lean" > "$task_tmp/bad-runtime-names.log" 2>&1; then
+  echo 'changed runtime annotation names passed their projection certificate' >&2; exit 1
+fi
+rg -q 'runtimeRules_eq.*sorryAx' "$task_tmp/bad-runtime-names.log"
+rg -q 'runtimeRules_productions.*sorryAx' "$task_tmp/bad-runtime-names.log"
+
+# The certificate also binds the complete ordered rule array, not just names.
+sed '/^def runtimeRules /,/^$/c\def runtimeRules : Array LALR.Frontend.AnnotatedRule := #[]\n' \
+  "$task_tmp/Recursive.lean" > "$task_tmp/MissingRuntimeRules.lean"
+if lake env lean "$task_tmp/MissingRuntimeRules.lean" > "$task_tmp/missing-runtime-rules.log" 2>&1; then
+  echo 'omitted runtime annotations passed their projection certificate' >&2; exit 1
+fi
+rg -q 'runtimeRules_eq.*sorryAx' "$task_tmp/missing-runtime-rules.log"
+rg -q 'runtimeRules_productions.*sorryAx' "$task_tmp/missing-runtime-rules.log"
+
+# A changed projection certificate must fail even with untouched runtime data.
+sed 's/runtimeRules = loweringWitness.rules/runtimeRules = #[]/' \
+  "$task_tmp/Recursive.lean" > "$task_tmp/BadRuntimeCertificate.lean"
+if lake env lean "$task_tmp/BadRuntimeCertificate.lean" > "$task_tmp/bad-runtime-certificate.log" 2>&1; then
+  echo 'changed runtime projection certificate unexpectedly checked' >&2; exit 1
+fi
+rg -q 'runtimeRules_eq.*sorryAx' "$task_tmp/bad-runtime-certificate.log"
 
 # The exact emitted table/edge constants participate in the certificate.
 sed 's/some (.shift [0-9][0-9]*)/some (.shift 999)/' "$task_tmp/Recursive.lean" > "$task_tmp/BadShift.lean"
@@ -130,4 +186,4 @@ if "$generator" --single "$task_tmp/undefined.ebnf" "$task_tmp/Recursive.lean" >
 fi
 rg -q 'undefined rule undefined' "$task_tmp/undefined.log"
 cmp "$task_tmp/Recursive.lean" "$task_tmp/preserved.lean"
-echo 'EBNF preservation and LALR safety/FIRST/completeness certificates, recursive execution, mutation and conflict checks passed'
+echo 'EBNF preservation and LALR safety/FIRST/completeness certificates, native runtime annotations, recursive execution, mutation and conflict checks passed'

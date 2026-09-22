@@ -13,6 +13,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Generated.source_read_checked
 #audit axioms Rumoca.Generated.source_notation_checked
 #audit axioms Rumoca.Generated.lowering_checked
+#audit axioms Rumoca.Generated.runtimeRules_eq
+#audit axioms Rumoca.Generated.runtimeRules_productions
 #audit axioms Rumoca.Generated.ebnf_correct
 #audit axioms Rumoca.Generated.source_parse_correct
 #audit axioms Rumoca.Generated.items_checked

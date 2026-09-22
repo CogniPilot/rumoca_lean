@@ -1504,6 +1504,12 @@ set_option maxHeartbeats 8000000 in
 theorem lowering_checked : loweringWitness.validate sourceGrammar prepared = true :=
   by decide +kernel
 
+-- Align annotations with the exact grammar consumed by the checked LR tables.
+theorem runtimeRules_productions :
+    grammar.productions = runtimeRules.map LALR.Frontend.AnnotatedRule.production := by
+  rw [runtimeRules_eq]
+  exact (LALR.Frontend.Witness.validate_iff.mp lowering_checked).2.2.2.2.2.2.2
+
 theorem ebnf_correct (word : List Parser.Symbol) :
     Parser.EBNF.Accepts sourceGrammar word ↔ grammar.Accepts (word.map encode) :=
   loweringWitness.accepts_iff (LALR.Frontend.Witness.validate_iff.mp lowering_checked)
