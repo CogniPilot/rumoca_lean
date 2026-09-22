@@ -51,7 +51,7 @@ structure ArrayVar where
 def ArrayVar.volume (v : ArrayVar) : Nat := v.dims.foldl (· * ·) 1
 
 /-- Input `u`, output square `x` and dense Jacobian `J`, matching the pinned
-tensor Algorithm Code `input Real[2] u; output Real[2] x; output Real[2, 2] J;`. -/
+tensor Algorithm Code `input Real u[2]; output Real x[2]; output Real J[2, 2];`. -/
 def inputVar : ArrayVar := ⟨"u", [2]⟩
 def squareVar : ArrayVar := ⟨"x", [2]⟩
 def jacobianVar : ArrayVar := ⟨"J", [2, 2]⟩

@@ -1,5 +1,32 @@
 # Development handoff — 2026-09-22
 
+## GJ02 implementation — owner passed; full gate next
+
+Authorized type/name/dimensions repair implemented across GALEC EBNF, generated
+tables/source, typed action tuple slots, token specification and tensor emitter.
+AST/indexed IR/math/numerical C and Modelica admission unchanged. Five universal
+declaration rejection theorem roots added; current-spec reference documentation
+no longer implies historical grammar equality. Existing tensor artifact mutation
+boundary independently rejects each old declaration position (execution pending).
+All nine recurring standards-review rows recorded before implementation; stage
+OPEN. GJ01/N01/block direction/native/MISRA findings are not closed.
+
+Owner V3/session20089 TERMINAL exit0: 2314jobs/456complete reports, all18selected
+roots present (5new), unchanged whitelist, no new-module warnings. V1/session8277
+failed on two beta-reduction rewrites in new proofs; V2/session40454 passed
+proofs, then V3 added an explicit audit of existing tensor_render_parses.
+Generator/session16306 terminal0. All agents closed. Bounded independent Astra
+review found no issue; worker edited only tests/efmi-algorithm.sh. Both proof
+rewrites were subsequently fixed by `dsimp only`, with unchanged statements.
+
+Evidence: build/gj02-owner-v3.*, build/gj02-required-roots.txt,
+build/gj02-new-roots.txt, build/gj02-generate-v1.*.
+Pre-repair archive Algorithm Code and Production C member hashes retained at
+build/gj02-before-algorithm.sha256 and build/gj02-before-production-c.sha256.
+Next: commit, freeze all tracked inputs, run one required full gate, audit roots
+and retained FMUs, inspect corrected actual Algorithm Code, and compare emitted
+Production C hashes. Do not claim GJ02 closure before actual repair-gate success.
+
 ## Cutover + PA11 full gate passed — standards repair next
 
 Implementation `acf3046` passed the required `nix develop .#verification

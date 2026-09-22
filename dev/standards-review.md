@@ -12,6 +12,35 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### GJ02 repair review — 2026-09-22, baseline e35c2f9, OPEN
+
+Implementation follow-up: the positional repair and universal old-order
+rejection proofs are now implemented. Owner V3 passed 2314jobs and456complete
+audited reports, all18selectedroots including5new; existing renderer-completeness
+now has an explicit audit root. Independent Astra review found no issue. Three
+actual-file old-order mutations are wired into the existing boundary but have
+not run yet. GJ02 remains OPEN pending the corrected actual-artifact/full-gate
+evidence. The preimplementation scope review below is retained.
+
+This is the authorized correction of GALEC declaration dimension placement,
+not a new Modelica case or ordinary grammar expansion. Main independently read
+the pinned G-2 productions, current CLI dispatch, fixed tensor/constant actual-
+file checkers, universal tree/profile contracts and the emitter/refinement
+chain. The Astra preparation is `build/gj02-stage-review-draft.md`; its live-
+baseline wording is superseded by the completed gate record below.
+
+| Required record | Reviewed scope, evidence and remaining obligation |
+| --- | --- |
+| Scope and identity | Baseline implementation `acf3046`, evidence `e35c2f9`. CLI admits the scalar unit profile to C/FMU/Algorithm Code/eFMU, the fixed extent-two square/Jacobian profile to FMU/Algorithm Code/eFMU, and the pinned two-state constant-rate profile to FMU only. The fixed tensor and constant file certificates do not admit every source accepted by the broader development grammar. Only the tensor GALEC spelling changes from type/dimensions/name to type/name/dimensions. Modelica EBNF and admission stay unchanged. |
+| Architecture continuity | Regenerate in-tree LALR certificates and retain all nine typed actions, exhaustive coverage/licensing, actual-CST conversion, independent word semantics and all-AST projection proofs. No token-pattern parser, second parse or tensor element enumeration. Existing name/extent-separated AST and indexed IR remain unchanged. PA11 helper boundaries remain intact; no new cost-complexity claim. |
+| Normative baseline | MLS 3.7, FMI 3.0.2, eFMI 1.0.0 Beta 1. Local `build/standards-review/efmi.txt` lines1878–1898 directly give type, name, optional constant dimensions, semicolon (§3.2.4 G-2). Lines1815–1846 retain the block-state direction TODO. Vendor README/SHA256SUMS pin FMI headers/eFMI schemas; those resources are not conformance proofs. No new MLS/FMI/MISRA interpretation is needed for this positional correction. |
+| MLS coverage | Current lexical/resolution/equation/initialization contracts carry forward without source edits. Unit, tensor square and fixed constant-rate source-to-Solve chains must rebuild through the corrected GALEC artifact chain. Preserve raw identifier categories and extents. `jacobian` remains an identified source extension. The existing MLS initialization and finite-real/encoded distinction findings remain open; unchanged source is not new evidence closing them. |
+| FMI coverage | Both ME and CS remain advertised for all three FMUs. Metadata, initialization/reset, access/counts, time/solver, errors/logging, storage/lifetime, source builds and ZIP contracts remain in scope, including existing FMI §§2.2.4, 2.4, 2.5.1.3, 3.2.1 and 4.2.1 mappings. No FMI adapter, prepared Solve or emitted C change is planned. Recheck the complete gate and retained certificates, not just GALEC parsing. Existing numerical/history/native findings carry forward. |
+| eFMI coverage | Correct tensor declarations under G-2 and preserve Startup/Recalibrate/DoStep, sample-period and numerical policy. Recheck `tensor_lexical`, `tensor_render_parses`, `tensor_render_denotes`, mathematical derivative/Jacobian refinement, target execution and tensor actual-file/manifest/archive contracts. Corrected Algorithm Code changes checksums and archive identities. GJ01's missing `jacobian` definition/interface, N01 signals/error policy and the separate block-direction TODO are not repaired here. |
+| Proof correspondence | `ProfileSemantics.tensor_denotes_iff` quantifies over any valid program tree; `ProfileBuild.buildTensor_tokens_iff` binds actual accepted CSTs to the complete token profile; exact projection holds on every AST. Re-elaborate their changed grammar/action/token dependencies and prove old-order rejection universally. Existing source-reference theorems refer to the current grammar/specification, so after correction they must not be described as historical language equality. Shape-parametric mathematics does not enlarge fixed artifact admission. |
+| Boundary evidence | Baseline full gate passed, 2,513 frozen inputs, 8,006 reports and four retained FMU roots audited. It does not certify this prospective repair. Required repair evidence: `nix develop .#verification --command lake test`, corrected actual Algorithm Code and archive identities, unchanged whitelist, existing importer/native/schema boundaries and nonvacuous old-order mutations in the existing tensor algorithm boundary. No current corrected artifact or repair pass yet. |
+| Decision | OPEN. Proceed only with the authorized GJ02 repair and its entire proof/artifact chain. Close the positional finding only after actual corrected bytes and the required gate; do not claim full declaration or standards conformance. GJ01/N01, S01/SR08 initialization, numerical/CS histories, native/ABI/callback trust, K02–K05 and whole-product MISRA obligations remain separate. Constant eFMI remains rejected; no broader ranks/extents/rates are admitted. Existing later repairs are not reopened by historical ledger wording. |
+
 **GALEC cutover and PA11 repair (2026-09-22; full gate passed):**
 Implementation `acf3046` passed the required full gate V2 (exit0). All 2,513
 frozen inputs were unchanged; all 8,006 complete printed reports, including

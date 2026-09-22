@@ -3,6 +3,7 @@ import GALECParser.GrammarProofs
 import GALECParser.ScannerProofs
 import GALECParser.StructuralParser
 import GALECParser.SourceCompatibility
+import GALECParser.DeclarationOrder
 import ProofAudit.Audit
 
 import GALECParser.LocatedCompleteness
@@ -172,3 +173,9 @@ import GALECParser.LocatedCompleteness
 #audit axioms Rumoca.GALEC.ProfileProjection.Factors.tensor_projection_exact
 #audit axioms Rumoca.GALEC.ProfileProjection.toScalar
 #audit axioms Rumoca.GALEC.ProfileProjection.toTensor
+
+#audit axioms Rumoca.GALEC.Syntax.DeclarationOrder.misplaced_position
+#audit axioms Rumoca.GALEC.Syntax.DeclarationOrder.declared_name_position
+#audit axioms Rumoca.GALEC.Syntax.DeclarationOrder.misplaced_not_tokens
+#audit axioms Rumoca.GALEC.Syntax.DeclarationOrder.source_rejected
+#audit axioms Rumoca.GALEC.Syntax.DeclarationOrder.source_rejected_at_position

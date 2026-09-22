@@ -115,10 +115,10 @@ structure TensorBlock where
 
 def TensorBlock.tokens (b : TensorBlock) : List Token :=
   [.literal "block", .ident b.name,
-   .literal "input", .literal "Real", .literal "[", .literal "2", .literal "]", .ident b.input, .literal ";",
-   .literal "output", .literal "Real", .literal "[", .literal "2", .literal "]", .ident b.state, .literal ";",
-   .literal "output", .literal "Real", .literal "[", .literal "2", .literal ",", .literal "2", .literal "]",
-   .ident b.jacobian, .literal ";",
+   .literal "input", .literal "Real", .ident b.input, .literal "[", .literal "2", .literal "]", .literal ";",
+   .literal "output", .literal "Real", .ident b.state, .literal "[", .literal "2", .literal "]", .literal ";",
+   .literal "output", .literal "Real", .ident b.jacobian, .literal "[", .literal "2", .literal ",", .literal "2", .literal "]",
+   .literal ";",
    .literal "protected", .literal "constant", .literal "Real", .ident b.clock, .literal ";",
    .literal "public",
    .literal "method", .literal "Startup", .literal "algorithm",
@@ -164,8 +164,9 @@ theorem tokens_of_decodeTensor (h : decodeTensor ts = some b) : ts = b.tokens :=
 
 /-- Name resolution of the tensor square profile: matching block/end names, a
 state distinct from the clock, startup and step targets equal to the state, the
-elementwise product of the input with itself, a Jacobian output whose built-in
-is `jacobian` applied to that same product differentiated by the input. -/
+elementwise product of the input with itself, a Jacobian output whose authored
+extension is `jacobian` applied to that same product differentiated by the input.
+The separate GJ01 normative function-definition/interface finding remains open. -/
 def ResolvedTensor (b : TensorBlock) : Prop :=
   b.name = b.endName ∧ b.state ≠ b.clock ∧
   b.initialState = b.state ∧ b.initialClock = b.clock ∧

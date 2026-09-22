@@ -188,6 +188,7 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.square_jacobian_coefficients
 #audit axioms Rumoca.EFMI.tensor_lexical
 #audit axioms Rumoca.EFMI.tensor_parsed
+#audit axioms Rumoca.EFMI.tensor_render_parses
 #audit axioms Rumoca.EFMI.tensor_render_denotes
 
 #audit axioms Rumoca.EFMI.TensorProduction.production_correct

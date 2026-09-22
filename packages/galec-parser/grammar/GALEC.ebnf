@@ -28,9 +28,9 @@ do_step = "method", "DoStep", "algorithm",
 reference = "self", ".", IDENT;
 
 tensor_block = "block", IDENT,
-    "input", "Real", "[", "2", "]", IDENT, ";",
-    "output", "Real", "[", "2", "]", IDENT, ";",
-    "output", "Real", "[", "2", ",", "2", "]", IDENT, ";",
+    "input", "Real", IDENT, "[", "2", "]", ";",
+    "output", "Real", IDENT, "[", "2", "]", ";",
+    "output", "Real", IDENT, "[", "2", ",", "2", "]", ";",
     "protected", "constant", "Real", IDENT, ";",
     "public", startup, recalibrate, tensor_do_step, "end", IDENT, ";";
 

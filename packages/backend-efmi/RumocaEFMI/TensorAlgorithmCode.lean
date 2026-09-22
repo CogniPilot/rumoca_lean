@@ -65,12 +65,13 @@ theorem square_jacobian_coefficients (shape : Shape) (ops : ScalarOps α) (zero 
 /-- Canonical Algorithm Code text of the admitted tensor square profile. The
 declarations use the concrete extent-2 arrays of the profile; the derivative
 method assigns the elementwise product and the Jacobian output applies the
-`jacobian` built-in to that product differentiated by the input. -/
+authored `jacobian` extension to that product differentiated by the input.
+GJ01's missing normative function definition/interface remains open. -/
 def tensorUnitSource : String :=
   "block TensorSquare\n" ++
-  "    input Real[2] u;\n" ++
-  "    output Real[2] x;\n" ++
-  "    output Real[2, 2] J;\n" ++
+  "    input Real u[2];\n" ++
+  "    output Real x[2];\n" ++
+  "    output Real J[2, 2];\n" ++
   "protected\n" ++
   "    constant Real samplePeriod;\n" ++
   "public\n" ++

@@ -71,18 +71,18 @@ def scalarBlock : Action AST.Block :=
       lit "end" ⋄ ident ⋄ lit ";")
 
 def tensorBlock : Action AST.Block :=
-  .map (fun (_, name, _, inputReal, _, n, _, input, _,
-      _, stateReal, _, m, _, state, _,
-      _, jacReal, _, rows, _, cols, _, jac, _,
+  .map (fun (_, name, _, inputReal, input, _, n, _, _,
+      _, stateReal, state, _, m, _, _,
+      _, jacReal, jac, _, rows, _, cols, _, _,
       _, _, clockReal, clock, _, _, init, reset, step, _, endName, _) =>
     ⟨name, [⟨.public, .input, .variable, inputReal, [n], input⟩,
       ⟨.public, .output, .variable, stateReal, [m], state⟩,
       ⟨.public, .output, .variable, jacReal, [rows, cols], jac⟩,
       ⟨.protected, .local, .constant, clockReal, [], clock⟩], [init, reset, step], endName⟩)
     (lit "block" ⋄ ident ⋄
-      lit "input" ⋄ lit "Real" ⋄ lit "[" ⋄ lit "2" ⋄ lit "]" ⋄ ident ⋄ lit ";" ⋄
-      lit "output" ⋄ lit "Real" ⋄ lit "[" ⋄ lit "2" ⋄ lit "]" ⋄ ident ⋄ lit ";" ⋄
-      lit "output" ⋄ lit "Real" ⋄ lit "[" ⋄ lit "2" ⋄ lit "," ⋄ lit "2" ⋄ lit "]" ⋄ ident ⋄ lit ";" ⋄
+      lit "input" ⋄ lit "Real" ⋄ ident ⋄ lit "[" ⋄ lit "2" ⋄ lit "]" ⋄ lit ";" ⋄
+      lit "output" ⋄ lit "Real" ⋄ ident ⋄ lit "[" ⋄ lit "2" ⋄ lit "]" ⋄ lit ";" ⋄
+      lit "output" ⋄ lit "Real" ⋄ ident ⋄ lit "[" ⋄ lit "2" ⋄ lit "," ⋄ lit "2" ⋄ lit "]" ⋄ lit ";" ⋄
       lit "protected" ⋄ lit "constant" ⋄ lit "Real" ⋄ ident ⋄ lit ";" ⋄
       lit "public" ⋄ .ref "startup" ⋄ .ref "recalibrate" ⋄ .ref "tensor_do_step" ⋄
       lit "end" ⋄ ident ⋄ lit ";")
@@ -102,4 +102,3 @@ def rules : StructuralActions.Rules Token Result
   | _ => none
 
 end Rumoca.GALEC.Structural
-

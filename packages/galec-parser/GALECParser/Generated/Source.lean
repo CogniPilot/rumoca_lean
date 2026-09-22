@@ -174,19 +174,7 @@ private def lexToks4 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "refe
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "Real",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "[",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "2",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "]",
- Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "output",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Real",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "[",
  Parser.EBNF.Lexeme.punct ',',
@@ -194,13 +182,27 @@ private def lexToks4 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "refe
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "]",
  Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ";",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "output",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "[",
  Parser.EBNF.Lexeme.punct ',',
@@ -211,8 +213,6 @@ private def lexToks4 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "refe
  Parser.EBNF.Lexeme.text "2",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "]",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ";",
  Parser.EBNF.Lexeme.punct ',',
@@ -461,19 +461,7 @@ private def ruleToks0 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "pro
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "Real",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "[",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "2",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "]",
- Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "output",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Real",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "[",
  Parser.EBNF.Lexeme.punct ',',
@@ -481,13 +469,27 @@ private def ruleToks0 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "pro
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "]",
  Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ";",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "output",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "[",
  Parser.EBNF.Lexeme.punct ',',
@@ -498,8 +500,6 @@ private def ruleToks0 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "pro
  Parser.EBNF.Lexeme.text "2",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "]",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ";",
  Parser.EBNF.Lexeme.punct ',',
@@ -689,13 +689,13 @@ private def ruleGrammar0 : Parser.EBNF.Grammar := [("program", Parser.EBNF.Expr.
         (Parser.EBNF.Expr.seq
           (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
           (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
             (Parser.EBNF.Expr.seq
-              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
               (Parser.EBNF.Expr.seq
-                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
                 (Parser.EBNF.Expr.seq
-                  (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
                   (Parser.EBNF.Expr.seq
                     (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
                     (Parser.EBNF.Expr.seq
@@ -703,13 +703,13 @@ private def ruleGrammar0 : Parser.EBNF.Grammar := [("program", Parser.EBNF.Expr.
                       (Parser.EBNF.Expr.seq
                         (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
                         (Parser.EBNF.Expr.seq
-                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+                          (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
                           (Parser.EBNF.Expr.seq
-                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
                             (Parser.EBNF.Expr.seq
-                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
                               (Parser.EBNF.Expr.seq
-                                (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
                                 (Parser.EBNF.Expr.seq
                                   (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
                                   (Parser.EBNF.Expr.seq
@@ -717,17 +717,17 @@ private def ruleGrammar0 : Parser.EBNF.Grammar := [("program", Parser.EBNF.Expr.
                                     (Parser.EBNF.Expr.seq
                                       (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
                                       (Parser.EBNF.Expr.seq
-                                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+                                        (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
                                         (Parser.EBNF.Expr.seq
-                                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
                                           (Parser.EBNF.Expr.seq
-                                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
+                                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
                                             (Parser.EBNF.Expr.seq
-                                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
                                               (Parser.EBNF.Expr.seq
-                                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+                                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
                                                 (Parser.EBNF.Expr.seq
-                                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
                                                   (Parser.EBNF.Expr.seq
                                                     (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
                                                     (Parser.EBNF.Expr.seq
@@ -1004,13 +1004,13 @@ theorem «rule_tensor_block» (word : List Parser.Symbol) :
       (Parser.EBNF.Expr.seq
         (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
         (Parser.EBNF.Expr.seq
-          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
           (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
             (Parser.EBNF.Expr.seq
-              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
               (Parser.EBNF.Expr.seq
-                (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
                 (Parser.EBNF.Expr.seq
                   (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
                   (Parser.EBNF.Expr.seq
@@ -1018,13 +1018,13 @@ theorem «rule_tensor_block» (word : List Parser.Symbol) :
                     (Parser.EBNF.Expr.seq
                       (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
                       (Parser.EBNF.Expr.seq
-                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+                        (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
                         (Parser.EBNF.Expr.seq
-                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
                           (Parser.EBNF.Expr.seq
-                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
                             (Parser.EBNF.Expr.seq
-                              (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
                               (Parser.EBNF.Expr.seq
                                 (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
                                 (Parser.EBNF.Expr.seq
@@ -1032,17 +1032,17 @@ theorem «rule_tensor_block» (word : List Parser.Symbol) :
                                   (Parser.EBNF.Expr.seq
                                     (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
                                     (Parser.EBNF.Expr.seq
-                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
                                       (Parser.EBNF.Expr.seq
-                                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
                                         (Parser.EBNF.Expr.seq
-                                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
+                                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
                                           (Parser.EBNF.Expr.seq
-                                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
+                                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
                                             (Parser.EBNF.Expr.seq
-                                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
+                                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
                                               (Parser.EBNF.Expr.seq
-                                                (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
                                                 (Parser.EBNF.Expr.seq
                                                   (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
                                                   (Parser.EBNF.Expr.seq

@@ -1,5 +1,38 @@
 # Exact verification contract
 
+**GJ02 declaration placement repair (owner checks passed; full gate pending):**
+
+The tensor GALEC grammar, generated Lean LALR tables, typed action slots,
+`TensorBlock.tokens` specification and emitted Algorithm Code now put constant
+dimensions after declaration names: `Real u[2]`, `Real x[2]`, `Real J[2, 2]`.
+The AST, indexed shapes, derivative/adjoint mathematics, prepared Solve and
+numerical C implementation are unchanged. Ordinary identifier call handling
+remains intact; GJ01's missing normative `jacobian` definition is not repaired.
+
+Universal corrected-profile acceptance, arbitrary-tree yield/build equivalence,
+actual emitted-text lexing/parsing and kernel refinement re-elaborated. New
+`DeclarationOrder.source_rejected_at_position` proves actual parser rejection
+for arbitrary source/token tails with a dimension bracket in any declaration-
+name slot, including combinations and the old all-three-misplaced form. Five
+new theorems have audit roots; the existing renderer-completeness theorem now
+also has an explicit audit entry. Current specification/reference equality is
+not described as historical language equality across the intentional repair.
+
+Owner V3 passed 2,314 jobs / 456 complete audited reports, all 18 selected roots
+present (five new), unchanged whitelist and no new-module warnings. V1 failed
+only on two new proof-script rewrites; V2 passed proofs but lacked the explicit
+renderer audit entry. Evidence: `build/gj02-owner-v3.log`, `.exit`, `.axioms`,
+`build/gj02-required-roots.txt`. Bounded independent Astra review found no
+positional, proof-scope or mutation issue; it did not run builds. The existing
+tensor actual-file boundary now includes three independent nonvacuous old-order
+mutations; script syntax passed, execution awaits the full gate.
+
+The nine-row whole-subset review is recorded in `dev/standards-review.md`.
+GJ02 closure awaits corrected actual artifacts and the required
+`nix develop .#verification --command lake test`. The previous passed gate does
+not certify this grammar repair. Block-direction ambiguity, GJ01/N01 and other
+standards/native/MISRA findings remain open; no new Modelica case is admitted.
+
 **GALEC structural cutover and PA11 repair (full gate passed):**
 
 Implementation `acf3046` passed the required

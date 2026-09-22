@@ -1,9 +1,12 @@
 import GALECParser.Parser
 
-/-! Proof-only reference for the source entrypoint behavior before structural
-cutover (a11e030). Noncomputable definitions prevent a legacy runtime fallback.
-Exact Except equality covers diagnostic text/precedence and successful ASTs;
-these definitions are not imported by the production source parser. -/
+/-! Proof-only profile-decoder specification of the current source entrypoints.
+The reference control flow came from the pre-structural cutover (a11e030), but
+its grammar/token dependencies follow the current profile. After GJ02 this is
+not historical language equality: old dimension placement is intentionally
+rejected. Noncomputable definitions prevent a runtime fallback. Exact Except
+equality covers current diagnostic precedence and successful ASTs; production
+source parsing does not import these definitions. -/
 namespace Rumoca.GALEC.Syntax.Compatibility
 open _root_.Parser
 
@@ -42,7 +45,7 @@ noncomputable def tensorReference (source : String) : Except Diagnostic (TensorP
         else .error ⟨"GALEC resolve", 0, "mismatched tensor block/state/input name"⟩
 
 
-/-- Exact old/new observable result, not merely agreement of successful ASTs. -/
+/-- Exact structural-parser/specification result, including diagnostics. -/
 theorem scalar_reference_exact (source : String) : parse source = scalarReference source := by
   have action : ∀ tokens tree, parseTree tokens = .ok tree →
       Structural.buildScalar tree tokens = decode tokens :=

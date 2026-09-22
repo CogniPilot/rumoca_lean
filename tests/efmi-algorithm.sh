@@ -75,7 +75,7 @@ cmp "$stage/model.alg" "$task_tmp/preserved.alg"
 # The array/tensor profile is admitted for tensor eFMI Algorithm Code output.
 # Publish the pinned tensor square Algorithm Code through the CLI, gated by the
 # fixed tensor-algorithm certificate, require no-build certificate reuse over the
-# published bytes and source identity, and reject a mutated method.
+# published bytes and source identity, and reject mutated declarations/methods.
 tensor_stage="$PWD/build/tensor-efmi-algorithm"
 rm -rf "$tensor_stage"
 mkdir -p "$tensor_stage"
@@ -88,8 +88,29 @@ lake run verify-artifact --check-only tensor-algorithm "$tensor_stage/Source.mo"
   > "$tensor_stage/cached.log"
 bash scripts/audit-lean.sh "$tensor_stage/cached.log"
 rg -q 'Rumoca.CheckedTensorEFMIFiles.source_to_algorithm depends on axioms:' "$tensor_stage/cached.log"
-# A mutated tensor Algorithm Code method must fail the fixed certificate.
 cp "$tensor_stage/model.alg" "$tensor_stage/original.alg"
+# Independently restore each declaration's old type-dimensions-name order.
+# Every mutation starts from the certified original and must change its bytes.
+for declaration in input state jacobian; do
+  case "$declaration" in
+    input) mutation='s/input Real u\[2\];/input Real[2] u;/' ;;
+    state) mutation='s/output Real x\[2\];/output Real[2] x;/' ;;
+    jacobian) mutation='s/output Real J\[2, 2\];/output Real[2, 2] J;/' ;;
+  esac
+  sed "$mutation" "$tensor_stage/original.alg" > "$tensor_stage/model.alg"
+  if cmp -s "$tensor_stage/original.alg" "$tensor_stage/model.alg"; then
+    printf 'ineffective tensor declaration mutation: %s\n' "$declaration" >&2; exit 1
+  fi
+  if lake run verify-artifact tensor-algorithm "$tensor_stage/Source.mo" "$tensor_stage/model.alg" \
+      packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+      > "$tensor_stage/rejected-dimension-$declaration.log" 2>&1; then
+    printf 'accepted old tensor dimension position: %s\n' "$declaration" >&2; exit 1
+  fi
+  rg -q 'differs from the pinned tensor square profile' "$tensor_stage/rejected-dimension-$declaration.log"
+done
+cp "$tensor_stage/original.alg" "$tensor_stage/model.alg"
+echo 'Tensor GALEC: all three old declaration-dimension positions rejected'
+# A mutated tensor Algorithm Code method must fail the fixed certificate.
 sed 's/self.samplePeriod := 1.0/self.samplePeriod := 0.0/' "$tensor_stage/original.alg" > "$tensor_stage/model.alg"
 if cmp -s "$tensor_stage/original.alg" "$tensor_stage/model.alg"; then
   echo 'ineffective tensor Algorithm Code mutation' >&2; exit 1
