@@ -1,13 +1,26 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Recursive source execution and declaration-derived storage — owner passed
+## Recursive source execution and declaration-derived storage — full gate passed
 
 Seven reviewed modules now live under `Elaboration.Bodies` (Lowering, Source,
 Correctness) and `Elaboration.Layout` (Base, Shapes, NoAlias, Execution). These
 are namespace/import migrations of the checked scratch, not a production
 grammar or actual-artifact cutover. The owner passed 2,377 jobs, 869 complete
 whitelisted reports and all 62 new roots; 15 source/audit hashes are recorded
-under `build/galec-layout-adoption/`. The required full gate remains pending.
+under `build/galec-layout-adoption/`.
+
+Implementation `b1b1335` passed full gate V1/session56401 and post-audit
+V1/session7904, both terminal0. All 2,607 frozen tracked inputs matched;
+8,483 complete reports passed the unchanged whitelist, all 337 selected roots
+were present and four actual retained FMU roots passed separate audit. The
+three FMI matrices covered 75 functions each and 526/650/526 behavior cells,
+with zero discrepancies or unexpected results. Scalar/tensor Algorithm Code
+and Production C members remained unchanged. Evidence:
+`build/galec-layout-full-gate-v1.*`, `-post-audit-v1.*`,
+`-required-roots-v1.txt`, `-fmu-retained-v1.axioms`,
+`-before-members-v1.sha256`, `-after-members-v1.sha256`, `-archives-v1.sha256`.
+Subsequent scratch surface-square and source-preparation proofs remain outside
+this gate; no compliance finding is closed by this prerequisite gate.
 
 The mutually recursive lowerer consumes actual AST statements and body lists,
 retaining the exact binder/count and outer scope across siblings. Its independent

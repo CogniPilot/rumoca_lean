@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Recursive source bodies and logical storage (owner passed; full gate pending):**
+**Recursive source bodies and logical storage (combined full gate passed):**
 Core `Elaboration.Bodies` now structurally lowers the actual nested AST and
 proves exact typing and conditional execution correspondence with independent
 source semantics. Mathematical Integer iteration preserves actual nested bodies,
@@ -33,6 +33,20 @@ the prior nested-body check passed four modules and 24 roots. Evidence:
 `build/galec-layout-draft/layout-review.md`, and
 `build/galec-nested-body-draft/*-final-v2.*` plus its semantic reviews.
 These owner checks are not the required combined C/actual-artifact gate.
+
+Implementation `b1b1335` subsequently passed the required full gate and
+post-audit V1, both terminal exit 0. All 2,607 tracked input hashes remained
+unchanged; 8,483 complete axiom reports passed the unchanged whitelist, all
+337 selected roots were present and four actual retained FMU roots passed a
+separate audit. The three FMI matrices covered 75 functions each and
+526/650/526 behavior cells, with zero recorded-finding discrepancies or
+unexpected results. Actual scalar/tensor Algorithm Code and Production C
+members remained byte-identical to the preceding gate. Evidence:
+`build/galec-layout-full-gate-v1.*`, `-post-audit-v1.*`,
+`-required-roots-v1.txt`, `-fmu-retained-v1.axioms`,
+`-before-members-v1.sha256`, `-after-members-v1.sha256`, `-archives-v1.sha256`.
+The gate does not cover subsequent scratch surface-square composition or
+source-preparation proofs and does not close the open compliance findings.
 
 **Declaration/range and assignment elaboration (combined full gate passed):**
 Fifteen reviewed modules now live in core: source declaration/shape-provider
