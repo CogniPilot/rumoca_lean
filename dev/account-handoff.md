@@ -1,5 +1,28 @@
 # Development handoff — 2026-09-22
 
+## PA11 repair integrated — next full gate V2
+
+The current checkpoint factors `GALECParser/ProfileProjection.lean` into small
+noinline AST checks. Old embeddings and six public theorem statements are
+unchanged. Independent all-AST helper/exact-image proofs replace the giant
+matcher; scratch old/new equalities remain outside production. No grammar,
+admission, lowering, emitted model C or axiom/contract weakening.
+
+Owner checks/session94643 are terminal exit0: 829 jobs, 465 complete audited
+reports, all 64 added roots present, no new-module warnings. Native owner
+check/session51620 is terminal exit0: 5,159 lines / 142,920 bytes of host C,
+Lean elaboration 7.2s, native object 2.2s. Evidence:
+`build/galec-projection-factor-owner-v1.*`, `-native-v1.*`,
+`build/galec-projection-factor-new-roots.txt`. Both draft and integration
+received bounded independent Astra review with no findings. Ptolemy completed
+and was closed; Aristotle's review completed and is being closed.
+
+Next: freeze inputs and run `nix develop .#verification --command lake test`
+as cutover V2, then audit all reports/new roots and retained FMU certificates.
+Do not claim a full pass from owner checks. V1/session71897 below remains
+terminal exit1 and must not be restarted or polled. Standards repairs and
+ordinary grammar expansion must wait for this cutover gate.
+
 ## GALEC structural cutover — owner checks passed; full gate pending
 
 Current HEAD `0f1fecc` implements the cutover after foundation `a363701`.

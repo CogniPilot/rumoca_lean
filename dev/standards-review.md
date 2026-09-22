@@ -12,6 +12,17 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**PA11 projection repair (2026-09-22; full gate pending):**
+Proof-preserving host compiler repair only; no EBNF, admitted subset, emitted
+model C, standards clause coverage or formal contract changes. Compositional
+AST checks retain all token categories, names, extents and malformed rejection,
+with independent universal exact-image proofs and unchanged public statements.
+Owner checks passed 829 jobs / 465 complete audited reports, all 64 added roots;
+integrated native projection compilation passed in 2.2s. Bounded independent
+Astra draft/integration reviews found no issue. These are not artifact-gate
+or conformance evidence. GJ01/GJ02/N01 and the other open findings remain open.
+See `docs/verification.md` and PA11 in `dev/performance-audit.md`.
+
 **GALEC structural action cutover (2026-09-22; full gate pending):**
 Repair prerequisite only: neither EBNF nor the admitted source subset changes.
 Typed rule-table actions now consume the actual accepted CST and preserve the

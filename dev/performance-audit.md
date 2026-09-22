@@ -20,8 +20,23 @@ rejection and raw token categories. Do not flatten/reconstruct tokens, rerun
 the parser, assume a valid AST, or weaken the profile predicate. Prove equality
 through the existing exact projection/retraction contracts, measure generated
 host C and native compilation separately, and rerun the full artifact gate.
-Scratch work is under `build/galec-projection-factor-draft/`; no repair or
-full-gate closure is claimed yet.
+The repair is now integrated as small `@[noinline]` AST checks under
+`ProfileProjection.Factors`, with unchanged embeddings and six public theorem
+statements. Independent helper/exact-image proofs cover every AST; the old giant
+matcher is removed, not retained as a fallback. Scratch migration equalities
+also prove identical success and rejection against the previous implementation.
+All 65 scratch roots passed the unchanged whitelist. Bounded independent Astra
+review found no omitted profile check or runtime/proof dependency issue.
+
+The actual integrated owner module generates 5,159 lines / 142,920 bytes of
+host C (about 381 times smaller by bytes). Its native object built successfully
+in 2.2 seconds; Lean elaboration took 7.2 seconds. Evidence:
+`build/galec-projection-factor-native-v1.log` and `.exit` (0).
+The scratch-only measurement was 3,917 lines / 94,391 bytes and does not include
+the imported embeddings; it is not substituted for the owner measurement.
+These are host build measurements, not model execution throughput, whole-build
+speedups, embedded WCET or a full artifact-gate pass. Full-gate closure remains
+pending. Scratch evidence is under `build/galec-projection-factor-draft/`.
 
 The current implementation is not ready for MSL-scale workloads. Identifier
 interning is necessary, but the first measured release blocker was native stack

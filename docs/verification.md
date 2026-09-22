@@ -1,5 +1,27 @@
 # Exact verification contract
 
+**PA11 projection repair (owner/native checks passed; full gate pending):**
+
+The GALEC structural cutover now uses compositional `@[noinline]` AST checks,
+with unchanged embeddings and six public projection/retraction theorem
+statements. Independent helper and exact-image proofs cover all ASTs, including
+malformed rejection. The previous giant matcher is removed entirely; there is
+no token reconstruction, decoder fallback, second parse or valid-AST premise.
+Scratch migration proofs establish equality to the previous projectors using
+their exact-image contracts; those old matchers are not imported into production.
+Bounded independent Astra review found no issue in the draft or integration.
+
+Owner checks passed 829 jobs and 465 complete audited reports, including all
+64 added roots, with the unchanged whitelist and no new-module warnings.
+Evidence: `build/galec-projection-factor-owner-v1.log`, `.exit`, `.axioms`,
+and `build/galec-projection-factor-new-roots.txt`.
+The integrated host C is 5,159 lines / 142,920 bytes; its native object built
+successfully in 2.2 seconds (`build/galec-projection-factor-native-v1.log`,
+`.exit`). These measurements repair the observed PA11 build-cost problem,
+not the model-C trusted boundary or standards findings. The required full
+artifact gate remains pending; stopped cutover V1 below remains failed evidence.
+No grammar, admission, lowering, emitted model C or contract weakening occurred.
+
 **GALEC structural action cutover (owner checks passed; full gate pending):**
 
 The source entrypoints now pass the actual accepted LALR CST to structural
