@@ -1,5 +1,40 @@
 # Exact verification contract
 
+**Structural EBNF bridge (full gate passed):**
+
+Checkpoint `3f413a7` adds `Parser.LALR.EBNFStructure`: conversion of the actual
+payload CST through the existing annotated lowering witness, preserving named
+rules, branches, nullable repetitions and exact payloads. Universal soundness
+and totality use independent EBNF derivations and preserve the actual token
+parser's complete language. Both generated frontends now expose computable
+runtime annotations certified equal to their proof-only witnesses. Production
+frontend actions, grammars, admission and emitted C remain unchanged.
+
+The source-symbol contract is `decode ∘ encode`; compatibility with each
+frontend's independent classifier and structural AST construction remain open.
+Focused owner/parser/frontend/native checks passed, with 19 new generic and
+four frontend roots within the unchanged axiom whitelist. Bounded independent
+Astra review found no remaining issue. The required
+`nix develop .#verification --command lake test` passed (exit 0), with all
+2,485 frozen input hashes unchanged. All 7,809 printed axiom reports (wrapped
+lists included), all 23 new roots, the recursive fixture's two runtime-annotation
+roots and four retained FMU roots passed the unchanged whitelist. The three FMI
+matrices passed 75 functions each and 526/650/526 cells with zero discrepancies.
+Existing parser, source/C, tensor-helper and scalar/tensor FMI/eFMI actual-artifact,
+native and mutation checks passed. Evidence:
+`build/ebnf-structure-full-gate-v2.log`. Existing warnings remain; no new bridge
+warnings were reported. The original V1 run had no terminal success evidence
+and is not counted as a pass. Only four evidence documents changed after V2's
+frozen gate.
+
+GJ01 in `dev/standards-review.md` additionally records an undeclared `jacobian`
+call in emitted tensor GALEC. Internal derivative and artifact proofs do not
+establish normative function lookup. Existing standards, native correspondence
+and MISRA findings remain open. The user authorized repair-only GALEC grammar
+changes for the existing findings, without new Modelica admission. GJ02 also
+records incorrect array-dimension placement in emitted GALEC. Neither repair
+nor a safety-critical claim follows from this bridge alone.
+
 **Generic CST payload attachment (full gate passed):**
 
 `Parser.LALR.Payloads` attaches original payloads to an existing concrete parse

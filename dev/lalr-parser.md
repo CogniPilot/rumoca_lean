@@ -200,14 +200,27 @@ and four retained FMU roots checked against the unchanged whitelist. All three
 FMI matrices and existing artifact/native/mutation checks passed. Evidence:
 `build/cst-payload-full-gate-v1.log`.
 
-The next bridge should interpret the existing `Fragment`/`AnnotatedRule` witness
-over the actual tree, retaining named rules and EBNF branch/optional/repetition
-structure. Runtime metadata must be computable and certified equal to the
-proof-only witness projection; current noncomputable witness constants cannot
-be executable dependencies. Preserve exact payloads and prove structural
-fidelity plus totality, including nullable repetitions and shared helpers.
-Any generator-output change must regenerate both frontend outputs in the same
-change to retain freshness; a generic bridge may precede that integration.
+**Structural bridge implemented (2026-09-22; full gate passed):**
+`Parser.LALR.EBNFStructure` interprets the existing `Fragment`/`AnnotatedRule`
+witness over the actual payload CST, retaining named rules, branches,
+optionals and repetitions, including nullable occurrences. Exact fidelity,
+payload recovery, independent EBNF soundness and checked-parser totality are
+universal, without encoder injectivity or helper freshness. Both regenerated
+frontends expose computable `runtimeRules`, certified equal to the witness and
+with its exact production projection. The existing recursive native fixture
+executes the public structural parser; metadata-only mutations are rejected.
+
+Focused checks and bounded Astra review passed (checkpoint `3f413a7`). The
+required full gate passed with all 2,485 frozen input hashes unchanged; all
+7,809 printed axiom reports, the 23 new roots, two recursive fixture roots and
+four retained FMU roots passed the unchanged whitelist. FMI matrices passed
+75 functions each and 526/650/526 cells with zero discrepancies; existing
+parser and FMI/eFMI artifact/native/mutation boundaries passed. Evidence:
+`build/ebnf-structure-full-gate-v2.log`. The original V1 run has no terminal
+success evidence and is not counted as a pass.
+This module is not yet used by production frontend actions. Its
+source semantics concern decoded encoded symbols; frontend classifier
+compatibility, language-owned syntax construction and cutover remain open.
 
 The September 22 review distinguishes the proved reusable LALR engine from the
 remaining frontend architecture. `ModelicaParser.Actions` currently ignores the

@@ -12,6 +12,67 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Structural EBNF bridge (2026-09-22; full gate passed):**
+Checkpoint `3f413a7` changes generic CST interpretation and certified runtime
+metadata, not either EBNF, production frontend action, source admission or C
+emission. Its 19 generic and four frontend audit roots passed focused checks;
+actual recursive native conversion and metadata mutation controls passed.
+The required full gate passed with all 2,485 frozen inputs unchanged, all
+7,809 printed axiom reports, all 23 new roots, two recursive fixture roots and
+four retained FMU roots within the unchanged whitelist. FMI matrices passed
+75 functions each and 526/650/526 cells with zero discrepancies; existing
+parser and scalar/tensor FMI/eFMI artifact/native/mutation checks passed.
+Evidence: `build/ebnf-structure-full-gate-v2.log`. The original V1 run had no
+terminal success evidence and is not counted as a pass.
+Pinned MLS/FMI/eFMI coverage is unchanged. Classifier compatibility and frontend
+AST cutover remain open; this does not complete the recurring stage review.
+
+### GJ01 — open: undeclared tensor GALEC `jacobian`
+
+The actual tensor Algorithm Code emitted by
+`RumocaEFMI/TensorAlgorithmCode.lean` calls
+`jacobian(self.u .* self.u, self.u)` without a function declaration. Independent
+Astra review inspected the retained `.alg` and `build/TensorSquare.efmu`:
+neither the sole GALEC member nor the Algorithm/Production Code manifests
+supplies a definition, external wrapper or local-function interface.
+
+Pinned eFMI Beta 1 §1.3.2 identifies §3.2.6 as the supported built-in catalog;
+that catalog does not define `jacobian`. §1.3.3 requires a GALEC local function
+or C implementation with GALEC wrapper and corresponding manifest interface.
+§3.2.4 S-3.TODO (function lookup / Name-analysis) requires a uniquely named
+function definition. Local normative evidence:
+`build/standards-review/efmi.txt`, lines 199–206 and 2738. This is a name-resolution
+finding, not an assertion that ordinary call syntax is itself invalid.
+
+The authored parser resolves this extension internally and the mathematical
+derivative proofs remain useful, but neither establishes a normative GALEC
+built-in. Closure requires valid lowered GALEC or a conforming definition/
+wrapper/interface, preserving mathematical refinement and binding corrected
+bytes/interfaces into the actual-artifact contract. Schema, native and internal
+parser successes alone do not close GJ01. It blocks further grammar expansion
+alongside N01 and the existing open findings. The user explicitly authorized
+repair-only GALEC grammar changes for existing undeclared-jacobian and numerical-
+error findings. No new Modelica cases are authorized, and no repair is
+implemented by this finding.
+
+### GJ02 — open: GALEC array declaration dimension placement
+
+Pinned eFMI Beta 1 §3.2.4 G-2 declaration productions place optional constant
+dimensions after the variable name. Local evidence:
+`build/standards-review/efmi.txt`, lines 1878–1898. The tensor emitter, authored
+grammar and token reconstruction instead use `input Real[2] u;`,
+`output Real[2] x;` and `output Real[2,2] J;`. Internal parser/artifact agreement
+does not establish conformity with the declaration production.
+
+Closure requires corrected rendering and grammar, structural actions,
+syntax/refinement proofs and actual-artifact binding, retaining tensor
+rank/extents in indexed IR. Do not extend canonical-token recognition as the
+repair mechanism. Beta 1's block-state direction grammar also contains TODOs;
+retain that ambiguity rather than claiming full declaration conformance from
+dimension placement alone. GJ01 and N01 remain separate open findings. In
+particular, a signal sets flags without automatically aborting, and checking a
+signal clears the tested flag; no zero-substitution failure policy is adopted.
+
 **Generic CST payload attachment (2026-09-22; full gate passed):**
 This reusable parser prerequisite changes neither language EBNF, production
 parser execution, source admission nor artifact emission. The pinned MLS 3.7,
@@ -823,7 +884,7 @@ and its theorems.
 
 | Standard | Impact |
 | --- | --- |
-| eFMI 1.0.0 Beta 1, §3.2.3 (lifecycle), §3.2.4 G-2 (declarations), G-3 (expressions), G-4 (statements) | The restricted GALEC profile now admits, beside the scalar unit block, a tensor block with fixed extent-two `Real[2]` and `Real[2, 2]` declarations, an elementwise-product derivative assignment and a Jacobian output statement applying the resolved `jacobian` built-in. This is a restriction of the published grammar, not a claim of full G-2/G-3/G-4 coverage; general extents, ranks, statements and expressions remain out of profile (TF04). |
+| eFMI 1.0.0 Beta 1, §3.2.3 (lifecycle), §3.2.4 G-2 (declarations), G-3 (expressions), G-4 (statements) | The authored GALEC profile admits a tensor block with fixed extent-two `Real[2]` and `Real[2, 2]` declarations, an elementwise-product assignment and a Jacobian call. Correction (GJ01, 2026-09-22): internal resolution does not make `jacobian` a normative GALEC built-in; the emitted call lacks a conforming definition/interface. The previous unqualified restriction-of-the-standard claim is withdrawn. General extents, ranks, statements and expressions remain out of profile (TF04). |
 | eFMI 1.0.0 Beta 1, Algorithm Code semantics (method lifecycle, arithmetic) | The GALEC to Solve refinement is universal in rank, extent and arithmetic interpretation: the elementwise product denotes the prepared `PointwiseIVP` derivative and the Jacobian output denotes the prepared diagonal coefficient program (the doubled input). Binary64 is one interpretation, not a claim that eFMI mandates it. The refinement is instantaneous; a sampled method schedule and clock are carried structurally as in the scalar profile. |
 | eFMI 1.0.0 Beta 1, artifact conformance (manifests, Production Code, eFMU archive) | Not yet extended: this stage certifies the Algorithm Code product only. Tensor manifests, tensor Production C, the eFMU archive, the checker extension and CLI admission remain open, each blocked on its own contract and actual-artifact evidence. A green parse of the emitted `.alg` bytes in the compiler test executable is boundary evidence for the emitter, not eFMU conformance. |
 | eFMI 1.0.0 Beta 1, TF01 closure criteria | TF01 (tensor eFMI path) is closed: the tensor GALEC Algorithm Code, Production Code and container manifests are certified against actual bytes, the complete `.efmu` archive certificate composes them with the stored-ZIP transport, and the default CLI admits tensor Algorithm Code and complete tensor eFMU output gated on those certificates. The archive certificate peaks at parity with the scalar eFMU archive certificate; the "8 GiB gate budget" figure is withdrawn. TF04 (fixed extent `2`, square kernel) is unchanged: this is the fixed square profile, not general tensor rank/extent or eFMI Production Code admission. |
