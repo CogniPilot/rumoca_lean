@@ -1,5 +1,22 @@
 # Development handoff — 2026-09-22
 
+## Latest full gate: Euler prerequisite passed
+
+Implementation checkpoint `a2fb25f` passed the required
+`nix develop .#verification --command lake test` (exit 0). All 2,498 frozen
+input hashes were unchanged. All 7,862 complete printed axiom reports, all 40
+new roots, the actual-helper contract and four retained FMU roots passed the
+unchanged whitelist. All three FMI matrices passed 75 functions each and
+526/650/526 cells with zero discrepancies. The integrated helper's three
+nonvacuous mutations, native boundary and existing parser/scalar/tensor FMI/eFMI
+artifact gates passed. Session44259 is terminal; do not restart or poll it.
+
+Evidence: `build/euler-preflight-full-gate-v1.log`, `.exit`, `.axioms` and
+`-inputs.sha256`; `build/euler-preflight-new-roots.txt`;
+`build/euler-preflight-actual-helper-v1.axioms`; and
+`build/euler-preflight-fmu-retained-v1.axioms` / `.sha256`.
+Only three evidence documents changed after this frozen gate.
+
 ## Current authorization and gate
 
 The user resumed after the account-switch checkpoint and explicitly authorized
@@ -42,7 +59,7 @@ Focused bridge evidence retained:
   (1,529 jobs, 24 reports), including recursive structural conversion and
   annotation-only mutation with unchanged CFG productions.
 
-## Euler prerequisite — integrated, full gate pending
+## Euler prerequisite — integrated and gated
 
 The seven modules and six package-owned audit snippets from
 `build/euler-package-stage/` are now integrated in core/backend-c. Standalone
@@ -66,15 +83,29 @@ existing checks and 15 added Euler checks, passed. Shell syntax passed.
 Focused owner checks passed 2,900 jobs. All 2,051 printed axiom reports,
 including the 40 new roots, passed the unchanged whitelist; no new-module
 warnings. Evidence: `build/euler-preflight-owner-v1.log` and `.axioms`.
-The required full gate covering this integrated change remains pending; the
-structural bridge V2 pass above does not cover it. Intended evidence paths:
-`build/euler-preflight-full-gate-v1.log`, `.exit` and `-inputs.sha256`.
+The required full gate covering this increment passed as recorded at the top.
+The earlier structural bridge V2 pass alone did not cover this increment.
 
 Both stages have READMEs and retained logs. Only authored Lean source files
 were copied: dependency symlinks and oleans were NOT copied into packages.
 All 36 original `build/cs-euler-draft/` files were
 hash-checked unchanged. Bounded Astra review found no concrete proof or new
-call/syntax/contract/file-checker linkage issue. All agents are closed.
+call/syntax/contract/file-checker linkage issue. Those agents are closed.
+
+New reviewed scratch in `build/square-euler-draft/` connects the existing
+prepared square RHS to finite Euler intervals (12 audited roots, check03
+exit 0), including zero-step behavior, globally reachable RHS/addition overflow
+and existing ordered AD coefficient finiteness. `EulerAssign.lean` proves
+canonical call-to-local assignment composition and its actual Euler helper
+instance (two audited roots, assign-check01 exit 0). Bounded Astra review found
+no issue; that reviewer is closed. These are not integrated and do not yet
+establish square/tensor C invocation or public CS behavior.
+
+Astra worker Ptolemy `01a0c9d1-d6e5-7b63-abee-db60e05adda8` is working only in
+`build/galec-actions-draft/` on a durable frontend AST and actual structural
+actions for the entire current GALEC grammar. No tracked edits, grammar changes
+or package builds are authorized to that worker. Its universal proof boundary
+and compiled results still need main review before integration.
 
 A separately checked GALEC prerequisite remains in
 `build/galec-structure-draft/Compatibility.lean`: six audited universal roots
@@ -86,10 +117,8 @@ adopted.
 
 ## Next actions
 
-Run the required full gate for the integrated helper and retain its frozen
-input hashes, 40 new roots and four FMU roots. Commit with
-James Goppert <james.goppert@gmail.com> and `-s`;
-no AI coauthor. Then compose whole-interval preflight before any CS instance
+Commit the gate evidence with James Goppert <james.goppert@gmail.com> and `-s`;
+no AI coauthor. Compose whole-interval preflight before any CS instance
 writes, retaining guard/output precedence and explicit callback effects.
 Repair GALEC through reusable structural actions and complete artifact contracts,
 not another canonical-token recognizer. More detailed ignored checkpoints are

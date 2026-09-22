@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Fixed-rate Euler interval preflight (integrated; full gate pending):**
+**Fixed-rate Euler interval preflight (full gate passed):**
 
 Solve now specifies independent scalar and shape-indexed tensor finite prefixes
 for a supplied finite increment and bounded Nat step count. Universal proofs
@@ -25,7 +25,15 @@ snippets, fixed checker, existing emitter and existing boundary script. Focused
 owner checks passed 2,900 jobs; all 2,051 complete printed reports, including
 the 40 new roots, passed the unchanged whitelist. There were no warnings in
 the new modules. Evidence: `build/euler-preflight-owner-v1.log`. The required
-full gate for this integrated increment is still pending.
+full gate for this integrated increment passed (exit 0), with all 2,498 frozen
+input hashes unchanged. All 7,862 complete printed axiom reports, all 40 new
+roots, the actual-helper contract and four retained FMU roots passed the
+unchanged whitelist. The integrated arithmetic/reset/guard mutations were
+nonvacuous and rejected; the existing native boundary and its 15 Euler cases
+passed. FMI matrices passed 75 functions each and 526/650/526 cells with zero
+discrepancies; existing parser and scalar/tensor FMI/eFMI artifact, native and
+mutation gates passed. Evidence: `build/euler-preflight-full-gate-v1.log`.
+Only three evidence documents changed after the frozen gate.
 
 This is a prerequisite for whole-call CS numerical Discard, not its production
 invocation. The increment is not yet linked to prepared RHS or a public step

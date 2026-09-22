@@ -12,7 +12,7 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
-**Fixed-rate Euler interval preflight (2026-09-22; integrated, gate pending):**
+**Fixed-rate Euler interval preflight (2026-09-22; full gate passed):**
 No grammar or source-admission expansion. The pinned MLS finite-real/encoded
 distinction, FMI 3.0.2 §2.2.4 Discard preservation, eFMI Beta 1 §3.2.5 signal
 semantics and MISRA C:2025 Dir 4.15 detection boundary remain applicable.
@@ -24,7 +24,13 @@ staging passed 40 roots, the fixed file adapter, three nonvacuous mutations and
 the extended existing native boundary; bounded Astra review found no issue.
 Integrated owner checks passed 2,900 jobs and all 2,051 printed reports,
 including all 40 new roots, within the unchanged whitelist. Evidence:
-`build/euler-preflight-owner-v1.log`. The required full gate remains pending.
+`build/euler-preflight-owner-v1.log`. The required full gate passed (exit 0)
+with all 2,498 frozen inputs unchanged and all 7,862 printed reports, all 40
+new roots, the actual-helper contract and four retained FMU roots within the
+unchanged whitelist. Integrated helper mutation/native boundaries and existing
+parser/FMI/eFMI gates passed. FMI matrices exercised 75 functions each and
+526/650/526 cells with zero discrepancies. Evidence:
+`build/euler-preflight-full-gate-v1.log`.
 No public CS failure behavior,
 clock policy, native correspondence or MISRA closure is established; N01,
 GJ01/GJ02 and the previous findings remain open. The authorized GALEC repair
