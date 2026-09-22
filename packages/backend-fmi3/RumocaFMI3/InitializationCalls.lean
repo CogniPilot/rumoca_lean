@@ -46,7 +46,7 @@ theorem guard_run (heap : Heap) (p : Address) (args : Raw) (kind : Kind)
   have checked := guard_eval heap p args
   simp only [locals] at checked
   cases h : rejects args <;>
-    simp [run, next, Runtime.reject, Runtime.branch, checked, locals, h, boolean, Value.truth]
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.reject, Runtime.branch, checked, locals, h, boolean, Value.truth]
 
 /-- All seven instance fields are written from the original heap, with no
 finite/readable old-clock premise. The initial model state is not overwritten. -/
@@ -61,7 +61,7 @@ theorem tail_run (heap : Heap) (p : Address) (args : Initialization.Arguments)
   cases flag : args.stopDefined <;>
     simp [tail, Runtime.initialTime, Runtime.put, Runtime.field, Runtime.v, Runtime.setMode,
       Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code,
-      run, next, eval, lvalue, locals, parameters, Raw.ofFinite, CBody.bind, resolve, constants,
+      run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, locals, parameters, Raw.ofFinite, CBody.bind, resolve, constants,
       Value.address, Value.finite, boolean, Value.truth, store, convert,
       InitializationEntry.finalHeap, HistoryProofs.initialHeap, HistoryProofs.write, HistoryProofs.cell,
       replace, ht, hn, he, hl, modeStored, stopStored, flagStored, flag]

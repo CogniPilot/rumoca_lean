@@ -9,3 +9,9 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.Indirect.named_iff
 #audit axioms Rumoca.CCalls.Indirect.field_pointer
 #audit axioms Rumoca.CCalls.Indirect.resolved_supported
+
+#audit axioms Rumoca.CCalls.Indirect.evaluated_null_with
+#audit axioms Rumoca.CCalls.Indirect.evaluated_pointer_with
+#audit axioms Rumoca.CCalls.Indirect.named_iff_with
+#audit axioms Rumoca.CCalls.Indirect.resolve_legacy
+#audit axioms Rumoca.CCalls.Indirect.resolved_supported_with

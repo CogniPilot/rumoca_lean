@@ -12,7 +12,7 @@ open CMemory
 theorem kernel_step (program : Program E)
     (step : CStatements.next program.internal.kernel s = some t) (heap stack) :
     internalNext program (.kernel s heap stack) = some (.kernel t heap stack) := by
-  cases s <;> simp_all [CStatements.next, internalNext, Typed.nextWith]
+  cases s <;> simp_all [CStatements.next, internalNext, internalNextWith, Typed.nextWithExpressions]
 
 theorem kernel_reaches (program : Program E)
     (path : CStatements.Reaches program.internal.kernel s t) (heap stack) :

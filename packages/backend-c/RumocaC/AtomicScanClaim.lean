@@ -95,6 +95,7 @@ theorem scan_exchange (program : Events.Program E) (tag : CAtomicBoolean.Calls.E
     | atomic k bounded previous heap =>
       cases step with
       | internal moved =>
+        change Events.internalNext program _ = _ at moved
         rw [Events.external_entry_exclusive program bound] at moved
         contradiction
       | external found converted executed =>

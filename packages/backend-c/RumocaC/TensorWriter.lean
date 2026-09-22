@@ -13,12 +13,12 @@ variable [interface : CInterface]
 theorem index_eval (env : CBody.Locals) (heap : Heap) (name : String) (base : Address) (i : Nat)
     (pointer : env name = some (.pointer (some base))) (counter : env "k" = some (.integer i)) :
     CBody.eval env heap (indexed name) = load heap (base.index i) := by
-  simp [indexed, CBody.eval, CBody.resolve, pointer, counter, Value.address]
+  simp [indexed, CBody.eval, CBody.evalWith, CBody.resolve, pointer, counter, Value.address]
 
 theorem index_lvalue (env : CBody.Locals) (heap : Heap) (name : String) (base : Address) (i : Nat)
     (pointer : env name = some (.pointer (some base))) (counter : env "k" = some (.integer i)) :
     CBody.lvalue env heap (indexed name) = some (base.index i) := by
-  simp [indexed, CBody.lvalue, CBody.eval, CBody.resolve, pointer, counter, Value.address]
+  simp [indexed, CBody.lvalue, CBody.lvalueWith, CBody.evalWith, CBody.resolve, pointer, counter, Value.address]
 
 theorem write_step (expr : Expr) (values : Values shape) (env : CBody.Locals) (types : CLoops.Types)
     (heap : Heap) (output : Address) (i : Fin shape.volume) (rest : List Stmt)
@@ -32,7 +32,9 @@ theorem write_step (expr : Expr) (values : Values shape) (env : CBody.Locals) (t
   have stored := store_next heap output values writable i.val i.isLt
   rw [← Fin.getElem_fin] at stored
   simp only [indexed] at target ⊢
-  simp only [CLoops.next, evaluated, target, stored, bind, Option.bind_some, pure]
+  change CBody.legacyExpressions.address env (written heap output values i.val)
+    (Expr.index (.id "out") (.id "k")) = some (output.index i.val) at target
+  simp only [CLoops.next, CLoops.nextWith, evaluated, target, stored, bind, Option.bind_some, pure]
 
 theorem writer_reaches (expr : Expr) (values : Values shape) (env : CBody.Locals) (types : CLoops.Types)
     (heap : Heap) (output : Address) (pointer : env "out" = some (.pointer (some output)))
@@ -49,7 +51,7 @@ theorem writer_reaches (expr : Expr) (values : Values shape) (env : CBody.Locals
   have repeated := CLoops.loop_reaches "k" (.id "count") [.assign (indexed "out") expr] [.ret none]
     (fun _ => env) (CLoops.bindType types "k" .size) (written heap output values) shape.volume
     (by simp [CLoops.bindType]) bounded (by simp [CLoops.noDeclarations])
-    (by intro i _; simp [CBody.eval, CBody.resolve, CLoops.counterEnv, CBody.bind, count])
+    (by intro i _; simp [CBody.eval, CBody.evalWith, CBody.resolve, CLoops.counterEnv, CBody.bind, count])
     (by
       intro i hi
       exact .next (write_step expr values _ _ heap output ⟨i, hi⟩ _

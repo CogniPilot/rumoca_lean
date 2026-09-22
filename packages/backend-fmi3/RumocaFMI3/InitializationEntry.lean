@@ -45,7 +45,7 @@ theorem guard_eval (heap : Heap) (p : Address) (args : Arguments) :
   change Value.isFinite (.float64 (toBits args.start).val) = some true at hf
   have hstop : Value.isFinite (.float64 args.stop) = some (finiteBits args.stop) := rfl
   simp [guard, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
-    Runtime.finite, Runtime.call, Runtime.lt, Runtime.v, Runtime.n, eval,
+    Runtime.finite, Runtime.call, Runtime.lt, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     locals, parameters, CBody.bind, resolve, constants, comparison, floatComparison,
     convert, Value.finite, hf, hstop, rejects, atLeast]
   all_goals
@@ -84,7 +84,7 @@ theorem prefix_run (heap : Heap) (p : Address) (args : Arguments) (kind : Kind)
   simpa only [locals] using
     (show run 1 (.running (Runtime.reject guard "Invalid initialization time interval" :: rest)
         (locals p args) heap) = some (.running rest (locals p args) heap) by
-      simp [Runtime.reject, Runtime.branch, run, next, hg, boolean, Value.truth])
+      simp [Runtime.reject, Runtime.branch, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, hg, boolean, Value.truth])
 
 set_option maxRecDepth 10000 in
 theorem body_reaches (m : Solve.FMI3Model source) (sig : Signature)
@@ -119,7 +119,7 @@ theorem body_reaches (m : Solve.FMI3Model source) (sig : Signature)
       some (.returned ⟨.integer 0, finalHeap heap p args⟩) := by
     cases hflag : args.stopDefined <;>
       simp [tail, Runtime.setMode, Runtime.put, Runtime.mode, Mode.code, Runtime.field,
-        Runtime.v, Runtime.n, Runtime.ok, Runtime.ret, run, next, eval, lvalue,
+        Runtime.v, Runtime.n, Runtime.ok, Runtime.ret, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
         locals, parameters, CBody.bind, resolve, constants, Value.address, boolean, Value.truth,
         store, hs', hd', hm', convert, finalHeap, replace, hflag]
   have hb : Runtime.body m sig = Runtime.require .enterInitialization ++

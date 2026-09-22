@@ -1,4 +1,4 @@
-import Rumoca.TensorProduction
+import Rumoca.TensorArtifact
 import RumocaEFMI.TensorAlgorithmProofs
 
 /-! Development tensor Algorithm Code product. The array/tensor profile is not

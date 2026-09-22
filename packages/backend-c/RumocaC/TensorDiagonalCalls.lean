@@ -39,9 +39,9 @@ theorem function_reaches (definitions : CLoops.Calls.Definitions)
     (parameters input output shape) parameterTypes tail stack fillDefined header
     (by simp [parameters, Lowering.Arguments.locals, signatureParameters, CBody.bind, Fill.function])
     (Fill.literal_eval .zero _ _ header.scalar)
-    (by simp [CBody.eval, CBody.resolve, parameters, Lowering.Arguments.locals, signatureParameters,
+    (by simp [CBody.eval, CBody.evalWith, CBody.resolve, parameters, Lowering.Arguments.locals, signatureParameters,
       arguments, CBody.bind])
-    (by simp [CBody.eval, CBody.resolve, parameters, Lowering.Arguments.locals, signatureParameters,
+    (by simp [CBody.eval, CBody.evalWith, CBody.resolve, parameters, Lowering.Arguments.locals, signatureParameters,
       arguments, CBody.bind]) writable bounded
   exact filled.trans (CLoops.Calls.body_reaches definitions
     (tail_reaches input output values heap separate reads bounded header.size
@@ -61,12 +61,12 @@ theorem helper_call_reaches (definitions : CLoops.Calls.Definitions)
   have entered : (CLoops.Calls.machine definitions).step
       (.calling function.signature.name (argumentValues input output shape) heap stack)
       (.body (.running function.body (parameters input output shape) parameterTypes heap) stack) := by
-    simp only [CLoops.Calls.machine, CLoops.Calls.next, found,
+    simp only [CLoops.Calls.machine, CLoops.Calls.machineWith, CLoops.Calls.nextWith, found,
       show function.signature.result = "void" from rfl, ne_eq, not_true_eq_false, ↓reduceIte,
       bind_parameters input output shape header bounded, bind_types header, bind, Option.bind_some, pure]
   exact .next entered ((function_reaches definitions input output values heap stack fillDefined fillHeader
     separate reads writable bounded).trans (.next
-      (by simp [CLoops.Calls.machine, CLoops.Calls.next]) (.refl _)))
+      (by simp [CLoops.Calls.machine, CLoops.Calls.machineWith, CLoops.Calls.nextWith]) (.refl _)))
 
 theorem helper_call_correct (definitions : CLoops.Calls.Definitions)
     (input output : Address) (values : Values shape) (heap : Heap)
@@ -106,8 +106,8 @@ theorem invoke_reaches (definitions : CLoops.Calls.Definitions)
       some (.calling function.signature.name (argumentValues input output shape) heap
         (.caller rest env types stack)) := by
     simp only [function] at unshadowed
-    simp [invoke, function, CLoops.Calls.next, CLoops.next, CLoops.eval, CBody.eval,
-      CLoops.Calls.enterCall, CCalls.arguments, hc, ho, hn, ha, argumentValues, unshadowed]
+    simp [invoke, function, CLoops.Calls.next, CLoops.Calls.nextWith, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      CLoops.Calls.enterCallWith, CCalls.argumentsWith, CBody.legacyExpressions, hc, ho, hn, ha, argumentValues, unshadowed]
   exact .next started ((helper_call_reaches definitions input output values heap _ found fillDefined
     header fillHeader separate reads writable bounded).trans (.next rfl (.refl _)))
 

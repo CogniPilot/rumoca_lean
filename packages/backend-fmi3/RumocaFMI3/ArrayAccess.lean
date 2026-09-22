@@ -42,7 +42,7 @@ theorem run_guard (env : Locals) (heap : Heap) (left right leftCount rightCount 
     cases lp <;> cases rp <;>
     simp_all [guard, Valid, Runtime.reject, Runtime.branch, Runtime.any,
       Runtime.either, Runtime.both, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n,
-      run, next, eval, comparison, boolean, Value.truth]
+      run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, comparison, boolean, Value.truth]
   all_goals have nonzero : (0 : Int) ≠ m.toNat := by omega
   all_goals simp [nonzero]
 

@@ -67,26 +67,26 @@ theorem dispatch_reaches {E : Type} (context : ErrorContext literals) :
     simpa only [load, LifecycleBodies.write_frame heap p (p.member "environment") .terminated (by simp)] using he
   have resolved : CCalls.Events.resolve program env (LifecycleBodies.writeMode heap p .terminated)
       (Runtime.field "logger") = some name := by
-    simp [CCalls.Events.resolve, CCalls.Indirect.resolve, Runtime.field, Runtime.v,
-      CBody.eval, hp, Value.address, loggerAfter, CCalls.Indirect.valueTarget, address]
+    simp [CCalls.Events.resolve, CCalls.Events.resolveWith, CCalls.Indirect.resolveWith, CBody.legacyExpressions, Runtime.field, Runtime.v,
+      CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, hp, Value.address, loggerAfter, CCalls.Indirect.valueTarget, address]
   have errorBound : CInterface.constants "fmi3Error" = some (.integer 3) := context.error
   have categoryBound : CInterface.literals "logStatus" = some category := context.bytes ▸ literal
   have values : CCalls.arguments env (LifecycleBodies.writeMode heap p .terminated)
       [Runtime.field "environment", Runtime.v "fmi3Error", .str "logStatus", Runtime.v "message"] =
       some (Logging.arguments environment category message) := by
-    simp [CCalls.arguments, Runtime.field, Runtime.v, CBody.eval, Value.address,
+    simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, Value.address,
       environmentAfter, categoryBound, errorBound, Logging.arguments, env, ErrorCalls.failureEnv,
       CBody.bind, resolve, constants]
   have blocked : CLoops.next (.running [ErrorBodies.logCall, Runtime.ret (Runtime.v "fmi3Error")]
       env types (LifecycleBodies.writeMode heap p .terminated)) = none := by
-    simp [CLoops.next, CLoops.eval, ErrorBodies.logCall, Runtime.field, Runtime.v, CBody.eval]
+    simp [CLoops.next, CLoops.nextWith, CBody.legacyExpressions, CLoops.evalWith, ErrorBodies.logCall, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith]
   have entered : CCalls.Events.internalNext program
       (.body (.running [ErrorBodies.logCall, Runtime.ret (Runtime.v "fmi3Error")]
         env types (LifecycleBodies.writeMode heap p .terminated)) "fmi3Status" stack) =
       some (.calling name (Logging.arguments environment category message)
         (LifecycleBodies.writeMode heap p .terminated) (Logging.failureContinuation p message types stack)) := by
-    simp only [CCalls.Events.internalNext, CCalls.Typed.nextWith, blocked]
-    simp [CCalls.Events.enterCall, ErrorBodies.logCall, CCalls.Indirect.operand,
+    simp only [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, blocked]
+    simp [CCalls.Events.enterCallWith, ErrorBodies.logCall, CCalls.Indirect.operand,
       resolved, values, Logging.failureContinuation, env]
   exact ⟨types, reached.trans (.next entered (.refl _))⟩
 
@@ -105,9 +105,9 @@ theorem resume_reaches {E : Type} (context : ErrorContext literals) :
   refine .next (t := .body (.running [Runtime.ret (Runtime.v "fmi3Error")] env types heap)
     "fmi3Status" stack) (by rfl) ?_
   refine .next (t := .body (.returned ⟨.integer 3, heap⟩) "fmi3Status" stack) ?_ ?_
-  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-      Runtime.ret, Runtime.v, CBody.eval, errorValue]
-  · exact .next (by simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, context.error_cast]) (.refl _)
+  · simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CBody.legacyExpressions, CLoops.evalWith,
+      Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, errorValue]
+  · exact .next (by simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, context.error_cast]) (.refl _)
 
 /-- All enabled callback outcomes, including an absent outcome, are retained.
 This does not model the native callback's internal execution or reentry. -/
@@ -167,7 +167,7 @@ theorem helper_suppressed_reaches {E : Type} (context : ErrorContext literals) :
       ErrorBodies.failure_dispatch_run (static := ⟨literals⟩) (ErrorCalls.failureEnv p message)
         heap p old logger logging (by simp [ErrorCalls.failureEnv, CBody.bind, resolve]) hm hl hg,
       off]
-    simp [run, next, Runtime.ret, Runtime.v, eval, ErrorCalls.failureEnv, CBody.bind, resolve, constants]
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, ErrorCalls.failureEnv, CBody.bind, resolve, constants]
   have transferred := (body_run_agreement (cInterface literals) context.target
     context.types context.bytes 3
     (.running Runtime.helpers[0].body (ErrorCalls.failureEnv p message) heap)
@@ -242,15 +242,15 @@ theorem statement_entry {E : Type} (context : ErrorContext literals) :
   have named : CInterface.constants "fail" = none := context.ordinary
   have literal : CInterface.literals text = some message := context.bytes ▸ messageBound
   have resolved : CCalls.Events.resolve program env heap (Runtime.v "fail") = some "fail" := by
-    simp [CCalls.Events.resolve, CCalls.Indirect.resolve, Runtime.v,
+    simp [CCalls.Events.resolve, CCalls.Events.resolveWith, CCalls.Indirect.resolveWith, CBody.legacyExpressions, Runtime.v, CBody.eval, CBody.evalWith,
       resolve, unshadowed, constants, named]
   have values : CCalls.arguments env heap [Runtime.v "m", .str text] =
       some [.pointer (some p), .pointer (some message)] := by
-    simp [CCalls.arguments, Runtime.v, CBody.eval, instanceBound, literal]
+    simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, Runtime.v, CBody.eval, CBody.evalWith, instanceBound, literal]
   have blocked : CLoops.next (.running (Runtime.fail text :: code) env types heap) = none := by
-    simp [CLoops.next, CLoops.eval, Runtime.fail, Runtime.ret, Runtime.call, Runtime.v, CBody.eval]
-  simp only [CCalls.Events.internalNext, CCalls.Typed.nextWith, blocked]
-  simp [CCalls.Events.enterCall, Runtime.fail, Runtime.ret, Runtime.call,
+    simp [CLoops.next, CLoops.nextWith, CBody.legacyExpressions, CLoops.evalWith, Runtime.fail, Runtime.ret, Runtime.call, Runtime.v, CBody.eval, CBody.evalWith]
+  simp only [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, blocked]
+  simp [CCalls.Events.enterCallWith, Runtime.fail, Runtime.ret, Runtime.call,
     CCalls.Indirect.operand, resolved, values]
 
 
@@ -295,8 +295,8 @@ theorem statement_all_behaviors {E : Type} (context : ErrorContext literals) :
   apply CCalls.Events.internal_prefix program
     (resume_reaches context program p message helperTypes saved value final)
   exact CCalls.Events.internal_prefix program (.next
-    (by simp [CCalls.Events.internalNext, CCalls.Typed.nextWith,
-      CCalls.Typed.resume, saved, context.error_cast]) (.refl _))
+    (by simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+      CCalls.Typed.resumeWith, saved, context.error_cast]) (.refl _))
     (CCalls.Events.return_forced program (.integer 3) final)
 
 /-- Disabled logging or a missing logger returns Error after the mode write,
@@ -327,8 +327,8 @@ theorem statement_suppressed_behaviors {E : Type} (context : ErrorContext litera
       unshadowed instanceBound messageBound) dispatched
   exact (CCalls.Events.internal_prefix program path
     (CCalls.Events.internal_prefix program (.next
-      (by simp [CCalls.Events.internalNext, CCalls.Typed.nextWith,
-        CCalls.Typed.resume, saved, context.error_cast]) (.refl _))
+      (by simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+        CCalls.Typed.resumeWith, saved, context.error_cast]) (.refl _))
       (CCalls.Events.return_forced program (.integer 3) (LifecycleBodies.writeMode heap p .terminated)))).behaviors behavior
 
 /-- A derived silent execution prefix ending at the actual error-helper call.
@@ -579,8 +579,8 @@ theorem statement_missing_behaviors {E : Type} (context : ErrorContext literals)
       unshadowed instanceBound messageBound) dispatched
   exact (CCalls.Events.internal_prefix program path
     (CCalls.Events.internal_prefix program (.next
-      (by simp [CCalls.Events.internalNext, CCalls.Typed.nextWith,
-        CCalls.Typed.resume, saved, context.error_cast]) (.refl _))
+      (by simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+        CCalls.Typed.resumeWith, saved, context.error_cast]) (.refl _))
       (CCalls.Events.return_forced program (.integer 3) (LifecycleBodies.writeMode heap p .terminated)))).behaviors behavior
 
 theorem prefix_missing_behaviors {E : Type} (context : ErrorContext literals) :

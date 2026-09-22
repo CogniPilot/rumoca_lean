@@ -85,31 +85,31 @@ theorem reaches (program : Events.Program E) (model : Solve.Model source)
       ((StateProofs.written_frame _ _ _ _ outputState).trans buffer)
   refine .next (t := .calling "model_advance"
     [.pointer (some (p.member "model")), .integer count.val] heap saved) ?_ ?_
-  · simp [Events.internalNext, Typed.nextWith, CLoops.next, CLoops.eval, CBody.eval,
-      code, Runtime.call, Runtime.field, Runtime.v, Events.enterCall, Events.resolve,
-      Indirect.operand, Indirect.resolve, CBody.resolve, CBody.constants,
-      CBody.lvalue, CBody.expressionCast, CBody.zeroLiteral, CBody.cast, helperTypes.count,
-      unshadowed, global, instanceValue, stepValue, converted, Value.address, arguments, saved]
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      code, Runtime.call, Runtime.field, Runtime.v, Events.enterCallWith, Events.resolveWith,
+      Indirect.operand, Indirect.resolveWith, CBody.legacyExpressions, CBody.resolve, CBody.constants,
+      CBody.lvalueWith, CBody.expressionCast, CBody.zeroLiteral, CBody.cast, helperTypes.count,
+      unshadowed, global, instanceValue, stepValue, converted, Value.address, argumentsWith, CBody.legacyExpressions, saved]
   refine (ModelAdvance.advance_reaches program helperTypes model kernel helper sample
     heap (p.member "model") x count stored saved).trans (.next (t :=
       .body (.running finalWrites env types stateHeap) "fmi3Status" stack) ?_ ?_)
   · rfl
   refine .next (t := .body (.running (finalWrites.drop 1) env types timeHeap) "fmi3Status" stack) ?_ ?_
   · apply Events.body_step
-    simp [CLoops.next, CLoops.eval, CBody.eval, CBody.lvalue, CBody.resolve,
+    simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, CBody.resolve,
       finalWrites, Runtime.put, Runtime.field, Runtime.v, nextValue, instanceValue,
       Value.address, Value.finite, store_float64 stateHeap (p.member "time") _ _ stateClock,
       timeHeap, StateProofs.written]
   refine .next (t := .body (.running [Runtime.ok] env types
     (written heap p output (model.run x count.val) next)) "fmi3Status" stack) ?_ ?_
   · apply Events.body_step
-    simp [CLoops.next, CLoops.eval, CBody.eval, CBody.lvalue, CBody.resolve,
+    simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, CBody.resolve,
       finalWrites, Runtime.out, Runtime.v, nextValue, outputValue, Value.address, Value.finite,
       store_float64 timeHeap output _ _ timeOutput, written, StateProofs.written]
     rfl
   exact Events.expression_return program env types _ (Runtime.v "fmi3OK") []
     "fmi3Status" stack (.integer 0) (.integer 0)
-    (by simpa [CLoops.eval, CBody.eval, Runtime.v] using okValue)
+    (by simpa [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, Runtime.v] using okValue)
     (CCalls.Casts.valueReturn "fmi3Status" _ _ (by decide)
       (CCalls.Casts.named "fmi3Status" .int32 _ _ statusType rfl))
 

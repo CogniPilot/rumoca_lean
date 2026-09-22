@@ -61,7 +61,8 @@ theorem initialization (flags : Address) (count : Nat) (heap : Heap)
   have third := CLoops.declare_local env2 types2 heap "_Bool" "busy" (.cast "_Bool" (.nat 0))
     tail .boolean (.integer 0) (.integer 0) boolean
     (by simp [env2, env1, env0, parameterLocals, CBody.bind])
-    (by simp [CLoops.eval, CBody.eval, CBody.expressionCast, CBody.cast, CBody.zeroLiteral,
+    (by simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      CBody.expressionCast, CBody.cast, CBody.zeroLiteral,
       boolean, convert, Value.truth]) rfl
   change CLoops.run 3 (.running
     (.declare "size_t" "k" (.nat 0) :: .declare "const size_t" "one" (.nat 1) :: busyDecl :: tail)

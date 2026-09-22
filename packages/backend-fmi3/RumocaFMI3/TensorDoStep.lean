@@ -86,11 +86,11 @@ theorem eulerStep (env : Locals) (types : Types) (heap : Heap) (dstBase srcBase 
     dstCell_lvalue env heap dstBase i.val dstBound counter
   have dstEval : CBody.eval env heap dstCell = some (.finite state[i]) := by
     have raw : CBody.eval env heap dstCell = load heap (dstBase.index i.val) := by
-      simp [dstCell, Runtime.v, CBody.eval, dstBound, counter, Value.address]
+      simp [dstCell, Runtime.v, CBody.eval, CBody.evalWith, dstBound, counter, Value.address]
     exact raw.trans dstRead
   have srcEval : CBody.eval env heap srcCell = some (.finite deriv[i]) := by
     have raw : CBody.eval env heap srcCell = load heap (srcBase.index i.val) := by
-      simp [srcCell, Runtime.v, CBody.eval, srcBound, counter, Value.address]
+      simp [srcCell, Runtime.v, CBody.eval, CBody.evalWith, srcBound, counter, Value.address]
     exact raw.trans srcRead
   have rhs : CLoops.eval env types heap (.bin .add dstCell srcCell) =
       some (.float64 (Binary64.addResult state[i] deriv[i]).encode) := by
@@ -104,8 +104,9 @@ theorem eulerStep (env : Locals) (types : Types) (heap : Heap) (dstBase srcBase 
     rw [(Binary64.addResult_correct state[i] deriv[i] (.finite sum[i])).mpr adds]
     rfl
   rw [encoded] at rhs
+  change CBody.legacyExpressions.address env heap dstCell = some (dstBase.index i.val) at address
   simp only [dstCell, srcCell] at address rhs
-  simp [eulerBody, dstCell, srcCell, CLoops.next, address, rhs, Option.bind_some,
+  simp [eulerBody, dstCell, srcCell, CLoops.next, CLoops.nextWith, address, rhs, Option.bind_some,
     store_float64 heap _ old _ dstStore, StateProofs.written]
 
 end
@@ -140,7 +141,7 @@ theorem euler_reaches (program : CCalls.Events.Program E) (env : Locals) (types 
     (fun _ => env) types (written heap dstBase sum) shape.volume resultType stack typed bounded
     eulerBody_closed
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i inside
     obtain ⟨old, storage⟩ := Float64Calls.pending_output heap dstBase sum writable i inside
     have dstRead : load (written heap dstBase sum i) (dstBase.index i) =
@@ -193,9 +194,9 @@ theorem finishOK (program : CCalls.Events.Program E) (heap : Heap) (env : Locals
       (.body (.running [Runtime.ok] env types heap) "fmi3Status" stack)
       (.returning (.integer 0) heap stack) := by
   refine .next (t := .body (.returned ⟨.integer 0, heap⟩) "fmi3Status" stack) ?_ (.next ?_ (.refl _))
-  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-      Runtime.ok, Runtime.ret, Runtime.v, CBody.eval, CBody.resolve, CBody.constants, ok, okBound]
-  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.returnCast, CBody.cast,
+  · simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      Runtime.ok, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, CBody.resolve, CBody.constants, ok, okBound]
+  · simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.returnCast, CBody.cast,
       status, convert]
 
 end
@@ -346,7 +347,7 @@ theorem euler_delivers_for (fenv : TensorFenv interface) (shape : Tensor.Shape) 
       ((Runtime.region TensorInstance.stateName)) .pointer
       (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst fenv.floatPointerType _ rfl
     apply CBodyEmbedding.eval_refines
-    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]
+    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CBody.resolve, mBound, Value.address]
   set env1 := bind env "dst" (.pointer (some (p.member TensorInstance.stateName))) with henv1
   have s_src : CLoops.next (.running (.declare "fmi3Float64 *" "src"
         ((Runtime.region TensorInstance.derivativeName)) ::
@@ -363,7 +364,7 @@ theorem euler_delivers_for (fenv : TensorFenv interface) (shape : Tensor.Shape) 
       (by simp [henv1, CBody.bind, freshSrc]) fenv.floatPointerType _ rfl
     apply CBodyEmbedding.eval_refines
     have m1 : env1 "m" = some (.pointer (some p)) := by simp [henv1, CBody.bind, mBound]
-    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]
+    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CBody.resolve, m1, Value.address]
   set env2 := bind env1 "src" (.pointer (some (p.member TensorInstance.derivativeName))) with henv2
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
@@ -373,7 +374,7 @@ theorem euler_delivers_for (fenv : TensorFenv interface) (shape : Tensor.Shape) 
         (CLoops.bindType (bindType (bindType types0 "dst" .pointer) "src" .pointer) "expected" .size) H) := by
     apply TensorFloat64.declare_step_e env2 _ H "size_t" "expected" (Runtime.n shape.volume) .size
       (.integer shape.volume) _ _ (by simp [henv2, henv1, CBody.bind, freshExpected]) fenv.sizeType
-      (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
+      (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded)
   set env3 := bind env2 "expected" (.integer shape.volume) with henv3
   set types3 := CLoops.bindType (bindType (bindType types0 "dst" .pointer) "src" .pointer) "expected" .size
     with htypes3
@@ -507,10 +508,10 @@ theorem internalStep_reaches_for (fenv : TensorFenv interface) (shape oshape : T
       some (.calling "rumoca_rhs"
         [.pointer (some (m.member TensorInstance.stateName)), .pointer (some (m.member TensorInstance.inputName)),
          .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] H cont) := by
-    simp [internalBody, eulerTail, List.cons_append, CCalls.Events.internalNext, CCalls.Typed.nextWith,
-      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
-      Runtime.v, CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve,
-      CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments, mBound, countBound,
+    simp [internalBody, eulerTail, List.cons_append, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+      CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
+      Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CCalls.Events.enterCallWith, CCalls.Events.resolveWith,
+      CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CBody.legacyExpressions, CCalls.argumentsWith, CBody.legacyExpressions, mBound, countBound,
       CBody.resolve, CBody.constants, Value.address, hcont, freshRhs, fenv.rhs]
   have argsEq : [Value.pointer (some (m.member TensorInstance.stateName)),
       .pointer (some (m.member TensorInstance.inputName)),
@@ -523,7 +524,7 @@ theorem internalStep_reaches_for (fenv : TensorFenv interface) (shape oshape : T
       backing pool i oshape time state input result output bounded executed resolves cont
   have resume : CCalls.Events.internalNext program (.returning .void derivHeap cont) =
       some (.body (.running (eulerTail shape ++ rest) env types0 derivHeap) resultType stack) := by
-    simp [hcont, CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+    simp [hcont, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith]
   have outsideX : ∀ a : Fin shape.volume,
       Outside (TensorInstanceRhs.locations pool i) (TensorInstanceRhs.kernel shape).derivative
         (TensorModelRhs.derivativePlan (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape))
@@ -852,10 +853,10 @@ theorem internalStepPure_reaches_for (shape : Tensor.Shape) (definitions : CLoop
       some (.calling "rumoca_rhs"
         [.pointer (some (m.member TensorInstance.stateName)), .pointer (some (m.member TensorInstance.inputName)),
          .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] H cont) := by
-    simp [stepBody, htail, List.cons_append, CCalls.Events.internalNext, CCalls.Typed.nextWith,
-      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
-      Runtime.v, CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve,
-      CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments, mBound, countBound,
+    simp [stepBody, htail, List.cons_append, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+      CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
+      Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CCalls.Events.enterCallWith, CCalls.Events.resolveWith,
+      CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CBody.legacyExpressions, CCalls.argumentsWith, CBody.legacyExpressions, mBound, countBound,
       CBody.resolve, CBody.constants, Value.address, hcont, freshRhs, fenv.rhs]
   have argsEq : [Value.pointer (some (m.member TensorInstance.stateName)),
       .pointer (some (m.member TensorInstance.inputName)),
@@ -878,13 +879,13 @@ theorem internalStepPure_reaches_for (shape : Tensor.Shape) (definitions : CLoop
     exact frameH _ outside
   have resume : CCalls.Events.internalNext program (.returning .void derivHeap cont) =
       some (.body (.running tail env types0 derivHeap) resultType stack) := by
-    simp [hcont, CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+    simp [hcont, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith]
   have reset : CLoops.next (.running tail env types0 derivHeap) =
       some (.running (loop "k" (Runtime.v "expected") eulerBody :: rest)
         (counterEnv env "k" 0) types0 derivHeap) := by
     have step := CLoops.assign_local env types0 derivHeap "k" (Runtime.n 0)
       (loop "k" (Runtime.v "expected") eulerBody :: rest) (.integer v0) (.integer 0) (.integer 0) .size
-      kBound typedK (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat 0 (by decide +kernel))
+      kBound typedK (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat 0 (by decide +kernel))
     simpa only [htail, counterEnv] using step
   have outsideX : ∀ a : Fin shape.volume,
       Outside (TensorInstanceRhs.locations pool i) (TensorInstanceRhs.kernel shape).derivative
@@ -1306,7 +1307,7 @@ def timeAdvance : List Stmt := [Runtime.put "time" (.bin .add (Runtime.field "ti
 
 theorem timeAdvance_closed : timeAdvance.all CBodyEmbedding.closedBlocks = true := by
   simp [timeAdvance, Runtime.put, Runtime.field, Runtime.v, oneExpr, CAlgorithm.literal,
-    CBodyEmbedding.closedBlocks, CLoops.noDeclarations]
+    CBodyEmbedding.closedBlocks]
 
 theorem timeAdvance_noDecl : timeAdvance.all CLoops.noDeclarations = true := by
   simp [timeAdvance, Runtime.put, Runtime.field, Runtime.v, oneExpr, CAlgorithm.literal,
@@ -1330,7 +1331,7 @@ theorem timeStep (env : Locals) (types : Types) (heap : Heap) (p : Address)
         (StateProofs.written heap (p.member "time") (toBits t').val)) := by
   have leftEval : CBody.eval env heap (Runtime.field "time") = some (.finite t) := by
     have raw : CBody.eval env heap (Runtime.field "time") = load heap (p.member "time") := by
-      simp [Runtime.field, Runtime.v, CBody.eval, CBody.resolve, mBound, Value.address]
+      simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.resolve, mBound, Value.address]
     exact raw.trans clock
   have rightEval : CBody.eval env heap oneExpr = some (.finite Binary64.one) :=
     Rumoca.CTensor.Fill.literal_eval .one env heap double
@@ -1342,9 +1343,10 @@ theorem timeStep (env : Locals) (types : Types) (heap : Heap) (p : Address)
     rw [(Binary64.addResult_correct t Binary64.one (.finite t')).mpr adds]; rfl
   rw [encoded] at rhs
   have address : CBody.lvalue env heap (Runtime.field "time") = some (p.member "time") := by
-    simp [Runtime.field, Runtime.v, CBody.lvalue, CBody.eval, CBody.resolve, mBound, Value.address]
+    simp [Runtime.field, Runtime.v, CBody.lvalue, CBody.lvalueWith, CBody.evalWith, CBody.resolve, mBound, Value.address]
+  change CBody.legacyExpressions.address env heap (Runtime.field "time") = some (p.member "time") at address
   simp only [Runtime.field, Runtime.v] at address rhs
-  simp [timeAdvance, Runtime.put, Runtime.field, Runtime.v, CLoops.next, address, rhs,
+  simp [timeAdvance, Runtime.put, Runtime.field, Runtime.v, CLoops.next, CLoops.nextWith, address, rhs,
     Option.bind_some, store_float64 heap _ old _ storage, StateProofs.written]
 
 end
@@ -1904,7 +1906,7 @@ theorem doStepBody_closed (shape : Tensor.Shape) (hasOutput : Bool) :
       Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.out, Runtime.stepRounding,
       Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.fail, Runtime.ret,
       Runtime.ok, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, Runtime.any, Runtime.negate,
-      Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.either, Runtime.put,
+      Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.either,
       CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop, CLoops.counterStep,
       List.all_append, stepBodyT_noDecl]
 
@@ -1999,7 +2001,7 @@ theorem tensorSolve_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Cal
       some (.integer duration.val) := by
     have base : CBody.resolve env4 "communicationStepSize" = some (.finite step) := by
       simp [CBody.resolve, henv4, henv3, henv2, henv1, CBody.bind, stepValue]
-    simp [CLoops.eval, CBody.eval, base, CBody.expressionCast, Runtime.v, CBody.zeroLiteral,
+    simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, base, CBody.expressionCast, Runtime.v, CBody.zeroLiteral,
       CBody.cast, stepCast, fenv.sizeType]
   set env5 := bind env4 "steps" (.integer duration.val) with henv5
   set types5 := bindType types4 "steps" .size with htypes5
@@ -2020,7 +2022,7 @@ theorem tensorSolve_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Cal
         ((Runtime.region TensorInstance.stateName)) .pointer
         (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst fenv.floatPointerType
         (by apply CBodyEmbedding.eval_refines
-            simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]) rfl)
+            simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CBody.resolve, mBound, Value.address]) rfl)
       "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env1 types1 H "fmi3Float64 *" "src"
@@ -2028,19 +2030,19 @@ theorem tensorSolve_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Cal
           (.pointer (some (p.member TensorInstance.derivativeName))) _ _
           (by simp [henv1, CBody.bind, freshSrc]) fenv.floatPointerType
           (by apply CBodyEmbedding.eval_refines
-              simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]) rfl)
+              simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CBody.resolve, m1, Value.address]) rfl)
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env2 types2 H "size_t" "nContinuousStates"
           (Runtime.n shape.volume) .size (.integer shape.volume) _ _
           (by simp [henv2, henv1, CBody.bind, freshCount]) fenv.sizeType
-          (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded))
+          (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env3 types3 H "size_t" "expected"
           (Runtime.n shape.volume) .size (.integer shape.volume) _ _
           (by simp [henv3, henv2, henv1, CBody.bind, freshExpected]) fenv.sizeType
-          (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded))
+          (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env4 types4 H "size_t" "steps"
@@ -2118,11 +2120,12 @@ theorem tensorSolve_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Cal
         some (.finite (times duration.val)) := by
       show CBody.eval tailEnv loopHeap (Runtime.field "time") = some (.finite (times duration.val))
       have raw : CBody.eval tailEnv loopHeap (Runtime.field "time") = load loopHeap (p.member "time") := by
-        simp [Runtime.field, Runtime.v, CBody.eval, CBody.resolve, mTail, Value.address]
+        simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.resolve, mTail, Value.address]
       rw [raw]; exact timeLoad
     have addr : CBody.lvalue tailEnv loopHeap (.deref (Runtime.v "lastSuccessfulTime")) = some buffers.last := by
-      simp [CBody.lvalue, Runtime.v, CBody.eval, lastTail, Value.address]
-    simp [Runtime.out, CLoops.next, leftEval, addr, Value.finite,
+      simp [CBody.lvalue, CBody.lvalueWith, Runtime.v, CBody.evalWith, lastTail, Value.address]
+    change CBody.legacyExpressions.address tailEnv loopHeap (.deref (Runtime.v "lastSuccessfulTime")) = some buffers.last at addr
+    simp [Runtime.out, CLoops.next, CLoops.nextWith, leftEval, addr, Value.finite,
       store_float64 loopHeap buffers.last oldLast _ lastLoop, hfinal, StateProofs.written]
   have okReach := finishOK program finalHeap tailEnv types7 stack okTail fenv.statusType fenv.fmi3OK
   refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -2312,7 +2315,7 @@ theorem tensorSolveOutput_reaches_for (shape : Tensor.Shape) (definitions : CLoo
       some (.integer duration.val) := by
     have base : CBody.resolve env4 "communicationStepSize" = some (.finite step) := by
       simp [CBody.resolve, henv4, henv3, henv2, henv1, CBody.bind, stepValue]
-    simp [CLoops.eval, CBody.eval, base, CBody.expressionCast, Runtime.v, CBody.zeroLiteral,
+    simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, base, CBody.expressionCast, Runtime.v, CBody.zeroLiteral,
       CBody.cast, stepCast, fenv.sizeType]
   set env5 := bind env4 "steps" (.integer duration.val) with henv5
   set types5 := bindType types4 "steps" .size with htypes5
@@ -2331,7 +2334,7 @@ theorem tensorSolveOutput_reaches_for (shape : Tensor.Shape) (definitions : CLoo
         ((Runtime.region TensorInstance.stateName)) .pointer
         (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst fenv.floatPointerType
         (by apply CBodyEmbedding.eval_refines
-            simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]) rfl)
+            simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CBody.resolve, mBound, Value.address]) rfl)
       "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env1 types1 H "fmi3Float64 *" "src"
@@ -2339,19 +2342,19 @@ theorem tensorSolveOutput_reaches_for (shape : Tensor.Shape) (definitions : CLoo
           (.pointer (some (p.member TensorInstance.derivativeName))) _ _
           (by simp [henv1, CBody.bind, freshSrc]) fenv.floatPointerType
           (by apply CBodyEmbedding.eval_refines
-              simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]) rfl)
+              simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CBody.resolve, m1, Value.address]) rfl)
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env2 types2 H "size_t" "nContinuousStates"
           (Runtime.n shape.volume) .size (.integer shape.volume) _ _
           (by simp [henv2, henv1, CBody.bind, freshCount]) fenv.sizeType
-          (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded))
+          (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env3 types3 H "size_t" "expected"
           (Runtime.n shape.volume) .size (.integer shape.volume) _ _
           (by simp [henv3, henv2, henv1, CBody.bind, freshExpected]) fenv.sizeType
-          (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded))
+          (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded))
         "fmi3Status" stack)
       (.next (CCalls.Events.body_step program
         (TensorFloat64.declare_step_e env4 types4 H "size_t" "steps"
@@ -2433,10 +2436,10 @@ theorem tensorSolveOutput_reaches_for (shape : Tensor.Shape) (definitions : CLoo
         [.pointer (some (p.member TensorInstance.inputName)), .pointer (some (p.member TensorInstance.outputName)),
          .integer shape.volume, .integer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume]
         loopHeap jacCont) := by
-    simp [TensorContinuousStates.jacobianCall, hjacCont, CCalls.Events.internalNext, CCalls.Typed.nextWith,
-      CLoops.next, CLoops.eval, TensorContinuousStates.jacobianEntryArgs, Runtime.call, Runtime.region,
-      Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CCalls.Events.enterCall,
-      CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments,
+    simp [TensorContinuousStates.jacobianCall, hjacCont, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+      CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, TensorContinuousStates.jacobianEntryArgs, Runtime.call, Runtime.region,
+      Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CCalls.Events.enterCallWith,
+      CCalls.Events.resolveWith, CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CBody.legacyExpressions, CCalls.argumentsWith, CBody.legacyExpressions,
       CBody.resolve, CBody.constants, Value.address, mTail, countTail, freshJacTail, fenv.jacobian]
   -- output writability survives the loop (the loop touches only x, dx and time).
   have writableOutputLoop : Writable loopHeap (TensorInstance.field pool i TensorInstance.outputName)
@@ -2452,7 +2455,7 @@ theorem tensorSolveOutput_reaches_for (shape : Tensor.Shape) (definitions : CLoo
   have resume : CCalls.Events.internalNext program (.returning .void jacHeap jacCont) =
       some (.body (.running (Runtime.out "lastSuccessfulTime" (Runtime.field "time") :: [Runtime.ok])
         tailEnv types7 jacHeap) "fmi3Status" stack) := by
-    simp [hjacCont, CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+    simp [hjacCont, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith]
   -- The instance's scalar time cell coincides with `p.member "time"`.
   have tfield : tf = p.member "time" := rfl
   have lastBlock : buffers.last.block ≠ (TensorInstance.record pool i).block := lastOutside i
@@ -2490,11 +2493,12 @@ theorem tensorSolveOutput_reaches_for (shape : Tensor.Shape) (definitions : CLoo
         some (.finite (times duration.val)) := by
       show CBody.eval tailEnv jacHeap (Runtime.field "time") = some (.finite (times duration.val))
       have raw : CBody.eval tailEnv jacHeap (Runtime.field "time") = load jacHeap (p.member "time") := by
-        simp [Runtime.field, Runtime.v, CBody.eval, CBody.resolve, mTail, Value.address]
+        simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.resolve, mTail, Value.address]
       rw [raw]; exact timeLoadJac
     have addr : CBody.lvalue tailEnv jacHeap (.deref (Runtime.v "lastSuccessfulTime")) = some buffers.last := by
-      simp [CBody.lvalue, Runtime.v, CBody.eval, lastTail, Value.address]
-    simp [Runtime.out, CLoops.next, leftEval, addr, Value.finite,
+      simp [CBody.lvalue, CBody.lvalueWith, Runtime.v, CBody.evalWith, lastTail, Value.address]
+    change CBody.legacyExpressions.address tailEnv jacHeap (.deref (Runtime.v "lastSuccessfulTime")) = some buffers.last at addr
+    simp [Runtime.out, CLoops.next, CLoops.nextWith, leftEval, addr, Value.finite,
       store_float64 jacHeap buffers.last oldLast _ lastLoopJac, hfinal, StateProofs.written]
   have okReach := finishOK program finalHeap tailEnv types7 stack okTail fenv.statusType fenv.fmi3OK
   refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -2679,7 +2683,7 @@ theorem front_run (shape : Tensor.Shape) (hasOutput : Bool) (types : StepEntry.T
   have checked : CBody.run 1 (.running (StepEntry.inputGuard :: tail)
       (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time)) =
       some (.running tail (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time)) := by
-    simp [CBody.run, CBody.next, StepEntry.inputGuard, Runtime.reject, Runtime.branch, condition,
+    simp [CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions, StepEntry.inputGuard, Runtime.reject, Runtime.branch, condition,
       boolean, Value.truth]
   have decomp : doStepBody shape hasOutput = Runtime.require .doStep ++ StepEntry.outputCode ++
       StepEntry.inputGuard :: tail := rfl
@@ -3990,9 +3994,9 @@ theorem body_printable (shape : Tensor.Shape) (hasOutput : Bool) :
       Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.mode, Runtime.reject, Runtime.branch,
       Runtime.pointerCheck, Runtime.out, Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding,
       Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call, Runtime.any,
-      Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le, Runtime.lt, Runtime.gt, Runtime.both,
+      Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le, Runtime.gt, Runtime.both,
       Runtime.either, CAlgorithm.literal, CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil,
-      List.map_cons, List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
+      List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact CNull.literal_printable _

@@ -24,18 +24,18 @@ inductive State where
   | returning (value : Value) (heap : Heap) (stack : Continuation)
   | halted (result : CBody.Result)
 
-def enterCall (s : CLoops.State) (resultType : String) (stack : Continuation) : Option State :=
+def enterCallWith (expressions : CBody.Expressions) (s : CLoops.State) (resultType : String) (stack : Continuation) : Option State :=
   match s with
   | .running [] _ _ heap =>
       if resultType = "void" then some (.returning .void heap stack) else none
   | .running (stmt :: rest) env types heap => do
       let (destination, name, args) ← CCalls.callOperand stmt
       if (env name).isSome || name = "isfinite" then none else do
-        let values ← CCalls.arguments env heap args
+        let values ← CCalls.argumentsWith expressions env heap args
         return .calling name values heap (.caller destination rest env types resultType stack)
   | .returned _ => none
 
-def resume (value : Value) (heap : Heap) : Continuation → Option State
+def resumeWith (expressions : CBody.Expressions) (value : Value) (heap : Heap) : Continuation → Option State
   | .done => some (.halted ⟨value, heap⟩)
   | .caller destination rest env types resultType outer =>
     match destination with
@@ -45,7 +45,7 @@ def resume (value : Value) (heap : Heap) : Continuation → Option State
         let converted ← convert type value
         return .body (.running rest (CBody.bind env name converted) types heap) resultType outer
     | .assign target => do
-        let address ← CBody.lvalue env heap target
+        let address ← expressions.address env heap target
         let heap' ← store heap address value
         return .body (.running rest env types heap') resultType outer
     | .declare type name => do
@@ -59,13 +59,14 @@ def resume (value : Value) (heap : Heap) : Continuation → Option State
 
 /-- Shared scheduler. Only call-site resolution varies; bodies, parameter
 conversion, numerical kernels and return continuations use the same rules. -/
-def nextWith (enter : CLoops.State → String → Continuation → Option State)
+def nextWithExpressions (expressions : CBody.Expressions)
+    (enter : CLoops.State → String → Continuation → Option State)
     (p : Program) : State → Option State
   | .halted _ => none
   | .body (.returned r) resultType stack => do
       return .returning (← returnCast resultType r.value) r.heap stack
   | .body s resultType stack =>
-      match CLoops.next s with
+      match CLoops.nextWith expressions s with
       | some t => some (.body t resultType stack)
       | none => enter s resultType stack
   | .calling name args heap stack => do
@@ -77,14 +78,22 @@ def nextWith (enter : CLoops.State → String → Continuation → Option State)
       | .kernel fn => return .kernel (← kernelEntry fn args) heap stack
   | .kernel (.returned x) heap stack => some (.returning (.finite x) heap stack)
   | .kernel s heap stack => do return .kernel (← CStatements.next p.kernel s) heap stack
-  | .returning value heap stack => resume value heap stack
+  | .returning value heap stack => resumeWith expressions value heap stack
 
-def next (p : Program) : State → Option State := nextWith enterCall p
+abbrev enterCall := enterCallWith CBody.legacyExpressions
+abbrev resume := resumeWith CBody.legacyExpressions
+abbrev nextWith := nextWithExpressions CBody.legacyExpressions
 
-def machine (p : Program) : Transition.Machine State CBody.Result where
-  step s t := next p s = some t
+def nextIn (expressions : CBody.Expressions) (p : Program) : State → Option State :=
+  nextWithExpressions expressions (enterCallWith expressions) p
+abbrev next := nextIn CBody.legacyExpressions
+
+def machineWith (expressions : CBody.Expressions) (p : Program) : Transition.Machine State CBody.Result where
+  step s t := nextIn expressions p s = some t
   final | .halted result => some result | _ => none
   deterministic ha hb := Option.some.inj (ha.symm.trans hb)
-  final_stuck := by intro s result hs t; cases s <;> simp_all [next, nextWith]
+  final_stuck := by intro s result hs t; cases s <;> simp_all [nextIn, nextWithExpressions]
+
+abbrev machine := machineWith CBody.legacyExpressions
 
 end Rumoca.CCalls.Typed

@@ -1,0 +1,14 @@
+import Rumoca.TensorEFMIExecutedContract
+import ProofAudit.Audit
+
+#audit axioms Rumoca.TensorExecutedArchiveContract.code_members
+#audit axioms Rumoca.TensorExecutedArchiveContract.toBase
+#audit axioms Rumoca.TensorExecutedManifestContract.execution
+#audit axioms Rumoca.TensorExecutedManifestContract.toTensorManifestContract
+#audit axioms Rumoca.TensorExecutedProductionContract.allocatedRecalibrate
+#audit axioms Rumoca.TensorExecutedProductionContract.allocatedStartup
+#audit axioms Rumoca.TensorExecutedProductionContract.sourceDoStep
+#audit axioms Rumoca.TensorExecutedProductionContract.toTensorProductionContract
+#audit axioms Rumoca.tensor_executed_archive_correct
+#audit axioms Rumoca.tensor_executed_manifests_correct
+#audit axioms Rumoca.tensor_executed_production_correct

@@ -83,7 +83,8 @@ theorem rounding_branch_path (header : Header) (program : CCalls.Events.Program 
         (CLoops.bindType types "rounding" .int32) heap) resultType stack) := by
     apply CCalls.Events.body_step
     by_cases same : observed = header.nearest <;>
-      simp [CLoops.next, CLoops.eval, CBody.eval, CBody.resolve, CBody.bind,
+      simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+        CBody.eval, CBody.evalWith, CBody.resolve, CBody.bind,
         CBody.constants, CBody.comparison, CBody.boolean, Value.truth,
         macroUnshadowed, macroBound, same, closed]
   simpa only [List.append_nil] using entered.trans

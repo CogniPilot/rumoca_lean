@@ -27,7 +27,8 @@ theorem internal_same (current : AtAllowed allowed state) :
   cases state with
   | calling name args heap stack =>
     simp only [AtAllowed] at current
-    simp only [Events.internalNext, Typed.nextWith, restrict, current, ↓reduceIte]
+    simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions,
+      restrict, current, ↓reduceIte]
   | body state => cases state <;> rfl
   | kernel state => cases state <;> rfl
   | _ => rfl

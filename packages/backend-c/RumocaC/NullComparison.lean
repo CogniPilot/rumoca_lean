@@ -60,7 +60,7 @@ variable [interface : CInterface]
 @[simp] theorem literal_eval (type : interface.types "void *" = some .pointer)
     (env : Locals) (heap : Heap) :
     eval env heap Expr.nullPointer = some (.pointer none) := by
-  simp [Expr.nullPointer, eval, expressionCast, zeroLiteral, type]
+  simp [Expr.nullPointer, eval, evalWith, expressionCast, zeroLiteral, type]
 
 theorem zero_variable_not_constant (name : String) (type : interface.types spelling = some .pointer) :
     expressionCast spelling (.id name) (.integer 0) = none := by
@@ -70,21 +70,21 @@ theorem equal_eval (pointer null : Expr) (env : Locals) (heap : Heap) (p : Optio
     (hp : eval env heap pointer = some (.pointer p))
     (hn : eval env heap null = some (.pointer none)) :
     eval env heap (.bin .eq pointer null) = eval env heap (.not pointer) := by
-  cases p <;> simp [eval, hp, hn, Value.truth, comparison]
+  cases p <;> simp [eval, evalWith, hp, hn, Value.truth, comparison]
 
 theorem unequal_truth (pointer null : Expr) (env : Locals) (heap : Heap) (p : Option Address)
     (hp : eval env heap pointer = some (.pointer p))
     (hn : eval env heap null = some (.pointer none)) :
     (eval env heap (.bin .ne pointer null) >>= Value.truth) =
       (eval env heap pointer >>= Value.truth) := by
-  cases p <;> simp [eval, hp, hn, Value.truth, comparison, boolean]
+  cases p <;> simp [eval, evalWith, hp, hn, Value.truth, comparison, boolean]
 
 theorem branch_preserved (pointer : Expr) (env : Locals) (heap : Heap) (p : Option Address)
     (hp : eval env heap pointer = some (.pointer p))
     (type : interface.types "void *" = some .pointer) (yes no rest : List Stmt) :
     next (.running (.branch (.bin .eq pointer Expr.nullPointer) yes no :: rest) env heap) =
       next (.running (.branch (.not pointer) yes no :: rest) env heap) := by
-  simp only [next, equal_eval pointer Expr.nullPointer env heap p hp (literal_eval type env heap)]
+  simp only [next, nextWith, CBody.legacyExpressions, equal_eval pointer Expr.nullPointer env heap p hp (literal_eval type env heap)]
 
 /-- An explicit null comparison preserves lazy conjunction even when the
 right operand has no evaluation result. -/
@@ -95,7 +95,7 @@ theorem and_unequal_null_eval (pointer right : Expr) (env : Locals) (heap : Heap
     eval env heap (.bin .and (.bin .ne pointer Expr.nullPointer) right) =
       eval env heap (.bin .and pointer right) := by
   have truth := unequal_truth pointer Expr.nullPointer env heap p hp (literal_eval type env heap)
-  cases p <;> simp_all [eval, literal_eval type env heap, Value.truth, comparison]
+  cases p <;> simp_all [eval, evalWith, literal_eval type env heap, Value.truth, comparison]
 
 /-- An explicit null comparison likewise preserves lazy disjunction. -/
 theorem or_unequal_null_eval (pointer right : Expr) (env : Locals) (heap : Heap)
@@ -105,7 +105,7 @@ theorem or_unequal_null_eval (pointer right : Expr) (env : Locals) (heap : Heap)
     eval env heap (.bin .or (.bin .ne pointer Expr.nullPointer) right) =
       eval env heap (.bin .or pointer right) := by
   have truth := unequal_truth pointer Expr.nullPointer env heap p hp (literal_eval type env heap)
-  cases p <;> simp_all [eval, literal_eval type env heap, Value.truth, comparison]
+  cases p <;> simp_all [eval, evalWith, literal_eval type env heap, Value.truth, comparison]
 
 /-- A null left pointer makes conjunction false without evaluating the right. -/
 theorem and_unequal_null_short_circuit (pointer right : Expr) (env : Locals) (heap : Heap)
@@ -114,6 +114,6 @@ theorem and_unequal_null_short_circuit (pointer right : Expr) (env : Locals) (he
     eval env heap (.bin .and (.bin .ne pointer Expr.nullPointer) right) =
       some (boolean false) := by
   rw [and_unequal_null_eval pointer right env heap none hp type]
-  simp [eval, hp, Value.truth]
+  simp [eval, evalWith, hp, Value.truth]
 
 end Rumoca.CNull

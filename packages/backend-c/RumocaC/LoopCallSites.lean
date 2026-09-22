@@ -26,7 +26,7 @@ variable [interface : CInterface]
 theorem enter_ready (ready : Ready permitted (.body state stack))
     (step : CLoops.Calls.enterCall state stack = some after) : Ready permitted after := by
   obtain ⟨code, frames⟩ := ready
-  unfold CLoops.Calls.enterCall at step
+  unfold CLoops.Calls.enterCall CLoops.Calls.enterCallWith at step
   split at step
   · rename_i name args rest env types heap
     have tail : ∀ stmt ∈ rest, Admits permitted stmt :=
@@ -45,11 +45,14 @@ theorem ready_next (admitted : DefinitionsAdmit permitted definitions)
   cases before with
   | halted => cases step
   | returning heap stack =>
-    cases stack <;> simp only [CLoops.Calls.next, Option.some.injEq] at step <;> subst after
+    cases stack <;>
+      simp only [CLoops.Calls.next, CLoops.Calls.nextWith, Option.some.injEq] at step <;>
+      subst after
     · trivial
     · exact ready
   | calling name args heap stack =>
-    simp only [CLoops.Calls.next, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
+    simp only [CLoops.Calls.next, CLoops.Calls.nextWith,
+      Option.bind_eq_bind, Option.bind_eq_some_iff] at step
     obtain ⟨fn, found, step⟩ := step
     split at step
     · cases step
@@ -60,19 +63,19 @@ theorem ready_next (admitted : DefinitionsAdmit permitted definitions)
   | body state stack =>
     cases state with
     | returned result =>
-      simp only [CLoops.Calls.next] at step
+      simp only [CLoops.Calls.next, CLoops.Calls.nextWith] at step
       split at step
       · cases step
         exact ready.2
       · cases step
     | running code env types heap =>
-      cases ordinary : CLoops.next (.running code env types heap) with
+      cases ordinary : CLoops.nextWith CBody.legacyExpressions (.running code env types heap) with
       | some following =>
-        simp only [CLoops.Calls.next, ordinary, Option.some.injEq] at step
+        simp only [CLoops.Calls.next, CLoops.Calls.nextWith, ordinary, Option.some.injEq] at step
         subst after
         exact ⟨loop_ready_next ready.1 ordinary, ready.2⟩
       | none =>
-        simp only [CLoops.Calls.next, ordinary] at step
+        simp only [CLoops.Calls.next, CLoops.Calls.nextWith, ordinary] at step
         exact enter_ready ready step
 
 theorem ready_reaches (admitted : DefinitionsAdmit permitted definitions)
@@ -116,7 +119,9 @@ theorem ready_resolves (program : Events.Program E)
                 cases value : env name <;> simp_all
               have resolved : Indirect.resolve env heap (.id name) = some (.named name) :=
                 Indirect.named_iff.mpr ⟨unshadowed, named.1⟩
-              simp [Events.resolve, resolved, named.2]
+              change Indirect.resolveWith CBody.legacyExpressions env heap (.id name) =
+                some (.named name) at resolved
+              simp [Events.resolveWith, resolved, named.2]
             | _ => trivial
           | _ => trivial
         | _ => trivial

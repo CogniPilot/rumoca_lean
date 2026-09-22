@@ -38,7 +38,7 @@ theorem validation_prefix (program : CCalls.Events.Program E) (env : Locals) (ty
     (fun _ => env) types (fun _ => heap) n 0 stop resultType stack (by omega) limit typed bounded
     (by simpa using validation_closed)
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i lower inside
     have loaded := counter_reference_eval env heap pointer n values i references (by omega) bound
     have next := validation_step (counterEnv env "k" i) types heap
@@ -65,7 +65,7 @@ theorem validation_reaches (program : CCalls.Events.Program E) (env : Locals) (t
   apply CCalls.Events.body_step
   apply CLoops.loop_stop _ _ _ "k" (Runtime.v "nValueReferences") [validation] rest n
   · simp [counterEnv, CBody.bind]
-  · simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+  · simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · simpa using validation_closed
 
 /-- The first invalid reference reaches the existing error statement before
@@ -92,7 +92,7 @@ theorem validation_rejects (program : CCalls.Events.Program E) (env : Locals) (t
   · apply CCalls.Events.body_step
     apply CLoops.loop_enter _ _ _ "k" (Runtime.v "nValueReferences") [validation] rest bad n
     · simp [counterEnv, CBody.bind]
-    · simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    · simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
     · simpa using validation_closed
     · exact inside
   · have loaded := counter_reference_eval env heap pointer n values bad references inside bound

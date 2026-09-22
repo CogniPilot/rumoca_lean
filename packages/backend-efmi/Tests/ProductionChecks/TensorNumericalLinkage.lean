@@ -1,0 +1,42 @@
+import RumocaEFMI.TensorNumericalLinkage
+import ProofAudit.Audit
+
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.NumericalInterface.binary_header
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.NumericalInterface.constants_unchanged
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.NumericalInterface.fill_header
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.NumericalInterface.literals_unchanged
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.NumericalInterface.types_existing
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.absent_unprinted
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.actual_member
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.all_count
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.all_unique
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.binary_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.defined_member
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.derivative_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.derivative_library
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.derivative_library_numerical
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.derivative_required
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.derivative_shape_bytes
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.diagonal_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.fill_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.initial_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.initial_library
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.initial_library_numerical
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.initial_required
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.initial_shape_bytes
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.library_for
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.method_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.no_kernel_tag
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.numerical_count
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.numerical_extends
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.numerical_in_actual
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.numerical_names
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.numerical_tree_bound
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.numerical_unique
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.pieces_exact
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.prepared_kernel
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.production_exact
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.selfField_eval
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.selfField_missing
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.square_diagonal_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.text_exact

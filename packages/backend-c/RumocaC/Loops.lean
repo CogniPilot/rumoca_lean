@@ -28,18 +28,21 @@ def sizeAdd (left right : Value) : Option Value := do
   let .integer b ← convert .size right | none
   return .integer ((a + b) % (2 ^ 64))
 
-def eval (env : CBody.Locals) (types : Types) (heap : Heap) : Expr → Option Value
+def evalWith (expressions : CBody.Expressions) (env : CBody.Locals) (types : Types) (heap : Heap) : Expr → Option Value
   | .bin .add (.id name) (.nat 1) => do
       if types name = some .size then increment (← env name)
       else none
   | .bin .add (.id left) (.id right) => do
       if types left = some .size ∧ types right = some .size then sizeAdd (← env left) (← env right)
-      else CArithmetic.floatAdd (← CBody.eval env heap (.id left)) (← CBody.eval env heap (.id right))
-  | .bin .add a b => do CArithmetic.floatAdd (← CBody.eval env heap a) (← CBody.eval env heap b)
-  | .bin .mul a b => do CArithmetic.floatMul (← CBody.eval env heap a) (← CBody.eval env heap b)
-  | .bin .sub a b => do CArithmetic.floatSub (← CBody.eval env heap a) (← CBody.eval env heap b)
-  | .bin .div a b => do CArithmetic.floatDiv (← CBody.eval env heap a) (← CBody.eval env heap b)
-  | e => CBody.eval env heap e
+      else CArithmetic.floatAdd (← expressions.value env heap (.id left)) (← expressions.value env heap (.id right))
+  | .bin .add a b => do CArithmetic.floatAdd (← expressions.value env heap a) (← expressions.value env heap b)
+  | .bin .mul a b => do CArithmetic.floatMul (← expressions.value env heap a) (← expressions.value env heap b)
+  | .bin .sub a b => do CArithmetic.floatSub (← expressions.value env heap a) (← expressions.value env heap b)
+  | .bin .div a b => do CArithmetic.floatDiv (← expressions.value env heap a) (← expressions.value env heap b)
+  | e => expressions.value env heap e
+
+abbrev eval (env : CBody.Locals) (types : Types) (heap : Heap) : Expr → Option Value :=
+  evalWith CBody.legacyExpressions env types heap
 
 def noDeclarations : Stmt → Bool
   | .declare .. => false
@@ -57,43 +60,47 @@ inductive State where
   | running (code : List Stmt) (locals : CBody.Locals) (types : Types) (heap : Heap)
   | returned (result : CBody.Result)
 
-def next : State → Option State
+def nextWith (expressions : CBody.Expressions) : State → Option State
   | .returned _ | .running [] _ _ _ => none
   | .running (.declare type name expr :: rest) env types heap => do
       let declared ← interface.types type
-      let value ← convert declared (← eval env types heap expr)
+      let value ← convert declared (← evalWith expressions env types heap expr)
       if (env name).isSome then none else
         return .running rest (CBody.bind env name value) (bindType types name declared) heap
   | .running (.assign (.id name) expr :: rest) env types heap => do
       let _ ← env name
       let declared ← types name
-      let value ← convert declared (← eval env types heap expr)
+      let value ← convert declared (← evalWith expressions env types heap expr)
       return .running rest (CBody.bind env name value) types heap
   | .running (.assign target expr :: rest) env types heap => do
-      let value ← eval env types heap expr
-      let address ← CBody.lvalue env heap target
+      let value ← evalWith expressions env types heap expr
+      let address ← expressions.address env heap target
       let heap' ← store heap address value
       return .running rest env types heap'
   | .running (.eval expr :: rest) env types heap => do
-      let _ ← eval env types heap expr
+      let _ ← evalWith expressions env types heap expr
       return .running rest env types heap
   | .running (.ret none :: _) _ _ heap => some (.returned ⟨.void, heap⟩)
   | .running (.ret (some expr) :: _) env types heap => do
-      return .returned ⟨← eval env types heap expr, heap⟩
+      return .returned ⟨← evalWith expressions env types heap expr, heap⟩
   | .running (.branch condition yes no :: rest) env types heap => do
       if !(yes.all noDeclarations && no.all noDeclarations) then none else do
-        let takeYes ← (← eval env types heap condition).truth
+        let takeYes ← (← evalWith expressions env types heap condition).truth
         return .running ((if takeYes then yes else no) ++ rest) env types heap
   | .running (.whileLoop condition body :: rest) env types heap => do
       if !(body.all noDeclarations) then none else do
-        let again ← (← eval env types heap condition).truth
+        let again ← (← evalWith expressions env types heap condition).truth
         return .running (if again then body ++ .whileLoop condition body :: rest else rest) env types heap
 
-def machine : Transition.Machine State CBody.Result where
-  step s t := next s = some t
+abbrev next : State → Option State := nextWith CBody.legacyExpressions
+
+def machineWith (expressions : CBody.Expressions) : Transition.Machine State CBody.Result where
+  step s t := nextWith expressions s = some t
   final | .returned result => some result | _ => none
   deterministic ha hb := Option.some.inj (ha.symm.trans hb)
-  final_stuck := by intro s result hs t; cases s <;> simp_all [next]
+  final_stuck := by intro s result hs t; cases s <;> simp_all [nextWith]
+
+abbrev machine : Transition.Machine State CBody.Result := machineWith CBody.legacyExpressions
 
 def run : Nat → State → Option State
   | 0, s => some s

@@ -30,9 +30,15 @@ end CHeader
   if name = "NULL" then some (.pointer none) else none
 
 @[simp] def cTypes (type : String) : Option CType :=
-  if type = "Model *" then some .pointer
+  if type = "Model *" || type = "double *" || type = "const double *" then some .pointer
+  else if type = "size_t" then some .size
   else if type = "double" then some .float64
   else (CHeader.scalarNamed type CHeader.declarations).map CHeader.Scalar.memoryType
+
+/-- Primitive spellings in the actual tensor numerical trees. -/
+@[simp] theorem cTypes_size : cTypes "size_t" = some .size := rfl
+@[simp] theorem cTypes_output_pointer : cTypes "double *" = some .pointer := rfl
+@[simp] theorem cTypes_input_pointer : cTypes "const double *" = some .pointer := rfl
 
 abbrev cInterface : CInterface := { constants := cConstants, types := cTypes }
 

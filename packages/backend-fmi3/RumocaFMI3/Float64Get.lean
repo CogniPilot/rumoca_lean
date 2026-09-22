@@ -127,7 +127,7 @@ theorem empty_get_reaches (model : Solve.FMI3Model source) (program : CCalls.Eve
   have ktype : typed "k" = some .size := by simp [typed, bindType]
   have counter : counterEnv env "k" 0 "k" = some (.integer 0) := by simp [counterEnv, CBody.bind]
   have count : CBody.eval (counterEnv env "k" 0) heap (Runtime.v "nValueReferences") = some (.integer 0) := by
-    simp [Runtime.v, CBody.eval, counterEnv, env, locals, parameters, CBody.bind, resolve]
+    simp [Runtime.v, CBody.eval, CBody.evalWith, counterEnv, env, locals, parameters, CBody.bind, resolve]
   have initialized := counter_initialize env types heap "k"
     (loop "k" (Runtime.v "nValueReferences") [validation] :: afterValidation)
     (by simp [env, locals, parameters, CBody.bind]) (by rfl)

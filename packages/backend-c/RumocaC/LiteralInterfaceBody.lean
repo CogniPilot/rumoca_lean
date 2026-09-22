@@ -12,7 +12,7 @@ def BodyAgrees (before after : CInterface) : CBody.State → Prop
 
 theorem body_next_agrees (valid : BodyAgrees before after s)
     (step : @CBody.next before s = some t) : BodyAgrees before after t := by
-  unfold CBody.next at step
+  unfold CBody.next CBody.nextWith at step
   split at step
   all_goals aesop (add simp [BodyAgrees, CodeAgrees, StmtAgrees,
     Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff])
@@ -32,31 +32,31 @@ theorem body_next_agreement (before after : CInterface)
           | declare type name value =>
               simp only [StmtAgrees] at head
               have ev := (expression_agreement before after types literals env heap value head).1
-              simp [CBody.next, ev, cast_agreement before after types]
+              simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, ev, cast_agreement before after types]
           | assign target value =>
               simp only [StmtAgrees] at head
               have ev := (expression_agreement before after types literals env heap value head.2).1
               have lv := (expression_agreement before after types literals env heap target head.1).2
-              simp [CBody.next, ev, lv]
+              simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, ev, lv]
           | eval value =>
               simp only [StmtAgrees] at head
               have ev := (expression_agreement before after types literals env heap value head).1
-              simp [CBody.next, ev]
+              simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, ev]
           | ret value =>
               cases value with
               | none => rfl
               | some value =>
                   simp only [StmtAgrees] at head
                   have ev := (expression_agreement before after types literals env heap value head).1
-                  simp [CBody.next, ev]
+                  simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, ev]
           | branch condition yes no =>
               simp only [StmtAgrees] at head
               have ev := (expression_agreement before after types literals env heap condition head.1).1
-              simp [CBody.next, ev]
+              simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, ev]
           | whileLoop condition body =>
               simp only [StmtAgrees] at head
               have ev := (expression_agreement before after types literals env heap condition head.1).1
-              simp [CBody.next, ev]
+              simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, ev]
 
 /-- Every bounded execution attempt agrees, including attempts that get stuck.
 This equality does not require a successful original execution. -/

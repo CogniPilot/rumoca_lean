@@ -127,7 +127,8 @@ theorem floor_declaration_path (program : CCalls.Events.Program E)
     "floor" [argument] [.finite x] [.finite x] rest resultType stack
     (floorExternal double) [] (.finite (Binary64.floorValue x))
     (.finite (Binary64.floorValue x)) .float64 fresh unshadowed named (by decide)
-    (by simp [CCalls.arguments, evaluated]) found (floor_arguments double x)
+    (by simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, evaluated])
+    found (floor_arguments double x)
     ((floor_effect double x).mpr ⟨rfl, rfl, rfl⟩)
     (fun _ _ _ h => (floor_effect double x).mp h) double rfl
 

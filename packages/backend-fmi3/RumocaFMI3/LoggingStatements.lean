@@ -20,18 +20,18 @@ theorem failure_statement_entry (program : CCalls.Events.Program E)
         (.caller .ret code env types "fmi3Status" stack)) := by
   let saved := CCalls.Typed.Continuation.caller .ret code env types "fmi3Status" stack
   have resolved : CCalls.Events.resolve program env heap (Runtime.v "fail") = some "fail" := by
-    simp [CCalls.Events.resolve, CCalls.Indirect.resolve, Runtime.v,
-      resolve, unshadowed, constants]
+    simp [CCalls.Events.resolve, CCalls.Events.resolveWith, CCalls.Indirect.resolveWith, CBody.legacyExpressions, Runtime.v,
+      eval, evalWith, resolve, unshadowed, constants]
   have values : CCalls.arguments env heap [Runtime.v "m", .str text] =
       some [.pointer (some p), .pointer (some message)] := by
-    simp [CCalls.arguments, Runtime.v, CBody.eval, instanceBound, messageBound]
+    simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, Runtime.v, CBody.eval, CBody.evalWith, instanceBound, messageBound]
   have blocked : CLoops.next (.running (Runtime.fail text :: code) env types heap) = none := by
-    simp [CLoops.next, CLoops.eval, Runtime.fail, Runtime.ret, Runtime.call, Runtime.v, CBody.eval]
+    simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, Runtime.fail, Runtime.ret, Runtime.call, Runtime.v, CBody.eval, CBody.evalWith]
   have entered : CCalls.Events.internalNext program
       (.body (.running (Runtime.fail text :: code) env types heap) "fmi3Status" stack) =
       some (.calling "fail" [.pointer (some p), .pointer (some message)] heap saved) := by
-    simp only [CCalls.Events.internalNext, CCalls.Typed.nextWith, blocked]
-    simp only [CCalls.Events.enterCall, Runtime.fail, Runtime.ret, Runtime.call, CCalls.Indirect.operand]
+    simp only [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, blocked]
+    simp only [CCalls.Events.enterCallWith, Runtime.fail, Runtime.ret, Runtime.call, CCalls.Indirect.operand]
     simp [resolved, values, saved]
   exact entered
 

@@ -28,7 +28,7 @@ theorem failure_dispatch_run (env : Locals) (heap : Heap) (p : Address)
     simpa only [load, write_frame heap p (p.member "logging") .terminated (by simp)] using hg
   have loggerValue : eval env (writeMode heap p .terminated) (Runtime.field "logger") =
       some (.pointer logger) := by
-    simp [Runtime.field, Runtime.v, eval, hp, Value.address, hl']
+    simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, hp, Value.address, hl']
   have guardValue : eval env (writeMode heap p .terminated)
       (Runtime.both (Runtime.nev (Runtime.field "logger") Expr.nullPointer) (Runtime.field "logging")) =
       eval env (writeMode heap p .terminated)
@@ -39,10 +39,10 @@ theorem failure_dispatch_run (env : Locals) (heap : Heap) (p : Address)
   rw [show 2 = 1 + 1 from rfl, run_add, failure_mode_run env heap p old hp hm]
   cases logger <;> cases logging
   all_goals
-    simp only [run, next, Runtime.log, Runtime.branch, Option.bind_some]
+    simp only [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.log, Runtime.branch, Option.bind_some]
     rw [guardValue]
     simp [Runtime.both,
-      Runtime.field, Runtime.v, Runtime.ret, eval, hp, Value.address, hl', hg',
+      Runtime.field, Runtime.v, Runtime.ret, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, hp, Value.address, hl', hg',
       Value.truth, boolean, logCall]
 
 /-- The enabled request uses the actual environment, Error status, declared
@@ -59,7 +59,7 @@ theorem failure_log_arguments (env : Locals) (heap : Heap) (p : Address)
         some [.pointer environment, .integer 3, .pointer (some category), .pointer (some message)] := by
   have hv' : load (writeMode heap p .terminated) (p.member "environment") = some (.pointer environment) := by
     simpa only [load, write_frame heap p (p.member "environment") .terminated (by simp)] using hv
-  simp [CCalls.arguments, Runtime.field, Runtime.v, eval, hp, Value.address, hv', he, hm, hc]
+  simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, hp, Value.address, hv', he, hm, hc]
 
 /-- Execute the complete existing failure body when logging is disabled.
 No callback behavior is assumed: its branch is not taken. -/
@@ -74,7 +74,7 @@ theorem failure_silent_run (env : Locals) (heap : Heap) (p : Address)
       some (.returned ⟨.integer 3, writeMode heap p .terminated⟩) := by
   rw [show 3 = 2 + 1 from rfl, run_add,
     failure_dispatch_run env heap p old logger false hp hm hl hg]
-  simp [run, next, Runtime.ret, Runtime.v, eval, he]
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, he]
 
 /-- With no logger the guard short-circuits before reading the logging flag.
 No validity premise is needed for that cell or the callback arguments. -/
@@ -91,7 +91,7 @@ theorem failure_missing_run (env : Locals) (heap : Heap) (p : Address)
     simpa only [load, write_frame heap p (p.member "logger") .terminated (by simp)] using hl
   have loggerValue : eval env (writeMode heap p .terminated) (Runtime.field "logger") =
       some (.pointer none) := by
-    simp [Runtime.field, Runtime.v, eval, hp, Value.address, hl']
+    simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, hp, Value.address, hl']
   have guardValue : eval env (writeMode heap p .terminated)
       (Runtime.both (Runtime.nev (Runtime.field "logger") Expr.nullPointer) (Runtime.field "logging")) =
       some (boolean false) := by
@@ -99,9 +99,9 @@ theorem failure_missing_run (env : Locals) (heap : Heap) (p : Address)
       (CNull.and_unequal_null_short_circuit (Runtime.field "logger") (Runtime.field "logging")
         env (writeMode heap p .terminated) loggerValue (by simp [cInterface_types, cTypes]))
   rw [show 3 = 1 + 2 from rfl, run_add, failure_mode_run env heap p old hp hm]
-  simp only [run, next, Runtime.log, Runtime.branch, Option.bind_some]
+  simp only [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.log, Runtime.branch, Option.bind_some]
   rw [guardValue]
-  simp [Runtime.ret, Runtime.v, eval, he]
+  simp [Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, he]
 
 /-- The rejected nominal query reaches the failure call before any output
 access. No output-pointer validity is needed and the whole heap is unchanged.

@@ -87,8 +87,8 @@ theorem continuous_run (model : Solve.FMI3Model source) (literals : CLiteralAddr
     .enterContinuous .me .event (tail .continuous)
     (by simp [HistoryBodies.parameters]) (by simp [HistoryBodies.parameters]) hk loaded ⟨rfl, rfl⟩
   rw [body, Entry.command, show 5 = 3 + 2 from rfl, run_add, entered]
-  simp [tail, run, next, Runtime.setMode, Runtime.put, Runtime.field, Runtime.v,
-    Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, eval, lvalue,
+  simp [tail, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.setMode, Runtime.put, Runtime.field, Runtime.v,
+    Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
     HistoryBodies.parameters, CBody.bind, CBody.resolve, constants, Value.address,
     store, hm, convert, LifecycleBodies.writeMode]
 

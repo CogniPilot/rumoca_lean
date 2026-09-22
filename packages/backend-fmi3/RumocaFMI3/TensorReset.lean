@@ -19,9 +19,9 @@ loop bound is the symbolic volume, so no tensor coordinate is enumerated. The
 post-reset state region reads the same value as the prepared initialization program
 `fill shape .zero` of the admitted kernel.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every existing
-contract are unchanged. Every theorem is universal in the tensor shape, the
+The tensor adapter consumes these bodies and proofs. This module alone does
+not establish source acceptance or certify an actual artifact; those obligations
+belong to the composed adapter/compiler contracts. Every theorem is universal in the tensor shape, the
 instance address (and, for the framing corollary, the instance index of the static
 pool) and the heap. -/
 noncomputable section
@@ -66,9 +66,10 @@ theorem zeroCopy_step (env : Locals) (types : Types) (heap : Heap) (regionBase :
   have address : CBody.lvalue env heap dstCell = some (regionBase.index i.val) :=
     dstCell_lvalue env heap regionBase i.val dstBound counter
   have rhs : CLoops.eval env types heap (Runtime.n 0) = some (.integer 0) := by
-    simp [Runtime.n, CLoops.eval, CBody.eval]
+    simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]
+  simp only [CLoops.eval, CBody.legacyExpressions] at rhs
   simp only [dstCell] at address
-  simp [zeroBody, dstCell, CLoops.next, address, rhs, CMemory.store, regionStore, convert,
+  simp [zeroBody, dstCell, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, address, rhs, CMemory.store, regionStore, convert,
     Binary64.exactInteger_zero, Value.finite, StateProofs.written]
 
 /-- One scalar bookkeeping write `m->name = 0;` in the call scheduler, resolving
@@ -86,8 +87,8 @@ theorem putZero_step (env : Locals) (types : Types) (heap : Heap) (p : Address) 
   have hstore : CMemory.store heap (p.member name) (.integer 0) =
       some (replace heap (p.member name) ⟨t, true, some result⟩) :=
     store_of_convert heap (p.member name) old (.integer 0) result t hne cell hconv
-  simp [Runtime.put, Runtime.field, Runtime.v, Runtime.n, CLoops.next, CLoops.eval, CBody.eval,
-    CBody.lvalue, mBound, Value.address, hstore]
+  simp [Runtime.put, Runtime.field, Runtime.v, Runtime.n, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+    CBody.lvalue, CBody.lvalueWith, mBound, Value.address, hstore]
 
 end
 
@@ -112,7 +113,7 @@ theorem zeroCopy_reaches (program : CCalls.Events.Program E) (env : Locals) (typ
     (fun _ => env) types (written heap regionBase (zeroValues shape)) shape.volume resultType stack typed
     bounded zeroBody_closed
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i inside
     obtain ⟨old, storage⟩ := Float64Calls.pending_output heap regionBase (zeroValues shape) writable i inside
     have counter : resolve (counterEnv env "k" i) "k" = some (.integer i) := by
@@ -323,8 +324,8 @@ theorem reset_reaches (shape : Tensor.Shape) (heap : Heap) (p : Address) (kind :
       ((Runtime.region stateName)) .pointer (.pointer (some (p.member stateName)))
       (.pointer (some (p.member stateName))) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
       (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, guardEnv,
-            parameters, CBody.bind, CBody.resolve, mBound, Value.address]) rfl
+          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, guardEnv,
+            parameters, CBody.bind, CBody.resolve, Value.address]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: bookkeepingTail)
         (bind (guardEnv p) "dst" (.pointer (some (p.member stateName)))) (bindType types0 "dst" .pointer) heap) =
@@ -332,7 +333,7 @@ theorem reset_reaches (shape : Tensor.Shape) (heap : Heap) (p : Address) (kind :
         bookkeepingTail) (stagedEnv p shape) (stagedTypes types0) heap) :=
     declare_step_e _ _ heap "size_t" "expected" (Runtime.n shape.volume) .size
       (.integer shape.volume) (.integer shape.volume) _ (by simp [guardEnv, parameters, CBody.bind])
-      rfl (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
+      rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded)
   refine .next (CCalls.Events.body_step program s_dst "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s_exp "fmi3Status" stack) ?_)
   set env := stagedEnv p shape with henv

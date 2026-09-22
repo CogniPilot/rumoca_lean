@@ -33,9 +33,12 @@ theorem execution_recorded (program : Events.Program E) (policy : Policy)
     exact ⟨first :: chunks, by simp only [List.flatten_cons, flattened],
       .next (.record (execute_installed head policy threads thread)) history⟩
 
-/-- Record an actual C call with one fresh descriptor, matching its exact
-completion. Its identifier is issued once and the counter advances even though
-the caller thread and all other active records are restored after completion. -/
+/-- Record an actual C call with one descriptor at the current counter,
+matching its exact completion. Its identifier is issued once in this call's
+trace and the counter advances while the caller thread and all other active
+records are restored after completion. Separation from previously active
+identifiers requires the separate freshness invariant; alignment alone does
+not provide it. -/
 theorem call_recorded (program : Events.Program E) (policy : Policy)
     (ledger : Ledger) (aligned : Aligned before ledger)
     (idle : before.threads thread = none)
@@ -94,7 +97,7 @@ theorem terminating_path (behavior : (machine program).Behaves before (.terminat
   cases behavior with
   | terminates path done =>
     rename_i last
-    cases last <;> simp only [machine] at done
+    cases last <;> simp only [machine, machineWith] at done
     all_goals try contradiction
     cases Option.some.inj done
     exact path

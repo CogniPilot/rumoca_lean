@@ -105,7 +105,8 @@ theorem step_ready (program : Events.Program E) (tag : CAtomicBoolean.Calls.Even
     exact known_step program (Events.body_step program
       (CLoops.declare_local (StaticRelease.parameters p) parameterTypes heap "Instance *" "m" _ [guard, .ret none]
         .pointer (.pointer p) (.pointer p) bindings.pointer (by simp [StaticRelease.parameters, CBody.bind])
-        (by simp [CLoops.eval, CBody.eval, CBody.expressionCast, CBody.cast, CBody.resolve,
+        (by simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval,
+          CBody.evalWith, CBody.expressionCast, CBody.cast, CBody.resolve,
           StaticRelease.parameters, CBody.bind, bindings.pointer, convert]) rfl)
       "void" stack) (.guarded heap) rfl step
   | guarded heap =>
@@ -122,6 +123,7 @@ theorem step_ready (program : Events.Program E) (tag : CAtomicBoolean.Calls.Even
   | atomic address heap =>
     cases step with
     | internal next =>
+      change Events.internalNext program _ = _ at next
       rw [Events.external_entry_exclusive program bindings.atomicBound] at next
       contradiction
     | external found converted executed =>

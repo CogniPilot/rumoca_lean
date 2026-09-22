@@ -52,7 +52,7 @@ theorem load_cell (hc : heap p = some (cell v)) : load heap p = some (.finite v)
 theorem eval_field (env : Locals) (heap : Heap) (p : Address) (name : String)
     (hm : resolve env "m" = some (.pointer (some p))) :
     eval env heap (Runtime.field name) = load heap (p.member name) := by
-  simp [Runtime.field, Runtime.v, eval, hm, Value.address]
+  simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, hm, Value.address]
 
 theorem put_run (env : Locals) (heap : Heap) (p : Address) (name : String)
     (expr : Expr) (value old : Binary64.Value) (rest : List Stmt)
@@ -62,7 +62,7 @@ theorem put_run (env : Locals) (heap : Heap) (p : Address) (name : String)
     run 1 (.running (Runtime.put name expr :: rest) env heap) =
       some (.running rest env (write heap p name value)) := by
   have hs := store_float64 heap (p.member name) (some (.finite old)) (toBits value).val hc
-  simp [run, next, Runtime.put, Runtime.field, Runtime.v, lvalue, eval, hm, hv,
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.put, Runtime.field, Runtime.v, CBody.lvalue, CBody.lvalueWith, CBody.eval, CBody.evalWith, hm, hv,
     Value.address, Value.finite, hs, write, cell]
 
 def raiseHeap (heap : Heap) (p : Address) (name : String) (old value : Binary64.Value) : Heap :=
@@ -86,11 +86,12 @@ theorem raise_run (env : Locals) (heap : Heap) (p : Address) (name : String)
     have hp := put_run env heap p name expr value old rest hm hv hc
     simp only [h, ↓reduceIte, raiseHeap]
     change (do run 1 (← next (.running (Runtime.raiseField name expr :: rest) env heap))) = _
-    simpa [Runtime.raiseField, Runtime.branch, Runtime.lt, next, eval, hl, hv,
+    simpa [Runtime.raiseField, Runtime.branch, Runtime.lt, next, nextWith, legacyExpressions,
+      eval, evalWith, hl, hv,
       Value.finite, comparison, floatComparison, hb, boolean, Value.truth] using hp
   · have hb : Rumoca.Float64.test .lt (toBits old).val (toBits value).val = false :=
       Bool.eq_false_iff.mpr (fun hh => h (ht.mp hh))
-    simp [run, next, Runtime.raiseField, Runtime.branch, Runtime.lt, eval, hl, hv,
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.raiseField, Runtime.branch, Runtime.lt, CBody.eval, CBody.evalWith, hl, hv,
       Value.finite, comparison, floatComparison, hb, boolean, Value.truth, h, raiseHeap]
 
 omit static in

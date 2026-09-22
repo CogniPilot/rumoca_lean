@@ -110,8 +110,8 @@ theorem invoke_step (definitions : CLoops.Calls.Definitions) (op : Tensor.Binary
       some (.calling (function op).signature.name (argumentValues left right output count) heap
         (.caller rest env types stack)) := by
   cases op <;>
-    simp [invoke, function, CLoops.Calls.next, CLoops.next, CLoops.eval, CBody.eval,
-      CLoops.Calls.enterCall, CCalls.arguments, hl, hr, ho, hc, argumentValues] <;>
+    simp [invoke, function, CLoops.Calls.next, CLoops.Calls.nextWith, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      CLoops.Calls.enterCallWith, CCalls.argumentsWith, CBody.legacyExpressions, hl, hr, ho, hc, argumentValues] <;>
     simpa only [function] using unshadowed
 
 theorem invoke_reaches (definitions : CLoops.Calls.Definitions) (op : Tensor.BinaryOp)

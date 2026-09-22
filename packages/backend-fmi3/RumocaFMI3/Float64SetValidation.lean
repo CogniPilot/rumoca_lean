@@ -24,8 +24,8 @@ theorem wrong_reference_step (env : Locals) (types : Types) (heap : Heap) (rest 
       some (.running (Runtime.fail message :: rest) env types heap) := by
   have invalidInt : ¬ (referenceValue.toNat : Int) = 1 := by omega
   simp [validation, Runtime.reject, Runtime.branch, Runtime.either, Runtime.nev, Runtime.n,
-    CLoops.next, CLoops.eval, CLoops.noDeclarations, Runtime.fail, Runtime.ret,
-    CBody.eval, loaded, comparison, boolean, Value.truth, invalidInt]
+    CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations, Runtime.fail, Runtime.ret,
+    CBody.eval, CBody.evalWith, loaded, comparison, boolean, Value.truth, invalidInt]
 
 theorem finite_check_step (env : Locals) (types : Types) (heap : Heap) (rest : List Stmt)
     (value : Value) (finite : Bool)
@@ -35,8 +35,8 @@ theorem finite_check_step (env : Locals) (types : Types) (heap : Heap) (rest : L
       some (.running (if finite then rest else Runtime.fail message :: rest) env types heap) := by
   cases finite <;>
     simp [validation, Runtime.reject, Runtime.branch, Runtime.either, Runtime.nev, Runtime.n,
-      Runtime.negate, Runtime.finite, CLoops.next, CLoops.eval, CLoops.noDeclarations,
-      Runtime.fail, Runtime.ret, Runtime.call, Runtime.v, CBody.eval, referenceLoaded, valueLoaded,
+      Runtime.negate, Runtime.finite, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations,
+      Runtime.fail, Runtime.ret, Runtime.call, Runtime.v, CBody.eval, CBody.evalWith, referenceLoaded, valueLoaded,
       classified, comparison, boolean, Value.truth]
 
 theorem validation_step (env : Locals) (types : Types) (heap : Heap) (rest : List Stmt)
@@ -83,7 +83,7 @@ theorem counter_value_eval (env : Locals) (heap : Heap) (pointer : Option Addres
     simpa [counterEnv, CBody.bind, resolve, same] using bound
   have countBound : resolve (counterEnv env "k" i) "k" = some (.integer i) := by
     simp [counterEnv, CBody.bind, resolve]
-  simp [output, Runtime.v, CBody.eval, pointerBound, countBound, Value.address, loaded]
+  simp [output, Runtime.v, CBody.eval, CBody.evalWith, pointerBound, countBound, Value.address, loaded]
 
 theorem validation_prefix (program : CCalls.Events.Program E) (env : Locals) (types : Types)
     (heap : Heap) (input buffer : Option Address) (n stop : Nat)
@@ -105,7 +105,7 @@ theorem validation_prefix (program : CCalls.Events.Program E) (env : Locals) (ty
     (fun _ => env) types (fun _ => heap) n 0 stop resultType stack (by omega) limit typed bounded
     (by simpa using validation_closed)
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i lower inside
     have referenceLoaded := counter_reference_eval env heap input n references i readable (by omega) referenceBound
     have valueLoaded := counter_value_eval env heap buffer n i references bits valuesReadable (by omega)
@@ -136,7 +136,7 @@ theorem validation_reaches (program : CCalls.Events.Program E) (env : Locals) (t
   apply CCalls.Events.body_step
   apply CLoops.loop_stop _ _ _ "k" (Runtime.v "nValueReferences") [validation] rest n
   · simp [counterEnv, CBody.bind]
-  · simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+  · simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · simpa using validation_closed
 
 /-- Every invalid entry is rejected before the setter's writing loop starts.
@@ -168,7 +168,7 @@ theorem validation_rejects (program : CCalls.Events.Program E) (env : Locals) (t
   · apply CCalls.Events.body_step
     apply CLoops.loop_enter _ _ _ "k" (Runtime.v "nValueReferences") [validation] rest bad n
     · simp [counterEnv, CBody.bind]
-    · simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    · simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
     · simpa using validation_closed
     · exact inside
   · have referenceLoaded := counter_reference_eval env heap input n references bad readable inside referenceBound

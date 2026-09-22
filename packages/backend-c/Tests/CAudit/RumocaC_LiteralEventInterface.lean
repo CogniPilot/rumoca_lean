@@ -17,3 +17,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CLiteral.Interface.Events.step_backward
 #audit axioms Rumoca.CLiteral.Interface.Events.behaviors
 #audit axioms Rumoca.CLiteral.Interface.Events.invocation_behaviors
+
+#audit axioms Rumoca.CLiteral.Interface.Events.bisimulation
+#audit axioms Rumoca.CLiteral.Interface.Events.external
+#audit axioms Rumoca.CLiteral.Interface.Events.program

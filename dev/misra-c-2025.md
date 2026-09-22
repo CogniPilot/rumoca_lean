@@ -26,6 +26,15 @@ outside the current proofs. Every other applicable row is Open with a closure
 criterion. The **reviewer field is unassigned for all rows**: no independent
 reviewer has signed off, so independent sign-off is itself an open K05 item.
 
+**Canonical tensor execution evidence (2026-09-22).** The required full gate now
+passes with the common C expression context and mandatory actual-file tensor eFMI
+public-method execution products. The existing native boundary also executes
+Startup, Recalibrate and DoStep on the extracted C, including finite and signed-zero
+cases. This strengthens execution evidence, not MISRA guideline coverage or
+independent sign-off. No matrix row is closed, no deviation is approved, and
+no native compilation/ABI correspondence is inferred. See docs/verification.md
+and build/canonical-context-integration.md for the scoped evidence.
+
 **Category caveat.** The per-row category reproduces the guideline's
 commonly-published default category. The Mandatory set in particular has not
 been reconciled entry-by-entry against the pinned 2025 PDF in this pass; it must

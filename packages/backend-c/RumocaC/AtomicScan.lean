@@ -33,10 +33,11 @@ theorem attempt_enter (program : CCalls.Events.Program E) (flags : Address) (cou
     some (.calling "atomic_exchange" [.pointer (some (flags.index k)), CAtomicBoolean.value true]
       heap (.caller (.assign (.id "busy")) rest (locals flags count k busy) types resultType stack)) := by
   have nonnegative : ¬ (k : Int) < 0 := by omega
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-    attempt, CBody.eval, CBody.lvalue, CBody.resolve, CBody.expressionCast, CBody.cast,
-    CBody.zeroLiteral, CBody.constants, CCalls.Events.enterCall, CCalls.Events.resolve,
-    CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+    CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+    attempt, CBody.eval, CBody.evalWith, CBody.lvalueWith, CBody.resolve, CBody.expressionCast, CBody.cast,
+    CBody.zeroLiteral, CBody.constants, CCalls.Events.enterCallWith, CCalls.Events.resolveWith,
+    CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CCalls.argumentsWith,
     locals, CBody.bind, types, CLoops.bindType, Value.address, CAtomicBoolean.value,
     boolean, named, convert, Value.truth, nonnegative]
 
@@ -53,7 +54,8 @@ theorem attempt_resume (program : CCalls.Events.Program E) (flags : Address) (co
     simp [locals, CBody.bind]
     split <;> rfl
   cases observed <;>
-    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume,
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith,
+      CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith,
       types, CLoops.bindType, locals, CBody.bind, convert, Value.truth, CAtomicBoolean.value] at shadow ⊢
   all_goals exact shadow
 
@@ -96,15 +98,17 @@ theorem scan_enter (flags : Address) (count k : Nat) (busy : Bool) (heap : Heap)
     CLoops.next (.running (scan :: rest) (locals flags count k busy) types heap) =
       some (.running (attempt :: selected :: advance :: scan :: rest) (locals flags count k busy) types heap) := by
   have below : (k : Int) < count := by exact_mod_cast less
-  simp [scan, attempt, selected, advance, CLoops.next, CLoops.noDeclarations,
-    CLoops.eval, CBody.eval, CBody.resolve, CBody.comparison, CBody.boolean,
+  simp [scan, attempt, selected, advance, CLoops.next, CLoops.nextWith, CLoops.noDeclarations,
+    CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.resolve,
+    CBody.comparison, CBody.boolean,
     locals, CBody.bind, Value.truth, below]
 
 theorem scan_stop (flags : Address) (count : Nat) (busy : Bool) (heap : Heap) (rest : List Stmt) :
     CLoops.next (.running (scan :: rest) (locals flags count count busy) types heap) =
       some (.running rest (locals flags count count busy) types heap) := by
-  simp [scan, attempt, selected, advance, CLoops.next, CLoops.noDeclarations,
-    CLoops.eval, CBody.eval, CBody.resolve, CBody.comparison, CBody.boolean,
+  simp [scan, attempt, selected, advance, CLoops.next, CLoops.nextWith, CLoops.noDeclarations,
+    CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.resolve,
+    CBody.comparison, CBody.boolean,
     locals, CBody.bind, Value.truth]
 
 theorem selected_step (flags : Address) (count k : Nat) (busy : Bool) (heap : Heap) (rest : List Stmt) :
@@ -112,7 +116,8 @@ theorem selected_step (flags : Address) (count k : Nat) (busy : Bool) (heap : He
       some (.running ((if busy then [] else [.ret (some (.id "k"))]) ++ rest)
         (locals flags count k busy) types heap) := by
   cases busy <;>
-    simp [selected, CLoops.next, CLoops.noDeclarations, CLoops.eval, CBody.eval,
+    simp [selected, CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith,
+      CBody.legacyExpressions, CBody.eval, CBody.evalWith,
       CBody.resolve, CBody.boolean, locals, CBody.bind, CAtomicBoolean.value, Value.truth]
 
 theorem advance_step (flags : Address) (count k : Nat) (busy : Bool) (heap : Heap) (rest : List Stmt)
@@ -145,14 +150,16 @@ theorem size_returned (program : CCalls.Events.Program E) (heap : Heap) (n : Nat
     CCalls.Events.internalNext program
       (.body (.returned ⟨.integer n, heap⟩) "size_t" stack) =
       some (.returning (.integer n) heap stack) := by
-  simp only [CCalls.Events.internalNext, CCalls.Typed.nextWith, size_cast n size bound,
+  simp only [CCalls.Events.internalNext, CCalls.Events.internalNextWith,
+    CCalls.Typed.nextWithExpressions, size_cast n size bound,
     bind, Option.bind_some, pure]
 
 theorem return_body (env : CBody.Locals) (heap : Heap) (name : String) (n : Nat) (rest : List Stmt)
     (found : env name = some (.integer n)) :
     CLoops.next (.running (.ret (some (.id name)) :: rest) env types heap) =
       some (.returned ⟨.integer n, heap⟩) := by
-  simp [CLoops.next, CLoops.eval, CBody.eval, CBody.resolve, found]
+  simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+    CBody.eval, CBody.evalWith, CBody.resolve, found]
 
 theorem return_path (program : CCalls.Events.Program E) (env : CBody.Locals) (heap : Heap)
     (name : String) (n : Nat) (rest : List Stmt) (stack : CCalls.Typed.Continuation)

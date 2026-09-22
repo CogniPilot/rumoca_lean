@@ -54,7 +54,7 @@ theorem validation_rejected_behaviors (program : CCalls.Events.Program E)
     unshadowed named pointerType integer bound literal expectedStored entries prior behavior).trans
   have entered := CLoops.loop_enter (counterEnv env "k" bad) types heap "k" (.id "nCategories")
     iteration rest bad n (by simp [counterEnv, CBody.bind])
-    (by simp [CBody.eval, counterEnv, CBody.bind, resolve, count]) iteration_closed inside
+    (by simp [CBody.eval, CBody.evalWith, counterEnv, CBody.bind, resolve, count]) iteration_closed inside
   apply (CCalls.Events.internal_prefix_behaviors program
     (.next (CCalls.Events.body_step program entered "fmi3Status" .done) (.refl _)) behavior).trans
   obtain ⟨base, _, _, stored⟩ := entries bad inside

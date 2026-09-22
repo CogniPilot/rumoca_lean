@@ -8,3 +8,13 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CReadOnly.typed_reaches
 #audit axioms Rumoca.CReadOnly.typed_load
 #audit axioms Rumoca.CReadOnly.typed_nextWith
+
+#audit axioms Rumoca.CReadOnly.body_next
+#audit axioms Rumoca.CReadOnly.body_nextWith
+#audit axioms Rumoca.CReadOnly.enter_preservesWith
+#audit axioms Rumoca.CReadOnly.loop_next
+#audit axioms Rumoca.CReadOnly.loop_nextWith
+#audit axioms Rumoca.CReadOnly.resume_preservesWith
+#audit axioms Rumoca.CReadOnly.typed_nextIn
+#audit axioms Rumoca.CReadOnly.typed_nextWithExpressions
+#audit axioms Rumoca.CReadOnly.typed_reachesWith

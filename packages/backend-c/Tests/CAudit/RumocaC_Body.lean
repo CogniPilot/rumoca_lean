@@ -9,3 +9,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CBody.truth_boolean
 #audit axioms Rumoca.CBody.zeroLiteral_true
 #audit axioms Rumoca.CBody.zeroLiteral_false
+
+#audit axioms Rumoca.CBody.eval_decimal_finite

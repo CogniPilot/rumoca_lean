@@ -32,7 +32,7 @@ theorem eval_refines (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
   | bin op a b =>
     cases op <;> try exact h
     all_goals
-      simp only [CBody.eval] at h
+      simp only [CBody.eval, CBody.evalWith] at h
       cases ha : CBody.eval env heap a <;> simp only [ha, bind, Option.bind_none, Option.bind_some] at h
       all_goals try contradiction
       all_goals cases hb : CBody.eval env heap b <;>
@@ -73,98 +73,99 @@ theorem next_refines (s t : CBody.State) (types : CLoops.Types)
     (hs : safe s) (h : CBody.next s = some t) :
     ∃ types', CLoops.next (lift s types) = some (lift t types') ∧ safe t := by
   cases s with
-  | returned result => simp [CBody.next] at h
+  | returned result => simp [CBody.next, CBody.nextWith] at h
   | running code env heap =>
     cases code with
-    | nil => simp [CBody.next] at h
+    | nil => simp [CBody.next, CBody.nextWith] at h
     | cons stmt rest =>
       have ⟨hc, hr⟩ : closedBlocks stmt = true ∧ rest.all closedBlocks = true := by
         simpa [safe] using hs
       cases stmt with
       | declare type name expr =>
         cases hv : CBody.eval env heap expr with
-        | none => simp [CBody.next, hv] at h
+        | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv] at h
         | some value =>
           have ev := eval_refines env types heap expr value hv
           cases ht : interface.types type with
-          | none => simp [CBody.next, CBody.cast, hv, ht] at h
+          | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.cast, hv, ht] at h
           | some declared =>
             cases hd : convert declared value with
-            | none => simp [CBody.next, CBody.cast, hv, ht, hd] at h
+            | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.cast, hv, ht, hd] at h
             | some converted =>
               cases hn : env name with
-              | some previous => simp [CBody.next, CBody.cast, hv, ht, hn] at h
+              | some previous => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.cast, hv, ht, hn] at h
               | none =>
-                simp [CBody.next, CBody.cast, hv, ht, hd, hn] at h
+                simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.cast, hv, ht, hd, hn] at h
                 subst t
                 exact ⟨CLoops.bindType types name declared,
-                  by simp [CLoops.next, lift, ev, ht, hd, hn], hr⟩
+                  by simp [CLoops.next, CLoops.nextWith, lift, ev, ht, hd, hn], hr⟩
       | assign target expr =>
         cases hv : CBody.eval env heap expr with
-        | none => simp [CBody.next, hv] at h
+        | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv] at h
         | some value =>
           have ev := eval_refines env types heap expr value hv
           cases hp : CBody.lvalue env heap target with
-          | none => simp [CBody.next, hv, hp] at h
+          | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv, hp] at h
           | some address =>
             cases hh : store heap address value with
-            | none => simp [CBody.next, hv, hp, hh] at h
+            | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv, hp, hh] at h
             | some heap' =>
-              simp [CBody.next, hv, hp, hh] at h
+              simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv, hp, hh] at h
               subst t
               refine ⟨types, ?_, hr⟩
-              cases target <;> simp_all [lift, CLoops.next, CBody.lvalue]
+              cases target <;> simp_all [lift, CLoops.next, CLoops.nextWith, CLoops.eval,
+                CBody.legacyExpressions, CBody.lvalue, CBody.lvalueWith]
       | eval expr =>
         cases hv : CBody.eval env heap expr with
-        | none => simp [CBody.next, hv] at h
+        | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv] at h
         | some value =>
           have ev := eval_refines env types heap expr value hv
-          simp [CBody.next, hv] at h
+          simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv] at h
           subst t
-          exact ⟨types, by simp [CLoops.next, lift, ev], hr⟩
+          exact ⟨types, by simp [CLoops.next, CLoops.nextWith, lift, ev], hr⟩
       | ret expr =>
         cases expr with
         | none =>
-          simp [CBody.next] at h
+          simp [CBody.next, CBody.nextWith] at h
           subst t
           exact ⟨types, rfl, trivial⟩
         | some expr =>
           cases hv : CBody.eval env heap expr with
-          | none => simp [CBody.next, hv] at h
+          | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv] at h
           | some value =>
             have ev := eval_refines env types heap expr value hv
-            simp [CBody.next, hv] at h
+            simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv] at h
             subst t
-            exact ⟨types, by simp [CLoops.next, lift, ev], trivial⟩
+            exact ⟨types, by simp [CLoops.next, CLoops.nextWith, lift, ev], trivial⟩
       | branch condition yes no =>
         cases hv : CBody.eval env heap condition with
-        | none => simp [CBody.next, hv] at h
+        | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv] at h
         | some value =>
           have ev := eval_refines env types heap condition value hv
           cases ht : value.truth with
-          | none => simp [CBody.next, hv, ht] at h
+          | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv, ht] at h
           | some takeYes =>
-            simp [CBody.next, hv, ht] at h
+            simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv, ht] at h
             subst t
             refine ⟨types, ?_, ?_⟩
             · have hb : (yes.all CLoops.noDeclarations && no.all CLoops.noDeclarations) = true := hc
-              simp [lift, CLoops.next, hb, ev, ht]
+              simp [lift, CLoops.next, CLoops.nextWith, hb, ev, ht]
             · have ⟨hy, hn⟩ : yes.all CLoops.noDeclarations = true ∧ no.all CLoops.noDeclarations = true := by
                 simpa only [closedBlocks, Bool.and_eq_true] using hc
               cases takeYes <;> simp [safe, hr, block_closed yes hy, block_closed no hn]
       | whileLoop condition body =>
         cases hv : CBody.eval env heap condition with
-        | none => simp [CBody.next, hv] at h
+        | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv] at h
         | some value =>
           have ev := eval_refines env types heap condition value hv
           cases ht : value.truth with
-          | none => simp [CBody.next, hv, ht] at h
+          | none => simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv, ht] at h
           | some again =>
-            simp [CBody.next, hv, ht] at h
+            simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hv, ht] at h
             subst t
             refine ⟨types, ?_, ?_⟩
             · have hb : body.all CLoops.noDeclarations = true := hc
-              simp [lift, CLoops.next, hb, ev, ht]
+              simp [lift, CLoops.next, CLoops.nextWith, hb, ev, ht]
             · cases again <;> simp [safe, hr, hc, block_closed body hc]
 
 theorem run_refines (n : Nat) (s t : CBody.State) (types : CLoops.Types)
@@ -196,7 +197,8 @@ theorem typed_return_reaches (program : CCalls.Program) (state : CBody.State)
       (.body (lift state types) returnType stack) (.returning returned result.heap stack) := by
   obtain ⟨types', execution, _⟩ := run_refines n state (.returned result) types hs h
   have reach := CCalls.Typed.body_reaches program (CLoops.run_reaches execution) returnType stack
-  exact reach.trans (.next (by simp [CCalls.Typed.machine, CCalls.Typed.next, lift, cast, CCalls.Typed.nextWith]) (.refl _))
+  exact reach.trans (.next (by simp [CCalls.Typed.machine, CCalls.Typed.machineWith,
+    CCalls.Typed.nextIn, lift, cast, CCalls.Typed.nextWithExpressions]) (.refl _))
 
 /-- Every behavior of the typed target equals the checked body's converted
 result. In particular, the new machine cannot add a stuck or divergent outcome. -/

@@ -13,3 +13,11 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CLiteral.Lowering.invocation_behaviors
 #audit axioms Rumoca.CLiteral.Lowering.nextWith_lowered
 #audit axioms Rumoca.CLiteral.Lowering.nextWith_safe
+
+#audit axioms Rumoca.CLiteral.Lowering.CallsReady.heads
+#audit axioms Rumoca.CLiteral.Lowering.StackSafe.frame
+#audit axioms Rumoca.CLiteral.Lowering.callBisimulation
+#audit axioms Rumoca.CLiteral.Lowering.calls_ready_next
+#audit axioms Rumoca.CLiteral.Lowering.destination_fresh
+#audit axioms Rumoca.CLiteral.Lowering.enterCall_safe
+#audit axioms Rumoca.CLiteral.Lowering.resume_safe

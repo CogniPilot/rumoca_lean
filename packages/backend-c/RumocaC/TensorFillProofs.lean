@@ -41,7 +41,7 @@ theorem function_reaches (shape : Tensor.Shape) (value : Binary64.Value) (output
     parameterTypes heap output (by simp [parameters]) (by simp [parameters]) (by simp [parameters])
     writable bounded size_type
   intro i
-  simp [CLoops.eval, CBody.eval, CBody.resolve, CLoops.counterEnv, CBody.bind, parameters]
+  simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.resolve, CLoops.counterEnv, CBody.bind, parameters]
 
 theorem bind_parameters (value : Binary64.Value) (output : Address) (count : Nat)
     (header : HeaderTypes interface) (bounded : count < 2 ^ 64) :
@@ -113,8 +113,8 @@ theorem invoke_reaches (definitions : CLoops.Calls.Definitions)
       some (.calling function.signature.name (argumentValues value output shape.volume) heap
         (.caller rest env types stack)) := by
     simp only [function] at unshadowed
-    simp [invoke, function, CLoops.Calls.next, CLoops.next, CLoops.eval, CBody.eval,
-      CLoops.Calls.enterCall, CCalls.arguments, hv, ho, hc, argumentValues, unshadowed]
+    simp [invoke, function, CLoops.Calls.next, CLoops.Calls.nextWith, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      CLoops.Calls.enterCallWith, CCalls.argumentsWith, CBody.legacyExpressions, hv, ho, hc, argumentValues, unshadowed]
   exact .next started ((helper_call_reaches definitions shape value output heap _ found header
     writable bounded).trans (.next rfl (.refl _)))
 
@@ -122,7 +122,7 @@ theorem literal_eval (literal : Literal) (env : CBody.Locals) (heap : Heap)
     (scalar : interface.types "double" = some .float64) :
     CBody.eval env heap (CAlgorithm.literal literal) =
       some (.finite (literal.eval Binary64.positiveZero Binary64.one)) := by
-  cases literal <;> simp [CAlgorithm.literal, CBody.eval, CBody.cast, scalar, convert, Literal.eval]
+  cases literal <;> simp [CAlgorithm.literal, CBody.eval, CBody.evalWith, CBody.cast, scalar, convert, Literal.eval]
 
 /-- The returned buffer is the actual Solve fill-program result, for every
 entry environment and either literal used by initialization and forward AD. -/

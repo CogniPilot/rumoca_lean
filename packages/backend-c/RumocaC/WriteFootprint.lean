@@ -28,12 +28,12 @@ address. This includes branches, loops, locals and arbitrary supported RHSs. -/
 theorem loop_frame (step : CLoops.next state = some following)
     (outside : loop state ≠ some query) :
     CReadOnly.loopHeap following query = CReadOnly.loopHeap state query := by
-  unfold CLoops.next at step
+  unfold CLoops.next CLoops.nextWith at step
   split at step
   all_goals
     aesop (add safe forward store_outside)
       (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff,
-        CReadOnly.loopHeap, loop, target])
+        CReadOnly.loopHeap, loop, target, CBody.legacyExpressions])
 
 end Rumoca.CWriteFootprint
 
@@ -62,7 +62,7 @@ theorem resume_frame (step : Typed.resume value heap stack = some following)
     | assign expr =>
       by_cases localTarget : ∃ name, expr = Expr.id name
       · obtain ⟨name, rfl⟩ := localTarget
-        simp only [Typed.resume, Option.bind_eq_bind, Option.pure_def,
+        simp only [Typed.resume, Typed.resumeWith, Option.bind_eq_bind, Option.pure_def,
           Option.bind_eq_some_iff] at step
         aesop (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff,
           CReadOnly.typedHeap, CReadOnly.loopHeap])
@@ -86,14 +86,14 @@ theorem resume_frame (step : Typed.resume value heap stack = some following)
           cases expr <;> exact selected
         exact store_outside stored (fun same => outside (selectedWrite.trans (congrArg some same)))
     | declare | discard | ret =>
-      simp only [Typed.resume, Option.bind_eq_bind, Option.pure_def,
+      simp only [Typed.resume, Typed.resumeWith, Option.bind_eq_bind, Option.pure_def,
         Option.bind_eq_some_iff] at step
       aesop (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff,
           CReadOnly.typedHeap, CReadOnly.loopHeap])
 
 theorem enter_frame (step : Events.enterCall program state resultType stack = some following) :
     CReadOnly.typedHeap following = CReadOnly.loopHeap state := by
-  unfold Events.enterCall at step
+  unfold Events.enterCall Events.enterCallWith at step
   split at step
   all_goals
     aesop (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff,
@@ -106,26 +106,26 @@ theorem internal_frame (step : Events.internalNext program state = some followin
     (outside : current state ≠ some query) :
     CReadOnly.typedHeap following query = CReadOnly.typedHeap state query := by
   cases state with
-  | halted => simp [Events.internalNext, Typed.nextWith] at step
+  | halted => simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions] at step
   | returning value heap stack => exact resume_frame step outside
   | body body resultType stack =>
     cases body with
     | returned result =>
-      simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind,
+      simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind,
         Option.pure_def, Option.bind_eq_some_iff] at step
       aesop (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff,
           CReadOnly.typedHeap, CReadOnly.loopHeap])
     | running code env types heap =>
       cases next : CLoops.next (.running code env types heap) with
       | none =>
-        simp only [Events.internalNext, Typed.nextWith, next] at step
+        simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, next] at step
         exact congrFun (enter_frame step) query
       | some body =>
-        simp only [Events.internalNext, Typed.nextWith, next] at step
+        simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, next] at step
         cases Option.some.inj step
         exact loop_frame next outside
   | calling name args heap stack =>
-    simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind,
+    simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind,
       Option.pure_def, Option.bind_eq_some_iff] at step
     obtain ⟨definition, found, entered⟩ := step
     cases definition <;>
@@ -133,7 +133,7 @@ theorem internal_frame (step : Events.internalNext program state = some followin
         CReadOnly.typedHeap, CReadOnly.loopHeap])
   | kernel body heap stack =>
     cases body <;>
-      simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind,
+      simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind,
         Option.pure_def, Option.bind_eq_some_iff] at step <;>
       aesop (add simp [CReadOnly.typedHeap])
 

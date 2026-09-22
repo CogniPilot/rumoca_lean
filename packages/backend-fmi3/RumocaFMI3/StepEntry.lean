@@ -115,11 +115,11 @@ theorem lifecycle_run (types : Types) (env : Locals) (heap : Heap) (p : Address)
         [Runtime.fail "Call is not allowed in the current FMI state"]) ++ rest)
         (locals env p) heap) := by
   cases kind <;> cases mode <;>
-    simp [run, next, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
       Runtime.reject, Runtime.branch, Runtime.ret, Runtime.negate, Runtime.v,
       Runtime.allowedExpression, Runtime.either, Runtime.both, Runtime.eqv,
       Runtime.field, Runtime.any, Runtime.mode, Runtime.n, permittedModes, allowed,
-      Mode.code, Kind.code, locals, CBody.bind, eval, resolve, constants,
+      Mode.code, Kind.code, locals, CBody.bind, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve, constants,
       Expr.nullPointer, expressionCast, zeroLiteral, CBody.cast, types.instancePointer,
       types.nullPointer, convert, handle, fresh, kindValue, modeValue, comparison,
       boolean, Value.truth, Value.address]
@@ -159,7 +159,7 @@ theorem input_condition_all (env : Locals) (heap : Heap) (p : Address)
         by_cases positive : 0 < Binary64.value duration <;>
         simp [inputCondition, Runtime.any, Runtime.negate, Runtime.finite, Runtime.call,
           Runtime.v, Runtime.n, Runtime.nev, Runtime.field, Runtime.le, Runtime.either,
-          eval, resolve, instanceValue, pointValue, stepValue, Value.address, clock,
+          CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve, instanceValue, pointValue, stepValue, Value.address, clock,
           comparison, Value.finite, floatComparison, comparison_value,
           CIntegerConversions.integer_float64 0 (by decide +kernel),
           hp, hs, boolean, Value.truth, InputsValid, Float64.Relation.Holds,
@@ -167,12 +167,12 @@ theorem input_condition_all (env : Locals) (heap : Heap) (p : Address)
     · have hp : (Value.float64 point).isFinite = some true := by simp [Value.isFinite, pointFinite]
       have hs : (Value.float64 step).isFinite = some false := by simp [Value.isFinite, stepFinite]
       simp [inputCondition, Runtime.any, Runtime.negate, Runtime.finite, Runtime.call,
-        Runtime.v, Runtime.n, Runtime.either, eval, resolve, pointValue, stepValue,
+        Runtime.v, Runtime.n, Runtime.either, CBody.eval, CBody.evalWith, resolve, pointValue, stepValue,
         hp, hs, boolean, Value.truth, InputsValid, Float64.decode, pointFinite, stepFinite]
       split_ifs <;> simp_all
   · have hp : (Value.float64 point).isFinite = some false := by simp [Value.isFinite, pointFinite]
     simp [inputCondition, Runtime.any, Runtime.negate, Runtime.finite, Runtime.call,
-      Runtime.v, Runtime.n, Runtime.either, eval, resolve, pointValue, hp,
+      Runtime.v, Runtime.n, Runtime.either, CBody.eval, CBody.evalWith, resolve, pointValue, hp,
       boolean, Value.truth, InputsValid, Float64.decode, pointFinite]
     split_ifs <;> simp_all
 
@@ -232,9 +232,9 @@ theorem outputs_run (env : Locals) (heap : Heap) (p : Address) (buffers : Buffer
       HistoryBodies.zero_frame _ _ _ (float_ne_boolean heap _ _ old last terminate),
       HistoryBodies.zero_frame _ _ _ (float_ne_boolean heap _ _ old last event), last]
   have storeLast := store_float64 h3 buffers.last old (Binary64.toBits time).val lastCell
-  simp [run, next, outputCode, Runtime.pointerCheck, Runtime.reject, Runtime.any,
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, outputCode, Runtime.pointerCheck, Runtime.reject, Runtime.any,
     Runtime.branch, Runtime.out, Runtime.v, Runtime.n, Runtime.negate, Runtime.either,
-    Runtime.field, eval, lvalue, resolve, instanceValue, eventValue, terminateValue,
+    Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalue, CBody.lvalueWith, resolve, instanceValue, eventValue, terminateValue,
     earlyValue, lastValue, Value.address, Value.truth, boolean,
     storeEvent, storeTerminate, storeEarly, show load h3 (p.member "time") = some (.finite time) from keptClock,
     storeLast, h1, h2, h3, outputHeap, Value.finite, StateProofs.written]
@@ -303,7 +303,7 @@ theorem prefix_run_suffix (types : Types) (env : Locals)
       some (.running (if InputsValid point step time then [] else [Runtime.fail
         "Invalid communication point or step size"]) (locals env p) (outputHeap heap buffers time)) := by
     by_cases valid : InputsValid point step time <;>
-      simp [run, next, inputGuard, Runtime.reject, Runtime.branch, condition,
+      simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, inputGuard, Runtime.reject, Runtime.branch, condition,
         valid, boolean, Value.truth]
   have isolated : run 9 (.running (Runtime.require .doStep ++ outputCode ++ [inputGuard]) env heap) =
       some (.running (if InputsValid point step time then [] else [Runtime.fail
@@ -394,8 +394,8 @@ theorem null_call (types : Types) (program : CCalls.Events.Program E)
     defined (parameters_bound types none point step flag outputs) (BodyEmbedding.body_closed model signature)
   · change run 3 (.running (Runtime.body model signature) _ heap) = _
     rw [body]
-    simp [run, next, Runtime.require, Runtime.instancePrefix, Runtime.branch, Runtime.ret,
-      Runtime.v, Expr.nullPointer, eval, resolve, constants, parameters, bindings,
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.require, Runtime.instancePrefix, Runtime.branch, Runtime.ret,
+      Runtime.v, Expr.nullPointer, CBody.eval, CBody.evalWith, resolve, constants, parameters, bindings,
       CBody.bind, CBody.cast, expressionCast, zeroLiteral, types.instancePointer,
       types.nullPointer, convert, comparison, Value.truth, boolean, error]
   · simp [Runtime.function, CCalls.returnCast, signature, CBody.cast, status, convert]

@@ -75,7 +75,7 @@ theorem accepted_run (model : Solve.FMI3Model source) (heap : Heap) (p : Address
     (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm allowed
   rw [body_eq, show 4 = 3 + 1 from rfl, run_add, guard]
   simp [tail, locals, parameters, Runtime.reject, Runtime.branch, Runtime.nev, Runtime.v, Runtime.n,
-    run, next, eval, resolve, CBody.bind, comparison, boolean, Value.truth]
+    run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, resolve, CBody.bind, comparison, boolean, Value.truth]
 
 theorem reaches (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)
     (heap : Heap) (p : Address) (buffer : Option Address) (mode : Mode)
@@ -130,7 +130,7 @@ theorem invalid_run (model : Solve.FMI3Model source) (heap : Heap) (p : Address)
     (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm allowed
   rw [body_eq, show 4 = 3 + 1 from rfl, run_add, accepted]
   simp [tail, locals, parameters, Runtime.reject, Runtime.branch, Runtime.nev, Runtime.v, Runtime.n,
-    run, next, eval, resolve, CBody.bind, comparison, boolean, Value.truth, invalid]
+    run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, resolve, CBody.bind, comparison, boolean, Value.truth, invalid]
 
 theorem failure_prefix (model : Solve.FMI3Model source) (access : Bool) (heap : Heap) (p : Address)
     (buffer : Option Address) (count : UInt64) (kind : Kind) (mode : Mode)

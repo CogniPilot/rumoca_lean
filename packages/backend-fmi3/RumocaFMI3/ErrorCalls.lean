@@ -60,11 +60,11 @@ theorem failure_statement_reaches (program : CCalls.Program) (env : Locals)
       (.returning (.integer 3) (writeMode heap p .terminated) stack) := by
   let saved := CCalls.Typed.Continuation.caller .ret rest env types "fmi3Status" stack
   refine .next ?_ ((failure_reaches program heap p message old logger saved helper hm hl hg).trans ?_)
-  · simp [CCalls.Typed.machine, CCalls.Typed.next, CLoops.next, CLoops.eval,
-      CCalls.Typed.enterCall, CCalls.callOperand, CCalls.arguments, Runtime.fail,
-      Runtime.ret, Runtime.call, Runtime.v, CBody.eval, hp, unshadowed, literal, saved, CCalls.Typed.nextWith]
-  · exact .next (by simp [CCalls.Typed.machine, CCalls.Typed.next, CCalls.Typed.resume,
-      saved, CCalls.returnCast, CBody.cast, convert, CCalls.Typed.nextWith]) (.refl _)
+  · simp [CCalls.Typed.machine, CCalls.Typed.machineWith, CCalls.Typed.nextIn, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      CCalls.Typed.enterCallWith, CCalls.callOperand, CCalls.argumentsWith, CBody.legacyExpressions, Runtime.fail,
+      Runtime.ret, Runtime.call, Runtime.v, CBody.eval, CBody.evalWith, hp, unshadowed, literal, saved, CCalls.Typed.nextWithExpressions]
+  · exact .next (by simp [CCalls.Typed.machine, CCalls.Typed.machineWith, CCalls.Typed.nextIn, CCalls.Typed.resumeWith, CBody.legacyExpressions,
+      saved, CCalls.returnCast, CBody.cast, convert, CCalls.Typed.nextWithExpressions]) (.refl _)
 
 /-- Shared public-call plumbing for a prefix reaching the ordinary failure
 helper. Each API proves its own prefix; this theorem supplies fresh entry,

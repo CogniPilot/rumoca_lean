@@ -3,8 +3,7 @@ import RumocaFMI3.StaticFactoryExhaustion
 import RumocaFMI3.StaticRelease
 import RumocaFMI3.FactoryValidation
 
-/-! Tensor instance-creation reservation suffix over the static tensor pool, as a
-package-checked product.
+/-! Tensor instance-creation reservation suffix over the static tensor pool.
 
 The tensor factory shares the model-agnostic reservation prefix of the scalar
 factory: a bounded serial slot reservation with the atomic scan helper
@@ -22,10 +21,9 @@ lemma of the scalar factory (`StaticFactory.select_step`, `guard_step`, `reserve
 `guard`, `selectInstance`, `reservedLocals`, `reservedTypes`, `ReservationBindings`)
 and the shared atomic-scan machinery, adding no source case.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every existing
-contract are unchanged. Every theorem is universal in the tensor shape and the pool
-index. -/
+The production tensor dispatcher consumes this factory for its public instantiate
+functions. This module alone is not a source-acceptance or actual-artifact
+certificate. Every theorem is universal in the tensor shape and the pool index. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorFactory
 open CTree CMemory CBody
@@ -84,7 +82,7 @@ theorem reserve_entry (program : CCalls.Events.Program E) (shape : Tensor.Shape)
         (.caller (.declare "size_t" "slot") (guard :: initializeInstance shape kind) env types "fmi3Instance" stack)) := by
   exact CCalls.Events.named_declare_entry program env types heap "size_t" "slot"
     CAtomicScan.function.signature.name _ _ _ "fmi3Instance" stack scope.slotFresh scope.helperFresh named
-    (by decide +kernel) (by simp [CCalls.arguments, eval, scope.flagsBound, scope.count])
+    (by decide +kernel) (by simp [CCalls.arguments, CCalls.argumentsWith, legacyExpressions, eval, evalWith, scope.flagsBound, scope.count])
 
 /-- Resume with the reserved slot index bound. Mirrors `StaticFactory.reserve_resume`. -/
 theorem reserve_resume (program : CCalls.Events.Program E) (shape : Tensor.Shape) (kind : Kind)
@@ -171,9 +169,11 @@ theorem guarded_initialization (program : CCalls.Events.Program E) (shape : Tens
 
 /-! ### Successful creation and exhaustion at the reservation scope -/
 
-/-- Successful creation returns a handle to a slot that was free, initializes
-exactly that record and preserves every other cell, performing the scan's bounded
-atomic work. Mirrors `StaticFactory.successful` at the same `Scope` premise level. -/
+/-- Successful creation returns a handle to a slot that was free and performs
+the scan's bounded atomic work. Initialization changes exactly that record and
+preserves other cells relative to the post-scan heap; reservation itself changes
+the selected atomic flag. Mirrors `StaticFactory.successful` at the same `Scope`
+premise level. -/
 theorem successful (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
     (shape : Tensor.Shape) (kind : Kind) (env : Locals) (types : CLoops.Types) (before after : Heap)
     (base flags : Address) (capacity : Nat) (environment logger : Option Address) (logging : Bool)
@@ -493,8 +493,9 @@ end
 
 /-! ### Creation followed by release restores the pool -/
 
-/-- A creation followed by a release of the same handle restores the original slot
-ownership and reusable storage, in one program and atomic interface. Mirrors
+/-- A creation followed by release of the same handle restores the original slot
+ownership and links both executions in one program and atomic interface. Storage
+and release-frame facts are supplied separately by `Created.release`. Mirrors
 `StaticFactory.create_release`. -/
 theorem create_release (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
     (shape : Tensor.Shape) (kind : Kind) (env : Locals) (types : CLoops.Types) (before after : Heap)
@@ -540,9 +541,9 @@ theorem create_release (program : CCalls.Events.Program E) (tag : CAtomicBoolean
 `StaticRuntime.FunctionContract` and the admission/rejection portion of
 `FactoryAdmission.FunctionContract`. It bundles: an accepted admission reducing to
 the reservation body; a rejected admission (bad name/token) returning null with no
-reservation; successful creation returning an initialized owned handle to a free
-slot; exhaustion returning null with no record change; and the create-then-release
-round trip restoring the pool. Every field is a proved theorem of this module. -/
+reservation; successful creation returning an initialized handle; and exhaustion
+returning null with no record change. Ownership and the create-then-release round
+trip are separate theorems, not fields of this contract. -/
 structure FunctionContract (program : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E)
     (model : Solve.FMI3Model source) (tok : String := token model) (shape : Tensor.Shape) : Prop where
   accepts : ∀ (bindings : Identity.Bindings program) (kind : Kind) (args : FactoryArguments.Raw)

@@ -45,13 +45,13 @@ theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tenso
       FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
       FactoryRejection.code, FactoryRejection.logCall, TensorFactory.code, StaticFactory.reserve,
       StaticFactory.guard, StaticFactory.exhausted, TensorFactory.initializeInstance,
-      StaticFactory.selectInstance, InstanceSlot.code, InstanceSlot.statement,
+      StaticFactory.selectInstance,
       TensorInstanceInit.code, TensorInstanceInit.slotStore, TensorInstanceInit.metaCode,
       TensorInstanceInit.stateTail, TensorReset.zeroBody, TensorFloat64.dstCell,
       InstanceInitialization.returnHandle, TensorInstance.stateName, CAtomicScan.function,
-      Identity.function, Runtime.region, Runtime.put, Runtime.field, Runtime.v, Runtime.n, Runtime.mode,
-      Runtime.ret, Runtime.call, CLoops.loop, CLoops.counterStep,
-      List.foldr_cons, List.foldr_nil, List.map_cons, List.mem_cons,
+      Identity.function, Runtime.region, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
+      CLoops.loop, CLoops.counterStep,
+      List.mem_cons,
       List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append, List.nil_append,
       forall_eq] <;>
     repeat first

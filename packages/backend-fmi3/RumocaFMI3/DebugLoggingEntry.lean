@@ -81,7 +81,7 @@ private theorem modes_eval (env : Locals) (heap : Heap) (p : Address) (current :
     have hhead : CBody.eval env heap (Runtime.eqv (Runtime.field "mode") (Runtime.mode head)) =
         some (boolean (current == head)) := by
       simp [Runtime.eqv, Runtime.field, Runtime.mode, Runtime.v, Runtime.n,
-        CBody.eval, hm, hc, Value.address, CBody.comparison, LifecycleGuard.mode_code_beq]
+        CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, hm, hc, Value.address, CBody.comparison, LifecycleGuard.mode_code_beq]
     simpa [Runtime.any, List.contains_cons] using BoolProofs.eval_or hhead ih
 
 /-- The generated lifecycle guard expression evaluates to the authored
@@ -95,11 +95,11 @@ private theorem guard_eval (env : Locals) (heap : Heap) (p : Address)
     CBody.eval env heap (Runtime.allowedExpression cmd) = some (boolean (allowed cmd kind mode)) := by
   have hme : CBody.eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n 0)) =
       some (boolean (kind.code == 0)) := by
-    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
+    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
       hp, hk, Value.address, CBody.comparison, Kind.code, boolean]
   have hcs : CBody.eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n 1)) =
       some (boolean (kind.code == 1)) := by
-    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
+    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
       hp, hk, Value.address, CBody.comparison, Kind.code, boolean]
   have h := BoolProofs.eval_or
     (BoolProofs.eval_and hme (modes_eval env heap p mode hp hm (permittedModes cmd .me)))
@@ -119,9 +119,9 @@ theorem logging_guard_run (types : EntryTypes) (env : Locals) (heap : Heap) (p :
     (by simp [CBody.bind, resolve]) kindValue modeValue
   have hallowed : allowed .logging kind mode = true := by cases kind <;> cases mode <;> rfl
   rw [hallowed] at hg
-  simp [CBody.run, CBody.next, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
+  simp [CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
     Runtime.reject, Runtime.branch, Runtime.ret, Runtime.negate, Runtime.v,
-    CBody.bind, CBody.eval, resolve, constants, Expr.nullPointer, expressionCast,
+    CBody.bind, CBody.eval, CBody.evalWith, resolve, constants, Expr.nullPointer, expressionCast,
     zeroLiteral, CBody.cast, types.instancePointer, types.nullPointer, convert,
     handle, fresh, hg, boolean, Value.truth]
 
@@ -138,8 +138,8 @@ theorem null_run (types : EntryTypes) (heap : Heap) (enabled : Bool) (count : UI
     (categories : Option Address) (error : interface.constants "fmi3Error" = some (.integer 3)) :
     CBody.run 3 (.running function.body (parameters none enabled count categories) heap) =
       some (.returned ⟨.integer 3, heap⟩) := by
-  simp [function, CBody.run, CBody.next, Runtime.require, Runtime.instancePrefix,
-    Runtime.branch, Runtime.ret, Runtime.v, parameters, CBody.bind, CBody.eval, resolve, constants,
+  simp [function, CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.require, Runtime.instancePrefix,
+    Runtime.branch, Runtime.ret, Runtime.v, parameters, CBody.bind, CBody.eval, CBody.evalWith, resolve, constants,
     Expr.nullPointer, expressionCast, zeroLiteral, CBody.cast, types.instancePointer,
     types.nullPointer, convert, CBody.comparison, boolean, Value.truth, error]
 

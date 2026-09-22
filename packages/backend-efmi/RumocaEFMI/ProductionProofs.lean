@@ -65,8 +65,10 @@ theorem startup_run (heap : Heap) (p : Address) (oldX oldPeriod : Option Value)
       some (.returned ⟨.integer 0, initialized heap p⟩) := by
   obtain ⟨oldStatus, hs⟩ := hs
   simp only [CHeader.statusName] at hs
-  simp [CArithmetic.run, CArithmetic.next, CBody.next, CBody.eval,
-    CBody.lvalue, unitModule, function, stateField,
+  simp [CArithmetic.run, CArithmetic.next, CArithmetic.nextWith, CBody.nextWith,
+    CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
+    CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+    unitModule, function, stateField,
     parameters, CBody.bind, CBody.resolve, CBody.constants,
     CBody.cast, convert, Value.address, hx, hp, hs, initialized, written,
     clearStatus, CHeader.statusName, store, replace, load, Value.finite]
@@ -80,8 +82,10 @@ theorem recalibrate_run (heap : Heap) (p : Address) (x : Binary64.Value)
       some (.returned ⟨.integer 0, written (clearStatus heap p) (p.member "x") x⟩) := by
   obtain ⟨oldStatus, hs⟩ := hs
   simp only [CHeader.statusName] at hs
-  simp [CArithmetic.run, CArithmetic.next, CBody.next, CBody.eval,
-    CBody.lvalue, unitModule, function, stateField,
+  simp [CArithmetic.run, CArithmetic.next, CArithmetic.nextWith, CBody.nextWith,
+    CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
+    CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+    unitModule, function, stateField,
     parameters, CBody.bind, CBody.resolve, CBody.constants,
     CBody.cast, convert, Value.address, hx, hs, written,
     clearStatus, CHeader.statusName, store, replace, load, Value.finite]
@@ -98,8 +102,10 @@ theorem doStep_run (heap : Heap) (p : Address) (x : Binary64.Value)
   simp only [CHeader.statusName] at hs
   have add := CArithmetic.floatAdd_one x
   simp only [Value.finite] at add
-  simp [CArithmetic.run, CArithmetic.next, CBody.next, CBody.eval,
-    CBody.lvalue, unitModule, function, stateField,
+  simp [CArithmetic.run, CArithmetic.next, CArithmetic.nextWith, CBody.nextWith,
+    CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
+    CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+    unitModule, function, stateField,
     parameters, CBody.bind, CBody.resolve, CBody.constants,
     CBody.cast, convert, Value.address, hx, hs, written,
     clearStatus, CHeader.statusName, store, replace, load, add, Value.finite]

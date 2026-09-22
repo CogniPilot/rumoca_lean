@@ -1,3 +1,8 @@
+import Tests.Audit.TensorArtifact
+import Tests.Audit.TensorEFMIExecutedContract
+import Tests.Audit.TensorEFMISourceJacobian
+import Tests.Audit.TensorEFMISourceMethod
+import Tests.Audit.TensorEFMISourceObservation
 -- Aggregator for the per-source-module axiom audits of the compiler.
 -- Each imported module audits exactly the roots of one Rumoca.* source
 -- module, so Lake elaborates them as independent parallel jobs while this

@@ -44,7 +44,7 @@ theorem missing_step (env : Locals) (types : Types) (heap : Heap)
       some (.running (if n = 0 ∨ pointer.isSome = true then rest else
         failure "Missing log categories" :: rest) env types heap) := by
   cases pointer <;> by_cases zero : n = 0 <;>
-    simp [missing, failure, CLoops.next, noDeclarations, CLoops.eval, CBody.eval,
+    simp [missing, failure, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, noDeclarations, CLoops.evalWith, CBody.eval, CBody.evalWith,
       resolve, count, array, boolean, Value.truth, zero]
 
 theorem declarations_reaches (program : CCalls.Events.Program E) (env : Locals)
@@ -73,7 +73,7 @@ theorem write_logging_step (env : Locals) (types : Types) (heap : Heap) (p : Add
     CLoops.next (.running (writeLogging :: rest) env types heap) =
       some (.running rest env types (written heap p enabled)) := by
   have stored := written_store heap p enabled old storage
-  simp [writeLogging, CLoops.next, CLoops.eval, CBody.eval, CBody.lvalue,
+  simp [writeLogging, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, CLoops.evalWith, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
     resolve, handle, flag, Value.address, stored]
 
 theorem finish_reaches (program : CCalls.Events.Program E) (env : Locals)

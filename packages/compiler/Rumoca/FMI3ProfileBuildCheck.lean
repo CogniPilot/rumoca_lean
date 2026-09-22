@@ -1,3 +1,4 @@
+import RumocaC.PrinterCertificate
 import Rumoca.FMI3AdapterCertificate
 import Rumoca.CertificateOptions
 import RumocaFMI3.Header
@@ -17,7 +18,7 @@ render fragments and its final contract proof through `ProfileBuildInputs`. -/
 
 namespace Rumoca.FMI3ProfileBuildCheck
 open Lean Elab Command
-open Rumoca.FMI3AdapterCertificate (quoteCharacters certifyConcatenation)
+open Rumoca.CTree.Printer.Certificate (quoteCharacters certifyConcatenation)
 open Rumoca Rumoca.FMI3
 
 /-- Kernel-check one `model.c` fragment against its rendered bytes by reflexivity.

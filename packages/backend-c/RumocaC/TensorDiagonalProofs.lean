@@ -58,13 +58,17 @@ theorem copy_step (input output : Address) (values : Values shape) (heap : Heap)
   have target : CBody.lvalue (CLoops.counterEnv (locals input output shape i.val) "k" i.val)
       (scatter (zeroHeap heap output shape) output values i.val)
       (.index (.id "out") (.id "offset")) = some (output.index (position shape i.val)) := by
-    simp [CBody.lvalue, CBody.eval, CBody.resolve, CLoops.counterEnv, locals, parameters,
+    simp [CBody.lvalue, CBody.lvalueWith, CBody.evalWith, CBody.resolve, CLoops.counterEnv, locals, parameters,
       Lowering.Arguments.locals, signatureParameters, arguments, CBody.bind, Value.address]
   have stored := scatter_store_next (zeroHeap heap output shape) output values (zero_writable heap output shape) i
   have evaluated : CLoops.eval (CLoops.counterEnv (locals input output shape i.val) "k" i.val)
       localTypes (scatter (zeroHeap heap output shape) output values i.val) (indexed "coeff") =
       some (.finite values[i]) := value
-  simp only [CLoops.next, evaluated, target, stored, bind, Option.bind_some, pure]
+  change CBody.legacyExpressions.address
+    (CLoops.counterEnv (locals input output shape i.val) "k" i.val)
+    (scatter (zeroHeap heap output shape) output values i.val)
+    (.index (.id "out") (.id "offset")) = some (output.index (position shape i.val)) at target
+  simp only [CLoops.next, CLoops.nextWith, evaluated, target, stored, bind, Option.bind_some, pure]
 
 theorem offset_eval (input output : Address) (shape : Shape) (heap : Heap)
     (bounded : (matrixShape shape.volume shape.volume).volume < 2 ^ 64)
@@ -120,7 +124,7 @@ theorem loop_reaches (input output : Address) (values : Values shape) (heap : He
     (by simp [operation, CLoops.noDeclarations])
     (by
       intro i hi
-      simp [CBody.eval, CBody.resolve, CLoops.counterEnv, locals, parameters,
+      simp [CBody.eval, CBody.evalWith, CBody.resolve, CLoops.counterEnv, locals, parameters,
         Lowering.Arguments.locals, signatureParameters, arguments, CBody.bind])
     (by
       intro i hi

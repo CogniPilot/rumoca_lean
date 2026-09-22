@@ -175,7 +175,7 @@ theorem nonfinite_run (model : Solve.FMI3Model source) (heap : Heap) (p buffer :
   simp only [Option.bind_some, tail]
   rw [show 2 = 1 + 1 from rfl, run_add, checked]
   simp [action, Runtime.reject, Runtime.branch, Runtime.negate, Runtime.finite, Runtime.call,
-    Runtime.v, Runtime.n, run, next, eval, parameters, CBody.bind, resolve, constants,
+    Runtime.v, Runtime.n, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, parameters, CBody.bind, resolve, constants,
     Value.address, boolean, Value.truth, input, nonfinite]
 
 theorem nonfinite_prefix (model : Solve.FMI3Model source) (heap : Heap) (p buffer : Address) (value : Value)

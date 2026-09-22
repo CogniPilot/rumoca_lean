@@ -20,9 +20,9 @@ prepared derivative entry on the instance (through the machinery of
 uses one counted `size_t` loop whose bound is the symbolic state volume, so no
 tensor coordinate is enumerated.
 
-This is a package-checked product only: no production artifact is emitted, no
-CLI or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. Every theorem is universal in the tensor shape,
+The tensor adapter consumes these bodies and proofs. This module alone does
+not establish source acceptance or certify an actual artifact; those obligations
+belong to the composed adapter/compiler contracts. Every theorem is universal in the tensor shape,
 the instance index of the static pool, the request length and the heap. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorContinuousStates
@@ -76,7 +76,7 @@ theorem count_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume :
     CBody.eval (guardEnv p buffer count) heap
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
         Runtime.negate (Runtime.v "continuousStates")]) = some (boolean false) := by
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval,
+  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, matched]
 
 /-! ### The getter -/
@@ -96,7 +96,7 @@ theorem getBody_closed (shape : Tensor.Shape) :
     (getFunction shape).body.all CBodyEmbedding.closedBlocks = true := by
   simp [getFunction, getBody, getTail, countReject, getLoopSuffix, getCopyBody, Runtime.require,
     Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
-    Runtime.ok, Runtime.field, Runtime.v, CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop,
+    Runtime.ok, Runtime.v, CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop,
     CLoops.counterStep]
 
 /-- The staged environment at the copy loop: instance guard plus `src` (the
@@ -152,8 +152,8 @@ theorem get_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address) (c
       ((Runtime.region stateName)) .pointer (.pointer (some (p.member stateName)))
       (.pointer (some (p.member stateName))) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
       (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, guardEnv, parameters, CBody.bind,
-            CBody.resolve, mBound, Value.address]) rfl
+          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, guardEnv, parameters, CBody.bind,
+            CBody.resolve, Value.address]) rfl
   have s_values : CLoops.next (.running (.declare "fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
         .declare "size_t" "expected" (Runtime.n shape.volume) :: getLoopSuffix)
         (bind (guardEnv p buffer count) "src" (.pointer (some (p.member stateName))))
@@ -163,14 +163,14 @@ theorem get_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address) (c
           "values" (.pointer (some buffer))) (bindType (bindType types0 "src" .pointer) "values" .pointer) heap) :=
     TensorFloat64.declare_step_e _ _ heap "fmi3Float64 *" "values" (Runtime.v "continuousStates") .pointer
       (.pointer (some buffer)) (.pointer (some buffer)) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
-      (by simp [Runtime.v, CLoops.eval, CBody.eval, guardEnv, parameters, CBody.bind, CBody.resolve]) rfl
+      (by simp [Runtime.v, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) :: getLoopSuffix)
         (bind (bind (guardEnv p buffer count) "src" (.pointer (some (p.member stateName))))
           "values" (.pointer (some buffer))) (bindType (bindType types0 "src" .pointer) "values" .pointer) heap) =
       some (.running getLoopSuffix (stagedGetEnv p buffer count shape) (stagedGetTypes types0) heap) :=
     TensorFloat64.declare_step_e _ _ heap "size_t" "expected" (Runtime.n shape.volume) .size
       (.integer shape.volume) (.integer shape.volume) _ (by simp [guardEnv, parameters, CBody.bind])
-      rfl (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
+      rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded)
   refine .next (CCalls.Events.body_step program s_src "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s_values "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s_exp "fmi3Status" stack) ?_))
@@ -229,7 +229,7 @@ theorem setBody_closed (shape : Tensor.Shape) :
     (setFunction shape).body.all CBodyEmbedding.closedBlocks = true := by
   simp [setFunction, setBody, setTail, countReject, setLoopSuffix, setCopyBody, validateBody,
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch,
-    Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v, CBodyEmbedding.closedBlocks,
+    Runtime.fail, Runtime.ret, Runtime.ok, Runtime.v, CBodyEmbedding.closedBlocks,
     CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
 
 def stagedSetEnv (p buffer : Address) (count : UInt64) (shape : Tensor.Shape) : Locals :=
@@ -280,8 +280,8 @@ theorem set_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address) (c
       ((Runtime.region stateName)) .pointer (.pointer (some (p.member stateName)))
       (.pointer (some (p.member stateName))) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
       (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, guardEnv, parameters, CBody.bind,
-            CBody.resolve, mBound, Value.address]) rfl
+          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, guardEnv, parameters, CBody.bind,
+            CBody.resolve, Value.address]) rfl
   have s_values : CLoops.next (.running (.declare "const fmi3Float64 *" "values" (Runtime.v "continuousStates") ::
         .declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix)
         (bind (guardEnv p buffer count) "dst" (.pointer (some (p.member stateName))))
@@ -291,14 +291,14 @@ theorem set_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address) (c
           "values" (.pointer (some buffer))) (bindType (bindType types0 "dst" .pointer) "values" .pointer) heap) :=
     TensorFloat64.declare_step_e _ _ heap "const fmi3Float64 *" "values" (Runtime.v "continuousStates") .pointer
       (.pointer (some buffer)) (.pointer (some buffer)) _ (by simp [guardEnv, parameters, CBody.bind]) rfl
-      (by simp [Runtime.v, CLoops.eval, CBody.eval, guardEnv, parameters, CBody.bind, CBody.resolve]) rfl
+      (by simp [Runtime.v, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) :: setLoopSuffix)
         (bind (bind (guardEnv p buffer count) "dst" (.pointer (some (p.member stateName))))
           "values" (.pointer (some buffer))) (bindType (bindType types0 "dst" .pointer) "values" .pointer) heap) =
       some (.running setLoopSuffix (stagedSetEnv p buffer count shape) (stagedSetTypes types0) heap) :=
     TensorFloat64.declare_step_e _ _ heap "size_t" "expected" (Runtime.n shape.volume) .size
       (.integer shape.volume) (.integer shape.volume) _ (by simp [guardEnv, parameters, CBody.bind])
-      rfl (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
+      rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded)
   refine .next (CCalls.Events.body_step program s_dst "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s_values "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s_exp "fmi3Status" stack) ?_))
@@ -478,9 +478,9 @@ theorem getBody_printable (shape : Tensor.Shape) :
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
-      Runtime.mode, Runtime.lt, Runtime.call, getCopyBody, TensorFloat64.srcCell, Float64Calls.output,
+      Runtime.mode, Runtime.call, getCopyBody, TensorFloat64.srcCell, Float64Calls.output,
       CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
-      List.mem_append, List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp, forall_and,
+      List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact CNull.literal_printable _
@@ -524,10 +524,10 @@ theorem setBody_printable (shape : Tensor.Shape) :
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
-      Runtime.mode, Runtime.lt, Runtime.call, Runtime.finite, setCopyBody, validateBody,
+      Runtime.mode, Runtime.call, Runtime.finite, setCopyBody, validateBody,
       TensorFloat64.dstCell, Float64Calls.output, CLoops.loop, CLoops.counterStep, List.foldr_cons,
-      List.foldr_nil, List.map_cons, List.map_nil, List.mem_append, List.mem_cons, List.not_mem_nil,
-      List.forall_mem_nil, or_false, or_imp, forall_and, List.cons_append, List.nil_append, forall_eq] <;>
+      List.foldr_nil, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
+      or_false, or_imp, forall_and, List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact CNull.literal_printable _
       | exact iType
@@ -713,7 +713,7 @@ theorem derivCount_pass (heap : Heap) (p buffer : Address) (count : UInt64) (vol
     CBody.eval (derivGuardEnv p buffer count) heap
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
         Runtime.negate (Runtime.v "derivatives")]) = some (boolean false) := by
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval,
+  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, matched]
 
 variable (program : CCalls.Events.Program E)
@@ -731,11 +731,11 @@ theorem deriv_enter (shape : Tensor.Shape) (p buffer : Address) (count : UInt64)
         [.pointer (some (p.member stateName)), .pointer (some (p.member inputName)),
          .pointer (some (p.member derivativeName)), .integer count.toNat] H
         (.caller .discard rest (derivGuardEnv p buffer count) types0 "fmi3Status" stack)) := by
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-    derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
-    CBody.lvalue,
-    CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve,
-    CCalls.arguments, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.constants,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+    derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+    CBody.lvalueWith,
+    CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CBody.legacyExpressions,
+    CCalls.argumentsWith, CBody.legacyExpressions, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.constants,
     Value.address]
 
 /-- The Jacobian entry-call step: from the resumed `der(x)` frame the observable
@@ -752,11 +752,11 @@ theorem jac_enter (shape : Tensor.Shape) (p buffer : Address) (count : UInt64)
         [.pointer (some (p.member inputName)), .pointer (some (p.member outputName)),
          .integer count.toNat, .integer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume] H
         (.caller .discard rest (derivGuardEnv p buffer count) types0 "fmi3Status" stack)) := by
-  simp [jacobianCall, CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-    jacobianEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
-    CBody.lvalue,
-    CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve,
-    CCalls.arguments, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.constants,
+  simp [jacobianCall, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+    jacobianEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+    CBody.lvalueWith,
+    CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CBody.legacyExpressions,
+    CCalls.argumentsWith, CBody.legacyExpressions, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.constants,
     Value.address]
 
 /-- The copy suffix of the derivative getter: over any heap whose `der(x)` region
@@ -782,8 +782,8 @@ theorem deriv_delivers (shape : Tensor.Shape) (H : Heap) (p buffer : Address) (c
       ((Runtime.region derivativeName)) .pointer (.pointer (some (p.member derivativeName)))
       (.pointer (some (p.member derivativeName))) _ (by simp [derivGuardEnv, derivParameters, CBody.bind])
       rfl (by apply CBodyEmbedding.eval_refines
-              simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, derivGuardEnv, derivParameters,
-                CBody.bind, CBody.resolve, mBound, Value.address]) rfl
+              simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, derivGuardEnv, derivParameters,
+                CBody.bind, CBody.resolve, Value.address]) rfl
   have s_values : CLoops.next (.running (.declare "fmi3Float64 *" "values" (Runtime.v "derivatives") ::
         .declare "size_t" "expected" (Runtime.n shape.volume) :: getLoopSuffix)
         (bind (derivGuardEnv p buffer count) "src" (.pointer (some (p.member derivativeName))))
@@ -793,7 +793,7 @@ theorem deriv_delivers (shape : Tensor.Shape) (H : Heap) (p buffer : Address) (c
           "values" (.pointer (some buffer))) (bindType (bindType types0 "src" .pointer) "values" .pointer) H) :=
     TensorFloat64.declare_step_e _ _ H "fmi3Float64 *" "values" (Runtime.v "derivatives") .pointer
       (.pointer (some buffer)) (.pointer (some buffer)) _ (by simp [derivGuardEnv, derivParameters, CBody.bind])
-      rfl (by simp [Runtime.v, CLoops.eval, CBody.eval, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve]) rfl
+      rfl (by simp [Runtime.v, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, derivGuardEnv, derivParameters, CBody.bind, CBody.resolve]) rfl
   set env := bind (bind (bind (derivGuardEnv p buffer count) "src" (.pointer (some (p.member derivativeName))))
     "values" (.pointer (some buffer))) "expected" (.integer shape.volume) with henv
   set types := bindType (bindType (bindType types0 "src" .pointer) "values" .pointer) "expected" .size with htypes
@@ -803,7 +803,7 @@ theorem deriv_delivers (shape : Tensor.Shape) (H : Heap) (p buffer : Address) (c
       some (.running getLoopSuffix env types H) :=
     TensorFloat64.declare_step_e _ _ H "size_t" "expected" (Runtime.n shape.volume) .size
       (.integer shape.volume) (.integer shape.volume) _ (by simp [derivGuardEnv, derivParameters, CBody.bind])
-      rfl (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
+      rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded)
   refine .next (CCalls.Events.body_step program s_src "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s_values "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s_exp "fmi3Status" stack) ?_))
@@ -938,7 +938,7 @@ theorem deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.
         (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)) =
       some (.body (.running (derivCopyTail shape) (derivGuardEnv m buffer count) types0 finalHeap)
         "fmi3Status" stack) := by
-    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith]
   have writableFinal : Writable finalHeap buffer shape.volume := by
     intro b hb
     obtain ⟨old, ho⟩ := writable b hb
@@ -1116,7 +1116,7 @@ theorem deriv_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.
           "fmi3Status" stack)) =
       some (.body (.running (jacobianCall shape :: derivCopyTail shape) (derivGuardEnv m buffer count) types0
         finalHeap1) "fmi3Status" stack) := by
-    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith]
   -- the input region is readable and the output region writable on the post-RHS heap
   have readsInputFinal : Reads finalHeap1 (TensorInstance.field pool i inputName) input := by
     intro k
@@ -1158,7 +1158,7 @@ theorem deriv_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.
         (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)) =
       some (.body (.running (derivCopyTail shape) (derivGuardEnv m buffer count) types0 finalHeap2)
         "fmi3Status" stack) := by
-    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith]
   -- der(x) survives the Jacobian write, and every other instance is preserved
   have derReadFinal : Reads finalHeap2 (TensorInstance.field pool i derivativeName) result := by
     intro k
@@ -1293,9 +1293,9 @@ theorem derivBody_printable (shape : Tensor.Shape) (hasOutput : Bool) :
       Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
-      Runtime.mode, Runtime.lt, Runtime.call, getCopyBody, TensorFloat64.srcCell, Float64Calls.output,
+      Runtime.mode, Runtime.call, getCopyBody, TensorFloat64.srcCell, Float64Calls.output,
       CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
-      List.mem_append, List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp, forall_and,
+      List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact CNull.literal_printable _

@@ -72,15 +72,15 @@ theorem intrinsic_iff (safe : NoIntrinsic symbols) (e : Expr) :
 
 private theorem call_nil (env : CBody.Locals) (heap : Heap) (fn : Expr) :
     CBody.eval env heap (.call fn []) = none := by
-  cases fn <;> simp [CBody.eval]
+  cases fn <;> simp [CBody.eval, CBody.evalWith]
 
 private theorem call_many (env : CBody.Locals) (heap : Heap) (fn a b : Expr)
     (rest : List Expr) : CBody.eval env heap (.call fn (a :: b :: rest)) = none := by
-  cases fn <;> simp [CBody.eval]
+  cases fn <;> simp [CBody.eval, CBody.evalWith]
 
 private theorem call_other (env : CBody.Locals) (heap : Heap) (fn a : Expr)
     (other : fn ≠ .id "isfinite") : CBody.eval env heap (.call fn [a]) = none := by
-  cases fn <;> simp_all [CBody.eval]
+  cases fn <;> simp_all [CBody.eval, CBody.evalWith]
 
 /-- Replacing a literal by a correctly bound data symbol preserves both its
 value and its supported lvalue contexts, including failed evaluations. -/
@@ -97,23 +97,23 @@ theorem expression_correct (bound : Bound symbols env) (safe : NoIntrinsic symbo
   | str text =>
       cases found : symbols text with
       | none => simp [expression, found]
-      | some name => simp [expression, found, CBody.eval, CBody.lvalue, bound text name found]
+      | some name => simp [expression, found, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, bound text name found]
   | bin op a b ha hb =>
-      cases op <;> simp [expression, CBody.eval, CBody.lvalue, ha.1, hb.1]
-  | not a ha => simp [expression, CBody.eval, CBody.lvalue, ha.1]
-  | deref a ha => simp [expression, CBody.eval, CBody.lvalue, ha.1]
-  | address a ha => simp [expression, CBody.eval, CBody.lvalue, ha.2]
-  | field a name pointer ha => simp [expression, CBody.eval, CBody.lvalue, ha.1, ha.2]
-  | index a i ha hi => simp [expression, CBody.eval, CBody.lvalue, ha.1, ha.2, hi.1]
+      cases op <;> simp [expression, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ha.1, hb.1]
+  | not a ha => simp [expression, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ha.1]
+  | deref a ha => simp [expression, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ha.1]
+  | address a ha => simp [expression, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ha.2]
+  | field a name pointer ha => simp [expression, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ha.1, ha.2]
+  | index a i ha hi => simp [expression, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ha.1, ha.2, hi.1]
   | cast type a ha =>
       have casts (value : Value) :
           CBody.expressionCast type (expression symbols a) value = CBody.expressionCast type a value := by
         unfold CBody.expressionCast
         rw [expression_zeroLiteral]
-      simp only [expression, CBody.eval, CBody.lvalue, ha.1, casts, and_self]
+      simp only [expression, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ha.1, casts, and_self]
   | sizeof type => simp [expression]
   | call fn args hfn hargs =>
-      refine ⟨?_, by simp [expression, CBody.lvalue]⟩
+      refine ⟨?_, by simp [expression, CBody.lvalue, CBody.lvalueWith]⟩
       simp only [expression]
       cases args with
       | nil => simp only [List.map_nil, call_nil]
@@ -124,7 +124,7 @@ theorem expression_correct (bound : Bound symbols env) (safe : NoIntrinsic symbo
               simp only [List.map_cons, List.map_nil]
               by_cases intrinsic : fn = .id "isfinite"
               · subst fn
-                simp [expression, CBody.eval, ha]
+                simp [expression, CBody.eval, CBody.evalWith, ha]
               · rw [call_other env heap _ _ (fun eq => intrinsic ((intrinsic_iff safe fn).mp eq)),
                   call_other env heap _ _ intrinsic]
           | cons b rest => simp only [List.map_cons, call_many]
@@ -142,7 +142,8 @@ theorem arguments_correct (bound : Bound symbols env) (safe : NoIntrinsic symbol
   induction args with
   | nil => rfl
   | cons a rest ih =>
-      simp [CCalls.arguments, (expression_correct bound safe heap a).1, ih]
+      simp only [CCalls.arguments, CBody.legacyExpressions] at ih
+      simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, (expression_correct bound safe heap a).1, ih]
 
 /-- The source body may not declare a local over a generated data name. -/
 def FreshName (symbols : Symbols) (name : String) : Prop :=
@@ -195,7 +196,7 @@ theorem body_next (safe : NoIntrinsic symbols) (s : CBody.State)
       | nil => rfl
       | cons stmt rest =>
           cases stmt <;>
-            simp [bodyState, statement, CBody.next, ev, lv, Option.map_bind]
+            simp [bodyState, statement, CBody.next, CBody.nextWith, CBody.legacyExpressions, ev, lv, Option.map_bind]
           all_goals try simp only [map_choice, List.map_append, List.map_cons, statement]
           case declare type name value =>
             cases (env name).isSome <;> simp [bodyState]
@@ -204,7 +205,7 @@ theorem body_next (safe : NoIntrinsic symbols) (s : CBody.State)
 
 theorem body_safe_next (bound : bodySafe symbols s) (step : CBody.next s = some t) :
     bodySafe symbols t := by
-  unfold CBody.next at step
+  unfold CBody.next CBody.nextWith at step
   split at step
   all_goals
     aesop (add safe apply Bound.bind)

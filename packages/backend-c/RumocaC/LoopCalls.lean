@@ -44,22 +44,22 @@ inductive State where
   | returning (heap : Heap) (stack : Continuation)
   | halted (heap : Heap)
 
-def enterCall (s : CLoops.State) (stack : Continuation) : Option State :=
+def enterCallWith (expressions : CBody.Expressions) (s : CLoops.State) (stack : Continuation) : Option State :=
   match s with
   | .running (.eval (.call (.id name) args) :: rest) env types heap => do
       if (env name).isSome || name = "isfinite" then none else do
-        let values ← CCalls.arguments env heap args
+        let values ← CCalls.argumentsWith expressions env heap args
         return .calling name values heap (.caller rest env types stack)
   | _ => none
 
-def next (definitions : Definitions) : State → Option State
+def nextWith (expressions : CBody.Expressions) (definitions : Definitions) : State → Option State
   | .halted _ => none
   | .body (.returned result) stack =>
       if result.value = .void then some (.returning result.heap stack) else none
   | .body state stack =>
-      match CLoops.next state with
+      match CLoops.nextWith expressions state with
       | some following => some (.body following stack)
-      | none => enterCall state stack
+      | none => enterCallWith expressions state stack
   | .calling name args heap stack => do
       let fn ← definitions name
       if fn.signature.result ≠ "void" then none else do
@@ -70,17 +70,22 @@ def next (definitions : Definitions) : State → Option State
   | .returning heap (.caller rest locals types outer) =>
       some (.body (.running rest locals types heap) outer)
 
-def machine (definitions : Definitions) : Transition.Machine State Heap where
-  step s t := next definitions s = some t
+abbrev enterCall := enterCallWith CBody.legacyExpressions
+abbrev next := nextWith CBody.legacyExpressions
+
+def machineWith (expressions : CBody.Expressions) (definitions : Definitions) : Transition.Machine State Heap where
+  step s t := nextWith expressions definitions s = some t
   final | .halted heap => some heap | _ => none
   deterministic ha hb := Option.some.inj (ha.symm.trans hb)
-  final_stuck := by intro s heap hs t; cases s <;> simp_all [next]
+  final_stuck := by intro s heap hs t; cases s <;> simp_all [nextWith]
+
+abbrev machine := machineWith CBody.legacyExpressions
 
 theorem body_step (definitions : Definitions) (h : CLoops.next s = some t) (stack) :
     next definitions (.body s stack) = some (.body t stack) := by
   cases s with
-  | returned => simp [CLoops.next] at h
-  | running => simp [next, h]
+  | returned => simp [CLoops.next, CLoops.nextWith] at h
+  | running => simp [next, nextWith, h]
 
 theorem body_reaches (definitions : Definitions)
     (h : Transition.Reaches CLoops.machine.step s t) (stack) :
@@ -102,8 +107,8 @@ theorem call_reaches (definitions : Definitions) (name : String) (args : List Va
     Transition.Reaches (machine definitions).step (.calling name args heap stack)
       (.returning finalHeap stack) := by
   refine .next (t := .body (.running fn.body locals types heap) stack)
-    (by simp [machine, next, found, returnsVoid, bound, typed]) ?_
-  exact (body_reaches definitions executed stack).trans (.next (by simp [machine, next]) (.refl _))
+    (by simp [machine, machineWith, nextWith, found, returnsVoid, bound, typed]) ?_
+  exact (body_reaches definitions executed stack).trans (.next (by simp [machine, machineWith, nextWith]) (.refl _))
 
 theorem call_behaviors (definitions : Definitions) (name : String) (args : List Value)
     (heap finalHeap : Heap) (fn : CTree.Function) (locals : CBody.Locals) (types : Types)

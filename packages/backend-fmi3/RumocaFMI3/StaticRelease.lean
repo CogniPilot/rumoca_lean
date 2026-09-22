@@ -34,7 +34,8 @@ theorem call_entry (program : CCalls.Events.Program E) (p : Option Address) (hea
   refine .next (CCalls.Events.body_step program
     (CLoops.declare_local (parameters p) parameterTypes heap "Instance *" "m" _ [guard, .ret none]
       .pointer (.pointer p) (.pointer p) pointer (by simp [parameters, CBody.bind])
-      (by simp [CLoops.eval, eval, expressionCast, CBody.cast, resolve, parameters, CBody.bind, pointer, convert]) rfl)
+      (by simp [CLoops.eval, CLoops.evalWith, legacyExpressions, eval, evalWith,
+        expressionCast, CBody.cast, resolve, parameters, CBody.bind, pointer, convert]) rfl)
     "void" stack) ?_
   exact .refl _
 
@@ -42,8 +43,9 @@ theorem guard_step (p : Option Address) (heap : Heap)
     (voidPointer : interface.types "void *" = some .pointer) :
     CLoops.next (.running [guard, .ret none] (locals p) types heap) =
       some (.running ((if p.isSome then [clear] else []) ++ [.ret none]) (locals p) types heap) := by
-  cases p <;> simp [guard, clear, CLoops.next, CLoops.noDeclarations, CLoops.eval,
-    eval, resolve, locals, CBody.bind, CNull.literal_eval voidPointer, comparison, boolean, Value.truth]
+  cases p <;> simp [guard, clear, CLoops.next, CLoops.nextWith, CLoops.noDeclarations,
+    CLoops.evalWith, legacyExpressions, eval, evalWith, resolve, locals, CBody.bind,
+    CNull.literal_eval voidPointer, comparison, boolean, Value.truth]
 
 theorem return_path (program : CCalls.Events.Program E) (env : Locals) (localTypes : CLoops.Types)
     (heap : Heap) (stack : CCalls.Typed.Continuation) :
@@ -63,9 +65,12 @@ theorem clear_entry (program : CCalls.Events.Program E) (heap : Heap) (p flags :
       some (.calling "atomic_store" [.pointer (some (flags.index slot)), CAtomicBoolean.value false]
         heap (.caller .discard [.ret none] (locals (some p)) types "void" stack)) := by
   have nonnegative : ¬ (slot : Int) < 0 := by omega
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval, clear,
-    CCalls.Events.enterCall, CCalls.Indirect.operand, CCalls.Events.resolve, CCalls.Indirect.resolve,
-    CCalls.arguments, eval, lvalue, resolve, constants, locals, parameters, CBody.bind,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith,
+    CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, clear,
+    CCalls.Events.enterCallWith, CCalls.Indirect.operand, CCalls.Events.resolveWith,
+    CCalls.Indirect.resolveWith, CCalls.argumentsWith, legacyExpressions,
+    eval, evalWith, lvalueWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt,
+    CDeclaredMembers.fieldAt, resolve, constants, locals, parameters, CBody.bind,
     expressionCast, CBody.cast, zeroLiteral, boolean, convert, Value.truth, Value.address,
     flagsBound, named, metadata, nonnegative, CAtomicBoolean.value]
 

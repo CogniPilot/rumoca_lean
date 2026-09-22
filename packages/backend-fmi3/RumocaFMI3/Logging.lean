@@ -72,8 +72,8 @@ theorem failure_dispatch_reaches (program : CCalls.Events.Program E)
     simpa only [load, write_frame heap p (p.member "logger") .terminated (by simp)] using hl
   have resolved : CCalls.Events.resolve program env (writeMode heap p .terminated) (Runtime.field "logger") =
       some name := by
-    simp [CCalls.Events.resolve, CCalls.Indirect.resolve, Runtime.field, Runtime.v,
-      CBody.eval, hp, Value.address, loggerAfter, CCalls.Indirect.valueTarget, address]
+    simp [CCalls.Events.resolve, CCalls.Events.resolveWith, CCalls.Indirect.resolveWith, CBody.legacyExpressions, Runtime.field, Runtime.v,
+      CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, hp, Value.address, loggerAfter, CCalls.Indirect.valueTarget, address]
   have values := ErrorBodies.failure_log_arguments env heap p environment category message
     literal hp he errorValue messageValue
   have entered : CCalls.Events.internalNext program
@@ -83,9 +83,9 @@ theorem failure_dispatch_reaches (program : CCalls.Events.Program E)
     have blocked : CLoops.next (.running
         (ErrorBodies.logCall :: [Runtime.ret (Runtime.v "fmi3Error")]) env types'
         (writeMode heap p .terminated)) = none := by
-      simp [CLoops.next, CLoops.eval, ErrorBodies.logCall, Runtime.field, Runtime.v, CBody.eval]
-    simp only [CCalls.Events.internalNext, CCalls.Typed.nextWith, blocked]
-    simp [CCalls.Events.enterCall, ErrorBodies.logCall, CCalls.Indirect.operand,
+      simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, ErrorBodies.logCall, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith]
+    simp only [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, blocked]
+    simp [CCalls.Events.enterCallWith, ErrorBodies.logCall, CCalls.Indirect.operand,
       resolved, values, arguments, saved]
 
   exact ⟨types', path.trans (.next entered (.refl _))⟩
@@ -102,8 +102,8 @@ theorem failure_resume_reaches (program : CCalls.Events.Program E)
   refine .next (t := .body (.running [Runtime.ret (Runtime.v "fmi3Error")] env types heap)
     "fmi3Status" stack) (by rfl) ?_
   refine .next (t := .body (.returned ⟨.integer 3, heap⟩) "fmi3Status" stack) ?_ ?_
-  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-      Runtime.ret, Runtime.v, CBody.eval, errorValue]
+  · simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, errorValue]
   · exact .next (by rfl) (.refl _)
 
 /-- Every represented host outcome is retained. An absent outcome is accounted

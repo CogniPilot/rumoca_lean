@@ -54,7 +54,7 @@ theorem tail_run (heap : Heap) (p : Address) (storage : Storage heap p) :
   have distinct (name : String) : p.member name ≠ (p.member "model").member "x" :=
     Ne.symm (HistoryBodies.state_ne_field p name)
   simp [tail, Runtime.put, Runtime.field, Runtime.v, Runtime.n, Runtime.setMode,
-    Runtime.mode, Runtime.ok, Runtime.ret, Mode.code, run, next, eval, lvalue,
+    Runtime.mode, Runtime.ok, Runtime.ret, Mode.code, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
     locals, HistoryBodies.parameters, CBody.bind, resolve, constants,
     Value.address, Value.finite, store, convert, boolean, Value.truth, distinct,
     finalHeap, CInitialization.written, LifecycleBodies.writeMode,
@@ -76,7 +76,7 @@ theorem body_run (m : Solve.FMI3Model source) (sig : Signature)
   obtain ⟨old, hx⟩ := storage.state
   have initialized := CInitialization.write_step m.solve Runtime.x (locals p) heap
     (StateProofs.stateAddress p) old (by simp)
-    (by simp [lvalue, eval, Runtime.x, Runtime.field, Runtime.v, locals,
+    (by simp [CBody.lvalue, CBody.lvalueWith, CBody.evalWith, Runtime.x, Runtime.field, Runtime.v, locals,
       CBody.bind, resolve, constants, Value.address, StateProofs.stateAddress]) hx tail
   have body : Runtime.body m sig = Runtime.require .reset ++
       (CInitialization.emit m.solve Runtime.x).statement :: tail := by

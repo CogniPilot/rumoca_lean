@@ -88,7 +88,8 @@ theorem step (env : Locals) (types : CLoops.Types) (heap : Heap) (p : Address)
     (writable : Reset.Writable heap (p.member "slot") .size) (bounded : slot < 2^64) :
     CLoops.next (.running (statement :: rest) env types heap) =
       some (.running rest env types (written heap p slot)) := by
-  simp [CLoops.next, CLoops.eval, statement, eval, lvalue, instanceBound, selected,
+  simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, legacyExpressions,
+    statement, eval, evalWith, lvalue, lvalueWith, instanceBound, selected,
     Value.address, store_index heap p slot writable bounded]
 
 theorem return_reaches (program : CCalls.Events.Program E) (model : Solve.Model source)

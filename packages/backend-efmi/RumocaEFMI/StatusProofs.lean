@@ -55,7 +55,8 @@ theorem mapped_status_of_result (module : Production.Module) (modelName : String
     decode_function _ _, rfl, rfl, status_unique _ _ _ _ _, rfl, rfl, ?_, rfl, ?_, rfl, rfl, ?_, success⟩
   · simp [select, production, node, codeFile, scalarType, modelType]
   · simp [select, modelType, node, statusComponent]
-  · simpa [mappedExpression, functionDescription, statusReference, CBody.eval, CBody.resolve,
+  · simpa [mappedExpression, functionDescription, statusReference, CBody.eval, CBody.evalWith,
+      CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.resolve,
       CBody.bind, Production.parameters, Value.address] using status
 
 theorem mapped_status (model : Solve.Algorithm.Model source) (module : Production.Module)

@@ -36,17 +36,17 @@ theorem reaches (program : Events.Program E) (types : Types)
   refine .next (Events.tree_entry program "model_rhs" [.pointer p] heap stack
     Runtime.helpers[1] (ModelRhs.locals p) ModelRhs.types helper bound typed) ?_
   refine .next (t := .calling "rumoca_rhs" [] heap (ModelRhs.continuation p stack)) ?_ ?_
-  · simp [Events.internalNext, Typed.nextWith, CLoops.next, CLoops.eval,
-      Runtime.helpers, Runtime.ret, Runtime.call, Runtime.v, CBody.eval,
-      Events.enterCall, Events.resolve, Indirect.operand, Indirect.resolve,
-      arguments, ModelRhs.locals, CBody.bind, CBody.resolve, CBody.constants,
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      Runtime.helpers, Runtime.ret, Runtime.call, Runtime.v, CBody.eval, CBody.evalWith,
+      Events.enterCallWith, Events.resolveWith, Indirect.operand, Indirect.resolveWith,
+      argumentsWith, ModelRhs.locals, CBody.bind, CBody.resolve, CBody.constants,
       types.rhs, ModelRhs.continuation]
   refine .next (t := .kernel (.entry .rhs Binary64.positiveZero ⟨0, by decide +kernel⟩)
     heap (ModelRhs.continuation p stack)) ?_ ?_
-  · simp [Events.internalNext, Typed.nextWith, numerical, kernelEntry]
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, numerical, kernelEntry]
   refine (Events.kernel_correct program model same .rhs Binary64.positiveZero
     ⟨0, by decide +kernel⟩ heap (ModelRhs.continuation p stack)).trans (.next ?_ (.refl _))
-  simp [Events.internalNext, Typed.nextWith, Typed.resume, ModelRhs.continuation,
+  simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Typed.resumeWith, ModelRhs.continuation,
     returnCast, CBody.cast, types.result, convert, CStatements.result, Value.finite]
 
 theorem behaviors (program : Events.Program E) (types : Types)

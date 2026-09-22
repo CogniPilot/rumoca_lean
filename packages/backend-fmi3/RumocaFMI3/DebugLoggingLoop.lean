@@ -56,7 +56,7 @@ theorem validation_prefix_equivalence (program : CCalls.Events.Program E)
     (fun _ => env) types (fun _ => heap) n 0 stop resultType stack (by omega) limit
     counterType bounded iteration_closed
   · intro i inside
-    simp [CBody.eval, counterEnv, resolve, CBody.bind, count]
+    simp [CBody.eval, CBody.evalWith, counterEnv, resolve, CBody.bind, count]
   · intro i lower inside observed
     obtain ⟨present, equal⟩ := valid i inside
     obtain ⟨base, _, _, stored⟩ := entries i (by omega)
@@ -103,7 +103,7 @@ theorem validation_valid_equivalence (program : CCalls.Events.Program E)
     unshadowed named pointerType integer bound literal expectedStored entries valid behavior).trans
   have stopped := CLoops.loop_stop (counterEnv env "k" n) types heap "k" (.id "nCategories")
     iteration rest n (by simp [counterEnv, CBody.bind])
-    (by simp [CBody.eval, counterEnv, CBody.bind, resolve, count]) iteration_closed
+    (by simp [CBody.eval, CBody.evalWith, counterEnv, CBody.bind, resolve, count]) iteration_closed
   exact CCalls.Events.internal_prefix_behaviors program
     (.next (CCalls.Events.body_step program stopped resultType stack) (.refl _)) behavior
 

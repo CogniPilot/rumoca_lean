@@ -67,9 +67,9 @@ theorem enter_append (program : Events.Program E) (state : CLoops.State)
   | returned result => rfl
   | running code env types heap =>
     cases code with
-    | nil => by_cases void : resultType = "void" <;> simp [Events.enterCall, void, Typed.State.append]
+    | nil => by_cases void : resultType = "void" <;> simp [Events.enterCall, Events.enterCallWith, void, Typed.State.append]
     | cons stmt rest =>
-      simp only [Events.enterCall, bind, pure, Option.map_bind, Function.comp_def,
+      simp only [Events.enterCall, Events.enterCallWith, bind, pure, Option.map_bind, Function.comp_def,
         Option.map_some, Typed.State.append, Typed.Continuation.append]
 
 /-- Context extension is an exact one-step equation before the inner root
@@ -88,21 +88,21 @@ theorem internal_append (program : Events.Program E) (state : Typed.State) (oute
   | body state resultType stack =>
     cases state with
     | returned result =>
-      simp [Events.internalNext, Typed.State.append, Typed.nextWith, Option.map_bind]
+      simp [Events.internalNext, Events.internalNextWith, Typed.State.append, Typed.nextWithExpressions, Option.map_bind]
     | running code env types heap =>
       cases next : CLoops.next (.running code env types heap) <;>
-        simp [Events.internalNext, Typed.State.append, Typed.nextWith, next, enter_append]
+        simp [Events.internalNext, Events.internalNextWith, Typed.State.append, Typed.nextWithExpressions, next, enter_append]
   | calling name args heap stack =>
     cases defined : program.internal.definitions name with
-    | none => simp [Events.internalNext, Typed.State.append, Typed.nextWith, defined]
+    | none => simp [Events.internalNext, Events.internalNextWith, Typed.State.append, Typed.nextWithExpressions, defined]
     | some fn =>
       cases fn with
       | tree fn =>
-        simp [Events.internalNext, Typed.State.append, Typed.nextWith, defined, Option.map_bind]
+        simp [Events.internalNext, Events.internalNextWith, Typed.State.append, Typed.nextWithExpressions, defined, Option.map_bind]
       | kernel fn =>
-        simp [Events.internalNext, Typed.State.append, Typed.nextWith, defined, Option.map_bind]
+        simp [Events.internalNext, Events.internalNextWith, Typed.State.append, Typed.nextWithExpressions, defined, Option.map_bind]
   | kernel state heap stack =>
-    cases state <;> simp [Events.internalNext, Typed.State.append, Typed.nextWith, Option.map_bind]
+    cases state <;> simp [Events.internalNext, Events.internalNextWith, Typed.State.append, Typed.nextWithExpressions, Option.map_bind]
 
 private theorem internal_unappend (program : Events.Program E) (state : Typed.State)
     (outer : Typed.Continuation) (active : Active state)
@@ -142,6 +142,7 @@ theorem step_append (program : Events.Program E) (state : Typed.State) (outer : 
   cases step with
   | internal moved =>
     apply Events.Step.internal
+    change Events.internalNext program state = some after at moved
     rw [internal_append program state outer active, moved]
     rfl
   | external found converted executed => exact .external found converted executed

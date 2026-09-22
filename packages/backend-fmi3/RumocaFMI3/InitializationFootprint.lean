@@ -11,7 +11,7 @@ theorem field_assignment_footprint (instanceBound : resolve env "m" = some (.poi
   refine ⟨rfl, free, ?_⟩
   intro heap address selected
   have same : some (p.member name) = some address := by
-    simpa [put, field, lvalue, eval, instanceBound, Value.address] using selected
+    simpa [put, field, lvalue, lvalueWith, eval, evalWith, instanceBound, Value.address] using selected
   cases Option.some.inj same
   exact p.member_in_record name
 
@@ -26,7 +26,7 @@ theorem initialization_footprint (model : Solve.Model source) (kind : Kind)
   · refine ⟨rfl, rfl, ?_⟩
     intro heap address selected
     have same : some ((p.member "model").member "x") = some address := by
-      simpa [CInitialization.Emission.statement, state, field, lvalue, eval,
+      simpa [CInitialization.Emission.statement, state, field, lvalue, lvalueWith, eval, evalWith,
         instanceBound, Value.address] using selected
     cases Option.some.inj same
     exact (p.member_in_record "model").member "x"

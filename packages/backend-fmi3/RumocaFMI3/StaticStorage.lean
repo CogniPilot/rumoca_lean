@@ -7,7 +7,8 @@ import RumocaC.ObjectDeclarationSemantics
 typed fields/clear flags required by static creation. Type spellings are
 interpreted in the selected C/FMI profile. This is program-startup semantics;
 it emits no initialization loop and performs no runtime allocation. Native
-layout/header correspondence and the production emitter cutover remain open. -/
+layout/header correspondence remains open. Runtime consumes these structured
+declarations; this module alone is not an actual-artifact certificate. -/
 noncomputable section
 namespace Rumoca.FMI3.StaticStorage
 open CObject CMemory

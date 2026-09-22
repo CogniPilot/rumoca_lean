@@ -65,10 +65,12 @@ theorem get_reaches {E : Type} (header : CFenv.Header) (objects : Objects)
   have called : Events.internalNext program
       (.body (.running DerivativeCalls.action env types heap) "fmi3Status" stack) =
       some (.calling "model_rhs" [.pointer (some (p.member "model"))] heap saved) := by
-    simp [Events.internalNext, Typed.nextWith, CLoops.next, CLoops.eval,
+    simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions,
+      CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
       DerivativeCalls.action, DerivativeCalls.target, Runtime.call, Runtime.field, Runtime.v, Runtime.n,
-      CBody.eval, CBody.lvalue, Events.enterCall, Events.resolve, Indirect.operand, Indirect.resolve,
-      arguments, env, DerivativeCalls.locals, DerivativeCalls.parameters, CBody.bind, resolve, constants,
+      CBody.eval, CBody.lvalue, CBody.evalWith, CBody.lvalueWith,
+      Events.enterCallWith, Events.resolveWith, Indirect.operand, Indirect.resolveWith,
+      argumentsWith, env, DerivativeCalls.locals, DerivativeCalls.parameters, CBody.bind, resolve, constants,
       Value.address, saved, DerivativeCalls.continuation, rhsBinding]
   refine entered.trans (.next called ?_)
   have helperTypes : ModelRhsRuntime.Types := ⟨rfl, rfl, rfl⟩
@@ -76,13 +78,15 @@ theorem get_reaches {E : Type} (header : CFenv.Header) (objects : Objects)
     heap (some (p.member "model")) saved).trans ?_
   let after := StateProofs.written heap buffer (Binary64.toBits model.solve.realRhs).val
   refine .next (t := .body (.running [Runtime.ok] env types after) "fmi3Status" stack) ?_ ?_
-  · simp [Events.internalNext, Typed.nextWith, Typed.resume, saved, DerivativeCalls.continuation,
-      DerivativeCalls.target, Runtime.v, Runtime.n, CBody.lvalue, CBody.eval, env, DerivativeCalls.locals,
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions,
+      Typed.resumeWith, CBody.legacyExpressions, CBody.lvalue, saved, DerivativeCalls.continuation,
+      DerivativeCalls.target, Runtime.v, Runtime.n, CBody.lvalueWith, CBody.evalWith, env, DerivativeCalls.locals,
       DerivativeCalls.parameters, CBody.bind, resolve, constants, Value.address, Value.finite,
       store_float64 heap buffer old _ storage, after, StateProofs.written]
   refine .next (t := .body (.returned ⟨.integer 0, after⟩) "fmi3Status" stack) ?_ (.next ?_ (.refl _))
-  · simp [Events.internalNext, Typed.nextWith, CLoops.next, CLoops.eval, Runtime.ok, Runtime.ret,
-      Runtime.v, CBody.eval, env, DerivativeCalls.locals, DerivativeCalls.parameters, CBody.bind, resolve, constants, okBinding]
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions,
+      CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, Runtime.ok, Runtime.ret,
+      Runtime.v, CBody.evalWith, env, DerivativeCalls.locals, DerivativeCalls.parameters, CBody.bind, resolve, constants, okBinding]
   · rfl
 
 theorem quiet_correct {E : Type} (header : CFenv.Header) (objects : Objects)

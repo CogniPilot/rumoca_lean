@@ -28,14 +28,14 @@ theorem instance_run (env : Locals) (heap : Heap) (p : Address) (rest : List Stm
     run 2 (.running (Runtime.instancePrefix ++ rest) env heap) =
       some (.running rest (CBody.bind env "m" (.pointer (some p))) heap) := by
   simp [Runtime.instancePrefix, Runtime.branch, Runtime.v,
-    run, next, eval, CBody.bind, resolve, constants, CBody.cast, convert,
+    run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.bind, resolve, constants, CBody.cast, convert,
     boolean, Value.truth, hi, hn]
 
 theorem branch_run (env : Locals) (heap : Heap) (condition : Expr) (choice : Bool)
     (yes no rest : List Stmt) (h : eval env heap condition = some (boolean choice)) :
     run 1 (.running (Runtime.branch condition yes no :: rest) env heap) =
       some (.running ((if choice then yes else no) ++ rest) env heap) := by
-  cases choice <;> simp [Runtime.branch, run, next, h, boolean, Value.truth]
+  cases choice <;> simp [Runtime.branch, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, h, boolean, Value.truth]
 
 theorem empty_eval (env : Locals) (heap : Heap) (refs values : Nat)
     (hr : env "nValueReferences" = some (.integer refs))
@@ -46,10 +46,10 @@ theorem empty_eval (env : Locals) (heap : Heap) (refs values : Nat)
     simp
   have hl : eval env heap (Runtime.eqv (Runtime.v "nValueReferences") (Runtime.n 0)) =
       some (boolean (refs == 0)) := by
-    simp [Runtime.eqv, Runtime.v, Runtime.n, eval, resolve, hr, comparison, hcast]
+    simp [Runtime.eqv, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, resolve, hr, comparison, hcast]
   have hh : eval env heap (Runtime.eqv (Runtime.v "nValues") (Runtime.n 0)) =
       some (boolean (values == 0)) := by
-    simp [Runtime.eqv, Runtime.v, Runtime.n, eval, resolve, hv, comparison, hcast]
+    simp [Runtime.eqv, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, resolve, hv, comparison, hcast]
   exact BoolProofs.eval_and hl hh
 
 theorem nested_nonempty_run (env : Locals) (heap : Heap) (p : Address) (refs values : Nat)
@@ -90,7 +90,7 @@ theorem return_ok (env : Locals) (heap : Heap) (p : Option Address) (rest : List
     (hok : env "fmi3OK" = none) :
     run 1 (.running (Runtime.ok :: rest) (CBody.bind env "m" (.pointer p)) heap) =
       some (.returned ⟨.integer 0, heap⟩) := by
-  simp [run, next, Runtime.ok, Runtime.ret, Runtime.v, eval, CBody.bind, resolve, hok, constants]
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.ok, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, CBody.bind, resolve, hok, constants]
 
 theorem nested_empty_run (env : Locals) (heap : Heap) (p : Address) (kind : Kind) (mode : Mode)
     (tail : List Stmt) (hi : env "instance" = some (.pointer (some p))) (hn : env "m" = none)
@@ -140,7 +140,7 @@ theorem hoisted_empty_run (env : Locals) (heap : Heap) (p : Address) (kind : Kin
   have ha : allowed .setVariables kind mode = true := (allowed_correct .setVariables kind mode).mpr permitted
   rw [ha] at hg
   rw [show 5 = 3 + 2 from rfl, run_add, h3]
-  simpa [run, next, Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.negate, eval,
+  simpa [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.negate, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
     hg, boolean, Value.truth] using return_ok env heap (some p) (Runtime.modeGuard .setStart :: tail) hok
 
 theorem instance_null_run (env : Locals) (heap : Heap) (rest : List Stmt)
@@ -149,7 +149,7 @@ theorem instance_null_run (env : Locals) (heap : Heap) (rest : List Stmt)
     run 3 (.running (Runtime.instancePrefix ++ rest) env heap) =
       some (.returned ⟨.integer 3, heap⟩) := by
   simp [Runtime.instancePrefix, Runtime.branch, Runtime.v, Runtime.ret,
-    run, next, eval, CBody.bind, resolve, constants, CBody.cast, convert,
+    run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.bind, resolve, constants, CBody.cast, convert,
     boolean, Value.truth, hi, hn, he]
 
 theorem nested_null_run (env : Locals) (heap : Heap) (refs values : Nat) (tail : List Stmt)
@@ -208,8 +208,8 @@ theorem hoisted_empty_prefix (env : Locals) (heap : Heap)
     p .setVariables kind mode (by simp [CBody.bind, resolve]) hk hm
   rw [show 4 = 3 + 1 from rfl, run_add, h3]
   cases permitted : allowed .setVariables kind mode <;>
-    simp [run, next, Runtime.modeGuard, Runtime.reject, Runtime.branch,
-      Runtime.negate, eval, hg, permitted, boolean, Value.truth]
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.modeGuard, Runtime.reject, Runtime.branch,
+      Runtime.negate, CBody.eval, CBody.evalWith, hg, permitted, boolean, Value.truth]
 
 theorem nested_empty_reject (env : Locals) (heap : Heap) (p : Address) (kind : Kind) (mode : Mode)
     (tail : List Stmt) (hi : env "instance" = some (.pointer (some p))) (hn : env "m" = none)
@@ -326,7 +326,7 @@ theorem entry_run (env : Locals) (heap : Heap) (p : Address) (kind : Kind) (mode
     (by simp [CBody.bind, resolve]) hk hm
   rw [show 4 = 3 + 1 from rfl, run_add, emitted, hp]
   cases ha : allowed .setStart kind mode <;>
-    simp [run, next, Runtime.reject, Runtime.branch, Runtime.negate, eval, hg, ha, boolean, Value.truth]
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.reject, Runtime.branch, Runtime.negate, CBody.eval, CBody.evalWith, hg, ha, boolean, Value.truth]
 
 noncomputable section
 

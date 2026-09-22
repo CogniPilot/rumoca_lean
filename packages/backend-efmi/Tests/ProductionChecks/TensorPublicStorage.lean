@@ -1,0 +1,39 @@
+import RumocaEFMI.TensorPublicStorage
+import ProofAudit.Audit
+
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.after_clear
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.array_arguments_after_clear
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.array_reads_frame
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.clear_member
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.clear_spec
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.clear_store
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.clock_frame
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.declared_header
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.input_frame
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.represents
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.status_assignment
+#audit axioms Rumoca.EFMI.TensorPublicStorage.AllocatedStorage.with_input
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.after_clear
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.after_clear_via_allocated
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.array_arguments_after_clear
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.clear_member
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.clear_spec
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.clear_store
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.clock_after_clear
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.declared_header
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.input_allocated
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.input_reads
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.input_writable_after_clear
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.jacobian_allocated
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.output_reads_after_clear
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.represents
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.represents_via_allocated
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.square_allocated
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.status_assignment
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.toAllocated
+#audit axioms Rumoca.EFMI.TensorPublicStorage.clear_of_status
+#audit axioms Rumoca.EFMI.TensorPublicStorage.cleared_other
+#audit axioms Rumoca.EFMI.TensorPublicStorage.cleared_status
+#audit axioms Rumoca.EFMI.TensorPublicStorage.cleared_status_reads
+#audit axioms Rumoca.EFMI.TensorPublicStorage.method_prefix
+#audit axioms Rumoca.EFMI.TensorPublicStorage.storage_iff_allocated

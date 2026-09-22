@@ -12,3 +12,9 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CLiteral.Pool.globalBindings
 #audit axioms Rumoca.CLiteral.Pool.reserved_agreement
 #audit axioms Rumoca.CLiteral.Pool.storage_after_steps
+
+#audit axioms Rumoca.CLiteral.Pool.HeaderFresh
+#audit axioms Rumoca.CLiteral.Pool.install
+#audit axioms Rumoca.CLiteral.Pool.install_frame
+#audit axioms Rumoca.CLiteral.Pool.interface
+#audit axioms Rumoca.CLiteral.Pool.namedInterface

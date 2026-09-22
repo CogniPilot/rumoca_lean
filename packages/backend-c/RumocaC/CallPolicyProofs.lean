@@ -121,25 +121,25 @@ private theorem valueTarget_not_named (value : Value) (name : String) :
 
 /-- Named resolution can only originate at the corresponding identifier.
 Function-pointer calls remain an explicit separately checked boundary. -/
-theorem named_origin [CInterface] (env : CBody.Locals) (heap : Heap) (callee : Expr)
-    (found : Indirect.resolve env heap callee = some (.named name)) : callee = .id name := by
+theorem named_origin_with (expressions : CBody.Expressions) (env : CBody.Locals) (heap : Heap) (callee : Expr)
+    (found : Indirect.resolveWith expressions env heap callee = some (.named name)) : callee = .id name := by
   cases callee with
   | id actual =>
-      cases resolved : CBody.resolve env actual with
-      | none => simpa [Indirect.resolve, resolved] using found
-      | some value => exact False.elim (valueTarget_not_named value name (by simpa [Indirect.resolve, resolved] using found))
+      cases resolved : expressions.value env heap (.id actual) with
+      | none => simpa [Indirect.resolveWith, resolved] using found
+      | some value => exact False.elim (valueTarget_not_named value name (by simpa [Indirect.resolveWith, resolved] using found))
   | field object field pointer | index object field =>
-      simp only [Indirect.resolve, Option.bind_eq_bind, Option.bind_eq_some_iff] at found
+      simp only [Indirect.resolveWith, Option.bind_eq_bind, Option.bind_eq_some_iff] at found
       obtain ⟨value, _, called⟩ := found
       exact False.elim (valueTarget_not_named value name called)
-  | _ => simp [Indirect.resolve] at found
+  | _ => simp [Indirect.resolveWith] at found
 
-theorem checked_named_target [CInterface] (checked : checkFunction check fn = true)
+theorem checked_named_target_with (expressions : CBody.Expressions) (checked : checkFunction check fn = true)
     (member : stmt ∈ fn.body) (extracted : Indirect.operand stmt = some operand)
-    (resolved : Indirect.resolve env heap operand.callee = some (.named name)) :
+    (resolved : Indirect.resolveWith expressions env heap operand.callee = some (.named name)) :
     check (.id name) = true := by
   have permitted := checked_operand checked member extracted
-  rwa [named_origin env heap operand.callee resolved] at permitted
+  rwa [named_origin_with expressions env heap operand.callee resolved] at permitted
 
 /-- Every pending statement retains its call policy as branches and loops
 are stepped. Pure expression evaluation cannot introduce statement syntax. -/
@@ -147,18 +147,18 @@ def LoopReady (permitted : Expr → Prop) : CLoops.State → Prop
   | .running code _ _ _ => ∀ stmt ∈ code, StatementAdmits permitted stmt
   | .returned _ => True
 
-theorem loop_ready_next [CInterface] (ready : LoopReady permitted s)
-    (step : CLoops.next s = some t) : LoopReady permitted t := by
-  unfold CLoops.next at step
+theorem loop_ready_next_with (expressions : CBody.Expressions) [CInterface] (ready : LoopReady permitted s)
+    (step : CLoops.nextWith expressions s = some t) : LoopReady permitted t := by
+  unfold CLoops.nextWith at step
   split at step
   all_goals aesop (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff,
     LoopReady, StatementAdmits])
 
-theorem loop_ready_reaches [CInterface] (ready : LoopReady permitted s)
-    (path : Transition.Reaches CLoops.machine.step s t) : LoopReady permitted t := by
+theorem loop_ready_reaches_with (expressions : CBody.Expressions) [CInterface] (ready : LoopReady permitted s)
+    (path : Transition.Reaches (CLoops.machineWith expressions).step s t) : LoopReady permitted t := by
   induction path with
   | refl => exact ready
-  | next first rest ih => exact ih (loop_ready_next ready first)
+  | next first rest ih => exact ih (loop_ready_next_with expressions ready first)
 
 theorem rank_callee_correct (rank : String → Option Nat) (caller : Nat) (expr : Expr) :
     rankCallee rank caller expr = true ↔
@@ -195,13 +195,13 @@ def definitionCalls : Definition → List Expr
 
 /-- Numerical execution cannot issue a call back into the shared scheduler.
 This justifies numerical definitions being leaves in the direct-call graph. -/
-theorem kernel_no_call [CInterface]
+theorem kernel_no_call_with (expressions : CBody.Expressions) [CInterface]
     (enter : CLoops.State → String → Typed.Continuation → Option Typed.State)
     (program : Program) (state : CStatements.State) (heap : Heap) (stack : Typed.Continuation)
     (name : String) (args : List Value) (after : Heap) (later : Typed.Continuation) :
-    Typed.nextWith enter program (.kernel state heap stack) ≠
+    Typed.nextWithExpressions expressions enter program (.kernel state heap stack) ≠
       some (.calling name args after later) := by
-  cases state <;> simp [Typed.nextWith, Option.bind_eq_bind, Option.bind_eq_some_iff]
+  cases state <;> simp [Typed.nextWithExpressions, Option.bind_eq_bind, Option.bind_eq_some_iff]
 
 def ProgramRanked (rank : String → Option Nat) (program : Program) : Prop :=
   ∀ name definition, program.definitions name = some definition →
@@ -253,6 +253,46 @@ theorem function_inventory_ready (fn : Function) (env : CBody.Locals)
 /-- A named call resolved by the actual shared C resolver lies in the same
 prepared program's graph. Indirect calls are deliberately not converted to
 named calls merely because their source designator is an identifier. -/
+theorem resolved_named_edge_with (expressions : CBody.Expressions) [CInterface] (program : Program) (fn : Function)
+    (defined : program.definitions caller = some (.tree fn))
+    (ready : LoopReady (fun e => e ∈ fn.body.flatMap statementCalls)
+      (.running (stmt :: rest) env types heap))
+    (extracted : Indirect.operand stmt = some operand)
+    (resolved : Indirect.resolveWith expressions env heap operand.callee = some (.named callee))
+    (target : program.definitions callee = some definition) :
+    ProgramEdge program caller callee := by
+  have policy := ready stmt (List.mem_cons_self)
+  have occurs := (statement_calls_complete _ _).mpr policy operand.callee
+    (operand_callee stmt operand extracted)
+  rw [named_origin_with expressions env heap operand.callee resolved] at occurs
+  exact ⟨.tree fn, defined, occurs, definition, target⟩
+
+theorem named_origin [CInterface] (env : CBody.Locals) (heap : Heap) (callee : Expr)
+    (found : Indirect.resolve env heap callee = some (.named name)) : callee = .id name :=
+  named_origin_with CBody.legacyExpressions env heap callee found
+
+theorem checked_named_target [CInterface] (checked : checkFunction check fn = true)
+    (member : stmt ∈ fn.body) (extracted : Indirect.operand stmt = some operand)
+    (resolved : Indirect.resolve env heap operand.callee = some (.named name)) :
+    check (.id name) = true :=
+  checked_named_target_with CBody.legacyExpressions checked member extracted resolved
+
+theorem loop_ready_next [CInterface] (ready : LoopReady permitted s)
+    (step : CLoops.next s = some t) : LoopReady permitted t :=
+  loop_ready_next_with CBody.legacyExpressions ready step
+
+theorem loop_ready_reaches [CInterface] (ready : LoopReady permitted s)
+    (path : Transition.Reaches CLoops.machine.step s t) : LoopReady permitted t :=
+  loop_ready_reaches_with CBody.legacyExpressions ready path
+
+theorem kernel_no_call [CInterface]
+    (enter : CLoops.State → String → Typed.Continuation → Option Typed.State)
+    (program : Program) (state : CStatements.State) (heap : Heap) (stack : Typed.Continuation)
+    (name : String) (args : List Value) (after : Heap) (later : Typed.Continuation) :
+    Typed.nextWith enter program (.kernel state heap stack) ≠
+      some (.calling name args after later) :=
+  kernel_no_call_with CBody.legacyExpressions enter program state heap stack name args after later
+
 theorem resolved_named_edge [CInterface] (program : Program) (fn : Function)
     (defined : program.definitions caller = some (.tree fn))
     (ready : LoopReady (fun e => e ∈ fn.body.flatMap statementCalls)
@@ -260,11 +300,7 @@ theorem resolved_named_edge [CInterface] (program : Program) (fn : Function)
     (extracted : Indirect.operand stmt = some operand)
     (resolved : Indirect.resolve env heap operand.callee = some (.named callee))
     (target : program.definitions callee = some definition) :
-    ProgramEdge program caller callee := by
-  have policy := ready stmt (List.mem_cons_self)
-  have occurs := (statement_calls_complete _ _).mpr policy operand.callee
-    (operand_callee stmt operand extracted)
-  rw [named_origin env heap operand.callee resolved] at occurs
-  exact ⟨.tree fn, defined, occurs, definition, target⟩
+    ProgramEdge program caller callee :=
+  resolved_named_edge_with CBody.legacyExpressions program fn defined ready extracted resolved target
 
 end Rumoca.CCallPolicy

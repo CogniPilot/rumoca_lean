@@ -34,15 +34,15 @@ private theorem add_pointer_right (p : Option Address) (value : Value) :
 private theorem literal_add_left (env : CBody.Locals) (heap : Heap) (text : String) (other : Expr) :
     ((CBody.eval env heap (.str text)).bind fun a =>
       (CBody.eval env heap other).bind (CArithmetic.floatAdd a)) = none := by
-  simp only [CBody.eval]
-  cases interface.literals text <;> cases CBody.eval env heap other <;>
+  simp only [CBody.eval, CBody.evalWith]
+  cases interface.literals text <;> cases CBody.evalWith (fun _ => none) (fun _ => none) env heap other <;>
     simp only [Option.map_none, Option.map_some, Option.bind_none, Option.bind_some, add_pointer_left]
 
 private theorem literal_add_right (env : CBody.Locals) (heap : Heap) (other : Expr) (text : String) :
     ((CBody.eval env heap other).bind fun a =>
       (CBody.eval env heap (.str text)).bind (CArithmetic.floatAdd a)) = none := by
-  simp only [CBody.eval]
-  cases interface.literals text <;> cases CBody.eval env heap other <;>
+  simp only [CBody.eval, CBody.evalWith]
+  cases interface.literals text <;> cases CBody.evalWith (fun _ => none) (fun _ => none) env heap other <;>
     simp only [Option.map_none, Option.map_some, Option.bind_none, Option.bind_some, add_pointer_right]
 
 private theorem named_add_left (types : CLoops.Types) (heap : Heap) (name text : String)
@@ -52,25 +52,25 @@ private theorem named_add_left (types : CLoops.Types) (heap : Heap) (name text :
   cases other with
   | nat n =>
       by_cases unit : n = 1
-      · subst n; simp [CLoops.eval, fresh]
-      · simp [CLoops.eval, unit, value, literal_add_left]
-  | _ => simp [CLoops.eval, fresh, value, literal_add_left]
+      · subst n; simp [CLoops.eval, CLoops.evalWith, fresh]
+      · simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, unit, value, literal_add_left]
+  | _ => simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, fresh, value, literal_add_left]
 
 private theorem named_add_right (types : CLoops.Types) (heap : Heap) (name text : String)
     (fresh : env name = none)
     (value : CBody.eval env heap (.id name) = CBody.eval env heap (.str text)) (other : Expr) :
     CLoops.eval env types heap (.bin .add other (.id name)) = none := by
-  cases other <;> simp [CLoops.eval, fresh, value, literal_add_right]
+  cases other <;> simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, fresh, value, literal_add_right]
 
 private theorem string_add_left (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
     (text : String) (other : Expr) :
     CLoops.eval env types heap (.bin .add (.str text) other) = none := by
-  simpa only [CLoops.eval] using literal_add_left env heap text other
+  simpa only [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using literal_add_left env heap text other
 
 private theorem string_add_right (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)
     (other : Expr) (text : String) :
     CLoops.eval env types heap (.bin .add other (.str text)) = none := by
-  simpa only [CLoops.eval] using literal_add_right env heap other text
+  simpa only [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using literal_add_right env heap other text
 
 private theorem add_correct (bound : Bound symbols env) (fresh : FreshLocals symbols env)
     (safe : NoIntrinsic symbols) (types : CLoops.Types) (heap : Heap) (a b : Expr) :
@@ -95,7 +95,7 @@ private theorem add_correct (bound : Bound symbols env) (fresh : FreshLocals sym
           | some name =>
               simp only [found] at hb ⊢
               rw [named_add_right types heap name text (fresh text name found) hb, string_add_right]
-      | _ => simp only [expression] at ha hb ⊢ <;> simp [CLoops.eval, ha, hb]
+      | _ => simp only [expression] at ha hb ⊢ <;> simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, ha, hb]
 
 /-- Numeric local rules and finite arithmetic retain the same outcomes after
 string references are lowered. Generated data names are fresh in local scope. -/
@@ -107,17 +107,17 @@ theorem loop_expression_correct (bound : Bound symbols env) (fresh : FreshLocals
   cases e with
   | bin op a b =>
       cases op
-      case add => simpa only [expression] using add_correct bound fresh safe types heap a b
-      case mul => simp only [expression, CLoops.eval, ev]
-      case sub => simp only [expression, CLoops.eval, ev]
-      case div => simp only [expression, CLoops.eval, ev]
-      all_goals simpa only [expression, CLoops.eval] using he
+      case add => simp only [expression, add_correct bound fresh safe]
+      case mul => simp only [expression, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, ev]
+      case sub => simp only [expression, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, ev]
+      case div => simp only [expression, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, ev]
+      all_goals simpa only [expression, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using he
   | str text =>
       cases found : symbols text with
       | none => simp [expression, found]
-      | some name => simp [expression, found, CLoops.eval, CBody.eval, bound text name found]
-  | id _ | nat _ | sizeof _ => simp [expression, CLoops.eval]
-  | _ => simpa only [expression, CLoops.eval] using he
+      | some name => simp [expression, found, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, bound text name found]
+  | id _ | nat _ | decimal _ _ _ | sizeof _ => simp [expression, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions]
+  | _ => simpa only [expression, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using he
 
 /-- Local writes, as well as declarations, must avoid the static data names. -/
 def FreshWrites (symbols : Symbols) : Stmt → Prop
@@ -156,7 +156,7 @@ def loopSafe (symbols : Symbols) : CLoops.State → Prop
 
 theorem loop_safe_next (valid : loopSafe symbols s) (step : CLoops.next s = some t) :
     loopSafe symbols t := by
-  unfold CLoops.next at step
+  unfold CLoops.next CLoops.nextWith at step
   split at step
   all_goals
     aesop (add safe apply [Bound.bind, FreshLocals.bind])
@@ -170,6 +170,8 @@ theorem loop_next (safe : NoIntrinsic symbols) (s : CLoops.State) (valid : loopS
   | running code env types heap =>
       have ev := fun e => loop_expression_correct valid.1 valid.2.1 safe types heap e
       have lv := fun e => (expression_correct valid.1 safe heap e).2
+      change ∀ e, CBody.legacyExpressions.address env heap (expression symbols e) =
+        CBody.legacyExpressions.address env heap e at lv
       cases code with
       | nil => rfl
       | cons stmt rest =>
@@ -179,25 +181,25 @@ theorem loop_next (safe : NoIntrinsic symbols) (s : CLoops.State) (valid : loopS
               cases target with
               | str text =>
                   cases found : symbols text with
-                  | none => simp [loopState, statement, expression, found, CLoops.next, ev, CBody.lvalue]
+                  | none => simp [loopState, statement, expression, found, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, CBody.lvalue, CBody.lvalueWith]
                   | some name =>
-                      simp [loopState, statement, expression, found, CLoops.next, ev,
-                        valid.2.1 text name found, CBody.lvalue]
+                      simp [loopState, statement, expression, found, CLoops.next, CLoops.nextWith,
+                        valid.2.1 text name found, CBody.legacyExpressions, CBody.lvalue, CBody.lvalueWith]
               | _ =>
                   simp only [expression] at targetEq ⊢
-                  simp [loopState, statement, expression, CLoops.next, ev, targetEq, Option.map_bind]
+                  simp [loopState, statement, expression, CLoops.next, CLoops.nextWith, ev, targetEq, Option.map_bind]
           | declare type name value =>
               cases defined : (env name).isSome <;>
-                simp [loopState, statement, CLoops.next, ev, Option.map_bind, defined]
+                simp [loopState, statement, CLoops.next, CLoops.nextWith, ev, Option.map_bind, defined]
           | ret value =>
-              cases value <;> simp [loopState, statement, CLoops.next, ev, Option.map_bind]
-          | eval value => simp [loopState, statement, CLoops.next, ev, Option.map_bind]
+              cases value <;> simp [loopState, statement, CLoops.next, CLoops.nextWith, ev, Option.map_bind]
+          | eval value => simp [loopState, statement, CLoops.next, CLoops.nextWith, ev, Option.map_bind]
           | branch condition yes no =>
-              simp [loopState, statement, CLoops.next, ev, List.all_map,
+              simp [loopState, statement, CLoops.next, CLoops.nextWith, ev, List.all_map,
                 noDeclarations_lowered]
               split <;> simp_all [Option.map_bind, loopState, apply_ite (List.map (statement symbols))]
           | whileLoop condition body =>
-              simp [loopState, statement, CLoops.next, ev, List.all_map,
+              simp [loopState, statement, CLoops.next, CLoops.nextWith, ev, List.all_map,
                 noDeclarations_lowered]
               split <;> simp_all [Option.map_bind, loopState, statement, apply_ite (List.map (statement symbols))]
 

@@ -24,7 +24,7 @@ theorem external_step_iff (selected : before.threads thread = some saved)
       rw [atCall] at executed
       cases executed with
       | internal next =>
-        rw [Events.external_entry_exclusive program bound] at next
+        rw [Events.external_entry_exclusive_with CBody.legacyExpressions program bound] at next
         contradiction
       | external found converted' executed =>
         cases Option.some.inj (found.symm.trans bound)
@@ -73,7 +73,7 @@ theorem external_step_values_iff (selected : before.threads thread = some saved)
       rw [atCall] at executed
       cases executed with
       | internal next =>
-        rw [Events.external_entry_exclusive program bound] at next
+        rw [Events.external_entry_exclusive_with CBody.legacyExpressions program bound] at next
         contradiction
       | external found converted executed =>
         cases Option.some.inj (found.symm.trans bound)

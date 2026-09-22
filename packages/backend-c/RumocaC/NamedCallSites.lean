@@ -18,8 +18,10 @@ theorem named_assign_entry (program : Program E) (env : CBody.Locals) (types : C
     internalNext program (.body (.running (.assign (.id destination) (.call (.id callee) args) :: rest)
       env types heap) resultType stack) =
       some (.calling callee values heap (.caller (.assign (.id destination)) rest env types resultType stack)) := by
-  simp [internalNext, Typed.nextWith, CLoops.next, CLoops.eval, CBody.eval, present, typed,
-    enterCall, Indirect.operand, resolve, Indirect.resolve, CBody.resolve, CBody.constants,
+  simp only [arguments, CBody.legacyExpressions] at evaluated
+  simp [internalNext, internalNextWith, Typed.nextWithExpressions, CLoops.nextWith,
+    CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, present, typed,
+    enterCallWith, Indirect.operand, resolveWith, Indirect.resolveWith, CBody.resolve, CBody.constants,
     unshadowed, named, ordinary, evaluated]
 
 theorem assign_result (program : Program E) (env : CBody.Locals) (types : CLoops.Types)
@@ -29,7 +31,7 @@ theorem assign_result (program : Program E) (env : CBody.Locals) (types : CLoops
     (converted : convert type value = some result) :
     internalNext program (.returning value heap (.caller (.assign (.id destination)) rest env types resultType stack)) =
       some (.body (.running rest (CBody.bind env destination result) types heap) resultType stack) := by
-  simp [internalNext, Typed.nextWith, Typed.resume, present, typed, converted]
+  simp [internalNext, internalNextWith, Typed.nextWithExpressions, Typed.resumeWith, present, typed, converted]
 
 theorem expression_return (program : Program E) (env : CBody.Locals) (types : CLoops.Types)
     (heap : Heap) (expr : Expr) (rest : List Stmt) (resultType : String) (stack : Typed.Continuation)
@@ -39,8 +41,8 @@ theorem expression_return (program : Program E) (env : CBody.Locals) (types : CL
       (.body (.running (.ret (some expr) :: rest) env types heap) resultType stack)
       (.returning result heap stack) := by
   have first : CLoops.next (.running (.ret (some expr) :: rest) env types heap) =
-      some (.returned ⟨value, heap⟩) := by simp [CLoops.next, evaluated]
+      some (.returned ⟨value, heap⟩) := by simp [CLoops.next, CLoops.nextWith, evaluated]
   refine .next (body_step program first resultType stack) ?_
-  exact .next (by simp [internalNext, Typed.nextWith, converted]) (.refl _)
+  exact .next (by simp [internalNext, internalNextWith, Typed.nextWithExpressions, converted]) (.refl _)
 
 end Rumoca.CCalls.Events

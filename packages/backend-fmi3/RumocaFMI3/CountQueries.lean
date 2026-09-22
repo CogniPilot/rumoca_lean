@@ -64,7 +64,7 @@ theorem body_run (m : Solve.FMI3Model source) (events : Bool)
   cases events <;>
     simp [tail, rest, Runtime.pointerCheck, Runtime.reject, Runtime.branch, Runtime.ret, Runtime.ok,
       Runtime.out, Runtime.any, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
-      run, next, eval, lvalue, parameters, CBody.bind, outputName, count, resolve, constants,
+      run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, parameters, CBody.bind, outputName, count, resolve, constants,
       CBody.cast, convert, boolean, Value.truth, Value.address, store, storage, written]
 
 theorem call_reaches (m : Solve.FMI3Model source) (events : Bool) (program : CCalls.Program)
@@ -115,7 +115,7 @@ theorem null_run (m : Solve.FMI3Model source) (events : Bool) (heap : Heap) (buf
   cases events <;>
     simp [Runtime.body, signature, Runtime.require, Runtime.instancePrefix, Runtime.branch,
       Runtime.ret, Runtime.negate, Runtime.v, parameters, outputName,
-      run, next, eval, CBody.bind, resolve, constants, CBody.cast, convert, Value.truth, boolean]
+      run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.bind, resolve, constants, CBody.cast, convert, Value.truth, boolean]
 
 theorem null_reaches (m : Solve.FMI3Model source) (events : Bool) (program : CCalls.Program)
     (heap : Heap) (buffer : Option Address) (stack : CCalls.Typed.Continuation)
@@ -208,7 +208,7 @@ theorem missing_run (m : Solve.FMI3Model source) (events : Bool) (heap : Heap) (
   cases events <;>
     simp [rest, Runtime.pointerCheck, Runtime.reject, Runtime.branch, Runtime.any,
       Runtime.either, Runtime.negate, Runtime.v, Runtime.n, parameters, outputName,
-      run, next, eval, CBody.bind, resolve, constants, Value.truth, boolean]
+      run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.bind, resolve, constants, Value.truth, boolean]
 
 theorem missing_reaches (m : Solve.FMI3Model source) (events : Bool) (program : CCalls.Program)
     (heap : Heap) (p message : Address) (kind : Kind) (mode : Mode) (logger : Option Address)

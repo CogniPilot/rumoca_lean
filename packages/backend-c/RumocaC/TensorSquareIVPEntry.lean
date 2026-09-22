@@ -108,7 +108,7 @@ theorem parameter_bound (parameters : List Syntax.Parameter) (base : Address) (s
   have pointer := Arguments.locals_present parameters (Entry.args base shape) name member
   have count := Arguments.locals_present parameters (Entry.args base shape) "count" countMember
   intro heap
-  simp only [ProgramFixture.buffer, CBody.eval, CBody.resolve, pointer, count, Entry.args,
+  simp only [ProgramFixture.buffer, CBody.eval, CBody.evalWith, CBody.resolve, pointer, count, Entry.args,
     if_neg different, ↓reduceIte, Option.orElse_some, Entry.locations, and_self]
 
 theorem initial_call_correct (definitions : CLoops.Calls.Definitions) (library : Library definitions)

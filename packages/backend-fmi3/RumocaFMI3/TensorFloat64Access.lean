@@ -23,9 +23,9 @@ coordinate is enumerated. A request must name exactly one value reference
 mishandled. Return status is `fmi3OK` on success and the scalar code's status on
 rejection.
 
-This is a package-checked product only: no production artifact is emitted, no
-CLI or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. Every theorem is universal in the tensor shape,
+The tensor adapter consumes these bodies and proofs. This module alone does
+not establish source acceptance or certify an actual artifact; those obligations
+belong to the composed adapter/compiler contracts. Every theorem is universal in the tensor shape,
 the instance index of the static pool, the request lengths and the heap. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorFloat64
@@ -44,19 +44,19 @@ variable [interface : CInterface]
 theorem reject_false (env : Locals) (heap : Heap) (c : Expr) (msg : String) (rest : List Stmt)
     (hc : CBody.eval env heap c = some (boolean false)) :
     CBody.next (.running (Runtime.reject c msg :: rest) env heap) = some (.running rest env heap) := by
-  simp [Runtime.reject, Runtime.branch, CBody.next, hc, boolean, Value.truth]
+  simp [Runtime.reject, Runtime.branch, CBody.next, CBody.nextWith, CBody.legacyExpressions, hc, boolean, Value.truth]
 
 /-- A branch whose condition is false takes the else block. -/
 theorem branch_false (env : Locals) (heap : Heap) (c : Expr) (yes no rest : List Stmt)
     (hc : CBody.eval env heap c = some (boolean false)) :
     CBody.next (.running (.branch c yes no :: rest) env heap) = some (.running (no ++ rest) env heap) := by
-  simp [CBody.next, hc, boolean, Value.truth]
+  simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hc, boolean, Value.truth]
 
 /-- A branch whose condition is true takes the then block. -/
 theorem branch_true (env : Locals) (heap : Heap) (c : Expr) (yes no rest : List Stmt)
     (hc : CBody.eval env heap c = some (boolean true)) :
     CBody.next (.running (.branch c yes no :: rest) env heap) = some (.running (yes ++ rest) env heap) := by
-  simp [CBody.next, hc, boolean, Value.truth]
+  simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, hc, boolean, Value.truth]
 
 /-- One declaration binds its evaluated, cast value into a fresh local. -/
 theorem declare_next (env : Locals) (heap : Heap) (type name : String) (expr : Expr)
@@ -64,7 +64,7 @@ theorem declare_next (env : Locals) (heap : Heap) (type name : String) (expr : E
     (ev : CBody.eval env heap expr = some v0) (cst : CBody.cast type v0 = some value) :
     CBody.next (.running (.declare type name expr :: rest) env heap) =
       some (.running rest (CBody.bind env name value) heap) := by
-  simp [CBody.next, ev, cst, fresh]
+  simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, ev, cst, fresh]
 
 /-- Compose two counted runs. -/
 theorem run_append {a b : Nat} {s t u : CBody.State} (h1 : CBody.run a s = some t)
@@ -81,7 +81,7 @@ theorem vr0_cmp (env : Locals) (heap : Heap) (refs : Address) (r j : Nat)
     (refRead : load heap (refs.index 0) = some (.integer r)) :
     CBody.eval env heap (Runtime.eqv vr0 (Runtime.n j)) = some (boolean (decide ((r : Int) = j))) := by
   have refRead' : load heap refs = some (.integer r) := refRead
-  simp [vr0, Runtime.eqv, Runtime.n, Runtime.v, CBody.eval, rBound, refRead', Value.address,
+  simp [vr0, Runtime.eqv, Runtime.n, Runtime.v, CBody.eval, CBody.evalWith, rBound, refRead', Value.address,
     CBody.comparison, boolean]
 
 /-- `valueReferences[0]` differs from a literal, in the memory machine. -/
@@ -105,7 +105,8 @@ theorem declare_step_e (env : Locals) (types : Types) (heap : Heap) (type name :
     (ev : CLoops.eval env types heap expr = some raw) (cst : convert declared raw = some value) :
     CLoops.next (.running (.declare type name expr :: rest) env types heap) =
       some (.running rest (CBody.bind env name value) (CLoops.bindType types name declared) heap) := by
-  simp [CLoops.next, spelling, ev, cst, fresh, CLoops.bindType]
+  simp only [CLoops.eval, CBody.legacyExpressions] at ev
+  simp [CLoops.next, CLoops.nextWith, CBody.legacyExpressions, spelling, ev, cst, fresh]
 
 /-- A typed-machine branch whose condition is false takes the else block. -/
 theorem cbranch_false (env : Locals) (types : Types) (heap : Heap) (c : Expr) (yes no rest : List Stmt)
@@ -113,7 +114,8 @@ theorem cbranch_false (env : Locals) (types : Types) (heap : Heap) (c : Expr) (y
     (hc : CLoops.eval env types heap c = some (boolean false)) :
     CLoops.next (.running (.branch c yes no :: rest) env types heap) =
       some (.running (no ++ rest) env types heap) := by
-  simp only [CLoops.next]; rw [safe]; simp [hc, boolean, Value.truth]
+  simp only [CLoops.eval, CBody.legacyExpressions] at hc
+  simp only [CLoops.next, CLoops.nextWith, CBody.legacyExpressions]; rw [safe]; simp [hc, boolean, Value.truth]
 
 /-- A typed-machine branch whose condition is true takes the then block. -/
 theorem cbranch_true (env : Locals) (types : Types) (heap : Heap) (c : Expr) (yes no rest : List Stmt)
@@ -121,7 +123,8 @@ theorem cbranch_true (env : Locals) (types : Types) (heap : Heap) (c : Expr) (ye
     (hc : CLoops.eval env types heap c = some (boolean true)) :
     CLoops.next (.running (.branch c yes no :: rest) env types heap) =
       some (.running (yes ++ rest) env types heap) := by
-  simp only [CLoops.next]; rw [safe]; simp [hc, boolean, Value.truth]
+  simp only [CLoops.eval, CBody.legacyExpressions] at hc
+  simp only [CLoops.next, CLoops.nextWith, CBody.legacyExpressions]; rw [safe]; simp [hc, boolean, Value.truth]
 
 end
 
@@ -296,7 +299,7 @@ theorem guard_reaches (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
       (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
         Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) =
       some (boolean false) := by
-    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval,
+    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
       guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, nref]
   have prefix_run : CBody.run 4 (.running (getBody shape outputShape)
       (parameters (some p) (some refs) (some buffer) n m) heap) =
@@ -323,7 +326,7 @@ theorem declares_reaches (program : CCalls.Events.Program E) (shape : Tensor.Sha
         (CBody.bind env0 "src" (.pointer none)) (CLoops.bindType types0 "src" .pointer) heap) :=
     declare_step_e env0 types0 heap "fmi3Float64 *" "src" Expr.nullPointer .pointer (.pointer none)
       (.pointer none) _ fresh_src rfl
-      (by simp [Expr.nullPointer, CLoops.eval, CBody.eval, CBody.expressionCast, CBody.zeroLiteral]) rfl
+      (by simp [Expr.nullPointer, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.zeroLiteral]) rfl
   have s2 : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n 0) ::
         getDispatch shape outputShape :: countReject :: getLoopSuffix)
         (CBody.bind env0 "src" (.pointer none)) (CLoops.bindType types0 "src" .pointer) heap) =
@@ -331,7 +334,7 @@ theorem declares_reaches (program : CCalls.Events.Program E) (shape : Tensor.Sha
         (declaredEnv env0) (declaredTypes types0) heap) :=
     declare_step_e (CBody.bind env0 "src" (.pointer none)) (CLoops.bindType types0 "src" .pointer) heap
       "size_t" "expected" (Runtime.n 0) .size (.integer 0) (.integer 0) _
-      (by simp [CBody.bind, fresh_exp]) rfl (by simp [Runtime.n, CLoops.eval, CBody.eval]) rfl
+      (by simp [CBody.bind, fresh_exp]) rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) rfl
   exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
 
@@ -357,7 +360,7 @@ theorem get_tail_reaches (program : CCalls.Events.Program E) (env0 : Locals) (ty
   set env := stagedEnv env0 regionBase rshape.volume with henv
   have hcount : CLoops.eval env types0 heap (Runtime.nev (Runtime.v "nValues") (Runtime.v "expected")) =
       some (boolean false) := by
-    simp [Runtime.nev, Runtime.v, CLoops.eval, CBody.eval, nvalBound, expBound, matched,
+    simp [Runtime.nev, Runtime.v, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, nvalBound, expBound, matched,
       CBody.comparison, boolean]
   have s1 : CLoops.next (.running (countReject :: getLoopSuffix) env types0 heap) =
       some (.running getLoopSuffix env types0 heap) := by
@@ -396,7 +399,7 @@ theorem eval_memberPointer (env : Locals) (heap : Heap) (member : String) (p reg
   subst regionEq
   unfold memberPointer
   split
-  · simp [Runtime.field, Runtime.v, CBody.eval, CBody.lvalue, mResolves, Value.address]
+  · simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CBody.lvalueWith, mResolves, Value.address]
   · exact Runtime.eval_region env heap member p mResolves
 
 /-- The two dispatch assignments stage the region pointer and count. -/
@@ -428,7 +431,7 @@ theorem stage_reaches (program : CCalls.Events.Program E) (env0 : Locals) (types
     have := CLoops.assign_local (CBody.bind (declaredEnv env0) "src" (.pointer (some regionBase)))
       (declaredTypes types0) heap "expected" (Runtime.n count) rest (.integer 0) (.integer count)
       (.integer count) .size (by simp [declaredEnv, CBody.bind]) (by simp [declaredTypes, CLoops.bindType])
-      (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat count bounded)
+      (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat count bounded)
     simpa [Runtime.v, stagedEnv] using this
   exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
@@ -469,11 +472,11 @@ theorem get_reaches_of (shape : Tensor.Shape) (outputShape : Option Tensor.Shape
     heap stack (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])).trans ?_)
   refine (nav types0).trans ?_
   refine (stage_reaches program (guardEnv p refs buffer n m) types0 heap p (p.member member) member
-    rshape.volume (countReject :: getLoopSuffix) stack bounded (by simp [guardEnv, parameters, CBody.bind])
+    rshape.volume (countReject :: getLoopSuffix) stack bounded (by simp [guardEnv, CBody.bind])
     rfl).trans ?_
   exact get_tail_reaches program (guardEnv p refs buffer n m) (declaredTypes types0) heap (p.member member)
     buffer rshape regionValues m stack bounded matched
-    (by simp [stagedEnv, declaredEnv, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, CBody.bind, CBody.resolve])
     (by simp [stagedEnv, CBody.bind, CBody.resolve])
     (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
     (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
@@ -991,9 +994,9 @@ theorem validate_step (env : Locals) (types : Types) (heap : Heap) (buffer : Add
     (read : load heap (buffer.index i.val) = some (.finite values[i])) :
     CLoops.next (.running (validateBody ++ rest) env types heap) = some (.running rest env types heap) := by
   have valueLoaded : CBody.eval env heap output = some (.finite values[i]) := by
-    simp [output, Runtime.v, CBody.eval, valuesBound, counter, Value.address, read]
+    simp [output, Runtime.v, CBody.eval, CBody.evalWith, valuesBound, counter, Value.address, read]
   simp [validateBody, Runtime.reject, Runtime.branch, Runtime.negate, Runtime.finite, Runtime.call,
-    Runtime.v, CLoops.next, CLoops.eval, CLoops.noDeclarations, Runtime.fail, Runtime.ret, CBody.eval,
+    Runtime.v, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations, Runtime.fail, Runtime.ret, CBody.eval, CBody.evalWith,
     valueLoaded, boolean, Value.truth, Value.isFinite_finite]
 
 /-- The validation loop accepts every finite caller value, heap fixed. -/
@@ -1010,7 +1013,7 @@ theorem validate_reaches (program : CCalls.Events.Program E) (env : Locals) (typ
   apply CCalls.Events.loop_reaches program "k" (Runtime.v "expected") validateBody rest
     (fun _ => env) types (fun _ => heap) shape.volume resultType stack typed bounded validateBody_closed
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i inside
     have step := validate_step (counterEnv env "k" i) types heap buffer values ⟨i, inside⟩
       (counterStep "k" :: CLoops.loop "k" (Runtime.v "expected") validateBody :: rest)
@@ -1042,7 +1045,7 @@ theorem set_guard_reaches (shape : Tensor.Shape) (program : CCalls.Events.Progra
       (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
         Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) =
       some (boolean false) := by
-    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval,
+    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
       guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, nref]
   have prefix_run : CBody.run 4 (.running (setBody shape)
       (parameters (some p) (some refs) (some buffer) n m) heap) =
@@ -1069,7 +1072,7 @@ theorem set_declares_reaches (program : CCalls.Events.Program E) (shape : Tensor
         (CBody.bind env0 "dst" (.pointer none)) (CLoops.bindType types0 "dst" .pointer) heap) :=
     declare_step_e env0 types0 heap "fmi3Float64 *" "dst" Expr.nullPointer .pointer (.pointer none)
       (.pointer none) _ fresh_dst rfl
-      (by simp [Expr.nullPointer, CLoops.eval, CBody.eval, CBody.expressionCast, CBody.zeroLiteral]) rfl
+      (by simp [Expr.nullPointer, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.zeroLiteral]) rfl
   have s2 : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n 0) ::
         setDispatch shape :: countReject :: setLoopSuffix)
         (CBody.bind env0 "dst" (.pointer none)) (CLoops.bindType types0 "dst" .pointer) heap) =
@@ -1078,7 +1081,7 @@ theorem set_declares_reaches (program : CCalls.Events.Program E) (shape : Tensor
     have := declare_step_e (CBody.bind env0 "dst" (.pointer none)) (CLoops.bindType types0 "dst" .pointer)
       heap "size_t" "expected" (Runtime.n 0) .size (.integer 0) (.integer 0)
       (setDispatch shape :: countReject :: setLoopSuffix)
-      (by simp [CBody.bind, fresh_exp]) rfl (by simp [Runtime.n, CLoops.eval, CBody.eval]) rfl
+      (by simp [CBody.bind, fresh_exp]) rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) rfl
     simpa [setDeclaredEnv, setDeclaredTypes] using this
   exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
@@ -1112,7 +1115,7 @@ theorem set_stage_reaches (program : CCalls.Events.Program E) (env0 : Locals) (t
     have := CLoops.assign_local (CBody.bind (setDeclaredEnv env0) "dst" (.pointer (some regionBase)))
       (setDeclaredTypes types0) heap "expected" (Runtime.n count) rest (.integer 0) (.integer count)
       (.integer count) .size (by simp [setDeclaredEnv, CBody.bind]) (by simp [setDeclaredTypes, CLoops.bindType])
-      (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat count bounded)
+      (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat count bounded)
     simpa [Runtime.v, stagedSetEnv] using this
   exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
@@ -1137,7 +1140,7 @@ theorem set_tail_reaches (program : CCalls.Events.Program E) (env0 : Locals) (ty
   set env := stagedSetEnv env0 regionBase rshape.volume with henv
   have hcount : CLoops.eval env types0 heap (Runtime.nev (Runtime.v "nValues") (Runtime.v "expected")) =
       some (boolean false) := by
-    simp [Runtime.nev, Runtime.v, CLoops.eval, CBody.eval, nvalBound, expBound, matched,
+    simp [Runtime.nev, Runtime.v, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, nvalBound, expBound, matched,
       CBody.comparison, boolean]
   have s1 : CLoops.next (.running (countReject :: setLoopSuffix) env types0 heap) =
       some (.running setLoopSuffix env types0 heap) := by
@@ -1235,11 +1238,11 @@ theorem set_reaches_of (shape : Tensor.Shape) (program : CCalls.Events.Program E
     (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])).trans ?_)
   refine (nav types0).trans ?_
   refine (set_stage_reaches program (guardEnv p refs buffer n m) types0 heap p (p.member member) member
-    rshape.volume (countReject :: setLoopSuffix) stack bounded (by simp [guardEnv, parameters, CBody.bind])
+    rshape.volume (countReject :: setLoopSuffix) stack bounded (by simp [guardEnv, CBody.bind])
     rfl).trans ?_
   exact set_tail_reaches program (guardEnv p refs buffer n m) (setDeclaredTypes types0) heap (p.member member)
     buffer rshape values m stack bounded matched
-    (by simp [stagedSetEnv, setDeclaredEnv, CBody.bind, CBody.resolve])
+    (by simp [stagedSetEnv, CBody.bind, CBody.resolve])
     (by simp [stagedSetEnv, CBody.bind, CBody.resolve])
     (by simp [stagedSetEnv, setDeclaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
     (by simp [stagedSetEnv, setDeclaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
@@ -1383,9 +1386,9 @@ theorem getBodyFor_printable (dispatch : Stmt)
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
-      Runtime.mode, Runtime.lt, Runtime.call, getCopyBody, srcCell, output, CLoops.loop,
-      CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil, List.mem_append,
-      List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp, forall_and,
+      Runtime.mode, Runtime.call, getCopyBody, srcCell, output, CLoops.loop,
+      CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
+      List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact hd
@@ -1431,9 +1434,9 @@ theorem setBodyFor_printable (dispatch : Stmt)
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
-      Runtime.mode, Runtime.lt, Runtime.call, Runtime.finite, setCopyBody, dstCell, output, CLoops.loop,
-      CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil, List.mem_append,
-      List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp, forall_and,
+      Runtime.mode, Runtime.call, Runtime.finite, setCopyBody, dstCell, output, CLoops.loop,
+      CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
+      List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact hd
@@ -1622,7 +1625,7 @@ private theorem basic_pass (heap : Heap) (p refs buffer : Address) (n m : UInt64
       (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
         Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) =
       some (boolean false) := by
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval,
+  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, nref]
 
 /-- The getter's memory-machine execution reaches its `fail` statement before the
@@ -1658,7 +1661,7 @@ theorem get_fail_prefix (shape : Tensor.Shape) (outputShape : Option Tensor.Shap
         (CBody.bind g "src" (.pointer none)) heap) :=
     run_one (declare_next g heap "fmi3Float64 *" "src" Expr.nullPointer (.pointer none) (.pointer none) _
       (by simp [hg, guardEnv, parameters, CBody.bind])
-      (by simp [Expr.nullPointer, CBody.eval, CBody.expressionCast, CBody.zeroLiteral])
+      (by simp [Expr.nullPointer, CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.zeroLiteral])
       (by simp [CBody.cast, convert]))
   have s_exp : CBody.run 1 (.running (.declare "size_t" "expected" (Runtime.n 0) ::
         getDispatch shape outputShape :: countReject :: getLoopSuffix)
@@ -1666,7 +1669,7 @@ theorem get_fail_prefix (shape : Tensor.Shape) (outputShape : Option Tensor.Shap
       some (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix) d heap) :=
     run_one (declare_next (CBody.bind g "src" (.pointer none)) heap "size_t" "expected" (Runtime.n 0)
       (.integer 0) (.integer 0) _ (by simp [hg, guardEnv, parameters, CBody.bind])
-      (by simp [Runtime.n, CBody.eval]) (by simp [CBody.cast, convert]))
+      (by simp [Runtime.n, CBody.eval, CBody.evalWith]) (by simp [CBody.cast, convert]))
   -- dispatch: branch 0..3 fall through
   have b0 : CBody.run 1 (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix) d heap) =
       some (.running (getDispatch1 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
@@ -1734,7 +1737,7 @@ theorem set_fail_prefix (shape : Tensor.Shape)
         (CBody.bind g "dst" (.pointer none)) heap) :=
     run_one (declare_next g heap "fmi3Float64 *" "dst" Expr.nullPointer (.pointer none) (.pointer none) _
       (by simp [hg, guardEnv, parameters, CBody.bind])
-      (by simp [Expr.nullPointer, CBody.eval, CBody.expressionCast, CBody.zeroLiteral])
+      (by simp [Expr.nullPointer, CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.zeroLiteral])
       (by simp [CBody.cast, convert]))
   have s_exp : CBody.run 1 (.running (.declare "size_t" "expected" (Runtime.n 0) ::
         setDispatch shape :: countReject :: setLoopSuffix)
@@ -1742,7 +1745,7 @@ theorem set_fail_prefix (shape : Tensor.Shape)
       some (.running (setDispatch shape :: countReject :: setLoopSuffix) d heap) :=
     run_one (declare_next (CBody.bind g "dst" (.pointer none)) heap "size_t" "expected" (Runtime.n 0)
       (.integer 0) (.integer 0) _ (by simp [hg, guardEnv, parameters, CBody.bind])
-      (by simp [Runtime.n, CBody.eval]) (by simp [CBody.cast, convert]))
+      (by simp [Runtime.n, CBody.eval, CBody.evalWith]) (by simp [CBody.cast, convert]))
   have b1 : CBody.run 1 (.running (setDispatch shape :: countReject :: setLoopSuffix) d heap) =
       some (.running (setDispatch2 shape ++ (countReject :: setLoopSuffix)) d heap) :=
     run_one (branch_false d heap _ (setArm inputName shape.volume) (setDispatch2 shape) _

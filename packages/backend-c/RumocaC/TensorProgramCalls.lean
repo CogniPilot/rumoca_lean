@@ -92,7 +92,7 @@ theorem program_call_reaches_for (f : Syntax.Function) (valid : f.valid = true)
   have entered : (CLoops.Calls.machine definitions).step
       (.calling f.name (Arguments.values f.parameters args) heap stack)
       (.body (.running f.tree.body (Arguments.locals f.parameters args) (Arguments.types f.parameters) heap) stack) := by
-    simp only [CLoops.Calls.machine, CLoops.Calls.next, found, Syntax.Function.tree,
+    simp only [CLoops.Calls.machine, CLoops.Calls.machineWith, CLoops.Calls.nextWith, found, Syntax.Function.tree,
       ne_eq, not_true_eq_false, ↓reduceIte, parameters, types, bind, Option.bind_some, pure]
   obtain ⟨domain, resultEq⟩ := Finite.executes_sound executed
   obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
@@ -103,7 +103,7 @@ theorem program_call_reaches_for (f : Syntax.Function) (valid : f.valid = true)
       (.body (.running [.ret none] (Arguments.locals f.parameters args) (Arguments.types f.parameters) finalHeap) stack)
       (.returning finalHeap stack) :=
     .next (t := .body (.returned ⟨.void, finalHeap⟩) stack) (by rfl)
-      (.next (by simp [CLoops.Calls.machine, CLoops.Calls.next]) (.refl _))
+      (.next (by simp [CLoops.Calls.machine, CLoops.Calls.machineWith, CLoops.Calls.nextWith]) (.refl _))
   change f.tree.body = (emit p plan layout).code ++ [.ret none] at matched
   rw [matched] at entered
   exact ⟨finalHeap, .next entered (ran.trans returned), resultEq ▸ readResult, boundResult, frame, writableResult⟩

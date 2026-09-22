@@ -46,7 +46,7 @@ theorem exit_run (m : Solve.FMI3Model source) (sig : Signature)
     simp [tail, Runtime.mode, Mode.code,
       Runtime.branch, Runtime.ret, Runtime.ok, Runtime.put, Runtime.setMode,
       Runtime.field, Runtime.eqv, Runtime.v, Runtime.n,
-      run, next, eval, lvalue, HistoryBodies.parameters, CBody.bind, resolve, constants,
+      run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalue, CBody.lvalueWith, HistoryBodies.parameters, CBody.bind, resolve, constants,
       convert, comparison, boolean, Value.truth, Value.address,
       hk, hm, store, exitHeap, kindCode, me_initialization, cs_initialization]
 

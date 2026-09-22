@@ -16,7 +16,7 @@ def names : Expr → List String
 private theorem other_call (interface : CInterface) (env : CBody.Locals) (heap : Heap)
     (fn a : Expr) (other : fn ≠ .id "isfinite") :
     @CBody.eval interface env heap (.call fn [a]) = none := by
-  cases fn <;> simp_all [CBody.eval]
+  cases fn <;> simp_all [CBody.eval, CBody.evalWith]
 
 theorem expression_agreement (before after : CInterface)
     (types : before.types = after.types) (literals : before.literals = after.literals)
@@ -31,24 +31,24 @@ theorem expression_agreement (before after : CInterface)
         @CBody.lvalue before env heap a = @CBody.lvalue after env heap a) with
   | id name =>
       intro agree
-      simp [CBody.eval, CBody.lvalue, CBody.resolve, CBody.constants,
+      simp [CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, CBody.resolve, CBody.constants,
         agree name (by simp [names])]
-  | nat | decimal | sizeof => intro agree; simp [CBody.eval, CBody.lvalue]
-  | str text => intro agree; simp [CBody.eval, CBody.lvalue, literals]
+  | nat | decimal | sizeof => intro agree; simp [CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith]
+  | str text => intro agree; simp [CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, literals]
   | bin op a b ha hb =>
       intro agree
       have left := ha (fun name member => agree name (by simp [names, member]))
       have right := hb (fun name member => agree name (by simp [names, member]))
-      cases op <;> simp [CBody.eval, CBody.lvalue, left.1, right.1]
+      cases op <;> simp [CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, left.1, right.1]
   | index a b ha hb =>
       intro agree
       have left := ha (fun name member => agree name (by simp [names, member]))
       have right := hb (fun name member => agree name (by simp [names, member]))
-      simp [CBody.eval, CBody.lvalue, left.1, left.2, right.1]
+      simp [CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, left.1, left.2, right.1]
   | not a ha | deref a ha | address a ha | field a name pointer ha =>
       intro agree
       have same := ha (by simpa only [names] using agree)
-      simp [CBody.eval, CBody.lvalue, same.1, same.2]
+      simp [CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, same.1, same.2]
   | cast type a ha =>
       intro agree
       have same := ha (by simpa only [names] using agree)
@@ -56,20 +56,20 @@ theorem expression_agreement (before after : CInterface)
           @CBody.expressionCast before type a value = @CBody.expressionCast after type a value := by
         unfold CBody.expressionCast CBody.cast
         rw [types]
-      simp only [CBody.eval, CBody.lvalue, same.1, casts, and_self]
+      simp only [CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, same.1, casts, and_self]
   | call fn args hfn hargs =>
       intro agree
-      refine ⟨?_, by simp [CBody.lvalue]⟩
+      refine ⟨?_, by simp [CBody.lvalue, CBody.lvalueWith]⟩
       cases args with
-      | nil => cases fn <;> simp [CBody.eval]
+      | nil => cases fn <;> simp [CBody.eval, CBody.evalWith]
       | cons a rest =>
           cases rest with
-          | cons b rest => cases fn <;> simp [CBody.eval]
+          | cons b rest => cases fn <;> simp [CBody.eval, CBody.evalWith]
           | nil =>
               have same := (hargs a (by simp))
                 (fun name member => agree name (by simp [names, member]))
               by_cases intrinsic : fn = .id "isfinite"
-              · subst fn; simp [CBody.eval, same.1]
+              · subst fn; simp [CBody.eval, CBody.evalWith, same.1]
               · rw [other_call before env heap fn a intrinsic, other_call after env heap fn a intrinsic]
   | nil => simp_all
   | cons a rest ha hr =>
@@ -92,14 +92,14 @@ theorem loop_expression_agreement (before after : CInterface)
         (fun name member => agree name (by simp [names, member]))).1
       cases op
       case add =>
-        cases a <;> cases b <;> simp [CLoops.eval, left, right]
+        cases a <;> cases b <;> simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, left, right]
         rename_i name value
         by_cases unit : value = 1 <;> simp_all
-      case mul => simp [CLoops.eval, left, right]
-      case sub => simp [CLoops.eval, left, right]
-      case div => simp [CLoops.eval, left, right]
-      all_goals simpa only [CLoops.eval] using whole
-  | _ => simpa only [CLoops.eval] using whole
+      case mul => simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, left, right]
+      case sub => simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, left, right]
+      case div => simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, left, right]
+      all_goals simpa only [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using whole
+  | _ => simpa only [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using whole
 
 /-- Preserve the supplied header dictionary, using the additional data
 bindings only for names absent from it. Declaration legality is separate. -/

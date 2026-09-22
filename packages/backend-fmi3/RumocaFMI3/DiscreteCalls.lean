@@ -110,7 +110,7 @@ theorem body_run (model : Solve.FMI3Model source) (literals : CLiteralAddresses)
     have falseCheck : eval env heap (CPointerConditions.missing names) = some (boolean false) := by
       simpa [names, layouts] using checked
     change run 1 (.running (Runtime.reject (CPointerConditions.missing names) "Missing output pointer" :: tail) env heap) = _
-    simp [run, next, Runtime.reject, Runtime.branch, falseCheck, Value.truth, boolean]
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.reject, Runtime.branch, falseCheck, Value.truth, boolean]
   have written := COutputAssignments.run_all env heap (outputs addresses) [Runtime.ok]
     (outputs_ready heap p addresses writable)
   have returned := HistoryBodies.return_ok (static := ⟨literals⟩) env
@@ -236,7 +236,7 @@ theorem output_prefix (model : Solve.FMI3Model source) (literals : CLiteralAddre
     rw [body, run_add, entered]
     simp only [Option.bind_some]
     change run 1 (.running (Runtime.reject (CPointerConditions.missing names) "Missing output pointer" :: tail) env heap) = _
-    simp [run, next, Runtime.reject, Runtime.branch, checked, Value.truth, boolean]
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.reject, Runtime.branch, checked, Value.truth, boolean]
   · simp [env, args, parameters, CBody.bind, names, layouts]
   · simp [env, CBody.bind, CBody.resolve]
 

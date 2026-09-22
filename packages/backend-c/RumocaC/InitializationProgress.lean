@@ -21,7 +21,7 @@ theorem complete_next_ready (program : Events.Program E)
       obtain ⟨identity, agreement⟩ := ready.exit
       subst value
       refine ⟨.halted ⟨returned, heap⟩, ?_, .inr ⟨heap, rfl, agreement⟩, rfl, fun _ _ => rfl⟩
-      simp [Events.internalNext, Typed.nextWith, Typed.resume]
+      simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Typed.resumeWith]
     · obtain ⟨after, enabled, next, decreases, frame⟩ := next_ready program resultFree cast ready exited
       exact ⟨after, enabled, .inl next, decreases, frame⟩
   · exact False.elim (active ⟨_, rfl⟩)
@@ -35,7 +35,7 @@ theorem complete_step_decreases (program : Events.Program E)
   have active : ¬ ∃ result, state = .halted result := by
     rintro ⟨result, rfl⟩
     cases step with
-    | internal next => simp [Events.internalNext, Typed.nextWith] at next
+    | internal next => simp [Events.internalNextWith, Typed.nextWithExpressions] at next
   obtain ⟨next, enabled, _, decreases, _⟩ := complete_next_ready program resultFree cast ready active
   obtain ⟨_, rfl⟩ := Events.internal_unique program enabled events after step
   exact decreases
@@ -51,7 +51,7 @@ theorem complete_step_frame (program : Events.Program E)
   have active : ¬ ∃ result, state = .halted result := by
     rintro ⟨result, rfl⟩
     cases step with
-    | internal next => simp [Events.internalNext, Typed.nextWith] at next
+    | internal next => simp [Events.internalNextWith, Typed.nextWithExpressions] at next
   obtain ⟨next, enabled, _, _, frame⟩ := complete_next_ready program resultFree cast ready active
   obtain ⟨_, rfl⟩ := Events.internal_unique program enabled events after step
   exact frame

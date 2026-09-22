@@ -9,13 +9,11 @@ together by the kernel, mirroring the scalar `EFMIArchiveArtifactCheck` over the
 tensor manifest contract. This does not certify the external C compiler or full
 XSD/prose semantics, and it does not publish an archive.
 
-The tensor manifest certificate (`EFMITensorManifestArtifactCheck`) fits the
-shared gate's memory budget, but composing it with the additional stored-ZIP
-transport certificate over all fifty archive members here still peaks above the
-8 GiB gate budget (dominated by the per-element XML serialization certificate).
-This adapter is therefore not yet wired into the gate or CLI admission; its
-`tensor-efmi-archive` kind exists so the composition can be completed once that
-cost is reduced. See dev/standards-review.md and dev/verification-performance.md. -/
+The fixed tensor archive path is used by CLI publication and the required
+artifact gate. Validation of this adapter's generated certificates over actual
+files is a separate obligation from compiling the adapter module itself. Its
+strengthened execution product retains all manifest and stored-ZIP obligations;
+the previous candidate's passing gate does not validate a changed checker. -/
 namespace Rumoca.EFMITensorArchiveArtifactCheck
 open Lean Elab Command EFMI
 
@@ -75,9 +73,9 @@ elab "verify_tensor_efmi_archive" : command => do
   elabCommand (← `(command| theorem $root:ident :
       Generated.source = $grammar ∧ GALEC.Generated.source = $galecGrammar ∧
       ∃ a : TensorArtifact $inputTerm, compileTensor $inputTerm = .ok a ∧
-        TensorArchiveContract a $identity $archiveBytes := by
+        TensorExecutedArchiveContract a $identity $archiveBytes := by
     obtain ⟨g₁, g₂, a, compiled, manifests⟩ := $manifests:ident
-    have archive := tensor_archive_correct a $identity $codeName manifests
+    have archive := tensor_executed_archive_correct a $identity $codeName manifests
       ($entriesEq:ident ▸ $transport:ident)
     exact ⟨g₁, g₂, a, compiled, archive⟩))
   if (← get).messages.hasErrors then throwError "tensor source-to-archive certificate failed"

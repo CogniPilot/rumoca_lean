@@ -151,4 +151,3 @@ theorem logged_call {E : Type} (header : CFenv.Header) (objects : Objects)
 
 end Rumoca.FMI3.ScheduledCreation
 end
-

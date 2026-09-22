@@ -26,11 +26,11 @@ theorem actual_resume (program : Events.Program E) (kind : Kind) (args : Factory
       (.caller (.declare "fmi3Boolean" "validIdentity") (FactoryPrefix.identityGuard :: creation)
         (FactoryArguments.parameters kind args) types "fmi3Instance" stack) = some after at moved
     cases cast : convert .boolean value with
-    | none => simp [Typed.resume, fresh, booleanType, cast] at moved
+    | none => simp [Typed.resume, Typed.resumeWith, fresh, booleanType, cast] at moved
     | some result =>
       obtain ⟨valid, truth, rfl⟩ := boolean_conversion cast
       refine ⟨valid, truth, rfl, ?_⟩
-      simpa [Typed.resume, fresh, booleanType, cast, locals, boolean] using moved.symm
+      simpa [Typed.resume, Typed.resumeWith, fresh, booleanType, cast, locals, boolean] using moved.symm
 
 /-- The actual next guard step selects the validation result's continuation.
 Rejection and creation stay distinct; no completed helper semantics are required
@@ -66,7 +66,8 @@ theorem resume_next (program : Events.Program E) (kind : Kind) (args : FactoryAr
       some (.body (.running (FactoryPrefix.identityGuard :: creation) (locals kind args valid)
         (CLoops.bindType types "validIdentity" .boolean) heap) "fmi3Instance" stack) := by
   have fresh := (FactoryArguments.scope kind args).result
-  simp [Events.internalNext, Typed.nextWith, Typed.resume, fresh, booleanType, convert, truth, locals, boolean]
+  simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions,
+    Typed.resumeWith, fresh, booleanType, convert, truth, locals, boolean]
 
 omit interface in
 /-- The source-prepared globals and original parameter frame determine the

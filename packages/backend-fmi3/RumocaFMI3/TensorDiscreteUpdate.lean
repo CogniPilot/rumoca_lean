@@ -1,23 +1,23 @@
 import RumocaFMI3.DiscreteContract
 import RumocaFMI3.TensorInstanceStorage
 
-/-! Tensor `fmi3UpdateDiscreteStates` contract over the tensor instance record, as
-a package-checked product.
+/-! Tensor `fmi3UpdateDiscreteStates` contract over the tensor instance record.
 
 The scalar body `Runtime.body model signature` for `fmi3UpdateDiscreteStates` is a
 fixed statement list: the handle/lifecycle guard, an output-pointer check, and the
 constant writes of the six discrete-update result fields, followed by `fmi3OK`. It
-reads no source name and touches no tensor region, so it is identical for every
+reads no source name and makes no direct tensor-field access, so it is identical for every
 prepared model, tensor or scalar (`independent`). A valid call writes the fixed
 `0`/false results into the caller's output pointers and returns `fmi3OK`; a null
 handle returns `fmi3Error`. The handle/lifecycle premises are reads of the
 instance record metadata cells (`kind`, `mode`) the tensor record also carries,
-and the writes land in the caller's own output storage, so the scalar execution
-transfers verbatim to a tensor instance record heap.
+and the writes use the caller's output pointers, so the scalar execution transfers
+verbatim to a tensor instance record heap. Those pointers can alias tensor state;
+preserving instance storage additionally requires the separation premises used by
+the frame and history theorems.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. -/
+Production tensor/constant adapter contracts consume these results. This module
+alone does not certify actual artifact bytes or admit a new source/grammar case. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorDiscreteUpdate
 open CTree CMemory CBody StaticFactory CLiteral.Interface

@@ -41,12 +41,12 @@ theorem complete_step_ready (program : Events.Program E)
       subst value
       have next : Events.internalNext program (.returning returned heap .done) =
           some (.halted ⟨returned, heap⟩) := by
-        simp [Events.internalNext, Typed.nextWith, Typed.resume]
+        simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Typed.resumeWith]
       obtain ⟨silent, rfl⟩ := Events.internal_unique program next events after step
       exact ⟨silent, .inr ⟨heap, rfl, agreement⟩⟩
     · obtain ⟨silent, next⟩ := step_ready program resultFree cast ready exited step
       exact ⟨silent, .inl next⟩
   · cases step with
-    | internal next => simp [Events.internalNext, Typed.nextWith] at next
+    | internal next => simp [Events.internalNextWith, Typed.nextWithExpressions] at next
 
 end Rumoca.CCalls.InitializationRegion

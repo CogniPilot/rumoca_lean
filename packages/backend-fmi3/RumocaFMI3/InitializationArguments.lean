@@ -108,7 +108,7 @@ theorem guard_eval (heap : Heap) (p : Address) (args : Raw) :
   have startFinite : Value.isFinite (.float64 args.start) = some (Initialization.finiteBits args.start) := rfl
   have stopFinite : Value.isFinite (.float64 args.stop) = some (Initialization.finiteBits args.stop) := rfl
   simp [guard, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
-    Runtime.finite, Runtime.call, Runtime.lt, Runtime.v, Runtime.n, CBody.eval,
+    Runtime.finite, Runtime.call, Runtime.lt, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     locals, parameters, CBody.bind, resolve, constants, comparison, floatComparison,
     convert, startFinite, stopFinite, rejects]
   all_goals

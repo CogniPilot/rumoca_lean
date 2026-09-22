@@ -44,9 +44,9 @@ theorem resume_reaches (context : ErrorContext literals) :
   refine .next (t := .body (.running (Runtime.ret (Runtime.v "fmi3Discard") :: rest) env types heap)
     "fmi3Status" stack) (by rfl) ?_
   refine .next (t := .body (.returned ⟨.integer 2, heap⟩) "fmi3Status" stack) ?_ ?_
-  · simp [Events.internalNext, Typed.nextWith, CLoops.next, CLoops.eval, Runtime.ret, Runtime.v,
-      CBody.eval, statusValue]
-  · exact .next (by simp [Events.internalNext, Typed.nextWith, cast]) (.refl _)
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, Runtime.ret, Runtime.v,
+      CBody.eval, CBody.evalWith, statusValue]
+  · exact .next (by simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, cast]) (.refl _)
 
 theorem suppressed_reaches (context : ErrorContext literals) :
     letI : CInterface := context.target
@@ -68,11 +68,11 @@ theorem suppressed_reaches (context : ErrorContext literals) :
     change eval env heap (.bin .and (.bin .ne (Runtime.field "logger") Expr.nullPointer)
       (Runtime.field "logging")) = _
     rw [CNull.and_unequal_null_eval _ _ env heap logger
-      (by simp [Runtime.field, Runtime.v, eval, instanceValue, Value.address, loggerValue])
+      (by simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, instanceValue, Value.address, loggerValue])
       (by change context.target.types "void *" = some .pointer; rw [← context.types]; rfl)]
     rcases suppressed with rfl | rfl
-    · simp [Runtime.field, Runtime.v, eval, instanceValue, Value.address, loggerValue, Value.truth, boolean]
-    · cases logger <;> simp [Runtime.field, Runtime.v, eval, instanceValue, Value.address,
+    · simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, instanceValue, Value.address, loggerValue, Value.truth, boolean]
+    · cases logger <;> simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, instanceValue, Value.address,
         loggerValue, loggingValue, Value.truth, boolean]
   simp only [Runtime.both, Runtime.nev] at disabled
   have cast : CCalls.returnCast "fmi3Status" (.integer 2) = some (.integer 2) := by
@@ -81,11 +81,11 @@ theorem suppressed_reaches (context : ErrorContext literals) :
     "fmi3Status" stack) ?_ ?_
   · apply Events.body_step
     simp [Runtime.stepDiscard, Runtime.log, Runtime.branch, Runtime.both, Runtime.nev,
-      CLoops.next, CLoops.noDeclarations, CLoops.eval, disabled, Value.truth]
+      CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith, CBody.legacyExpressions, disabled, Value.truth]
   · refine .next (t := .body (.returned ⟨.integer 2, heap⟩) "fmi3Status" stack) ?_ ?_
     · apply Events.body_step
-      simp [CLoops.next, CLoops.eval, Runtime.ret, Runtime.v, eval, statusValue]
-    · exact .next (by simp [Events.internalNext, Typed.nextWith, cast]) (.refl _)
+      simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, statusValue]
+    · exact .next (by simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, cast]) (.refl _)
 
 theorem dispatch_reaches (context : ErrorContext literals) :
     letI : CInterface := context.target
@@ -113,29 +113,29 @@ theorem dispatch_reaches (context : ErrorContext literals) :
     change eval env heap (.bin .and (.bin .ne (Runtime.field "logger") Expr.nullPointer)
       (Runtime.field "logging")) = _
     rw [CNull.and_unequal_null_eval _ _ env heap (some logger)
-      (by simp [Runtime.field, Runtime.v, eval, instanceValue, Value.address, loggerValue])
+      (by simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, instanceValue, Value.address, loggerValue])
       (by change context.target.types "void *" = some .pointer; rw [← context.types]; rfl)]
-    simp [Runtime.field, Runtime.v, eval, instanceValue, Value.address,
+    simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, instanceValue, Value.address,
       loggerValue, loggingValue, Value.truth, boolean]
   simp only [Runtime.both, Runtime.nev] at enabled
   have resolved : Events.resolve program env heap (Runtime.field "logger") = some name := by
-    simp [Events.resolve, CCalls.Indirect.resolve, Runtime.field, Runtime.v, eval,
+    simp [Events.resolve, Events.resolveWith, CCalls.Indirect.resolveWith, CBody.legacyExpressions, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
       instanceValue, Value.address, loggerValue, CCalls.Indirect.valueTarget, address]
   have values : CCalls.arguments env heap
       [Runtime.field "environment", Runtime.v "fmi3Discard", .str "logStatus", .str message] =
       some (arguments environment category text) := by
-    simp [CCalls.arguments, Runtime.field, Runtime.v, eval, instanceValue, statusValue,
-      Value.address, environmentValue, categoryBound, textBound, arguments]
+    simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, instanceValue, statusValue,
+      Value.address, environmentValue, categoryBound, textBound, arguments, argumentsWith, CBody.legacyExpressions]
   let tail := Runtime.ret (Runtime.v "fmi3Discard") :: rest
   have blocked : CLoops.next (.running (logCall :: tail) env types heap) = none := by
-    simp [CLoops.next, CLoops.eval, logCall, Runtime.field, Runtime.v, eval]
+    simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, logCall, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith]
   refine .next (t := .body (.running (logCall :: tail) env types heap) "fmi3Status" stack) ?_ ?_
   · apply Events.body_step
-    simp [Runtime.stepDiscard, Runtime.log, Runtime.branch, Runtime.both, Runtime.nev, CLoops.noDeclarations, CLoops.next, CLoops.eval, enabled,
+    simp [Runtime.stepDiscard, Runtime.log, Runtime.branch, Runtime.both, Runtime.nev, CLoops.noDeclarations, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, enabled,
       Value.truth, logCall, tail, message]
   · refine .next ?_ (.refl _)
-    simp only [Events.internalNext, Typed.nextWith, blocked]
-    simp [Events.enterCall, logCall, CCalls.Indirect.operand, resolved, values, continuation, tail]
+    simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, blocked]
+    simp [Events.enterCallWith, logCall, CCalls.Indirect.operand, resolved, values, continuation, tail]
 
 theorem suppressed_behaviors (context : ErrorContext literals) :
     letI : CInterface := context.target
@@ -390,7 +390,7 @@ theorem missing_reaches (context : ErrorContext literals) :
   intro program env types rest heap p stack instanceValue statusValue loggerValue
   have disabled := CNull.and_unequal_null_short_circuit
     (Runtime.field "logger") (Runtime.field "logging") env heap
-    (by simp [Runtime.field, Runtime.v, eval, instanceValue, Value.address, loggerValue])
+    (by simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, instanceValue, Value.address, loggerValue])
     (by change context.target.types "void *" = some .pointer; rw [← context.types]; rfl)
   have cast : CCalls.returnCast "fmi3Status" (.integer 2) = some (.integer 2) := by
     simp [CCalls.returnCast, CBody.cast, ← context.types, convert]
@@ -398,11 +398,11 @@ theorem missing_reaches (context : ErrorContext literals) :
     "fmi3Status" stack) ?_ ?_
   · apply Events.body_step
     simp [Runtime.stepDiscard, Runtime.log, Runtime.branch, Runtime.both, Runtime.nev,
-      CLoops.next, CLoops.noDeclarations, CLoops.eval, disabled, Value.truth, boolean]
+      CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith, CBody.legacyExpressions, disabled, Value.truth, boolean]
   · refine .next (t := .body (.returned ⟨.integer 2, heap⟩) "fmi3Status" stack) ?_ ?_
     · apply Events.body_step
-      simp [CLoops.next, CLoops.eval, Runtime.ret, Runtime.v, eval, statusValue]
-    · exact .next (by simp [Events.internalNext, Typed.nextWith, cast]) (.refl _)
+      simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, statusValue]
+    · exact .next (by simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, cast]) (.refl _)
 
 theorem missing_behaviors (context : ErrorContext literals) :
     letI : CInterface := context.target

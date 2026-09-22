@@ -42,21 +42,21 @@ theorem srcCell_eval (env : Locals) (heap : Heap) (regionBase : Address) (k : Na
     (pointer : resolve env "src" = some (.pointer (some regionBase)))
     (counter : resolve env "k" = some (.integer k)) :
     CBody.eval env heap srcCell = load heap (regionBase.index k) := by
-  simp [srcCell, Runtime.v, CBody.eval, pointer, counter, Value.address]
+  simp [srcCell, Runtime.v, CBody.eval, CBody.evalWith, pointer, counter, Value.address]
 
 /-- `values[k]` addresses the caller buffer cell `buffer.index k`. -/
 theorem out_lvalue (env : Locals) (heap : Heap) (buffer : Address) (k : Nat)
     (pointer : resolve env "values" = some (.pointer (some buffer)))
     (counter : resolve env "k" = some (.integer k)) :
     CBody.lvalue env heap output = some (buffer.index k) := by
-  simp [output, Runtime.v, CBody.lvalue, CBody.eval, pointer, counter, Value.address]
+  simp [output, Runtime.v, CBody.lvalue, CBody.lvalueWith, CBody.evalWith, pointer, counter, Value.address]
 
 /-- `dst[k]` addresses the region cell at `regionBase.index k`. -/
 theorem dstCell_lvalue (env : Locals) (heap : Heap) (regionBase : Address) (k : Nat)
     (pointer : resolve env "dst" = some (.pointer (some regionBase)))
     (counter : resolve env "k" = some (.integer k)) :
     CBody.lvalue env heap dstCell = some (regionBase.index k) := by
-  simp [dstCell, Runtime.v, CBody.lvalue, CBody.eval, pointer, counter, Value.address]
+  simp [dstCell, Runtime.v, CBody.lvalue, CBody.lvalueWith, CBody.evalWith, pointer, counter, Value.address]
 
 /-- One getter iteration reads the region cell and writes the buffer cell. -/
 theorem getCopy_step (env : Locals) (types : Types) (heap : Heap) (regionBase buffer : Address)
@@ -72,9 +72,10 @@ theorem getCopy_step (env : Locals) (types : Types) (heap : Heap) (regionBase bu
   have address : CBody.lvalue env heap output = some (buffer.index i.val) :=
     out_lvalue env heap buffer i.val valuesBound counter
   have rhs : CLoops.eval env types heap srcCell = some (.finite regionValues[i]) := by
-    simpa [CLoops.eval] using (srcCell_eval env heap regionBase i.val srcBound counter).trans srcRead
+    simpa [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using (srcCell_eval env heap regionBase i.val srcBound counter).trans srcRead
+  simp only [CLoops.eval, CBody.legacyExpressions] at rhs
   simp only [output] at address
-  simp [getCopyBody, output, CLoops.next, address, rhs, Value.finite,
+  simp [getCopyBody, output, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, address, rhs, Value.finite,
     store_float64 heap _ old _ dstStore, StateProofs.written]
 
 /-- One setter iteration reads the caller buffer cell and writes the region cell. -/
@@ -92,10 +93,11 @@ theorem setCopy_step (env : Locals) (types : Types) (heap : Heap) (regionBase bu
     dstCell_lvalue env heap regionBase i.val dstBound counter
   have rhs : CLoops.eval env types heap output = some (.finite values[i]) := by
     have base : CBody.eval env heap output = load heap (buffer.index i.val) := by
-      simp [output, Runtime.v, CBody.eval, valuesBound, counter, Value.address]
-    simpa [CLoops.eval] using base.trans bufferRead
+      simp [output, Runtime.v, CBody.eval, CBody.evalWith, valuesBound, counter, Value.address]
+    simpa [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using base.trans bufferRead
+  simp only [CLoops.eval, CBody.legacyExpressions] at rhs
   simp only [dstCell] at address
-  simp [setCopyBody, dstCell, CLoops.next, address, rhs, Value.finite,
+  simp [setCopyBody, dstCell, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, address, rhs, Value.finite,
     store_float64 heap _ old _ regionStore, StateProofs.written]
 
 end
@@ -125,7 +127,7 @@ theorem getCopy_reaches (program : CCalls.Events.Program E) (env : Locals) (type
     (fun _ => env) types (written heap buffer regionValues) shape.volume resultType stack typed bounded
     getCopyBody_closed
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i inside
     obtain ⟨old, storage⟩ := pending_output heap buffer regionValues writable i inside
     have srcRead : load (written heap buffer regionValues i) (regionBase.index i) =
@@ -172,7 +174,7 @@ theorem setCopy_reaches (program : CCalls.Events.Program E) (env : Locals) (type
     (fun _ => env) types (written heap regionBase values) shape.volume resultType stack typed bounded
     setCopyBody_closed
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i inside
     obtain ⟨old, storage⟩ := pending_output heap regionBase values writable i inside
     have bufferRead : load (written heap regionBase values i) (buffer.index i) =

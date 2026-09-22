@@ -27,7 +27,7 @@ theorem value_evaluated (model : Solve.Model source) (env : CBody.Locals) (heap 
     (double : interface.types "double" = some .float64) :
     CBody.eval env heap (value model) = some (.finite Binary64.positiveZero) := by
   rw [value_zero]
-  simp [CBody.eval, CBody.cast, double, convert]
+  simp [CBody.eval, CBody.evalWith, CBody.cast, double, convert]
 
 def written (heap : Heap) (address : Address) : Heap :=
   replace heap address ⟨.float64, true, some (.finite Binary64.positiveZero)⟩
@@ -41,7 +41,7 @@ theorem write_step (model : Solve.Model source) (target : Expr)
     (storage : heap address = some ⟨.float64, true, old⟩) (rest : List Stmt) :
     CBody.next (.running ((emit model target).statement :: rest) env heap) =
       some (.running rest env (written heap address)) := by
-  simp [CBody.next, Emission.statement, value_evaluated model env heap double, located,
+  simp [CBody.next, CBody.nextWith, CBody.legacyExpressions, Emission.statement, value_evaluated model env heap double, located,
     store_float64 heap address old (Binary64.toBits Binary64.positiveZero).val storage,
     Value.finite, written]
 

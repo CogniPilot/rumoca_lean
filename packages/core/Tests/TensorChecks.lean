@@ -1,3 +1,4 @@
+import Tests.TensorChecks.Array_ADExact
 import ProofAudit.Audit
 import RumocaCore.Tensor.Matrix
 import RumocaCore.Tensor.Differentiation

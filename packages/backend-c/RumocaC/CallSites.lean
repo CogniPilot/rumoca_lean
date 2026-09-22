@@ -84,7 +84,7 @@ variable [CInterface]
 set_option maxHeartbeats 800000 in
 theorem loop_ready_next (ready : LoopReady permitted before)
     (step : CLoops.next before = some after) : LoopReady permitted after := by
-  unfold CLoops.next at step
+  unfold CLoops.next CLoops.nextWith at step
   split at step
   all_goals aesop (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff, LoopReady, Admits])
 
@@ -112,7 +112,7 @@ theorem resume_ready (frames : Frames permitted stack)
     (step : Typed.resume value heap stack = some after) : Ready permitted calls after := by
   cases stack with
   | done =>
-    simp only [Typed.resume, Option.some.injEq] at step
+    simp only [Typed.resume, Typed.resumeWith, Option.some.injEq] at step
     subst after
     trivial
   | caller destination rest env types resultType outer =>
@@ -120,7 +120,7 @@ theorem resume_ready (frames : Frames permitted stack)
     have body : ∀ env types heap, Ready permitted calls
         (.body (.running rest env types heap) resultType outer) := fun _ _ _ => ⟨code, frames⟩
     have returning : ∀ value heap, Ready permitted calls (.returning value heap outer) := fun _ _ => frames
-    unfold Typed.resume at step
+    unfold Typed.resume Typed.resumeWith at step
     split at step
     all_goals
       aesop (add safe apply [body, returning])
@@ -136,17 +136,17 @@ theorem enter_ready (sound : OperandSound program permitted calls)
     (step : Events.enterCall program state resultType stack = some after) : Ready permitted calls after := by
   obtain ⟨code, frames⟩ := ready
   cases state with
-  | returned result => simp [Events.enterCall] at step
+  | returned result => simp [Events.enterCall, Events.enterCallWith] at step
   | running pending env types heap =>
     cases pending with
     | nil =>
-      simp only [Events.enterCall] at step
+      simp only [Events.enterCall, Events.enterCallWith] at step
       split at step
       · cases Option.some.inj step
         exact frames
       · contradiction
     | cons stmt rest =>
-      simp only [Events.enterCall, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
+      simp only [Events.enterCall, Events.enterCallWith, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
       obtain ⟨operand, extracted, name, resolved, values, evaluated, emitted⟩ := step
       cases Option.some.inj emitted
       exact ⟨sound operand (operand_permitted (code stmt List.mem_cons_self) extracted) env heap name values resolved evaluated,
@@ -162,12 +162,12 @@ theorem internal_ready (program : Events.Program E)
     obtain ⟨code, frames⟩ := ready
     cases state with
     | returned result =>
-      simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
+      simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
       obtain ⟨value, cast, emitted⟩ := step
       cases Option.some.inj emitted
       exact frames
     | running pending env types heap =>
-      simp only [Events.internalNext, Typed.nextWith] at step
+      simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions] at step
       cases nextStep : CLoops.next (.running pending env types heap) with
       | none => exact enter_ready sound ⟨code, frames⟩ (by simpa only [nextStep] using step)
       | some nextState =>
@@ -175,7 +175,7 @@ theorem internal_ready (program : Events.Program E)
         subst after
         exact ⟨loop_ready_next code nextStep, frames⟩
   | calling name args heap stack =>
-    simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
+    simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
     obtain ⟨definition, found, entered⟩ := step
     cases definition with
     | tree fn =>
@@ -191,16 +191,16 @@ theorem internal_ready (program : Events.Program E)
   | kernel state heap stack =>
     cases state with
     | returned value =>
-      simp only [Events.internalNext, Typed.nextWith, Option.some.injEq] at step
+      simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.some.injEq] at step
       subst after
       exact ready
     | _ =>
-      simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
+      simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind, Option.bind_eq_some_iff] at step
       obtain ⟨state, moved, emitted⟩ := step
       cases Option.some.inj emitted
       exact ready
   | returning value heap stack => exact resume_ready ready step
-  | halted result => simp [Events.internalNext, Typed.nextWith] at step
+  | halted result => simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions] at step
 
 theorem event_ready (program : Events.Program E)
     (functions : ProgramAdmits permitted program.internal) (sound : OperandSound program permitted calls)
@@ -272,8 +272,8 @@ def NamedOnly (program : Events.Program E) (name : String) : Prop :=
 theorem named_resolution (program : Events.Program E) (onlyNamed : NamedOnly program name)
     (resolved : Events.resolve program env heap callee = some name) :
     Indirect.resolve env heap callee = some (.named name) := by
-  unfold Events.resolve at resolved
-  cases found : Indirect.resolve env heap callee with
+  unfold Events.resolve Events.resolveWith at resolved
+  cases found : Indirect.resolveWith CBody.legacyExpressions env heap callee with
   | none => simp [found] at resolved
   | some which =>
     cases which with
@@ -282,7 +282,7 @@ theorem named_resolution (program : Events.Program E) (onlyNamed : NamedOnly pro
       split at resolved
       · contradiction
       · cases Option.some.inj resolved
-        rfl
+        exact found
     | pointer address =>
       exact False.elim (onlyNamed address (by
         simpa only [found, Option.bind_eq_bind, Option.bind_some] using resolved))

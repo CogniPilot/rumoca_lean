@@ -28,8 +28,8 @@ theorem write_run (env : Locals) (heap : Heap) (p : Address) (mode : Mode)
     (hm : heap (p.member "mode") = some ⟨.int32, true, old⟩) :
     run 1 (.running (Runtime.setMode mode :: rest) env heap) =
       some (.running rest env (writeMode heap p mode)) := by
-  cases mode <;> simp [run, next, Runtime.setMode, Runtime.put, Runtime.field,
-    Runtime.v, Runtime.mode, Runtime.n, Mode.code, eval, lvalue, hp, Value.address,
+  cases mode <;> simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.setMode, Runtime.put, Runtime.field,
+    Runtime.v, Runtime.mode, Runtime.n, Mode.code, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, hp, Value.address,
     store, hm, convert, writeMode]
 
 omit static in
@@ -71,8 +71,8 @@ theorem terminate_run (m : Solve.FMI3Model source) (sig : Signature)
   rw [show Runtime.body m sig = Runtime.require .terminate ++
     [Runtime.setMode .terminated, Runtime.ok] by simp [Runtime.body, hsig]]
   rw [show 5 = 3 + 2 from rfl, run_add, hp]
-  simp [run, next, Runtime.setMode, Runtime.put, Runtime.field, Runtime.v,
-    Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, eval, lvalue,
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.setMode, Runtime.put, Runtime.field, Runtime.v,
+    Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
     HistoryBodies.parameters, CBody.bind, resolve, constants, Value.address,
     store, hm, convert, writeMode]
 

@@ -21,7 +21,8 @@ theorem select_step (env : Locals) (types : CLoops.Types) (heap : Heap)
   apply CLoops.declare_local env types heap "Instance *" "m" _ rest .pointer
     (.pointer (some (base.index slot))) (.pointer (some (base.index slot))) pointer fresh ?_ rfl
   have nonnegative : ¬ (slot : Int) < 0 := by omega
-  simp [CLoops.eval, eval, lvalue, instances, selected, Value.address, nonnegative]
+  simp [CLoops.eval, CLoops.evalWith, legacyExpressions, eval, evalWith, lvalueWith,
+    instances, selected, Value.address, nonnegative]
 
 theorem guard_step (env : Locals) (types : CLoops.Types) (heap : Heap)
     (slot capacity : Nat) (rest : List Stmt)
@@ -32,11 +33,13 @@ theorem guard_step (env : Locals) (types : CLoops.Types) (heap : Heap)
   by_cases same : slot = capacity
   · subst slot
     simp [guard, exhausted, FactoryRejection.code, FactoryRejection.logCall,
-      CLoops.next, CLoops.noDeclarations, CLoops.eval, eval,
+      CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith,
+      legacyExpressions, eval, evalWith,
       selected, count, comparison, boolean, Value.truth]
   · have different : (slot : Int) ≠ (capacity : Int) := by omega
     simp [guard, exhausted, FactoryRejection.code, FactoryRejection.logCall,
-      CLoops.next, CLoops.noDeclarations, CLoops.eval, eval,
+      CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith,
+      legacyExpressions, eval, evalWith,
       selected, count, comparison, boolean, Value.truth, same, different]
 
 theorem selected_bindings (env : Locals) (p : Address) (environment logger : Option Address)
@@ -77,8 +80,9 @@ theorem initialization_reaches (program : CCalls.Events.Program E) (model : Solv
     (selected_bindings env _ environment logger logging environmentBound loggerBound loggingBound)
     (by simpa [resolve, CBody.bind] using selected) bounded double handle
 
-/-- The successful guard establishes that array selection is within the
-configured capacity; initialization is never entered at the exhaustion sentinel. -/
+/-- An already in-range selection passes the exhaustion-sentinel guard and
+initializes the record. Bounds come from `slot : Fin capacity`, supplied by
+the scan outcome in the composed factory proof, not from the equality guard. -/
 theorem guarded_initialization (program : CCalls.Events.Program E) (model : Solve.Model source)
     (kind : Kind) (env : Locals) (types : CLoops.Types) (heap : Heap)
     (base : Address) (capacity : Nat) (slot : Fin capacity)

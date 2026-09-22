@@ -27,10 +27,10 @@ def Extends (definitions : CLoops.Calls.Definitions) (p : Program) : Prop :=
 theorem enter_loop_call (s : CLoops.State) (stack : CLoops.Calls.Continuation) (t : CLoops.Calls.State)
     (h : CLoops.Calls.enterCall s stack = some t) :
     enterCall s "void" (loopContinuation stack) = some (loopState t) := by
-  unfold CLoops.Calls.enterCall at h
+  unfold CLoops.Calls.enterCall CLoops.Calls.enterCallWith at h
   split at h
   · rename_i name args rest env types heap
-    simp only [enterCall, CCalls.callOperand, bind, Option.bind_some]
+    simp only [enterCall, enterCallWith, CCalls.callOperand, bind, Option.bind_some]
     by_cases shadowed : (env name).isSome || name = "isfinite"
     · simp only [if_pos shadowed] at h
       cases h
@@ -49,32 +49,32 @@ theorem loop_step (p : Program) (definitions : CLoops.Calls.Definitions) (linked
   cases s with
   | halted => cases h
   | returning heap stack =>
-    cases stack <;> simp only [CLoops.Calls.next, Option.some.injEq] at h <;> subst t <;> rfl
+    cases stack <;> simp only [CLoops.Calls.next, CLoops.Calls.nextWith, Option.some.injEq] at h <;> subst t <;> rfl
   | body state stack =>
     cases state with
     | returned result =>
-      simp only [CLoops.Calls.next] at h
+      simp only [CLoops.Calls.next, CLoops.Calls.nextWith] at h
       by_cases void : result.value = .void
       · rw [if_pos void] at h
         cases h
-        simp only [loopState, next, returnCast, ↓reduceIte, void, bind, Option.bind_some, pure, nextWith]
+        simp only [loopState, next, nextIn, nextWithExpressions, returnCast, ↓reduceIte, void, bind, Option.bind_some, pure]
       · rw [if_neg void] at h
         cases h
     | running code locals types heap =>
       cases hn : CLoops.next (.running code locals types heap) with
       | none =>
-        simp only [CLoops.Calls.next, hn] at h
-        simpa only [loopState, next, hn, nextWith] using enter_loop_call _ stack t h
+        simp only [CLoops.Calls.next, CLoops.Calls.nextWith, hn] at h
+        simpa only [loopState, next, nextIn, nextWithExpressions, hn, nextWith] using enter_loop_call _ stack t h
       | some following =>
-        simp only [CLoops.Calls.next, hn, Option.some.injEq] at h
+        simp only [CLoops.Calls.next, CLoops.Calls.nextWith, hn, Option.some.injEq] at h
         subst t
-        simp only [loopState, next, hn, nextWith]
+        simp only [loopState, next, nextIn, nextWithExpressions, hn]
   | calling name args heap stack =>
     cases hd : definitions name with
-    | none => simp [CLoops.Calls.next, hd] at h
+    | none => simp [CLoops.Calls.next, CLoops.Calls.nextWith, hd] at h
     | some fn =>
       have hp := linked name fn hd
-      simp only [CLoops.Calls.next, hd, bind, Option.bind_some] at h
+      simp only [CLoops.Calls.next, CLoops.Calls.nextWith, hd, bind, Option.bind_some] at h
       by_cases void : fn.signature.result = "void"
       · rw [if_neg (not_not_intro void)] at h
         cases ha : parameters fn.signature.parameters args with
@@ -85,7 +85,7 @@ theorem loop_step (p : Program) (definitions : CLoops.Calls.Definitions) (linked
           | some types =>
             simp only [ha, ht, Option.bind_some, pure] at h
             cases h
-            simp only [loopState, next, hp, ha, ht, void, bind, Option.bind_some, pure, nextWith]
+            simp only [loopState, next, nextIn, nextWithExpressions, hp, ha, ht, void, bind, Option.bind_some, pure]
       · rw [if_pos void] at h
         cases h
 
@@ -120,18 +120,17 @@ theorem enter_append (s : CLoops.State) (resultType : String) (stack outer : Con
   | returned => rfl
   | running code env types heap =>
     cases code with
-    | nil => by_cases h : resultType = "void" <;> simp [enterCall, h, State.append]
+    | nil => by_cases h : resultType = "void" <;> simp [enterCall, enterCallWith, h, State.append]
     | cons stmt rest =>
       cases ho : CCalls.callOperand stmt with
-      | none => simp [enterCall, ho]
+      | none => simp [enterCall, enterCallWith, ho]
       | some operand =>
         obtain ⟨destination, name, args⟩ := operand
-        simp only [enterCall, ho, bind, Option.bind_some]
+        simp only [enterCall, enterCallWith, ho, bind, Option.bind_some]
         by_cases hs : (env name).isSome || name = "isfinite"
         · simp only [if_pos hs, Option.map_none]
-        · cases CCalls.arguments env heap args <;>
-            simp only [if_neg hs, Option.bind_some, Option.bind_none, pure,
-              Option.map_none, Option.map_some, State.append, Continuation.append]
+        · cases CCalls.argumentsWith CBody.legacyExpressions env heap args <;>
+            simp only [if_neg hs, Option.bind_some, Option.bind_none, pure, Option.map_none, Option.map_some, State.append, Continuation.append]
 
 theorem resume_append (value : Value) (heap : Heap) (destination : Destination) (rest : List Stmt)
     (env : CBody.Locals) (types : Types) (resultType : String) (stack outer : Continuation) :
@@ -139,16 +138,16 @@ theorem resume_append (value : Value) (heap : Heap) (destination : Destination) 
       (resume value heap (.caller destination rest env types resultType stack)).map (fun t => t.append outer) := by
   cases destination with
   | discard => rfl
-  | ret => cases h : returnCast resultType value <;> simp [resume, h, State.append]
+  | ret => cases h : returnCast resultType value <;> simp [resume, resumeWith, h, State.append]
   | declare type name =>
     by_cases hf : (env name).isSome
-    · simp [resume, hf]
+    · simp [resume, resumeWith, hf]
     · cases ht : interface.types type with
-      | none => simp [resume, hf, ht]
-      | some declared => cases hc : convert declared value <;> simp [resume, hf, ht, hc, State.append]
+      | none => simp [resume, resumeWith, hf, ht]
+      | some declared => cases hc : convert declared value <;> simp [resume, resumeWith, hf, ht, hc, State.append]
   | assign target =>
     cases target <;>
-      simp only [resume, bind, pure, Option.map_bind, Function.comp_def, Option.map_some, State.append]
+      simp only [resume, resumeWith, bind, pure, Option.map_bind, Function.comp_def, Option.map_some, State.append]
 
 theorem append_step (p : Program) (s t : State) (outer : Continuation) (h : next p s = some t) :
     Transition.Reaches (machine p).step (s.append outer) (t.append outer) := by
@@ -168,47 +167,47 @@ theorem append_step (p : Program) (s t : State) (outer : Continuation) (h : next
   | calling name args heap stack =>
     apply Transition.Reaches.next (t := t.append outer) ?_ (.refl _)
     cases hd : p.definitions name with
-    | none => simp [next, hd, nextWith] at h
+    | none => simp [next, nextIn, nextWithExpressions, hd] at h
     | some d => cases d with
       | kernel fn =>
-        cases he : kernelEntry fn args <;> simp [next, hd, he, nextWith] at h
+        cases he : kernelEntry fn args <;> simp [next, nextIn, nextWithExpressions, hd, he] at h
         cases h
-        simp [machine, State.append, next, hd, he, nextWith]
+        simp [machine, machineWith, nextIn, State.append, nextWithExpressions, hd, he]
       | tree fn =>
         cases ha : parameters fn.signature.parameters args with
-        | none => simp [next, hd, ha, nextWith] at h
+        | none => simp [next, nextIn, nextWithExpressions, hd, ha] at h
         | some env =>
-          cases ht : CLoops.Calls.parameterTypes fn.signature.parameters <;> simp [next, hd, ha, ht, nextWith] at h
+          cases ht : CLoops.Calls.parameterTypes fn.signature.parameters <;> simp [next, nextIn, nextWithExpressions, hd, ha, ht] at h
           cases h
-          simp [machine, State.append, next, hd, ha, ht, nextWith]
+          simp [machine, machineWith, nextIn, State.append, nextWithExpressions, hd, ha, ht]
   | kernel state heap stack =>
     apply Transition.Reaches.next (t := t.append outer) ?_ (.refl _)
     cases state with
     | returned x => cases h; rfl
     | entry fn x n =>
-      cases he : CStatements.next p.kernel (.entry fn x n) <;> simp [next, he, nextWith] at h
+      cases he : CStatements.next p.kernel (.entry fn x n) <;> simp [next, nextIn, nextWithExpressions, he] at h
       cases h
-      simp [machine, State.append, next, he, nextWith]
+      simp [machine, machineWith, nextIn, State.append, nextWithExpressions, he]
     | running code locals =>
-      cases he : CStatements.next p.kernel (.running code locals) <;> simp [next, he, nextWith] at h
+      cases he : CStatements.next p.kernel (.running code locals) <;> simp [next, nextIn, nextWithExpressions, he] at h
       cases h
-      simp [machine, State.append, next, he, nextWith]
+      simp [machine, machineWith, nextIn, State.append, nextWithExpressions, he]
   | body state resultType stack =>
     apply Transition.Reaches.next (t := t.append outer) ?_ (.refl _)
     cases state with
     | returned result =>
-      cases hc : returnCast resultType result.value <;> simp [next, hc, nextWith] at h
+      cases hc : returnCast resultType result.value <;> simp [next, nextIn, nextWithExpressions, hc] at h
       cases h
-      simp [machine, State.append, next, hc, nextWith]
+      simp [machine, machineWith, nextIn, State.append, nextWithExpressions, hc]
     | running code env types heap =>
       cases hn : CLoops.next (.running code env types heap) with
       | none =>
-        simp only [next, hn, nextWith] at h
-        simp only [machine, State.append, next, hn, enter_append, h, Option.map_some, nextWith]
+        simp only [next, nextIn, nextWithExpressions, hn] at h
+        simp only [machine, machineWith, nextIn, State.append, nextWithExpressions, hn, enter_append, h, Option.map_some]
       | some following =>
-        simp only [next, hn, Option.some.injEq, nextWith] at h
+        simp only [next, nextIn, nextWithExpressions, hn, Option.some.injEq] at h
         subst t
-        simp only [machine, State.append, next, hn, nextWith]
+        simp only [machine, machineWith, nextIn, State.append, nextWithExpressions, hn]
 
 theorem append_reaches (p : Program) (h : Transition.Reaches (machine p).step s t) (outer : Continuation) :
     Transition.Reaches (machine p).step (s.append outer) (t.append outer) := by
@@ -227,8 +226,8 @@ theorem loop_call_reaches (p : Program) (definitions : CLoops.Calls.Definitions)
 theorem body_step (p : Program) (h : CLoops.next s = some t) (type stack) :
     next p (.body s type stack) = some (.body t type stack) := by
   cases s with
-  | returned => simp [CLoops.next] at h
-  | running => simp [next, h, nextWith]
+  | returned => simp [CLoops.next, CLoops.nextWith] at h
+  | running => simp [next, nextIn, nextWithExpressions, h]
 
 theorem body_reaches (p : Program)
     (h : Transition.Reaches CLoops.machine.step s t) (type stack) :
@@ -239,7 +238,7 @@ theorem body_reaches (p : Program)
 
 theorem kernel_step (p : Program) (h : CStatements.next p.kernel s = some t) (heap stack) :
     next p (.kernel s heap stack) = some (.kernel t heap stack) := by
-  cases s <;> simp_all [CStatements.next, next, nextWith]
+  cases s <;> simp_all [CStatements.next, next, nextIn, nextWithExpressions]
 
 theorem kernel_reaches (p : Program) (h : CStatements.Reaches p.kernel s t) (heap stack) :
     Transition.Reaches (machine p).step (.kernel s heap stack) (.kernel t heap stack) := by
@@ -253,7 +252,7 @@ theorem tree_entry (p : Program) (name args heap stack fn env types)
     (ht : CLoops.Calls.parameterTypes fn.signature.parameters = some types) :
     next p (.calling name args heap stack) =
       some (.body (.running fn.body env types heap) fn.signature.result stack) := by
-  simp [next, hd, hp, ht, nextWith]
+  simp [next, nextIn, nextWithExpressions, hd, hp, ht]
 
 theorem loop_terminates_reaches (p : Program) (definitions : CLoops.Calls.Definitions)
     (linked : Extends definitions p)
@@ -262,7 +261,7 @@ theorem loop_terminates_reaches (p : Program) (definitions : CLoops.Calls.Defini
   cases h with
   | terminates ran final =>
     rename_i t
-    cases t <;> simp [CLoops.Calls.machine] at final
+    cases t <;> simp [CLoops.Calls.machine, CLoops.Calls.machineWith] at final
     cases final
     exact loop_reaches p definitions linked ran
 
@@ -294,11 +293,10 @@ theorem invoke_step (p : Program) (name : String) (args : List Expr) (values : L
     (evaluated : arguments env heap args = some values) :
     next p (.body (.running (.eval (.call (.id name) args) :: rest) env types heap) type stack) =
       some (.calling name values heap (.caller .discard rest env types type stack)) := by
+  change argumentsWith { value := CBody.eval, address := CBody.lvalue } env heap args = some values at evaluated
   have pureCall : CBody.eval env heap (.call (.id name) args) = none := by
-    simp [CBody.eval, ordinary]
-  simp only [next, CLoops.next, CLoops.eval, pureCall, bind, Option.bind_none,
-    enterCall, callOperand, Option.bind_some, unshadowed, Option.isSome_none,
-    Bool.false_or, decide_eq_true_eq, if_neg ordinary, evaluated, pure, nextWith]
+    simp [CBody.eval, CBody.evalWith, ordinary]
+  simp only [next, nextIn, nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, pureCall, bind, Option.bind_none, enterCallWith, callOperand, Option.bind_some, unshadowed, Option.isSome_none, Bool.false_or, decide_eq_true_eq, if_neg ordinary, evaluated, pure]
 
 theorem invoke_reaches (p : Program) (h : CallResult p name values heap finalHeap)
     (args : List Expr) (rest : List Stmt) (env : CBody.Locals) (types : Types)
@@ -322,8 +320,8 @@ theorem invoke_return_reaches (p : Program) (h : CallResult p name values heap f
   apply (invoke_reaches p h args [.ret (some status)] env types type stack
     ordinary unshadowed evaluated).trans
   refine .next (t := .body (.returned ⟨statusValue, finalHeap⟩) type stack) ?_ ?_
-  · exact body_step p (by simp [CLoops.next, statusEval]) type stack
-  · exact .next (by simp [machine, next, converted, nextWith]) (.refl _)
+  · exact body_step p (by simp [CLoops.next, CLoops.nextWith, statusEval]) type stack
+  · exact .next (by simp [machine, machineWith, nextIn, nextWithExpressions, converted]) (.refl _)
 
 
 end Rumoca.CCalls.Typed

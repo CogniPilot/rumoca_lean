@@ -1,8 +1,7 @@
 import RumocaFMI3.ScheduledCreationContract
 import RumocaFMI3.TensorInstanceStorage
 
-/-! Tensor `fmi3InstantiateScheduledExecution` contract, as a package-checked
-product.
+/-! Tensor `fmi3InstantiateScheduledExecution` rejection contract.
 
 The scalar body `Runtime.body model signature` for
 `fmi3InstantiateScheduledExecution` is the fixed rejection `FactoryRejection.code
@@ -16,9 +15,9 @@ a logging call emits the diagnostic through the supplied logger callback. The
 logger, environment and logging-flag premises are call arguments the creation
 request carries, exactly as in the scalar proof.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar factory, `Runtime.lean` and every
-existing contract are unchanged. -/
+Production adapter contracts consume this rejection result. It does not establish
+Scheduled Execution support, certify actual artifact bytes by itself, or admit a
+new source/grammar case. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorScheduledCreation
 open CTree CMemory CBody CCalls.Events StaticFactory CLiteral.Interface

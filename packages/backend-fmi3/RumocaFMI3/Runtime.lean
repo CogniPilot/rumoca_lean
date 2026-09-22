@@ -37,7 +37,8 @@ theorem eval_region [Rumoca.CInterface] (env : CBody.Locals) (heap : Heap)
     (name : String) (m : Address)
     (mResolves : CBody.resolve env "m" = some (.pointer (some m))) :
     CBody.eval env heap (region name) = some (.pointer (some (m.member name))) := by
-  simp [region, field, v, n, CBody.eval, CBody.lvalue, mResolves, Value.address]
+  simp [region, field, v, n, CBody.eval, CBody.evalWith, CBody.lvalueWith,
+    mResolves, Value.address]
 def x := Expr.field (field "model") "x"
 def eqv := Expr.bin BinOp.eq
 def nev := Expr.bin BinOp.ne

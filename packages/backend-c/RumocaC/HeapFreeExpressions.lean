@@ -29,16 +29,16 @@ theorem heap_free (expr : Expr) :
     (heapFreeValue expr = true → ∀ env before after, eval env before expr = eval env after expr) ∧
     (heapFreeAddress expr = true → ∀ env before after, lvalue env before expr = lvalue env after expr) := by
   cases expr with
-  | id | nat | str => constructor <;> simp [heapFreeValue, heapFreeAddress, eval, lvalue]
+  | id | nat | str => constructor <;> simp [heapFreeValue, heapFreeAddress, eval, evalWith, lvalue, lvalueWith]
   | cast type value =>
     constructor
     · intro accepted env before after
-      simp only [eval, (heap_free value).1 accepted env before after]
+      simp only [eval, evalWith, (heap_free value).1 accepted env before after]
     · simp [heapFreeAddress]
   | not value =>
     constructor
     · intro accepted env before after
-      simp only [eval, (heap_free value).1 accepted env before after]
+      simp only [eval, evalWith, (heap_free value).1 accepted env before after]
     · simp [heapFreeAddress]
   | bin op left right =>
     constructor
@@ -46,35 +46,36 @@ theorem heap_free (expr : Expr) :
       obtain ⟨l, r⟩ := Bool.and_eq_true_iff.mp accepted
       have leftEq := (heap_free left).1 l env before after
       have rightEq := (heap_free right).1 r env before after
-      cases op <;> simp only [eval, leftEq, rightEq]
+      cases op <;> simp only [eval, evalWith, leftEq, rightEq]
     · simp [heapFreeAddress]
   | address target =>
     constructor
     · intro accepted env before after
-      simp only [eval, (heap_free target).2 accepted env before after]
+      simp only [eval, evalWith, (heap_free target).2 accepted env before after]
     · simp [heapFreeAddress]
   | deref pointer =>
     constructor
     · simp [heapFreeValue]
     · intro accepted env before after
-      simp only [lvalue, (heap_free pointer).1 accepted env before after]
+      simp only [lvalue, lvalueWith, (heap_free pointer).1 accepted env before after]
   | field base name pointer =>
     constructor
     · simp [heapFreeValue]
     · intro accepted env before after
       cases pointer with
-      | true => simp only [lvalue, ↓reduceIte, (heap_free base).1 accepted env before after]
-      | false => simp only [lvalue, Bool.false_eq_true, ↓reduceIte, (heap_free base).2 accepted env before after]
+      | true => simp only [lvalue, lvalueWith, ↓reduceIte, (heap_free base).1 accepted env before after]
+      | false => simp only [lvalue, lvalueWith, Bool.false_eq_true, ↓reduceIte, (heap_free base).2 accepted env before after]
   | index base index =>
     constructor
     · simp [heapFreeValue]
     · intro accepted env before after
       obtain ⟨b, i⟩ := Bool.and_eq_true_iff.mp accepted
-      -- A base certified `heapFreeValue` is not an lvalue expression, so the
-      -- array-decay fallback branch is unreachable and heap-independent.
+      -- A base certified `heapFreeValue` is not an lvalue expression, so
+      -- the first address alternative fails. The evaluated-pointer fallback
+      -- remains possible and is heap-independent by the induction hypothesis.
       have lvNone : ∀ h, lvalue env h base = none := by
-        cases base <;> simp_all [heapFreeValue, lvalue]
-      simp only [lvalue, (heap_free base).1 b env before after, (heap_free index).1 i env before after,
+        cases base <;> simp_all [heapFreeValue, lvalue, lvalueWith]
+      simp only [lvalue, lvalueWith, (heap_free base).1 b env before after, (heap_free index).1 i env before after,
         lvNone]
   | call | decimal | sizeof => simp [heapFreeValue, heapFreeAddress]
 termination_by sizeOf expr
@@ -93,7 +94,7 @@ theorem loop_heap_free (accepted : heapFreeValue expr = true)
   have support : ∀ value, heapFreeValue value = true →
       CBody.eval env before value = CBody.eval env after value :=
     fun value valid => (heap_free value).1 valid env before after
-  unfold CLoops.eval
-  split <;> simp_all only [heapFreeValue, Bool.and_eq_true]
+  unfold CLoops.eval CLoops.evalWith
+  split <;> simp_all only [CBody.legacyExpressions, heapFreeValue, Bool.and_eq_true]
 
 end Rumoca.CBody.Footprint

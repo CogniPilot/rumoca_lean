@@ -1,5 +1,20 @@
 # Trust and premise ledger (K05)
 
+**Canonical-context integration, full gate passed (2026-09-22):** The tensor eFMI actual-file
+products now retain the old contracts and additionally require the public-method
+execution/source-Jacobian products on the same source, bytes and final heap.
+The common C evaluator/scheduler threads declared record/array metadata, with
+empty-context legacy wrappers. Allocated storage, finite RHS/addition, external
+calls and other stated premises are retained; no arbitrary-outcome, complete
+history or native-correspondence claim follows. The integrated required artifact
+gate passed with unchanged inputs: all 462 new package roots were present and
+all 7,477 printed axiom reports plus four retained FMU roots were permitted.
+All three FMI matrices and scalar/tensor eFMI artifact/reuse/mutation checks passed.
+The extended native boundary executes extracted tensor public methods, including
+finite and signed-zero cases; it does not prove host compilation or ABI. See
+docs/verification.md and the canonical consumer checkpoint for evidence.
+No K05 item is closed by this integration.
+
 This ledger records, for every mandatory actual-artifact contract in the frozen
 subset, the theorem quantifiers, the classification of each premise, the
 all-behavior coverage of the emitted interfaces, the non-vacuity evidence, and

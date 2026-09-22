@@ -1,5 +1,41 @@
 # Exact verification contract
 
+**Canonical tensor execution (full artifact gate passed):**
+
+Shared C now has one context-parameterized expression evaluator and scheduler
+path; legacy APIs instantiate its empty-context wrapper. Declared record/array
+metadata supplies the public tensor method context. The tensor eFMI contracts
+compose Startup, Recalibrate and DoStep with prepared Solve execution and exact
+forward-AD/Jacobian observations on the same final heap and actual byte witness.
+Existing contracts, allocated storage, finite RHS/addition and external-call
+premises remain explicit. This is not arbitrary numerical-outcome coverage,
+complete source histories, a native compiler proof, or MISRA conformance.
+
+The complete affected consumer closure passed in the isolated candidate, including
+all 267 final FMI/compiler owners and their 896 original audit roots. Package-local
+checks now retain the new roots, quotation diagnostics and two universal
+counterexamples distinguishing ledger alignment from freshness and equality guards
+from range checks. Five introductory comments were corrected without changing
+contracts. The existing eFMI integration suite now also executes the public tensor
+methods from the actual extracted C archive member; this tests host behavior only.
+
+The reviewed source candidate and prior actual tensor archive certificate are
+recorded in /tmp/rumoca-canonical-executed.i68EWO/CONSUMER-CLOSURE.md and EXECUTED.md.
+The required `nix develop .#verification --command lake test` passed (exit 0,
+observed 2026-09-22 at 04:13:55 UTC), with all 331 gate-input fingerprints unchanged.
+All 462 new package roots were present; all 7,477 printed axiom reports and the
+four retained FMU source/C/build roots passed the unchanged whitelist. All three
+FMI matrices passed 75/75 functions and 526 cells, with zero recorded-finding
+discrepancies or unexpected results. Scalar/tensor eFMI publication, actual-file,
+reuse and mutation checks passed, including native tensor Startup/Recalibrate/
+DoStep finite and signed-zero checks. Existing warnings remain. Evidence is in
+build/canonical-context-full-gate-v1.log and build/canonical-context-integration.md.
+Only documentation status updates followed the gate; implementation inputs remain
+identical. This validates the increment, not full standards conformance.
+No new source case, grammar, emitted C or solver policy is added. K02–K05,
+full numerical/source-history obligations, native correspondence and MISRA remain
+open; grammar expansion stays blocked.
+
 **Numerical tree linkage and concrete accepted execution (full gate passed):**
 
 The 79-file numerical-linkage increment is promoted. Core owns the prepared

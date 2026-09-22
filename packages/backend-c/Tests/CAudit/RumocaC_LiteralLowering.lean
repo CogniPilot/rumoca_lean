@@ -10,3 +10,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CLiteral.Lowering.body_terminates
 #audit axioms Rumoca.CLiteral.Lowering.body_behaviors
 #audit axioms Rumoca.CLiteral.Lowering.expression_zeroLiteral
+
+#audit axioms Rumoca.CLiteral.Lowering.Bound.bind
+#audit axioms Rumoca.CLiteral.Lowering.bodyBisimulation
+#audit axioms Rumoca.CLiteral.Lowering.body_safe_next
+#audit axioms Rumoca.CLiteral.Lowering.intrinsic_iff

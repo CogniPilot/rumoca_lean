@@ -120,7 +120,7 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
     theorem $theoremId:ident :
         Generated.source = $ebnf ∧ GALEC.Generated.source = $algEbnf ∧
         ∃ a : TensorArtifact $inputTerm, compileTensor $inputTerm = .ok a ∧
-          TensorManifestContract a ⟨$cid, $aid, $pid, $date⟩ $alg $out $ax $px $cx := by
+          TensorExecutedManifestContract a ⟨$cid, $aid, $pid, $date⟩ $alg $out $ax $px $cx := by
       obtain ⟨g₁, g₂, a, compiled, code⟩ := $productionRoot:ident
       refine ⟨g₁, g₂, a, compiled, ?_⟩
       let parsed : ArrayProfile.Parsed $srcLit :=
@@ -131,12 +131,15 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
           (compileTensor_eq_parsed $inputTerm parsed squareAst_resolved))
       have hname : a.name = $nameLit := by
         rw [hsame]; exact TensorArtifact.name_square _ rfl
-      have code' : TensorProductionContract a $alg $out := by
+      have code' : TensorExecutedProductionContract a $alg $out := by
         have hc : (String.ofList $modelChars) = $out := by rfl
         exact hc ▸ code
-      exact tensor_manifests_correct_of_documents a $identityName $identityValid:ident code'
-        $aTree $pTree $cTree
-        (by rw [hname]; exact $graph:ident) $valid:ident $aText:ident $pText:ident $cText:ident))
+      exact {
+        toTensorManifestContract :=
+          tensor_manifests_correct_of_documents a $identityName $identityValid:ident
+            code'.toTensorProductionContract $aTree $pTree $cTree
+            (by rw [hname]; exact $graph:ident) $valid:ident $aText:ident $pText:ident $cText:ident
+        execution := code' }))
   let axioms ← collectAxioms theoremName
   for dependency in axioms do
     unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do

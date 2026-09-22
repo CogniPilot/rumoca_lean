@@ -17,7 +17,7 @@ theorem constants_collected (model : Solve.FMI3Model source) (sig : Signature) (
   all_goals simp [Runtime.function, Runtime.body, named, Runtime.makeInstance,
     FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
     FactoryRejection.code, FactoryRejection.logCall,
-    functionTexts, statementTexts, expressionTexts, Runtime.call, Runtime.v]
+    functionTexts, statementTexts, expressionTexts]
 
 theorem constants_ready (model : Solve.FMI3Model source) (sigs : List Signature)
     (sig : Signature) (member : sig ∈ sigs) (kind : Kind) (named : sig.name = factoryName kind)

@@ -55,7 +55,7 @@ theorem run_one [interface : CInterface] (env : Locals) (heap : Heap) (entry : E
     run 1 (.running (statement entry :: rest) env heap) =
       some (.running rest env (write heap entry)) := by
   obtain ⟨old, writable⟩ := ready.writable
-  simp [run, next, statement, eval, lvalue, ready.bound, ready.expression heap,
+  simp [run, next, nextWith, CBody.legacyExpressions, statement, eval, evalWith, lvalue, lvalueWith, ready.bound, ready.expression heap,
     Value.address, store, writable, ready.nonatomic, ready.conversion, write]
 
 /-- Any prepared list executes through its exact successive heaps. No

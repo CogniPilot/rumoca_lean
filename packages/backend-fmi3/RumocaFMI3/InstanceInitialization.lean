@@ -43,7 +43,7 @@ theorem run_initialization (model : Solve.Model source) (kind : Kind)
     Ne.symm (HistoryBodies.state_ne_field p name)
   cases kind <;> cases logging <;>
     simp [code, put, field, state, CInitialization.Emission.statement, CInitialization.value_zero,
-      run, next, eval, lvalue, instanceBound, environmentBound, loggerBound, loggingBound,
+      run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, instanceBound, environmentBound, loggerBound, loggingBound,
       Value.address, Value.finite, CBody.cast, double, convert, boolean, Value.truth, store,
       finalHeap, Reset.finalHeap, CInitialization.written, HistoryProofs.initialHeap,
       HistoryProofs.write, HistoryProofs.cell, LifecycleBodies.writeMode, Kind.code, Mode.code,

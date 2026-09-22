@@ -85,8 +85,9 @@ theorem null_step (env : CBody.Locals) (types : CLoops.Types) (heap : Heap) (nam
     CLoops.next (.running (nullCheck name :: rest) env types heap) =
       some (.running ((if pointer.isNone then [falseReturn] else []) ++ rest) env types heap) := by
   cases pointer <;>
-    simp [nullCheck, falseReturn, CLoops.next, CLoops.noDeclarations, CLoops.eval,
-      CBody.eval, CBody.resolve, found, CNull.literal_eval voidPointer, CBody.comparison,
+    simp [nullCheck, falseReturn, CLoops.next, CLoops.nextWith, CLoops.noDeclarations,
+      CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      CBody.resolve, found, CNull.literal_eval voidPointer, CBody.comparison,
       CBody.boolean, Value.truth]
 
 theorem checks_pass (name token expected whitespace : Address) (heap : Heap)

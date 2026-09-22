@@ -39,9 +39,9 @@ theorem target_agreement (before after : CInterface)
   cases callee with
   | id name =>
       have resolved : @CBody.resolve before env name = @CBody.resolve after env name := values
-      simp only [CCalls.Indirect.resolve, resolved]
+      simp only [CCalls.Indirect.resolve, CCalls.Indirect.resolveWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, resolved]
   | field | index =>
-      simpa only [CCalls.Indirect.resolve] using
+      simpa only [CCalls.Indirect.resolve, CCalls.Indirect.resolveWith, CBody.legacyExpressions] using
         congrArg (fun value => value.bind CCalls.Indirect.valueTarget) values
   | _ => rfl
 
@@ -51,7 +51,7 @@ theorem resolve_agreement (before after : CInterface)
     (callee : Expr) (agree : ExprAgrees before after callee) :
     @CCalls.Events.resolve E before original env heap callee =
       @CCalls.Events.resolve E after (program types original) env heap callee := by
-  simp only [CCalls.Events.resolve, target_agreement before after types literals env heap callee agree,
+  simp only [CCalls.Events.resolve, CCalls.Events.resolveWith, target_agreement before after types literals env heap callee agree,
     program]
 
 theorem callee_agreement (agree : ExprAgrees before after (.call fn args)) :
@@ -86,28 +86,30 @@ theorem enter_agreement (before after : CInterface)
       | nil => rfl
       | cons stmt rest =>
           cases operand : CCalls.Indirect.operand stmt with
-          | none => simp [CCalls.Events.enterCall, operand]
+          | none => simp [CCalls.Events.enterCall, CCalls.Events.enterCallWith, operand]
           | some request =>
               have ⟨_, callee, args⟩ := operand_agreement (valid stmt (by simp)) operand
               have resolved := resolve_agreement before after types literals original env heap request.callee callee
               have values := arguments_agreement before after types literals env heap request.args args
-              simp [CCalls.Events.enterCall, operand, resolved, values]
+              simp only [CCalls.Events.resolve] at resolved
+              simp only [CCalls.arguments] at values
+              simp [CCalls.Events.enterCall, CCalls.Events.enterCallWith, operand, resolved, values]
 
 theorem enter_agrees_next (original : @CCalls.Events.Program before E)
     (valid : LoopAgrees before after s) (stackAgrees : StackAgrees before after stack)
     (step : @CCalls.Events.enterCall E before original s resultType stack = some t) :
     StateAgrees before after t := by
   cases s with
-  | returned => simp [CCalls.Events.enterCall] at step
+  | returned => simp [CCalls.Events.enterCall, CCalls.Events.enterCallWith] at step
   | running code env locals heap =>
       cases code with
       | nil =>
-          simp only [CCalls.Events.enterCall] at step
+          simp only [CCalls.Events.enterCall, CCalls.Events.enterCallWith] at step
           split at step
           · cases Option.some.inj step; exact stackAgrees
           · contradiction
       | cons stmt rest =>
-          simp only [CCalls.Events.enterCall, Option.bind_eq_bind, Option.pure_def,
+          simp only [CCalls.Events.enterCall, CCalls.Events.enterCallWith, Option.bind_eq_bind, Option.pure_def,
             Option.bind_eq_some_iff, Option.some.injEq] at step
           obtain ⟨call, operand, name, resolved, values, evaluated, rfl⟩ := step
           exact StackAgrees.caller (operand_agreement (valid stmt (by simp)) operand).1

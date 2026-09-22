@@ -80,7 +80,7 @@ theorem named_bound (base : Address) (shape : Tensor.Shape) (name : String)
   have pointer := Arguments.locals_present profile.parameters (args base shape) name declared
   have count := Arguments.locals_present profile.parameters (args base shape) "count" (by decide +kernel)
   intro heap
-  simp only [buffer, CBody.eval, CBody.resolve, pointer, count, args, if_neg notCount,
+  simp only [buffer, CBody.eval, CBody.evalWith, CBody.resolve, pointer, count, args, if_neg notCount,
     ↓reduceIte, Option.orElse_some, locations, and_self]
 
 theorem layout_bound (base : Address) (shape : Tensor.Shape) :

@@ -1,3 +1,4 @@
+import RumocaC.PrinterCertificate
 import Rumoca.FMI3StateProofs
 import Rumoca.FMI3DerivativeProofs
 import Rumoca.FMI3Float64Proofs
@@ -18,6 +19,7 @@ register_option rumoca.fmi3.root : String :=
 
 namespace Rumoca.FMI3BuildArtifactCheck
 open Lean Elab Command
+open Rumoca.CTree.Printer.Certificate (quoteCharacters)
 open FMI3AdapterCertificate
 
 /-- The fixed adapter independently reads all files and checks a fixed proposition.

@@ -18,7 +18,8 @@ theorem factory_arguments (model : Solve.FMI3Model source) (tok : String := toke
     CCalls.arguments env heap
       [Runtime.v "instanceName", Runtime.v "instantiationToken", .str tok, .str " \t\n\r\u000c\u000b"] =
       some (Arguments.values ⟨name, suppliedToken, some expected, some whitespace⟩) := by
-  simp [CCalls.arguments, Runtime.v, CBody.eval, CBody.resolve, nameBound, tokenBound,
+  simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions,
+    Runtime.v, CBody.eval, CBody.evalWith, CBody.resolve, nameBound, tokenBound,
     expectedBound, whitespaceBound, Arguments.values]
 
 theorem factory_enters (program : CCalls.Events.Program E) (model : Solve.FMI3Model source) (tok : String := token model) (rest : List Stmt)

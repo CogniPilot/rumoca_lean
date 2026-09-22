@@ -23,12 +23,13 @@ theorem coSimulation_guard (program : CCalls.Events.Program E) (rest : List Stmt
         (Runtime.nev (Runtime.v "nRequiredIntermediateVariables") (Runtime.n 0))) =
       some (boolean (unsupported args)) := by
     cases flag : args.events <;>
-      simp [parameters, CCalls.Signature.locals, signature, arguments, List.lookup, eval,
+      simp [parameters, CCalls.Signature.locals, signature, arguments, List.lookup, eval, evalWith,
         resolve, Runtime.either, Runtime.v, Runtime.nev, Runtime.n, comparison,
         boolean, Value.truth, unsupported, flag]
   simp only [FactoryPrefix.entry, FactoryPrefix.capabilityGuard]
   simp only [Runtime.either, Runtime.nev, Runtime.v, Runtime.n] at condition ⊢
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith,
+    CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
     CLoops.noDeclarations, condition, FactoryRejection.code,
     FactoryRejection.logCall, boolean, Value.truth]
 

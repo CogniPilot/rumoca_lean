@@ -30,10 +30,10 @@ theorem call_numerical (program : CCalls.Events.Program E) (heap : Heap)
     CCalls.Events.internalNext program
       (.body (.running Runtime.helpers[1].body (locals p) types heap) "double" stack) =
       some (.calling "rumoca_rhs" [] heap (continuation p stack)) := by
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-    Runtime.helpers, Runtime.ret, Runtime.call, Runtime.v, CBody.eval,
-    CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand,
-    CCalls.Indirect.resolve, CCalls.arguments, locals, CBody.bind, CBody.resolve,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+    Runtime.helpers, Runtime.ret, Runtime.call, Runtime.v, CBody.eval, CBody.evalWith,
+    CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand,
+    CCalls.Indirect.resolveWith, CBody.legacyExpressions, CCalls.argumentsWith, CBody.legacyExpressions, locals, CBody.bind, CBody.resolve,
     CBody.constants, continuation]
 
 /-- Actual helper entry, nested numerical C execution and converted return.
@@ -51,10 +51,10 @@ theorem reaches (model : Solve.FMI3Model source) (program : CCalls.Events.Progra
   refine .next (call_numerical program heap p stack) ?_
   refine .next (t := .kernel (.entry .rhs Binary64.positiveZero ⟨0, by decide +kernel⟩)
     heap (continuation p stack)) ?_ ?_
-  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, numerical, CCalls.kernelEntry]
+  · simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, numerical, CCalls.kernelEntry]
   refine (CCalls.Events.kernel_correct program model.solve same .rhs Binary64.positiveZero
     ⟨0, by decide +kernel⟩ heap (continuation p stack)).trans (.next ?_ (.refl _))
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith,
     continuation, CCalls.returnCast, CBody.cast, convert, CStatements.result, Value.finite]
 
 theorem behaviors (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)

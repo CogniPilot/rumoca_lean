@@ -108,19 +108,19 @@ theorem enterCall_lowered (safe : NoIntrinsic symbols) (s : CLoops.State)
       cases code with
       | nil =>
           by_cases isVoid : resultType = "void" <;>
-            simp [loopState, CCalls.Typed.enterCall, isVoid, callState]
+            simp [loopState, CCalls.Typed.enterCall, CCalls.Typed.enterCallWith, isVoid, callState]
       | cons stmt rest =>
           have operand := callOperand_lowered symbols stmt (heads stmt (by simp))
           cases call : CCalls.callOperand stmt with
-          | none => simp [loopState, CCalls.Typed.enterCall, operand, call]
+          | none => simp [loopState, CCalls.Typed.enterCall, CCalls.Typed.enterCallWith, operand, call]
           | some request =>
               obtain ⟨dest, name, args⟩ := request
               have arguments := arguments_correct valid.1 safe heap args
               cases shadow : env name with
-              | some value => simp [loopState, CCalls.Typed.enterCall, operand, call, shadow]
+              | some value => simp [loopState, CCalls.Typed.enterCall, CCalls.Typed.enterCallWith, operand, call, shadow]
               | none =>
                   by_cases intrinsic : name = "isfinite" <;>
-                    simp [loopState, CCalls.Typed.enterCall, operand, call, shadow, intrinsic,
+                    simp [loopState, CCalls.Typed.enterCall, CCalls.Typed.enterCallWith, operand, call, shadow, intrinsic,
                       arguments, Option.map_bind, callState, continuation]
 
 def FrameBound (symbols : Symbols) : CCalls.Typed.Continuation → Prop
@@ -136,22 +136,24 @@ theorem resume_lowered (safe : NoIntrinsic symbols) (value : Value) (heap : Heap
   | caller dest rest env types resultType outer =>
       cases dest with
       | discard => rfl
-      | ret => simp [continuation, destination, CCalls.Typed.resume, Option.map_bind, callState]
+      | ret => simp [continuation, destination, CCalls.Typed.resume, CCalls.Typed.resumeWith, Option.map_bind, callState]
       | declare type name =>
           cases defined : (env name).isSome <;>
-            simp [continuation, destination, CCalls.Typed.resume, defined, Option.map_bind, callState, loopState]
+            simp [continuation, destination, CCalls.Typed.resume, CCalls.Typed.resumeWith, defined, Option.map_bind, callState, loopState]
       | assign target =>
           have targetEq := (expression_correct valid.1 safe heap target).2
+          change CBody.legacyExpressions.address env heap (expression symbols target) =
+            CBody.legacyExpressions.address env heap target at targetEq
           cases target with
           | str text =>
               cases found : symbols text with
-              | none => simp [continuation, destination, expression, found, CCalls.Typed.resume, CBody.lvalue]
+              | none => simp [continuation, destination, expression, found, CCalls.Typed.resume, CCalls.Typed.resumeWith, CBody.legacyExpressions, CBody.lvalue, CBody.lvalueWith]
               | some name =>
-                  simp [continuation, destination, expression, found, CCalls.Typed.resume,
-                    valid.2 text name found, CBody.lvalue]
+                  simp [continuation, destination, expression, found, CCalls.Typed.resume, CCalls.Typed.resumeWith,
+                    valid.2 text name found, CBody.legacyExpressions, CBody.lvalue, CBody.lvalueWith]
           | _ =>
               simp only [expression] at targetEq ⊢
-              simp [continuation, destination, expression, CCalls.Typed.resume, targetEq,
+              simp [continuation, destination, expression, CCalls.Typed.resume, CCalls.Typed.resumeWith, targetEq,
                 Option.map_bind, callState, loopState]
 
 def CallsWellFormed : Stmt → Prop
@@ -190,7 +192,7 @@ private theorem calls_loop (condition : Expr) (body : List Stmt) :
   rw [CallsWellFormed]
 
 theorem calls_ready_next (ready : CallsReady s) (step : CLoops.next s = some t) : CallsReady t := by
-  unfold CLoops.next at step
+  unfold CLoops.next CLoops.nextWith at step
   split at step
   all_goals aesop (add simp [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff,
     CallsReady, calls_branch, calls_loop])
@@ -231,16 +233,16 @@ theorem enterCall_safe (valid : loopSafe symbols s) (ready : CallsReady s)
     (stackSafe : StackSafe symbols stack) (step : CCalls.Typed.enterCall s resultType stack = some t) :
     StateSafe symbols t := by
   cases s with
-  | returned => simp [CCalls.Typed.enterCall] at step
+  | returned => simp [CCalls.Typed.enterCall, CCalls.Typed.enterCallWith] at step
   | running code env types heap =>
       cases code with
       | nil =>
-          simp only [CCalls.Typed.enterCall] at step
+          simp only [CCalls.Typed.enterCall, CCalls.Typed.enterCallWith] at step
           split at step
           · cases Option.some.inj step; exact stackSafe
           · contradiction
       | cons stmt rest =>
-          simp only [CCalls.Typed.enterCall, Option.bind_eq_bind, Option.pure_def,
+          simp only [CCalls.Typed.enterCall, CCalls.Typed.enterCallWith, Option.bind_eq_bind, Option.pure_def,
             Option.bind_eq_some_iff] at step
           obtain ⟨⟨dest, name, args⟩, operand, step⟩ := step
           split at step
@@ -269,12 +271,12 @@ theorem resume_safe (valid : StackSafe symbols stack)
           cases Option.some.inj step
           exact ⟨⟨bound, fresh, codeFresh⟩, codeReady, outerSafe⟩
       | ret =>
-          simp only [CCalls.Typed.resume, Option.bind_eq_bind, Option.pure_def,
+          simp only [CCalls.Typed.resume, CCalls.Typed.resumeWith, Option.bind_eq_bind, Option.pure_def,
             Option.bind_eq_some_iff, Option.some.injEq] at step
           obtain ⟨converted, convertedEq, rfl⟩ := step
           exact outerSafe
       | declare type name =>
-          simp only [CCalls.Typed.resume] at step
+          simp only [CCalls.Typed.resume, CCalls.Typed.resumeWith] at step
           split at step
           · contradiction
           · simp only [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff,
@@ -285,13 +287,13 @@ theorem resume_safe (valid : StackSafe symbols stack)
       | assign target =>
           cases target with
           | id name =>
-              simp only [CCalls.Typed.resume, Option.bind_eq_bind, Option.pure_def,
+              simp only [CCalls.Typed.resume, CCalls.Typed.resumeWith, Option.bind_eq_bind, Option.pure_def,
                 Option.bind_eq_some_iff, Option.some.injEq] at step
               obtain ⟨old, oldEq, declared, declaredEq, converted, convertedEq, rfl⟩ := step
               exact ⟨⟨bound.bind destinationFresh converted, fresh.bind destinationFresh converted, codeFresh⟩,
                 codeReady, outerSafe⟩
           | _ =>
-              simp only [CCalls.Typed.resume, Option.bind_eq_bind, Option.pure_def,
+              simp only [CCalls.Typed.resume, CCalls.Typed.resumeWith, Option.bind_eq_bind, Option.pure_def,
                 Option.bind_eq_some_iff, Option.some.injEq] at step
               obtain ⟨address, addressEq, newHeap, stored, rfl⟩ := step
               exact ⟨⟨bound, fresh, codeFresh⟩, codeReady, outerSafe⟩
@@ -309,14 +311,14 @@ theorem nextWith_lowered (safe : NoIntrinsic symbols) (original : CCalls.Program
   | returning value heap stack => exact resume_lowered safe value heap stack valid.frame
   | calling name args heap stack =>
       cases defined : original.definitions name with
-      | none => simp [callState, program, defined, CCalls.Typed.nextWith]
+      | none => simp [callState, program, defined, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions]
       | some fn =>
-          cases fn <;> simp [callState, program, defined, function, loopState, Option.map_bind, CCalls.Typed.nextWith]
+          cases fn <;> simp [callState, program, defined, function, loopState, Option.map_bind, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions]
   | kernel state heap stack =>
-      cases state <;> simp [callState, program, Option.map_bind, CCalls.Typed.nextWith]
+      cases state <;> simp [callState, program, Option.map_bind, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions]
   | body state resultType stack =>
       cases state with
-      | returned result => simp [callState, loopState, Option.map_bind, CCalls.Typed.nextWith]
+      | returned result => simp [callState, loopState, Option.map_bind, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions]
       | running code env types heap =>
           have lowered := loop_next safe (.running code env types heap) valid.1
           have entered := entry (.running code env types heap) valid.1
@@ -324,9 +326,9 @@ theorem nextWith_lowered (safe : NoIntrinsic symbols) (original : CCalls.Program
           simp only [loopState] at lowered entered
           cases next : CLoops.next (.running code env types heap) with
           | none =>
-              simpa only [callState, loopState, lowered, next, Option.map_none, CCalls.Typed.nextWith] using entered
+              simpa only [callState, loopState, lowered, next, Option.map_none, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] using entered
           | some state =>
-              simp [callState, loopState, lowered, next, CCalls.Typed.nextWith]
+              simp [callState, loopState, lowered, next, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions]
 
 theorem nextWith_safe (globals : GlobalBindings symbols) (checked : ProgramSafe symbols original)
     (enterSource : CLoops.State → String → CCalls.Typed.Continuation → Option CCalls.Typed.State)
@@ -335,45 +337,45 @@ theorem nextWith_safe (globals : GlobalBindings symbols) (checked : ProgramSafe 
     (valid : StateSafe symbols s) (step : CCalls.Typed.nextWith enterSource original s = some t) :
     StateSafe symbols t := by
   cases s with
-  | halted result => simp [CCalls.Typed.nextWith] at step
+  | halted result => simp [CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] at step
   | returning value heap stack => exact resume_safe valid step
   | calling name args heap stack =>
       cases defined : original.definitions name with
-      | none => simp [defined, CCalls.Typed.nextWith] at step
+      | none => simp [defined, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] at step
       | some fn =>
           cases fn with
           | kernel fn =>
               simp only [defined, Option.bind_eq_bind, Option.bind_some,
-                Option.pure_def, Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith] at step
+                Option.pure_def, Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] at step
               obtain ⟨state, entered, rfl⟩ := step
               exact valid
           | tree fn =>
               have ⟨paramsFresh, codeFresh, codeReady⟩ := checked name fn defined
               simp only [defined, Option.bind_eq_bind, Option.bind_some,
-                Option.pure_def, Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith] at step
+                Option.pure_def, Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] at step
               obtain ⟨env, parameters, types, parameterTypes, rfl⟩ := step
               obtain ⟨bound, fresh⟩ := parameter_bindings globals paramsFresh parameters
               exact ⟨⟨bound, fresh, codeFresh⟩, codeReady, valid⟩
   | kernel state heap stack =>
       cases state <;>
         simp only [Option.bind_eq_bind, Option.pure_def,
-          Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith] at step
+          Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] at step
       all_goals aesop (add simp StateSafe)
   | body state resultType stack =>
       cases state with
       | returned result =>
           simp only [Option.bind_eq_bind, Option.pure_def,
-            Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith] at step
+            Option.bind_eq_some_iff, Option.some.injEq, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] at step
           obtain ⟨converted, conversion, rfl⟩ := step
           exact valid.2.2
       | running code env types heap =>
           cases next : CLoops.next (.running code env types heap) with
           | none =>
               exact entry valid.1 valid.2.1 valid.2.2
-                (by simpa only [next, CCalls.Typed.nextWith] using step)
+                (by simpa only [next, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] using step)
           | some state =>
               have result : CCalls.Typed.State.body state resultType stack = t :=
-                Option.some.inj (by simpa only [next, CCalls.Typed.nextWith] using step)
+                Option.some.inj (by simpa only [next, CCalls.Typed.nextWith, CCalls.Typed.nextWithExpressions] using step)
               cases result
               exact ⟨loop_safe_next valid.1 next, calls_ready_next valid.2.1 next, valid.2.2⟩
 

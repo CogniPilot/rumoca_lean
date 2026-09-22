@@ -8,3 +8,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CLiteral.Lowering.loop_safe_next
 #audit axioms Rumoca.CLiteral.Lowering.loop_next
 #audit axioms Rumoca.CLiteral.Lowering.loop_behaviors
+
+#audit axioms Rumoca.CLiteral.Lowering.FreshLocals.bind
+#audit axioms Rumoca.CLiteral.Lowering.loopBisimulation

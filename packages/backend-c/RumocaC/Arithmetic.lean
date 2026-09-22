@@ -66,26 +66,30 @@ theorem floatDiv_finite (x y : Binary64.Value) (h : Binary64.finiteQuotient x y)
 
 variable [interface : CInterface]
 
-def next : CBody.State → Option CBody.State
+def nextWith (expressions : CBody.Expressions) : CBody.State → Option CBody.State
   | .running (.declare type name (.bin .add a b) :: rest) env heap => do
-      let value ← floatAdd (← CBody.eval env heap a) (← CBody.eval env heap b)
+      let value ← floatAdd (← expressions.value env heap a) (← expressions.value env heap b)
       let converted ← CBody.cast type value
       if (env name).isSome then none else
         return .running rest (CBody.bind env name converted) heap
   | .running (.declare type name (.bin .mul a b) :: rest) env heap => do
-      let value ← floatMul (← CBody.eval env heap a) (← CBody.eval env heap b)
+      let value ← floatMul (← expressions.value env heap a) (← expressions.value env heap b)
       let converted ← CBody.cast type value
       if (env name).isSome then none else
         return .running rest (CBody.bind env name converted) heap
-  | state => CBody.next state
+  | state => CBody.nextWith expressions state
 
-def machine : Transition.Machine CBody.State CBody.Result where
-  step s t := next s = some t
+abbrev next := nextWith CBody.legacyExpressions
+
+def machineWith (expressions : CBody.Expressions) : Transition.Machine CBody.State CBody.Result where
+  step s t := nextWith expressions s = some t
   final | .returned result => some result | _ => none
   deterministic ha hb := Option.some.inj (ha.symm.trans hb)
   final_stuck := by
     intro s result hs t
-    cases s <;> simp_all [next, CBody.next]
+    cases s <;> simp_all [nextWith, CBody.nextWith]
+
+abbrev machine := machineWith CBody.legacyExpressions
 
 def run : Nat → CBody.State → Option CBody.State
   | 0, state => some state

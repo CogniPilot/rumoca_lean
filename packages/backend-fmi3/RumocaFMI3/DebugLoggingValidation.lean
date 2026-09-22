@@ -20,7 +20,7 @@ theorem category_eval (env : Locals) (heap : Heap) (base : Address) (i : Nat)
     (counter : resolve env "k" = some (.integer i))
     (loaded : load heap (base.index i) = some (.pointer value)) :
     CBody.eval env heap category = some (.pointer value) := by
-  simp [category, CBody.eval, pointer, counter, Value.address, loaded]
+  simp [category, CBody.eval, CBody.evalWith, CBody.lvalueWith, pointer, counter, Value.address, loaded]
 
 theorem null_category_step (env : Locals) (types : Types) (heap : Heap)
     (value : Option Address) (rest : List Stmt)
@@ -29,8 +29,8 @@ theorem null_category_step (env : Locals) (types : Types) (heap : Heap)
       some (.running (if value.isNone then failure "Unknown log category" :: rest else rest)
         env types heap) := by
   cases value <;>
-    simp [rejectNull, failure, CLoops.next, noDeclarations, CLoops.eval,
-      CBody.eval, loaded, Value.truth, boolean]
+    simp [rejectNull, failure, CLoops.next, CLoops.nextWith, noDeclarations,
+      CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, loaded, Value.truth, boolean]
 
 theorem difference_step (env : Locals) (types : Types) (heap : Heap)
     (value : Int) (rest : List Stmt)
@@ -39,8 +39,9 @@ theorem difference_step (env : Locals) (types : Types) (heap : Heap)
       some (.running (if value = 0 then rest else failure "Unknown log category" :: rest)
         env types heap) := by
   by_cases zero : value = 0 <;>
-    simp [rejectDifference, failure, CLoops.next, noDeclarations, CLoops.eval,
-      CBody.eval, resolve, loaded, CBody.comparison, boolean, Value.truth, zero]
+    simp [rejectDifference, failure, CLoops.next, CLoops.nextWith, noDeclarations,
+      CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      resolve, loaded, CBody.comparison, boolean, Value.truth, zero]
 
 theorem iteration_valid_equivalence (program : CCalls.Events.Program E)
     (env : Locals) (types : Types) (heap : Heap) (selected expected : Address)
@@ -67,7 +68,8 @@ theorem iteration_valid_equivalence (program : CCalls.Events.Program E)
   apply CStringCalls.compare_assignment_equivalence program env types heap "difference"
     [category, .str "logStatus"] (rejectDifference :: rest) resultType stack old selected expected bytes bytes
     pointer integer present typed unshadowed named bound
-    (by simp [CCalls.arguments, loaded, CBody.eval, literal]) selectedStored expectedStored
+    (by simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions,
+      loaded, CBody.eval, CBody.evalWith, literal]) selectedStored expectedStored
   intro value range compared observed
   have zero : value = 0 := (comparison_zero compared).mpr rfl
   subst value

@@ -63,10 +63,10 @@ theorem enter_rhs (program : CCalls.Events.Program E) (heap : Heap) (p buffer : 
       (.body (.running action (locals p (some buffer) 1) types heap) "fmi3Status" stack) =
       some (.calling "model_rhs" [.pointer (some (p.member "model"))] heap
         (continuation (locals p (some buffer) 1) types stack)) := by
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-    action, target, Runtime.call, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue,
-    CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve,
-    CCalls.arguments, locals, parameters, CBody.bind, CBody.resolve, CBody.constants,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+    action, target, Runtime.call, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
+    CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CBody.legacyExpressions,
+    CCalls.argumentsWith, CBody.legacyExpressions, locals, parameters, CBody.bind, CBody.resolve, CBody.constants,
     Value.address, continuation]
 
 theorem return_rhs (program : CCalls.Events.Program E) (heap : Heap) (p buffer : Address)
@@ -76,8 +76,8 @@ theorem return_rhs (program : CCalls.Events.Program E) (heap : Heap) (p buffer :
       (.returning (.finite value) heap (continuation (locals p (some buffer) 1) types stack)) =
       some (.body (.running [Runtime.ok] (locals p (some buffer) 1) types
         (StateProofs.written heap buffer (Binary64.toBits value).val)) "fmi3Status" stack) := by
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume, continuation,
-    target, Runtime.v, Runtime.n, CBody.lvalue, CBody.eval, locals, parameters, CBody.bind,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith, CBody.legacyExpressions, continuation,
+    target, Runtime.v, Runtime.n, CBody.lvalue, CBody.lvalueWith, CBody.evalWith, locals, parameters, CBody.bind,
     CBody.resolve, CBody.constants, Value.address, Value.finite,
     store_float64 heap buffer old _ storage, StateProofs.written]
 
@@ -87,8 +87,8 @@ theorem finish (program : CCalls.Events.Program E) (heap : Heap) (env : Locals)
       (.body (.running [Runtime.ok] env types heap) "fmi3Status" stack)
       (.returning (.integer 0) heap stack) := by
   refine .next (t := .body (.returned ⟨.integer 0, heap⟩) "fmi3Status" stack) ?_ (.next ?_ (.refl _))
-  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-      Runtime.ok, Runtime.ret, Runtime.v, CBody.eval, CBody.resolve, CBody.constants, ok]
+  · simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      Runtime.ok, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, CBody.resolve, CBody.constants, ok]
   · rfl
 
 theorem reaches (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)

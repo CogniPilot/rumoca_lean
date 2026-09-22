@@ -155,7 +155,7 @@ theorem emit_refines_for (locals : CBody.Locals) (types : CLoops.Types) (locatio
   have returned : Transition.Reaches (CLoops.Calls.machine definitions).step
       (.body (.running [.ret none] locals types finalHeap) .done) (.halted finalHeap) :=
     .next (t := .body (.returned ⟨.void, finalHeap⟩) .done) (by rfl)
-      (.next (t := .returning finalHeap .done) (by simp [CLoops.Calls.machine, CLoops.Calls.next])
+      (.next (t := .returning finalHeap .done) (by simp [CLoops.Calls.machine, CLoops.Calls.machineWith, CLoops.Calls.nextWith])
         (.next (by rfl) (.refl _)))
   exact ⟨finalHeap, resultEq ▸ readResult, boundResult, frame, writableResult,
     fun _ => (CLoops.Calls.machine definitions).behavior_iff (ran.trans returned) rfl⟩

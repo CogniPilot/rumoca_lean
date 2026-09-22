@@ -41,19 +41,19 @@ theorem stop_condition (env : Locals) (heap : Heap) (p : Address)
       (Runtime.gt (Runtime.v "next") (Runtime.field "stop"))) =
       some (boolean (decide (AboveStop next stop))) := by
   cases stop with
-  | none => simp [Runtime.both, Runtime.field, Runtime.gt, Runtime.v, eval, resolve,
+  | none => simp [Runtime.both, Runtime.field, Runtime.gt, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
       instanceValue, nextValue, Value.address, enabled, AboveStop]
   | some stop =>
     have stored := limit stop rfl
     cases next with
     | finite next =>
-      simp [Runtime.both, Runtime.field, Runtime.gt, Runtime.v, eval, resolve,
+      simp [Runtime.both, Runtime.field, Runtime.gt, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
         instanceValue, nextValue, Value.address, enabled, stored, AboveStop,
         Float64.Number.encode, Value.finite, comparison, floatComparison,
         finite_comparison, Float64.Relation.Holds]
       rfl
     | negativeInfinity | positiveInfinity | nan =>
-      simp [Runtime.both, Runtime.field, Runtime.gt, Runtime.v, eval, resolve,
+      simp [Runtime.both, Runtime.field, Runtime.gt, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
         instanceValue, nextValue, Value.address, enabled, stored, AboveStop,
         Value.finite, comparison, floatComparison, Float64.test, Float64.compareBits,
         Float64.Number.compare]
@@ -75,13 +75,13 @@ theorem progress_condition (env : Locals) (heap : Heap) (p : Address)
       Value.isFinite_finite next
     by_cases advances : Binary64.value time < Binary64.value next <;>
       simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.finite,
-      Runtime.call, Runtime.v, Runtime.n, Runtime.le, Runtime.field, eval, resolve,
+      Runtime.call, Runtime.v, Runtime.n, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
       instanceValue, nextValue, Value.address, clock, Float64.Number.encode,
       finite, comparison, floatComparison, Value.finite, boolean, Value.truth,
       finite_comparison, Float64.Relation.Holds, Progress, advances, not_lt.mp, not_le.mpr]
   | negativeInfinity | positiveInfinity | nan =>
     simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.finite,
-      Runtime.call, Runtime.v, Runtime.n, Runtime.le, Runtime.field, eval, resolve,
+      Runtime.call, Runtime.v, Runtime.n, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
       instanceValue, nextValue, Value.address, clock, negative, positive, unordered, Progress]
 
 theorem grid_condition (env : Locals) (heap : Heap) (step : Binary64.Value)
@@ -94,7 +94,7 @@ theorem grid_condition (env : Locals) (heap : Heap) (step : Binary64.Value)
   by_cases integral : Binary64.value (Binary64.floorValue step) = Binary64.value step <;>
     by_cases bounded : Binary64.value step ≤ 1000000 <;>
     simp [Runtime.any, Runtime.either, Runtime.nev, Runtime.gt, Runtime.v, Runtime.n,
-    eval, resolve, stepValue, floorValue, Value.finite, comparison, floatComparison,
+    CBody.eval, CBody.evalWith, resolve, stepValue, floorValue, Value.finite, comparison, floatComparison,
     CIntegerConversions.integer_float64 1000000 (by decide +kernel),
     finite_comparison, Float64.Relation.Holds, Binary64.ofSmallInt_value,
     StepAdmission.AdmittedDuration, positive, integral, bounded, boolean, Value.truth,
@@ -111,7 +111,7 @@ private theorem branch_path (program : Events.Program E) (env : Locals) (types :
       (.body (.running ((if choice then yes else no) ++ rest) env types heap) resultType stack) := by
   apply Events.internal_path
   refine .next (Events.body_step program ?_ resultType stack) (.refl _)
-  simp [CLoops.next, yesClosed, noClosed, evaluated]
+  simp [CLoops.next, CLoops.nextWith, yesClosed, noClosed, evaluated]
 
 /-- The first guarded library call covers every admitted int32 observation.
 A rejected observation reaches the actual failure statement before addition. -/
@@ -161,14 +161,14 @@ theorem clock_path (program : Events.Program E) (env : Locals) (types : CLoops.T
   let laterTypes := CLoops.bindType types "next" .float64
   have sum := CArithmetic.eval_member_add env types heap (Runtime.v "m")
     (Runtime.v "communicationStepSize") "time" true time step
-    (by simp [Runtime.v, eval, resolve, instanceValue, Value.address, clock])
-    (by simp [Runtime.v, eval, resolve, stepValue])
+    (by simp [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve, instanceValue, Value.address, clock])
+    (by simp [Runtime.v, CBody.eval, CBody.evalWith, resolve, stepValue])
   simp only [Runtime.v] at sum
   have declared : Events.internalNext program
       (.body (.running (Runtime.stepClock ++ rest) env types heap) resultType stack) =
       some (.body (.running (Runtime.stepClock.drop 1 ++ rest) later laterTypes heap) resultType stack) := by
     apply Events.body_step
-    simp [Runtime.stepClock, Runtime.field, Runtime.v, CLoops.next, double,
+    simp [Runtime.stepClock, Runtime.field, Runtime.v, CLoops.next, CLoops.nextWith, double,
       sum, convert, fresh, later, laterTypes, candidate]
   have entered := Events.internal_path program (.next declared (.refl _))
   have stopGuard := stop_condition later heap p candidate stop
@@ -217,7 +217,7 @@ theorem grid_path (program : Events.Program E) (env : Locals) (types : CLoops.Ty
   have entered := CMathCalls.floor_declaration_path program env types heap "floored"
     (Runtime.v "communicationStepSize") step (Runtime.stepGrid.drop 1 ++ rest)
     resultType stack double fresh unshadowed ordinary
-    (by simp [Runtime.v, eval, resolve, stepValue]) found
+    (by simp [Runtime.v, CBody.eval, CBody.evalWith, resolve, stepValue]) found
   have condition := grid_condition later heap step
     (by simpa [later, CBody.bind] using stepValue) (by simp [later, CBody.bind]) positive
   have checked := branch_path program later laterTypes heap

@@ -70,12 +70,13 @@ theorem write_step (env : Locals) (types : Types) (heap : Heap) (p : Address)
       some (.running rest env types
         (StateProofs.written heap (StateProofs.stateAddress p) (Binary64.toBits value).val)) := by
   have address : CBody.lvalue env heap Runtime.x = some (StateProofs.stateAddress p) := by
-    simp [Runtime.x, Runtime.field, Runtime.v, CBody.lvalue, CBody.eval, instanceBound,
+    simp [Runtime.x, Runtime.field, Runtime.v, CBody.lvalue, CBody.lvalueWith, CBody.evalWith, instanceBound,
       Value.address, StateProofs.stateAddress]
   have rhs : CLoops.eval env types heap output = some (.finite value) := by
-    simpa [CLoops.eval] using loaded
+    simpa [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions] using loaded
+  simp only [CLoops.eval, CBody.legacyExpressions] at rhs
   simp only [Runtime.x] at address
-  simp [writeBody, Runtime.x, CLoops.next, address, rhs, Value.finite,
+  simp [writeBody, Runtime.x, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, address, rhs, Value.finite,
     store_float64 heap _ old _ stored, StateProofs.written]
 
 theorem write_reaches (program : CCalls.Events.Program E) (env : Locals) (types : Types)
@@ -96,7 +97,7 @@ theorem write_reaches (program : CCalls.Events.Program E) (env : Locals) (types 
   apply CCalls.Events.loop_reaches program "k" (Runtime.v "nValueReferences") writeBody rest
     (fun _ => env) types (assigned heap p values) shape.volume resultType stack typed bounded write_closed
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i inside
     obtain ⟨current, cell⟩ := assigned_writable heap p values i old stored
     have loaded := assigned_reads heap p buffer values i readable separate ⟨i, inside⟩
@@ -105,7 +106,7 @@ theorem write_reaches (program : CCalls.Events.Program E) (env : Locals) (types 
     have counter : resolve (counterEnv env "k" i) "k" = some (.integer i) := by
       simp [counterEnv, CBody.bind, resolve]
     have rhs : CBody.eval (counterEnv env "k" i) (assigned heap p values i) output = some (.finite values[i]) := by
-      simpa [output, Runtime.v, CBody.eval, pointer, counter, Value.address] using loaded
+      simpa [output, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, pointer, counter, Value.address] using loaded
     have step := write_step (counterEnv env "k" i) types (assigned heap p values i) p values[i] current
       (counterStep "k" :: loop "k" (Runtime.v "nValueReferences") writeBody :: rest)
       (by simpa [counterEnv, CBody.bind, resolve] using instanceBound) rhs cell

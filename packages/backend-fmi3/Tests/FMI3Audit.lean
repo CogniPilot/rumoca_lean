@@ -1,3 +1,8 @@
+import Tests.FMI3Audit.AdapterProfile
+import Tests.FMI3Audit.CInterface
+import Tests.FMI3Audit.FactoryGuard
+import Tests.FMI3Audit.IdentitySteps
+import Tests.FMI3Audit.Runtime
 -- Aggregator for the per-source-module axiom audits of the FMI 3 backend.
 -- Each imported module audits exactly the roots of one RumocaFMI3.* source
 -- module, so Lake elaborates them as independent parallel jobs while this

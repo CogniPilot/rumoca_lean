@@ -89,7 +89,8 @@ theorem full_step_ready (program : Events.Program E) (tag : CAtomicBoolean.Calls
       (CLoops.declare_local (afterOne flags count) typesAfterOne heap "_Bool" "busy" (.cast "_Bool" (.nat 0))
         [CAtomicScan.scan, .ret (some (.id "count"))] .boolean (.integer 0) (.integer 0) boolean
         (by simp [afterOne, afterK, parameterLocals, CBody.bind])
-        (by simp [CLoops.eval, CBody.eval, CBody.expressionCast, CBody.cast, CBody.zeroLiteral,
+        (by simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+          CBody.expressionCast, CBody.cast, CBody.zeroLiteral,
           boolean, convert, Value.truth]) rfl)
       "size_t" stack) (.loop (.scan 0 (Nat.zero_le _) false heap)) step
   | loop ready => exact .loop (step_ready program tag boolean pointer size named bound range ready active step)

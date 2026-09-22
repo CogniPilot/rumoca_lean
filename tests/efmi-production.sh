@@ -319,6 +319,13 @@ dims = {v.get('name'): [d.get('size') for d in v.findall('Dimensions/Dimension')
 assert dims['u'] == ['2'] and dims['x'] == ['2'] and dims['J'] == ['2', '2'], dims
 print('tensor eFMU: 50 members, schemas match, XSD-valid, checksums correlated, array dimensions declared')
 PY
+# Exercise the public tensor methods in the actual extracted translation unit.
+# This is tested host behavior, separate from the authored-C/IEEE Lean proofs.
+cc -std=c11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
+  -fno-fast-math -ffp-contract=off -frounding-math \
+  -I"$troot/ProductionCode" tests/efmi-tensor-native.c -lm -o "$tstage/tensor-native"
+"$tstage/tensor-native"
+echo 'tensor eFMU: native Startup/Recalibrate/DoStep finite and signed-zero checks passed'
 # One Production C mutation control: the extracted directory with a mutated
 # Production C must be rejected by the tensor directory checker (before any kernel
 # certificate work) and must not certify.

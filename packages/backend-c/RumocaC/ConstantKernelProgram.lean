@@ -29,9 +29,9 @@ set_option maxRecDepth 10000
 /-! ### Rate literals and their rounded binary64 values -/
 
 /-- The C floating constant for a source rate. Its exact base-ten magnitude is
-`|sign| * mantissa * 10 ^ power`, negated when the sign is negative, so a
-conforming translator rounds it to the same binary64 value the body semantics
-assign to the literal. -/
+`|sign| * mantissa * 10 ^ power`, negated when the sign is negative.
+The body semantics assigns its nearest-even binary64 value; correspondence with
+an external C translator's literal conversion is a separate trusted boundary. -/
 def rateLit (d : Decimal) : Expr :=
   .decimal (decide (d.sign < 0)) (d.sign.natAbs * d.mantissa) d.power
 
@@ -165,13 +165,13 @@ addressed array cell. -/
 theorem index_lvalue_nat (env : CBody.Locals) (heap : Heap) (name : String) (base : Address) (start : Nat)
     (ptr : env name = some (.pointer (some base))) :
     CBody.lvalue env heap (.index (.id name) (.nat start)) = some (base.index start) := by
-  simp [CBody.lvalue, CBody.eval, CBody.resolve, ptr, Value.address]
+  simp [CBody.lvalue, CBody.lvalueWith, CBody.evalWith, CBody.resolve, ptr, Value.address]
 
 /-- Evaluating a subscripted caller pointer parameter loads the addressed cell. -/
 theorem index_eval_nat (env : CBody.Locals) (heap : Heap) (name : String) (base : Address) (start : Nat)
     (ptr : env name = some (.pointer (some base))) :
     CBody.eval env heap (.index (.id name) (.nat start)) = load heap (base.index start) := by
-  simp [CBody.eval, CBody.resolve, ptr, Value.address]
+  simp [CBody.eval, CBody.evalWith, CBody.resolve, ptr, Value.address]
 
 /-! ### The kernel statement lists, universal in the source rates -/
 
@@ -206,7 +206,10 @@ theorem rhs_next (name : String) (base : Address) (d : Decimal) (env : CBody.Loc
     CLoops.next (.running (.assign (.index (.id name) (.nat start)) (rateLit d) :: rest) env types heap)
       = some (.running rest env types
         (replace heap (base.index start) ⟨.float64, true, some (.finite (rateVal d))⟩)) := by
-  simp only [CLoops.next, eval_rateLit, index_lvalue_nat env heap name base start ptr,
+  have evaluated := eval_rateLit env types heap d
+  simp only [CLoops.eval, CBody.legacyExpressions] at evaluated
+  simp only [CLoops.next, CLoops.nextWith, evaluated, CBody.legacyExpressions,
+    index_lvalue_nat env heap name base start ptr,
     store_finite heap (base.index start) old (rateVal d) cell, bind, Option.bind_some, pure]
 
 /-- The declaration-order rate stores reach the heap that holds the rounded
@@ -257,7 +260,9 @@ theorem step_next (name : String) (base : Address) (d : Decimal) (env : CBody.Lo
     rw [hunfold, hload, hlit]
     simp only [Option.bind_some]
     exact CArithmetic.floatAdd_finite x (rateVal d) finite
-  simp only [CLoops.next, hadd, index_lvalue_nat env heap name base start ptr,
+  simp only [CLoops.eval, CBody.legacyExpressions] at hadd
+  simp only [CLoops.next, CLoops.nextWith, hadd, CBody.legacyExpressions,
+    index_lvalue_nat env heap name base start ptr,
     store_finite heap (base.index start) (some (.finite x)) (Binary64.roundedAdd x (rateVal d)) cell,
     bind, Option.bind_some, pure]
 

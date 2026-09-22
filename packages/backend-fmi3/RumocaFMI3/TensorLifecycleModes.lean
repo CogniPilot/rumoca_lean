@@ -2,7 +2,7 @@ import RumocaFMI3.TensorReset
 import RumocaFMI3.Termination
 
 /-! Tensor Model Exchange mode-transition bodies over the static tensor instance
-record, as package-checked products.
+record.
 
 The Model Exchange mode transitions `fmi3EnterInitializationMode`,
 `fmi3ExitInitializationMode`, `fmi3EnterEventMode`, `fmi3EnterContinuousTimeMode`
@@ -24,9 +24,10 @@ does (FMI 3.0.2 §2.3.1).
 
 These bodies are shape-independent: they never read or write a tensor region, so
 they are stated over an arbitrary instance address and specialized to the static
-pool record only in the framing corollaries. This is a package-checked product
-only: no production artifact is emitted, no CLI or grammar case is added, and the
-scalar adapter, `Runtime.lean` and every existing contract are unchanged. -/
+pool record only in the framing corollaries. Production tensor/constant adapters
+consume these bodies and contracts. These mode-transition facts do not supply
+full initialization/time-history validation or an actual-artifact certificate;
+no new source or grammar case is admitted here. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorLifecycleModes
 open CTree CMemory CBody
@@ -208,14 +209,14 @@ theorem body_run (ph : Phase) (heap : Heap) (p : Address) (kind : Kind) (mode : 
   case exitInitialization =>
     rw [body, show Phase.steps .exitInitialization = 3 + 3 from rfl, CBody.run_add, entered]
     cases kind <;>
-      simp [tail, Phase.afterKind, run, next, Runtime.branch, Runtime.eqv, Runtime.setMode,
+      simp [tail, Phase.afterKind, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.branch, Runtime.eqv, Runtime.setMode,
         Runtime.put, Runtime.field, Runtime.v, Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret,
-        Mode.code, Kind.code, eval, lvalue, parameters, Phase.extraLocals, CBody.bind, resolve,
+        Mode.code, Kind.code, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalue, CBody.lvalueWith, parameters, Phase.extraLocals, CBody.bind, resolve,
         constants, comparison, boolean, Value.truth, Value.address, store, hk, hm, convert, writeMode]
   all_goals
     (rw [body, show Phase.steps _ = 3 + 2 from rfl, CBody.run_add, entered]
-     simp [tail, Phase.afterKind, run, next, Runtime.setMode, Runtime.put, Runtime.field,
-       Runtime.v, Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, eval, lvalue, parameters,
+     simp [tail, Phase.afterKind, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.setMode, Runtime.put, Runtime.field,
+       Runtime.v, Runtime.mode, Runtime.n, Runtime.ok, Runtime.ret, Mode.code, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, parameters,
        Phase.extraLocals, CBody.bind, resolve, constants, Value.address, store, hm, convert, writeMode])
 
 theorem call_behaviors (ph : Phase) (program : CCalls.Events.Program E) (heap : Heap) (p : Address)

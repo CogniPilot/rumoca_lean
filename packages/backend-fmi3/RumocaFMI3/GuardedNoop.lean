@@ -20,7 +20,7 @@ theorem unchanged_body (cmd : Command) (env : Locals) (heap : Heap)
       some (.returned ⟨.integer 0, heap⟩) := by
   rw [show 4 = 3 + 1 from rfl, run_add,
     LifecycleGuard.accept env heap p cmd kind mode [Runtime.ok] hi hn hk hm allowed]
-  simp [run, next, Runtime.ok, Runtime.ret, Runtime.v, eval, resolve,
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.ok, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, resolve,
     CBody.bind, constants, ok]
 
 end Rumoca.FMI3.GuardedCalls

@@ -93,7 +93,7 @@ theorem reference_eval (env : Locals) (heap : Heap) (p : Address) (i : Nat) (val
     (counter : resolve env "k" = some (.integer i))
     (loaded : load heap (p.index i) = some (.integer value.toNat)) :
     eval env heap reference = some (.integer value.toNat) := by
-  simp [reference, Runtime.v, eval, pointer, counter, Value.address, loaded]
+  simp [reference, Runtime.v, CBody.eval, CBody.evalWith, pointer, counter, Value.address, loaded]
 
 theorem validation_step (env : Locals) (types : CLoops.Types) (heap : Heap)
     (rest : List Stmt) (value : UInt32)
@@ -104,11 +104,11 @@ theorem validation_step (env : Locals) (types : CLoops.Types) (heap : Heap)
   by_cases valid : value.toNat ≤ 2
   · have bound : ¬ (value.toNat : Int) > 2 := by omega
     simp [validation, Runtime.reject, Runtime.branch, Runtime.gt, Runtime.n, Runtime.fail, Runtime.ret,
-      CLoops.next, CLoops.eval, CLoops.noDeclarations, eval, loaded, comparison,
+      CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations, CBody.eval, CBody.evalWith, loaded, comparison,
       boolean, Value.truth, valid, bound]
   · have bound : (value.toNat : Int) > 2 := by omega
     simp [validation, Runtime.reject, Runtime.branch, Runtime.gt, Runtime.n, Runtime.fail, Runtime.ret,
-      CLoops.next, CLoops.eval, CLoops.noDeclarations, eval, loaded, comparison,
+      CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations, CBody.eval, CBody.evalWith, loaded, comparison,
       boolean, Value.truth, valid, bound]
 
 end

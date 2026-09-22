@@ -12,10 +12,10 @@ theorem next_running_suffix (code rest tail : List Stmt) (env later : Locals)
     next (.running (code ++ tail) env heap) =
       some (.running (rest ++ tail) later after) := by
   cases code with
-  | nil => simp [next] at ran
+  | nil => simp [next, nextWith] at ran
   | cons stmt code =>
     cases stmt <;>
-      simp only [next, List.cons_append, Option.bind_eq_bind, Option.pure_def,
+      simp only [next, nextWith, List.cons_append, Option.bind_eq_bind, Option.pure_def,
         Option.bind_eq_some_iff, Option.some.injEq,
         State.running.injEq] at ran ⊢ <;>
       aesop (add simp [List.append_assoc, List.cons_append, Option.bind_eq_bind,
@@ -39,7 +39,7 @@ theorem run_running_suffix (steps : Nat) (code rest tail : List Stmt)
       cases state with
       | returned result =>
         simp only [run, hn] at ran
-        cases n <;> simp [run, next] at ran
+        cases n <;> simp [run, next, nextWith] at ran
       | running mid env' heap' =>
         have restRun := ih mid env' heap' (by simpa [run, hn] using ran)
         simpa only [run, next_running_suffix code mid tail env env' heap heap' hn,

@@ -45,8 +45,8 @@ theorem read_dispatch (env : Locals) (types : Types) (heap : Heap) (rest : List 
       some (.running (.assign output selected.expression :: rest) env types heap) := by
   cases selected <;>
     simp [readBody, Variable.expression, Variable.code, Runtime.branch, Runtime.eqv,
-      Runtime.n, CLoops.run, CLoops.next, CLoops.eval, CLoops.noDeclarations,
-      CBody.eval, loaded, comparison, boolean, Value.truth]
+      Runtime.n, CLoops.run, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations,
+      CBody.eval, CBody.evalWith, loaded, comparison, boolean, Value.truth]
 
 end
 
@@ -62,7 +62,7 @@ theorem output_address (env : Locals) (heap : Heap) (buffer : Address) (i : Nat)
     (pointer : resolve env "values" = some (.pointer (some buffer)))
     (counter : resolve env "k" = some (.integer i)) :
     CBody.lvalue env heap output = some (buffer.index i) := by
-  simp [output, Runtime.v, CBody.lvalue, CBody.eval, pointer, counter, Value.address]
+  simp [output, Runtime.v, CBody.lvalue, CBody.lvalueWith, CBody.evalWith, pointer, counter, Value.address]
 
 theorem derivative_call (program : CCalls.Events.Program E) (env : Locals) (types : Types)
     (heap : Heap) (p : Address) (rest : List Stmt) (resultType : String) (stack : CCalls.Typed.Continuation)
@@ -73,10 +73,10 @@ theorem derivative_call (program : CCalls.Events.Program E) (env : Locals) (type
       some (.calling "model_rhs" [.pointer (some (p.member "model"))] heap
         (readContinuation env types rest resultType stack)) := by
   have named : resolve env "model_rhs" = none := by simp [resolve, constants, unshadowed]
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
     Variable.expression, Runtime.call, Runtime.field, Runtime.v, output,
-    CBody.eval, CBody.lvalue, instanceBound, CCalls.Events.enterCall, CCalls.Events.resolve,
-    CCalls.Indirect.operand, CCalls.Indirect.resolve, named, CCalls.arguments,
+    CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, instanceBound, CCalls.Events.enterCallWith, CCalls.Events.resolveWith,
+    CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CBody.legacyExpressions, named, CCalls.argumentsWith, CBody.legacyExpressions,
     Value.address, readContinuation]
 
 theorem output_return (program : CCalls.Events.Program E) (env : Locals) (types : Types)
@@ -89,7 +89,7 @@ theorem output_return (program : CCalls.Events.Program E) (env : Locals) (types 
       some (.body (.running rest env types (StateProofs.written heap (buffer.index i)
         (Binary64.toBits value).val)) resultType stack) := by
   simp only [output] at address
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith, CBody.legacyExpressions,
     readContinuation, output, address, Value.finite,
     store_float64 heap (buffer.index i) old _ storage, StateProofs.written]
 
@@ -116,18 +116,20 @@ theorem read_iteration (model : Solve.FMI3Model source) (program : CCalls.Events
   cases selected with
   | time =>
       have evaluated : CLoops.eval env types heap (Runtime.field "time") = some (.finite time) := by
-        simp [CLoops.eval, Runtime.field, Runtime.v, CBody.eval, instanceBound, Value.address, timeStored]
+        simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, instanceBound, Value.address, timeStored]
+      simp only [CLoops.eval, CBody.legacyExpressions] at evaluated
       refine .next (CCalls.Events.body_step program ?_ resultType stack) (.refl _)
-      simp [CLoops.next, output, Variable.expression, Variable.value, Runtime.v, evaluated, address, Value.finite,
+      simp [CLoops.next, CLoops.nextWith, CBody.legacyExpressions, output, Variable.expression, Variable.value, Runtime.v, evaluated, address, Value.finite,
         store_float64 heap (buffer.index i) old _ storage, StateProofs.written]
   | state =>
       have stored := stateStored
       simp only [StateProofs.Represents, StateProofs.stateAddress] at stored
       have evaluated : CLoops.eval env types heap Runtime.x = some (.finite state.x) := by
-        simp [CLoops.eval, Runtime.x, Runtime.field, Runtime.v, CBody.eval, CBody.lvalue,
+        simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, Runtime.x, Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith,
           instanceBound, Value.address, stored]
+      simp only [CLoops.eval, CBody.legacyExpressions] at evaluated
       refine .next (CCalls.Events.body_step program ?_ resultType stack) (.refl _)
-      simp [CLoops.next, output, Variable.expression, Variable.value, Runtime.v, evaluated, address,
+      simp [CLoops.next, CLoops.nextWith, CBody.legacyExpressions, output, Variable.expression, Variable.value, Runtime.v, evaluated, address,
         ModelExchange.getContinuousState, Value.finite,
         store_float64 heap (buffer.index i) old _ storage, StateProofs.written]
   | derivative =>
@@ -255,7 +257,7 @@ theorem read_reaches (model : Solve.FMI3Model source) (program : CCalls.Events.P
   apply CCalls.Events.loop_reaches program "k" (Runtime.v "nValueReferences") readBody rest
     (fun _ => env) types heaps shape.volume resultType stack typed bounded read_closed
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i inside
     obtain ⟨old, storage⟩ := pending_output heap buffer values writable i inside
     have refs := references_written heap buffer pointer values references i readable referencesSeparate

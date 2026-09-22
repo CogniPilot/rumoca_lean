@@ -19,7 +19,7 @@ theorem missing_eval [interface : CInterface] (env : Locals) (heap : Heap)
     unfold missing at tail
     cases pointer : addresses name <;>
       cases rest : names.any (fun name => (addresses name).isNone) <;>
-      simp [missing, List.any_cons, eval, head, pointer, tail, rest, boolean, Value.truth]
+      simp [missing, List.any_cons, eval, evalWith, head, pointer, tail, rest, boolean, Value.truth]
 
 theorem missing_iff (names : List String) (addresses : String → Option Address) :
     (names.any fun name => (addresses name).isNone) = true ↔ ∃ name ∈ names, addresses name = none := by

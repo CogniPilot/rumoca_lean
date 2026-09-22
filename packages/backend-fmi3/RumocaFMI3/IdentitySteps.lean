@@ -42,7 +42,8 @@ theorem measure_enter (program : CCalls.Events.Program E) (args : Arguments) (le
   · simp [locals, parameterLocals, CBody.bind]
   · exact named
   · decide
-  · simp [CCalls.arguments, CBody.eval, CBody.resolve, locals, parameterLocals, CBody.bind]
+  · simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions,
+      CBody.eval, CBody.evalWith, CBody.resolve, locals, parameterLocals, CBody.bind]
 
 theorem prefix_enter (program : CCalls.Events.Program E) (args : Arguments) (length prefixLength : Nat)
     (difference : Int) (heap : Heap) (rest : List Stmt) (stack : CCalls.Typed.Continuation)
@@ -57,7 +58,8 @@ theorem prefix_enter (program : CCalls.Events.Program E) (args : Arguments) (len
   · simp [locals, parameterLocals, CBody.bind]
   · exact named
   · decide
-  · simp [CCalls.arguments, CBody.eval, CBody.resolve, locals, parameterLocals, CBody.bind]
+  · simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions,
+      CBody.eval, CBody.evalWith, CBody.resolve, locals, parameterLocals, CBody.bind]
 
 theorem compare_enter (program : CCalls.Events.Program E) (args : Arguments) (length prefixLength : Nat)
     (difference : Int) (heap : Heap) (rest : List Stmt) (stack : CCalls.Typed.Continuation)
@@ -72,7 +74,8 @@ theorem compare_enter (program : CCalls.Events.Program E) (args : Arguments) (le
   · simp [locals, parameterLocals, CBody.bind]
   · exact named
   · decide
-  · simp [CCalls.arguments, CBody.eval, CBody.resolve, locals, parameterLocals, CBody.bind]
+  · simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions,
+      CBody.eval, CBody.evalWith, CBody.resolve, locals, parameterLocals, CBody.bind]
 
 theorem length_resume (program : CCalls.Events.Program E) (args : Arguments)
     (old prefixLength newLength : Nat) (difference : Int) (heap : Heap) (rest : List Stmt)
@@ -110,7 +113,8 @@ theorem blank_step (args : Arguments) (length prefixLength : Nat) (difference : 
       some (.running ((if prefixLength = length then [falseReturn] else []) ++ rest)
         (locals args length prefixLength difference) types heap) := by
   by_cases same : prefixLength = length <;>
-    simp [blank, falseReturn, CLoops.next, CLoops.noDeclarations, CLoops.eval, CBody.eval,
+    simp [blank, falseReturn, CLoops.next, CLoops.nextWith, CLoops.noDeclarations,
+      CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
       CBody.resolve, CBody.comparison, CBody.boolean, Value.truth, locals, CBody.bind, same]
 
 theorem boolean_return_cast (boolean : interface.types "fmi3Boolean" = some .boolean) (flag : Bool) :
@@ -125,7 +129,8 @@ theorem false_return (program : CCalls.Events.Program E) (env : CBody.Locals) (t
       (.returning (CBody.boolean false) heap stack) := by
   apply CCalls.Events.expression_return program env types heap _ rest "fmi3Boolean" stack
     (CBody.boolean false) (CBody.boolean false)
-  · simp [CLoops.eval, CBody.eval, CBody.expressionCast, CBody.zeroLiteral,
+  · simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      CBody.expressionCast, CBody.zeroLiteral,
       CBody.cast, boolean, convert, Value.truth, CBody.boolean]
   · exact boolean_return_cast boolean false
 
@@ -138,7 +143,8 @@ theorem comparison_return (program : CCalls.Events.Program E) (args : Arguments)
   apply CCalls.Events.expression_return program (locals args length prefixLength difference) types heap _ rest
     "fmi3Boolean" stack (CBody.boolean (decide (difference = 0))) (CBody.boolean (decide (difference = 0)))
   · by_cases zero : difference = 0 <;>
-      simp [CLoops.eval, CBody.eval, CBody.resolve, locals, CBody.bind,
+      simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+        CBody.resolve, locals, CBody.bind,
         CBody.comparison, CBody.expressionCast, CBody.zeroLiteral, CBody.cast, boolean, convert,
         Value.truth, CBody.boolean, zero]
   · exact boolean_return_cast boolean _

@@ -50,7 +50,7 @@ private theorem guard_finite (heap : Heap) (p : Address) (minimum time : Binary6
     cases hl : Rumoca.Float64.test .lt (toBits time).val (toBits minimum).val <;>
       simp [Runtime.invalidTime, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
       Runtime.finite, Runtime.call, Runtime.lt, Runtime.gt, Runtime.field, Runtime.v,
-      eval, locals, parameters, CBody.bind, resolve, constants, Value.address,
+      CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, locals, parameters, CBody.bind, resolve, constants, Value.address,
       comparison, floatComparison, hm, hd, hf, Value.finite, rejects, Runtime.n, Value.truth, boolean, hl]
   | some bound =>
     have hb := hs bound rfl
@@ -58,7 +58,7 @@ private theorem guard_finite (heap : Heap) (p : Address) (minimum time : Binary6
       cases hu : Rumoca.Float64.test .gt (toBits time).val (toBits bound).val <;>
       simp [Runtime.invalidTime, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
       Runtime.finite, Runtime.call, Runtime.lt, Runtime.gt, Runtime.field, Runtime.v,
-      eval, locals, parameters, CBody.bind, resolve, constants, Value.address,
+      CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, locals, parameters, CBody.bind, resolve, constants, Value.address,
       comparison, floatComparison, hm, hd, hf, hb, Value.finite, rejects, Runtime.n, Value.truth, boolean, hl, hu]
 
 /-- The actual generated expression accepts precisely the reference time
@@ -83,7 +83,7 @@ theorem guard_nonfinite (heap : Heap) (p : Address) (bits : BitVec 64)
     eval (locals p bits) heap Runtime.invalidTime = some (boolean true) := by
   simp [Runtime.invalidTime, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
     Runtime.finite, Runtime.call, Runtime.lt, Runtime.gt, Runtime.field, Runtime.v,
-    eval, locals, parameters, CBody.bind, resolve, constants, hn, boolean, Value.truth]
+    CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, locals, parameters, CBody.bind, resolve, constants, hn, boolean, Value.truth]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 2000000 in
@@ -106,7 +106,7 @@ theorem set_run (m : Solve.FMI3Model source) (sig : Signature)
     Runtime.allowedExpression, Runtime.any, permittedModes, Runtime.mode, Mode.code,
     Runtime.branch, Runtime.ret, Runtime.fail, Runtime.ok, Runtime.put,
     Runtime.field, Runtime.eqv, Runtime.both, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
-    run, next, eval, lvalue, parameters, CBody.bind, resolve, constants,
+    run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalue, CBody.lvalueWith, parameters, CBody.bind, resolve, constants,
     CBody.cast, convert, comparison, boolean, Value.truth, Value.address,
     hk, hmode, guard, store_float64 heap (p.member "time") old _ ht, StateProofs.written]
 

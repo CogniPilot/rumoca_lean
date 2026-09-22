@@ -34,7 +34,7 @@ theorem pointer_condition (names : List String) (addresses : String → Option A
           c.truth.bind fun d => some (boolean d)) = _
     have negated : eval env heap (.not (Runtime.v name)) =
         some (boolean (addresses name).isNone) := by
-      simp only [eval, head]
+      simp only [CBody.eval, CBody.evalWith, head]
       cases addresses name <;> rfl
     rw [negated, tail]
     cases value : addresses name <;> simp [List.any_cons, value, Value.truth, boolean]
@@ -47,7 +47,7 @@ theorem pointerCheck_run (names : List String) (addresses : String → Option Ad
         [Runtime.fail "Missing output pointer"] else []) ++ tail) env heap) := by
   have condition := pointer_condition names addresses env heap bound
   cases found : names.any (fun name => (addresses name).isNone) <;>
-    simp [run, next, Runtime.pointerCheck, Runtime.reject, Runtime.branch,
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.pointerCheck, Runtime.reject, Runtime.branch,
       condition, found, Value.truth, boolean]
 
 
@@ -82,7 +82,7 @@ theorem outputs_prefix_for_tail (types : StepEntry.Types) (fn : Function) (tail 
     simp only [List.mem_cons, List.not_mem_nil, or_false] at member
     rcases member with rfl | rfl | rfl | rfl <;>
       simp [later, env, StepEntry.locals, StepEntry.parameters, StepEntry.bindings,
-        CBody.bind, Runtime.v, eval, resolve, addresses]
+        CBody.bind, Runtime.v, CBody.eval, CBody.evalWith, resolve, addresses]
   have missingAny : ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"].any
       (fun name => (addresses name).isNone) = true := by
     rcases missing with h | h | h | h <;> simp [addresses, h]

@@ -24,6 +24,7 @@ theorem clear_return_tail (program : Events.Program E) (tag : CAtomicBoolean.Cal
   | atomic address =>
     cases step with
     | internal next =>
+      change Events.internalNext program _ = _ at next
       rw [Events.external_entry_exclusive program bound] at next
       contradiction
     | external found converted executed =>

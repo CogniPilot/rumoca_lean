@@ -121,12 +121,14 @@ theorem copy_step (output input : Address) (result values : Values shape) (heap 
   rw [encoded] at rhs
   have target : CBody.lvalue env H (.index (.id "out") (.id "offset")) =
       some (output.index (position shape i.val)) := by
-    simp [henv, hH, CBody.lvalue, CBody.eval, CBody.resolve, CLoops.counterEnv, locals, Diagonal.parameters,
+    simp [henv, CBody.lvalue, CBody.lvalueWith, CBody.evalWith, CBody.resolve, CLoops.counterEnv, locals, Diagonal.parameters,
       Lowering.Arguments.locals, signatureParameters, arguments, CBody.bind, Value.address]
   have stored := scatter_store_next (zeroHeap heap output shape) output result (zero_writable heap output shape) i
   rw [← hH] at stored
   simp only [Value.finite] at stored
-  simp only [operation, List.cons_append, List.nil_append, CLoops.next, rhs, target,
+  change CBody.legacyExpressions.address env H (.index (.id "out") (.id "offset")) =
+    some (output.index (position shape i.val)) at target
+  simp only [operation, List.cons_append, List.nil_append, CLoops.next, CLoops.nextWith, rhs, target,
     stored, bind, Option.bind_some, pure]
 
 /-- The complete diagonal loop over the zero-filled output reaches the scattered
@@ -145,7 +147,7 @@ theorem loop_reaches (input output : Address) (result values : Values shape) (he
     (by simp [operation, CLoops.noDeclarations])
     (by
       intro i hi
-      simp [CBody.eval, CBody.resolve, CLoops.counterEnv, locals, Diagonal.parameters,
+      simp [CBody.eval, CBody.evalWith, CBody.resolve, CLoops.counterEnv, locals, Diagonal.parameters,
         Lowering.Arguments.locals, signatureParameters, arguments, CBody.bind])
     (by
       intro i hi
@@ -234,9 +236,9 @@ theorem function_reaches (definitions : CLoops.Calls.Definitions)
     (Diagonal.parameters input output shape) Diagonal.parameterTypes tail stack fillDefined header
     (by simp [Diagonal.parameters, Lowering.Arguments.locals, signatureParameters, CBody.bind, Fill.function])
     (Fill.literal_eval .zero _ _ header.scalar)
-    (by simp [CBody.eval, CBody.resolve, Diagonal.parameters, Lowering.Arguments.locals, signatureParameters,
+    (by simp [CBody.eval, CBody.evalWith, CBody.resolve, Diagonal.parameters, Lowering.Arguments.locals, signatureParameters,
       arguments, CBody.bind])
-    (by simp [CBody.eval, CBody.resolve, Diagonal.parameters, Lowering.Arguments.locals, signatureParameters,
+    (by simp [CBody.eval, CBody.evalWith, CBody.resolve, Diagonal.parameters, Lowering.Arguments.locals, signatureParameters,
       arguments, CBody.bind]) writable bounded
   exact filled.trans (CLoops.Calls.body_reaches definitions
     (tail_reaches input output result values heap separate reads adds bounded header.size) stack)
@@ -256,14 +258,14 @@ theorem helper_call_reaches (definitions : CLoops.Calls.Definitions)
   have entered : (CLoops.Calls.machine definitions).step
       (.calling function.signature.name (Diagonal.argumentValues input output shape) heap stack)
       (.body (.running function.body (Diagonal.parameters input output shape) Diagonal.parameterTypes heap) stack) := by
-    simp only [CLoops.Calls.machine, CLoops.Calls.next, found,
+    simp only [CLoops.Calls.machine, CLoops.Calls.machineWith, CLoops.Calls.nextWith, found,
       show function.signature.result = "void" from rfl, ne_eq, not_true_eq_false, ↓reduceIte,
       show function.signature.parameters = Diagonal.function.signature.parameters from rfl,
       Diagonal.bind_parameters input output shape header bounded, Diagonal.bind_types header,
       bind, Option.bind_some, pure]
   exact .next entered ((function_reaches definitions input output result values heap stack fillDefined fillHeader
     separate reads adds writable bounded).trans (.next
-      (by simp [CLoops.Calls.machine, CLoops.Calls.next]) (.refl _)))
+      (by simp [CLoops.Calls.machine, CLoops.Calls.machineWith, CLoops.Calls.nextWith]) (.refl _)))
 
 /-- Correctness of the ordinary call: the sole terminating behavior writes the
 dense diagonal matrix `diag(2*u)` into the output region (`resultHeap`). -/
@@ -310,8 +312,8 @@ theorem invoke_reaches (definitions : CLoops.Calls.Definitions)
       some (.calling function.signature.name (Diagonal.argumentValues input output shape) heap
         (.caller rest env types stack)) := by
     simp only [function] at unshadowed
-    simp [invoke, function, CLoops.Calls.next, CLoops.next, CLoops.eval, CBody.eval,
-      CLoops.Calls.enterCall, CCalls.arguments, hc, ho, hn, ha, Diagonal.argumentValues, unshadowed]
+    simp [invoke, function, CLoops.Calls.next, CLoops.Calls.nextWith, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
+      CLoops.Calls.enterCallWith, CCalls.argumentsWith, CBody.legacyExpressions, hc, ho, hn, ha, Diagonal.argumentValues, unshadowed]
   exact .next started ((helper_call_reaches definitions input output result values heap _ found fillDefined
     header fillHeader separate reads adds writable bounded).trans (.next rfl (.refl _)))
 

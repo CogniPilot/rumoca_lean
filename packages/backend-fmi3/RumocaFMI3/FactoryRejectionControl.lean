@@ -91,7 +91,9 @@ theorem control_step (model : Solve.FMI3Model source) (sigs : List Signature)
     have next : Events.internalNext program
         (.body (.running (.ret (some (.id "NULL")) :: tail) env types heap) "fmi3Instance" .done) =
         some (.body (.returned ⟨.pointer none, heap⟩) "fmi3Instance" .done) := by
-      simp [Events.internalNext, Typed.nextWith, CLoops.next, CLoops.eval, CBody.eval, nullBound]
+      simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions,
+        CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval,
+        CBody.evalWith, nullBound]
     obtain ⟨_, rfl⟩ := Events.internal_unique program next _ _ step
     exact .closed ⟨True.intro, True.intro⟩
   | closed ready => exact .closed (ReservationOrigin.event_ready model sigs program actual onlyNamed ready step)

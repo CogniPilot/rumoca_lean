@@ -68,10 +68,11 @@ theorem operand_sound (program : Events.Program E)
   obtain ⟨address, args⟩ := permitted callee
   rw [args] at evaluated
   cases location : CBody.eval env heap address with
-  | none => simp [CCalls.arguments, location] at evaluated
+  | none => simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, location] at evaluated
   | some value =>
     refine ⟨value, ?_⟩
-    simpa [CCalls.arguments, location, CBody.eval, CBody.expressionCast, CBody.cast,
+    simpa [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, location,
+      CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.cast,
       CBody.zeroLiteral, boolean, convert, Value.truth, CAtomicBoolean.value] using evaluated.symm
 
 omit interface in

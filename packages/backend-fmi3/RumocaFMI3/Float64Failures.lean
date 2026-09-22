@@ -28,7 +28,7 @@ theorem get_array_error_site (model : Solve.FMI3Model source) (program : CCalls.
     defined (parameters_bound false _ _ _ _ _) (BodyEmbedding.body_closed model (signature false)) guarded
   refine ⟨locals p references values n m, types, afterGuard, reached, ?_, ?_⟩
   · simp [locals, parameters, CBody.bind]
-  · simp [locals, parameters, CBody.bind, resolve]
+  · simp [locals, CBody.bind, resolve]
 
 theorem get_reference_error_site (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)
     (heap : Heap) (p : Address) (pointer buffer : Option Address) (n : UInt64) (references : Nat → UInt32)

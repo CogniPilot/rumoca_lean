@@ -33,15 +33,15 @@ theorem model_rhs_reaches (m : Solve.FMI3Model source) (heap : Heap) (p : Addres
   have numerical := kernel_correct (linked m) m.solve rfl .rhs
     Binary64.positiveZero ⟨0, by decide⟩ heap k
   refine .next (t := .body (.running (Runtime.helpers[1].body) env heap) "double" stack) ?_ ?_
-  · simp [machine, next, linked, Runtime.helpers, parameters, parameterType, env, rhsLocals,
+  · simp [machine, machineWith, nextWith, linked, Runtime.helpers, parameters, parameterType, env, rhsLocals,
       CBody.cast, convert]
   refine .next (t := .calling "rumoca_rhs" [] heap k) ?_ ?_
-  · simp [machine, next, Runtime.helpers, Runtime.ret, Runtime.call, Runtime.v,
-      CBody.next, CBody.eval, enterCall, callOperand, arguments,
+  · simp [machine, machineWith, nextWith, Runtime.helpers, Runtime.ret, Runtime.call, Runtime.v,
+      CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, enterCallWith, callOperand, argumentsWith, CBody.legacyExpressions,
       env, rhsLocals, CBody.bind, k]
   refine .next (t := .kernel (.entry .rhs Binary64.positiveZero ⟨0, by decide⟩) heap k) ?_ ?_
-  · simp [machine, next, linked, kernelEntry]
-  exact numerical.trans (.next (by simp [machine, next, resume, k, returnCast,
+  · simp [machine, machineWith, nextWith, linked, kernelEntry]
+  exact numerical.trans (.next (by simp [machine, machineWith, nextWith, resumeWith, k, returnCast,
     CStatements.result, CBody.cast, convert, Value.finite]) (.refl _))
 
 private def advanceLocals (p : Address) (n : CStatements.Counter) : CBody.Locals :=
@@ -77,15 +77,15 @@ private theorem advance_call (m : Solve.FMI3Model source) (heap : Heap)
     (hx : load heap (p.member "x") = some (.finite x)) :
     next (linked m) (.body (.running Runtime.helpers[2].body (advanceLocals p n) heap) "void" stack) =
       some (.calling "rumoca_sample" [.finite x, .integer n.val] heap (advanceContinuation p n stack)) := by
-  simp [next, Runtime.helpers, Runtime.call, Runtime.v, CBody.next,
-    CBody.eval, enterCall, callOperand, arguments, advanceLocals,
+  simp [next, nextWith, Runtime.helpers, Runtime.call, Runtime.v, CBody.nextWith, CBody.legacyExpressions,
+    CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, enterCallWith, callOperand, argumentsWith, CBody.legacyExpressions, advanceLocals,
     CBody.bind, CBody.resolve, CBody.constants, Value.address, hx, advanceContinuation]
 
 private theorem sample_entry (m : Solve.FMI3Model source) (heap : Heap)
     (x : Binary64.Value) (n : CStatements.Counter) (stack) :
     next (linked m) (.calling "rumoca_sample" [.finite x, .integer n.val] heap stack) =
       some (.kernel (.entry .sample x n) heap stack) := by
-  simp [next, linked, kernelEntry]
+  simp [next, nextWith, linked, kernelEntry]
 
 set_option maxRecDepth 10000 in
 private theorem advance_return (m : Solve.FMI3Model source) (heap : Heap)
@@ -94,8 +94,9 @@ private theorem advance_return (m : Solve.FMI3Model source) (heap : Heap)
     next (linked m) (.returning (.finite y) heap (advanceContinuation p n stack)) =
       some (.body (.running [] (advanceLocals p n)
         (StateProofs.written heap (p.member "x") (Binary64.toBits y).val)) "void" stack) := by
-  simp [next, resume, advanceContinuation, CBody.lvalue,
-    CBody.eval, CBody.resolve, CBody.constants, advanceLocals,
+  simp [next, nextWith, resumeWith, CBody.legacyExpressions,
+    advanceContinuation, CBody.lvalue, CBody.lvalueWith,
+    CBody.evalWith, CBody.resolve, CBody.constants, advanceLocals,
     CBody.bind, Value.address, Value.finite, store_float64 heap (p.member "x") _ _ hs,
     StateProofs.written]
 

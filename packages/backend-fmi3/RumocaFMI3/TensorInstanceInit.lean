@@ -23,9 +23,9 @@ return complete in the same call machine. No tensor solver value is initialized
 here: the initialization program value of the admitted kernel is the fixed-zero
 fill, which the loop re-establishes (`FMI3.TensorReset.initialization_is_zero`).
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. Every theorem is universal in the tensor shape,
+The tensor adapter consumes these bodies and proofs. This module alone does
+not establish source acceptance or certify an actual artifact; those obligations
+belong to the composed adapter/compiler contracts. Every theorem is universal in the tensor shape,
 the instance address and the heap. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorInstanceInit
@@ -275,31 +275,31 @@ theorem initialized (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
   · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "kind") =
         some ⟨.int32, true, some (.integer kind.code)⟩ :=
       (fm "kind" (by decide +kernel)).trans (by
-        simp [metaHeap, slotHeap, replace, mne "kind" "time", mne "kind" "logging", mne "kind" "logger",
+        simp [metaHeap, replace, mne "kind" "time", mne "kind" "logging", mne "kind" "logger",
           mne "kind" "environment", mne "kind" "mode",
           mne "kind" "timeMin", mne "kind" "eventTime", mne "kind" "lastCompleted"])
     cases kind <;> exact load_converted _ _ .int32 true _ cell (by decide +kernel) (by decide +kernel)
   · rw [fm "mode" (by decide +kernel)]
-    simp [metaHeap, slotHeap, replace, mne "mode" "time", mne "mode" "logging", mne "mode" "logger",
+    simp [metaHeap, replace, mne "mode" "time", mne "mode" "logging", mne "mode" "logger",
       mne "mode" "environment",
       mne "mode" "timeMin", mne "mode" "eventTime", mne "mode" "lastCompleted"]
   · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "environment") =
         some ⟨.pointer, true, some (.pointer environment)⟩ :=
       (fm "environment" (by decide +kernel)).trans (by
-        simp [metaHeap, slotHeap, replace, mne "environment" "time", mne "environment" "logging",
+        simp [metaHeap, replace, mne "environment" "time", mne "environment" "logging",
           mne "environment" "logger",
           mne "environment" "timeMin", mne "environment" "eventTime", mne "environment" "lastCompleted"])
     exact load_converted _ _ .pointer true _ cell (by decide +kernel) (by simp [convert])
   · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "logger") =
         some ⟨.pointer, true, some (.pointer logger)⟩ :=
       (fm "logger" (by decide +kernel)).trans (by
-        simp [metaHeap, slotHeap, replace, mne "logger" "time", mne "logger" "logging",
+        simp [metaHeap, replace, mne "logger" "time", mne "logger" "logging",
           mne "logger" "timeMin", mne "logger" "eventTime", mne "logger" "lastCompleted"])
     exact load_converted _ _ .pointer true _ cell (by decide +kernel) (by simp [convert])
   · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "logging") =
         some ⟨.boolean, true, some (boolean logging)⟩ :=
       (fm "logging" (by decide +kernel)).trans (by
-        simp [metaHeap, slotHeap, replace, mne "logging" "time",
+        simp [metaHeap, replace, mne "logging" "time",
           mne "logging" "timeMin", mne "logging" "eventTime", mne "logging" "lastCompleted"])
     cases logging <;> exact load_converted _ _ .boolean true _ cell (by decide +kernel) (by decide +kernel)
 
@@ -317,7 +317,7 @@ theorem put_step (name : String) (rhs : Expr) (env : Locals) (heap : Heap) (p : 
     (ordinary : type ≠ .atomicBoolean) (conv : convert type v = some out) :
     CBody.next (.running (Runtime.put name rhs :: rest) env heap) =
       some (.running rest env (replace heap (p.member name) ⟨type, true, some out⟩)) := by
-  simp [Runtime.put, Runtime.field, Runtime.v, CBody.next, CBody.eval, CBody.lvalue, instanceBound,
+  simp [Runtime.put, Runtime.field, Runtime.v, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, instanceBound,
     Value.address, evalRhs, store_converted heap (p.member name) type old v out cell ordinary conv]
 
 /-- The reserved-slot store writes the size-typed slot index. -/
@@ -329,7 +329,7 @@ theorem slot_step (env : Locals) (heap : Heap) (p : Address) (slot : Nat) (rest 
       some (.running rest env (slotHeap heap p slot)) := by
   obtain ⟨old, cell⟩ := cellStore
   simpa [slotStore, slotHeap] using put_step "slot" (Runtime.v "slot") env heap p .size (.integer slot)
-    (.integer slot) old rest instanceBound (by simp [Runtime.v, CBody.eval, slotBound]) cell (by decide +kernel)
+    (.integer slot) old rest instanceBound (by simp [Runtime.v, CBody.eval, CBody.evalWith, slotBound]) cell (by decide +kernel)
     (CLoops.convert_size_nat slot bounded)
 
 set_option maxHeartbeats 1600000 in
@@ -346,8 +346,8 @@ theorem metaCode_run (shape : Tensor.Shape) (kind : Kind) (env : Locals) (heap :
     ⟨tmOld, htm⟩, ⟨etOld, het⟩, ⟨lcOld, hlc⟩, _⟩ := storage
   have mne : ∀ a b, a ≠ b → p.member a ≠ p.member b := fun a b h => member_ne p a b h
   cases kind <;> cases logging <;>
-    simp [metaCode, Runtime.put, Runtime.field, Runtime.v, Runtime.n, CBody.run, CBody.next,
-      CBody.eval, CBody.lvalue, bindings.instanceBound, bindings.environmentBound, bindings.loggerBound,
+    simp [metaCode, Runtime.put, Runtime.field, Runtime.v, Runtime.n, CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions,
+      CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, bindings.instanceBound, bindings.environmentBound, bindings.loggerBound,
       bindings.loggingBound, Value.address, Value.finite, CMemory.store, convert, boolean, Value.truth,
       slotHeap, replace, metaHeap, Mode.code, Kind.code, hkind, hmode, henv, hlog, hlg, htime,
       htm, het, hlc,
@@ -413,14 +413,14 @@ theorem return_reaches (shape : Tensor.Shape) (kind : Kind) (env : Locals) (type
     declare_step_e env types' mh "fmi3Float64 *" "dst" ((Runtime.region stateName)) .pointer
       (.pointer (some (p.member stateName))) (.pointer (some (p.member stateName))) _ bindings.dstFresh float
       (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, mBound, Value.address]) rfl
+          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, mBound, Value.address]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: [returnHandle])
         (CBody.bind env "dst" (.pointer (some (p.member stateName)))) (CLoops.bindType types' "dst" .pointer) mh) =
       some (.running (.declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: [returnHandle])
         stagedEnv stagedTypes mh) :=
     declare_step_e _ _ mh "size_t" "expected" (Runtime.n shape.volume) .size (.integer shape.volume)
-      (.integer shape.volume) _ bindings.expectedFresh size (by simp [Runtime.n, CLoops.eval, CBody.eval])
+      (.integer shape.volume) _ bindings.expectedFresh size (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith])
       (CLoops.convert_size_nat _ volumeBounded)
   refine .next (CCalls.Events.body_step program s_dst "fmi3Instance" stack)
     (.next (CCalls.Events.body_step program s_exp "fmi3Instance" stack) ?_)
@@ -445,9 +445,9 @@ theorem return_reaches (shape : Tensor.Shape) (kind : Kind) (env : Locals) (type
   have retStep : CLoops.next (.running [returnHandle] envK (CLoops.bindType stagedTypes "k" .size)
       (finalHeap heap p slot kind environment logger logging shape)) =
       some (.returned ⟨.pointer (some p), finalHeap heap p slot kind environment logger logging shape⟩) := by
-    simp [returnHandle, CLoops.next, CLoops.eval, CBody.eval, CBody.cast, mBoundK, handle, convert]
+    simp [returnHandle, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.cast, mBoundK, handle, convert]
   refine .next (CCalls.Events.body_step program retStep "fmi3Instance" stack) (.next ?_ (.refl _))
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.returnCast, CBody.cast, handle, convert]
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.returnCast, CBody.cast, handle, convert]
 
 /-- The reserved-record initializer terminates returning the initialized handle,
 and preserves every existing object cell (it only writes the reserved record's own

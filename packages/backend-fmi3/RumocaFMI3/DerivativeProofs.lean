@@ -44,14 +44,14 @@ private theorem prefix_run (m : Solve.FMI3Model source) (sig : Signature)
   rw [hb, show 4 = 3 + 1 from rfl, CBody.run_add, hp]
   simp [tail, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
     Runtime.nev, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
-    CBody.run, CBody.next, CBody.eval, parameters, locals, CBody.bind,
+    CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, parameters, locals, CBody.bind,
     CBody.resolve, CBody.constants, CBody.comparison, CBody.boolean, Value.truth]
 
 private theorem enter_rhs (m : Solve.FMI3Model source) (heap : Heap) (p buffer : Address) :
     next (linked m) (.body (.running tailBody (locals p buffer) heap) "fmi3Status" .done) =
       some (.calling "model_rhs" [.pointer (some (p.member "model"))] heap (continuation p buffer)) := by
-  simp [next, tailBody, CBody.next, CBody.eval, CBody.lvalue,
-    enterCall, callOperand, arguments, Runtime.call, Runtime.field, Runtime.v,
+  simp [CCalls.next, CCalls.nextWith, tailBody, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
+    CCalls.enterCallWith, callOperand, CCalls.argumentsWith, CBody.legacyExpressions, Runtime.call, Runtime.field, Runtime.v,
     locals, parameters, CBody.bind, CBody.resolve, CBody.constants,
     Value.address, continuation]
 
@@ -61,7 +61,7 @@ private theorem return_rhs (m : Solve.FMI3Model source) (heap : Heap)
     next (linked m) (.returning (.finite y) heap (continuation p buffer)) =
       some (.body (.running [Runtime.ok] (locals p buffer)
         (StateProofs.written heap buffer (Binary64.toBits y).val)) "fmi3Status" .done) := by
-  simp [next, resume, continuation, target, CBody.lvalue, CBody.eval,
+  simp [CCalls.next, CCalls.nextWith, CCalls.resumeWith, CBody.legacyExpressions, continuation, target, CBody.lvalue, CBody.lvalueWith, CBody.evalWith,
     locals, parameters, CBody.bind, CBody.resolve, CBody.constants,
     Value.address, Value.finite, store_float64 heap buffer old _ ho, StateProofs.written]
 
@@ -69,9 +69,9 @@ private theorem finish (program : Program) (heap : Heap) (env : CBody.Locals)
     (hok : env "fmi3OK" = none) :
     run program 3 (.body (.running [Runtime.ok] env heap) "fmi3Status" .done) =
       some (.halted ⟨.integer 0, heap⟩) := by
-  simp [run, next, CBody.next, Runtime.ok, Runtime.ret, Runtime.v,
-    CBody.eval, CBody.resolve, CBody.constants, hok, returnCast,
-    CBody.cast, convert, resume]
+  simp [run, CCalls.next, CCalls.nextWith, CBody.nextWith, CBody.legacyExpressions, Runtime.ok, Runtime.ret, Runtime.v,
+    CBody.eval, CBody.evalWith, CBody.resolve, CBody.constants, hok, returnCast,
+    CBody.cast, convert, CCalls.resumeWith, CBody.legacyExpressions]
 
 theorem get_reaches (m : Solve.FMI3Model source) (sig : Signature)
     (hsig : sig.name = "fmi3GetContinuousStateDerivatives")

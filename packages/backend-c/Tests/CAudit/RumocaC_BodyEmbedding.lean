@@ -10,3 +10,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CBodyEmbedding.typed_body_behaviors
 #audit axioms Rumoca.CBodyEmbedding.typed_call_reaches
 #audit axioms Rumoca.CBodyEmbedding.typed_call_behaviors
+
+#audit axioms Rumoca.CBodyEmbedding.block_closed
+#audit axioms Rumoca.CBodyEmbedding.noDeclarations_closed

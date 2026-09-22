@@ -54,18 +54,18 @@ theorem advance_reaches (program : Events.Program E) (types : Types)
   obtain ⟨bound, typed⟩ := advance_parameters types p n
   refine .next (Events.tree_entry program _ _ _ stack _ _ _ helper bound typed) ?_
   refine .next (t := .calling "rumoca_sample" [.finite x, .integer n.val] heap saved) ?_ ?_
-  · simp [Events.internalNext, Typed.nextWith, CLoops.next, CLoops.eval,
-      Events.enterCall, Events.resolve, Indirect.resolve, Indirect.operand,
-      CBody.eval, CBody.resolve, CBody.constants, arguments, Runtime.helpers,
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      Events.enterCallWith, Events.resolveWith, Indirect.resolveWith, CBody.legacyExpressions, Indirect.operand,
+      CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.resolve, CBody.constants, argumentsWith, CBody.legacyExpressions, Runtime.helpers,
       Runtime.call, Runtime.v, env, advanceLocals, CBody.bind, types.sample, saved,
       Value.address, loaded]
   refine .next (t := .kernel (.entry .sample x n) heap saved) ?_ ?_
-  · simp [Events.internalNext, Typed.nextWith, kernel, kernelEntry]
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, kernel, kernelEntry]
   refine (Events.kernel_correct program model same .sample x n heap saved).trans
     (.next (t := .body (.running [] env advanceTypes output) "void" stack) ?_
       (.next ?_ (.refl _)))
-  · simp [Events.internalNext, Typed.nextWith, Typed.resume, saved, CBody.lvalue,
-      CBody.eval, CBody.resolve, CBody.constants, env, advanceLocals, CBody.bind,
+  · simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Typed.resumeWith, CBody.legacyExpressions, saved, CBody.lvalue, CBody.lvalueWith,
+      CBody.evalWith, CBody.resolve, CBody.constants, env, advanceLocals, CBody.bind,
       Value.address, CStatements.result, Value.finite, store_float64 heap (p.member "x") _ _ stored,
       output, StateProofs.written]
   · rfl

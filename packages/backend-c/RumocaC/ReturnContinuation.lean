@@ -47,7 +47,7 @@ theorem resume_commutes (value : Value) (heap : Heap) (stack : Continuation) :
   cases stack with
   | done => rfl
   | caller destination rest env resultType outer =>
-      cases destination <;> simp only [trim, restFor, resume, normalize, trim_idempotent,
+      cases destination <;> simp only [trim, restFor, resume, resumeWith, normalize, trim_idempotent,
         Bind.bind, Pure.pure, Option.map_bind, Function.comp_def, Option.map_some]
       split <;> simp only [Option.map_none, Option.map_bind, Function.comp_def, Option.map_some,
         normalize, trim_idempotent]
@@ -60,10 +60,10 @@ theorem enter_commutes (state : CBody.State) (resultType : String) (stack : Cont
   | running statements env heap =>
       cases statements with
       | nil =>
-          simp only [enterCall]
+          simp only [enterCall, enterCallWith]
           split <;> simp only [Option.map_some, Option.map_none, normalize, trim_idempotent]
       | cons statement rest =>
-          simp only [enterCall]
+          simp only [enterCall, enterCallWith]
           cases found : callOperand statement with
           | none => rfl
           | some item =>
@@ -83,21 +83,21 @@ theorem next_commutes (program : Program) (state : State) :
   | halted result => rfl
   | returning value heap stack => exact resume_commutes value heap stack
   | calling name args heap stack =>
-      simp only [normalize, next, Bind.bind, Pure.pure, Option.map_bind, Function.comp_def]
+      simp only [normalize, next, nextWith, Bind.bind, Pure.pure, Option.map_bind, Function.comp_def]
       congr 1
       funext definition
       cases definition <;>
         simp only [Option.map_bind, Function.comp_def, Option.map_some, normalize, trim_idempotent]
   | kernel state heap stack =>
-      cases state <;> simp only [normalize, next, Bind.bind, Pure.pure, Option.map_bind, Function.comp_def, Option.map_some,
+      cases state <;> simp only [normalize, next, nextWith, Bind.bind, Pure.pure, Option.map_bind, Function.comp_def, Option.map_some,
         trim_idempotent]
   | body state resultType stack =>
       cases state with
       | returned result =>
-          simp only [normalize, next, Bind.bind, Pure.pure, Option.map_bind, Function.comp_def, Option.map_some, trim_idempotent]
+          simp only [normalize, next, nextWith, Bind.bind, Pure.pure, Option.map_bind, Function.comp_def, Option.map_some, trim_idempotent]
       | running statements env heap =>
-          simp only [normalize, next]
-          cases stepped : CBody.next (.running statements env heap) with
+          simp only [normalize, next, nextWith]
+          cases stepped : CBody.nextWith CBody.legacyExpressions (.running statements env heap) with
           | none => exact enter_commutes _ resultType stack
           | some later => simp only [Option.map_some, normalize, trim_idempotent]
 
@@ -107,7 +107,7 @@ private def normalizedMachine (program : Program) : Transition.Machine State CBo
   deterministic first second := Option.some.inj (first.symm.trans second)
   final_stuck := by
     intro state result final later
-    cases state <;> simp_all [machine, next]
+    cases state <;> simp_all [machine, machineWith, next, nextWith]
 
 private def simulation (program : Program) :
     Transition.FunctionalBisimulation (machine program) (normalizedMachine program) where
@@ -202,7 +202,7 @@ theorem enter_return_suffix (operand : Option Expr) (first second : List Stmt)
       cases expr <;> try rfl
       rename_i fn args
       cases fn <;> try rfl
-      simp only [enterCall, callOperand, Bind.bind, Pure.pure, Option.bind_some]
+      simp only [enterCall, enterCallWith, callOperand, Bind.bind, Pure.pure, Option.bind_some]
       split
       · rfl
       · simp only [Option.map_bind, Function.comp_def, Option.map_some, normalize, trim, restFor]
@@ -217,8 +217,9 @@ theorem return_body_suffix (program : Program) (operand : Option Expr)
   apply next_equal_behaviors program _ _ rfl rfl
   have equal : CBody.next (.running (.ret operand :: first) env heap) =
       CBody.next (.running (.ret operand :: second) env heap) := by cases operand <;> rfl
-  simp only [next, equal]
-  cases stepped : CBody.next (.running (.ret operand :: second) env heap) with
+  simp only [CBody.next] at equal
+  simp only [next, nextWith, equal]
+  cases stepped : CBody.nextWith CBody.legacyExpressions (.running (.ret operand :: second) env heap) with
   | some later => rfl
   | none => exact enter_return_suffix operand first second env heap resultType stack
 

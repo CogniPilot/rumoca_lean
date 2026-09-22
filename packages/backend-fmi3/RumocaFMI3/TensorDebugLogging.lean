@@ -2,8 +2,7 @@ import RumocaFMI3.DebugLoggingRuntime
 import RumocaFMI3.DebugLoggingContract
 import RumocaFMI3.TensorInstanceStorage
 
-/-! Tensor `fmi3SetDebugLogging` contract over the tensor instance record, as a
-package-checked product.
+/-! Tensor `fmi3SetDebugLogging` contract over the tensor instance record.
 
 The scalar body `Runtime.body model signature` for `fmi3SetDebugLogging` is the
 fixed statement list `Runtime.require .logging ++ DebugLogging.code`; it reads no
@@ -17,9 +16,8 @@ environment and logging-flag premises are reads of the instance record metadata
 cells the tensor record also carries, so the scalar runtime execution transfers
 verbatim to a tensor instance record heap.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. -/
+Production adapter contracts consume these results. This module alone does not
+certify actual artifact bytes or admit a new source/grammar case. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorDebugLogging
 open CTree CMemory CBody CStringMemory StaticFactory CLiteral.Interface

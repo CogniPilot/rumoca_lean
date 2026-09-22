@@ -130,11 +130,11 @@ theorem invalid_body (model : Solve.FMI3Model source) (heap : Heap) (p : Address
   rw [body, show 4 = 3 + 1 from rfl, run_add, accepted]
   rcases invalid with bad | rfl
   · simp [ErrorCalls.nominalRest, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
-      Runtime.either, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n, run, next, eval,
+      Runtime.either, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
       ErrorCalls.nominalEnv, CBody.bind, resolve, constants, comparison, boolean, Value.truth,
       bad, accessMessage, accessRest]
   · simp [ErrorCalls.nominalRest, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
-      Runtime.either, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n, run, next, eval,
+      Runtime.either, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
       ErrorCalls.nominalEnv, CBody.bind, resolve, constants, comparison, boolean, Value.truth,
       accessMessage, accessRest]
 

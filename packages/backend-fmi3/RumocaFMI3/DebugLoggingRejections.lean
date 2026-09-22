@@ -100,7 +100,7 @@ theorem iteration_invalid_behaviors (program : CCalls.Events.Program E)
     · apply CStringCalls.compare_assignment_equivalence program env types heap "difference"
         [category, .str "logStatus"] (rejectDifference :: rest) "fmi3Status" .done old
         selected expected bytes expectedBytes pointer integer present typed unshadowed named bound
-        (by simp [CCalls.arguments, loaded, CBody.eval, literal]) (selectedStored selected rfl) expectedStored
+        (by simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, loaded, CBody.eval, CBody.evalWith, literal]) (selectedStored selected rfl) expectedStored
       intro value range compared observed
       have nonzero : value ≠ 0 := fun zero => different ((comparison_zero compared).mp zero)
       have step := difference_step (CBody.bind env "difference" (.integer value)) types heap value rest

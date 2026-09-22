@@ -39,7 +39,7 @@ theorem reserve_entry (program : CCalls.Events.Program E) (model : Solve.Model s
         (.caller (.declare "size_t" "slot") (guard :: initializeInstance model kind) env types "fmi3Instance" stack)) := by
   exact CCalls.Events.named_declare_entry program env types heap "size_t" "slot"
     CAtomicScan.function.signature.name _ _ _ "fmi3Instance" stack scope.slotFresh scope.helperFresh named
-    (by decide +kernel) (by simp [CCalls.arguments, eval, scope.flagsBound, scope.count])
+    (by decide +kernel) (by simp [CCalls.arguments, CCalls.argumentsWith, legacyExpressions, eval, evalWith, scope.flagsBound, scope.count])
 
 theorem reserve_resume (program : CCalls.Events.Program E) (model : Solve.Model source)
     (kind : Kind) (env : Locals) (types : CLoops.Types) (heap : Heap) (slot : Nat)

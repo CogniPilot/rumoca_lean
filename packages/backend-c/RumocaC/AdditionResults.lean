@@ -58,7 +58,7 @@ theorem eval_member_add (env : CBody.Locals) (types : CLoops.Types) (heap : Heap
     (rightValue : CBody.eval env heap right = some (.finite b)) :
     CLoops.eval env types heap (.bin .add (.field base member pointer) right) =
       some (.float64 (addResult a b).encode) := by
-  simp only [CLoops.eval, leftValue, rightValue, bind, Option.bind_some, add_result]
+  simp only [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, leftValue, rightValue, bind, Option.bind_some, add_result]
 
 /-- Prepared floating registers use the same addition rule; unsigned size
 arithmetic cannot take precedence for a declared floating left operand. -/
@@ -69,7 +69,7 @@ theorem eval_register_add (env : CBody.Locals) (types : CLoops.Types) (heap : He
     (rightValue : CBody.eval env heap (.id right) = some (.finite b)) :
     CLoops.eval env types heap (.bin .add (.id left) (.id right)) =
       some (.float64 (addResult a b).encode) := by
-  simp only [CLoops.eval, leftType, Option.some.injEq, reduceCtorEq, false_and, ↓reduceIte,
+  simp only [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, leftType, Option.some.injEq, reduceCtorEq, false_and, ↓reduceIte,
     leftValue, rightValue, bind, Option.bind_some, add_result]
 
 end

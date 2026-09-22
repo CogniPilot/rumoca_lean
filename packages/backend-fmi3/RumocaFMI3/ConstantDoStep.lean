@@ -105,7 +105,7 @@ theorem doStepBody_closed : doStepBody.all CBodyEmbedding.closedBlocks = true :=
     Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, Runtime.any, Runtime.negate,
     Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.either, Runtime.put,
     CAlgorithm.literal, CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop,
-    CLoops.counterStep, List.all_append]
+    CLoops.counterStep]
 
 /-! ### Printed-text denotation -/
 
@@ -128,9 +128,9 @@ theorem body_printable :
       permittedModes, Runtime.mode, Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.out,
       Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding, Runtime.stepClock,
       Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call,
-      Runtime.any, Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le, Runtime.lt,
+      Runtime.any, Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le,
       Runtime.gt, Runtime.both, Runtime.either, CAlgorithm.literal, CLoops.loop, CLoops.counterStep,
-      List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil, List.mem_append, List.mem_cons,
+      List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil, List.mem_cons,
       List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact CNull.literal_printable _
@@ -364,10 +364,10 @@ theorem constant_step_enter (p : Address) (env : Locals) (types0 : Types) (H : H
       (.body (.running (stepBody ++ rest) env types0 H) resultType stack) =
       some (.calling "rumoca_constant_step" [.pointer (some (p.member stateName))] H
         (.caller .discard rest env types0 resultType stack)) := by
-  simp [stepBody, List.cons_append, List.nil_append, CCalls.Events.internalNext, CCalls.Typed.nextWith,
-    CLoops.next, CLoops.eval, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n,
-    CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand,
-    CCalls.Indirect.resolve, CCalls.arguments, CBody.bind, CBody.resolve, CBody.constants, Value.address,
+  simp [stepBody, List.cons_append, List.nil_append, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+    CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n,
+    CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand,
+    CCalls.Indirect.resolveWith, CBody.legacyExpressions, CCalls.argumentsWith, CBody.legacyExpressions, CBody.resolve, CBody.constants, Value.address,
     mBound, freshStep, noConst]
 
 /-- One constant Co-Simulation internal step from the time-augmented declaration-free
@@ -443,7 +443,7 @@ theorem internalStep_reaches {shape : Tensor.Shape} (rates : List Decimal) (len 
       H1 pool i state readsStateH1 writableStateH1 finite (resolves H1) cont
   have resumeStep : CCalls.Events.internalNext program (.returning .void finalHeap cont) =
       some (.body (.running rest env types0 finalHeap) resultType stack) := by
-    simp [hcont, CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+    simp [hcont, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith]
   refine ⟨finalHeap, reads, writableStep, ?_, ?_, ?_, ?_, ?_⟩
   · have neState : ∀ m, m < shape.volume → (field pool i timeName) ≠ (field pool i stateName).index m := by
       intro m _
@@ -655,7 +655,7 @@ theorem solve_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates
       some (.integer duration.val) := by
     have base : CBody.resolve env "communicationStepSize" = some (.finite step) := by
       simp [CBody.resolve, stepValue]
-    simp [CLoops.eval, CBody.eval, base, CBody.expressionCast, Runtime.v, CBody.zeroLiteral,
+    simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, base, CBody.expressionCast, Runtime.v, CBody.zeroLiteral,
       CBody.cast, stepCast, fenv.sizeType]
   have freshN1 : env1 "n" = none := by simp [henv1, CBody.bind, freshN]
   set env2 := counterEnv env1 "n" 0 with henv2
@@ -712,11 +712,12 @@ theorem solve_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates
         some (.finite (times duration.val)) := by
       show CBody.eval tailEnv loopHeap (Runtime.field "time") = some (.finite (times duration.val))
       have raw : CBody.eval tailEnv loopHeap (Runtime.field "time") = load loopHeap (p.member "time") := by
-        simp [Runtime.field, Runtime.v, CBody.eval, CBody.resolve, mTail, Value.address]
+        simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.resolve, mTail, Value.address]
       rw [raw]; exact timeLoad
     have addr : CBody.lvalue tailEnv loopHeap (.deref (Runtime.v "lastSuccessfulTime")) = some buffers.last := by
-      simp [CBody.lvalue, Runtime.v, CBody.eval, lastTail, Value.address]
-    simp [stepPublishTail, Runtime.out, Runtime.ok, CLoops.next, leftEval, addr, Value.finite,
+      simp [CBody.lvalue, CBody.lvalueWith, Runtime.v, CBody.evalWith, lastTail, Value.address]
+    change CBody.legacyExpressions.address tailEnv loopHeap (.deref (Runtime.v "lastSuccessfulTime")) = some buffers.last at addr
+    simp [stepPublishTail, Runtime.out, Runtime.ok, CLoops.next, CLoops.nextWith, leftEval, addr, Value.finite,
       store_float64 loopHeap buffers.last oldLast _ lastLoop, hfinal, StateProofs.written]
   have okReach := TensorDoStep.finishOK program finalHeap tailEnv types2 stack okTail fenv.statusType fenv.fmi3OK
   refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
@@ -807,7 +808,7 @@ theorem front_run (types : StepEntry.Types) (env : Locals) (heap : Heap)
   have checked : CBody.run 1 (.running (StepEntry.inputGuard :: tail)
       (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time)) =
       some (.running tail (StepEntry.locals env p) (StepEntry.outputHeap heap buffers time)) := by
-    simp [CBody.run, CBody.next, StepEntry.inputGuard, Runtime.reject, Runtime.branch, condition,
+    simp [CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions, StepEntry.inputGuard, Runtime.reject, Runtime.branch, condition,
       boolean, Value.truth]
   have decomp : doStepBody = Runtime.require .doStep ++ StepEntry.outputCode ++
       StepEntry.inputGuard :: tail := rfl

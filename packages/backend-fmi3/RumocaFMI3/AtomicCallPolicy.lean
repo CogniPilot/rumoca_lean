@@ -83,7 +83,7 @@ theorem boolean_eval (boolean : interface.types "_Bool" = some .boolean)
     (env : CBody.Locals) (heap : Heap) (busy : Bool) :
     CBody.eval env heap (.cast "_Bool" (.nat (if busy then 1 else 0))) =
       some (CAtomicBoolean.value busy) := by
-  cases busy <;> simp [CBody.eval, CBody.expressionCast, CBody.cast, CBody.zeroLiteral,
+  cases busy <;> simp [CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.cast, CBody.zeroLiteral,
     boolean, convert, Value.truth, CAtomicBoolean.value]
 
 theorem arguments_value (boolean : interface.types "_Bool" = some .boolean)
@@ -99,7 +99,7 @@ theorem arguments_value (boolean : interface.types "_Bool" = some .boolean)
         rfl
       · contradiction
     subst value
-    simp only [arguments, boolean_eval boolean, Option.bind_eq_bind, Option.bind_some,
+    simp only [arguments, argumentsWith, CBody.legacyExpressions, boolean_eval boolean, Option.bind_eq_bind, Option.bind_some,
       Option.pure_def, Option.bind_eq_some_iff] at evaluated
     obtain ⟨pointerValue, _, result⟩ := evaluated
     exact ⟨pointerValue, (Option.some.inj result).symm⟩

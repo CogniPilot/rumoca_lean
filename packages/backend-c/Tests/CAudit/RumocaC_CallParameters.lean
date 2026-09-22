@@ -7,3 +7,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCalls.Parameters.parameters_typed
 #audit axioms Rumoca.CCalls.Parameters.parameters_length
 #audit axioms Rumoca.CCalls.Parameters.parameters_unknown
+
+#audit axioms Rumoca.CCalls.Parameters.coherent_bind
+#audit axioms Rumoca.CCalls.Parameters.coherent_domain

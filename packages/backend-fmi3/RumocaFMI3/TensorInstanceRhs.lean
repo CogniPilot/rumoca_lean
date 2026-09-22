@@ -91,7 +91,7 @@ theorem parameter_bound (parameters : List Syntax.Parameter) (pool : Address) (i
   have pointer := Arguments.locals_present parameters (args pool i shape) name member
   have count := Arguments.locals_present parameters (args pool i shape) "count" countMember
   intro heap
-  simp only [namedBuffer, Named.Buffer.erase, CBody.eval, CBody.resolve, pointer, count, args,
+  simp only [namedBuffer, Named.Buffer.erase, CBody.eval, CBody.evalWith, CBody.resolve, pointer, count, args,
     if_neg different, ↓reduceIte, Option.orElse_some, locations, and_self]
 
 /-- A well-formed instance heap satisfies the derivative entry's argument

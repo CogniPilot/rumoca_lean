@@ -16,10 +16,10 @@ theorem invalid_run (env : Locals) (heap : Heap) (arrayName countName : String)
       some (.running (Runtime.fail "Expected one continuous state" :: tail) env heap) := by
   rcases invalid with bad | rfl
   · simp [Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch, Runtime.either, Runtime.nev,
-      Runtime.negate, Runtime.v, Runtime.n, run, next, eval, countBound, arrayBound,
+      Runtime.negate, Runtime.v, Runtime.n, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, countBound, arrayBound,
       comparison, boolean, Value.truth, bad]
   · simp [Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch, Runtime.either, Runtime.nev,
-      Runtime.negate, Runtime.v, Runtime.n, run, next, eval, countBound, arrayBound,
+      Runtime.negate, Runtime.v, Runtime.n, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, countBound, arrayBound,
       comparison, boolean, Value.truth]
 
 theorem valid_run (env : Locals) (heap : Heap) (arrayName countName : String)
@@ -29,7 +29,7 @@ theorem valid_run (env : Locals) (heap : Heap) (arrayName countName : String)
     run 1 (.running (Runtime.scalarAccessCheck arrayName countName ++ tail) env heap) =
       some (.running tail env heap) := by
   simp [Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch, Runtime.either, Runtime.nev,
-    Runtime.negate, Runtime.v, Runtime.n, run, next, eval, countBound, arrayBound,
+    Runtime.negate, Runtime.v, Runtime.n, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, countBound, arrayBound,
     comparison, boolean, Value.truth]
 
 end Rumoca.FMI3.ScalarAccess

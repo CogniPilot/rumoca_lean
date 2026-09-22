@@ -25,6 +25,7 @@ theorem clear_scheduled (program : Events.Program E) (tag : Event → E)
     change Events.Step program (.calling "atomic_store" [object, value false] before.heap stack) events _ at executed
     cases executed with
     | internal moved =>
+      change Events.internalNext program _ = _ at moved
       rw [Events.external_entry_exclusive program bound] at moved
       contradiction
     | external found converted executed =>
@@ -57,6 +58,7 @@ theorem exchange_scheduled (program : Events.Program E) (tag : Event → E)
       (.calling "atomic_exchange" [.pointer (some address), value true] before.heap stack) events _ at executed
     cases executed with
     | internal moved =>
+      change Events.internalNext program _ = _ at moved
       rw [Events.external_entry_exclusive program bound] at moved
       contradiction
     | external found converted executed =>

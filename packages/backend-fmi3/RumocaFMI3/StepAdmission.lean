@@ -105,7 +105,7 @@ theorem duration_checks (env : CBody.Locals) (heap : Heap) (step : Binary64.Valu
       AdmittedDuration step := by
   have false_iff (b : Bool) : CBody.boolean b = CBody.boolean false ↔ b = false := by
     cases b <;> decide
-  simp only [CBody.eval, CBody.resolve, stepBound, floorBound, Option.orElse_some,
+  simp only [CBody.eval, CBody.evalWith, CBody.resolve, stepBound, floorBound, Option.orElse_some,
     Option.bind_eq_bind, Option.bind_some, Value.finite, CBody.comparison, Nat.cast_zero, Nat.cast_ofNat]
   rw [CIntegerConversions.integer_float64 0 (by decide +kernel),
     CIntegerConversions.integer_float64 1000000 (by decide +kernel)]

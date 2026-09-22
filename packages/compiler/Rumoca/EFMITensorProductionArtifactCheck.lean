@@ -1,5 +1,6 @@
 import Rumoca.EFMITensorArtifactCheck
-import Rumoca.FMI3AdapterCertificate
+import Rumoca.TensorEFMIExecutedContract
+import RumocaC.PrinterCertificate
 import RumocaEFMI.TensorProductionText
 import RumocaEFMI.Directory
 
@@ -12,7 +13,7 @@ its independently delaborated tree, and the concatenation against the read bytes
 It never evaluates producer proof commands. -/
 namespace Rumoca.EFMITensorProductionArtifactCheck
 open Lean Elab Command
-open Rumoca.FMI3AdapterCertificate (quoteCharacters certifyConcatenation checkCharacterEquality)
+open Rumoca.CTree.Printer.Certificate (quoteCharacters certifyConcatenation)
 open Rumoca Rumoca.EFMI Rumoca.EFMI.TensorProduction Rumoca.CTensor
 
 /-- Kernel-check one plain-string fragment's characters by reflexivity. Unlike the
@@ -160,9 +161,10 @@ def check (input : EFMICheckOptions.Code) (c : String) : CommandElabM Unit := do
     theorem $theoremId:ident :
         Generated.source = $ebnf ∧ GALEC.Generated.source = $algEbnf ∧
         ∃ a : TensorArtifact $inputTerm, compileTensor $inputTerm = .ok a ∧
-          TensorProductionContract a $alg (String.ofList $modelChars) := by
+          TensorExecutedProductionContract a $alg (String.ofList $modelChars) := by
       obtain ⟨g₁, g₂, a, compiled, algorithm⟩ := $algorithmRoot:ident
-      exact ⟨g₁, g₂, a, compiled, tensor_production_correct a algorithm $renderEq:ident⟩))
+      exact ⟨g₁, g₂, a, compiled, tensor_executed_production_correct a
+        (tensor_production_correct a algorithm $renderEq:ident)⟩))
   let axioms ← collectAxioms theoremName
   for dependency in axioms do
     unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do

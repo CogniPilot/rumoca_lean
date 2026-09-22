@@ -62,7 +62,7 @@ theorem eval_integer_cast (env : CBody.Locals) (heap : Heap) (type name : String
     (declared : interface.types type = some .float64) (bound : env name = some (.integer n))
     (small : n.natAbs < 2 ^ 53) :
     CBody.eval env heap (.cast type (.id name)) = some (.finite (Binary64.ofSmallInt n small)) := by
-  simpa only [CBody.eval, CBody.resolve, bound, Option.orElse_some, Option.bind_some,
+  simpa only [CBody.eval, CBody.evalWith, CBody.resolve, bound, Option.orElse_some, Option.bind_some,
     CBody.expressionCast_ordinary (show CBody.zeroLiteral (.id name) = false by rfl)] using
     cast_integer type n declared small
 
@@ -70,7 +70,7 @@ theorem eval_size_cast (env : CBody.Locals) (heap : Heap) (type name : String) (
     (declared : interface.types type = some .size) (bound : env name = some (.finite x))
     (bounded : 0 ≤ Binary64.truncateInteger x ∧ Binary64.truncateInteger x < 2 ^ 64) :
     CBody.eval env heap (.cast type (.id name)) = some (.integer (Binary64.truncateInteger x)) := by
-  simpa only [CBody.eval, CBody.resolve, bound, Option.orElse_some, Option.bind_some,
+  simpa only [CBody.eval, CBody.evalWith, CBody.resolve, bound, Option.orElse_some, Option.bind_some,
     CBody.expressionCast_ordinary (show CBody.zeroLiteral (.id name) = false by rfl)] using
     cast_size type x declared bounded
 

@@ -13,9 +13,9 @@ non-null, then writes the fixed nominal `1` into every cell of the caller buffer
 with a counted `size_t` loop whose bound is the symbolic volume. No tensor
 coordinate is enumerated during lowering.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every existing
-contract are unchanged. Every theorem is universal in the tensor shape, the
+The tensor adapter consumes these bodies and proofs. This module alone does
+not establish source acceptance or certify an actual artifact; those obligations
+belong to the composed adapter/compiler contracts. Every theorem is universal in the tensor shape, the
 instance address, the caller buffer and the heap. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorNominals
@@ -50,9 +50,10 @@ theorem oneCopy_step (env : Locals) (types : Types) (heap : Heap) (regionBase : 
   have address : CBody.lvalue env heap dstCell = some (regionBase.index i.val) :=
     dstCell_lvalue env heap regionBase i.val dstBound counter
   have rhs : CLoops.eval env types heap (Runtime.n 1) = some (.integer 1) := by
-    simp [Runtime.n, CLoops.eval, CBody.eval]
+    simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]
+  simp only [CLoops.eval, CBody.legacyExpressions] at rhs
   simp only [dstCell] at address
-  simp [oneBody, dstCell, CLoops.next, address, rhs, CMemory.store, regionStore, convert,
+  simp [oneBody, dstCell, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, address, rhs, CMemory.store, regionStore, convert,
     Binary64.exactInteger_one, Value.finite, StateProofs.written]
 
 end
@@ -78,7 +79,7 @@ theorem oneCopy_reaches (program : CCalls.Events.Program E) (env : Locals) (type
     (fun _ => env) types (written heap regionBase (oneValues shape)) shape.volume resultType stack typed
     bounded oneBody_closed
   · intro i inside
-    simpa [Runtime.v, CBody.eval, counterEnv, CBody.bind, resolve] using count
+    simpa [Runtime.v, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, counterEnv, CBody.bind, resolve] using count
   · intro i inside
     obtain ⟨old, storage⟩ := Float64Calls.pending_output heap regionBase (oneValues shape) writable i inside
     have counter : resolve (counterEnv env "k" i) "k" = some (.integer i) := by
@@ -138,7 +139,7 @@ theorem body_closed (shape : Tensor.Shape) :
     (function shape).body.all CBodyEmbedding.closedBlocks = true := by
   simp [function, body, nominalTail, countReject, oneBody, Runtime.require, Runtime.instancePrefix,
     Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok,
-    Runtime.field, Runtime.v, Runtime.any, Runtime.either, Runtime.nev, Runtime.negate, dstCell,
+    Runtime.v, Runtime.any, Runtime.either, Runtime.nev, Runtime.negate, dstCell,
     CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
 
 section
@@ -160,7 +161,7 @@ theorem count_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume :
     CBody.eval (guardEnv p buffer count) heap
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
         Runtime.negate (Runtime.v "nominals")]) = some (boolean false) := by
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval,
+  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, matched]
 
 /-- The staged environment at the fill loop. -/
@@ -212,7 +213,7 @@ theorem nominal_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address
     declare_step_e (guardEnv p buffer count) types0 heap "fmi3Float64 *" "dst"
       (Runtime.v "nominals") .pointer (.pointer (some buffer)) (.pointer (some buffer)) _
       (by simp [guardEnv, parameters, CBody.bind]) rfl
-      (by simp [Runtime.v, CLoops.eval, CBody.eval, guardEnv, parameters, CBody.bind, CBody.resolve]) rfl
+      (by simp [Runtime.v, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve]) rfl
   have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
         .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") oneBody :: [Runtime.ok])
         (bind (guardEnv p buffer count) "dst" (.pointer (some buffer)))
@@ -221,7 +222,7 @@ theorem nominal_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address
         [Runtime.ok]) (stagedEnv buffer p shape count) (stagedTypes types0) heap) :=
     declare_step_e _ _ heap "size_t" "expected" (Runtime.n shape.volume) .size
       (.integer shape.volume) (.integer shape.volume) _ (by simp [guardEnv, parameters, CBody.bind])
-      rfl (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
+      rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat _ bounded)
   refine .next (CCalls.Events.body_step program s_dst "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s_exp "fmi3Status" stack) ?_)
   set env := stagedEnv buffer p shape count with henv

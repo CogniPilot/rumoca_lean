@@ -18,3 +18,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CLiteral.Lowering.Events.step_reflected
 #audit axioms Rumoca.CLiteral.Lowering.Events.behaviors
 #audit axioms Rumoca.CLiteral.Lowering.Events.invocation_behaviors
+
+#audit axioms Rumoca.CLiteral.Lowering.Events.bisimulation
+#audit axioms Rumoca.CLiteral.Lowering.Events.program

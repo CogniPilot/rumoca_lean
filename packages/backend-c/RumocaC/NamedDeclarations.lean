@@ -16,8 +16,10 @@ theorem named_declare_entry (program : Program E) (env : CBody.Locals) (types : 
     internalNext program (.body (.running (.declare declaredType destination (.call (.id callee) args) :: rest)
       env types heap) resultType stack) =
       some (.calling callee values heap (.caller (.declare declaredType destination) rest env types resultType stack)) := by
-  simp [internalNext, Typed.nextWith, CLoops.next, CLoops.eval, CBody.eval, fresh,
-    enterCall, Indirect.operand, resolve, Indirect.resolve, CBody.resolve, CBody.constants,
+  simp only [arguments, CBody.legacyExpressions] at evaluated
+  simp [internalNext, internalNextWith, Typed.nextWithExpressions, CLoops.nextWith,
+    CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, fresh,
+    enterCallWith, Indirect.operand, resolveWith, Indirect.resolveWith, CBody.resolve, CBody.constants,
     unshadowed, named, ordinary, evaluated]
 
 theorem declare_result (program : Program E) (env : CBody.Locals) (types : CLoops.Types)
@@ -28,6 +30,6 @@ theorem declare_result (program : Program E) (env : CBody.Locals) (types : CLoop
     internalNext program (.returning value heap (.caller (.declare declaredType destination) rest env types resultType stack)) =
       some (.body (.running rest (CBody.bind env destination result) (CLoops.bindType types destination type) heap)
         resultType stack) := by
-  simp [internalNext, Typed.nextWith, Typed.resume, fresh, typed, converted]
+  simp [internalNext, internalNextWith, Typed.nextWithExpressions, Typed.resumeWith, fresh, typed, converted]
 
 end Rumoca.CCalls.Events

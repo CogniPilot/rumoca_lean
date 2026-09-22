@@ -71,7 +71,7 @@ theorem resume_ready (frames : Frames rank ceiling 0 stack)
     (stepped : Typed.resume value heap stack = some target) : Ready rank ceiling program target := by
   cases stack with
   | done =>
-      simp only [Typed.resume, Option.some.injEq] at stepped
+      simp only [Typed.resume, Typed.resumeWith, Option.some.injEq] at stepped
       subst target
       trivial
   | caller destination rest env types resultType outer =>
@@ -81,7 +81,7 @@ theorem resume_ready (frames : Frames rank ceiling 0 stack)
         fun _ _ _ => ⟨caller, upper, ready, frames⟩
       have returning : ∀ value heap, Ready rank ceiling program (.returning value heap outer) :=
         fun _ _ => frames.weaken (Nat.zero_le _)
-      unfold Typed.resume at stepped
+      unfold Typed.resume Typed.resumeWith at stepped
       split at stepped
       all_goals
         aesop (add safe apply [body, returning])
@@ -95,17 +95,17 @@ theorem enter_ready (program : Events.Program E)
     Ready rank ceiling program target := by
   obtain ⟨caller, upper, policy, frames⟩ := ready
   cases state with
-  | returned result => simp [Events.enterCall] at entered
+  | returned result => simp [Events.enterCall, Events.enterCallWith] at entered
   | running code env types heap =>
       cases code with
       | nil =>
-          simp only [Events.enterCall] at entered
+          simp only [Events.enterCall, Events.enterCallWith] at entered
           split at entered
           · cases Option.some.inj entered
             exact frames.weaken (Nat.zero_le _)
           · contradiction
       | cons stmt rest =>
-          simp only [Events.enterCall, Option.bind_eq_bind, Option.bind_eq_some_iff] at entered
+          simp only [Events.enterCall, Events.enterCallWith, Option.bind_eq_bind, Option.bind_eq_some_iff] at entered
           obtain ⟨operand, extracted, name, resolved, values, converted, emitted⟩ := entered
           cases Option.some.inj emitted
           have suspended : ∀ lower, lower ≤ caller → Frames rank ceiling lower
@@ -145,13 +145,13 @@ theorem internal_ready (program : Events.Program E)
       obtain ⟨caller, upper, policy, frames⟩ := ready
       cases control with
       | returned result =>
-          simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind,
+          simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind,
             Option.bind_eq_some_iff] at stepped
           obtain ⟨value, converted, emitted⟩ := stepped
           cases Option.some.inj emitted
           exact frames.weaken (Nat.zero_le _)
       | running code env types heap =>
-          simp only [Events.internalNext, Typed.nextWith] at stepped
+          simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions] at stepped
           cases next : CLoops.next (.running code env types heap) with
           | none =>
               simp only [next] at stepped
@@ -161,7 +161,7 @@ theorem internal_ready (program : Events.Program E)
               subst target
               exact ⟨caller, upper, loop_ready_next policy next, frames⟩
   | calling name args heap stack =>
-      simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind,
+      simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind,
         Option.bind_eq_some_iff] at stepped
       obtain ⟨definition, defined, entered⟩ := stepped
       simp only [Ready, defined] at ready
@@ -180,18 +180,18 @@ theorem internal_ready (program : Events.Program E)
   | kernel control heap stack =>
       cases control with
       | returned value =>
-          simp only [Events.internalNext, Typed.nextWith, Option.some.injEq] at stepped
+          simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.some.injEq] at stepped
           subst target
           exact ready
       | entry | running =>
-          simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind,
+          simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind,
             Option.bind_eq_some_iff] at stepped
           obtain ⟨following, next, emitted⟩ := stepped
           cases Option.some.inj emitted
           exact ready
   | returning value heap stack =>
-      exact resume_ready ready (by simpa only [Events.internalNext, Typed.nextWith] using stepped)
-  | halted result => simp [Events.internalNext, Typed.nextWith] at stepped
+      exact resume_ready ready (by simpa only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions] using stepped)
+  | halted result => simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions] at stepped
 
 theorem event_ready (program : Events.Program E)
     (foreign : CCallPolicy.ForeignAddresses program)

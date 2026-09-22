@@ -1,8 +1,7 @@
 import RumocaFMI3.DiscreteEvaluationCalls
 import RumocaFMI3.TensorInstanceStorage
 
-/-! Tensor `fmi3EvaluateDiscreteStates` contract over the tensor instance record,
-as a package-checked product.
+/-! Tensor `fmi3EvaluateDiscreteStates` contract over the tensor instance record.
 
 The scalar body `Runtime.body model signature` for `fmi3EvaluateDiscreteStates`
 is the fixed statement list `Runtime.require .evaluateDiscrete ++ [ok]`; it reads
@@ -14,9 +13,8 @@ reads of the instance record metadata cells (`kind`, `mode`) the tensor record
 also carries, so the scalar quiet execution transfers verbatim to a tensor
 instance record heap.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. -/
+Production adapter contracts consume these results. This module alone does not
+certify actual artifact bytes or admit a new source/grammar case. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorDiscreteEvaluation
 open CTree CMemory CBody StaticFactory CLiteral.Interface

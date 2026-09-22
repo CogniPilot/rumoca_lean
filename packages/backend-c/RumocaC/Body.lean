@@ -1,5 +1,5 @@
 import RumocaC.Tree
-import RumocaC.Interface
+import RumocaC.MemberContext
 import RumocaCore.Real.Comparison
 import RumocaCore.Real.ScaledRounding
 import RumocaCore.Transition
@@ -135,43 +135,62 @@ theorem decimalValue_unique {negative : Bool} {mantissa : Nat} {exponent : Int} 
   Binary64.Scaled.rounding_unique h (decimalValue_rounds negative mantissa exponent)
 
 mutual
-  noncomputable def eval (env : Locals) (heap : Heap) : Expr → Option Value
+  noncomputable def evalWith (declarations : CDeclaredMembers.Declarations) (objects : CDeclaredMembers.Objects)
+      (env : Locals) (heap : Heap) : Expr → Option Value
     | .id name => resolve env name
     | .nat n => some (.integer n)
     | .decimal negative mantissa exponent => some (.finite (decimalValue negative mantissa exponent))
     | .str s => (interface.literals s).map (fun p => .pointer (some p))
-    | .cast type a => do expressionCast type a (← eval env heap a)
-    | .not a => do return boolean (!(← (← eval env heap a).truth))
+    | .cast type a => do expressionCast type a (← evalWith declarations objects env heap a)
+    | .not a => do return boolean (!(← (← evalWith declarations objects env heap a).truth))
     | .bin .and a b => do
-      if !(← (← eval env heap a).truth) then return boolean false
-      return boolean (← (← eval env heap b).truth)
+      if !(← (← evalWith declarations objects env heap a).truth) then return boolean false
+      return boolean (← (← evalWith declarations objects env heap b).truth)
     | .bin .or a b => do
-      if ← (← eval env heap a).truth then return boolean true
-      return boolean (← (← eval env heap b).truth)
-    | .bin op a b => do comparison op (← eval env heap a) (← eval env heap b)
-    | .deref a => do load heap (← (← eval env heap a).address)
-    | .address a => do return .pointer (some (← lvalue env heap a))
+      if ← (← evalWith declarations objects env heap a).truth then return boolean true
+      return boolean (← (← evalWith declarations objects env heap b).truth)
+    | .bin op a b => do comparison op (← evalWith declarations objects env heap a) (← evalWith declarations objects env heap b)
+    | .deref a => do load heap (← (← evalWith declarations objects env heap a).address)
+    | .address a => do return .pointer (some (← lvalueWith declarations objects env heap a))
     | .field a name pointer => do
-      let p ← if pointer then do (← eval env heap a).address else lvalue env heap a
-      load heap (p.member name)
+      let p ← if pointer then do (← evalWith declarations objects env heap a).address else lvalueWith declarations objects env heap a
+      CDeclaredMembers.memberValue declarations objects heap p name
     | .index a i => do
-      let p ← lvalue env heap a <|> (eval env heap a).bind Value.address
-      let .integer n ← eval env heap i | none
+      let p ← lvalueWith declarations objects env heap a <|> (evalWith declarations objects env heap a).bind Value.address
+      let .integer n ← evalWith declarations objects env heap i | none
       if n < 0 then none else load heap (p.index n.toNat)
-    | .call (.id "isfinite") [a] => do return boolean (← (← eval env heap a).isFinite)
+    | .call (.id "isfinite") [a] => do return boolean (← (← evalWith declarations objects env heap a).isFinite)
     | _ => none
 
-  noncomputable def lvalue (env : Locals) (heap : Heap) : Expr → Option Address
-    | .deref a => do (← eval env heap a).address
+  noncomputable def lvalueWith (declarations : CDeclaredMembers.Declarations) (objects : CDeclaredMembers.Objects)
+      (env : Locals) (heap : Heap) : Expr → Option Address
+    | .deref a => do (← evalWith declarations objects env heap a).address
     | .field a name pointer => do
-      let p ← if pointer then do (← eval env heap a).address else lvalue env heap a
+      let p ← if pointer then do (← evalWith declarations objects env heap a).address else lvalueWith declarations objects env heap a
       return p.member name
     | .index a i => do
-      let p ← lvalue env heap a <|> (eval env heap a).bind Value.address
-      let .integer n ← eval env heap i | none
+      let p ← lvalueWith declarations objects env heap a <|> (evalWith declarations objects env heap a).bind Value.address
+      let .integer n ← evalWith declarations objects env heap i | none
       if n < 0 then none else some (p.index n.toNat)
     | _ => none
 end
+
+/-- Legacy APIs select empty declarations; there is only one recursive evaluator. -/
+noncomputable abbrev eval (env : Locals) (heap : Heap) : Expr → Option Value :=
+  evalWith (fun _ => none) (fun _ => none) env heap
+noncomputable abbrev lvalue (env : Locals) (heap : Heap) : Expr → Option Address :=
+  lvalueWith (fun _ => none) (fun _ => none) env heap
+
+/-- One value/lvalue pair is threaded through statement and call execution. -/
+structure Expressions where
+  value : Locals → Heap → Expr → Option Value
+  address : Locals → Heap → Expr → Option Address
+
+noncomputable def declaredExpressions (declarations : CDeclaredMembers.Declarations)
+    (objects : CDeclaredMembers.Objects) : Expressions :=
+  ⟨evalWith declarations objects, lvalueWith declarations objects⟩
+
+noncomputable def legacyExpressions : Expressions := ⟨eval, lvalue⟩
 
 /-- A bare identifier is not an lvalue in this fragment, so subscripting a
 pointer variable `p[i]` takes the array-decay branch's fallback and follows the
@@ -214,37 +233,41 @@ inductive State where
   | running (code : List Stmt) (locals : Locals) (heap : Heap)
   | returned (result : Result)
 
-noncomputable def next : State → Option State
+noncomputable def nextWith (expressions : Expressions) : State → Option State
   | .returned _ | .running [] _ _ => none
   | .running (.declare type name expr :: rest) env heap => do
-    let value ← cast type (← eval env heap expr)
+    let value ← cast type (← expressions.value env heap expr)
     if (env name).isSome then none else
       return .running rest (bind env name value) heap
   | .running (.assign target expr :: rest) env heap => do
-    let value ← eval env heap expr
-    let address ← lvalue env heap target
+    let value ← expressions.value env heap expr
+    let address ← expressions.address env heap target
     let heap' ← store heap address value
     return .running rest env heap'
   | .running (.eval expr :: rest) env heap => do
-    let _ ← eval env heap expr
+    let _ ← expressions.value env heap expr
     return .running rest env heap
   | .running (.ret none :: _) _ heap => some (.returned ⟨.void, heap⟩)
   | .running (.ret (some expr) :: _) env heap => do
-    return .returned ⟨← eval env heap expr, heap⟩
+    return .returned ⟨← expressions.value env heap expr, heap⟩
   | .running (.branch condition yes no :: rest) env heap => do
-    let takeYes ← (← eval env heap condition).truth
+    let takeYes ← (← expressions.value env heap condition).truth
     return .running ((if takeYes then yes else no) ++ rest) env heap
   | .running (.whileLoop condition body :: rest) env heap => do
-    let again ← (← eval env heap condition).truth
+    let again ← (← expressions.value env heap condition).truth
     return .running (if again then body ++ .whileLoop condition body :: rest else rest) env heap
 
-def machine : Transition.Machine State Result where
-  step s t := next s = some t
+noncomputable abbrev next : State → Option State := nextWith legacyExpressions
+
+def machineWith (expressions : Expressions) : Transition.Machine State Result where
+  step s t := nextWith expressions s = some t
   final | .returned result => some result | _ => none
   deterministic ha hb := Option.some.inj (ha.symm.trans hb)
   final_stuck := by
     intro s result hs t
-    cases s <;> simp_all [next]
+    cases s <;> simp_all [nextWith]
+
+noncomputable abbrev machine : Transition.Machine State Result := machineWith legacyExpressions
 
 noncomputable def run : Nat → State → Option State
   | 0, s => some s

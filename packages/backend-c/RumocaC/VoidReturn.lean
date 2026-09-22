@@ -63,7 +63,7 @@ theorem step_ready (program : Events.Program E) (ready : Ready env types state)
   have active : ¬ ∃ result, state = .halted result := by
     rintro ⟨result, rfl⟩
     cases step with
-    | internal next => simp [Events.internalNext, Typed.nextWith] at next
+    | internal next => simp [Events.internalNextWith, Typed.nextWithExpressions] at next
   obtain ⟨next, enabled, following, decreases, unchanged⟩ := next_ready program ready active
   obtain ⟨rfl, rfl⟩ := Events.internal_unique program enabled events after step
   exact ⟨rfl, following, decreases, unchanged⟩

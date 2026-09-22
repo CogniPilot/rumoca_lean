@@ -27,9 +27,9 @@ array and the capacity constant are shared verbatim with the scalar storage;
 only the record body differs. There is no dynamic allocation and no tensor
 coordinate is enumerated: the extents stay symbolic in the shape.
 
-This is a package-checked product only: no production artifact is emitted, no
-CLI or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. -/
+The production tensor renderer consumes these declarations. These layout and
+tokenization facts alone do not certify actual artifact bytes or native layout,
+and do not admit a new CLI or grammar case. -/
 namespace Rumoca.FMI3.TensorStorage
 open Rumoca.Tensor
 

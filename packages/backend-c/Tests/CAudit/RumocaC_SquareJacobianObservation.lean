@@ -1,0 +1,8 @@
+import RumocaC.SquareJacobianObservation
+import ProofAudit.Audit
+
+#audit axioms Rumoca.CTensor.SquareJacobianObservation.helper_contract
+#audit axioms Rumoca.CTensor.SquareJacobianObservation.mathematical_derivative
+#audit axioms Rumoca.CTensor.SquareJacobianObservation.mathematical_eq
+#audit axioms Rumoca.CTensor.SquareJacobianObservation.matrix_nearest
+#audit axioms Rumoca.CTensor.SquareJacobianObservation.result_observes

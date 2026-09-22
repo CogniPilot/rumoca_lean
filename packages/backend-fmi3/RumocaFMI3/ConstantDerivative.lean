@@ -80,10 +80,10 @@ theorem derivBody_printable (shape : Tensor.Shape) :
       TensorFloat64.getLoopSuffix, Runtime.region, Runtime.require, Runtime.instancePrefix,
       Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.reject, Runtime.branch,
       Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv,
-      Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any, Runtime.mode, Runtime.lt,
+      Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any, Runtime.mode,
       Runtime.call, TensorFloat64.getCopyBody, TensorFloat64.srcCell, Float64Calls.output,
       CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
-      List.mem_append, List.mem_cons, List.not_mem_nil, List.forall_mem_nil, or_false, or_imp, forall_and,
+      List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact CNull.literal_printable _
@@ -197,10 +197,10 @@ theorem constant_deriv_enter (shape : Tensor.Shape) (p buffer : Address) (count 
         (derivGuardEnv p buffer count) types0 H) "fmi3Status" stack) =
       some (.calling "rumoca_constant_rhs" [.pointer (some (p.member derivativeName))] H
         (.caller .discard rest (derivGuardEnv p buffer count) types0 "fmi3Status" stack)) := by
-  simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-    entryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
-    CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve, CCalls.Indirect.operand,
-    CCalls.Indirect.resolve, CCalls.arguments, derivGuardEnv, derivParameters, CBody.bind,
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+    entryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+    CBody.lvalueWith, CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand,
+    CCalls.Indirect.resolveWith, CBody.legacyExpressions, CCalls.argumentsWith, CBody.legacyExpressions, derivGuardEnv, derivParameters, CBody.bind,
     CBody.resolve, CBody.constants, Value.address]
 
 /-- The fused single-run constant derivative getter over instance `i`: guarding,
@@ -283,7 +283,7 @@ theorem deriv_reaches (shape : Tensor.Shape) (rates : List Rumoca.ConstantProfil
         (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)) =
       some (.body (.running (derivCopyTail shape) (derivGuardEnv m buffer count) types0 finalHeap)
         "fmi3Status" stack) := by
-    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.Typed.resumeWith]
   have writableFinal : Writable finalHeap buffer shape.volume := by
     intro b hb
     obtain ⟨old, ho⟩ := writable b hb

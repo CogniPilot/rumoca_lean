@@ -11,9 +11,9 @@ finite time value into the instance's independent time base. The time base is th
 scalar (rank-0) member of the tensor instance record, so the write targets a
 single `double` cell; no tensor coordinate is enumerated.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. Every theorem is universal in the instance
+The tensor adapter consumes these bodies and proofs. This module alone does
+not establish source acceptance or certify an actual artifact; those obligations
+belong to the composed adapter/compiler contracts. Every theorem is universal in the instance
 address (and, for the instance-bound corollary, in the tensor shape and the
 instance index of the static pool) and the heap. -/
 noncomputable section
@@ -76,7 +76,7 @@ theorem finite_pass (heap : Heap) (p : Address) (time : Binary64.Value) :
       (Runtime.negate (Runtime.finite (Runtime.v "time"))) = some (boolean false) := by
   have hfin : (Value.float64 (toBits time).val).isFinite = some true := Value.isFinite_finite time
   simp (config := { decide := true }) [Runtime.negate, Runtime.finite, Runtime.call, Runtime.v,
-    CBody.eval, guardEnv, parameters, CBody.bind, CBody.resolve, hfin, Value.truth, boolean]
+    CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve, hfin, Value.truth, boolean]
 
 /-- The time write stores the value into the instance time cell. -/
 theorem time_write (heap : Heap) (p : Address) (bits : BitVec 64) (old : Option Value)
@@ -89,10 +89,10 @@ theorem time_write (heap : Heap) (p : Address) (bits : BitVec 64) (old : Option 
     exact store_of_convert heap (p.member "time") old (.float64 bits) (.float64 bits) .float64
       (by decide) storage (by simp [convert])
   have hres : resolve (guardEnv p bits) "m" = some (.pointer (some p)) := by
-    simp [guardEnv, parameters, CBody.bind, CBody.resolve]
+    simp [guardEnv, CBody.bind, CBody.resolve]
   have htime : resolve (guardEnv p bits) "time" = some (.float64 bits) := by
     simp [guardEnv, parameters, CBody.bind, CBody.resolve]
-  simp [tail, Runtime.put, Runtime.field, Runtime.v, CBody.next, CBody.eval, CBody.lvalue,
+  simp [tail, Runtime.put, Runtime.field, Runtime.v, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
     htime, hres, Value.address, hstore]
 
 /-- The whole body runs to the successful time write for a finite value. -/
@@ -116,7 +116,7 @@ theorem body_run (heap : Heap) (p : Address) (time : Binary64.Value) (kind : Kin
   have s_ok : CBody.next (.running [Runtime.ok] (guardEnv p (toBits time).val)
       (written heap (p.member "time") (toBits time).val)) =
       some (.returned ⟨.integer 0, written heap (p.member "time") (toBits time).val⟩) := by
-    simp [Runtime.ok, Runtime.ret, Runtime.v, CBody.next, CBody.eval, guardEnv, parameters,
+    simp [Runtime.ok, Runtime.ret, Runtime.v, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, guardEnv, parameters,
       CBody.bind, CBody.resolve, constants]
   rw [show (6 : Nat) = 3 + 3 from rfl, CBody.run_add, accepted, Option.bind_some,
     show (3 : Nat) = 1 + (1 + 1) from rfl, CBody.run_add, s_reject, Option.bind_some,
@@ -167,7 +167,7 @@ theorem nonfinite_prefix (heap : Heap) (p : Address) (bits : BitVec 64) (kind : 
   have hcond : CBody.eval (guardEnv p bits) heap
       (Runtime.negate (Runtime.finite (Runtime.v "time"))) = some (boolean true) := by
     simp (config := { decide := true }) [Runtime.negate, Runtime.finite, Runtime.call, Runtime.v,
-      CBody.eval, guardEnv, parameters, CBody.bind, CBody.resolve, nonfinite, Value.truth, boolean]
+      CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve, nonfinite, Value.truth, boolean]
   have s_reject : CBody.run 1 (.running (finiteReject :: tail) (guardEnv p bits) heap) =
       some (.running (Runtime.fail message :: tail) (guardEnv p bits) heap) :=
     run_one (Rumoca.FMI3.TensorFloat64.branch_true (guardEnv p bits) heap
@@ -178,7 +178,7 @@ theorem nonfinite_prefix (heap : Heap) (p : Address) (bits : BitVec 64) (kind : 
       some (.running (Runtime.fail message :: tail) (guardEnv p bits) heap)
     rw [show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some, s_reject]
   · simp [guardEnv, parameters, CBody.bind]
-  · simp [guardEnv, parameters, CBody.bind, CBody.resolve]
+  · simp [guardEnv, CBody.bind, CBody.resolve]
 
 /-- The non-finite rejection returns `fmi3Error` with logging suppressed. -/
 theorem nonfinite_behaviors (program : CCalls.Events.Program E) (heap : Heap) (p message' : Address)

@@ -29,7 +29,8 @@ def nullParameters : Locals := fun name =>
 theorem null_instance_run (heap : Heap) (rest : List Stmt) :
     run 3 (.running (Runtime.instancePrefix ++ rest) nullParameters heap) =
       some (.returned ⟨.integer 3, heap⟩) := by
-  simp [run, next, eval, Runtime.instancePrefix, Runtime.branch, Runtime.ret,
+  simp [run, next, nextWith, legacyExpressions, eval, evalWith,
+    Runtime.instancePrefix, Runtime.branch, Runtime.ret,
     Runtime.v, nullParameters, CBody.bind, resolve, constants,
     CBody.cast, convert, Value.truth, boolean]
 
@@ -60,7 +61,9 @@ theorem get_run (m : Solve.FMI3Model source) (sig : Signature)
   rw [hb, show 6 = 3 + 3 from rfl, run_add, hp]
   simp [tail, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
     Runtime.ret, Runtime.ok, Runtime.field, Runtime.x, Runtime.nev, Runtime.either,
-    Runtime.negate, Runtime.v, Runtime.n, run, next, eval, lvalue, parameters,
+    Runtime.negate, Runtime.v, Runtime.n, run, next, nextWith, legacyExpressions,
+    eval, evalWith, lvalue, lvalueWith, CDeclaredMembers.memberValue,
+    CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, parameters,
     CBody.bind, resolve, constants, CBody.cast, convert, comparison, boolean,
     Value.truth, Value.address, hx, store_float64 heap buffer old _ ho, written]
 
@@ -84,7 +87,9 @@ theorem set_run (m : Solve.FMI3Model source) (sig : Signature)
     Runtime.scalarAccessCheck, Runtime.branch, Runtime.ret, Runtime.fail, Runtime.ok,
     Runtime.field, Runtime.x, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
     Runtime.negate, Runtime.v, Runtime.n, Runtime.call, Runtime.finite,
-    run, next, eval, lvalue, parameters, CBody.bind, resolve, constants, CBody.cast, convert,
+    run, next, nextWith, legacyExpressions, eval, evalWith, lvalue, lvalueWith,
+    CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+    parameters, CBody.bind, resolve, constants, CBody.cast, convert,
     comparison, boolean, Value.truth, Value.address,
     hk, hm, hi, finiteInput, Value.finite, storeState, written, stateAddress]
 

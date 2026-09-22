@@ -79,7 +79,7 @@ theorem named_bound (base : Address) (shape : Tensor.Shape) (name : String)
   have pointer := Arguments.locals_present parameters (args base shape) name member
   have count := Arguments.locals_present parameters (args base shape) "count" (by decide +kernel)
   intro heap
-  simp only [buffer, CBody.eval, CBody.resolve, pointer, count, args, Entry.args, if_neg notCount,
+  simp only [buffer, CBody.eval, CBody.evalWith, CBody.resolve, pointer, count, args, Entry.args, if_neg notCount,
     if_neg notCells, if_neg (by decide +kernel : "count" ≠ "cells"),
     ↓reduceIte, Option.orElse_some, Entry.locations, and_self]
 
@@ -88,7 +88,7 @@ theorem output_bound (base : Address) (shape : Tensor.Shape) :
   have pointer := Arguments.locals_present parameters (args base shape) "J" (by decide +kernel)
   have count := Arguments.locals_present parameters (args base shape) "cells" (by decide +kernel)
   intro heap
-  simp only [output, CBody.eval, CBody.resolve, pointer, count, args, Entry.args,
+  simp only [output, CBody.eval, CBody.evalWith, CBody.resolve, pointer, count, args, Entry.args,
     if_neg (by decide +kernel : "J" ≠ "cells"), if_neg (by decide +kernel : "J" ≠ "count"),
     ↓reduceIte, Option.orElse_some, Entry.locations, and_self]
 

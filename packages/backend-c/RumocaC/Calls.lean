@@ -60,9 +60,12 @@ def parameters : List Parameter → List Value → Option CBody.Locals
         return CBody.bind env p.name value
   | _, _ => none
 
-def arguments (env : CBody.Locals) (heap : Heap) : List Expr → Option (List Value)
+def argumentsWith (expressions : CBody.Expressions) (env : CBody.Locals) (heap : Heap) : List Expr → Option (List Value)
   | [] => some []
-  | e :: es => do return (← CBody.eval env heap e) :: (← arguments env heap es)
+  | e :: es => do return (← expressions.value env heap e) :: (← argumentsWith expressions env heap es)
+
+abbrev arguments (env : CBody.Locals) (heap : Heap) : List Expr → Option (List Value) :=
+  argumentsWith CBody.legacyExpressions env heap
 
 def finiteValue : Value → Option Binary64.Value
   | .float64 bits =>
@@ -109,7 +112,7 @@ def callOperand : Stmt → Option (Destination × String × List Expr)
   | .ret (some (.call (.id name) args)) => some (.ret, name, args)
   | _ => none
 
-def enterCall (s : CBody.State) (resultType : String) (stack : Continuation) : Option State :=
+def enterCallWith (expressions : CBody.Expressions) (s : CBody.State) (resultType : String) (stack : Continuation) : Option State :=
   match s with
   | .running [] _ heap =>
     if resultType = "void" then some (.returning .void heap stack) else none
@@ -117,16 +120,16 @@ def enterCall (s : CBody.State) (resultType : String) (stack : Continuation) : O
     let (destination, name, args) ← callOperand stmt
     -- A local binding shadows a global function; indirect calls are not in this fragment.
     if (env name).isSome || name = "isfinite" then none else do
-      let values ← arguments env heap args
+      let values ← argumentsWith expressions env heap args
       return .calling name values heap (.caller destination rest env resultType stack)
   | .returned _ => none
 
-def resume (value : Value) (heap : Heap) : Continuation → Option State
+def resumeWith (expressions : CBody.Expressions) (value : Value) (heap : Heap) : Continuation → Option State
   | .done => some (.halted ⟨value, heap⟩)
   | .caller destination rest env resultType outer =>
     match destination with
     | .assign target => do
-      let address ← CBody.lvalue env heap target
+      let address ← expressions.address env heap target
       let heap' ← store heap address value
       return .body (.running rest env heap') resultType outer
     | .declare type name => do
@@ -136,14 +139,14 @@ def resume (value : Value) (heap : Heap) : Continuation → Option State
     | .discard => some (.body (.running rest env heap) resultType outer)
     | .ret => do return .returning (← returnCast resultType value) heap outer
 
-def next (p : Program) : State → Option State
+def nextWith (expressions : CBody.Expressions) (p : Program) : State → Option State
   | .halted _ => none
   | .body (.returned r) resultType stack => do
     return .returning (← returnCast resultType r.value) r.heap stack
   | .body s resultType stack =>
-    match CBody.next s with
+    match CBody.nextWith expressions s with
     | some t => some (.body t resultType stack)
-    | none => enterCall s resultType stack
+    | none => enterCallWith expressions s resultType stack
   | .calling name args heap stack => do
     match ← p.definitions name with
     | .tree fn =>
@@ -152,15 +155,21 @@ def next (p : Program) : State → Option State
     | .kernel fn => return .kernel (← kernelEntry fn args) heap stack
   | .kernel (.returned x) heap stack => some (.returning (.finite x) heap stack)
   | .kernel s heap stack => do return .kernel (← CStatements.next p.kernel s) heap stack
-  | .returning value heap stack => resume value heap stack
+  | .returning value heap stack => resumeWith expressions value heap stack
 
-def machine (p : Program) : Transition.Machine State CBody.Result where
-  step s t := next p s = some t
+abbrev enterCall := enterCallWith CBody.legacyExpressions
+abbrev resume := resumeWith CBody.legacyExpressions
+abbrev next := nextWith CBody.legacyExpressions
+
+def machineWith (expressions : CBody.Expressions) (p : Program) : Transition.Machine State CBody.Result where
+  step s t := nextWith expressions p s = some t
   final | .halted result => some result | _ => none
   deterministic ha hb := Option.some.inj (ha.symm.trans hb)
   final_stuck := by
     intro s result hs t
-    cases s <;> simp_all [next]
+    cases s <;> simp_all [nextWith]
+
+abbrev machine := machineWith CBody.legacyExpressions
 
 def run (p : Program) : Nat → State → Option State
   | 0, s => some s
@@ -171,7 +180,7 @@ theorem tree_entry (p : Program) (name args heap stack fn env)
     (hp : parameters fn.signature.parameters args = some env) :
     next p (.calling name args heap stack) =
       some (.body (.running fn.body env heap) fn.signature.result stack) := by
-  simp [next, hd, hp]
+  simp [next, nextWith, hd, hp]
 
 theorem run_reaches (h : run p n s = some t) : Transition.Reaches (machine p).step s t := by
   induction n generalizing s with
@@ -191,8 +200,8 @@ theorem behaviors_of_run (h : run p n s = some (.halted result)) (b) :
 theorem body_step (p : Program) (h : CBody.next s = some t) (type stack) :
     next p (.body s type stack) = some (.body t type stack) := by
   cases s with
-  | returned => simp [CBody.next] at h
-  | running => simp [next, h]
+  | returned => simp [CBody.next, CBody.nextWith] at h
+  | running => simp [next, nextWith, h]
 
 theorem body_reaches (p : Program)
     (h : Transition.Reaches CBody.machine.step s t) (type stack) :
@@ -208,7 +217,7 @@ theorem body_behaviors_of_reaches (p : Program)
   have tailRun : Transition.Reaches (machine p).step
       (.body (.returned result) type .done) (.halted result) :=
     .next (t := .returning result.value result.heap .done)
-      (by simp [machine, next, hc]) (.next (by rfl) (.refl _))
+      (by simp [machine, machineWith, nextWith, hc]) (.next (by rfl) (.refl _))
   exact (machine p).behavior_iff
     ((body_reaches p h type .done).trans tailRun) rfl
 
@@ -219,7 +228,7 @@ theorem body_behaviors (p : Program) (h : CBody.run n s = some (.returned result
 
 theorem kernel_step (p : Program) (h : CStatements.next p.kernel s = some t) (heap stack) :
     next p (.kernel s heap stack) = some (.kernel t heap stack) := by
-  cases s <;> simp_all [CStatements.next, next]
+  cases s <;> simp_all [CStatements.next, next, nextWith]
 
 theorem kernel_reaches (p : Program) (h : CStatements.Reaches p.kernel s t) (heap stack) :
     Transition.Reaches (machine p).step (.kernel s heap stack) (.kernel t heap stack) := by

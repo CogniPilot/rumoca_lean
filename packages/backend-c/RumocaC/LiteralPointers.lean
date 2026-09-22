@@ -20,16 +20,16 @@ decays to its supplied first-element address. Missing storage bindings reject
 evaluation; they do not silently become null pointers or abstract strings. -/
 theorem eval_string (bound : interface.literals source = some base) :
     CBody.eval env heap (.str source) = some (.pointer (some base)) := by
-  simp [CBody.eval, bound]
+  simp [CBody.eval, CBody.evalWith, bound]
 
 theorem eval_string_missing (missing : interface.literals source = none) :
     CBody.eval env heap (.str source) = none := by
-  simp [CBody.eval, missing]
+  simp [CBody.eval, CBody.evalWith, missing]
 
 theorem pointer_argument (bound : interface.literals source = some base)
     (type : interface.types spelling = some .pointer) :
     CBody.eval env heap (.cast spelling (.str source)) = some (.pointer (some base)) := by
-  simp [CBody.eval, bound, CBody.cast, type, convert]
+  simp [CBody.eval, CBody.evalWith, bound, CBody.cast, type, convert]
 
 /-- Indexing the actual string expression reads the represented character,
 including its zero terminator and the chosen signed-char interpretation. -/
@@ -39,7 +39,7 @@ theorem eval_index (valid : Valid interface.literals signed heap)
     CBody.eval env heap (.index (.str source) (.nat index)) =
       some (.integer (CCharacter.value signed byte)) := by
   have loaded := (valid source base bound).load atByte
-  simp [CBody.eval, bound, Value.address, loaded]
+  simp [CBody.eval, CBody.evalWith, bound, Value.address, loaded]
 
 /-- Actual rendered bytes and expression execution share the same object
 address and byte storage after every modeled preprocessing sequence. -/

@@ -126,7 +126,7 @@ theorem pointer_pass (events : Bool) (heap : Heap) (p buffer : Address) :
     CBody.eval (guardEnv events p buffer) heap
       (Runtime.any [Runtime.negate (Runtime.v (outputName events))]) = some (boolean false) := by
   cases events <;>
-    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.v, Runtime.n, CBody.eval, guardEnv,
+    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, guardEnv,
       parameters, outputName, CBody.bind, CBody.resolve, Value.truth, boolean]
 
 /-- The whole count-query body runs to the successful count write. Composed from
@@ -165,14 +165,14 @@ theorem body_run (shape : Tensor.Shape) (events : Bool) (heap : Heap) (p buffer 
       (Runtime.out (outputName events) (Runtime.n (count shape events)) :: [Runtime.ok])
       (guardEnv events p buffer) heap) =
       some (.running [Runtime.ok] (guardEnv events p buffer) (written shape events heap buffer)) := by
-    simp [Runtime.out, Runtime.n, Runtime.v, CBody.next, CBody.eval, CBody.lvalue,
+    simp [Runtime.out, Runtime.n, Runtime.v, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
       hbufResolve, Value.address, store_count shape events heap buffer old bounded storage]
   -- the success return
   have s_ok : CBody.next (.running [Runtime.ok] (guardEnv events p buffer)
       (written shape events heap buffer)) =
       some (.returned ⟨.integer 0, written shape events heap buffer⟩) := by
     cases events <;>
-      simp [Runtime.ok, Runtime.ret, Runtime.v, CBody.next, CBody.eval, guardEnv, parameters, outputName,
+      simp [Runtime.ok, Runtime.ret, Runtime.v, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, guardEnv, parameters, outputName,
         CBody.bind, CBody.resolve, constants]
   rw [show (6 : Nat) = 3 + 3 from rfl, CBody.run_add, accepted, Option.bind_some,
     show (3 : Nat) = 1 + (1 + 1) from rfl, CBody.run_add, s_check, Option.bind_some,

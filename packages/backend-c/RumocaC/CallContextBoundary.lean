@@ -22,31 +22,31 @@ theorem step_live (program : Events.Program E) (active : Active before)
   cases step with
   | internal moved =>
     cases before with
-    | halted result => simp [Events.internalNext, Typed.nextWith] at moved
+    | halted result => simp [Events.internalNextWith, Typed.nextWithExpressions] at moved
     | returning value heap stack =>
       cases stack with
       | done => exact active.1 ⟨value, heap, rfl⟩
       | caller destination rest env types resultType stack =>
         cases destination <;>
-          simp_all [Events.internalNext, Typed.nextWith, Typed.resume,
+          simp_all [Events.internalNextWith, Typed.nextWithExpressions, Typed.resumeWith,
             Option.bind_eq_some_iff]
         split at moved <;> simp_all [Option.bind_eq_some_iff]
     | body state resultType stack =>
       cases state with
-      | returned value => simp [Events.internalNext, Typed.nextWith, Option.bind_eq_some_iff] at moved
+      | returned value => simp [Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_some_iff] at moved
       | running code env types heap =>
         cases next : CLoops.next (.running code env types heap) with
-        | some following => simp [Events.internalNext, Typed.nextWith, next] at moved
+        | some following => simp [Events.internalNextWith, Typed.nextWithExpressions, next] at moved
         | none =>
-          cases code <;> simp [Events.internalNext, Typed.nextWith, next,
-            Events.enterCall, Option.bind_eq_some_iff] at moved
+          cases code <;> simp [Events.internalNextWith, Typed.nextWithExpressions, next,
+            Events.enterCallWith, Option.bind_eq_some_iff] at moved
     | calling name args heap stack =>
-      simp only [Events.internalNext, Typed.nextWith, Option.bind_eq_bind,
+      simp only [Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind,
         Option.bind_eq_some_iff] at moved
       obtain ⟨fn, _, entered⟩ := moved
       cases fn <;> simp [Option.bind_eq_some_iff] at entered
     | kernel state heap stack =>
-      cases state <;> simp [Events.internalNext, Typed.nextWith, Option.bind_eq_some_iff] at moved
+      cases state <;> simp [Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_some_iff] at moved
 
 /-- A local invariant can be followed beneath an arbitrary saved caller up
 to its exact return boundary. No replacement call interpreter is involved. -/

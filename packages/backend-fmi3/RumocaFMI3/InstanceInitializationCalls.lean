@@ -27,7 +27,7 @@ theorem run_return (model : Solve.Model source) (kind : Kind)
   rw [show 13 = 12 + 1 from rfl, run_add,
     run_initialization model kind env heap p environment logger logging [returnHandle]
       storage double bound.instanceBound bound.environmentBound bound.loggerBound bound.loggingBound]
-  simp [run, next, returnHandle, eval, bound.instanceBound, CBody.cast, handle, convert]
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, returnHandle, CBody.eval, CBody.evalWith, bound.instanceBound, CBody.cast, handle, convert]
 
 /-- The suffix terminates and returns its initialized handle in every caller
 continuation. No successful execution, zero-filled object or foreign-call result
@@ -46,7 +46,7 @@ theorem return_reaches (program : CCalls.Events.Program E) (model : Solve.Model 
       CBodyEmbedding.closedBlocks])
     (run_return model kind env heap p environment logger logging storage bound double handle)
   refine (CCalls.Events.body_reaches program (CLoops.run_reaches executed) "fmi3Instance" stack).trans ?_
-  exact .next (by simp [CBodyEmbedding.lift, CCalls.Events.internalNext, CCalls.Typed.nextWith,
+  exact .next (by simp [CBodyEmbedding.lift, CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
     CCalls.returnCast, CBody.cast, handle, convert]) (.refl _)
 
 theorem complete (program : CCalls.Events.Program E) (model : Solve.Model source)

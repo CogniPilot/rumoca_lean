@@ -1,8 +1,7 @@
 import RumocaFMI3.EventIndicatorFunction
 import RumocaFMI3.TensorInstanceStorage
 
-/-! Tensor `fmi3GetEventIndicators` contract over the tensor instance record, as
-a package-checked product.
+/-! Tensor `fmi3GetEventIndicators` contract over the tensor instance record.
 
 The scalar body `Runtime.body model signature` for `fmi3GetEventIndicators` reads
 no source name and touches no tensor region: it is the fixed statement list
@@ -15,9 +14,8 @@ the instance record metadata cells (`kind`, `mode`) that the tensor instance
 record also carries, so the scalar execution transfers verbatim to a tensor
 instance record heap.
 
-This is a package-checked product only: no production artifact is emitted, no CLI
-or grammar case is added, and the scalar adapter, `Runtime.lean` and every
-existing contract are unchanged. -/
+Production adapter contracts consume these results. This module alone does not
+certify actual artifact bytes or admit a new source/grammar case. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorEventIndicators
 open CTree CMemory CBody

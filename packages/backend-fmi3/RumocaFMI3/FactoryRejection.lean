@@ -19,9 +19,9 @@ theorem identity_guard (program : CCalls.Events.Program E) (rest : List Stmt)
         ((if valid then [] else code "Invalid name or instantiation token") ++
           rest) env types heap) "fmi3Instance" stack) := by
   cases valid <;>
-    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, FactoryPrefix.identityGuard,
-      code, logCall, CLoops.next, CLoops.noDeclarations, CLoops.eval,
-      CBody.eval,
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, FactoryPrefix.identityGuard,
+      code, logCall, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith, CBody.legacyExpressions,
+      CBody.eval, CBody.evalWith,
       bound, boolean, Value.truth]
 
 theorem dispatch (program : CCalls.Events.Program E) (message : String)
@@ -35,9 +35,9 @@ theorem dispatch (program : CCalls.Events.Program E) (message : String)
         ((if logger.isSome && logging then [logCall message] else []) ++
           Runtime.ret (Runtime.v "NULL") :: rest) env types heap) "fmi3Instance" stack) := by
   cases logger <;> cases logging <;>
-    simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, code, logCall,
-      CLoops.next, CLoops.noDeclarations, CLoops.eval,
-      Runtime.v, Runtime.ret, CBody.eval, loggerBound, loggingBound, boolean, Value.truth]
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, code, logCall,
+      CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith, CBody.legacyExpressions,
+      Runtime.v, Runtime.ret, CBody.eval, CBody.evalWith, loggerBound, loggingBound, boolean, Value.truth]
 
 theorem return_null (program : CCalls.Events.Program E) (env : Locals)
     (types : CLoops.Types) (heap : Heap) (rest : List Stmt)
@@ -48,9 +48,9 @@ theorem return_null (program : CCalls.Events.Program E) (env : Locals)
       (.body (.running (Runtime.ret (Runtime.v "NULL") :: rest) env types heap) "fmi3Instance" stack)
       (.returning (.pointer none) heap stack) := by
   refine .next (t := .body (.returned ⟨.pointer none, heap⟩) "fmi3Instance" stack) ?_ ?_
-  · simp [CCalls.Events.internalNext, CCalls.Typed.nextWith, CLoops.next, CLoops.eval,
-      Runtime.ret, Runtime.v, CBody.eval, nullBound]
-  · exact .next (by simp [CCalls.Events.internalNext, CCalls.Typed.nextWith,
+  · simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, nullBound]
+  · exact .next (by simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
       CCalls.returnCast, CBody.cast, handle, convert]) (.refl _)
 
 theorem callback_entry (program : CCalls.Events.Program E) (message : String)
@@ -68,18 +68,18 @@ theorem callback_entry (program : CCalls.Events.Program E) (message : String)
       some (.calling name (Logging.arguments environment category text) heap
         (.caller .discard rest env types "fmi3Instance" stack)) := by
   have resolved : CCalls.Events.resolve program env heap (Runtime.v "logMessage") = some name := by
-    simp [CCalls.Events.resolve, CCalls.Indirect.resolve, Runtime.v, CBody.resolve, loggerBound,
-      CCalls.Indirect.valueTarget, address]
+    simp [CCalls.Events.resolve, CCalls.Events.resolveWith, CCalls.Indirect.resolveWith, CBody.legacyExpressions, Runtime.v, CBody.resolve, loggerBound,
+      CCalls.Indirect.valueTarget, address, CBody.eval, CBody.evalWith]
   have values : CCalls.arguments env heap
       [Runtime.v "instanceEnvironment", Runtime.v "fmi3Error", .str "logStatus", .str message] =
       some (Logging.arguments environment category text) := by
-    simp [CCalls.arguments, Runtime.v, CBody.eval, environmentBound, errorBound,
+    simp [CCalls.arguments, CCalls.argumentsWith, CBody.legacyExpressions, Runtime.v, CBody.eval, CBody.evalWith, environmentBound, errorBound,
       categoryBound, messageBound, Logging.arguments]
   have blocked : CLoops.next (.running (logCall message :: rest) env types heap) = none := by
-    simp [CLoops.next, CLoops.eval, logCall, CBody.eval]
+    simp [CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, logCall, CBody.eval, CBody.evalWith]
   simp only [Runtime.v] at resolved values
-  simp only [CCalls.Events.internalNext, CCalls.Typed.nextWith, blocked]
-  simp [CCalls.Events.enterCall, logCall, CCalls.Indirect.operand, resolved, values]
+  simp only [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, blocked]
+  simp [CCalls.Events.enterCallWith, logCall, CCalls.Indirect.operand, resolved, values]
 
 theorem silent_equivalence (program : CCalls.Events.Program E) (message : String)
     (env : Locals) (types : CLoops.Types) (heap : Heap) (rest : List Stmt)

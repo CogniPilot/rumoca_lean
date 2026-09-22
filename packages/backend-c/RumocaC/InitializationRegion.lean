@@ -76,14 +76,14 @@ theorem next_ready (program : Events.Program E)
       have next : CLoops.next (.running [.ret (some resultExpr)] env types reference) =
           some (.returned expected) := by simpa [CLoops.run] using finishes
       cases evaluated : CLoops.eval env types reference resultExpr with
-      | none => simp [CLoops.next, evaluated] at next
+      | none => simp [CLoops.next, CLoops.nextWith, evaluated] at next
       | some value =>
         have same : CLoops.State.returned ⟨value, reference⟩ = .returned expected := by
-          simpa [CLoops.next, evaluated] using next
+          simpa [CLoops.next, CLoops.nextWith, evaluated] using next
         cases CLoops.State.returned.inj same
         have actual : CLoops.next (.running [.ret (some resultExpr)] env types heap) =
             some (.returned ⟨value, heap⟩) := by
-          simp only [CLoops.next, ← loop_heap_free resultFree env types reference heap, evaluated]
+          simp only [CLoops.next, CLoops.nextWith, ← loop_heap_free resultFree env types reference heap, evaluated]
           rfl
         exact ⟨_, Events.body_step program actual resultType stack, .finishing heap agreement, rfl, fun _ _ => rfl⟩
     | cons stmt rest =>
@@ -105,7 +105,7 @@ theorem next_ready (program : Events.Program E)
     have next : Events.internalNext program
         (.body (.returned ⟨expected.value, heap⟩) resultType stack) =
         some (.returning returned heap stack) := by
-      simp [Events.internalNext, Typed.nextWith, cast]
+      simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, cast]
     exact ⟨_, next, .returning heap agreement, rfl, fun _ _ => rfl⟩
   | returning heap agreement => exact False.elim (active ⟨returned, heap, rfl⟩)
 

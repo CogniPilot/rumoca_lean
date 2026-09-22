@@ -13,3 +13,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CStorage.internal_next
 #audit axioms Rumoca.CStorage.internal_reaches
 #audit axioms Rumoca.CStorage.internal_no_new_cells
+
+#audit axioms Rumoca.CStorage.Preserves.refl
+#audit axioms Rumoca.CStorage.Preserves.trans

@@ -134,7 +134,7 @@ theorem logged_call {E : Type} (reason : Reason) (query : StepCases.Query) (obje
       p message category logger environment name foreign instanceValue statusValue loggerAfter loggingAfter environmentAfter
       address categoryBound (by simpa only [discard, Reason.message] using literal) external prototype
     have call := (reached.silent_finite_behaviors (by intro history divergent; have impossible := (result (.diverges history)).mp divergent; simp at impossible) behavior).trans (result behavior)
-    simpa only [status, afterHeap, discard, ↓reduceIte, arguments, StepDiscard.arguments] using call
+    simpa only [status, afterHeap, discard, ↓reduceIte, arguments, argumentsWith, CBody.legacyExpressions, StepDiscard.arguments] using call
   · simp only [Path, if_neg discard] at path
     obtain ⟨old, mode⟩ := writable discard
     have helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) := by
@@ -145,7 +145,7 @@ theorem logged_call {E : Type} (reason : Reason) (query : StepCases.Query) (obje
       path helper literal address external prototype categoryBound
       ((before_frame reason query heap p reads selected (p.member "mode") rfl).trans mode)
       loggerAfter loggingAfter environmentAfter behavior
-    simpa only [status, afterHeap, discard, ↓reduceIte, arguments, Logging.arguments] using call
+    simpa only [status, afterHeap, discard, ↓reduceIte, arguments, argumentsWith, CBody.legacyExpressions, Logging.arguments] using call
 
 end Rumoca.FMI3.StepRejections
 end

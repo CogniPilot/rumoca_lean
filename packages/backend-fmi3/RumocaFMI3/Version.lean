@@ -23,8 +23,8 @@ theorem call_reaches (model : Solve.FMI3Model source) (program : CCalls.Program)
   apply CBodyEmbedding.typed_call_reaches program (Runtime.function model signature)
     [] (fun _ => none) heap ⟨.pointer (some base), heap⟩ (.pointer (some base)) stack 1
     defined rfl (BodyEmbedding.body_closed model signature) ?_ ?_
-  · simp [CBody.run, CBody.next, Runtime.function, Runtime.body, signature,
-      Runtime.ret, CBody.eval, bound]
+  · simp [CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.function, Runtime.body, signature,
+      Runtime.ret, CBody.eval, CBody.evalWith, bound]
   · simp [Runtime.function, signature, CCalls.returnCast, CBody.cast, convert]
 
 theorem call_behaviors (model : Solve.FMI3Model source) (program : CCalls.Program)

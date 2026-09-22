@@ -130,7 +130,7 @@ theorem null_body (env : Locals) (heap : Heap) (rest : List Stmt)
     (hi : env "instance" = some (.pointer none)) (hn : env "m" = none)
     (error : env "fmi3Error" = none) :
     run 3 (.running (Runtime.instancePrefix ++ rest) env heap) = some (.returned ⟨.integer 3, heap⟩) := by
-  simp [run, next, eval, Runtime.instancePrefix, Runtime.branch, Runtime.ret,
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, Runtime.instancePrefix, Runtime.branch, Runtime.ret,
     Runtime.v, CBody.bind, resolve, constants, CBody.cast,
     convert, Value.truth, boolean, hi, hn, error]
 

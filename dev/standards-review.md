@@ -12,6 +12,22 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Canonical-context integration, full gate passed (2026-09-22):** No grammar/admission, emitted C
+or solver-policy expansion is included. The existing MLS/FMI/eFMI clause review
+therefore carries forward without new conformance claims. The tensor eFMI fixed
+artifact contracts now require public-method execution and source/Jacobian
+observations through the common C evaluator; existing finite-arithmetic/storage
+and external-call premises remain. The complete isolated consumer closure and
+actual tensor archive certificate passed. The required full gate then passed
+with unchanged inputs, all 462 new package roots, 7,477 permitted printed axiom
+reports, and four permitted retained FMU roots. All three FMI matrices matched
+their recorded expectations across 75 functions and 526 cells each. Scalar/tensor
+eFMI artifact/reuse/mutation controls and extracted tensor-method finite/signed-zero
+native checks passed. These are not a proof of host compilation or ABI correspondence.
+Alignment/freshness and guard/range counterexamples are retained as formal
+checks, and the tensor output-alias prose is qualified. K02–K05 and all prior
+open findings remain; this is not authorization for a grammar expansion.
+
 **Numerical applicability repair (2026-09-21, full gate passed):** The linkage review
 proved that the previous standard tensor fenv type dictionary could not supply
 the binary helper header/full-library premise: `double *` and `const double *`

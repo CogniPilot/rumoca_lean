@@ -18,7 +18,7 @@ theorem body_next (step : CBody.next s = some t) :
     R (CReadOnly.bodyHeap s) (CReadOnly.bodyHeap t) := by
   have store_rule := stable.store
   have refl_rule := stable.refl
-  unfold CBody.next at step
+  unfold CBody.next CBody.nextWith at step
   split at step
   all_goals try simp_all only [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff]
   all_goals
@@ -28,7 +28,7 @@ theorem loop_next (step : CLoops.next s = some t) :
     R (CReadOnly.loopHeap s) (CReadOnly.loopHeap t) := by
   have store_rule := stable.store
   have refl_rule := stable.refl
-  unfold CLoops.next at step
+  unfold CLoops.next CLoops.nextWith at step
   split at step
   all_goals
     aesop (add safe forward store_rule) (add safe apply refl_rule)
@@ -37,7 +37,7 @@ theorem loop_next (step : CLoops.next s = some t) :
 theorem resume (step : CCalls.Typed.resume value heap stack = some t) : R heap (CReadOnly.typedHeap t) := by
   have store_rule := stable.store
   have refl_rule := stable.refl
-  unfold CCalls.Typed.resume at step
+  unfold CCalls.Typed.resume CCalls.Typed.resumeWith at step
   split at step
   all_goals
     aesop (add safe forward store_rule) (add safe apply refl_rule)
@@ -56,7 +56,7 @@ theorem nextWith
   have resumed : ∀ value heap stack t, CCalls.Typed.resume value heap stack = some t →
       R heap (CReadOnly.typedHeap t) := fun _ _ _ _ step => resume stable step
   have refl_rule := stable.refl
-  unfold CCalls.Typed.nextWith at step
+  unfold CCalls.Typed.nextWith CCalls.Typed.nextWithExpressions at step
   split at step
   all_goals
     aesop (add safe forward [loops, entry, resumed])
@@ -68,7 +68,7 @@ theorem event_entry (program : CCalls.Events.Program E)
     (step : CCalls.Events.enterCall program s resultType stack = some t) :
     R (CReadOnly.loopHeap s) (CReadOnly.typedHeap t) := by
   have refl_rule := stable.refl
-  unfold CCalls.Events.enterCall at step
+  unfold CCalls.Events.enterCall CCalls.Events.enterCallWith at step
   split at step
   all_goals
     aesop (add safe apply refl_rule)

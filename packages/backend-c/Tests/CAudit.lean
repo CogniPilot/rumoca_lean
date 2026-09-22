@@ -1,3 +1,44 @@
+import Tests.CAudit.LedgerFreshness
+import Tests.CAudit.QuotationFactor
+import Tests.CAudit.RumocaC_AddressedIVP
+import Tests.CAudit.RumocaC_AssignmentFootprint
+import Tests.CAudit.RumocaC_CallContext
+import Tests.CAudit.RumocaC_CallContextBoundary
+import Tests.CAudit.RumocaC_CallContextHistory
+import Tests.CAudit.RumocaC_CallDepth
+import Tests.CAudit.RumocaC_CallFrameClassification
+import Tests.CAudit.RumocaC_CallIntervals
+import Tests.CAudit.RumocaC_CallLinkage
+import Tests.CAudit.RumocaC_CallPolicyProofs
+import Tests.CAudit.RumocaC_CallSites
+import Tests.CAudit.RumocaC_CallStoreInvariant
+import Tests.CAudit.RumocaC_ContextAppend
+import Tests.CAudit.RumocaC_ContextCallResult
+import Tests.CAudit.RumocaC_ContextCalls
+import Tests.CAudit.RumocaC_DeclaredMembers
+import Tests.CAudit.RumocaC_DeclaredStorage
+import Tests.CAudit.RumocaC_DiagonalWritable
+import Tests.CAudit.RumocaC_FieldFreeCalls
+import Tests.CAudit.RumocaC_FieldFreeExpressions
+import Tests.CAudit.RumocaC_FieldFreeLoop
+import Tests.CAudit.RumocaC_HostCalls
+import Tests.CAudit.RumocaC_HostExecution
+import Tests.CAudit.RumocaC_InvocationContinuation
+import Tests.CAudit.RumocaC_InvocationControl
+import Tests.CAudit.RumocaC_InvocationExecution
+import Tests.CAudit.RumocaC_InvocationFootprint
+import Tests.CAudit.RumocaC_InvocationIdentity
+import Tests.CAudit.RumocaC_InvocationLedger
+import Tests.CAudit.RumocaC_InvocationOrigins
+import Tests.CAudit.RumocaC_InvocationRegion
+import Tests.CAudit.RumocaC_InvocationReplay
+import Tests.CAudit.RumocaC_Loops
+import Tests.CAudit.RumocaC_SquareJacobianExact
+import Tests.CAudit.RumocaC_SquareJacobianObservation
+import Tests.CAudit.RumocaC_TypedEventsTransfer
+import Tests.CAudit.RumocaC_VoidReturn
+import Tests.CAudit.RumocaC_WriteInterference
+import Tests.CAudit.RumocaC_WriteRegions
 -- Aggregator for the per-source-module axiom audits (CAudit).
 -- Each imported module audits exactly the roots of one source module,
 -- so Lake elaborates them as independent parallel jobs while this

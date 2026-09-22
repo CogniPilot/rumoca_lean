@@ -20,7 +20,7 @@ theorem rendered_functions (m : Solve.FMI3Model source) (signatures : List Signa
       Runtime.declarations ++ String.join ((functions m signatures).map Function.render) := by
   apply String.toList_injective
   simp only [Runtime.render, functions, String.toList_append, CString.join_toList,
-    List.flatMap_map, List.flatMap_append, List.flatMap_cons, List.append_assoc]
+    List.flatMap_map, List.flatMap_append, List.append_assoc]
 
 /-- The existing renderer contains the certified function fragment at its
 actual list slot. This uses shared lookup/printing; headers and ABI are open. -/

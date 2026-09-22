@@ -38,7 +38,7 @@ theorem eval_sizeAdd (env : CBody.Locals) (types : Types) (heap : Heap)
     _ = (if types left = some .size ∧ types right = some .size then
       (env left).bind (fun x => (env right).bind (sizeAdd x))
       else (CBody.eval env heap (.id left)).bind (fun x =>
-        (CBody.eval env heap (.id right)).bind (CArithmetic.floatAdd x))) := eval.eq_2 env types heap left right
+        (CBody.eval env heap (.id right)).bind (CArithmetic.floatAdd x))) := evalWith.eq_2 CBody.legacyExpressions env types heap left right
     _ = (env left).bind (fun x => (env right).bind (sizeAdd x)) := if_pos both
     _ = (some (.integer a)).bind (fun x => (env right).bind (sizeAdd x)) :=
       congrArg (fun v => v.bind (fun x => (env right).bind (sizeAdd x))) hl
@@ -53,7 +53,7 @@ theorem declare_local (env : CBody.Locals) (types : Types) (heap : Heap)
     (evaluated : eval env types heap expr = some value) (cast : convert declared value = some converted) :
     next (.running (.declare type name expr :: rest) env types heap) =
       some (.running rest (CBody.bind env name converted) (bindType types name declared) heap) := by
-  simp only [next, typed, evaluated, cast, fresh, Option.isSome_none, Bool.false_eq_true,
+  simp only [next, nextWith, typed, evaluated, cast, fresh, Option.isSome_none, Bool.false_eq_true,
     ↓reduceIte, bind, Option.bind_some, pure]
 
 theorem eval_increment (env : CBody.Locals) (types : Types) (heap : Heap)
@@ -62,7 +62,7 @@ theorem eval_increment (env : CBody.Locals) (types : Types) (heap : Heap)
     eval env types heap (.bin .add (.id counter) (.nat 1)) = some (.integer (i + 1)) := by
   calc
     _ = (if types counter = some .size then (env counter).bind increment else none) :=
-      eval.eq_1 env types heap counter
+      evalWith.eq_1 CBody.legacyExpressions env types heap counter
     _ = (env counter).bind increment := if_pos typed
     _ = (some (.integer i)).bind increment := congrArg (fun v => v.bind increment) value
     _ = increment (.integer i) := Option.bind_some _ _
@@ -74,7 +74,7 @@ theorem assign_local (env : CBody.Locals) (types : Types) (heap : Heap)
     (evaluated : eval env types heap expr = some value) (cast : convert type value = some converted) :
     next (.running (.assign (.id name) expr :: rest) env types heap) =
       some (.running rest (CBody.bind env name converted) types heap) := by
-  simp only [next, present, typed, evaluated, cast, bind, Option.bind_some, pure]
+  simp only [next, nextWith, present, typed, evaluated, cast, bind, Option.bind_some, pure]
 
 theorem counter_step (env : CBody.Locals) (types : Types) (heap : Heap) (counter : String)
     (i : Nat) (rest : List Stmt) (typed : types counter = some .size) (bound : i + 1 < 2 ^ 64) :
@@ -101,7 +101,7 @@ theorem loop_enter (env : CBody.Locals) (types : Types) (heap : Heap) (counter :
     next (.running (loop counter count body :: rest) env types heap) =
       some (.running (body ++ counterStep counter :: loop counter count body :: rest) env types heap) := by
   have hlt : (i : Int) < n := by exact_mod_cast less
-  simp [loop, next, noDeclarations, counterStep, eval, safe, CBody.eval, CBody.resolve,
+  simp [loop, next, nextWith, noDeclarations, counterStep, evalWith, CBody.legacyExpressions, safe, CBody.eval, CBody.evalWith, CBody.resolve,
     counter_value, count_value, CBody.comparison, CBody.boolean, Value.truth, hlt, List.append_assoc]
 
 theorem loop_stop (env : CBody.Locals) (types : Types) (heap : Heap) (counter : String)
@@ -110,7 +110,7 @@ theorem loop_stop (env : CBody.Locals) (types : Types) (heap : Heap) (counter : 
     (count_value : CBody.eval env heap count = some (.integer n))
     (safe : body.all noDeclarations = true) :
     next (.running (loop counter count body :: rest) env types heap) = some (.running rest env types heap) := by
-  simp [loop, next, noDeclarations, counterStep, eval, safe, CBody.eval, CBody.resolve,
+  simp [loop, next, nextWith, noDeclarations, counterStep, evalWith, CBody.legacyExpressions, safe, CBody.eval, CBody.evalWith, CBody.resolve,
     counter_value, count_value, CBody.comparison, CBody.boolean, Value.truth]
 
 theorem counter_initialize (env : CBody.Locals) (types : Types) (heap : Heap) (counter : String)
@@ -118,7 +118,7 @@ theorem counter_initialize (env : CBody.Locals) (types : Types) (heap : Heap) (c
     next (.running (.declare "size_t" counter (.nat 0) :: rest) env types heap) =
       some (.running rest (counterEnv env counter 0) (bindType types counter .size) heap) := by
   have hc : convert .size (.integer 0) = some (.integer 0) := convert_size_nat 0 (by decide)
-  simp [next, eval, CBody.eval, size_type, hc, fresh, counterEnv]
+  simp [next, nextWith, evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, size_type, hc, fresh, counterEnv]
 
 /-- Execute an arbitrary certified body for each counter value, then exit.
 The unsigned increment cannot wrap because the bound itself fits `size_t`.

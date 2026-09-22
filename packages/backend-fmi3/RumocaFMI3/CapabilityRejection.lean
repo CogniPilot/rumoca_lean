@@ -61,7 +61,8 @@ theorem nonnull_body (env : Locals) (heap : Heap) (p : Address)
     run 2 (.running code env heap) =
       some (.running [Runtime.fail message] (CBody.bind env "m" (.pointer (some p))) heap) := by
   simp [code, Runtime.instancePrefix, Runtime.branch, Runtime.ret, Runtime.v,
-    run, next, eval, CBody.bind, CBody.resolve, constants, CBody.cast, convert,
+    run, next, CBody.nextWith, CBody.legacyExpressions, eval, CBody.evalWith,
+    CBody.bind, CBody.resolve, constants, CBody.cast, convert,
     Value.truth, boolean, instanceValue, fresh]
 
 theorem failure_prefix (model : Solve.FMI3Model source) (profile : Profile sig tail)
@@ -178,4 +179,3 @@ theorem logged_call {E : Type} (header : CFenv.Header) (objects : Objects)
 
 end Rumoca.FMI3.CapabilityRejection
 end
-

@@ -28,7 +28,8 @@ theorem modes_eval (env : Locals) (heap : Heap) (p : Address) (current : Mode)
     have hhead : eval env heap (Runtime.eqv (Runtime.field "mode") (Runtime.mode head)) =
         some (boolean (current == head)) := by
       simp [Runtime.eqv, Runtime.field, Runtime.mode, Runtime.v, Runtime.n,
-        eval, hm, hc, Value.address, comparison, mode_code_beq]
+        eval, evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt,
+        CDeclaredMembers.fieldAt, hm, hc, Value.address, comparison, mode_code_beq]
     simpa [Runtime.any, List.contains_cons] using BoolProofs.eval_or hhead ih
 
 theorem eval_correct (env : Locals) (heap : Heap) (p : Address)
@@ -39,11 +40,13 @@ theorem eval_correct (env : Locals) (heap : Heap) (p : Address)
     eval env heap (Runtime.allowedExpression cmd) = some (boolean (allowed cmd kind mode)) := by
   have hme : eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n 0)) =
       some (boolean (kind.code == 0)) := by
-    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, eval,
+    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, eval, evalWith,
+      CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
       hp, hk, Value.address, comparison, Kind.code, boolean]
   have hcs : eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n 1)) =
       some (boolean (kind.code == 1)) := by
-    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, eval,
+    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, eval, evalWith,
+      CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
       hp, hk, Value.address, comparison, Kind.code, boolean]
   have h := BoolProofs.eval_or
     (BoolProofs.eval_and hme (modes_eval env heap p mode hp hm (permittedModes cmd .me)))
@@ -76,7 +79,8 @@ theorem require_run (env : Locals) (heap : Heap) (p : Address)
     (by simp [CBody.bind, resolve]) hk hm
   cases ha : allowed cmd kind mode <;>
     simp [Runtime.require, Runtime.instancePrefix, Runtime.reject, Runtime.branch,
-      Runtime.ret, Runtime.negate, Runtime.v, run, next, eval, CBody.bind, resolve,
+      Runtime.ret, Runtime.negate, Runtime.v, run, next, nextWith, legacyExpressions,
+      eval, evalWith, CBody.bind, resolve,
       constants, CBody.cast, convert, boolean, Value.truth, hi, hn, hg, ha]
 
 theorem accept (env : Locals) (heap : Heap) (p : Address)

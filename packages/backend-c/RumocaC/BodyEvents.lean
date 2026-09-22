@@ -24,7 +24,7 @@ theorem body_call_reaches (program : Program E) (fn : Function)
     (.running fn.body env heap) (.returned result) types closed executed
   refine .next (tree_entry program fn.signature.name args heap stack fn env types defined bound typed) ?_
   exact (body_reaches program (CLoops.run_reaches execution) fn.signature.result stack).trans
-    (.next (by simp [internalNext, Typed.nextWith, CBodyEmbedding.lift, cast]) (.refl _))
+    (.next (by simp [internalNext, internalNextWith, Typed.nextWithExpressions, CBodyEmbedding.lift, cast]) (.refl _))
 
 theorem body_call_prefix (program : Program E) (fn : Function)
     (args : List Value) (env : CBody.Locals) (heap : Heap)

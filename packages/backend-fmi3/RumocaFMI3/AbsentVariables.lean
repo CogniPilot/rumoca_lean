@@ -105,8 +105,8 @@ theorem empty_body (write : Bool) (env : Locals) (heap : Heap) (p : Address)
       some (.returned ⟨.integer 0, heap⟩) := by
   rw [show 5 = 3 + 2 from rfl, run_add,
     LifecycleGuard.accept env heap p (accessCommand write) kind mode suffix hi hn hk hm allowed]
-  simp [suffix, run, next, Runtime.branch, Runtime.both, Runtime.eqv,
-    Runtime.v, Runtime.n, Runtime.ok, Runtime.ret, eval, resolve,
+  simp [suffix, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.branch, Runtime.both, Runtime.eqv,
+    Runtime.v, Runtime.n, Runtime.ok, Runtime.ret, CBody.eval, CBody.evalWith, resolve,
     CBody.bind, constants, refs, values, ok, Value.truth, boolean, comparison]
 
 /-- A nonempty request reaches the shared diagnostic before reading any
@@ -127,11 +127,11 @@ theorem nonempty_body (write : Bool) (env : Locals) (heap : Heap) (p : Address)
     LifecycleGuard.accept env heap p (accessCommand write) kind mode suffix hi hn hk hm allowed]
   by_cases referenceZero : referenceCount = 0
   · have valueNonzero : valueCount ≠ 0 := nonempty.resolve_left (by simpa using referenceZero)
-    simp [suffix, run, next, Runtime.branch, Runtime.both, Runtime.eqv,
-      Runtime.v, Runtime.n, eval, resolve, CBody.bind, refs, values,
+    simp [suffix, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.branch, Runtime.both, Runtime.eqv,
+      Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, resolve, CBody.bind, refs, values,
       Value.truth, boolean, comparison, referenceZero, valueNonzero]
-  · simp [suffix, run, next, Runtime.branch, Runtime.both, Runtime.eqv,
-      Runtime.v, Runtime.n, eval, resolve, CBody.bind, refs,
+  · simp [suffix, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.branch, Runtime.both, Runtime.eqv,
+      Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, resolve, CBody.bind, refs,
       Value.truth, boolean, comparison, referenceZero]
 
 theorem parameters_bound (ty : VariableType) (write : Bool)

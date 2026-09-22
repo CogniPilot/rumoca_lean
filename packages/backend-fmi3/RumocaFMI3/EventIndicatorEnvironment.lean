@@ -40,7 +40,8 @@ theorem quiet_correct {E : Type} (header : CFenv.Header) (objects : Objects)
       letI : CInterface := cInterface literals
       rw [show 5 = 4 + 1 from rfl, CBody.run_add,
         EventIndicatorCalls.accepted_run (static := ⟨literals⟩) model heap p buffer mode hk hm allowed]
-      simp [CBody.run, CBody.next, CBody.eval, Runtime.ok, Runtime.ret, Runtime.v,
+      simp [CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions,
+        CBody.eval, CBody.evalWith, Runtime.ok, Runtime.ret, Runtime.v,
         EventIndicatorCalls.locals, EventIndicatorCalls.parameters, CBody.bind, CBody.resolve, CBody.constants]
     exact Events.body_call_interface_behaviors (cInterface literals)
       (RuntimeEnvironment.interface header objects literals)

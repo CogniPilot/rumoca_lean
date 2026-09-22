@@ -38,7 +38,7 @@ theorem continuous_prefix (env : Locals) (heap : Heap) (p : Address)
 theorem return_ok (env : Locals) (heap : Heap)
     (ho : resolve env "fmi3OK" = some (.integer 0)) :
     run 1 (.running [Runtime.ok] env heap) = some (.returned ⟨.integer 0, heap⟩) := by
-  simp [run, next, Runtime.ok, Runtime.ret, Runtime.v, eval, ho]
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.ok, Runtime.ret, Runtime.v, CBody.eval, CBody.evalWith, ho]
 
 def eventHeap (heap : Heap) (p : Address) (c : Time.Clock) : Heap :=
   replace (HistoryProofs.eventHeap heap p c) (p.member "mode")
@@ -77,7 +77,7 @@ theorem event_reaches (m : Solve.FMI3Model source) (sig : Signature)
       (locals (parameters p) p) (HistoryProofs.eventHeap heap p c)) =
       some (.returned ⟨.integer 0, eventHeap heap p c⟩) := by
     simp [Runtime.setMode, Runtime.put, Runtime.mode, Mode.code, Runtime.field,
-      Runtime.v, Runtime.n, Runtime.ok, Runtime.ret, run, next, eval, lvalue,
+      Runtime.v, Runtime.n, Runtime.ok, Runtime.ret, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
       locals, parameters, CBody.bind, resolve, constants, Value.address,
       store, hframe, convert, eventHeap]
   have hbody : Runtime.body m sig = Runtime.require .enterEvent ++
@@ -136,8 +136,8 @@ theorem outputs_run (heap : Heap) (p event terminate : Address) (flag : Bool) (r
         (outputsHeap heap event terminate)) := by
   have heStore := zero_store he
   have htStore := zero_store (zero_writable ht event)
-  simp [run, next, Runtime.pointerCheck, Runtime.reject, Runtime.any, Runtime.branch,
-    Runtime.out, Runtime.v, Runtime.n, Runtime.negate, Runtime.either, eval, lvalue,
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.pointerCheck, Runtime.reject, Runtime.any, Runtime.branch,
+    Runtime.out, Runtime.v, Runtime.n, Runtime.negate, Runtime.either, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
     locals, completedParameters, CBody.bind, resolve, constants, Value.address,
     Value.truth, boolean, heStore, htStore, outputsHeap]
 

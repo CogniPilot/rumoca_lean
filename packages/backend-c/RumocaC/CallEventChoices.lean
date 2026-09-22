@@ -30,7 +30,7 @@ theorem external_step_iff (program : Program E)
   · intro step
     cases step with
     | internal next =>
-        rw [external_entry_exclusive program found] at next
+        rw [external_entry_exclusive_with CBody.legacyExpressions program found] at next
         contradiction
     | external found' converted' executed =>
         have same := Option.some.inj (found'.symm.trans found)

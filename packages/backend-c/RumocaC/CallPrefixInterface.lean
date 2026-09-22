@@ -28,19 +28,20 @@ theorem internalNext_extends [CInterface] (original target : Program E)
     cases body with
     | returned => rfl
     | running code env types heap =>
-      cases code <;> simp [enterCall, resolve, addresses]
+      cases code <;> simp [enterCall, enterCallWith, resolveWith, addresses]
+  simp only [enterCall] at entered
   cases s with
   | calling name args heap stack =>
     cases found : original.internal.definitions name with
-    | none => simp [internalNext, Typed.nextWith, found] at step
+    | none => simp [internalNext, internalNextWith, Typed.nextWithExpressions, found] at step
     | some fn =>
       have actual := definitions name fn found
-      cases fn <;> simp only [internalNext, Typed.nextWith, actual]
-        <;> simpa [internalNext, Typed.nextWith, found] using step
+      cases fn <;> simp only [internalNext, internalNextWith, Typed.nextWithExpressions, actual]
+        <;> simpa [internalNext, internalNextWith, Typed.nextWithExpressions, found] using step
   | body body resultType stack =>
-    cases body <;> simpa only [internalNext, Typed.nextWith, entered] using step
+    cases body <;> simpa only [internalNext, internalNextWith, Typed.nextWithExpressions, entered] using step
   | kernel body heap stack =>
-    cases body <;> simpa only [internalNext, Typed.nextWith, kernel] using step
+    cases body <;> simpa only [internalNext, internalNextWith, Typed.nextWithExpressions, kernel] using step
   | returning value heap stack => exact step
   | halted result => exact step
 

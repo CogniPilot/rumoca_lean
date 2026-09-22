@@ -25,16 +25,16 @@ theorem target_lowered (bound : Bound symbols env) (safe : NoIntrinsic symbols)
   cases callee with
   | str text => exact False.elim (notString text rfl)
   | field | index =>
-      simpa only [expression, CCalls.Indirect.resolve] using
+      simpa only [expression, CCalls.Indirect.resolve, CCalls.Indirect.resolveWith, CBody.legacyExpressions] using
         congrArg (fun value => value.bind CCalls.Indirect.valueTarget) values
-  | _ => simp [expression, CCalls.Indirect.resolve]
+  | _ => simp [expression, CCalls.Indirect.resolve, CCalls.Indirect.resolveWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]
 
 theorem resolve_lowered (original : CCalls.Events.Program E)
     (bound : Bound symbols env) (safe : NoIntrinsic symbols)
     (callee : Expr) (notString : ∀ text, callee ≠ .str text) :
     CCalls.Events.resolve (program symbols original) env heap (expression symbols callee) =
       CCalls.Events.resolve original env heap callee := by
-  simp only [CCalls.Events.resolve, target_lowered bound safe callee notString, program]
+  simp only [CCalls.Events.resolve, CCalls.Events.resolveWith, target_lowered bound safe callee notString, program]
 
 omit interface in
 theorem operand_lowered (symbols : Symbols) (stmt : Stmt) :
@@ -88,17 +88,19 @@ theorem enter_lowered (original : CCalls.Events.Program E) (safe : NoIntrinsic s
       cases code with
       | nil =>
           by_cases isVoid : resultType = "void" <;>
-            simp [loopState, CCalls.Events.enterCall, isVoid, callState]
+            simp [loopState, CCalls.Events.enterCall, CCalls.Events.enterCallWith, isVoid, callState]
       | cons stmt rest =>
           have operand := operand_lowered symbols stmt
           cases found : CCalls.Indirect.operand stmt with
-          | none => simp [loopState, CCalls.Events.enterCall, operand, found]
+          | none => simp [loopState, CCalls.Events.enterCall, CCalls.Events.enterCallWith, operand, found]
           | some call =>
               obtain ⟨dest, callee, args⟩ := call
               have resolved := resolve_lowered (heap := heap) original valid.1 safe callee
                 (operand_head_safe found (heads stmt (by simp)))
               have values := arguments_correct valid.1 safe heap args
-              simp [loopState, CCalls.Events.enterCall, operand, found, resolved, values,
+              simp only [CCalls.Events.resolve] at resolved
+              simp only [CCalls.arguments] at values
+              simp [loopState, CCalls.Events.enterCall, CCalls.Events.enterCallWith, operand, found, resolved, values,
                 Option.map_bind, callState, continuation]
 
 end Rumoca.CLiteral.Lowering.Events
@@ -124,16 +126,16 @@ theorem enter_safe (original : CCalls.Events.Program E)
     (stackSafe : StackSafe symbols stack)
     (step : CCalls.Events.enterCall original s resultType stack = some t) : StateSafe symbols t := by
   cases s with
-  | returned => simp [CCalls.Events.enterCall] at step
+  | returned => simp [CCalls.Events.enterCall, CCalls.Events.enterCallWith] at step
   | running code env types heap =>
       cases code with
       | nil =>
-          simp only [CCalls.Events.enterCall] at step
+          simp only [CCalls.Events.enterCall, CCalls.Events.enterCallWith] at step
           split at step
           · cases Option.some.inj step; exact stackSafe
           · contradiction
       | cons stmt rest =>
-          simp only [CCalls.Events.enterCall, Option.bind_eq_bind, Option.pure_def,
+          simp only [CCalls.Events.enterCall, CCalls.Events.enterCallWith, Option.bind_eq_bind, Option.pure_def,
             Option.bind_eq_some_iff, Option.some.injEq] at step
           obtain ⟨call, operand, name, resolved, values, evaluated, rfl⟩ := step
           exact StackSafe.caller valid.1 valid.2.1

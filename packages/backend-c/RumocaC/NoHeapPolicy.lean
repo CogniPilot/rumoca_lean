@@ -107,20 +107,20 @@ theorem noHeap_no_alloc_call [CInterface] {E : Type} (program : Events.Program E
       ((definedNames defs).contains name = true ∨ b.allows name = true) := by
   cases state with
   | returned result =>
-      simp [Events.internalNext, Typed.nextWith, Option.bind_eq_bind,
+      simp [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions, Option.bind_eq_bind,
         Option.bind_eq_some_iff] at stepped
   | running code env types heap =>
-      simp only [Events.internalNext, Typed.nextWith] at stepped
+      simp only [Events.internalNext, Events.internalNextWith, Typed.nextWithExpressions] at stepped
       cases next : CLoops.next (.running code env types heap) with
       | some following => simp [next] at stepped
       | none =>
           simp only [next] at stepped
           cases code with
           | nil =>
-              simp only [Events.enterCall] at stepped
+              simp only [Events.enterCallWith] at stepped
               split at stepped <;> simp at stepped
           | cons stmt rest =>
-              simp only [Events.enterCall, Option.bind_eq_bind, Option.bind_eq_some_iff] at stepped
+              simp only [Events.enterCallWith, Option.bind_eq_bind, Option.bind_eq_some_iff] at stepped
               obtain ⟨operand, extracted, resolvedName, resolved, values, converted, emitted⟩ := stepped
               have names := (Typed.State.calling.inj (Option.some.inj emitted)).1
               rw [names] at resolved

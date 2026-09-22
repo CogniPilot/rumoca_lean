@@ -71,7 +71,8 @@ theorem read_correct (module : Production.Module) (method : GALEC.Method) (var :
   have lp : load heap (p.member "samplePeriod") = some (.finite state.samplePeriod[0]) := by
     simp [load, represents.2.1, convert, Value.finite]
   cases var <;> simp [referenceExpression, functionDescription, dataReference,
-    Variable.name, Variable.value, Variable.scalarValue, CBody.eval,
+    Variable.name, Variable.value, Variable.scalarValue, CBody.eval, CBody.evalWith,
+    CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
     CBody.resolve, CBody.bind, Production.parameters, Value.address, lx, lp] <;> rfl
 
 /-- After every method, every mapped variable observes its exact Solve value.

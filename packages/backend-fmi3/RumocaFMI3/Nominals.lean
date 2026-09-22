@@ -33,7 +33,7 @@ theorem body_run (model : Solve.FMI3Model source)
   rw [body, show 6 = 3 + 3 from rfl, run_add, accepted]
   simp [tail, ErrorCalls.nominalRest, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
     Runtime.ret, Runtime.ok, Runtime.either, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n,
-    run, next, eval, lvalue, ErrorCalls.nominalEnv, CBody.bind, resolve, constants,
+    run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ErrorCalls.nominalEnv, CBody.bind, resolve, constants,
     CBody.cast, convert, comparison, boolean, Value.truth, Value.address, store, storage, written]
 
 theorem call_behaviors (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)
@@ -81,7 +81,7 @@ theorem null_body (model : Solve.FMI3Model source) (heap : Heap) (buffer : Optio
     run 3 (.running (Runtime.body model ErrorCalls.nominalSignature) (nullEnv buffer count) heap) =
       some (.returned ⟨.integer 3, heap⟩) := by
   simp [Runtime.body, ErrorCalls.nominalSignature, Runtime.require, Runtime.instancePrefix,
-    Runtime.branch, Runtime.negate, Runtime.v, Runtime.ret, run, next, eval, nullEnv,
+    Runtime.branch, Runtime.negate, Runtime.v, Runtime.ret, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, nullEnv,
     CBody.bind, resolve, constants, CBody.cast, convert, Value.truth, boolean]
 
 theorem null_behaviors (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)

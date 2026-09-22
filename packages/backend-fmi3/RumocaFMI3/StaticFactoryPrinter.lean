@@ -9,7 +9,8 @@ import RumocaC.Initialization
 /-! The existing certified C printer applied to both full static factories
 and release. These are ordinary-function grammar/token contracts. Their
 surrounding declarations, typedef meanings and atomic macros remain separate
-translation-unit obligations; the native emitter has not switched yet. -/
+translation-unit obligations. The runtime uses these factory/release bodies;
+these printer theorems alone do not discharge those surrounding obligations. -/
 namespace Rumoca.FMI3.StaticFactory.Printer
 open CTree CTree.Printer CTree.Syntax
 

@@ -47,7 +47,7 @@ variable [interface : CInterface]
 
 theorem body_next (step : CBody.next s = some t) :
     Preserves (CReadOnly.bodyHeap s) (CReadOnly.bodyHeap t) := by
-  unfold CBody.next at step
+  unfold CBody.next CBody.nextWith at step
   split at step
   all_goals try simp_all only [Option.bind_eq_bind, Option.pure_def, Option.bind_eq_some_iff]
   all_goals
@@ -56,7 +56,7 @@ theorem body_next (step : CBody.next s = some t) :
 
 theorem loop_next (step : CLoops.next s = some t) :
     Preserves (CReadOnly.loopHeap s) (CReadOnly.loopHeap t) := by
-  unfold CLoops.next at step
+  unfold CLoops.next CLoops.nextWith at step
   split at step
   all_goals
     aesop (add safe forward store_preserves) (add safe apply Preserves.refl)
@@ -64,7 +64,7 @@ theorem loop_next (step : CLoops.next s = some t) :
 
 theorem resume_preserves (step : CCalls.Typed.resume value heap stack = some t) :
     Preserves heap (CReadOnly.typedHeap t) := by
-  unfold CCalls.Typed.resume at step
+  unfold CCalls.Typed.resume CCalls.Typed.resumeWith at step
   split at step
   all_goals
     aesop (add safe forward store_preserves) (add safe apply Preserves.refl)
@@ -77,7 +77,7 @@ theorem typed_nextWith
       Preserves (CReadOnly.loopHeap s) (CReadOnly.typedHeap t))
     (step : CCalls.Typed.nextWith enter program s = some t) :
     Preserves (CReadOnly.typedHeap s) (CReadOnly.typedHeap t) := by
-  unfold CCalls.Typed.nextWith at step
+  unfold CCalls.Typed.nextWith CCalls.Typed.nextWithExpressions at step
   split at step
   all_goals
     aesop (add safe forward [loop_next, preserved, resume_preserves])
@@ -88,7 +88,7 @@ theorem typed_nextWith
 theorem event_enter_preserves (program : CCalls.Events.Program E)
     (step : CCalls.Events.enterCall program s resultType stack = some t) :
     Preserves (CReadOnly.loopHeap s) (CReadOnly.typedHeap t) := by
-  unfold CCalls.Events.enterCall at step
+  unfold CCalls.Events.enterCall CCalls.Events.enterCallWith at step
   split at step
   all_goals
     aesop (add safe apply Preserves.refl)
