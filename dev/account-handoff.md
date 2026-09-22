@@ -1,6 +1,6 @@
 # Development handoff — 2026-09-22
 
-## Recursive action engine — integrated; full gate pending
+## Latest full gate: recursive action engine passed
 
 `packages/parser/Parser/LALR/EBNFActions.lean` now owns typed recursive rule
 delegation, independent denotation and universal soundness/completeness, plus
@@ -10,9 +10,45 @@ proves arbitrary-depth heterogeneous recursion and nullable repetition.
 Owner V2 passed 798 jobs/297 complete audited reports, including all 18 new roots;
 standalone check15 passed. V1 failed on now-fixed proof-module registration.
 Evidence: `build/recursive-actions-owner-v2.log`, `.axioms`,
-`build/recursive-actions-new-roots.txt`. The required full gate is pending.
+`build/recursive-actions-new-roots.txt`. Independent Astra review found no bounded
+engine, parser-composition or recursive-fixture issue.
 
-## Latest full gate: Euler prerequisite passed
+Implementation `e9a8bdd` passed `nix develop .#verification --command lake test`
+(exit 0). All 2,500 frozen tracked inputs were unchanged. All 7,880 complete
+printed axiom reports, including all 18 new roots, passed the unchanged whitelist.
+Four retained FMU roots were separately audited; all three FMI matrices passed
+75 functions and 526/650/526 cells, zero discrepancies. Existing parser,
+source/C/helper and FMI/eFMI artifact, native-boundary and mutation checks passed.
+Evidence: `build/recursive-actions-full-gate-v1.log`, `.exit`, `.axioms`,
+`-inputs.sha256`; `build/recursive-actions-fmu-retained-v1.axioms`/`.sha256`.
+Session62094 is terminal exit0; do not poll or restart it. No full gate is live.
+Only three evidence documents changed after this frozen gate.
+
+Later scratch, NOT integrated or covered by the gate:
+- `build/recursive-actions-draft/BuildActions.lean`: three audited roots prove
+  parse/build agreement and checked-CST soundness/totality, avoiding a second
+  parse at eventual diagnostic-preserving cutover; check01 passed, no warnings.
+- `build/galec-actions-draft/GalecProfileDraft`: seven modules, 44 audited roots
+  for arbitrary-tree/profile yield and exact source-success compatibility. Main
+  read all modules, verified final exits/warning checks and 25 preserved inputs.
+- `build/galec-recursive-draft`: seven modules, 57 audited roots (40 theorems,
+  17 runtime definitions) instantiate all nine current rules with generic typed
+  references and prove all-tree/all-token equivalence plus profile compatibility.
+  Main checked runtime/table/coverage/compatibility and final evidence: all exits0,
+  no final warnings, all 54 earlier-draft and 2,500 tracked hashes preserved.
+  Worker Ptolemy is CLOSED. Bounded independent Astra review of
+  Simulation/Equivalence found no issue, including malformed-tree rejection,
+  all nine lookups, unchanged semantic maps and dormant metadata. Reviewer
+  Aristotle is CLOSED. No subagent remains active.
+
+Next: integrate the typed GALEC table/AST/profile proofs
+without the superseded finite action runtime, and preserve source diagnostics
+using the already accepted CST. Remove the scratch bridge's dependency on the
+source Parser entrypoint to avoid an import cycle. Keep existing certificates
+and run the full gate after production cutover. Details:
+`build/galec-source-cutover-plan.md`. Standards repairs remain separate.
+
+## Previous full gate: Euler prerequisite passed
 
 Implementation checkpoint `a2fb25f` passed the required
 `nix develop .#verification --command lake test` (exit 0). All 2,498 frozen
@@ -113,11 +149,11 @@ instance (two audited roots, assign-check01 exit 0). Bounded Astra review found
 no issue; that reviewer is closed. These are not integrated and do not yet
 establish square/tensor C invocation or public CS behavior.
 
-Astra worker Ptolemy `01a0c9d1-d6e5-7b63-abee-db60e05adda8` is working only in
-`build/galec-actions-draft/` on a durable frontend AST and actual structural
-actions for the entire current GALEC grammar. No tracked edits, grammar changes
-or package builds are authorized to that worker. Its universal proof boundary
-and compiled results still need main review before integration.
+The original eight-module `build/galec-actions-draft/` was fully read and its
+33 roots audited by main. Its frontend AST/projections preserve raw names,
+ordinary calls and explicit extents, but its finite named-action expansions
+must not become a new production runtime. The generic rule-table replacement
+and later source/profile compatibility are recorded in the latest section above.
 
 A separately checked GALEC prerequisite remains in
 `build/galec-structure-draft/Compatibility.lean`: six audited universal roots
@@ -127,10 +163,9 @@ The tracked standards ledger records GJ01's undeclared function and GJ02's
 incorrect array dimension placement. No zero-substitution error policy is
 adopted.
 
-## Next actions
+## Remaining numerical and standards work
 
-Commit the gate evidence with James Goppert <james.goppert@gmail.com> and `-s`;
-no AI coauthor. Compose whole-interval preflight before any CS instance
+Compose whole-interval preflight before any CS instance
 writes, retaining guard/output precedence and explicit callback effects.
 Repair GALEC through reusable structural actions and complete artifact contracts,
 not another canonical-token recognizer. More detailed ignored checkpoints are

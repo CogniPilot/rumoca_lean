@@ -99,6 +99,10 @@ the proof-only lowering witness. The symbol contract is still `decode ∘ encode
 each frontend must connect it to its independent token classifier and prove
 the intended AST semantics. Universal recursive/nullable instantiations live in
 `Tests.StructuralActions`. This engine does not itself cut over either frontend.
+The owning-package checks and required root `lake test` passed for `e9a8bdd`:
+all 18 new roots, existing artifacts and rejection/native boundaries passed;
+2,500 frozen inputs were unchanged. See `build/recursive-actions-full-gate-v1.log`
+and [the exact verification boundary](../../docs/verification.md).
 
 `Scanner.Prefix` provides compositional scanning judgments with the actual
 unconsumed suffix present. Its composition and full-input equivalence proofs

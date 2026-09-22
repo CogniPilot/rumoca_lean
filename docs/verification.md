@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Recursive structural actions (package checks passed; full gate pending):**
+**Recursive structural actions (full gate passed):**
 
 `Parser.LALR.EBNFActions` adds reusable typed rule-table delegation over the
 actual structural tree, including empty, optional and repeated expressions.
@@ -19,8 +19,22 @@ passed 18 roots. Owner checks passed 798 jobs and 297 complete axiom reports,
 including all 18 new roots, under the unchanged whitelist; no new-module
 warnings. Evidence: `build/recursive-actions-owner-v2.log` and `.axioms`.
 The earlier V1 package run failed on missing proof-module registration and is
-not pass evidence. Frontend cutover, grammar/source admission and emitted C
-are unchanged. Existing standards and numerical findings remain open.
+not pass evidence. Independent Astra review found no bounded engine,
+parser-composition or recursive-fixture issue. The required full gate for
+implementation `e9a8bdd` passed (exit 0): all 2,500 frozen tracked inputs were
+unchanged; all 7,880 complete printed axiom reports, including all 18 new roots,
+passed the unchanged whitelist. Four roots retained in the actual FMUs were
+separately audited. All three FMI matrices passed 75 functions each and
+526/650/526 behavior cells with zero discrepancies. Existing parser, source/C,
+helper, FMI and scalar/tensor eFMI actual-artifact, native-boundary and mutation
+checks passed. Evidence: `build/recursive-actions-full-gate-v1.log`, `.exit`,
+`.axioms`, `-inputs.sha256`, and `build/recursive-actions-fmu-retained-v1.axioms`.
+Only three evidence documents changed after the frozen gate.
+
+Frontend cutover, grammar/source admission and emitted C are unchanged. The
+later scratch GALEC table/profile compatibility and already-accepted-CST build
+API are not integrated or covered by this gate. Existing standards and
+numerical findings, native correspondence and MISRA closure remain open.
 
 **Fixed-rate Euler interval preflight (full gate passed):**
 
