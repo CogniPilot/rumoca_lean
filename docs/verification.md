@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Declaration/range and assignment elaboration (owner passed; full gate pending):**
+**Declaration/range and assignment elaboration (combined full gate passed):**
 Fifteen reviewed modules now live in core: source declaration/shape-provider
 validation, mathematical Integer iteration and explicit fresh unit-loop
 headers, shaped reads/locations, Real expressions, writable assignments and
@@ -20,6 +20,19 @@ AST lowering remains separate scratch; this adoption does not admit source
 cases, change the production parser/emitter or prove complete loop artifacts.
 Method capability and scope policy, target counters, normative range-policy
 coverage and GJ01/GJ03/N01 remain open. See [details](../dev/galec-realization.md).
+
+Implementation `f1fa7b9` passed the required full gate and post-audit V1,
+both terminal exit 0. All 2,593 tracked input hashes remained unchanged;
+8,421 complete axiom reports passed the unchanged whitelist, all 275 selected
+roots were present, and four actual retained FMU roots passed a separate audit.
+The three FMI matrices covered 75 functions each and 526/650/526 behavior cells,
+with zero recorded-finding discrepancies or unexpected results. Actual scalar
+and tensor Algorithm Code and Production C members remained byte-identical to
+the preceding gate. Evidence: `build/galec-body-elaboration-full-gate-v1.*`,
+`-post-audit-v1.*`, `-required-roots-v1.txt`, `-fmu-retained-v1.axioms`,
+`-before-members-v1.sha256`, `-after-members-v1.sha256`, `-archives-v1.sha256`.
+This covers the adopted prerequisites, not subsequent scratch recursive-body
+or storage-layout proofs, and does not close the open compliance findings.
 
 **Static/indexed GALEC elaboration prerequisites (combined full gate passed):**
 The core now owns immutable shaped read/write binding metadata, retained AST

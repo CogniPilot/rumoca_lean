@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Source declarations, headers and assignment bodies — owner passed
+## Source declarations, headers and assignment bodies — full gate passed
 
 Fifteen checked scratch modules are adopted under core ownership. The
 mathematical Integer range relation is `GALEC.IntegerIteration`; declaration
@@ -35,8 +35,19 @@ Core owner12392 passed 2,363 jobs and 807 complete whitelisted reports, all
 verified their exact transformations; independent Astra review found no
 substantive issue and confirmed all retained roots. Evidence is under
 `build/galec-body-adoption/`, including owner/post-owner logs/exits, new-roots,
-source hashes and both review documents. The required combined full gate is
-pending. No grammar, emitter or artifact predicate is changed.
+source hashes and both review documents. Implementation `f1fa7b9` passed the
+required full gate V1/session32753 and post-audit V1/session73458, both terminal0.
+All 2,593 frozen tracked inputs matched; all 8,421 complete axiom reports passed
+the unchanged whitelist, all 275 selected roots were present and four actual
+retained FMU roots passed a separate audit. The three FMI matrices covered
+75 functions each and 526/650/526 cells, with zero recorded-finding discrepancies
+or unexpected results. Scalar/tensor Algorithm Code and Production C members
+are byte-identical to the preceding completed gate. Evidence:
+`build/galec-body-elaboration-full-gate-v1.*`, `-post-audit-v1.*`,
+`-required-roots-v1.txt`, `-fmu-retained-v1.axioms`, `-before-members-v1.sha256`,
+`-after-members-v1.sha256`, `-archives-v1.sha256`.
+No grammar, emitter or artifact predicate is changed. Subsequent scratch
+recursive-body and storage-layout work is outside this gate's coverage.
 
 Actual mutually recursive AST/body lowering and its execution proof remain
 separate work. Initial scope/declaration→execution capability validation,
