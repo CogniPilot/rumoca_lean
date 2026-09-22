@@ -1,5 +1,39 @@
 # Exact verification contract
 
+**Recursive source bodies and logical storage (owner passed; full gate pending):**
+Core `Elaboration.Bodies` now structurally lowers the actual nested AST and
+proves exact typing and conditional execution correspondence with independent
+source semantics. Mathematical Integer iteration preserves actual nested bodies,
+iterator environments and intermediate stores. Arithmetic may remain partial
+or nondeterministic; no total evaluator or replacement canonical body defines
+source meaning. Compiler recursion visits syntax, not iterations or tensor cells.
+
+`Elaboration.Layout` constructs existing shaped input/output references in
+declaration order from full Real descriptors and separately supplied roles.
+All allocated role-tagged typed slots are distinct, including repeated shapes;
+this is not a native-address nonaliasing claim. Its shape lookup agrees for all
+keys with the same validated source declarations. The closed-body execution
+composition therefore discharges the previously assumed shape-provider premise
+using the exact table employed for expression and assignment resolution.
+Roles are not inferred from direction/variability, and their method legality is
+not proved here. Complete initial scope, scanner provenance, environment
+initialization, target counters and actual rendered-body/Solve/artifact linkage
+remain obligations. No grammar, accepted source, emitter or artifact predicate
+changes, and no standards/native/MISRA finding closes.
+
+The seven modules and their audit leaves passed `lake build check-core`:
+2,377 jobs, 869 complete unchanged-whitelist reports and all 62 new roots.
+Fifteen adopted source/audit hashes were recorded. Main checked the exact
+namespace/import migration from reviewed scratch; independent Astra review
+confirmed all seven modules and exact 62-root registration, with no finding
+(`build/galec-layout-adoption/review.md`). The layout scratch check
+passed five modules and 38 roots, with its four implementation logs empty;
+the prior nested-body check passed four modules and 24 roots. Evidence:
+`build/galec-layout-adoption/`, `build/galec-layout-draft/*-final-v1.*`,
+`build/galec-layout-draft/layout-review.md`, and
+`build/galec-nested-body-draft/*-final-v2.*` plus its semantic reviews.
+These owner checks are not the required combined C/actual-artifact gate.
+
 **Declaration/range and assignment elaboration (combined full gate passed):**
 Fifteen reviewed modules now live in core: source declaration/shape-provider
 validation, mathematical Integer iteration and explicit fresh unit-loop

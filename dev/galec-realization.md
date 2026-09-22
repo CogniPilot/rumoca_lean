@@ -1,5 +1,51 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Recursive source execution and declaration-derived storage — owner passed
+
+Seven reviewed modules now live under `Elaboration.Bodies` (Lowering, Source,
+Correctness) and `Elaboration.Layout` (Base, Shapes, NoAlias, Execution). These
+are namespace/import migrations of the checked scratch, not a production
+grammar or actual-artifact cutover. The owner passed 2,377 jobs, 869 complete
+whitelisted reports and all 62 new roots; 15 source/audit hashes are recorded
+under `build/galec-layout-adoption/`. The required full gate remains pending.
+
+The mutually recursive lowerer consumes actual AST statements and body lists,
+retaining the exact binder/count and outer scope across siblings. Its independent
+typing iff covers the authored positive explicit unit-range profile. Source
+execution recursively uses source assignments and mathematical Integer iteration,
+with an exact one-based Fin witness rather than saturation or default indices.
+The universal conditional execution iff preserves all intermediate stores and
+partial/nondeterministic arithmetic through sequence and loop composition.
+This is not complete semantics for arbitrary Integer locals, strides, shadowing
+or omitted steps, nor an error-state/rollback theorem.
+
+Logical storage construction partitions whole-shaped fields by explicitly
+supplied roles, preserving order and full descriptor metadata. Each field
+receives a distinct existing typed reference; rank/extents remain in its type,
+and lowering never enumerates tensor cells. Shift inverses prove slot separation
+even for duplicate names/shapes, without permitting duplicate source declarations
+or asserting native memory separation. All-key shape lookup agrees with the
+same ordered declarations. The closed-body compiler and execution theorem use
+that table for both source reads/writes and static size queries; source shape
+meaning remains the independent declaration judgment.
+
+Scratch layout final-v1/session19234 passed five modules and 38 complete roots;
+all four implementation logs are empty. Nested-body final-v2/session12520 passed
+four modules and 24 roots. Main read the NoAlias proof and independent reviews,
+and checked exact migration equality for all seven modules. The layout review
+is `build/galec-layout-draft/layout-review.md`; nested reviews are under
+`build/galec-nested-body-draft/`. Independent adoption review confirmed exact
+identity and all 62 roots, with no finding (`build/galec-layout-adoption/review.md`).
+The full declaration-profile gate below does
+not cover these subsequent modules.
+
+Remaining: validate method roles and complete initial scope, establish scanner
+and environment provenance, compose actual parsed/rendered bodies with prepared
+SquareBodies/Solve and actual C/archive contracts, prove target counter behavior,
+and repair startup/broadcast and GJ01/GJ03/N01 findings. No method-specific
+permission follows from the role tags alone. No new source admission or broad
+standards/MISRA/native conformance follows from this prerequisite adoption.
+
 ## Source declarations, headers and assignment bodies — full gate passed
 
 Fifteen checked scratch modules are adopted under core ownership. The
