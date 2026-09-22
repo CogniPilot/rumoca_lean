@@ -1,12 +1,13 @@
 import RumocaC.Calls
 import RumocaCore.Real.AdditionResult
+import RumocaCore.Real.MultiplicationResult
 import RumocaCore.Real.Subtraction
 import RumocaCore.Real.Division
 
 /-! The straight-line C arithmetic extension needed by Solve register code.
 Other statements retain the existing object-memory semantics. The arithmetic
-operations accept finite binary64 operands. Addition includes signed infinity
-on overflow; multiplication still requires a finite result. Compound arithmetic
+operations accept finite binary64 operands. Addition and multiplication include
+signed infinity on overflow. Compound arithmetic
 and nonfinite operands remain unsupported. Generated unit-method proofs
 establish that all their additions have finite results. -/
 noncomputable section
@@ -35,12 +36,13 @@ theorem floatAdd_one (x : Binary64.Value) :
 def floatMul (left right : Value) : Option Value := do
   let x ← CCalls.finiteValue left
   let y ← CCalls.finiteValue right
-  return .finite (← Binary64.multiply? x y)
+  return .float64 (Binary64.mulResult x y).encode
 
 theorem floatMul_finite (x y : Binary64.Value) (h : Binary64.finiteProduct x y) :
     floatMul (.finite x) (.finite y) = some (.finite (Binary64.roundedMul x y)) := by
-  simp only [floatMul, CCalls.finiteValue_finite, Binary64.multiply?, if_pos h,
-    bind, Option.bind_some, pure]
+  simp only [floatMul, CCalls.finiteValue_finite, bind, Option.bind_some, pure]
+  exact congrArg (fun result : Float64.Number => some (Value.float64 result.encode))
+    (Binary64.mulResult_finite x y h)
 
 def floatSub (left right : Value) : Option Value := do
   let x ← CCalls.finiteValue left

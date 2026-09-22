@@ -1,5 +1,23 @@
 # Trust and premise ledger (K05)
 
+**Finite-input multiplication outcomes (2026-09-22; full gate passed):**
+The authored C multiplication rule now returns the independently specified
+finite/infinite result for finite operands. `mulResult_finite_iff` proves exact
+conservativity of the finite operation, including zero encodings. The new tensor
+helper proof reuses typed array storage; finite heap specialization and the
+outside frame are retained. Mandatory `multiplicationOutcomes` fields bind the
+new helper contract to actual text in both artifact paths. Legacy fields remain.
+Focused independent review and native helper rehearsals passed. The complete
+affected package rebuild passed 4,286 jobs, all 32 new roots and all 5,382
+printed axiom reports under the unchanged whitelist. The required full artifact
+gate then passed with all 2,440 inputs unchanged, all 32 new roots, 7,583
+permitted printed axiom reports and four permitted retained FMU roots. All three
+FMI matrices and scalar/tensor eFMI actual-byte/reuse/mutation/native checks
+passed. See `build/multiplication-outcomes-checkpoint.md`.
+Nonfinite operands, source trajectories/public-method overflow, exceptions/traps,
+size bounds and native correspondence remain outside this increment. F3/K05
+are not closed.
+
 **Encoded Jacobian helper outcomes (2026-09-22; full gate passed):**
 `SquareDiagonal.Total.storage_correct` removes the finite-output premise for
 the unchanged helper on arbitrary finite inputs. The result is the independently

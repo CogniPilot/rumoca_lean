@@ -1,4 +1,9 @@
 import Tests.CAudit.LedgerFreshness
+import Tests.CAudit.RumocaC_MultiplicationResults
+import Tests.CAudit.RumocaC_TensorEncodedMemory
+import Tests.CAudit.RumocaC_TensorEncodedWriter
+import Tests.CAudit.RumocaC_TensorMultiplicationTotal
+import Tests.CAudit.RumocaC_TensorMultiplicationTotalContract
 import Tests.CAudit.RumocaC_TensorEncodedDiagonal
 import Tests.CAudit.RumocaC_TensorSquareDiagonalTotal
 import Tests.CAudit.RumocaC_TensorSquareDiagonalTotalContract

@@ -1,6 +1,7 @@
 import Rumoca.TensorEFMISourceMethod
 import Rumoca.TensorEFMIFiniteJacobian
 import RumocaC.TensorSquareDiagonalTotalContract
+import RumocaC.TensorMultiplicationTotalContract
 import RumocaEFMI.TensorStartup
 
 /-! Source-bound execution products for the existing tensor eFMI slice.
@@ -26,6 +27,13 @@ structure TensorExecutedProductionContract (a : TensorArtifact source)
       String.join (numericalFunctions.map CTree.Function.render) ++
       TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
     CTensor.SquareDiagonal.Total.ArtifactContract CTensor.SquareDiagonal.function.render
+  /-- Same actual C table, with total finite-input multiplication outcomes.
+  This is not a source/public-method overflow theorem. -/
+  multiplicationOutcomes :
+    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+      String.join (numericalFunctions.map CTree.Function.render) ++
+      TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+    CTensor.MultiplicationTotal.ArtifactContract (CTensor.function .mul).render
   sourceDoStep (unusedKernel : CSyntax.Program)
       (values : String → Values stateShape) (objects : CDeclaredMembers.Objects)
       (heap : Heap) (base : Address) (rhs result : Values stateShape)
@@ -82,6 +90,8 @@ theorem tensor_executed_production_correct (a : TensorArtifact source)
   finiteSourceDoStep := SourceMethod.finiteDoStep a base
   jacobianOutcomes := ⟨JacobianObservation.actual_trees a base,
     CTensor.SquareDiagonal.Total.artifact_correct _ rfl⟩
+  multiplicationOutcomes := ⟨JacobianObservation.actual_trees a base,
+    CTensor.MultiplicationTotal.artifact_correct _ rfl⟩
   sourceDoStep := SourceMethod.doStep a base
   allocatedStartup := AllocatedMethods.startup
   allocatedRecalibrate := AllocatedMethods.recalibrate

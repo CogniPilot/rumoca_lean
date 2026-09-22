@@ -1,5 +1,41 @@
 # Exact verification contract
 
+**Finite-input multiplication outcomes (full gate passed):**
+
+`Binary64.MultipliesResult` independently specifies finite or signed-infinite
+nearest/even products. Its unique implementation `mulResult` is exactly
+equivalent to the previous guarded multiplication on every finite result,
+including signed zero and gradual underflow. The shared C `floatMul` now uses
+this result instead of getting stuck on finite-input overflow; all existing
+finite theorem statements remain. Nonfinite operands are still unsupported.
+
+The tensor multiplication proof uses the existing typed `ArrayStore` through
+a rank-preserving encoded view and counted writer. The old finite tensor and
+diagonal heaps are exact specializations. Total helper execution, output reads,
+independent numerical results and outside frame share one heap, with the same
+storage, separation, size and header/function premises. FMI source-build and
+eFMI production/manifest/archive contracts now require these outcomes and the
+same actual numerical text. No emitted C, source grammar or admission changes.
+
+Core/helper compilation, focused independent review and native helper rehearsals
+passed. The complete affected package rebuild then passed all 4,286 jobs, with
+all 32 new roots and all 5,382 printed axiom reports (wrapped lists included)
+passing the unchanged whitelist. No warnings occurred in the new proof modules;
+existing warnings remain. Evidence: `build/multiplication-outcomes-package-v1.log`
+and `build/multiplication-outcomes-checkpoint.md`. The required
+`nix develop .#verification --command lake test` then passed (exit 0, observed
+2026-09-22 at 07:09 UTC), with all 2,440 input fingerprints unchanged. All 32
+new roots, all 7,583 printed axiom reports and four retained FMU roots passed
+the unchanged whitelist, with wrapped reports included. Each FMI matrix passed
+75 functions and 526 cells with zero discrepancies; scalar/tensor eFMI actual-byte,
+reuse/mutation and native checks passed, including signed multiplication overflow,
+underflow, subnormals and zero signs. The final log is
+`build/multiplication-outcomes-full-gate-v1.log`. Only the three evidence documents
+were updated after this frozen gate.
+This does not establish complete source RHS/public DoStep overflow,
+source trajectories, nonfinite-input arithmetic, exception flags/traps, native
+correspondence or MISRA compliance. K02–K05 and grammar-expansion gates remain.
+
 **Encoded Jacobian overflow outcomes (full gate passed):**
 
 The unchanged scratch-free square-Jacobian helper now has a total encoded-result

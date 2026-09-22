@@ -9,6 +9,7 @@ import RumocaC.TensorFillCode
 import RumocaC.TensorDiagonalCode
 import RumocaC.TensorSquareDiagonal
 import RumocaC.TensorSquareDiagonalTotalContract
+import RumocaC.TensorMultiplicationTotalContract
 import RumocaC.TensorSquareIVPEntry
 import RumocaC.TensorSquareClosedCalls
 import RumocaFMI3.TensorNumericalEvents
@@ -172,6 +173,9 @@ structure TensorSourceBuildContract (a : TensorArtifact input)
   inputs, without asserting that infinity is a real-valued source derivative. -/
   jacobianOutcomes : modelC = TensorKernel.modelC ∧
     CTensor.SquareDiagonal.Total.ArtifactContract CTensor.ProgramFixture.IVPEntry.jacobianDiagSource
+  /-- Total finite-input numerical multiplication in the same emitted table. -/
+  multiplicationOutcomes : modelC = TensorKernel.modelC ∧
+    CTensor.MultiplicationTotal.ArtifactContract (CTensor.function .mul).render
   /-- The source-build recipe agrees with the required profile for the model. -/
   build : FMI3.Build.ArtifactContract a.name buildDescription
   /-- The complete rendered tensor call graph obeys the checked no-heap policy (no
@@ -215,7 +219,8 @@ theorem tensorSourceBuild_correct (a : TensorArtifact input)
     (metadataDocument : XML.Document (FMI3.TensorMetadata.modelDescription a.tensorModel) metadata) :
     TensorSourceBuildContract a modelC buildDescription adapter metadata :=
   ⟨tensorNumericalLinkage_correct a modelC adapter index kernel adapter',
-    kernel, kernelContract, ⟨kernel, CTensor.SquareDiagonal.Total.artifact_correct _ rfl⟩, build,
+    kernel, kernelContract, ⟨kernel, CTensor.SquareDiagonal.Total.artifact_correct _ rfl⟩,
+    ⟨kernel, CTensor.MultiplicationTotal.artifact_correct _ rfl⟩, build,
     (by
       obtain ⟨src, w, _, contractFn⟩ := adapter'
       letI : FMI3.StaticLiterals := ⟨fun _ => none⟩

@@ -1,4 +1,5 @@
 import RumocaC.TensorDiagonalMemory
+import RumocaC.TensorEncodedMemory
 
 /-! Diagonal storage for arbitrary binary64 encodings, including infinities.
 The region/index model is shared with the finite diagonal view; this module
@@ -7,10 +8,10 @@ namespace Rumoca.CTensor.EncodedDiagonal
 open CMemory CMemory.TensorView Rumoca.Tensor
 open Diagonal (position position_bound position_index position_injective zeroHeap)
 
-abbrev Bits (shape : Shape) := Tensor.Value (BitVec 64) shape
+abbrev Bits (shape : Shape) := CMemory.EncodedTensor.Bits shape
 
-def ReadsBits (heap : Heap) (base : Address) (values : Bits shape) : Prop :=
-  ∀ i : Fin shape.volume, load heap (base.index i.val) = some (.float64 values[i])
+abbrev ReadsBits (heap : Heap) (base : Address) (values : Bits shape) : Prop :=
+  CMemory.EncodedTensor.ReadsBits heap base values
 
 def matrix (values : Bits shape) : Bits (matrixShape shape.volume shape.volume) :=
   Value.ofMatrix (Matrix.diagonal (fun i => values[i]))
@@ -120,8 +121,7 @@ theorem coeff_reads (heap : Heap) (output input : Address) (result : Bits shape)
   simpa only [zeroHeap, zeroed, load] using reads i
 
 /-- Finite storage is exactly the specialization of the encoded view. -/
-def finiteBits (values : Values shape) : Bits shape :=
-  ⟨values.data.map (fun x => (Binary64.toBits x).val)⟩
+abbrev finiteBits (values : Values shape) : Bits shape := CMemory.EncodedTensor.finiteBits values
 
 theorem finiteBits_get (values : Values shape) (i : Nat) (hi : i < shape.volume) :
     (finiteBits values)[i] = (Binary64.toBits values[i]).val := by

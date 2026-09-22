@@ -325,7 +325,7 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
   -fno-fast-math -ffp-contract=off -frounding-math \
   -I"$troot/ProductionCode" tests/efmi-tensor-native.c -lm -o "$tstage/tensor-native"
 "$tstage/tensor-native"
-echo 'tensor eFMU: native finite/signed-zero methods and finite-input Jacobian overflow checks passed'
+echo 'tensor eFMU: native finite/signed-zero methods, Jacobian overflow and multiplication outcome checks passed'
 # One Production C mutation control: the extracted directory with a mutated
 # Production C must be rejected by the tensor directory checker (before any kernel
 # certificate work) and must not certify.

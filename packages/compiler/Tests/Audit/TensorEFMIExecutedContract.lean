@@ -10,6 +10,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.TensorExecutedProductionContract.sourceDoStep
 #audit axioms Rumoca.TensorExecutedProductionContract.finiteSourceDoStep
 #audit axioms Rumoca.TensorExecutedProductionContract.jacobianOutcomes
+#audit axioms Rumoca.TensorExecutedProductionContract.multiplicationOutcomes
 #audit axioms Rumoca.TensorExecutedProductionContract.toTensorProductionContract
 #audit axioms Rumoca.tensor_executed_archive_correct
 #audit axioms Rumoca.tensor_executed_manifests_correct

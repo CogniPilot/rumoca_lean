@@ -1,5 +1,6 @@
 import ProofAudit.Audit
 import RumocaCore.Real.Multiplication
+import RumocaCore.Real.MultiplicationResult
 import RumocaCore.Real.Addition
 import RumocaCore.Real.Subtraction
 import RumocaCore.Real.Division
@@ -16,6 +17,15 @@ compiler audit roots so Lake can check this numerical increment independently. -
 #audit axioms Rumoca.Binary64.roundedMul_spec
 #audit axioms Rumoca.Binary64.product_rounding_unique
 #audit axioms Rumoca.Binary64.multiply_correct
+#audit axioms Rumoca.Binary64.product_below_overflow
+#audit axioms Rumoca.Binary64.product_above_negative_overflow
+#audit axioms Rumoca.Binary64.mulResult_spec
+#audit axioms Rumoca.Binary64.multipliesResult_unique
+#audit axioms Rumoca.Binary64.mulResult_correct
+#audit axioms Rumoca.Binary64.mulResult_finite
+#audit axioms Rumoca.Binary64.mulResult_finite_iff
+#audit axioms Rumoca.Binary64.mulResult_no_nan
+#audit axioms Rumoca.Binary64.mulResult_square_not_negative_infinity
 #audit axioms Rumoca.Binary64.multiply_complete
 #audit axioms Rumoca.Binary64.finiteProduct_real
 #audit axioms Rumoca.Binary64.multiply_zero

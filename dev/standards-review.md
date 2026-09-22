@@ -12,6 +12,22 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Finite-input multiplication outcomes (2026-09-22; full gate passed):**
+No grammar, source admission, emitted C or solver-policy expansion. The existing
+pinned MLS/FMI/eFMI clause reviews carry forward; the authored C numerical model
+is extended to finite-input multiplication overflow, matching the intended
+nearest/even finite/infinite result profile. Exact finite-domain conservativity
+is proved, and both actual-byte products require total helper outcomes. This is
+not a valid-real-derivative or complete public-method overflow claim. Focused
+review and native helper rehearsals passed; the affected package rebuild passed
+4,286 jobs, all 32 new roots and 5,382 permitted printed axiom reports.
+The required full artifact gate then passed with unchanged inputs, all 32 new
+roots, 7,583 permitted printed axiom reports and four permitted retained FMU
+roots. All three FMI matrices and eFMI actual-byte/reuse/mutation/native checks
+passed; evidence is in `build/multiplication-outcomes-checkpoint.md`.
+K02–K05, MISRA and all
+unresolved normative/native-correspondence findings remain open.
+
 **Encoded Jacobian helper outcomes (2026-09-22; full gate passed):** No grammar,
 source admission, emitted C or solver-policy change. The existing pinned
 MLS/FMI/eFMI clause reviews carry forward. Mandatory actual-byte products now
