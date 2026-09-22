@@ -12,6 +12,21 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Lookahead closure normalization — 2026-09-22; stage OPEN
+
+The exact named-repetition kernel fixture failed under the old sorted closure
+decider, so the `f33a1eb` full gate V1 was stopped143 with no pass/post-audit claim.
+Structural candidates now have universal exact membership in the same sorted
+lookahead set and preserve every bounded-forall closure obligation. Only the
+decision implementation changes; independent validator propositions, metadata,
+parser runtime and all MLS/FMI/eFMI admitted profiles remain unchanged.
+Owner1555jobs/315whitelistedreports/all3roots pass; independent review found no
+weakening. The unchanged fixture now checks and both production generated
+directories remain byte-identical. The larger scratch grammar's item certificate
+passes, not yet its complete artifact chain. No standards finding closes;
+R1–R5 and the recurring whole-subset review below remain applicable. The
+combined required gate is pending, including the upcoming AST-only prerequisite.
+
 ### Signed parser resource prerequisite — 2026-09-22; stage OPEN
 
 The generic LALR budget now permits signed nonterminal credits, with the same

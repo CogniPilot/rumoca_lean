@@ -51,6 +51,13 @@ credits. Search is bounded and heuristic; failure is a preprocessing error,
 not a syntax rejection or a proof that no certificate exists. Every success
 still needs the independent validators and generated kernel proofs.
 
+Closure decisions use structurally recursive `lookaheadCandidates`, with
+universal exact-membership and bounded-forall equivalence to sorted lookaheads.
+This avoids well-founded sorting during kernel decision reduction without
+changing `ItemCheck.Closed`, its obligations or the generator's ordered data.
+It is not a claim that all parser preprocessing avoids sorting or has a proved
+wall-clock/space bound.
+
 `EBNF.Derives` gives independent recursive expression semantics. A finite
 structural witness accounts for every source branch and every actual CFG rule;
 `Frontend.lower_correct` and `compile_correct` prove language preservation for

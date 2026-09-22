@@ -178,6 +178,9 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Completeness.parse_complete
 #audit axioms Parser.LALR.Completeness.accepts_iff_parse
 #audit axioms Parser.LALR.Fuel.validate_iff
+#audit axioms Parser.LALR.mem_lookaheadCandidates_spec
+#audit axioms Parser.LALR.mem_lookaheadCandidates_iff
+#audit axioms Parser.LALR.forall_lookaheadCandidates_iff
 #audit axioms Parser.LALR.Fuel.repeat_iff
 #audit axioms Parser.LALR.Fuel.named_repeat_iff
 #audit axioms Parser.LALR.Fuel.nonnegative_named_repeat_impossible

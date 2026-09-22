@@ -1,5 +1,28 @@
 # Exact verification contract
 
+**Kernel-reducible lookahead closure (owner and named certificate passed):**
+The original generated `decide +kernel` certificate could not normalize
+sorted nullable lookaheads. This reproduces even on the exact named-repetition
+fixture required by `tests/lalr.sh`. Full gate5075 for `f33a1eb` was therefore
+stopped deliberately (terminal143), not passed or timed out. Its V1 logs remain;
+no post-audit or artifact evidence is inferred from that incomplete run.
+
+`LookaheadCandidates` now provides structurally recursive predictions and three
+universal exact-membership/specification/bounded-forall equivalences, including
+arbitrary missing, repeated or unsorted FIRST facts. Only `ItemCheck.Closed`'s
+Decidable implementation changes. `Closed`, `Conditions`, `validate`, sorted
+metadata and parser execution contracts retain their definitions/obligations.
+The adapter uses `decidable_of_iff`, not an unchecked Bool or native proof axiom.
+Owner1555jobs/315completewhitelistedreports/all3newroots passed; independent
+review found no weakening. The unchanged named-repetition certificate now
+passes. Both production grammar directories and the fixture regenerate
+byte-identically. The prospective183-state loop grammar's split item certificate
+also passes; remaining certificate groups and its final audit are separate.
+Evidence: `build/lalr-lookahead-owner-v1.*`,
+`build/lalr-items-draft/named-repeat-v{1,2}.{log,exit}` and `split-*-v1.*`.
+No grammar/admission/emitter/artifact-contract expansion follows. The combined
+required full gate must be rerun after this repair and pending AST integration.
+
 **Signed LALR resource credits (owner passed; full gate pending):**
 The reusable parser can now carry positive symbol weights through named
 token-consuming rules. Three universal lemmas characterize repetition and

@@ -1,5 +1,5 @@
 import Parser.LALR.Item
-import Parser.LALR.FirstProofs
+import Parser.LALR.LookaheadCandidates
 
 /-! Finite LR-item coverage obligations for the actual action/goto tables.
 The annotations are untrusted candidates. Validation requires the augmented
@@ -30,10 +30,24 @@ def Closed (g : Grammar) (facts : Array First) (state : ItemSet) (item : Item) :
           (⟨index.val, 0, lookahead⟩ : Item) ∈ state
     | _ => True
 
+/-- Decide the same closure proposition using equal-membership structural
+candidates. Kernel reduction need not evaluate well-founded sorting; the
+generator's ordered lookahead metadata and this proposition stay unchanged. -/
 instance : Decidable (Closed g facts state item) := by
   unfold Closed
-  split <;> try infer_instance
-  split <;> infer_instance
+  split
+  · infer_instance
+  · rename_i p found
+    split
+    · rename_i n next
+      let candidates : Prop :=
+        ∀ index : Fin g.productions.size, g.productions[index].input = n →
+          ∀ lookahead ∈ lookaheadCandidates facts (p.output.drop (item.dot + 1)) item.lookahead,
+            (⟨index.val, 0, lookahead⟩ : Item) ∈ state
+      have candidateDecision : Decidable candidates := by unfold candidates; infer_instance
+      exact @decidable_of_iff _ candidates
+        (by unfold candidates; simp only [forall_lookaheadCandidates_iff]) candidateDecision
+    · infer_instance
 
 /-- A terminal edge must be the actual shift action, not merely an annotation
 edge. A nonterminal edge must be the actual goto. Both retain the advanced
