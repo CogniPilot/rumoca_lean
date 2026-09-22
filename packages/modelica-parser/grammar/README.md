@@ -40,12 +40,36 @@ and [§7.2.5](https://specification.modelica.org/maint/3.7/inheritance-modificat
 Only the small forms above are implemented; the full standard also permits
 other dimensions and expressions.
 
-The generated LALR parser recognizes these selected syntactic profiles. The production
-compiler and actual-C certificate currently admit only the unit profile.
-The driven and array development APIs are checked separately and must acquire
-their target execution and actual-artifact contracts before becoming FMU paths.
-The new API is `Rumoca.ArrayProfile.parseLocated` from
-`ModelicaParser.Array.Located`; the production CLI/LSP remain on the unit profile.
+The generated LALR parser recognizes these selected syntactic profiles.
+Production publication has separate checked paths for the unit profile, the
+tensor square/Jacobian profile and the constant-rate profile. The tensor path
+publishes FMI 3 FMUs, eFMI Algorithm Code and complete eFMUs; the constant-rate
+path publishes FMI 3 FMUs. Publication still requires the corresponding fixed
+actual-artifact checker: successful parsing alone does not admit an arbitrary
+model or export format. Driven and expression profiles remain development
+cases. The array located API is `Rumoca.ArrayProfile.parseLocated` from
+`ModelicaParser.Array.Located`; the LSP still uses the unit-profile document API.
+
+## Structural grammar repair
+
+The profile-specific composition alternatives, especially `jacobian_body`, are
+not the intended permanent grammar structure. The next cutover must use ordinary
+declarations, equations, expressions and function calls, following the selected
+MLS production families. `jacobian` remains an identifier resolved after parsing;
+renaming its special production is not a structural repair. Existing checked
+profile records may remain semantic lowering inputs, but must not determine
+syntax through whole-token-list recognition.
+
+The updated implementation reference for that work is
+[Rumoca's Parol grammar at `f477d0b`](https://github.com/CogniPilot/rumoca/blob/f477d0b698954b5a70f86286aaae9a3570ef39d5/crates/rumoca-phase-parse/src/modelica.par).
+This does not change the provenance pin of the current EBNF above. The pinned
+MLS remains normative; do not copy the entire upstream grammar or assume every
+Parol alternative is the chosen MLS subset. The reusable-core sequence and
+proof obligations are in [the parser design](../../../dev/lalr-parser.md#structural-modelica-actions).
+Open [stage findings](../../../dev/standards-review.md#required-review-at-every-spiral-stage)
+still block grammar expansion, including recognition-only expansion. Generic
+CST infrastructure may be developed without changing either language grammar,
+production parser path or source admission.
 
 Regenerate both checked and runtime tables with `lake run generate`. The full gate
 checks freshness and rejects an actual grammar file changed after generation.

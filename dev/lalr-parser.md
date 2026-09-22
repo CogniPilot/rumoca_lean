@@ -185,6 +185,51 @@ contract describes the frozen profiles' exact-token relation. It now instantiate
 `LALR.TokenParser.Actions`, whose arbitrary `Denotes` relation and CST/payload
 builder support other AST representations without changing the LR engine.
 
+## Structural Modelica actions
+
+The September 22 review distinguishes the proved reusable LALR engine from the
+remaining frontend architecture. `ModelicaParser.Actions` currently ignores the
+tree in its builder; array actions collect identifiers and compare the entire
+canonical token sequence. Array diagnostics then use fixed token positions.
+Those mechanisms do not become extensible syntax construction merely because
+the separate LALR recognition theorem holds.
+
+The next steps preserve the existing engine and separate three obligations:
+
+1. Attach original token payloads to the exact checked CST, preserving terminal
+   order, production indices and nonterminal identities. Prove success exactly
+   when the encoded word agrees, exact erasure and payload recovery, a
+   prefix/suffix consumption invariant, and total attachment after a successful
+   `TokenParser.run`. The encoder need not be injective: distinct identifiers
+   share a terminal category. This generic prerequisite changes no executing
+   frontend path. It does not by itself establish a grammar cutover.
+2. Construct language-owned syntax from that tree through named source-production
+   interfaces, accounting for EBNF helper productions. Prove an independent
+   syntax relation and total construction for every valid selected syntax tree.
+   Recover locations from payload leaves/subtrees, not fixed profile positions.
+   Parentheses and other syntax omitted by an AST require a relational contract,
+   not equality to one canonical token serialization.
+3. Resolve names, check shapes/initialization and select the existing verified
+   lowering profiles from syntax. Keep unsupported functions or semantic forms
+   distinct from malformed syntax. Before production cutover, preserve source
+   semantics and prove the full lowering, target and actual-artifact chain;
+   retire the old frontend token-list builders rather than adding a fallback.
+
+The Modelica grammar should then use the MLS declaration, modification, equation
+and expression families for a small subset. Calls are ordinary syntax;
+`jacobian` is a semantic extension, not a grammar production. Unsigned numeric
+categories and separate unary signs need a lexical proof before that cutover;
+the current signed-number scanner and `IDENT`-only EBNF category cannot silently
+be treated as the general MLS lexical contract. Shared lexical-category changes
+must also preserve GALEC's contracts.
+
+These are dependencies, not authorization to expand recognition now. The
+[recurring stage review](standards-review.md#required-review-at-every-spiral-stage)
+must close applicable findings before either grammar expansion or new production
+admission. A grammar switch that recognizes more syntax is an expansion even
+when semantic selection still accepts the same artifacts. Generic payload
+infrastructure can proceed independently within the frozen subset.
+
 ## Implementation and proof sequence
 
 - [x] **LR01: independent grammar semantics.** `LALR.Grammar` uses mathlib's
