@@ -82,6 +82,21 @@ int main(void) {
          state[2] == 0.0 && !signbit(state[2]) && state[3] == 19.0);
   rumoca_rhs(state + 1, input, output + 1, 2);
   assert(output[0] == 17.0 && output[1] == 4.0 && output[2] == 9.0 && output[3] == 19.0);
+  /* Execute the actual prepared RHS wrapper, not only its arithmetic helper. */
+  const double extreme_input[2] = {DBL_MAX, -DBL_MAX};
+  double extreme_output[4] = {17.0, 0.0, 0.0, 19.0};
+  rumoca_rhs(extreme_input, extreme_input, extreme_output + 1, 2);
+  assert(extreme_output[0] == 17.0 && extreme_output[3] == 19.0);
+  assert(isinf(extreme_output[1]) && !signbit(extreme_output[1]) &&
+         isinf(extreme_output[2]) && !signbit(extreme_output[2]));
+  assert(extreme_input[0] == DBL_MAX && extreme_input[1] == -DBL_MAX);
+  assert(rumoca_tensor_all_finite(extreme_output + 1, 2) == 0);
+  const double tiny_input[2] = {-0.0, -DBL_TRUE_MIN};
+  rumoca_rhs(tiny_input, tiny_input, extreme_output + 1, 2);
+  assert(extreme_output[0] == 17.0 && extreme_output[3] == 19.0);
+  assert(extreme_output[1] == 0.0 && !signbit(extreme_output[1]) &&
+         extreme_output[2] == 0.0 && !signbit(extreme_output[2]));
+  assert(rumoca_tensor_all_finite(extreme_output + 1, 2) == 1);
   /* The actual forward-AD program and its explicit diagonal output. */
   double scratch[5][2];
   double jacobian[6] = {17.0, -1.0, -1.0, -1.0, -1.0, 19.0};

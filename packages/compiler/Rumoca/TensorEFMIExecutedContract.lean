@@ -2,6 +2,7 @@ import Rumoca.TensorEFMISourceMethod
 import Rumoca.TensorEFMIFiniteJacobian
 import RumocaC.TensorSquareDiagonalTotalContract
 import RumocaC.TensorMultiplicationTotalContract
+import RumocaEFMI.TensorContextRhsTotal
 import RumocaEFMI.TensorStartup
 
 /-! Source-bound execution products for the existing tensor eFMI slice.
@@ -34,6 +35,17 @@ structure TensorExecutedProductionContract (a : TensorArtifact source)
       String.join (numericalFunctions.map CTree.Function.render) ++
       TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
     CTensor.MultiplicationTotal.ArtifactContract (CTensor.function .mul).render
+  /-- Total prepared RHS execution in the same actual eFMI tables; finite
+  source refinement is retained and infinity is never a real derivative. -/
+  rhsOutcomes :
+    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+      String.join (numericalFunctions.map CTree.Function.render) ++
+      TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+    CTensor.SquareRhsTotal.ArtifactContract CTensor.ProgramFixture.IVPEntry.sources.derivative ∧
+    CTensor.SquareRhsTotal.LinkedArtifactContract c numericalFunctions
+      "#include <stddef.h>\n#include <stdint.h>\n"
+      (TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render)) ∧
+    ContextRhsTotal.CallContract
   sourceDoStep (unusedKernel : CSyntax.Program)
       (values : String → Values stateShape) (objects : CDeclaredMembers.Objects)
       (heap : Heap) (base : Address) (rhs result : Values stateShape)
@@ -92,6 +104,12 @@ theorem tensor_executed_production_correct (a : TensorArtifact source)
     CTensor.SquareDiagonal.Total.artifact_correct _ rfl⟩
   multiplicationOutcomes := ⟨JacobianObservation.actual_trees a base,
     CTensor.MultiplicationTotal.artifact_correct _ rfl⟩
+  rhsOutcomes := ⟨JacobianObservation.actual_trees a base,
+    CTensor.SquareRhsTotal.artifact_correct _ rfl,
+    CTensor.SquareRhsTotal.linked_artifact_correct c numericalFunctions _ _
+      (by simpa only [String.append_assoc] using JacobianObservation.actual_trees a base)
+      ContextRhsTotal.storage,
+    ContextRhsTotal.call_correct⟩
   sourceDoStep := SourceMethod.doStep a base
   allocatedStartup := AllocatedMethods.startup
   allocatedRecalibrate := AllocatedMethods.recalibrate

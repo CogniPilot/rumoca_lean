@@ -1,5 +1,45 @@
 # Exact verification contract
 
+**Total prepared tensor RHS outcomes (full gate passed):**
+
+The prepared square RHS wrapper now has a total finite-input execution proof,
+including overflowing square results. A reusable theorem handles any valid
+single-product indexed Solve entry with its ordinary lowering match, parameter
+bindings and nested helper call. The square specialization preserves the exact
+encoded result heap, output writability and outside frame; finite execution
+recovers exactly the previous finite heap, and rejection has an independent real
+overflow-threshold witness. Shared storage setup is reused by both proofs.
+
+Actual FMI source-build and eFMI Production/manifest/archive contracts now
+mandate these RHS outcomes alongside every existing field. The concrete tables
+discharge helper/entry lookup and field-free obligations. Canonical C calls
+retain arbitrary declared objects and saved callers; the eFMI instantiation also
+discharges header/runtime-table linkage. Owner/audit builds and the extended
+existing native driver passed, including actual RHS overflow, aliasing of the
+two input pointers, underflow, signed zero and guarded output storage.
+The final owner/audit build passed 2,643 jobs; all 59 printed axiom reports,
+including wrapped lists and all 24 new roots, passed the unchanged whitelist.
+Bounded independent review identified a fragment-versus-file linkage clarity
+issue; both outcome products now explicitly bind the complete surrounding bytes
+to the same rendered function table used by the execution contract. The reviewer
+confirmed resolution with no remaining findings. Owner evidence:
+`build/tensor-rhs-outcomes-final-owner-v3.log`. The required
+`nix develop .#verification --command lake test` passed (exit 0, observed
+2026-09-22 at 10:32 UTC), with all 2,456 frozen input hashes unchanged. All
+7,683 printed axiom reports (wrapped lists included), all 24 new roots and four
+retained FMU roots passed the unchanged whitelist. All three FMI matrices passed
+75 functions and 526 cells each with zero discrepancies; scalar/tensor eFMI
+actual-byte, publication/reuse/mutation and native checks passed. Only three
+evidence documents were updated after the frozen gate. Existing warnings remain;
+none occurred in the new proof modules. Full evidence:
+`build/tensor-rhs-outcomes-full-gate-v1.log`.
+
+Emitted C, source admission, grammar and public failure policy are unchanged.
+This proves the RHS computation needed before detection, not execution of the
+scanner by FMI/eFMI methods. Nonfinite operands, CS Euler-overflow handling,
+complete histories, native correspondence, N01, K02–K05 and MISRA closure remain
+open. Evidence: `build/tensor-rhs-outcomes-checkpoint.md`.
+
 **Runtime tensor finiteness scanner (full gate passed):**
 
 The shared C backend now emits a reusable, read-only counted scanner and proves

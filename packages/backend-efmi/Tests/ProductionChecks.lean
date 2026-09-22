@@ -2,6 +2,7 @@ import Tests.ProductionChecks.CInterface
 import Tests.ProductionChecks.TensorArrayMembers
 import Tests.ProductionChecks.TensorContextCalls
 import Tests.ProductionChecks.TensorContextIVP
+import Tests.ProductionChecks.TensorContextRhsTotal
 import Tests.ProductionChecks.TensorContextJacobian
 import Tests.ProductionChecks.TensorDoStep
 import Tests.ProductionChecks.TensorJacobianExact

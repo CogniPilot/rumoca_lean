@@ -10,6 +10,7 @@ import RumocaC.TensorDiagonalCode
 import RumocaC.TensorSquareDiagonal
 import RumocaC.TensorSquareDiagonalTotalContract
 import RumocaC.TensorMultiplicationTotalContract
+import RumocaC.TensorSquareRhsTotalContract
 import RumocaC.TensorSquareIVPEntry
 import RumocaC.TensorSquareClosedCalls
 import RumocaFMI3.TensorNumericalEvents
@@ -62,6 +63,14 @@ def modelC : String := String.join pieces
 in the same order; no helper is inserted by a linkage certificate. -/
 theorem pieces_functions :
     pieces = "#include <stddef.h>\n" :: functions.map CTree.Function.render := rfl
+
+theorem rhs_linked_outcomes (actual : String) (printed : actual = modelC) :
+    CTensor.SquareRhsTotal.LinkedArtifactContract actual functions "#include <stddef.h>\n" "" := by
+  apply CTensor.SquareRhsTotal.linked_artifact_correct
+  · rw [printed, modelC, pieces_functions]
+    simp only [String.append_empty]
+    rfl
+  · exact CTensor.SquareRhsTotal.closed_storage
 
 theorem square_ivp : Rumoca.squareModel.ivp =
     CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape :=
@@ -176,6 +185,11 @@ structure TensorSourceBuildContract (a : TensorArtifact input)
   /-- Total finite-input numerical multiplication in the same emitted table. -/
   multiplicationOutcomes : modelC = TensorKernel.modelC ∧
     CTensor.MultiplicationTotal.ArtifactContract (CTensor.function .mul).render
+  /-- Complete prepared RHS wrapper and nested helper execution, including
+  encoded overflow. This does not claim an interface-level failure protocol. -/
+  rhsOutcomes : modelC = TensorKernel.modelC ∧
+    CTensor.SquareRhsTotal.ArtifactContract CTensor.ProgramFixture.IVPEntry.sources.derivative ∧
+    CTensor.SquareRhsTotal.LinkedArtifactContract modelC TensorKernel.functions "#include <stddef.h>\n" ""
   /-- The source-build recipe agrees with the required profile for the model. -/
   build : FMI3.Build.ArtifactContract a.name buildDescription
   /-- The complete rendered tensor call graph obeys the checked no-heap policy (no
@@ -220,7 +234,9 @@ theorem tensorSourceBuild_correct (a : TensorArtifact input)
     TensorSourceBuildContract a modelC buildDescription adapter metadata :=
   ⟨tensorNumericalLinkage_correct a modelC adapter index kernel adapter',
     kernel, kernelContract, ⟨kernel, CTensor.SquareDiagonal.Total.artifact_correct _ rfl⟩,
-    ⟨kernel, CTensor.MultiplicationTotal.artifact_correct _ rfl⟩, build,
+    ⟨kernel, CTensor.MultiplicationTotal.artifact_correct _ rfl⟩,
+    ⟨kernel, CTensor.SquareRhsTotal.artifact_correct _ rfl,
+      TensorKernel.rhs_linked_outcomes modelC kernel⟩, build,
     (by
       obtain ⟨src, w, _, contractFn⟩ := adapter'
       letI : FMI3.StaticLiterals := ⟨fun _ => none⟩

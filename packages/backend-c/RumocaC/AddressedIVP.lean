@@ -83,25 +83,21 @@ theorem initial_call (definitions : CLoops.Calls.Definitions)
 
 /-- Inputs may alias one another; only the written result must be separate.
 This covers the actual public RHS call with both inputs pointing at u. -/
-theorem derivative_call (definitions : CLoops.Calls.Definitions)
-    (library : LibraryFor (IVPEntry.kernel shape).derivative definitions)
-    (found : definitions (IVPEntry.plan shape).derivative.function.name =
-      some (IVPEntry.plan shape).derivative.function.tree)
-    (heap : Heap) (addresses : String → Address) (state input result : Values shape)
+theorem derivative_setup
+    (heap : Heap) (addresses : String → Address) (state input : Values shape)
     (bounded : shape.volume < 2 ^ 64)
     (readsState : Reads heap (addresses "x") state) (readsInput : Reads heap (addresses "u") input)
     (writable : Writable heap (addresses "dx") shape.volume)
     (separate : ∀ name, name = "x" ∨ name = "u" → ∀ i < shape.volume, ∀ j < shape.volume,
-      (addresses "dx").index i ≠ (addresses name).index j)
-    (executed : Finite.Executes (IVPEntry.kernel shape).derivative
-      (ArrayProfile.environment state input) result) :
-    ∃ finalHeap, Reads finalHeap (addresses "dx") result ∧
-      Writable finalHeap (addresses "dx") shape.volume ∧
-      (∀ q, (∀ i < shape.volume, q ≠ (addresses "dx").index i) → finalHeap q = heap q) ∧
-      ∀ behavior, (CLoops.Calls.machine definitions).Behaves
-        (.calling (IVPEntry.plan shape).derivative.function.name
-          (Arguments.values (IVPEntry.plan shape).derivative.function.parameters (args addresses shape))
-          heap .done) behavior ↔ behavior = .terminates finalHeap := by
+      (addresses "dx").index i ≠ (addresses name).index j) :
+    LayoutBound (Arguments.locals (IVPEntry.plan shape).derivative.function.parameters (args addresses shape))
+      (locations addresses) (Named.Layout.erase (IVPEntry.plan shape).derivative.layout) ∧
+    Represents (locations addresses) (Named.Layout.erase (IVPEntry.plan shape).derivative.layout) heap
+      (ArrayProfile.environment state input) ∧
+    Ready (Arguments.locals (IVPEntry.plan shape).derivative.function.parameters (args addresses shape))
+      (locations addresses) (IVPEntry.kernel shape).derivative
+      (Named.Plan.erase _ (IVPEntry.plan shape).derivative.plan)
+      (Named.Layout.erase (IVPEntry.plan shape).derivative.layout) heap := by
   have layoutBound : LayoutBound
       (Arguments.locals (IVPEntry.plan shape).derivative.function.parameters (args addresses shape))
       (locations addresses) (Named.Layout.erase (IVPEntry.plan shape).derivative.layout) := by
@@ -137,6 +133,29 @@ theorem derivative_call (definitions : CLoops.Calls.Definitions)
     | there r => cases r with
       | here => exact separate "u" (Or.inr rfl) i hi j hj
       | there r => nomatch r
+  exact ⟨layoutBound, represented, ready⟩
+
+theorem derivative_call (definitions : CLoops.Calls.Definitions)
+    (library : LibraryFor (IVPEntry.kernel shape).derivative definitions)
+    (found : definitions (IVPEntry.plan shape).derivative.function.name =
+      some (IVPEntry.plan shape).derivative.function.tree)
+    (heap : Heap) (addresses : String → Address) (state input result : Values shape)
+    (bounded : shape.volume < 2 ^ 64)
+    (readsState : Reads heap (addresses "x") state) (readsInput : Reads heap (addresses "u") input)
+    (writable : Writable heap (addresses "dx") shape.volume)
+    (separate : ∀ name, name = "x" ∨ name = "u" → ∀ i < shape.volume, ∀ j < shape.volume,
+      (addresses "dx").index i ≠ (addresses name).index j)
+    (executed : Finite.Executes (IVPEntry.kernel shape).derivative
+      (ArrayProfile.environment state input) result) :
+    ∃ finalHeap, Reads finalHeap (addresses "dx") result ∧
+      Writable finalHeap (addresses "dx") shape.volume ∧
+      (∀ q, (∀ i < shape.volume, q ≠ (addresses "dx").index i) → finalHeap q = heap q) ∧
+      ∀ behavior, (CLoops.Calls.machine definitions).Behaves
+        (.calling (IVPEntry.plan shape).derivative.function.name
+          (Arguments.values (IVPEntry.plan shape).derivative.function.parameters (args addresses shape))
+          heap .done) behavior ↔ behavior = .terminates finalHeap := by
+  obtain ⟨layoutBound, represented, ready⟩ :=
+    derivative_setup heap addresses state input bounded readsState readsInput writable separate
   obtain ⟨finalHeap, reads, _, frame, writes, behaviors⟩ :=
     program_call_refines_for (IVPEntry.plan shape).derivative.function (IVPEntry.plan_valid shape).2.1 _ _ _
       (Named.function_matches _ _ _ _ _) definitions library found (args addresses shape)

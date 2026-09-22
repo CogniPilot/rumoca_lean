@@ -12,6 +12,29 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Total prepared tensor RHS outcomes (2026-09-22; full gate passed):**
+No source grammar/admission, emitted C, GALEC text or interface-policy expansion.
+The pinned MLS 3.7 finite-real derivative distinction, eFMI Beta 1 §3.2.5 §2
+overflow propagation and §1.3/§1.6 signal-interface constraints, FMI 3.0.2
+§2.2.4 status/frame obligations and §3.2.1 numerical-failure note, and MISRA
+C:2025 Dir 4.15 detection/consumer requirements carry forward from N01. The
+new universal proof covers the actual prepared RHS wrapper, not just its
+arithmetic helper; overflow remains an encoded numerical outcome, not a real
+derivative. Actual FMI/eFMI contracts require this result and its finite
+conservativity. Owner/audit builds and actual-wrapper native boundary checks
+passed. Final owner/audit checks passed 2,643 jobs, all 24 new roots and 59
+permitted printed axiom reports. Independent review's linkage concern was
+resolved by explicit file-byte/function-table equality in both outcome fields;
+the bounded recheck found no remaining issue. The required full gate passed with
+all 2,456 inputs unchanged, all 7,683 permitted printed axiom reports (wrapped
+lists included), all 24 new roots and four permitted retained FMU roots. All
+three FMI matrices and scalar/tensor eFMI actual-byte, publication/reuse/mutation
+and native checks passed. Scanner invocation,
+all-path/consumer composition and public failure protocols remain open.
+This is progress within the frozen subset, not a completed recurring stage
+review or MISRA closure. All unresolved findings continue to block expansion.
+Evidence: `build/tensor-rhs-outcomes-checkpoint.md`.
+
 **Runtime tensor finiteness scanner (2026-09-22; full gate passed):**
 This is a shared-backend prerequisite within the frozen subset, not a grammar
 expansion or completed recurring stage review. The pinned MLS 3.7 source and

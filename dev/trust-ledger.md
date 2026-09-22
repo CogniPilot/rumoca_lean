@@ -1,5 +1,29 @@
 # Trust and premise ledger (K05)
 
+**Total prepared tensor RHS outcomes (2026-09-22; full gate passed):**
+The actual square RHS wrapper and its nested multiplication now execute without
+a finite-result premise, on arbitrary finite inputs. Output reads, writability,
+outside frame, exact finite-heap conservativity and the core detector's
+finite/overflow boundary refer to one result heap. Generic lowering and storage
+setup are reused; no new scheduler, scalarized tensor lowering or trusted
+arithmetic rule is introduced. Exact function-table lookup and field-free
+obligations are discharged; native header meanings and supplied storage remain
+explicit. The eFMI canonical instantiation also discharges its concrete runtime
+linkage. Both actual-artifact products require the new RHS contract while
+retaining old finite/public-method fields. Owner/audit builds and the native
+boundary passed. The final owner/audit build passed 2,643 jobs, all 24 new roots
+and 59 permitted printed axiom reports, wrapped lists included. Independent
+review prompted explicit surrounding-file byte equality to the exact executed
+function table in both outcome fields; the bounded recheck found no remaining
+issue. The required full gate passed with all 2,456 inputs unchanged, all 7,683
+printed axiom reports (wrapped lists included), all 24 new roots and four
+retained FMU roots passing the unchanged whitelist. All three FMI matrices and
+scalar/tensor eFMI actual-byte, publication/reuse/mutation and native checks
+passed. Only three evidence documents changed after the frozen gate.
+The emitted methods still do not invoke detection, and no new failure/status
+policy, source trajectory, native-correspondence or MISRA claim follows.
+N01 and K02–K05 remain open; see `build/tensor-rhs-outcomes-checkpoint.md`.
+
 **Runtime tensor finiteness scanner (2026-09-22; full gate passed):**
 The emitted scanner now executes the core all-finite classifier in the authored
 C semantics, including typed parameter/return conversion and canonical contextual

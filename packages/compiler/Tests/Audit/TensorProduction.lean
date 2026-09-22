@@ -6,6 +6,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.tensorSourceBuild_correct
 #audit axioms Rumoca.TensorSourceBuildContract.jacobianOutcomes
 #audit axioms Rumoca.TensorSourceBuildContract.multiplicationOutcomes
+#audit axioms Rumoca.TensorSourceBuildContract.rhsOutcomes
+#audit axioms Rumoca.TensorKernel.rhs_linked_outcomes
 #audit axioms Rumoca.compileTensor_eq
 #audit axioms Rumoca.compileTensor_eq_parsed
 #audit axioms Rumoca.compileTensor_complete
