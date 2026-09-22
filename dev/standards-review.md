@@ -12,6 +12,24 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Fixed-rate Euler interval preflight (2026-09-22; integrated, gate pending):**
+No grammar or source-admission expansion. The pinned MLS finite-real/encoded
+distinction, FMI 3.0.2 §2.2.4 Discard preservation, eFMI Beta 1 §3.2.5 signal
+semantics and MISRA C:2025 Dir 4.15 detection boundary remain applicable.
+Universal scalar/tensor finite-prefix and reachable-overflow proofs support a
+read-only scalar C interval checker with finite inputs, count < 2^64 and exact
+heap preservation. Its mandatory actual-source contract includes independent
+numerical meaning, not only equality to an executable classifier. Standalone
+staging passed 40 roots, the fixed file adapter, three nonvacuous mutations and
+the extended existing native boundary; bounded Astra review found no issue.
+Integrated owner checks passed 2,900 jobs and all 2,051 printed reports,
+including all 40 new roots, within the unchanged whitelist. Evidence:
+`build/euler-preflight-owner-v1.log`. The required full gate remains pending.
+No public CS failure behavior,
+clock policy, native correspondence or MISRA closure is established; N01,
+GJ01/GJ02 and the previous findings remain open. The authorized GALEC repair
+scope does not authorize new Modelica cases or complete this stage review.
+
 **Structural EBNF bridge (2026-09-22; full gate passed):**
 Checkpoint `3f413a7` changes generic CST interpretation and certified runtime
 metadata, not either EBNF, production frontend action, source admission or C

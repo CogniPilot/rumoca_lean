@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 mkdir -p build/tensor-c
 
 lake env lean --run packages/backend-c/Tests/EmitTensor.lean build/tensor-c
-for operation in add mul sub div fill diagonal finite product_finite; do
+for operation in add mul sub div fill diagonal finite product_finite euler_finite; do
   cat > "build/tensor-c/Check-$operation.lean" <<EOF
 import RumocaC.TensorArtifactCheck
 verify_tensor_helper "build/tensor-c/$operation.c" as $operation
@@ -58,6 +58,29 @@ if lake env lean build/tensor-c/Reject-product_finite.lean > build/tensor-c/prod
 fi
 rg -q 'actual tensor C file differs' build/tensor-c/product_finite-rejection.log
 
+# Mutations must actually change the helper and fail its fixed actual-file contract.
+for mutation in arithmetic reset guard; do
+  case "$mutation" in
+    arithmetic) pattern='s/sample + rate/sample * rate/' ;;
+    reset) pattern='s/valid = 0/valid = 1/' ;;
+    guard) pattern='s/valid != 0/valid == 0/g' ;;
+  esac
+  sed "$pattern" build/tensor-c/euler_finite.c > "build/tensor-c/corrupt-euler-$mutation.c"
+  if cmp -s build/tensor-c/euler_finite.c "build/tensor-c/corrupt-euler-$mutation.c"; then
+    echo "Euler preflight $mutation mutation did not change bytes" >&2
+    exit 1
+  fi
+  cat > "build/tensor-c/Reject-euler-$mutation.lean" <<EOF
+import RumocaC.TensorArtifactCheck
+verify_tensor_helper "build/tensor-c/corrupt-euler-$mutation.c" as euler_finite
+EOF
+  if lake env lean "build/tensor-c/Reject-euler-$mutation.lean" > "build/tensor-c/euler-$mutation-rejection.log" 2>&1; then
+    echo "corrupted Euler preflight ($mutation) passed its actual-file contract" >&2
+    exit 1
+  fi
+  rg -q 'actual tensor C file differs' "build/tensor-c/euler-$mutation-rejection.log"
+done
+
 # Change one operation in the complete IVP; other members remain valid.
 mkdir -p build/tensor-c/corrupt-ivp
 cp build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian-diag.c build/tensor-c/corrupt-ivp/
@@ -78,7 +101,7 @@ rg -q 'actual tensor IVP differs' build/tensor-c/ivp-rejection.log
   -Wno-unused-parameter -include packages/backend-c/Tests/tensor-native.h \
   build/tensor-c/add.c build/tensor-c/mul.c build/tensor-c/sub.c build/tensor-c/div.c \
   build/tensor-c/fill.c build/tensor-c/diagonal.c \
-  build/tensor-c/finite.c build/tensor-c/product_finite.c \
+  build/tensor-c/finite.c build/tensor-c/product_finite.c build/tensor-c/euler_finite.c \
   build/tensor-c/initial.c build/tensor-c/derivative.c build/tensor-c/jacobian.c \
   build/tensor-c/jacobian-diag.c \
   packages/backend-c/Tests/tensor-native.c -lm -o build/tensor-c/native

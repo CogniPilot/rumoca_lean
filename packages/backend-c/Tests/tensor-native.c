@@ -15,6 +15,22 @@ _Static_assert(FLT_RADIX == 2 && DBL_MANT_DIG == 53 && DBL_MAX_EXP == 1024 &&
 /* One native boundary check complements the universal Lean proofs. */
 int main(void) {
   assert(fesetround(FE_TONEAREST) == 0);
+  /* Finite inputs only: native correspondence is a tested boundary, not a proof. */
+  assert(rumoca_euler_finite(DBL_MAX, DBL_MAX, 0) == 1);
+  assert(rumoca_euler_finite(-DBL_MAX, -DBL_MAX, 0) == 1);
+  assert(rumoca_euler_finite(0.0, 2.5, 3) == 1);
+  assert(rumoca_euler_finite(0.0, -1.0, 3) == 1);
+  assert(rumoca_euler_finite(-0.0, -0.0, 4) == 1);
+  assert(rumoca_euler_finite(DBL_TRUE_MIN, DBL_TRUE_MIN, 4) == 1);
+  assert(rumoca_euler_finite(-DBL_TRUE_MIN, -DBL_TRUE_MIN, 4) == 1);
+  assert(rumoca_euler_finite(DBL_MAX, DBL_MAX, 1) == 0);
+  assert(rumoca_euler_finite(-DBL_MAX, -DBL_MAX, 1) == 0);
+  assert(rumoca_euler_finite(0.0, DBL_MAX, 1) == 1);
+  assert(rumoca_euler_finite(0.0, DBL_MAX, 2) == 0);
+  assert(rumoca_euler_finite(0.0, DBL_MAX, 8) == 0);
+  assert(rumoca_euler_finite(0.0, -DBL_MAX, 1) == 1);
+  assert(rumoca_euler_finite(0.0, -DBL_MAX, 2) == 0);
+  assert(rumoca_euler_finite(0.0, -DBL_MAX, 8) == 0);
   /* Empty tensors have no dereference, including a null data pointer. */
   assert(rumoca_tensor_all_finite(NULL, 0) == 1);
   const double finite_values[] = {0.0, -0.0, DBL_TRUE_MIN, -DBL_TRUE_MIN, DBL_MAX, -DBL_MAX};

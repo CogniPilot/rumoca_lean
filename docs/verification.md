@@ -1,5 +1,39 @@
 # Exact verification contract
 
+**Fixed-rate Euler interval preflight (integrated; full gate pending):**
+
+Solve now specifies independent scalar and shape-indexed tensor finite prefixes
+for a supplied finite increment and bounded Nat step count. Universal proofs
+characterize success, absorbing rejection, exact real overflow thresholds and a
+globally reachable tensor failure boundary. Tensor rank/extents remain indexed;
+these proofs introduce no element enumeration in compiler lowering.
+
+The shared C helper checks each scalar candidate immediately, copies it only
+when finite and preserves the entire heap. Parameter/header conversions and
+return to arbitrary saved callers are proved for finite operands and count
+below 2^64. Unique terminal behavior is stated for the empty continuation,
+not for later caller execution. Executable C construction is separated from
+proof-only arithmetic witnesses. The fixed actual-file contract requires exact
+bytes, independent token syntax, contextual execution and independent finite-
+prefix/real-overflow characterizations together, using the unchanged whitelist.
+
+Standalone staging checks passed all seven modules and 40 audit roots. Bounded
+independent Astra review found no issue. The staged file adapter passed;
+arithmetic/reset/guard mutants were rejected, and the existing strict native
+boundary plus 15 Euler cases passed. Package integration wires the six audit
+snippets, fixed checker, existing emitter and existing boundary script. Focused
+owner checks passed 2,900 jobs; all 2,051 complete printed reports, including
+the 40 new roots, passed the unchanged whitelist. There were no warnings in
+the new modules. Evidence: `build/euler-preflight-owner-v1.log`. The required
+full gate for this integrated increment is still pending.
+
+This is a prerequisite for whole-call CS numerical Discard, not its production
+invocation. The increment is not yet linked to prepared RHS or a public step
+size; public clocks, tensor C composition, FMI callback behavior and GALEC
+repairs remain open. The scanner certifies this fixed token profile, not all C.
+Native floating-environment/compiler correspondence and MISRA conformance are
+not established by these proofs or tests. No grammar or source admission changes.
+
 **Structural EBNF bridge (full gate passed):**
 
 Checkpoint `3f413a7` adds `Parser.LALR.EBNFStructure`: conversion of the actual

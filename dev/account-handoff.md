@@ -42,10 +42,11 @@ Focused bridge evidence retained:
   (1,529 jobs, 24 reports), including recursive structural conversion and
   annotation-only mutation with unchanged CFG productions.
 
-## Reviewed next change — still staged, not integrated
+## Euler prerequisite — integrated, full gate pending
 
-`build/euler-package-stage/` holds seven package-ready Lean modules and six
-package-owned audit snippets. Standalone stage02 passed, and all 40 roots
+The seven modules and six package-owned audit snippets from
+`build/euler-package-stage/` are now integrated in core/backend-c. Standalone
+stage02 passed, and all 40 roots
 passed the unchanged whitelist. The scalar/tensor finite-prefix and real-
 overflow proofs retain bounded Nat semantics. C execution immediately checks
 each candidate before reuse, preserves the entire heap, and returns to arbitrary
@@ -57,16 +58,21 @@ The actual-source contract requires exact bytes, independent tokens, contextual
 execution and independent finite-prefix/real-overflow characterizations together.
 No public clock, prepared RHS, FMI composition or GALEC repair follows yet.
 
-`build/euler-boundary-stage/` contains candidate fixed-file checker, emitter,
-existing native/integration updates and audit aggregators. The staged actual-file
+The fixed-file checker, emitter, existing native/integration updates and audit
+aggregators from `build/euler-boundary-stage/` are integrated. The staged actual-file
 contract passed and its one root was audited. Arithmetic/reset/guard mutations
 all changed bytes and were rejected. The strict native boundary, including its
 existing checks and 15 added Euler checks, passed. Shell syntax passed.
-Normal package wiring and a full gate covering the integrated change remain.
+Focused owner checks passed 2,900 jobs. All 2,051 printed axiom reports,
+including the 40 new roots, passed the unchanged whitelist; no new-module
+warnings. Evidence: `build/euler-preflight-owner-v1.log` and `.axioms`.
+The required full gate covering this integrated change remains pending; the
+structural bridge V2 pass above does not cover it. Intended evidence paths:
+`build/euler-preflight-full-gate-v1.log`, `.exit` and `-inputs.sha256`.
 
-Both stages have READMEs and retained logs. Copy authored Lean source files
-only: the package stage includes dependency symlinks and oleans that must NOT
-be copied into packages. All 36 original `build/cs-euler-draft/` files were
+Both stages have READMEs and retained logs. Only authored Lean source files
+were copied: dependency symlinks and oleans were NOT copied into packages.
+All 36 original `build/cs-euler-draft/` files were
 hash-checked unchanged. Bounded Astra review found no concrete proof or new
 call/syntax/contract/file-checker linkage issue. All agents are closed.
 
@@ -80,9 +86,9 @@ adopted.
 
 ## Next actions
 
-Integrate the reviewed Euler helper into the owning core/C packages, wire its
-audits and existing boundary checks, run focused checks and the required full
-gate, and commit with James Goppert <james.goppert@gmail.com> and `-s`;
+Run the required full gate for the integrated helper and retain its frozen
+input hashes, 40 new roots and four FMU roots. Commit with
+James Goppert <james.goppert@gmail.com> and `-s`;
 no AI coauthor. Then compose whole-interval preflight before any CS instance
 writes, retaining guard/output precedence and explicit callback effects.
 Repair GALEC through reusable structural actions and complete artifact contracts,

@@ -57,3 +57,5 @@ import Tests.CoreAudit.RumocaCore_Transition_Events_SilentChoices
 import Tests.CoreAudit.RumocaCore_Transition_Events_Simulation
 import Tests.CoreAudit.RumocaCore_Transition_Prefix
 import Tests.CoreAudit.RumocaCore_Transition_Simulation
+import Tests.CoreAudit.RumocaCore_Solve_FiniteEuler
+import Tests.CoreAudit.RumocaCore_Solve_Tensor_FiniteEuler

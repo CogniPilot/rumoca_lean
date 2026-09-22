@@ -3,6 +3,7 @@ import RumocaC.TensorFillCode
 import RumocaC.TensorDiagonalCode
 import RumocaC.TensorFiniteScanCode
 import RumocaC.TensorProductPreflightCode
+import RumocaC.EulerPreflightCode
 import RumocaC.TensorSquareDiagonal
 import TensorCChecks.IVPEntry
 
@@ -19,6 +20,7 @@ def main (args : List String) : IO Unit := do
   IO.FS.writeFile (root / "diagonal.c") Rumoca.CTensor.Diagonal.function.render
   IO.FS.writeFile (root / "finite.c") Rumoca.CTensor.FiniteScan.function.render
   IO.FS.writeFile (root / "product_finite.c") Rumoca.CTensor.ProductPreflight.function.render
+  IO.FS.writeFile (root / "euler_finite.c") Rumoca.CEulerPreflight.function.render
   IO.FS.writeFile (root / "jacobian-diag.c") Rumoca.CTensor.SquareDiagonal.function.render
   let sources := Rumoca.CTensor.ProgramFixture.IVPEntry.sources
   IO.FS.writeFile (root / "initial.c") sources.initial

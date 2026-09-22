@@ -3,6 +3,7 @@ import RumocaC.TensorFillContract
 import RumocaC.TensorDiagonalContract
 import RumocaC.TensorFiniteScanContract
 import RumocaC.TensorProductPreflightContract
+import RumocaC.EulerPreflightContract
 import Lean
 
 /-! Trusted file-to-proposition adapter for the development tensor C
@@ -22,7 +23,8 @@ elab "verify_tensor_helper " path:str " as " operation:ident : command => do
     | `diagonal => pure Diagonal.function.render
     | `finite => pure FiniteScan.function.render
     | `product_finite => pure ProductPreflight.function.render
-    | _ => throwError "expected tensor helper add, mul, sub, div, fill, diagonal, finite or product_finite"
+    | `euler_finite => pure CEulerPreflight.function.render
+    | _ => throwError "expected tensor helper add, mul, sub, div, fill, diagonal, finite, product_finite or euler_finite"
   let source ← IO.FS.readFile path.getString
   -- Early rejection is only a convenience. Kernel-checked literal equality
   -- below is the sole authorization for applying the artifact theorem.
@@ -37,12 +39,14 @@ elab "verify_tensor_helper " path:str " as " operation:ident : command => do
     | `diagonal => `(term| Diagonal.ArtifactContract $literal)
     | `finite => `(term| FiniteScan.ArtifactContract $literal)
     | `product_finite => `(term| ProductPreflight.ArtifactContract $literal)
+    | `euler_finite => `(term| CEulerPreflight.ArtifactContract $literal)
     | _ => `(term| Fill.ArtifactContract $literal)
   let proof ← match operation.getId with
     | `fill => `(tactic| (apply Fill.artifact_correct; tensor_expand_fill_printer; decide +kernel))
     | `diagonal => `(tactic| (apply Diagonal.artifact_correct; tensor_expand_diagonal_printer; decide +kernel))
     | `finite => `(tactic| (apply FiniteScan.artifact_correct; tensor_expand_finite_scan_printer; decide +kernel))
     | `product_finite => `(tactic| (apply ProductPreflight.artifact_correct; tensor_expand_product_preflight_printer; decide +kernel))
+    | `euler_finite => `(tactic| (apply CEulerPreflight.artifact_correct; euler_expand_preflight_printer; decide +kernel))
     | _ => `(tactic| (apply call_artifact_correct; tensor_expand_printer; decide +kernel))
   let theoremName := `Rumoca.CTensor.CheckedFile.contract
   let theoremId := mkIdent theoremName
