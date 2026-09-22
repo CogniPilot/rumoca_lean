@@ -8,6 +8,7 @@ import Parser.LALR.Actions
 import Parser.LALR.Payloads
 import Parser.LALR.EBNFStructure
 import Parser.LALR.EBNFActions
+import Parser.LALR.ActionWords
 import Tests.StructuralActions
 import Parser.LALR.FirstProofs
 import Parser.LALR.ItemCheck
@@ -294,3 +295,15 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.nullable_meaning
 #audit axioms Parser.LALR.Frontend.StructuralActions.RecursiveFixture.nullable_depth
 #audit axioms Parser.Scanner.prefix_before_delimiter
+
+#audit axioms Parser.LALR.Frontend.StructuralActions.denotes_words
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.step_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.step
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.empty_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.terminal_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.seq_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.alt_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.ref_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.map_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.optional_iff
+#audit axioms Parser.LALR.Frontend.StructuralActions.Words.many_iff

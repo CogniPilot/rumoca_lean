@@ -1,5 +1,34 @@
 # Exact verification contract
 
+**GALEC structural action cutover (owner checks passed; full gate pending):**
+
+The source entrypoints now pass the actual accepted LALR CST to structural
+conversion, the reusable typed rule-table engine and direct AST profile
+projections. They parse once and retain the original token categories, names,
+ordinary call identifiers and explicit extents. The old token decoders are
+noncomputable proof-only compatibility specifications, not a runtime fallback.
+All nine current rules have exhaustive coverage/licensing certificates.
+
+Generic independent token-yield semantics plus direct frontend profile proofs
+establish exact token/AST correspondence for arbitrary valid start-rule trees,
+without the earlier finite-action engine, reconstructed canonical trees or CST
+uniqueness. Exact unconditional `Except` equalities preserve both successful
+source results and diagnostic text/precedence against proof-only pre-cutover
+references. Existing source completeness and lexical/grammar/resolution fields
+are retained. Bounded Astra review found no code-contract issue; it did not
+establish elaboration of the then-live final equality proof or the artifact gate.
+The equality proofs subsequently passed. Final owner checks passed 829 jobs
+and 401 complete printed axiom reports, including all 62 new roots, under the
+unchanged whitelist, with no new-module warnings. Evidence:
+`build/galec-cutover-owner-v2.log` and `.axioms`. V1 failed on a duplicated
+documentation comment, fixed before V2; earlier source-proof iterations were
+not pass evidence. The required full gate is pending.
+
+No grammar, source-admission, lowering, emitted-C or artifact-contract change.
+This is an architectural prerequisite for authorized repairs, not closure of
+GJ01/GJ02/N01, the other standards findings, native correspondence or MISRA.
+Earlier full-gate records below do not certify this working-tree cutover.
+
 **Recursive structural actions (full gate passed):**
 
 `Parser.LALR.EBNFActions` adds reusable typed rule-table delegation over the

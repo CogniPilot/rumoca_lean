@@ -1,6 +1,7 @@
 import GALECParser.Syntax
 import GALECParser.Generated
 import Parser.LALR.Soundness
+import GALECParser.ProfileBuild
 
 open _root_.Parser
 
@@ -39,12 +40,13 @@ def parse (source : String) : Except Diagnostic (Parsed source) :=
   | .error e => .error e
   | .ok tokens => match ht : parseTree tokens with
     | .error _ => .error ⟨"GALEC syntax", 0, "outside the certified unit grammar profile"⟩
-    | .ok _tree => match ha : decode tokens with
+    | .ok tree => match ha : Structural.buildScalar tree tokens with
       | none => .error ⟨"GALEC action", 0, "outside the unit action profile"⟩
       | some ast =>
         if hr : Resolved ast then
-          .ok ⟨ast, tokens_of_decode ha ▸ (Scanner.lex_correct scanner source tokens).mp hl,
-            tokens_of_decode ha ▸ tree_language ht, hr⟩
+          .ok ⟨ast, ((Structural.buildScalar_tokens_iff ht ast).mp ha) ▸
+              (Scanner.lex_correct scanner source tokens).mp hl,
+            ((Structural.buildScalar_tokens_iff ht ast).mp ha) ▸ tree_language ht, hr⟩
         else .error ⟨"GALEC resolve", 0, "mismatched block/state/clock name"⟩
 
 theorem parse_complete (source : String) (b : Block)
@@ -65,12 +67,14 @@ theorem parse_complete (source : String) (b : Block)
     · rename_i e he
       rw [ht] at he
       contradiction
-    · split
+    · rename_i tree parsed
+      have hb := (Structural.buildScalar_tokens_iff parsed b).mpr rfl
+      split
       · rename_i he
-        rw [decode_tokens] at he
+        rw [hb] at he
         contradiction
       · rename_i ast he
-        have heq := Option.some.inj ((decode_tokens b).symm.trans he)
+        have heq := Option.some.inj (hb.symm.trans he)
         subst ast
         simp only [dif_pos resolved]
 
@@ -100,12 +104,13 @@ def parseTensor (source : String) : Except Diagnostic (TensorParsed source) :=
   | .error e => .error e
   | .ok tokens => match ht : parseTree tokens with
     | .error _ => .error ⟨"GALEC syntax", 0, "outside the certified tensor grammar profile"⟩
-    | .ok _tree => match ha : decodeTensor tokens with
+    | .ok tree => match ha : Structural.buildTensor tree tokens with
       | none => .error ⟨"GALEC action", 0, "outside the tensor square action profile"⟩
       | some ast =>
         if hr : ResolvedTensor ast then
-          .ok ⟨ast, tokens_of_decodeTensor ha ▸ (Scanner.lex_correct tensorScanner source tokens).mp hl,
-            tokens_of_decodeTensor ha ▸ tree_language ht, hr⟩
+          .ok ⟨ast, ((Structural.buildTensor_tokens_iff ht ast).mp ha) ▸
+              (Scanner.lex_correct tensorScanner source tokens).mp hl,
+            ((Structural.buildTensor_tokens_iff ht ast).mp ha) ▸ tree_language ht, hr⟩
         else .error ⟨"GALEC resolve", 0, "mismatched tensor block/state/input name"⟩
 
 theorem parseTensor_complete (source : String) (b : TensorBlock)
@@ -126,12 +131,14 @@ theorem parseTensor_complete (source : String) (b : TensorBlock)
     · rename_i e he
       rw [ht] at he
       contradiction
-    · split
+    · rename_i tree parsed
+      have hb := (Structural.buildTensor_tokens_iff parsed b).mpr rfl
+      split
       · rename_i he
-        rw [decodeTensor_tokens] at he
+        rw [hb] at he
         contradiction
       · rename_i ast he
-        have heq := Option.some.inj ((decodeTensor_tokens b).symm.trans he)
+        have heq := Option.some.inj (hb.symm.trans he)
         subst ast
         simp only [dif_pos resolved]
 

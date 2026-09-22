@@ -12,6 +12,22 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**GALEC structural action cutover (2026-09-22; full gate pending):**
+Repair prerequisite only: neither EBNF nor the admitted source subset changes.
+Typed rule-table actions now consume the actual accepted CST and preserve the
+previous source results/diagnostics. Old canonical-token decoders are retained
+only as noncomputable compatibility specifications. Independent token-yield
+and arbitrary-tree profile proofs do not import the superseded finite engine.
+Owner checks passed 829 jobs and 401 complete reports, including all 62 new
+roots, under the unchanged whitelist; no new-module warnings. The full artifact
+gate remains pending; see `docs/verification.md` and
+`build/galec-cutover-owner-v2.log`.
+The pinned MLS/FMI/eFMI clause coverage is unchanged. In particular, ordinary
+call AST construction does not supply the missing GALEC `jacobian` definition,
+and structural parsing does not repair the existing dimension placement or
+numerical-error policy. GJ01/GJ02/N01 and the other open findings still block
+ordinary grammar expansion. No conformance or MISRA closure is claimed.
+
 **Fixed-rate Euler interval preflight (2026-09-22; full gate passed):**
 No grammar or source-admission expansion. The pinned MLS finite-real/encoded
 distinction, FMI 3.0.2 §2.2.4 Discard preservation, eFMI Beta 1 §3.2.5 signal

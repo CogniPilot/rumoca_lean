@@ -34,9 +34,10 @@ def Block.tokens (b : Block) : List Token :=
 def identifiers (ts : List Token) : List String :=
   ts.filterMap fun t => match t with | .ident name => some name | _ => none
 
-/-- A linear token equality check avoids a large nested literal-match tree.
-The fields are still explicit, and every punctuation/literal is checked. -/
-def decode (ts : List Token) : Option Block :=
+/-- Proof-only pre-cutover profile specification. Production source parsing
+uses the actual CST and typed structural actions, not this token decoder.
+The fields remain explicit, and every punctuation/literal is checked. -/
+noncomputable def decode (ts : List Token) : Option Block :=
   match identifiers ts with
   | [name, state, clock, initialState, initialClock, stepTarget, stepRead, endName] =>
     let b := Block.mk name state clock initialState initialClock stepTarget stepRead endName
@@ -135,10 +136,9 @@ def TensorBlock.tokens (b : TensorBlock) : List Token :=
    .literal "end", .literal "DoStep", .literal ";",
    .literal "end", .ident b.endName, .literal ";"]
 
-/-- A linear identifier check avoids a large nested literal-match tree, exactly
-as the scalar decoder. Every array bracket, extent, operator and punctuation is
-still checked by the reconstruction equality. -/
-def decodeTensor (ts : List Token) : Option TensorBlock :=
+/-- Proof-only tensor profile specification retained for exact compatibility.
+Every bracket, extent, operator and punctuation remains checked. -/
+noncomputable def decodeTensor (ts : List Token) : Option TensorBlock :=
   match identifiers ts with
   | [name, input, state, jacobian, clock, initialState, initialClock, stepState,
      derivLeft, derivRight, jacTarget, jacFn, jacLeft, jacRight, jacArg, endName] =>

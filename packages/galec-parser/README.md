@@ -16,12 +16,29 @@ lake run check-generated
 
 The root generation command supplies `--namespace Rumoca.GALEC.Generated`.
 Generated tables include checked structural safety, FIRST/nullable coverage,
-and a generic located-tree entry point. Language-owned actions decode that
-syntax into the tiny GALEC block; EBNF alone does not define semantic AST meaning.
+and a generic located-tree entry point. `StructuralActions` supplies a typed
+table for every current EBNF rule, executed by the reusable recursive action
+engine. Names, ordinary function calls and explicit extents retain their
+original token payloads in `AST`; no shape inference or resolution occurs there.
 `GrammarProofs.lean` binds the actual EBNF preprocessing result to these tables.
 
-`GALECParserChecks` audits the selected syntax round trip, parsing and table
+The source entrypoints run LALR once and give its actual CST to `StructureBridge`
+and `StructuralParser`. Direct AST projections restrict lowering to the existing
+verified scalar/tensor profiles. Generic independent `Words` semantics and the
+frontend profile proofs establish exact payload yield for arbitrary valid trees,
+without reconstructing a canonical tree or assuming CST uniqueness.
+Exhaustive coverage/licensing instantiate generic action completeness for the
+whole current grammar, not merely accepted examples.
+
+`SourceCompatibility` proves exact `Except` equality with proof-only references
+of the previous source entrypoints, including diagnostic text and precedence.
+The old token decoders are noncomputable compatibility specifications; the
+production parser executes neither them nor a second parse. No grammar or
+source-admission expansion follows from this cutover.
+
+`GALECParserChecks` audits the selected syntax, parser, action and compatibility
 contracts. The eFMI backend separately proves the relationship to GALEC/Solve
-IR and emitted artifacts. These language-instance proofs do not establish
-universal LALR completeness or full eFMI compliance. See the
+IR and emitted artifacts. The full artifact gate is required in addition to
+these owner checks; see [current evidence](../../docs/verification.md).
+These proofs do not establish full eFMI compliance. See the
 [grammar restrictions](grammar/README.md) and [standards review](../../dev/efmi.md).

@@ -44,9 +44,21 @@ noncomputable def tensorReference (source : String) : Except Diagnostic (TensorP
 
 /-- Exact old/new observable result, not merely agreement of successful ASTs. -/
 theorem scalar_reference_exact (source : String) : parse source = scalarReference source := by
-  rfl
+  have action : ∀ tokens tree, parseTree tokens = .ok tree →
+      Structural.buildScalar tree tokens = decode tokens :=
+    fun _ _ parsed => Structural.buildScalar_eq_decode parsed
+  unfold parse scalarReference
+  repeat' first | (simp_all; done) | split
+  all_goals simp_all
+  all_goals (subst_vars; simp_all)
 
 theorem tensor_reference_exact (source : String) : parseTensor source = tensorReference source := by
-  rfl
+  have action : ∀ tokens tree, parseTree tokens = .ok tree →
+      Structural.buildTensor tree tokens = decodeTensor tokens :=
+    fun _ _ parsed => Structural.buildTensor_eq_decode parsed
+  unfold parseTensor tensorReference
+  repeat' first | (simp_all; done) | split
+  all_goals simp_all
+  all_goals (subst_vars; simp_all)
 
 end Rumoca.GALEC.Syntax.Compatibility

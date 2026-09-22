@@ -1,6 +1,32 @@
 # Development handoff — 2026-09-22
 
-## In progress: package-owned GALEC structural cutover
+## GALEC structural cutover — owner checks passed; full gate pending
+
+The public scalar/tensor source entrypoints now consume their already accepted
+CST once via package-owned structural conversion, generic typed rule dispatch
+and direct AST projection. The old token decoders are noncomputable proof-only
+references. Exact unconditional Except equalities against a11e030 source
+references preserve diagnostic text/precedence and successful results; all
+previous source-completeness statements and result certificates remain intact.
+
+Direct generic ActionWords and frontend ProfileRules/ProfileProofTactic/
+ProfileWords/ProfileSemantics replace the finite-draft comparison chain entirely.
+ProfileBuild connects arbitrary accepted CSTs to profile token yield and the
+proof-only old decoder specifications. No grammar/source admission/C change.
+Owner V2 passed 829 jobs/401 complete audited reports, all 62 new roots present,
+no new-module warnings. V1 failed only on a doubled documentation comment.
+Evidence: `build/galec-cutover-owner-v2.log`, `.axioms`,
+`build/galec-cutover-new-roots.txt`. Required full gate not started yet.
+
+Bounded Astra review found no direct Words/profile/runtime contract issue and
+verified that source reference bodies match a11e030. It preceded successful
+elaboration of the final source equality script and the noncomputable labels on
+old decoder definitions; the latter change no reference bodies. Final equality
+proofs and decoder retirement passed the owner check. Both agents are CLOSED;
+no agent or build is live. Next: commit this cutover, freeze tracked inputs,
+run the required full gate once, audit reports and retain artifact evidence.
+
+### Earlier foundation checkpoint
 
 The frontend AST, all nine typed rule bodies, exhaustive coverage/licensing,
 direct profile projections and actual-CST bridge/builder are now package-owned.
