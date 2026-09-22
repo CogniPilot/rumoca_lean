@@ -79,5 +79,21 @@ Independent Astra review found no issue in the iteration/write mechanisms or
 the final finite/pointwise/diagonal composition. It explicitly retained the
 limits above, including no failure-state/trace equivalence or executed
 preflight guarantee. The reviewer did not duplicate the main owner's builds.
-The required full artifact gate is pending. A package check alone is not the
-C/artifact gate.
+The required full artifact gate subsequently passed for implementation
+`8f9034b`: `nix develop .#verification --command lake test`, V1 exit0. The
+post-audit also passed: 2,523 frozen inputs unchanged, 8,078 complete reports
+under the unchanged whitelist, all 66 new roots present, four retained FMU
+roots separately audited. The three FMI matrices exercised 75 functions each
+and 526/650/526 cells, with no recorded-finding discrepancies or unexpected
+results. Existing parser/LSP/source/C/helper/FMI/eFMI artifact, mutation and
+native boundaries passed. Actual scalar/tensor Algorithm Code and Production
+C members are byte-identical to the baseline; this gate does not repair their
+still-open GJ01/GJ03 output findings.
+
+Evidence: `build/galec-realization-full-gate-v1.*`,
+`build/galec-realization-post-audit-v1.*`,
+`build/galec-realization-{before,after}-members.sha256`,
+`build/galec-realization-fmu-retained-v1.axioms` and
+`build/galec-realization-archives-v1.sha256`. Gate21657 and post98157 are
+terminal exit0. No future typed-statement or renderer change is covered by
+this frozen implementation's gate.

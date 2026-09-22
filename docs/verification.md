@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**GALEC bounded tensor realization (semantic prerequisites; full gate pending):**
+**GALEC bounded tensor realization (semantic prerequisites; full gate passed):**
 Four new core modules supply universal bounded-loop/write correspondence,
 shape-preserving pointwise and diagonal execution, and proof-bearing prepared
 coefficient realization. The finite square instance reuses existing AD proofs,
@@ -9,7 +9,24 @@ Independent scalar rounding and write relations compose to the prepared
 result. See [the scope and evidence record](../dev/galec-realization.md).
 No production grammar, accepted source case, emitter or artifact contract
 changes. GJ01/GJ03/N01 and other standards/native/MISRA findings remain open;
-the required full artifact gate is not yet claimed for these additions.
+the unchanged emitted GALEC still has its recorded output findings.
+
+Implementation `8f9034b` passed the required
+`nix develop .#verification --command lake test` (V1, exit0), followed by a
+successful post-audit. All 2,523 frozen inputs were unchanged; all 8,078
+complete reports passed the unchanged whitelist. All 66 new declaration
+roots were present and four retained FMU roots were separately audited.
+All three FMI matrices passed 75 functions and 526/650/526 cells with no
+recorded-finding discrepancies or unexpected results. Existing parser/LSP,
+source/C/helper, FMI/eFMI artifact/native/mutation boundaries passed. Actual
+scalar/tensor Algorithm Code and Production C members match the baseline
+byte-for-byte. Independent Astra review found no issue within the stated
+semantic scope. Gate21657 and post98157 are terminal exit0.
+Evidence: `build/galec-realization-full-gate-v1.*`,
+`build/galec-realization-post-audit-v1.*`,
+`build/galec-realization-{before,after}-members.sha256`,
+`build/galec-realization-fmu-retained-v1.axioms` and
+`build/galec-realization-archives-v1.sha256`.
 
 **GJ02 declaration placement repair (full gate passed; positional finding closed):**
 

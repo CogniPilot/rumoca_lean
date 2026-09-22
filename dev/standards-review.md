@@ -14,6 +14,15 @@ review, rather than a one-time backend inspection.
 
 ### GJ01/GJ03 semantic preparation — 2026-09-22; stage OPEN
 
+Implementation `8f9034b` passed the required full gate V1 and post-audit
+(both exit0): 2,523 unchanged inputs, 8,078 complete whitelisted reports,
+all 66 new roots, four retained FMU roots. All three FMI matrices and existing
+artifact/native/mutation checks passed. Actual scalar/tensor Algorithm Code
+and Production C members are byte-identical to the prior baseline. Evidence
+and exact limits are recorded in `dev/galec-realization.md`. No finding closes
+from this prerequisite gate; any future loop grammar/emission repair needs
+its own complete proof/artifact chain and recurring review.
+
 New core loop, shaped-write and prepared-coefficient realization proofs are
 prerequisites only; see [galec-realization.md](galec-realization.md). MLS 3.7,
 FMI 3.0.2 ME/CS and eFMI 1.0.0 Beta 1 admitted profiles, grammar and artifacts

@@ -1,5 +1,36 @@
 # Development handoff — 2026-09-22
 
+## GALEC realization prerequisite gate passed — typed loops next
+
+Implementation `8f9034b` passed the required full gate V1 and post-audit:
+gate21657 and post98157 TERMINAL exit0. The gate exit file was recorded from
+the actual terminal tool result (launch shell did not write it automatically).
+2,523 frozen inputs unchanged; 8,078 complete whitelist reports; all66 new
+roots; four retained FMU roots. Three FMI matrices:75functions each and
+526/650/526cells, no discrepancies/unexpected. Existing parser/LSP/source/C/
+helper/FMI/eFMI native/artifact/mutation checks passed. Actual scalar/tensor
+Algorithm Code and Production C members are byte-identical to baseline.
+Evidence: `build/galec-realization-full-gate-v1.*`, `-post-audit-v1.*`,
+`-{before,after}-members.sha256`, `-fmu-retained-v1.axioms`,
+`-archives-v1.sha256`; orchestration `build/audit-galec-realization-v1.sh`.
+GJ01/GJ03/N01 and all other retained findings remain open. No source expansion.
+
+Next-slice draft only: `build/galec-index-draft/GalecIndexDraft/` contains
+Coordinates, IndexSyntax, State and Statements. CoordinatesV2/IndexSyntaxV1/
+StateV3 checked; Statements is being checked/reviewed separately. They are NOT
+integrated or covered by the frozen gate. Scoped iterator references, full-rank
+coordinates and existing Solve typed environments avoid a temporary callback
+IR or untyped register map. Actual parsed/source/Integer/finite/signal/target/
+artifact correspondence is still needed before repair cutover.
+
+Independent prospective whole-subset review is
+`build/galec-loop-stage-review-draft.md` (134lines), read fully by main, with
+the new cited dimension/static-builtin clauses independently checked. It
+records R1–R5, pinned versions/grammar identities and retained findings. It
+must be adopted into the recurring ledger before grammar expansion; no
+such expansion has occurred. Aristotle's bounded scratch review may still
+be active; revalidate before reuse. No full gate remains live.
+
 ## GALEC tensor realization prerequisites — owner passed; full gate next
 
 Four core modules plus per-module audits now prove bounded/guarded iteration,
