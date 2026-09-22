@@ -5,6 +5,7 @@ import Parser.LALR.EBNF
 import Parser.EBNF.Rules
 import Parser.EBNF.ReaderCorrectness
 import Parser.LALR.Actions
+import Parser.LALR.Payloads
 import Parser.LALR.FirstProofs
 import Parser.LALR.ItemCheck
 import Parser.LALR.Execution
@@ -243,4 +244,12 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.TokenParser.parseWith_complete
 #audit axioms Parser.LALR.TokenParser.parseWith_iff
 #audit axioms Parser.LALR.TokenParser.parseWith_grammar
+#audit axioms Parser.LALR.PayloadTree.prependTokens_append
+#audit axioms Parser.LALR.PayloadTree.erase_word
+#audit axioms Parser.LALR.PayloadTree.attachPrefix_sound
+#audit axioms Parser.LALR.PayloadTree.attachPrefix_complete
+#audit axioms Parser.LALR.PayloadTree.attach_sound
+#audit axioms Parser.LALR.PayloadTree.attach_iff
+#audit axioms Parser.LALR.PayloadTree.attach_checked
+#audit axioms Parser.LALR.TokenParser.attach_total
 #audit axioms Parser.Scanner.prefix_before_delimiter

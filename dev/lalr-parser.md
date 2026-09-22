@@ -187,6 +187,28 @@ builder support other AST representations without changing the LR engine.
 
 ## Structural Modelica actions
 
+**Payload prerequisite completed (2026-09-22):**
+`Parser.LALR.Payloads` now supplies the first obligation below. Its eight audit
+roots prove accumulator yield, exact erasure, prefix/suffix soundness and
+completeness, whole-input attachment equivalence, checker transport and total
+attachment after the actual token parser succeeds. The proof does not assume an
+injective encoder or infer grammar validity from matching leaves. Only the
+parser audit imports it; no frontend executes it yet. Owner/parser-check builds
+and bounded independent Astra review passed. The full required gate passed with
+all 2,483 input hashes unchanged, all 7,758 axiom reports, the eight new roots
+and four retained FMU roots checked against the unchanged whitelist. All three
+FMI matrices and existing artifact/native/mutation checks passed. Evidence:
+`build/cst-payload-full-gate-v1.log`.
+
+The next bridge should interpret the existing `Fragment`/`AnnotatedRule` witness
+over the actual tree, retaining named rules and EBNF branch/optional/repetition
+structure. Runtime metadata must be computable and certified equal to the
+proof-only witness projection; current noncomputable witness constants cannot
+be executable dependencies. Preserve exact payloads and prove structural
+fidelity plus totality, including nullable repetitions and shared helpers.
+Any generator-output change must regenerate both frontend outputs in the same
+change to retain freshness; a generic bridge may precede that integration.
+
 The September 22 review distinguishes the proved reusable LALR engine from the
 remaining frontend architecture. `ModelicaParser.Actions` currently ignores the
 tree in its builder; array actions collect identifiers and compare the entire

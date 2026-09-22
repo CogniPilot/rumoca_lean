@@ -12,6 +12,25 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Generic CST payload attachment (2026-09-22; full gate passed):**
+This reusable parser prerequisite changes neither language EBNF, production
+parser execution, source admission nor artifact emission. The pinned MLS 3.7,
+FMI 3.0.2 and eFMI Beta 1 clause coverage carries forward without a new standards
+interpretation. Universal proofs preserve exact CST structure and original
+payloads, including noninjective encodings and nullable nodes, and establish
+total attachment after successful checked parsing. Grammar validity remains an
+existing-parser obligation. No language-specific case or token-pattern fallback
+is added. Bounded independent Astra review found no issue.
+
+The full required gate passed with all 2,483 frozen inputs unchanged, all 7,758
+printed axiom reports, all eight new roots and four retained FMU roots within
+the unchanged whitelist. FMI matrices passed 75 functions each and 526/650/526
+cells, with zero discrepancies; existing parser and FMI/eFMI artifact/native/
+mutation boundaries passed. Evidence: `build/cst-payload-full-gate-v1.log`.
+Structural frontend actions, grammar cutover, N01, K02–K05, histories, native
+correspondence and MISRA closure remain open. This is not completion of the
+recurring stage review and does not authorize grammar growth.
+
 **Tensor FMI derivative numerical Discard (2026-09-22; full gate passed):**
 No grammar/admission expansion. The pinned MLS 3.7 real/encoded distinction
 and eFMI Beta 1 signal constraints remain unchanged. FMI 3.0.2 §2.2.4

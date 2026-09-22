@@ -1,5 +1,36 @@
 # Exact verification contract
 
+**Generic CST payload attachment (full gate passed):**
+
+`Parser.LALR.Payloads` attaches original payloads to an existing concrete parse
+tree without changing terminal order, production indices or nonterminal
+identities. Universal Lean proofs establish exact erasure and payload recovery,
+prefix/suffix consumption, success exactly when the encoded word agrees, and
+total attachment after the actual `TokenParser.run` succeeds. Encoders need not
+be injective. Grammar validity comes from the existing checked parser, not
+attachment alone. The worker consumes leaves once; no machine stack or formal
+complexity bound is claimed.
+
+Focused builds passed 735 owner jobs and 795 parser-check jobs; all 260 printed
+audit reports, including eight new roots, passed the unchanged whitelist.
+Independent Astra review found no issue in the bounded structural contract.
+The required `nix develop .#verification --command lake test` passed (exit 0,
+observed 2026-09-22 at 13:22 UTC), with all 2,483 frozen input hashes unchanged.
+All 7,758 printed axiom reports (wrapped lists included), all eight new roots
+and four retained FMU roots passed the unchanged whitelist. The three FMI
+matrices passed 75 functions each and 526/650/526 cells for Integrator,
+TensorSquare and ConstantRates, with zero discrepancies. Existing LALR,
+source/C, tensor-helper and scalar/tensor FMI/eFMI artifact, native and mutation
+checks passed. Evidence: `build/cst-payload-full-gate-v1.log`. No new-module
+warnings; existing warnings remain. Only three evidence documents changed
+after the frozen gate.
+
+Only the parser audit imports the new module. Current frontend execution,
+grammars, admission, lowering and emission are unchanged. This is a prerequisite
+for structural actions, not their production cutover or completed MLS/FMI/eFMI
+conformance. N01, K02–K05, histories, native correspondence and MISRA closure
+remain open and continue to block grammar expansion.
+
 **Tensor FMI derivative numerical Discard (full gate passed):**
 
 The production tensor derivative getter now runs the shared read-only product
