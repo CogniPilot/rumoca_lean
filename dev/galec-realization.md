@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Typed loop bodies and prepared square composition — owner passed
+## Typed loop bodies and prepared square composition — full gate passed
 
 The concrete typed pointwise, nested rectangular-clear, diagonal-scatter and
 whole square/Jacobian bodies now instantiate the reusable statement semantics.
@@ -45,8 +45,18 @@ Evidence: `build/galec-typed-bodies-owner-v1.*`,
 `build/galec-typed-bodies-{new,required}-roots.txt`, and
 `build/galec-matrix-clear-draft/`. Earlier failed elaboration logs remain separate.
 
-The combined full gate is next. The earlier 8f9034b gate does not cover these
-changes or the c9843b1 statement addition. No grammar, emitter, production source
+Implementation `a7b854a`, including the `c9843b1` statement addition, passed
+the required full gate V1/session92788 and post-audit V1/session52530, both
+terminal exit 0. All 2,545 frozen inputs are unchanged; 8,184 complete reports
+pass the unchanged whitelist; all 106 required roots and four retained FMU
+roots are present. Three FMI matrices cover 75 functions each and 526/650/526
+behavior cells, with no discrepancies/unexpected results. Existing actual-file,
+native and mutation boundaries pass. Actual scalar/tensor Algorithm Code and
+Production C members are byte-identical to baseline. Evidence:
+`build/galec-typed-bodies-full-gate-v1.*`, `-post-audit-v1.*`,
+`build/galec-typed-bodies-{before,after}-members.sha256`,
+`build/galec-typed-bodies-fmu-retained-v1.axioms` and `-archives-v1.sha256`.
+No grammar, emitter, production source
 case or actual-artifact contract has changed. Parsed/elaborated GALEC linkage,
 surface/target Integer bounds, signal/failure-state behavior, native aliasing
 and repaired artifact evidence remain open. Adopt the prepared recurring review

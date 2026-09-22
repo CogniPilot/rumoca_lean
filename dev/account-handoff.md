@@ -1,5 +1,39 @@
 # Development handoff — 2026-09-22
 
+## Typed bodies full gate passed; reusable parser resource repair next
+
+Implementation `a7b854a` (including `c9843b1`) passed full gate92788 and
+post-audit52530, both terminal0. Do not poll/restart them. All2545 frozen
+inputs unchanged,8184 complete whitelisted reports,106 required roots and
+4retainedFMUroots. Three FMI matrices:75functions each,526/650/526cells,
+0discrepancies/unexpected. Existing artifact/native/mutation checks passed;
+actual scalar/tensor AlgorithmCode and ProductionC members unchanged.
+Evidence: `build/galec-typed-bodies-full-gate-v1.*`, `-post-audit-v1.*`,
+`build/galec-typed-bodies-{before,after}-members.sha256`,
+`build/galec-typed-bodies-fmu-retained-v1.axioms`, `-archives-v1.sha256`.
+
+Prospective whole-subset loop repair review is now adopted in the recurring
+standards ledger. No production grammar/admission change. Main's scratch
+`build/galec-loop-grammar-draft/GALEC.ebnf` is LALR-conflict-free, but exposes
+the generic Nat-credit budget obstruction for repetition of a named rule.
+Signed-credit prototype in `build/galec-signed-budget-draft/` rechecks the
+existing universal Fuel/Progress guarantees without new assumptions. Its
+`SignedSearch.lean` preserves the entire old resource search first, then
+recomputes signed grammar and state candidates on each fallback attempt.
+Probe V2 passes: draft183states/P8/ceiling7, unchanged current GALEC P1/ceiling17
+and Modelica P16/ceiling15 metadata. This is NOT generated kernel/artifact
+evidence. Review `build/galec-signed-budget-review.md`: bounded search remains
+heuristic, no discovery completeness claim; preserve all independent validators.
+Adopt into the existing parser modules without scratch import cycles, prove/audit
+the repetition lemmas, and extend the existing recursive/mutation boundary.
+
+Astra's checked mutual AST prototype/migration notes are in
+`build/galec-surface-ast-draft/`. Main read the AST, all12 laws and migration
+notes;38 reports pass the whitelist, source hashes match. It preserves indices
+on every path component and ordinary callees. Production projection must reject
+indices/loops outside its old exact image. No prototype has been adopted yet.
+Both agents are complete/closed. GJ01/GJ03/N01 and other findings remain open.
+
 ## Typed loop bodies/source composition — owner passed; combined full gate next
 
 Seven new core modules: StoreIteration, CoefficientTerms, VectorBodies,

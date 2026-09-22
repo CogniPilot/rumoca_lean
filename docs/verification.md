@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Typed square/Jacobian loop bodies (owner passed; combined full gate next):**
+**Typed square/Jacobian loop bodies (combined full gate passed):**
 Concrete pointwise and clear-then-scatter bodies now execute through the typed
 statement semantics. The complete square body has exact partial finite
 execution correspondence to the original prepared square RHS and a final store
@@ -8,8 +8,17 @@ whose Jacobian cells equal the existing AD-generated prepared matrix. The
 original primal domain, signed zeros and unrelated binding frames are retained.
 No new arithmetic-totality premise is imposed. Owner V1 passed 2,312jobs and
 584 complete whitelisted reports, including 62 new and the prior 44 roots;
-independent semantic/adoption review found no issue. The combined full gate
-must still cover these changes and c9843b1. No grammar, admission, emission or
+independent semantic/adoption review found no issue. Implementation `a7b854a`,
+including `c9843b1`, passed the required full gate and post-audit (both exit 0):
+2,545 unchanged tracked inputs, 8,184 complete whitelisted reports, all 106
+required roots and four retained FMU roots. All three FMI matrices passed
+75 functions and 526/650/526 behavior cells with no discrepancies or unexpected
+results. Existing artifact/native/mutation boundaries passed; actual scalar
+and tensor Algorithm Code and Production C members are unchanged. Evidence:
+`build/galec-typed-bodies-full-gate-v1.*`, `-post-audit-v1.*`,
+`build/galec-typed-bodies-{before,after}-members.sha256`,
+`build/galec-typed-bodies-fmu-retained-v1.axioms` and `-archives-v1.sha256`.
+No grammar, admission, emission or
 artifact contract changes; GJ01/GJ03/N01 remain open. See
 [the precise scope and evidence](../dev/galec-realization.md).
 

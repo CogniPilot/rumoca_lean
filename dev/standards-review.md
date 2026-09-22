@@ -12,6 +12,74 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Prospective indexed-loop GALEC repair — 2026-09-22; stage OPEN
+
+Adopted from the independently reviewed prospective draft; main checked the
+new static-expression, dimension and builtin clauses. This is the authorized
+GJ01/GJ03 repair of existing admission, not ordinary language expansion.
+The prototype grammar remains scratch-only. Its named statement repetition
+exposes a generic parser resource-certificate limitation, to be repaired with
+signed credits and unchanged universal safety/completeness/progress obligations.
+
+| Required record | Entire admitted subset, evidence and open obligations |
+| --- | --- |
+| Scope and identity | Scalar unit: C/FMU/Algorithm Code/eFMU. Fixed extent-two square/Jacobian: FMU/Algorithm Code/eFMU, not standalone C. Pinned two-state ConstantRates: FMU only. Driven sources, other extents/rates, broader development parses and constant eFMI remain outside production admission. |
+| Architecture continuity | Reusable in-tree LALR, recursive typed actions, independent word semantics and actual CST consumption once. Generic indexed AST/typed elaboration, not token reconstruction or fixture matching. Core owns shape/AD/prepared realization; no backend inference or compiler-time tensor-cell enumeration. |
+| Normative baseline | MLS 3.7, FMI 3.0.2 ME/CS, eFMI 1.0.0 Beta 1; pinned vendor schemas/headers unchanged. MLS syntax annex and retained clause mappings, local FMI/eFMI extracts reviewed. Non-syntax MLS mappings reuse earlier ledger/initialization reviews, not a claimed new complete prose reread. No version migration or schema-only conformance inference. |
+| MLS | Preserve lexical §§2.1–2.4/A.1; syntax A.2.1/A.2.2/A.2.4/A.2.6–A.2.7; equations §§8.2–8.3.1; Operator 3.12 `der`; Real §4.9.1; initialization §8.6. Existing fixed-zero, tensor shape/square/AD and constant-rate rounding/permutation contracts remain. Modelica `jacobian` is an explicit extension with an ordinary callee. S01/SR08 and ideal-Real/finite-storage limits remain. |
+| FMI | All three FMUs: §§2.2.4 status, 2.3 lifecycle/logging/init/reset, 2.4 metadata, 2.4.7.2 arrays, 2.4.10 builds, 2.5.1.3 source ZIP, 3.2.1 ME, 4.2.1 CS. Preserve actual source-build/adapter/public-call/access/time/storage/lifetime/error obligations. No new capability, solver or numerical policy. Existing finite/history/native limitations remain. |
+| eFMI | Both scalar/tensor outputs: §§1.3.1/3.2.3 lifecycle/sample period, 3.2.4 declarations/expressions/statements, 3.2.5 signals, Chapters 2/3/5 containers/Algorithm/Production Code. Replace target `.*` and undefined target `jacobian` with scalar indexed loops, preserving Startup/Recalibrate/DoStep meanings and Production C. Correlated manifests/checksums must bind revised Algorithm Code. N01 and block-direction TODO remain. |
+| Formal correspondence | `a7b854a` proves typed whole-body execution iff the original finite square RHS and exact final store; coefficient domains follow from the primal. Signed zeros and unrelated-binding frames remain. This does not yet establish parsed-body/target-Integer/signal/native correspondence. Bind those typed bodies through actual accepted CST and artifact contracts; profile recognition alone is insufficient. |
+| Artifact evidence | Required full gate and post-audit for `a7b854a` both exit0:2545unchangedinputs/8184whitelistedreports/all106requiredroots/4retainedFMUroots. Three FMI matrices75functions each,526/650/526cells,zero discrepancies/unexpected. Existing artifact/native/mutation checks pass; actual scalar/tensor Algorithm/ProductionC unchanged. These still contain the old GALEC findings and do not certify future grammar/emission changes. |
+| Decision | Proceed only with scoped reusable prerequisites and authorized repair. R1–R5 below block repair completion; all other open findings continue to block ordinary expansion and broad standards/native/MISRA claims. Numerical C is unchanged. |
+
+Applicable eFMI details in local `build/standards-review/efmi.txt`:
+G-3.5–G-3.10 (2458–2470) does not list `.*`; unique function lookup (2738)
+does not define `jacobian`. §3.2.1(a–c) requires bounded iteration/in-bounds
+accesses and preserves multidimensional abstractions. G-3.1–G-3.4/S-3.1
+(2411–2439/2502–2504) covers `size(reference,axis)` and static bounds;
+§3.2.6 L-2 (5437–5439) retains target-dependent Integer checks. S-2.13/14
+(2398–2405) forbids size-derived state dimensions; keep literal extents two.
+The statement heading (2741–2742) is TODO-labelled, not finalized G-4.
+Reference productions (2825–2836) allow per-component indices; local references
+are not dotted state paths. Loops (2879–2889) use start[:step]:end and end with
+`end for;`. Mutability rules (2890–2895) forbid input/iterator writes. Avoid
+unresolved shadowing by fresh binders. Evaluation-order L-1 (2530) forbids
+reassociation; ordinary Real infinity/qNaN propagation (3620–3624) is not an
+automatic error signal. Core zero-volume proofs license neither zero-sized
+source arrays nor `1:0`; FMI initial dimensions remain positive.
+
+Repair completion obligations:
+
+- R1: Generic indexed paths, size queries, scoped loops, typed Integer/Real
+  elaboration and generated LALR certificates. Preserve Token categories and
+  universal malformed-input rejection; no special Jacobian parser rule.
+- R2: Proved one-based coordinate/rank/axis/range/scoping/target-Integer bridge.
+  Matrices use two indices; writes obey mutability. Mathematical Nat bounds
+  alone do not establish target representability or error freedom.
+- R3: Compose the actual parsed body with prepared square/AD execution and
+  immutable-input/output frames. Preserve primal-square finite domain, `u+u`
+  order, signed zeros and positive off-diagonal zero; do not replace by `2*u`.
+- R4: Replace profile-recognition-only denotation with independent typed body
+  execution linked to prepared Solve and existing target execution. No backend AD.
+- R5: Bind that correspondence into actual-file/archive contracts and correlated
+  manifests; run the required gate for repaired artifacts. Extend existing
+  boundaries with independently nonvacuous bound/index/RHS/target mutants and
+  obsolete-extension rejection. Byte mismatch alone is not semantic evidence.
+
+Baseline EBNF SHA256: Modelica
+`1223b291a24cd5f80dcf3734e403164f00b55e4d25f16a0e198960456eee2907`, GALEC
+`15b65a1ba11cbb1a65f92577947b6b47c2d3c9e4deb0424667490fa98b6bab73`.
+Extract SHA256: eFMI
+`2e5aff94511f8499d49a12726085335a3b470fe63950dc26ce4b4407f328f4f9`, FMI
+`6e6f59c2209ca40a6d982a1113a20683ba2ddf7cbeda693432c3d56d9b85c7fe`.
+MLS annex: `build/modelica-3.7-syntax-reference.html`. Artifact evidence:
+`build/galec-typed-bodies-full-gate-v1.*`, `-post-audit-v1.*`,
+`build/galec-typed-bodies-{before,after}-members.sha256`,
+`build/galec-typed-bodies-fmu-retained-v1.axioms`, `-archives-v1.sha256`.
+GJ01/GJ03/N01, block directions, S01/SR08, K02–K05, remaining histories and
+native/ABI/callback/MISRA obligations remain open. No full conformance claim.
+
 ### Typed prepared square body — 2026-09-22; stage OPEN
 
 The typed pointwise, rectangular clearing and diagonal-scatter bodies now have
