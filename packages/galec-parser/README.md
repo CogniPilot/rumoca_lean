@@ -22,6 +22,14 @@ engine. Names, ordinary function calls and explicit extents retain their
 original token payloads in `AST`; no shape inference or resolution occurs there.
 `GrammarProofs.lean` binds the actual EBNF preprocessing result to these tables.
 
+The unresolved AST additionally represents per-component computed indices,
+dimension queries and nested `for` loops with an optional explicit step.
+These are representation prerequisites, not newly admitted syntax: current
+actions construct unindexed references, and the existing exact-profile
+projections reject indexed paths and loops. Bounds, static Integer checking,
+scope, shapes, mutability and execution belong to subsequent elaboration/proofs.
+No Jacobian-specific call constructor is introduced.
+
 The source entrypoints run LALR once and give its actual CST to `StructureBridge`
 and `StructuralParser`. Direct AST projections restrict lowering to the existing
 verified scalar/tensor profiles. Generic independent `Words` semantics and the

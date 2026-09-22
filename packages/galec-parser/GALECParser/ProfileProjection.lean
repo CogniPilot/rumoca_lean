@@ -7,7 +7,8 @@ existing Resolved predicates belong to the subsequent checked phase. -/
 namespace Rumoca.GALEC.ProfileProjection
 open _root_.Parser
 
-def selfRef (name : String) : AST.Reference := ⟨.literal "self", [.ident name]⟩
+def selfRef (name : String) : AST.Reference :=
+  AST.Reference.unindexed (.literal "self") [.ident name]
 
 def startup (state clock : String) : AST.Method :=
   ⟨.public, .literal "Startup",
@@ -79,7 +80,12 @@ namespace Factors
   | _ => none
 
 @[noinline] def selfName (ref : AST.Reference) : Option String := do
-  if ref.base = .literal "self" then identifier (← one ref.fields) else none
+  if ref.base.name = .literal "self" then
+    let _ ← empty ref.base.indices
+    let field ← one ref.fields
+    let _ ← empty field.indices
+    identifier field.name
+  else none
 
 @[noinline] def reference : AST.Expr → Option String
   | .reference ref => selfName ref
@@ -125,21 +131,25 @@ namespace Factors
       let name ← selfName target
       let _ ← literal spelling value
       return name
+  | _ => none
 
 @[noinline] def scalarAssignment : AST.Statement → Option (String × String)
   | .assign target value => do return (← selfName target, ← plusOne value)
+  | _ => none
 
 @[noinline] def productAssignment : AST.Statement → Option (String × String × String)
   | .assign target value => do
       let name ← selfName target
       let (left, right) ← product value
       return (name, left, right)
+  | _ => none
 
 @[noinline] def callAssignment : AST.Statement → Option (String × String × String × String × String)
   | .assign target value => do
       let name ← selfName target
       let (callee, left, right, wrt) ← derivativeCall value
       return (name, callee, left, right, wrt)
+  | _ => none
 
 @[noinline] def methodBody (name : String) (method : AST.Method) : Option (List AST.Statement) :=
   if method.visibility = .public ∧ method.name = .literal name ∧ method.endName = .literal name
@@ -232,8 +242,15 @@ theorem empty_iff (xs : List α) (u : Unit) : empty xs = some u ↔ xs = [] := b
 
 theorem selfName_iff (ref : AST.Reference) (name : String) :
     selfName ref = some name ↔ ref = ProfileProjection.selfRef name := by
-  cases ref
-  simp [selfName, Option.bind_eq_some_iff, one_iff, identifier_iff, ProfileProjection.selfRef]
+  rcases ref with ⟨⟨base, indices⟩, fields⟩
+  simp [selfName, Option.bind_eq_some_iff, one_iff, empty_iff, identifier_iff,
+    ProfileProjection.selfRef, AST.Reference.unindexed]
+  constructor
+  · rintro ⟨baseName, baseIndices, field, fieldsEq, fieldIndices, fieldName⟩
+    cases field
+    simp_all
+  · rintro ⟨⟨baseName, baseIndices⟩, fieldsEq⟩
+    exact ⟨baseName, baseIndices, _, fieldsEq, rfl, rfl⟩
 
 theorem reference_iff (expr : AST.Expr) (name : String) :
     reference expr = some name ↔ expr = .reference (ProfileProjection.selfRef name) := by
@@ -282,22 +299,19 @@ theorem derivativeCall_iff (expr : AST.Expr) (callee left right wrt : String) :
 theorem literalAssignment_iff (spelling : String) (stmt : AST.Statement) (name : String) :
     literalAssignment spelling stmt = some name ↔ stmt =
       .assign (ProfileProjection.selfRef name) (.literal (.literal spelling)) := by
-  cases stmt
-  simp [literalAssignment, Option.bind_eq_some_iff, selfName_iff, literal_iff]
+  cases stmt <;> simp [literalAssignment, Option.bind_eq_some_iff, selfName_iff, literal_iff]
 
 theorem scalarAssignment_iff (stmt : AST.Statement) (target read : String) :
     scalarAssignment stmt = some (target, read) ↔ stmt =
       .assign (ProfileProjection.selfRef target) (.parens
         (.binary (.literal "+") (.reference (ProfileProjection.selfRef read))
           (.literal (.literal "1.0")))) := by
-  cases stmt
-  simp [scalarAssignment, Option.bind_eq_some_iff, selfName_iff, plusOne_iff]
+  cases stmt <;> simp [scalarAssignment, Option.bind_eq_some_iff, selfName_iff, plusOne_iff]
 
 theorem productAssignment_iff (stmt : AST.Statement) (target left right : String) :
     productAssignment stmt = some (target, left, right) ↔ stmt =
       .assign (ProfileProjection.selfRef target) (ProfileProjection.product left right) := by
-  cases stmt
-  simp [productAssignment, Option.bind_eq_some_iff, Prod.exists, selfName_iff, product_iff,
+  cases stmt <;> simp [productAssignment, Option.bind_eq_some_iff, Prod.exists, selfName_iff, product_iff,
     and_assoc, and_comm]
 
 theorem callAssignment_iff (stmt : AST.Statement) (target callee left right wrt : String) :
@@ -305,8 +319,7 @@ theorem callAssignment_iff (stmt : AST.Statement) (target callee left right wrt 
       .assign (ProfileProjection.selfRef target)
         (.call (.ident callee) [ProfileProjection.product left right,
           .reference (ProfileProjection.selfRef wrt)]) := by
-  cases stmt
-  simp [callAssignment, Option.bind_eq_some_iff, Prod.exists, selfName_iff, derivativeCall_iff,
+  cases stmt <;> simp [callAssignment, Option.bind_eq_some_iff, Prod.exists, selfName_iff, derivativeCall_iff,
     and_assoc, and_left_comm, and_comm]
 
 theorem methodBody_iff (name : String) (method : AST.Method) (body : List AST.Statement) :

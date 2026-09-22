@@ -8,6 +8,8 @@ import ProofAudit.Audit
 
 import GALECParser.LocatedCompleteness
 
+#audit axioms Rumoca.GALEC.AST.Reference.unindexed
+
 #audit axioms Rumoca.GALEC.Syntax.scanner_preserves_text
 #audit axioms Rumoca.GALEC.Syntax.scanner_locations
 #audit axioms Rumoca.GALEC.Syntax.Parsed.locations_exist

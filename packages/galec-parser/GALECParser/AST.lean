@@ -4,27 +4,43 @@ import Parser.Token
 Names keep the original token, including its category. In particular, raw token
 parsing must not silently turn a `Token.number` (also classified IDENT by the
 shared token API) into an identifier. Scanner and resolution contracts remain
-separate. Extents are source syntax, not inferred or enumerated tensor shapes. -/
+separate. Extents are source syntax, not inferred or enumerated tensor shapes.
+Computed reference indices belong to each path component. Loop bounds remain
+unresolved expressions; their representation does not establish boundedness. -/
 namespace Rumoca.GALEC.AST
 open _root_.Parser
 
 abbrev Name := Token
 
-structure Reference where
-  base : Name
-  fields : List Name
-  deriving Repr, DecidableEq
+mutual
+  inductive Expr where
+    | reference (ref : Reference)
+    | literal (spelling : Token)
+    | binary (operator : Token) (left right : Expr)
+    | parens (body : Expr)
+    | call (callee : Name) (arguments : List Expr)
+    | size (ref : Reference) (axis : Expr)
+    deriving Repr
 
-inductive Expr where
-  | reference (ref : Reference)
-  | literal (spelling : Token)
-  | binary (operator : Token) (left right : Expr)
-  | parens (body : Expr)
-  | call (callee : Name) (arguments : List Expr)
-  deriving Repr
+  structure Reference where
+    base : Component
+    fields : List Component
+    deriving Repr
+
+  structure Component where
+    name : Name
+    indices : List Expr
+    deriving Repr
+end
+
+/-- Construct an unindexed path without discarding any parsed indices. -/
+def Reference.unindexed (base : Name) (fields : List Name) : Reference :=
+  ⟨⟨base, []⟩, fields.map (fun name => ⟨name, []⟩)⟩
 
 inductive Statement where
   | assign (target : Reference) (value : Expr)
+  | forLoop (binder : Name) (start : Expr) (step : Option Expr) (stop : Expr)
+      (body : List Statement)
   deriving Repr
 
 inductive Visibility where
@@ -65,4 +81,3 @@ structure Block where
   deriving Repr
 
 end Rumoca.GALEC.AST
-

@@ -22,7 +22,7 @@ def ident : Action Token := .terminal .ident
 local infixr:60 " ⋄ " => StructuralActions.Action.seq
 
 def reference : Action AST.Reference :=
-  .map (fun (base, _, field) => ⟨base, [field]⟩)
+  .map (fun (base, _, field) => AST.Reference.unindexed base [field])
     (lit "self" ⋄ lit "." ⋄ ident)
 
 def product : Action AST.Expr :=

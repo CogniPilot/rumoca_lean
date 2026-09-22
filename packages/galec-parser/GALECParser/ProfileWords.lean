@@ -17,7 +17,7 @@ theorem scalar_words_yield (b : Syntax.Block) (word : List Token) :
   all_goals simp_all [Result, symbol_literal,
     ProfileProjection.ofScalar, ProfileProjection.startup,
     ProfileProjection.recalibrate, ProfileProjection.scalarStep,
-    ProfileProjection.selfRef, Syntax.Block.tokens]
+    ProfileProjection.selfRef, AST.Reference.unindexed, Syntax.Block.tokens]
 
 theorem scalar_words_ast (b : Syntax.Block) (ast : AST.Block) :
     Words rules Token.symbol (.ref "program") b.tokens ast →
@@ -28,7 +28,7 @@ theorem scalar_words_ast (b : Syntax.Block) (ast : AST.Block) :
   all_goals simp_all [Result, symbol_literal,
     ProfileProjection.ofScalar, ProfileProjection.startup,
     ProfileProjection.recalibrate, ProfileProjection.scalarStep,
-    ProfileProjection.selfRef, Syntax.Block.tokens]
+    ProfileProjection.selfRef, AST.Reference.unindexed, Syntax.Block.tokens]
 
 theorem tensor_words_yield (b : Syntax.TensorBlock) (word : List Token) :
     Words rules Token.symbol (.ref "program") word (ProfileProjection.ofTensor b) →
@@ -39,7 +39,7 @@ theorem tensor_words_yield (b : Syntax.TensorBlock) (word : List Token) :
   all_goals simp_all [Result, symbol_literal,
     ProfileProjection.ofTensor, ProfileProjection.startup,
     ProfileProjection.recalibrate, ProfileProjection.tensorStep,
-    ProfileProjection.product, ProfileProjection.selfRef,
+    ProfileProjection.product, ProfileProjection.selfRef, AST.Reference.unindexed,
     Syntax.TensorBlock.tokens]
 
 theorem tensor_words_ast (b : Syntax.TensorBlock) (ast : AST.Block) :
@@ -51,8 +51,7 @@ theorem tensor_words_ast (b : Syntax.TensorBlock) (ast : AST.Block) :
   all_goals simp_all [Result, symbol_literal,
     ProfileProjection.ofTensor, ProfileProjection.startup,
     ProfileProjection.recalibrate, ProfileProjection.tensorStep,
-    ProfileProjection.product, ProfileProjection.selfRef,
+    ProfileProjection.product, ProfileProjection.selfRef, AST.Reference.unindexed,
     Syntax.TensorBlock.tokens]
 
 end Rumoca.GALEC.Structural.ProfileSemantics
-

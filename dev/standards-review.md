@@ -12,6 +12,22 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Indexed AST preparation — 2026-09-22; stage OPEN
+
+Generic surface references now retain indices on every component, expressions
+represent dimension queries and ordinary callees, and loops retain unresolved
+bounds/step/body. The existing grammar/actions still produce only unindexed
+profiles. All arbitrary-AST projection exactness/retraction, structural
+coverage, word/yield and source-compatibility contracts recheck; indexed paths
+and loops cannot leak through the old projections. Owner814jobs/162reports
+passes the unchanged whitelist. No admitted source/grammar/emitter/target
+contract changes; the whole-subset review below applies unchanged.
+The prospective183-state loop grammar now has all split kernel certificates
+and24audited roots, but lacks production actions/elaboration/Integer/body/
+artifact integration. R1–R5, GJ01/GJ03/N01 and all standards/MISRA/native limits
+remain open. Combined full gate V2 is required for these prerequisites; the
+stopped V1 and the earlier typed-body artifact gate are not substitutes.
+
 ### Lookahead closure normalization — 2026-09-22; stage OPEN
 
 The exact named-repetition kernel fixture failed under the old sorted closure

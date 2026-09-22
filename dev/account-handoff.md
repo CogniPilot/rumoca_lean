@@ -1,5 +1,44 @@
 # Development handoff — 2026-09-22
 
+## Indexed AST integrated; combined prerequisite gate V2 next
+
+Mutual AST Expr/Reference/Component retains indices per component; Expr.size
+and Statement.forLoop retain unresolved dimensions/bounds/optional step/body.
+Current actions construct Reference.unindexed; generic calls keep original
+Token names. Old projections explicitly require empty base/field indices,
+exactly self.identifier, and reject loops. All old universal exact-image,
+retraction, word/yield, coverage/licensing and source-compatibility contracts
+recheck without narrowed quantifiers. Main reviewed the worker's2file changes,
+migrated actions/word proofs and added the helper audit root. No grammar,
+admission, emission or artifact-contract change; no typed loop execution claim.
+
+Owner21173 TERMINAL0:814jobs/162completewhitelist reports, newhelper root and
+all retained projection/parser roots. Only prior MaskedSafety hsize warning.
+Focused workerV2 passed7jobs. Host ProfileProjection.c144550bytes (not target
+Production C); no giant-matcher regression. All agents closed.
+
+Larger grammar split check48478 TERMINAL0:Tables/Source/Items/Reductions0/1/2/
+Safety/Progress/umbrella all0. Audit74951 TERMINAL0;24complete roots passed
+unchanged whitelist. Actual source in build/galec-loop-grammar-draft/GALEC.ebnf;
+certificates/logs/audit under build/lalr-items-draft/. This proves the reusable
+grammar/parser instance, NOT actions/elaboration/artifact acceptance.
+
+Required combined gate V2 must cover f33a1eb signed credits,853d99a lookahead
+decision and this AST migration. Its intended paths are
+build/galec-signed-budget-full-gate-v2.*, postchecker
+build/audit-galec-signed-budget-v2.sh,45selected roots in
+build/galec-signed-budget-required-roots-v2.txt. The checker preserves frozen
+hashes/whitelist/4retainedFMUroots/actualAlgorithm+ProductionC member comparisons.
+Read build/galec-signed-budget-live-checkpoint.md for actual launch/session state.
+Do not reuse stopped V1/session5075 (143) or failed probes as pass evidence.
+
+After V2/postaudit: implement the certified prospective grammar's typed
+structural actions and elaboration into existing core typed loops, surface
+Integer/coordinate/scoping proofs, actual parsed-body execution, renderer and
+actual-file/archive contracts. The nine-row standards review is already
+adopted; no ordinary source expansion is authorized while findings remain.
+No need to redesign AST/parser engine or redo finished prerequisite proofs.
+
 ## Lookahead decision repair checked; AST adoption in progress
 
 f33a1eb gate5075 intentionally STOPPED143 after exact mandatory named-repeat

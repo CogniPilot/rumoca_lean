@@ -1,5 +1,25 @@
 # Exact verification contract
 
+**Indexed GALEC AST prerequisite (owner passed; combined full gate pending):**
+Mutual expressions/references/components retain computed indices at every path
+component, ordinary call Tokens, dimension queries and nested loop bodies with
+explicitly omitted or supplied steps. This is unresolved syntax, not a claim
+of static bounds, valid Integer indices, shape/mutability checking or execution.
+The production grammar is unchanged and its actions construct unindexed paths.
+Old scalar/tensor projections require empty base/field indices and reject loops;
+all existing arbitrary-AST exact-image/retraction and word/yield/coverage/source
+compatibility contracts retain their quantifiers. The factored noinline runtime
+checks remain; no token reconstruction or profile-only loop semantics is added.
+
+Owner `lake build check-galec-parser` passed814jobs/162completewhitelistedreports,
+including the new `Reference.unindexed` root and retained parser/projection roots.
+Main reviewed the worker's AST/projection migration; dependent action and word
+proofs rechecked. Host parser `ProfileProjection.c` is144550bytes, separate from
+authored Production C. Evidence: `build/galec-surface-ast-owner-v1.*` and
+`build/galec-surface-ast-adoption/focused-v2.*`. No grammar, source admission,
+emitter or artifact contract changes; the combined full gate must still cover
+this representation and the two generic parser repairs below.
+
 **Kernel-reducible lookahead closure (owner and named certificate passed):**
 The original generated `decide +kernel` certificate could not normalize
 sorted nullable lookaheads. This reproduces even on the exact named-repetition
@@ -16,10 +36,14 @@ The adapter uses `decidable_of_iff`, not an unchecked Bool or native proof axiom
 Owner1555jobs/315completewhitelistedreports/all3newroots passed; independent
 review found no weakening. The unchanged named-repetition certificate now
 passes. Both production grammar directories and the fixture regenerate
-byte-identically. The prospective183-state loop grammar's split item certificate
-also passes; remaining certificate groups and its final audit are separate.
+byte-identically. All nine split certificate modules for the prospective
+183-state loop grammar now pass, including source, items, three reduction
+groups, safety, resources and umbrella; all24selected roots pass the whitelist.
+This is a grammar-level certificate, not typed actions/elaboration or artifact
+semantics for the new syntax.
 Evidence: `build/lalr-lookahead-owner-v1.*`,
-`build/lalr-items-draft/named-repeat-v{1,2}.{log,exit}` and `split-*-v1.*`.
+`build/lalr-items-draft/named-repeat-v{1,2}.{log,exit}`, `split-*-v1.*` and
+`build/lalr-items-draft/audit-v1.{log,axioms}`.
 No grammar/admission/emitter/artifact-contract expansion follows. The combined
 required full gate must be rerun after this repair and pending AST integration.
 
