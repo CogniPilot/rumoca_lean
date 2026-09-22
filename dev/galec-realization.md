@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Static and indexed source elaboration — core owner passed
+## Static and indexed source elaboration — combined full gate passed
 
 `RumocaCore.GALEC.Elaboration` now contains the reviewed generic prerequisite
 chain, with the scratch implementations moved by import/namespace changes only:
@@ -34,7 +34,16 @@ remain distinct. Evidence: `build/galec-static-elaboration-owner-v1.*`,
 Independent Astra adoption review confirmed mechanical identity of all eight
 core modules and complete public-root registration, with no substantive finding:
 `build/galec-index-elaboration-adoption-review.md` (main read in full).
-The full artifact gate for this adoption remains pending.
+Implementation `ba65b18` passed full gate V1/session74650 and post-audit
+V1/session8668, both terminal0. All2,563 frozen inputs matched, all8,286 complete
+reports passed the unchanged whitelist, all140selected roots and four retained
+FMU roots were present. FMI matrices covered75functions each and526/650/526cells
+with no recorded-finding discrepancies/unexpected results. Actual scalar/tensor
+AlgorithmCode and ProductionC members were byte-identical to baseline. Evidence:
+`build/galec-static-elaboration-full-gate-v1.*`, `-post-audit-v1.*`,
+`-required-roots-v1.txt`, `-fmu-retained-v1.axioms`, `-before-members-v1.sha256`,
+`-after-members-v1.sha256`, `-archives-v1.sha256`. Subsequent source declaration
+and range scratch work is not part of this gate or production admission.
 
 No production grammar, accepted source, emitter or actual-artifact predicate
 changes. This does not validate arbitrary declaration tables, source shadowing,

@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Static/indexed GALEC elaboration prerequisites (core owner passed; full gate pending):**
+**Static/indexed GALEC elaboration prerequisites (combined full gate passed):**
 The core now owns immutable shaped read/write binding metadata, retained AST
 state paths, lexical iterator resolution with non-iterator barriers, exact
 per-axis subscript elaboration and static decimal/dimension-query evaluation.
@@ -29,6 +29,19 @@ target Integer/counter execution, actual parsed body execution and artifact
 linkage remain required. Method capabilities are not blanket eFMI direction
 rules. General Integer expressions and arbitrary indexed intermediate record
 components are not admitted. See [scope](../dev/galec-realization.md).
+
+Implementation `ba65b18` passed the required full gate and post-audit V1,
+both terminal exit 0. All 2,563 tracked input hashes remained unchanged;
+8,286 complete axiom reports passed the unchanged whitelist, all 140 selected
+roots were present, and four actual retained FMU roots passed a separate audit.
+The three FMI matrices covered 75 functions each and 526/650/526 behavior cells,
+with zero recorded-finding discrepancies or unexpected results. Actual scalar
+and tensor Algorithm Code and Production C members remained byte-identical to
+the preceding gate. Evidence: `build/galec-static-elaboration-full-gate-v1.*`,
+`-post-audit-v1.*`, `-required-roots-v1.txt`, `-fmu-retained-v1.axioms`,
+`-before-members-v1.sha256`, `-after-members-v1.sha256`, `-archives-v1.sha256`.
+This gate does not cover the subsequent scratch declaration/range checks and
+does not close GJ01/GJ03/N01 or other standards/native/MISRA findings.
 
 **Combined parser/indexed-AST gate (passed, frozen `e08ddef`):**
 The required `nix develop .#verification --command lake test` and its V2
