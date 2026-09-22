@@ -31,11 +31,25 @@ theorem storage_correct : StorageContract := by
     EncodedTensor.written_reads heap output (result a b), result_spec a b,
     EncodedTensor.written_frame heap output (result a b) shape.volume⟩
 
+/-- Classification of every coordinate on the exact helper result heap.
+No emitted runtime detector, interface failure policy or MISRA closure is
+asserted here. This supplies the observation needed by a later detector loop. -/
+def ClassificationContract : Prop :=
+  ∀ {shape : Shape} (a b : Values shape) (heap : Heap) (output : Address),
+    EncodedTensor.AllFinite (EncodedTensor.written heap output (result a b) shape.volume)
+      output shape ↔ ∀ i : Fin shape.volume, Binary64.finiteProduct a[i] b[i]
+
+theorem classification_correct : ClassificationContract := by
+  intro shape a b heap output
+  rw [EncodedTensor.allFinite_iff _ _ _ (EncodedTensor.written_reads heap output (result a b))]
+  exact result_allFinite a b
+
 def ArtifactContract (actual : String) : Prop :=
-  actual = (function .mul).render ∧ Syntax.Denotes actual .mul ∧ StorageContract
+  actual = (function .mul).render ∧ Syntax.Denotes actual .mul ∧
+    StorageContract ∧ ClassificationContract
 
 theorem artifact_correct (actual : String) (printed : actual = (function .mul).render) :
     ArtifactContract actual :=
-  ⟨printed, printed ▸ Syntax.render_denotes .mul, storage_correct⟩
+  ⟨printed, printed ▸ Syntax.render_denotes .mul, storage_correct, classification_correct⟩
 
 end Rumoca.CTensor.MultiplicationTotal

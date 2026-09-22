@@ -12,6 +12,20 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+**Numerical classification foundation (2026-09-22; full gate passed):**
+No grammar, admission, emitted C or interface policy change. The N01 normative
+review carries forward: core tensor/bit classification and its actual-helper
+heap correspondence do not establish runtime detection. The exact square
+finite-execution boundary and real overflow witness are now proved in Lean;
+the mandatory helper artifact contract includes classification. Owning modules,
+bounded independent review and the affected-package rebuild passed: 4,289 jobs,
+all 20 new roots and 5,402 permitted printed axiom reports. The required full
+artifact gate passed with all 2,444 inputs unchanged, all 20 new roots, all
+7,608 permitted printed axiom reports and four permitted retained FMU roots.
+All three FMI matrices and scalar/tensor eFMI actual-byte/reuse/mutation/native
+checks passed; evidence is in `build/numerical-detection-checkpoint.md`.
+N01 and all other open findings continue to block expansion.
+
 **Numerical error-detection follow-up (2026-09-22; open):**
 [N01](numerical-outcomes-review.md) records actual tensor eFMI DoStep returning
 zero status with infinite square/Jacobian outputs for finite inputs. The pinned

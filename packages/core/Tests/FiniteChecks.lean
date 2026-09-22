@@ -5,9 +5,25 @@ import RumocaCore.Real.Addition
 import RumocaCore.Real.Subtraction
 import RumocaCore.Real.Division
 import RumocaCore.Solve.Tensor.Finite
+import RumocaCore.Array.Numerical
 
 /-! General arithmetic contracts, isolated from the unrelated lifecycle and
 compiler audit roots so Lake can check this numerical increment independently. -/
+#audit axioms Rumoca.Float64.Number.isFinite_iff
+#audit axioms Rumoca.Float64.Number.not_finite_iff
+#audit axioms Rumoca.Float64.finiteBits_decode
+#audit axioms Rumoca.Float64.finiteBits_encode
+#audit axioms Rumoca.Float64.finiteBits_iff
+#audit axioms Rumoca.Solve.Tensor.Numerical.allFinite_iff
+#audit axioms Rumoca.Solve.Tensor.Numerical.allFinite_false_iff
+#audit axioms Rumoca.Solve.Tensor.Numerical.allFiniteBits_iff
+#audit axioms Rumoca.Solve.Tensor.Numerical.allFiniteBits_encode
+#audit axioms Rumoca.Solve.Tensor.Numerical.multiply_spec
+#audit axioms Rumoca.Solve.Tensor.Numerical.multiply_unique
+#audit axioms Rumoca.Solve.Tensor.Numerical.multiply_allFinite_iff
+#audit axioms Rumoca.Solve.Tensor.Numerical.multiply_detects_iff
+#audit axioms Rumoca.ArrayProfile.square_detection_finite_execution
+#audit axioms Rumoca.ArrayProfile.square_detection_overflow
 #audit axioms Rumoca.Binary64.Scaled.round_spec
 #audit axioms Rumoca.Binary64.Scaled.rounding_unique
 #audit axioms Rumoca.Binary64.Scaled.round_one

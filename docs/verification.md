@@ -1,5 +1,34 @@
 # Exact verification contract
 
+**Numerical classification foundation (full gate passed):**
+
+Solve now owns rank-preserving numerical multiplication outcomes and a total
+encoded finiteness detector. Its universal proofs cover every binary64 pattern,
+all tensor coordinates and zero-volume shapes. For the square program, acceptance
+is equivalent to existence of the old finite execution; rejection has an exact
+real overflow-threshold witness. Signed zero and subnormals remain finite.
+The shared C value classifier agrees with the core bit test. The mandatory
+actual multiplication-helper contract now also classifies its exact final heap,
+without removing any previous execution, storage, frame or source fields.
+
+The emitted C and public status policy are unchanged: a proved classification
+of stored outputs is **not an executed C detector**. N01, MISRA, public numerical
+failure protocols, source histories and native correspondence remain open.
+No grammar/admission expansion. Owning-module checks and bounded independent
+review passed. The affected-package rebuild passed 4,289 jobs; all 5,402 printed
+axiom reports (including wrapped lists) passed the unchanged whitelist and
+contained all 20 new roots. Evidence: `build/numerical-detection-package-v1.log`.
+The required `nix develop .#verification --command lake test` passed (exit 0,
+observed 2026-09-22 at 08:39 UTC), with all 2,444 input hashes unchanged. All
+7,608 printed axiom reports, including wrapped lists and all 20 new roots,
+and four retained FMU roots passed the unchanged whitelist. All three FMI
+matrices passed 75 functions and 526 cells each with zero discrepancies;
+scalar/tensor eFMI actual-byte, reuse/mutation and native checks passed.
+Evidence: `build/numerical-detection-full-gate-v1.log` and
+`build/numerical-detection-checkpoint.md`. Only the three evidence documents
+were updated after the frozen gate; existing warnings remain. See
+`dev/numerical-outcomes-review.md` for the detection closure requirements.
+
 **Finite-input multiplication outcomes (full gate passed):**
 
 `Binary64.MultipliesResult` independently specifies finite or signed-infinite

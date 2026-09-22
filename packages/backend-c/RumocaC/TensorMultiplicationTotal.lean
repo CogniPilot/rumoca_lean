@@ -16,6 +16,21 @@ set_option exponentiation.threshold 4096
 def result (a b : Values shape) : Bits shape :=
   Tensor.Value.zipWith (fun x y => (Binary64.mulResult x y).encode) a b
 
+/-- The target storage contains the prepared numerical result; the backend
+does not own a different numerical interpretation. -/
+theorem result_core (a b : Values shape) :
+    result a b = Solve.Tensor.Numerical.encode (Solve.Tensor.Numerical.multiply a b) := by
+  apply Tensor.Value.ext
+  intro i hi
+  simp only [result, Solve.Tensor.Numerical.encode, Solve.Tensor.Numerical.multiply,
+    Tensor.Value.getElem_mapWith, Tensor.Value.getElem_zipWith]
+
+theorem result_allFinite (a b : Values shape) :
+    Solve.Tensor.Numerical.allFiniteBits (result a b) = true ↔
+      ∀ i : Fin shape.volume, Binary64.finiteProduct a[i] b[i] := by
+  rw [result_core, Solve.Tensor.Numerical.allFiniteBits_encode,
+    Solve.Tensor.Numerical.multiply_allFinite_iff]
+
 theorem result_get (a b : Values shape) (i : Nat) (hi : i < shape.volume) :
     (result a b)[i] = (Binary64.mulResult a[i] b[i]).encode :=
   Tensor.Value.getElem_zipWith _ _ _ hi

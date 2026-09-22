@@ -1,7 +1,13 @@
 import RumocaC.Memory
+import RumocaCore.Real.Classification
 
 noncomputable section
 namespace Rumoca.CMemory.Value
+
+/-- The authored C classifier agrees with the shared encoding classifier for
+every bit pattern. This does not assume native `isfinite` correspondence. -/
+theorem isFinite_bits (bits : BitVec 64) :
+    (Value.float64 bits).isFinite = some (Float64.finiteBits bits) := rfl
 
 /-- The executable finiteness check accepts exactly the finite binary64 value
 domain, using the existing encoding equivalence and preserving both zeros. -/

@@ -1,5 +1,22 @@
 # Trust and premise ledger (K05)
 
+**Numerical classification foundation (2026-09-22; full gate passed):**
+The core detector is proved against all finite/nonfinite encoding classes, and
+its tensor lift covers all coordinates. The square detector accepts exactly
+the existing finite-execution domain and otherwise witnesses real overflow.
+The actual multiplication-helper contract retains its execution/storage/frame
+fields and additionally classifies the same final heap using the authored C
+value check. No emitted runtime scanner or interface failure handling is added;
+native classifier correspondence and the N01/MISRA detection obligation remain
+open. Owning modules, bounded independent review and the affected-package
+rebuild passed (4,289 jobs, all 20 new roots and 5,402 permitted printed axiom
+reports, wrapped lists included). The required full artifact gate passed with
+all 2,444 inputs unchanged, all 20 new roots, all 7,608 permitted printed axiom
+reports and four permitted retained FMU roots. All three FMI matrices and the
+scalar/tensor eFMI actual-byte/reuse/mutation/native checks passed. Only the
+three evidence documents were updated after the gate. See
+`build/numerical-detection-checkpoint.md`. N01 and K02–K05 remain open.
+
 **Finite-input multiplication outcomes (2026-09-22; full gate passed):**
 The authored C multiplication rule now returns the independently specified
 finite/infinite result for finite operands. `mulResult_finite_iff` proves exact

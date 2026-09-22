@@ -1,4 +1,6 @@
 import RumocaC.ArrayStore
+import RumocaC.FiniteValue
+import RumocaCore.Solve.Tensor.Numerical
 
 /-! Rank-preserving binary64 bit views over the existing typed array-store
 model. Finite numbers and infinities share the same C cells; no new allocation
@@ -10,6 +12,25 @@ abbrev Bits (shape : Shape) := Tensor.Value (BitVec 64) shape
 
 def ReadsBits (heap : Heap) (base : Address) (values : Bits shape) : Prop :=
   ∀ i : Fin shape.volume, load heap (base.index i.val) = some (.float64 values[i])
+
+/-- A classification of the observed storage, not a claim that emitted code
+has already executed a detector. Each cell uses the existing C value check. -/
+def AllFinite (heap : Heap) (base : Address) (shape : Shape) : Prop :=
+  ∀ i : Fin shape.volume,
+    (load heap (base.index i.val)).bind CMemory.Value.isFinite = some true
+
+theorem allFinite_iff (heap : Heap) (base : Address) (values : Bits shape)
+    (reads : ReadsBits heap base values) :
+    AllFinite heap base shape ↔ Solve.Tensor.Numerical.allFiniteBits values = true := by
+  simp only [AllFinite, Solve.Tensor.Numerical.allFiniteBits, Vector.all_eq_true]
+  constructor
+  · intro h i hi
+    have cell := h ⟨i, hi⟩
+    rw [reads ⟨i, hi⟩] at cell
+    simpa only [Option.bind_some, CMemory.Value.isFinite_bits, Option.some.injEq] using cell
+  · intro h i
+    rw [reads i]
+    simpa only [Option.bind_some, CMemory.Value.isFinite_bits, Option.some.injEq] using h i.val i.isLt
 
 def written (heap : Heap) (base : Address) (values : Bits shape) : Nat → Heap :=
   ArrayStore.written heap base .float64 (fun i => .float64 values[i])

@@ -5,3 +5,4 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.CMemory.Value.isFinite_true_iff
 #audit axioms Rumoca.CMemory.Value.float64_cases
+#audit axioms Rumoca.CMemory.Value.isFinite_bits
