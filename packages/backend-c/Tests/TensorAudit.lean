@@ -48,3 +48,6 @@ import Tests.TensorAudit.TensorCChecks_DiagonalEntry
 import Tests.TensorAudit.TensorCChecks_Entry
 import Tests.TensorAudit.TensorCChecks_Fixture
 import Tests.TensorAudit.TensorCChecks_IVPEntry
+import Tests.TensorAudit.RumocaC_TensorProgramRequirements
+import Tests.TensorAudit.RumocaC_TensorSquareTable
+import Tests.TensorAudit.RumocaC_TensorSquareClosedCalls

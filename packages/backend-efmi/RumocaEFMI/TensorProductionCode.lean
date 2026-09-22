@@ -3,7 +3,7 @@ import RumocaC.TensorFillCode
 import RumocaC.TensorCode
 import RumocaC.TensorDiagonalCode
 import RumocaC.TensorSquareDiagonal
-import TensorCChecks.IVPEntry
+import RumocaC.TensorSquareIVPEntry
 
 /-! Production Code rendering for the fixed-extent tensor square profile.
 

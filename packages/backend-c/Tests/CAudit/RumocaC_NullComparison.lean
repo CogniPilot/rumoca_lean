@@ -1,6 +1,10 @@
 import RumocaC.NullComparison
 import ProofAudit.Audit
 
+#audit axioms Rumoca.CNull.and_unequal_null_eval
+#audit axioms Rumoca.CNull.or_unequal_null_eval
+#audit axioms Rumoca.CNull.and_unequal_null_short_circuit
+
 -- Axiom audit for the roots defined in RumocaC.NullComparison.
 
 #audit axioms Rumoca.CNull.Compared.iff

@@ -1,4 +1,5 @@
 import RumocaFMI3.ConstantFamilyContracts
+import RumocaFMI3.PreparedStepContract
 import RumocaFMI3.PublicAPICertificate
 import RumocaFMI3.TensorVersion
 import RumocaFMI3.TensorDebugLogging
@@ -60,6 +61,15 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
   ∃ sigs : List Signature,
     ((functions model m sigs).map (fun fn => fn.signature.name)).Nodup ∧
     render model m sigs = text ∧
+    StepEntry.signature ∈ sigs ∧
+    (ConstantFunctions.prepare model m sigs).isSome = true ∧
+    PreparedStep.ConstantContract model m sigs ∧
+    (ConstantFunctions.program model m sigs).definitions "fmi3DoStep" =
+      some (.tree ConstantDoStep.function) ∧
+    (ConstantFunctions.program model m sigs).definitions "fail" =
+      some (.tree Runtime.helpers[0]) ∧
+    (∃ before after : String,
+      text = before ++ ConstantDoStep.function.render ++ after) ∧
     PublicAPI.Covered sigs ∧
     ConstantAbsentVariables.FamilyContract model m sigs ∧
     ConstantCapabilityRejection.FamilyContract model m sigs ∧
@@ -158,11 +168,17 @@ given the located and distinct header signatures and the model-free coverage. -/
 theorem render_contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (sigs : List Signature)
     (unique : ((functions model m sigs).map (fun fn => fn.signature.name)).Nodup)
+    (step : StepEntry.signature ∈ sigs)
     (covered : PublicAPI.Covered sigs)
     (absentMembers : ∀ ty write, AbsentVariables.signature ty write ∈ sigs)
-    (capMembers : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs) :
+    (capMembers : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs)
+    (poolReady : (ConstantFunctions.prepare model m sigs).isSome = true) :
     Contract model m (render model m sigs) :=
-  ⟨sigs, unique, rfl, covered,
+  ⟨sigs, unique, rfl, step, poolReady, PreparedStep.constant_contract model m sigs step unique,
+    ConstantFunctions.doStep_bound model m sigs unique step,
+    ConstantFunctions.helpers_bound model m sigs Runtime.helpers[0]
+      (by simp [ConstantFunctions.helpers, TensorFunctions.helpers]),
+    ConstantFunctions.doStep_fragment model m sigs step, covered,
     ConstantAbsentVariables.family_correct model m sigs unique absentMembers,
     ConstantCapabilityRejection.family_correct model m sigs unique capMembers,
     TensorVersion.contract model,

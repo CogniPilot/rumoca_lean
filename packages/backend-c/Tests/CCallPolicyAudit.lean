@@ -55,3 +55,5 @@ import Tests.CCallPolicyAudit.RumocaC_VoidReturn
 import Tests.CCallPolicyAudit.RumocaC_WriteFootprint
 import Tests.CCallPolicyAudit.RumocaC_WriteInterference
 import Tests.CCallPolicyAudit.RumocaC_WriteRegions
+import Tests.CCallPolicyAudit.RumocaC_LoopCallSites
+import Tests.CCallPolicyAudit.RumocaC_TensorSquareCallSites

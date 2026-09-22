@@ -1,5 +1,204 @@
 # Exact verification contract
 
+**Numerical tree linkage and concrete accepted execution (full gate passed):**
+
+The 79-file numerical-linkage increment is promoted. Core owns the prepared
+square IVP; shared C owns its indexed plans and exact ordered function table,
+with test modules reduced to consumers. Canonical numerical proofs require only
+operations present in the indexed programs. Legacy theorem statements and all
+earlier contract fields remain.
+
+The mandatory tensor source-build product now identifies the compiled Solve IVP
+and independently read numerical bytes with that table. One adapter signature
+witness per static-literal environment owns the rendered adapter, prepared
+rejections, numerical extension and accepted execution. Accepted calls discharge
+internal lookup/library and reachable helper-resolution premises, retaining the
+previous storage, alias, lifecycle, external-math and finite-arithmetic inputs
+and all observations on the same final heap.
+
+The FMI dictionary now includes the emitted double-pointer spellings. Actual
+runtime header facts and their source-product instantiation passed the coherent
+package rebuild: all 4,163 jobs, all 150 new audit roots, and 4,857 printed axiom
+lists using only permitted axioms. The first build failed at an implicit event
+type in the runtime wrapper; explicitly introducing that universally quantified
+type repaired the proof without changing its statement. Logs are
+build/numerical-linkage-package.log and build/numerical-linkage-package-repair.log.
+The required full artifact gate passed (exit 0, observed 2026-09-21 at 22:12 UTC)
+in build/numerical-linkage-full-gate.log with unchanged implementation inputs.
+All 150 new roots were present; all 6,753 printed axiom lists and four retained
+FMU source/C/build audit roots use only permitted axioms. All three FMI matrices
+passed 75/75 functions and 526 cells with zero discrepancies. Scalar/tensor eFMI
+publication, actual-artifact, reuse and mutation checks passed. Scalar eFMI
+includes native driver execution; the tensor eFMI native boundary here is C
+compilation, not execution of its complete public methods. Existing warnings remain.
+Evidence is in build/numerical-linkage-checkpoint.md; provenance is recorded in
+/tmp/rumoca-numerical-promotion.KRyn7b/README.md. No grammar, emitted C, solver
+policy or boundary suite changed. Full numerical outcomes, source histories,
+native correspondence, MISRA and K02–K05 remain open.
+
+**Prepared step composition and accepted observations (full gate passed):**
+
+Both tensor and constant adapter contracts now require successful literal-pool
+preparation and six prepared logged rejection paths. The actual-byte certifiers
+derive pool readiness from the same kernel-checked function trees used for the
+rendered adapter. The call proofs derive diagnostic/category addresses and exact
+stored C-string contents at callback entry, retaining arbitrary represented
+callback effects and the no-outcome case. Installation freshness, the initial
+read-only frame and runtime linkage remain explicit; no native or post-callback
+storage guarantee follows from pool construction alone.
+
+The existing accepted execution products additionally require
+`StepEntry.SuccessState` on the same final-heap witness: the three output flags
+are false and the selected instance's mode cell is unchanged. The canonical
+loop/solve/call proofs retain their residual frames to derive these observations.
+All earlier premises and state/time/last-time/other-instance/execution conclusions
+remain, including Boolean-buffer aliasing and conditional finite arithmetic.
+The lifecycle-history consumer retains its previous statement.
+
+Independent review and isolated owner compilation passed; 58 selected roots
+(39 new, with strengthened and retained roots) use only permitted axioms.
+Prepared-adapter byte-certifier rehearsals passed before the accepted-observation
+addition. Those rehearsals do not certify the integrated source build. Owning
+package checks passed all 4,055 jobs (exit 0) in
+`build/step-composition-package-v3.log`; all 39 new roots were present and all
+4,215 printed axiom lists used only permitted axioms. Existing profile warnings
+remain. The required full gate passed (exit 0, observed 2026-09-21 at 20:47:09 UTC)
+in `build/step-composition-full-gate-v3.log`, with unchanged implementation inputs.
+All three FMI matrices passed 75/75 functions and 526 cells with zero discrepancies;
+scalar/tensor eFMI artifact and mutation checks passed. All 6,525 printed axiom
+lists and four retained FMU audit roots use only permitted axioms. Evidence is in
+`build/step-composition-checkpoint-v3.md`.
+The numerical checkpoint below predates this increment. No grammar, emitted C,
+solver policy or boundary suite changed.
+Actual numerical-kernel/program linkage, finite-arithmetic outcomes, complete
+source histories, native correspondence, MISRA and K02–K05 remain open.
+
+At that checkpoint, the linkage review found a concrete premise gap: `FMI3.cTypes`
+did not bind the emitted helper spellings `double *` and `const double *`.
+Lean diagnostics prove that `CTensor.HeaderTypes`, and hence the full numerical
+`Library` premise, could not be instantiated in that standard tensor fenv
+interface. This limits applicability of its conditional accepted-execution
+products; it is not a native-execution failure or a defect in the implication
+proofs. Repairing those bindings, restricting binary-helper requirements to
+actual instructions, and requiring the actual tree-backed table/source-IVP
+linkage are one pending increment. Diagnostic evidence is in
+`build/kernel-header-gap-diagnostic.log`; no repair or full-gate validation of
+the promoted next increment is claimed by this historical checkpoint.
+
+**Step numerical rejection (full gate passed):**
+
+Both tensor and constant step contracts now additionally require
+`roundingRejected`, `stopRejected` and `discardRejected`. Shared actual-function
+prefix theorems derive the guard paths from syntax, without a solver-execution
+premise. Each contract covers suppressed, enabled and missing-callback logging
+under arbitrary checked error contexts. Rounding and stop errors initialize the
+outputs and then terminate the instance before invoking the callback. Discard
+covers both a nonprogressing/nonfinite next clock and an off-grid/over-bound
+duration after the earlier stop guard is admitted; it does not write the mode.
+Floor bindings are required only on the progressing-clock branch. Logged cases
+retain arbitrary represented callback events/heaps and the no-outcome case.
+
+All earlier contract fields and audit roots remain. The 22 new roots passed
+scratch owner/profile rehearsals and the integrated owning-package check passed
+all 3,795 jobs (exit 0) in `build/step-numeric-contract-package.log`. The new
+shared proof modules produced no warnings; existing profile warnings remain.
+Independent review confirmed mandatory propagation through both adapter and
+fixed actual-source-build contracts. The required full gate passed on
+2026-09-21 (exit 0, observed 19:22:37 UTC) in
+`build/step-numeric-contract-full-gate.log`, with unchanged implementation
+fingerprints. All three production FMI matrices passed 75/75 functions and 526
+cells with zero discrepancies; scalar/tensor eFMI actual-artifact and mutation
+checks passed. The four retained FMU source/C/build audit records and all 6,485
+printed axiom lists use only the permitted axioms. Evidence and artifact hashes
+are in `build/step-numeric-contract-checkpoint.md`. The argument-rejection
+checkpoint below predates these fields.
+No grammar, emitter, numerical semantics or boundary-suite change is included.
+Prepared literals, actual kernel/event-program linkage, accepted output/mode
+frames, finite-arithmetic coverage and complete source histories remain open.
+K02–K05, native correspondence and MISRA still block grammar expansion.
+
+**Step argument rejection (full gate passed):**
+
+The tensor and constant step contracts now require `inputRejected` and
+`outputsRejected`. Each product has silent, logged and missing-logger cases
+under arbitrary checked error contexts. Missing outputs reach failure before
+clock or buffer access; invalid raw point/step arguments first initialize the
+outputs, then terminate the instance. Callbacks receive that exact heap and
+retain every represented event/outcome and the no-outcome `.wrong []` case.
+Missing logging needs no logging-flag or callback-environment cell.
+
+Shared finite-prefix and guard theorems supply both profiles; the existing
+scalar prefix statements are preserved and their proof bodies now use the same
+mechanisms. No grammar, emitter, numerical semantics or boundary suite changes
+in this increment. Draft checks and independent semantic review passed before
+promotion; owning-package validation passed all 4,045 jobs in
+`build/step-argument-contract-package.log` (exit 0), including the 21 added audit
+roots and retained roots. No warnings were reported from the changed shared
+prefix/error modules. The required full gate passed on 2026-09-21 (exit 0) in
+`build/step-argument-contract-full-gate.log`, with unchanged implementation
+fingerprints. All three production FMI matrices passed 75/75 functions and 526
+cells with zero discrepancies; scalar/tensor eFMI actual-artifact and mutation
+checks passed. Retained FMU source-build audits use only the three permitted
+axioms. Evidence and artifact hashes are in
+`build/step-argument-contract-checkpoint.md`.
+The lifecycle/logger full-gate pass
+below predates these new mandatory fields and is not their artifact validation.
+Prepared-literal and pointer-emission repair drafts remain outside production.
+Full step coverage, native correspondence, MISRA and K02–K05 remain open.
+
+**Tensor and constant step lifecycle rejection (full gate passed):**
+
+The mandatory `TensorDoStep.Contract` and `ConstantDoStep.Contract` now include
+disallowed-state rejection with logging suppressed and enabled. Their universal
+whole-call proofs instantiate `GuardedCalls`: suppressed logging returns
+`fmi3Error` and writes only the selected instance's terminated mode; enabled
+logging passes that updated heap to the actual failure callback and retains its
+events and heap effects. Absence of a represented callback outcome is exposed as
+`.wrong []`. Caller output buffers need no validity premise on these paths,
+because the lifecycle guard runs before their access.
+
+The existing adapter contracts include these strengthened products, and the fixed
+tensor/constant source-build checkers require them for the actual adapter bytes.
+Shapes, instance kinds/modes, argument bits, heaps and callback outcomes remain
+universally quantified. The original accepted, null and discard fields remain.
+The initial proof-only targeted tensor and constant audits passed
+(`build/tensor-lifecycle-package.log`, `build/constant-lifecycle-package.log`).
+The preliminary required full gate in `build/step-lifecycle-full-gate.log` was
+deliberately stopped (exit 143) to integrate review follow-ups; it is partial
+evidence, not a full-gate pass. The combined change explicitly compares the
+logger with a null pointer before testing the logging flag. Shared C lemmas
+preserve short-circuit evaluation, including an unevaluated right operand.
+Missing-callback rejection is mandatory even without a valid logging-flag cell.
+The adapter contracts bind the step and failure-helper definitions, and the
+rendered step fragment, to the same signature list. The compiler certificates
+check exact step-signature membership with a kernel-checked structural proof. Literal bindings and
+external callback assumptions remain explicit. Instantiating the step theorem
+still requires linking the event program to that certified definition table.
+The combined targeted checks
+passed (`build/logger-null-integration.log`, `build/logger-contract-package-v2.log`),
+including the strengthened contract audits and compiler certificate modules.
+The existing native FMI matrix now includes missing-callback lifecycle rejection
+with null output pointers for both interfaces and logging settings. A fresh full
+artifact gate in `build/logger-contract-full-gate.log` failed at the tensor FMI
+certificate: the generated membership tactic attempted `decide` without a
+decidable-equality instance for signatures. The axiom audit rejected the failed
+elaboration. The tactic now uses the scalar certificate's structural proof.
+The repaired tensor and constant actual-artifact checks passed and produced
+`build/tensor-fmi/logger-repair.fmu` and `constant-logger-repair.fmu`; each retained
+source-build audit contains only the three permitted axioms. Each existing native
+matrix passed all 75 functions and 526 behavior cells with zero discrepancies
+(`build/logger-tensor-native-matrix.log`, `build/logger-constant-native-matrix.log`).
+The required `nix develop .#verification --command lake test` passed on
+2026-09-21 (exit 0; `build/logger-contract-full-gate-v2.log`). The implementation
+diff fingerprint stayed unchanged throughout that run. All three production FMI
+matrices passed 75/75 functions and 526 cells with zero discrepancies; the retained
+source-build audits use only the three permitted axioms. Scalar and tensor eFMI
+publication, actual-file, archive and mutation checks also passed. Existing
+warnings remain, but none were reported on this increment's changed Lean lines.
+The earlier failed run remains retained. K02–K05,
+remaining argument/numeric rejections, native correspondence and MISRA findings
+continue to block grammar expansion.
+
 **Initialization from checked controls (full gate passed):**
 
 The private interference frame now follows from current C destinations on the

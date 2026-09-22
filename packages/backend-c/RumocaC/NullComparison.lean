@@ -86,4 +86,34 @@ theorem branch_preserved (pointer : Expr) (env : Locals) (heap : Heap) (p : Opti
       next (.running (.branch (.not pointer) yes no :: rest) env heap) := by
   simp only [next, equal_eval pointer Expr.nullPointer env heap p hp (literal_eval type env heap)]
 
+/-- An explicit null comparison preserves lazy conjunction even when the
+right operand has no evaluation result. -/
+theorem and_unequal_null_eval (pointer right : Expr) (env : Locals) (heap : Heap)
+    (p : Option Address)
+    (hp : eval env heap pointer = some (.pointer p))
+    (type : interface.types "void *" = some .pointer) :
+    eval env heap (.bin .and (.bin .ne pointer Expr.nullPointer) right) =
+      eval env heap (.bin .and pointer right) := by
+  have truth := unequal_truth pointer Expr.nullPointer env heap p hp (literal_eval type env heap)
+  cases p <;> simp_all [eval, literal_eval type env heap, Value.truth, comparison]
+
+/-- An explicit null comparison likewise preserves lazy disjunction. -/
+theorem or_unequal_null_eval (pointer right : Expr) (env : Locals) (heap : Heap)
+    (p : Option Address)
+    (hp : eval env heap pointer = some (.pointer p))
+    (type : interface.types "void *" = some .pointer) :
+    eval env heap (.bin .or (.bin .ne pointer Expr.nullPointer) right) =
+      eval env heap (.bin .or pointer right) := by
+  have truth := unequal_truth pointer Expr.nullPointer env heap p hp (literal_eval type env heap)
+  cases p <;> simp_all [eval, literal_eval type env heap, Value.truth, comparison]
+
+/-- A null left pointer makes conjunction false without evaluating the right. -/
+theorem and_unequal_null_short_circuit (pointer right : Expr) (env : Locals) (heap : Heap)
+    (hp : eval env heap pointer = some (.pointer none))
+    (type : interface.types "void *" = some .pointer) :
+    eval env heap (.bin .and (.bin .ne pointer Expr.nullPointer) right) =
+      some (boolean false) := by
+  rw [and_unequal_null_eval pointer right env heap none hp type]
+  simp [eval, hp, Value.truth]
+
 end Rumoca.CNull

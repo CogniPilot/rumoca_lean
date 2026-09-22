@@ -1,5 +1,7 @@
 import RumocaFMI3.TensorDoStep
+import RumocaFMI3.StepSuccessState
 import RumocaFMI3.ConstantInstanceRhs
+import RumocaFMI3.StepArguments
 
 /-! Constant-rate Co-Simulation `fmi3DoStep` body over the static constant-rate
 instance record, as a package-checked product.
@@ -222,6 +224,72 @@ theorem lifecycle_behaviors (types : StepEntry.Types) (heap : Heap)
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind]) messageBound hk hm hl hg rejected
 
+/-- A disallowed `fmi3DoStep` with logging enabled first terminates the instance,
+then mirrors every represented callback outcome of the emitted failure helper. -/
+theorem lifecycle_logged_behaviors (types : StepEntry.Types) (heap : Heap)
+    (p message category logger : Address) (environment : Option Address)
+    (kind : Kind) (mode : Mode) (name : String) (foreign : CCalls.Events.External E)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs)
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree function))
+    (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (messageBound : static.addresses ErrorCalls.rejectionMessage = some message)
+    (categoryBound : static.addresses "logStatus" = some category)
+    (address : program.addresses logger = some name)
+    (external : program.externals name = some foreign)
+    (prototype : foreign.signature = Logging.signature name)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
+    (hl : load heap (p.member "logger") = some (.pointer (some logger)))
+    (hg : load heap (p.member "logging") = some (.integer 1))
+    (he : load heap (p.member "environment") = some (.pointer environment))
+    (rejected : ¬ Reference.Allowed .doStep kind mode) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      (∃ events value after, foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value after ∧
+        behavior = .terminates events ⟨.integer 3, after⟩) ∨
+      ((∀ events value after, ¬ foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value after) ∧ behavior = .wrong []) := by
+  apply GuardedCalls.rejected_all_behaviors program function .doStep
+    (StepEntry.outputCode ++ StepEntry.inputGuard ::
+      (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve))
+    (StepEntry.arguments (some p) point step flag outputs) (StepEntry.parameters (some p) point step flag outputs)
+    heap p message category logger environment kind mode name foreign defined
+    (StepEntry.parameters_bound types (some p) point step flag outputs)
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+      StepEntry.inputCondition, List.append_assoc]) rfl doStepBody_closed
+    helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    messageBound address external prototype categoryBound hk hm hl hg he rejected
+
+/-- A missing logger rejects a disallowed DoStep before reading the logging
+flag or any caller output buffer. -/
+theorem lifecycle_missing_behaviors (types : StepEntry.Types) (heap : Heap)
+    (p message : Address) (kind : Kind) (mode : Mode)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs)
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree function))
+    (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (messageBound : static.addresses ErrorCalls.rejectionMessage = some message)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
+    (hl : load heap (p.member "logger") = some (.pointer none))
+    (rejected : ¬ Reference.Allowed .doStep kind mode) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
+  apply GuardedCalls.rejected_missing_behaviors program function .doStep
+    (StepEntry.outputCode ++ StepEntry.inputGuard ::
+      (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve))
+    (StepEntry.arguments (some p) point step flag outputs) (StepEntry.parameters (some p) point step flag outputs)
+    heap p message kind mode defined (StepEntry.parameters_bound types (some p) point step flag outputs)
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+      StepEntry.inputCondition, List.append_assoc]) rfl doStepBody_closed
+    helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    messageBound hk hm hl rejected
+
 end
 
 /-! ### The header-aware constant floating-environment interface bundle
@@ -338,6 +406,8 @@ theorem internalStep_reaches {shape : Tensor.Shape} (rates : List Decimal) (len 
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((field pool j b).index k) = H ((field pool j b).index k)) ∧
       (∀ q, q.block ≠ (record pool i).block → finalHeap q = H q) ∧
+      (∀ (b : String) (k : Nat), b ≠ stateName → b ≠ timeName →
+        finalHeap ((field pool i b).index k) = H ((field pool i b).index k)) ∧
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
         (.body (.running (stepBodyT ++ rest) env types0 H) resultType stack)
         (.body (.running rest env types0 finalHeap) resultType stack) := by
@@ -374,7 +444,7 @@ theorem internalStep_reaches {shape : Tensor.Shape} (rates : List Decimal) (len 
   have resumeStep : CCalls.Events.internalNext program (.returning .void finalHeap cont) =
       some (.body (.running rest env types0 finalHeap) resultType stack) := by
     simp [hcont, CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
-  refine ⟨finalHeap, reads, writableStep, ?_, ?_, ?_, ?_⟩
+  refine ⟨finalHeap, reads, writableStep, ?_, ?_, ?_, ?_, ?_⟩
   · have neState : ∀ m, m < shape.volume → (field pool i timeName) ≠ (field pool i stateName).index m := by
       intro m _
       rw [show field pool i timeName = (field pool i timeName).index 0 from (Address.index_zero _).symm]
@@ -402,6 +472,10 @@ theorem internalStep_reaches {shape : Tensor.Shape} (rates : List Decimal) (len 
     have h1frame : H1 q = H q := by
       rw [hH1]; exact StateProofs.written_frame H (p.member "time") q (Binary64.toBits t').val qneTime
     rw [frameGen, h1frame]
+  · intro b k notState notTime
+    exact (frame ((field pool i b).index k)
+      (fun m _ => fields_separate pool i b stateName notState k m)).trans
+      (frameH1 b k notTime)
   · have assoc : stepBodyT ++ rest = timeAdvance ++ (stepBody ++ rest) := by
       simp [stepBodyT, List.append_assoc]
     rw [assoc]
@@ -459,6 +533,8 @@ theorem stepLoop_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : ra
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((field pool j b).index k) = H0 ((field pool j b).index k)) ∧
       (∀ q, q.block ≠ (record pool i).block → finalHeap q = H0 q) ∧
+      (∀ (b : String) (k : Nat), b ≠ stateName → b ≠ timeName →
+        finalHeap ((field pool i b).index k) = H0 ((field pool i b).index k)) ∧
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
         (.body (.running (loop "n" (Runtime.v "steps") stepBodyT :: rest)
           (counterEnv env0 "n" 0) types0 H0) resultType stack)
@@ -477,28 +553,31 @@ theorem stepLoop_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : ra
       (∀ (j : Nat) (b : String) (m : Nat), j ≠ i →
         Hk ((field pool j b).index m) = H0 ((field pool j b).index m)) ∧
       (∀ q, q.block ≠ (record pool i).block → Hk q = H0 q) ∧
+      (∀ (b : String) (m : Nat), b ≠ stateName → b ≠ timeName →
+        Hk ((field pool i b).index m) = H0 ((field pool i b).index m)) ∧
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
         (.body (.running (loop "n" (Runtime.v "steps") stepBodyT :: rest)
           (counterEnv env0 "n" 0) types0 H0) resultType stack)
         (.body (.running (loop "n" (Runtime.v "steps") stepBodyT :: rest)
           (counterEnv env0 "n" k) types0 Hk) resultType stack) by
-    obtain ⟨HN, stateN, wStateN, timeN, othersN, genN, reachN⟩ := key N (le_refl N)
+    obtain ⟨HN, stateN, wStateN, timeN, othersN, genN, membersN, reachN⟩ := key N (le_refl N)
     have stop := CLoops.loop_stop (counterEnv env0 "n" N) types0 HN "n"
       (Runtime.v "steps") stepBodyT rest N (by simp [counterEnv, CBody.bind]) (stepsEval N HN) stepBodyT_noDecl
-    exact ⟨HN, stateN, wStateN, timeN, othersN, genN,
+    exact ⟨HN, stateN, wStateN, timeN, othersN, genN, membersN,
       reachN.trans (.next (CCalls.Events.body_step program stop resultType stack) (.refl _))⟩
   intro k
   induction k with
   | zero =>
     intro _
-    exact ⟨H0, readsState0, writableState0, timeInit0, fun _ _ _ _ => rfl, fun _ _ => rfl, .refl _⟩
+    exact ⟨H0, readsState0, writableState0, timeInit0, fun _ _ _ _ => rfl, fun _ _ => rfl,
+      fun _ _ _ _ => rfl, .refl _⟩
   | succ k ih =>
     intro hk1
     have hk : k < N := Nat.lt_of_succ_le hk1
-    obtain ⟨Hk, stateK, wStateK, timeK, othersK, genK, reachK⟩ := ih (le_of_lt hk)
+    obtain ⟨Hk, stateK, wStateK, timeK, othersK, genK, membersK, reachK⟩ := ih (le_of_lt hk)
     have enter := CLoops.loop_enter (counterEnv env0 "n" k) types0 Hk "n"
       (Runtime.v "steps") stepBodyT rest k N (by simp [counterEnv, CBody.bind]) (stepsEval k Hk) stepBodyT_noDecl hk
-    obtain ⟨Dk, sumDk, wStateDk, timeDk, othersDk, genDk, stepReach⟩ :=
+    obtain ⟨Dk, sumDk, wStateDk, timeDk, othersDk, genDk, membersDk, stepReach⟩ :=
       internalStep_reaches program rates len definitions linked found ptrTy Hk pool i (states k)
         (times k) (times (k + 1)) (counterEnv env0 "n" k) types0 resultType stack
         (counterStep "n" :: loop "n" (Runtime.v "steps") stepBodyT :: rest)
@@ -506,10 +585,12 @@ theorem stepLoop_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : ra
         stateK wStateK timeK (finite k hk) (timeAdds k hk) resolves fenv
     have increment := CLoops.counter_step env0 types0 Dk "n" k
       (loop "n" (Runtime.v "steps") stepBodyT :: rest) typedN (by omega)
-    refine ⟨Dk, ?_, wStateDk, timeDk, ?_, ?_, ?_⟩
+    refine ⟨Dk, ?_, wStateDk, timeDk, ?_, ?_, ?_, ?_⟩
     · rw [stateStep k hk]; exact sumDk
     · intro j b m different; rw [othersDk j b m different]; exact othersK j b m different
     · intro q hq; rw [genDk q hq]; exact genK q hq
+    · intro b m notState notTime
+      exact (membersDk b m notState notTime).trans (membersK b m notState notTime)
     · refine reachK.trans (.next (CCalls.Events.body_step program enter resultType stack) ?_)
       refine stepReach.trans ?_
       exact .next (CCalls.Events.body_step program increment resultType stack) (.refl _)
@@ -560,6 +641,9 @@ theorem solve_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((field pool j b).index k) = H ((field pool j b).index k)) ∧
+      (∀ q, q.block ≠ (record pool i).block → q ≠ buffers.last → finalHeap q = H q) ∧
+      (∀ (b : String) (k : Nat), b ≠ stateName → b ≠ timeName →
+        finalHeap ((field pool i b).index k) = H ((field pool i b).index k)) ∧
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
         (.body (.running stepSolve env types0 H) "fmi3Status" stack)
         (.returning (.integer 0) finalHeap stack) := by
@@ -596,7 +680,7 @@ theorem solve_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates
   have freshStep1 : env1 "rumoca_constant_step" = none := by
     simp [henv1, CBody.bind, freshStep]
   have typedN2 : types2 "n" = some .size := by simp [htypes2, CLoops.bindType]
-  obtain ⟨loopHeap, stateN, wStateN, timeN, othersN, genN, loopReach⟩ :=
+  obtain ⟨loopHeap, stateN, wStateN, timeN, othersN, genN, membersN, loopReach⟩ :=
     stepLoop_reaches program rates len definitions linked found ptrTy H pool i states times duration.val
       env1 types2 "fmi3Status" stack stepPublishTail duration.isLt mBound1 typedN2 stepsBound1 freshStep1
       readsState writableState timeInit (fun n _ => stateStep n) (fun n _ => finite n) (fun n _ => timeAdds n)
@@ -608,7 +692,7 @@ theorem solve_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates
   have lastTail : CBody.resolve tailEnv "lastSuccessfulTime" = some (.pointer (some buffers.last)) := by
     simp [htailEnv, henv1, counterEnv, CBody.resolve, CBody.bind, lastValue]
   have okTail : tailEnv "fmi3OK" = none := by
-    simp [htailEnv, henv2, henv1, counterEnv, CBody.bind, freshOK]
+    simp [htailEnv, henv1, counterEnv, CBody.bind, freshOK]
   have tfield : field pool i timeName = p.member "time" := rfl
   have timeMember : loopHeap (p.member "time") = some ⟨.float64, true, some (.finite (times duration.val))⟩ := by
     rw [← tfield]; exact timeN
@@ -635,7 +719,7 @@ theorem solve_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates
     simp [stepPublishTail, Runtime.out, Runtime.ok, CLoops.next, leftEval, addr, Value.finite,
       store_float64 loopHeap buffers.last oldLast _ lastLoop, hfinal, StateProofs.written]
   have okReach := TensorDoStep.finishOK program finalHeap tailEnv types2 stack okTail fenv.statusType fenv.fmi3OK
-  refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · intro a
     have ne : (field pool i stateName).index a.val ≠ buffers.last :=
       (TensorDoStep.cell_block_ne pool i stateName a.val buffers.last lastBlock).symm
@@ -654,6 +738,13 @@ theorem solve_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : rates
     have frame : finalHeap ((field pool j b).index k) = loopHeap ((field pool j b).index k) := by
       rw [hfinal]; exact StateProofs.written_frame loopHeap buffers.last _ _ ne
     rw [frame]; exact othersN j b k different
+  · intro q outside notLast
+    exact (StateProofs.written_frame loopHeap buffers.last q _ notLast).trans (genN q outside)
+  · intro b k notState notTime
+    have notLast : (field pool i b).index k ≠ buffers.last :=
+      (TensorDoStep.cell_block_ne pool i b k buffers.last lastBlock).symm
+    exact (StateProofs.written_frame loopHeap buffers.last _ _ notLast).trans
+      (membersN b k notState notTime)
   · exact declReach.trans
       (loopReach.trans (.next (CCalls.Events.body_step program outStep "fmi3Status" stack) okReach))
 
@@ -797,6 +888,7 @@ theorem accepted_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : ra
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((field pool j b).index k) = heap ((field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (record pool i) buffers ∧
       Transition.Events.Prefix (CCalls.Events.machine program)
         (.calling "fmi3DoStep" (StepEntry.arguments (some (record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) []
@@ -887,7 +979,7 @@ theorem accepted_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : ra
       StepEntry.output_instance heap buffers (times 0) p (p.member "time")
         (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl]; exact timeCell
   obtain ⟨_e, _t, _ea, lastAfter⟩ := StepEntry.output_values heap buffers (times 0) oldOutput event terminate early last
-  obtain ⟨finalHeap, stateFinal, timeFinal, lastFinal, othersFinal, solveReach⟩ :=
+  obtain ⟨finalHeap, stateFinal, timeFinal, lastFinal, othersFinal, outsideFinal, membersFinal, solveReach⟩ :=
     solve_reaches program rates len definitions linked found ptrTy after pool i states times duration step
       gridEnv gridTypes .done buffers (some (.finite (times 0)))
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, instanceValue, hp])
@@ -901,12 +993,17 @@ theorem accepted_reaches {shape : Tensor.Shape} (rates : List Decimal) (len : ra
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters,
         StepEntry.bindings, CBody.bind]) readsStateAfter writableStateAfter timeAfter lastAfter outsideLast
       stateStep finite timeAdds resolves fenv
-  refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, ?_, ?_⟩
+  refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, ?_, ?_, ?_⟩
   · intro j b k different
     have frameAfter : after ((field pool j b).index k) = heap ((field pool j b).index k) :=
       StepEntry.output_instance heap buffers (times 0) p ((field pool j b).index k)
         (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl
     rw [othersFinal j b k different, frameAfter]
+  · have modeFrame := membersFinal "mode" 0 (by decide) (by decide)
+    simp only [Address.index_zero] at modeFrame
+    exact StepEntry.success_of_frames heap finalHeap p buffers (times 0) oldOutput
+      event terminate early last (outsideEvent i) (outsideTerminate i) (outsideEarly i)
+      (outsideLast i) outsideFinal modeFrame
   · refine (CCalls.Events.internal_path program entered).trans (first.trans (second'.trans (third'.trans ?_)))
     exact CCalls.Events.internal_path program solveReach
 
@@ -962,16 +1059,17 @@ theorem accepted_behaviors {shape : Tensor.Shape} (rates : List Decimal) (len : 
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((field pool j b).index k) = heap ((field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (record pool i) buffers ∧
       ∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling "fmi3DoStep" (StepEntry.arguments (some (record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
         behavior = .terminates [] ⟨.integer 0, finalHeap⟩ := by
-  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal, reach⟩ :=
+  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal, success, reach⟩ :=
     accepted_reaches program rates len types header fenv nearest ptrTy definitions linked found heap pool i buffers
       point step flag stop oldOutput states times rounding floorBound defined kindValue modeValue timeCell same
       enabled limit admitted progress withinStop readsState writableState event terminate early last outsideEvent
       outsideTerminate outsideEarly outsideLast stateStep finite timeAdds resolves
-  exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal,
+  exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal, success,
     fun behavior => (reach.forced (CCalls.Events.return_forced program (.integer 0) finalHeap)).behaviors behavior⟩
 
 end
@@ -1041,6 +1139,7 @@ def ExecutionFree (header : CFenv.Header) : Prop :=
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((field pool j b).index k) = heap ((field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (record pool i) buffers ∧
       ∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling "fmi3DoStep" (StepEntry.arguments (some (record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
@@ -1312,6 +1411,44 @@ theorem discard_logged_behaviors (header : CFenv.Header) :
 end
 
 
+/-- Invalid numerical inputs are rejected under every checked error context. -/
+theorem input_rejection_contract : StepArguments.InputRejectionContract function := by
+  apply Rumoca.FMI3.StepArguments.input_rejection_contract function
+    (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve)
+    rfl _ doStepBody_closed
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+/-- Missing output pointers are rejected under every checked error context. -/
+theorem output_rejection_contract : StepArguments.OutputRejectionContract function := by
+  apply Rumoca.FMI3.StepArguments.output_rejection_contract function
+    (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve)
+    rfl _ doStepBody_closed
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+theorem rounding_rejection_contract :
+    StepFailures.RoundingRejectionContract function := by
+  apply StepFailures.rounding_rejection_contract function
+    (Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve) rfl _ doStepBody_closed
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+theorem stop_rejection_contract :
+    StepFailures.StopRejectionContract function := by
+  apply StepFailures.stop_rejection_contract function
+    (Runtime.stepGrid ++ stepSolve) rfl _ doStepBody_closed
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+theorem discard_rejection_contract :
+    StepDiscard.DiscardRejectionContract function := by
+  apply StepDiscard.discard_rejection_contract function
+    stepSolve rfl _ doStepBody_closed
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+
 /-! ### Consumable function contract
 
 This mirrors the tensor `fmi3DoStep` contract shape: the printed function text, its
@@ -1319,13 +1456,73 @@ declaration closedness, its printed-text denotation under the shared C printer, 
 null-handle rejection, the accepted end-to-end execution over the constant-rate
 instance record (`execution`), and, under the same C floating-environment guard
 premises, the off-grid `fmi3Discard` path with logging suppressed and enabled
-(`discarded`). The lifecycle rejection (`lifecycle_behaviors`) is a companion
-theorem. -/
+(`discarded`). Both suppressed and enabled lifecycle rejection are part of the
+consumable contract. -/
 
 section
 open CTree.Printer
 variable [static : StaticLiterals]
 private local instance contractInterface : CInterface := cInterface static.addresses
+
+/-- Complete disallowed-state behavior when rejection logging is suppressed. -/
+def LifecycleSuppressed : Prop :=
+  ∀ {E} (program : CCalls.Events.Program E) (_types : StepEntry.Types) (heap : Heap)
+    (p message : Address) (logger : Option Address) (kind : Kind) (mode : Mode)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs),
+    program.internal.definitions "fmi3DoStep" = some (.tree function) →
+    program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+    static.addresses ErrorCalls.rejectionMessage = some message →
+    load heap (p.member "kind") = some (.integer kind.code) →
+    heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
+    load heap (p.member "logger") = some (.pointer logger) →
+    load heap (p.member "logging") = some (.integer 0) →
+    ¬ Reference.Allowed .doStep kind mode → ∀ behavior,
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩
+
+/-- Complete disallowed-state behavior when the failure helper invokes a logger. -/
+def LifecycleLogged : Prop :=
+  ∀ {E} (program : CCalls.Events.Program E) (_types : StepEntry.Types) (heap : Heap)
+    (p message category logger : Address) (environment : Option Address)
+    (kind : Kind) (mode : Mode) (name : String) (foreign : CCalls.Events.External E)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs),
+    program.internal.definitions "fmi3DoStep" = some (.tree function) →
+    program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+    static.addresses ErrorCalls.rejectionMessage = some message →
+    static.addresses "logStatus" = some category →
+    program.addresses logger = some name →
+    program.externals name = some foreign →
+    foreign.signature = Logging.signature name →
+    load heap (p.member "kind") = some (.integer kind.code) →
+    heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
+    load heap (p.member "logger") = some (.pointer (some logger)) →
+    load heap (p.member "logging") = some (.integer 1) →
+    load heap (p.member "environment") = some (.pointer environment) →
+    ¬ Reference.Allowed .doStep kind mode → ∀ behavior,
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      (∃ events value after, foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value after ∧
+        behavior = .terminates events ⟨.integer 3, after⟩) ∨
+      ((∀ events value after, ¬ foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value after) ∧ behavior = .wrong [])
+
+/-- Complete disallowed-state behavior when no logger is installed. -/
+def LifecycleMissing : Prop :=
+  ∀ {E} (program : CCalls.Events.Program E) (_types : StepEntry.Types) (heap : Heap)
+    (p message : Address) (kind : Kind) (mode : Mode)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs),
+    program.internal.definitions "fmi3DoStep" = some (.tree function) →
+    program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+    static.addresses ErrorCalls.rejectionMessage = some message →
+    load heap (p.member "kind") = some (.integer kind.code) →
+    heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
+    load heap (p.member "logger") = some (.pointer none) →
+    ¬ Reference.Allowed .doStep kind mode → ∀ behavior,
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩
 
 /-- The constant-rate `fmi3DoStep` function contract, parameterized on the C
 floating-environment header its accepted and discard paths run under. -/
@@ -1339,8 +1536,16 @@ structure Contract (header : CFenv.Header) (text : String) : Prop where
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling "fmi3DoStep" (StepEntry.arguments none point step flag outputs) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩
+  lifecycleSilent : LifecycleSuppressed
+  lifecycleLogged : LifecycleLogged
+  lifecycleMissing : LifecycleMissing
   execution : ExecutionFree header
   discarded : DiscardSuppressed header ∧ DiscardLogged header
+  inputRejected : StepArguments.InputRejectionContract function
+  outputsRejected : StepArguments.OutputRejectionContract function
+  roundingRejected : StepFailures.RoundingRejectionContract function
+  stopRejected : StepFailures.StopRejectionContract function
+  discardRejected : StepDiscard.DiscardRejectionContract function
 
 theorem contract (header : CFenv.Header) : Contract header function.render where
   printed := rfl
@@ -1348,8 +1553,30 @@ theorem contract (header : CFenv.Header) : Contract header function.render where
   denotes := function_denotes
   rejected program types heap point step flag outputs defined :=
     null_behaviors program types heap point step flag outputs defined
+  lifecycleSilent := by
+    intro E program types heap p message logger kind mode point step flag outputs
+      defined helper messageBound hk hm hl hg rejected behavior
+    exact lifecycle_behaviors program types heap p message logger kind mode
+      point step flag outputs defined helper messageBound hk hm hl hg rejected behavior
+  lifecycleLogged := by
+    intro E program types heap p message category logger environment kind mode name foreign
+      point step flag outputs defined helper messageBound categoryBound address external
+      prototype hk hm hl hg he rejected behavior
+    exact lifecycle_logged_behaviors program types heap p message category logger environment
+      kind mode name foreign point step flag outputs defined helper messageBound categoryBound
+      address external prototype hk hm hl hg he rejected behavior
+  lifecycleMissing := by
+    intro E program types heap p message kind mode point step flag outputs
+      defined helper messageBound hk hm hl rejected behavior
+    exact lifecycle_missing_behaviors program types heap p message kind mode
+      point step flag outputs defined helper messageBound hk hm hl rejected behavior
   execution := execution_free header
   discarded := ⟨discard_suppressed_behaviors header, discard_logged_behaviors header⟩
+  inputRejected := input_rejection_contract
+  outputsRejected := output_rejection_contract
+  roundingRejected := rounding_rejection_contract
+  stopRejected := stop_rejection_contract
+  discardRejected := discard_rejection_contract
 
 end
 

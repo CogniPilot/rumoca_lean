@@ -304,6 +304,24 @@ theorem helpers_bound (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mode
   simp only [helpers, List.mem_cons, List.not_mem_nil, or_false] at member
   rcases member with rfl | rfl | rfl <;> rfl
 
+/-- The exact public DoStep signature selects the proved tensor body in this
+same adapter definition table. The header-list membership is a premise. -/
+theorem doStep_bound (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
+    (signatures : List Signature)
+    (unique : ((functions model m signatures).map (fun fn => fn.signature.name)).Nodup)
+    (step : StepEntry.signature ∈ signatures) :
+    (program model m signatures).definitions "fmi3DoStep" =
+      some (.tree (TensorDoStep.function shape m.hasOutput)) := by
+  exact function_bound model m signatures unique StepEntry.signature step
+
+/-- The very same selected DoStep tree is a fragment of the rendered adapter. -/
+theorem doStep_fragment (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
+    (signatures : List Signature) (step : StepEntry.signature ∈ signatures) :
+    ∃ before after : String,
+      render model m signatures =
+        before ++ (TensorDoStep.function shape m.hasOutput).render ++ after := by
+  exact rendered_member model m signatures StepEntry.signature step
+
 def prepare (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (signatures : List Signature) :
     Option (Pool (LiteralPreparation.excluded ++ (functions model m signatures).flatMap functionNames)) :=

@@ -55,7 +55,8 @@ def out (name : String) (e : Expr) := Stmt.assign (.deref (v name)) e
 def branch (c : Expr) (yes : List Stmt) (no : List Stmt := []) := Stmt.branch c yes no
 def fail (message : String) := ret (call "fail" [v "m", .str message])
 def reject (c : Expr) (message : String) := branch c [fail message]
-def log (status : String) (message : Expr) := branch (both (field "logger") (field "logging"))
+def log (status : String) (message : Expr) :=
+  branch (both (nev (field "logger") Expr.nullPointer) (field "logging"))
   [.eval (.call (field "logger") [field "environment", v status, .str "logStatus", message])]
 def finite (e : Expr) := call "isfinite" [e]
 def mode (m : Mode) := n m.code

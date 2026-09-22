@@ -5,3 +5,8 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.CTensor.Lowering.emit_correct
 #audit axioms Rumoca.CTensor.Lowering.emit_refines
+
+#audit axioms Rumoca.CTensor.Lowering.Setup.restrict
+#audit axioms Rumoca.CTensor.Lowering.SetupFor.weaken
+#audit axioms Rumoca.CTensor.Lowering.emit_correct_for
+#audit axioms Rumoca.CTensor.Lowering.emit_refines_for

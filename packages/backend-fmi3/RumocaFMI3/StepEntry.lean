@@ -1,4 +1,5 @@
 import RumocaFMI3.StepGuards
+import RumocaC.BodySuffix
 import RumocaFMI3.BodyEmbedding
 import RumocaFMI3.HistoryBodies
 
@@ -258,6 +259,62 @@ theorem output_instance (heap : Heap) (buffers : Buffers) (time : Binary64.Value
   exact output_frame heap buffers time query (outside _ event) (outside _ terminate)
     (outside _ early) (outside _ last)
 
+/-- The shared nine-step input prefix is independent of the later numerical code. -/
+theorem prefix_run_suffix (types : Types) (env : Locals)
+    (heap : Heap) (p : Address) (buffers : Buffers) (point step : BitVec 64) (time : Binary64.Value)
+    (oldOutput : Option Value)
+    (handle : env "instance" = some (.pointer (some p))) (fresh : env "m" = none)
+    (kindValue : load heap (p.member "kind") = some (.integer 1))
+    (modeValue : load heap (p.member "mode") = some (.integer 4))
+    (pointValue : env "currentCommunicationPoint" = some (.float64 point))
+    (stepValue : env "communicationStepSize" = some (.float64 step))
+    (eventValue : env "eventHandlingNeeded" = some (.pointer (some buffers.event)))
+    (terminateValue : env "terminateSimulation" = some (.pointer (some buffers.terminate)))
+    (earlyValue : env "earlyReturn" = some (.pointer (some buffers.early)))
+    (lastValue : env "lastSuccessfulTime" = some (.pointer (some buffers.last)))
+    (clock : load heap (p.member "time") = some (.finite time))
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, oldOutput⟩)
+    (outsideEvent : buffers.event.block ≠ p.block) (outsideTerminate : buffers.terminate.block ≠ p.block)
+    (outsideEarly : buffers.early.block ≠ p.block) (outsideLast : buffers.last.block ≠ p.block) :
+    ∀ tail : List Stmt,
+    run 9 (.running ((Runtime.require .doStep ++ outputCode ++ [inputGuard]) ++ tail) env heap) =
+      some (.running ((if InputsValid point step time then [] else [Runtime.fail
+        "Invalid communication point or step size"]) ++ tail) (locals env p) (outputHeap heap buffers time)) := by
+  have entered := lifecycle_run types env heap p .cs .step
+    (outputCode ++ [inputGuard]) handle fresh kindValue modeValue
+  simp only [allowed, permittedModes] at entered
+  have setup := outputs_run (locals env p) heap p buffers time oldOutput
+    [inputGuard] (by simp [locals, CBody.bind])
+    (by simpa [locals, CBody.bind] using eventValue)
+    (by simpa [locals, CBody.bind] using terminateValue)
+    (by simpa [locals, CBody.bind] using earlyValue)
+    (by simpa [locals, CBody.bind] using lastValue) clock event terminate early last
+    outsideEvent outsideTerminate outsideEarly
+  have clockAfter : load (outputHeap heap buffers time) (p.member "time") = some (.finite time) := by
+    simpa only [load, output_instance heap buffers time p (p.member "time")
+      outsideEvent outsideTerminate outsideEarly outsideLast rfl] using clock
+  have condition := input_condition_all (locals env p) (outputHeap heap buffers time) p point step time
+    (by simp [locals, CBody.bind]) (by simpa [locals, CBody.bind] using pointValue)
+    (by simpa [locals, CBody.bind] using stepValue) clockAfter
+  have checked : run 1 (.running [inputGuard] (locals env p) (outputHeap heap buffers time)) =
+      some (.running (if InputsValid point step time then [] else [Runtime.fail
+        "Invalid communication point or step size"]) (locals env p) (outputHeap heap buffers time)) := by
+    by_cases valid : InputsValid point step time <;>
+      simp [run, next, inputGuard, Runtime.reject, Runtime.branch, condition,
+        valid, boolean, Value.truth]
+  have isolated : run 9 (.running (Runtime.require .doStep ++ outputCode ++ [inputGuard]) env heap) =
+      some (.running (if InputsValid point step time then [] else [Runtime.fail
+        "Invalid communication point or step size"]) (locals env p) (outputHeap heap buffers time)) := by
+    rw [List.append_assoc, show 9 = 3 + 6 from rfl, run_add, entered]
+    change run 6 (.running (outputCode ++ [inputGuard]) (locals env p) heap) = _
+    rw [show 6 = 5 + 1 from rfl, run_add, setup]
+    exact checked
+  intro tail
+  exact run_running_suffix 9 _ _ tail _ _ _ _ isolated
+
 def inputDestination (point step : BitVec 64) (time : Binary64.Value) : List Stmt :=
   (if InputsValid point step time then [] else
     [Runtime.fail "Invalid communication point or step size"]) ++ Runtime.doStep.drop 9
@@ -285,35 +342,10 @@ theorem prefix_run (types : Types) (model : Solve.FMI3Model source) (env : Local
     (outsideEarly : buffers.early.block ≠ p.block) (outsideLast : buffers.last.block ≠ p.block) :
     run 9 (.running (Runtime.body model signature) env heap) =
       some (.running (inputDestination point step time) (locals env p) (outputHeap heap buffers time)) := by
-  have entered := lifecycle_run types env heap p .cs .step
-    (outputCode ++ inputGuard :: Runtime.doStep.drop 9) handle fresh kindValue modeValue
-  simp only [allowed, permittedModes] at entered
-  have setup := outputs_run (locals env p) heap p buffers time oldOutput
-    (inputGuard :: Runtime.doStep.drop 9) (by simp [locals, CBody.bind])
-    (by simpa [locals, CBody.bind] using eventValue)
-    (by simpa [locals, CBody.bind] using terminateValue)
-    (by simpa [locals, CBody.bind] using earlyValue)
-    (by simpa [locals, CBody.bind] using lastValue) clock event terminate early last
-    outsideEvent outsideTerminate outsideEarly
-  have clockAfter : load (outputHeap heap buffers time) (p.member "time") = some (.finite time) := by
-    simpa only [load, output_instance heap buffers time p (p.member "time")
-      outsideEvent outsideTerminate outsideEarly outsideLast rfl] using clock
-  have condition := input_condition_all (locals env p) (outputHeap heap buffers time) p point step time
-    (by simp [locals, CBody.bind]) (by simpa [locals, CBody.bind] using pointValue)
-    (by simpa [locals, CBody.bind] using stepValue) clockAfter
-  have checked : run 1 (.running (inputGuard :: Runtime.doStep.drop 9) (locals env p)
-      (outputHeap heap buffers time)) =
-      some (.running (inputDestination point step time) (locals env p) (outputHeap heap buffers time)) := by
-    by_cases valid : InputsValid point step time <;>
-      simp [run, next, inputGuard, Runtime.reject, Runtime.branch, condition,
-        inputDestination, valid, boolean, Value.truth]
-  have remaining : run 6 (.running (outputCode ++ inputGuard :: Runtime.doStep.drop 9)
-      (locals env p) heap) =
-      some (.running (inputDestination point step time) (locals env p) (outputHeap heap buffers time)) := by
-    rw [show 6 = 5 + 1 from rfl, run_add, setup]
-    exact checked
-  rw [body, List.append_assoc, show 9 = 3 + 6 from rfl, run_add, entered]
-  exact remaining
+  simpa only [body, inputDestination, List.append_assoc, List.singleton_append] using
+    prefix_run_suffix types env heap p buffers point step time oldOutput handle fresh kindValue modeValue
+      pointValue stepValue eventValue terminateValue earlyValue lastValue clock event terminate early last
+      outsideEvent outsideTerminate outsideEarly outsideLast (Runtime.doStep.drop 9)
 
 /-- Execute the public prefix through output initialization and source-independent
 input admission. All later state/clock premises come from the original heap. -/

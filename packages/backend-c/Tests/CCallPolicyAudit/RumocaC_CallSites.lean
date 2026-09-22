@@ -16,3 +16,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CCallSites.reaches_ready
 #audit axioms Rumoca.CCallSites.ready_withHeap
 #audit axioms Rumoca.CCallSites.resume_ready
+
+#audit axioms Rumoca.CCallSites.admits_mono

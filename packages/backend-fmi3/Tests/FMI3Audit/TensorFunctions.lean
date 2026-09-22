@@ -15,6 +15,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorFunctions.function_bound
 #audit axioms Rumoca.FMI3.TensorFunctions.program_covered
 #audit axioms Rumoca.FMI3.TensorFunctions.helpers_bound
+#audit axioms Rumoca.FMI3.TensorFunctions.doStep_bound
+#audit axioms Rumoca.FMI3.TensorFunctions.doStep_fragment
 #audit axioms Rumoca.FMI3.TensorFunctions.header_fresh
 #audit axioms Rumoca.FMI3.TensorFunctions.text_bound
 #audit axioms Rumoca.FMI3.TensorFunctions.pool_complete

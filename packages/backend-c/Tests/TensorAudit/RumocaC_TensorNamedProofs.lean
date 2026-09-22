@@ -9,3 +9,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CTensor.Lowering.Named.diagonal_matches
 #audit axioms Rumoca.CTensor.Lowering.Named.artifact_correct
 #audit axioms Rumoca.CTensor.Lowering.Named.diagonal_artifact_correct
+
+#audit axioms Rumoca.CTensor.Lowering.Named.artifact_correct_for
+#audit axioms Rumoca.CTensor.Lowering.Named.diagonal_artifact_correct_for

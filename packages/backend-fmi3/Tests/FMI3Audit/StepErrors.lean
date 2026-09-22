@@ -7,3 +7,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StepErrors.lifecycle_prefix
 #audit axioms Rumoca.FMI3.StepErrors.lifecycle_suppressed
 #audit axioms Rumoca.FMI3.StepErrors.types
+
+#audit axioms Rumoca.FMI3.StepErrors.lifecycle_prefix_for_tail

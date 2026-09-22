@@ -23,3 +23,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StaticErrors.prefix_suppressed_behaviors
 #audit axioms Rumoca.FMI3.StaticErrors.path_suppressed_behaviors
 #audit axioms Rumoca.FMI3.StaticErrors.path_all_behaviors
+#audit axioms Rumoca.FMI3.StaticErrors.helper_missing_reaches
+#audit axioms Rumoca.FMI3.StaticErrors.statement_missing_behaviors
+#audit axioms Rumoca.FMI3.StaticErrors.prefix_missing_behaviors
+#audit axioms Rumoca.FMI3.StaticErrors.path_missing_behaviors

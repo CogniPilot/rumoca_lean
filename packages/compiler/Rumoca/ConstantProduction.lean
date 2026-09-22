@@ -249,7 +249,7 @@ theorem constantSourceBuild_correct (a : ConstantArtifact input)
     (by
       obtain ⟨src, w, _, contractFn⟩ := adapter'
       letI : FMI3.StaticLiterals := ⟨fun _ => none⟩
-      obtain ⟨sigs, _, renderEq, covered, _⟩ := contractFn
+      obtain ⟨sigs, _, renderEq, _step, _poolReady, _prepared, _defined, _helper, _fragment, covered, _⟩ := contractFn
       exact ⟨src, w, sigs, renderEq,
         FMI3.ConstantCallPolicy.constant_no_heap w a.constantModel sigs,
         FMI3.ConstantCallPolicy.constant_acyclic w a.constantModel sigs covered⟩),

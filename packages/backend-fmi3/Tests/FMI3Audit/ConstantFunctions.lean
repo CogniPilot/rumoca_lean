@@ -15,6 +15,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConstantFunctions.function_bound
 #audit axioms Rumoca.FMI3.ConstantFunctions.program_covered
 #audit axioms Rumoca.FMI3.ConstantFunctions.helpers_bound
+#audit axioms Rumoca.FMI3.ConstantFunctions.doStep_bound
+#audit axioms Rumoca.FMI3.ConstantFunctions.doStep_fragment
 #audit axioms Rumoca.FMI3.ConstantFunctions.helpers_subset
 #audit axioms Rumoca.FMI3.ConstantFunctions.header_fresh
 #audit axioms Rumoca.FMI3.ConstantFunctions.text_bound

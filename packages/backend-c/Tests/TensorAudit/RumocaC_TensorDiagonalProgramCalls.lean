@@ -5,3 +5,6 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.CTensor.Lowering.diagonal_call_reaches
 #audit axioms Rumoca.CTensor.Lowering.diagonal_call_refines
+
+#audit axioms Rumoca.CTensor.Lowering.diagonal_call_reaches_for
+#audit axioms Rumoca.CTensor.Lowering.diagonal_call_refines_for

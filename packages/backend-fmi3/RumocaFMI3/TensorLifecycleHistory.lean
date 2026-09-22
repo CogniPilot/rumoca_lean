@@ -411,7 +411,7 @@ theorem lifecycle_cs_step (shape : Tensor.Shape) (types : StepEntry.Types) (head
     rw [← coherent]
     exact LifecycleBodies.write_mode (writeMode H0 (TensorInstance.record pool i) .initialization)
       (TensorInstance.record pool i) .step
-  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, _lastFinal, _othersFinal, stepBehaviors⟩ :=
+  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, _lastFinal, _othersFinal, _successFinal, stepBehaviors⟩ :=
     TensorDoStep.accepted_behaviors program shape types header TensorDoStep.cInterface_fenv macroBound
       definitions linked library found stepHeap pool i buffers
       point step flag stop oldOutput initial input results sums times count bounded matched rounding floorBound

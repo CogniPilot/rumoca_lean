@@ -46,14 +46,16 @@ def certify (adapter : String) (sigs : List CTree.Signature) (actualChars : Iden
           (ConstantFunctions.rates Rumoca.constantRatesModel)
     preambleTerm := preambleTerm
     dischargeContract := fun ctx => do
-      let ⟨contract, rendered, signatures, sigTerms, witnessModel, mTerm, actualChars⟩ := ctx
+      let ⟨contract, rendered, signatures, sigTerms, witnessModel, mTerm, actualChars, poolReady⟩ := ctx
       elabCommand (← `(command|
         theorem $contract:ident : ∀ [FMI3.StaticLiterals],
             FMI3.ConstantAdapter.Contract $witnessModel $mTerm (String.ofList $actualChars) := by
           intro static
           rw [← $rendered:ident]
-          refine FMI3.ConstantAdapter.render_contract $witnessModel $mTerm $signatures ?_ ?_ ?_ ?_
+          refine FMI3.ConstantAdapter.render_contract $witnessModel $mTerm $signatures ?_ ?_ ?_ ?_ ?_ ?_
           · rw [FMI3.ConstantFunctions.functions_names]; decide +kernel
+          · change FMI3.StepEntry.signature ∈ [$sigTerms,*]
+            simp [FMI3.StepEntry.signature]
           · change FMI3.PublicAPI.Covered [$sigTerms,*]
             fmi_public_coverage
           · intro ty write
@@ -61,7 +63,8 @@ def certify (adapter : String) (sigs : List CTree.Signature) (actualChars : Iden
             all_goals simp [FMI3.AbsentVariables.signature, FMI3.AbsentVariables.VariableType.name,
               FMI3.AbsentVariables.VariableType.hasSizes]
           · change ∀ sig ∈ FMI3.CapabilityRejection.signatures, sig ∈ [$sigTerms,*]
-            simp [FMI3.CapabilityRejection.signatures]))
+            simp [FMI3.CapabilityRejection.signatures]
+          · exact $poolReady:ident))
   } adapter sigs actualChars
 
 end Rumoca.ConstantFMI3AdapterCertificate

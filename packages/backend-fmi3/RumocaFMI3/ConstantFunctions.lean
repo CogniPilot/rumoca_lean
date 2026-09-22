@@ -268,6 +268,24 @@ theorem helpers_bound (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Mo
   simp only [helpers, TensorFunctions.helpers, List.mem_cons, List.not_mem_nil, or_false] at member
   rcases member with rfl | rfl | rfl <;> rfl
 
+/-- The exact public DoStep signature selects the proved constant-rate body in
+this adapter definition table. The header-list membership is a premise. -/
+theorem doStep_bound (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
+    (signatures : List Signature)
+    (unique : ((functions model m signatures).map (fun fn => fn.signature.name)).Nodup)
+    (step : StepEntry.signature ∈ signatures) :
+    (program model m signatures).definitions "fmi3DoStep" =
+      some (.tree ConstantDoStep.function) := by
+  exact function_bound model m signatures unique StepEntry.signature step
+
+/-- The very same selected DoStep tree is a fragment of the rendered adapter. -/
+theorem doStep_fragment (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
+    (signatures : List Signature) (step : StepEntry.signature ∈ signatures) :
+    ∃ before after : String,
+      render model m signatures =
+        before ++ ConstantDoStep.function.render ++ after := by
+  exact rendered_member model m signatures StepEntry.signature step
+
 def prepare (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (signatures : List Signature) :
     Option (Pool (LiteralPreparation.excluded ++ (functions model m signatures).flatMap functionNames)) :=

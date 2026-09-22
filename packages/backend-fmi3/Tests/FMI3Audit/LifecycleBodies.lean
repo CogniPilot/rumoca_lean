@@ -11,3 +11,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.LifecycleBodies.failure_mode_run
 #audit axioms Rumoca.FMI3.LifecycleBodies.terminate_run
 #audit axioms Rumoca.FMI3.LifecycleBodies.terminate_correct
+
+#audit axioms Rumoca.FMI3.LifecycleBodies.writeMode_readonly

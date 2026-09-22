@@ -10,24 +10,29 @@ import RumocaC.TensorCode
 import RumocaC.TensorFillCode
 import RumocaC.TensorDiagonalCode
 import RumocaC.TensorSquareDiagonal
-import TensorCChecks.IVPEntry
+import RumocaC.TensorSquareIVPEntry
+import RumocaC.TensorSquareClosedCalls
+import RumocaFMI3.TensorNumericalEvents
+import RumocaFMI3.PreparedTensorLinkedContract
+import RumocaFMI3.TensorAcceptedRuntime
 
-/-! Development tensor artifact and its composed source-to-build contract. This
+/-! Tensor artifact and its composed source-to-build contract. This
 mirrors the scalar `Artifact`/`FMI3.SourceBuildContract` shape for the pointwise
 tensor profile: it parses the array profile, prepares the executable pointwise
 kernel, and carries the certified tensor kernel C text, the rendered tensor
 adapter, the tensor model description and the shared build description.
 
-This path is deliberately kept out of the CLI's production admission: the
-default compiler still rejects the array profile. Tensor rank and extents stay
-symbolic in the shape parameter; the pointwise problem is the one owner of the
-executable kernel. -/
+The CLI delegates the admitted array/tensor profile to this compiler path.
+Publication still requires the relevant fixed actual-artifact certificate;
+successful parsing alone does not authorize a new source case. Tensor rank and
+extents stay symbolic in the shape parameter; the pointwise problem is the one
+owner of the executable kernel. -/
 namespace Rumoca
 
 open _root_.Parser
 open Rumoca.Solve Rumoca.FMI3
 
-/-- A development tensor artifact: the located array parse together with its
+/-- A tensor artifact: the located array parse together with its
 prepared pointwise kernel. Source provenance and the lowering chain cannot be
 absent or supplied by reparsing. -/
 structure TensorArtifact (input : Source.InputRef) where
@@ -59,8 +64,9 @@ def scalarInput (a : TensorArtifact input) : Source.InputRef :=
 
 end TensorArtifact
 
-/-- Parse the array profile and prepare its pointwise kernel. This entry is not
-called by the CLI's default admission path. -/
+/-- Parse the array profile and prepare its pointwise kernel. The CLI calls this
+after the unit profile rejects; publication additionally requires its fixed
+actual-artifact certificate. -/
 def compileTensor (input : Source.InputRef) :
     Except (Source.Diagnostic input.source) (TensorArtifact input) := do
   let prepared ← ArrayCompiler.prepare input.source
@@ -185,6 +191,28 @@ def pieces : List String :=
 /-- The certified private-kernel `model.c` text. -/
 def modelC : String := String.join pieces
 
+/-- The existing rendered fragments are exactly the numerical execution table,
+in the same order; no helper is inserted by a linkage certificate. -/
+theorem pieces_functions :
+    pieces = "#include <stddef.h>\n" :: functions.map CTree.Function.render := rfl
+
+theorem square_ivp : Rumoca.squareModel.ivp =
+    CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape :=
+  ArrayProfile.Solved.lower_eq_squareIVP
+    (ArrayProfile.DAE.lower (ArrayProfile.Flat.lower squareAst squareAst_resolved)) rfl rfl rfl
+
+/-- Source compilation supplies the very Solve index consumed by the C plan. -/
+theorem compiled_ivp (a : TensorArtifact input)
+    (parsed : a.prepared.parsed.parsed.ast = squareAst) :
+    a.tensorModel.ivp = CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape := by
+  rw [a.tensorModel_square parsed]
+  exact square_ivp
+
+/-- Bind independently read numerical bytes to that same function table. -/
+theorem actual_functions (actual : String) (checked : actual = modelC) :
+    actual = String.join ("#include <stddef.h>\n" :: functions.map CTree.Function.render) := by
+  rw [checked, modelC, pieces_functions]
+
 private theorem piece_chunks (ps : List String) (chunks : List (List Char))
     (matched : List.Forall₂ (fun s chars => s.toList = chars) ps chunks) :
     ps.flatMap (fun s => s.toList) = chunks.flatten := by
@@ -202,6 +230,59 @@ theorem chars (chunks : List (List Char)) (actual : List Char)
 
 end TensorKernel
 
+noncomputable section
+open CTree CMemory
+
+structure TensorNumericalLinkage (a : TensorArtifact input) (numerical adapter : String) : Prop where
+  /-- The compiler-owned Solve value is the exact index of the emitted plan. -/
+  ivp : a.tensorModel.ivp = CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape
+  /-- The actual numerical bytes use precisely the execution table's trees. -/
+  bytes : numerical = String.join ("#include <stddef.h>\n" :: TensorKernel.functions.map Function.render)
+  /-- Storage and finite-execution premises remain, but library/lookup premises do not. -/
+  calls : ∀ shape, TensorKernel.ClosedIVPCalls shape
+  /-- One signature witness owns the rendered adapter, prepared literal pool,
+  numerical extension, prepared rejection calls and concrete accepted execution. -/
+  adapterTable : ∃ (source : AST.Model) (model : Solve.FMI3Model source), source.name = a.name ∧
+    ∀ [FMI3.StaticLiterals], ∃ sigs : List Signature,
+      ((FMI3.TensorFunctions.functions model a.tensorModel sigs).map (fun fn => fn.signature.name)).Nodup ∧
+      FMI3.TensorFunctions.render model a.tensorModel sigs = adapter ∧
+      FMI3.StepEntry.signature ∈ sigs ∧
+      (FMI3.TensorFunctions.prepare model a.tensorModel sigs).isSome = true ∧
+      CCalls.Typed.Extends TensorKernel.definitions (FMI3.TensorFunctions.squareLinkedProgram model a.tensorModel sigs) ∧
+      FMI3.PreparedStep.TensorContractFor model a.tensorModel sigs
+        (FMI3.TensorFunctions.squareLinkedProgram model a.tensorModel sigs) ∧
+      TensorKernel.RuntimeTransfer (FMI3.TensorFunctions.squareLinkedProgram model a.tensorModel sigs) ∧
+      FMI3.TensorAcceptedRuntime.Contract model a.tensorModel sigs
+
+theorem tensorNumericalLinkage_correct (a : TensorArtifact input) (numerical adapter : String)
+    (index : a.tensorModel.ivp = CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape)
+    (bytes : numerical = TensorKernel.modelC)
+    (adapterContract : ∃ (source : AST.Model) (model : Solve.FMI3Model source), source.name = a.name ∧
+      ∀ [FMI3.StaticLiterals], FMI3.TensorAdapter.Contract model a.tensorModel adapter) :
+    TensorNumericalLinkage a numerical adapter := by
+  refine ⟨index, TensorKernel.actual_functions numerical bytes, TensorKernel.ivp_closed, ?_⟩
+  obtain ⟨source, model, named, contracts⟩ := adapterContract
+  refine ⟨source, model, named, ?_⟩
+  intro static
+  obtain ⟨sigs, unique, rendered, step, poolReady, _prepared, _defined, _helper, _fragment, covered, _rest⟩ := contracts
+  have linked := FMI3.TensorFunctions.linked_numerical_covered model a.tensorModel sigs unique covered
+  exact ⟨sigs, unique, rendered, step, poolReady, linked,
+    FMI3.PreparedStep.tensor_linked_contract model a.tensorModel sigs step unique covered,
+    TensorKernel.runtime_transfer _ linked,
+    FMI3.TensorAcceptedRuntime.contract model a.tensorModel sigs step unique covered⟩
+
+/-- The existing actual-source checker already proves this AST identity. The
+new field additionally requires it to discharge the missing numerical index. -/
+theorem tensorNumericalLinkage_of_source (a : TensorArtifact input) (numerical adapter : String)
+    (parsed : a.prepared.parsed.parsed.ast = squareAst)
+    (bytes : numerical = TensorKernel.modelC)
+    (adapterContract : ∃ (source : AST.Model) (model : Solve.FMI3Model source), source.name = a.name ∧
+      ∀ [FMI3.StaticLiterals], FMI3.TensorAdapter.Contract model a.tensorModel adapter) :
+    TensorNumericalLinkage a numerical adapter :=
+  tensorNumericalLinkage_correct a numerical adapter (TensorKernel.compiled_ivp a parsed) bytes adapterContract
+
+end
+
 /-- The composed tensor source-to-build contract, mirroring
 `FMI3.SourceBuildContract` for the pointwise tensor profile. It bundles the
 certified tensor kernel C text and its pointwise IVP artifact contract, the
@@ -211,6 +292,9 @@ identifier and instantiation-token agreements, and the tensor model description
 XML document. -/
 structure TensorSourceBuildContract (a : TensorArtifact input)
     (modelC buildDescription adapter metadata : String) : Prop where
+  /-- Actual numerical bytes, compiled IVP, and the rendered adapter share one
+  tree-backed execution table, including prepared rejection calls. -/
+  numerical : TensorNumericalLinkage a modelC adapter
   /-- The actual private kernel is exactly the certified tensor kernel text. -/
   kernel : modelC = TensorKernel.modelC
   /-- The pointwise IVP sources (initial, derivative, Jacobian coefficients) and
@@ -247,6 +331,7 @@ structure TensorSourceBuildContract (a : TensorArtifact input)
 mirroring `FMI3.sourceBuild_correct`. -/
 theorem tensorSourceBuild_correct (a : TensorArtifact input)
     (modelC buildDescription adapter metadata : String)
+    (index : a.tensorModel.ivp = CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape)
     (kernel : modelC = TensorKernel.modelC)
     (kernelContract : CTensor.ProgramFixture.IVPEntry.ArtifactContract
       CTensor.ProgramFixture.IVPEntry.sources CTensor.ProgramFixture.IVPEntry.jacobianDiagSource)
@@ -259,11 +344,12 @@ theorem tensorSourceBuild_correct (a : TensorArtifact input)
       = some (FMI3.TensorMetadata.token a.tensorModel))
     (metadataDocument : XML.Document (FMI3.TensorMetadata.modelDescription a.tensorModel) metadata) :
     TensorSourceBuildContract a modelC buildDescription adapter metadata :=
-  ⟨kernel, kernelContract, build,
+  ⟨tensorNumericalLinkage_correct a modelC adapter index kernel adapter',
+    kernel, kernelContract, build,
     (by
       obtain ⟨src, w, _, contractFn⟩ := adapter'
       letI : FMI3.StaticLiterals := ⟨fun _ => none⟩
-      obtain ⟨sigs, _, renderEq, covered, _⟩ := contractFn
+      obtain ⟨sigs, _, renderEq, _step, _poolReady, _prepared, _defined, _helper, _fragment, covered, _⟩ := contractFn
       exact ⟨src, w, sigs, renderEq,
         FMI3.TensorCallPolicy.tensor_no_heap w a.tensorModel sigs,
         FMI3.TensorCallPolicy.tensor_acyclic w a.tensorModel sigs covered⟩),

@@ -12,3 +12,11 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StepDiscard.public_prefix
 #audit axioms Rumoca.FMI3.StepDiscard.call_suppressed
 #audit axioms Rumoca.FMI3.StepDiscard.call_logged
+#audit axioms Rumoca.FMI3.StepDiscard.missing_reaches
+#audit axioms Rumoca.FMI3.StepDiscard.missing_behaviors
+#audit axioms Rumoca.FMI3.StepDiscard.path_missing_behaviors
+#audit axioms Rumoca.FMI3.StepDiscard.nonprogress_prefix_for_tail
+#audit axioms Rumoca.FMI3.StepDiscard.path_suppressed_behaviors
+#audit axioms Rumoca.FMI3.StepDiscard.path_all_behaviors
+#audit axioms Rumoca.FMI3.StepDiscard.public_prefix_for_tail
+#audit axioms Rumoca.FMI3.StepDiscard.discard_rejection_contract

@@ -3,6 +3,7 @@
 -- so Lake elaborates them as independent parallel jobs while this
 -- aggregator keeps its check-library root name unchanged.
 import Tests.CAudit.RumocaC_AdditionResults
+import Tests.CAudit.RumocaC_BodySuffix
 import Tests.CAudit.RumocaC_Arithmetic
 import Tests.CAudit.RumocaC_ArrayStore
 import Tests.CAudit.RumocaC_AtomicBoolean
@@ -134,3 +135,5 @@ import Tests.CAudit.RumocaC_TypedMemory
 import Tests.CAudit.RumocaC_TypeSyntax
 import Tests.CAudit.RumocaC_Unsigned
 import Tests.CAudit.RumocaC_UnsignedMemory
+import Tests.CAudit.RumocaC_LiteralPoolContents
+import Tests.CAudit.RumocaC_TreeTable

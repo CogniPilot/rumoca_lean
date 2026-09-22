@@ -43,6 +43,31 @@ and storage satisfying the entry predicates, the typed machine reaches a
 returning state whose derivative buffer holds the finite tensor derivative
 result, under any saved caller. Cells outside the derivative output region are
 preserved. -/
+theorem reaches_for {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
+    (valid : plan.derivative.function.valid = true)
+    (definitions : CLoops.Calls.Definitions) (target : CCalls.Program)
+    (linked : CCalls.Typed.Extends definitions target) (library : LibraryFor p.derivative definitions)
+    (found : definitions plan.derivative.function.name = some plan.derivative.function.tree)
+    (args : Arguments.Values) (arguments : Arguments.Valid plan.derivative.function.parameters args)
+    (locations : Locations) (values : Env Binary64.Value [shape, shape]) (result : Values shape) (heap : Heap)
+    (bound : LayoutBound (Arguments.locals plan.derivative.function.parameters args) locations
+      (derivativeLayout p plan))
+    (represented : Represents locations (derivativeLayout p plan) heap values)
+    (ready : Ready (Arguments.locals plan.derivative.function.parameters args) locations
+      p.derivative (derivativePlan p plan) (derivativeLayout p plan) heap)
+    (executed : Finite.Executes p.derivative values result) (stack : CCalls.Typed.Continuation) :
+    ∃ finalHeap,
+      Reads finalHeap (derivativeBuffer p plan locations) result ∧
+      (∀ q, Outside locations p.derivative (derivativePlan p plan) q → finalHeap q = heap q) ∧
+      Transition.Reaches (CCalls.Typed.machine target).step
+        (.calling plan.derivative.function.name
+          (Arguments.values plan.derivative.function.parameters args) heap stack)
+        (.returning .void finalHeap stack) := by
+  obtain ⟨finalHeap, reads, _resultBound, frame, _writableResult, callResult⟩ :=
+    (plan.derivative.correct_for valid).2 definitions target linked library found args arguments
+      locations values result heap bound represented ready executed
+  exact ⟨finalHeap, reads, frame, callResult.1 stack⟩
+
 theorem reaches {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
     (valid : plan.derivative.function.valid = true)
     (definitions : CLoops.Calls.Definitions) (target : CCalls.Program)
@@ -62,15 +87,38 @@ theorem reaches {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : Po
       Transition.Reaches (CCalls.Typed.machine target).step
         (.calling plan.derivative.function.name
           (Arguments.values plan.derivative.function.parameters args) heap stack)
-        (.returning .void finalHeap stack) := by
-  obtain ⟨finalHeap, reads, _resultBound, frame, _writableResult, callResult⟩ :=
-    (plan.derivative.correct valid).2 definitions target linked library found args arguments
-      locations values result heap bound represented ready executed
-  exact ⟨finalHeap, reads, frame, callResult.1 stack⟩
-
+        (.returning .void finalHeap stack) :=
+  reaches_for p plan valid definitions target linked (library.restrict _) found args arguments locations values result heap bound represented ready executed stack
 /-- The typed machine behaves exactly with the terminating derivative behavior:
 its sole outcome writes the finite tensor derivative into the output buffer and
 preserves every cell outside that region. -/
+theorem behaviors_for {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
+    (valid : plan.derivative.function.valid = true)
+    (definitions : CLoops.Calls.Definitions) (target : CCalls.Program)
+    (linked : CCalls.Typed.Extends definitions target) (library : LibraryFor p.derivative definitions)
+    (found : definitions plan.derivative.function.name = some plan.derivative.function.tree)
+    (args : Arguments.Values) (arguments : Arguments.Valid plan.derivative.function.parameters args)
+    (locations : Locations) (values : Env Binary64.Value [shape, shape]) (result : Values shape) (heap : Heap)
+    (bound : LayoutBound (Arguments.locals plan.derivative.function.parameters args) locations
+      (derivativeLayout p plan))
+    (represented : Represents locations (derivativeLayout p plan) heap values)
+    (ready : Ready (Arguments.locals plan.derivative.function.parameters args) locations
+      p.derivative (derivativePlan p plan) (derivativeLayout p plan) heap)
+    (executed : Finite.Executes p.derivative values result) :
+    ∃ finalHeap,
+      Reads finalHeap (derivativeBuffer p plan locations) result ∧
+      (∀ q, Outside locations p.derivative (derivativePlan p plan) q → finalHeap q = heap q) ∧
+      (Writable heap (derivativeBuffer p plan locations) shape.volume →
+        Writable finalHeap (derivativeBuffer p plan locations) shape.volume) ∧
+      ∀ behavior, (CCalls.Typed.machine target).Behaves
+        (.calling plan.derivative.function.name
+          (Arguments.values plan.derivative.function.parameters args) heap .done) behavior ↔
+        behavior = .terminates ⟨.void, finalHeap⟩ := by
+  obtain ⟨finalHeap, reads, _resultBound, frame, writableResult, callResult⟩ :=
+    (plan.derivative.correct_for valid).2 definitions target linked library found args arguments
+      locations values result heap bound represented ready executed
+  exact ⟨finalHeap, reads, frame, writableResult, callResult.2⟩
+
 theorem behaviors {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
     (valid : plan.derivative.function.valid = true)
     (definitions : CLoops.Calls.Definitions) (target : CCalls.Program)
@@ -92,12 +140,8 @@ theorem behaviors {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : 
       ∀ behavior, (CCalls.Typed.machine target).Behaves
         (.calling plan.derivative.function.name
           (Arguments.values plan.derivative.function.parameters args) heap .done) behavior ↔
-        behavior = .terminates ⟨.void, finalHeap⟩ := by
-  obtain ⟨finalHeap, reads, _resultBound, frame, writableResult, callResult⟩ :=
-    (plan.derivative.correct valid).2 definitions target linked library found args arguments
-      locations values result heap bound represented ready executed
-  exact ⟨finalHeap, reads, frame, writableResult, callResult.2⟩
-
+        behavior = .terminates ⟨.void, finalHeap⟩ :=
+  behaviors_for p plan valid definitions target linked (library.restrict _) found args arguments locations values result heap bound represented ready executed
 /-- Observable-machine execution of the prepared tensor derivative entry. The
 entry runs in the void loop-call machine (`CLoops.Calls.machine`, the level of
 the tensor `CallCorrect`); its nested calls are the emitted tensor helper
@@ -105,6 +149,39 @@ functions, direct calls by identifier. Under the direct-resolution premise for
 the call sites the run visits (`resolves`), the transfer lemma
 `CCalls.Events.loop_call_reaches_events` embeds the same execution into the
 observable machine under any saved caller, reaching the identical final heap. -/
+theorem events_reaches_for {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
+    (valid : plan.derivative.function.valid = true)
+    (definitions : CLoops.Calls.Definitions) {E : Type} (program : CCalls.Events.Program E)
+    (linked : CCalls.Typed.Extends definitions program.internal) (library : LibraryFor p.derivative definitions)
+    (found : definitions plan.derivative.function.name = some plan.derivative.function.tree)
+    (args : Arguments.Values) (arguments : Arguments.Valid plan.derivative.function.parameters args)
+    (locations : Locations) (values : Env Binary64.Value [shape, shape]) (result : Values shape) (heap : Heap)
+    (bound : LayoutBound (Arguments.locals plan.derivative.function.parameters args) locations
+      (derivativeLayout p plan))
+    (represented : Represents locations (derivativeLayout p plan) heap values)
+    (ready : Ready (Arguments.locals plan.derivative.function.parameters args) locations
+      p.derivative (derivativePlan p plan) (derivativeLayout p plan) heap)
+    (executed : Finite.Executes p.derivative values result)
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling plan.derivative.function.name
+        (Arguments.values plan.derivative.function.parameters args) heap .done) v →
+      CCalls.Events.Resolves program v)
+    (stack : CCalls.Typed.Continuation) :
+    ∃ finalHeap,
+      Reads finalHeap (derivativeBuffer p plan locations) result ∧
+      (∀ q, Outside locations p.derivative (derivativePlan p plan) q → finalHeap q = heap q) ∧
+      (Writable heap (derivativeBuffer p plan locations) shape.volume →
+        Writable finalHeap (derivativeBuffer p plan locations) shape.volume) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling plan.derivative.function.name
+          (Arguments.values plan.derivative.function.parameters args) heap stack)
+        (.returning .void finalHeap stack) := by
+  obtain ⟨finalHeap, reads, _boundResult, frame, writableResult, behaviorIff⟩ :=
+    (plan.derivative.correct_for valid).1.2 definitions library found args arguments
+      locations values result heap bound represented ready executed
+  exact ⟨finalHeap, reads, frame, writableResult,
+    CCalls.Events.loop_call_reaches_events program definitions linked ((behaviorIff _).mpr rfl) resolves stack⟩
+
 theorem events_reaches {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
     (valid : plan.derivative.function.valid = true)
     (definitions : CLoops.Calls.Definitions) {E : Type} (program : CCalls.Events.Program E)
@@ -131,13 +208,8 @@ theorem events_reaches {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (pl
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
         (.calling plan.derivative.function.name
           (Arguments.values plan.derivative.function.parameters args) heap stack)
-        (.returning .void finalHeap stack) := by
-  obtain ⟨finalHeap, reads, _boundResult, frame, writableResult, behaviorIff⟩ :=
-    (plan.derivative.correct valid).1.2 definitions library found args arguments
-      locations values result heap bound represented ready executed
-  exact ⟨finalHeap, reads, frame, writableResult,
-    CCalls.Events.loop_call_reaches_events program definitions linked ((behaviorIff _).mpr rfl) resolves stack⟩
-
+        (.returning .void finalHeap stack) :=
+  events_reaches_for p plan valid definitions program linked (library.restrict _) found args arguments locations values result heap bound represented ready executed resolves stack
 end Rumoca.FMI3.TensorModelRhs
 
 noncomputable section
@@ -149,6 +221,30 @@ behavior. This mirrors the scalar `ModelRhs.FunctionContract` so a future tensor
 adapter contract can carry the tensor right-hand side unchanged. The execution
 field internalizes the C interface, keeping the contract independent of any
 particular address environment. -/
+structure FunctionContractFor {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape)
+    (plan : PointwisePlan p) (text : String) : Prop where
+  valid : plan.derivative.function.valid = true
+  printed : text = plan.derivative.function.tree.render
+  denotes : Rumoca.CTensor.Lowering.Syntax.Denotes text plan.derivative.function
+  execution : ∀ [CInterface] (definitions : CLoops.Calls.Definitions) (target : CCalls.Program),
+    CCalls.Typed.Extends definitions target → LibraryFor p.derivative definitions →
+    definitions plan.derivative.function.name = some plan.derivative.function.tree →
+    ∀ (args : Arguments.Values), Arguments.Valid plan.derivative.function.parameters args →
+    ∀ (locations : Locations) (values : Env Binary64.Value [shape, shape]) (result : Values shape) (heap : Heap),
+    LayoutBound (Arguments.locals plan.derivative.function.parameters args) locations
+      (derivativeLayout p plan) →
+    Represents locations (derivativeLayout p plan) heap values →
+    Ready (Arguments.locals plan.derivative.function.parameters args) locations
+      p.derivative (derivativePlan p plan) (derivativeLayout p plan) heap →
+    Finite.Executes p.derivative values result →
+    ∃ finalHeap,
+      Reads finalHeap (derivativeBuffer p plan locations) result ∧
+      (∀ q, Outside locations p.derivative (derivativePlan p plan) q → finalHeap q = heap q) ∧
+      ∀ behavior, (CCalls.Typed.machine target).Behaves
+        (.calling plan.derivative.function.name
+          (Arguments.values plan.derivative.function.parameters args) heap .done) behavior ↔
+        behavior = .terminates ⟨.void, finalHeap⟩
+
 structure FunctionContract {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape)
     (plan : PointwisePlan p) (text : String) : Prop where
   valid : plan.derivative.function.valid = true
@@ -175,16 +271,25 @@ structure FunctionContract {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape)
 
 /-- The rendered derivative function satisfies its contract whenever the entry's
 syntax is valid. -/
-theorem rendered_contract {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
+theorem rendered_contract_for {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
     (valid : plan.derivative.function.valid = true) :
-    FunctionContract p plan plan.derivative.function.tree.render := by
+    FunctionContractFor p plan plan.derivative.function.tree.render := by
   refine ⟨valid, rfl, ?_, ?_⟩
   · exact Rumoca.CTensor.Lowering.Syntax.render_denotes plan.derivative.function valid
   · intro interface definitions target linked library found args arguments locations values result heap
       bound represented ready executed
     obtain ⟨finalHeap, reads, frame, _writableResult, behaviorIff⟩ :=
-      behaviors p plan valid definitions target linked library found args arguments
+      behaviors_for p plan valid definitions target linked library found args arguments
         locations values result heap bound represented ready executed
     exact ⟨finalHeap, reads, frame, behaviorIff⟩
 
+theorem FunctionContractFor.to_full (h : FunctionContractFor p plan text) : FunctionContract p plan text := by
+  refine ⟨h.valid, h.printed, h.denotes, ?_⟩
+  intro interface definitions target linked library
+  exact h.execution definitions target linked (library.restrict p.derivative)
+
+theorem rendered_contract {shape : Tensor.Shape} (p : Solve.PointwiseIVP shape) (plan : PointwisePlan p)
+    (valid : plan.derivative.function.valid = true) :
+    FunctionContract p plan plan.derivative.function.tree.render :=
+  FunctionContractFor.to_full (rendered_contract_for p plan valid)
 end Rumoca.FMI3.TensorModelRhs

@@ -13,6 +13,37 @@ theorem types (context : ErrorContext literals) : @StepEntry.Types context.targe
   letI : CInterface := context.target
   refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_⟩ <;> rw [← context.types] <;> rfl
 
+/-- Reusable lifecycle rejection for every actual step body and checked error
+context. No buffer, clock, literal-address or numerical-tail premise is needed. -/
+theorem lifecycle_prefix_for_tail (context : ErrorContext literals)
+    (fn : Function) (tail : List Stmt)
+    (signature : fn.signature = StepEntry.signature)
+    (body : fn.body = Runtime.require .doStep ++ tail)
+    (closed : fn.body.all CBodyEmbedding.closedBlocks = true)
+    (heap : Heap) (p : Address) (point step : BitVec 64) (flag : Bool)
+    (outputs : StepEntry.Outputs) (kind : Kind) (mode : Mode)
+    (kindValue : load heap (p.member "kind") = some (.integer kind.code))
+    (modeValue : load heap (p.member "mode") = some (.integer mode.code))
+    (denied : ¬ Reference.Allowed .doStep kind mode) :
+    @GuardedCalls.FailurePrefix context.target fn
+      (StepEntry.arguments (some p) point step flag outputs) heap p ErrorCalls.rejectionMessage heap := by
+  letI : CInterface := context.target
+  let env := StepEntry.parameters (some p) point step flag outputs
+  let later := StepEntry.locals env p
+  have rejected : allowed .doStep kind mode = false :=
+    Bool.eq_false_iff.mpr (fun admitted => denied ((allowed_correct .doStep kind mode).mp admitted))
+  refine ⟨by rw [signature]; rfl, closed, env, later, tail, 3, ?_, ?_, ?_, ?_⟩
+  · rw [signature]
+    exact StepEntry.parameters_bound (StepErrors.types context) _ _ _ _ _
+  · have ran := StepEntry.lifecycle_run (StepErrors.types context) env heap p kind mode tail
+      (by simp [env, StepEntry.parameters, StepEntry.bindings, CBody.bind])
+      (by simp [env, StepEntry.parameters, StepEntry.bindings, CBody.bind]) kindValue modeValue
+    rw [body]
+    simpa only [rejected, Bool.false_eq_true, ↓reduceIte, List.singleton_append] using ran
+  · simp [later, StepEntry.locals, env, StepEntry.parameters, StepEntry.bindings, CBody.bind]
+  · simp [later, StepEntry.locals, CBody.bind, CBody.resolve]
+
+
 /-- Rejected lifecycle calls reach failure before touching any output buffer.
 Every raw numerical argument and nullable output pointer is covered. -/
 theorem lifecycle_prefix (context : ErrorContext literals) (model : Solve.FMI3Model source)
@@ -23,22 +54,11 @@ theorem lifecycle_prefix (context : ErrorContext literals) (model : Solve.FMI3Mo
     (denied : ¬ Reference.Allowed .doStep kind mode) :
     @GuardedCalls.FailurePrefix context.target (Runtime.function model StepEntry.signature)
       (StepEntry.arguments (some p) point step flag outputs) heap p ErrorCalls.rejectionMessage heap := by
-  letI : CInterface := context.target
-  let env := StepEntry.parameters (some p) point step flag outputs
-  let later := StepEntry.locals env p
-  let rest := StepEntry.outputCode ++ StepEntry.inputGuard :: Runtime.doStep.drop 9
-  have rejected : allowed .doStep kind mode = false :=
-    Bool.eq_false_iff.mpr (fun admitted => denied ((allowed_correct .doStep kind mode).mp admitted))
-  refine ⟨rfl, BodyEmbedding.body_closed model StepEntry.signature,
-    env, later, rest, 3, StepEntry.parameters_bound (types context) _ _ _ _ _, ?_, ?_, ?_⟩
-  · have ran := StepEntry.lifecycle_run (types context) env heap p kind mode rest
-      (by simp [env, StepEntry.parameters, StepEntry.bindings, CBody.bind])
-      (by simp [env, StepEntry.parameters, StepEntry.bindings, CBody.bind]) kindValue modeValue
-    change run 3 (.running (Runtime.body model StepEntry.signature) env heap) = _
-    rw [StepEntry.body, List.append_assoc]
-    simpa only [rejected, Bool.false_eq_true, ↓reduceIte, List.singleton_append] using ran
-  · simp [later, StepEntry.locals, env, StepEntry.parameters, StepEntry.bindings, CBody.bind]
-  · simp [later, StepEntry.locals, CBody.bind, resolve]
+  exact lifecycle_prefix_for_tail context (Runtime.function model StepEntry.signature)
+    (StepEntry.outputCode ++ StepEntry.inputGuard :: Runtime.doStep.drop 9) rfl
+    (by simpa only [List.append_assoc] using StepEntry.body model)
+    (BodyEmbedding.body_closed model StepEntry.signature)
+    heap p point step flag outputs kind mode kindValue modeValue denied
 
 theorem lifecycle_suppressed {E : Type} (context : ErrorContext literals) (model : Solve.FMI3Model source) :
     letI : CInterface := context.target

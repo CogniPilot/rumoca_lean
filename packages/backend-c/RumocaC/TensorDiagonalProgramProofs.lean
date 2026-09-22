@@ -7,11 +7,12 @@ open CTree CMemory CMemory.TensorView Solve.Tensor
 noncomputable section
 variable [interface : CInterface]
 
-theorem emitDiagonal_correct (locals : CBody.Locals) (types : CLoops.Types) (locations : Locations)
-    (definitions : CLoops.Calls.Definitions) (setup : Setup locals definitions)
+theorem emitDiagonal_correct_for (locals : CBody.Locals) (types : CLoops.Types) (locations : Locations)
+    (definitions : CLoops.Calls.Definitions) (p : DiagonalProgram Γ shape)
+    (setup : SetupFor p.coefficients locals definitions)
     (diagonalDefined : definitions Diagonal.function.signature.name = some Diagonal.function)
     (diagonalUnshadowed : locals Diagonal.function.signature.name = none)
-    (p : DiagonalProgram Γ shape) (plan : Plan p.coefficients) (layout : Layout Γ)
+    (plan : Plan p.coefficients) (layout : Layout Γ)
     (output : Buffer p.shape) (values : Env Binary64.Value Γ) (coefficients : Values shape) (heap : Heap)
     (bound : LayoutBound locals locations layout) (represented : Represents locations layout heap values)
     (ready : Ready locals locations p.coefficients plan layout heap)
@@ -26,8 +27,8 @@ theorem emitDiagonal_correct (locals : CBody.Locals) (types : CLoops.Types) (loc
       Reads finalHeap (locations (emit p.coefficients plan layout).result) coefficients ∧
       ∀ q, DiagonalOutside locations p plan output q → finalHeap q = heap q := by
   obtain ⟨domain, resultEq⟩ := Finite.executes_sound executed
-  obtain ⟨intermediate, produced, readResult, resultBound, frame, _⟩ := emit_correct locals types locations
-    definitions setup p.coefficients plan layout values heap bound represented ready domain
+  obtain ⟨intermediate, produced, readResult, resultBound, frame, _⟩ := emit_correct_for locals types locations
+    definitions p.coefficients setup plan layout values heap bound represented ready domain
     (Diagonal.invoke (emit p.coefficients plan layout).result.pointer output.pointer
       (emit p.coefficients plan layout).result.count output.count :: rest) stack
   have readCoefficients : Reads intermediate (locations (emit p.coefficients plan layout).result) coefficients := by
@@ -54,6 +55,28 @@ theorem emitDiagonal_correct (locals : CBody.Locals) (types : CLoops.Types) (loc
     simpa only [load, unchanged] using readCoefficients i
   · intro q outside
     exact (Diagonal.result_frame intermediate (locations output) coefficients q outside.2).trans (frame q outside.1)
+
+theorem emitDiagonal_correct (locals : CBody.Locals) (types : CLoops.Types) (locations : Locations)
+    (definitions : CLoops.Calls.Definitions) (setup : Setup locals definitions)
+    (diagonalDefined : definitions Diagonal.function.signature.name = some Diagonal.function)
+    (diagonalUnshadowed : locals Diagonal.function.signature.name = none)
+    (p : DiagonalProgram Γ shape) (plan : Plan p.coefficients) (layout : Layout Γ)
+    (output : Buffer p.shape) (values : Env Binary64.Value Γ) (coefficients : Values shape) (heap : Heap)
+    (bound : LayoutBound locals locations layout) (represented : Represents locations layout heap values)
+    (ready : Ready locals locations p.coefficients plan layout heap)
+    (reserved : Reserved locations output p.coefficients plan layout)
+    (outputBound : Bound locals locations output) (writable : Writable heap (locations output) p.shape.volume)
+    (bounded : p.shape.volume < 2 ^ 64) (executed : Finite.Executes p.coefficients values coefficients)
+    (rest : List Stmt) (stack : CLoops.Calls.Continuation) :
+    ∃ finalHeap, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.body (.running ((emitDiagonal p plan layout output).code ++ rest) locals types heap) stack)
+      (.body (.running rest locals types finalHeap) stack) ∧
+      Reads finalHeap (locations output) (p.eval Finite.ops Binary64.positiveZero Binary64.one values) ∧
+      Reads finalHeap (locations (emit p.coefficients plan layout).result) coefficients ∧
+      ∀ q, DiagonalOutside locations p plan output q → finalHeap q = heap q :=
+  emitDiagonal_correct_for locals types locations definitions p (setup.restrict p.coefficients)
+    diagonalDefined diagonalUnshadowed plan layout output values coefficients heap bound represented ready
+    reserved outputBound writable bounded executed rest stack
 
 end
 

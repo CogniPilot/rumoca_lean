@@ -34,6 +34,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorDoStep.accepted_output_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.null_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.lifecycle_behaviors
+#audit axioms Rumoca.FMI3.TensorDoStep.lifecycle_logged_behaviors
+#audit axioms Rumoca.FMI3.TensorDoStep.lifecycle_missing_behaviors
 #audit axioms Rumoca.FMI3.TensorDoStep.finishOK
 #audit axioms Rumoca.FMI3.TensorDoStep.cInterface_fenv
 #audit axioms Rumoca.FMI3.TensorDoStep.fenvInterface_fenv
@@ -46,3 +48,25 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorDoStep.execution_free
 #audit axioms Rumoca.FMI3.TensorDoStep.execution_output
 #audit axioms Rumoca.FMI3.TensorDoStep.contract
+#audit axioms Rumoca.FMI3.TensorDoStep.input_rejection_contract
+#audit axioms Rumoca.FMI3.TensorDoStep.output_rejection_contract
+#audit axioms Rumoca.FMI3.TensorDoStep.rounding_rejection_contract
+#audit axioms Rumoca.FMI3.TensorDoStep.stop_rejection_contract
+#audit axioms Rumoca.FMI3.TensorDoStep.discard_rejection_contract
+
+-- Canonical dependency-restricted roots; all legacy roots retained.
+#audit axioms Rumoca.FMI3.TensorDoStep.derivative_run_for
+#audit axioms Rumoca.FMI3.TensorDoStep.internalStepPure_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.stepLoop_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.internalStepPureT_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.stepLoopT_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.tensorSolve_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.tensorSolveOutput_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.accepted_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.accepted_behaviors_for
+#audit axioms Rumoca.FMI3.TensorDoStep.accepted_output_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.accepted_output_behaviors_for
+#audit axioms Rumoca.FMI3.TensorDoStep.euler_delivers_for
+#audit axioms Rumoca.FMI3.TensorDoStep.internalStep_reaches_for
+#audit axioms Rumoca.FMI3.TensorDoStep.execution_free_for
+#audit axioms Rumoca.FMI3.TensorDoStep.execution_output_for

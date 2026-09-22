@@ -54,12 +54,30 @@ theorem diagonal_matches (name : String) (parameters : List Syntax.Parameter)
   rw [hp, hn]
   rfl
 
+theorem artifact_correct_for (name : String) (parameters : List Syntax.Parameter)
+    (p : Program Γ shape) (plan : Plan p) (layout : Layout Γ)
+    (valid : (function name parameters p plan layout).valid = true) :
+    CallArtifactContractFor (function name parameters p plan layout).tree.render
+      (function name parameters p plan layout) p (Plan.erase p plan) layout.erase :=
+  call_artifact_correct_for _ _ p _ _ rfl valid (function_matches name parameters p plan layout)
+
 theorem artifact_correct (name : String) (parameters : List Syntax.Parameter)
     (p : Program Γ shape) (plan : Plan p) (layout : Layout Γ)
     (valid : (function name parameters p plan layout).valid = true) :
     CallArtifactContract (function name parameters p plan layout).tree.render
       (function name parameters p plan layout) p (Plan.erase p plan) layout.erase :=
-  call_artifact_correct _ _ p _ _ rfl valid (function_matches name parameters p plan layout)
+  CallArtifactContractFor.to_full (artifact_correct_for name parameters p plan layout valid)
+
+theorem diagonal_artifact_correct_for (name : String) (parameters : List Syntax.Parameter)
+    (p : DiagonalProgram Γ shape) (plan : Plan p.coefficients) (layout : Layout Γ)
+    (output : Buffer p.shape)
+    (valid : (diagonalFunction name parameters p plan layout output).valid = true)
+    (scope : DiagonalScope (diagonalFunction name parameters p plan layout output)) :
+    DiagonalArtifactContractFor (diagonalFunction name parameters p plan layout output).tree.render
+      (diagonalFunction name parameters p plan layout output) p (Plan.erase p.coefficients plan)
+      layout.erase output.erase :=
+  Lowering.diagonal_artifact_correct_for _ _ p _ _ _ rfl valid scope
+    (diagonal_matches name parameters p plan layout output)
 
 theorem diagonal_artifact_correct (name : String) (parameters : List Syntax.Parameter)
     (p : DiagonalProgram Γ shape) (plan : Plan p.coefficients) (layout : Layout Γ)
@@ -69,7 +87,7 @@ theorem diagonal_artifact_correct (name : String) (parameters : List Syntax.Para
     DiagonalArtifactContract (diagonalFunction name parameters p plan layout output).tree.render
       (diagonalFunction name parameters p plan layout output) p (Plan.erase p.coefficients plan)
       layout.erase output.erase :=
-  Lowering.diagonal_artifact_correct _ _ p _ _ _ rfl valid scope
-    (diagonal_matches name parameters p plan layout output)
+  DiagonalArtifactContractFor.to_full
+    (diagonal_artifact_correct_for name parameters p plan layout output valid scope)
 
 end Rumoca.CTensor.Lowering.Named

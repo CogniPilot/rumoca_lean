@@ -8,6 +8,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConstantDoStep.function_denotes
 #audit axioms Rumoca.FMI3.ConstantDoStep.null_behaviors
 #audit axioms Rumoca.FMI3.ConstantDoStep.lifecycle_behaviors
+#audit axioms Rumoca.FMI3.ConstantDoStep.lifecycle_logged_behaviors
+#audit axioms Rumoca.FMI3.ConstantDoStep.lifecycle_missing_behaviors
 #audit axioms Rumoca.FMI3.ConstantDoStep.cInterface_fenv
 #audit axioms Rumoca.FMI3.ConstantDoStep.fenvInterface_fenv
 #audit axioms Rumoca.FMI3.ConstantDoStep.constant_step_enter
@@ -22,3 +24,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConstantDoStep.discard_suppressed_behaviors
 #audit axioms Rumoca.FMI3.ConstantDoStep.discard_logged_behaviors
 #audit axioms Rumoca.FMI3.ConstantDoStep.contract
+#audit axioms Rumoca.FMI3.ConstantDoStep.input_rejection_contract
+#audit axioms Rumoca.FMI3.ConstantDoStep.output_rejection_contract
+#audit axioms Rumoca.FMI3.ConstantDoStep.rounding_rejection_contract
+#audit axioms Rumoca.FMI3.ConstantDoStep.stop_rejection_contract
+#audit axioms Rumoca.FMI3.ConstantDoStep.discard_rejection_contract

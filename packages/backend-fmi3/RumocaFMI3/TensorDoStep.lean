@@ -1,6 +1,8 @@
 import RumocaFMI3.TensorContinuousStates
 import RumocaFMI3.TensorInstanceRhs
 import RumocaFMI3.StepEntry
+import RumocaFMI3.StepSuccessState
+import RumocaFMI3.StepArguments
 import RumocaFMI3.StepGuards
 import RumocaFMI3.StepAdmission
 import RumocaFMI3.StepDiscard
@@ -35,6 +37,9 @@ open CTree CMemory CBody CLoops
 open Rumoca.CMemory.TensorView
 open Rumoca.FMI3.TensorFloat64 (dstCell srcCell dstCell_lvalue)
 open Binary64 (toBits)
+open CTree.Printer StepGuards CTensor.Lowering Solve.Tensor ArrayProfile CTensor
+set_option maxRecDepth 100000
+set_option maxHeartbeats 4000000
 
 /-- The Euler update loop body: `x[k] = x[k] + dx[k];`, reading the state cell
 `dst[k]` and the derivative cell `src[k]` and writing the elementwise sum back
@@ -312,6 +317,88 @@ def eulerTail (shape : Tensor.Shape) : List Stmt :=
   [loop "k" (Runtime.v "expected") eulerBody]
 
 section
+variable [interface : CInterface]
+variable (program : CCalls.Events.Program E)
+
+theorem euler_delivers_for (fenv : TensorFenv interface) (shape : Tensor.Shape) (H : Heap) (p : Address) (env : Locals) (types0 : Types)
+    (state result sum : Values shape) (rest : List Stmt) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (bounded : shape.volume < 2 ^ 64)
+    (mBound : env "m" = some (.pointer (some p)))
+    (freshDst : env "dst" = none) (freshSrc : env "src" = none)
+    (freshExpected : env "expected" = none) (freshK : env "k" = none)
+    (readableX : Reads H (p.member TensorInstance.stateName) state)
+    (readableDx : Reads H (p.member TensorInstance.derivativeName) result)
+    (writableX : Writable H (p.member TensorInstance.stateName) shape.volume)
+    (separate : ∀ i < shape.volume, ∀ j < shape.volume,
+      (p.member TensorInstance.stateName).index i ≠ (p.member TensorInstance.derivativeName).index j)
+    (adds : ∀ i : Fin shape.volume, Binary64.Adds state[i] result[i] (.finite sum[i])) :
+    ∃ envF typesF, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+      (.body (.running (eulerTail shape ++ rest) env types0 H) resultType stack)
+      (.body (.running rest envF typesF
+        (written H (p.member TensorInstance.stateName) sum shape.volume)) resultType stack) := by
+  have s_dst : CLoops.next (.running (eulerTail shape ++ rest) env types0 H) =
+      some (.running (.declare "fmi3Float64 *" "src" ((Runtime.region TensorInstance.derivativeName)) ::
+        .declare "size_t" "expected" (Runtime.n shape.volume) ::
+        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
+        (bind env "dst" (.pointer (some (p.member TensorInstance.stateName))))
+        (bindType types0 "dst" .pointer) H) := by
+    apply TensorFloat64.declare_step_e env types0 H "fmi3Float64 *" "dst"
+      ((Runtime.region TensorInstance.stateName)) .pointer
+      (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst fenv.floatPointerType _ rfl
+    apply CBodyEmbedding.eval_refines
+    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]
+  set env1 := bind env "dst" (.pointer (some (p.member TensorInstance.stateName))) with henv1
+  have s_src : CLoops.next (.running (.declare "fmi3Float64 *" "src"
+        ((Runtime.region TensorInstance.derivativeName)) ::
+        .declare "size_t" "expected" (Runtime.n shape.volume) ::
+        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
+        env1 (bindType types0 "dst" .pointer) H) =
+      some (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
+        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
+        (bind env1 "src" (.pointer (some (p.member TensorInstance.derivativeName))))
+        (bindType (bindType types0 "dst" .pointer) "src" .pointer) H) := by
+    apply TensorFloat64.declare_step_e env1 _ H "fmi3Float64 *" "src"
+      ((Runtime.region TensorInstance.derivativeName)) .pointer
+      (.pointer (some (p.member TensorInstance.derivativeName))) _ _
+      (by simp [henv1, CBody.bind, freshSrc]) fenv.floatPointerType _ rfl
+    apply CBodyEmbedding.eval_refines
+    have m1 : env1 "m" = some (.pointer (some p)) := by simp [henv1, CBody.bind, mBound]
+    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]
+  set env2 := bind env1 "src" (.pointer (some (p.member TensorInstance.derivativeName))) with henv2
+  have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
+        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
+        env2 (bindType (bindType types0 "dst" .pointer) "src" .pointer) H) =
+      some (.running (.declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
+        (bind env2 "expected" (.integer shape.volume))
+        (CLoops.bindType (bindType (bindType types0 "dst" .pointer) "src" .pointer) "expected" .size) H) := by
+    apply TensorFloat64.declare_step_e env2 _ H "size_t" "expected" (Runtime.n shape.volume) .size
+      (.integer shape.volume) _ _ (by simp [henv2, henv1, CBody.bind, freshExpected]) fenv.sizeType
+      (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
+  set env3 := bind env2 "expected" (.integer shape.volume) with henv3
+  set types3 := CLoops.bindType (bindType (bindType types0 "dst" .pointer) "src" .pointer) "expected" .size
+    with htypes3
+  have freshK3 : env3 "k" = none := by simp [henv3, henv2, henv1, CBody.bind, freshK]
+  have s_k := CLoops.counter_initialize env3 types3 H "k"
+    (loop "k" (Runtime.v "expected") eulerBody :: rest) freshK3 fenv.sizeType
+  have expBound : resolve env3 "expected" = some (.integer shape.volume) := by
+    simp [henv3, CBody.bind, CBody.resolve]
+  have dstBound : resolve env3 "dst" = some (.pointer (some (p.member TensorInstance.stateName))) := by
+    simp [henv3, henv2, henv1, CBody.bind, CBody.resolve]
+  have srcBound : resolve env3 "src" = some (.pointer (some (p.member TensorInstance.derivativeName))) := by
+    simp [henv3, henv2, henv1, CBody.bind, CBody.resolve]
+  refine ⟨counterEnv env3 "k" shape.volume, CLoops.bindType types3 "k" .size, ?_⟩
+  refine .next (CCalls.Events.body_step program s_dst resultType stack)
+    (.next (CCalls.Events.body_step program s_src resultType stack)
+    (.next (CCalls.Events.body_step program s_exp resultType stack)
+    (.next (CCalls.Events.body_step program s_k resultType stack) ?_)))
+  exact euler_reaches program env3 (CLoops.bindType types3 "k" .size) H
+    (p.member TensorInstance.stateName) (p.member TensorInstance.derivativeName) state result sum
+    rest resultType stack bounded (by simp [CLoops.bindType]) expBound dstBound srcBound
+    readableX readableDx writableX separate adds
+
+end
+
+section
 variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses
 variable (program : CCalls.Events.Program E)
@@ -337,67 +424,8 @@ theorem euler_delivers (shape : Tensor.Shape) (H : Heap) (p : Address) (env : Lo
     ∃ envF typesF, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.body (.running (eulerTail shape ++ rest) env types0 H) resultType stack)
       (.body (.running rest envF typesF
-        (written H (p.member TensorInstance.stateName) sum shape.volume)) resultType stack) := by
-  have s_dst : CLoops.next (.running (eulerTail shape ++ rest) env types0 H) =
-      some (.running (.declare "fmi3Float64 *" "src" ((Runtime.region TensorInstance.derivativeName)) ::
-        .declare "size_t" "expected" (Runtime.n shape.volume) ::
-        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
-        (bind env "dst" (.pointer (some (p.member TensorInstance.stateName))))
-        (bindType types0 "dst" .pointer) H) := by
-    apply TensorFloat64.declare_step_e env types0 H "fmi3Float64 *" "dst"
-      ((Runtime.region TensorInstance.stateName)) .pointer
-      (.pointer (some (p.member TensorInstance.stateName))) _ _ freshDst rfl _ rfl
-    apply CBodyEmbedding.eval_refines
-    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, mBound, Value.address]
-  set env1 := bind env "dst" (.pointer (some (p.member TensorInstance.stateName))) with henv1
-  have s_src : CLoops.next (.running (.declare "fmi3Float64 *" "src"
-        ((Runtime.region TensorInstance.derivativeName)) ::
-        .declare "size_t" "expected" (Runtime.n shape.volume) ::
-        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
-        env1 (bindType types0 "dst" .pointer) H) =
-      some (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
-        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
-        (bind env1 "src" (.pointer (some (p.member TensorInstance.derivativeName))))
-        (bindType (bindType types0 "dst" .pointer) "src" .pointer) H) := by
-    apply TensorFloat64.declare_step_e env1 _ H "fmi3Float64 *" "src"
-      ((Runtime.region TensorInstance.derivativeName)) .pointer
-      (.pointer (some (p.member TensorInstance.derivativeName))) _ _
-      (by simp [henv1, CBody.bind, freshSrc]) rfl _ rfl
-    apply CBodyEmbedding.eval_refines
-    have m1 : env1 "m" = some (.pointer (some p)) := by simp [henv1, CBody.bind, mBound]
-    simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CBody.resolve, m1, Value.address]
-  set env2 := bind env1 "src" (.pointer (some (p.member TensorInstance.derivativeName))) with henv2
-  have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
-        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
-        env2 (bindType (bindType types0 "dst" .pointer) "src" .pointer) H) =
-      some (.running (.declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") eulerBody :: rest)
-        (bind env2 "expected" (.integer shape.volume))
-        (CLoops.bindType (bindType (bindType types0 "dst" .pointer) "src" .pointer) "expected" .size) H) := by
-    apply TensorFloat64.declare_step_e env2 _ H "size_t" "expected" (Runtime.n shape.volume) .size
-      (.integer shape.volume) _ _ (by simp [henv2, henv1, CBody.bind, freshExpected]) rfl
-      (by simp [Runtime.n, CLoops.eval, CBody.eval]) (CLoops.convert_size_nat _ bounded)
-  set env3 := bind env2 "expected" (.integer shape.volume) with henv3
-  set types3 := CLoops.bindType (bindType (bindType types0 "dst" .pointer) "src" .pointer) "expected" .size
-    with htypes3
-  have freshK3 : env3 "k" = none := by simp [henv3, henv2, henv1, CBody.bind, freshK]
-  have s_k := CLoops.counter_initialize env3 types3 H "k"
-    (loop "k" (Runtime.v "expected") eulerBody :: rest) freshK3 rfl
-  have expBound : resolve env3 "expected" = some (.integer shape.volume) := by
-    simp [henv3, CBody.bind, CBody.resolve]
-  have dstBound : resolve env3 "dst" = some (.pointer (some (p.member TensorInstance.stateName))) := by
-    simp [henv3, henv2, henv1, CBody.bind, CBody.resolve]
-  have srcBound : resolve env3 "src" = some (.pointer (some (p.member TensorInstance.derivativeName))) := by
-    simp [henv3, henv2, henv1, CBody.bind, CBody.resolve]
-  refine ⟨counterEnv env3 "k" shape.volume, CLoops.bindType types3 "k" .size, ?_⟩
-  refine .next (CCalls.Events.body_step program s_dst resultType stack)
-    (.next (CCalls.Events.body_step program s_src resultType stack)
-    (.next (CCalls.Events.body_step program s_exp resultType stack)
-    (.next (CCalls.Events.body_step program s_k resultType stack) ?_)))
-  exact euler_reaches program env3 (CLoops.bindType types3 "k" .size) H
-    (p.member TensorInstance.stateName) (p.member TensorInstance.derivativeName) state result sum
-    rest resultType stack bounded (by simp [CLoops.bindType]) expBound dstBound srcBound
-    readableX readableDx writableX separate adds
-
+        (written H (p.member TensorInstance.stateName) sum shape.volume)) resultType stack) :=
+  euler_delivers_for program (cInterface_fenv (static := static)) shape H p env types0 state result sum rest resultType stack bounded mBound freshDst freshSrc freshExpected freshK readableX readableDx writableX separate adds
 end
 
 /-! ### The full internal step: derivative evaluation composed with the Euler update
@@ -430,6 +458,107 @@ theorem store_writable_state (backing : Heap) (pool : Address) (i : Nat) (shape 
   cases output with
   | none => exact core
   | some J => exact TensorInstance.writable_place_other (by decide +kernel) core
+
+section
+variable [interface : CInterface]
+variable (program : CCalls.Events.Program E)
+
+theorem internalStep_reaches_for (fenv : TensorFenv interface) (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (backing : Heap) (pool : Address) (i : Nat)
+    (time : Values Tensor.scalar) (state input result sum : Values shape) (output : Option (Values oshape))
+    (count : UInt64) (env : Locals) (types0 : Types) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (rest : List Stmt)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (mBound : env "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (countBound : env "nContinuousStates" = some (.integer count.toNat))
+    (freshDst : env "dst" = none) (freshSrc : env "src" = none)
+    (freshExpected : env "expected" = none) (freshK : env "k" = none)
+    (freshRhs : env "rumoca_rhs" = none)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (adds : ∀ i : Fin shape.volume, Binary64.Adds state[i] result[i] (.finite sum[i]))
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape))
+        (TensorInstance.store backing pool i shape oshape time state input output) .done) v →
+      CCalls.Events.Resolves program v) :
+    ∃ derivHeap envF typesF,
+      Reads derivHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        derivHeap ((TensorInstance.field pool j b).index k) =
+          backing ((TensorInstance.field pool j b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (internalBody shape ++ rest) env types0
+          (TensorInstance.store backing pool i shape oshape time state input output)) resultType stack)
+        (.body (.running rest envF typesF
+          (written derivHeap (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume))
+          resultType stack) := by
+  set H := TensorInstance.store backing pool i shape oshape time state input output with hH
+  set m := TensorInstance.record pool i with hm'
+  set cont := CCalls.Typed.Continuation.caller .discard (eulerTail shape ++ rest) env types0 resultType stack
+    with hcont
+  have enter : CCalls.Events.internalNext program
+      (.body (.running (internalBody shape ++ rest) env types0 H) resultType stack) =
+      some (.calling "rumoca_rhs"
+        [.pointer (some (m.member TensorInstance.stateName)), .pointer (some (m.member TensorInstance.inputName)),
+         .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] H cont) := by
+    simp [internalBody, eulerTail, List.cons_append, CCalls.Events.internalNext, CCalls.Typed.nextWith,
+      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
+      Runtime.v, CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve,
+      CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments, mBound, countBound,
+      CBody.resolve, CBody.constants, Value.address, hcont, freshRhs, fenv.rhs]
+  have argsEq : [Value.pointer (some (m.member TensorInstance.stateName)),
+      .pointer (some (m.member TensorInstance.inputName)),
+      .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] =
+      Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+        (TensorInstanceRhs.args pool i shape) := by
+    rw [hm', matched]; rfl
+  obtain ⟨derivHeap, reads, _writableDeriv, frameH, others, ran⟩ :=
+    TensorInstanceRhs.derivative_writes_events_for (shape := shape) definitions program linked library found
+      backing pool i oshape time state input result output bounded executed resolves cont
+  have resume : CCalls.Events.internalNext program (.returning .void derivHeap cont) =
+      some (.body (.running (eulerTail shape ++ rest) env types0 derivHeap) resultType stack) := by
+    simp [hcont, CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
+  have outsideX : ∀ a : Fin shape.volume,
+      Outside (TensorInstanceRhs.locations pool i) (TensorInstanceRhs.kernel shape).derivative
+        (TensorModelRhs.derivativePlan (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape))
+        ((TensorInstance.field pool i TensorInstance.stateName).index a.val) :=
+    fun a => ⟨fun a2 _ => TensorInstance.fields_separate pool i TensorInstance.stateName
+      TensorInstance.derivativeName (by decide +kernel) a.val a2, True.intro⟩
+  have readableX : Reads derivHeap (m.member TensorInstance.stateName) state := by
+    intro a
+    have frame := frameH ((TensorInstance.field pool i TensorInstance.stateName).index a.val) (outsideX a)
+    have base := TensorInstance.reads_state backing pool i shape oshape time state input output a
+    simp only [TensorInstance.field, hm'] at frame ⊢
+    simp only [load, frame]
+    simpa only [load, TensorInstance.field] using base
+  have readableDx : Reads derivHeap (m.member TensorInstance.derivativeName) result := by
+    intro a; simpa only [TensorInstance.field, hm'] using reads a
+  have writableX : Writable derivHeap (m.member TensorInstance.stateName) shape.volume := by
+    intro a ha
+    have frame := frameH ((TensorInstance.field pool i TensorInstance.stateName).index a) (outsideX ⟨a, ha⟩)
+    obtain ⟨old, ho⟩ := store_writable_state backing pool i shape oshape time state input output a ha
+    refine ⟨old, ?_⟩
+    simp only [TensorInstance.field, hm'] at frame ho ⊢
+    rw [frame]; exact ho
+  have separateXdx : ∀ a < shape.volume, ∀ b < shape.volume,
+      (m.member TensorInstance.stateName).index a ≠ (m.member TensorInstance.derivativeName).index b := by
+    intro a _ b _
+    simpa only [TensorInstance.field, hm'] using
+      TensorInstance.fields_separate pool i TensorInstance.stateName TensorInstance.derivativeName
+        (by decide +kernel) a b
+  obtain ⟨envF, typesF, eulerRun⟩ := euler_delivers_for program fenv shape derivHeap m env types0 state result sum
+    rest resultType stack bounded mBound freshDst freshSrc freshExpected freshK readableX readableDx
+    writableX separateXdx adds
+  refine ⟨derivHeap, envF, typesF, by simpa only [TensorInstance.field, hm'] using readableDx, others, ?_⟩
+  exact .next (argsEq ▸ enter) (ran.trans (.next resume eulerRun))
+
+end
 
 section
 variable [static : StaticLiterals]
@@ -480,67 +609,8 @@ theorem internalStep_reaches (shape oshape : Tensor.Shape) (definitions : CLoops
           (TensorInstance.store backing pool i shape oshape time state input output)) resultType stack)
         (.body (.running rest envF typesF
           (written derivHeap (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume))
-          resultType stack) := by
-  set H := TensorInstance.store backing pool i shape oshape time state input output with hH
-  set m := TensorInstance.record pool i with hm'
-  set cont := CCalls.Typed.Continuation.caller .discard (eulerTail shape ++ rest) env types0 resultType stack
-    with hcont
-  have enter : CCalls.Events.internalNext program
-      (.body (.running (internalBody shape ++ rest) env types0 H) resultType stack) =
-      some (.calling "rumoca_rhs"
-        [.pointer (some (m.member TensorInstance.stateName)), .pointer (some (m.member TensorInstance.inputName)),
-         .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] H cont) := by
-    simp [internalBody, eulerTail, List.cons_append, CCalls.Events.internalNext, CCalls.Typed.nextWith,
-      CLoops.next, CLoops.eval, TensorContinuousStates.derivEntryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.n,
-      Runtime.v, CBody.eval, CBody.lvalue, CCalls.Events.enterCall, CCalls.Events.resolve,
-      CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments, mBound, countBound,
-      CBody.bind, CBody.resolve, CBody.constants, Value.address, hcont, freshRhs]
-  have argsEq : [Value.pointer (some (m.member TensorInstance.stateName)),
-      .pointer (some (m.member TensorInstance.inputName)),
-      .pointer (some (m.member TensorInstance.derivativeName)), .integer count.toNat] =
-      Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
-        (TensorInstanceRhs.args pool i shape) := by
-    rw [hm', matched]; rfl
-  obtain ⟨derivHeap, reads, _writableDeriv, frameH, others, ran⟩ :=
-    TensorInstanceRhs.derivative_writes_events (shape := shape) definitions program linked library found
-      backing pool i oshape time state input result output bounded executed resolves cont
-  have resume : CCalls.Events.internalNext program (.returning .void derivHeap cont) =
-      some (.body (.running (eulerTail shape ++ rest) env types0 derivHeap) resultType stack) := by
-    simp [hcont, CCalls.Events.internalNext, CCalls.Typed.nextWith, CCalls.Typed.resume]
-  have outsideX : ∀ a : Fin shape.volume,
-      Outside (TensorInstanceRhs.locations pool i) (TensorInstanceRhs.kernel shape).derivative
-        (TensorModelRhs.derivativePlan (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape))
-        ((TensorInstance.field pool i TensorInstance.stateName).index a.val) :=
-    fun a => ⟨fun a2 _ => TensorInstance.fields_separate pool i TensorInstance.stateName
-      TensorInstance.derivativeName (by decide +kernel) a.val a2, True.intro⟩
-  have readableX : Reads derivHeap (m.member TensorInstance.stateName) state := by
-    intro a
-    have frame := frameH ((TensorInstance.field pool i TensorInstance.stateName).index a.val) (outsideX a)
-    have base := TensorInstance.reads_state backing pool i shape oshape time state input output a
-    simp only [TensorInstance.field, hm'] at frame ⊢
-    simp only [load, frame]
-    simpa only [load, TensorInstance.field] using base
-  have readableDx : Reads derivHeap (m.member TensorInstance.derivativeName) result := by
-    intro a; simpa only [TensorInstance.field, hm'] using reads a
-  have writableX : Writable derivHeap (m.member TensorInstance.stateName) shape.volume := by
-    intro a ha
-    have frame := frameH ((TensorInstance.field pool i TensorInstance.stateName).index a) (outsideX ⟨a, ha⟩)
-    obtain ⟨old, ho⟩ := store_writable_state backing pool i shape oshape time state input output a ha
-    refine ⟨old, ?_⟩
-    simp only [TensorInstance.field, hm'] at frame ho ⊢
-    rw [frame]; exact ho
-  have separateXdx : ∀ a < shape.volume, ∀ b < shape.volume,
-      (m.member TensorInstance.stateName).index a ≠ (m.member TensorInstance.derivativeName).index b := by
-    intro a _ b _
-    simpa only [TensorInstance.field, hm'] using
-      TensorInstance.fields_separate pool i TensorInstance.stateName TensorInstance.derivativeName
-        (by decide +kernel) a b
-  obtain ⟨envF, typesF, eulerRun⟩ := euler_delivers program shape derivHeap m env types0 state result sum
-    rest resultType stack bounded mBound freshDst freshSrc freshExpected freshK readableX readableDx
-    writableX separateXdx adds
-  refine ⟨derivHeap, envF, typesF, by simpa only [TensorInstance.field, hm'] using readableDx, others, ?_⟩
-  exact .next (argsEq ▸ enter) (ran.trans (.next resume eulerRun))
-
+          resultType stack) :=
+  internalStep_reaches_for program (cInterface_fenv (static := static)) shape oshape definitions linked (library.restrict _) found backing pool i time state input result sum output count env types0 resultType stack rest bounded matched mBound countBound freshDst freshSrc freshExpected freshK freshRhs executed adds resolves
 end
 
 /-! ### The prepared derivative run over an abstract well-formed instance heap
@@ -566,9 +636,9 @@ an arbitrary heap `H` whose state region reads `state`, whose input region reads
 derivative `result` into the `der(x)` region and preserves every cell outside that
 region (in particular the state, input and time regions, and every cell of every
 other instance). Universal in the shape, instance index, heap and caller. -/
-theorem derivative_run (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem derivative_run_for (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (H : Heap) (pool : Address) (i : Nat) (state input result : Values shape)
@@ -646,7 +716,7 @@ theorem derivative_run (shape : Tensor.Shape) (definitions : CLoops.Calls.Defini
           (by decide +kernel) i' j
       | there r => nomatch r
   obtain ⟨finalHeap, reads, frame, writableResult, ran⟩ :=
-    TensorModelRhs.events_reaches (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape)
+    TensorModelRhs.events_reaches_for (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape)
       (TensorInstanceRhs.derivative_valid shape)
       definitions program linked library found (TensorInstanceRhs.args pool i shape) arguments
       (TensorInstanceRhs.locations pool i) (ArrayProfile.environment state input) result H
@@ -655,6 +725,36 @@ theorem derivative_run (shape : Tensor.Shape) (definitions : CLoops.Calls.Defini
   exact ⟨finalHeap, by rwa [TensorInstanceRhs.derivativeBuffer_eq] at reads,
     writableResult writableDx, frame, ran⟩
 
+theorem derivative_run (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H : Heap) (pool : Address) (i : Nat) (state input result : Values shape)
+    (bounded : shape.volume < 2 ^ 64)
+    (readsState : Reads H (TensorInstance.field pool i TensorInstance.stateName) state)
+    (readsInput : Reads H (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableDx : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) H .done) v →
+      CCalls.Events.Resolves program v)
+    (stack : CCalls.Typed.Continuation) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      (∀ q, Outside (TensorInstanceRhs.locations pool i) (TensorInstanceRhs.kernel shape).derivative
+          (TensorModelRhs.derivativePlan (TensorInstanceRhs.kernel shape) (TensorInstanceRhs.plan shape)) q →
+        finalHeap q = H q) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+          (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+            (TensorInstanceRhs.args pool i shape)) H stack)
+        (.returning .void finalHeap stack) :=
+  derivative_run_for program shape definitions linked (library.restrict _) found H pool i state input result bounded readsState readsInput writableDx executed resolves stack
 end
 
 /-! ### The declaration-free internal-step body
@@ -695,9 +795,9 @@ heap premises `readsState`, `readsInput`, `writableState`/`writableDx` are exact
 those the prepared derivative entry and the Euler tail require; `executed`,
 `adds` and `resolves` carry the finite tensor derivative, the per-cell finite
 addition and the direct helper resolution, as in `internalStep_reaches`. -/
-theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem internalStepPure_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (H : Heap) (pool : Address) (i : Nat)
@@ -764,7 +864,7 @@ theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Ca
         (TensorInstanceRhs.args pool i shape) := by
     rw [hm', matched]; rfl
   obtain ⟨derivHeap, reads, writableDeriv, frameH, ran⟩ :=
-    derivative_run program shape definitions linked library found H pool i state input result bounded
+    derivative_run_for program shape definitions linked library found H pool i state input result bounded
       readsState readsInput writableDx executed resolves cont
   have others : ∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
       derivHeap ((TensorInstance.field pool j b).index k) =
@@ -848,6 +948,55 @@ theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Ca
   refine .next (argsEq ▸ enter) (ran.trans (.next resume ?_))
   exact .next (CCalls.Events.body_step program reset resultType stack) eulerRun
 
+theorem internalStepPure_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H : Heap) (pool : Address) (i : Nat)
+    (state input result sum : Values shape) (count : UInt64) (v0 : Nat)
+    (env : Locals) (types0 : Types) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (rest : List Stmt)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (mBound : env "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (countBound : env "nContinuousStates" = some (.integer count.toNat))
+    (kBound : env "k" = some (.integer v0)) (typedK : types0 "k" = some .size)
+    (dstBound : resolve env "dst" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.stateName))))
+    (srcBound : resolve env "src" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.derivativeName))))
+    (expBound : resolve env "expected" = some (.integer shape.volume))
+    (freshRhs : env "rumoca_rhs" = none)
+    (readsState : Reads H (TensorInstance.field pool i TensorInstance.stateName) state)
+    (readsInput : Reads H (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable H (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDx : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (adds : ∀ a : Fin shape.volume, Binary64.Adds state[a] result[a] (.finite sum[a]))
+    (resolves : ∀ w, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) H .done) w →
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
+    ∃ derivHeap,
+      Reads derivHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      Writable derivHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      Reads derivHeap (TensorInstance.field pool i TensorInstance.inputName) input ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        derivHeap ((TensorInstance.field pool j b).index k) =
+          H ((TensorInstance.field pool j b).index k)) ∧
+      (∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName →
+        derivHeap ((TensorInstance.field pool i b).index k) =
+          H ((TensorInstance.field pool i b).index k)) ∧
+      (∀ q, q.block ≠ (TensorInstance.record pool i).block →
+        written derivHeap (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume q = H q) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (stepBody ++ rest) env types0 H) resultType stack)
+        (.body (.running rest (counterEnv env "k" shape.volume) types0
+          (written derivHeap (TensorInstance.field pool i TensorInstance.stateName) sum shape.volume))
+          resultType stack) :=
+  internalStepPure_reaches_for program shape definitions linked (library.restrict _) found H pool i state input result sum count v0 env types0 resultType stack rest bounded matched mBound countBound kBound typedK dstBound srcBound expBound freshRhs readsState readsInput writableState writableDx executed adds resolves fenv
 end
 
 /-! ### The N-fold Euler state iteration
@@ -952,9 +1101,9 @@ variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
-theorem stepLoop_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem stepLoop_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (H0 : Heap) (pool : Address) (i : Nat) (initial input : Values shape)
@@ -1043,7 +1192,7 @@ theorem stepLoop_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Defi
       stepBody_noDecl hk
     -- One internal step over the current heap.
     obtain ⟨Dk, readsDk, wDerivDk, inputDk, othersDk, _memberDk, _genDk, stepReach⟩ :=
-      internalStepPure_reaches program shape definitions linked library found Hk pool i
+      internalStepPure_reaches_for program shape definitions linked library found Hk pool i
         (eulerIterate initial sums k) input (results k) (sums k) count v0
         (counterEnv (loopLocals env0 shape.volume k) "n" k) types0 resultType stack
         (counterStep "n" :: loop "n" (Runtime.v "steps") stepBody :: rest)
@@ -1089,6 +1238,54 @@ theorem stepLoop_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Defi
       rw [commute]
       exact .next (CCalls.Events.body_step program increment resultType stack) (.refl _)
 
+theorem stepLoop_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H0 : Heap) (pool : Address) (i : Nat) (initial input : Values shape)
+    (results sums : Nat → Values shape) (count : UInt64) (N : Nat)
+    (env0 : Locals) (types0 : Types) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (rest : List Stmt)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume) (nBound : N < 2 ^ 64)
+    (mBound : env0 "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (countBound : env0 "nContinuousStates" = some (.integer count.toNat))
+    (typedK : types0 "k" = some .size) (typedN : types0 "n" = some .size)
+    (kInit : env0 "k" = some (.integer 0))
+    (dstBound : CBody.resolve env0 "dst" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.stateName))))
+    (srcBound : CBody.resolve env0 "src" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.derivativeName))))
+    (expBound : CBody.resolve env0 "expected" = some (.integer shape.volume))
+    (stepsBound : CBody.resolve env0 "steps" = some (.integer N))
+    (freshRhs : env0 "rumoca_rhs" = none)
+    (readsState0 : Reads H0 (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput0 : Reads H0 (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState0 : Writable H0 (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv0 : Writable H0 (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (executes : ∀ n < N, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n < N, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName) (eulerIterate initial sums N) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.inputName) input ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.stateName) shape.volume ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = H0 ((TensorInstance.field pool j b).index k)) ∧
+      (∀ pos, N = pos + 1 → Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) (results pos)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (loop "n" (Runtime.v "steps") stepBody :: rest)
+          (counterEnv env0 "n" 0) types0 H0) resultType stack)
+        (.body (.running rest (counterEnv (loopLocals env0 shape.volume N) "n" N) types0 finalHeap)
+          resultType stack) :=
+  stepLoop_reaches_for program shape definitions linked (library.restrict _) found H0 pool i initial input results sums count N env0 types0 resultType stack rest bounded matched nBound mBound countBound typedK typedN kInit dstBound srcBound expBound stepsBound freshRhs readsState0 readsInput0 writableState0 writableDeriv0 executes adds resolves fenv
 end
 
 /-! ### Per-internal-step time advance
@@ -1182,9 +1379,9 @@ the state, derivative and input regions stay readable/writable so the next step'
 premises re-establish. `executed`, `adds`, `timeAdds` and `resolves` carry the
 finite tensor derivative, the per-cell finite addition, the finite time addition
 and the direct helper resolution. -/
-theorem internalStepPureT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem internalStepPureT_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (H : Heap) (pool : Address) (i : Nat)
@@ -1270,7 +1467,7 @@ theorem internalStepPureT_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       exact ⟨old, by rw [frameH1 TensorInstance.derivativeName a (by decide)]; exact ho⟩
   -- One internal state step over the time-advanced heap.
   obtain ⟨D, readsD, wDerivD, inputD, othersD, memberD, genD, reachInner⟩ :=
-    internalStepPure_reaches program shape definitions linked library found H1 pool i
+    internalStepPure_reaches_for program shape definitions linked library found H1 pool i
       state input result sum count v0 env types0 resultType stack rest bounded matched
       mBound countBound kBound typedK dstBound srcBound expBound freshRhs
       readsStateH1 readsInputH1 writableStateH1 writableDxH1 executed adds (resolves H1) fenv
@@ -1332,6 +1529,59 @@ theorem internalStepPureT_reaches (shape : Tensor.Shape) (definitions : CLoops.C
     rw [assoc]
     exact .next (CCalls.Events.body_step program timeTrans resultType stack) reachInner
 
+theorem internalStepPureT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H : Heap) (pool : Address) (i : Nat)
+    (state input result sum : Values shape) (t t' : Binary64.Value) (count : UInt64) (v0 : Nat)
+    (env : Locals) (types0 : Types) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (rest : List Stmt)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (mBound : env "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (countBound : env "nContinuousStates" = some (.integer count.toNat))
+    (kBound : env "k" = some (.integer v0)) (typedK : types0 "k" = some .size)
+    (dstBound : resolve env "dst" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.stateName))))
+    (srcBound : resolve env "src" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.derivativeName))))
+    (expBound : resolve env "expected" = some (.integer shape.volume))
+    (freshRhs : env "rumoca_rhs" = none)
+    (readsState : Reads H (TensorInstance.field pool i TensorInstance.stateName) state)
+    (readsInput : Reads H (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable H (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDx : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (timeStored : H (TensorInstance.field pool i TensorInstance.timeName) =
+      some ⟨.float64, true, some (.finite t)⟩)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (adds : ∀ a : Fin shape.volume, Binary64.Adds state[a] result[a] (.finite sum[a]))
+    (timeAdds : Binary64.Adds t Binary64.one (.finite t'))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName) sum ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.inputName) input ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.stateName) shape.volume ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite t')⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) =
+          H ((TensorInstance.field pool j b).index k)) ∧
+      (∀ q, q.block ≠ (TensorInstance.record pool i).block → finalHeap q = H q) ∧
+      (∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName → b ≠ TensorInstance.stateName →
+        b ≠ TensorInstance.timeName →
+        finalHeap ((TensorInstance.field pool i b).index k) = H ((TensorInstance.field pool i b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (stepBodyT ++ rest) env types0 H) resultType stack)
+        (.body (.running rest (counterEnv env "k" shape.volume) types0 finalHeap) resultType stack) :=
+  internalStepPureT_reaches_for program shape definitions linked (library.restrict _) found H pool i state input result sum t t' count v0 env types0 resultType stack rest bounded matched mBound countBound kBound typedK dstBound srcBound expBound freshRhs readsState readsInput writableState writableDx timeStored executed adds timeAdds resolves fenv
 end
 
 /-! ### The N-step Co-Simulation grid loop with time advance
@@ -1350,9 +1600,9 @@ variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
-theorem stepLoopT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem stepLoopT_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (H0 : Heap) (pool : Address) (i : Nat) (initial input : Values shape)
@@ -1457,7 +1707,7 @@ theorem stepLoopT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Def
       ((eval_id_loopEnv env0 shape.volume k Hk "steps" (by decide) (by decide)).trans stepsBound)
       stepBodyT_noDecl hk
     obtain ⟨Dk, sumDk, derivDk, inputDk, wStateDk, wDerivDk, timeDk, othersDk, genDk, outputDk, stepReach⟩ :=
-      internalStepPureT_reaches program shape definitions linked library found Hk pool i
+      internalStepPureT_reaches_for program shape definitions linked library found Hk pool i
         (eulerIterate initial sums k) input (results k) (sums k) (times k) (times (k + 1)) count v0
         (counterEnv (loopLocals env0 shape.volume k) "n" k) types0 resultType stack
         (counterStep "n" :: loop "n" (Runtime.v "steps") stepBodyT :: rest)
@@ -1491,6 +1741,64 @@ theorem stepLoopT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Def
       rw [commute]
       exact .next (CCalls.Events.body_step program increment resultType stack) (.refl _)
 
+theorem stepLoopT_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H0 : Heap) (pool : Address) (i : Nat) (initial input : Values shape)
+    (results sums : Nat → Values shape) (times : Nat → Binary64.Value) (count : UInt64) (N : Nat)
+    (env0 : Locals) (types0 : Types) (resultType : String)
+    (stack : CCalls.Typed.Continuation) (rest : List Stmt)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume) (nBound : N < 2 ^ 64)
+    (mBound : env0 "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (countBound : env0 "nContinuousStates" = some (.integer count.toNat))
+    (typedK : types0 "k" = some .size) (typedN : types0 "n" = some .size)
+    (kInit : env0 "k" = some (.integer 0))
+    (dstBound : CBody.resolve env0 "dst" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.stateName))))
+    (srcBound : CBody.resolve env0 "src" =
+      some (.pointer (some ((TensorInstance.record pool i).member TensorInstance.derivativeName))))
+    (expBound : CBody.resolve env0 "expected" = some (.integer shape.volume))
+    (stepsBound : CBody.resolve env0 "steps" = some (.integer N))
+    (freshRhs : env0 "rumoca_rhs" = none)
+    (readsState0 : Reads H0 (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput0 : Reads H0 (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState0 : Writable H0 (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv0 : Writable H0 (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (timeInit0 : H0 (TensorInstance.field pool i TensorInstance.timeName) =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (executes : ∀ n < N, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n < N, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (timeAdds : ∀ n < N, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName) (eulerIterate initial sums N) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.inputName) input ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.stateName) shape.volume ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times N))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = H0 ((TensorInstance.field pool j b).index k)) ∧
+      (∀ pos, N = pos + 1 →
+        Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) (results pos)) ∧
+      (∀ q, q.block ≠ (TensorInstance.record pool i).block → finalHeap q = H0 q) ∧
+      (∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName → b ≠ TensorInstance.stateName →
+        b ≠ TensorInstance.timeName →
+        finalHeap ((TensorInstance.field pool i b).index k) = H0 ((TensorInstance.field pool i b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (loop "n" (Runtime.v "steps") stepBodyT :: rest)
+          (counterEnv env0 "n" 0) types0 H0) resultType stack)
+        (.body (.running rest (counterEnv (loopLocals env0 shape.volume N) "n" N) types0 finalHeap)
+          resultType stack) :=
+  stepLoopT_reaches_for program shape definitions linked (library.restrict _) found H0 pool i initial input results sums times count N env0 types0 resultType stack rest bounded matched nBound mBound countBound typedK typedN kInit dstBound srcBound expBound stepsBound freshRhs readsState0 readsInput0 writableState0 writableDeriv0 timeInit0 executes adds timeAdds resolves fenv
 end
 
 
@@ -1618,9 +1926,9 @@ variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
-theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem tensorSolve_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (H : Heap) (pool : Address) (i : Nat) (initial input : Values shape)
@@ -1663,6 +1971,12 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = H ((TensorInstance.field pool j b).index k)) ∧
+      (∀ q, q.block ≠ (TensorInstance.record pool i).block → q ≠ buffers.last →
+        finalHeap q = H q) ∧
+      (∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName →
+        b ≠ TensorInstance.stateName → b ≠ TensorInstance.timeName →
+        finalHeap ((TensorInstance.field pool i b).index k) =
+          H ((TensorInstance.field pool i b).index k)) ∧
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
         (.body (.running (tensorStepSolve shape false) env types0 H) "fmi3Status" stack)
         (.returning (.integer 0) finalHeap stack) := by
@@ -1762,7 +2076,7 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
   have nBoundD : duration.val < 2 ^ 64 := duration.isLt
   -- The outer grid loop.
   obtain ⟨loopHeap, stateN, inputN, wStateN, wDerivN, timeN, othersN, _derivN, genN, _outputN, loopReach⟩ :=
-    stepLoopT_reaches program shape definitions linked library found H pool i initial input results sums times
+    stepLoopT_reaches_for program shape definitions linked library found H pool i initial input results sums times
       count duration.val env6 types7 "fmi3Status" stack
       (Runtime.out "lastSuccessfulTime" (Runtime.field "time") :: [Runtime.ok])
       bounded matched nBoundD mBound6 countBound6 typedK7 typedN7 kInit6 dstBound6 srcBound6 expBound6
@@ -1811,7 +2125,7 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
     simp [Runtime.out, CLoops.next, leftEval, addr, Value.finite,
       store_float64 loopHeap buffers.last oldLast _ lastLoop, hfinal, StateProofs.written]
   have okReach := finishOK program finalHeap tailEnv types7 stack okTail fenv.statusType fenv.fmi3OK
-  refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · -- state region reads the N-fold Euler iterate
     intro a
     have ne : sf.index a.val ≠ buffers.last :=
@@ -1835,10 +2149,72 @@ theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.D
         loopHeap ((TensorInstance.field pool j b).index k) := by
       rw [hfinal]; exact StateProofs.written_frame loopHeap buffers.last _ _ ne
     rw [frame]; exact othersN j b k different
+  · intro q outside different
+    exact (StateProofs.written_frame loopHeap buffers.last q _ different).trans (genN q outside)
+  · intro b k notDerivative notState notTime
+    have notLast : (TensorInstance.field pool i b).index k ≠ buffers.last :=
+      (cell_block_ne pool i b k buffers.last lastBlock).symm
+    exact (StateProofs.written_frame loopHeap buffers.last _ _ notLast).trans
+      (_outputN b k notDerivative notState notTime)
   · -- the observable-machine execution: declarations, loop, publish, return
     exact declReach.trans
       (loopReach.trans (.next (CCalls.Events.body_step program outStep "fmi3Status" stack) okReach))
 
+theorem tensorSolve_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (H : Heap) (pool : Address) (i : Nat) (initial input : Values shape)
+    (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
+    (count : UInt64) (duration : CStatements.Counter) (step : Binary64.Value)
+    (env : Locals) (types0 : Types) (stack : CCalls.Typed.Continuation)
+    (buffers : StepEntry.Buffers) (oldLast : Option Value)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (mBound : env "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (stepValue : env "communicationStepSize" = some (.finite step))
+    (stepCast : convert .size (.finite step) = some (.integer duration.val))
+    (lastValue : env "lastSuccessfulTime" = some (.pointer (some buffers.last)))
+    (freshDst : env "dst" = none) (freshSrc : env "src" = none)
+    (freshCount : env "nContinuousStates" = none) (freshExpected : env "expected" = none)
+    (freshSteps : env "steps" = none) (freshK : env "k" = none) (freshN : env "n" = none)
+    (freshRhs : env "rumoca_rhs" = none) (freshOK : env "fmi3OK" = none)
+    (readsState : Reads H (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput : Reads H (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable H (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (timeInit : H (TensorInstance.field pool i TensorInstance.timeName) =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (lastCell : H buffers.last = some ⟨.float64, true, oldLast⟩)
+    (lastOutside : ∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block)
+    (executes : ∀ n, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (timeAdds : ∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
+        (eulerIterate initial sums duration.val) ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = H ((TensorInstance.field pool j b).index k)) ∧
+      (∀ q, q.block ≠ (TensorInstance.record pool i).block → q ≠ buffers.last →
+        finalHeap q = H q) ∧
+      (∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName →
+        b ≠ TensorInstance.stateName → b ≠ TensorInstance.timeName →
+        finalHeap ((TensorInstance.field pool i b).index k) =
+          H ((TensorInstance.field pool i b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (tensorStepSolve shape false) env types0 H) "fmi3Status" stack)
+        (.returning (.integer 0) finalHeap stack) :=
+  tensorSolve_reaches_for program shape definitions linked (library.restrict _) found H pool i initial input results sums times count duration step env types0 stack buffers oldLast bounded matched mBound stepValue stepCast lastValue freshDst freshSrc freshCount freshExpected freshSteps freshK freshN freshRhs freshOK readsState readsInput writableState writableDeriv timeInit lastCell lastOutside executes adds timeAdds resolves fenv
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile Rumoca.CTensor in
 /-- The model-dependent numerical tail of the output-aware tensor `fmi3DoStep`: the
 seven function-scope declarations, the outer grid loop, then the prepared
@@ -1846,9 +2222,9 @@ square-Jacobian diagonal entry `rumoca_square_jacobian_diag` (writing `J = diag(
 from the instance's current input region), then the advanced-time publication and the
 `fmi3OK` return. Alongside the output-free conclusion it delivers the dense Jacobian
 `diag(2*u)` into the instance's `J` region. -/
-theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem tensorSolveOutput_reaches_for (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (jacFound : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
@@ -1905,6 +2281,12 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = H ((TensorInstance.field pool j b).index k)) ∧
+      (∀ q, q.block ≠ (TensorInstance.record pool i).block → q ≠ buffers.last →
+        finalHeap q = H q) ∧
+      (∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName →
+        b ≠ TensorInstance.stateName → b ≠ TensorInstance.timeName → b ≠ TensorInstance.outputName →
+        finalHeap ((TensorInstance.field pool i b).index k) =
+          H ((TensorInstance.field pool i b).index k)) ∧
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
         (.body (.running (tensorStepSolve shape true) env types0 H) "fmi3Status" stack)
         (.returning (.integer 0) finalHeap stack) := by
@@ -2005,7 +2387,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
   have nBoundD : duration.val < 2 ^ 64 := duration.isLt
   -- The outer grid loop.
   obtain ⟨loopHeap, stateN, inputN, wStateN, wDerivN, timeN, othersN, _derivN, genN, outputN, loopReach⟩ :=
-    stepLoopT_reaches program shape definitions linked library found H pool i initial input results sums times
+    stepLoopT_reaches_for program shape definitions linked library found H pool i initial input results sums times
       count duration.val env6 types7 "fmi3Status" stack tail
       bounded matched nBoundD mBound6 countBound6 typedK7 typedN7 kInit6 dstBound6 srcBound6 expBound6
       stepsBound6 freshRhs6 readsState readsInput writableState writableDeriv timeInit
@@ -2055,7 +2437,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       CLoops.next, CLoops.eval, TensorContinuousStates.jacobianEntryArgs, Runtime.call, Runtime.region,
       Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.lvalue, CCalls.Events.enterCall,
       CCalls.Events.resolve, CCalls.Indirect.operand, CCalls.Indirect.resolve, CCalls.arguments,
-      CBody.bind, CBody.resolve, CBody.constants, Value.address, mTail, countTail, freshJacTail, fenv.jacobian]
+      CBody.resolve, CBody.constants, Value.address, mTail, countTail, freshJacTail, fenv.jacobian]
   -- output writability survives the loop (the loop touches only x, dx and time).
   have writableOutputLoop : Writable loopHeap (TensorInstance.field pool i TensorInstance.outputName)
       (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume := by
@@ -2063,7 +2445,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
     obtain ⟨old, ho⟩ := writableOutput a ha
     exact ⟨old, by rw [outputN TensorInstance.outputName a (by decide) (by decide) (by decide)]; exact ho⟩
   obtain ⟨jacReads, jacFrame, jacRan⟩ :=
-    TensorInstanceJacobian.jacobian_writes_events (shape := shape) definitions program linked library jacFound
+    TensorInstanceJacobian.jacobian_writes_events_for (shape := shape) definitions program linked library.binaryHeader library.fillHeader library.fillDefined jacFound
       pool i input loopHeap bounded2 inputN writableOutputLoop jacAdds (jacResolves loopHeap) jacCont
   set jacHeap := Diagonal.resultHeap loopHeap (TensorInstance.field pool i TensorInstance.outputName)
     (SquareDiagonal.doubled input) with hjacHeap
@@ -2115,7 +2497,7 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
     simp [Runtime.out, CLoops.next, leftEval, addr, Value.finite,
       store_float64 jacHeap buffers.last oldLast _ lastLoopJac, hfinal, StateProofs.written]
   have okReach := finishOK program finalHeap tailEnv types7 stack okTail fenv.statusType fenv.fmi3OK
-  refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  refine ⟨finalHeap, ?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
   · -- state region reads the N-fold Euler iterate
     intro a
     have neLast : sf.index a.val ≠ buffers.last :=
@@ -2154,10 +2536,90 @@ theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.C
       jacFrame ((TensorInstance.field pool j b).index k)
         (fun a _ => Address.instances_separate pool j i different b TensorInstance.outputName k a)
     rw [frameLast, frameJac]; exact othersN j b k different
+  · intro q outside different
+    apply (StateProofs.written_frame jacHeap buffers.last q _ different).trans
+    exact (jacFrame q (fun k _ =>
+      cell_block_ne pool i TensorInstance.outputName k q outside)).trans (genN q outside)
+  · intro b k notDerivative notState notTime notOutput
+    have notLast : (TensorInstance.field pool i b).index k ≠ buffers.last :=
+      (cell_block_ne pool i b k buffers.last lastBlock).symm
+    apply (StateProofs.written_frame jacHeap buffers.last _ _ notLast).trans
+    exact (jacFrame ((TensorInstance.field pool i b).index k) (fun a _ =>
+      TensorInstance.fields_separate pool i b TensorInstance.outputName notOutput k a)).trans
+      (outputN b k notDerivative notState notTime)
   · -- the observable-machine execution: declarations, loop, Jacobian, publish, return
     exact declReach.trans (loopReach.trans (.next (argsJac ▸ jacEnter)
       (jacRan.trans (.next resume (.next (CCalls.Events.body_step program outStep "fmi3Status" stack) okReach)))))
 
+theorem tensorSolveOutput_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (jacFound : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
+    (H : Heap) (pool : Address) (i : Nat) (initial input : Values shape)
+    (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
+    (count : UInt64) (duration : CStatements.Counter) (step : Binary64.Value)
+    (env : Locals) (types0 : Types) (stack : CCalls.Typed.Continuation)
+    (buffers : StepEntry.Buffers) (oldLast : Option Value)
+    (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
+    (mBound : env "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (stepValue : env "communicationStepSize" = some (.finite step))
+    (stepCast : convert .size (.finite step) = some (.integer duration.val))
+    (lastValue : env "lastSuccessfulTime" = some (.pointer (some buffers.last)))
+    (freshDst : env "dst" = none) (freshSrc : env "src" = none)
+    (freshCount : env "nContinuousStates" = none) (freshExpected : env "expected" = none)
+    (freshSteps : env "steps" = none) (freshK : env "k" = none) (freshN : env "n" = none)
+    (freshRhs : env "rumoca_rhs" = none) (freshOK : env "fmi3OK" = none)
+    (freshJac : env "rumoca_square_jacobian_diag" = none)
+    (readsState : Reads H (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput : Reads H (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable H (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv : Writable H (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (writableOutput : Writable H (TensorInstance.field pool i TensorInstance.outputName)
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
+    (timeInit : H (TensorInstance.field pool i TensorInstance.timeName) =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (lastCell : H buffers.last = some ⟨.float64, true, oldLast⟩)
+    (lastOutside : ∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block)
+    (executes : ∀ n, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (timeAdds : ∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (jacAdds : ∀ k : Fin shape.volume,
+      Binary64.Adds input[k] input[k] (.finite (SquareDiagonal.doubled input)[k]))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w)
+    (jacResolves : ∀ (H' : Heap) w, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling SquareDiagonal.function.signature.name
+        (Diagonal.argumentValues (TensorInstance.field pool i TensorInstance.inputName)
+          (TensorInstance.field pool i TensorInstance.outputName) shape) H' .done) w →
+      CCalls.Events.Resolves program w) (fenv : TensorFenv interface) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
+        (eulerIterate initial sums duration.val) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.outputName)
+        (Diagonal.matrix (SquareDiagonal.doubled input)) ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = H ((TensorInstance.field pool j b).index k)) ∧
+      (∀ q, q.block ≠ (TensorInstance.record pool i).block → q ≠ buffers.last →
+        finalHeap q = H q) ∧
+      (∀ (b : String) (k : Nat), b ≠ TensorInstance.derivativeName →
+        b ≠ TensorInstance.stateName → b ≠ TensorInstance.timeName → b ≠ TensorInstance.outputName →
+        finalHeap ((TensorInstance.field pool i b).index k) =
+          H ((TensorInstance.field pool i b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (tensorStepSolve shape true) env types0 H) "fmi3Status" stack)
+        (.returning (.integer 0) finalHeap stack) :=
+  tensorSolveOutput_reaches_for program shape definitions linked (library.restrict _) found jacFound H pool i initial input results sums times count duration step env types0 stack buffers oldLast bounded matched bounded2 mBound stepValue stepCast lastValue freshDst freshSrc freshCount freshExpected freshSteps freshK freshN freshRhs freshOK freshJac readsState readsInput writableState writableDeriv writableOutput timeInit lastCell lastOutside executes adds timeAdds jacAdds resolves jacResolves fenv
 end
 
 /-! ### The reused model-independent guard prefix
@@ -2249,10 +2711,10 @@ variable [interface : CInterface]
 variable (program : CCalls.Events.Program E)
 
 set_option maxRecDepth 100000 in
-theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+theorem accepted_reaches_for (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
     (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
     (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
@@ -2306,6 +2768,7 @@ theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (heade
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
       Transition.Events.Prefix (CCalls.Events.machine program)
         (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) []
@@ -2407,8 +2870,8 @@ theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (heade
         (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl]; exact timeCell
   obtain ⟨_e, _t, _ea, lastAfter⟩ := StepEntry.output_values heap buffers (times 0) oldOutput event terminate early last
   -- The tensor numerical tail from the post-guard state.
-  obtain ⟨finalHeap, stateFinal, timeFinal, lastFinal, othersFinal, solveReach⟩ :=
-    tensorSolve_reaches program shape definitions linked library found after pool i initial input results sums
+  obtain ⟨finalHeap, stateFinal, timeFinal, lastFinal, othersFinal, outsideFinal, membersFinal, solveReach⟩ :=
+    tensorSolve_reaches_for program shape definitions linked library found after pool i initial input results sums
       times count duration step gridEnv gridTypes .done buffers (some (.finite (times 0))) bounded matched
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, instanceValue, hp])
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, stepBound]) dcast
@@ -2429,14 +2892,153 @@ theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (heade
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters,
         StepEntry.bindings, CBody.bind]) readsStateAfter readsInputAfter writableStateAfter writableDerivAfter
       timeAfter lastAfter outsideLast executes adds timeAdds resolves fenv
-  refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, ?_, ?_⟩
+  refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, ?_, ?_, ?_⟩
   · intro j b k different
     have frameAfter : after ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k) :=
       StepEntry.output_instance heap buffers (times 0) p ((TensorInstance.field pool j b).index k)
         (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl
     rw [othersFinal j b k different, frameAfter]
+  · refine StepEntry.success_of_frames heap finalHeap p buffers (times 0) oldOutput
+      event terminate early last (outsideEvent i) (outsideTerminate i)
+      (outsideEarly i) (outsideLast i) outsideFinal ?_
+    simpa only [Address.index_zero] using
+      membersFinal "mode" 0 (by decide) (by decide) (by decide)
   · refine (CCalls.Events.internal_path program entered).trans (first.trans (second'.trans (third'.trans ?_)))
     exact CCalls.Events.internal_path program solveReach
+
+theorem accepted_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
+    (count : UInt64) (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape false)))
+    (kindValue : load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1))
+    (modeValue : load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4))
+    (timeCell : heap ((TensorInstance.record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (same : Binary64.value point = Binary64.value (times 0))
+    (enabled : load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome))
+    (limit : ∀ value, stop = some value →
+      load heap ((TensorInstance.record pool i).member "stop") = some (.finite value))
+    (admitted : StepAdmission.AdmittedDuration step)
+    (progress : Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step))
+    (withinStop : ∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value)
+    (readsState : Reads heap (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput : Reads heap (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable heap (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv : Writable heap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, oldOutput⟩)
+    (outsideEvent : ∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block)
+    (outsideTerminate : ∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block)
+    (outsideEarly : ∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block)
+    (outsideLast : ∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block)
+    (executes : ∀ n, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (timeAdds : ∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
+        (eulerIterate initial sums duration.val) ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
+      Transition.Events.Prefix (CCalls.Events.machine program)
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) []
+        (.returning (.integer 0) finalHeap .done) :=
+  accepted_reaches_for program shape types header fenv nearest definitions linked (library.restrict _) found heap pool i buffers point step flag stop oldOutput initial input results sums times count bounded matched rounding floorBound defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly outsideLast executes adds timeAdds resolves
+theorem accepted_behaviors_for (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
+    (count : UInt64) (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape false)))
+    (kindValue : load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1))
+    (modeValue : load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4))
+    (timeCell : heap ((TensorInstance.record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (same : Binary64.value point = Binary64.value (times 0))
+    (enabled : load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome))
+    (limit : ∀ value, stop = some value →
+      load heap ((TensorInstance.record pool i).member "stop") = some (.finite value))
+    (admitted : StepAdmission.AdmittedDuration step)
+    (progress : Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step))
+    (withinStop : ∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value)
+    (readsState : Reads heap (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput : Reads heap (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable heap (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv : Writable heap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, oldOutput⟩)
+    (outsideEvent : ∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block)
+    (outsideTerminate : ∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block)
+    (outsideEarly : ∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block)
+    (outsideLast : ∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block)
+    (executes : ∀ n, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (timeAdds : ∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
+        (eulerIterate initial sums duration.val) ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, finalHeap⟩ := by
+  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal, successFinal, reach⟩ :=
+    accepted_reaches_for program shape types header fenv nearest definitions linked library found heap pool i buffers point step
+      flag stop oldOutput initial input results sums times count bounded matched rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
+      readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate
+      outsideEarly outsideLast executes adds timeAdds resolves
+  exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal, successFinal,
+    fun behavior => (reach.forced (CCalls.Events.return_forced program (.integer 0) finalHeap)).behaviors behavior⟩
 
 theorem accepted_behaviors (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
     (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
@@ -2495,23 +3097,16 @@ theorem accepted_behaviors (shape : Tensor.Shape) (types : StepEntry.Types) (hea
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
       ∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
-        behavior = .terminates [] ⟨.integer 0, finalHeap⟩ := by
-  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal, reach⟩ :=
-    accepted_reaches program shape types header fenv nearest definitions linked library found heap pool i buffers point step
-      flag stop oldOutput initial input results sums times count bounded matched rounding floorBound
-      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
-      readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate
-      outsideEarly outsideLast executes adds timeAdds resolves
-  exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, timeFinal, lastFinal, othersFinal,
-    fun behavior => (reach.forced (CCalls.Events.return_forced program (.integer 0) finalHeap)).behaviors behavior⟩
-
-theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+        behavior = .terminates [] ⟨.integer 0, finalHeap⟩ :=
+  accepted_behaviors_for program shape types header fenv nearest definitions linked (library.restrict _) found heap pool i buffers point step flag stop oldOutput initial input results sums times count bounded matched rounding floorBound defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly outsideLast executes adds timeAdds resolves
+theorem accepted_output_reaches_for (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
     (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
     (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree)
     (jacFound : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
@@ -2578,6 +3173,7 @@ theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types)
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
       Transition.Events.Prefix (CCalls.Events.machine program)
         (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) []
@@ -2684,8 +3280,8 @@ theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types)
         (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl]; exact timeCell
   obtain ⟨_e, _t, _ea, lastAfter⟩ := StepEntry.output_values heap buffers (times 0) oldOutput event terminate early last
   -- The tensor numerical tail from the post-guard state.
-  obtain ⟨finalHeap, stateFinal, jFinal, timeFinal, lastFinal, othersFinal, solveReach⟩ :=
-    tensorSolveOutput_reaches program shape definitions linked library found jacFound after pool i initial input results sums
+  obtain ⟨finalHeap, stateFinal, jFinal, timeFinal, lastFinal, othersFinal, outsideFinal, membersFinal, solveReach⟩ :=
+    tensorSolveOutput_reaches_for program shape definitions linked library found jacFound after pool i initial input results sums
       times count duration step gridEnv gridTypes .done buffers (some (.finite (times 0))) bounded matched bounded2
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, instanceValue, hp])
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, stepBound]) dcast
@@ -2708,14 +3304,179 @@ theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types)
       (by simp [gridEnv, clockEnv, roundingEnv, CBody.bind, hlater, StepEntry.locals, hparams, StepEntry.parameters,
         StepEntry.bindings, CBody.bind]) readsStateAfter readsInputAfter writableStateAfter writableDerivAfter writableOutputAfter
       timeAfter lastAfter outsideLast executes adds timeAdds jacAdds resolves jacResolves fenv
-  refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, ?_, ?_⟩
+  refine ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, ?_, ?_, ?_⟩
   · intro j b k different
     have frameAfter : after ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k) :=
       StepEntry.output_instance heap buffers (times 0) p ((TensorInstance.field pool j b).index k)
         (outsideEvent i) (outsideTerminate i) (outsideEarly i) (outsideLast i) rfl
     rw [othersFinal j b k different, frameAfter]
+  · refine StepEntry.success_of_frames heap finalHeap p buffers (times 0) oldOutput
+      event terminate early last (outsideEvent i) (outsideTerminate i)
+      (outsideEarly i) (outsideLast i) outsideFinal ?_
+    simpa only [Address.index_zero] using
+      membersFinal "mode" 0 (by decide) (by decide) (by decide) (by decide)
   · refine (CCalls.Events.internal_path program entered).trans (first.trans (second'.trans (third'.trans ?_)))
     exact CCalls.Events.internal_path program solveReach
+
+theorem accepted_output_reaches (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (jacFound : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
+    (count : UInt64) (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape true)))
+    (kindValue : load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1))
+    (modeValue : load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4))
+    (timeCell : heap ((TensorInstance.record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (same : Binary64.value point = Binary64.value (times 0))
+    (enabled : load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome))
+    (limit : ∀ value, stop = some value →
+      load heap ((TensorInstance.record pool i).member "stop") = some (.finite value))
+    (admitted : StepAdmission.AdmittedDuration step)
+    (progress : Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step))
+    (withinStop : ∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value)
+    (readsState : Reads heap (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput : Reads heap (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable heap (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv : Writable heap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (writableOutput : Writable heap (TensorInstance.field pool i TensorInstance.outputName)
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, oldOutput⟩)
+    (outsideEvent : ∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block)
+    (outsideTerminate : ∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block)
+    (outsideEarly : ∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block)
+    (outsideLast : ∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block)
+    (executes : ∀ n, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (timeAdds : ∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (jacAdds : ∀ k : Fin shape.volume,
+      Binary64.Adds input[k] input[k] (.finite (SquareDiagonal.doubled input)[k]))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w)
+    (jacResolves : ∀ (H' : Heap) w, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling SquareDiagonal.function.signature.name
+        (Diagonal.argumentValues (TensorInstance.field pool i TensorInstance.inputName)
+          (TensorInstance.field pool i TensorInstance.outputName) shape) H' .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
+        (eulerIterate initial sums duration.val) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.outputName)
+        (Diagonal.matrix (SquareDiagonal.doubled input)) ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
+      Transition.Events.Prefix (CCalls.Events.machine program)
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) []
+        (.returning (.integer 0) finalHeap .done) :=
+  accepted_output_reaches_for program shape types header fenv nearest definitions linked (library.restrict _) found jacFound heap pool i buffers point step flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate outsideEarly outsideLast executes adds timeAdds jacAdds resolves jacResolves
+theorem accepted_output_behaviors_for (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
+    (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (jacFound : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
+    (count : UInt64) (bounded : shape.volume < 2 ^ 64) (matched : count.toNat = shape.volume)
+    (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
+    (rounding : program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩))
+    (floorBound : program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType))
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape true)))
+    (kindValue : load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1))
+    (modeValue : load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4))
+    (timeCell : heap ((TensorInstance.record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩)
+    (same : Binary64.value point = Binary64.value (times 0))
+    (enabled : load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome))
+    (limit : ∀ value, stop = some value →
+      load heap ((TensorInstance.record pool i).member "stop") = some (.finite value))
+    (admitted : StepAdmission.AdmittedDuration step)
+    (progress : Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step))
+    (withinStop : ∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value)
+    (readsState : Reads heap (TensorInstance.field pool i TensorInstance.stateName) initial)
+    (readsInput : Reads heap (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableState : Writable heap (TensorInstance.field pool i TensorInstance.stateName) shape.volume)
+    (writableDeriv : Writable heap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume)
+    (writableOutput : Writable heap (TensorInstance.field pool i TensorInstance.outputName)
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, oldOutput⟩)
+    (outsideEvent : ∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block)
+    (outsideTerminate : ∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block)
+    (outsideEarly : ∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block)
+    (outsideLast : ∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block)
+    (executes : ∀ n, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n))
+    (adds : ∀ n, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a]))
+    (timeAdds : ∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1))))
+    (jacAdds : ∀ k : Fin shape.volume,
+      Binary64.Adds input[k] input[k] (.finite (SquareDiagonal.doubled input)[k]))
+    (resolves : ∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w)
+    (jacResolves : ∀ (H' : Heap) w, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling SquareDiagonal.function.signature.name
+        (Diagonal.argumentValues (TensorInstance.field pool i TensorInstance.inputName)
+          (TensorInstance.field pool i TensorInstance.outputName) shape) H' .done) w →
+      CCalls.Events.Resolves program w) :
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
+        (eulerIterate initial sums duration.val) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.outputName)
+        (Diagonal.matrix (SquareDiagonal.doubled input)) ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, finalHeap⟩ := by
+  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, othersFinal, successFinal, reach⟩ :=
+    accepted_output_reaches_for program shape types header fenv nearest definitions linked library found jacFound heap pool i buffers point step
+      flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
+      readsInput writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate
+      outsideEarly outsideLast executes adds timeAdds jacAdds resolves jacResolves
+  exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, othersFinal, successFinal,
+    fun behavior => (reach.forced (CCalls.Events.return_forced program (.integer 0) finalHeap)).behaviors behavior⟩
 
 theorem accepted_output_behaviors (shape : Tensor.Shape) (types : StepEntry.Types) (header : CFenv.Header)
     (fenv : TensorFenv interface) (nearest : interface.constants "FE_TONEAREST" = some (.integer header.nearest))
@@ -2787,19 +3548,12 @@ theorem accepted_output_behaviors (shape : Tensor.Shape) (types : StepEntry.Type
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
       ∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
-        behavior = .terminates [] ⟨.integer 0, finalHeap⟩ := by
-  obtain ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, othersFinal, reach⟩ :=
-    accepted_output_reaches program shape types header fenv nearest definitions linked library found jacFound heap pool i buffers point step
-      flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound
-      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
-      readsInput writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate
-      outsideEarly outsideLast executes adds timeAdds jacAdds resolves jacResolves
-  exact ⟨duration, finalHeap, dpos, dbound, ddur, stateFinal, jFinal, timeFinal, lastFinal, othersFinal,
-    fun behavior => (reach.forced (CCalls.Events.return_forced program (.integer 0) finalHeap)).behaviors behavior⟩
-
+        behavior = .terminates [] ⟨.integer 0, finalHeap⟩ :=
+  accepted_output_behaviors_for program shape types header fenv nearest definitions linked (library.restrict _) found jacFound heap pool i buffers point step flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate outsideEarly outsideLast executes adds timeAdds jacAdds resolves jacResolves
 end
 
 /-! ### The pre-guard rejections
@@ -2857,6 +3611,78 @@ theorem lifecycle_behaviors (shape : Tensor.Shape) (hasOutput : Bool) (types : S
     helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind]) messageBound hk hm hl hg rejected
+
+/-- Lifecycle rejection with logging enabled executes the actual failure helper.
+The callback sees the terminated mode; its effects and lack of an outcome remain
+explicit in the public call's behavior. Output buffers are not accessed first. -/
+theorem lifecycle_logged_behaviors (shape : Tensor.Shape) (hasOutput : Bool)
+    (types : StepEntry.Types) (heap : Heap)
+    (p message category logger : Address) (environment : Option Address)
+    (kind : Kind) (mode : Mode) (name : String) (foreign : CCalls.Events.External E)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs)
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)))
+    (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (messageBound : static.addresses ErrorCalls.rejectionMessage = some message)
+    (address : program.addresses logger = some name)
+    (external : program.externals name = some foreign)
+    (prototype : foreign.signature = Logging.signature name)
+    (literal : static.addresses "logStatus" = some category)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
+    (hl : load heap (p.member "logger") = some (.pointer (some logger)))
+    (hg : load heap (p.member "logging") = some (.integer 1))
+    (he : load heap (p.member "environment") = some (.pointer environment))
+    (rejected : ¬ Reference.Allowed .doStep kind mode) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      (∃ events value after, foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value after ∧
+        behavior = .terminates events ⟨.integer 3, after⟩) ∨
+      ((∀ events value after, ¬ foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value after) ∧ behavior = .wrong []) := by
+  apply GuardedCalls.rejected_all_behaviors program (function shape hasOutput) .doStep
+    (StepEntry.outputCode ++ StepEntry.inputGuard ::
+      (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput))
+    (StepEntry.arguments (some p) point step flag outputs)
+    (StepEntry.parameters (some p) point step flag outputs)
+    heap p message category logger environment kind mode name foreign defined
+    (StepEntry.parameters_bound types (some p) point step flag outputs)
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+      StepEntry.inputCondition, List.append_assoc]) rfl (doStepBody_closed shape hasOutput)
+    helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    messageBound address external prototype literal hk hm hl hg he rejected
+
+/-- A missing logger rejects a disallowed DoStep before inspecting the logging
+flag or any output buffer. -/
+theorem lifecycle_missing_behaviors (shape : Tensor.Shape) (hasOutput : Bool)
+    (types : StepEntry.Types) (heap : Heap)
+    (p message : Address) (kind : Kind) (mode : Mode)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs)
+    (defined : program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)))
+    (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (messageBound : static.addresses ErrorCalls.rejectionMessage = some message)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
+    (hl : load heap (p.member "logger") = some (.pointer none))
+    (rejected : ¬ Reference.Allowed .doStep kind mode) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
+  apply GuardedCalls.rejected_missing_behaviors program (function shape hasOutput) .doStep
+    (StepEntry.outputCode ++ StepEntry.inputGuard ::
+      (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput))
+    (StepEntry.arguments (some p) point step flag outputs)
+    (StepEntry.parameters (some p) point step flag outputs)
+    heap p message kind mode defined
+    (StepEntry.parameters_bound types (some p) point step flag outputs)
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+      StepEntry.inputCondition, List.append_assoc]) rfl (doStepBody_closed shape hasOutput)
+    helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
+    messageBound hk hm hl rejected
 
 end
 
@@ -3205,15 +4031,229 @@ theorem function_denotes (shape : Tensor.Shape) (hasOutput : Bool) :
 
 end
 
+/-- Invalid numerical inputs are rejected under every checked error context. -/
+theorem input_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
+    StepArguments.InputRejectionContract (function shape hasOutput) := by
+  apply Rumoca.FMI3.StepArguments.input_rejection_contract (function shape hasOutput)
+    (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++
+      tensorStepSolve shape hasOutput)
+    rfl _ (doStepBody_closed shape hasOutput)
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+/-- Missing output pointers are rejected under every checked error context. -/
+theorem output_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
+    StepArguments.OutputRejectionContract (function shape hasOutput) := by
+  apply Rumoca.FMI3.StepArguments.output_rejection_contract (function shape hasOutput)
+    (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++
+      tensorStepSolve shape hasOutput)
+    rfl _ (doStepBody_closed shape hasOutput)
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+theorem rounding_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
+    StepFailures.RoundingRejectionContract (function shape hasOutput) := by
+  apply StepFailures.rounding_rejection_contract (function shape hasOutput)
+    (Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput) rfl _ (doStepBody_closed shape hasOutput)
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+theorem stop_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
+    StepFailures.StopRejectionContract (function shape hasOutput) := by
+  apply StepFailures.stop_rejection_contract (function shape hasOutput)
+    (Runtime.stepGrid ++ tensorStepSolve shape hasOutput) rfl _ (doStepBody_closed shape hasOutput)
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+theorem discard_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
+    StepDiscard.DiscardRejectionContract (function shape hasOutput) := by
+  apply StepDiscard.discard_rejection_contract (function shape hasOutput)
+    (tensorStepSolve shape hasOutput) rfl _ (doStepBody_closed shape hasOutput)
+  simp [function, doStepBody, StepEntry.outputCode,
+    StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
+
+
 /-! ### The consumable tensor `fmi3DoStep` contract
 
 This mirrors the tensor-native contract shape of `TensorReset.Contract`,
 `TensorContinuousStates.DerivContract` and `TensorNominals.Contract`: the printed
 function text, its declaration closedness, its printed-text denotation under the
 shared C printer, the null-handle rejection, and the accepted end-to-end execution
-over the tensor instance record. The lifecycle rejection (`lifecycle_behaviors`) and,
-under the same C floating-environment guard premises, the `fmi3Discard` off-grid path
-are companion theorems. -/
+over the tensor instance record. Suppressed and enabled logging for lifecycle
+rejection, and the `fmi3Discard` off-grid path under the C floating-environment
+guard premises, are required parts of the contract. -/
+def ExecutionFreeFor (shape : Tensor.Shape) (header : CFenv.Header)
+    (target : CInterface) (fenv : TensorFenv target) : Prop :=
+    letI : CInterface := target
+    ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types)
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
+    (count : UInt64), shape.volume < 2 ^ 64 → count.toNat = shape.volume →
+    program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩) →
+    program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType) →
+    program.internal.definitions "fmi3DoStep" = some (.tree (function shape false)) →
+    load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1) →
+    load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4) →
+    heap ((TensorInstance.record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩ →
+    Binary64.value point = Binary64.value (times 0) →
+    load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome) →
+    (∀ value, stop = some value →
+      load heap ((TensorInstance.record pool i).member "stop") = some (.finite value)) →
+    StepAdmission.AdmittedDuration step →
+    Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step) →
+    (∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value) →
+    Reads heap (TensorInstance.field pool i TensorInstance.stateName) initial →
+    Reads heap (TensorInstance.field pool i TensorInstance.inputName) input →
+    Writable heap (TensorInstance.field pool i TensorInstance.stateName) shape.volume →
+    Writable heap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume →
+    HistoryBodies.BoolWritable heap buffers.event → HistoryBodies.BoolWritable heap buffers.terminate →
+    HistoryBodies.BoolWritable heap buffers.early → heap buffers.last = some ⟨.float64, true, oldOutput⟩ →
+    (∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block) →
+    (∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block) →
+    (∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block) →
+    (∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block) →
+    (∀ n, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n)) →
+    (∀ n, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a])) →
+    (∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1)))) →
+    (∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) →
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
+        (eulerIterate initial sums duration.val) ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, finalHeap⟩
+
+theorem execution_free_for (shape : Tensor.Shape) (header : CFenv.Header)
+    (target : CInterface) (fenv : TensorFenv target)
+    (nearest : target.constants "FE_TONEAREST" = some (.integer header.nearest)) :
+    ExecutionFreeFor shape header target fenv := by
+  letI : CInterface := target
+  intro E program ptypes definitions linked library found heap pool i buffers point step flag stop
+      oldOutput initial input results sums times count bounded matched rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput
+      writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly outsideLast
+      executes adds timeAdds resolves
+  exact accepted_behaviors_for program shape ptypes header fenv nearest
+      definitions linked library found heap pool i buffers point step
+      flag stop oldOutput initial input results sums times count bounded matched rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
+      readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly
+      outsideLast executes adds timeAdds resolves
+
+def ExecutionOutputFor (shape : Tensor.Shape) (header : CFenv.Header)
+    (target : CInterface) (fenv : TensorFenv target) : Prop :=
+    letI : CInterface := target
+    ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types)
+    (definitions : CLoops.Calls.Definitions) (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.LibraryFor (TensorInstanceRhs.kernel shape).derivative definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (jacFound : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
+    (heap : Heap) (pool : Address) (i : Nat) (buffers : StepEntry.Buffers)
+    (point step : Binary64.Value) (flag : Bool) (stop : Option Binary64.Value) (oldOutput : Option Value)
+    (initial input : Values shape) (results sums : Nat → Values shape) (times : Nat → Binary64.Value)
+    (count : UInt64), shape.volume < 2 ^ 64 → count.toNat = shape.volume →
+    (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64 →
+    program.externals "fegetround" = some (CMathCalls.roundingExternal fenv.intType header.nearest
+      ⟨by have positive := header.nonnegative; omega, header.bounded⟩) →
+    program.externals "floor" = some (CMathCalls.floorExternal fenv.doubleType) →
+    program.internal.definitions "fmi3DoStep" = some (.tree (function shape true)) →
+    load heap ((TensorInstance.record pool i).member "kind") = some (.integer 1) →
+    load heap ((TensorInstance.record pool i).member "mode") = some (.integer 4) →
+    heap ((TensorInstance.record pool i).member "time") =
+      some ⟨.float64, true, some (.finite (times 0))⟩ →
+    Binary64.value point = Binary64.value (times 0) →
+    load heap ((TensorInstance.record pool i).member "stopDefined") = some (boolean stop.isSome) →
+    (∀ value, stop = some value →
+      load heap ((TensorInstance.record pool i).member "stop") = some (.finite value)) →
+    StepAdmission.AdmittedDuration step →
+    Binary64.value (times 0) < Binary64.value (Binary64.roundedAdd (times 0) step) →
+    (∀ value, stop = some value →
+      Binary64.value (Binary64.roundedAdd (times 0) step) ≤ Binary64.value value) →
+    Reads heap (TensorInstance.field pool i TensorInstance.stateName) initial →
+    Reads heap (TensorInstance.field pool i TensorInstance.inputName) input →
+    Writable heap (TensorInstance.field pool i TensorInstance.stateName) shape.volume →
+    Writable heap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume →
+    Writable heap (TensorInstance.field pool i TensorInstance.outputName)
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume →
+    HistoryBodies.BoolWritable heap buffers.event → HistoryBodies.BoolWritable heap buffers.terminate →
+    HistoryBodies.BoolWritable heap buffers.early → heap buffers.last = some ⟨.float64, true, oldOutput⟩ →
+    (∀ j : Nat, buffers.event.block ≠ (TensorInstance.record pool j).block) →
+    (∀ j : Nat, buffers.terminate.block ≠ (TensorInstance.record pool j).block) →
+    (∀ j : Nat, buffers.early.block ≠ (TensorInstance.record pool j).block) →
+    (∀ j : Nat, buffers.last.block ≠ (TensorInstance.record pool j).block) →
+    (∀ n, Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment (eulerIterate initial sums n) input) (results n)) →
+    (∀ n, ∀ a : Fin shape.volume,
+      Binary64.Adds (eulerIterate initial sums n)[a] (results n)[a] (.finite (sums n)[a])) →
+    (∀ n, Binary64.Adds (times n) Binary64.one (.finite (times (n + 1)))) →
+    (∀ k : Fin shape.volume, Binary64.Adds input[k] input[k] (.finite (SquareDiagonal.doubled input)[k])) →
+    (∀ (Hn : Heap) (w), Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape)) Hn .done) w →
+      CCalls.Events.Resolves program w) →
+    (∀ (H' : Heap) w, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling SquareDiagonal.function.signature.name
+        (Diagonal.argumentValues (TensorInstance.field pool i TensorInstance.inputName)
+          (TensorInstance.field pool i TensorInstance.outputName) shape) H' .done) w →
+      CCalls.Events.Resolves program w) →
+    ∃ (duration : CStatements.Counter) (finalHeap : Heap),
+      0 < duration.val ∧ duration.val ≤ 1000000 ∧ Binary64.value step = (duration.val : ℝ) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.stateName)
+        (eulerIterate initial sums duration.val) ∧
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.outputName)
+        (Diagonal.matrix (SquareDiagonal.doubled input)) ∧
+      finalHeap (TensorInstance.field pool i TensorInstance.timeName) =
+        some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
+          (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, finalHeap⟩
+
+theorem execution_output_for (shape : Tensor.Shape) (header : CFenv.Header)
+    (target : CInterface) (fenv : TensorFenv target)
+    (nearest : target.constants "FE_TONEAREST" = some (.integer header.nearest)) :
+    ExecutionOutputFor shape header target fenv := by
+  letI : CInterface := target
+  intro E program ptypes definitions linked library found jacFound heap pool i buffers point step flag stop
+      oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput
+      writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate outsideEarly
+      outsideLast executes adds timeAdds jacAdds resolves jacResolves
+  exact accepted_output_behaviors_for program shape ptypes header fenv nearest
+      definitions linked library found jacFound heap pool i buffers
+      point step flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound
+      defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
+      readsInput writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate
+      outsideEarly outsideLast executes adds timeAdds jacAdds resolves jacResolves
+
 section
 open CTree.Printer
 open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile Rumoca.CTensor
@@ -3221,10 +4261,11 @@ variable [static : StaticLiterals]
 
 /-- The accepted end-to-end behavior of the output-free tensor `fmi3DoStep`.
 It advances the state by the admitted number of unit Euler steps and publishes the
-advanced time, preserving every other instance. The C floating-environment
+advanced time, preserving every other instance, the selected mode and the three
+initialized false output flags. The C floating-environment
 interface is the header-aware tensor interface, so the round-to-nearest guard and
-`fmi3OK` return resolve; the only remaining external premise is the modeled
-`fegetround`/`floor` platform returns. -/
+`fmi3OK` return resolve. Linked numerical definitions, finite-arithmetic, storage
+and modeled `fegetround`/`floor` premises remain explicit. -/
 def ExecutionFree (shape : Tensor.Shape) (header : CFenv.Header) : Prop :=
     letI : CInterface := fenvInterface header
     ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types)
@@ -3281,6 +4322,7 @@ def ExecutionFree (shape : Tensor.Shape) (header : CFenv.Header) : Prop :=
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
       ∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
@@ -3288,7 +4330,8 @@ def ExecutionFree (shape : Tensor.Shape) (header : CFenv.Header) : Prop :=
 
 /-- The accepted end-to-end behavior of the output-aware tensor `fmi3DoStep`.
 Alongside the output-free behavior it writes the dense Jacobian `diag(2*u)` into the
-instance's `J` region on every accepted step, preserving every other instance. -/
+instance's `J` region on every accepted step, preserving every other instance,
+the selected mode and the three initialized false output flags. -/
 def ExecutionOutput (shape : Tensor.Shape) (header : CFenv.Header) : Prop :=
     letI : CInterface := fenvInterface header
     ∀ {E} (program : CCalls.Events.Program E) (ptypes : StepEntry.Types)
@@ -3357,6 +4400,7 @@ def ExecutionOutput (shape : Tensor.Shape) (header : CFenv.Header) : Prop :=
       finalHeap buffers.last = some ⟨.float64, true, some (.finite (times duration.val))⟩ ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      StepEntry.SuccessState heap finalHeap (TensorInstance.record pool i) buffers ∧
       ∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling "fmi3DoStep" (StepEntry.arguments (some (TensorInstance.record pool i))
           (Binary64.toBits point).val (Binary64.toBits step).val flag buffers.outputs) heap .done) behavior ↔
@@ -3376,8 +4420,67 @@ structure Contract (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Hea
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling "fmi3DoStep" (StepEntry.arguments none point step flag outputs) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩
+  lifecycleSilent : letI : CInterface := cInterface static.addresses
+    ∀ {E} (program : CCalls.Events.Program E) (_types : StepEntry.Types) (heap : Heap)
+    (p message : Address) (logger : Option Address) (kind : Kind) (mode : Mode)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs),
+    program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)) →
+    program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+    static.addresses ErrorCalls.rejectionMessage = some message →
+    load heap (p.member "kind") = some (.integer kind.code) →
+    heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
+    load heap (p.member "logger") = some (.pointer logger) →
+    load heap (p.member "logging") = some (.integer 0) →
+    ¬ Reference.Allowed .doStep kind mode →
+    ∀ behavior, (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩
+  lifecycleLogged : letI : CInterface := cInterface static.addresses
+    ∀ {E} (program : CCalls.Events.Program E) (_types : StepEntry.Types) (heap : Heap)
+    (p message category logger : Address) (environment : Option Address)
+    (kind : Kind) (mode : Mode) (name : String) (foreign : CCalls.Events.External E)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs),
+    program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)) →
+    program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+    static.addresses ErrorCalls.rejectionMessage = some message →
+    program.addresses logger = some name →
+    program.externals name = some foreign →
+    foreign.signature = Logging.signature name →
+    static.addresses "logStatus" = some category →
+    load heap (p.member "kind") = some (.integer kind.code) →
+    heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
+    load heap (p.member "logger") = some (.pointer (some logger)) →
+    load heap (p.member "logging") = some (.integer 1) →
+    load heap (p.member "environment") = some (.pointer environment) →
+    ¬ Reference.Allowed .doStep kind mode →
+    ∀ behavior, (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      (∃ events value after, foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value after ∧
+        behavior = .terminates events ⟨.integer 3, after⟩) ∨
+      ((∀ events value after, ¬ foreign.execute (Logging.arguments environment category message)
+        (LifecycleBodies.writeMode heap p .terminated) events value after) ∧ behavior = .wrong [])
+  lifecycleMissing : letI : CInterface := cInterface static.addresses
+    ∀ {E} (program : CCalls.Events.Program E) (_types : StepEntry.Types) (heap : Heap)
+    (p message : Address) (kind : Kind) (mode : Mode)
+    (point step : BitVec 64) (flag : Bool) (outputs : StepEntry.Outputs),
+    program.internal.definitions "fmi3DoStep" = some (.tree (function shape hasOutput)) →
+    program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+    static.addresses ErrorCalls.rejectionMessage = some message →
+    load heap (p.member "kind") = some (.integer kind.code) →
+    heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩ →
+    load heap (p.member "logger") = some (.pointer none) →
+    ¬ Reference.Allowed .doStep kind mode →
+    ∀ behavior, (CCalls.Events.machine program).Behaves
+      (.calling "fmi3DoStep" (StepEntry.arguments (some p) point step flag outputs) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩
   execution : cond hasOutput (ExecutionOutput shape header) (ExecutionFree shape header)
   discarded : DiscardSuppressed shape hasOutput header ∧ DiscardLogged shape hasOutput header
+  inputRejected : StepArguments.InputRejectionContract (function shape hasOutput)
+  outputsRejected : StepArguments.OutputRejectionContract (function shape hasOutput)
+  roundingRejected : StepFailures.RoundingRejectionContract (function shape hasOutput)
+  stopRejected : StepFailures.StopRejectionContract (function shape hasOutput)
+  discardRejected : StepDiscard.DiscardRejectionContract (function shape hasOutput)
 
 theorem execution_free (shape : Tensor.Shape) (header : CFenv.Header) : ExecutionFree shape header := by
   letI : CInterface := fenvInterface header
@@ -3386,13 +4489,12 @@ theorem execution_free (shape : Tensor.Shape) (header : CFenv.Header) : Executio
       defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput
       writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly outsideLast
       executes adds timeAdds resolves
-  exact accepted_behaviors program shape ptypes header (fenvInterface_fenv header) (fenvInterface_nearest header)
-      definitions linked library found heap pool i buffers point step
+  exact accepted_behaviors_for program shape ptypes header (fenvInterface_fenv header) (fenvInterface_nearest header)
+      definitions linked (library.restrict _) found heap pool i buffers point step
       flag stop oldOutput initial input results sums times count bounded matched rounding floorBound
       defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
       readsInput writableState writableDeriv event terminate early last outsideEvent outsideTerminate outsideEarly
       outsideLast executes adds timeAdds resolves
-
 theorem execution_output (shape : Tensor.Shape) (header : CFenv.Header) : ExecutionOutput shape header := by
   letI : CInterface := fenvInterface header
   intro E program ptypes definitions linked library found jacFound heap pool i buffers point step flag stop
@@ -3400,13 +4502,12 @@ theorem execution_output (shape : Tensor.Shape) (header : CFenv.Header) : Execut
       defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState readsInput
       writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate outsideEarly
       outsideLast executes adds timeAdds jacAdds resolves jacResolves
-  exact accepted_output_behaviors program shape ptypes header (fenvInterface_fenv header) (fenvInterface_nearest header)
-      definitions linked library found jacFound heap pool i buffers
+  exact accepted_output_behaviors_for program shape ptypes header (fenvInterface_fenv header) (fenvInterface_nearest header)
+      definitions linked (library.restrict _) found jacFound heap pool i buffers
       point step flag stop oldOutput initial input results sums times count bounded matched bounded2 rounding floorBound
       defined kindValue modeValue timeCell same enabled limit admitted progress withinStop readsState
       readsInput writableState writableDeriv writableOutput event terminate early last outsideEvent outsideTerminate
       outsideEarly outsideLast executes adds timeAdds jacAdds resolves jacResolves
-
 theorem contract (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Header) :
     Contract shape hasOutput header (function shape hasOutput).render where
   printed := rfl
@@ -3416,12 +4517,20 @@ theorem contract (shape : Tensor.Shape) (hasOutput : Bool) (header : CFenv.Heade
     letI : CInterface := cInterface static.addresses
     intro E program types heap point step flag outputs defined
     exact null_behaviors program shape hasOutput types heap point step flag outputs defined
+  lifecycleSilent := fun program => lifecycle_behaviors program shape hasOutput
+  lifecycleLogged := fun program => lifecycle_logged_behaviors program shape hasOutput
+  lifecycleMissing := fun program => lifecycle_missing_behaviors program shape hasOutput
   execution := by
     cases hasOutput
     · exact execution_free shape header
     · exact execution_output shape header
   discarded := ⟨discard_suppressed_behaviors shape hasOutput header,
     discard_logged_behaviors shape hasOutput header⟩
+  inputRejected := input_rejection_contract shape hasOutput
+  outputsRejected := output_rejection_contract shape hasOutput
+  roundingRejected := rounding_rejection_contract shape hasOutput
+  stopRejected := stop_rejection_contract shape hasOutput
+  discardRejected := discard_rejection_contract shape hasOutput
 
 end
 

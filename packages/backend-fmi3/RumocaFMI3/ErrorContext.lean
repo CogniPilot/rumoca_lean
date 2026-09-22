@@ -25,7 +25,7 @@ def static (objects : Objects) (literals : CLiteralAddresses) : ErrorContext lit
   helper := by
     simp [CodeAgrees, StmtAgrees, ExprAgrees, names, Runtime.helpers,
       Runtime.setMode, Runtime.put, Runtime.mode, Runtime.log, Runtime.branch,
-      Runtime.ret, Runtime.v, Runtime.n, Runtime.field, Runtime.both,
+      Runtime.ret, Runtime.v, Runtime.n, Runtime.field, Runtime.both, Runtime.nev, Expr.nullPointer,
       executionInterface, objectConstants]
   error := rfl
   ordinary := rfl
@@ -39,7 +39,7 @@ def withRounding (context : ErrorContext literals) (header : CFenv.Header) : Err
   helper := by
     simpa [CodeAgrees, StmtAgrees, ExprAgrees, names, Runtime.helpers,
       Runtime.setMode, Runtime.put, Runtime.mode, Runtime.log, Runtime.branch,
-      Runtime.ret, Runtime.v, Runtime.n, Runtime.field, Runtime.both,
+      Runtime.ret, Runtime.v, Runtime.n, Runtime.field, Runtime.both, Runtime.nev, Expr.nullPointer,
       CFenv.Header.interface] using context.helper
   error := context.error
   ordinary := context.ordinary
@@ -49,7 +49,7 @@ theorem instance_binding (context : ErrorContext literals) :
   have used := context.helper
   simp [CodeAgrees, StmtAgrees, ExprAgrees, names, Runtime.helpers,
     Runtime.setMode, Runtime.put, Runtime.mode, Runtime.log, Runtime.branch,
-    Runtime.ret, Runtime.v, Runtime.n, Runtime.field, Runtime.both] at used
+    Runtime.ret, Runtime.v, Runtime.n, Runtime.field, Runtime.both, Runtime.nev, Expr.nullPointer] at used
   aesop
 
 theorem error_cast (context : ErrorContext literals) :

@@ -23,7 +23,7 @@ class StaticLiterals where
 runtime bodies. Pointer values are opaque symbolic addresses here: this does
 not establish pointee layouts, callback execution or the native ABI. -/
 @[simp] def cTypes (type : String) : Option CMemory.CType :=
-  if ["void *", "Instance *", "Model *", "const Model *", "fmi3Instance",
+  if ["double *", "const double *", "void *", "Instance *", "Model *", "const Model *", "fmi3Instance",
       "fmi3Float64 *", "const fmi3Float64 *", "const char *", "fmi3String",
       "fmi3InstanceEnvironment", "fmi3FMUState", "fmi3LogMessageCallback",
       "fmi3ClockUpdateCallback", "fmi3IntermediateUpdateCallback",

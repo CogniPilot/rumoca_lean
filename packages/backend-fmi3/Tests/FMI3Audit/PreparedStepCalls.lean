@@ -1,0 +1,22 @@
+import RumocaFMI3.PreparedStepCalls
+import ProofAudit.Audit
+
+#audit axioms Rumoca.FMI3.PreparedLifecycleFailureCall.tensor_logged
+#audit axioms Rumoca.FMI3.PreparedLifecycleFailureCall.constant_logged
+#audit axioms Rumoca.FMI3.PreparedOutputFailureCall.tensor_logged
+#audit axioms Rumoca.FMI3.PreparedOutputFailureCall.constant_logged
+#audit axioms Rumoca.FMI3.PreparedInputFailureCall.tensor_logged
+#audit axioms Rumoca.FMI3.PreparedInputFailureCall.constant_logged
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.tensor_rounding_logged
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.tensor_stop_logged
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.tensor_discard_logged
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.constant_rounding_logged
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.constant_stop_logged
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.constant_discard_logged
+
+#audit axioms Rumoca.FMI3.PreparedLifecycleFailureCall.tensor_logged_for
+#audit axioms Rumoca.FMI3.PreparedOutputFailureCall.tensor_logged_for
+#audit axioms Rumoca.FMI3.PreparedInputFailureCall.tensor_logged_for
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.tensor_rounding_logged_for
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.tensor_stop_logged_for
+#audit axioms Rumoca.FMI3.PreparedNumericFailureCall.tensor_discard_logged_for

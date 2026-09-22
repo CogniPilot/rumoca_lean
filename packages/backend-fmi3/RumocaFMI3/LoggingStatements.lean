@@ -104,4 +104,34 @@ theorem failure_statement_silent_behaviors (program : CCalls.Events.Program E)
   · exact CCalls.Events.internal_prefix program (.next (by rfl) (.refl _))
       (CCalls.Events.return_forced program (.integer 3) (writeMode heap p .terminated))
 
+/-- A missing logger makes the complete failure call return Error without
+reading the logging flag or invoking any foreign callback. -/
+theorem failure_statement_missing_behaviors (program : CCalls.Events.Program E)
+    (env : Locals) (types : CLoops.Types) (code : List Stmt) (text : String)
+    (heap : Heap) (p message : Address) (old : Option Value)
+    (defined : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (unshadowed : env "fail" = none)
+    (instanceBound : resolve env "m" = some (.pointer (some p)))
+    (messageBound : static.addresses text = some message)
+    (hm : heap (p.member "mode") = some ⟨.int32, true, old⟩)
+    (hl : load heap (p.member "logger") = some (.pointer none)) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running (Runtime.fail text :: code) env types heap) "fmi3Status" .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, writeMode heap p .terminated⟩ := by
+  let saved := CCalls.Typed.Continuation.caller .ret code env types "fmi3Status" .done
+  apply Transition.Events.Forced.behaviors
+  apply CCalls.Events.internal_prefix program (.next
+    (failure_statement_entry program env types code text heap p message .done
+      unshadowed instanceBound messageBound) (.refl _))
+  apply CCalls.Events.body_call_prefix program Runtime.helpers[0]
+    [.pointer (some p), .pointer (some message)] (ErrorCalls.failureEnv p message) heap
+    ⟨.integer 3, writeMode heap p .terminated⟩ (.integer 3) saved 3 defined
+    (ErrorCalls.failure_parameters p message) (BodyEmbedding.helpers_closed _ (by simp [Runtime.helpers]))
+  · exact ErrorBodies.failure_missing_run _ heap p old
+      (by simp [ErrorCalls.failureEnv, CBody.bind, resolve]) hm hl
+      (by simp [ErrorCalls.failureEnv, CBody.bind, resolve, constants])
+  · rfl
+  · exact CCalls.Events.internal_prefix program (.next (by rfl) (.refl _))
+      (CCalls.Events.return_forced program (.integer 3) (writeMode heap p .terminated))
+
 end Rumoca.FMI3.Logging

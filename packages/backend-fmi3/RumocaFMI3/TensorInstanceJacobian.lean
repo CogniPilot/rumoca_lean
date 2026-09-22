@@ -38,10 +38,11 @@ heap in which `J` reads the dense matrix `diag(2*u)` and every cell outside the
 `J` region is preserved. The `resolves` premise records that the nested helper
 call (`rumoca_tensor_fill`) resolves directly by name, and the `adds` premise is
 the explicit no-overflow condition on the doubled input cells. -/
-theorem jacobian_writes_events {shape : Shape}
+theorem jacobian_writes_events_for {shape : Shape}
     (definitions : CLoops.Calls.Definitions) {E : Type} (program : CCalls.Events.Program E)
     (linked : CCalls.Typed.Extends definitions program.internal)
-    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (binaryHeader : CTensor.HeaderTypes interface) (fillHeader : Fill.HeaderTypes interface)
+    (fillDefined : definitions Fill.function.signature.name = some Fill.function)
     (found : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
     (pool : Address) (i : Nat) (input : Values shape) (heap : Heap)
     (bounded : (matrixShape shape.volume shape.volume).volume < 2 ^ 64)
@@ -77,9 +78,39 @@ theorem jacobian_writes_events {shape : Shape}
   have behaves := (SquareDiagonal.helper_call_correct definitions
       (TensorInstance.field pool i TensorInstance.inputName)
       (TensorInstance.field pool i TensorInstance.outputName) (doubled input) input heap found
-      library.fillDefined library.binaryHeader library.fillHeader separate readsInput adds writableOutput bounded
+      fillDefined binaryHeader fillHeader separate readsInput adds writableOutput bounded
       (.terminates (Diagonal.resultHeap heap (TensorInstance.field pool i TensorInstance.outputName)
         (doubled input)))).mpr rfl
   exact CCalls.Events.loop_call_reaches_events program definitions linked behaves resolves stack
 
+theorem jacobian_writes_events {shape : Shape}
+    (definitions : CLoops.Calls.Definitions) {E : Type} (program : CCalls.Events.Program E)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function)
+    (pool : Address) (i : Nat) (input : Values shape) (heap : Heap)
+    (bounded : (matrixShape shape.volume shape.volume).volume < 2 ^ 64)
+    (readsInput : Reads heap (TensorInstance.field pool i TensorInstance.inputName) input)
+    (writableOutput : Writable heap (TensorInstance.field pool i TensorInstance.outputName)
+      (matrixShape shape.volume shape.volume).volume)
+    (adds : ∀ k : Fin shape.volume, Binary64.Adds input[k] input[k] (.finite (doubled input)[k]))
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling SquareDiagonal.function.signature.name
+        (Diagonal.argumentValues (TensorInstance.field pool i TensorInstance.inputName)
+          (TensorInstance.field pool i TensorInstance.outputName) shape) heap .done) v →
+      CCalls.Events.Resolves program v)
+    (stack : CCalls.Typed.Continuation) :
+    Reads (Diagonal.resultHeap heap (TensorInstance.field pool i TensorInstance.outputName) (doubled input))
+        (TensorInstance.field pool i TensorInstance.outputName) (Diagonal.matrix (doubled input)) ∧
+      (∀ q, (∀ a < (matrixShape shape.volume shape.volume).volume,
+          q ≠ (TensorInstance.field pool i TensorInstance.outputName).index a) →
+        Diagonal.resultHeap heap (TensorInstance.field pool i TensorInstance.outputName) (doubled input) q = heap q) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling SquareDiagonal.function.signature.name
+          (Diagonal.argumentValues (TensorInstance.field pool i TensorInstance.inputName)
+            (TensorInstance.field pool i TensorInstance.outputName) shape) heap stack)
+        (.returning .void
+          (Diagonal.resultHeap heap (TensorInstance.field pool i TensorInstance.outputName) (doubled input))
+          stack) :=
+  jacobian_writes_events_for definitions program linked library.binaryHeader library.fillHeader library.fillDefined found pool i input heap bounded readsInput writableOutput adds resolves stack
 end Rumoca.FMI3.TensorInstanceJacobian

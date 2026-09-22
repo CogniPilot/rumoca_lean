@@ -1,4 +1,5 @@
 import RumocaFMI3.TensorFamilyContracts
+import RumocaFMI3.PreparedStepContract
 import RumocaFMI3.PublicAPICertificate
 import RumocaFMI3.TensorVersion
 import RumocaFMI3.TensorDebugLogging
@@ -32,11 +33,11 @@ floating-environment header, objects and literal addresses. This is not a
 weakening of any conjunct: each behavioral contract is included exactly as its
 proved product states it, with its own premises.
 
-Two `fmi3DoStep` behaviors remain open inside `TensorDoStep.contract` itself (the
-`fmi3Discard` off-grid composition and the header-aware floating-environment
-interface); this skeleton includes that contract as proved and inherits exactly
-those open items. This is a package-checked product only: no production artifact is
-emitted, no CLI or grammar case is added, and no existing contract changes. -/
+The `fmi3DoStep` contract includes accepted execution, off-grid discard and
+lifecycle rejection with logging suppressed or enabled. It is quantified over
+the floating-environment header below. The compiler's tensor source-build checker
+requires this adapter contract for the actual adapter bytes. External callback
+effects, finite-arithmetic premises and native correspondence remain explicit. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorAdapter
 open CTree CMemory CBody StaticFactory CLiteral.Interface
@@ -54,6 +55,15 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
   ∃ sigs : List Signature,
     ((functions model m sigs).map (fun fn => fn.signature.name)).Nodup ∧
     render model m sigs = text ∧
+    StepEntry.signature ∈ sigs ∧
+    (TensorFunctions.prepare model m sigs).isSome = true ∧
+    PreparedStep.TensorContract model m sigs ∧
+    (TensorFunctions.program model m sigs).definitions "fmi3DoStep" =
+      some (.tree (TensorDoStep.function shape m.hasOutput)) ∧
+    (TensorFunctions.program model m sigs).definitions "fail" =
+      some (.tree Runtime.helpers[0]) ∧
+    (∃ before after : String,
+      text = before ++ (TensorDoStep.function shape m.hasOutput).render ++ after) ∧
     PublicAPI.Covered sigs ∧
     TensorAbsentVariables.FamilyContract model m sigs ∧
     TensorCapabilityRejection.FamilyContract model m sigs ∧
@@ -160,12 +170,18 @@ given the located and distinct header signatures and the model-free coverage. -/
 theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (sigs : List Signature)
     (unique : ((functions model m sigs).map (fun fn => fn.signature.name)).Nodup)
+    (step : StepEntry.signature ∈ sigs)
     (covered : PublicAPI.Covered sigs)
     (absentMembers : ∀ ty write, AbsentVariables.signature ty write ∈ sigs)
     (capMembers : ∀ sig ∈ CapabilityRejection.signatures, sig ∈ sigs)
-    (freshKernel : ∀ sig ∈ sigs, sig.name ≠ "rumoca_rhs") :
+    (freshKernel : ∀ sig ∈ sigs, sig.name ≠ "rumoca_rhs")
+    (poolReady : (TensorFunctions.prepare model m sigs).isSome = true) :
     Contract model m (render model m sigs) :=
-  ⟨sigs, unique, rfl, covered,
+  ⟨sigs, unique, rfl, step, poolReady, PreparedStep.tensor_contract model m sigs step unique,
+    TensorFunctions.doStep_bound model m sigs unique step,
+    TensorFunctions.helpers_bound model m sigs Runtime.helpers[0]
+      (by simp [TensorFunctions.helpers]),
+    TensorFunctions.doStep_fragment model m sigs step, covered,
     TensorAbsentVariables.family_correct model m sigs unique absentMembers,
     TensorCapabilityRejection.family_correct model m sigs unique capMembers,
     TensorVersion.contract model,

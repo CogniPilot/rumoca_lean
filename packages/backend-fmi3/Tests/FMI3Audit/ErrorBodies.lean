@@ -6,6 +6,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ErrorBodies.failure_dispatch_run
 #audit axioms Rumoca.FMI3.ErrorBodies.failure_log_arguments
 #audit axioms Rumoca.FMI3.ErrorBodies.failure_silent_run
+#audit axioms Rumoca.FMI3.ErrorBodies.failure_missing_run
 #audit axioms Rumoca.FMI3.ErrorBodies.failure_silent_correct
 #audit axioms Rumoca.FMI3.ErrorBodies.nominals_reject_run
 #audit axioms Rumoca.FMI3.ErrorBodies.nominals_reject_reaches

@@ -337,6 +337,7 @@ import Tests.FMI3Audit.StepCases
 import Tests.FMI3Audit.StepContract
 import Tests.FMI3Audit.StepDiscard
 import Tests.FMI3Audit.StepEntry
+import Tests.FMI3Audit.StepSuccessState
 import Tests.FMI3Audit.StepErrors
 import Tests.FMI3Audit.StepFailures
 import Tests.FMI3Audit.StepGuards
@@ -383,3 +384,13 @@ import Tests.FMI3Audit.TimeHistory
 import Tests.FMI3Audit.TimeProofs
 import Tests.FMI3Audit.Version
 import Tests.FMI3Audit.VersionMetadata
+import Tests.FMI3Audit.PreparedStepLiterals
+import Tests.FMI3Audit.PreparedStepCalls
+import Tests.FMI3Audit.PreparedStepContract
+import Tests.FMI3Audit.TensorNumericalEvents
+import Tests.FMI3Audit.TensorLinkedProgram
+import Tests.FMI3Audit.PreparedTensorLinkedContract
+import Tests.FMI3Audit.TensorAcceptedLinked
+import Tests.FMI3Audit.TensorAcceptedRuntime
+import Tests.FMI3Audit.TensorAcceptedContract
+import Tests.FMI3Audit.TensorHeader

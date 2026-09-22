@@ -96,6 +96,36 @@ theorem rejected_silent_behaviors (program : CCalls.Events.Program E) (fn : Func
     tail ErrorCalls.rejectionMessage heap p message _ logger helper
     (by simp [CBody.bind, unshadowed]) (by simp [CBody.bind, resolve]) messageBound hm hl hg behavior
 
+/-- A disallowed public call with no logger returns Error without requiring a
+readable logging flag or callback environment. -/
+theorem rejected_missing_behaviors (program : CCalls.Events.Program E) (fn : Function)
+    (cmd : Command) (tail : List Stmt) (args : List Value) (env : Locals)
+    (heap : Heap) (p message : Address) (kind : Kind) (mode : Mode)
+    (defined : program.internal.definitions fn.signature.name = some (.tree fn))
+    (parameters : CCalls.parameters fn.signature.parameters args = some env)
+    (body : fn.body = Runtime.require cmd ++ tail)
+    (status : fn.signature.result = "fmi3Status")
+    (closed : fn.body.all CBodyEmbedding.closedBlocks = true)
+    (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
+    (hi : env "instance" = some (.pointer (some p))) (hn : env "m" = none)
+    (unshadowed : env "fail" = none)
+    (messageBound : static.addresses ErrorCalls.rejectionMessage = some message)
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
+    (hl : load heap (p.member "logger") = some (.pointer none))
+    (rejected : ¬ Reference.Allowed cmd kind mode) (behavior) :
+    (CCalls.Events.machine program).Behaves (.calling fn.signature.name args heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
+  have modeLoaded : load heap (p.member "mode") = some (.integer mode.code) := by
+    cases mode <;> simp [load, hm, convert, Mode.code]
+  obtain ⟨types, reached⟩ := rejected_prefix program fn cmd tail args env heap p kind mode .done
+    defined parameters body closed hi hn hk modeLoaded rejected
+  rw [status] at reached
+  rw [CCalls.Events.internal_prefix_behaviors program reached behavior]
+  exact Logging.failure_statement_missing_behaviors program (CBody.bind env "m" (.pointer (some p))) types
+    tail ErrorCalls.rejectionMessage heap p message _ helper
+    (by simp [CBody.bind, unshadowed]) (by simp [CBody.bind, resolve]) messageBound hm hl behavior
+
 theorem null_body (env : Locals) (heap : Heap) (rest : List Stmt)
     (hi : env "instance" = some (.pointer none)) (hn : env "m" = none)
     (error : env "fmi3Error" = none) :
@@ -194,4 +224,25 @@ theorem FailurePrefix.silent_behaviors (program : CCalls.Events.Program E)
     old logger helper unshadowed instanceBound messageBound hm hl hg behavior
 
 end
+end Rumoca.FMI3.GuardedCalls
+
+namespace Rumoca.FMI3.GuardedCalls
+open CTree CMemory CBody
+
+/-- Any checked pure failure prefix preserves existing immutable objects. -/
+theorem FailurePrefix.readonly [CInterface]
+    (certified : GuardedCalls.FailurePrefix fn args before p text after) :
+    CReadOnly.Preserves before after := by
+  obtain ⟨_, _, env, later, tail, steps, _, executed, _, _⟩ := certified
+  exact CReadOnly.body_reaches (CBody.run_reaches executed)
+
+/-- Prefix execution and the required mode write derive the read-only frame at
+the callback entry. No callback frame or post-callback property is asserted. -/
+theorem FailurePrefix.error_readonly [CInterface]
+    (certified : GuardedCalls.FailurePrefix fn args before p text after)
+    (old : Option Value)
+    (writable : after (p.member "mode") = some ⟨.int32, true, old⟩) :
+    CReadOnly.Preserves before (LifecycleBodies.writeMode after p .terminated) :=
+  certified.readonly.trans (LifecycleBodies.writeMode_readonly after p .terminated old writable)
+
 end Rumoca.FMI3.GuardedCalls

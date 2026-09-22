@@ -200,7 +200,7 @@ theorem helpers_printable : ∀ fn ∈ Runtime.helpers, FunctionPrintable typede
     | skip
   all_goals simp only [FunctionPrintable, SignaturePrintable, ParameterPrintable,
     Runtime.setMode, Runtime.put, Runtime.mode, Runtime.log, Runtime.branch,
-    Runtime.both, Runtime.field, Runtime.v, Runtime.n, Runtime.ret, Runtime.call,
+    Runtime.both, Runtime.nev, Runtime.field, Runtime.v, Runtime.n, Runtime.ret, Runtime.call,
     List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
   all_goals repeat first
     | exact instance_type
@@ -211,6 +211,7 @@ theorem helpers_printable : ∀ fn ∈ Runtime.helpers, FunctionPrintable typede
     | exact count_type
     | exact double_type
     | exact void_type
+    | exact CNull.literal_printable _
     | apply And.intro
     | apply ItemPrintable.assign
     | apply ItemPrintable.declare

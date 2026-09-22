@@ -1,4 +1,5 @@
 import RumocaFMI3.HistoryBodies
+import RumocaC.ReadOnly
 
 /-! Mode writes and successful termination in the shared C execution model.
 The error-helper theorem reaches its logger after entering Terminated; callback
@@ -95,4 +96,14 @@ theorem terminate_correct (m : Solve.FMI3Model source) (sig : Signature)
     (by simp [CCalls.returnCast, CBody.cast, convert]) b,
    write_history hc .terminated, write_model hx .terminated, write_mode heap p .terminated⟩
 end
+omit static in
+/-- The error helper's writable mode update cannot overwrite a read-only cell. -/
+theorem writeMode_readonly (heap : Heap) (p : Address) (mode : Mode)
+    (old : Option Value)
+    (writable : heap (p.member "mode") = some ⟨.int32, true, old⟩) :
+    CReadOnly.Preserves heap (LifecycleBodies.writeMode heap p mode) := by
+  apply CReadOnly.store_preserves (address := p.member "mode") (value := .integer mode.code)
+  cases mode <;> simp [store, writable, convert, Mode.code, LifecycleBodies.writeMode]
+
+
 end Rumoca.FMI3.LifecycleBodies

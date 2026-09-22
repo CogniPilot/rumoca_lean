@@ -32,6 +32,34 @@ theorem helper_absent (f : Syntax.Function) (valid : f.valid = true) (name : Str
     simpa using excluded
   exact absent helper
 
+structure LibraryFor (p : Program Γ shape) (definitions : CLoops.Calls.Definitions) : Prop where
+  binaryHeader : CTensor.HeaderTypes interface
+  fillHeader : Fill.HeaderTypes interface
+  binaryDefined : ∀ op ∈ requiredOps p,
+    definitions (CTensor.function op).signature.name = some (CTensor.function op)
+  fillDefined : definitions Fill.function.signature.name = some Fill.function
+
+theorem Library.restrict (library : Library definitions) (p : Program Γ shape) :
+    LibraryFor p definitions :=
+  ⟨library.binaryHeader, library.fillHeader, fun op _ => library.binaryDefined op, library.fillDefined⟩
+
+theorem LibraryFor.weaken (p : Program Γ shape) (q : Program Δ target)
+    (library : LibraryFor p definitions)
+    (included : ∀ op ∈ requiredOps q, op ∈ requiredOps p) :
+    LibraryFor q definitions :=
+  ⟨library.binaryHeader, library.fillHeader,
+    fun op used => library.binaryDefined op (included op used), library.fillDefined⟩
+
+theorem LibraryFor.setup (p : Program Γ shape) (definitions : CLoops.Calls.Definitions)
+    (library : LibraryFor p definitions)
+    (f : Syntax.Function) (valid : f.valid = true) (args : Arguments.Values) :
+    SetupFor p (Arguments.locals f.parameters args) definitions := by
+  refine ⟨library.binaryHeader, library.fillHeader, library.binaryDefined, library.fillDefined, ?_, ?_⟩
+  · intro op _used
+    apply Arguments.locals_absent
+    cases op <;> exact helper_absent f valid _ (by decide +kernel)
+  · exact Arguments.locals_absent _ _ _ (helper_absent f valid _ (by decide +kernel))
+
 theorem Library.setup (definitions : CLoops.Calls.Definitions) (library : Library definitions)
     (f : Syntax.Function) (valid : f.valid = true) (args : Arguments.Values) :
     Setup (Arguments.locals f.parameters args) definitions := by
@@ -41,9 +69,9 @@ theorem Library.setup (definitions : CLoops.Calls.Definitions) (library : Librar
     cases op <;> exact helper_absent f valid _ (by decide +kernel)
   · exact Arguments.locals_absent _ _ _ (helper_absent f valid _ (by decide +kernel))
 
-theorem program_call_reaches (f : Syntax.Function) (valid : f.valid = true)
+theorem program_call_reaches_for (f : Syntax.Function) (valid : f.valid = true)
     (p : Program Γ shape) (plan : Plan p) (layout : Layout Γ) (matched : Syntax.Matches f p plan layout)
-    (definitions : CLoops.Calls.Definitions) (library : Library definitions)
+    (definitions : CLoops.Calls.Definitions) (library : LibraryFor p definitions)
     (found : definitions f.name = some f.tree) (args : Arguments.Values)
     (arguments : Arguments.Valid f.parameters args) (locations : Locations)
     (values : Env Binary64.Value Γ) (result : Values shape) (heap : Heap)
@@ -68,8 +96,8 @@ theorem program_call_reaches (f : Syntax.Function) (valid : f.valid = true)
       ne_eq, not_true_eq_false, ↓reduceIte, parameters, types, bind, Option.bind_some, pure]
   obtain ⟨domain, resultEq⟩ := Finite.executes_sound executed
   obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
-    emit_correct (Arguments.locals f.parameters args) (Arguments.types f.parameters) locations
-      definitions (library.setup definitions f valid args) p plan layout values heap bound represented ready domain
+    emit_correct_for (Arguments.locals f.parameters args) (Arguments.types f.parameters) locations
+      definitions p (library.setup p definitions f valid args) plan layout values heap bound represented ready domain
       [.ret none] stack
   have returned : Transition.Reaches (CLoops.Calls.machine definitions).step
       (.body (.running [.ret none] (Arguments.locals f.parameters args) (Arguments.types f.parameters) finalHeap) stack)
@@ -79,6 +107,50 @@ theorem program_call_reaches (f : Syntax.Function) (valid : f.valid = true)
   change f.tree.body = (emit p plan layout).code ++ [.ret none] at matched
   rw [matched] at entered
   exact ⟨finalHeap, .next entered (ran.trans returned), resultEq ▸ readResult, boundResult, frame, writableResult⟩
+
+theorem program_call_reaches (f : Syntax.Function) (valid : f.valid = true)
+    (p : Program Γ shape) (plan : Plan p) (layout : Layout Γ) (matched : Syntax.Matches f p plan layout)
+    (definitions : CLoops.Calls.Definitions) (library : Library definitions)
+    (found : definitions f.name = some f.tree) (args : Arguments.Values)
+    (arguments : Arguments.Valid f.parameters args) (locations : Locations)
+    (values : Env Binary64.Value Γ) (result : Values shape) (heap : Heap)
+    (bound : LayoutBound (Arguments.locals f.parameters args) locations layout)
+    (represented : Represents locations layout heap values)
+    (ready : Ready (Arguments.locals f.parameters args) locations p plan layout heap)
+    (executed : Finite.Executes p values result) (stack : CLoops.Calls.Continuation) :
+    ∃ finalHeap, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling f.name (Arguments.values f.parameters args) heap stack) (.returning finalHeap stack) ∧
+      Reads finalHeap (locations (emit p plan layout).result) result ∧
+      Bound (Arguments.locals f.parameters args) locations (emit p plan layout).result ∧
+      (∀ q, Outside locations p plan q → finalHeap q = heap q) ∧
+      (Writable heap (locations (emit p plan layout).result) shape.volume →
+        Writable finalHeap (locations (emit p plan layout).result) shape.volume) :=
+  program_call_reaches_for f valid p plan layout matched definitions (library.restrict p) found args arguments
+    locations values result heap bound represented ready executed stack
+
+theorem program_call_refines_for (f : Syntax.Function) (valid : f.valid = true)
+    (p : Program Γ shape) (plan : Plan p) (layout : Layout Γ) (matched : Syntax.Matches f p plan layout)
+    (definitions : CLoops.Calls.Definitions) (library : LibraryFor p definitions)
+    (found : definitions f.name = some f.tree) (args : Arguments.Values)
+    (arguments : Arguments.Valid f.parameters args) (locations : Locations)
+    (values : Env Binary64.Value Γ) (result : Values shape) (heap : Heap)
+    (bound : LayoutBound (Arguments.locals f.parameters args) locations layout)
+    (represented : Represents locations layout heap values)
+    (ready : Ready (Arguments.locals f.parameters args) locations p plan layout heap)
+    (executed : Finite.Executes p values result) :
+    ∃ finalHeap, Reads finalHeap (locations (emit p plan layout).result) result ∧
+      Bound (Arguments.locals f.parameters args) locations (emit p plan layout).result ∧
+      (∀ q, Outside locations p plan q → finalHeap q = heap q) ∧
+      (Writable heap (locations (emit p plan layout).result) shape.volume →
+        Writable finalHeap (locations (emit p plan layout).result) shape.volume) ∧
+      ∀ behavior, (CLoops.Calls.machine definitions).Behaves
+        (.calling f.name (Arguments.values f.parameters args) heap .done) behavior ↔
+        behavior = .terminates finalHeap := by
+  obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
+    program_call_reaches_for f valid p plan layout matched
+      definitions library found args arguments locations values result heap bound represented ready executed .done
+  exact ⟨finalHeap, readResult, boundResult, frame, writableResult,
+    fun _ => (CLoops.Calls.machine definitions).behavior_iff (ran.trans (.next (by rfl) (.refl _))) rfl⟩
 
 theorem program_call_refines (f : Syntax.Function) (valid : f.valid = true)
     (p : Program Γ shape) (plan : Plan p) (layout : Layout Γ) (matched : Syntax.Matches f p plan layout)
@@ -97,10 +169,7 @@ theorem program_call_refines (f : Syntax.Function) (valid : f.valid = true)
         Writable finalHeap (locations (emit p plan layout).result) shape.volume) ∧
       ∀ behavior, (CLoops.Calls.machine definitions).Behaves
         (.calling f.name (Arguments.values f.parameters args) heap .done) behavior ↔
-        behavior = .terminates finalHeap := by
-  obtain ⟨finalHeap, ran, readResult, boundResult, frame, writableResult⟩ :=
-    program_call_reaches f valid p plan layout matched
-      definitions library found args arguments locations values result heap bound represented ready executed .done
-  exact ⟨finalHeap, readResult, boundResult, frame, writableResult,
-    fun _ => (CLoops.Calls.machine definitions).behavior_iff (ran.trans (.next (by rfl) (.refl _))) rfl⟩
+        behavior = .terminates finalHeap :=
+  program_call_refines_for f valid p plan layout matched definitions (library.restrict p) found args arguments
+    locations values result heap bound represented ready executed
 end Rumoca.CTensor.Lowering

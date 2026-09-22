@@ -531,4 +531,97 @@ theorem failure_silent_behaviors {E : Type} (context : ErrorContext literals) :
   exact failure_suppressed_behaviors context program fn args before after p message text old logger false
     agrees certified defined helper messageBound hm hl hg (Or.inr rfl) behavior
 
+theorem helper_missing_reaches {E : Type} (context : ErrorContext literals) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (heap : Heap) (p message : Address)
+      (old : Option Value) (stack : CCalls.Typed.Continuation),
+      program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+      heap (p.member "mode") = some ⟨.int32, true, old⟩ →
+      load heap (p.member "logger") = some (.pointer none) →
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling "fail" [.pointer (some p), .pointer (some message)] heap stack)
+        (.returning (.integer 3) (LifecycleBodies.writeMode heap p .terminated) stack) := by
+  letI : CInterface := context.target
+  intro program heap p message old stack defined hm hl
+  have pure := ErrorBodies.failure_missing_run (static := ⟨literals⟩)
+    (ErrorCalls.failureEnv p message) heap p old
+    (by simp [ErrorCalls.failureEnv, CBody.bind, resolve]) hm hl
+    (by simp [ErrorCalls.failureEnv, CBody.bind, resolve, constants])
+  have transferred := (body_run_agreement (cInterface literals) context.target
+    context.types context.bytes 3
+    (.running Runtime.helpers[0].body (ErrorCalls.failureEnv p message) heap)
+    (helper_agrees context)).symm.trans pure
+  exact CCalls.Events.body_call_reaches program Runtime.helpers[0]
+    [.pointer (some p), .pointer (some message)] (ErrorCalls.failureEnv p message) heap
+    ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ (.integer 3) stack 3 defined
+    (helper_parameters context p message)
+    (BodyEmbedding.helpers_closed _ (by simp [Runtime.helpers])) transferred context.error_cast
+
+theorem statement_missing_behaviors {E : Type} (context : ErrorContext literals) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (env : Locals) (types : CLoops.Types)
+      (code : List Stmt) (text : String) (heap : Heap) (p message : Address)
+      (old : Option Value),
+      env "fail" = none → resolve env "m" = some (.pointer (some p)) →
+      program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+      literals text = some message →
+      heap (p.member "mode") = some ⟨.int32, true, old⟩ →
+      load heap (p.member "logger") = some (.pointer none) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves
+        (.body (.running (Runtime.fail text :: code) env types heap) "fmi3Status" .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
+  letI : CInterface := context.target
+  intro program env types code text heap p message old unshadowed instanceBound helper messageBound hm hl behavior
+  let saved := CCalls.Typed.Continuation.caller .ret code env types "fmi3Status" .done
+  have dispatched := helper_missing_reaches context program heap p message old saved helper hm hl
+  have path := Transition.Reaches.next (step := fun s t => CCalls.Events.internalNext program s = some t)
+    (statement_entry context program env types code text heap p message .done
+      unshadowed instanceBound messageBound) dispatched
+  exact (CCalls.Events.internal_prefix program path
+    (CCalls.Events.internal_prefix program (.next
+      (by simp [CCalls.Events.internalNext, CCalls.Typed.nextWith,
+        CCalls.Typed.resume, saved, context.error_cast]) (.refl _))
+      (CCalls.Events.return_forced program (.integer 3) (LifecycleBodies.writeMode heap p .terminated)))).behaviors behavior
+
+theorem prefix_missing_behaviors {E : Type} (context : ErrorContext literals) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (fn : Function) (args : List Value)
+      (before after : Heap) (p message : Address) (text : String) (old : Option Value),
+      @GuardedCalls.FailurePrefix context.target fn args before p text after →
+      program.internal.definitions fn.signature.name = some (.tree fn) →
+      program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+      literals text = some message →
+      after (p.member "mode") = some ⟨.int32, true, old⟩ →
+      load after (p.member "logger") = some (.pointer none) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves (.calling fn.signature.name args before .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode after p .terminated⟩ := by
+  letI : CInterface := context.target
+  intro program fn args before after p message text old certified defined helper messageBound hm hl behavior
+  obtain ⟨status, closed, env, later, tail, steps, bound, executed, unshadowed, instanceBound⟩ := certified
+  obtain ⟨types, reached⟩ := CCalls.Events.body_prefix_reaches program fn args env later before after
+    (Runtime.fail text :: tail) .done steps defined bound closed executed
+  rw [status] at reached
+  rw [CCalls.Events.internal_prefix_behaviors program reached behavior]
+  exact statement_missing_behaviors context program later types tail text after p message old
+    unshadowed instanceBound helper messageBound hm hl behavior
+
+theorem path_missing_behaviors {E : Type} (context : ErrorContext literals) :
+    letI : CInterface := context.target
+    ∀ (program : CCalls.Events.Program E) (start : CCalls.Typed.State) (heap : Heap)
+      (p message : Address) (text : String) (old : Option Value),
+      FailurePath program start heap p text →
+      program.internal.definitions "fail" = some (.tree Runtime.helpers[0]) →
+      literals text = some message →
+      heap (p.member "mode") = some ⟨.int32, true, old⟩ →
+      load heap (p.member "logger") = some (.pointer none) → ∀ behavior,
+      (CCalls.Events.machine program).Behaves start behavior ↔
+      behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
+  letI : CInterface := context.target
+  intro program start heap p message text old path helper literal mode loggerValue
+  obtain ⟨env, types, code, reached, unshadowed, instanceBound⟩ := path
+  have result := statement_missing_behaviors context program env types code text heap p message old
+    unshadowed instanceBound helper literal mode loggerValue
+  intro behavior
+  exact (reached.silent_finite_behaviors (by intro history; simp [result]) behavior).trans (result behavior)
+
 end Rumoca.FMI3.StaticErrors

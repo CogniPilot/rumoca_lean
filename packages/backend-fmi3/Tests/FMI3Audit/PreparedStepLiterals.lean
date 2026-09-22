@@ -1,0 +1,18 @@
+import RumocaFMI3.PreparedStepLiterals
+import ProofAudit.Audit
+
+#audit axioms Rumoca.FMI3.PreparedLifecycleLiterals.rejection_collected
+#audit axioms Rumoca.FMI3.PreparedLifecycleLiterals.tensor_rejection_collected
+#audit axioms Rumoca.FMI3.PreparedLifecycleLiterals.constant_rejection_collected
+#audit axioms Rumoca.FMI3.PreparedLifecycleLiterals.tensor_prepared
+#audit axioms Rumoca.FMI3.PreparedLifecycleLiterals.constant_prepared
+#audit axioms Rumoca.FMI3.PreparedArgumentLiterals.message_collected
+#audit axioms Rumoca.FMI3.PreparedArgumentLiterals.tensor_message_collected
+#audit axioms Rumoca.FMI3.PreparedArgumentLiterals.constant_message_collected
+#audit axioms Rumoca.FMI3.PreparedArgumentLiterals.tensor_prepared
+#audit axioms Rumoca.FMI3.PreparedArgumentLiterals.constant_prepared
+#audit axioms Rumoca.FMI3.PreparedNumericLiterals.message_collected
+#audit axioms Rumoca.FMI3.PreparedNumericLiterals.tensor_message_collected
+#audit axioms Rumoca.FMI3.PreparedNumericLiterals.constant_message_collected
+#audit axioms Rumoca.FMI3.PreparedNumericLiterals.tensor_prepared
+#audit axioms Rumoca.FMI3.PreparedNumericLiterals.constant_prepared

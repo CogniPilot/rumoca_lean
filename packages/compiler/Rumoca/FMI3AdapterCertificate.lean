@@ -129,6 +129,7 @@ structure ProfileCertContext where
   witnessModel : TSyntax `term
   mTerm : TSyntax `term
   actualChars : Ident
+  poolReady : Ident
 
 /-- Everything a single adapter profile contributes to `certifyAdapterBytes`:
 the synthetic scalar witness identity, the pinned model term, the native
@@ -212,6 +213,41 @@ def certifyFunctions (base : Name) (label : String)
     equations := equations.push checked
   return (trees, treeEquations, chunks, equations)
 
+/-- Shared certificate construction for a checked list of function trees. -/
+def certifyReady (base : Name) (functions : TSyntax `term)
+    (trees treeEquations : Array Ident) : CommandElabM Ident := do
+  if trees.size != treeEquations.size then throwError "tree certificate length mismatch"
+  let treesId := mkIdent (base.str "function_trees")
+  elabCommand (← `(command| def $treesId:ident : List CTree.Function := [$trees,*]))
+  let treesEq := mkIdent (base.str "function_trees_eq")
+  let mut treeProof ← `(term| Eq.refl ([] : List CTree.Function))
+  for i in [:treeEquations.size] do
+    let equation := treeEquations[treeEquations.size - 1 - i]!
+    treeProof ← `(term| congrArg₂ List.cons $equation $treeProof)
+  elabCommand (← `(command| theorem $treesEq:ident : $functions = $treesId := $treeProof))
+  let ready := mkIdent (base.str "literal_pool_ready")
+  let treeUnfolds ← trees.mapM fun tree => `(Lean.Parser.Tactic.simpLemma| $tree:ident)
+  elabCommand (← `(command| theorem $ready:ident :
+      (CLiteral.Pool.forFunctions FMI3.LiteralPreparation.excluded $functions).isSome = true := by
+    rw [$treesEq:ident]
+    unfold CLiteral.Pool.forFunctions CLiteral.Pool.make CLiteral.Pool.check
+    split
+    · rfl
+    · rename_i invalid
+      apply False.elim
+      apply invalid
+      simp only [$treesId:ident, $treeUnfolds,*, CLiteral.PoolValid,
+        CLiteral.functionNames, CLiteral.statementNames, CLiteral.Interface.names,
+        CLiteral.functionTexts, CLiteral.statementTexts, CLiteral.expressionTexts,
+        List.flatMap_cons, List.flatMap_nil, List.map_cons, List.map_nil,
+        List.nil_append, List.cons_append, List.append_nil]
+      decide +kernel))
+  let dependencies ← collectAxioms ready.getId
+  for dependency in dependencies do
+    unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
+      throwError "unapproved pool-readiness axiom: {dependency}"
+  return ready
+
 def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
     (actualChars : Ident) : CommandElabM Certificate := do
   let .ok candidate := compile (.single sourceFile source) | throwError "source compilation failed"
@@ -267,35 +303,8 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
     fnTerms := fnTerms.push (← `(term| FMI3.Runtime.function $m $sig))
   let functions := (FMI3.LiteralPreparation.functions prepared sigs).toArray
   let (trees, treeEquations, chunks, equations) ← certifyFunctions base "" fnTerms functions
-  let treesId := mkIdent (base.str "function_trees")
-  elabCommand (← `(command| def $treesId:ident : List CTree.Function := [$trees,*]))
-  let treesEq := mkIdent (base.str "function_trees_eq")
-  let mut treeProof ← `(term| Eq.refl ([] : List CTree.Function))
-  for i in [:treeEquations.size] do
-    let equation := treeEquations[treeEquations.size - 1 - i]!
-    treeProof ← `(term| congrArg₂ List.cons $equation $treeProof)
-  elabCommand (← `(command| theorem $treesEq:ident :
-    FMI3.LiteralPreparation.functions $m $signatures = $treesId := $treeProof))
-  let poolReady := mkIdent (base.str "literal_pool_ready")
-  let treeUnfolds ← trees.mapM fun tree => `(Lean.Parser.Tactic.simpLemma| $tree:ident)
-  -- Reuse the individually checked tree equalities before reducing collection.
-  -- Native candidate trees have no authority over the original function list.
-  elabCommand (← `(command| theorem $poolReady:ident :
-      (FMI3.LiteralPreparation.prepare $m $signatures).isSome = true := by
-    unfold FMI3.LiteralPreparation.prepare
-    rw [$treesEq:ident]
-    unfold CLiteral.Pool.forFunctions CLiteral.Pool.make CLiteral.Pool.check
-    split
-    · rfl
-    · rename_i invalid
-      apply False.elim
-      apply invalid
-      simp only [$treesId:ident, $treeUnfolds,*, CLiteral.PoolValid,
-        CLiteral.functionNames, CLiteral.statementNames, CLiteral.Interface.names,
-        CLiteral.functionTexts, CLiteral.statementTexts, CLiteral.expressionTexts,
-        List.flatMap_cons, List.flatMap_nil, List.map_cons, List.map_nil,
-        List.nil_append, List.cons_append, List.append_nil]
-      decide +kernel))
+  let poolReady ← certifyReady base
+    (← `(term| FMI3.LiteralPreparation.functions $m $signatures)) trees treeEquations
   let chunkList ← `(term| [$chunks,*])
   let matched := mkIdent (base.str "functions_matched")
   let mut pairProof ← `(term| List.Forall₂.nil)
@@ -448,9 +457,11 @@ def certifyAdapterBytes (inp : ProfileCertInputs) (adapter : String)
     fnTerms := fnTerms.push (← `(term| ($helpers)[$index]'(by decide +kernel)))
   for sig in sigTerms do
     fnTerms := fnTerms.push (← `(term| $functionCtor $witnessModel $mTerm $sig))
-  let (_, _, chunks, equations) ← certifyFunctions base inp.label fnTerms functions
-  let chunkList ← `(term| [$chunks,*])
+  let (trees, treeEquations, chunks, equations) ← certifyFunctions base inp.label fnTerms functions
   let functionsId := mkIdent inp.functionsName
+  let poolReady ← certifyReady base
+    (← `(term| $functionsId $witnessModel $mTerm $signatures)) trees treeEquations
+  let chunkList ← `(term| [$chunks,*])
   let matched := mkIdent (base.str "functions_matched")
   let mut pairProof ← `(term| List.Forall₂.nil)
   for i in [:equations.size] do
@@ -478,7 +489,8 @@ def certifyAdapterBytes (inp : ProfileCertInputs) (adapter : String)
       $adapterCharsId $witnessModel $mTerm $signatures
         $preambleChars $chunkList $actualChars $preambleEq $matched $completeBytes))
   let contract := mkIdent (base.str "contract")
-  inp.dischargeContract { contract, rendered, signatures, sigTerms, witnessModel, mTerm, actualChars }
+  inp.dischargeContract {
+    contract, rendered, signatures, sigTerms, witnessModel, mTerm, actualChars, poolReady }
   return (contract, artifact)
 
 end Rumoca.FMI3AdapterCertificate

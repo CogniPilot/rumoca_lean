@@ -6,3 +6,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.Logging.failure_statement_entry
 #audit axioms Rumoca.FMI3.Logging.failure_statement_all_behaviors
 #audit axioms Rumoca.FMI3.Logging.failure_statement_silent_behaviors
+#audit axioms Rumoca.FMI3.Logging.failure_statement_missing_behaviors

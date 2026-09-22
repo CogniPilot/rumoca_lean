@@ -101,9 +101,9 @@ validity, layout bounds, representation and readiness, so
 preserves every cell outside it, and in particular preserves every tensor cell of
 every other instance in the static pool. Universal in the tensor shape and the
 instance index. -/
-theorem derivative_writes {shape : Shape}
+theorem derivative_writes_for {shape : Shape}
     (definitions : CLoops.Calls.Definitions) (target : CCalls.Program)
-    (linked : CCalls.Typed.Extends definitions target) (library : Library definitions)
+    (linked : CCalls.Typed.Extends definitions target) (library : LibraryFor (kernel shape).derivative definitions)
     (found : definitions (plan shape).derivative.function.name = some (plan shape).derivative.function.tree)
     (backing : Heap) (pool : Address) (i : Nat) (oshape : Shape)
     (time : Values Tensor.scalar) (state input result : Values shape)
@@ -171,7 +171,7 @@ theorem derivative_writes {shape : Shape}
           (by decide +kernel) i' j
       | there r => nomatch r
   obtain ⟨finalHeap, reads, frame, writableResult, behaviorsIff⟩ :=
-    TensorModelRhs.behaviors (kernel shape) (plan shape) (derivative_valid shape)
+    TensorModelRhs.behaviors_for (kernel shape) (plan shape) (derivative_valid shape)
       definitions target linked library found (args pool i shape) arguments
       (locations pool i) (ArrayProfile.environment state input) result H
       bound represented ready executed
@@ -191,6 +191,28 @@ theorem derivative_writes {shape : Shape}
       _ = backing ((TensorInstance.field pool j b).index k) :=
           TensorInstance.store_other_instance backing pool i j shape oshape time state input output b k different
 
+theorem derivative_writes {shape : Shape}
+    (definitions : CLoops.Calls.Definitions) (target : CCalls.Program)
+    (linked : CCalls.Typed.Extends definitions target) (library : Library definitions)
+    (found : definitions (plan shape).derivative.function.name = some (plan shape).derivative.function.tree)
+    (backing : Heap) (pool : Address) (i : Nat) (oshape : Shape)
+    (time : Values Tensor.scalar) (state input result : Values shape)
+    (output : Option (Values oshape)) (bounded : shape.volume < 2 ^ 64)
+    (executed : Finite.Executes (kernel shape).derivative (ArrayProfile.environment state input) result) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      (∀ q, Outside (locations pool i) (kernel shape).derivative
+          (TensorModelRhs.derivativePlan (kernel shape) (plan shape)) q →
+        finalHeap q = TensorInstance.store backing pool i shape oshape time state input output q) ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = backing ((TensorInstance.field pool j b).index k)) ∧
+      ∀ behavior, (CCalls.Typed.machine target).Behaves
+        (.calling (plan shape).derivative.function.name
+          (Arguments.values (plan shape).derivative.function.parameters (args pool i shape))
+          (TensorInstance.store backing pool i shape oshape time state input output) .done) behavior ↔
+        behavior = .terminates ⟨.void, finalHeap⟩ :=
+  derivative_writes_for definitions target linked (library.restrict _) found backing pool i oshape time state input result output bounded executed
 omit interface in
 /-- A caller buffer separate from instance `i`'s derivative region lies outside
 the derivative entry's written region, so the entry's frame preserves it. -/
@@ -221,9 +243,9 @@ every other instance in the static pool. The additional premise `resolves`
 records that the nested tensor helper calls the run visits resolve to their own
 names in the observable machine (they are direct calls to helper functions,
 which are not shadowed by constants). -/
-theorem derivative_writes_events {shape : Shape}
+theorem derivative_writes_events_for {shape : Shape}
     (definitions : CLoops.Calls.Definitions) {E : Type} (program : CCalls.Events.Program E)
-    (linked : CCalls.Typed.Extends definitions program.internal) (library : Library definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal) (library : LibraryFor (kernel shape).derivative definitions)
     (found : definitions (plan shape).derivative.function.name = some (plan shape).derivative.function.tree)
     (backing : Heap) (pool : Address) (i : Nat) (oshape : Shape)
     (time : Values Tensor.scalar) (state input result : Values shape)
@@ -297,7 +319,7 @@ theorem derivative_writes_events {shape : Shape}
           (by decide +kernel) i' j
       | there r => nomatch r
   obtain ⟨finalHeap, reads, frame, writableResult, ran⟩ :=
-    TensorModelRhs.events_reaches (kernel shape) (plan shape) (derivative_valid shape)
+    TensorModelRhs.events_reaches_for (kernel shape) (plan shape) (derivative_valid shape)
       definitions program linked library found (args pool i shape) arguments
       (locations pool i) (ArrayProfile.environment state input) result H
       bound represented ready executed resolves stack
@@ -317,4 +339,32 @@ theorem derivative_writes_events {shape : Shape}
       _ = backing ((TensorInstance.field pool j b).index k) :=
           TensorInstance.store_other_instance backing pool i j shape oshape time state input output b k different
 
+theorem derivative_writes_events {shape : Shape}
+    (definitions : CLoops.Calls.Definitions) {E : Type} (program : CCalls.Events.Program E)
+    (linked : CCalls.Typed.Extends definitions program.internal) (library : Library definitions)
+    (found : definitions (plan shape).derivative.function.name = some (plan shape).derivative.function.tree)
+    (backing : Heap) (pool : Address) (i : Nat) (oshape : Shape)
+    (time : Values Tensor.scalar) (state input result : Values shape)
+    (output : Option (Values oshape)) (bounded : shape.volume < 2 ^ 64)
+    (executed : Finite.Executes (kernel shape).derivative (ArrayProfile.environment state input) result)
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (plan shape).derivative.function.name
+        (Arguments.values (plan shape).derivative.function.parameters (args pool i shape))
+        (TensorInstance.store backing pool i shape oshape time state input output) .done) v →
+      CCalls.Events.Resolves program v)
+    (stack : CCalls.Typed.Continuation) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) result ∧
+      Writable finalHeap (TensorInstance.field pool i TensorInstance.derivativeName) shape.volume ∧
+      (∀ q, Outside (locations pool i) (kernel shape).derivative
+          (TensorModelRhs.derivativePlan (kernel shape) (plan shape)) q →
+        finalHeap q = TensorInstance.store backing pool i shape oshape time state input output q) ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = backing ((TensorInstance.field pool j b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling (plan shape).derivative.function.name
+          (Arguments.values (plan shape).derivative.function.parameters (args pool i shape))
+          (TensorInstance.store backing pool i shape oshape time state input output) stack)
+        (.returning .void finalHeap stack) :=
+  derivative_writes_events_for definitions program linked (library.restrict _) found backing pool i oshape time state input result output bounded executed resolves stack
 end Rumoca.FMI3.TensorInstanceRhs

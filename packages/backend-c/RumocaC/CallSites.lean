@@ -16,6 +16,27 @@ def Admits (permitted : Indirect.Operand → Prop) (stmt : Stmt) : Prop :=
     | .whileLoop _ body => ∀ child ∈ body, Admits permitted child
     | _ => True
 
+theorem admits_mono (sound : ∀ operand, p operand → q operand) (stmt : Stmt)
+    (admitted : Admits p stmt) : Admits q stmt := by
+  induction stmt using Stmt.rec (motive_2 := fun code =>
+      (∀ stmt ∈ code, Admits p stmt) → ∀ stmt ∈ code, Admits q stmt) with
+  | declare | assign | eval | ret =>
+      simp only [Admits] at admitted ⊢
+      exact ⟨fun operand extracted => sound operand (admitted.1 operand extracted), trivial⟩
+  | branch _ _ _ yes no =>
+      simp only [Admits] at admitted ⊢
+      exact ⟨fun operand extracted => sound operand (admitted.1 operand extracted),
+        yes admitted.2.1, no admitted.2.2⟩
+  | whileLoop _ _ body =>
+      simp only [Admits] at admitted ⊢
+      exact ⟨fun operand extracted => sound operand (admitted.1 operand extracted), body admitted.2⟩
+  | nil => rename_i _ _ member; cases member
+  | cons stmt rest head tail =>
+      rename_i code child member
+      rcases List.mem_cons.mp member with rfl | member
+      · exact head (code _ List.mem_cons_self)
+      · exact tail (fun s hs => code s (List.mem_cons_of_mem stmt hs)) child member
+
 def checkStatement (check : Indirect.Operand → Bool) (stmt : Stmt) : Bool :=
   ((Indirect.operand stmt).map check).getD true &&
     match stmt with

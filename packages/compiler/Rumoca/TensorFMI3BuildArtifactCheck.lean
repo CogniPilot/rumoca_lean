@@ -68,7 +68,8 @@ elab "verify_tensor_fmi3_build_files" : command => do
           have hmodel : a.tensorModel = Rumoca.squareModel := Rumoca.TensorArtifact.tensorModel_square a hast
           have hname : a.name = "TensorSquare" := Rumoca.TensorArtifact.name_square a hast
           refine Rumoca.tensorSourceBuild_correct a (String.ofList $(ctx.modelChars)) $(ctx.buildLit)
-            (String.ofList $(ctx.adapterChars)) $(ctx.mdLit) ?_ ?_ ?_ ?_ ?_ ?_ ?_
+            (String.ofList $(ctx.adapterChars)) $(ctx.mdLit)
+            (Rumoca.TensorKernel.compiled_ivp a hast) ?_ ?_ ?_ ?_ ?_ ?_ ?_
           · exact ($(ctx.modelEq):ident).symm
           · exact Rumoca.CTensor.ProgramFixture.IVPEntry.artifact_correct _ _ rfl rfl
           · rw [hname, ← (congrArg XML.document $(ctx.buildTreeEq):ident).trans $(ctx.buildBytesId):ident]

@@ -146,11 +146,11 @@ def behavior_matrix(fmu_path, label):
                  [C.c_char_p, C.c_char_p, C.c_char_p, B, B, P, LOG, P, P, P], P)
     free = fn("FreeInstance", [P], None)
 
-    def cs(logging=False, tk=token):
-        return inst_cs(b"m", tk, None, False, logging, False, False, None, 0, P(123), logger, None)
+    def cs(logging=False, tk=token, callback=logger):
+        return inst_cs(b"m", tk, None, False, logging, False, False, None, 0, P(123), callback, None)
 
-    def me(logging=False, tk=token):
-        return inst_me(b"m", tk, None, False, logging, P(123), logger)
+    def me(logging=False, tk=token, callback=logger):
+        return inst_me(b"m", tk, None, False, logging, P(123), callback)
 
     do_step_fn = fn("DoStep", [P, D, D, B] + [C.POINTER(B)] * 3 + [C.POINTER(D)])
 
@@ -271,6 +271,20 @@ def behavior_matrix(fmu_path, label):
           "fmi3EnterContinuousTimeMode in a co-simulation instance is rejected")
     check(terminate(handle) == ERROR, "fmi3Terminate before initialization is rejected")
     free(handle)
+
+    # Native callback ABI boundary for the proved missing-logger case. These
+    # are defensive invalid-lifecycle calls, not legal importer requests.
+    # Lean proves the universal short circuit and output-buffer non-access.
+    for create in [me, cs]:
+        for logging in [False, True]:
+            handle = create(logging, callback=LOG())
+            check(bool(handle), "missing-logger fixture instantiation")
+            if handle:
+                messages.clear()
+                check(do_step_fn(handle, 0.0, 1.0, True, None, None, None, None) == ERROR,
+                      "fmi3DoStep rejects lifecycle before outputs with no logger")
+                check(messages == [], "missing logger emits no callback")
+                free(handle)
 
     # -- argument rejection: non-finite set value, unknown reference, wrong nValues --
     handle = cs(False)

@@ -10,3 +10,9 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StepFailures.rounding_logged
 #audit axioms Rumoca.FMI3.StepFailures.stop_suppressed
 #audit axioms Rumoca.FMI3.StepFailures.stop_logged
+#audit axioms Rumoca.FMI3.StepFailures.rounding_entry_for_tail
+#audit axioms Rumoca.FMI3.StepFailures.rounding_prefix_for_tail
+#audit axioms Rumoca.FMI3.StepFailures.clock_entry_for_tail
+#audit axioms Rumoca.FMI3.StepFailures.stop_prefix_for_tail
+#audit axioms Rumoca.FMI3.StepFailures.rounding_rejection_contract
+#audit axioms Rumoca.FMI3.StepFailures.stop_rejection_contract

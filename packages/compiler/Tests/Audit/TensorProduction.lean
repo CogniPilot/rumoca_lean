@@ -11,3 +11,11 @@ import ProofAudit.Audit
 #audit axioms Rumoca.TensorArtifact.tensorModel_square
 #audit axioms Rumoca.TensorArtifact.name_square
 #audit axioms Rumoca.TensorKernel.chars
+
+#audit axioms Rumoca.TensorKernel.pieces_functions
+#audit axioms Rumoca.TensorKernel.square_ivp
+#audit axioms Rumoca.TensorKernel.compiled_ivp
+#audit axioms Rumoca.TensorKernel.actual_functions
+
+#audit axioms Rumoca.tensorNumericalLinkage_correct
+#audit axioms Rumoca.tensorNumericalLinkage_of_source

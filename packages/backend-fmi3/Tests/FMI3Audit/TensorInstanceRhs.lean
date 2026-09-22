@@ -10,3 +10,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.buffer_outside
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes_events
 #audit axioms Rumoca.FMI3.TensorInstanceRhs.field_outside
+
+-- Canonical dependency-restricted roots; all legacy roots retained.
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes_for
+#audit axioms Rumoca.FMI3.TensorInstanceRhs.derivative_writes_events_for

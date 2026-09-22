@@ -3,6 +3,7 @@ import RumocaCore.Tensor.Matrix
 import RumocaCore.Tensor.Differentiation
 import RumocaCore.Array.Builtin
 import RumocaCore.Array.Lowering
+import RumocaCore.Array.SquareIVP
 import RumocaCore.Array.Finite
 import RumocaCore.Solve.Tensor.ReverseProofs
 import RumocaCore.Driven.Lowering
@@ -84,6 +85,7 @@ theorem wrong_initialization_rejected (m : Driven.DAE.Model source)
 #audit axioms Rumoca.ArrayProfile.DAE.solveJacobian_correct
 #audit axioms Rumoca.ArrayProfile.Solved.lower_complete
 #audit axioms Rumoca.ArrayProfile.Solved.lower_checked
+#audit axioms Rumoca.ArrayProfile.Solved.lower_eq_squareIVP
 #audit axioms Rumoca.ArrayProfile.Solved.lower_correct
 #audit axioms Rumoca.ArrayProfile.Solved.lower_initial
 #audit axioms Rumoca.ArrayProfile.square_jacobian_eval

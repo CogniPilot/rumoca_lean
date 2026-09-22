@@ -23,7 +23,7 @@ theorem helpers_inputs (fn : CTree.Function) (member : fn ∈ Runtime.helpers) :
   rcases member with rfl | rfl | rfl | rfl | rfl <;>
     simp [FunctionInputs, SignatureInputs, ParameterInputs, StmtInputs, ExprInputs,
       Runtime.setMode, Runtime.put, Runtime.mode, Runtime.n, Runtime.v, Runtime.field,
-      Runtime.log, Runtime.branch, Runtime.both, Runtime.ret, Runtime.call, Plain,
+      Runtime.log, Runtime.branch, Runtime.both, Runtime.nev, Runtime.ret, Runtime.call, Plain,
       Identity.function, Identity.nullCheck, Identity.falseReturn, Identity.measure, Identity.measurePrefix,
       Identity.blank, Identity.compareToken, Identity.comparisonReturn, CTree.Expr.nullPointer,
       CAtomicScan.function, CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance]
