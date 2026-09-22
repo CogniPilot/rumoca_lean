@@ -1,5 +1,55 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Typed statement integration — owner passed; full repair gate pending
+
+The next core prerequisite adds four modules, without grammar, source
+admission, emitter or artifact-contract changes:
+
+- `Tensor.Coordinates`: arbitrary-rank coordinates, a row-major dense-index
+  equivalence, exact agreement with the existing vector/matrix layouts,
+  one-based bounds and an exact checked one-based decoder round trip.
+- `Solve.Tensor.Environment`: updates of the existing typed `Env`, with exact
+  addressed reads and an independent frame iff for every other reference,
+  including different nominal shapes. There is no new untyped register map
+  or Solve-to-GALEC dependency.
+- `GALEC.IndexSyntax`: intrinsically bounded iterator references and per-axis
+  subscripts, with weakening/capture-preservation proofs even when nested
+  binders have equal extents. Names are absent from this resolved core syntax.
+- `GALEC.Statements`: typed scalar reads, output-only indexed writes,
+  sequencing and bounded nested loops. Independent scalar/write/frame/loop
+  relations compose to `Statement.execute_correct`, universal in syntax,
+  contexts, arithmetic, iterator environments and initial/final states.
+
+The evaluator theorem explicitly assumes total deterministic scalar arithmetic.
+The independent execution relation permits partial/nondeterministic arithmetic;
+it is not a proof that finite IEEE execution always succeeds. Future finite
+execution with mutable output reads needs intermediate-state domain reasoning.
+Inputs and iterators are separate immutable semantic environments; native
+aliasing and parsed-source mutability still need their translation proofs.
+Prepared Nat bounds do not prove target Integer representability or surface
+range semantics. Zero-volume mathematics does not admit zero-sized GALEC arrays.
+No callback or enumerated scalar instruction list is stored in the statement IR.
+
+Scratch checks passed before adoption, including 44 complete whitelisted roots.
+Integrated owner V1 passed `lake build check-core` (2,298 jobs): 522 complete
+whitelisted reports, all 44 new roots, no new-module warnings. Independent
+Astra semantic and adoption reviews found no issue after correcting ownership:
+Environment imports Solve directly, while Statements imports TensorWrites.
+All four audit modules are wired into the existing CoreAudit aggregator.
+Evidence: `build/galec-statements-owner-v1.*`,
+`build/galec-statements-required-roots.txt`, and scratch `build/galec-index-draft/`.
+
+The full gate recorded below covers `8f9034b`, NOT these newer modules.
+Next instantiate the pointwise and nested matrix-clear/diagonal-scatter bodies
+in this typed syntax and connect their execution to the previously proved
+realizations. Then complete the parser/elaboration/render/actual-artifact chain
+under the reviewed repair scope. The prospective whole-subset checklist in
+`build/galec-loop-stage-review-draft.md` was read by main, but still needs
+adoption into the recurring ledger before any grammar edit. GJ01/GJ03/N01 and
+all retained conformance/native/MISRA findings remain open.
+
+## Gated bounded-execution and coefficient baseline
+
 This is core semantic preparation for GJ01/GJ03, not a grammar cutover or a
 new admitted source case. The production parser, emitted GALEC/C and artifact
 contracts are unchanged. GJ01/GJ03/N01 and the other standards findings remain

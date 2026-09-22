@@ -1,5 +1,35 @@
 # Development handoff — 2026-09-22
 
+## Typed coordinates/statements integrated — owner passed; realization next
+
+New modules: Tensor.Coordinates, Solve.Tensor.Environment, GALEC.IndexSyntax,
+GALEC.Statements. All44 authored declarations have per-source audit entries
+and CoreAudit imports. Owner V1/session16882 TERMINAL exit0:2298jobs,
+522completewhitelist reports/all44roots/no new-module warnings. Independent
+Astra semantic/adoption reviews found no issue; the reviewer independently
+reconciled the44 declarations/audits. Solve Environment imports Solve only;
+Statements explicitly imports TensorWrites, avoiding a reverse dependency.
+
+These are reusable resolved statements with actual scalar/indexed-read/write,
+sequence and nested-loop semantics, not callbacks or enumerated scalar code.
+Generic execute_correct has an explicit total-arithmetic premise; partial
+arithmetic remains permitted in the independent relation. Source parsing,
+finite domain/trace composition, physical aliasing, target Integer bounds,
+rendering and actual-artifact correspondence remain to be proved. No grammar
+or production admission changes. See dev/galec-realization.md.
+
+Next locally implement typed pointwise/square and nested matrix-clear/diagonal
+scatter builders with execution correspondence to the gated coefficient
+realizations. Then parser/elaboration/render/target/artifact integration under
+the authorized GJ01/GJ03 repair. Adopt the existing134line stage review draft
+into the recurring ledger before grammar edits. Ordinary expansion stays frozen.
+
+The last full gate covers8f9034b only; it does NOT cover these additions.
+No full gate is live. Both agents are complete/closed. Owner logs:
+build/galec-statements-owner-v1.* and build/galec-statements-required-roots.txt.
+Scratch4module checks and44root whitelist audit are under build/galec-index-draft;
+earlier failures remain recorded there, not treated as passing evidence.
+
 ## GALEC realization prerequisite gate passed — typed loops next
 
 Implementation `8f9034b` passed the required full gate V1 and post-audit:

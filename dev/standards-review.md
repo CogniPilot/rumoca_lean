@@ -12,6 +12,21 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Typed loop/index prerequisite — 2026-09-22; stage OPEN
+
+Generic resolved statements, per-axis indices, row-major coordinates and typed
+environment updates are integrated without a grammar/emitter/admission change.
+Core owner V1 passed 2,298jobs/522complete whitelisted reports/all44new roots;
+independent semantic/adoption review found no issue. This is not the complete
+repair gate. The8f9034b full gate below covers the earlier coefficient/iteration
+baseline only. `dev/galec-realization.md` records exact semantic limits.
+MLS/FMI/eFMI admitted profiles and MISRA/native claims are unchanged. The
+prospective134line whole-subset loop-repair review is prepared in
+`build/galec-loop-stage-review-draft.md`; main read it and independently checked
+the new static-expression/dimension/builtin clauses. Adopt its recurring
+checklist before a grammar change; no grammar expansion has yet occurred.
+GJ01/GJ03/N01 and all other retained findings stay open.
+
 ### GJ01/GJ03 semantic preparation — 2026-09-22; stage OPEN
 
 Implementation `8f9034b` passed the required full gate V1 and post-audit

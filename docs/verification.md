@@ -1,5 +1,18 @@
 # Exact verification contract
 
+**Typed GALEC statement prerequisite (owner passed; full repair gate pending):**
+Rank-preserving coordinate/one-based conversion, typed Solve environment
+updates, scoped per-axis indices and generic assignment/sequence/bounded-loop
+semantics are now integrated. Universal execution correspondence uses
+independent scalar/write/frame/iteration relations and explicitly requires
+total deterministic arithmetic for the executable evaluator theorem; the
+relation itself may use partial arithmetic. Owner V1 passed 2,298jobs and
+522 complete whitelisted reports, including all 44 new declaration roots.
+Independent semantic/adoption review found no issue. No parser, admission,
+emission or artifact contract changes; no repair/conformance finding closes.
+The full gate below is for the earlier `8f9034b` baseline, not this addition.
+See [exact scope, evidence and next obligations](../dev/galec-realization.md).
+
 **GALEC bounded tensor realization (semantic prerequisites; full gate passed):**
 Four new core modules supply universal bounded-loop/write correspondence,
 shape-preserving pointwise and diagonal execution, and proof-bearing prepared
