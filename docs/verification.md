@@ -1,6 +1,24 @@
 # Exact verification contract
 
-**Indexed GALEC AST prerequisite (owner passed; combined full gate pending):**
+**Combined parser/indexed-AST gate (passed, frozen `e08ddef`):**
+The required `nix develop .#verification --command lake test` and its V2
+post-audit both terminated with exit 0. All 2,546 tracked input hashes stayed
+unchanged. The unchanged whitelist accepted 8,191 complete axiom reports,
+all 45 selected parser/AST/retained execution roots were present, and four
+actual retained FMU roots passed a separate audit. The three FMI matrices
+covered 75 functions each and 526/650/526 behavior cells, with zero recorded-
+finding discrepancies or unexpected results. Actual scalar/tensor Algorithm
+Code and Production C members are byte-identical to the preceding gated
+baseline. The named-repeat and signed-credit mutation boundary passed as part
+of this gate. Evidence: `build/galec-signed-budget-full-gate-v2.*`,
+`-post-audit-v2.*`, `-required-roots-v2.txt`, `-fmu-retained-v2.axioms`,
+`-before-members-v2.sha256`, `-after-members-v2.sha256`, `-archives-v2.sha256`.
+This covers the signed resource, closure-decision and AST prerequisites below,
+not the subsequent scratch loop elaborator. No new source admission or emitted
+algorithm follows; GJ01/GJ03/N01 and the other standards/MISRA/native findings
+remain open. Historical V1 was stopped with exit 143, not passed.
+
+**Indexed GALEC AST prerequisite (owner and combined full gate passed):**
 Mutual expressions/references/components retain computed indices at every path
 component, ordinary call Tokens, dimension queries and nested loop bodies with
 explicitly omitted or supplied steps. This is unresolved syntax, not a claim
@@ -17,8 +35,8 @@ Main reviewed the worker's AST/projection migration; dependent action and word
 proofs rechecked. Host parser `ProfileProjection.c` is144550bytes, separate from
 authored Production C. Evidence: `build/galec-surface-ast-owner-v1.*` and
 `build/galec-surface-ast-adoption/focused-v2.*`. No grammar, source admission,
-emitter or artifact contract changes; the combined full gate must still cover
-this representation and the two generic parser repairs below.
+emitter or artifact contract changes; the combined V2 gate above covers this
+representation and the two generic parser repairs below.
 
 **Kernel-reducible lookahead closure (owner and named certificate passed):**
 The original generated `decide +kernel` certificate could not normalize
@@ -45,9 +63,9 @@ Evidence: `build/lalr-lookahead-owner-v1.*`,
 `build/lalr-items-draft/named-repeat-v{1,2}.{log,exit}`, `split-*-v1.*` and
 `build/lalr-items-draft/audit-v1.{log,axioms}`.
 No grammar/admission/emitter/artifact-contract expansion follows. The combined
-required full gate must be rerun after this repair and pending AST integration.
+required V2 full gate above covers this repair and the AST integration.
 
-**Signed LALR resource credits (owner passed; full gate pending):**
+**Signed LALR resource credits (owner and combined full gate passed):**
 The reusable parser can now carry positive symbol weights through named
 token-consuming rules. Three universal lemmas characterize repetition and
 the old nonnegative-credit obstruction. The existing valid-tree bound,
@@ -67,10 +85,11 @@ its negative credits. Their gate remains pending. Evidence:
 `build/galec-signed-budget-owner-v1.*` and production regeneration under
 `build/galec-signed-budget-draft/{modelica,galec}/`.
 No production grammar, accepted source, emitted algorithm/C or artifact
-contract changes. A larger prospective loop grammar's separate scratch
-certificate check has unresolved item-closure normalization errors; it is
-not a checked grammar or production cutover. The full gate below certifies
-the preceding `a7b854a`, not this newer parser change.
+contract changes. The larger prospective loop grammar's initial item-closure
+normalization failure was repaired by the structural closure decision above;
+its checked scratch certificates do not constitute a production cutover.
+The combined V2 gate certifies `e08ddef`; the older full gate below certifies
+the preceding `a7b854a`.
 
 **Typed square/Jacobian loop bodies (combined full gate passed):**
 Concrete pointwise and clear-then-scatter bodies now execute through the typed
