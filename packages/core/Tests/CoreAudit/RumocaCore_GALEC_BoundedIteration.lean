@@ -7,6 +7,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Iteration.Executes
 #audit axioms Rumoca.GALEC.Iteration.Executes.bounded
 #audit axioms Rumoca.GALEC.Iteration.executes_reindex
+#audit axioms Rumoca.GALEC.Iteration.executes_congr
 #audit axioms Rumoca.GALEC.Iteration.prefix_correct
 #audit axioms Rumoca.GALEC.Iteration.run_correct
 #audit axioms Rumoca.GALEC.Iteration.prefix_guarded_correct

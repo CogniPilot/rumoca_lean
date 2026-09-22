@@ -46,6 +46,24 @@ theorem executes_reindex (equal : firstBound = secondBound)
   subst secondBound
   rfl
 
+/-- Pointwise relational refinement lifts through every ordered prefix,
+preserving intermediate states without assuming total or deterministic bodies. -/
+theorem executes_congr (first second : Fin bound → σ → σ → Prop)
+    (body_equivalent : ∀ i before after, first i before after ↔ second i before after)
+    (count : Nat) (initial final : σ) :
+    Executes first count initial final ↔ Executes second count initial final := by
+  constructor
+  · intro executed
+    induction executed with
+    | zero state => exact .zero state
+    | next within _ body ih =>
+      exact .next within ih ((body_equivalent _ _ _).mp body)
+  · intro executed
+    induction executed with
+    | zero state => exact .zero state
+    | next within _ body ih =>
+      exact .next within ih ((body_equivalent _ _ _).mpr body)
+
 /-- Refinement for every body whose execution relation is implemented by the
 given total function, all initial states and every in-bounds prefix. -/
 theorem prefix_correct (body : Fin bound → σ → σ)

@@ -1,5 +1,26 @@
 # Exact verification contract
 
+**Declaration/range and assignment elaboration (owner passed; full gate pending):**
+Fifteen reviewed modules now live in core: source declaration/shape-provider
+validation, mathematical Integer iteration and explicit fresh unit-loop
+headers, shaped reads/locations, Real expressions, writable assignments and
+ordered statement-list composition. Independent source judgments retain
+partial/nondeterministic arithmetic, exact addresses, per-axis dimensions and
+whole-store frames. `Iteration.executes_congr` universally lifts pointwise
+body-relation equivalence through every bounded prefix. No tensor cells are
+enumerated and no callbacks are stored in resolved IR.
+
+The combined core owner passed 2,363 jobs, 807 complete unchanged-whitelist
+reports and all 135 new roots; 33 owner/audit input hashes were recorded.
+Main and independent Astra reviews confirmed mechanical identity to checked
+scratch, preserved root coverage and the new relational congruence lemma.
+Evidence: `build/galec-body-adoption/{owner-v1.*,post-owner-v1.*,new-roots.txt,
+declarations-range-review.md,read-assignment-review.md}`. Actual recursive loop
+AST lowering remains separate scratch; this adoption does not admit source
+cases, change the production parser/emitter or prove complete loop artifacts.
+Method capability and scope policy, target counters, normative range-policy
+coverage and GJ01/GJ03/N01 remain open. See [details](../dev/galec-realization.md).
+
 **Static/indexed GALEC elaboration prerequisites (combined full gate passed):**
 The core now owns immutable shaped read/write binding metadata, retained AST
 state paths, lexical iterator resolution with non-iterator barriers, exact

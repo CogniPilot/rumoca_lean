@@ -1,5 +1,50 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Source declarations, headers and assignment bodies — owner passed
+
+Fifteen checked scratch modules are adopted under core ownership. The
+mathematical Integer range relation is `GALEC.IntegerIteration`; declaration
+checking and source-derived shape lookup are under `Elaboration.Declarations`;
+explicit positive unit ranges and fresh headers under `Elaboration.Loops`.
+`Elaboration` also owns Reads, Expressions, Locations, Targets, Assignments
+and StatementLists. Changes are mechanical namespace/import migrations; no
+scratch imports or semantic rewrites remain. The generic NamedLists import
+was preserved to avoid an unrelated dependency refactor during adoption.
+
+Declaration checks preserve order and visibility/direction/variability,
+reject duplicate names, and retain positive individually bounded dimensions.
+Their shape-provider contract is stated independently over actual source
+declarations. Header semantics evaluates all three explicit range expressions
+through bounded static semantics, checks semantic start/step values of one and
+a positive stop, and preserves old iterator references under fresh extension.
+Freshness includes noniterator barriers, not merely failed iterator lookup.
+Neither preserved direction metadata nor writable execution-context membership
+is asserted to establish full eFMI method permissions.
+
+Reads and locations have exact shaped-reference/coordinate semantics independent
+of store values. Assignment source semantics evaluates the RHS in the before
+store, writes one addressed tensor cell and preserves the whole-store frame.
+Its correctness and sequential composition permit arbitrary partial or
+nondeterministic arithmetic. The sole new non-migration lemma,
+`Iteration.executes_congr`, transports pointwise body iff through all prefixes,
+preserving actual intermediate states; it does not assume a total evaluator.
+
+Core owner12392 passed 2,363 jobs and 807 complete whitelisted reports, all
+135 new roots (74 declarations/ranges,60 reads/assignments,1 congruence), and
+33 owner/audit input hashes. Main read all migrated sources or independently
+verified their exact transformations; independent Astra review found no
+substantive issue and confirmed all retained roots. Evidence is under
+`build/galec-body-adoption/`, including owner/post-owner logs/exits, new-roots,
+source hashes and both review documents. The required combined full gate is
+pending. No grammar, emitter or artifact predicate is changed.
+
+Actual mutually recursive AST/body lowering and its execution proof remain
+separate work. Initial scope/declaration→execution capability validation,
+target counter arithmetic, source/renderer/Solve composition and actual bytes
+must still be proved. The explicit range/freshness restrictions are authored
+repair profiles, not full normative GALEC loop/shadowing completeness. No new
+Modelica admission or standards/native/MISRA finding closes.
+
 ## Static and indexed source elaboration — combined full gate passed
 
 `RumocaCore.GALEC.Elaboration` now contains the reviewed generic prerequisite
