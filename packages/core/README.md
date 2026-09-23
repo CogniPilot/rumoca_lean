@@ -10,6 +10,13 @@ derives typed roles from declaration metadata and proves a recursive write-side
 policy for original AST bodies. These mechanisms preserve full tensor shapes;
 they do not validate whole blocks, Startup policy or complete eFMI permissions.
 
+`GALEC.VectorClear` and `InitializationBodies` prove shaped vector/matrix
+initialization and scalar assignment with exact values and a complete store
+frame. `Elaboration.Initialization` connects source AST loops through the
+generic lowerer to that semantics, retaining explicit bindings, shapes and
+bounds. These are reusable prerequisites, not production source admission or
+normative Startup permission checks.
+
 Use `lake build check-core` from the repository root for incremental core proofs and
 axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/FiniteChecks.lean` belong to the
 `RumocaCoreChecks` library, also selected by this package's `lake test`. See

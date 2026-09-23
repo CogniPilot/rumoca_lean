@@ -1,5 +1,39 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Startup shaped initialization prerequisites — owner passed
+
+Core `VectorClear` and `InitializationBodies` use existing bounded loops and
+assignments for vector/matrix zero fills and a scalar one. An independent
+whole-store predicate and exact update iff retain every unrelated reference;
+rank-derived separation needs no physical alias assumption. Core extents are
+independent and may be zero. Source `Elaboration.Initialization` composes actual
+generic AST lowering with independent source execution and that core predicate;
+its positive, bounded, same-extent square profile is narrower than the reusable
+core. Writable bindings/shape metadata remain explicit independent premises.
+
+Four implementations are exact namespace/import/reference migrations. Owner
+V1/session9879 passed 2,406 jobs; post-owner V1/session74549 passed 985 complete
+whitelisted reports, 29 new roots and nine owner hashes. Main checked migrations
+and read the full independent source and adoption reviews; exact migrations and
+all 29 registrations were independently confirmed with no substantive finding.
+Full artifact gate remains pending.
+Evidence: `build/startup-core-owner-v1.*`, `build/galec-startup-adoption/`,
+`build/galec-startup-core-draft/`, `build/galec-startup-source-draft/`.
+
+The separate candidate C proof calls existing `rumoca_initialize` on x then J,
+preserves allocated-only storage, initializes exact positive-zero encodings,
+sets clock/status and returns through the actual numerical table. Its final
+check/session88464 passed 25 roots and empty implementation logs; independent
+review found no substantive defect and main read it fully. Candidate source/C
+composition/session71623 passed five roots and an empty implementation log;
+independent review found no substantive defect and main read it fully.
+No initial finite input or output heap representation is required, because the
+body reads none of those values. Evidence: `build/galec-startup-{c,link}-draft/`.
+Current production still preserves J; direct candidate-body execution is not
+public Startup entry or artifact linkage. The full source declaration/capability,
+selected parsed method, emitter, actual-file and archive contracts must still
+be integrated. No open compliance finding closes or grammar expands here.
+
 ## Method selection and DoStep policy adoption — full gate passed
 
 `Parser.UniqueSelection`, core `Elaboration.Methods.{Selection,Headers}` and

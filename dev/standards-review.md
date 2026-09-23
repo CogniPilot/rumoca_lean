@@ -12,6 +12,31 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Startup initialization prerequisites — 2026-09-22; stage OPEN
+
+The existing method-policy findings below remain authoritative: pinned eFMI
+Beta1 §3.2.3 initial block/input values, §3.2.4 S-2.11 initial outputs and §3.1.6
+row-major array starts require separate treatment. Core now proves shaped
+vector/matrix clears and period-one assignment with independent exact values
+and complete frames; generic source lowering preserves their independent
+semantics. These are conditional writable-binding/shape facts, not normative
+Startup capabilities. The input-initialization/assignment-ban conflict is not
+resolved by assuming that input cells already hold values.
+
+Owner V1/session9879 passed 2,406 jobs; post-owner V1/session74549 passed 985
+complete whitelisted reports, 29 new roots and nine owner hashes. Main read
+independent source review and checked exact owner migrations. Required full
+artifact gate remains pending. Independent adoption review confirmed all four
+exact migrations and 29 audit registrations; main read it fully. Separate
+checked and independently reviewed candidate C/source-C proofs
+initialize x/J without old finite reads, but actual public Startup and artifacts
+remain unchanged. No initial-output finding closes before complete cutover;
+manifest array starts, GJ01/GJ03/N01, all MLS/FMI findings and native/MISRA scope
+remain open. This is a repair-prerequisite addendum, not a grammar-stage
+expansion or new whole-subset compliance verdict. Evidence:
+`build/galec-startup-{core,source,c,link}-draft/`,
+`build/galec-startup-adoption/` and `build/startup-core-owner-v1.*`.
+
 ### DoStep write-policy prerequisites — 2026-09-22; stage OPEN
 
 The core now owns exact-occurrence method selection/public-end-name checks and

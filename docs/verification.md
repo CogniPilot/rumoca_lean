@@ -1,5 +1,43 @@
 # Exact verification contract
 
+**Shaped initialization and source lowering (owner passed; full gate pending):**
+Core `GALEC.VectorClear` realizes literal-zero rank-one clearing with existing
+bounded/assignment statements. `InitializationBodies` composes vector clear,
+rectangular matrix clear and scalar literal-one assignment. Independent
+`Initializes` specifies exact shaped values and the complete other-reference
+frame; execution is iff that predicate and iff the exact ordered environment
+update. Rank 1/2/0 forces distinct typed references even at equal volumes.
+The core proofs quantify over independent natural extents (including zero),
+arbitrary scalar values and partial/nondeterministic arithmetic, without reading
+old destinations or inputs and without enumerating elements during lowering.
+
+`Elaboration.Initialization.{VectorClear,Body}` proves actual generic recursive
+AST lowering, retaining all trailing skips, and independent source execution
+iff the same core result. These source bodies require positive bounded extents;
+the composed source currently uses a square matrix matching the vector extent.
+Writable bindings and the all-key shape-lookup/meaning correspondence remain
+explicit premises, not an inferred Startup permission policy or declaration
+validator. No parser/grammar, production source admission or artifact changes.
+
+Four owner implementations are namespace/import/reference migrations of checked
+scratch. Main checked exact migrations and read the independent source review.
+Independent adoption review also confirmed exact migrations and registration of
+all 29 roots, with no substantive finding; main read it completely.
+Owner V1/session9879 passed 2,406 jobs; post-owner V1/session74549 passed 985
+complete unchanged-whitelist reports, all 29 new roots and nine recorded owner
+hashes. Evidence: `build/startup-core-owner-v1.*`,
+`build/galec-startup-adoption/`, `build/galec-startup-core-draft/` and
+`build/galec-startup-source-draft/`. Required full artifact gate remains pending.
+
+Separate checked C scratch composes the actual numerical initializer for both
+`x` and `J`, then status/period/return, under allocated-only storage with exact
+positive-zero reads and a full heap frame. Conditional source/core-to-C scratch
+connects the same values to that candidate body without assuming old finite
+heap values. It does not enter the unchanged public Startup function or bind an
+actual emitted file. These candidate proofs are outside the owner adoption;
+Startup input policy, public-entry/artifact cutover and standards/MISRA findings
+remain open. Evidence: `build/galec-startup-{c,link}-draft/`.
+
 **Method selection and DoStep capabilities (full artifact gate passed):**
 The generic parser utility `UniqueSelection` selects one key occurrence, rejecting
 duplicates even when their values are identical. Core `Elaboration.Methods`
