@@ -1,5 +1,8 @@
 # Development handoff — 2026-09-22
 
+> Superseded for resumption by [the current handoff](resume-handoff.md).
+> Everything below is historical; do not follow its old live-session or next-gate instructions.
+
 ## Indexed AST integrated; combined prerequisite gate V2 next
 
 Mutual AST Expr/Reference/Component retains indices per component; Expr.size
