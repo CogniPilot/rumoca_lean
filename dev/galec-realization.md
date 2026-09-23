@@ -1,5 +1,28 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Named preparation and initialization capabilities — owner check passed
+
+The core now owns role-parametric metadata/write proofs, their restricted
+non-input initialization specialization, and named-method preparation with an
+independent preparation iff and original-body execution iff. The three modules
+are exact migrations from `InitializationPolicyDraft.{Capabilities,Policy}` and
+`StartupLayoutDraft.Preparation`; runtime target IR contains no role callback.
+Owner V1/session10534 passed 2,412 jobs; post-owner V1 passed 1,026 complete
+whitelisted reports, 41 new roots and seven owner hashes. Main checked exact
+migrations and read the full independent adoption review; no substantive finding.
+Evidence: `build/named-preparation-adoption/`. Required full artifact
+gate pending; no production parser/emitter/admission change or finding closure.
+
+The fresh statement-list Startup grammar passed universal generated/action/source
+checks (44 roots); its actual 266-token source passed the Startup chain (25 roots)
+and separate DoStep chain (eight roots). Both preserve the same original parsed
+AST; DoStep retains finite square execution and AD, not an Euler substitute.
+Main read the complete independent review/addendum, no substantive finding.
+Old two-assignment action compatibility passed 11 roots, retaining AST and token
+word, but is not a proof of all-old-LR/source acceptance. These are scratch body
+certificates, not public dispatch, lifecycle or emitted-file/archive cutover.
+Evidence: `build/galec-startup-{parser,certificate}-draft/`.
+
 ## Startup shaped initialization prerequisites — full gate passed
 
 Core `VectorClear` and `InitializationBodies` use existing bounded loops and

@@ -12,6 +12,29 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Named preparation and restricted initialization policy — stage OPEN
+
+This is an ownership adoption of reviewed repair prerequisites, not a grammar
+expansion or new admitted case. Pinned eFMI Beta1 §3.2.3, §3.2.4 S-2.11 and the
+TODO input-assignment prohibition remain unresolved as recorded below. The
+initialization role permits writes to non-input variables/constants, retaining
+read-only inputs; its independent recursive write judgment proves only that
+restricted profile, not complete normative Startup legality. Named preparation
+proves exact method selection, original declarations/shapes and original-body
+execution correspondence. It does not validate other methods or lifecycle order.
+
+Owner V1/session10534 and post-owner V1 passed (2,412 jobs, 1,026 complete
+whitelisted reports, 41 roots, seven owner hashes); full artifact gate pending.
+Evidence: `build/named-preparation-adoption/`. Production languages and emitters
+are unchanged. The prospective statement-list parser and same-source Startup /
+DoStep body certificates now have separate checked receipts and a fully read
+independent review (`build/galec-startup-{parser,certificate}-draft/`). These
+discharge the supplied-text parsing/preparation step, not public dispatch,
+actual-file/archive cutover or sequential lifecycle composition. Old action
+compatibility is not a general old-source acceptance theorem. All prior MLS,
+FMI, eFMI, manifest-start, numeric/domain, native and MISRA findings remain open;
+ordinary expansion remains blocked under the recurring whole-subset checklist.
+
 ### Startup initialization prerequisites — 2026-09-22; stage OPEN
 
 The existing method-policy findings below remain authoritative: pinned eFMI

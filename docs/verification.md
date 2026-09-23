@@ -1,5 +1,50 @@
 # Exact verification contract
 
+**Named preparation and initialization capabilities (owner check passed):**
+Core `Elaboration.Capabilities.Generic` traces original assignment paths and
+whole shapes to declaration metadata under a role/predicate equivalence. Its
+recursive source write judgment is independent of lowering and target execution.
+`Capabilities.Initialization` specializes this mechanism to non-input writes,
+including initialization of non-input constants. It is a restricted profile,
+not a resolution of the pinned Startup input-initialization/assignment conflict.
+
+`Elaboration.Methods.Preparation` selects an exact public method token with a
+matching end-name, reads the original declarations and recursively lowers its
+original body. Successful preparation is iff an independent source judgment.
+One original method is fixed before all runtime arithmetic, values and stores;
+source execution is iff execution of the shaped result. Declaration-derived
+shape lookup replaces a caller-supplied oracle. Roles remain preparation
+parameters, never target callbacks. Whole-block/interface and lifecycle validity
+remain separate. Existing specialized DoStep modules are unchanged.
+
+The three implementations are exact namespace/import/reference migrations of
+reviewed scratch. Owner V1/session10534 passed 2,412 jobs; post-owner V1 passed
+1,026 complete whitelisted reports, all 41 new roots and seven recorded owner
+hashes. Main checked all three exact migrations and read the complete independent
+adoption review, which confirmed all registrations with no substantive finding. Evidence:
+`build/named-preparation-adoption/`. The required full artifact gate is pending;
+these package results do not establish a new C or actual-artifact contract.
+No production parser, grammar, emitter, source admission or audit whitelist
+changes, and no standards/MISRA finding closes.
+
+Separate prospective parser evidence now checks statement-list Startup with
+21 rules, 598 canonical and 178 LALR states: generated, action/source and post
+checks passed (sessions7314/3265/54555), with 44 audited roots. The actual supplied
+266-token source has checked scanner/CST/structure equations and an axiom-free
+typed-action denotation. Final-v2/session77173 passed 25 Startup-chain roots;
+the separate DoStep final passed eight roots from the same original parsed AST,
+retaining the finite primal RHS domain and existing RHS/Jacobian C body, not
+Euler integration. Main read the full independent parser/certificate review,
+including its DoStep addendum; no substantive finding. Evidence:
+`build/galec-startup-{parser,certificate}-draft/`.
+
+Compatibility v5/session70008 passed 11 roots: any old two-assignment action
+denotation over unchanged reference rules transfers to the new action with
+identical AST and token word. This is not all-old-LR/source acceptance. Candidate
+body proofs do not establish public dispatch, emitted-file/archive linkage,
+sequential lifecycle composition, or normative input initialization. The
+prospective grammar and concrete certificates remain scratch, not production.
+
 **Shaped initialization and source lowering (full artifact gate passed):**
 Core `GALEC.VectorClear` realizes literal-zero rank-one clearing with existing
 bounded/assignment statements. `InitializationBodies` composes vector clear,
