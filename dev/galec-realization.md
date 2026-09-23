@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Method selection and DoStep policy adoption — owners passed
+## Method selection and DoStep policy adoption — full gate passed
 
 `Parser.UniqueSelection`, core `Elaboration.Methods.{Selection,Headers}` and
 `Elaboration.Capabilities.DoStep.{Policy,Bodies}` now own the reviewed generic
@@ -15,7 +15,15 @@ All five migrations change only namespaces/imports/references. Combined owner
 V1/session67533 passed 2,423 jobs; post-owner V1/session82937 passed 1,294 complete
 whitelisted reports, all 44 new roots and 11 hashes. Main and independent Astra
 checked exact migration and registration, no substantive finding. Evidence:
-`build/method-capability-adoption/`. Required full artifact gate is pending.
+`build/method-capability-adoption/`. Required full gate V1/session15943 and
+post-audit V1/session82397 subsequently passed `07e1060`, both terminal0:
+2,630 frozen tracked inputs, 8,586 complete whitelisted reports, all 440 selected
+roots and four retained actual FMU roots. Three FMI matrices covered 75 functions
+each, 526/650/526 behavior cells and zero recorded-finding discrepancies or
+unexpected results. Scalar/tensor Algorithm Code and Production C members stayed
+byte-identical. Evidence prefix: `build/method-capability-` (full-gate/post-audit
+V1 logs, input/member/archive hashes, required roots and retained FMU audits).
+This gate excludes later scratch Startup repairs and closes no compliance finding.
 The named preparation/C pipeline remains checked scratch under
 `build/galec-method-preparation-draft/`, not a production grammar admission.
 

@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Method selection and DoStep capabilities (owners passed; full gate pending):**
+**Method selection and DoStep capabilities (full artifact gate passed):**
 The generic parser utility `UniqueSelection` selects one key occurrence, rejecting
 duplicates even when their values are identical. Core `Elaboration.Methods`
 retains original token categories and whole methods, then checks public visibility
@@ -22,9 +22,19 @@ jobs; post-owner V1/session82937 passed 1,294 complete unchanged-whitelist
 reports, all 44 new roots and 11 input hashes. Main checked exact migration;
 independent Astra adoption review found no substantive issue and confirmed all
 audit registrations. Evidence: `build/method-capability-adoption/`.
-Required full artifact verification is pending; earlier gates do not cover
-this adoption. Prospective named-source/C and whole-interface-header certificates
-remain scratch, and existing compliance findings remain open.
+Implementation `07e1060` subsequently passed the required full gate
+V1/session15943 and post-audit V1/session82397, both terminal exit 0. All 2,630
+frozen tracked input hashes matched; 8,586 complete reports passed the unchanged
+whitelist, all 440 selected roots were present and four retained actual FMU
+roots passed separate audit. Three FMI matrices covered 75 functions each and
+526/650/526 behavior cells, with zero recorded-finding discrepancies or
+unexpected results. Scalar/tensor Algorithm Code and Production C members
+remained byte-identical. Evidence: `build/method-capability-full-gate-v1.*`,
+`-post-audit-v1.*`, `-required-roots-v1.txt`, `-fmu-retained-v1.axioms`,
+`-before-members-v1.sha256`, `-after-members-v1.sha256`, `-archives-v1.sha256`.
+Prospective named-source/C, whole-interface-header and Startup repair
+certificates remain scratch, outside this gate. Existing compliance findings
+remain open; no production source admission or behavior changed.
 
 **Generic exact-tree and typed-action certificates (combined full gate passed):**
 The parser package now owns `LALR.ExactTree` and `LALR.ActionCertificate`.

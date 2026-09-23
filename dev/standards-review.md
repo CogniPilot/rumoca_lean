@@ -27,7 +27,14 @@ read/call effects, Startup or complete method/lifecycle legality.
 Reviewed scope/evidence: `build/galec-dostep-capabilities-draft/review.md` and
 `build/method-capability-adoption/review.md`, both read fully by main. Combined
 parser/core owner passed 2,423 jobs, 1,294 complete whitelisted reports and all
-44 new roots; required full artifact gate for this adoption remains pending.
+44 new roots. Required full gate V1/session15943 and post-audit V1/session82397
+subsequently passed `07e1060`, both terminal0: 2,630 frozen inputs, 8,586 complete
+whitelisted reports, all 440 selected roots and four retained actual FMU roots.
+Three FMI matrices covered 75 functions each and 526/650/526 behavior cells,
+with zero recorded-finding discrepancies/unexpected results. Algorithm Code
+and Production C members stayed byte-identical. Evidence prefix:
+`build/method-capability-`; this gate excludes subsequent scratch repairs and
+does not close any compliance finding.
 The independently checked prospective named-source/C and whole-interface-header
 certificates remain scratch, not admitted source/artifact evidence. MLS/FMI and
 all retained eFMI findings carry forward unchanged; this is a focused repair
