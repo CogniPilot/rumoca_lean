@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Scalar original-body semantics — adopted; full gate pending
+## Scalar original-body semantics — full gate passed
 
 The scalar cutover prerequisite now has generic declaration-derived preparation
 and original-body execution for every resolved old scalar block, not just the
@@ -17,8 +17,14 @@ field; `ProductionContract.original_methods` supplies original-source execution
 and existing actual authored C behavior at the same final logical state with
 the complete heap frame. Allocated-only Startup and all existing target branches
 are retained. Native ABI, host scheduling and standards findings remain separate.
-Owner V1/session91528 passed 3,657 jobs with 63 new registered roots. Full gate
-pending; no actual-artifact success is inferred from this package check.
+Owner V1/session91528 passed 3,657 jobs with 63 new registered roots. Required
+full gate V1/session67522 and post-audit V1/session66369 then passed `ba091c6`,
+both terminal0: 2,654 frozen inputs, 8,719 complete unchanged-whitelist reports,
+573 selected roots and four retained FMU roots. All three 75-function matrices
+had zero discrepancies/unexpected results (526/650/526 behavior cells).
+Scalar/tensor Algorithm/Production members stayed byte-identical. The scalar
+actual-file/archive contract now includes original-body semantics; this is not
+a fresh-parser cutover. Full/post evidence prefix: `build/scalar-source-`.
 
 Fresh-parser source composition remains checked scratch (combined final-v1:
 62 roots, five empty implementation logs, nine local and seventeen selected
@@ -37,8 +43,9 @@ old blocks, not just the proof-data blueprint. Scanner final55002 passed six
 roots; compatibility final75411 passed 21, with three empty implementation logs,
 selected hashes and a fully read independent review, no substantive finding.
 Evidence: `build/galec-scalar-{scanner,parser-compat}-draft/`. Scalar lowering /
-method execution, diagnostic equality and production/artifact cutover are not
-claimed; obsolete tensor source syntax intentionally is not the compatibility
+method execution was subsequently supplied by the owned increment above.
+Diagnostic equality and fresh-parser production/artifact cutover remain open;
+obsolete tensor source syntax intentionally is not the compatibility
 target. The unchanged admitted Modelica products remain the required target.
 
 Total Startup composition/session75948 passed one root and an empty implementation

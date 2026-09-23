@@ -28,9 +28,16 @@ The separately required allocated-only Startup branch is retained unchanged.
 This improves formal source/C coverage of the frozen scalar subset; it does
 not settle native ABI, host scheduling, MISRA or tensor initialization findings.
 Owner V1/session91528 passed 3,657 jobs; 63 new roots are registered. Required
-full artifact gate pending. Fresh-parser scalar composition is still scratch
-(62 roots in its combined check), not a production parser cutover. Prior
-clause mappings and all unresolved expansion blockers carry forward.
+full gate V1/session67522 and post-audit V1/session66369 passed `ba091c6`, both
+terminal0: 2,654 frozen inputs, 8,719 complete unchanged-whitelist reports, 573
+selected roots, four retained actual FMU roots and all three 75-function FMI
+matrices with zero discrepancies/unexpected results (526/650/526 cells).
+Algorithm/Production members remained byte-identical, while the scalar
+actual-file/archive proof contract now includes original-body semantics.
+Evidence prefix: `build/scalar-source-`. Fresh-parser scalar composition is
+still scratch (62 roots in its combined check), not a production parser cutover.
+Only the three ledgers change after the frozen gate. Prior clause mappings and
+all unresolved expansion blockers carry forward.
 
 ### Scalar compatibility and source-totality repair prerequisites — stage OPEN
 

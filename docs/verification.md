@@ -1,7 +1,7 @@
 # Exact verification contract
 
-**Original scalar bodies are now mandatory in the artifact contract (package-checked;
-full gate pending):** Core `GALEC.Elaboration.Scalar` proves generic named
+**Original scalar bodies are now mandatory in the artifact contract (full gate
+passed):** Core `GALEC.Elaboration.Scalar` proves generic named
 preparation of every resolved old scalar block, retaining all original names,
 declarations and exact statement order. Independent source execution has exact
 store effects for Startup, Recalibrate and literal-one DoStep, with arbitrary
@@ -24,9 +24,17 @@ Four core modules and audits are exact namespace/import migrations; 59 core,
 three backend and one compiler roots are registered. Standalone scratch final-v1
 checks 62 roots, including fresh-parser/source composition which remains outside
 production. Evidence: `build/galec-scalar-preparation-draft/` and
-`build/scalar-source-owner-v1.log`. Package checks do not establish the new
-actual-file contract; the required full artifact gate must still pass. The
-earlier parser-repair production cutover and standards findings remain open.
+`build/scalar-source-owner-v1.log`. Required full gate V1/session67522 and
+post-audit V1/session66369 passed `ba091c6`, both terminal0: 2,654 frozen tracked
+inputs matched, 8,719 complete reports passed the unchanged whitelist, all 573
+selected roots and four retained actual FMU roots passed. Three FMI matrices
+covered 75 functions each and 526/650/526 behavior cells, with zero recorded
+discrepancies or unexpected results. Scalar/tensor Algorithm Code and Production
+C members stayed byte-identical. The scalar actual-file/archive certificates
+now require the stronger original-body contract. Evidence prefix:
+`build/scalar-source-` (full/post logs, input/root manifests, member hashes).
+Only the three ledgers change after that frozen code gate. Production parser
+cutover, tensor initialization repair and standards findings remain open.
 
 **Universal scalar parser preservation and total candidate Startup (checked scratch):**
 The fresh parser now has a forward compatibility theorem for every typed old
@@ -46,8 +54,9 @@ session75411 passed 21 roots, three empty implementation logs, seven local and
 fourteen selected input hashes, retained upstream manifests and five output
 hashes. Main read both complete implementations and independent reviews;
 no substantive findings. Evidence: `build/galec-scalar-{scanner,parser-compat}-draft/`.
-Generic scalar body preparation/execution and production parser/artifact cutover
-still require their own connections; this scratch is outside the full gate below.
+Generic scalar body preparation/execution was subsequently connected in the
+owned increment above. Fresh-parser production/artifact cutover remains open;
+this parser scratch itself is outside the production full gate.
 
 The repaired square source/public Startup composition now additionally constructs
 an original-source execution for every source input/old store and allocated C
