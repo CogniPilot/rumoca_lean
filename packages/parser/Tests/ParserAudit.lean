@@ -18,6 +18,8 @@ import Parser.LALR.DerivationTrees
 import Parser.LALR.Completeness
 import Parser.LALR.Fuel
 import Parser.LALR.Progress
+import Parser.LALR.ExactTree
+import Parser.LALR.ActionCertificate
 import Parser.LALR.RuntimeProofs
 import Parser.LALR.SafetyProofs
 import Parser.Provenance
@@ -210,6 +212,10 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Progress.parse_not_exhausted
 #audit axioms Parser.LALR.Progress.parse_terminates
 #audit axioms Parser.LALR.Progress.accepts_iff_parse
+
+#audit axioms Parser.LALR.ExactTree.parse_valid_tree
+#audit axioms Parser.LALR.ExactTree.parse_checked_tree
+#audit axioms Parser.LALR.Frontend.StructuralActions.Certificate.build
 #audit axioms Parser.Scanner.symbol_correct
 #audit axioms Parser.Scanner.lex_correct
 #audit axioms Parser.Scanner.SymbolLexes.single_unpaired

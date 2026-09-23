@@ -41,6 +41,21 @@ their proofs and a `parse_correct` contract tied to its actual `parse` entry
 point, with a separate `parsed_tree` guarantee. Only two scalar budget
 coefficients are used at runtime; credit arrays are proof-only metadata.
 
+`LALR.ExactTree.parse_checked_tree` links an independently checked candidate
+tree to that same executable parser at its certified input-size bound. It uses
+the existing item, safety and resource validators; no tree-uniqueness assumption
+or parser replay is required. The certificate checks the whole encoded input.
+It does not recover token payloads or establish an AST result by itself.
+
+`Parser.LALR.ActionCertificate` provides `action_certificate`, a syntax-directed
+proof builder for the existing `StructuralActions.Denotes` relation. It applies
+the relation's constructors and checked reflexivity, then compares the inferred
+result with the requested result. The ordinary kernel checks the produced term;
+this is not a replacement action interpreter or a trusted native oracle.
+Opaque definitions and bounded proof search may cause failure; no completeness
+or performance theorem for the metaprogram is claimed. Original token/structural
+provenance and actual-file binding remain separate certificate obligations.
+
 Nonterminal credits are signed: a named token-consuming phrase can carry a
 positive weight into a repetition rule. `Fuel.repeat_iff` and
 `named_repeat_iff` characterize this requirement universally; nonnegative-only

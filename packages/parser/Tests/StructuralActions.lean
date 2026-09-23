@@ -1,4 +1,5 @@
 import Parser.LALR.EBNFActions
+import Parser.LALR.ActionCertificate
 
 /-! Universal recursive and nullable action instantiations. These are proofs for
 arbitrary depths, not a finite collection of successful parser examples. -/
@@ -65,7 +66,7 @@ theorem meaning (n : Nat) (spelling : String) :
     Denotes rules classify (.ref "expr") (tree n spelling) n := by
   induction n with
   | zero =>
-    exact .ref rfl (.altLeft (.map (.ref rfl (.terminal rfl))))
+    action_certificate
   | succ n ih =>
     exact .ref rfl (.altRight (.map (f := fun value : Token × Nat × Token => value.2.1 + 1)
       (.seq (.terminal (payload := Token.leftParen) rfl)
@@ -94,4 +95,3 @@ theorem nullable_depth (n : Nat) :
   denotes_run (nullable_meaning n)
 
 end Parser.LALR.Frontend.StructuralActions.RecursiveFixture
-

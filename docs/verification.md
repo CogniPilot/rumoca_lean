@@ -1,5 +1,31 @@
 # Exact verification contract
 
+**Generic exact-tree and typed-action certificates (owner passed; full gate pending):**
+The parser package now owns `LALR.ExactTree` and `LALR.ActionCertificate`.
+The two exact-tree theorems specialize existing universal completeness and
+resource proofs to an independently checked candidate with the exact full input
+yield. They establish the actual bounded parser result without assumed tree
+uniqueness or replaying LR tables by conversion. Original token payloads,
+scanner provenance and typed AST correspondence remain separate obligations.
+
+The action certificate builder constructs proofs of the existing independent
+`StructuralActions.Denotes` using its constructors and reflexivity. It synthesizes
+map results before checking the requested result; normal kernel checking and the
+unchanged axiom audit remain authoritative. It is not a replacement interpreter,
+and no completeness/performance guarantee is claimed for bounded metaprogram
+search. The existing arbitrary-depth action fixture now uses it in the base case
+for arbitrary identifier spellings; the theorem statement and inductive step are
+unchanged. No grammar, source admission, production emitter or artifact predicate
+changes, and no lifecycle/native/MISRA finding closes.
+
+Both implementations match reviewed scratch by namespace migration only. Main
+checked exact diffs; independent Astra adoption review found no substantive
+issue and confirmed all three audit roots. `lake build check-parser` passed
+956 jobs and 325 complete unchanged-whitelist reports; four source/audit hashes
+matched in post-audit. Evidence: `build/parser-certificate-adoption/`.
+The required combined full artifact gate remains pending; earlier gates do not
+cover this adoption.
+
 **Surface square/AD composition (combined full gate passed):**
 Reusable `StatementRelations` proves skip, sequencing and bounded-loop
 congruence for partial/nondeterministic execution. Generic surface witnesses

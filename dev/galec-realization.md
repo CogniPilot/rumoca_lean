@@ -1,5 +1,22 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Generic certificate infrastructure adoption — owner passed
+
+The reviewed exact-tree proof and syntax-directed action certificate builder
+now live in `packages/parser/Parser/LALR/{ExactTree,ActionCertificate}.lean`.
+Only namespaces changed from scratch. All three roots are registered, and the
+existing universal recursive fixture uses the certificate tactic in its base
+case without changing the statement or inductive step. Owner V1/session20923
+passed 956 jobs; post-owner V1/session53773 passed 325 complete reports under the
+unchanged whitelist and all four input hashes. Main checked exact migration;
+independent adoption review found no substantive issue, including sibling-goal
+preservation. Evidence: `build/parser-certificate-adoption/`.
+
+These mechanisms do not infer a frontend token payload or change source
+admission. The concrete prospective loop source/C chain below remains scratch,
+and full method/lifecycle/actual-artifact obligations remain open. Required
+combined full gate for this adoption is pending.
+
 ## Prospective source-to-authored-C certificate — checked scratch
 
 The supplied 195-token prospective loop source now has a kernel-checked chain
