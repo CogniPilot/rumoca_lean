@@ -1,5 +1,32 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Scalar original-body semantics — adopted; full gate pending
+
+The scalar cutover prerequisite now has generic declaration-derived preparation
+and original-body execution for every resolved old scalar block, not just the
+renderer image. Core owns `Elaboration.Scalar.{Preparation,Execution,State,FiniteArithmetic}`.
+State/clock values move between method-role layouts via whole-shaped roundtrips;
+the clock is not confused with state merely because both have scalar shape.
+DoStep remains `x + one` with its explicit arithmetic relation, never a new
+clock-dependent Euler step. The finite specialization discharges only this
+instruction's domain. Recalibrate preserves the complete logical state.
+
+The scalar AlgorithmContract now requires `ScalarSourceSemantics` for its actual
+parsed member. Existing Production/Manifest/Archive contracts carry the stronger
+field; `ProductionContract.original_methods` supplies original-source execution
+and existing actual authored C behavior at the same final logical state with
+the complete heap frame. Allocated-only Startup and all existing target branches
+are retained. Native ABI, host scheduling and standards findings remain separate.
+Owner V1/session91528 passed 3,657 jobs with 63 new registered roots. Full gate
+pending; no actual-artifact success is inferred from this package check.
+
+Fresh-parser source composition remains checked scratch (combined final-v1:
+62 roots, five empty implementation logs, nine local and seventeen selected
+input hashes). It fixes the original parsed block/methods before runtime choices.
+No production parser/emitter, obsolete tensor syntax or source admission changed.
+Evidence: `build/galec-scalar-preparation-draft/`,
+`build/scalar-source-owner-v1.log`; independent main/sidecar reviews are retained.
+
 ## Forward scalar syntax preservation and total candidate Startup — checked scratch
 
 Every typed old scalar source parse now has an exact fresh-parser AST result,

@@ -87,4 +87,33 @@ theorem compile_production_verified (h : compile source = .ok a)
     compile source = .ok a ∧ ProductionContract a algorithm c :=
   ⟨h, production_correct a (algorithm_correct a ha) hc⟩
 
+/-- The original parsed scalar bodies and actual authored C methods agree on
+one logical state, including the clock, with the complete C heap frame retained.
+The source and C method witnesses are fixed before all runtime choices. This
+finite initialized-entry theorem does not replace the allocated-only Startup
+branch, public ABI, or host scheduling obligations in the existing contract. -/
+theorem ProductionContract.original_methods (contract : ProductionContract a algorithm c) :
+    ∃ parsed module, GALEC.Syntax.parse algorithm = .ok parsed ∧
+      Production.lower a.algorithmSolve = .ok module ∧ module.render = c ∧
+      ∀ ceiling method heap p (before : GALEC.UnitProfile.State Binary64.Value),
+        Production.Represents heap p before → ∃ after,
+        GALEC.Elaboration.Scalar.StateBridge.SourceExec parsed.ast ceiling Solve.Tensor.Finite.Result
+          Binary64.positiveZero Binary64.one method before after ∧
+        (∀ behavior, CArithmetic.machine.Behaves
+          (.running (module.method method).body (Production.parameters p) heap) behavior ↔
+          behavior = .terminates ⟨.integer 0, Production.resultHeap heap p before method⟩) ∧
+        Production.Represents (Production.resultHeap heap p before method) p after ∧
+        (∀ q, q ≠ p.member "x" → q ≠ p.member "samplePeriod" →
+          q ≠ p.member CHeader.statusName →
+          Production.resultHeap heap p before method q = heap q) := by
+  obtain ⟨parsed, accepted, sourceSemantics⟩ := contract.algorithm_contract.original_source
+  obtain ⟨module, lowered, rendered, _, _, _, _, methods, _, _, _⟩ := contract.target
+  refine ⟨parsed, module, accepted, lowered, rendered, ?_⟩
+  intro ceiling method heap p before represented
+  obtain ⟨behavior, result, frame⟩ := methods method heap p before represented
+  refine ⟨GALEC.UnitProfile.solveExecute a.algorithmSolve.block Binary64.positiveZero
+    Binary64.one GALEC.roundedAdd method before, ?_, behavior, result, frame⟩
+  exact (sourceSemantics.execution ceiling method before _).mpr
+    (contract.algorithm_contract.solve_refinement method before)
+
 end Rumoca.EFMI

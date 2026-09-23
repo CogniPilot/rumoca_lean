@@ -58,6 +58,7 @@ theorem initial_state_and_period (old : GALEC.UnitProfile.State Nat) :
 #audit axioms EFMI.algorithm_correct
 #audit axioms EFMI.compile_algorithm_verified
 #audit axioms EFMI.production_correct
+#audit axioms EFMI.ProductionContract.original_methods
 #audit axioms EFMI.compile_production_verified
 #audit axioms Rumoca.square_prepared_kernel
 #audit axioms Rumoca.TensorAlgorithmArtifact.algorithm_correct

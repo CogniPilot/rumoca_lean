@@ -1,6 +1,7 @@
 import Rumoca.EFMI
 import Rumoca.GALEC
 import RumocaEFMI.AlgorithmProofs
+import RumocaEFMI.ScalarSourceProofs
 import RumocaCore.GALEC.Protocol
 
 open _root_.Parser
@@ -17,6 +18,8 @@ structure AlgorithmContract (a : Artifact source) (emitted : String) : Prop wher
   grammar_processed :
     (LALR.Frontend.compile GALEC.Generated.source).map (·.grammar) = .ok GALEC.Generated.grammar
   parsed : ∃ p, GALEC.Syntax.parse emitted = .ok p ∧ Denotes p.ast a.algorithmCode.block
+  original_source : ∃ p, GALEC.Syntax.parse emitted = .ok p ∧
+    ScalarSourceSemantics p.ast a.algorithmCode.block
   dae_admission : ∀ dx : ℝ, a.solve.dae.Holds dx ↔ dx = 1
   startup : ∀ x, a.algorithmCode.execute .startup x = Binary64.positiveZero
   recalibrate : ∀ x, a.algorithmCode.execute .recalibrate x = x
@@ -38,7 +41,8 @@ structure AlgorithmContract (a : Artifact source) (emitted : String) : Prop wher
 theorem algorithm_correct (a : Artifact source) (he : a.algorithmSource = emitted) :
     AlgorithmContract a emitted := by
   refine ⟨he, parsed_lexes a.parsed, parsed_in_ebnf a.parsed, EFMI.grammar_processed,
-    he ▸ render_denotes a.algorithmCode, GALEC.lower_equation_correct a.solve.dae,
+    he ▸ render_denotes a.algorithmCode, he ▸ render_source_semantics a.algorithmCode,
+    GALEC.lower_equation_correct a.solve.dae,
     GALEC.startup_correct _, GALEC.recalibrate_correct _, ?_, ?_, ?_, ?_⟩
   · intro x
     rw [GALEC.doStep_correct, Solve.Model.advance_correct]

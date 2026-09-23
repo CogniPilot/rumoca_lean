@@ -1,4 +1,5 @@
 import Tests.ProductionChecks.CInterface
+import Tests.ProductionChecks.ScalarSourceProofs
 import Tests.ProductionChecks.TensorArrayMembers
 import Tests.ProductionChecks.TensorContextCalls
 import Tests.ProductionChecks.TensorContextIVP

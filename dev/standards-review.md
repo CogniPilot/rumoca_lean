@@ -12,6 +12,26 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Original scalar method semantics — repair increment; stage OPEN
+
+No grammar expansion or new admitted source case. The original scalar parsed
+member now has mandatory generic method preparation and independent body
+execution in `AlgorithmContract.original_source`; state and clock have proved
+whole-value transport across method-role layouts. DoStep retains literal-one
+addition, with the finite domain proved only for that instruction. Startup's
+non-input writes and later constant-read-only partition are the existing
+restricted policies, not a new normative input-initialization resolution.
+
+`ProductionContract.original_methods` connects those body semantics to the
+existing authored C result and complete frame under finite represented entry.
+The separately required allocated-only Startup branch is retained unchanged.
+This improves formal source/C coverage of the frozen scalar subset; it does
+not settle native ABI, host scheduling, MISRA or tensor initialization findings.
+Owner V1/session91528 passed 3,657 jobs; 63 new roots are registered. Required
+full artifact gate pending. Fresh-parser scalar composition is still scratch
+(62 roots in its combined check), not a production parser cutover. Prior
+clause mappings and all unresolved expansion blockers carry forward.
+
 ### Scalar compatibility and source-totality repair prerequisites — stage OPEN
 
 No production grammar, source admission, interface policy or artifact changed.

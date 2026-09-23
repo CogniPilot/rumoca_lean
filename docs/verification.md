@@ -1,5 +1,33 @@
 # Exact verification contract
 
+**Original scalar bodies are now mandatory in the artifact contract (package-checked;
+full gate pending):** Core `GALEC.Elaboration.Scalar` proves generic named
+preparation of every resolved old scalar block, retaining all original names,
+declarations and exact statement order. Independent source execution has exact
+store effects for Startup, Recalibrate and literal-one DoStep, with arbitrary
+partial/nondeterministic arithmetic. Whole-shaped pack/unpack inverses transport
+both state and clock between Startup's writable pair and later methods' split
+read-only/writable layouts. The finite interpretation proves only the actual
+addition-with-one total; it does not assume general IEEE addition is total.
+
+`ScalarSourceSemantics` connects those original bodies to the same logical
+`UnitProfile.State` used by Solve/C. `AlgorithmContract.original_source` is a
+new mandatory field, so existing Production/Manifest/Archive contracts retain
+it. `ProductionContract.original_methods` composes source execution with actual
+authored C method behavior, returned state/clock/status and the full heap frame.
+The existing allocated-only Startup branch remains unchanged; the new composed
+all-method theorem has finite represented entry storage and is not a public-ABI
+or host-scheduler theorem. No parser, emitter, grammar or source admission changes.
+
+Owner V1/session91528 passed `check-core check-efmi check-compiler` (3,657 jobs).
+Four core modules and audits are exact namespace/import migrations; 59 core,
+three backend and one compiler roots are registered. Standalone scratch final-v1
+checks 62 roots, including fresh-parser/source composition which remains outside
+production. Evidence: `build/galec-scalar-preparation-draft/` and
+`build/scalar-source-owner-v1.log`. Package checks do not establish the new
+actual-file contract; the required full artifact gate must still pass. The
+earlier parser-repair production cutover and standards findings remain open.
+
 **Universal scalar parser preservation and total candidate Startup (checked scratch):**
 The fresh parser now has a forward compatibility theorem for every typed old
 scalar parse certificate: its actual source parse returns exactly
