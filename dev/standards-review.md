@@ -26,7 +26,12 @@ resolved by assuming that input cells already hold values.
 Owner V1/session9879 passed 2,406 jobs; post-owner V1/session74549 passed 985
 complete whitelisted reports, 29 new roots and nine owner hashes. Main read
 independent source review and checked exact owner migrations. Required full
-artifact gate remains pending. Independent adoption review confirmed all four
+gate V1/session22907 and post-audit V1/session46912 subsequently passed `7cef7b0`,
+both terminal0: 2,638 frozen tracked inputs, 8,615 complete whitelisted reports,
+all 469 selected roots and four retained FMU roots. Three FMI matrices covered
+75 functions each, 526/650/526 cells and zero discrepancies/unexpected results;
+actual scalar/tensor Algorithm/Production Code members stayed byte-identical.
+Evidence prefix: `build/startup-initialization-`. Independent adoption review confirmed all four
 exact migrations and 29 audit registrations; main read it fully. Separate
 checked and independently reviewed candidate C/source-C proofs
 initialize x/J without old finite reads, but actual public Startup and artifacts
@@ -36,6 +41,36 @@ remain open. This is a repair-prerequisite addendum, not a grammar-stage
 expansion or new whole-subset compliance verdict. Evidence:
 `build/galec-startup-{core,source,c,link}-draft/`,
 `build/galec-startup-adoption/` and `build/startup-core-owner-v1.*`.
+
+### Whole-subset Startup grammar repair review — 2026-09-23 UTC; stage OPEN
+
+Before changing the prospective grammar, main read the complete independent
+266-line review `build/galec-startup-grammar-review/review.md`. It inspects
+current dispatch, both production grammars, selected actual artifacts and pinned
+references at `7cef7b0`, carrying all unresolved findings forward. Its live-gate
+observations are historical; the completed gate evidence is recorded above.
+
+| Recurring checklist | Current repair decision and evidence |
+| --- | --- |
+| Scope and identity | Scalar unit C/FMU/Algorithm/eFMU, fixed extent-two square/Jacobian FMU/Algorithm/eFMU, pinned two-state constant FMU only. No new Modelica case or product. |
+| Architecture continuity | Prospective Startup changes only from two fixed assignments to existing statement repetition, through reusable LALR/CST/typed actions; original names/bodies and shaped IR remain. No token matcher, second parse or cell enumeration. |
+| Normative baseline | MLS3.7, FMI3.0.2 ME/CS, eFMI1.0Beta1. Review records pinned hashes; TODO-labelled eFMI rules stay labelled. |
+| MLS coverage | Existing lexical/AnnexA, declarations/equations, Real/derivative and initialization mappings for all three profiles. Source jacobian remains an extension; S01/SR08 remain open. |
+| FMI coverage | All three advertised ME/CS products retain lifecycle, access/counts, metadata/arrays, initialization/reset, prepared solver/time, status/logging, storage and source-build/archive obligations. No FMI behavior change. |
+| eFMI coverage | Both eFMUs retain Startup/Recalibrate/DoStep, period, mappings/status and same-container Algorithm/Production correspondence. Beta1 §3.2.4 G-2 uses statement repetition; §3.2.3, S-2.11, §3.1.6 and TODO input-write rules keep initialization/output/start/input-policy obligations open. |
+| Proof correspondence | Owned source/core initialization plus checked candidate C are prerequisites. Missing actual parsed Startup, public entry, actual-file/manifest/archive cutover and target-counter/normative permission obligations cannot be replaced by successful examples. |
+| Boundary evidence | Completed full-gate records above, actual member/XML inspection in the review, and separate draft checks. Schemas/importers/native success do not establish conformance; official eFMI standalone-checker limitation remains. |
+| Decision | Proceed only with the bounded scratch repair under existing user authorization. Ordinary expansion and production promotion remain blocked by unresolved findings. Preserve old scalar Startup AST and all other admitted profiles. |
+
+The new scratch root is `build/galec-startup-parser-draft/`; the older checked
+loop draft and all production files remain unchanged. Initial generation
+succeeded with 598 canonical/178 LALR states and 21 rules; kernel certificates
+and full typed-action/source correspondence still require their own evidence.
+The companion restricted initialization policy and declaration/named-Startup/C
+chain passed standalone checks with 31 and 38 roots respectively; independent
+reviews were read by main (`build/galec-startup-{policy,layout}-draft/`). They
+do not resolve the input-initialization conflict, manifest starts, GJ01/GJ03/N01,
+source/finite history, native/ABI or MISRA obligations. No finding closes here.
 
 ### DoStep write-policy prerequisites — 2026-09-22; stage OPEN
 

@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Startup shaped initialization prerequisites — owner passed
+## Startup shaped initialization prerequisites — full gate passed
 
 Core `VectorClear` and `InitializationBodies` use existing bounded loops and
 assignments for vector/matrix zero fills and a scalar one. An independent
@@ -16,7 +16,13 @@ V1/session9879 passed 2,406 jobs; post-owner V1/session74549 passed 985 complete
 whitelisted reports, 29 new roots and nine owner hashes. Main checked migrations
 and read the full independent source and adoption reviews; exact migrations and
 all 29 registrations were independently confirmed with no substantive finding.
-Full artifact gate remains pending.
+Required full gate V1/session22907 and post-audit V1/session46912 subsequently
+passed `7cef7b0`, both terminal0: 2,638 frozen inputs, 8,615 complete whitelisted
+reports, all 469 selected roots and four retained actual FMU roots. Three FMI
+matrices covered 75 functions each, 526/650/526 cells and zero discrepancies or
+unexpected results; scalar/tensor Algorithm/Production Code members stayed
+byte-identical. Evidence prefix: `build/startup-initialization-`. This excludes
+later policy/named-preparation/parser scratch and closes no standards finding.
 Evidence: `build/startup-core-owner-v1.*`, `build/galec-startup-adoption/`,
 `build/galec-startup-core-draft/`, `build/galec-startup-source-draft/`.
 

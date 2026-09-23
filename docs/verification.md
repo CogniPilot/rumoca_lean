@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Shaped initialization and source lowering (owner passed; full gate pending):**
+**Shaped initialization and source lowering (full artifact gate passed):**
 Core `GALEC.VectorClear` realizes literal-zero rank-one clearing with existing
 bounded/assignment statements. `InitializationBodies` composes vector clear,
 rectangular matrix clear and scalar literal-one assignment. Independent
@@ -27,7 +27,17 @@ Owner V1/session9879 passed 2,406 jobs; post-owner V1/session74549 passed 985
 complete unchanged-whitelist reports, all 29 new roots and nine recorded owner
 hashes. Evidence: `build/startup-core-owner-v1.*`,
 `build/galec-startup-adoption/`, `build/galec-startup-core-draft/` and
-`build/galec-startup-source-draft/`. Required full artifact gate remains pending.
+`build/galec-startup-source-draft/`. Implementation `7cef7b0` subsequently passed
+the required full gate V1/session22907 and post-audit V1/session46912, both
+terminal0. All 2,638 frozen tracked hashes matched; 8,615 complete reports passed
+the unchanged whitelist, all 469 selected roots were present and four retained
+actual FMU roots passed separate audit. Three FMI matrices covered 75 functions
+each and 526/650/526 behavior cells, with zero recorded-finding discrepancies or
+unexpected results. Scalar/tensor Algorithm Code and Production C members
+remained byte-identical. Evidence prefix: `build/startup-initialization-`
+(full-gate/post-audit V1 logs, frozen inputs, required roots, retained FMU audits,
+before/after-member and archive hashes). Later policy/named-preparation/parser
+repair drafts are outside this gate; no compliance finding closes.
 
 Separate checked C scratch composes the actual numerical initializer for both
 `x` and `J`, then status/period/return, under allocated-only storage with exact
