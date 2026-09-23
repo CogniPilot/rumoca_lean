@@ -1,5 +1,38 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Prospective source-to-authored-C certificate — checked scratch
+
+The supplied 195-token prospective loop source now has a kernel-checked chain
+through original scanned tokens, exact bounded LALR tree, payload-bearing
+structural value, typed-action AST and generic selected-body preparation to the
+existing tensor eFMI authored C DoStep body. The generic exact-tree theorem
+instantiates existing item/safety/resource proofs; it does not assume uniqueness
+or replay tables by conversion. A generic syntax-directed certificate builder
+proves existing `StructuralActions.Denotes` using constructors and checked
+reflexivity; the concrete action proof has no axioms. Existing universal action
+correctness then supplies the actual executable result.
+
+The final concrete theorem has no caller parse/lowering premise. It fixes the
+original AST and selected method before runtime quantifiers, then retains the
+independent source-execution and existing C storage/call-context premises. Its
+endpoint includes the exact numerical view and complete prior C Outcome/frame.
+This is forward selected-body execution of the supplied literal, not an
+independently read emitted artifact or a complete public-call/lifecycle theorem.
+The role map remains explicit policy. Startup, permission, source initialization,
+native and MISRA findings remain open; no production admission changes.
+
+Evidence: `build/lalr-exact-tree-draft/` (2 roots),
+`build/galec-c-composition-draft/` (16 roots),
+`build/galec-certificate-draft/` and
+`build/structural-action-certificate-draft/`. The combined certificate/composition
+post-check V1 passed 17 selected complete reports under the unchanged whitelist
+and verified local/upstream hashes. Structural certification took 25.068 seconds
+for this literal; this is not a general performance bound. Main reviewed the
+generic builder and composition; independent Astra reviews cover the C bridge,
+universal wrappers, final candidate generator and static preparation. Durable
+owner adoption and actual-file/grammar/archive binding are still required.
+The completed production gate below does not cover these later scratch modules.
+
 ## Surface square/AD body composition — full gate passed
 
 The previously reviewed six scratch modules are adopted as generic
