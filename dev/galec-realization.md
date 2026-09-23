@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Named preparation and initialization capabilities — owner check passed
+## Named preparation and initialization capabilities — full gate passed
 
 The core now owns role-parametric metadata/write proofs, their restricted
 non-input initialization specialization, and named-method preparation with an
@@ -10,8 +10,12 @@ are exact migrations from `InitializationPolicyDraft.{Capabilities,Policy}` and
 Owner V1/session10534 passed 2,412 jobs; post-owner V1 passed 1,026 complete
 whitelisted reports, 41 new roots and seven owner hashes. Main checked exact
 migrations and read the full independent adoption review; no substantive finding.
-Evidence: `build/named-preparation-adoption/`. Required full artifact
-gate pending; no production parser/emitter/admission change or finding closure.
+Evidence: `build/named-preparation-adoption/`. Required full gate27860 and
+post-audit74127 passed `3accd67`: 2,644 frozen inputs, 8,656 complete whitelisted
+reports, 510 selected roots, four retained FMU roots; all three 75-function FMI
+matrices had zero discrepancies/unexpected results, with 526/650/526 cells.
+Algorithm/Production members stayed byte-identical. Evidence prefix:
+`build/named-preparation-`. No production parser/emitter/admission change.
 
 The fresh statement-list Startup grammar passed universal generated/action/source
 checks (44 roots); its actual 266-token source passed the Startup chain (25 roots)
@@ -22,6 +26,18 @@ Old two-assignment action compatibility passed 11 roots, retaining AST and token
 word, but is not a proof of all-old-LR/source acceptance. These are scratch body
 certificates, not public dispatch, lifecycle or emitted-file/archive cutover.
 Evidence: `build/galec-startup-{parser,certificate}-draft/`.
+
+Later standalone whole-block preparation passed 55 roots (session44601),
+candidate public Startup passed 12 (session55588), and same-heap source/public
+composition passed four (session91615). Full independent reviews read, no
+substantive findings. These connect the same original source and all three
+prepared methods to candidate public Startup, retaining source execution as a
+premise and the exact source-observed final heap. They do not change production
+tables/files/archives or prove sequential lifecycle/state transport. Evidence:
+`build/galec-block-preparation-draft/`, `build/galec-startup-public-draft/`,
+`build/galec-startup-public-link-draft/`. The normative manifest scalar-start
+permission is corrected in `dev/standards-review.md`; actual initialization and
+GALEC assignment legality remain distinct obligations.
 
 ## Startup shaped initialization prerequisites — full gate passed
 

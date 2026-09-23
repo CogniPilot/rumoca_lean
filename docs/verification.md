@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Named preparation and initialization capabilities (owner check passed):**
+**Named preparation and initialization capabilities (full artifact gate passed):**
 Core `Elaboration.Capabilities.Generic` traces original assignment paths and
 whole shapes to declaration metadata under a role/predicate equivalence. Its
 recursive source write judgment is independent of lowering and target execution.
@@ -22,8 +22,14 @@ reviewed scratch. Owner V1/session10534 passed 2,412 jobs; post-owner V1 passed
 1,026 complete whitelisted reports, all 41 new roots and seven recorded owner
 hashes. Main checked all three exact migrations and read the complete independent
 adoption review, which confirmed all registrations with no substantive finding. Evidence:
-`build/named-preparation-adoption/`. The required full artifact gate is pending;
-these package results do not establish a new C or actual-artifact contract.
+`build/named-preparation-adoption/`. Required full gate V1/session27860 and
+post-audit V1/session74127 passed `3accd67`, both terminal0: all 2,644 frozen
+tracked input hashes matched, 8,656 complete reports passed the unchanged
+whitelist, all 510 selected roots and four retained actual FMU roots passed.
+Three FMI matrices covered 75 functions each and 526/650/526 behavior cells,
+with zero recorded-finding discrepancies or unexpected results. Scalar/tensor
+Algorithm Code and Production C members stayed byte-identical. Evidence prefix:
+`build/named-preparation-` (full/post logs, frozen inputs, roots and member hashes).
 No production parser, grammar, emitter, source admission or audit whitelist
 changes, and no standards/MISRA finding closes.
 
@@ -44,6 +50,27 @@ identical AST and token word. This is not all-old-LR/source acceptance. Candidat
 body proofs do not establish public dispatch, emitted-file/archive linkage,
 sequential lifecycle composition, or normative input initialization. The
 prospective grammar and concrete certificates remain scratch, not production.
+
+Subsequent checked scratch connects all three original methods from that same
+source to one block-preparation judgment (55 roots, session44601); metadata
+equality preserves full descriptors but is not state transport between role
+layouts. Candidate public Startup (12 roots, session55588) uses the actual
+numerical table with a repaired method and retains the full x/J/status/period,
+input and heap-frame outcome. The same-heap source/public addendum (four roots,
+session91615) carries original source observations into that public call, with
+all-continuation reachability and exact terminating behavior. Main read all
+independent reviews; no substantive findings. Evidence:
+`build/galec-block-preparation-draft/`, `build/galec-startup-public-draft/`,
+`build/galec-startup-public-link-draft/`. Source execution remains an explicit
+premise; production table/emitter/file/archive cutover and sequential lifecycle
+are not established by those draft receipts.
+
+**Standards-review correction:** the complete pinned eFMI Beta1 §3.1.6 start
+description explicitly permits a scalar encoding as the uniform initial value
+of an array. The current manifest `start="0"` is not a cardinality violation.
+The earlier review stopped before this permission; see the corrective entry in
+`dev/standards-review.md`. This does not license GALEC scalar-to-array assignment,
+prove actual initialization, or resolve the input-initialization conflict.
 
 **Shaped initialization and source lowering (full artifact gate passed):**
 Core `GALEC.VectorClear` realizes literal-zero rank-one clearing with existing

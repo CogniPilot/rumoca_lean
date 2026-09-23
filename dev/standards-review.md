@@ -12,6 +12,26 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Correction: scalar-encoded array manifest starts are permitted — 2026-09-23 UTC
+
+Main read the complete pinned eFMI Beta1 §3.1.6 variable/start description,
+including the text following the row-major example. Extract lines887–897
+explicitly permit either a scalar encoding, used uniformly for every element,
+or a multi-dimensional encoding with element values. The earlier focused
+method-policy review cited only lines873–884 and failed to read this permission.
+The extract is unchanged: SHA256
+`2e5aff94511f8499d49a12726085335a3b470fe63950dc26ce4b4407f328f4f9`.
+
+Therefore the single `start="0"` values emitted for u[2], x[2] and J[2,2] by
+`TensorManifest.algorithmVariable` are **not a manifest cardinality defect**.
+No emitter change or element enumeration is required to repair that alleged
+defect. This corrects the normative interpretation, not an artifact or full
+conformance claim. Source/C initialization correspondence, type/range validity
+and method lifecycle retain their own evidence requirements. It does not
+authorize scalar-to-array GALEC assignment or resolve initial inputs versus
+the TODO assignment ban. Missing production J initialization remains open.
+Historical scratch reviews are retained unchanged and superseded on this point.
+
 ### Named preparation and restricted initialization policy — stage OPEN
 
 This is an ownership adoption of reviewed repair prerequisites, not a grammar
@@ -24,7 +44,11 @@ proves exact method selection, original declarations/shapes and original-body
 execution correspondence. It does not validate other methods or lifecycle order.
 
 Owner V1/session10534 and post-owner V1 passed (2,412 jobs, 1,026 complete
-whitelisted reports, 41 roots, seven owner hashes); full artifact gate pending.
+whitelisted reports, 41 roots, seven owner hashes). Full gate27860 and
+post-audit74127 subsequently passed `3accd67`: 2,644 frozen inputs, 8,656 complete
+whitelisted reports, 510 selected roots and four retained FMU roots; all three
+75-function matrices had zero discrepancies/unexpected results, with
+526/650/526 cells. Algorithm/Production members stayed byte-identical.
 Evidence: `build/named-preparation-adoption/`. Production languages and emitters
 are unchanged. The prospective statement-list parser and same-source Startup /
 DoStep body certificates now have separate checked receipts and a fully read
@@ -32,7 +56,7 @@ independent review (`build/galec-startup-{parser,certificate}-draft/`). These
 discharge the supplied-text parsing/preparation step, not public dispatch,
 actual-file/archive cutover or sequential lifecycle composition. Old action
 compatibility is not a general old-source acceptance theorem. All prior MLS,
-FMI, eFMI, manifest-start, numeric/domain, native and MISRA findings remain open;
+FMI, eFMI, initialization-correspondence, numeric/domain, native and MISRA findings remain open;
 ordinary expansion remains blocked under the recurring whole-subset checklist.
 
 ### Startup initialization prerequisites — 2026-09-22; stage OPEN
@@ -137,12 +161,14 @@ TODO-labelled side-effect rule at2893–2895 forbids assignments to control-inpu
 without a stated Startup exception. Keep that conflict OPEN: neither blanket
 writable Startup inputs nor an unstated external-initialization agreement is
 justified. §3.2.4 S-2.11 (2321–2327) requires initial outputs; §3.1.6
-(873–884) describes per-element row-major array starts, not scalar assignment
-broadcast. Current `TensorStartup.lean`'s `StartupOutcome` explicitly preserves prior
+(873–897) permits scalar-encoded uniform or row-major array manifest starts,
+not scalar assignment broadcast in GALEC (corrected above). Current
+`TensorStartup.lean`'s `StartupOutcome` explicitly preserves prior
 u/J storage while initializing x and the clock. Therefore initial J is a real
 unclosed output-initialization obligation. Scalar-to-array `self.x := 0.0` and
-the single-value array manifest starts also remain unestablished, not certified
-by schemas or the current storage frame proof.
+the manifest-to-execution initialization correspondence remain unestablished,
+not certified by schemas or the current storage frame proof. Single-value
+array manifest starts themselves are explicitly permitted by §3.1.6.
 
 The conservative DoStep configuration (u/constant period read-only; x/J writable)
 is supported by the side-effect and limitation clauses (3654–3729), but must
