@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Generic certificate infrastructure adoption — owner passed
+## Generic certificate infrastructure adoption — full gate passed
 
 The reviewed exact-tree proof and syntax-directed action certificate builder
 now live in `packages/parser/Parser/LALR/{ExactTree,ActionCertificate}.lean`.
@@ -15,7 +15,16 @@ preservation. Evidence: `build/parser-certificate-adoption/`.
 These mechanisms do not infer a frontend token payload or change source
 admission. The concrete prospective loop source/C chain below remains scratch,
 and full method/lifecycle/actual-artifact obligations remain open. Required
-combined full gate for this adoption is pending.
+combined full gate V1/session68139 and post-audit V1/session55080 subsequently
+passed `e5b8a39`, both terminal0: 2,621 frozen tracked inputs, 8,542 complete
+whitelisted reports, 396 selected roots and four retained actual FMU roots.
+Three FMI matrices covered 75 functions each, 526/650/526 behavior cells and
+zero recorded-finding discrepancies/unexpected results. Scalar/tensor Algorithm
+Code and Production C members were unchanged. Evidence prefix:
+`build/parser-certificate-` (`full-gate-v1.*`, `post-audit-v1.*`,
+`required-roots-v1.txt`, `fmu-retained-v1.axioms`, before/after-member and archive
+hashes). This gate does not cover later method/capability/header scratch or
+close a compliance finding.
 
 ## Prospective source-to-authored-C certificate — checked scratch
 

@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Generic exact-tree and typed-action certificates (owner passed; full gate pending):**
+**Generic exact-tree and typed-action certificates (combined full gate passed):**
 The parser package now owns `LALR.ExactTree` and `LALR.ActionCertificate`.
 The two exact-tree theorems specialize existing universal completeness and
 resource proofs to an independently checked candidate with the exact full input
@@ -23,8 +23,18 @@ checked exact diffs; independent Astra adoption review found no substantive
 issue and confirmed all three audit roots. `lake build check-parser` passed
 956 jobs and 325 complete unchanged-whitelist reports; four source/audit hashes
 matched in post-audit. Evidence: `build/parser-certificate-adoption/`.
-The required combined full artifact gate remains pending; earlier gates do not
-cover this adoption.
+Implementation `e5b8a39` subsequently passed the required full gate V1/session68139
+and post-audit V1/session55080, both terminal exit 0. All 2,621 tracked input
+hashes matched; 8,542 complete reports passed the unchanged whitelist, all 396
+selected roots were present and four actual retained FMU roots passed separate
+audit. Three FMI matrices covered 75 functions each and 526/650/526 behavior
+cells, with zero recorded-finding discrepancies or unexpected results. Actual
+scalar/tensor Algorithm Code and Production C members remained byte-identical.
+Evidence: `build/parser-certificate-full-gate-v1.*`, `-post-audit-v1.*`,
+`-required-roots-v1.txt`, `-fmu-retained-v1.axioms`, `-before-members-v1.sha256`,
+`-after-members-v1.sha256`, `-archives-v1.sha256`. Later scratch method selection,
+capabilities, named preparation and interface-header work are outside this gate.
+No open compliance finding closes.
 
 **Surface square/AD composition (combined full gate passed):**
 Reusable `StatementRelations` proves skip, sequencing and bounded-loop
