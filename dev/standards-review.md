@@ -12,6 +12,42 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Tensor method-policy addendum — 2026-09-22; stage OPEN
+
+Focused independent review is `build/galec-composition-draft/method-policy-review.md`;
+main read it fully and independently checked the lifecycle/input-write clauses
+and actual tensor Startup/DoStep definitions. This supplements the whole-subset
+checklist below; MLS/FMI and other open findings are carried forward, not newly
+certified. No grammar, method implementation or numerical policy changes here.
+
+Pinned eFMI Beta1 §3.2.3 §2/§3 (local extract lines1251–1287) requires initial
+block-variable values and explicitly discusses initialized inputs. The
+TODO-labelled side-effect rule at2893–2895 forbids assignments to control-inputs
+without a stated Startup exception. Keep that conflict OPEN: neither blanket
+writable Startup inputs nor an unstated external-initialization agreement is
+justified. §3.2.4 S-2.11 (2321–2327) requires initial outputs; §3.1.6
+(873–884) describes per-element row-major array starts, not scalar assignment
+broadcast. Current `TensorStartup.lean`'s `StartupOutcome` explicitly preserves prior
+u/J storage while initializing x and the clock. Therefore initial J is a real
+unclosed output-initialization obligation. Scalar-to-array `self.x := 0.0` and
+the single-value array manifest starts also remain unestablished, not certified
+by schemas or the current storage frame proof.
+
+The conservative DoStep configuration (u/constant period read-only; x/J writable)
+is supported by the side-effect and limitation clauses (3654–3729), but must
+still be derived through method-specific capability validation. Constants being
+read-only in DoStep does not prohibit establishing their value in Startup.
+Retain the existing scope/namespace and immutable-input obligations.
+
+No tensor eFMI Euler mismatch was found: `TensorProductionCode.doStepFunction`
+calls prepared RHS and diagonal entries, agreeing with the current Algorithm
+Code's RHS/Jacobian intent. FMI3 CS state-plus-derivative behavior belongs to a
+different path. The new source-body proofs must compose with existing eFMI
+heap/status/return contracts, not silently add Euler integration. Chapter5
+(7776–7777) still requires Production Code to implement the algorithm in the
+same container. GJ01/GJ03/N01, Startup, direction syntax, native/ABI and MISRA
+findings remain open; ordinary language expansion remains blocked.
+
 ### Indexed AST preparation — 2026-09-22; stage OPEN
 
 Generic surface references now retain indices on every component, expressions

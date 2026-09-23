@@ -1,5 +1,50 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Surface square/AD body composition — owner passed
+
+The previously reviewed six scratch modules are adopted as generic
+`GALEC.StatementRelations`, generic `Elaboration.Surface`, and
+`Elaboration.Square.{Lowering,Execution,Layout,Finite}`. Only namespaces,
+imports and opens change. Surface depends on vector/matrix helpers; the square
+instance imports SquareBodies itself. Generic mechanisms do not acquire a
+profile-specific namespace or a backend dependency.
+
+Square source builders retain actual unresolved references, indices, ordinary
+operators and explicit positive `1:1:size(...)` headers. Their independent
+typing derivations instantiate reusable body completeness to prove the exact
+generic lowering equation. The result keeps trailing skips in every body.
+Relational sequence/loop congruence connects it to prepared pointwise square,
+matrix clear and diagonal scatter, preserving all intermediate stores and
+partial/nondeterministic arithmetic. There is no replacement runtime recognizer.
+
+The concrete u/x/J/samplePeriod declarations independently validate and build
+the same ordered whole-shaped table used for all reads/writes/shape queries.
+Their method roles are explicit configuration, not inferred permission evidence.
+Source execution is iff the original finite square RHS and exact two-update
+final store. The matrix observations agree with the already AD-generated
+program at rank-aware coordinates, including the inherited signed-zero
+behavior. These are RHS/Jacobian computations, not an Euler trajectory claim.
+Both current tensor eFMI Algorithm/Production Code compute that RHS/Jacobian;
+FMI3 CS Euler is a separate path, not a reason to change this method's meaning.
+
+Core owner V1/session6566 terminal0: 2,389 jobs, 925 complete whitelisted
+reports, all 56 new roots and 13 recorded source/audit hashes; post-owner0.
+Scratch combined final-v1/session30892 passed seven modules, 56 roots and six
+empty implementation logs. All three independent semantic reviews were read
+fully by main and found no substantive issue. Evidence under
+`build/galec-square-adoption/` and `build/galec-composition-draft/`.
+Main also verified exact migration equality for all six modules; independent
+adoption review confirmed those transformations and all 56 audit roots with
+no finding (`build/galec-square-adoption/review.md`).
+The combined full artifact gate for this adoption remains pending.
+
+Actual parsed/rendered text, normative method capabilities and initial scope,
+target counter execution and actual C/archive composition remain separate.
+The focused method review also confirms missing tensor Startup J initialization,
+unestablished whole-array scalar broadcast/start cardinality, and the pinned
+Beta1 input-initialization contradiction. These remain open; no new source
+case or standards/MISRA/native conformance is claimed.
+
 ## Recursive source execution and declaration-derived storage — full gate passed
 
 Seven reviewed modules now live under `Elaboration.Bodies` (Lowering, Source,

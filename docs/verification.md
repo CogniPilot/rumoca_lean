@@ -1,5 +1,35 @@
 # Exact verification contract
 
+**Surface square/AD composition (owner passed; full gate pending):**
+Reusable `StatementRelations` proves skip, sequencing and bounded-loop
+congruence for partial/nondeterministic execution. Generic surface witnesses
+live in `Elaboration.Surface`; the existing rank-one square repair instances
+live in `Elaboration.Square`. The actual square/clear/scatter AST lowers through
+generic `Bodies` to the exact statement tree, including every trailing skip.
+Only relational congruence connects that result to prepared `SquareBodies`;
+no source-body recognizer, arithmetic rewrite or compiler optimization is added.
+
+The four source declarations produce the same logical table used by reads,
+writes and dimension queries. The source execution iff retains the original
+finite square RHS domain and exact final store, with observations equal to the
+prepared AD-generated matrix in Binary64 encodings. Both matrix axes and
+distinct equal-extent iterator slots remain explicit; no cells are enumerated
+during lowering. Supplied method roles remain separate from normative permission
+validation. Actual scanner/rendered-text identity, complete method/lifecycle
+legality, target counters, initialization and actual artifact composition remain
+required. No production grammar, source admission or target bytes change.
+
+The six owner modules and six audit leaves passed 2,389 core jobs, 925 complete
+unchanged-whitelist reports and all 56 new roots; 13 adopted source/audit hashes
+were recorded. Scratch combined final-v1/session30892 passed seven modules and
+56 roots, with all six implementation logs empty. Main read the generic
+relation proof and all three independent semantic reviews; no substantive
+finding. Independent adoption review confirmed exact namespace/import/open
+migration and complete registration of all 56 roots, with no finding
+(`build/galec-square-adoption/review.md`). Evidence: `build/galec-square-adoption/`,
+`build/galec-composition-draft/*-final-v1.*` and its three review documents.
+The preceding full gate below does not cover this subsequent adoption.
+
 **Recursive source bodies and logical storage (combined full gate passed):**
 Core `Elaboration.Bodies` now structurally lowers the actual nested AST and
 proves exact typing and conditional execution correspondence with independent
