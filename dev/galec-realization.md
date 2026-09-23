@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Surface square/AD body composition — owner passed
+## Surface square/AD body composition — full gate passed
 
 The previously reviewed six scratch modules are adopted as generic
 `GALEC.StatementRelations`, generic `Elaboration.Surface`, and
@@ -36,7 +36,18 @@ fully by main and found no substantive issue. Evidence under
 Main also verified exact migration equality for all six modules; independent
 adoption review confirmed those transformations and all 56 audit roots with
 no finding (`build/galec-square-adoption/review.md`).
-The combined full artifact gate for this adoption remains pending.
+Implementation `ba6c98f` passed required full gate V1/session11824 and
+post-audit V1/session5263, both terminal0. All 2,619 frozen tracked inputs
+matched, 8,539 complete reports passed the unchanged whitelist, all 393
+selected roots were present and four retained actual FMU roots passed separate
+audit. Three FMI matrices covered 75 functions each and 526/650/526 cells,
+with zero recorded-finding discrepancies or unexpected results. Scalar/tensor
+Algorithm Code and Production C members remained unchanged. Evidence:
+`build/galec-square-full-gate-v1.*`, `-post-audit-v1.*`,
+`-required-roots-v1.txt`, `-fmu-retained-v1.axioms`,
+`-before-members-v1.sha256`, `-after-members-v1.sha256`, `-archives-v1.sha256`.
+Subsequent source-preparation, source-to-C and exact-tree scratch proofs are
+outside this gate; no compliance finding closes.
 
 Actual parsed/rendered text, normative method capabilities and initial scope,
 target counter execution and actual C/archive composition remain separate.

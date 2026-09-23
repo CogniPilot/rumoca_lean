@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Surface square/AD composition (owner passed; full gate pending):**
+**Surface square/AD composition (combined full gate passed):**
 Reusable `StatementRelations` proves skip, sequencing and bounded-loop
 congruence for partial/nondeterministic execution. Generic surface witnesses
 live in `Elaboration.Surface`; the existing rank-one square repair instances
@@ -29,6 +29,22 @@ migration and complete registration of all 56 roots, with no finding
 (`build/galec-square-adoption/review.md`). Evidence: `build/galec-square-adoption/`,
 `build/galec-composition-draft/*-final-v1.*` and its three review documents.
 The preceding full gate below does not cover this subsequent adoption.
+
+Implementation `ba6c98f` subsequently passed the required
+`nix develop .#verification --command lake test` (V1/session11824) and
+post-audit (V1/session5263), both terminal exit 0. All 2,619 tracked input
+hashes remained unchanged; 8,539 complete axiom reports passed the unchanged
+whitelist, all 393 selected roots were present and four retained actual FMU
+roots passed separate audit. The three FMI matrices covered 75 functions each
+and 526/650/526 behavior cells, with zero recorded-finding discrepancies or
+unexpected results. Scalar/tensor Algorithm Code and Production C members
+remained byte-identical to the preceding gate. Evidence:
+`build/galec-square-full-gate-v1.*`, `-post-audit-v1.*`,
+`-required-roots-v1.txt`, `-fmu-retained-v1.axioms`,
+`-before-members-v1.sha256`, `-after-members-v1.sha256`, `-archives-v1.sha256`.
+This covers the adopted surface prerequisites, not subsequent scratch
+source-preparation, source-to-C composition or exact-tree certificate work.
+No production admission or open compliance finding changes.
 
 **Recursive source bodies and logical storage (combined full gate passed):**
 Core `Elaboration.Bodies` now structurally lowers the actual nested AST and
