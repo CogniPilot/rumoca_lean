@@ -1,5 +1,151 @@
 # Resume handoff — 2026-09-23 UTC
 
+## Latest wrap-up — start here
+
+The user requested another wrap-up and handoff. Development is stopped; resume
+only when asked. This section supersedes all live-status/next-action statements
+below. The overall compiler goal remains incomplete.
+
+Before this documentation-only wrap-up, HEAD was `6ec6d8c`, with clean tracked
+files and `main` three commits ahead of `origin/main`. Latest full-gated code is
+`bac8f61`; `6ec6d8c` records its evidence. No production source changed during
+the latest candidate work. No full gate is running. Audit session17314 finished
+with exit 0; the completed review agent Halley was collected and closed.
+
+**Preserve ignored `build/` across the account switch.** The latest proofs,
+dependencies, logs and reviews are local scratch, not committed implementation.
+This handoff survives a clone; those files do not. Do not clean `build/` or
+mistake the production full gate for verification of these candidate modules.
+
+### Latest candidate: original tensor source to public Startup
+
+Directory: `build/galec-tensor-contract-draft/`.
+Module root: `TensorContractDraft`; namespace `Rumoca.EFMI.TensorContractDraft`.
+
+- `Source.lean` (15 roots): generic theorem from owned whole-block preparation
+  to independent semantics of the selected original Startup, Recalibrate and
+  DoStep bodies. Methods are fixed before runtime values. Startup has exact
+  initialized values and frame; Recalibrate preserves the whole writable store;
+  DoStep retains the actual finite primal multiplication domain and exact x/J
+  updates. AD agreement is with the same kernel's prepared diagonal program,
+  at rank-aware matrix indices. It is not a claim about real differentiation of
+  rounded IEEE functions. Generic extent/block coverage is conditional on the
+  canonical prepared fields/results, not arbitrary renamings or source shapes.
+- `Concrete.lean` (9 roots): the repaired 266-token source goes through the
+  generic diagnostic source API and owned block preparation. The contract binds
+  the supplied Algorithm string and all source laws to that returned parsed
+  AST and the supplied model's kernel. The candidate renderer is extent 2;
+  it is not the production emitter or independent emitted-file evidence.
+- `Target.lean` (28 roots, namespace `.Target`): a single candidate function
+  table/render containing existing numerical functions, repaired Startup and
+  unchanged Recalibrate/DoStep definitions. Retains the full numerical IVP
+  artifact contract, exact table membership/rendering, numerical extension,
+  allocated-only total public Startup and exact public behavior. `same_heap`
+  carries repaired direct-body execution to public Startup at that same heap.
+- `Startup.lean` (9 roots): constructs execution of the selected original
+  source Startup, retaining the same source-after and final C heap observations
+  through the candidate public call. No caller-supplied source-execution,
+  lowering or entry-result premise. `candidate_startup_correct` binds supplied
+  Algorithm/C strings to both candidate renderers and constructs the combined
+  `StartupContract`.
+- `Audit.lean`: all 61 roots above. `check.sh` provides the dependency paths.
+
+Only Startup is composed to public C. Do not call this an all-method production
+contract. The source input is not related to C input storage by this theorem:
+overwrite-only Startup does not read it. Input representation, transport into
+later calls, sequential lifecycle, actual files/XML/checksums/ZIP and production
+cutover remain separate obligations.
+
+### Checks and review actually completed
+
+Source V1, Concrete V2, Target V2 and Startup V5 passed with empty implementation
+logs. `check-v5.exit` is 0 (session17314: Startup plus Audit). At wrap-up main
+normalized the multiline `Audit-v5.log`, checked it with unchanged
+`scripts/audit-lean.sh`, and compared its root list exactly with Audit.lean:
+all 61 reports passed. Earlier Target V1 and Startup V3 elaboration failures
+remain as history, not passing evidence.
+The normalized report is `wrapup-v1.axioms`; empty axiom lists are rendered as
+the audit script's equivalent “does not depend on any axioms” form.
+
+Main read `independent-review.md` completely: no substantive findings in final
+Source/Concrete/Startup, including the last constructor. The reviewer authored
+Target and explicitly did not claim independent review of it; main reviewed
+Target and its `target-review.md` author receipt separately.
+
+**Not done:** one combined frozen-input rebuild/receipt for all four modules.
+The individual passes and aggregate audit above must not be presented as that
+receipt or as the required production gate. Target has its own V2 source/input/
+output hashes. Source/Concrete/Startup match the independent review hashes.
+Current source hashes, relative to `build/galec-tensor-contract-draft/`:
+
+```text
+d0b1f17905e6b52a1422fb5919f58eb6b6448e9cef9a54a2472b4474da50f4a5  TensorContractDraft/Source.lean
+8034e147a40584027313e8fb85733e91bc23bb5fb86b1f34cfb15fca47b14d54  TensorContractDraft/Concrete.lean
+a4248ac23b54e932d8e0c756c6967d871970b020724f952157551bf17d495e57  TensorContractDraft/Target.lean
+af3fd05a1b36c9fcd9671545dbd6744e71b828f5e87e80515d6417e807067fd8  TensorContractDraft/Startup.lean
+39de866dd912972664e5b484d2d10b56596345056514e20595cdf107fb3cbcaa  TensorContractDraft/Audit.lean
+```
+
+### Immediate resume plan
+
+1. Inspect Git state; read repository instructions, `docs/verification.md`,
+   `docs/layout.md`, current standards repair entries and the two candidate
+   reviews. Preserve current contracts and scratch dependencies.
+2. Finish the combined frozen scratch receipt: snapshot local sources/scripts,
+   selected dependency sources/oleans and upstream manifests, compile Source,
+   Concrete, Target, Startup, Audit in that order, require four empty logs,
+   exactly 61 complete reports and the unchanged whitelist, recheck inputs,
+   then record output hashes. Adapt the existing source-API final receipt
+   runner; do not regenerate already checked parser tables. The existing
+   runner alone can be invoked with an unused version label:
+
+   ```sh
+   nix develop .#verification --command lake env bash \
+     build/galec-tensor-contract-draft/check.sh resume-v1 \
+     Source Concrete Target Startup Audit
+   ```
+
+   This command is only compilation, not the full frozen receipt described
+   above. Do not reuse an existing version label or overwrite old evidence.
+3. Compose Recalibrate/DoStep public behavior on the **same candidate table**.
+   `build/galec-c-composition-draft/` proves prepared DoStep against the old
+   table. Old-table execution cannot simply be relabeled: Startup changed, so
+   whole-table extension fails. Reuse/generalize the existing public method
+   proofs using candidate `Target.numerical_extends` and exact method lookup.
+4. Connect finite input/whole-state heap representation and method handoff as
+   needed. `TensorPublicStorage.Storage` has finite input cells plus allocated
+   outputs; repaired Startup's input frame can preserve it. Current
+   `StartupLinkDraft.Observes` relates only x/J/period. Do not infer the missing
+   input relation from independent input preservation.
+5. Complete the coupled parser/emitter/source/C/actual-artifact repair before
+   production promotion. Preserve the universal old scalar parser compatibility
+   and mandatory scalar original-source contract. Replace the old Startup
+   arbitrary-J preservation outcome with J initialization, not a contradictory
+   conjunction; update existing native boundary expectations in the same
+   adoption. Register roots, review and run the required full artifact gate.
+
+The standards ledger still blocks ordinary expansion **and production promotion**
+while repair findings are unresolved. Candidate work is not permission to switch
+the grammar early. Generic source parsing belongs in the frontend; its
+core-dependent preparation wrapper must remain downstream to avoid a cycle.
+
+Useful dependency receipts: `galec-source-api-draft/preparation-final-v1-*`,
+`galec-block-preparation-draft/final-v1-*`,
+`galec-startup-certificate-draft/{final-v2-*,dostep-final-*}`,
+`galec-startup-layout-draft/final-*`, and
+`galec-startup-public-draft/final-*`. Later public `SameHeap` is an additional
+dependency; include its source/olean explicitly rather than assuming the older
+public manifest covers it. All paths here are under ignored `build/`.
+
+Suggested prompt for the next agent:
+
+> Resume from dev/resume-handoff.md, starting with “Latest wrap-up.” Preserve
+> ignored build/ proofs. Finish the tensor candidate's frozen receipt, then
+> same-table public Recalibrate/DoStep and the complete coupled artifact repair.
+> Do not expand grammar or promote candidates before standards/artifact
+> obligations close. Keep verification in Lean, tensor-native IR, and existing
+> contracts/audits. Commit with James Goppert's identity and -s, no AI co-author.
+
 ## Subsequent resumption — generic owner adoption
 
 The goal was reactivated after the wrap-up below; main verified its active
