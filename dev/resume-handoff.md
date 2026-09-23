@@ -1,5 +1,19 @@
 # Resume handoff — 2026-09-23 UTC
 
+## Subsequent resumption — generic owner adoption
+
+The goal was reactivated after the wrap-up below; main verified its active
+status and resumed from clean `f6eb14c`. Five modules are now integrated:
+`Elaboration.Block.{Headers,Preparation}`, `Methods.{Correspondence,Sequence}`,
+and `Layout.State`, with five audit leaves/61 roots. They preserve the reviewed
+scratch statements while moving metadata/execution correspondence out of the
+restricted block profile. Owner session40817 passed `check-core` (2,433 jobs).
+The concrete Square/Source and fresh-parser/C/artifact cutover remain scratch.
+Required full gate and post-audit use `build/layout-state-*`; inspect their
+actual terminal files/handles before resuming or restarting anything.
+This section supersedes the paused/live-status and first-next-action statements
+below; the remaining cutover map and baseline evidence still apply.
+
 ## Start here
 
 The user requested a wrap-up and handoff, not more implementation. Resume only

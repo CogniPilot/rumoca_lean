@@ -1,5 +1,22 @@
 # Exact verification contract
 
+**Whole-block preparation and whole-state method handoff (owner checked; full
+gate pending):** Core now owns `Elaboration.Block.{Headers,Preparation}`,
+`Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface
+retains the three exact original methods; generic correspondence is independent
+of that interface profile. Partition/join roundtrips and metadata-aligned
+transport preserve complete tensor values and full ordered descriptors. The
+two-method source/IR execution iff transfers the first actual post-store and
+retains the entire final read-only environment as well as writable results.
+No arithmetic-totality, role-policy or source-execution premise is invented.
+
+This adopts reviewed scratch without changing source admission, grammar,
+production parser, emitter, C or artifact predicates. Package `check-core`
+session40817 passed (2,433 jobs); 61 new roots are registered. Required full
+gate evidence will use `build/layout-state-`; it is not yet a passed gate.
+Concrete square/source handoff and repaired public C remain scratch, and
+physical storage/lifecycle, input policy and all standards findings remain open.
+
 **Original scalar bodies are now mandatory in the artifact contract (full gate
 passed):** Core `GALEC.Elaboration.Scalar` proves generic named
 preparation of every resolved old scalar block, retaining all original names,

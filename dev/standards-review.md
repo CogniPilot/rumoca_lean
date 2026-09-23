@@ -12,6 +12,17 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Whole-state handoff adoption — repair prerequisite; stage OPEN
+
+No grammar expansion, source admission, policy or emitted artifact changes.
+Generic whole-block preparation and two-method source/IR composition are now
+owned, retaining actual original methods and complete shaped values across
+role partitions. This is not physical C storage or public lifecycle evidence.
+The 61 new registered roots passed owner `check-core` session40817; required
+full-gate evidence is pending under `build/layout-state-`. Prior admitted-subset
+clause mappings and every unresolved finding carry forward unchanged, including
+the Startup input-policy conflict. No conformance or MISRA finding closes.
+
 ### Original scalar method semantics — repair increment; stage OPEN
 
 No grammar expansion or new admitted source case. The original scalar parsed

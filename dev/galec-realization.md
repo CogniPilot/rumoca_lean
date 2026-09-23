@@ -1,5 +1,19 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Whole-block preparation and state handoff — owner checked
+
+The generic portions of `galec-block-preparation-draft` and
+`galec-layout-state-draft` are now core-owned: restricted block headers and
+preparation, generic method correspondence, complete layout-state partitions,
+and two-method source/IR composition. Full ordered descriptors align the
+handoff; the actual first post-store supplies newly read-only values. All
+quantifiers and whole-value/frame boundaries of the reviewed proofs remain.
+Five implementations and five audit leaves register 61 roots. `check-core`
+session40817 passed 2,433 jobs; the required full gate is pending. Evidence
+prefix `build/layout-state-`, review `build/layout-state-adoption-review.md`.
+This does not adopt the fresh parser, concrete source certificate, Square
+handoff, repaired C table or actual-artifact semantics. Those remain next work.
+
 ## Scalar original-body semantics — full gate passed
 
 The scalar cutover prerequisite now has generic declaration-derived preparation
