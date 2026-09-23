@@ -1,5 +1,28 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Forward scalar syntax preservation and total candidate Startup — checked scratch
+
+Every typed old scalar source parse now has an exact fresh-parser AST result,
+retaining all eight original name fields and resolution. Generic scanner
+monotonicity transfers all successful old scans; universal checked-tree,
+structural-conversion and action certificates establish actual parsing for all
+old blocks, not just the proof-data blueprint. Scanner final55002 passed six
+roots; compatibility final75411 passed 21, with three empty implementation logs,
+selected hashes and a fully read independent review, no substantive finding.
+Evidence: `build/galec-scalar-{scanner,parser-compat}-draft/`. Scalar lowering /
+method execution, diagnostic equality and production/artifact cutover are not
+claimed; obsolete tensor source syntax intentionally is not the compatibility
+target. The unchanged admitted Modelica products remain the required target.
+
+Total Startup composition/session75948 passed one root and an empty implementation
+log. It supplies original-source execution for every source input/old store,
+then the candidate public call at the same source-observed heap, given allocated
+storage. Main read and independently reviewed the proof and complete receipt.
+No source-success premise is retained; no initial-input representation, lifecycle
+state transport or emitted-artifact correspondence is inferred. Evidence:
+`build/galec-startup-total-draft/`. The concrete production replacement map is
+`build/galec-production-cutover-review.md`, read completely by main.
+
 ## Named preparation and initialization capabilities — full gate passed
 
 The core now owns role-parametric metadata/write proofs, their restricted

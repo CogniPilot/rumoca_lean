@@ -12,6 +12,28 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Scalar compatibility and source-totality repair prerequisites — stage OPEN
+
+No production grammar, source admission, interface policy or artifact changed.
+The prospective replacement now preserves every old scalar typed parse's exact
+AST and resolution via universal scanner and actual LALR/CST/action proofs
+(six scanner roots, 21 compatibility roots; standalone final55002/75411).
+The old two-assignment action-only boundary is therefore supplemented by a
+successful-source theorem, not retroactively broadened. Reverse-domain and
+diagnostic equality, scalar generic lowering/execution, and all product-level
+artifact obligations remain separate. The obsolete tensor `.*` language is not
+a preservation requirement; the admitted Modelica product and its corrected
+Algorithm/Production semantics are. Full independent review read, no substantive
+finding; evidence: `build/galec-scalar-{scanner,parser-compat}-draft/`.
+
+The existing source-existence proof also composes into the same-source public
+Startup theorem (one root, session75948), removing an external source-execution
+premise without assuming initial input/heap representation or weakening the
+output/status/input/frame contract. Main independently reviewed it in full.
+Candidate tables are still not actual emitted files/archives. These are repair
+prerequisites, not a new whole-subset compliance verdict; all ordinary-expansion
+blockers remain, except the corrected manifest-cardinality concern below.
+
 ### Correction: scalar-encoded array manifest starts are permitted — 2026-09-23 UTC
 
 Main read the complete pinned eFMI Beta1 §3.1.6 variable/start description,

@@ -1,5 +1,36 @@
 # Exact verification contract
 
+**Universal scalar parser preservation and total candidate Startup (checked scratch):**
+The fresh parser now has a forward compatibility theorem for every typed old
+scalar parse certificate: its actual source parse returns exactly
+`ProfileProjection.ofScalar parsed.ast`, retaining all eight independently
+varying names and the old resolution facts. A separate existential theorem
+covers every successful old parser invocation. Generic scanner monotonicity
+preserves exact original tokens under single-punctuation extension. The
+57-token blueprint is proof data: checked-tree, actual structure conversion,
+typed actions and token parsing are then proved universally in the old block,
+using the reusable LALR certificates, not a runtime pattern recognizer or a
+finite-example completeness claim. Reverse-domain/diagnostic equality and
+obsolete tensor syntax are not preserved by this theorem.
+
+Scanner final/session55002 passed six roots. Scalar compatibility final-v1 /
+session75411 passed 21 roots, three empty implementation logs, seven local and
+fourteen selected input hashes, retained upstream manifests and five output
+hashes. Main read both complete implementations and independent reviews;
+no substantive findings. Evidence: `build/galec-scalar-{scanner,parser-compat}-draft/`.
+Generic scalar body preparation/execution and production parser/artifact cutover
+still require their own connections; this scratch is outside the full gate below.
+
+The repaired square source/public Startup composition now additionally constructs
+an original-source execution for every source input/old store and allocated C
+heap. It uses existing source totality, fixes the same block/method before runtime
+and retains the same source-after/public-final-heap observations. No external
+source-execution, parse, lowering or public-entry premise remains. V1/session75948
+passed its one new root, empty implementation log and selected source/input/output
+hashes. Main read the entire proof/receipt and wrote an independent review.
+Evidence: `build/galec-startup-total-draft/`. This remains candidate-table evidence,
+not actual emitted bytes, initial-input representation or sequential lifecycle.
+
 **Named preparation and initialization capabilities (full artifact gate passed):**
 Core `Elaboration.Capabilities.Generic` traces original assignment paths and
 whole shapes to declaration metadata under a role/predicate equivalence. Its
