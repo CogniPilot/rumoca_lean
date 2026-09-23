@@ -6,6 +6,11 @@ located concrete syntax trees, bounded parallel mapping, and their proofs.
 It depends on Std/mathlib and the separate proof audit tooling. It imports no
 language frontend, compiler IR, or backend.
 
+`Parser.UniqueSelection` provides key-generic exact-one occurrence selection and
+an independent inductive selection relation. It needs equality only on keys;
+two identical matching items still reject. It returns the original item and
+does not interpret names or validate language-specific headers.
+
 Language definitions live in sibling packages:
 
 - [Modelica](../modelica-parser/README.md): its EBNF, generated LALR tables,

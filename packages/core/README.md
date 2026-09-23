@@ -4,6 +4,12 @@ Target-independent Flat, DAE and Solve representations, finite Solve execution,
 binary64 specifications and generic transition/behavior proofs. This package
 does not import the compiler driver or any backend.
 
+`GALEC.Elaboration.Methods` selects exactly one original name-token occurrence
+before validating the public/end-name header. `Elaboration.Capabilities.DoStep`
+derives typed roles from declaration metadata and proves a recursive write-side
+policy for original AST bodies. These mechanisms preserve full tensor shapes;
+they do not validate whole blocks, Startup policy or complete eFMI permissions.
+
 Use `lake build check-core` from the repository root for incremental core proofs and
 axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/FiniteChecks.lean` belong to the
 `RumocaCoreChecks` library, also selected by this package's `lake test`. See

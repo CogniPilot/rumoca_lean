@@ -1,5 +1,31 @@
 # Exact verification contract
 
+**Method selection and DoStep capabilities (owners passed; full gate pending):**
+The generic parser utility `UniqueSelection` selects one key occurrence, rejecting
+duplicates even when their values are identical. Core `Elaboration.Methods`
+retains original token categories and whole methods, then checks public visibility
+and the matching end-name. Invalid matching headers cannot be filtered away
+before duplicate detection. These are independent selection/header judgments,
+not a body recognizer or complete block validation.
+
+Core `Elaboration.Capabilities.DoStep` derives writable roles from variable
+variability and non-input direction. It traces actual typed target paths and
+full shapes back to declaration metadata, and universally proves an independent
+recursive write-side condition for the original nested AST. Source declaration
+validity/uniqueness, method identity and complete permissions remain separate;
+the policy does not apply to Startup, absent parameter kinds or range handling.
+No source admission, production grammar/emitter or artifact predicate changes.
+
+Five implementations are exact namespace/import/reference migrations from
+reviewed scratch. The combined parser/core owner V1/session67533 passed 2,423
+jobs; post-owner V1/session82937 passed 1,294 complete unchanged-whitelist
+reports, all 44 new roots and 11 input hashes. Main checked exact migration;
+independent Astra adoption review found no substantive issue and confirmed all
+audit registrations. Evidence: `build/method-capability-adoption/`.
+Required full artifact verification is pending; earlier gates do not cover
+this adoption. Prospective named-source/C and whole-interface-header certificates
+remain scratch, and existing compliance findings remain open.
+
 **Generic exact-tree and typed-action certificates (combined full gate passed):**
 The parser package now owns `LALR.ExactTree` and `LALR.ActionCertificate`.
 The two exact-tree theorems specialize existing universal completeness and

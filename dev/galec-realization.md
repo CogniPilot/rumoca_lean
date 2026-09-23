@@ -1,5 +1,24 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Method selection and DoStep policy adoption — owners passed
+
+`Parser.UniqueSelection`, core `Elaboration.Methods.{Selection,Headers}` and
+`Elaboration.Capabilities.DoStep.{Policy,Bodies}` now own the reviewed generic
+selection/header/write-policy mechanisms. Exact occurrence checks reject even
+identical duplicate methods; full token categories and original bodies survive.
+Header checks follow selection. Metadata-derived roles and independent recursive
+write-side judgments cover actual original targets/nested bodies, not a target
+execution model substituted for source meaning. Startup and whole-block legality
+remain outside this restricted DoStep policy.
+
+All five migrations change only namespaces/imports/references. Combined owner
+V1/session67533 passed 2,423 jobs; post-owner V1/session82937 passed 1,294 complete
+whitelisted reports, all 44 new roots and 11 hashes. Main and independent Astra
+checked exact migration and registration, no substantive finding. Evidence:
+`build/method-capability-adoption/`. Required full artifact gate is pending.
+The named preparation/C pipeline remains checked scratch under
+`build/galec-method-preparation-draft/`, not a production grammar admission.
+
 ## Generic certificate infrastructure adoption — full gate passed
 
 The reviewed exact-tree proof and syntax-directed action certificate builder

@@ -1,5 +1,6 @@
 import Parser
 import Parser.DecimalNat
+import Parser.UniqueSelection
 import Parser.LocatedCompleteness
 import Parser.LALR.LocatedCompleteness
 import Parser.LALR.EBNF
@@ -38,6 +39,20 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.DecimalNat.denotes_unique
 #audit axioms Parser.DecimalNat.render_denotes
 #audit axioms Parser.DecimalNat.parse_render
+
+#audit axioms Parser.UniqueSelection.select
+#audit axioms Parser.UniqueSelection.Selects
+#audit axioms Parser.UniqueSelection.Selects.here
+#audit axioms Parser.UniqueSelection.Selects.there
+#audit axioms Parser.UniqueSelection.Selects.mem
+#audit axioms Parser.UniqueSelection.Selects.key_eq
+#audit axioms Parser.UniqueSelection.select_sound
+#audit axioms Parser.UniqueSelection.select_complete
+#audit axioms Parser.UniqueSelection.select_iff
+#audit axioms Parser.UniqueSelection.selects_iff_filter
+#audit axioms Parser.UniqueSelection.selected_unique
+#audit axioms Parser.UniqueSelection.select_none_iff
+#audit axioms Parser.UniqueSelection.select_repeated
 
 #audit axioms Parser.Scanner.Prefix.append
 #audit axioms Parser.Scanner.Prefix.finish

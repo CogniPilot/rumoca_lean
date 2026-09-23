@@ -12,6 +12,27 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### DoStep write-policy prerequisites — 2026-09-22; stage OPEN
+
+The core now owns exact-occurrence method selection/public-end-name checks and
+metadata-derived DoStep capabilities. The applicable pinned eFMI Beta1 anchors
+are §3.2.4 S-2.2 (extract1916–1919), the TODO-labelled control-input assignment
+prohibition (2893–2895), and §3.2.5 §3's DoStep constant/input discussion (3727).
+The independent write condition is variable variability and non-input direction;
+proofs trace actual resolved shaped targets and every nested source assignment
+to the original declaration metadata. This does not validate arbitrary descriptor
+combinations, parameter kinds absent from the IR, ranges/implicit limitation,
+read/call effects, Startup or complete method/lifecycle legality.
+
+Reviewed scope/evidence: `build/galec-dostep-capabilities-draft/review.md` and
+`build/method-capability-adoption/review.md`, both read fully by main. Combined
+parser/core owner passed 2,423 jobs, 1,294 complete whitelisted reports and all
+44 new roots; required full artifact gate for this adoption remains pending.
+The independently checked prospective named-source/C and whole-interface-header
+certificates remain scratch, not admitted source/artifact evidence. MLS/FMI and
+all retained eFMI findings carry forward unchanged; this is a focused repair
+addendum, not a new whole-subset compliance decision or grammar expansion.
+
 ### Tensor method-policy addendum — 2026-09-22; stage OPEN
 
 Focused independent review is `build/galec-composition-draft/method-policy-review.md`;
