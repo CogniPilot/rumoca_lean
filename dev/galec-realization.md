@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Whole-block preparation and state handoff — owner checked
+## Whole-block preparation and state handoff — full gate passed
 
 The generic portions of `galec-block-preparation-draft` and
 `galec-layout-state-draft` are now core-owned: restricted block headers and
@@ -9,10 +9,26 @@ and two-method source/IR composition. Full ordered descriptors align the
 handoff; the actual first post-store supplies newly read-only values. All
 quantifiers and whole-value/frame boundaries of the reviewed proofs remain.
 Five implementations and five audit leaves register 61 roots. `check-core`
-session40817 passed 2,433 jobs; the required full gate is pending. Evidence
-prefix `build/layout-state-`, review `build/layout-state-adoption-review.md`.
+session40817 passed 2,433 jobs. Required full gate44814/post-audit52837 passed
+`bac8f61`, both terminal0: 2,665 frozen inputs, 8,780 complete unchanged-whitelist
+reports, all 634 selected roots and four retained actual FMU roots. All three
+75-function FMI matrices passed (526/650/526 cells), zero discrepancies or
+unexpected results. Algorithm/Production C members remained byte-identical.
+Evidence prefix `build/layout-state-`; complete independent adoption review
+`build/layout-state-adoption-review.md` found no substantive finding.
 This does not adopt the fresh parser, concrete source certificate, Square
 handoff, repaired C table or actual-artifact semantics. Those remain next work.
+
+Further scratch `build/galec-source-api-draft/` removes concrete fixture/C
+coupling from source provenance. Its typed diagnostic parser retains exact
+scanner/CST/action witnesses, scans/parses/builds once, and has universal
+erasure/success/grammar-acceptance and lexical-error results. The downstream
+wrapper feeds that same AST to owned block preparation and retains the exact
+result/preparation iff. Combined final/session48079 passed 21 roots, two empty
+implementation logs, six local/20 selected input/four output hashes and the
+upstream parser source manifest. Main read both independent reviews, no
+substantive findings. Old production diagnostics and actual artifact admission
+remain separate; only the parser API belongs in the frontend package.
 
 ## Scalar original-body semantics — full gate passed
 

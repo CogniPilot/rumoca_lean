@@ -9,12 +9,33 @@ and `Layout.State`, with five audit leaves/61 roots. They preserve the reviewed
 scratch statements while moving metadata/execution correspondence out of the
 restricted block profile. Owner session40817 passed `check-core` (2,433 jobs).
 The concrete Square/Source and fresh-parser/C/artifact cutover remain scratch.
-Required full gate and post-audit use `build/layout-state-*`; inspect their
-actual terminal files/handles before resuming or restarting anything.
+Required full gate44814/post-audit52837 passed implementation `bac8f61`, both
+terminal 0: 2,665 frozen inputs, 8,780 complete unchanged-whitelist reports,
+all 634 selected roots, four retained FMU roots and all three 75-function FMI
+matrices (526/650/526 cells, zero discrepancies/unexpected). Algorithm and C
+members remain byte-identical. Evidence prefix `build/layout-state-`. Do not
+restart these completed sessions. No full gate or agent remains running.
+
+New scratch `build/galec-source-api-draft/` passed its combined final/session48079:
+21 roots, two empty implementation logs, six local/20 selected input/four output hashes,
+upstream parser-source manifest and unchanged whitelist. Main read both complete
+independent reviews, no substantive findings. `SourceAPIDraft/Parser.lean`
+supplies frontend-only typed source provenance and diagnostic parsing, with
+exact erasure to the prospective Option parser and all-source acceptance iff.
+`Preparation.lean` passes that same parsed AST to owned Block.fromBlock;
+success is iff source provenance and independent preparation of the exact
+returned result. No repeated runtime parse or concrete C fixture dependency.
+Keep the core-dependent wrapper downstream of the frontend to avoid an import
+cycle. Old production diagnostic equivalence and artifact admission are not
+established by this scratch.
+
+Next: integrate the fresh parser/provenance with the repaired tensor emitter,
+original-body semantics, actual Startup J initialization and mandatory artifact
+chain. The earlier first-next-action (generic owner adoption) is complete.
 This section supersedes the paused/live-status and first-next-action statements
 below; the remaining cutover map and baseline evidence still apply.
 
-## Start here
+## Prior wrap-up snapshot (historical)
 
 The user requested a wrap-up and handoff, not more implementation. Resume only
 when asked. This file supersedes the next-action/session instructions in

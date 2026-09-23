@@ -1,7 +1,7 @@
 # Exact verification contract
 
-**Whole-block preparation and whole-state method handoff (owner checked; full
-gate pending):** Core now owns `Elaboration.Block.{Headers,Preparation}`,
+**Whole-block preparation and whole-state method handoff (full gate passed):**
+Core now owns `Elaboration.Block.{Headers,Preparation}`,
 `Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface
 retains the three exact original methods; generic correspondence is independent
 of that interface profile. Partition/join roundtrips and metadata-aligned
@@ -12,10 +12,22 @@ No arithmetic-totality, role-policy or source-execution premise is invented.
 
 This adopts reviewed scratch without changing source admission, grammar,
 production parser, emitter, C or artifact predicates. Package `check-core`
-session40817 passed (2,433 jobs); 61 new roots are registered. Required full
-gate evidence will use `build/layout-state-`; it is not yet a passed gate.
+session40817 passed (2,433 jobs); 61 new roots are registered. Independent
+adoption review found no substantive finding. Required full gate session44814
+and post-audit session52837 passed `bac8f61`, both terminal0: 2,665 frozen inputs,
+8,780 complete unchanged-whitelist reports, all 634 selected roots and four
+retained actual FMU roots. Three FMI matrices passed 75/75 functions each and
+526/650/526 behavior cells, zero discrepancies/unexpected results. Algorithm
+and Production C members stayed byte-identical. Evidence: `build/layout-state-`.
 Concrete square/source handoff and repaired public C remain scratch, and
 physical storage/lifecycle, input policy and all standards findings remain open.
+
+Separate checked scratch now supplies a diagnostic source API with frontend-only
+provenance and an exact one-parse connection to owned block preparation. Its
+21 roots pass the combined frozen scratch receipt (session48079), with an
+independent review and no substantive findings. It is not production cutover
+or old-profile diagnostic equivalence. Evidence: `build/galec-source-api-draft/`;
+keep its core-dependent preparation wrapper out of the frontend package.
 
 **Original scalar bodies are now mandatory in the artifact contract (full gate
 passed):** Core `GALEC.Elaboration.Scalar` proves generic named

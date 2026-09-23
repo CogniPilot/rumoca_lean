@@ -18,8 +18,12 @@ No grammar expansion, source admission, policy or emitted artifact changes.
 Generic whole-block preparation and two-method source/IR composition are now
 owned, retaining actual original methods and complete shaped values across
 role partitions. This is not physical C storage or public lifecycle evidence.
-The 61 new registered roots passed owner `check-core` session40817; required
-full-gate evidence is pending under `build/layout-state-`. Prior admitted-subset
+The 61 new registered roots passed owner `check-core` session40817. Required
+full gate44814/post-audit52837 passed `bac8f61`, both terminal 0: 2,665 frozen
+inputs, 8,780 complete unchanged-whitelist reports, all 634 selected roots,
+four retained FMU roots and three 75-function FMI matrices (526/650/526 cells,
+zero discrepancies/unexpected). Algorithm/Production members stayed byte-identical.
+Evidence prefix `build/layout-state-`. Prior admitted-subset
 clause mappings and every unresolved finding carry forward unchanged, including
 the Startup input-policy conflict. No conformance or MISRA finding closes.
 
