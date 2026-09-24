@@ -1,6 +1,6 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
-Debug-category pointer repair (2026-09-24; owner passed, artifacts pending):
+Debug-category pointer repair (2026-09-24; full gate passed):
 the categories and indexed category pointers now use explicit null equality.
 This bounded Rules 11.11/11.9 repair retains count-first short circuit, first
 invalid entry, null-before-strcmp ordering and full callback/heap/public/artifact
@@ -15,8 +15,13 @@ and read the complete independent review. Fourteen source/proof files and six
 existing audit leaves changed, adding 48 direct registrations without removing
 old roots. Private 68-module evidence used copied unselected dependencies and
 does not substitute for owner/full checks. Baseline14974 captured the completed
-state-array artifacts; full/post remain pending with 819 roots and exactly six
-guard lines/leaves across three adapters, unchanged numerical/eFMI code.
+state-array artifacts. Required gate17712 and post-audit43632 passed `84c56aa`,
+both terminal0: 2,665 frozen tracked inputs, 8,886 complete approved reports,
+all 819 selected roots and four retained FMU roots. Three matrices passed 75/75
+functions (526/650/526 cells), zero discrepancies/unexpected results. Whole-file
+comparison confirms exactly six guard lines/leaves across three adapters;
+three numerical C and four eFMI Algorithm/C members stayed identical. Main read
+the diffs/matrices/roots and rechecked the five archive hashes.
 Evidence: `build/debug-null-gate/`. No grammar/admission, policy or normative
 finding is closed; whole-subset review and expansion/promotion blocks remain.
 

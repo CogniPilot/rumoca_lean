@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Debug-category explicit null guards (owner passed; full gate pending):**
+**Debug-category explicit null guards (full gate passed):**
 The shared debug body now compares both the categories buffer and indexed
 category pointer explicitly to null. Predicate-parametric syntax and one proof
 chain retain logical views for old arbitrary-interface helpers; typed actual
@@ -25,9 +25,14 @@ modules/71 roots, 104 input/69 output hashes and five unsuppressed warnings;
 unselected copied dependencies mean that run alone is not an owner closure.
 
 Baseline14974 captured the completed state-array artifacts before adoption.
-Required full/post remain pending: 819 selected roots (748 retained plus 71
-disjoint), six changed guard lines/leaves across three adapters, and identical
-three numerical C/four eFMI Algorithm/C members. Evidence:
+Required full gate17712 and post-audit43632 passed `84c56aa`, both terminal0:
+2,665 frozen tracked inputs, 8,886 complete approved reports, all 819 selected
+roots (748 retained plus 71 disjoint) and four retained FMU roots. Three matrices
+passed 75/75 functions (526/650/526 cells), zero discrepancies/unexpected results.
+Whole-file comparison confirms exactly six changed guard lines/leaves across
+three adapters; three numerical C and four eFMI Algorithm/C members stayed
+identical. Main read all three diffs, matrices and FMU roots and rechecked the
+five archive hashes. Evidence:
 `build/debug-null-gate/`, `build/debug-null-adoption/`, and its independent
 review. No source-admission, normative or native trust-boundary claim is added.
 

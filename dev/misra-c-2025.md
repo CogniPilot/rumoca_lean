@@ -167,7 +167,7 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   candidate; an epsilon repair is not an equivalent fix, and the exact FMI time
   semantics must be preserved.
 - **Pointer comparisons (Rule 11.11, Rule 11.9).** Current bounded repair
-  includes debug-category guards (owner passed; full gate pending). Shared
+  includes debug-category guards (full gate passed). Shared
   predicate-parametric syntax/proofs preserve 12 old generic helper domains
   through logical views; 84 other theorem headers remain unchanged. Actual
   callers derive null typing from existing entry assumptions. Count-first
@@ -176,9 +176,14 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   reviewed overlays; six existing audit leaves add 48 direct registrations.
   Owner-v1/session99557 passed 4,338 jobs, 5,226 approved reports, all 71 selected
   roots and frozen 2,665 tracked/four runner hashes. Main checked the receipt
-  and independent review. Baseline14974 captures completed state-array artifacts;
-  full/post require 819 roots and exactly six guard lines/leaves across three
-  adapters with numerical/eFMI code unchanged. No guideline closure follows;
+  and independent review. Baseline14974 captures completed state-array artifacts.
+  Required gate17712 and post-audit43632 passed `84c56aa`, both terminal0:
+  2,665 frozen inputs, 8,886 approved reports, all 819 selected roots and four
+  retained FMU roots. Three matrices passed 75/75 functions (526/650/526 cells),
+  zero discrepancies/unexpected results. Whole-file comparison confirms exactly
+  six guard lines/leaves across three adapters; three numerical C and four eFMI
+  Algorithm/C members stayed identical. Main read the diffs/matrices/roots and
+  rechecked five archive hashes. No guideline closure follows;
   evidence: `build/debug-null-gate/`.
   The preceding fully gated repair includes tensor/constant state-array guards.
   Three shared constructors change only their pointer leaves, retaining count

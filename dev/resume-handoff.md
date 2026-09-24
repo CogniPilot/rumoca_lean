@@ -1,11 +1,11 @@
 # Resume handoff — 2026-09-24 UTC
 
-## Current debug-category repair — owner passed, full gate pending
+## Current debug-category repair — full gate passed
 
 Applied reviewed debug production.patch and audit.patch after signed state-array
 evidence `61cbc48` and baseline14974 success. All 14 source files match overlays;
-six existing audit leaves add 48 registrations. All 96 old theorem headers are
-retained: 84 unchanged, 12 naming definitionally old logical syntax with the same
+six existing audit leaves add 48 registrations. All 96 old theorems remain:
+84 headers unchanged, 12 naming definitionally old logical syntax with the same
 domains/results. Shared predicate-parametric syntax/proofs keep one actual
 emitter/table; actual public callers use existing EntryTypes.nullPointer. Zero
 guard requires only count0; legal-request and defensive whole-body domains,
@@ -19,20 +19,44 @@ independent review. No owner source correction was needed. Private final-v1/
 session44979's 68 modules/71 roots, 104 input/69 output hashes and five warnings
 are preparatory evidence over copied unselected dependencies, not a full closure.
 
-Next after signing the implementation: run `build/debug-null-gate/full-gate.sh`
-in the verification environment; post-audit.sh only after terminal0. Neither
-full nor post has passed this repair yet. Required union819 = retained748 +71
-disjoint names. Whole-file expectation: six changed guard lines/leaves across
-three adapters; three numerical C and four eFMI Algorithm/C members identical.
-Baseline-v1 is complete; do not recreate it. Consult the ignored live checkpoint
-before starting: a later turn may already have launched the run.
+Required full gate17712 and post-audit43632 passed `84c56aa`, both terminal0.
+Do not restart them. Evidence: `build/debug-null-gate/full-v1/`, 2,665 frozen
+tracked inputs, 8,886 complete approved reports, all 819 selected roots and four
+retained FMU roots. Three matrices passed 75/75 functions (526/650/526 cells),
+zero discrepancies/unexpected results. Whole-file comparison confirms exactly
+six guard lines/leaves across three adapters; three numerical C and four eFMI
+Algorithm/C members stayed identical. Main read all three diffs, matrices and
+FMU roots and rechecked five archive hashes.
 
-Aristotle/Astra continues the factory callback repair privately in
-`build/factory-null-adoption/`; preserve debug changes when rebasing overlapping
-proof files. Factory map and prospective baseline are independently reviewed,
-not source/artifact clearance. Huygens is closed; resume for final factory review.
-Broader standards/native/essential-type findings remain open, candidate promotion
-unapproved, and no push authorized.
+The factory callback proposal in `build/factory-null-adoption/` is privately
+checked and independently reviewed, not adopted yet. Final-v1/session95629
+passed 227 selected modules/162 exact roots, 371 input/228 output hashes and
+71 unsuppressed warnings in 24 logs (not all old sites). Main read its complete
+patch/runner/inventory and review, including the post-run README update, and
+rechecked the receipt. Unselected copied imports are not a clean owner closure.
+Patch SHA-256 is `5d0572d85cfdf5a89d239aa3124172ea09ff722a7f10c0405f5bced843ffc18e`.
+Next: capture the reviewed factory baseline from these completed debug archives,
+apply 33 source files plus 99 additive audits in 13 existing leaves, check owner
+paths, sign, then run the required 981-root full/post gate. Predicted whole-file
+delta is 18 callback guard lines/leaves; numerical/eFMI code must remain identical.
+
+Aristotle/Astra has also prepared the uncompiled count-only proposal in
+`build/count-condition-adoption/`; Huygens is reviewing it. Main reviewed all
+20 proposed source changes: three legacy helper statement views preserve their
+old domains, while actual callers derive existing size typing locally. Private
+overlay/checker preparation is allowed; compilation/cache copies are not yet
+authorized. The shared prototype's 12 roots passed and were independently
+reviewed, but that receipt does not cover this integration. Prospective count
+baseline scripts are independently reviewed and unexecuted. Main's audit.patch
+is unreviewed preparation: 35 additions, four existing FMI leaves plus a new
+C audit leaf wired into the existing umbrella. No count source is adopted.
+
+Disk is below 1 GB free. User approval was requested for pruning old generated
+certificate entries after the gate, keeping ten most recently used per kind;
+no answer or cleanup yet. Preserve all current receipts and do not infer approval.
+Consult `build/method-table-live-checkpoint.md` before starting any run. Broader
+standards/native/essential-type findings remain open, candidate promotion remains
+unapproved, and no push is authorized.
 
 ## Current tensor/constant state-array repair — full gate passed
 
