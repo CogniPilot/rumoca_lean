@@ -136,8 +136,8 @@ theorem outputs_run (heap : Heap) (p event terminate : Address) (flag : Bool) (r
         (outputsHeap heap event terminate)) := by
   have heStore := zero_store he
   have htStore := zero_store (zero_writable ht event)
-  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.pointerCheck, Runtime.reject, Runtime.any, Runtime.branch,
-    Runtime.out, Runtime.v, Runtime.n, Runtime.negate, Runtime.either, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.reject, Runtime.any, Runtime.branch,
+    Runtime.out, Runtime.v, Runtime.n, Runtime.eqv, comparison, Runtime.either, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith,
     locals, completedParameters, CBody.bind, resolve, constants, Value.address,
     Value.truth, boolean, heStore, htStore, outputsHeap]
 

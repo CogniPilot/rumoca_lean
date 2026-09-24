@@ -97,7 +97,7 @@ theorem body_closed (shape : Tensor.Shape) (events : Bool) :
     (function shape events).body.all CBodyEmbedding.closedBlocks = true := by
   cases events <;>
     simp [function, body, rest, outputName, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
-      Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.pointerCheck,
+      Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.pointerCheck, Runtime.pointerCheckWith,
       Runtime.out, Runtime.v, Runtime.n, Runtime.any, CBodyEmbedding.closedBlocks, CLoops.noDeclarations]
 
 section
@@ -129,6 +129,14 @@ theorem pointer_pass (events : Bool) (heap : Heap) (p buffer : Address) :
     simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, guardEnv,
       parameters, outputName, CBody.bind, CBody.resolve, Value.truth, boolean]
 
+/-- The actual explicit guard uses the fixed interface's null type. -/
+theorem explicit_pointer_pass (events : Bool) (heap : Heap) (p buffer : Address) :
+    CBody.eval (guardEnv events p buffer) heap
+      (Runtime.any [Runtime.eqv (Runtime.v (outputName events)) Expr.nullPointer]) = some (boolean false) := by
+  cases events <;>
+    simp [Runtime.any, Runtime.either, Runtime.eqv, comparison, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, guardEnv,
+      parameters, outputName, CBody.bind, CBody.resolve, Value.truth, boolean]
+
 /-- The whole count-query body runs to the successful count write. Composed from
 the guard, pointer check, single write and return, so the `size_t` conversion is
 the only place the volume bound is used. -/
@@ -153,11 +161,11 @@ theorem body_run (shape : Tensor.Shape) (events : Bool) (heap : Heap) (p buffer 
       some (.running (Runtime.out (outputName events) (Runtime.n (count shape events)) :: [Runtime.ok])
         (guardEnv events p buffer) heap) :=
     run_one (by
-      simpa only [rest, Runtime.pointerCheck, List.map_cons, List.map_nil] using
+      simpa only [rest, Runtime.pointerCheck, Runtime.pointerCheckWith, List.map_cons, List.map_nil] using
         reject_false (guardEnv events p buffer) heap
-          (Runtime.any [Runtime.negate (Runtime.v (outputName events))]) "Missing output pointer"
+          (Runtime.any [Runtime.eqv (Runtime.v (outputName events)) Expr.nullPointer]) "Missing output pointer"
           [Runtime.out (outputName events) (Runtime.n (count shape events)), Runtime.ok]
-          (pointer_pass events heap p buffer))
+          (explicit_pointer_pass events heap p buffer))
   -- the single count write
   have hbufResolve : resolve (guardEnv events p buffer) (outputName events) = some (.pointer (some buffer)) := by
     cases events <;> simp [guardEnv, parameters, outputName, CBody.bind, CBody.resolve]
@@ -240,7 +248,7 @@ theorem body_printable (shape : Tensor.Shape) (events : Bool) :
   cases events <;>
     (simp only [function, body, rest, outputName, Bool.false_eq_true, ↓reduceIte, Runtime.require,
         Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
-        Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.pointerCheck,
+        Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.pointerCheck, Runtime.pointerCheckWith,
         Runtime.out, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.both, Runtime.either,
         Runtime.negate, Runtime.any, Runtime.mode, Runtime.call, List.foldr_cons, List.foldr_nil, List.map_cons,
         List.map_nil, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append,

@@ -13,7 +13,7 @@ def MissingOutput (outputs : StepEntry.Outputs) : Prop :=
   outputs.event = none ∨ outputs.terminate = none ∨ outputs.early = none ∨ outputs.last = none
 
 section Generic
-variable [CInterface]
+variable [interface : CInterface]
 
 /-- One reusable interpretation of the pointer guard for any parameter list. -/
 theorem pointer_condition (names : List String) (addresses : String → Option Address)
@@ -42,12 +42,28 @@ theorem pointer_condition (names : List String) (addresses : String → Option A
 theorem pointerCheck_run (names : List String) (addresses : String → Option Address)
     (env : Locals) (heap : Heap) (tail : List Stmt)
     (bound : ∀ name ∈ names, eval env heap (Runtime.v name) = some (.pointer (addresses name))) :
-    run 1 (.running (Runtime.pointerCheck names :: tail) env heap) =
+    run 1 (.running (Runtime.logicalPointerCheck names :: tail) env heap) =
       some (.running ((if names.any (fun name => (addresses name).isNone) then
         [Runtime.fail "Missing output pointer"] else []) ++ tail) env heap) := by
   have condition := pointer_condition names addresses env heap bound
+  simp only [Runtime.negate] at condition
   cases found : names.any (fun name => (addresses name).isNone) <;>
-    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.pointerCheck, Runtime.reject, Runtime.branch,
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.logicalPointerCheck, Runtime.pointerCheckWith, Runtime.reject, Runtime.branch,
+      condition, found, Value.truth, boolean]
+
+
+theorem explicit_pointerCheck_run (nullType : interface.types "void *" = some .pointer) (names : List String) (addresses : String → Option Address)
+    (env : Locals) (heap : Heap) (tail : List Stmt)
+    (bound : ∀ name ∈ names, eval env heap (Runtime.v name) = some (.pointer (addresses name))) :
+    run 1 (.running (Runtime.pointerCheck names :: tail) env heap) =
+      some (.running ((if names.any (fun name => (addresses name).isNone) then
+        [Runtime.fail "Missing output pointer"] else []) ++ tail) env heap) := by
+  have condition := CPointerConditions.explicit_missing_eval env heap names addresses bound nullType
+  change eval env heap (Runtime.any (names.map fun name => Expr.bin .eq (Runtime.v name) Expr.nullPointer)) =
+    some (boolean (names.any fun name => (addresses name).isNone)) at condition
+  cases found : names.any (fun name => (addresses name).isNone) <;>
+    simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.pointerCheck,
+      Runtime.pointerCheckWith, Runtime.eqv, Runtime.reject, Runtime.branch,
       condition, found, Value.truth, boolean]
 
 
@@ -86,7 +102,7 @@ theorem outputs_prefix_for_tail (types : StepEntry.Types) (fn : Function) (tail 
   have missingAny : ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"].any
       (fun name => (addresses name).isNone) = true := by
     rcases missing with h | h | h | h <;> simp [addresses, h]
-  have checked := pointerCheck_run
+  have checked := explicit_pointerCheck_run types.nullPointer
     ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"]
     addresses later heap rest bound
   simp only [missingAny, ↓reduceIte, List.singleton_append] at checked

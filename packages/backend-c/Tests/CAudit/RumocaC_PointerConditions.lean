@@ -5,3 +5,6 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.CPointerConditions.missing_eval
 #audit axioms Rumoca.CPointerConditions.missing_iff
+#audit axioms Rumoca.CPointerConditions.explicitMissing
+#audit axioms Rumoca.CPointerConditions.explicit_missing_eq
+#audit axioms Rumoca.CPointerConditions.explicit_missing_eval

@@ -86,8 +86,15 @@ def countLoop (count : Expr) (body : List Stmt) : List Stmt := [
   .declare "size_t" "k" (n 0),
   .whileLoop (lt (v "k") count) (body ++ [.assign (v "k") (.bin .add (v "k") (n 1))])]
 
-def pointerCheck (names : List String) : Stmt :=
-  reject (any (names.map fun p => negate (v p))) "Missing output pointer"
+/-- Shared ordered output validation; only the pointer predicate varies. -/
+def pointerCheckWith (pointerMissing : Expr → Expr) (names : List String) : Stmt :=
+  reject (any (names.map fun p => pointerMissing (v p))) "Missing output pointer"
+
+/-- Retained logical tree for generic proofs with no null-type binding. -/
+def logicalPointerCheck := pointerCheckWith Expr.not
+
+/-- Production output guards use explicit null comparisons. -/
+def pointerCheck := pointerCheckWith (fun p => eqv p Expr.nullPointer)
 
 def makeInstance (m : Solve.FMI3Model source) (kind : Kind) : List Stmt :=
   FactoryPrefix.validation m :: FactoryPrefix.identityGuard :: StaticFactory.code m.solve kind

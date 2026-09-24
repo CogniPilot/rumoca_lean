@@ -169,7 +169,7 @@ theorem body_agrees (header : CFenv.Header) (model : Solve.FMI3Model source) (ob
     permittedModes, Runtime.put, Runtime.mode, Runtime.ok, Runtime.reject,
     Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.call, Runtime.v, Runtime.n,
-    Runtime.completedTime, Runtime.raiseField, Runtime.lt, Runtime.pointerCheck, Runtime.out,
+    Runtime.completedTime, Runtime.raiseField, Runtime.lt, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out,
     Expr.nullPointer, RuntimeEnvironment.interface, CFenv.Header.interface, CInterface.constants,
       objectConstants]
 
@@ -294,7 +294,7 @@ theorem body_agrees (header : CFenv.Header) (model : Solve.FMI3Model source) (ob
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject,
     Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.call, Runtime.v, Runtime.n,
-    Runtime.pointerCheck, Runtime.out, Expr.nullPointer, RuntimeEnvironment.interface, CFenv.Header.interface, CInterface.constants,
+    Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Expr.nullPointer, RuntimeEnvironment.interface, CFenv.Header.interface, CInterface.constants,
       objectConstants]
 
 theorem call_behaviors {E : Type} (header : CFenv.Header) (objects : Objects) (literals : CLiteralAddresses)

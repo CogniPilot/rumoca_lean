@@ -55,7 +55,7 @@ theorem body_agrees (model : Solve.FMI3Model source) (objects : Objects) (litera
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject,
     Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.call, Runtime.v, Runtime.n,
-    Runtime.pointerCheck, Runtime.out, Expr.nullPointer, executionInterface, objectConstants]
+    Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Expr.nullPointer, executionInterface, objectConstants]
 
 theorem parameters_bound (literals : CLiteralAddresses) (handle : Option Address)
     (addresses : String → Option Address) :
@@ -103,13 +103,13 @@ theorem body_run (model : Solve.FMI3Model source) (literals : CLiteralAddresses)
   have entered := LifecycleGuard.accept (static := ⟨literals⟩) args heap p .updateDiscrete .me .event
     (Runtime.pointerCheck names :: tail)
     (by simp [args, parameters]) (by simp [args, parameters, names, layouts]) hk hm ⟨rfl, rfl⟩
-  have checked := CPointerConditions.missing_eval env heap names (fun name => some (addresses name))
-    (output_bound (some p) (fun name => some (addresses name)) p)
+  have checked := CPointerConditions.explicit_missing_eval env heap names (fun name => some (addresses name))
+    (output_bound (some p) (fun name => some (addresses name)) p) rfl
   have guard : run 1 (.running (Runtime.pointerCheck names :: tail) env heap) =
       some (.running tail env heap) := by
-    have falseCheck : eval env heap (CPointerConditions.missing names) = some (boolean false) := by
+    have falseCheck : eval env heap (CPointerConditions.explicitMissing names) = some (boolean false) := by
       simpa [names, layouts] using checked
-    change run 1 (.running (Runtime.reject (CPointerConditions.missing names) "Missing output pointer" :: tail) env heap) = _
+    change run 1 (.running (Runtime.reject (CPointerConditions.explicitMissing names) "Missing output pointer" :: tail) env heap) = _
     simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.reject, Runtime.branch, falseCheck, Value.truth, boolean]
   have written := COutputAssignments.run_all env heap (outputs addresses) [Runtime.ok]
     (outputs_ready heap p addresses writable)
@@ -228,14 +228,14 @@ theorem output_prefix (model : Solve.FMI3Model source) (literals : CLiteralAddre
   have entered := LifecycleGuard.accept (static := ⟨literals⟩) args heap p .updateDiscrete .me .event
     (Runtime.pointerCheck names :: tail)
     (by simp [args, parameters]) (by simp [args, parameters, names, layouts]) hk hm ⟨rfl, rfl⟩
-  have checked := CPointerConditions.missing_eval env heap names addresses (output_bound (some p) addresses p)
+  have checked := CPointerConditions.explicit_missing_eval env heap names addresses (output_bound (some p) addresses p) rfl
   rw [(CPointerConditions.missing_iff names addresses).mpr missing] at checked
   refine ⟨rfl, BodyEmbedding.body_closed model signature, args, env,
     tail, 4, parameters_bound literals _ _, ?_, ?_, ?_⟩
   · change run (3 + 1) (.running (Runtime.body model signature) args heap) = _
     rw [body, run_add, entered]
     simp only [Option.bind_some]
-    change run 1 (.running (Runtime.reject (CPointerConditions.missing names) "Missing output pointer" :: tail) env heap) = _
+    change run 1 (.running (Runtime.reject (CPointerConditions.explicitMissing names) "Missing output pointer" :: tail) env heap) = _
     simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.reject, Runtime.branch, checked, Value.truth, boolean]
   · simp [env, args, parameters, CBody.bind, names, layouts]
   · simp [env, CBody.bind, CBody.resolve]

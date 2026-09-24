@@ -16,7 +16,7 @@ theorem message_collected (m : Solve.FMI3Model source) (events missing : Bool) :
   cases events <;> cases missing <;>
     simp [Runtime.function, Runtime.body, signature, outputName, failureMessage,
       functionTexts, statementTexts, expressionTexts, Runtime.require,
-      Runtime.instancePrefix, Runtime.pointerCheck, Runtime.reject, Runtime.branch,
+      Runtime.instancePrefix, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.reject, Runtime.branch,
       Runtime.fail, Runtime.ret, Runtime.call, Runtime.v]
 
 noncomputable section

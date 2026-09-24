@@ -9,7 +9,7 @@ theorem message_collected (model : Solve.FMI3Model source) (reason : Failure) :
     message reason ∈ functionTexts (Runtime.function model signature) := by
   cases reason <;>
     simp [functionTexts, Runtime.function, body, Runtime.require, Runtime.instancePrefix,
-      Runtime.modeGuard, Runtime.pointerCheck, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
+      Runtime.modeGuard, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
       Runtime.call, Runtime.put, Runtime.ok, ErrorCalls.rejectionMessage, message, tail,
       Runtime.out, Runtime.completedTime, Runtime.raiseField, Runtime.lt, Runtime.field, Runtime.v,
       statementTexts, expressionTexts]

@@ -16,6 +16,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StepArguments.ready_prefix
 #audit axioms Rumoca.FMI3.StepArguments.pointer_condition
 #audit axioms Rumoca.FMI3.StepArguments.pointerCheck_run
+#audit axioms Rumoca.FMI3.StepArguments.explicit_pointerCheck_run
 #audit axioms Rumoca.FMI3.StepArguments.outputs_prefix_for_tail
 #audit axioms Rumoca.FMI3.StepArguments.input_prefix_for_tail
 #audit axioms Rumoca.FMI3.StepArguments.context_input_silent_for_tail

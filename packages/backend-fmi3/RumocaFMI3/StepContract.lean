@@ -11,11 +11,11 @@ set_option maxHeartbeats 1000000
 theorem message_collected (model : Solve.FMI3Model source) (reason : StepRejections.Reason) :
     reason.message ∈ functionTexts (Runtime.function model StepEntry.signature) := by
   cases reason <;>
-    simp [StepRejections.Reason.message, functionTexts, Runtime.function, StepEntry.body, StepEntry.outputCode, StepEntry.inputGuard,
+    simp [StepRejections.Reason.message, functionTexts, Runtime.function, StepEntry.body, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard,
       Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch,
       Runtime.fail, Runtime.ret, Runtime.call, Runtime.doStep,
       Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log,
-      Runtime.out, Runtime.pointerCheck, StepArguments.inputMessage, StepFailures.roundingMessage,
+      Runtime.out, Runtime.pointerCheck, Runtime.pointerCheckWith, StepArguments.inputMessage, StepFailures.roundingMessage,
       StepFailures.stopMessage, StepDiscard.message, ErrorCalls.rejectionMessage,
       statementTexts, expressionTexts]
 

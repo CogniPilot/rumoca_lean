@@ -167,6 +167,17 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   candidate; an epsilon repair is not an equivalent fix, and the exact FMI time
   semantics must be preserved.
 - **Pointer comparisons (Rule 11.11, Rule 11.9).** Current bounded repair
+  now also includes shared output-pointer guards: 25 source/proof files use
+  explicit null comparisons with full public/artifact contracts retained.
+  Two generic helper statements name retained logical trees (same old domain
+  and outcomes); separate typed explicit helpers use existing entry types.
+  Owner-v1/session62663 passed 4,338 jobs, 5,166 approved reports and all 25
+  selected roots with 2,665 tracked/four runner hashes checked. Independent
+  review cleared the synchronized patch and 12 additive audit registrations.
+  Full gate/post remain pending: expected five lines/14 leaves per adapter,
+  all 699 selected roots and unchanged numerical/eFMI members. This does not
+  close Rule 11.11 or the essential-type findings. Evidence: `build/output-null-gate/`.
+  Earlier bounded repair
   (2026-09-24, full artifact gate passed): `Runtime.scalarAccessCheck` now uses
   explicit null comparison for the four scalar state/derivative/nominal
   functions. Existing theorem statements and complete public contracts are

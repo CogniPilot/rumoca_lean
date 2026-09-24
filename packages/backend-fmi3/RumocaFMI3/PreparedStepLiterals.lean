@@ -125,8 +125,8 @@ theorem message_collected (before after : List Stmt) (text : String)
     text ∈ (before ++ StepEntry.outputCode ++ StepEntry.inputGuard :: after).flatMap
       statementTexts := by
   rcases selected with rfl | rfl <;>
-    simp [StepEntry.outputCode, StepEntry.inputGuard, StepArguments.inputMessage,
-      Runtime.pointerCheck, Runtime.reject, Runtime.branch, Runtime.fail,
+    simp [StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard, StepArguments.inputMessage,
+      Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.reject, Runtime.branch, Runtime.fail,
       Runtime.ret, Runtime.call, Runtime.v, statementTexts, expressionTexts]
 
 theorem tensor_message_collected (shape : Tensor.Shape) (hasOutput : Bool)
@@ -137,7 +137,7 @@ theorem tensor_message_collected (shape : Tensor.Shape) (hasOutput : Bool)
       Runtime.require .doStep ++ StepEntry.outputCode ++ StepEntry.inputGuard ::
         (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++
           TensorDoStep.tensorStepSolve shape hasOutput) := by
-    simp [TensorDoStep.function, TensorDoStep.doStepBody, StepEntry.outputCode,
+    simp [TensorDoStep.function, TensorDoStep.doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
       StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
   rw [functionTexts, body]
   exact message_collected _ _ text selected
@@ -149,7 +149,7 @@ theorem constant_message_collected (text : String)
       Runtime.require .doStep ++ StepEntry.outputCode ++ StepEntry.inputGuard ::
         (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++
           ConstantDoStep.stepSolve) := by
-    simp [ConstantDoStep.function, ConstantDoStep.doStepBody, StepEntry.outputCode,
+    simp [ConstantDoStep.function, ConstantDoStep.doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
       StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
   rw [functionTexts, body]
   exact message_collected _ _ text selected
@@ -262,7 +262,7 @@ theorem tensor_message_collected (shape : Tensor.Shape) (hasOutput : Bool)
       (Runtime.require .doStep ++ StepEntry.outputCode ++ [StepEntry.inputGuard]) ++
         Runtime.stepRounding ++ Runtime.stepClock ++
           (Runtime.stepGrid ++ TensorDoStep.tensorStepSolve shape hasOutput) := by
-    simp [TensorDoStep.function, TensorDoStep.doStepBody, StepEntry.outputCode,
+    simp [TensorDoStep.function, TensorDoStep.doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
       StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
   rw [functionTexts, body]
   exact message_collected _ _ text selected
@@ -275,7 +275,7 @@ theorem constant_message_collected (text : String)
       (Runtime.require .doStep ++ StepEntry.outputCode ++ [StepEntry.inputGuard]) ++
         Runtime.stepRounding ++ Runtime.stepClock ++
           (Runtime.stepGrid ++ ConstantDoStep.stepSolve) := by
-    simp [ConstantDoStep.function, ConstantDoStep.doStepBody, StepEntry.outputCode,
+    simp [ConstantDoStep.function, ConstantDoStep.doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
       StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
   rw [functionTexts, body]
   exact message_collected _ _ text selected

@@ -1,5 +1,35 @@
 # Exact verification contract
 
+**Shared output-pointer explicit null guards (owner checks passed; full gate pending):**
+The shared Runtime guard now uses explicit null equality in discrete update,
+completed step, both count queries and DoStep for scalar/tensor/constant FMI.
+Reusable CPointerConditions proofs transfer the ordered lazy predicate under
+existing pointer bindings and null typing. The two generic helper statements
+`StepArguments.pointerCheck_run` and `StepEntry.outputs_run` now name retained
+logical trees, definitionally their old code, with unchanged premises and full
+results/heaps. Their new explicit counterparts derive null typing from existing
+concrete entry assumptions. Do not claim all old statement text is unchanged:
+356 old statements are textually retained, two name the retained logical trees.
+No public/artifact, aliasing, callback, count-policy or source-admission weakening.
+
+The 25 implementation/proof files match the independently reviewed overlays;
+five existing audit leaves add 12 direct registrations, retaining every old one.
+Private final-v1 checked 196 selected modules and 25 roots (12 warning logs;
+cached imports outside that selection). Actual owner-v1/session62663 passed
+4,338 jobs, 5,166 complete approved reports, 25 exact selected roots, 2,665
+frozen tracked inputs and four runner/input hashes. Main rechecked the receipt
+and read the complete independent source/registration/runner review; the initial
+patch/overlay mismatch was synchronized and independently closed. No new axiom,
+scratch import or whitelist change. Evidence: `build/output-null-adoption/`,
+`build/output-null-gate/`, `build/output-null-adoption-review.md`.
+
+Baseline80822 captures the completed Float64 gate's actual archives before this
+adoption. Required full gate/post remain pending: all 674 prior selected roots
+plus 25 disjoint selections (699), exact five-line/14-pointer-leaf changes in
+each of three whole adapters, unchanged three numerical C and four eFMI
+Algorithm/C members. Owner success does not establish those changed artifacts
+or MISRA conformance. Other implicit guards and essential-type findings remain.
+
 **Scalar array-access explicit null guards (full gate passed):**
 `Runtime.scalarAccessCheck` now uses explicit equality to `Expr.nullPointer`
 instead of pointer negation. The count-first short circuit, rejection message,

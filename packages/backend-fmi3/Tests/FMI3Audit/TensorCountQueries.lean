@@ -9,6 +9,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorCountQueries.parameters_bound
 #audit axioms Rumoca.FMI3.TensorCountQueries.store_count
 #audit axioms Rumoca.FMI3.TensorCountQueries.pointer_pass
+#audit axioms Rumoca.FMI3.TensorCountQueries.explicit_pointer_pass
 #audit axioms Rumoca.FMI3.TensorCountQueries.body_run
 #audit axioms Rumoca.FMI3.TensorCountQueries.call_behaviors
 #audit axioms Rumoca.FMI3.TensorCountQueries.null_behaviors

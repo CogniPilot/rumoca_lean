@@ -76,7 +76,7 @@ theorem tensor_logged_for {source : AST.Model} {shape : Tensor.Shape} {E : Type}
   have certified := StepErrors.lifecycle_prefix_for_tail context (TensorDoStep.function shape m.hasOutput)
     (StepEntry.outputCode ++ StepEntry.inputGuard ::
       (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ TensorDoStep.tensorStepSolve shape m.hasOutput))
-    rfl (by simp [TensorDoStep.function, TensorDoStep.doStepBody, StepEntry.outputCode,
+    rfl (by simp [TensorDoStep.function, TensorDoStep.doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
       StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]) (TensorDoStep.doStepBody_closed shape m.hasOutput)
     heap p point step flag outputs kind mode kindValue modeValue rejected
   exact StaticErrors.prefix_all_behaviors context program (TensorDoStep.function shape m.hasOutput)
@@ -188,7 +188,7 @@ theorem constant_logged {source : AST.Model} {n : Nat} {E : Type}
   have certified := StepErrors.lifecycle_prefix_for_tail context ConstantDoStep.function
     (StepEntry.outputCode ++ StepEntry.inputGuard ::
       (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ ConstantDoStep.stepSolve))
-    rfl (by simp [ConstantDoStep.function, ConstantDoStep.doStepBody, StepEntry.outputCode,
+    rfl (by simp [ConstantDoStep.function, ConstantDoStep.doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
       StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]) ConstantDoStep.doStepBody_closed
     heap p point step flag outputs kind mode kindValue modeValue rejected
   exact StaticErrors.prefix_all_behaviors context program ConstantDoStep.function

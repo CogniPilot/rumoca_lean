@@ -30,7 +30,7 @@ theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
     Runtime.makeInstance, Runtime.require, Runtime.instancePrefix, Runtime.countLoop,
     Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith,
-    Runtime.scalarAccessCheck, Runtime.pointerCheck,
+    Runtime.scalarAccessCheck, Runtime.pointerCheck, Runtime.pointerCheckWith,
     Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
     Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
     CInitialization.Emission.statement,

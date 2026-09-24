@@ -1,4 +1,5 @@
 import RumocaFMI3.StepGuards
+import RumocaC.PointerConditions
 import RumocaC.BodySuffix
 import RumocaFMI3.BodyEmbedding
 import RumocaFMI3.HistoryBodies
@@ -70,10 +71,15 @@ def inputCondition : Expr := Runtime.any [
 
 def inputGuard : Stmt := Runtime.reject inputCondition "Invalid communication point or step size"
 
-def outputCode : List Stmt := [
-  Runtime.pointerCheck ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"],
+def outputCodeWith (pointerMissing : Expr → Expr) : List Stmt := [
+  Runtime.pointerCheckWith pointerMissing ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"],
   Runtime.out "eventHandlingNeeded" (Runtime.n 0), Runtime.out "terminateSimulation" (Runtime.n 0),
   Runtime.out "earlyReturn" (Runtime.n 0), Runtime.out "lastSuccessfulTime" (Runtime.field "time")]
+
+/-- Retained logical sequence used by the unrestricted generic output theorem. -/
+def logicalOutputCode := outputCodeWith Expr.not
+
+def outputCode := outputCodeWith (fun p => Expr.bin .eq p Expr.nullPointer)
 
 def outputHeap (heap : Heap) (buffers : Buffers) (time : Binary64.Value) : Heap :=
   StateProofs.written
@@ -212,7 +218,7 @@ theorem outputs_run (env : Locals) (heap : Heap) (p : Address) (buffers : Buffer
     (outsideEvent : buffers.event.block ≠ p.block)
     (outsideTerminate : buffers.terminate.block ≠ p.block)
     (outsideEarly : buffers.early.block ≠ p.block) :
-    run 5 (.running (outputCode ++ rest) env heap) =
+    run 5 (.running (logicalOutputCode ++ rest) env heap) =
       some (.running rest env (outputHeap heap buffers time)) := by
   let h1 := HistoryBodies.zero heap buffers.event
   let h2 := HistoryBodies.zero h1 buffers.terminate
@@ -232,12 +238,53 @@ theorem outputs_run (env : Locals) (heap : Heap) (p : Address) (buffers : Buffer
       HistoryBodies.zero_frame _ _ _ (float_ne_boolean heap _ _ old last terminate),
       HistoryBodies.zero_frame _ _ _ (float_ne_boolean heap _ _ old last event), last]
   have storeLast := store_float64 h3 buffers.last old (Binary64.toBits time).val lastCell
-  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, outputCode, Runtime.pointerCheck, Runtime.reject, Runtime.any,
-    Runtime.branch, Runtime.out, Runtime.v, Runtime.n, Runtime.negate, Runtime.either,
+  simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, logicalOutputCode, outputCodeWith, Runtime.pointerCheckWith, Runtime.reject, Runtime.any,
+    Runtime.branch, Runtime.out, Runtime.v, Runtime.n, Runtime.either,
     Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalue, CBody.lvalueWith, resolve, instanceValue, eventValue, terminateValue,
     earlyValue, lastValue, Value.address, Value.truth, boolean,
     storeEvent, storeTerminate, storeEarly, show load h3 (p.member "time") = some (.finite time) from keptClock,
     storeLast, h1, h2, h3, outputHeap, Value.finite, StateProofs.written]
+
+/-- Actual emitted output sequence, with the null type supplied by existing entry typing. -/
+theorem outputs_explicit_run (nullType : interface.types "void *" = some .pointer) (env : Locals) (heap : Heap) (p : Address) (buffers : Buffers)
+    (time : Binary64.Value) (old : Option Value) (rest : List Stmt)
+    (instanceValue : env "m" = some (.pointer (some p)))
+    (eventValue : env "eventHandlingNeeded" = some (.pointer (some buffers.event)))
+    (terminateValue : env "terminateSimulation" = some (.pointer (some buffers.terminate)))
+    (earlyValue : env "earlyReturn" = some (.pointer (some buffers.early)))
+    (lastValue : env "lastSuccessfulTime" = some (.pointer (some buffers.last)))
+    (clock : load heap (p.member "time") = some (.finite time))
+    (event : HistoryBodies.BoolWritable heap buffers.event)
+    (terminate : HistoryBodies.BoolWritable heap buffers.terminate)
+    (early : HistoryBodies.BoolWritable heap buffers.early)
+    (last : heap buffers.last = some ⟨.float64, true, old⟩)
+    (outsideEvent : buffers.event.block ≠ p.block)
+    (outsideTerminate : buffers.terminate.block ≠ p.block)
+    (outsideEarly : buffers.early.block ≠ p.block) :
+    run 5 (.running (outputCode ++ rest) env heap) =
+      some (.running rest env (outputHeap heap buffers time)) := by
+  let names := ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"]
+  let addresses : String → Option Address := fun name =>
+    if name = "eventHandlingNeeded" then some buffers.event else
+    if name = "terminateSimulation" then some buffers.terminate else
+    if name = "earlyReturn" then some buffers.early else some buffers.last
+  have bound : ∀ name ∈ names, resolve env name = some (.pointer (addresses name)) := by
+    intro name member
+    simp only [names, List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl | rfl | rfl <;>
+      simp [addresses, resolve, eventValue, terminateValue, earlyValue, lastValue]
+  have condition := CPointerConditions.explicit_missing_eq env heap names addresses bound nullType
+  have nextSame : next (.running (outputCode ++ rest) env heap) =
+      next (.running (logicalOutputCode ++ rest) env heap) := by
+    simp only [outputCode, logicalOutputCode, outputCodeWith, List.cons_append,
+      Runtime.pointerCheckWith, Runtime.reject, Runtime.branch, next, nextWith, legacyExpressions]
+    change eval env heap (Runtime.any (names.map fun name => Expr.bin .eq (Runtime.v name) Expr.nullPointer)) =
+      eval env heap (Runtime.any (names.map fun name => Expr.not (Runtime.v name))) at condition
+    rw [condition]
+  have old := outputs_run env heap p buffers time old rest instanceValue eventValue terminateValue
+    earlyValue lastValue clock event terminate early last outsideEvent outsideTerminate outsideEarly
+  simpa only [run, nextSame] using old
+
 
 omit interface in
 theorem output_frame (heap : Heap) (buffers : Buffers) (time : Binary64.Value) (query : Address)
@@ -286,7 +333,7 @@ theorem prefix_run_suffix (types : Types) (env : Locals)
   have entered := lifecycle_run types env heap p .cs .step
     (outputCode ++ [inputGuard]) handle fresh kindValue modeValue
   simp only [allowed, permittedModes] at entered
-  have setup := outputs_run (locals env p) heap p buffers time oldOutput
+  have setup := outputs_explicit_run types.nullPointer (locals env p) heap p buffers time oldOutput
     [inputGuard] (by simp [locals, CBody.bind])
     (by simpa [locals, CBody.bind] using eventValue)
     (by simpa [locals, CBody.bind] using terminateValue)

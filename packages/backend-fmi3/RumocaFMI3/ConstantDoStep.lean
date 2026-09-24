@@ -100,7 +100,7 @@ theorem doStepBody_prefix : doStepBody = Runtime.doStep.take 16 ++ stepSolve := 
 theorem doStepBody_closed : doStepBody.all CBodyEmbedding.closedBlocks = true := by
   simp [doStepBody, stepSolve, stepBodyT, stepBody, timeAdvance, oneExpr, stepPublishTail,
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch,
-    Runtime.pointerCheck, Runtime.out, Runtime.put, Runtime.stepRounding, Runtime.stepClock,
+    Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.put, Runtime.stepRounding, Runtime.stepClock,
     Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.fail, Runtime.ret, Runtime.ok,
     Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, Runtime.any, Runtime.negate,
     Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.either, Runtime.put,
@@ -125,7 +125,7 @@ theorem body_printable :
   have doubleType : TypeSpelling RuntimePrinter.typedefs "double" := .named (.primitive (by decide +kernel))
   simp only [function, doStepBody, stepSolve, stepPublishTail, stepBodyT, stepBody, timeAdvance, oneExpr,
       Runtime.region, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
-      permittedModes, Runtime.mode, Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.out,
+      permittedModes, Runtime.mode, Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out,
       Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding, Runtime.stepClock,
       Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call,
       Runtime.any, Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le,
@@ -193,7 +193,7 @@ theorem null_behaviors (types : StepEntry.Types) (heap : Heap)
       (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve)))
     (StepEntry.arguments none point step flag outputs) (StepEntry.parameters none point step flag outputs)
     heap defined (StepEntry.parameters_bound types none point step flag outputs)
-    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard,
       StepEntry.inputCondition, List.append_assoc]) rfl doStepBody_closed
   all_goals simp [StepEntry.parameters, StepEntry.bindings, CBody.bind]
 
@@ -218,7 +218,7 @@ theorem lifecycle_behaviors (types : StepEntry.Types) (heap : Heap)
       (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve))
     (StepEntry.arguments (some p) point step flag outputs) (StepEntry.parameters (some p) point step flag outputs)
     heap p message logger kind mode defined (StepEntry.parameters_bound types (some p) point step flag outputs)
-    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard,
       StepEntry.inputCondition, List.append_assoc]) rfl doStepBody_closed
     helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
@@ -256,7 +256,7 @@ theorem lifecycle_logged_behaviors (types : StepEntry.Types) (heap : Heap)
     (StepEntry.arguments (some p) point step flag outputs) (StepEntry.parameters (some p) point step flag outputs)
     heap p message category logger environment kind mode name foreign defined
     (StepEntry.parameters_bound types (some p) point step flag outputs)
-    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard,
       StepEntry.inputCondition, List.append_assoc]) rfl doStepBody_closed
     helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
@@ -283,7 +283,7 @@ theorem lifecycle_missing_behaviors (types : StepEntry.Types) (heap : Heap)
       (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve))
     (StepEntry.arguments (some p) point step flag outputs) (StepEntry.parameters (some p) point step flag outputs)
     heap p message kind mode defined (StepEntry.parameters_bound types (some p) point step flag outputs)
-    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard,
       StepEntry.inputCondition, List.append_assoc]) rfl doStepBody_closed
     helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
@@ -791,7 +791,7 @@ theorem front_run (types : StepEntry.Types) (env : Locals) (heap : Heap)
   have entered := StepEntry.lifecycle_run types env heap p .cs .step
     (StepEntry.outputCode ++ StepEntry.inputGuard :: tail) handle fresh kindValue modeValue
   simp only [allowed, permittedModes] at entered
-  have setup := StepEntry.outputs_run (StepEntry.locals env p) heap p buffers time oldOutput
+  have setup := StepEntry.outputs_explicit_run types.nullPointer (StepEntry.locals env p) heap p buffers time oldOutput
     (StepEntry.inputGuard :: tail) (by simp [StepEntry.locals, CBody.bind])
     (by simpa [StepEntry.locals, CBody.bind] using eventValue)
     (by simpa [StepEntry.locals, CBody.bind] using terminateValue)
@@ -1417,7 +1417,7 @@ theorem input_rejection_contract : StepArguments.InputRejectionContract function
   apply Rumoca.FMI3.StepArguments.input_rejection_contract function
     (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve)
     rfl _ doStepBody_closed
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 /-- Missing output pointers are rejected under every checked error context. -/
@@ -1425,28 +1425,28 @@ theorem output_rejection_contract : StepArguments.OutputRejectionContract functi
   apply Rumoca.FMI3.StepArguments.output_rejection_contract function
     (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve)
     rfl _ doStepBody_closed
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 theorem rounding_rejection_contract :
     StepFailures.RoundingRejectionContract function := by
   apply StepFailures.rounding_rejection_contract function
     (Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve) rfl _ doStepBody_closed
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 theorem stop_rejection_contract :
     StepFailures.StopRejectionContract function := by
   apply StepFailures.stop_rejection_contract function
     (Runtime.stepGrid ++ stepSolve) rfl _ doStepBody_closed
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 theorem discard_rejection_contract :
     StepDiscard.DiscardRejectionContract function := by
   apply StepDiscard.discard_rejection_contract function
     stepSolve rfl _ doStepBody_closed
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 

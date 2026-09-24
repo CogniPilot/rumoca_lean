@@ -92,7 +92,7 @@ macro "cadmit" : tactic => `(tactic| (
     Runtime.any, Runtime.all, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
     Runtime.lt, Runtime.le, Runtime.gt, Runtime.ge, Runtime.negate, Runtime.region, Runtime.x,
     Runtime.field, Runtime.setMode, Runtime.mode, Runtime.v, Runtime.n, Runtime.call, Runtime.out,
-    Runtime.put, Runtime.pointerCheck, Runtime.scalarAccessCheck, Runtime.countLoop,
+    Runtime.put, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.scalarAccessCheck, Runtime.countLoop,
     CLoops.loop, CLoops.counterStep]
   done))
 

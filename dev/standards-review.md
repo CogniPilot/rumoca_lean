@@ -1,5 +1,24 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Shared output-pointer repair (2026-09-24; owner passed, artifacts pending):
+Runtime now selects explicit null equality in five shared output-guard functions
+for all three FMI profiles. This is another bounded Rules 11.11/11.9 repair,
+not grammar expansion or policy change. Two old generic helper statements name
+retained logical trees with the same old domains/full results; explicit helpers
+derive null typing from existing entry assumptions. All public/artifact,
+callback, aliasing and count-policy obligations remain. The other 356 old
+statements in 25 source/proof files are textually retained. Twelve additive
+audits in five existing leaves preserve old registrations and the whitelist.
+
+Owner-v1/session62663 passed 4,338 jobs, 5,166 approved reports, all 25 selected
+roots, 2,665 frozen tracked inputs and four runner hashes. Main checked the
+receipt and independent review; its initial patch/overlay discrepancy is closed.
+Baseline80822 captured the prior completed Float64 artifacts before adoption.
+Required full/post remain pending, selecting 699 roots and requiring exactly
+five changed lines/14 pointer leaves per adapter, unchanged numerical/eFMI code.
+Evidence: `build/output-null-gate/`. No normative finding is closed. The current
+whole-subset MLS/FMI/eFMI mappings and expansion/promotion blocks remain.
+
 Scalar array-access repair update (2026-09-24; full gate passed): the four
 scalar state/derivative/nominal guards now spell the pointer test as equality
 to `(void *)0`. MISRA C:2025 Rules 11.11/11.9 motivate this local repair; the

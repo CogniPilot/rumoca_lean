@@ -179,7 +179,7 @@ macro "fmi_literal_calls" : tactic => `(tactic|
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
     Runtime.fail, Runtime.branch, Runtime.ret, Runtime.v, Runtime.n,
     Runtime.call, Runtime.log, Runtime.ok, Runtime.put, Runtime.setMode,
-    Runtime.out, Runtime.scalarAccessCheck, Runtime.countLoop, Runtime.pointerCheck,
+    Runtime.out, Runtime.scalarAccessCheck, Runtime.countLoop, Runtime.pointerCheck, Runtime.pointerCheckWith,
     FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
     FactoryRejection.code, FactoryRejection.logCall,
     StaticFactory.code, StaticFactory.reserve, StaticFactory.guard, StaticFactory.exhausted,

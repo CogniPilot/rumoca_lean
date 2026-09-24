@@ -122,7 +122,7 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
       DebugLogging.finish, DebugLogging.writeLogging, CLoops.loop, CLoops.counterStep,
       Runtime.instancePrefix, Runtime.countLoop,
       Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith,
-      Runtime.scalarAccessCheck, Runtime.pointerCheck,
+      Runtime.scalarAccessCheck, Runtime.pointerCheck, Runtime.pointerCheckWith,
       Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
       Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
       Runtime.invalidTime, CInitialization.Emission.statement, CInitialization.value_zero,

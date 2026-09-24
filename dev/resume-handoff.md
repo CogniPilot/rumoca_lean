@@ -1,5 +1,39 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current output-pointer repair — owner checks passed, full gate pending
+
+Applied reviewed output-null production.patch plus audit.patch after signed
+Float64 evidence commit `fd3dac7` and successful baseline80822. All 25
+implementation/proof files match their reviewed overlays; five existing audit
+leaves add 12 registrations. Two old generic helper statements explicitly name
+retained logical trees, preserving old domains/results; 356 others retain their
+text. Actual explicit helpers use existing entry null typing, not new public
+premises. No source admission, count policy, artifact predicate or whitelist change.
+
+Owner-v1/session62663 finished0: 4,338 jobs, 5,166 complete approved reports,
+all 25 selected roots, 2,665 frozen tracked inputs and four runner hashes.
+Main rechecked hashes/roots and read the complete independent review. Private
+final-v1's 196 modules/25 roots (12 warning logs) remain preparatory evidence,
+not a frozen exhaustive import closure. Initial patch/overlay R1 was fixed and
+independently closed. No further source correction was needed in owner-v1.
+
+Next after signed clean implementation commit: run in verification environment
+`build/output-null-gate/full-gate.sh`, then post-audit.sh only after terminal0.
+Expected 699-root union = retained674 +25 disjoint selections. Exact whole-file
+delta must be five lines/14 pointer leaves in each of three adapters; three
+numerical C and four eFMI Algorithm/C members must stay identical. Neither
+full gate nor post has passed this repair yet. Do not recreate baseline-v1.
+Check ignored `build/method-table-live-checkpoint.md` before starting a run;
+later continuations may already have launched it. No push authorized.
+
+Next private work: Aristotle/Astra, exclusive `build/tensor-float64-null-adoption/`,
+is preparing only TensorFloat64.basicReject's two pointer leaves reused by
+tensor/constant Get/SetFloat64. No tracked/shared writes authorized during the
+gate. See `build/remaining-pointer-guard-map.md` for source-correlated scope:
+predicted four lines/eight leaves across those two adapters. Do not substitute
+the different scalar zero-count policy. No next repair is adopted. Standards,
+native/ABI, essential-type and candidate-promotion findings remain open.
+
 ## Current owned scalar-access repair — full gate passed
 
 `Runtime.scalarAccessCheck` now emits explicit pointer equality to `(void *)0`
@@ -71,24 +105,21 @@ two changed guard lines/four pointer leaves; both other adapters, all three
 numerical C files and four eFMI Algorithm/C members stayed identical. Main read
 the diff, roots and matrices and rechecked all five archive hashes.
 
-Next reviewed repair: `build/output-null-adoption/production.patch`
+Subsequently adopted repair (current status above): `build/output-null-adoption/production.patch`
 SHA-256 `d004e0651cd8ddc53f9451a4e79d413e83c63456c7529245c8f237c22a34248e`
 and `build/output-null-gate/audit.patch` add shared explicit output guards and
 12 direct audit registrations. Private final-v1 passed 196 selected modules
 and 25 exact approved roots; twelve logs contain warnings. This uses cached
 imports outside the selection, not an exhaustive frozen import closure.
 Main read the full patch and independent review; R1 patch/overlay mismatch
-was repaired and independently closed. Both Astra agents are closed.
+was repaired and independently closed. Those review tasks are complete.
 The two old generic helpers explicitly name retained logical syntax trees;
 their old domains/results remain, but do not claim all old statement text
 unchanged. Public/artifact predicates and full heaps remain unchanged.
 
-Before generating changed output-guard artifacts, capture the completed
-Float64 baseline with `build/output-null-gate/baseline.sh` in the verification
-environment. Then adopt the reviewed patches, run owner.sh with a fresh receipt,
-sign the implementation commit, and run full-gate.sh/post-audit.sh. All runners
-were independently reviewed. Expected delta: five lines/14 pointer leaves in
-each of three adapters, unchanged numerical/eFMI members; selected union699.
+The completed Float64 baseline was captured by session80822 before adopting
+those patches. All output-null runners were independently reviewed; see the
+current section above for completed owner checks and pending full/post gates.
 Check `build/method-table-live-checkpoint.md` before starting: later work may
 have advanced this sequence. Tensor promotion remains unapproved and broader
 standards findings remain open. No push authorization.

@@ -1903,7 +1903,7 @@ theorem doStepBody_closed (shape : Tensor.Shape) (hasOutput : Bool) :
   cases hasOutput <;>
     simp [doStepBody, tensorStepSolve, jacobianTail, stepPublishTail, TensorContinuousStates.jacobianCall,
       TensorContinuousStates.jacobianEntryArgs, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
-      Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.out, Runtime.stepRounding,
+      Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.stepRounding,
       Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.fail, Runtime.ret,
       Runtime.ok, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, Runtime.any, Runtime.negate,
       Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.either,
@@ -2666,7 +2666,7 @@ theorem front_run (shape : Tensor.Shape) (hasOutput : Bool) (types : StepEntry.T
   have entered := StepEntry.lifecycle_run types env heap p .cs .step
     (StepEntry.outputCode ++ StepEntry.inputGuard :: tail) handle fresh kindValue modeValue
   simp only [allowed, permittedModes] at entered
-  have setup := StepEntry.outputs_run (StepEntry.locals env p) heap p buffers time oldOutput
+  have setup := StepEntry.outputs_explicit_run types.nullPointer (StepEntry.locals env p) heap p buffers time oldOutput
     (StepEntry.inputGuard :: tail) (by simp [StepEntry.locals, CBody.bind])
     (by simpa [StepEntry.locals, CBody.bind] using eventValue)
     (by simpa [StepEntry.locals, CBody.bind] using terminateValue)
@@ -3587,7 +3587,7 @@ theorem null_behaviors (shape : Tensor.Shape) (hasOutput : Bool) (types : StepEn
       (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput)))
     (StepEntry.arguments none point step flag outputs) (StepEntry.parameters none point step flag outputs)
     heap defined (StepEntry.parameters_bound types none point step flag outputs)
-    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]) rfl (doStepBody_closed shape hasOutput)
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]) rfl (doStepBody_closed shape hasOutput)
   all_goals simp [StepEntry.parameters, StepEntry.bindings, CBody.bind]
 
 /-- A `fmi3DoStep` call in a disallowed FMI state is rejected with `fmi3Error`,
@@ -3611,7 +3611,7 @@ theorem lifecycle_behaviors (shape : Tensor.Shape) (hasOutput : Bool) (types : S
       (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput))
     (StepEntry.arguments (some p) point step flag outputs) (StepEntry.parameters (some p) point step flag outputs)
     heap p message logger kind mode defined (StepEntry.parameters_bound types (some p) point step flag outputs)
-    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]) rfl (doStepBody_closed shape hasOutput)
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]) rfl (doStepBody_closed shape hasOutput)
     helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind]) messageBound hk hm hl hg rejected
@@ -3651,7 +3651,7 @@ theorem lifecycle_logged_behaviors (shape : Tensor.Shape) (hasOutput : Bool)
     (StepEntry.parameters (some p) point step flag outputs)
     heap p message category logger environment kind mode name foreign defined
     (StepEntry.parameters_bound types (some p) point step flag outputs)
-    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard,
       StepEntry.inputCondition, List.append_assoc]) rfl (doStepBody_closed shape hasOutput)
     helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
@@ -3681,7 +3681,7 @@ theorem lifecycle_missing_behaviors (shape : Tensor.Shape) (hasOutput : Bool)
     (StepEntry.parameters (some p) point step flag outputs)
     heap p message kind mode defined
     (StepEntry.parameters_bound types (some p) point step flag outputs)
-    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.inputGuard,
+    (by simp [function, doStepBody, Runtime.require, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv, StepEntry.inputGuard,
       StepEntry.inputCondition, List.append_assoc]) rfl (doStepBody_closed shape hasOutput)
     helper (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
     (by simp [StepEntry.parameters, StepEntry.bindings, CBody.bind])
@@ -3992,7 +3992,7 @@ theorem body_printable (shape : Tensor.Shape) (hasOutput : Bool) :
       dstCell, srcCell, TensorContinuousStates.derivEntryArgs, Runtime.region, Runtime.require,
       Runtime.instancePrefix,
       Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.mode, Runtime.reject, Runtime.branch,
-      Runtime.pointerCheck, Runtime.out, Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding,
+      Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding,
       Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call, Runtime.any,
       Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le, Runtime.gt, Runtime.both,
       Runtime.either, CAlgorithm.literal, CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil,
@@ -4042,7 +4042,7 @@ theorem input_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
     (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++
       tensorStepSolve shape hasOutput)
     rfl _ (doStepBody_closed shape hasOutput)
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 /-- Missing output pointers are rejected under every checked error context. -/
@@ -4052,28 +4052,28 @@ theorem output_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
     (Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++
       tensorStepSolve shape hasOutput)
     rfl _ (doStepBody_closed shape hasOutput)
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 theorem rounding_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
     StepFailures.RoundingRejectionContract (function shape hasOutput) := by
   apply StepFailures.rounding_rejection_contract (function shape hasOutput)
     (Runtime.stepClock ++ Runtime.stepGrid ++ tensorStepSolve shape hasOutput) rfl _ (doStepBody_closed shape hasOutput)
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 theorem stop_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
     StepFailures.StopRejectionContract (function shape hasOutput) := by
   apply StepFailures.stop_rejection_contract (function shape hasOutput)
     (Runtime.stepGrid ++ tensorStepSolve shape hasOutput) rfl _ (doStepBody_closed shape hasOutput)
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 theorem discard_rejection_contract (shape : Tensor.Shape) (hasOutput : Bool) :
     StepDiscard.DiscardRejectionContract (function shape hasOutput) := by
   apply StepDiscard.discard_rejection_contract (function shape hasOutput)
     (tensorStepSolve shape hasOutput) rfl _ (doStepBody_closed shape hasOutput)
-  simp [function, doStepBody, StepEntry.outputCode,
+  simp [function, doStepBody, StepEntry.outputCode, StepEntry.outputCodeWith, Runtime.pointerCheck, Runtime.eqv,
     StepEntry.inputGuard, StepEntry.inputCondition, List.append_assoc]
 
 

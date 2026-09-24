@@ -9,6 +9,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StepEntry.input_condition
 #audit axioms Rumoca.FMI3.StepEntry.float_ne_boolean
 #audit axioms Rumoca.FMI3.StepEntry.outputs_run
+#audit axioms Rumoca.FMI3.StepEntry.outputCodeWith
+#audit axioms Rumoca.FMI3.StepEntry.logicalOutputCode
+#audit axioms Rumoca.FMI3.StepEntry.outputCode
+#audit axioms Rumoca.FMI3.StepEntry.outputs_explicit_run
 #audit axioms Rumoca.FMI3.StepEntry.output_frame
 #audit axioms Rumoca.FMI3.StepEntry.output_instance
 #audit axioms Rumoca.FMI3.StepEntry.ready_run
