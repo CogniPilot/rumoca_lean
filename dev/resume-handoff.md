@@ -10,7 +10,7 @@ checked before/after and five output hashes. Read its new README for scope.
 No production implementation changed. The detailed previous wrap-up remains
 useful history, but its pause and immediate receipt-next-action are superseded.
 
-New next-stage scratch is in progress:
+The next-stage candidate composition is now checked:
 
 - `build/galec-method-table-draft/`: reusable numerical-extension RHS/Jacobian/
   DoStep/public proofs on the exact repaired candidate table. `candidate_from_rhs`
@@ -21,17 +21,29 @@ New next-stage scratch is in progress:
 - `build/galec-recalibrate-table-draft/`: table-parametric Recalibrate plus
   original-source composition with all four logical field observations.
   `final-combined-v1.exit` = 0, session90313; 17 roots, two empty logs,
-  seven local/76 selected inputs/four upstream manifests/four outputs. Independent
-  review is pending. `Handoff.lean` is an additional five-root checked module
-  (session99581), not yet part of that frozen receipt: owned whole-shaped
+  seven local/76 selected inputs/four upstream manifests/four outputs.
+  `Handoff.lean` adds five roots: owned whole-shaped
   repartition plus represented input preservation establishes full later-method
   StateView at the actual Startup post-heap, without old output representation.
+  `DoStep.lean` adds ten roots connecting the same parsed original method and
+  source-after to the same candidate public final heap/full Outcome/StateView.
+  Its `MethodsContract` retains the entire candidate Startup/byte pair,
+  Recalibrate correspondence, Startup readiness and DoStep correspondence.
+  Full combined `methods-all-v1.exit` = 0, session75150: 32 roots, four empty
+  logs, 12 local/100 selected inputs/seven upstream manifests/eight outputs.
+  Main read all independent reviews, no substantive finding. Read this draft's
+  README, `independent-review.md` (including DoStep addendum) and
+  `handoff-review.md`. Earlier V1 errors were resolved without weakening claims.
 
-Current implementation next: compose original parsed DoStep with the new table
-proof, retaining the same source-after and C final heap; combine all three
-methods and physical handoff. Then complete coupled parser/source/C/artifact
-repair. Ordinary expansion and production promotion remain blocked by the
-standards ledger. Scratch success is not actual-file/archive evidence.
+Current implementation next: adopt the reusable parametric helper/body/public
+proofs into their existing EFMI owners without changing emitted bytes or source
+admission. Keep old APIs as specializations; extract generic public completion
+into method-entry ownership to avoid a Startup/MethodEntry import cycle. Add
+all audit roots and run owner/required full gates. Do not import build modules
+into packages. Then complete coupled parser/source/C/actual-artifact repair,
+preserving every existing scalar and tensor contract field. Ordinary expansion
+and production promotion remain blocked by the standards ledger. Scratch
+success is not actual-file/archive evidence or a sequential lifecycle theorem.
 
 ## Latest wrap-up — start here
 

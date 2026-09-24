@@ -13,6 +13,28 @@ Supplied-string renderer equality is not independent emitted-file evidence.
 Production parser/emitter/contracts remain unchanged; the required production
 gate remains the `bac8f61` result below, not this scratch receipt.
 
+**Candidate all-method composition and represented-input handoff (checked
+scratch):** The same candidate table now has original parsed Recalibrate and
+conditional DoStep correspondence, with the full existing target outcomes and
+exact public behavior at the same source-after/final heap. Recalibrate constructs
+source identity execution; DoStep preserves the actual finite primal domain and
+derives AD coefficient arithmetic from it. The four-field view includes u/x/J
+and period. Owned whole-shaped repartition connects the actual Startup output
+to that later-method view; finite represented input is an explicit stronger
+entry premise, not a new input-write permission or a weakening of allocated-only
+Startup. MethodsContract retains the full prior Algorithm/C byte-pair contract.
+
+`build/galec-method-table-draft/` V1/session72200 passed 11 roots and three empty
+logs; main independently reviewed all implementations. The composed
+`build/galec-recalibrate-table-draft/` methods-all-v1/session75150 passed 32 roots,
+four empty logs, 12 local/100 selected inputs/seven upstream manifests/eight
+output hashes. Main read the complete independent Execution/Source/Handoff/
+DoStep reviews, no substantive findings. These selected-input scratch receipts
+do not prove a sequential lifecycle, input-update protocol, overflow public
+method behavior, independent emitted files/archives, native ABI or standards
+closure. Total helper outcomes and all existing production fields must remain
+in the eventual coupled artifact repair.
+
 **Whole-block preparation and whole-state method handoff (full gate passed):**
 Core now owns `Elaboration.Block.{Headers,Preparation}`,
 `Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface

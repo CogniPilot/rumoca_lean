@@ -155,6 +155,19 @@ expansion or new whole-subset compliance verdict. Evidence:
 
 ### Whole-subset Startup grammar repair review — 2026-09-23 UTC; stage OPEN
 
+Candidate evidence update (2026-09-24 UTC): original three-method source
+semantics, the repaired candidate C table, all three public-method refinements
+and represented-input Startup handoff now have checked scratch compositions.
+The tensor byte-pair receipt checks 61 roots; numerical/table DoStep checks 11;
+the all-method/source/view composition checks 32. Evidence and precise domains
+are in `build/galec-{tensor-contract,method-table,recalibrate-table}-draft/`.
+DoStep retains the finite primal domain; the same source-after/public heap
+observes all four logical fields. Finite entry input is explicit and preserved,
+not initialized or made writable. This advances candidate R3/R4 correspondence
+evidence, not actual Algorithm/C publication, R5 file/archive evidence, normative
+input/lifecycle policy, overflow-method behavior or conformance. Production
+files are unchanged. The stage decision below and all open findings remain.
+
 Before changing the prospective grammar, main read the complete independent
 266-line review `build/galec-startup-grammar-review/review.md`. It inspects
 current dispatch, both production grammars, selected actual artifacts and pinned
