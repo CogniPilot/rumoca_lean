@@ -1,6 +1,6 @@
 # Resume handoff — 2026-09-24 UTC
 
-## Current factory callback repair — owner passed, full gate pending
+## Current factory callback repair — full gate passed
 
 This section supersedes the older factory/count prospective status below.
 After debug evidence `2734e6f`, factory baseline-v1/session90077 passed and
@@ -17,24 +17,46 @@ restart it. Original private 162-root receipts and 99-registration audit.patch
 remain historical snapshots. Independent delta review is tracked separately in
 `build/factory-null-owner-delta-review.md`; main read it completely: no blocking
 finding, all seven old theorem headers in the two repair files unchanged.
-The required full `lake test` and post-audit have NOT run. Next: after reviewing
-the delta and signing this implementation, obtain sufficient free space, run
-`build/factory-null-gate/full-gate.sh`, then its post-audit inside the verification
-environment. Require the exact whole-file eighteen-line callback delta,
-unchanged three numerical C/four eFMI members and retained four FMU roots.
+Required full gate58422 and post-audit67075 passed implementation `a29d162`, both
+terminal0. Do not restart them. Receipt: `build/factory-null-gate/full-v1/`,
+2,665 frozen tracked inputs, 8,986 approved reports, all 983 selected roots,
+four retained FMU roots. Three matrices passed 75/75 functions (526/650/526
+cells), zero discrepancies/unexpected results. Whole-file comparisons confirm
+exactly eighteen callback guard lines/leaves across three adapters; three
+numerical C and four eFMI Algorithm/C members stayed identical. Main read all
+diffs/matrices/roots and rechecked five archive hashes before ledger updates.
 
-Count proposal remains unadopted/uncompiled. Its reviewed prospective checker
-selects 93 modules/60 roots; 351 preparation and 73 direct dependency-object
-hashes remain intact. These are not complete cached/transitive/toolchain closure.
-Count future root union is 1,019 (60 selection, 24 overlap with factory983).
-Private checking needs a clean tracked tree and adequate disk; no concurrent
-cache copies, artifact generation or deletion is authorized. Its prospective
-gate/checker reviews are in `build/count-condition-adoption-review.md`.
+Count proposal remains unadopted, but its private check is complete and reviewed.
+Original final-v1/session31932 failed at the first import due to namespace-root
+shadowing, not a proof failure. Versioned check-v2.sh uses 1,193 immutable
+factory-object file links, excluding all selected outputs; original inputs and
+the failed receipt remain untouched. Final-v2/session74352 passed 93 freshly
+checked modules plus Audit, all 60 exact approved roots, 1,637 input/94 output
+hashes and mapping checks. There are 28 unsuppressed warnings in 13 logs (25 in
+ten count overlays, three in other files; not claimed all old). Main rechecked
+the receipt and read the complete independent terminal review and separate
+RESULT-final-v2.md. Cached dependency/third-party boundaries remain explicit;
+this is not the owner/full/artifact gate. The production patch is unchanged:
+`5d6762839612a04bd046bee18e6403361cd2369b43eaf36fcc4419da9f5bb58e`.
+See `build/count-condition-adoption/`, its source review, and
+`build/count-condition-checker-v2-review.md`.
 
-Free disk was only 229 MB after owner-v2. Cleanup permission remains unanswered:
-requested official generated-certificate pruning retaining ten most recently
-used entries per kind, after the active gate. Nothing has been deleted. Do not
-start the space-intensive full gate or infer permission from goal continuation.
+Next: after committing these evidence updates, capture the count baseline using
+the reviewed `build/count-condition-gate/baseline.sh`, then apply the reviewed
+20-source production patch and 35-addition audit.patch. Index the two new C
+sources and new C audit leaf before the owner runner freezes tracked inputs.
+Count selection is 60 roots, future full union 1,019 (24 overlap with factory983).
+Require owner success before signing, then full/post checks of the exact five
+guard lines/seven count leaves with numerical/eFMI members unchanged.
+
+The user authorized disk cleanup and made it a standing requirement after every
+major milestone; AGENTS.md and docs/development.md now record it. Initial prune
+removed 107 old generated certificate entries (8,842.52 MiB). After factory full/
+post completion, milestone prune29084 removed five more (522.16 MiB), retaining
+ten most recently used per kind. Free disk afterward: 399 GB (other disk changes
+were outside this cleanup). Source/review logs/receipts and private dependencies
+were preserved; count receipt hashes still verify. Deleted cache objects/input
+snapshots have no trash backup and require their inputs to regenerate.
 No push authorization; no grammar expansion, candidate promotion or standards
 closure. Preserve ignored build evidence across account changes.
 

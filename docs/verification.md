@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Factory callback explicit null guards (owner passed; full gate pending):**
+**Factory callback explicit null guards (full gate passed):**
 The shared factory rejection syntax now compares the logger callback explicitly
 to null before the existing logging flag. Predicate-parametric constructors
 retain logical views for old arbitrary-interface helpers. Actual callers derive
@@ -25,11 +25,16 @@ Owner-v2/session79584 passed 4,338 jobs, 5,326 complete approved reports, all
 164 exact selected roots, 2,665 frozen tracked inputs and four runner hashes.
 Main rechecked the receipt and read the complete independent proposal and
 owner-delta reviews, which found no blocker. All seven old theorem headers in
-the two dependent repair files remain unchanged. The required `lake test` and actual-artifact
-post-audit have NOT run for this repair. Their required union is 983 roots;
-the predicted artifact delta is eighteen callback guard lines/leaves across
-three adapters, with numerical C and eFMI members unchanged. Prediction and
-owner proofs do not establish actual-file equality. Evidence:
+the two dependent repair files remain unchanged.
+
+Required full gate58422 and post-audit67075 passed `a29d162`, both terminal0:
+2,665 frozen tracked inputs, 8,986 complete approved reports, all 983 selected
+roots and four retained FMU roots. Three matrices passed 75/75 functions
+(526/650/526 behavior cells), zero discrepancies/unexpected results. Whole-file
+comparison confirms exactly eighteen callback guard lines/leaves across three
+adapters; three numerical C and four eFMI Algorithm/C members stayed identical.
+Main read all three diffs, matrices and FMU roots and rechecked the five archive
+hashes and frozen inputs before ledger updates. Evidence:
 `build/factory-null-adoption/` and `build/factory-null-gate/`.
 No source admission, standards closure or native callback/ABI claim is added.
 

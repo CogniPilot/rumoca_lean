@@ -1,6 +1,6 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
-Factory callback pointer repair (2026-09-24; owner passed, full pending):
+Factory callback pointer repair (2026-09-24; full gate passed):
 bounded continuation of the Rules 11.11/11.9 work, not grammar expansion.
 The shared logger guard uses explicit null inequality while retaining lazy
 order, flags/messages, complete callback/heap/scan/initialization outcomes and
@@ -10,10 +10,14 @@ Owner-v1/session92721 found two dependent unfolding failures; proof-body-only
 repairs preserve both statements. Owner-v2/session79584 passed 4,338 jobs,
 5,326 approved reports, 164 selected roots, 2,665 tracked/four runner hashes.
 Main rechecked hashes and receipt. There are 35 changed source/proof files and
-100 additive audits in 14 existing leaves. Full/post verification remains
-outstanding: 983 required roots and eighteen predicted callback guard lines
-across three adapters, with numerical/eFMI members required unchanged.
-See `build/factory-null-gate/`; predicted bytes are not artifact evidence.
+100 additive audits in 14 existing leaves. Required full gate58422 and
+post-audit67075 passed `a29d162`, both terminal0: 2,665 tracked inputs,
+8,986 approved reports, all 983 selected roots and four retained FMU roots.
+Three matrices passed 75/75 functions (526/650/526 cells), zero discrepancies
+or unexpected results. Whole-file comparisons confirm eighteen callback guard
+lines/leaves across three adapters, with three numerical C and four eFMI
+Algorithm/C members unchanged. Main read the diffs, matrices and FMU roots and
+rechecked five archive hashes and frozen inputs. See `build/factory-null-gate/`.
 No MLS/FMI/eFMI finding, MISRA guideline or native trust boundary is closed;
 whole-subset review and expansion/promotion blocks remain in force.
 

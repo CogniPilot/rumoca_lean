@@ -191,6 +191,19 @@ stamp records when the certificate was last built or reused.
 
 #### Bounded retention
 
+After each major milestone, finish the verification and post-audit, capture
+the evidence, then inspect free space and `lake run certificate-usage`. As the
+standing development policy, use
+`nix develop .#verification --command lake run prune-certificates 10` to retain
+ten most recently used entries per kind. Check that no live gate or active
+check needs the entries being removed before pruning; defer cleanup if it does.
+Preserve source files, review logs, receipts and private dependency caches
+needed by ongoing work. Do not clear `build/` or `.lake/` wholesale. Report
+the removed cache count/bytes and remaining free space. Pruned objects and
+input snapshots are deleted, not moved to trash; rebuilding requires their
+source inputs. This housekeeping is separate from verification and does not
+change its required contracts or evidence.
+
 The root coordinating `lakefile.lean` is part of every certificate's trace, so
 any edit to an input, a checker import, or the root Lake file produces a new
 trace-hash directory and never removes the superseded one. Without bounds the

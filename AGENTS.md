@@ -36,6 +36,14 @@ Grow the small compiler core one formally checked slice at a time.
   check, importer run or green CI alone does not establish conformance.
 - The required gate is `nix develop .#verification --command lake test`.
   `lake build audit` alone does not establish the C contract.
+- After each major milestone, clean up generated disk usage once verification
+  and evidence capture are complete. Check free space and certificate usage;
+  retain ten most recently used certificates per kind with
+  `nix develop .#verification --command lake run prune-certificates 10`.
+  Do not prune during a live gate or remove inputs needed by active checks.
+  Preserve source, review logs, receipts and private dependency caches still
+  needed by ongoing work. Never clear `build/` or `.lake/` wholesale. Report
+  what was removed and remaining free space.
 - Never introduce `sorry`, `admit`, new axioms, or native-reduction proof axioms.
   Never weaken the contract or axiom audit to make a check pass.
 - Prefer formal proofs over unit tests. Prove compiler properties universally
