@@ -1,5 +1,18 @@
 # Exact verification contract
 
+**Candidate tensor source/Startup byte pair (checked scratch, not promotion):**
+`build/galec-tensor-contract-draft/` now has a combined frozen scratch receipt
+for original three-method source semantics, finite primal/AD correspondence,
+the same candidate rendered C table, and constructed source/public Startup
+execution at the same observed final heap. Final-v1/session71516 passed all
+61 roots, four empty implementation logs, seven local/60 selected input hashes,
+ten retained upstream manifests before/after and five output hashes. Independent
+review found no substantive finding; main separately reviewed the worker's
+Target implementation. Only Startup is source/public composed in this bundle.
+Supplied-string renderer equality is not independent emitted-file evidence.
+Production parser/emitter/contracts remain unchanged; the required production
+gate remains the `bac8f61` result below, not this scratch receipt.
+
 **Whole-block preparation and whole-state method handoff (full gate passed):**
 Core now owns `Elaboration.Block.{Headers,Preparation}`,
 `Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface

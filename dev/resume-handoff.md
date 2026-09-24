@@ -1,5 +1,38 @@
 # Resume handoff — 2026-09-23 UTC
 
+## Active resumption after latest wrap-up
+
+The user explicitly resumed the goal with more tokens. Work is active again.
+The frozen tensor-candidate receipt formerly listed as missing is complete:
+`build/galec-tensor-contract-draft/final-v1.exit` = 0, session71516; 61 roots,
+four empty logs, seven local/60 selected input hashes, ten upstream manifests
+checked before/after and five output hashes. Read its new README for scope.
+No production implementation changed. The detailed previous wrap-up remains
+useful history, but its pause and immediate receipt-next-action are superseded.
+
+New next-stage scratch is in progress:
+
+- `build/galec-method-table-draft/`: reusable numerical-extension RHS/Jacobian/
+  DoStep/public proofs on the exact repaired candidate table. `candidate_from_rhs`
+  needs only existing finite input storage and original finite primal execution;
+  it derives AD Adds and retains the full owned Outcome and exact public behavior.
+  V1/session72200 passed 11 roots and three empty logs. Main read all three
+  implementations and wrote `independent-review.md`, no substantive finding.
+- `build/galec-recalibrate-table-draft/`: table-parametric Recalibrate plus
+  original-source composition with all four logical field observations.
+  `final-combined-v1.exit` = 0, session90313; 17 roots, two empty logs,
+  seven local/76 selected inputs/four upstream manifests/four outputs. Independent
+  review is pending. `Handoff.lean` is an additional five-root checked module
+  (session99581), not yet part of that frozen receipt: owned whole-shaped
+  repartition plus represented input preservation establishes full later-method
+  StateView at the actual Startup post-heap, without old output representation.
+
+Current implementation next: compose original parsed DoStep with the new table
+proof, retaining the same source-after and C final heap; combine all three
+methods and physical handoff. Then complete coupled parser/source/C/artifact
+repair. Ordinary expansion and production promotion remain blocked by the
+standards ledger. Scratch success is not actual-file/archive evidence.
+
 ## Latest wrap-up — start here
 
 The user requested another wrap-up and handoff. Development is stopped; resume
