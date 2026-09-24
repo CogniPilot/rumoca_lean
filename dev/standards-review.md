@@ -5,8 +5,14 @@ checked explicit-code constructors and 11 universal graph/reference proofs.
 Existing trees/17 old proofs and artifact predicates are preserved. The compiler
 checker only unfolds the extracted body. Owner session38903 passed 3,502 jobs,
 718 unchanged-whitelist reports and 13 new roots; independent adoption review
-read by main found no blocking issue. Required full gate is pending. This does
-not promote the candidate, expand the subset or close any normative finding.
+read by main found no blocking issue. Required full gate session46842 and
+post-audit session22719 passed `6b7f9e9`, both terminal0: 2,665 frozen tracked
+inputs, 8,805 unchanged-whitelist reports, all 659 selected roots and four
+retained FMU roots. Three matrices passed 75/75 functions (526/650/526 cells),
+zero discrepancies/unexpected results; old Algorithm/C members stayed identical.
+The reviewed runner hashes and exact 646+13 root union were also rechecked.
+Evidence prefix `build/code-manifest-`. This does not promote the candidate,
+expand the subset or close any normative finding.
 
 The current artifacts are **not ready for a full standards-compliance claim**.
 This review reproduced two source-FMU integration failures, found an omitted

@@ -2,6 +2,19 @@
 
 ## Latest owned increment — full gate passed
 
+The newest full-gated implementation is `6b7f9e9`: explicit-code manifest
+constructors and universal metadata/checksum proofs in the existing EFMI owner,
+with only a constructor-unfold addition in the existing actual-file checker.
+Full gate session46842 and post-audit session22719 both finished with exit0.
+Evidence prefix `build/code-manifest-`: 2,665 tracked inputs, 8,805 complete
+unchanged-whitelist reports, all 659 selected roots and four retained FMU roots.
+All three FMI matrices passed 75/75 functions (526/650/526 cells), zero
+discrepancies/unexpected results. Old scalar/tensor Algorithm/C members remained
+byte-identical. Main rechecked all six reviewed runner/inventory/validator hashes
+and the exact 646+13 root union. Do not restart these completed runs.
+This is not candidate promotion or standards closure. The prior owned increment
+and its historical gate follow; current candidate/repair work is below.
+
 The reviewed reusable table-parametric mechanisms are now in existing EFMI
 owners: `TensorPublicRHS`, `TensorPublicJacobian`, `TensorDoStep`,
 `TensorMethodEntry`, and `TensorStartup`, with matching audit leaves. Old APIs
@@ -148,10 +161,22 @@ Implementation session57530 passed 2,293 jobs; owner session38903 passed 3,502
 jobs, 718 approved reports, all 13 new roots and four frozen hashes. Main read
 the complete independent adoption review: all 17 old proof declarations and
 old document trees are preserved; the compiler change only unfolds the new
-constructor. Required full gate is pending, not covered by the older gate.
-Evidence prefix `build/code-manifest-`; inspect the live checkpoint/handles
-before launching any build. The full/post runners require 659 selected roots
-(646 retained + 13 new), existing FMU roots and unchanged Algorithm/C members.
+constructor. The required full gate and post-audit have now passed as recorded
+at the top; no full-gate process remains live. These receipts describe the
+frozen `6b7f9e9` snapshot; subsequent documentation changes are expected.
+
+Recovered `build/pointer-guard-recovery/` pure null-guard proofs also passed
+check-v2/session60181: exactly five approved roots, three local/ten selected
+source/object hashes and two output hashes. Main read the complete independent
+review, no blocking finding. Failure, lazy disjunction, exact optional next
+state and positive exact-fuel runs are preserved. Conditional pointer typing
+still applies to every operand, even skipped ones; `void *` must denote the
+pointer type. These are legacy pure-machine proofs, not ordinary-call/context
+execution, native behavior or MISRA closure. Lift them to the canonical context
+before considering any emitter replacement; production pointer guards remain
+unchanged. The pending user choice about existing-profile tensor promotion has
+not been answered; retain the ledger's promotion restriction.
+
 Then continue
 the coupled parser/source/C integration, native/lifecycle obligations and
 standards closure. Check the ignored live checkpoint before changing inputs.

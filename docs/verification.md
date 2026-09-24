@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Owned explicit-code manifest constructors (owner checks passed; full gate pending):**
+**Owned explicit-code manifest constructors (full gate passed):**
 The existing TensorManifest owner now has `productionWithCode` and
 `prepareWithCode`, with 11 migrated universal document/checksum/reference proofs.
 Old production/prepare outputs are exact specializations; all 17 preexisting
@@ -10,9 +10,16 @@ grammar, emitted code, source admission or whitelist changes, and no scratch
 imports. Implementation check passed 2,293 jobs; owner session38903 passed
 3,502 jobs, 718 complete unchanged-whitelist reports, all 13 new roots and four
 frozen source/audit hashes. Main read the complete independent adoption review,
-no blocking finding. Evidence prefix: `build/code-manifest-`. The required
-`lake test` gate for this extraction is pending; the earlier gate below does
-not establish this changed checker's actual-artifact behavior.
+no blocking finding. Evidence prefix: `build/code-manifest-`. Required
+`nix develop .#verification --command lake test` session46842 and post-audit
+session22719 passed `6b7f9e9`, both terminal0: 2,665 frozen tracked inputs,
+8,805 complete unchanged-whitelist reports, all 659 selected roots (646 retained
+and 13 new), and four retained actual FMU roots. Three FMI matrices passed 75/75
+functions (526/650/526 behavior cells), zero discrepancies/unexpected results.
+Scalar/tensor Algorithm and Production C members stayed byte-identical. Main
+also rechecked the six independently reviewed runner/inventory/validator hashes
+and recomputed the exact required-root union. This covers the owned extraction
+and changed actual-file checker, not candidate promotion or standards closure.
 
 **Owned table-parametric method proofs (full gate passed):**
 The existing EFMI owners now contain numerical-extension RHS/Jacobian helpers,
