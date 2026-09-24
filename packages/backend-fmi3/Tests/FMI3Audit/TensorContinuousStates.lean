@@ -5,6 +5,10 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.FMI3.TensorContinuousStates.parameters_bound
 #audit axioms Rumoca.FMI3.TensorContinuousStates.count_pass
+#audit axioms Rumoca.FMI3.TensorContinuousStates.countReject
+#audit axioms Rumoca.FMI3.TensorContinuousStates.derivCountReject
+#audit axioms Rumoca.FMI3.TensorContinuousStates.count_explicit_pass
+#audit axioms Rumoca.FMI3.TensorContinuousStates.derivCount_explicit_pass
 #audit axioms Rumoca.FMI3.TensorContinuousStates.getBody_closed
 #audit axioms Rumoca.FMI3.TensorContinuousStates.setBody_closed
 #audit axioms Rumoca.FMI3.TensorContinuousStates.get_reaches

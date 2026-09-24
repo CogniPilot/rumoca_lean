@@ -260,9 +260,9 @@ theorem deriv_reaches (shape : Tensor.Shape) (rates : List Rumoca.ConstantProfil
     rw [show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
     exact TensorFloat64.run_one (TensorFloat64.reject_false (derivGuardEnv m buffer count) H
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n shape.volume),
-        Runtime.negate (Runtime.v "derivatives")]) "Invalid continuous state count or pointer"
+        Runtime.eqv (Runtime.v "derivatives") Expr.nullPointer]) "Invalid continuous state count or pointer"
       (.eval (Runtime.call "rumoca_constant_rhs" entryArgs) :: derivCopyTail shape)
-      (TensorContinuousStates.derivCount_pass H m buffer count shape.volume matched))
+      (TensorContinuousStates.derivCount_explicit_pass H m buffer count shape.volume matched))
   obtain ⟨types0, entered⟩ := CCalls.Events.body_prefix_reaches program (derivFunction shape)
     (DerivativeCalls.values (some m) (some buffer) count) (derivParameters (some m) (some buffer) count)
     (derivGuardEnv m buffer count) H H

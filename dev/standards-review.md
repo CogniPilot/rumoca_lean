@@ -1,5 +1,24 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Tensor/constant state-array repair (2026-09-24; owner passed, artifacts pending):
+three shared state/derivative/nominal constructors replace only pointer negation
+with explicit null equality. This bounded Rules 11.11/11.9 repair retains count
+order, matched-zero-volume non-null policy, all 70 old theorem headers and full
+public/artifact/heap/frame/numerical/failure contracts. Four explicit helpers
+derive null typing locally; old logical helpers remain without stronger premises.
+No grammar/admission, solver, lifecycle or normative policy expansion.
+
+Owner-v1/session41170 passed 4,338 jobs, 5,178 approved reports, 31 exact roots,
+2,665 frozen tracked inputs and four runner hashes. Five source/proof files and
+three existing audit leaves changed; seven direct audits retain all prior roots.
+Main checked the receipt and complete independent review. D1's prose-contaminated
+inventory was corrected to 70 and independently verified. Baseline78901 captured
+the completed prior Float64 artifacts. Full/post remain pending with 748 roots,
+eight lines/eight pointer leaves across tensor/constant adapters and unchanged
+other adapter/numerical/eFMI members. Evidence: `build/tensor-array-null-gate/`.
+No normative finding is closed; existing MLS/FMI/eFMI mappings and expansion/
+promotion blocks remain.
+
 Tensor/constant Float64 repair (2026-09-24; full gate passed):
 the shared `basicReject` now uses explicit null equality for its two pointer
 leaves. This bounded Rules 11.11/11.9 repair preserves count-equals-one, lazy

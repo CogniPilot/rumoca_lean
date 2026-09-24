@@ -1,5 +1,38 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current tensor/constant state-array repair — owner passed, full gate pending
+
+Applied reviewed array production.patch plus audit.patch after signed Float64
+evidence commit `df5c343` and baseline78901 success. All five source files match
+reviewed overlays; three existing audit leaves add seven direct roots. All 70
+old theorem headers remain; four explicit helpers derive existing null typing
+locally. Old logical count-pass helpers remain. Count-first order, zero-volume
+non-null policy and full numerical/heap/frame/failure/public/artifact contracts
+are unchanged. No source-admission, evaluator or whitelist changes.
+
+Owner-v1/session41170 finished0: 4,338 jobs, 5,178 complete approved reports,
+all 31 exact roots, 2,665 frozen tracked inputs and four runner hashes. Main
+rechecked hashes/roots and read the full independent review. No source repair
+was needed. Private final-v1's 13 modules/31 roots, 24 selected-input/14 output
+hashes and 22 warnings are preparatory evidence over reused caches, not a full
+import closure. D1's prose-contaminated inventory was corrected to 70 and
+independently verified, including the missing deriv_copy_delivers entry.
+
+Next after signed clean implementation commit: run in verification environment
+`build/tensor-array-null-gate/full-gate.sh`, then post-audit.sh only after terminal0.
+Neither has passed this repair yet. Selected union748 = retained717 +31 disjoint
+names. Whole-file expectation: eight guard lines/eight pointer leaves across
+TensorSquare/ConstantRates, unchanged Integrator, three model C files and four
+eFMI Algorithm/C members. Baseline-v1 is complete; do not recreate it. Consult
+the ignored live checkpoint before starting: later work may have launched a run.
+
+Aristotle/Astra is preparing a READ-ONLY debug-category null-guard migration map
+in `build/debug-null-migration-map.md`, no implementation/overlay/builds. The
+remaining arbitrary-interface helper domains require explicit analysis before
+changing actual debug code. No new debug repair is adopted. Broader standards/
+native/essential-type findings remain open, candidate promotion unapproved, and
+no push authorized.
+
 ## Current tensor/constant Float64 repair — full gate passed
 
 Applied reviewed tensor-float64-null production.patch plus audit.patch after
@@ -28,7 +61,7 @@ exactly four guard lines/eight pointer leaves across TensorSquare/ConstantRates;
 Integrator, three numerical C and four eFMI Algorithm/C members stayed identical.
 Main read both diffs and matrices and rechecked the five archive hashes.
 
-Next reviewed repair: `build/tensor-array-null-adoption/production.patch`, hash
+Subsequently adopted repair (current status above): `build/tensor-array-null-adoption/production.patch`, hash
 `ab5afa2e2e3653936b6d170e7098dda745fc00b9338ae485603f26ba5f6a82e6`. Five files
 change three guard leaves/add four explicit helpers, retaining all 70 old theorem
 headers, old logical count-pass lemmas, full contracts and zero-volume non-null
@@ -37,16 +70,13 @@ input/14 output hashes, with 22 warnings at unchanged sites. Copied dependencies
 outside the selection are not a complete import closure. Main read the complete
 patch/review/README/inventory and checked hashes/roots. D1's prose-contaminated
 inventory was corrected to 70 (38/0/5/15/12); the missing real deriv_copy_delivers
-entry was restored and independently checked. Both agents are closed.
+entry was restored and independently checked. Those review tasks are complete.
 
-All prospective `build/tensor-array-null-gate/` runners and audit.patch are
-independently reviewed, unexecuted. First capture baseline.sh after this completed
-gate/post, BEFORE new artifacts. Then adopt production.patch plus seven additive
-audits in three existing leaves, run owner.sh with a fresh receipt, sign the
-implementation, and run full/post. Expected union748=717+31 disjoint roots;
-eight guard lines/eight leaves across TensorSquare/ConstantRates, unchanged
-Integrator/numerical/eFMI members. No array repair adopted yet. Check the ignored
-live checkpoint before acting; later continuations may have advanced this.
+All `build/tensor-array-null-gate/` runners and audit.patch are independently
+reviewed. Baseline78901 captured these artifacts before array repair adoption;
+the current section above records owner success and pending full/post work.
+Check the ignored live checkpoint before acting; later continuations may have
+advanced this.
 Broader standards/native/essential-type findings remain open, tensor candidate
 promotion unapproved, and no push authorized.
 

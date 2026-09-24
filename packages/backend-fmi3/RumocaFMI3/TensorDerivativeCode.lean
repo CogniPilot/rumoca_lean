@@ -17,7 +17,7 @@ def derivGuardEnv (p buffer : Address) (count : UInt64) : Locals :=
 
 def derivCountReject (volume : Nat) : Stmt :=
   Runtime.reject (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
-    Runtime.negate (Runtime.v "derivatives")]) "Invalid continuous state count or pointer"
+    Runtime.eqv (Runtime.v "derivatives") Expr.nullPointer]) "Invalid continuous state count or pointer"
 
 def derivEntryArgs : List Expr :=
   [Runtime.region stateName, Runtime.region inputName, Runtime.region derivativeName,

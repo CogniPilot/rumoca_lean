@@ -4,6 +4,8 @@ import ProofAudit.Audit
 -- Axiom audit for the roots defined in RumocaFMI3.TensorNominals.
 
 #audit axioms Rumoca.FMI3.TensorNominals.oneBody_closed
+#audit axioms Rumoca.FMI3.TensorNominals.countReject
+#audit axioms Rumoca.FMI3.TensorNominals.count_explicit_pass
 #audit axioms Rumoca.FMI3.TensorNominals.oneCopy_step
 #audit axioms Rumoca.FMI3.TensorNominals.oneCopy_reaches
 #audit axioms Rumoca.FMI3.TensorNominals.body_closed

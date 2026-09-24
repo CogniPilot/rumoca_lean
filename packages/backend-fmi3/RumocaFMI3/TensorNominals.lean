@@ -114,7 +114,7 @@ def guardEnv (p buffer : Address) (count : UInt64) : Locals :=
 buffer must be non-null. -/
 def countReject (volume : Nat) : Stmt :=
   Runtime.reject (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
-    Runtime.negate (Runtime.v "nominals")]) "Invalid nominal count or pointer"
+    Runtime.eqv (Runtime.v "nominals") Expr.nullPointer]) "Invalid nominal count or pointer"
 
 /-- The statements after the request check: stage the buffer pointer and count,
 run the fill loop, and return. -/
@@ -164,6 +164,32 @@ theorem count_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume :
   simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, matched]
 
+/-- The actual guard's null type comes from the existing fixed FMI interface. -/
+theorem count_explicit_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume : Nat)
+    (matched : count.toNat = volume) :
+    CBody.eval (guardEnv p buffer count) heap
+      (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
+        Runtime.eqv (Runtime.v "nominals") Expr.nullPointer]) = some (boolean false) := by
+  have tail := CPointerConditions.explicit_missing_eq (guardEnv p buffer count) heap
+    ["nominals"] (fun _ => some buffer)
+    (by
+      intro name member
+      simp only [List.mem_singleton] at member
+      subst name
+      simp [guardEnv, parameters, CBody.bind, resolve]) rfl
+  change CBody.eval (guardEnv p buffer count) heap
+    (Runtime.any [Runtime.eqv (Runtime.v "nominals") Expr.nullPointer]) =
+    CBody.eval (guardEnv p buffer count) heap
+      (Runtime.any [Runtime.negate (Runtime.v "nominals")]) at tail
+  change ((CBody.eval (guardEnv p buffer count) heap
+    (Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume))).bind
+    fun a => a.truth.bind fun b => if b then some (boolean true) else
+      (CBody.eval (guardEnv p buffer count) heap
+        (Runtime.any [Runtime.eqv (Runtime.v "nominals") Expr.nullPointer])).bind
+        fun c => c.truth.bind fun d => some (boolean d)) = _
+  rw [tail]
+  exact count_pass heap p buffer count volume matched
+
 /-- The staged environment at the fill loop. -/
 def stagedEnv (buffer : Address) (p : Address) (shape : Tensor.Shape) (count : UInt64) : Locals :=
   bind (bind (guardEnv p buffer count) "dst" (.pointer (some buffer))) "expected" (.integer shape.volume)
@@ -196,7 +222,7 @@ theorem nominal_reaches (shape : Tensor.Shape) (heap : Heap) (p buffer : Address
     rw [body, show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
     exact run_one (reject_false (guardEnv p buffer count) heap _
       "Invalid nominal count or pointer" (nominalTail shape)
-      (count_pass heap p buffer count _ matched))
+      (count_explicit_pass heap p buffer count _ matched))
   obtain ⟨types0, entered⟩ := CCalls.Events.body_prefix_reaches program (function shape)
     (arguments (some p) (some buffer) count) (parameters (some p) (some buffer) count)
     (guardEnv p buffer count) heap heap (nominalTail shape) stack 4 defined

@@ -1,5 +1,33 @@
 # Exact verification contract
 
+**Tensor/constant state-array explicit null guards (owner passed; full gate pending):**
+The shared state, derivative and nominal guard constructors now compare their
+buffer pointers explicitly to null. Count mismatch remains first, with identical
+lazy OR/final zero, messages and continuations; even matched zero-volume requests
+still require non-null buffers. Five source/proof files retain all 70 old theorem
+headers and full heap/frame/failure/numerical/public/artifact contracts. Four new
+explicit count-pass helpers reuse CPointerConditions with null typing derived
+locally from the existing fixed interface. Both old logical derivative helper
+copies remain; actual tensor admission and constant derivatives use the new
+explicit counterpart. No new public premise, emitter or evaluator is introduced.
+
+Three existing audit leaves add seven direct registrations without removing old
+roots. Owner-v1/session41170 passed 4,338 jobs, 5,178 complete approved reports,
+all 31 selected roots, 2,665 frozen tracked inputs and four runner hashes. Main
+checked hashes/roots and the complete independent review. D1's inventory counted
+prose and omitted one real declaration; corrected inventory70 was independently
+verified against every old header. The earlier private 13-module/31-root run
+(22 warnings at old sites; 24 selected-input/14 output hashes) reused provisional
+dependency caches and is not a complete import closure. All five adopted source
+files match the reviewed overlays. No proof or whitelist weakening.
+
+Baseline78901 captures the preceding completed Float64 gate before adoption.
+Full/post remain pending: 748 selected roots (717 retained plus 31 disjoint),
+exactly eight guard lines/eight pointer leaves across TensorSquare/ConstantRates,
+unchanged Integrator, three numerical C and four eFMI Algorithm/C members.
+Evidence: `build/tensor-array-null-gate/`, `build/tensor-array-null-adoption/`
+and its independent review. No source-admission or standards finding is closed.
+
 **Tensor/constant Float64 explicit null guards (full gate passed):**
 `TensorFloat64.basicReject`, shared by both profiles' getters/setters, now uses
 explicit equality for its two pointer leaves. The reference-count-equals-one

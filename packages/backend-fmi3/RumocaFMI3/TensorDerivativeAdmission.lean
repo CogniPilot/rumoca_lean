@@ -46,6 +46,32 @@ theorem count_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume :
     CBody.eval, CBody.evalWith, CBody.resolve, derivGuardEnv, derivParameters, CBody.bind,
     matched, CBody.comparison, Value.truth, boolean]
 
+/-- The actual guard's null type comes from the existing fixed FMI interface. -/
+theorem count_explicit_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume : Nat)
+    (matched : count.toNat = volume) :
+    CBody.eval (derivGuardEnv p buffer count) heap
+      (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
+        Runtime.eqv (Runtime.v "derivatives") Expr.nullPointer]) = some (.integer 0) := by
+  have tail := CPointerConditions.explicit_missing_eq (derivGuardEnv p buffer count) heap
+    ["derivatives"] (fun _ => some buffer)
+    (by
+      intro name member
+      simp only [List.mem_singleton] at member
+      subst name
+      simp [derivGuardEnv, derivParameters, CBody.bind, resolve]) rfl
+  change CBody.eval (derivGuardEnv p buffer count) heap
+    (Runtime.any [Runtime.eqv (Runtime.v "derivatives") Expr.nullPointer]) =
+    CBody.eval (derivGuardEnv p buffer count) heap
+      (Runtime.any [Runtime.negate (Runtime.v "derivatives")]) at tail
+  change ((CBody.eval (derivGuardEnv p buffer count) heap
+    (Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume))).bind
+    fun a => a.truth.bind fun b => if b then some (boolean true) else
+      (CBody.eval (derivGuardEnv p buffer count) heap
+        (Runtime.any [Runtime.eqv (Runtime.v "derivatives") Expr.nullPointer])).bind
+        fun c => c.truth.bind fun d => some (boolean d)) = _
+  rw [tail]
+  exact count_pass heap p buffer count volume matched
+
 theorem entry (program : CCalls.Events.Program E) (shape : Tensor.Shape) (hasOutput : Bool)
     (heap : Heap) (p buffer : Address) (count : UInt64) (kind : Kind) (mode : Mode)
     (stack : CCalls.Typed.Continuation) (matched : count.toNat = shape.volume)
@@ -73,8 +99,8 @@ theorem entry (program : CCalls.Events.Program E) (shape : Tensor.Shape) (hasOut
     rw [show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
     exact TensorFloat64.run_one (TensorFloat64.reject_false (derivGuardEnv p buffer count) heap
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n shape.volume),
-        Runtime.negate (Runtime.v "derivatives")]) "Invalid continuous state count or pointer"
-      rest (count_pass heap p buffer count shape.volume matched))
+        Runtime.eqv (Runtime.v "derivatives") Expr.nullPointer]) "Invalid continuous state count or pointer"
+      rest (count_explicit_pass heap p buffer count shape.volume matched))
   exact CCalls.Events.body_prefix_reaches program (derivCheckedFunction shape hasOutput)
     (DerivativeCalls.values (some p) (some buffer) count) (derivParameters (some p) (some buffer) count)
     (derivGuardEnv p buffer count) heap heap rest stack 4 defined
