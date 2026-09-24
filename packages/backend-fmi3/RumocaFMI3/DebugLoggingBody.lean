@@ -30,20 +30,40 @@ structure Library (program : CCalls.Events.Program E) : Prop where
   ok : interface.constants "fmi3OK" = some (.integer 0)
   status : CCalls.returnCast "fmi3Status" (.integer 0) = some (.integer 0)
 
+theorem prepare_code_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
+    (program : CCalls.Events.Program E) (library : Library program)
+    (env : Locals) (types : Types) (heap : Heap) (p : Address) (pointer : Option Address)
+    (n : Nat) (enabled : Bool) (scope : Scope env p pointer n enabled)
+    (readable : n = 0 ∨ pointer.isSome = true) :
+    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+      (.body (.running (codeWith pointerMissing) env types heap) "fmi3Status" .done)
+      (.body (.running ((validationWith pointerMissing) :: finish) (working env 0) (workingTypes types) heap) "fmi3Status" .done) := by
+  have first := missing_step_with pointerMissing law env types heap pointer n
+    (.declare "int" "difference" (.nat 0) :: .declare "size_t" "k" (.nat 0) :: (validationWith pointerMissing) :: finish)
+    scope.count scope.array
+  rw [if_pos readable] at first
+  exact .next (CCalls.Events.body_step program first "fmi3Status" .done)
+    (declarations_reaches program env types heap ((validationWith pointerMissing) :: finish) "fmi3Status" .done
+      scope.differenceFresh scope.counterFresh library.integer library.size)
+
 theorem prepare_code (program : CCalls.Events.Program E) (library : Library program)
+    (env : Locals) (types : Types) (heap : Heap) (p : Address) (pointer : Option Address)
+    (n : Nat) (enabled : Bool) (scope : Scope env p pointer n enabled)
+    (readable : n = 0 ∨ pointer.isSome = true) :
+    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+      (.body (.running logicalCode env types heap) "fmi3Status" .done)
+      (.body (.running (logicalValidation :: finish) (working env 0) (workingTypes types) heap) "fmi3Status" .done) := by
+  exact prepare_code_with .not logical_missing_law program library env types heap p pointer n enabled scope readable
+
+theorem prepare_code_explicit (nullType : interface.types "void *" = some .pointer)
+    (program : CCalls.Events.Program E) (library : Library program)
     (env : Locals) (types : Types) (heap : Heap) (p : Address) (pointer : Option Address)
     (n : Nat) (enabled : Bool) (scope : Scope env p pointer n enabled)
     (readable : n = 0 ∨ pointer.isSome = true) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.body (.running code env types heap) "fmi3Status" .done)
       (.body (.running (validation :: finish) (working env 0) (workingTypes types) heap) "fmi3Status" .done) := by
-  have first := missing_step env types heap pointer n
-    (.declare "int" "difference" (.nat 0) :: .declare "size_t" "k" (.nat 0) :: validation :: finish)
-    scope.count scope.array
-  rw [if_pos readable] at first
-  exact .next (CCalls.Events.body_step program first "fmi3Status" .done)
-    (declarations_reaches program env types heap (validation :: finish) "fmi3Status" .done
-      scope.differenceFresh scope.counterFresh library.integer library.size)
+  exact prepare_code_with explicitMissing (explicit_missing_law nullType) program library env types heap p pointer n enabled scope readable
 
 omit interface in
 theorem Entries.readable (entries : Entries heap pointer n selected bytes) :
@@ -53,7 +73,8 @@ theorem Entries.readable (entries : Entries heap pointer n selected bytes) :
   · obtain ⟨base, same, _, _⟩ := entries 0 (by omega)
     exact Or.inr (same ▸ rfl)
 
-theorem code_success_behaviors (program : CCalls.Events.Program E) (library : Library program)
+theorem code_success_behaviors_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
+    (program : CCalls.Events.Program E) (library : Library program)
     (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
     (n : Nat) (enabled : Bool) (old : Option Value) (scope : Scope env p pointer n enabled)
     (bounded : n < 2^64) (selected : Nat → Option Address) (bytes : Nat → List UInt8)
@@ -64,11 +85,11 @@ theorem code_success_behaviors (program : CCalls.Events.Program E) (library : Li
     (valid : ∀ i < n, Accepted (selected i) (bytes i) expectedBytes)
     (storage : heap (p.member "logging") = some ⟨.boolean, true, old⟩) (behavior) :
     (CCalls.Events.machine program).Behaves
-      (.body (.running code env types heap) "fmi3Status" .done) behavior ↔
+      (.body (.running (codeWith pointerMissing) env types heap) "fmi3Status" .done) behavior ↔
     behavior = .terminates [] ⟨.integer 0, written heap p enabled⟩ := by
   apply (CCalls.Events.internal_prefix_behaviors program
-    (prepare_code program library env types heap p pointer n enabled scope entries.readable) behavior).trans
-  apply (validation_valid_equivalence program (CBody.bind env "difference" (.integer 0))
+    (prepare_code_with pointerMissing law program library env types heap p pointer n enabled scope entries.readable) behavior).trans
+  apply (validation_valid_equivalence_with pointerMissing law program (CBody.bind env "difference" (.integer 0))
     (workingTypes types) heap pointer n selected bytes expected expectedBytes finish "fmi3Status" .done
     bounded (by simp [workingTypes, bindType])
     (by simp [CBody.bind, scope.count]) (by simp [CBody.bind, scope.array])
@@ -83,6 +104,63 @@ theorem code_success_behaviors (program : CCalls.Events.Program E) (library : Li
       library.status storage)
     (CCalls.Events.return_forced program (.integer 0) (written heap p enabled))).behaviors behavior
 
+theorem code_success_behaviors (program : CCalls.Events.Program E) (library : Library program)
+    (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
+    (n : Nat) (enabled : Bool) (old : Option Value) (scope : Scope env p pointer n enabled)
+    (bounded : n < 2^64) (selected : Nat → Option Address) (bytes : Nat → List UInt8)
+    (expectedBytes : List UInt8)
+    (literal : interface.literals "logStatus" = some expected)
+    (expectedStored : Contents heap expected expectedBytes)
+    (entries : Entries heap pointer n selected bytes)
+    (valid : ∀ i < n, Accepted (selected i) (bytes i) expectedBytes)
+    (storage : heap (p.member "logging") = some ⟨.boolean, true, old⟩) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running logicalCode env types heap) "fmi3Status" .done) behavior ↔
+    behavior = .terminates [] ⟨.integer 0, written heap p enabled⟩ := by
+  exact code_success_behaviors_with .not logical_missing_law program library env types heap p expected pointer n enabled old scope bounded selected bytes expectedBytes literal expectedStored entries valid storage behavior
+
+theorem code_success_behaviors_explicit (nullType : interface.types "void *" = some .pointer)
+    (program : CCalls.Events.Program E) (library : Library program)
+    (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
+    (n : Nat) (enabled : Bool) (old : Option Value) (scope : Scope env p pointer n enabled)
+    (bounded : n < 2^64) (selected : Nat → Option Address) (bytes : Nat → List UInt8)
+    (expectedBytes : List UInt8)
+    (literal : interface.literals "logStatus" = some expected)
+    (expectedStored : Contents heap expected expectedBytes)
+    (entries : Entries heap pointer n selected bytes)
+    (valid : ∀ i < n, Accepted (selected i) (bytes i) expectedBytes)
+    (storage : heap (p.member "logging") = some ⟨.boolean, true, old⟩) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running code env types heap) "fmi3Status" .done) behavior ↔
+    behavior = .terminates [] ⟨.integer 0, written heap p enabled⟩ := by
+  exact code_success_behaviors_with explicitMissing (explicit_missing_law nullType) program library env types heap p expected pointer n enabled old scope bounded selected bytes expectedBytes literal expectedStored entries valid storage behavior
+
+theorem code_unknown_behaviors_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
+    (program : CCalls.Events.Program E) (library : Library program)
+    (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
+    (n bad : Nat) (enabled : Bool) (scope : Scope env p pointer n enabled)
+    (inside : bad < n) (bounded : n < 2^64)
+    (selected : Nat → Option Address) (bytes : Nat → List UInt8) (expectedBytes : List UInt8)
+    (literal : interface.literals "logStatus" = some expected)
+    (expectedStored : Contents heap expected expectedBytes)
+    (entries : Entries heap pointer n selected bytes)
+    (prior : ∀ i < bad, Accepted (selected i) (bytes i) expectedBytes)
+    (invalid : ¬ Accepted (selected bad) (bytes bad) expectedBytes)
+    (outcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (failed : FailureContract program heap p "Unknown log category" outcomes) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running (codeWith pointerMissing) env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
+  apply (CCalls.Events.internal_prefix_behaviors program
+    (prepare_code_with pointerMissing law program library env types heap p pointer n enabled scope entries.readable) behavior).trans
+  exact validation_rejected_behaviors_with pointerMissing law program (CBody.bind env "difference" (.integer 0))
+    (workingTypes types) heap pointer n bad selected bytes p expected expectedBytes finish inside
+    bounded (by simp [workingTypes, bindType])
+    (by simp [CBody.bind, scope.count]) (by simp [CBody.bind, scope.array])
+    (by simp [CBody.bind]) (by simp [workingTypes, bindType])
+    (by simp [CBody.bind, scope.compareName]) library.compareName library.pointer library.integer
+    library.compareBinding literal expectedStored entries prior invalid
+    (by simp [CBody.bind, scope.failureName]) (by simp [resolve, CBody.bind, scope.handle]) outcomes failed behavior
+
 theorem code_unknown_behaviors (program : CCalls.Events.Program E) (library : Library program)
     (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
     (n bad : Nat) (enabled : Bool) (scope : Scope env p pointer n enabled)
@@ -96,17 +174,41 @@ theorem code_unknown_behaviors (program : CCalls.Events.Program E) (library : Li
     (outcomes : Transition.Events.Observation E CBody.Result → Prop)
     (failed : FailureContract program heap p "Unknown log category" outcomes) (behavior) :
     (CCalls.Events.machine program).Behaves
+      (.body (.running logicalCode env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
+  exact code_unknown_behaviors_with .not logical_missing_law program library env types heap p expected pointer n bad enabled scope inside bounded selected bytes expectedBytes literal expectedStored entries prior invalid outcomes failed behavior
+
+theorem code_unknown_behaviors_explicit (nullType : interface.types "void *" = some .pointer)
+    (program : CCalls.Events.Program E) (library : Library program)
+    (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
+    (n bad : Nat) (enabled : Bool) (scope : Scope env p pointer n enabled)
+    (inside : bad < n) (bounded : n < 2^64)
+    (selected : Nat → Option Address) (bytes : Nat → List UInt8) (expectedBytes : List UInt8)
+    (literal : interface.literals "logStatus" = some expected)
+    (expectedStored : Contents heap expected expectedBytes)
+    (entries : Entries heap pointer n selected bytes)
+    (prior : ∀ i < bad, Accepted (selected i) (bytes i) expectedBytes)
+    (invalid : ¬ Accepted (selected bad) (bytes bad) expectedBytes)
+    (outcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (failed : FailureContract program heap p "Unknown log category" outcomes) (behavior) :
+    (CCalls.Events.machine program).Behaves
       (.body (.running code env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
+  exact code_unknown_behaviors_with explicitMissing (explicit_missing_law nullType) program library env types heap p expected pointer n bad enabled scope inside bounded selected bytes expectedBytes literal expectedStored entries prior invalid outcomes failed behavior
+
+theorem code_missing_behaviors_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
+    (program : CCalls.Events.Program E)
+    (env : Locals) (types : Types) (heap : Heap) (p : Address) (n : Nat)
+    (enabled : Bool) (scope : Scope env p none n enabled) (positive : 0 < n)
+    (outcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (failed : FailureContract program heap p "Missing log categories" outcomes) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running (codeWith pointerMissing) env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
+  have first := missing_step_with pointerMissing law env types heap none n
+    (.declare "int" "difference" (.nat 0) :: .declare "size_t" "k" (.nat 0) :: (validationWith pointerMissing) :: finish)
+    scope.count scope.array
+  rw [if_neg (by simp; omega)] at first
   apply (CCalls.Events.internal_prefix_behaviors program
-    (prepare_code program library env types heap p pointer n enabled scope entries.readable) behavior).trans
-  exact validation_rejected_behaviors program (CBody.bind env "difference" (.integer 0))
-    (workingTypes types) heap pointer n bad selected bytes p expected expectedBytes finish inside
-    bounded (by simp [workingTypes, bindType])
-    (by simp [CBody.bind, scope.count]) (by simp [CBody.bind, scope.array])
-    (by simp [CBody.bind]) (by simp [workingTypes, bindType])
-    (by simp [CBody.bind, scope.compareName]) library.compareName library.pointer library.integer
-    library.compareBinding literal expectedStored entries prior invalid
-    (by simp [CBody.bind, scope.failureName]) (by simp [resolve, CBody.bind, scope.handle]) outcomes failed behavior
+    (.next (CCalls.Events.body_step program first "fmi3Status" .done) (.refl _)) behavior).trans
+  exact failed.body env types _ scope.failureName (by simp [resolve, scope.handle]) behavior
 
 theorem code_missing_behaviors (program : CCalls.Events.Program E)
     (env : Locals) (types : Types) (heap : Heap) (p : Address) (n : Nat)
@@ -114,20 +216,93 @@ theorem code_missing_behaviors (program : CCalls.Events.Program E)
     (outcomes : Transition.Events.Observation E CBody.Result → Prop)
     (failed : FailureContract program heap p "Missing log categories" outcomes) (behavior) :
     (CCalls.Events.machine program).Behaves
+      (.body (.running logicalCode env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
+  exact code_missing_behaviors_with .not logical_missing_law program env types heap p n enabled scope positive outcomes failed behavior
+
+theorem code_missing_behaviors_explicit (nullType : interface.types "void *" = some .pointer)
+    (program : CCalls.Events.Program E)
+    (env : Locals) (types : Types) (heap : Heap) (p : Address) (n : Nat)
+    (enabled : Bool) (scope : Scope env p none n enabled) (positive : 0 < n)
+    (outcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (failed : FailureContract program heap p "Missing log categories" outcomes) (behavior) :
+    (CCalls.Events.machine program).Behaves
       (.body (.running code env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
-  have first := missing_step env types heap none n
-    (.declare "int" "difference" (.nat 0) :: .declare "size_t" "k" (.nat 0) :: validation :: finish)
-    scope.count scope.array
-  rw [if_neg (by simp; omega)] at first
-  apply (CCalls.Events.internal_prefix_behaviors program
-    (.next (CCalls.Events.body_step program first "fmi3Status" .done) (.refl _)) behavior).trans
-  exact failed.body env types _ scope.failureName (by simp [resolve, scope.handle]) behavior
+  exact code_missing_behaviors_with explicitMissing (explicit_missing_law nullType) program env types heap p n enabled scope positive outcomes failed behavior
 
 /-- One statement covers every represented category request. A nonnull caller
 array supplies readable cells and strings; no memory premise is imposed on a
 missing array. The error outcomes are supplied by the proved shared helper,
 and a successful write follows only after the whole selection is accepted. -/
+theorem code_behaviors_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
+    (program : CCalls.Events.Program E) (library : Library program)
+    (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
+    (n : Nat) (enabled : Bool) (old : Option Value) (scope : Scope env p pointer n enabled)
+    (bounded : n < 2^64) (selected : Nat → Option Address) (bytes : Nat → List UInt8)
+    (expectedBytes : List UInt8)
+    (literal : interface.literals "logStatus" = some expected)
+    (expectedStored : Contents heap expected expectedBytes)
+    (caller : pointer.isSome = true → Entries heap pointer n selected bytes)
+    (storage : heap (p.member "logging") = some ⟨.boolean, true, old⟩)
+    (missingOutcomes unknownOutcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (missingContract : FailureContract program heap p "Missing log categories" missingOutcomes)
+    (unknownContract : FailureContract program heap p "Unknown log category" unknownOutcomes)
+    (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running (codeWith pointerMissing) env types heap) "fmi3Status" .done) behavior ↔
+    (if n = 0 ∨ pointer.isSome = true then
+      if ∀ i < n, Accepted (selected i) (bytes i) expectedBytes then
+        behavior = .terminates [] ⟨.integer 0, written heap p enabled⟩
+      else unknownOutcomes behavior
+     else missingOutcomes behavior) := by
+  classical
+  by_cases readable : n = 0 ∨ pointer.isSome = true
+  · rw [if_pos readable]
+    have entries : Entries heap pointer n selected bytes := by
+      rcases readable with zero | somePointer
+      · intro i inside
+        omega
+      · exact caller somePointer
+    rcases category_cases selected bytes expectedBytes n with valid | ⟨bad, inside, invalid, prior⟩
+    · rw [if_pos valid]
+      exact code_success_behaviors_with pointerMissing law program library env types heap p expected pointer n enabled old scope
+        bounded selected bytes expectedBytes literal expectedStored entries valid storage behavior
+    · have notAll : ¬ ∀ i < n, Accepted (selected i) (bytes i) expectedBytes :=
+        fun all => invalid (all bad inside)
+      rw [if_neg notAll]
+      exact code_unknown_behaviors_with pointerMissing law program library env types heap p expected pointer n bad enabled scope
+        inside bounded selected bytes expectedBytes literal expectedStored entries prior invalid
+        unknownOutcomes unknownContract behavior
+  · rw [if_neg readable]
+    have absent : pointer = none := by cases pointer <;> simp_all
+    have positive : 0 < n := by omega
+    subst pointer
+    exact code_missing_behaviors_with pointerMissing law program env types heap p n enabled scope positive
+      missingOutcomes missingContract behavior
+
 theorem code_behaviors (program : CCalls.Events.Program E) (library : Library program)
+    (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
+    (n : Nat) (enabled : Bool) (old : Option Value) (scope : Scope env p pointer n enabled)
+    (bounded : n < 2^64) (selected : Nat → Option Address) (bytes : Nat → List UInt8)
+    (expectedBytes : List UInt8)
+    (literal : interface.literals "logStatus" = some expected)
+    (expectedStored : Contents heap expected expectedBytes)
+    (caller : pointer.isSome = true → Entries heap pointer n selected bytes)
+    (storage : heap (p.member "logging") = some ⟨.boolean, true, old⟩)
+    (missingOutcomes unknownOutcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (missingContract : FailureContract program heap p "Missing log categories" missingOutcomes)
+    (unknownContract : FailureContract program heap p "Unknown log category" unknownOutcomes)
+    (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running logicalCode env types heap) "fmi3Status" .done) behavior ↔
+    (if n = 0 ∨ pointer.isSome = true then
+      if ∀ i < n, Accepted (selected i) (bytes i) expectedBytes then
+        behavior = .terminates [] ⟨.integer 0, written heap p enabled⟩
+      else unknownOutcomes behavior
+     else missingOutcomes behavior) := by
+  exact code_behaviors_with .not logical_missing_law program library env types heap p expected pointer n enabled old scope bounded selected bytes expectedBytes literal expectedStored caller storage missingOutcomes unknownOutcomes missingContract unknownContract behavior
+
+theorem code_behaviors_explicit (nullType : interface.types "void *" = some .pointer)
+    (program : CCalls.Events.Program E) (library : Library program)
     (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (pointer : Option Address)
     (n : Nat) (enabled : Bool) (old : Option Value) (scope : Scope env p pointer n enabled)
     (bounded : n < 2^64) (selected : Nat → Option Address) (bytes : Nat → List UInt8)
@@ -147,30 +322,7 @@ theorem code_behaviors (program : CCalls.Events.Program E) (library : Library pr
         behavior = .terminates [] ⟨.integer 0, written heap p enabled⟩
       else unknownOutcomes behavior
      else missingOutcomes behavior) := by
-  classical
-  by_cases readable : n = 0 ∨ pointer.isSome = true
-  · rw [if_pos readable]
-    have entries : Entries heap pointer n selected bytes := by
-      rcases readable with zero | somePointer
-      · intro i inside
-        omega
-      · exact caller somePointer
-    rcases category_cases selected bytes expectedBytes n with valid | ⟨bad, inside, invalid, prior⟩
-    · rw [if_pos valid]
-      exact code_success_behaviors program library env types heap p expected pointer n enabled old scope
-        bounded selected bytes expectedBytes literal expectedStored entries valid storage behavior
-    · have notAll : ¬ ∀ i < n, Accepted (selected i) (bytes i) expectedBytes :=
-        fun all => invalid (all bad inside)
-      rw [if_neg notAll]
-      exact code_unknown_behaviors program library env types heap p expected pointer n bad enabled scope
-        inside bounded selected bytes expectedBytes literal expectedStored entries prior invalid
-        unknownOutcomes unknownContract behavior
-  · rw [if_neg readable]
-    have absent : pointer = none := by cases pointer <;> simp_all
-    have positive : 0 < n := by omega
-    subst pointer
-    exact code_missing_behaviors program env types heap p n enabled scope positive
-      missingOutcomes missingContract behavior
+  exact code_behaviors_with explicitMissing (explicit_missing_law nullType) program library env types heap p expected pointer n enabled old scope bounded selected bytes expectedBytes literal expectedStored caller storage missingOutcomes unknownOutcomes missingContract unknownContract behavior
 
 end Rumoca.FMI3.DebugLogging
 end

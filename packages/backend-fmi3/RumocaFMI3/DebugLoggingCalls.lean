@@ -34,7 +34,7 @@ theorem call_behaviors (types : EntryTypes) (program : CCalls.Events.Program E)
   obtain ⟨localTypes, entered⟩ := public_prefix types program heap p enabled count pointer kind mode
     defined kindValue modeValue
   exact (CCalls.Events.internal_prefix_behaviors program entered behavior).trans
-    (code_behaviors program library (locals p enabled count pointer) localTypes heap p expected pointer
+    (code_behaviors_explicit types.nullPointer program library (locals p enabled count pointer) localTypes heap p expected pointer
       count.toNat enabled old (public_scope p enabled count pointer) count.toNat_lt_size selected bytes
       expectedBytes literal expectedStored caller storage missingOutcomes unknownOutcomes
       missingContract unknownContract behavior)
@@ -57,7 +57,7 @@ theorem call_success_behaviors (types : EntryTypes) (program : CCalls.Events.Pro
   obtain ⟨localTypes, entered⟩ := public_prefix types program heap p enabled count pointer kind mode
     defined kindValue modeValue
   exact (CCalls.Events.internal_prefix_behaviors program entered behavior).trans
-    (code_success_behaviors program library (locals p enabled count pointer) localTypes heap p expected
+    (code_success_behaviors_explicit types.nullPointer program library (locals p enabled count pointer) localTypes heap p expected
       pointer count.toNat enabled old (public_scope p enabled count pointer) count.toNat_lt_size
       selected bytes expectedBytes literal expectedStored entries valid storage behavior)
 

@@ -66,7 +66,8 @@ theorem logged_failure_contract {E : Type} (context : ErrorContext literals) :
 
 variable [interface : CInterface]
 
-theorem iteration_invalid_behaviors (program : CCalls.Events.Program E)
+theorem iteration_invalid_behaviors_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
+    (program : CCalls.Events.Program E)
     (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (selected : Option Address)
     (bytes expectedBytes : List UInt8) (old : Value) (rest : List Stmt)
     (pointer : interface.types "const char *" = some .pointer)
@@ -85,9 +86,9 @@ theorem iteration_invalid_behaviors (program : CCalls.Events.Program E)
     (failed : FailureContract program heap p "Unknown log category" outcomes)
     (behavior) :
     (CCalls.Events.machine program).Behaves
-      (.body (.running (iteration ++ rest) env types heap) "fmi3Status" .done) behavior ↔
+      (.body (.running ((iterationWith pointerMissing) ++ rest) env types heap) "fmi3Status" .done) behavior ↔
     outcomes behavior := by
-  have first := null_category_step env types heap selected (comparison :: rejectDifference :: rest) loaded
+  have first := null_category_step_with pointerMissing law env types heap selected (comparison :: rejectDifference :: rest) loaded
   apply (CCalls.Events.internal_prefix_behaviors program
     (.next (CCalls.Events.body_step program first "fmi3Status" .done) (.refl _)) behavior).trans
   cases selected with
@@ -112,6 +113,53 @@ theorem iteration_invalid_behaviors (program : CCalls.Events.Program E)
         (by simp [CBody.bind, failureName]) (by simpa [resolve, CBody.bind] using instanceBound)
         observed).trans (failed.body env types rest failureName instanceBound observed).symm
     · exact failed.body env types rest failureName instanceBound behavior
+
+theorem iteration_invalid_behaviors (program : CCalls.Events.Program E)
+    (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (selected : Option Address)
+    (bytes expectedBytes : List UInt8) (old : Value) (rest : List Stmt)
+    (pointer : interface.types "const char *" = some .pointer)
+    (integer : interface.types "int" = some .int32)
+    (present : env "difference" = some old) (typed : types "difference" = some .int32)
+    (unshadowed : env "strcmp" = none) (named : interface.constants "strcmp" = none)
+    (bound : program.externals "strcmp" = some (CStringCalls.compareExternal integer))
+    (loaded : CBody.eval env heap category = some (.pointer selected))
+    (literal : interface.literals "logStatus" = some expected)
+    (selectedStored : ∀ value, selected = some value → Contents heap value bytes)
+    (expectedStored : Contents heap expected expectedBytes)
+    (invalid : ¬ Accepted selected bytes expectedBytes)
+    (failureName : env "fail" = none)
+    (instanceBound : resolve env "m" = some (.pointer (some p)))
+    (outcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (failed : FailureContract program heap p "Unknown log category" outcomes)
+    (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running (logicalIteration ++ rest) env types heap) "fmi3Status" .done) behavior ↔
+    outcomes behavior := by
+  exact iteration_invalid_behaviors_with .not logical_missing_law program env types heap p expected selected bytes expectedBytes old rest pointer integer present typed unshadowed named bound loaded literal selectedStored expectedStored invalid failureName instanceBound outcomes failed behavior
+
+theorem iteration_invalid_behaviors_explicit (nullType : interface.types "void *" = some .pointer)
+    (program : CCalls.Events.Program E)
+    (env : Locals) (types : Types) (heap : Heap) (p expected : Address) (selected : Option Address)
+    (bytes expectedBytes : List UInt8) (old : Value) (rest : List Stmt)
+    (pointer : interface.types "const char *" = some .pointer)
+    (integer : interface.types "int" = some .int32)
+    (present : env "difference" = some old) (typed : types "difference" = some .int32)
+    (unshadowed : env "strcmp" = none) (named : interface.constants "strcmp" = none)
+    (bound : program.externals "strcmp" = some (CStringCalls.compareExternal integer))
+    (loaded : CBody.eval env heap category = some (.pointer selected))
+    (literal : interface.literals "logStatus" = some expected)
+    (selectedStored : ∀ value, selected = some value → Contents heap value bytes)
+    (expectedStored : Contents heap expected expectedBytes)
+    (invalid : ¬ Accepted selected bytes expectedBytes)
+    (failureName : env "fail" = none)
+    (instanceBound : resolve env "m" = some (.pointer (some p)))
+    (outcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (failed : FailureContract program heap p "Unknown log category" outcomes)
+    (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.body (.running (iteration ++ rest) env types heap) "fmi3Status" .done) behavior ↔
+    outcomes behavior := by
+  exact iteration_invalid_behaviors_with explicitMissing (explicit_missing_law nullType) program env types heap p expected selected bytes expectedBytes old rest pointer integer present typed unshadowed named bound loaded literal selectedStored expectedStored invalid failureName instanceBound outcomes failed behavior
 
 end Rumoca.FMI3.DebugLogging
 end

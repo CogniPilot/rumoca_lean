@@ -16,8 +16,9 @@ def failureMessage (unknown : Bool) : String :=
 theorem message_collected (unknown : Bool) :
     failureMessage unknown ∈ functionTexts function := by
   cases unknown <;>
-    simp [failureMessage, function, code, missing, failure, validation, CLoops.loop,
-      iteration, rejectNull, comparison, rejectDifference, finish, writeLogging,
+    simp [failureMessage, function, code, codeWith, missingWith, rejectNullWith, iterationWith, validationWith,
+      explicitMissing, Expr.nullPointer, failure, CLoops.loop,
+      comparison, rejectDifference, finish, writeLogging,
       Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
       Runtime.branch, Runtime.fail, Runtime.ret, Runtime.call, Runtime.v,
       functionTexts, statementTexts, expressionTexts]

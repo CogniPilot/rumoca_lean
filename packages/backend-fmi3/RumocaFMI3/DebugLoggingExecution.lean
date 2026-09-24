@@ -36,16 +36,49 @@ theorem written_storage (heap : Heap) (p : Address) (enabled : Bool) (old : Opti
 
 variable [interface : CInterface]
 
+theorem missing_step_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
+    (env : Locals) (types : Types) (heap : Heap)
+    (pointer : Option Address) (n : Nat) (rest : List Stmt)
+    (count : env "nCategories" = some (.integer n))
+    (array : env "categories" = some (.pointer pointer)) :
+    CLoops.next (.running ((missingWith pointerMissing) :: rest) env types heap) =
+      some (.running (if n = 0 ∨ pointer.isSome = true then rest else
+        failure "Missing log categories" :: rest) env types heap) := by
+  have loaded : CBody.eval env heap (.id "categories") = some (.pointer pointer) := by
+    simp [CBody.eval, CBody.evalWith, resolve, array]
+  have evaluated := law.value env heap (.id "categories") pointer loaded
+  cases pointer <;> by_cases zero : n = 0 <;>
+    simp [CBody.eval, CBody.evalWith, resolve, array, Value.truth, boolean] at evaluated <;>
+    simp [missingWith, failure, CLoops.next, CLoops.nextWith, CBody.legacyExpressions,
+      noDeclarations, CLoops.evalWith, CBody.eval, CBody.evalWith,
+      resolve, count, evaluated, boolean, Value.truth, zero]
+
 theorem missing_step (env : Locals) (types : Types) (heap : Heap)
+    (pointer : Option Address) (n : Nat) (rest : List Stmt)
+    (count : env "nCategories" = some (.integer n))
+    (array : env "categories" = some (.pointer pointer)) :
+    CLoops.next (.running (logicalMissing :: rest) env types heap) =
+      some (.running (if n = 0 ∨ pointer.isSome = true then rest else
+        failure "Missing log categories" :: rest) env types heap) := by
+  exact missing_step_with .not logical_missing_law env types heap pointer n rest count array
+
+theorem missing_step_explicit (nullType : interface.types "void *" = some .pointer)
+    (env : Locals) (types : Types) (heap : Heap)
     (pointer : Option Address) (n : Nat) (rest : List Stmt)
     (count : env "nCategories" = some (.integer n))
     (array : env "categories" = some (.pointer pointer)) :
     CLoops.next (.running (missing :: rest) env types heap) =
       some (.running (if n = 0 ∨ pointer.isSome = true then rest else
         failure "Missing log categories" :: rest) env types heap) := by
-  cases pointer <;> by_cases zero : n = 0 <;>
-    simp [missing, failure, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, noDeclarations, CLoops.evalWith, CBody.eval, CBody.evalWith,
-      resolve, count, array, boolean, Value.truth, zero]
+  exact missing_step_with explicitMissing (explicit_missing_law nullType) env types heap pointer n rest count array
+
+/-- Zero skips the pointer operand entirely, even in an incomplete interface. -/
+theorem missing_zero_step (env : Locals) (types : Types) (heap : Heap) (rest : List Stmt)
+    (count : env "nCategories" = some (.integer 0)) :
+    CLoops.next (.running (missing :: rest) env types heap) =
+      some (.running rest env types heap) := by
+  simp [missing, missingWith, failure, CLoops.next, CLoops.nextWith, noDeclarations,
+    CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, resolve, count, Value.truth, boolean]
 
 theorem declarations_reaches (program : CCalls.Events.Program E) (env : Locals)
     (types : Types) (heap : Heap) (rest : List Stmt) (resultType : String)

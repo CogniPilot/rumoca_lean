@@ -167,7 +167,20 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   candidate; an epsilon repair is not an equivalent fix, and the exact FMI time
   semantics must be preserved.
 - **Pointer comparisons (Rule 11.11, Rule 11.9).** Current bounded repair
-  includes tensor/constant state-array guards (full gate passed).
+  includes debug-category guards (owner passed; full gate pending). Shared
+  predicate-parametric syntax/proofs preserve 12 old generic helper domains
+  through logical views; 84 other theorem headers remain unchanged. Actual
+  callers derive null typing from existing entry assumptions. Count-first
+  laziness, zero-count domains, first invalid entry and full heap/callback/
+  public/artifact contracts remain unchanged. Fourteen source files match the
+  reviewed overlays; six existing audit leaves add 48 direct registrations.
+  Owner-v1/session99557 passed 4,338 jobs, 5,226 approved reports, all 71 selected
+  roots and frozen 2,665 tracked/four runner hashes. Main checked the receipt
+  and independent review. Baseline14974 captures completed state-array artifacts;
+  full/post require 819 roots and exactly six guard lines/leaves across three
+  adapters with numerical/eFMI code unchanged. No guideline closure follows;
+  evidence: `build/debug-null-gate/`.
+  The preceding fully gated repair includes tensor/constant state-array guards.
   Three shared constructors change only their pointer leaves, retaining count
   order, zero-volume non-null policy and all 70 old theorem headers. Four new
   helpers derive null typing locally without strengthening public contracts.

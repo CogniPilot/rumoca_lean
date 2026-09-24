@@ -3,6 +3,11 @@ import ProofAudit.Audit
 
 -- Axiom audit for the roots defined in RumocaFMI3.DebugLoggingExecution.
 
+-- Explicit-null migration: shared syntax, retained domains and typed execution.
+#audit axioms Rumoca.FMI3.DebugLogging.missing_step_with
+#audit axioms Rumoca.FMI3.DebugLogging.missing_step_explicit
+#audit axioms Rumoca.FMI3.DebugLogging.missing_zero_step
+
 #audit axioms Rumoca.FMI3.DebugLogging.written_store
 #audit axioms Rumoca.FMI3.DebugLogging.written_frame
 #audit axioms Rumoca.FMI3.DebugLogging.written_storage

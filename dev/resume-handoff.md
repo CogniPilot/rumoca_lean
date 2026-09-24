@@ -1,5 +1,39 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current debug-category repair — owner passed, full gate pending
+
+Applied reviewed debug production.patch and audit.patch after signed state-array
+evidence `61cbc48` and baseline14974 success. All 14 source files match overlays;
+six existing audit leaves add 48 registrations. All 96 old theorem headers are
+retained: 84 unchanged, 12 naming definitionally old logical syntax with the same
+domains/results. Shared predicate-parametric syntax/proofs keep one actual
+emitter/table; actual public callers use existing EntryTypes.nullPointer. Zero
+guard requires only count0; legal-request and defensive whole-body domains,
+first invalid entry and all heap/frame/callback/public/artifact contracts stay
+unchanged. No new public premises, axioms or source admission.
+
+Owner-v1/session99557 finished0: 4,338 jobs, 5,226 complete approved reports,
+71 exact selected roots, 2,665 frozen tracked inputs and four runner hashes.
+Main rechecked hashes/roots and all source-to-overlay matches and read the full
+independent review. No owner source correction was needed. Private final-v1/
+session44979's 68 modules/71 roots, 104 input/69 output hashes and five warnings
+are preparatory evidence over copied unselected dependencies, not a full closure.
+
+Next after signing the implementation: run `build/debug-null-gate/full-gate.sh`
+in the verification environment; post-audit.sh only after terminal0. Neither
+full nor post has passed this repair yet. Required union819 = retained748 +71
+disjoint names. Whole-file expectation: six changed guard lines/leaves across
+three adapters; three numerical C and four eFMI Algorithm/C members identical.
+Baseline-v1 is complete; do not recreate it. Consult the ignored live checkpoint
+before starting: a later turn may already have launched the run.
+
+Aristotle/Astra continues the factory callback repair privately in
+`build/factory-null-adoption/`; preserve debug changes when rebasing overlapping
+proof files. Factory map and prospective baseline are independently reviewed,
+not source/artifact clearance. Huygens is closed; resume for final factory review.
+Broader standards/native/essential-type findings remain open, candidate promotion
+unapproved, and no push authorized.
+
 ## Current tensor/constant state-array repair — full gate passed
 
 Applied reviewed array production.patch plus audit.patch after signed Float64
@@ -26,19 +60,6 @@ cells), zero discrepancies/unexpected results. Whole-file comparison confirms
 exactly eight guard lines/eight pointer leaves across TensorSquare/ConstantRates;
 Integrator, three numerical C and four eFMI Algorithm/C members stayed identical.
 Main read both diffs/matrices and rechecked the five archive hashes.
-
-Next debug repair is private, checked and independently reviewed, not adopted:
-`build/debug-null-adoption/` and `build/debug-null-adoption-review.md`. Main read
-the complete review and patch. Final-v1/session44979 passed 68 selected modules,
-71 exact roots, 104 input/69 output hashes; copied unselected dependencies mean
-this is not a full owner closure. Five warnings remain, none suppressed. All 96
-old theorem headers are retained: 84 unchanged, 12 naming definitionally old
-logical syntax with unchanged domains/results. Actual callers derive null typing
-from existing EntryTypes. Public/artifact and callback/full-heap contracts stay
-unchanged. Prospective `build/debug-null-gate/` scripts are reviewed, unexecuted:
-capture baseline first, adopt 14 source files plus 48 registrations in six
-existing audit leaves, run owner checks, then the required 819-root full/post
-gate. Expected delta is six guard lines/leaves across three adapters.
 
 Aristotle/Astra is implementing the next factory callback repair privately in
 `build/factory-null-adoption/`. Main read the factory migration map, including

@@ -33,8 +33,10 @@ set_option maxHeartbeats 1000000 in
 theorem body_inputs (model : Solve.FMI3Model source) (signature : Signature) :
     ∀ stmt ∈ Runtime.body model signature, StmtInputs stmt := by
   unfold Runtime.body
-  split <;> simp [DebugLogging.code, DebugLogging.missing, DebugLogging.failure,
-    DebugLogging.validation, DebugLogging.iteration, DebugLogging.rejectNull,
+  split <;> simp [DebugLogging.code, DebugLogging.codeWith, DebugLogging.missingWith,
+      DebugLogging.rejectNullWith, DebugLogging.iterationWith, DebugLogging.validationWith,
+      DebugLogging.explicitMissing, DebugLogging.failure,
+    DebugLogging.rejectNull,
     DebugLogging.comparison, DebugLogging.rejectDifference, DebugLogging.category,
     DebugLogging.finish, DebugLogging.writeLogging, CLoops.loop, CLoops.counterStep,
     StmtInputs, ExprInputs, Expr.nullPointer, plain_iff_all, or_imp, forall_and,

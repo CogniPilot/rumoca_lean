@@ -1,5 +1,36 @@
 # Exact verification contract
 
+**Debug-category explicit null guards (owner passed; full gate pending):**
+The shared debug body now compares both the categories buffer and indexed
+category pointer explicitly to null. Predicate-parametric syntax and one proof
+chain retain logical views for old arbitrary-interface helpers; typed actual
+helpers use existing EntryTypes.nullPointer at the public call boundary. No
+public premise, evaluator, Runtime table or emitter is added. Of 96 old theorem
+headers, 84 are unchanged and 12 name definitionally old logical syntax with
+unchanged domains and full results. Do not claim all statement text is unchanged.
+
+Count-first laziness, first invalid category, null-before-strcmp order, messages,
+all observations and full heap/frame/callback outcomes remain. Legal zero/null
+requests, defensive zero-count acceptance with either pointer, and the new
+guard-only zero theorem are distinct: the last needs only a zero count binding,
+not categories storage/binding or null typing. Whole-call premises are unchanged.
+
+All 14 source/proof files match reviewed overlays; six existing audit leaves add
+48 registrations, retaining old roots and the whitelist. Owner-v1/session99557
+passed 4,338 jobs, 5,226 complete approved reports, all 71 exact selected roots,
+2,665 frozen tracked inputs and four runner hashes. Main rechecked the receipt
+and read the complete independent source/statement/runner review. No owner
+source correction was needed. Private final-v1/session44979 checked 68 selected
+modules/71 roots, 104 input/69 output hashes and five unsuppressed warnings;
+unselected copied dependencies mean that run alone is not an owner closure.
+
+Baseline14974 captured the completed state-array artifacts before adoption.
+Required full/post remain pending: 819 selected roots (748 retained plus 71
+disjoint), six changed guard lines/leaves across three adapters, and identical
+three numerical C/four eFMI Algorithm/C members. Evidence:
+`build/debug-null-gate/`, `build/debug-null-adoption/`, and its independent
+review. No source-admission, normative or native trust-boundary claim is added.
+
 **Tensor/constant state-array explicit null guards (full gate passed):**
 The shared state, derivative and nominal guard constructors now compare their
 buffer pointers explicitly to null. Count mismatch remains first, with identical

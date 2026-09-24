@@ -1,5 +1,25 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Debug-category pointer repair (2026-09-24; owner passed, artifacts pending):
+the categories and indexed category pointers now use explicit null equality.
+This bounded Rules 11.11/11.9 repair retains count-first short circuit, first
+invalid entry, null-before-strcmp ordering and full callback/heap/public/artifact
+contracts. Shared syntax/proofs preserve 12 old generic helper domains via
+logical views; 84 other old theorem headers are unchanged. Actual callers use
+existing null typing without new public premises. The guard-only zero theorem
+needs only count0; legal-request and defensive whole-body domains stay distinct.
+
+Owner-v1/session99557 passed 4,338 jobs, 5,226 approved reports, all 71 selected
+roots, 2,665 tracked inputs and four runner hashes. Main rechecked the receipt
+and read the complete independent review. Fourteen source/proof files and six
+existing audit leaves changed, adding 48 direct registrations without removing
+old roots. Private 68-module evidence used copied unselected dependencies and
+does not substitute for owner/full checks. Baseline14974 captured the completed
+state-array artifacts; full/post remain pending with 819 roots and exactly six
+guard lines/leaves across three adapters, unchanged numerical/eFMI code.
+Evidence: `build/debug-null-gate/`. No grammar/admission, policy or normative
+finding is closed; whole-subset review and expansion/promotion blocks remain.
+
 Tensor/constant state-array repair (2026-09-24; full gate passed):
 three shared state/derivative/nominal constructors replace only pointer negation
 with explicit null equality. This bounded Rules 11.11/11.9 repair retains count
