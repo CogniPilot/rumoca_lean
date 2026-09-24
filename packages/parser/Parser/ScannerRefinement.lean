@@ -25,7 +25,7 @@ def scan (cfg : Config) (total : Nat) : Nat → List Char → Except Diagnostic 
       (cfg.classify (String.ofList (c :: rest.takeWhile cfg.wordRest)) :: ·) <$>
         scan cfg total fuel (rest.dropWhile cfg.wordRest)
     else if c.isDigit then
-      (.literal (String.ofList (c :: rest.takeWhile cfg.numberRest)) :: ·) <$>
+      (cfg.number (String.ofList (c :: rest.takeWhile cfg.numberRest)) :: ·) <$>
         scan cfg total fuel (rest.dropWhile cfg.numberRest)
     else match readSymbol cfg (c :: rest) with
       | some (token, tail) => (token :: ·) <$> scan cfg total fuel tail

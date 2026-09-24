@@ -2,14 +2,15 @@ import Parser.Scanner
 import Parser.LocatedCompleteness
 
 /-! Exact-spelling attachment contract for reusable scanner configurations.
-Word classifiers must preserve the spelling; trivia and token shapes are
-otherwise supplied by the configuration, without language-specific imports. -/
+Word and number classifiers must preserve the spelling; trivia and token shapes
+are otherwise supplied by the configuration, without language-specific imports. -/
 namespace Parser.Scanner
 
 /-- Successful maximal-munch derivations satisfy the location contract whenever
-word classification retains the original text. Single/pair symbols and numeric
-spellings are handled by the scanner itself. -/
+word and number classification retain the original text. Single/pair symbols
+are handled by the scanner itself. -/
 theorem Lexes.spelled (classified : ∀ word, (cfg.classify word).text = word)
+    (numbered : ∀ spelling, (cfg.number spelling).text = spelling)
     (lexical : Lexes cfg cs ts) : Source.Spelled cfg.space cs ts := by
   induction lexical with
   | nil => exact .nil rfl
@@ -20,8 +21,8 @@ theorem Lexes.spelled (classified : ∀ word, (cfg.classify word).text = word)
       have result := Source.Spelled.cons (gap := []) (by rfl) text hs ih
       simpa only [List.nil_append, text, List.cons_append, List.takeWhile_append_dropWhile] using result
   | @number c ts cs hs hw hd _ ih =>
-      have text : (Token.literal (String.ofList (c :: cs.takeWhile cfg.numberRest))).text.toList =
-          c :: cs.takeWhile cfg.numberRest := by simp [Token.text]
+      have text : (cfg.number (String.ofList (c :: cs.takeWhile cfg.numberRest))).text.toList =
+          c :: cs.takeWhile cfg.numberRest := by simp [numbered]
       have result := Source.Spelled.cons (gap := []) (by rfl) text hs ih
       simpa only [List.nil_append, text, List.cons_append, List.takeWhile_append_dropWhile] using result
   | @symbol c cs t rest ts hs hw hd symbol _ ih =>
@@ -38,9 +39,11 @@ theorem Lexes.spelled (classified : ∀ word, (cfg.classify word).text = word)
 /-- No successful tokenization of a spelling-preserving scanner configuration
 can fail source attachment. This is independent of a particular AST or grammar. -/
 theorem lex_locations (cfg : Config) (classified : ∀ word, (cfg.classify word).text = word)
+    (numbered : ∀ spelling, (cfg.number spelling).text = spelling)
     (source : String) (tokens : List Token) (accepted : lex cfg source = .ok tokens) :
     ∃ xs, Source.attach cfg.space source.startPos tokens = some xs := by
-  apply Source.attach_complete ((lex_correct cfg source tokens).mp accepted |>.spelled classified)
+  apply Source.attach_complete
+    ((lex_correct cfg source tokens).mp accepted |>.spelled classified numbered)
     source.startPos ""
   simp
 

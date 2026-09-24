@@ -1,7 +1,7 @@
 import Parser.Token
 
-/-! Reusable scanner for the two tiny grammar profiles. Configurations define
-word classification and punctuation; this does not implement either language's
+/-! Reusable scanner for the tiny grammar profiles. Configurations define
+word and number classification and punctuation; this does not implement a language's
 full lexical specification (comments and quoted names remain unsupported). -/
 namespace Parser.Scanner
 
@@ -11,6 +11,9 @@ structure Config where
   wordRest : Char → Bool
   numberRest : Char → Bool
   classify : String → Token
+  /-- Token class of a digit-initial run. The default keeps a number as a
+  literal spelling; a configuration may select `Token.number` instead. -/
+  number : String → Token := .literal
   single : Char → Bool
   pair : Char → Option Char
 
@@ -123,7 +126,7 @@ inductive Lexes (cfg : Config) : List Char → List Token → Prop where
       Lexes cfg (c :: cs) (cfg.classify (String.ofList (c :: cs.takeWhile cfg.wordRest)) :: ts)
   | number : cfg.space c = false → cfg.wordStart c = false → c.isDigit = true →
       Lexes cfg (cs.dropWhile cfg.numberRest) ts →
-      Lexes cfg (c :: cs) (.literal (String.ofList (c :: cs.takeWhile cfg.numberRest)) :: ts)
+      Lexes cfg (c :: cs) (cfg.number (String.ofList (c :: cs.takeWhile cfg.numberRest)) :: ts)
   | symbol : cfg.space c = false → cfg.wordStart c = false → c.isDigit = false →
       SymbolLexes cfg (c :: cs) t rest → Lexes cfg rest ts → Lexes cfg (c :: cs) (t :: ts)
 
@@ -136,7 +139,7 @@ def scan (cfg : Config) (total : Nat) : Nat → List Char → Except Diagnostic 
       (cfg.classify (String.ofList (c :: rest.takeWhile cfg.wordRest)) :: ·) <$>
         scan cfg total fuel (rest.dropWhile cfg.wordRest)
     else if c.isDigit then
-      (.literal (String.ofList (c :: rest.takeWhile cfg.numberRest)) :: ·) <$>
+      (cfg.number (String.ofList (c :: rest.takeWhile cfg.numberRest)) :: ·) <$>
         scan cfg total fuel (rest.dropWhile cfg.numberRest)
     else match readSymbol cfg (c :: rest) with
       | some (token, tail) => (token :: ·) <$> scan cfg total fuel tail

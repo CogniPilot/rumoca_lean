@@ -181,5 +181,8 @@ The configurable scanner prefers a matching two-character symbol before an
 enabled single-character symbol. `ScannerRefinement.lex_disjoint` (namespace
 `Parser.Scanner`) proves exact results and errors for configurations with
 disjoint prefixes. The proof-only reference adds no runtime fallback.
+A digit-initial run becomes `Config.number spelling`, by default `Token.literal`;
+a frontend may choose `Token.number`, whose grammar symbol is `IDENT`.
+`lex_locations` requires word and number classification to preserve spelling.
 `lake test` in this package builds those checks; the root `lake test` additionally
 checks actual artifacts and all language/backend integration boundaries.

@@ -15,7 +15,7 @@ inductive Prefix (cfg : Config) : List Char → List Token → List Char → Pro
   | number : cfg.space c = false → cfg.wordStart c = false → c.isDigit = true →
       Prefix cfg (cs.dropWhile cfg.numberRest) ts rest →
       Prefix cfg (c :: cs)
-        (.literal (String.ofList (c :: cs.takeWhile cfg.numberRest)) :: ts) rest
+        (cfg.number (String.ofList (c :: cs.takeWhile cfg.numberRest)) :: ts) rest
   | symbol : cfg.space c = false → cfg.wordStart c = false → c.isDigit = false →
       SymbolLexes cfg (c :: cs) t tail → Prefix cfg tail ts rest →
       Prefix cfg (c :: cs) (t :: ts) rest

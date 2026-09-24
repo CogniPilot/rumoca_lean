@@ -14,7 +14,7 @@ theorem scanner_preserves_text (word : String) : (scanner.classify word).text = 
 theorem scanner_locations (source : String) (tokens : List Token)
     (accepted : Scanner.lex scanner source = .ok tokens) :
     ∃ xs, Source.attach scanner.space source.startPos tokens = some xs :=
-  Scanner.lex_locations scanner scanner_preserves_text source tokens accepted
+  Scanner.lex_locations scanner scanner_preserves_text (fun _ => rfl) source tokens accepted
 
 /-- The independently checked GALEC parse supplies all premises of attachment
 completeness. Its source has no additional location-related rejection case. -/
@@ -31,7 +31,7 @@ theorem tensorScanner_preserves_text (word : String) :
 theorem tensorScanner_locations (source : String) (tokens : List Token)
     (accepted : Scanner.lex tensorScanner source = .ok tokens) :
     ∃ xs, Source.attach tensorScanner.space source.startPos tokens = some xs :=
-  Scanner.lex_locations tensorScanner tensorScanner_preserves_text source tokens accepted
+  Scanner.lex_locations tensorScanner tensorScanner_preserves_text (fun _ => rfl) source tokens accepted
 
 theorem TensorParsed.locations_exist (parsed : TensorParsed source) :
     ∃ xs, Source.attach tensorScanner.space source.startPos parsed.ast.tokens = some xs :=
