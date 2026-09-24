@@ -59,10 +59,11 @@ theorem guard_run (model : Solve.FMI3Model source) (heap : Heap) (p : Address)
   rw [(allowed_correct _ _ _).mpr permitted] at entered
   simp only [↓reduceIte, List.nil_append, values_eq] at entered
   rw [show 5 = 4 + 1 from rfl, CBody.run_add, entered]
-  exact ArrayAccess.run_guard _ heap "valueReferences" "values" "nValueReferences" "nValues"
+  exact ArrayAccess.run_explicit_guard _ heap "valueReferences" "values" "nValueReferences" "nValues"
     "Invalid Float64 array lengths or pointers" input buffer n m afterGuard
     (by simp [locals, parameters, CBody.bind, resolve]) (by simp [locals, parameters, CBody.bind, resolve])
     (by simp [locals, parameters, CBody.bind, resolve]) (by simp [locals, parameters, CBody.bind, resolve])
+    rfl
 
 theorem empty_behaviors (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)
     (heap : Heap) (p : Address) (input buffer : Option Address) (kind : Kind) (mode : Mode)

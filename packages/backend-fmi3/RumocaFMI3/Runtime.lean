@@ -95,10 +95,18 @@ def makeInstance (m : Solve.FMI3Model source) (kind : Kind) : List Stmt :=
 def scalarAccessCheck (array count : String) : List Stmt := [
   reject (either (nev (v count) (n 1)) (eqv (v array) Expr.nullPointer)) "Expected one continuous state"]
 
+/-- Equal-length scalar array validation, with count-gated pointer tests.
+The pointer predicate varies without changing count truthiness or evaluation order. -/
+def arrayAccessGuardWith (pointerMissing : Expr → Expr)
+    (left right leftCount rightCount message : String) : Stmt :=
+  reject (any [nev (v leftCount) (v rightCount),
+    both (v leftCount) (pointerMissing (v left)),
+    both (v rightCount) (pointerMissing (v right))]) message
+
 def getFloat64 : List Stmt := require .get ++ [
-  reject (any [nev (v "nValueReferences") (v "nValues"),
-    both (v "nValueReferences") (negate (v "valueReferences")),
-    both (v "nValues") (negate (v "values"))]) "Invalid Float64 array lengths or pointers"] ++
+  arrayAccessGuardWith (fun p => eqv p Expr.nullPointer)
+    "valueReferences" "values" "nValueReferences" "nValues"
+    "Invalid Float64 array lengths or pointers"] ++
   countLoop (v "nValueReferences") [
     reject (gt (.index (v "valueReferences") (v "k")) (n 2)) "Unknown value reference"] ++
   [Stmt.assign (v "k") (n 0), .whileLoop (lt (v "k") (v "nValueReferences")) [
@@ -111,9 +119,9 @@ def getFloat64 : List Stmt := require .get ++ [
 
 /-- Value validation and writes after the setter's instance/lifecycle guards. -/
 def setFloat64Values : List Stmt := [
-  reject (any [nev (v "nValueReferences") (v "nValues"),
-    both (v "nValueReferences") (negate (v "valueReferences")),
-    both (v "nValues") (negate (v "values"))]) "Invalid Float64 array lengths or pointers"] ++
+  arrayAccessGuardWith (fun p => eqv p Expr.nullPointer)
+    "valueReferences" "values" "nValueReferences" "nValues"
+    "Invalid Float64 array lengths or pointers"] ++
   countLoop (v "nValueReferences") [
     reject (either (nev (.index (v "valueReferences") (v "k")) (n 1))
       (negate (finite (.index (v "values") (v "k"))))) "Only a finite continuous state value may be set"] ++

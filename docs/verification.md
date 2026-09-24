@@ -29,27 +29,38 @@ are byte-identical. Main read the diff and rechecked archive hashes and exact
 roots. Evidence: `build/scalar-access-null/`. Residual MISRA and standards
 findings remain open; native compilation is still a tested boundary.
 
-**Next scalar Float64 repair (prepared, not adopted):**
-`build/float64-null-adoption/production.patch` coordinates Runtime emission,
-the proof-facing alias and both concrete guard consumers through a shared
-Runtime constructor. It retains the old arbitrary-interface guard and theorem;
+**Scalar Float64 explicit null guards (owner checks passed; full gate pending):**
+Runtime emission, the proof-facing alias and both concrete guard consumers now
+share `Runtime.arrayAccessGuardWith`. The owned change retains the old
+arbitrary-interface guard and theorem;
 only the new explicit helper needs the null-type lookup, derived locally by
 existing concrete callers. A separate zero-count theorem needs no pointer
-bindings or null-type lookup. All 92 old theorem statements in nine proposed
-files are unchanged. Isolated check-v3/session93138 passed 37 modules with empty
-implementation logs and 13 exact approved roots (four new, nine retained).
-Main read the independent source/runner review and final addendum, and checked
-the patch hash, logs, roots and whitelist. This uses existing caches and is not
-a frozen full dependency or downstream/public/artifact check. The production
-patch and `build/float64-null-gate/` runners remain unexecuted/unadopted here.
+bindings or null-type lookup. Count mismatch/order, empty setter lifecycle,
+numerical/failure/heap/public/artifact predicates and tensor/constant bodies
+are unchanged. All 122 old theorem statements across 13 implementation/proof
+files are retained. Two existing audit leaves add four direct registrations
+without removing any old root. No scratch imports or whitelist changes.
+
+Owner-v2/session81934 passed 4,013 jobs, 3,515 complete approved reports,
+13 exact selected roots, 2,665 frozen tracked inputs and four runner/input
+hashes. Owner-v1 failed three missing constructor unfolds; those and the
+matching downstream setter-interface unfold were repaired without changing
+statements. Main read the complete independent adoption/delta reviews and
+rechecked hashes and roots. The earlier isolated 37-module/13-root check is
+only preparatory evidence, not a substitute for this owner build. Baseline22532
+captures the completed scalar gate's archives and exact two-line/four-pointer-
+leaf expected delta. Required full gate/post remain pending; their selected
+inventory retains all 661 previous roots plus 13 Float64 selections (674).
+Evidence: `build/float64-null-gate/` and `build/float64-null-adoption-review.md`.
+The prior scalar full gate does not establish the changed Float64 artifacts.
 
 The preceding `build/float64-null-guard-draft/final-v1` also checked 26 exact
 roots at `33bdf34`: 13 new and 13 freshly recompiled context roots, three
 audit-only warning-free logs, four local/34 selected-input/three output hashes.
 Main and independent review checked those hashes. Its canonical same-program
 guard-point behavior equivalence retains callback/failure/divergence outcomes;
-it is not definition-table replacement or actual-artifact evidence. The proposed
-owned patch uses existing CNull lemmas, not scratch imports. Count truthiness,
+it is not definition-table replacement or actual-artifact evidence. The
+owned change uses existing CNull lemmas, not scratch imports. Count truthiness,
 other implicit guards and tensor-candidate promotion remain separate open work.
 
 **Owned explicit-code manifest constructors (full gate passed):**

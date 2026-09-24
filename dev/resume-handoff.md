@@ -30,12 +30,12 @@ Prior receipts below remain historical; never overwrite them or interpret
 intentional later source changes as failures of their frozen snapshots.
 No push is authorized by this continuation.
 
-## Next owned repair — scalar Float64 patch ready, not adopted
+## Current scalar Float64 repair — owner checks passed, full gate pending
 
-Apply `build/float64-null-adoption/production.patch` only after recording the
-completed scalar evidence and capturing the new baseline. Its SHA-256 is
+The reviewed `build/float64-null-adoption/production.patch` was applied after
+signed scalar evidence commit `7eb1241` and baseline22532 success. Its SHA-256 is
 `b3295fb37bf4361432be6c8190354ca6e1d98df140de38ddfa4714dc0e4fb90d`.
-Nine proposed owner files; all 92 old theorem statements unchanged. The shared
+Its original nine files match the reviewed overlays. The shared
 Runtime constructor retains the old logical ArrayAccess guard; a new explicit
 helper uses owned CNull proofs and an explicit null-type premise. The two
 existing concrete consumers discharge that premise by rfl. Zero counts skip
@@ -43,22 +43,30 @@ pointer leaves without pointer/null-type assumptions. No scratch imports,
 count-policy changes or tensor/constant Float64 guard changes.
 
 Isolated check-v3/session93138 passed 37 modules (empty implementation logs)
-and 13 exact approved roots, four new and nine old. Main read the complete
-independent review/addendum and rechecked hashes, exact roots and whitelist.
-This uses copied caches and is not a frozen complete downstream/owner/artifact
-check. Both agents are closed. The earlier Float64 context scratch final-v1
+and 13 exact approved roots, four new and nine old; this was preparatory evidence
+using copied caches. The actual owner-v1/session59937 finished1 on three missing
+constructor unfolds: RuntimePreprocessing, Float64SetContract and
+Float64Environment. Those and the matching downstream Float64SetEnvironment
+proof now unfold the shared constructor. All 122 old statements across the
+13 implementation/proof files remain unchanged. Two audit leaves add the four
+new direct roots without removals: total 15 changed Lean files.
+
+Owner-v2/session81934 finished0: 4,013 jobs, 3,515 approved reports, 13 exact
+selected roots, 2,665 frozen tracked inputs and four runner hashes. Main read
+the full independent review and owned-delta addendum and rechecked hashes,
+exact roots and whitelist. Both agents are closed. The earlier Float64 context
+scratch final-v1
 also passed 26 roots with selected-input hashes; see docs/verification.md for
 its narrower same-program behavior-equivalence boundary. Do not import scratch.
 
-`build/float64-null-gate/` contains independently reviewed, syntax-checked but
-unexecuted baseline/owner/full-gate/post-audit scripts. Run baseline.sh in the
-verification environment BEFORE generating any changed Float64 artifacts; it
-requires the completed scalar gate/post and validates their archive hashes.
-Then apply the reviewed patch with apply_patch, register four new direct audits
-in existing Runtime/ArrayAccess audit leaves, and retain every old audit.
-Run owner.sh with a fresh receipt name. After owner success, update pending
-claims, sign a clean commit, run full-gate.sh and then post-audit.sh after
-terminal0. Required selected union: 674 = old661 +13 disjoint selections.
+`build/float64-null-gate/` contains independently reviewed scripts. Baseline-v1
+is complete: it validated all five prior archive hashes and captures the exact
+expected Float64 delta. Do not recreate it from changed artifacts. Owner-v2 is
+complete as above. Next, after a signed clean implementation commit, run
+`nix develop .#verification --command bash build/float64-null-gate/full-gate.sh`.
+Only after terminal0 run post-audit.sh in the verification environment.
+Neither full gate nor post has passed this change yet. Required selected union:
+674 = old661 +13 disjoint selections (four new declarations, nine existing).
 The whole scalar adapter must show exactly two changed guard lines/four pointer
 leaves; both other adapters/all three model C/four eFMI members stay identical.
 Check the live checkpoint before starting anything: later continuations may

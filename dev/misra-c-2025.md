@@ -177,8 +177,12 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   confirms exactly four scalar guard changes and unchanged selected other
   adapter/numerical/eFMI code. Three native FMI matrices passed with zero
   discrepancies/unexpected results; this is not a native compilation proof.
-  The next scalar Float64 repair has only preparatory isolated proof/review
-  evidence, not production adoption or actual-byte evidence. Other implicit
+  The scalar Float64 repair is now owned and retains all 122 old theorem
+  statements. Owner-v2 passed 4,013 jobs, 3,515 approved reports and 13 exact
+  selected roots; source/runner/delta review found no substantive issue.
+  Its actual-artifact gate and exact two-line/four-pointer-leaf comparison
+  remain pending. Count truthiness is unchanged and remains separate. Other
+  implicit
   guards remain below; Rule 11.11 is not closed. The earlier scan counted
   75 `(ptr == ((void *)0))` / `!=` comparisons in unit `fmi3.c`, 77 in
   the tensor adapter, and zero direct `if (!ptr)` / `if (ptr)` tests. That scan

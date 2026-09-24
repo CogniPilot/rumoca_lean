@@ -189,7 +189,7 @@ macro "fmi_literal_calls" : tactic => `(tactic|
     InstanceInitialization.put, InstanceInitialization.field, InstanceInitialization.state,
     InstanceInitialization.returnHandle, CAtomicScan.function,
     CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
-    Runtime.makeInstance, Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
+    Runtime.makeInstance, Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith,
     Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
     Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
     CInitialization.Emission.statement, CInitialization.value,

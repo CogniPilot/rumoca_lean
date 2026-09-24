@@ -23,12 +23,20 @@ Algorithm/C members stayed byte-identical. Evidence: `build/scalar-access-null/`
 and `build/scalar-access-null-review.md`. No tensor-candidate promotion, grammar
 expansion or normative finding closure follows.
 
-The next bounded repair is prepared only: `build/float64-null-adoption/` retains
-all 92 old theorem statements while changing the scalar Float64 pointer leaves.
-Its isolated 37-module/13-root check and independent review passed, but adoption,
-owner checks and actual-artifact evidence remain pending. Numeric count
-truthiness and other implicit guards remain open. The same admitted-subset
-MLS/FMI/eFMI mappings and all unresolved findings carry forward unchanged.
+The next bounded repair is now owned: shared Runtime syntax and explicit-null
+scalar Float64 guards retain all 122 old theorem statements across 13 source/
+proof files. Two audit leaves add four direct roots. Scalar count order,
+zero-query/lifecycle policy and full public/artifact predicates are unchanged;
+the old arbitrary-interface helper remains valid, and concrete callers derive
+the new helper's null type locally. This addresses the same MISRA 11.11/11.9
+pointer-spelling issue without grammar/admission or normative policy changes.
+Owner-v2/session81934 passed 4,013 jobs, 3,515 whitelisted reports, 13 exact
+selected roots, 2,665 tracked inputs and four runner hashes. V1's missing
+constructor unfolds were repaired; independent source/runner/delta review
+found no substantive issue. Actual-artifact gate/post remain pending, with
+674 selected roots and an exact two-line/four-pointer-leaf expectation in
+`build/float64-null-gate/`. Numeric count truthiness, other implicit guards and
+all admitted-subset MLS/FMI/eFMI findings remain open. No candidate promotion.
 
 Owned repair-prerequisite update (2026-09-24): TensorManifest now owns the
 checked explicit-code constructors and 11 universal graph/reference proofs.

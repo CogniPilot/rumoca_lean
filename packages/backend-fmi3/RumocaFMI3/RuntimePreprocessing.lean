@@ -48,7 +48,7 @@ theorem body_inputs (model : Solve.FMI3Model source) (signature : Signature) :
     InstanceInitialization.returnHandle, CAtomicScan.function,
     CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
     Runtime.makeInstance, Runtime.instancePrefix, Runtime.countLoop,
-    Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values,
+    Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith,
     Runtime.scalarAccessCheck, Runtime.pointerCheck,
     Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
     Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,

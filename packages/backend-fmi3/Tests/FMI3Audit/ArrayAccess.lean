@@ -6,3 +6,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ArrayAccess.getter_guard
 #audit axioms Rumoca.FMI3.ArrayAccess.setter_guard
 #audit axioms Rumoca.FMI3.ArrayAccess.run_guard
+#audit axioms Rumoca.FMI3.ArrayAccess.explicitGuard
+#audit axioms Rumoca.FMI3.ArrayAccess.run_explicit_guard
+#audit axioms Rumoca.FMI3.ArrayAccess.run_explicit_guard_zero
