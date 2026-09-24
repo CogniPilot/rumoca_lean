@@ -21,6 +21,29 @@ also rechecked the six independently reviewed runner/inventory/validator hashes
 and recomputed the exact required-root union. This covers the owned extraction
 and changed actual-file checker, not candidate promotion or standards closure.
 
+**Canonical pointer-guard context equivalence (checked scratch):**
+`build/pointer-guard-context-draft/` now lifts the recovered pure null-guard
+reasoning to canonical `evalWith` and the existing typed/eventful schedulers.
+The same-program guard-point theorem preserves every observation, including
+stuck execution, divergence, callback events and the complete returned heap,
+with arbitrary suffix and saved caller stack. It derives the null-type lookup
+from existing RuntimeEnvironment/ErrorContext agreements; conditional pointer
+typing still applies to every operand, including skipped operands.
+
+Frozen `final-v1` at `6fe83b2` passed: 16 exact unchanged-whitelist roots,
+warning-free logs containing only the 13+3 audits, four local/32 selected-input
+hashes and two output hashes. Main read both full sources/runner/README and
+the complete independent review, and rechecked hashes and exact roots. No
+blocking finding in the reusable proofs. Selected inputs are not an exhaustive
+import closure. This is not global definition-table replacement or emitted-byte
+proof. Consumer review identifies a real migration constraint: generic
+`StepArguments.pointerCheck_run`, `StepEntry.outputs_run` and
+`ArrayAccess.run_guard` lack a null-type hypothesis. Blindly replacing their
+guards makes their old claims false for incomplete type dictionaries. Resolve
+this helper boundary explicitly while preserving concrete public/artifact
+contracts; do not add buffer-validity requirements to non-dereferencing paths.
+Production guards, grammar, accepted source and MISRA findings remain unchanged.
+
 **Owned table-parametric method proofs (full gate passed):**
 The existing EFMI owners now contain numerical-extension RHS/Jacobian helpers,
 whole DoStep execution/behavior, checked public entry/completion, finite-primal

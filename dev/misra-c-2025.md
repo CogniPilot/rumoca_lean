@@ -185,6 +185,16 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   `NullComparison.lean`), with the emitted idiom produced by `instancePrefix`
   (`Runtime.lean`). Not covered: equality of two non-null pointers, relational
   pointer comparison, and native address assignment.
+  Repair prerequisite (2026-09-24): the scratch canonical context lift in
+  `build/pointer-guard-context-draft/` passed `final-v1` at `6fe83b2` with 16
+  approved roots. Main rechecked its four local/32 selected-input/two output
+  hashes and read the complete independent review, no blocking proof finding.
+  Unlike the earlier pure recovery, this preserves all ordinary-call event
+  observations at the same-program guard point, including failure and divergence.
+  It is not an emitted guard repair or global table substitution. Existing
+  concrete public interfaces supply the null-type binding, but generic helper
+  theorems without that premise require an explicit migration strategy;
+  public/artifact contracts must not be weakened. Rule 11.11 remains open.
 
 ## Reconciliation with the finding-level review (MC01-MC10)
 

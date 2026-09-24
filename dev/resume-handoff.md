@@ -177,6 +177,25 @@ before considering any emitter replacement; production pointer guards remain
 unchanged. The pending user choice about existing-profile tensor promotion has
 not been answered; retain the ledger's promotion restriction.
 
+The canonical context lift is now checked in
+`build/pointer-guard-context-draft/`. Frozen `final-v1` at `6fe83b2` passed
+16 exact approved roots, two warning-free audit-only logs, four local/32 selected
+input hashes and two output hashes; main rechecked them and read all source and
+runner text. It proves same-program all-observation equivalence at the actual
+guard point, retaining arbitrary suffix/stack, failure, divergence, callbacks
+and final heaps. Runtime/context type agreements discharge the null-type lookup.
+It does not substitute a transformed definition table or change production C.
+Main read the complete independent source/runner/consumer review:
+`build/pointer-guard-context-consumer-review.md`, no blocking proof finding.
+The review identifies generic helper statements with no null-type premise:
+StepArguments.pointerCheck_run, StepEntry.outputs_run and ArrayAccess.run_guard.
+These cannot survive a blind in-place guard change under arbitrary incomplete
+type dictionaries. Resolve that internal API boundary and discharge pointer
+typing from existing entry invariants, preserving all concrete public/artifact
+contracts. Keep scalar empty-array calls, tensor nonempty policy, rejection
+order and callback effects exact. Both bounded agents finished; no build remains
+live. Do not rerun completed receipts or mistake scratch for owned/full-gate work.
+
 Then continue
 the coupled parser/source/C integration, native/lifecycle obligations and
 standards closure. Check the ignored live checkpoint before changing inputs.
