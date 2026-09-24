@@ -212,6 +212,182 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### GALEC loop cutover grammar - 2026-09-24; stage OPEN
+
+Recurring whole-subset review for the GALEC grammar actually adopted for the
+GJ01/GJ03 cutover. It supersedes the grammar shape reviewed in the prospective
+indexed-loop record below (fixture block rules, literal extents, keyword method
+names, enumerated number spellings) but retains that record's clause mappings,
+R1-R5 obligations and open findings. Reviewed at `955e24f`; no grammar, action,
+core, emitter or artifact file is changed by this record.
+
+| Required record | Entire admitted subset, evidence and open obligations |
+| --- | --- |
+| Scope and identity | Unchanged admitted sources and products: scalar Integrator C/FMU/Algorithm Code/eFMU; fixed extent-two TensorSquare FMU/Algorithm Code/eFMU (no standalone C); pinned two-state ConstantRates FMU only. No new Modelica case, extent, rank, rate, callee, operator, type, method or literal value is admitted. Driven sources, constant eFMI and broader development parses stay outside production admission. |
+| Architecture continuity | One general start-symbol `block` grammar on the reusable in-tree LALR engine with signed resource credits, structural typed actions and generated certificates (476 canonical/125 LALR states, 21 rules, measured with the existing generator). Numbers become a scanner token class (`Token.number`, grammar symbol `IDENT`, Modelica precedent); method names become `IDENT`. Admission is core static semantics over the generic AST, not grammar enumeration or token-pattern recognition. Tensor Algorithm Code is printed from an AST assembled by core builders; loops keep rank/extents and never enumerate cells. The old profile/fixture parser path is deleted, not retained beside the new one. |
+| Normative baseline | MLS 3.7, FMI 3.0.2 ME/CS, eFMI 1.0.0 Beta 1; pinned vendor schemas/headers unchanged. Extract/grammar hashes below verified at review time. TODO-labelled eFMI productions and rules stay labelled; each restricted interpretation is recorded below. No version migration or schema-only conformance inference. |
+| MLS | Modelica EBNF bytes, source semantics and all retained clause mappings of the prospective record are unchanged: lexical §§2.1-2.4/A.1, syntax A.2.1/A.2.2/A.2.4/A.2.6-A.2.7, equations §§8.2-8.3.1, `der`, Real §4.9.1, initialization §8.6. Source `jacobian` remains an explicit extension resolved upstream. S01/SR08 and ideal-Real/finite-storage limits remain open. |
+| FMI | No FMI source, adapter, kernel, XML or archive byte changes; FMI3 packages do not import GALEC. All three FMUs keep §§2.2.4, 2.3, 2.4, 2.4.7.2, 2.4.10, 2.5.1.3, 3.2.1 and 4.2.1 obligations and existing finite/history/native limitations. |
+| eFMI | §3.2.4 G-2/G-3 and TODO-labelled statement productions instantiated as a strict subset (clause table below). Tensor target `.*` (GJ03) and undeclared target `jacobian` (GJ01) are replaced by one-based indexed loops using `+` and `*` on scalar cells. Startup/Recalibrate/DoStep meanings, sample period and §3.2.5 signal behavior are unchanged. Chapters 2/3/5 container, manifest and Production Code correspondence must rebind the revised Algorithm Code. N01, block-direction TODO and the Startup input conflict remain. |
+| Formal correspondence | Required, not yet established on the new grammar: generated LALR certificates and action coverage for the 21 rules; typed elaboration of the actual parsed AST through the owned `Declarations`, `Expressions`, `Static`, `Loops`, `Methods` and `Block` checks with the named target Integer ceiling; composition with prepared square/AD execution and target execution (R1-R4). Scalar proofs are rebased onto `AST.Block` without changing scalar bytes. |
+| Artifact evidence | None yet for this grammar. Predicted deltas and byte-identity requirements are listed below; they are gate obligations, not results. The last passed gate (`8a4a433`) certifies only the pre-cutover artifacts, which still contain GJ01/GJ03. |
+| Decision | OPEN. Grammar edit may proceed as the authorized GJ01/GJ03 repair under the restrictions below. GJ01/GJ03 close only after the actual-artifact chain and required gate pass. Normative concerns C1-C4 below must be resolved in the same change. All other findings continue to block ordinary expansion and broad conformance/native/MISRA claims. |
+
+Adopted grammar (map section 6.1 without `-` and `/`):
+
+```ebnf
+block = "block", IDENT, { declaration },
+    "protected", { declaration },
+    "public", { method }, "end", IDENT, ";";
+declaration = [ direction | "constant" ], primitive_type, IDENT,
+    [ "[", expression_list, "]" ], ";";
+direction = "input" | "output";
+primitive_type = "Real" | "Integer" | "Boolean";
+method = "method", IDENT, "algorithm", { statement }, "end", IDENT, ";";
+statement = (single_assignment | for_loop), ";";
+single_assignment = reference, ":=", expression;
+for_loop = "for", IDENT, "in", expression, ":", expression,
+    [ ":", expression ], "loop", { statement }, "end", "for";
+reference = local_reference | state_reference;
+local_reference = component_reference;
+state_reference = "self", ".", component_reference, { ".", component_reference };
+component_reference = IDENT, [ "[", expression_list, "]" ];
+expression_list = expression, { ",", expression };
+expression = term, { additive_operator, term };
+additive_operator = "+";
+term = primary, { multiplicative_operator, primary };
+multiplicative_operator = "*";
+primary = reference | "(", expression, ")" | function_call | dimension_query;
+function_call = IDENT, "(", [ expression_list ], ")";
+dimension_query = "size", "(", reference, ",", expression, ")";
+```
+
+Clause correspondence, eFMI Beta 1 extract `build/standards-review/efmi.txt`:
+
+| Production | Pinned clause (extract lines) | Relation and restricted interpretation |
+| --- | --- | --- |
+| `block` | G-2.1-G-2.3 block (1779, 1817-1830), R-2.1 unique start symbol (1897), S-2.1 consistent naming (1898) | Subset: no state compartments, error signals or functions in `protected`, only methods in `public`. Leading `{ state-entity-declaration }` carries the TODO "inputs, followed by outputs followed by parameters" (1820); no ordering is inferred from it. Start/end names: S-2.1, checked by `Block.Headers.blockName`. |
+| `declaration`, `direction`, `variability`, `primitive_type` | G-2.4-G-2.12 (1851, 1878-1896): `state-entity-declaration`, `variable-declaration`, `constant-dimensions`; `data-flow-direction` (1883); S-2.2 control-inputs/-outputs (1916) | Pinned `state-entity-declaration` has only `[ "constant" \| "parameter" ]` (itself TODO-labelled, 1879); `data-flow-direction` appears only in `parameter-declaration`, while S-2.2 presupposes directed state entities (existing block-direction TODO). The adopted `[direction] [variability]` is a superset in the block context; only `input`, `output` and `constant` alone are given meaning (C2). No `derived-dimension` `:`, no `state-compartment-reference` type. Extents are `constant-scalar-integer-expression`s (G-3.1-G-3.4) read by `Static.Naturals` under an empty shape lookup, so S-2.13 (2398) dimension-queries in state entities are rejected and S-2.14 (2403) derived dimensions are syntactically absent. Adopted interpretation of the S-2.13 TODO "more restrict alternative" (2401): extents must be positive; no zero-extent declaration. |
+| `method` | G-2 `function-declaration` (1839-1850), S-2.1, S-2.11 initialization/control-cycle functions (2321) | Subset: `method` keyword only; no signal interface, parameters or local section. Method name is `name` = `identifier` (G-1.19-G-1.26, 1543, 1591-1606; `Startup`/`Recalibrate`/`DoStep` are not G-1.19 keywords), so `IDENT` conforms where the old keyword classification did not. Name/end equality, exact-one selection and the known three-method set: `Methods.Headers`, `Methods.Selection`, `Block.Headers.Known`. |
+| `statement`, `single_assignment`, `for_loop` | G-TODO.TODO statements (heading 2743, productions 2839-2889), mutability S-TODO.TODO (2893-2894), §3.2.1(a) bounded iteration (1055-1056) | Heading and rules are TODO-labelled, not finalized G-4. Subset: no limit, call, multi-assignment or if statements. `bounded-iteration` (2880-2885) is `[ iterator "in" ] start [ ":" step ] ":" stop`; the adopted form requires the iterator and has the same token language, and the action must map the three-expression form to (start, step, stop) with the middle expression as step (C4). Adopted interpretation: explicit one-based inclusive ascending range with explicit unit step `1:1:e`, `e` a positive bounded static natural (`Loops.UnitRange`); omitted-step and other strides are rejected. Iterator names are fresh against enclosing iterators and local barriers (`Loops.Binder.Fresh`), avoiding the unfinalized iterator S-TODO (2013); state entities occupy a separate name space (R-2, 2015). Writes to control-inputs and iterators are rejected (2894): `Read.target` (`Targets`) admits only writable state references under the method role policy. Fixed iteration counts satisfy §3.2.1(a). |
+| `reference`, `local_reference`, `state_reference`, `component_reference` | G-TODO references (2824-2837), S-TODO.TODO type of references (2890) | Same token language; per-component `computed-dimensions`. Local references denote only loop iterators; state references are dotted `self.` paths. Index count must equal declared rank (`SubscriptLowering.lower`); indices are iterator references with proved in-bounds coordinates. |
+| `expression`, `term`, `primary`, `expression_list` | G-3.1-G-3.4 (2411, 2427-2439), S-3.3 precedence/associativity (2510-2529), L-1 strict evaluation order (2530) | Stratified subset of the ambiguous `binary-operation`: `*` binds tighter than `+`, both left-to-right, matching S-3.3; actions must build left-nested trees so the AST order is the L-1 order. No constants other than numbers; no boolean, if-expression, constructor or unary operation. |
+| `additive_operator`, `multiplicative_operator` | G-3.5-G-3.10 (2440, 2458-2463; `arithmetic-operator` 2462) | `+` and `*` are members of `arithmetic-operator`; `.*` is absent, closing the GJ03 spelling once emitted. `-`, `/`, `^` and relational/logical operators are omitted; `-` omission also avoids the G-1 signed-`integer` longest-match question. Operator admission: `Expressions.operator` (`+`, `*` only). |
+| `function_call` | G-3.11-G-3.14 (2465, `function-call` 2491), S-3.TODO function lookup (2738), §1.3.2 built-ins (199-202), §3.2.6 catalogue (3736) | Syntax only. `Expressions.lower` maps every `.call` to `none`: no callee is admitted, in particular not `jacobian`, which §3.2.6 does not define (GJ01). Static expressions also reject calls, which is stricter than S-3.1. |
+| `dimension_query` | G-3.1-G-3.4 `dimension-query` (2438), S-3.1 statically-evaluated expressions (2502-2504), §3.2.6 L-2 (5437-5439) | `size(reference, axis)` with unindexed state reference and one-based static axis (`Static.Dimensions`); every static node is bounded by the named target Integer ceiling (`Static.Bounded`). References in static expressions are only dimension-query operands or iterators (S-3.1). L-2 makes static results target-dependent; the int32 ceiling is an adopted target profile constant, not a value stated by L-2. |
+| Numbers (`IDENT`-symbol `Token.number`) | G-1.8-G-1.17 constants (1512, 1532-1542), S-1.1 longest match (1632) | Recorded lexical coverage limit, not a conformance claim: the scanner number class is digits and `.`, with no exponent and no sign, so signed and exponent literals are not admitted. Real literals elaborate only for `0.0` and `1.0`; static naturals use `Parser.DecimalNat`, which accepts leading zeros that G-1 `integer` forbids (C3). |
+| Keywords | G-1.19 keyword list (1543, 1591-1606) | The pinned list omits `constant` and `parameter` although G-2 uses them as terminals; restricted interpretation: both stay reserved. `size`, `self`, `in`, `for`, `loop` are pinned keywords. |
+
+Why this is grammar generality within the GJ01/GJ03 repair, not source expansion:
+the Modelica EBNF, frontend, admitted sources and the product matrix above are
+unchanged; the only emitted texts parsed are the scalar and tensor Algorithm
+Code produced by the compiler. Every syntactically broader GALEC form is
+rejected after parsing by owned core static semantics
+(`packages/core/RumocaCore/GALEC/Elaboration/**`, read at review time):
+`Declarations.Real.read` requires an identifier name and `Real` type (Integer,
+Boolean and number-named declarations fail); `Declarations.Extents` and
+`Static.{Naturals,Bounded}` accept only positive decimal extents and literal,
+size-query and parenthesized static naturals within the ceiling;
+`Expressions.operator` admits only `+`/`*`, and `Expressions.lower` admits only
+references, `0.0`, `1.0`, those binary operations and parentheses (calls and
+Real-context size queries fail); `Methods.Selection` requires exact-one method
+selection by original token; `Methods.Headers` requires public visibility and
+end-name equality; `Block.Headers` requires matching block/end names and only
+the known Startup/Recalibrate/DoStep set; `Loops.{UnitRange,Binder,Header}`
+require explicit unit ranges starting at one, a positive bounded stop and fresh
+binders. The ceiling becomes a named target constant, replacing the literal `2`
+of the drafts. Three gaps are closed only by the core checks named in C1-C3 below.
+
+Normative concerns to resolve in the cutover change:
+
+- C1 `parameter`: `AST.Variability` has only `variable`/`constant`, and the
+  pinned meaning of parameters is TODO (1879). Resolution adopted: `parameter`
+  is not in the grammar (reserved; a later additive alternative), and the
+  declaration production follows the pinned structure in which direction and
+  `constant` are mutually exclusive, `[ direction | "constant" ]`.
+- C2 section placement: `input`/`output` in `protected` and `constant` in the
+  leading section still parse, and current role policies
+  (`Capabilities.Initialization.role`, `Capabilities.DoStep.role`) classify
+  rather than reject them. Resolution adopted: one owned declaration-kind
+  check in core (direction only on leading public declarations; `constant`
+  only in the protected section), rejecting by static semantics.
+- C3 leading zeros: G-1 `integer = [ "-" ], ( "0" | positive-integer )` forbids
+  `01`; `DecimalNat` accepts it for extents, bounds, steps and axes. Require
+  canonical numerals in the static natural readers (or the scanner) and add a
+  rejection mutant.
+- C4 range field order: the pinned three-expression form puts the step in the
+  middle; action mapping and the universal action/AST correspondence must fix
+  (start, step, stop) with a nonvacuous mutant distinguishing `1:1:2` from a
+  swapped interpretation.
+
+Artifact delta obligations (baselines at `955e24f`, SHA-256 unless noted):
+
+- Must change, tensor eFMU only: `AlgorithmCode/model.alg` whole text (current
+  `69c3fc4e3dd6800a558404f7a5d8d369c2d26d610eec9f7b76d12be47b127b36`, SHA-1
+  `ccbc359e91409eecdb274a3ef17ceedff25cb50c`), printed from the core-built AST
+  in the scalar layout; its new hash is recorded at the gate (the flat-candidate
+  prediction does not apply). `ProductionCode/production.c` (current SHA-1
+  `822cf66ac240d0ebd5d2a064f977a9cc3ca00df7`) gains exactly one Startup line
+  `rumoca_initialize((self->J), 4);`, predicted SHA-256
+  `631023dcec572d90cb61f04f2e51e8f169d12f9bcb30954fba002064041ff866`. Manifest
+  ids and dates are unchanged; only Algorithm `File` checksum, Production
+  `File` and `ManifestReference` checksums and the two container
+  `ModelRepresentation` checksums change. `build/TensorSquare.efmu` bytes
+  change (current
+  `f359de826bf6fa468194db794e1d5e6e7490f4bd4554fe48cb69406b85140f5c`); member
+  roster, schemas and order are unchanged.
+- Must remain byte-identical: scalar Algorithm Code
+  `4069287302da53679a34a9134b6b3eebc064b923ab322044d69af6b42bfe94ff`
+  (= `examples/UnitIntegrator.alg`), scalar Production C
+  `acabd1d265477654a708daf05bfe62987c446013cc922dc59a2ce321c54e0b8a`,
+  `build/Integrator.efmu`
+  `c52be2f995df2c77f4f690acf16956c50f13c3d59906d377acb70a864659f3be`, every
+  `sources/fmi3.c`/`sources/model.c` and FMI XML of the three FMUs; FMU archives
+  `Integrator.fmu` `d3a31ed689b6b600e41276ab90500643b1b72326251383a39a2eaa5a68494884`,
+  `TensorSquare.fmu` `f11a374846837adce1d4cbf83828b425f615f85f8df2441c9405a8cdb00f1c77`,
+  `ConstantRates.fmu` `4c5bec9839c7efa7551f00c551341e2c7907d220a9b90bf469943b69b245696d`.
+  Modelica generated parser directories must regenerate byte-identically.
+
+Findings: GJ01 and GJ03 can close only after the actual tensor `.alg`,
+Production C, manifests and archive are bound to the new parse and typed
+execution contracts and the required gate plus post-audit pass. Regardless of
+this stage, N01, S01/SR08, the Startup input-initialization versus
+forbidden-input-write conflict (§3.2.3/S-2.11 versus 2894), the block-direction
+TODO (1820), manifest array starts, native/ABI/callback trust, whole-product
+MISRA rows and K02-K05 remain open. The new J initialization addresses the
+tensor initial-output value only within the existing restricted policy; it
+does not resolve the input conflict. GJ02 remains closed; its fixture-positional
+rejection proofs must be replaced by grammar-structure proofs or actual-file
+mutants, stated in its ledger entry.
+
+Repair obligations mapped to cutover steps (map section 6.3):
+
+- R1 (steps 1-2): scanner number class, general EBNF, regenerated tables and
+  kernel certificates, structural actions/coverage, universal malformed-input
+  rejection; no special Jacobian or fixture rule.
+- R2 (step 3): core rebase to number/identifier tokens and expression extents;
+  one-based coordinate, rank, axis, range and scoping bridge with the named
+  target Integer ceiling; C1-C3 rejections.
+- R3 (steps 3 and 5): parsed tensor body composed with prepared square/AD
+  execution and immutable-input/output frames; `u+u` order, signed zeros and
+  finite primal domain preserved.
+- R4 (steps 4-5): independent typed body execution linked to prepared Solve
+  and target execution, including the Production C Startup J line; scalar
+  contracts rebased onto `AST.Block`; no backend AD.
+- R5 (steps 6-8): actual-file/manifest/archive contracts, boundary mutants
+  (bound, index, RHS, target, leading zero, range order, obsolete `.*` and
+  `jacobian` rejection), required `LC_ALL=C` full gate, post-audit and prune.
+
+Hashes verified at review time: eFMI extract
+`2e5aff94511f8499d49a12726085335a3b470fe63950dc26ce4b4407f328f4f9`, FMI extract
+`6e6f59c2209ca40a6d982a1113a20683ba2ddf7cbeda693432c3d56d9b85c7fe`, MLS annex
+`build/modelica-3.7-syntax-reference.html`
+`62c1756596f423dca0f21e86421a82b4e1836c04c558f870f7afabb685201ea1`, Modelica
+EBNF `1223b291a24cd5f80dcf3734e403164f00b55e4d25f16a0e198960456eee2907`
+(unchanged by this stage), pre-cutover GALEC EBNF
+`15b65a1ba11cbb1a65f92577947b6b47c2d3c9e4deb0424667490fa98b6bab73`. No full
+conformance claim.
+
 ### Table-parametric method adoption — repair prerequisite; stage OPEN
 
 No grammar, admission, C tree, artifact or permission-policy change. Existing
