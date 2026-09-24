@@ -326,27 +326,30 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
   -I"$troot/ProductionCode" tests/efmi-tensor-native.c -lm -o "$tstage/tensor-native"
 "$tstage/tensor-native"
 echo 'tensor eFMU: native finite/signed-zero methods, Jacobian overflow and multiplication outcome checks passed'
-# One Production C mutation control: the extracted directory with a mutated
-# Production C must be rejected by the tensor directory checker (before any kernel
-# certificate work) and must not certify.
+# Production C mutation controls: the extracted directory with a mutated kernel
+# call, or with the Startup Jacobian initialization deleted, must be rejected by
+# the tensor directory checker (before any kernel certificate work) and must not
+# certify.
 tmut="$tstage/mutant"
 rm -rf "$tmut"; mkdir -p "$tmut/AlgorithmCode" "$tmut/ProductionCode"
 cp "$troot/AlgorithmCode/model.alg" "$tmut/AlgorithmCode/model.alg"
 cp "$troot/AlgorithmCode/manifest.xml" "$tmut/AlgorithmCode/manifest.xml"
 cp "$troot/ProductionCode/manifest.xml" "$tmut/ProductionCode/manifest.xml"
 cp "$troot/__content.xml" "$tmut/__content.xml"
-sed 's/rumoca_tensor_mul(u, u/rumoca_tensor_add(u, u/' \
-  "$troot/ProductionCode/production.c" > "$tmut/ProductionCode/production.c"
-if cmp -s "$troot/ProductionCode/production.c" "$tmut/ProductionCode/production.c"; then
-  echo 'ineffective tensor Production C mutation' >&2; exit 1
-fi
-if lake run verify-artifact tensor-efmi-directory examples/development/TensorSquare.mo "$tmut" \
-    packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
-    > "$tstage/rejected-production.log" 2>&1; then
-  echo 'accepted mutated tensor Production C' >&2; exit 1
-fi
-rg -q 'actual tensor Production C differs from the certified translation unit' "$tstage/rejected-production.log"
+for mutation in 's/rumoca_tensor_mul(u, u/rumoca_tensor_add(u, u/' \
+    '/rumoca_initialize((self->J), 4);/d'; do
+  sed "$mutation" "$troot/ProductionCode/production.c" > "$tmut/ProductionCode/production.c"
+  if cmp -s "$troot/ProductionCode/production.c" "$tmut/ProductionCode/production.c"; then
+    echo "ineffective tensor Production C mutation: $mutation" >&2; exit 1
+  fi
+  if lake run verify-artifact tensor-efmi-directory examples/development/TensorSquare.mo "$tmut" \
+      packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+      > "$tstage/rejected-production.log" 2>&1; then
+    echo "accepted mutated tensor Production C: $mutation" >&2; exit 1
+  fi
+  rg -q 'actual tensor Production C differs from the certified translation unit' "$tstage/rejected-production.log"
+done
 cp "$tarchive" build/TensorSquare.efmu
 sha256sum build/TensorSquare.efmu
 rm -rf "$tstage"
-echo 'Tensor eFMU: checked CLI publication, certificate reuse, official schemas/checksums, array dimensions and Production C mutation control passed'
+echo 'Tensor eFMU: checked CLI publication, certificate reuse, official schemas/checksums, array dimensions and Production C mutation controls passed'
