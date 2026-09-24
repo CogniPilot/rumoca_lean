@@ -2,11 +2,11 @@ import RumocaEFMI.TensorAlgorithmProofs
 import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.squareKernel
 #audit axioms Rumoca.EFMI.squareExtent
-#audit axioms Rumoca.EFMI.square_extent
 #audit axioms Rumoca.EFMI.squareStartup
 #audit axioms Rumoca.EFMI.squareDoStep
 #audit axioms Rumoca.EFMI.squareBlock
-#audit axioms Rumoca.EFMI.squareBlock_declarations
+#audit axioms Rumoca.EFMI.renderTensorAlgorithm
+#audit axioms Rumoca.EFMI.admittedModel
 #audit axioms Rumoca.EFMI.tensorAlgorithmSource
 #audit axioms Rumoca.EFMI.TensorAlgorithm.startupResult
 #audit axioms Rumoca.EFMI.TensorAlgorithm.recalibrateResult
@@ -33,3 +33,12 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorAlgorithm.emitted_prepared
 #audit axioms Rumoca.EFMI.TensorAlgorithm.AlgorithmContract
 #audit axioms Rumoca.EFMI.TensorAlgorithm.algorithm_correct
+#audit axioms Rumoca.EFMI.TensorAlgorithm.envTotal
+#audit axioms Rumoca.EFMI.TensorAlgorithm.observe
+#audit axioms Rumoca.EFMI.TensorAlgorithm.step_lowered
+#audit axioms Rumoca.EFMI.TensorAlgorithm.withDoStep
+#audit axioms Rumoca.EFMI.TensorAlgorithm.coefficientBody
+#audit axioms Rumoca.EFMI.TensorAlgorithm.unclearedBody
+#audit axioms Rumoca.EFMI.TensorAlgorithm.coefficient_rejected
+#audit axioms Rumoca.EFMI.TensorAlgorithm.uncleared_rejected
+#audit axioms Rumoca.EFMI.TensorAlgorithm.changed_bodies_prepare

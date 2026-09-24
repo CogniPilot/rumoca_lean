@@ -89,7 +89,7 @@ lake run verify-artifact --check-only tensor-algorithm "$tensor_stage/Source.mo"
 bash scripts/audit-lean.sh "$tensor_stage/cached.log"
 rg -q 'Rumoca.CheckedTensorEFMIFiles.source_to_algorithm depends on axioms:' "$tensor_stage/cached.log"
 cp "$tensor_stage/model.alg" "$tensor_stage/original.alg"
-# Independently restore each declaration's old type-dimensions-name order.
+# Each declaration with its dimensions written after the type is rejected.
 # Every mutation starts from the certified original and must change its bytes.
 for declaration in input state jacobian; do
   case "$declaration" in
@@ -104,16 +104,20 @@ for declaration in input state jacobian; do
   if lake run verify-artifact tensor-algorithm "$tensor_stage/Source.mo" "$tensor_stage/model.alg" \
       packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
       > "$tensor_stage/rejected-dimension-$declaration.log" 2>&1; then
-    printf 'accepted old tensor dimension position: %s\n' "$declaration" >&2; exit 1
+    printf 'accepted type-position tensor dimensions: %s\n' "$declaration" >&2; exit 1
   fi
   rg -q 'differs from the emitted tensor square block' "$tensor_stage/rejected-dimension-$declaration.log"
 done
 cp "$tensor_stage/original.alg" "$tensor_stage/model.alg"
-echo 'Tensor GALEC: all three old declaration-dimension positions rejected'
+echo 'Tensor GALEC: all three type-position declaration dimensions rejected'
 # Each mutated tensor Algorithm Code method must fail the fixed certificate.
 # Every mutation starts from the certified original and must change its bytes:
-# the period, a loop bound, an index, a coefficient, the operation order, the
-# DoStep matrix clear, and the pointwise `.*` and `jacobian(...)` spellings.
+# the period, a loop bound, an index, a coefficient, the matrix clear moved after
+# the diagonal scatter, the missing matrix clear, and the `.*` and `jacobian(...)`
+# spellings. The checker rejects all of them at its early byte comparison with
+# the emitted text; this script does not show semantic rejection. The Lean
+# evidence is `Syntax.no_pointwise_token`, the call-free expression lowering and
+# `TensorAlgorithm.coefficient_rejected`/`uncleared_rejected`.
 reject_tensor() {
   perl -0pe "$2" "$tensor_stage/original.alg" > "$tensor_stage/model.alg"
   if cmp -s "$tensor_stage/original.alg" "$tensor_stage/model.alg"; then
@@ -130,11 +134,11 @@ reject_tensor period 's/self\.samplePeriod := 1\.0/self.samplePeriod := 0.0/'
 reject_tensor loop-bound 's/(method DoStep.*?for k in 1:1:size\(self\.u, )1/${1}2/s'
 reject_tensor index 's/self\.x\[k\] := self\.u\[k\] \* self\.u\[k\]/self.x[k] := self.u[1] * self.u[k]/'
 reject_tensor coefficient 's/self\.u\[k\] \+ self\.u\[k\]/self.u[k] * self.u[k]/'
-reject_tensor order 's/(method DoStep\n    algorithm\n)(.*?end for;\n)(.*?end for;\n        end for;\n)/$1$3$2/s'
+reject_tensor clear-after-scatter 's/(method DoStep\n    algorithm\n.*?end for;\n)(        for r in .*?end for;\n        end for;\n)(        for k in .*?end for;\n)/$1$3$2/s'
 reject_tensor matrix-clear 's/(method DoStep.*?end for;\n)        for r in .*?end for;\n        end for;\n/$1/s'
 reject_tensor pointwise 's/self\.u\[k\] \* self\.u\[k\]/self.u[k] .* self.u[k]/'
 reject_tensor jacobian 's/self\.J\[k, k\] := self\.u\[k\] \+ self\.u\[k\]/self.J[k, k] := jacobian(self.u[k] * self.u[k], self.u[k])/'
-echo 'Tensor GALEC: period, loop, index, coefficient, order, clear and obsolete-spelling mutations rejected'
+echo 'Tensor GALEC: period, loop, index, coefficient, clear-order, clear and pointwise-spelling mutants rejected'
 rm -rf "$tensor_stage"
 
 echo 'GALEC EBNF freshness, reuse, actual-file certificate and mutation checks passed'

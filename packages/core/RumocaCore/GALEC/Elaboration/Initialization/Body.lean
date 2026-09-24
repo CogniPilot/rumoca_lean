@@ -2,7 +2,7 @@ import RumocaCore.GALEC.Elaboration.Initialization.VectorClear
 import RumocaCore.GALEC.InitializationBodies
 import RumocaCore.GALEC.Elaboration.Square.Execution
 
-/-! Proposed Startup source body through generic lowering. Writable bindings are
+/-! Startup source body through generic lowering. Writable bindings are
 explicit premises, not a claimed normative Startup permission policy. -/
 namespace Rumoca.GALEC.Elaboration.Initialization.Body
 open Elaboration Elaboration.Surface Rumoca.Tensor Rumoca.Solve.Tensor

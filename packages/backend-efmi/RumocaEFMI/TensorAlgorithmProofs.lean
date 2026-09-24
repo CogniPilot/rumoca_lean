@@ -182,17 +182,80 @@ parses to the emitter's tree, and the one-pass source pipeline returns an
 original AST whose three bodies satisfy the source contract. No original-body
 execution premise is supplied by the checker. -/
 structure AlgorithmContract (model : TensorModel ArrayProfile.stateShape) (emitted : String) : Prop where
-  bytes : tensorAlgorithmSource = emitted
+  bytes : renderTensorAlgorithm model = emitted
   parsed : ∃ parsed, Syntax.parse emitted = .ok parsed ∧ parsed.ast = squareBlock squareExtent
   original_source : ∃ product,
     Block.fromSource emitted = .ok product ∧
     SourceContract squareExtent Static.Bounded.integerCeiling product.parsed.ast model.kernel
 
 theorem algorithm_correct (model : TensorModel ArrayProfile.stateShape)
-    (printed : tensorAlgorithmSource = emitted) : AlgorithmContract model emitted := by
+    (printed : renderTensorAlgorithm model = emitted) : AlgorithmContract model emitted := by
   subst emitted
   obtain ⟨product, compiled, sameResult⟩ := emitted_prepared
   exact ⟨rfl, emitted_parses, product, compiled,
     source_contract (sameResult ▸ product.prepared) model.profile⟩
+
+/-! ### The source contract rejects prepared but wrong DoStep bodies
+
+Each block below changes one DoStep statement of the emitted block and still
+parses and prepares through the generic preparer. The contract fixes the
+prepared DoStep result, so it fails for both. The observation executes a
+prepared body over natural numbers and totals every output coordinate. -/
+
+/-- Sum of every stored coordinate over any output layout. -/
+def envTotal : (shapes : List Shape) → Env Nat shapes → Nat
+  | [], _ => 0
+  | _ :: rest, env => (env .here).data.toList.sum + envTotal rest (fun r => env (.there r))
+
+/-- Total of all outputs after a prepared body runs with inputs three and
+outputs five, over natural-number arithmetic. -/
+def observe (result : Methods.Preparation.Result) : Nat :=
+  envTotal _ (result.2.execute ⟨Nat.add, Nat.mul, Nat.sub, Nat.div, id⟩ 0 1
+    (fun {s} _ => Value.fill s 3) IteratorEnv.empty (fun {s} _ => Value.fill s 5))
+
+theorem step_lowered (contract : SourceContract extent ceiling block kernel) :
+    Methods.Preparation.fromBlock (.ident "DoStep") Capabilities.DoStep.role ceiling block =
+      some (stepResult extent) := by
+  obtain ⟨interface, prepared⟩ := contract.prepared
+  exact (Methods.Preparation.fromBlock_iff _ _ _ _ _).mpr prepared.doStep
+
+/-- The emitted block with another DoStep body. -/
+def withDoStep (body : List AST.Statement) : AST.Block :=
+  { squareBlock squareExtent with
+    methods := [squareStartup, Scalar.recalibrateMethod, ⟨.ident "DoStep", body, .ident "DoStep"⟩] }
+
+open GALEC.Elaboration.Surface in
+/-- The diagonal coefficient `u[k] * u[k]` in place of `u[k] + u[k]`. -/
+def coefficientBody : List AST.Statement :=
+  [Square.pointwiseSource "u" "x", Square.clearSource "J",
+   unitLoop "k" (dimension "u" 1)
+    [.assign (stateReference "J" [iterator "k", iterator "k"])
+      (.binary (.literal "*") (.reference (stateReference "u" [iterator "k"]))
+        (.reference (stateReference "u" [iterator "k"])))]]
+
+/-- The DoStep body without the matrix clear. -/
+def unclearedBody : List AST.Statement :=
+  [Square.pointwiseSource "u" "x", Square.scatterSource "u" "J"]
+
+theorem coefficient_rejected (kernel : PointwiseIVP ⟨[squareExtent]⟩) :
+    ¬ SourceContract squareExtent Static.Bounded.integerCeiling (withDoStep coefficientBody) kernel := by
+  intro contract
+  have observed := congrArg (Option.map observe) (step_lowered contract)
+  revert observed
+  decide +kernel
+
+theorem uncleared_rejected (kernel : PointwiseIVP ⟨[squareExtent]⟩) :
+    ¬ SourceContract squareExtent Static.Bounded.integerCeiling (withDoStep unclearedBody) kernel := by
+  intro contract
+  have observed := congrArg (Option.map observe) (step_lowered contract)
+  revert observed
+  decide +kernel
+
+/-- Both changed blocks prepare generically, so their rejection is by the
+source contract and not by preparation. -/
+theorem changed_bodies_prepare :
+    (Block.fromBlock Static.Bounded.integerCeiling (withDoStep coefficientBody)).isSome = true ∧
+    (Block.fromBlock Static.Bounded.integerCeiling (withDoStep unclearedBody)).isSome = true := by
+  decide +kernel
 
 end Rumoca.EFMI.TensorAlgorithm

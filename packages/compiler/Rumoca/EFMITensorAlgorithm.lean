@@ -31,8 +31,8 @@ structure TensorAlgorithmArtifact (source : String) where
 def TensorAlgorithmArtifact.model (a : TensorAlgorithmArtifact source) :
     EFMI.TensorModel ArrayProfile.stateShape := ⟨a.prepared.kernel, a.square⟩
 
-def TensorAlgorithmArtifact.algorithmSource (_a : TensorAlgorithmArtifact source) : String :=
-  EFMI.tensorAlgorithmSource
+def TensorAlgorithmArtifact.algorithmSource (a : TensorAlgorithmArtifact source) : String :=
+  EFMI.renderTensorAlgorithm a.model
 
 /-- Compiler correctness: the emitted tensor Algorithm Code parses to the
 emitter tree, and its one-pass source preparation satisfies the source contract

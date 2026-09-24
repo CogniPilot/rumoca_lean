@@ -57,24 +57,9 @@ theorem prepared_results (input : InputEnv) (env : IteratorEnv [])
   refine ⟨rhsValue ▸ run, ?_⟩
   apply (matrixEquiv (rows := 2) (columns := 2)).injective
   funext row col
-  simpa only [squareExtent, matrixEquiv, Value.toMatrix, Matrix.of_apply, vector_index_two] using
+  simpa only [squareExtent, ArrayProfile.stateShape, List.headD_cons, matrixEquiv, Value.toMatrix,
+    Matrix.of_apply, vector_index_two] using
     jacobianValue row col
-
-theorem source_results (bounded : 2 ≤ ceiling) (input : InputEnv) (env : IteratorEnv [])
-    (before after : OutputEnv)
-    (executed : Square.squareExecutes squareExtent ceiling Finite.Result Binary64.positiveZero
-      Binary64.one @input @env @before @after) :
-    Finite.Executes (ArrayProfile.squareProgram inputShape)
-      (ArrayProfile.environment (input (Square.squareInput squareExtent))
-        (input (Square.squareInput squareExtent)))
-      (after (Square.squareRhs squareExtent)) ∧
-    after (Square.squareJacobian squareExtent) =
-      (ArrayProfile.squareJacobianProgram inputShape).eval Finite.ops Binary64.positiveZero Binary64.one
-        (ArrayProfile.environment (input (Square.squareInput squareExtent))
-          (input (Square.squareInput squareExtent))) :=
-  prepared_results @input @env @before @after
-    ((Square.layout_source_executes (by decide) bounded bounded Finite.Result
-      Binary64.positiveZero Binary64.one @input @env @before @after).mp executed)
 
 /-! ### Startup source initialization and the emitted Startup body -/
 
@@ -126,56 +111,6 @@ theorem initialized_to_c (unusedKernel : CSyntax.Program) (objects : Objects)
     intro i
     have zero : i.val = 0 := by have := i.isLt; change i.val < 1 at this; omega
     simpa only [Fin.getElem_fin, zero, Address.index_zero, Tensor.Value.getElem_fill] using outcome.clock
-
-theorem prepared_to_c (unusedKernel : CSyntax.Program) (objects : Objects)
-    (heap : Heap) (base : Address) (before after : Env Binary64.Value outputs)
-    (vector : Ref outputs ⟨[squareExtent]⟩) (matrix : Ref outputs (matrixShape squareExtent squareExtent))
-    (period : Ref outputs scalar) (input : Env Binary64.Value inputs)
-    (iterators : IteratorEnv bounds)
-    (executed : (InitializationBodies.body vector matrix period).Executes
-      Finite.Result Binary64.positiveZero Binary64.one @input @iterators @before @after)
-    (storage : AllocatedStorage objects heap base)
-    (locals : CBody.Locals) (types : CLoops.Types)
-    (bound : locals "self" = some (.pointer (some base)))
-    (unshadowed : locals "rumoca_initialize" = none)
-    (stack : CCalls.Typed.Continuation) :
-    Completes unusedKernel objects heap base @after vector matrix period locals types stack :=
-  initialized_to_c unusedKernel objects heap base @before @after vector matrix period
-    ((InitializationBodies.body_executes_iff vector matrix period Finite.Result
-      Binary64.positiveZero Binary64.one @input @iterators @before @after).mp executed)
-    storage locals types bound unshadowed stack
-
-/-- Given explicit source bindings and shape metadata, independent source
-semantics determines precisely the values read after the emitted Startup body.
-No input read or finite-domain premise is introduced by the target refinement. -/
-theorem source_to_c (table : BindingTable inputs outputs) (lookupShape : List String → Option Shape)
-    (HasShape : List String → Shape → Prop)
-    (correct : ∀ key shape, lookupShape key = some shape ↔ HasShape key shape)
-    (vector : Ref outputs ⟨[squareExtent]⟩) (matrix : Ref outputs (matrixShape squareExtent squareExtent))
-    (period : Ref outputs scalar)
-    (vectorBound : BindingTable.Resolves table [vectorName] ⟨_, .writable vector⟩)
-    (matrixBound : BindingTable.Resolves table [matrixName] ⟨_, .writable matrix⟩)
-    (periodBound : BindingTable.Resolves table [periodName] ⟨_, .writable period⟩)
-    (vectorKnown : HasShape [vectorName] ⟨[squareExtent]⟩)
-    (matrixKnown : HasShape [matrixName] (matrixShape squareExtent squareExtent))
-    (bounded : 2 ≤ ceiling)
-    (unusedKernel : CSyntax.Program) (objects : Objects)
-    (heap : Heap) (base : Address) (before after : Env Binary64.Value outputs)
-    (input : Env Binary64.Value inputs) (iterators : IteratorEnv [])
-    (executed : Bodies.Source.statements table HasShape ceiling Finite.Result
-      Binary64.positiveZero Binary64.one @input .nil @iterators
-      (Initialization.Body.source vectorName matrixName periodName) @before @after)
-    (storage : AllocatedStorage objects heap base)
-    (locals : CBody.Locals) (types : CLoops.Types)
-    (bound : locals "self" = some (.pointer (some base)))
-    (unshadowed : locals "rumoca_initialize" = none)
-    (stack : CCalls.Typed.Continuation) :
-    Completes unusedKernel objects heap base @after vector matrix period locals types stack :=
-  initialized_to_c unusedKernel objects heap base @before @after vector matrix period
-    ((Initialization.Body.source_executes table lookupShape HasShape correct vector matrix period
-      vectorBound matrixBound periodBound vectorKnown matrixKnown (by decide) bounded bounded
-      Finite.Result Binary64.positiveZero Binary64.one @input @iterators @before @after).mp executed)
-    storage locals types bound unshadowed stack
 
 /-! ### Startup correspondence on the public entry -/
 
@@ -305,16 +240,6 @@ def handoff
     (show (Square.startupFields squareExtent).map Layout.Field.declaration =
       (Square.squareFields squareExtent).map Layout.Field.declaration from rfl) @input @output
 
-theorem handoff_preserves
-    (input : Env α (Layout.inputShapes (Square.startupFields squareExtent)))
-    (output : Env α (Layout.outputShapes (Square.startupFields squareExtent))) :
-    @Layout.State.join α (Square.squareFields squareExtent)
-      (handoff @input @output).1 (handoff @input @output).2 =
-    @Layout.State.join α (Square.startupFields squareExtent) @input @output :=
-  Layout.State.repartition_preserves
-    (show (Square.startupFields squareExtent).map Layout.Field.declaration =
-      (Square.squareFields squareExtent).map Layout.Field.declaration from rfl) @input @output
-
 theorem startup_ready
     (input : Env Binary64.Value (Layout.inputShapes (Square.startupFields squareExtent)))
     (output : Env Binary64.Value (Layout.outputShapes (Square.startupFields squareExtent)))
@@ -437,14 +362,5 @@ theorem methods_correct (algorithm : AlgorithmContract model algorithmBytes)
     MethodsContract model algorithmBytes productionC :=
   ⟨startup_contract algorithm target, recalibrate_correspondence algorithm,
     source_startup_ready (algorithm_startup_correspondence algorithm), step_correspondence algorithm⟩
-
-/-- The emitted Algorithm Code and Production C satisfy all method
-correspondences. -/
-theorem emitted_methods_correct (model : TensorModel ArrayProfile.stateShape)
-    (algorithmBytes : tensorAlgorithmSource = algorithm)
-    (productionBytes : productionC = TensorProduction.render) :
-    MethodsContract model algorithm productionC :=
-  methods_correct (algorithm_correct model algorithmBytes)
-    (TensorProduction.production_correct productionC productionBytes)
 
 end Rumoca.EFMI.TensorSourceMethods

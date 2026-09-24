@@ -47,7 +47,8 @@ certify_source undeclared (Print.block { unitTree with
   methods := [Scalar.startupMethod "missing" "samplePeriod", Scalar.recalibrateMethod,
     Scalar.stepMethod "x"] })
 /- Two declarations with the same name. -/
-certify_source duplicate (Print.block { unitTree with protectedDeclarations := [real .constant "x"] })
+certify_source duplicate (Print.block { unitTree with
+  protectedDeclarations := [Scalar.clockDeclaration "samplePeriod", real .constant "x"] })
 /- A Real literal outside the admitted values. -/
 certify_source literal (Print.block { unitTree with
   methods := [Scalar.startupMethod "x" "samplePeriod", Scalar.recalibrateMethod,
@@ -59,10 +60,10 @@ certify_source methodEnd (Print.block { unitTree with
     Scalar.stepMethod "x"] })
 /- A direction in the protected section. -/
 certify_source protectedInput (Print.block { unitTree with
-  protectedDeclarations := [real .input "samplePeriod"] })
+  protectedDeclarations := [Scalar.clockDeclaration "samplePeriod", real .input "extra"] })
 /- `constant` in the leading section. -/
 certify_source publicConstant (Print.block { unitTree with
-  publicDeclarations := [real .constant "x"] })
+  publicDeclarations := [Scalar.stateDeclaration "x", real .constant "extra"] })
 /- A non-canonical extent numeral. -/
 certify_source leadingZero (Print.block { EFMI.squareBlock EFMI.squareExtent with
   publicDeclarations := real .input "u" [.literal (.number "02")] ::
@@ -100,6 +101,18 @@ theorem leading_zero_rejected : ∀ product, Block.fromSource leadingZero.source
 theorem swapped_range_rejected : ∀ product, Block.fromSource swappedRange.source ≠ .ok product :=
   rejected swappedRange.witness (by decide +kernel)
 
+/-- The same edits without their faults prepare: an unused protected constant,
+an unused leading variable and a second distinct protected constant. Each
+rejection above is therefore caused by its one fault. -/
+theorem single_faults :
+    (Block.fromBlock Static.Bounded.integerCeiling { unitTree with
+      protectedDeclarations := [Scalar.clockDeclaration "samplePeriod", real .constant "extra"] }).isSome ∧
+    (Block.fromBlock Static.Bounded.integerCeiling { unitTree with
+      publicDeclarations := [Scalar.stateDeclaration "x", real .variable "extra"] }).isSome ∧
+    (Block.fromBlock Static.Bounded.integerCeiling { unitTree with
+      protectedDeclarations := [Scalar.clockDeclaration "samplePeriod", real .constant "y"] }).isSome := by
+  decide +kernel
+
 /- A different well-formed program: DoStep reads the period instead of `x`. -/
 certify_source readsPeriod (Print.block { unitTree with
   methods := [Scalar.startupMethod "x" "samplePeriod", Scalar.recalibrateMethod,
@@ -107,8 +120,9 @@ certify_source readsPeriod (Print.block { unitTree with
       (.reference (stateReference "samplePeriod" [])) (.literal (.number "1.0"))))],
       .ident "DoStep"⟩] })
 
-/-- The compiler's scalar Algorithm Code denotation rejects a different
-well-formed program, not only malformed or unprepared text. -/
+/-- A different well-formed program is not the scalar specification tree, so the
+scalar Algorithm Code denotation rejects it. This is a syntactic rejection:
+the parsed tree differs from the specification tree. -/
 theorem reads_period_rejected : ¬ EFMI.Denotes readsPeriod.ast GALEC.unitBlock := by
   intro denotes
   have printed := congrArg Print.block denotes.1
@@ -162,6 +176,7 @@ theorem initial_state_and_period (old : GALEC.UnitProfile.State Nat) :
 #audit axioms public_constant_rejected
 #audit axioms leading_zero_rejected
 #audit axioms swapped_range_rejected
+#audit axioms single_faults
 #audit axioms reads_period_rejected
 #audit axioms changed_period
 #audit axioms tensor_operation_order

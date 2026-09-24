@@ -45,11 +45,6 @@ theorem square_jacobian_coefficients (shape : Shape) (ops : ScalarOps α) (zero 
   rw [Program.forward_correct]
   rfl
 
-/-- The state extent of the prepared array profile. -/
-def squareExtent : Nat := 2
-
-theorem square_extent : ArrayProfile.stateShape = ⟨[squareExtent]⟩ := rfl
-
 /-- Startup clears the state output `x` and the Jacobian output `J`, then sets
 the sample period. -/
 def squareStartup : AST.Method :=
@@ -66,10 +61,18 @@ def squareBlock (extent : Nat) : AST.Block :=
   ⟨.ident "TensorSquare", Square.squarePublic extent, Square.squareProtected,
     [squareStartup, Scalar.recalibrateMethod, squareDoStep], .ident "TensorSquare"⟩
 
-theorem squareBlock_declarations (extent : Nat) :
-    (squareBlock extent).declarations = Square.squareDeclarations extent := rfl
+/-- The tensor Algorithm Code text of a prepared square model: the square block
+at the state extent of the model's shape. -/
+def renderTensorAlgorithm (_model : TensorModel ⟨[extent]⟩) : String :=
+  Print.block (squareBlock extent)
 
-/-- The emitted tensor Algorithm Code text at the prepared state extent. -/
-def tensorAlgorithmSource : String := Print.block (squareBlock squareExtent)
+/-- The state extent of the admitted array profile, read from its prepared shape. -/
+def squareExtent : Nat := ArrayProfile.stateShape.dimensions.headD 0
+
+/-- The admitted prepared square model. -/
+def admittedModel : TensorModel ArrayProfile.stateShape := ⟨squareKernel _, rfl⟩
+
+/-- The emitted tensor Algorithm Code text of the admitted model. -/
+def tensorAlgorithmSource : String := renderTensorAlgorithm admittedModel
 
 end Rumoca.EFMI

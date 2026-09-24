@@ -3,12 +3,9 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorSourceMethods.NumericalView
 #audit axioms Rumoca.EFMI.TensorSourceMethods.vector_index_two
 #audit axioms Rumoca.EFMI.TensorSourceMethods.prepared_results
-#audit axioms Rumoca.EFMI.TensorSourceMethods.source_results
 #audit axioms Rumoca.EFMI.TensorSourceMethods.Observes
 #audit axioms Rumoca.EFMI.TensorSourceMethods.Completes
 #audit axioms Rumoca.EFMI.TensorSourceMethods.initialized_to_c
-#audit axioms Rumoca.EFMI.TensorSourceMethods.prepared_to_c
-#audit axioms Rumoca.EFMI.TensorSourceMethods.source_to_c
 #audit axioms Rumoca.EFMI.TensorSourceMethods.StartupCorrespondence
 #audit axioms Rumoca.EFMI.TensorSourceMethods.algorithm_startup_correspondence
 #audit axioms Rumoca.EFMI.TensorSourceMethods.StartupContract
@@ -19,7 +16,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorSourceMethods.RecalibrateCorrespondence
 #audit axioms Rumoca.EFMI.TensorSourceMethods.recalibrate_correspondence
 #audit axioms Rumoca.EFMI.TensorSourceMethods.handoff
-#audit axioms Rumoca.EFMI.TensorSourceMethods.handoff_preserves
 #audit axioms Rumoca.EFMI.TensorSourceMethods.startup_ready
 #audit axioms Rumoca.EFMI.TensorSourceMethods.StartupReady
 #audit axioms Rumoca.EFMI.TensorSourceMethods.source_startup_ready
@@ -28,4 +24,3 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorSourceMethods.step_correspondence
 #audit axioms Rumoca.EFMI.TensorSourceMethods.MethodsContract
 #audit axioms Rumoca.EFMI.TensorSourceMethods.methods_correct
-#audit axioms Rumoca.EFMI.TensorSourceMethods.emitted_methods_correct
