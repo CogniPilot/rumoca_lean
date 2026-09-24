@@ -32,7 +32,7 @@ theorem body_run (model : Solve.FMI3Model source)
     simp [Runtime.body, ErrorCalls.nominalSignature, tail, ErrorCalls.nominalRest]
   rw [body, show 6 = 3 + 3 from rfl, run_add, accepted]
   simp [tail, ErrorCalls.nominalRest, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
-    Runtime.ret, Runtime.ok, Runtime.either, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n,
+    Runtime.ret, Runtime.ok, Runtime.either, Runtime.nev, Runtime.eqv, Runtime.v, Runtime.n,
     run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ErrorCalls.nominalEnv, CBody.bind, resolve, constants,
     CBody.cast, convert, comparison, boolean, Value.truth, Value.address, store, storage, written]
 

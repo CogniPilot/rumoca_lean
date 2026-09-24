@@ -1,5 +1,37 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current owned scalar-access repair — owner checks passed, full gate pending
+
+`Runtime.scalarAccessCheck` now emits explicit pointer equality to `(void *)0`
+with the same leading count test and failure continuation. Six source/proof
+files preserve all 38 original theorem statements; the seventh Lean change
+adds direct get_run/set_run audits to the existing StateProofs audit leaf.
+No public/artifact predicate, grammar/admission or tensor/eFMI guard change.
+The fixed scalar interface discharges the null type, avoiding the unrelated
+generic output/Float64 helper obstacle described below. Residual MISRA findings
+remain open; this is not a compliance claim or tensor candidate promotion.
+
+Owner-v3/session52894 finished0: 4,013 jobs, 3,511 whitelisted reports, seven
+exact selected roots, ten frozen inputs. Main rechecked the receipt and read
+the independent source/runner review. Owner-v1 failed the missing nominal
+proof unfold; v2's Lean build passed but its root check found the two state-run
+roots had only indirect caller audits. Added direct registrations; no expected
+root or whitelist restriction was removed. All earlier runs are terminal.
+
+Next run the required full gate once after the signed clean commit:
+`nix develop .#verification --command bash build/scalar-access-null/full-gate.sh`.
+Check the live checkpoint/handle before launching: it may already be running.
+Only after exit0 run `post-audit.sh` in the same verification environment.
+Scripts freeze tracked inputs and runner/normalizer/root inventories, retain
+all 659 old plus two new roots, require four exact actual FMU roots, and compare
+the whole scalar adapter against a baseline-derived four-guard delta. The other
+two adapters, three model C files and four eFMI Algorithm/C members must stay
+unchanged. Baseline-v1 is complete; do not recreate it from new artifacts.
+Required full gate has not yet passed this repair. Prior snapshots below are
+historical; the changed Runtime source intentionally invalidates their current
+dependency hashes. Rebuild/re-snapshot scratch only when needed, never overwrite
+old receipts. No push is authorized by this continuation.
+
 ## Latest owned increment — full gate passed
 
 The newest full-gated implementation is `6b7f9e9`: explicit-code manifest

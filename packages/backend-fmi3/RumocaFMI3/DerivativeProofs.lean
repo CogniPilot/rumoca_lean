@@ -43,7 +43,7 @@ private theorem prefix_run (m : Solve.FMI3Model source) (sig : Signature)
     simp [Runtime.body, hsig, tail, tailBody, target, Runtime.v, Runtime.n]
   rw [hb, show 4 = 3 + 1 from rfl, CBody.run_add, hp]
   simp [tail, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
-    Runtime.nev, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
+    Runtime.nev, Runtime.eqv, Runtime.either, Runtime.v, Runtime.n,
     CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, parameters, locals, CBody.bind,
     CBody.resolve, CBody.constants, CBody.comparison, CBody.boolean, Value.truth]
 

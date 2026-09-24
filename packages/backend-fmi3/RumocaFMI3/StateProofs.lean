@@ -60,8 +60,8 @@ theorem get_run (m : Solve.FMI3Model source) (sig : Signature)
     simp [Runtime.body, hsig, tail]
   rw [hb, show 6 = 3 + 3 from rfl, run_add, hp]
   simp [tail, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
-    Runtime.ret, Runtime.ok, Runtime.field, Runtime.x, Runtime.nev, Runtime.either,
-    Runtime.negate, Runtime.v, Runtime.n, run, next, nextWith, legacyExpressions,
+    Runtime.ret, Runtime.ok, Runtime.field, Runtime.x, Runtime.nev, Runtime.eqv, Runtime.either,
+    Runtime.v, Runtime.n, run, next, nextWith, legacyExpressions,
     eval, evalWith, lvalue, lvalueWith, CDeclaredMembers.memberValue,
     CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, parameters,
     CBody.bind, resolve, constants, CBody.cast, convert, comparison, boolean,

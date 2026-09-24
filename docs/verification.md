@@ -1,5 +1,26 @@
 # Exact verification contract
 
+**Scalar array-access explicit null guards (owner checks passed; full gate pending):**
+`Runtime.scalarAccessCheck` now uses explicit equality to `Expr.nullPointer`
+instead of pointer negation. The count-first short circuit, rejection message,
+continuation and all existing public/artifact predicates are unchanged. The
+six implementation/proof files retain all 38 original theorem statements; proof
+maintenance only changes simplification lists. The existing concrete FMI type
+dictionary supplies the null type. No new type/storage premise is introduced.
+This affects four scalar state/derivative/nominal functions, not the independent
+tensor/constant guards or the shared output/Float64 guards. Those residual MISRA
+findings and the generic-helper migration constraint remain open.
+
+Owner-v3/session52894 passed 4,013 jobs, 3,511 complete unchanged-whitelist
+reports, seven exact selected roots and ten frozen inputs. Two direct state
+execution audits were added, retaining all previous audits. V1 exposed one
+missing nominal-proof unfold; V2's Lean build passed but its receipt correctly
+failed because those two roots were not directly registered yet. No contract
+or audit requirement was removed. Independent review found no source finding;
+its root-substring runner finding was repaired with exact-name checks. Required
+`lake test` and post-audit are pending: the prior full gate does not establish
+the changed adapter's actual-artifact behavior. Evidence: `build/scalar-access-null/`.
+
 **Owned explicit-code manifest constructors (full gate passed):**
 The existing TensorManifest owner now has `productionWithCode` and
 `prepareWithCode`, with 11 migrated universal document/checksum/reference proofs.

@@ -93,7 +93,7 @@ def makeInstance (m : Solve.FMI3Model source) (kind : Kind) : List Stmt :=
   FactoryPrefix.validation m :: FactoryPrefix.identityGuard :: StaticFactory.code m.solve kind
 
 def scalarAccessCheck (array count : String) : List Stmt := [
-  reject (either (nev (v count) (n 1)) (negate (v array))) "Expected one continuous state"]
+  reject (either (nev (v count) (n 1)) (eqv (v array) Expr.nullPointer)) "Expected one continuous state"]
 
 def getFloat64 : List Stmt := require .get ++ [
   reject (any [nev (v "nValueReferences") (v "nValues"),

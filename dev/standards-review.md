@@ -1,5 +1,24 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Scalar array-access repair update (2026-09-24; full gate pending): the four
+scalar state/derivative/nominal guards now spell the pointer test as equality
+to `(void *)0`. MISRA C:2025 Rules 11.11/11.9 motivate this local repair; the
+already-reviewed null semantics and literal printer apply. Count-first order,
+all 38 affected-file theorem statements and complete public/artifact predicates
+remain unchanged. No grammar/admission, Modelica semantics, solver policy,
+FMI lifecycle/array policy or eFMI body changes. The existing whole-subset
+MLS/FMI/eFMI clause mappings and unresolved findings are retained. Shared output,
+Float64 and tensor/constant implicit guards still require repair; Rule 11.11
+and overall conformance remain open.
+
+Owner-v3/session52894 passed 4,013 jobs, 3,511 whitelisted reports, seven exact
+selected roots and ten frozen inputs. Two direct state-run audits supplement
+the existing caller audits. The actual-artifact gate and post-audit are pending;
+their required inventory retains all 659 previous roots and adds these two.
+The post check must show exactly four scalar adapter line changes and unchanged
+other selected C/Algorithm files. Evidence: `build/scalar-access-null/` and
+`build/scalar-access-null-review.md`. No tensor-candidate promotion or grammar expansion.
+
 Owned repair-prerequisite update (2026-09-24): TensorManifest now owns the
 checked explicit-code constructors and 11 universal graph/reference proofs.
 Existing trees/17 old proofs and artifact predicates are preserved. The compiler
