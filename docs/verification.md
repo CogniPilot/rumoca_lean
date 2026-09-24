@@ -92,6 +92,21 @@ Supplied renderer/kernel equalities are not independently read source/grammar/
 Algorithm/C/XML/archive evidence. Actual-artifact cutover, public overflow
 policy, native boundaries and standards findings remain open.
 
+**Aligned single-call source/C execution (checked scratch):**
+The candidate now constructs original GALEC DoStep execution from finite RHS
+execution of the same Modelica artifact, with explicit shared-input alignment.
+The full GALEC output store and all four field observations, original Modelica
+source/diagonal observations, full target outcome and public behavior refer to
+one exact final heap. The previous entire candidate composition is retained.
+GALEC x is an RHS buffer, not the integrated Modelica state; no equality between
+those is invented. Period representation remains an explicit existing premise.
+Final-v1/session8704 at `a5c6059` passed 12 exact roots, an empty implementation
+log, four source/script, 2,665 tracked/235 selected input hashes and two outputs.
+Main read the complete independent source review, no blocking finding, and
+checked the frozen receipt. Evidence: `build/galec-environment-alignment-draft/`.
+This closes single-call alignment, not arbitrary lifecycle/history, actual-file
+cutover, public overflow policy or any standards/native finding.
+
 **Whole-block preparation and whole-state method handoff (full gate passed):**
 Core now owns `Elaboration.Block.{Headers,Preparation}`,
 `Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface

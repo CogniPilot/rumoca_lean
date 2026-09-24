@@ -93,8 +93,20 @@ implementations and the complete independent review, no blocking finding;
 main checked final hashes and audit receipt. Both Astra agents are closed;
 no terminal session remains live. Do not rerun these completed checks.
 
-Next: explicit Modelica/GALEC environment alignment for a joint execution
-history, and the coupled actual-artifact repair. Preserve the exact model/kernel
+Single-call environment alignment is now checked in
+`build/galec-environment-alignment-draft/`: V3/session2364 and final-v1/session8704
+passed at `a5c6059`, 12 roots, empty implementation log, four local/2,665 tracked/
+235 selected input hashes and two outputs. Main read the complete independent
+review, no blocking finding, and rechecked final hashes. The theorem constructs
+original GALEC execution from the same artifact's finite RHS under explicit
+input alignment, retaining the full output store and both source observations
+at one exact public final heap. GALEC x is an RHS buffer, not integrated state.
+It retains the whole previous bundle and existing period/storage premises.
+
+Next: the coupled actual-artifact repair. An isolated fixed file checker and
+candidate producer are being authored under `build/galec-candidate-artifact-draft/`;
+they are not yet compiled or evidence. Check the ignored live checkpoint for
+worker/terminal status before overlapping that work. Preserve the exact model/kernel
 link, every existing scalar/tensor/total-helper field and allocated-only branch.
 Same candidate parameters alone are not an arbitrary lifecycle or host input
 protocol. Read the latest draft README/review and standards ledger; no actual
