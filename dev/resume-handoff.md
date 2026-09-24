@@ -30,7 +30,7 @@ Prior receipts below remain historical; never overwrite them or interpret
 intentional later source changes as failures of their frozen snapshots.
 No push is authorized by this continuation.
 
-## Current scalar Float64 repair — owner checks passed, full gate pending
+## Current scalar Float64 repair — full gate passed
 
 The reviewed `build/float64-null-adoption/production.patch` was applied after
 signed scalar evidence commit `7eb1241` and baseline22532 success. Its SHA-256 is
@@ -62,16 +62,36 @@ its narrower same-program behavior-equivalence boundary. Do not import scratch.
 `build/float64-null-gate/` contains independently reviewed scripts. Baseline-v1
 is complete: it validated all five prior archive hashes and captures the exact
 expected Float64 delta. Do not recreate it from changed artifacts. Owner-v2 is
-complete as above. Next, after a signed clean implementation commit, run
-`nix develop .#verification --command bash build/float64-null-gate/full-gate.sh`.
-Only after terminal0 run post-audit.sh in the verification environment.
-Neither full gate nor post has passed this change yet. Required selected union:
-674 = old661 +13 disjoint selections (four new declarations, nine existing).
-The whole scalar adapter must show exactly two changed guard lines/four pointer
-leaves; both other adapters/all three model C/four eFMI members stay identical.
-Check the live checkpoint before starting anything: later continuations may
-already have advanced this sequence. Tensor promotion remains unapproved and
-all broader standards findings remain open.
+complete as above. Required full gate38308 and post-audit58887 passed `aff03c0`,
+both terminal0. Do not restart them. Evidence in full-v1: 2,665 frozen tracked
+inputs, 8,811 complete approved reports, all 674 selected roots and four
+retained FMU roots. Three matrices passed 75/75 functions (526/650/526 cells),
+zero discrepancies/unexpected results. The whole scalar adapter has exactly
+two changed guard lines/four pointer leaves; both other adapters, all three
+numerical C files and four eFMI Algorithm/C members stayed identical. Main read
+the diff, roots and matrices and rechecked all five archive hashes.
+
+Next reviewed repair: `build/output-null-adoption/production.patch`
+SHA-256 `d004e0651cd8ddc53f9451a4e79d413e83c63456c7529245c8f237c22a34248e`
+and `build/output-null-gate/audit.patch` add shared explicit output guards and
+12 direct audit registrations. Private final-v1 passed 196 selected modules
+and 25 exact approved roots; twelve logs contain warnings. This uses cached
+imports outside the selection, not an exhaustive frozen import closure.
+Main read the full patch and independent review; R1 patch/overlay mismatch
+was repaired and independently closed. Both Astra agents are closed.
+The two old generic helpers explicitly name retained logical syntax trees;
+their old domains/results remain, but do not claim all old statement text
+unchanged. Public/artifact predicates and full heaps remain unchanged.
+
+Before generating changed output-guard artifacts, capture the completed
+Float64 baseline with `build/output-null-gate/baseline.sh` in the verification
+environment. Then adopt the reviewed patches, run owner.sh with a fresh receipt,
+sign the implementation commit, and run full-gate.sh/post-audit.sh. All runners
+were independently reviewed. Expected delta: five lines/14 pointer leaves in
+each of three adapters, unchanged numerical/eFMI members; selected union699.
+Check `build/method-table-live-checkpoint.md` before starting: later work may
+have advanced this sequence. Tensor promotion remains unapproved and broader
+standards findings remain open. No push authorization.
 
 ## Previous owned increment — full gate passed
 

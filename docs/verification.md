@@ -29,7 +29,7 @@ are byte-identical. Main read the diff and rechecked archive hashes and exact
 roots. Evidence: `build/scalar-access-null/`. Residual MISRA and standards
 findings remain open; native compilation is still a tested boundary.
 
-**Scalar Float64 explicit null guards (owner checks passed; full gate pending):**
+**Scalar Float64 explicit null guards (full gate passed):**
 Runtime emission, the proof-facing alias and both concrete guard consumers now
 share `Runtime.arrayAccessGuardWith`. The owned change retains the old
 arbitrary-interface guard and theorem;
@@ -49,10 +49,16 @@ statements. Main read the complete independent adoption/delta reviews and
 rechecked hashes and roots. The earlier isolated 37-module/13-root check is
 only preparatory evidence, not a substitute for this owner build. Baseline22532
 captures the completed scalar gate's archives and exact two-line/four-pointer-
-leaf expected delta. Required full gate/post remain pending; their selected
-inventory retains all 661 previous roots plus 13 Float64 selections (674).
+leaf expected delta. Required full gate38308 and post-audit58887 passed
+`aff03c0`, both terminal0: 2,665 frozen tracked inputs, 8,811 complete approved
+reports, all 674 selected roots (661 retained plus 13 selections) and four
+retained actual FMU roots. Three FMI matrices passed 75/75 functions
+(526/650/526 cells), zero discrepancies/unexpected results. Whole-file comparison
+confirms exactly two scalar guard-line changes/four pointer leaves; both other
+adapters, all three numerical C files and four eFMI Algorithm/C members are
+byte-identical. Main read the diff and matrices and rechecked archive hashes.
 Evidence: `build/float64-null-gate/` and `build/float64-null-adoption-review.md`.
-The prior scalar full gate does not establish the changed Float64 artifacts.
+This establishes the bounded Float64 repair, not overall standards conformance.
 
 The preceding `build/float64-null-guard-draft/final-v1` also checked 26 exact
 roots at `33bdf34`: 13 new and 13 freshly recompiled context roots, three

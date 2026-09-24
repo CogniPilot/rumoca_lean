@@ -180,8 +180,12 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   The scalar Float64 repair is now owned and retains all 122 old theorem
   statements. Owner-v2 passed 4,013 jobs, 3,515 approved reports and 13 exact
   selected roots; source/runner/delta review found no substantive issue.
-  Its actual-artifact gate and exact two-line/four-pointer-leaf comparison
-  remain pending. Count truthiness is unchanged and remains separate. Other
+  Required full gate38308 and post-audit58887 passed `aff03c0`: 2,665 frozen
+  inputs, 8,811 approved reports, all 674 selected roots and four FMU roots.
+  The exact two-line/four-pointer-leaf whole-adapter comparison passed; both
+  other adapters, all three numerical C files and four eFMI Algorithm/C members
+  stayed identical. Three FMI matrices passed 75/75 functions with zero
+  discrepancies/unexpected results. Count truthiness is unchanged and remains separate. Other
   implicit
   guards remain below; Rule 11.11 is not closed. The earlier scan counted
   75 `(ptr == ((void *)0))` / `!=` comparisons in unit `fmi3.c`, 77 in

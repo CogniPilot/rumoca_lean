@@ -33,9 +33,14 @@ pointer-spelling issue without grammar/admission or normative policy changes.
 Owner-v2/session81934 passed 4,013 jobs, 3,515 whitelisted reports, 13 exact
 selected roots, 2,665 tracked inputs and four runner hashes. V1's missing
 constructor unfolds were repaired; independent source/runner/delta review
-found no substantive issue. Actual-artifact gate/post remain pending, with
-674 selected roots and an exact two-line/four-pointer-leaf expectation in
-`build/float64-null-gate/`. Numeric count truthiness, other implicit guards and
+found no substantive issue. Required gate38308 and post-audit58887 passed
+`aff03c0`, both terminal0: 2,665 frozen inputs, 8,811 complete approved reports,
+all 674 selected roots and four retained FMU roots. Three FMI matrices passed
+75/75 functions (526/650/526 cells), zero discrepancies/unexpected results.
+Whole-adapter comparison proves the exact two-line/four-pointer-leaf delta;
+both other adapters, all three numerical C files and four eFMI Algorithm/C
+members remain byte-identical. Main inspected the diff and rechecked archive
+hashes. Evidence: `build/float64-null-gate/`. Numeric count truthiness, other implicit guards and
 all admitted-subset MLS/FMI/eFMI findings remain open. No candidate promotion.
 
 Owned repair-prerequisite update (2026-09-24): TensorManifest now owns the
