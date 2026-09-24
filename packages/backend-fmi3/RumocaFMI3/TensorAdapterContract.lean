@@ -205,7 +205,7 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     TensorContinuousStates.get_contract shape,
     TensorContinuousStates.set_contract shape,
     TensorContinuousStates.deriv_contract shape m.hasOutput,
-    (fun _E prog tag => TensorFactory.contract prog tag model (TensorMetadata.token m) shape),
+    (fun _E prog tag => TensorFactory.contract_explicit (by rfl) prog tag model (TensorMetadata.token m) shape),
     (fun _E prog tag bindings => TensorFree.contract prog tag bindings),
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n",
       String.join (TensorFunctions.helpers.map Function.render) ++

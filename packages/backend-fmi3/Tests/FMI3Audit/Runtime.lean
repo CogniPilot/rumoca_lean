@@ -6,3 +6,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.Runtime.pointerCheckWith
 #audit axioms Rumoca.FMI3.Runtime.logicalPointerCheck
 #audit axioms Rumoca.FMI3.Runtime.pointerCheck
+
+-- Factory pointer migration: retained generic domains and actual typed routes.
+#audit axioms Rumoca.FMI3.Runtime.body

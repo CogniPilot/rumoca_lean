@@ -10,21 +10,27 @@ abbrev Closed := Ready ReservationOrigin.Permitted (fun name _ => ReservationOri
 /-- Rejection's unconditional return cuts off the arbitrary creation tail.
 The tail need not pass the non-reservation call policy: it is unreachable.
 An optional callback keeps its literal return continuation while executing. -/
-inductive Control (message : String) (tail : List Stmt) (env : Locals) (types : CLoops.Types) :
+inductive ControlWith (pointerPresent : Expr → Expr) (message : String) (tail : List Stmt) (env : Locals) (types : CLoops.Types) :
     Typed.State → Prop where
-  | dispatch (heap : Heap) : Control message tail env types
-      (.body (.running (code message ++ tail) env types heap) "fmi3Instance" .done)
-  | callback (heap : Heap) : Control message tail env types
+  | dispatch (heap : Heap) : ControlWith pointerPresent message tail env types
+      (.body (.running (codeWith pointerPresent message ++ tail) env types heap) "fmi3Instance" .done)
+  | callback (heap : Heap) : ControlWith pointerPresent message tail env types
       (.body (.running (logCall message :: .ret (some (.id "NULL")) :: tail) env types heap) "fmi3Instance" .done)
   | suspended (ready : Context.Suspended Closed
       (.caller .discard (.ret (some (.id "NULL")) :: tail) env types "fmi3Instance" .done) state) :
-      Control message tail env types state
-  | returnNull (heap : Heap) : Control message tail env types
+      ControlWith pointerPresent message tail env types state
+  | returnNull (heap : Heap) : ControlWith pointerPresent message tail env types
       (.body (.running (.ret (some (.id "NULL")) :: tail) env types heap) "fmi3Instance" .done)
-  | closed (ready : Closed state) : Control message tail env types state
+  | closed (ready : Closed state) : ControlWith pointerPresent message tail env types state
 
-theorem Control.withHeap (ready : Control message tail env types state) (heap : Heap) :
-    Control message tail env types (Concurrent.withHeap state heap) := by
+/-- Original state propositions under logical specialization, with the
+factored inductive's constructor identities. -/
+abbrev Control := ControlWith id
+/-- Actual rejection syntax; its preservation proof uses local null typing. -/
+abbrev ExplicitControl := ControlWith explicitPresent
+
+theorem ControlWith.withHeap {pointerPresent : Expr → Expr} (ready : ControlWith pointerPresent message tail env types state) (heap : Heap) :
+    ControlWith pointerPresent message tail env types (Concurrent.withHeap state heap) := by
   cases ready with
   | dispatch => exact .dispatch heap
   | callback => exact .callback heap
@@ -33,7 +39,11 @@ theorem Control.withHeap (ready : Control message tail env types state) (heap : 
   | returnNull => exact .returnNull heap
   | closed ready => exact .closed ((ready_withHeap _ _).mpr ready)
 
-theorem Control.call_allowed (ready : Control message tail env types (.calling name args heap stack)) :
+theorem Control.withHeap (ready : Control message tail env types state) (heap : Heap) :
+    Control message tail env types (Concurrent.withHeap state heap) := by
+  exact ControlWith.withHeap ready heap
+
+theorem ControlWith.call_allowed {pointerPresent : Expr → Expr} (ready : ControlWith pointerPresent message tail env types (.calling name args heap stack)) :
     ReservationOrigin.allowed name = true := by
   cases ready with
   | suspended ready =>
@@ -41,24 +51,29 @@ theorem Control.call_allowed (ready : Control message tail env types (.calling n
     exact ready.1
   | closed ready => exact ready.1
 
+theorem Control.call_allowed (ready : Control message tail env types (.calling name args heap stack)) :
+    ReservationOrigin.allowed name = true := by
+  exact ControlWith.call_allowed ready
+
 variable [interface : CInterface] {E : Type}
 
 /-- Every actual rejection step stays before the unconditional return or in
 the closed post-return domain, including every admitted callback outcome.
 No completed callback or successful factory execution is assumed. -/
-theorem control_step (model : Solve.FMI3Model source) (sigs : List Signature)
+theorem control_step_with (pointerPresent : Expr → Expr) (law : PointerPresentLaw pointerPresent)
+    (model : Solve.FMI3Model source) (sigs : List Signature)
     (program : Events.Program E) (actual : program.internal = LiteralPreparation.program model sigs)
     (onlyNamed : ∀ name, ReservationOrigin.allowed name = false → NamedOnly program name)
     (logger : Option Address) (logging : Bool)
     (loggerBound : resolve env "logMessage" = some (.pointer logger))
     (loggingBound : resolve env "loggingOn" = some (boolean logging))
     (nullBound : resolve env "NULL" = some (.pointer none))
-    (ready : Control message tail env types before)
-    (step : Events.Step program before events after) : Control message tail env types after := by
+    (ready : ControlWith pointerPresent message tail env types before)
+    (step : Events.Step program before events after) : ControlWith pointerPresent message tail env types after := by
   cases ready with
   | dispatch heap =>
     obtain ⟨_, rfl⟩ := Events.internal_unique program
-      (dispatch program message env types heap tail .done logger logging loggerBound loggingBound) _ _ step
+      (dispatch_with pointerPresent law program message env types heap tail .done logger logging loggerBound loggingBound) _ _ step
     cases enabled : logger.isSome && logging <;> simp only [Bool.false_eq_true, ↓reduceIte,
       List.nil_append, List.cons_append] <;> first | exact .callback heap | exact .returnNull heap
   | callback heap =>
@@ -97,5 +112,28 @@ theorem control_step (model : Solve.FMI3Model source) (sigs : List Signature)
     obtain ⟨_, rfl⟩ := Events.internal_unique program next _ _ step
     exact .closed ⟨True.intro, True.intro⟩
   | closed ready => exact .closed (ReservationOrigin.event_ready model sigs program actual onlyNamed ready step)
+
+theorem control_step (model : Solve.FMI3Model source) (sigs : List Signature)
+    (program : Events.Program E) (actual : program.internal = LiteralPreparation.program model sigs)
+    (onlyNamed : ∀ name, ReservationOrigin.allowed name = false → NamedOnly program name)
+    (logger : Option Address) (logging : Bool)
+    (loggerBound : resolve env "logMessage" = some (.pointer logger))
+    (loggingBound : resolve env "loggingOn" = some (boolean logging))
+    (nullBound : resolve env "NULL" = some (.pointer none))
+    (ready : Control message tail env types before)
+    (step : Events.Step program before events after) : Control message tail env types after := by
+  exact control_step_with id logical_present_law model sigs program actual onlyNamed logger logging loggerBound loggingBound nullBound ready step
+
+theorem control_step_explicit (nullType : interface.types "void *" = some .pointer)
+    (model : Solve.FMI3Model source) (sigs : List Signature)
+    (program : Events.Program E) (actual : program.internal = LiteralPreparation.program model sigs)
+    (onlyNamed : ∀ name, ReservationOrigin.allowed name = false → NamedOnly program name)
+    (logger : Option Address) (logging : Bool)
+    (loggerBound : resolve env "logMessage" = some (.pointer logger))
+    (loggingBound : resolve env "loggingOn" = some (boolean logging))
+    (nullBound : resolve env "NULL" = some (.pointer none))
+    (ready : ExplicitControl message tail env types before)
+    (step : Events.Step program before events after) : ExplicitControl message tail env types after := by
+  exact control_step_with explicitPresent (explicit_present_law nullType) model sigs program actual onlyNamed logger logging loggerBound loggingBound nullBound ready step
 
 end Rumoca.FMI3.FactoryRejection

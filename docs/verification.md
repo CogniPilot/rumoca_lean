@@ -1,5 +1,38 @@
 # Exact verification contract
 
+**Factory callback explicit null guards (owner passed; full gate pending):**
+The shared factory rejection syntax now compares the logger callback explicitly
+to null before the existing logging flag. Predicate-parametric constructors
+retain logical views for old arbitrary-interface helpers. Actual callers derive
+null typing from existing bindings or their concrete interface. The reviewed
+33-file proposal retains 151 old theorem headers and changes 11 to logical
+views with the same domains and full results. No new public premise, evaluator,
+Runtime table, host-success assumption or numerical policy is introduced.
+Full lazy-conjunction results, callback events/heaps, blocked outcomes, scan
+traces, initialization, ownership and all four tensor contract fields remain.
+
+Private final-v1/session95629 passed 227 selected modules/162 roots with frozen
+371 input/228 output hashes. Its unselected copied imports do not establish
+owner closure. After baseline-v1/session90077 passed at `2734e6f`, the proposal
+was adopted. Owner-v1/session92721 exposed two dependent proof failures.
+AdapterFunctionsPrinter.factory_printable and InitializerProtection's
+Ready.destination now unfold the parameterized constructors; their theorem
+statements are unchanged. A direct printer audit and both selected roots extend
+the owner selection to 164. Total scope: 35 source/proof files, 100 additive
+registrations in 14 existing audit leaves, no removed roots or whitelist change.
+
+Owner-v2/session79584 passed 4,338 jobs, 5,326 complete approved reports, all
+164 exact selected roots, 2,665 frozen tracked inputs and four runner hashes.
+Main rechecked the receipt and read the complete independent proposal and
+owner-delta reviews, which found no blocker. All seven old theorem headers in
+the two dependent repair files remain unchanged. The required `lake test` and actual-artifact
+post-audit have NOT run for this repair. Their required union is 983 roots;
+the predicted artifact delta is eighteen callback guard lines/leaves across
+three adapters, with numerical C and eFMI members unchanged. Prediction and
+owner proofs do not establish actual-file equality. Evidence:
+`build/factory-null-adoption/` and `build/factory-null-gate/`.
+No source admission, standards closure or native callback/ABI claim is added.
+
 **Debug-category explicit null guards (full gate passed):**
 The shared debug body now compares both the categories buffer and indexed
 category pointer explicitly to null. Predicate-parametric syntax and one proof

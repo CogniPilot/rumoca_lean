@@ -10,7 +10,7 @@ open CTree CMemory CBody CLiteral CCalls.Events StaticFactory CLiteral.Interface
 
 theorem message_collected (model : Solve.FMI3Model source) :
     message ∈ functionTexts (Runtime.function model signature) := by
-  simp [functionTexts, Runtime.function, body, FactoryRejection.code, FactoryRejection.logCall,
+  simp [functionTexts, Runtime.function, body, FactoryRejection.explicitPresent, FactoryRejection.code, FactoryRejection.codeWith, FactoryRejection.logCall,
     message, statementTexts, expressionTexts]
 
 structure PreparedContract (model : Solve.FMI3Model source) (sigs : List Signature)

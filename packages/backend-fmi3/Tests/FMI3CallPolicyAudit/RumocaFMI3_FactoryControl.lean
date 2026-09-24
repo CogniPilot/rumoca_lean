@@ -5,3 +5,6 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.FMI3.FactoryControl.Control.atomic_origin
 #audit axioms Rumoca.FMI3.FactoryControl.Control.withHeap
+
+-- Factory pointer migration: retained generic domains and actual typed routes.
+#audit axioms Rumoca.FMI3.FactoryControl.Control

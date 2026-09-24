@@ -15,8 +15,8 @@ theorem constants_collected (model : Solve.FMI3Model source) (sig : Signature) (
       " \t\n\r\u000c\u000b" ∈ functionTexts (Runtime.function model sig) := by
   cases kind <;> simp only [factoryName] at named
   all_goals simp [Runtime.function, Runtime.body, named, Runtime.makeInstance,
-    FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
-    FactoryRejection.code, FactoryRejection.logCall,
+    FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.identityGuardWith, FactoryPrefix.capabilityGuard, FactoryPrefix.capabilityGuardWith,
+    FactoryRejection.explicitPresent, FactoryRejection.code, FactoryRejection.codeWith, FactoryRejection.logCall,
     functionTexts, statementTexts, expressionTexts]
 
 theorem constants_ready (model : Solve.FMI3Model source) (sigs : List Signature)

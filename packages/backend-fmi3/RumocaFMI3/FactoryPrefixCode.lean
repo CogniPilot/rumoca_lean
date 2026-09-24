@@ -33,9 +33,14 @@ namespace FactoryRejection
 def logCall (message : String) : Stmt := .eval (.call (.id "logMessage")
   [.id "instanceEnvironment", .id "fmi3Error", .str "logStatus", .str message])
 
-def code (message : String) : List Stmt := [
-  .branch (.bin .and (.id "logMessage") (.id "loggingOn")) [logCall message] [],
+def codeWith (pointerPresent : Expr → Expr) (message : String) : List Stmt := [
+  .branch (.bin .and (pointerPresent (.id "logMessage")) (.id "loggingOn")) [logCall message] [],
   .ret (some (.id "NULL"))]
+
+/-- Legacy logical proof view and actual explicit pointer test. -/
+def explicitPresent (pointer : Expr) : Expr := .bin .ne pointer Expr.nullPointer
+def logicalCode : String → List Stmt := codeWith id
+def code : String → List Stmt := codeWith explicitPresent
 
 end FactoryRejection
 
@@ -45,20 +50,32 @@ def validation (model : Solve.FMI3Model source) (tok : String := token model) : 
   .declare "fmi3Boolean" "validIdentity" (.call (.id Identity.function.signature.name)
     [.id "instanceName", .id "instantiationToken", .str tok, .str " \t\n\r\u000c\u000b"])
 
-def identityGuard : Stmt := .branch (.not (.id "validIdentity"))
-  (FactoryRejection.code "Invalid name or instantiation token") []
+def identityGuardWith (pointerPresent : Expr → Expr) : Stmt := .branch (.not (.id "validIdentity"))
+  (FactoryRejection.codeWith pointerPresent "Invalid name or instantiation token") []
 
-def capabilityGuard : Stmt := .branch
+def capabilityGuardWith (pointerPresent : Expr → Expr) : Stmt := .branch
   (.bin .or (.id "eventModeUsed") (.bin .ne (.id "nRequiredIntermediateVariables") (.nat 0)))
-  (FactoryRejection.code "Events and intermediate updates are unsupported") []
+  (FactoryRejection.codeWith pointerPresent "Events and intermediate updates are unsupported") []
 
-def entry (kind : Kind) (rest : List Stmt) : List Stmt :=
+def entryWith (pointerPresent : Expr → Expr) (kind : Kind) (rest : List Stmt) : List Stmt :=
   match kind with
   | .me => rest
-  | .cs => capabilityGuard :: rest
+  | .cs => capabilityGuardWith pointerPresent :: rest
 
-def body (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt) (tok : String := token model) : List Stmt :=
-  entry kind (validation model tok :: identityGuard :: creation)
+def bodyWith (pointerPresent : Expr → Expr) (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt) (tok : String := token model) : List Stmt :=
+  entryWith pointerPresent kind (validation model tok :: identityGuardWith pointerPresent :: creation)
+
+def logicalIdentityGuard : Stmt := identityGuardWith id
+def logicalCapabilityGuard : Stmt := capabilityGuardWith id
+def logicalEntry := entryWith id
+def logicalBody (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt)
+    (tok : String := token model) : List Stmt := bodyWith id model kind creation tok
+def identityGuard : Stmt := identityGuardWith FactoryRejection.explicitPresent
+def capabilityGuard : Stmt := capabilityGuardWith FactoryRejection.explicitPresent
+def entry := entryWith FactoryRejection.explicitPresent
+def body (model : Solve.FMI3Model source) (kind : Kind) (creation : List Stmt)
+    (tok : String := token model) : List Stmt :=
+  bodyWith FactoryRejection.explicitPresent model kind creation tok
 
 end FactoryPrefix
 end Rumoca.FMI3

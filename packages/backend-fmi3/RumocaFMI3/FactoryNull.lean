@@ -74,7 +74,7 @@ theorem silent_behaviors (program : CCalls.Events.Program E) (model : Solve.FMI3
     defined helper typeBindings pointer integer voidPointer named supported missing expectedBound whitespaceBound
   rw [path behavior]
   have scope := FactoryArguments.scope kind args
-  rw [FactoryRejection.silent_equivalence program "Invalid name or instantiation token"
+  rw [FactoryRejection.silent_equivalence_explicit voidPointer program "Invalid name or instantiation token"
     (rejected kind args) types heap creation .done args.logger args.logging
     (by simp [rejected, CBody.bind, resolve, scope.logger])
     (by simp [rejected, CBody.bind, resolve, scope.logging])
@@ -117,7 +117,7 @@ theorem logged_behaviors (program : CCalls.Events.Program E) (model : Solve.FMI3
     defined helper typeBindings pointer integer voidPointer named supported missing expectedBound whitespaceBound
   rw [path behavior]
   have scope := FactoryArguments.scope kind args
-  exact FactoryRejection.all_behaviors program "Invalid name or instantiation token"
+  exact FactoryRejection.all_behaviors_explicit voidPointer program "Invalid name or instantiation token"
     (rejected kind args) types heap creation logger category message
     args.environment name foreign
     (by simp [rejected, CBody.bind, scope.logger, loggerBound])

@@ -116,7 +116,8 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
     | exact StaticFactory.Printer.release_printable.2
     | skip
   all_goals
-    simp only [DebugLogging.code, DebugLogging.codeWith, DebugLogging.missingWith,
+    simp only [FactoryRejection.code, FactoryRejection.codeWith, FactoryRejection.explicitPresent, FactoryRejection.logCall,
+      DebugLogging.code, DebugLogging.codeWith, DebugLogging.missingWith,
       DebugLogging.rejectNullWith, DebugLogging.iterationWith, DebugLogging.validationWith,
       DebugLogging.explicitMissing, DebugLogging.failure,
       DebugLogging.rejectNull,

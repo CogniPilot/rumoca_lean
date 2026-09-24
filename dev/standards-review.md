@@ -1,5 +1,22 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Factory callback pointer repair (2026-09-24; owner passed, full pending):
+bounded continuation of the Rules 11.11/11.9 work, not grammar expansion.
+The shared logger guard uses explicit null inequality while retaining lazy
+order, flags/messages, complete callback/heap/scan/initialization outcomes and
+public/artifact domains. Logical views preserve old generic helper domains;
+actual callers derive typing locally. No additional host-success assumption.
+Owner-v1/session92721 found two dependent unfolding failures; proof-body-only
+repairs preserve both statements. Owner-v2/session79584 passed 4,338 jobs,
+5,326 approved reports, 164 selected roots, 2,665 tracked/four runner hashes.
+Main rechecked hashes and receipt. There are 35 changed source/proof files and
+100 additive audits in 14 existing leaves. Full/post verification remains
+outstanding: 983 required roots and eighteen predicted callback guard lines
+across three adapters, with numerical/eFMI members required unchanged.
+See `build/factory-null-gate/`; predicted bytes are not artifact evidence.
+No MLS/FMI/eFMI finding, MISRA guideline or native trust boundary is closed;
+whole-subset review and expansion/promotion blocks remain in force.
+
 Debug-category pointer repair (2026-09-24; full gate passed):
 the categories and indexed category pointers now use explicit null equality.
 This bounded Rules 11.11/11.9 repair retains count-first short circuit, first

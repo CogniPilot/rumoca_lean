@@ -198,9 +198,8 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
   | "fmi3InstantiateModelExchange" => makeInstance m .me
   | "fmi3InstantiateCoSimulation" =>
     FactoryPrefix.capabilityGuard :: makeInstance m .cs
-  | "fmi3InstantiateScheduledExecution" => [
-    branch (both (v "logMessage") (v "loggingOn")) [.eval (.call (v "logMessage")
-      [v "instanceEnvironment", v "fmi3Error", .str "logStatus", .str "Scheduled Execution is unsupported"])], ret (v "NULL")]
+  | "fmi3InstantiateScheduledExecution" =>
+    FactoryRejection.code "Scheduled Execution is unsupported"
   | "fmi3FreeInstance" => StaticRelease.function.body
   | "fmi3SetDebugLogging" => require .logging ++ DebugLogging.code
   | "fmi3EnterInitializationMode" => require .enterInitialization ++ [

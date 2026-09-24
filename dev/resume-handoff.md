@@ -1,5 +1,43 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current factory callback repair — owner passed, full gate pending
+
+This section supersedes the older factory/count prospective status below.
+After debug evidence `2734e6f`, factory baseline-v1/session90077 passed and
+the reviewed 33-source/99-audit proposal was adopted. Owner-v1/session92721
+failed in AdapterFunctionsPrinter.factory_printable and InitializerProtection's
+Ready.destination. Both repairs only unfold the parameterized constructors;
+theorem statements are unchanged. Added one direct printer audit and selected
+both roots. Total: 35 source/proof files, 100 additive registrations in 14
+existing audit leaves; 164 owner roots and 983 full-gate roots.
+
+Owner-v2/session79584 passed 4,338 jobs, 5,326 complete approved reports and
+all 164 roots, with 2,665 tracked/four runner hashes rechecked by main. Do not
+restart it. Original private 162-root receipts and 99-registration audit.patch
+remain historical snapshots. Independent delta review is tracked separately in
+`build/factory-null-owner-delta-review.md`; main read it completely: no blocking
+finding, all seven old theorem headers in the two repair files unchanged.
+The required full `lake test` and post-audit have NOT run. Next: after reviewing
+the delta and signing this implementation, obtain sufficient free space, run
+`build/factory-null-gate/full-gate.sh`, then its post-audit inside the verification
+environment. Require the exact whole-file eighteen-line callback delta,
+unchanged three numerical C/four eFMI members and retained four FMU roots.
+
+Count proposal remains unadopted/uncompiled. Its reviewed prospective checker
+selects 93 modules/60 roots; 351 preparation and 73 direct dependency-object
+hashes remain intact. These are not complete cached/transitive/toolchain closure.
+Count future root union is 1,019 (60 selection, 24 overlap with factory983).
+Private checking needs a clean tracked tree and adequate disk; no concurrent
+cache copies, artifact generation or deletion is authorized. Its prospective
+gate/checker reviews are in `build/count-condition-adoption-review.md`.
+
+Free disk was only 229 MB after owner-v2. Cleanup permission remains unanswered:
+requested official generated-certificate pruning retaining ten most recently
+used entries per kind, after the active gate. Nothing has been deleted. Do not
+start the space-intensive full gate or infer permission from goal continuation.
+No push authorization; no grammar expansion, candidate promotion or standards
+closure. Preserve ignored build evidence across account changes.
+
 ## Current debug-category repair — full gate passed
 
 Applied reviewed debug production.patch and audit.patch after signed state-array

@@ -7,3 +7,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorAdapterPrinter.tensorFunction_printable
 #audit axioms Rumoca.FMI3.TensorAdapterPrinter.functions_printable
 #audit axioms Rumoca.FMI3.TensorAdapterPrinter.rendered_contract
+#audit axioms Rumoca.FMI3.AdapterFunctionsPrinter.factory_printable

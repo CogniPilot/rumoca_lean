@@ -13,10 +13,10 @@ def reserve : Stmt := .declare "size_t" "slot"
   (.call (.id CAtomicScan.function.signature.name)
     [.id "rumoca_instance_flags", .id "rumoca_instance_capacity"])
 
-def exhausted : List Stmt := FactoryRejection.code "Instance capacity exhausted"
+def exhaustedWith (pointerPresent : Expr → Expr) : List Stmt := FactoryRejection.codeWith pointerPresent "Instance capacity exhausted"
 
-def guard : Stmt := .branch
-  (.bin .eq (.id "slot") (.id "rumoca_instance_capacity")) exhausted []
+def guardWith (pointerPresent : Expr → Expr) : Stmt := .branch
+  (.bin .eq (.id "slot") (.id "rumoca_instance_capacity")) (exhaustedWith pointerPresent) []
 
 def selectInstance : Stmt := .declare "Instance *" "m"
   (.address (.index (.id "rumoca_instances") (.id "slot")))
@@ -24,12 +24,23 @@ def selectInstance : Stmt := .declare "Instance *" "m"
 def initializeInstance (model : Solve.Model source) (kind : Kind) : List Stmt :=
   selectInstance :: InstanceSlot.code model kind
 
-def code (model : Solve.Model source) (kind : Kind) : List Stmt :=
-  reserve :: guard :: initializeInstance model kind
+def codeWith (pointerPresent : Expr → Expr) (model : Solve.Model source) (kind : Kind) : List Stmt :=
+  reserve :: guardWith pointerPresent :: initializeInstance model kind
 
 /-- Both public FMI factories share admission and the prepared Solve
 initializer. Selecting storage introduces no source-language lowering. -/
+def functionWith (pointerPresent : Expr → Expr) (model : Solve.FMI3Model source) (kind : Kind) : Function :=
+  ⟨FactoryArguments.signature kind, FactoryPrefix.bodyWith pointerPresent model kind (codeWith pointerPresent model.solve kind), false⟩
+
+def logicalExhausted : List Stmt := exhaustedWith id
+def logicalGuard : Stmt := guardWith id
+def logicalCode (model : Solve.Model source) (kind : Kind) : List Stmt := codeWith id model kind
+def logicalFunction (model : Solve.FMI3Model source) (kind : Kind) : Function := functionWith id model kind
+def exhausted : List Stmt := exhaustedWith FactoryRejection.explicitPresent
+def guard : Stmt := guardWith FactoryRejection.explicitPresent
+def code (model : Solve.Model source) (kind : Kind) : List Stmt :=
+  codeWith FactoryRejection.explicitPresent model kind
 def function (model : Solve.FMI3Model source) (kind : Kind) : Function :=
-  ⟨FactoryArguments.signature kind, FactoryPrefix.body model kind (code model.solve kind), false⟩
+  functionWith FactoryRejection.explicitPresent model kind
 
 end Rumoca.FMI3.StaticFactory

@@ -91,12 +91,12 @@ theorem execution_correct (model : Solve.FMI3Model source) (program : CCalls.Eve
     exact FactoryUnsupported.rejection_entry program (Runtime.makeInstance model .cs)
       args heap stack (FactoryArguments.base_types static.addresses) (definitions .cs) unsupported
   · intro field env types rest logger logging loggerBound loggingBound nullBound quiet behavior
-    rw [FactoryRejection.silent_equivalence program (text model field) env types heap rest .done
+    rw [FactoryRejection.silent_equivalence_explicit (by rfl) program (text model field) env types heap rest .done
       logger logging loggerBound loggingBound nullBound rfl quiet behavior]
     exact (CCalls.Events.return_forced program (.pointer none) heap).behaviors behavior
   · intro field env types rest logger environment name foreign loggerBound loggingBound
       environmentBound errorBound nullBound address external prototype behavior
-    refine ⟨FactoryRejection.all_behaviors program (text model field) env types heap rest
+    refine ⟨FactoryRejection.all_behaviors_explicit (by rfl) program (text model field) env types heap rest
       logger (addresses .category) (addresses field) environment name foreign loggerBound loggingBound
       environmentBound errorBound nullBound (bound .category) (bound field) address external prototype rfl
       (Logging.arguments_converted name environment (addresses .category) (addresses field)) behavior, ?_⟩

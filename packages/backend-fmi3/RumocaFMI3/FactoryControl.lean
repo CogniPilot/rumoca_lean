@@ -41,11 +41,11 @@ inductive Control (model : Solve.FMI3Model source) (kind : Kind) (args : Factory
       (.body (.running (FactoryPrefix.identityGuard :: StaticFactory.code model.solve kind)
         (FactoryValidation.locals kind args valid) types heap) "fmi3Instance" .done)
   | capabilityRejected (types : CLoops.Types)
-      (ready : FactoryRejection.Control "Events and intermediate updates are unsupported"
+      (ready : FactoryRejection.ExplicitControl "Events and intermediate updates are unsupported"
         (validationCode model kind) (FactoryArguments.parameters .cs args) types state) :
       Control model kind args objects state
   | identityRejected (types : CLoops.Types)
-      (ready : FactoryRejection.Control "Invalid name or instantiation token"
+      (ready : FactoryRejection.ExplicitControl "Invalid name or instantiation token"
         (StaticFactory.code model.solve kind) (FactoryValidation.locals kind args false) types state) :
       Control model kind args objects state
   | reserve (types : CLoops.Types) (heap : Heap) : Control model kind args objects

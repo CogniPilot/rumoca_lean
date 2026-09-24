@@ -13,8 +13,8 @@ theorem capacity_message_collected (model : Solve.FMI3Model source) :
     "Instance capacity exhausted" ∈ functionTexts
       (Runtime.function model (FactoryArguments.signature .cs)) := by
   rw [StaticRuntime.factory_definition]
-  simp [StaticFactory.function, FactoryPrefix.body, FactoryPrefix.entry, StaticFactory.code, StaticFactory.guard,
-    StaticFactory.exhausted, FactoryRejection.code, FactoryRejection.logCall,
+  simp [StaticFactory.function, StaticFactory.functionWith, FactoryPrefix.body, FactoryPrefix.bodyWith, FactoryPrefix.entry, FactoryPrefix.entryWith, StaticFactory.code, StaticFactory.codeWith, StaticFactory.guard, StaticFactory.guardWith,
+    StaticFactory.exhausted, StaticFactory.exhaustedWith, FactoryRejection.explicitPresent, FactoryRejection.code, FactoryRejection.codeWith, FactoryRejection.logCall,
     functionTexts, statementTexts, expressionTexts]
 
 theorem capacity_message_prepared (model : Solve.FMI3Model source) (signatures : List Signature)

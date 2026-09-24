@@ -24,23 +24,32 @@ theorem select_step (env : Locals) (types : CLoops.Types) (heap : Heap)
   simp [CLoops.eval, CLoops.evalWith, legacyExpressions, eval, evalWith, lvalueWith,
     instances, selected, Value.address, nonnegative]
 
+theorem guard_step_with (pointerPresent : Expr → Expr)
+    (env : Locals) (types : CLoops.Types) (heap : Heap)
+    (slot capacity : Nat) (rest : List Stmt)
+    (selected : resolve env "slot" = some (.integer slot))
+    (count : resolve env "rumoca_instance_capacity" = some (.integer capacity)) :
+    CLoops.next (.running ((StaticFactory.guardWith pointerPresent) :: rest) env types heap) =
+      some (.running ((if slot = capacity then (StaticFactory.exhaustedWith pointerPresent) else []) ++ rest) env types heap) := by
+  by_cases same : slot = capacity
+  · subst slot
+    simp [StaticFactory.guardWith, StaticFactory.exhaustedWith, FactoryRejection.codeWith, FactoryRejection.logCall,
+      CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith,
+      legacyExpressions, eval, evalWith,
+      selected, count, comparison, boolean, Value.truth]
+  · have different : (slot : Int) ≠ (capacity : Int) := by omega
+    simp [StaticFactory.guardWith, StaticFactory.exhaustedWith, FactoryRejection.codeWith, FactoryRejection.logCall,
+      CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith,
+      legacyExpressions, eval, evalWith,
+      selected, count, comparison, boolean, Value.truth, same, different]
+
 theorem guard_step (env : Locals) (types : CLoops.Types) (heap : Heap)
     (slot capacity : Nat) (rest : List Stmt)
     (selected : resolve env "slot" = some (.integer slot))
     (count : resolve env "rumoca_instance_capacity" = some (.integer capacity)) :
     CLoops.next (.running (guard :: rest) env types heap) =
       some (.running ((if slot = capacity then exhausted else []) ++ rest) env types heap) := by
-  by_cases same : slot = capacity
-  · subst slot
-    simp [guard, exhausted, FactoryRejection.code, FactoryRejection.logCall,
-      CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith,
-      legacyExpressions, eval, evalWith,
-      selected, count, comparison, boolean, Value.truth]
-  · have different : (slot : Int) ≠ (capacity : Int) := by omega
-    simp [guard, exhausted, FactoryRejection.code, FactoryRejection.logCall,
-      CLoops.next, CLoops.nextWith, CLoops.noDeclarations, CLoops.evalWith,
-      legacyExpressions, eval, evalWith,
-      selected, count, comparison, boolean, Value.truth, same, different]
+  exact guard_step_with FactoryRejection.explicitPresent env types heap slot capacity rest selected count
 
 theorem selected_bindings (env : Locals) (p : Address) (environment logger : Option Address)
     (logging : Bool)
@@ -83,6 +92,34 @@ theorem initialization_reaches (program : CCalls.Events.Program E) (model : Solv
 /-- An already in-range selection passes the exhaustion-sentinel guard and
 initializes the record. Bounds come from `slot : Fin capacity`, supplied by
 the scan outcome in the composed factory proof, not from the equality guard. -/
+theorem guarded_initialization_with (pointerPresent : Expr → Expr)
+    (program : CCalls.Events.Program E) (model : Solve.Model source)
+    (kind : Kind) (env : Locals) (types : CLoops.Types) (heap : Heap)
+    (base : Address) (capacity : Nat) (slot : Fin capacity)
+    (environment logger : Option Address) (logging : Bool) (stack : CCalls.Typed.Continuation)
+    (storage : InstanceSlot.Storage heap (base.index slot.val))
+    (bounded : slot.val < 2^64)
+    (instances : resolve env "rumoca_instances" = some (.pointer (some base)))
+    (selected : resolve env "slot" = some (.integer slot.val))
+    (count : resolve env "rumoca_instance_capacity" = some (.integer capacity))
+    (fresh : env "m" = none)
+    (environmentBound : resolve env "instanceEnvironment" = some (.pointer environment))
+    (loggerBound : resolve env "logMessage" = some (.pointer logger))
+    (loggingBound : resolve env "loggingOn" = some (boolean logging))
+    (pointer : interface.types "Instance *" = some .pointer)
+    (double : interface.types "double" = some .float64)
+    (handle : interface.types "fmi3Instance" = some .pointer) :
+    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+      (.body (.running ((StaticFactory.guardWith pointerPresent) :: initializeInstance model kind) env types heap) "fmi3Instance" stack)
+      (.returning (.pointer (some (base.index slot.val)))
+        (InstanceSlot.finalHeap heap (base.index slot.val) slot.val kind environment logger logging) stack) := by
+  have different : slot.val ≠ capacity := Nat.ne_of_lt slot.isLt
+  have first := StaticFactory.guard_step_with pointerPresent env types heap slot.val capacity (initializeInstance model kind) selected count
+  simp only [different, ↓reduceIte, List.nil_append] at first
+  exact .next (CCalls.Events.body_step program first "fmi3Instance" stack)
+    (initialization_reaches program model kind env types heap base capacity slot environment logger logging stack
+      storage bounded instances selected fresh environmentBound loggerBound loggingBound pointer double handle)
+
 theorem guarded_initialization (program : CCalls.Events.Program E) (model : Solve.Model source)
     (kind : Kind) (env : Locals) (types : CLoops.Types) (heap : Heap)
     (base : Address) (capacity : Nat) (slot : Fin capacity)
@@ -103,11 +140,6 @@ theorem guarded_initialization (program : CCalls.Events.Program E) (model : Solv
       (.body (.running (guard :: initializeInstance model kind) env types heap) "fmi3Instance" stack)
       (.returning (.pointer (some (base.index slot.val)))
         (InstanceSlot.finalHeap heap (base.index slot.val) slot.val kind environment logger logging) stack) := by
-  have different : slot.val ≠ capacity := Nat.ne_of_lt slot.isLt
-  have first := guard_step env types heap slot.val capacity (initializeInstance model kind) selected count
-  simp only [different, ↓reduceIte, List.nil_append] at first
-  exact .next (CCalls.Events.body_step program first "fmi3Instance" stack)
-    (initialization_reaches program model kind env types heap base capacity slot environment logger logging stack
-      storage bounded instances selected fresh environmentBound loggerBound loggingBound pointer double handle)
+  exact guarded_initialization_with FactoryRejection.explicitPresent program model kind env types heap base capacity slot environment logger logging stack storage bounded instances selected count fresh environmentBound loggerBound loggingBound pointer double handle
 
 end Rumoca.FMI3.StaticFactory

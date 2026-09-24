@@ -41,10 +41,14 @@ theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tenso
     .pointer (text := "fmi3Float64") (named_type _ (by decide +kernel))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" := named_type _ (by decide +kernel)
   cases kind <;>
-    simp only [TensorFactory.function, FactoryPrefix.body, FactoryPrefix.entry,
-      FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard,
-      FactoryRejection.code, FactoryRejection.logCall, TensorFactory.code, StaticFactory.reserve,
-      StaticFactory.guard, StaticFactory.exhausted, TensorFactory.initializeInstance,
+    simp only [TensorFactory.function, TensorFactory.functionWith,
+      FactoryPrefix.body, FactoryPrefix.bodyWith, FactoryPrefix.entry, FactoryPrefix.entryWith,
+      FactoryPrefix.validation, FactoryPrefix.identityGuard, FactoryPrefix.identityGuardWith,
+      FactoryPrefix.capabilityGuard, FactoryPrefix.capabilityGuardWith,
+      FactoryRejection.code, FactoryRejection.codeWith, FactoryRejection.explicitPresent,
+      FactoryRejection.logCall, TensorFactory.code, TensorFactory.codeWith, StaticFactory.reserve,
+      StaticFactory.guard, StaticFactory.guardWith, StaticFactory.exhausted,
+      StaticFactory.exhaustedWith, TensorFactory.initializeInstance,
       StaticFactory.selectInstance,
       TensorInstanceInit.code, TensorInstanceInit.slotStore, TensorInstanceInit.metaCode,
       TensorInstanceInit.stateTail, TensorReset.zeroBody, TensorFloat64.dstCell,

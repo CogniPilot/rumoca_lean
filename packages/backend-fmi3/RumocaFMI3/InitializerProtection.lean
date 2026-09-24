@@ -88,7 +88,8 @@ theorem Ready.destination
     cases control <;>
       simp [CWriteFootprint.current, CWriteFootprint.loop, CWriteFootprint.saved,
         CWriteFootprint.target, tail, CAtomicScan.selected, caller] at selected
-  | guard => simp [CWriteFootprint.current, CWriteFootprint.loop, StaticFactory.guard] at selected
+  | guard => simp [CWriteFootprint.current, CWriteFootprint.loop, StaticFactory.guard,
+      StaticFactory.guardWith] at selected
   | select => simp [CWriteFootprint.current, CWriteFootprint.loop, initializeInstance, selectInstance] at selected
   | initializing control => exact control.destination selected
 

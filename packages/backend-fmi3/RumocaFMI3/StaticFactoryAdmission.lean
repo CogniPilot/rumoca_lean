@@ -63,7 +63,7 @@ theorem public_admission {E : Type} (objects : Objects) (literals : CLiteralAddr
     request.expectedStored request.whitespaceStored request.fits
   refine ⟨types, factory_scope objects literals kind args, ?_⟩
   intro behavior
-  simpa only [request.accepted, FactoryValidation.remaining, ↓reduceIte, List.nil_append] using path behavior
+  simpa only [request.accepted, FactoryValidation.remaining, FactoryValidation.remainingWith, ↓reduceIte, List.nil_append] using path behavior
 
 /-- Accepted public calls either initialize an instance or return null on
 exhaustion. The scan outcome and its work bound follow from typed storage. -/
@@ -92,7 +92,7 @@ theorem public_create_silent {E : Type} (objects : Objects) (literals : CLiteral
   obtain ⟨types, scope, admission⟩ := public_admission objects literals program identity model kind args before .done
     request defined helper
   have argsScope := FactoryArguments.scope kind args
-  obtain ⟨trace, slot, after, outcome, bounded, work, creation⟩ := create_silent program tag model.solve kind
+  obtain ⟨trace, slot, after, outcome, bounded, work, creation⟩ := create_silent_explicit (by rfl) program tag model.solve kind
     (FactoryValidation.locals kind args true) types before objects.instances objects.flags objects.capacity
     args.environment args.logger args.logging scope storage bindings ⟨rfl, rfl, rfl⟩
     (by simp [FactoryValidation.locals, CBody.bind, resolve, argsScope.null, constants]; rfl) quiet
@@ -141,7 +141,7 @@ theorem public_create_logged {E : Type} (objects : Objects) (literals : CLiteral
   have converted : CCalls.Events.convertedArguments (Logging.signature name).parameters
       (Logging.arguments args.environment category message) = some (Logging.arguments args.environment category message) := by
     rfl
-  obtain ⟨trace, slot, after, outcome, bounded, work, creation⟩ := create_logged program tag model.solve kind
+  obtain ⟨trace, slot, after, outcome, bounded, work, creation⟩ := create_logged_explicit (by rfl) program tag model.solve kind
     (FactoryValidation.locals kind args true) types before objects.instances objects.flags objects.capacity
     args.environment logger category message name foreign scope storage bindings ⟨rfl, rfl, rfl⟩
     (by simp [FactoryValidation.locals, CBody.bind, argsScope.logger, loggerBound])

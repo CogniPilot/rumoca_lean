@@ -167,6 +167,18 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   candidate; an epsilon repair is not an equivalent fix, and the exact FMI time
   semantics must be preserved.
 - **Pointer comparisons (Rule 11.11, Rule 11.9).** Current bounded repair
+  now also includes factory callback guards (owner passed; full gate pending).
+  Shared explicit null inequality retains existing logging flags, lazy order,
+  callback/heap/scan/initialization outcomes and public domains. Owner-v1 failed
+  two dependent proof unfoldings; unchanged-statement repairs passed owner-v2/
+  session79584: 4,338 jobs, 5,326 approved reports, 164 exact roots and frozen
+  2,665 tracked/four runner hashes, rechecked by main. Scope is 35 source/proof
+  files and 100 additive registrations in 14 existing audit leaves. Required
+  full/post gates have not run: eighteen predicted callback guard lines across
+  three adapters and unchanged numerical/eFMI members are still obligations,
+  not observed artifact evidence. No guideline closure or native callback/ABI
+  correspondence follows. Evidence: `build/factory-null-gate/`.
+  The latest fully gated bounded repair
   includes debug-category guards (full gate passed). Shared
   predicate-parametric syntax/proofs preserve 12 old generic helper domains
   through logical views; 84 other theorem headers remain unchanged. Actual

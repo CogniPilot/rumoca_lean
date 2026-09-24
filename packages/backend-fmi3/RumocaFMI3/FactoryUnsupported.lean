@@ -9,6 +9,24 @@ variable [interface : CInterface]
 
 def message : String := "Events and intermediate updates are unsupported"
 
+theorem rejection_entry_with (pointerPresent : Expr → Expr)
+    (program : CCalls.Events.Program E) (rest : List Stmt)
+    (args : Raw) (heap : Heap) (stack : CCalls.Typed.Continuation)
+    (typeBindings : FactoryArguments.Types)
+    (defined : program.internal.definitions (signature .cs).name =
+      some (.tree ⟨signature .cs, (FactoryPrefix.entryWith pointerPresent) .cs rest, false⟩))
+    (unsupported : FactoryEntry.unsupported args = true) :
+    ∃ types,
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling (signature .cs).name (arguments .cs args) heap stack)
+        (.body (.running ((FactoryRejection.codeWith pointerPresent) message ++ rest)
+          (parameters .cs args) types heap) "fmi3Instance" stack) := by
+  obtain ⟨types, entered, _, _⟩ := FactoryArguments.call_entry program ((FactoryPrefix.entryWith pointerPresent) .cs rest)
+    .cs args heap stack typeBindings defined
+  have guarded := FactoryEntry.coSimulation_guard_with pointerPresent program (rest) args types heap stack
+  rw [unsupported] at guarded
+  exact ⟨types, .next entered (.next guarded (.refl _))⟩
+
 theorem rejection_entry (program : CCalls.Events.Program E) (rest : List Stmt)
     (args : Raw) (heap : Heap) (stack : CCalls.Typed.Continuation)
     (typeBindings : FactoryArguments.Types)
@@ -20,13 +38,44 @@ theorem rejection_entry (program : CCalls.Events.Program E) (rest : List Stmt)
         (.calling (signature .cs).name (arguments .cs args) heap stack)
         (.body (.running (FactoryRejection.code message ++ rest)
           (parameters .cs args) types heap) "fmi3Instance" stack) := by
-  obtain ⟨types, entered, _, _⟩ := FactoryArguments.call_entry program (FactoryPrefix.entry .cs rest)
-    .cs args heap stack typeBindings defined
-  have guarded := FactoryEntry.coSimulation_guard program (rest) args types heap stack
-  rw [unsupported] at guarded
-  exact ⟨types, .next entered (.next guarded (.refl _))⟩
+  exact rejection_entry_with FactoryRejection.explicitPresent program rest args heap stack typeBindings defined unsupported
+
+theorem silent_behaviors_with (pointerPresent : Expr → Expr) (law : FactoryRejection.PointerPresentLaw pointerPresent)
+    (program : CCalls.Events.Program E) (rest : List Stmt)
+    (args : Raw) (heap : Heap)
+    (typeBindings : FactoryArguments.Types)
+    (defined : program.internal.definitions (signature .cs).name =
+      some (.tree ⟨signature .cs, (FactoryPrefix.entryWith pointerPresent) .cs rest, false⟩))
+    (unsupported : FactoryEntry.unsupported args = true)
+    (nullConstant : interface.constants "NULL" = some (.pointer none))
+    (quiet : (args.logger.isSome && args.logging) = false) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling (signature .cs).name (arguments .cs args) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.pointer none, heap⟩ := by
+  obtain ⟨types, entered⟩ := FactoryUnsupported.rejection_entry_with pointerPresent program rest args heap .done typeBindings defined unsupported
+  rw [CCalls.Events.internal_prefix_behaviors program entered behavior]
+  have scope := FactoryArguments.scope .cs args
+  rw [FactoryRejection.silent_equivalence_with pointerPresent law program message (parameters .cs args) types heap
+    (rest) .done args.logger args.logging
+    (by simp [resolve, scope.logger]) (by simp [resolve, scope.logging])
+    (by simp [resolve, scope.null, constants, nullConstant]) typeBindings.handle quiet behavior]
+  exact (CCalls.Events.return_forced program (.pointer none) heap).behaviors behavior
 
 theorem silent_behaviors (program : CCalls.Events.Program E) (rest : List Stmt)
+    (args : Raw) (heap : Heap)
+    (typeBindings : FactoryArguments.Types)
+    (defined : program.internal.definitions (signature .cs).name =
+      some (.tree ⟨signature .cs, FactoryPrefix.logicalEntry .cs rest, false⟩))
+    (unsupported : FactoryEntry.unsupported args = true)
+    (nullConstant : interface.constants "NULL" = some (.pointer none))
+    (quiet : (args.logger.isSome && args.logging) = false) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling (signature .cs).name (arguments .cs args) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.pointer none, heap⟩ := by
+  exact silent_behaviors_with id FactoryRejection.logical_present_law program rest args heap typeBindings defined unsupported nullConstant quiet behavior
+
+theorem silent_behaviors_explicit (nullType : interface.types "void *" = some .pointer)
+    (program : CCalls.Events.Program E) (rest : List Stmt)
     (args : Raw) (heap : Heap)
     (typeBindings : FactoryArguments.Types)
     (defined : program.internal.definitions (signature .cs).name =
@@ -37,16 +86,71 @@ theorem silent_behaviors (program : CCalls.Events.Program E) (rest : List Stmt)
     (CCalls.Events.machine program).Behaves
       (.calling (signature .cs).name (arguments .cs args) heap .done) behavior ↔
       behavior = .terminates [] ⟨.pointer none, heap⟩ := by
-  obtain ⟨types, entered⟩ := rejection_entry program rest args heap .done typeBindings defined unsupported
+  exact silent_behaviors_with FactoryRejection.explicitPresent (FactoryRejection.explicit_present_law nullType) program rest args heap typeBindings defined unsupported nullConstant quiet behavior
+
+theorem logged_behaviors_with (pointerPresent : Expr → Expr) (law : FactoryRejection.PointerPresentLaw pointerPresent)
+    (program : CCalls.Events.Program E) (rest : List Stmt)
+    (args : Raw) (heap : Heap) (logger category text : Address)
+    (name : String) (foreign : CCalls.Events.External E)
+    (typeBindings : FactoryArguments.Types)
+    (defined : program.internal.definitions (signature .cs).name =
+      some (.tree ⟨signature .cs, (FactoryPrefix.entryWith pointerPresent) .cs rest, false⟩))
+    (unsupported : FactoryEntry.unsupported args = true)
+    (nullConstant : interface.constants "NULL" = some (.pointer none))
+    (loggerBound : args.logger = some logger) (logging : args.logging = true)
+    (categoryBound : interface.literals "logStatus" = some category)
+    (messageBound : interface.literals message = some text)
+    (address : program.addresses logger = some name)
+    (external : program.externals name = some foreign)
+    (prototype : foreign.signature = Logging.signature name)
+    (errorConstant : interface.constants "fmi3Error" = some (.integer 3))
+    (converted : CCalls.Events.convertedArguments (Logging.signature name).parameters
+      (Logging.arguments args.environment category text) = some (Logging.arguments args.environment category text))
+    (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling (signature .cs).name (arguments .cs args) heap .done) behavior ↔
+    (∃ events value after, foreign.execute (Logging.arguments args.environment category text)
+      heap events value after ∧ behavior = .terminates events ⟨.pointer none, after⟩) ∨
+    ((∀ events value after, ¬ foreign.execute (Logging.arguments args.environment category text)
+      heap events value after) ∧ behavior = .wrong []) := by
+  obtain ⟨types, entered⟩ := FactoryUnsupported.rejection_entry_with pointerPresent program rest args heap .done typeBindings defined unsupported
   rw [CCalls.Events.internal_prefix_behaviors program entered behavior]
   have scope := FactoryArguments.scope .cs args
-  rw [FactoryRejection.silent_equivalence program message (parameters .cs args) types heap
-    (rest) .done args.logger args.logging
-    (by simp [resolve, scope.logger]) (by simp [resolve, scope.logging])
-    (by simp [resolve, scope.null, constants, nullConstant]) typeBindings.handle quiet behavior]
-  exact (CCalls.Events.return_forced program (.pointer none) heap).behaviors behavior
+  exact FactoryRejection.all_behaviors_with pointerPresent law program message (parameters .cs args) types heap
+    (rest) logger category text args.environment name foreign
+    (by simpa [loggerBound] using scope.logger)
+    (by simp [resolve, scope.logging, logging]) (by simp [resolve, scope.environment])
+    (by simp [resolve, scope.error, constants, errorConstant]) (by simp [resolve, scope.null, constants, nullConstant])
+    categoryBound messageBound address external prototype typeBindings.handle converted behavior
 
 theorem logged_behaviors (program : CCalls.Events.Program E) (rest : List Stmt)
+    (args : Raw) (heap : Heap) (logger category text : Address)
+    (name : String) (foreign : CCalls.Events.External E)
+    (typeBindings : FactoryArguments.Types)
+    (defined : program.internal.definitions (signature .cs).name =
+      some (.tree ⟨signature .cs, FactoryPrefix.logicalEntry .cs rest, false⟩))
+    (unsupported : FactoryEntry.unsupported args = true)
+    (nullConstant : interface.constants "NULL" = some (.pointer none))
+    (loggerBound : args.logger = some logger) (logging : args.logging = true)
+    (categoryBound : interface.literals "logStatus" = some category)
+    (messageBound : interface.literals message = some text)
+    (address : program.addresses logger = some name)
+    (external : program.externals name = some foreign)
+    (prototype : foreign.signature = Logging.signature name)
+    (errorConstant : interface.constants "fmi3Error" = some (.integer 3))
+    (converted : CCalls.Events.convertedArguments (Logging.signature name).parameters
+      (Logging.arguments args.environment category text) = some (Logging.arguments args.environment category text))
+    (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling (signature .cs).name (arguments .cs args) heap .done) behavior ↔
+    (∃ events value after, foreign.execute (Logging.arguments args.environment category text)
+      heap events value after ∧ behavior = .terminates events ⟨.pointer none, after⟩) ∨
+    ((∀ events value after, ¬ foreign.execute (Logging.arguments args.environment category text)
+      heap events value after) ∧ behavior = .wrong []) := by
+  exact logged_behaviors_with id FactoryRejection.logical_present_law program rest args heap logger category text name foreign typeBindings defined unsupported nullConstant loggerBound logging categoryBound messageBound address external prototype errorConstant converted behavior
+
+theorem logged_behaviors_explicit (nullType : interface.types "void *" = some .pointer)
+    (program : CCalls.Events.Program E) (rest : List Stmt)
     (args : Raw) (heap : Heap) (logger category text : Address)
     (name : String) (foreign : CCalls.Events.External E)
     (typeBindings : FactoryArguments.Types)
@@ -70,14 +174,6 @@ theorem logged_behaviors (program : CCalls.Events.Program E) (rest : List Stmt)
       heap events value after ∧ behavior = .terminates events ⟨.pointer none, after⟩) ∨
     ((∀ events value after, ¬ foreign.execute (Logging.arguments args.environment category text)
       heap events value after) ∧ behavior = .wrong []) := by
-  obtain ⟨types, entered⟩ := rejection_entry program rest args heap .done typeBindings defined unsupported
-  rw [CCalls.Events.internal_prefix_behaviors program entered behavior]
-  have scope := FactoryArguments.scope .cs args
-  exact FactoryRejection.all_behaviors program message (parameters .cs args) types heap
-    (rest) logger category text args.environment name foreign
-    (by simpa [loggerBound] using scope.logger)
-    (by simp [resolve, scope.logging, logging]) (by simp [resolve, scope.environment])
-    (by simp [resolve, scope.error, constants, errorConstant]) (by simp [resolve, scope.null, constants, nullConstant])
-    categoryBound messageBound address external prototype typeBindings.handle converted behavior
+  exact logged_behaviors_with FactoryRejection.explicitPresent (FactoryRejection.explicit_present_law nullType) program rest args heap logger category text name foreign typeBindings defined unsupported nullConstant loggerBound logging categoryBound messageBound address external prototype errorConstant converted behavior
 
 end Rumoca.FMI3.FactoryUnsupported

@@ -6,3 +6,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StaticFactory.reserve_entry
 #audit axioms Rumoca.FMI3.StaticFactory.reserve_resume
 #audit axioms Rumoca.FMI3.StaticFactory.successful
+
+-- Factory pointer migration: retained generic domains and actual typed routes.
+#audit axioms Rumoca.FMI3.StaticFactory.reserve_entry_with
+#audit axioms Rumoca.FMI3.StaticFactory.reserve_resume_with
+#audit axioms Rumoca.FMI3.StaticFactory.successful_with

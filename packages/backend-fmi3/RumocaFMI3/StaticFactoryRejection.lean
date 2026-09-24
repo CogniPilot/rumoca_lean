@@ -50,7 +50,7 @@ theorem public_rejected_silent {E : Type} (objects : Objects) (literals : CLiter
   cases rejected with
   | unsupported cs requested =>
       subst kind
-      exact FactoryUnsupported.silent_behaviors program
+      exact FactoryUnsupported.silent_behaviors_explicit (by rfl) program
         (FactoryPrefix.validation model :: FactoryPrefix.identityGuard :: code model.solve .cs)
         args heap (factory_types objects literals) defined requested rfl quiet behavior
   | missing supported missing expected whitespace expectedBound whitespaceBound helper =>
@@ -96,7 +96,7 @@ theorem public_rejected_logged {E : Type} (objects : Objects) (literals : CLiter
   cases rejected with
   | unsupported cs requested =>
       subst kind
-      exact FactoryUnsupported.logged_behaviors program
+      exact FactoryUnsupported.logged_behaviors_explicit (by rfl) program
         (FactoryPrefix.validation model :: FactoryPrefix.identityGuard :: code model.solve .cs)
         args heap logger category text name foreign (factory_types objects literals) defined requested rfl
         loggerBound logging categoryBound messageBound address external prototype rfl converted behavior

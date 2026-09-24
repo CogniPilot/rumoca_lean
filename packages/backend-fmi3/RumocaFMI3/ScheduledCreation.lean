@@ -108,7 +108,7 @@ theorem quiet_call {E : Type} (header : CFenv.Header) (objects : Objects)
   have null : CBody.resolve args.locals "NULL" = some (.pointer none) := by
     simp only [CBody.resolve, localScope.null]
     rfl
-  have rest := FactoryRejection.silent_equivalence program message args.locals types heap [] .done
+  have rest := FactoryRejection.silent_equivalence_explicit (by rfl) program message args.locals types heap [] .done
     args.logger args.logging logger logging null (by rfl) quiet observed
   simpa only [List.append_nil] using rest.trans ((return_forced program (.pointer none) heap).behaviors observed)
 
@@ -144,7 +144,7 @@ theorem logged_call {E : Type} (header : CFenv.Header) (objects : Objects)
   have null : CBody.resolve args.locals "NULL" = some (.pointer none) := by
     simp only [CBody.resolve, localScope.null]
     rfl
-  simpa only [List.append_nil] using FactoryRejection.all_behaviors program message args.locals types heap []
+  simpa only [List.append_nil] using FactoryRejection.all_behaviors_explicit (by rfl) program message args.locals types heap []
     logger category text args.environment name foreign localLogger localLogging environment error null
     categoryBound bound address external prototype (by rfl)
     (by rfl) observed

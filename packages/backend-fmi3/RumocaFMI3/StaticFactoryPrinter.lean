@@ -39,9 +39,9 @@ theorem factory_printable (model : Solve.FMI3Model source) (kind : Kind) :
     FunctionPrintable RuntimePrinter.typedefs (function model kind) := by
   refine ⟨signature_printable kind, ?_⟩
   cases kind <;>
-    simp only [function, FactoryPrefix.body, FactoryPrefix.entry, FactoryPrefix.validation,
-      FactoryPrefix.identityGuard, FactoryPrefix.capabilityGuard, FactoryRejection.code, FactoryRejection.logCall,
-      code, reserve, guard, exhausted, initializeInstance, selectInstance, CAtomicScan.function, Identity.function,
+    simp only [function, functionWith, FactoryPrefix.body, FactoryPrefix.bodyWith, FactoryPrefix.entry, FactoryPrefix.entryWith, FactoryPrefix.validation,
+      FactoryPrefix.identityGuard, FactoryPrefix.identityGuardWith, FactoryPrefix.capabilityGuard, FactoryPrefix.capabilityGuardWith, FactoryRejection.explicitPresent, FactoryRejection.code, FactoryRejection.codeWith, FactoryRejection.logCall,
+      code, codeWith, reserve, guard, guardWith, exhausted, exhaustedWith, initializeInstance, selectInstance, CAtomicScan.function, Identity.function,
       InstanceSlot.code, InstanceSlot.statement, InstanceInitialization.code, InstanceInitialization.put,
       InstanceInitialization.returnHandle, InstanceInitialization.state, InstanceInitialization.field,
       CInitialization.Emission.statement, CInitialization.value_zero,
@@ -49,6 +49,7 @@ theorem factory_printable (model : Solve.FMI3Model source) (kind : Kind) :
       or_imp, forall_and, forall_eq]
   all_goals
     repeat first
+      | exact CNull.literal_printable _
       | exact instance_pointer
       | exact named_type _ (by decide +kernel)
       | exact (TypeSpelling.named (.primitive (by decide +kernel)) : TypeSpelling RuntimePrinter.typedefs "double")
@@ -76,10 +77,10 @@ theorem release_printable : FunctionPrintable RuntimePrinter.typedefs StaticRele
   constructor
   · refine ⟨.named (.primitive (by decide +kernel)), by decide +kernel, ?_⟩
     intro param member
-    simp only [StaticRelease.function, List.mem_cons, List.not_mem_nil, or_false] at member
+    simp only [StaticRelease.function, functionWith, List.mem_cons, List.not_mem_nil, or_false] at member
     subst param
     exact ⟨named_type _ (by decide +kernel), by decide +kernel⟩
-  · simp only [StaticRelease.function, StaticRelease.guard, StaticRelease.clear, List.mem_cons,
+  · simp only [StaticRelease.function, functionWith, StaticRelease.guard, guardWith, StaticRelease.clear, List.mem_cons,
       List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq]
     repeat first
       | exact CNull.literal_printable _

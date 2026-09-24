@@ -70,13 +70,13 @@ theorem control_step (header : CFenv.Header) (objects : StaticFactory.Objects)
     | true => exact .reserve types heap
   | capabilityRejected types ready =>
     have scope := FactoryArguments.scope .cs args
-    exact .capabilityRejected types (FactoryRejection.control_step model sigs program actual onlyNamed
+    exact .capabilityRejected types (FactoryRejection.control_step_explicit (by rfl) model sigs program actual onlyNamed
       args.logger args.logging
       (by simp [resolve, scope.logger]) (by simp [resolve, scope.logging])
       (by simp [resolve, scope.null, constants]; rfl) ready step)
   | identityRejected types ready =>
     have scope := FactoryArguments.scope kind args
-    exact .identityRejected types (FactoryRejection.control_step model sigs program actual onlyNamed
+    exact .identityRejected types (FactoryRejection.control_step_explicit (by rfl) model sigs program actual onlyNamed
       args.logger args.logging
       (by simp [FactoryValidation.locals, CBody.bind, resolve, scope.logger])
       (by simp [FactoryValidation.locals, CBody.bind, resolve, scope.logging])

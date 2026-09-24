@@ -199,7 +199,7 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3
     TensorContinuousStates.get_contract m.shape,
     TensorContinuousStates.set_contract m.shape,
     ConstantDerivative.deriv_contract m.shape,
-    (fun _E prog tag => TensorFactory.contract prog tag model (TensorMetadata.constantToken m.name) m.shape),
+    (fun _E prog tag => TensorFactory.contract_explicit (by rfl) prog tag model (TensorMetadata.constantToken m.name) m.shape),
     (fun _E prog tag bindings => TensorFree.contract prog tag bindings),
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n",
       String.join (ConstantFunctions.helpers.map Function.render) ++
