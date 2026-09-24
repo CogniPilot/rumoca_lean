@@ -158,37 +158,54 @@ theorem complete (unusedKernel : CSyntax.Program) (objects : Objects) (name : St
           statusAlias .done)
         (.returning (.integer 0) finalHeap .done)) :
     MethodResult unusedKernel objects name heap finalHeap base := by
-  letI : CInterface := NumericalInterface.interface
-  have entered := ContextMethod.entry unusedKernel objects name code member heap base .done
-  have finished : Transition.Reaches (machine (expressions objects) (program unusedKernel)).step
-      (.calling name [.pointer (some base)] heap .done) (.halted ⟨.integer 0, finalHeap⟩) :=
-    .next entered (ran.trans (.next rfl (.refl _)))
-  exact ⟨fun stack => append_reaches (expressions objects) (program unusedKernel) finished stack,
-    fun _ => (machine (expressions objects) (program unusedKernel)).behavior_iff finished rfl⟩
+  exact ContextMethod.complete_in (program unusedKernel) objects name code
+    (method_defined unusedKernel (method name code) member) heap finalHeap base ran
 
-theorem recalibrate (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
-    (base : Address) (storage : AllocatedStorage objects heap base) :
-    RecalibrateOutcome objects heap (cleared heap base) base ∧
-      MethodResult unusedKernel objects recalibrateName heap (cleared heap base) base := by
+/-- The unchanged Recalibrate body requires no function-table extension or
+input-value interpretation; it preserves the supplied locals and continuation. -/
+theorem recalibrate_body_in (p : CCalls.Program) (objects : Objects) (heap : Heap)
+    (base : Address) (storage : AllocatedStorage objects heap base)
+    (env : CBody.Locals) (types : CLoops.Types)
+    (bound : env "self" = some (.pointer (some base)))
+    (stack : CCalls.Typed.Continuation) :
+    letI : CInterface := NumericalInterface.interface
+    Transition.Reaches (machine (expressions objects) p).step
+      (.body (.running recalibrateFunction.body env types heap) statusAlias stack)
+      (.returning (.integer 0) (cleared heap base) stack) := by
   letI : CInterface := NumericalInterface.interface
+  have first := method_clear recalibrateName [] objects env types
+    heap (cleared heap base) base bound storage.clear_store
+  have step : next (expressions objects) p
+      (.body (.running (method recalibrateName []).body env types heap) statusAlias stack) =
+      some (.body (.running [.ret (some (selfField statusName))]
+        env types (cleared heap base)) statusAlias stack) := by
+    simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, first, List.nil_append]
+  exact .next step (return_zero p objects (cleared heap base) base
+    storage.after_clear env types bound cleared_status_reads stack)
+
+/-- Exact lookup of the unchanged Recalibrate definition suffices for its full
+owned outcome and ordinary public behavior on the supplied table. -/
+theorem recalibrate_in (p : CCalls.Program) (objects : Objects) (heap : Heap)
+    (base : Address) (storage : AllocatedStorage objects heap base)
+    (found : p.definitions recalibrateName = some (.tree recalibrateFunction)) :
+    RecalibrateOutcome objects heap (cleared heap base) base ∧
+      ContextMethod.Completes p objects recalibrateName heap (cleared heap base) base := by
   have outcome : RecalibrateOutcome objects heap (cleared heap base) base :=
     ⟨storage.after_clear, rfl, cleared_status_reads,
       storage.input_frame,
       storage.clear_member squareVar.name (by decide +kernel),
       storage.clear_member jacobianVar.name (by decide +kernel),
       storage.clock_frame.1, fun _ separate => cleared_other separate⟩
-  refine ⟨outcome, complete unusedKernel objects recalibrateName [] ?_ heap (cleared heap base) base ?_⟩
-  · simp [TensorProduction.functions, recalibrateFunction]
-  · have first := method_clear recalibrateName [] objects (ContextMethod.locals base) ContextMethod.types
-      heap (cleared heap base) base rfl storage.clear_store
-    have step : next (expressions objects) (program unusedKernel)
-        (.body (.running (method recalibrateName []).body (ContextMethod.locals base) ContextMethod.types heap)
-          statusAlias .done) =
-        some (.body (.running [.ret (some (selfField statusName))]
-          (ContextMethod.locals base) ContextMethod.types (cleared heap base)) statusAlias .done) := by
-      simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, first, List.nil_append]
-    exact .next step (return_zero (program unusedKernel) objects (cleared heap base) base
-      storage.after_clear (ContextMethod.locals base) ContextMethod.types rfl cleared_status_reads .done)
+  exact ⟨outcome, ContextMethod.complete_in p objects recalibrateName [] found
+    heap (cleared heap base) base
+    (recalibrate_body_in p objects heap base storage (ContextMethod.locals base) ContextMethod.types rfl .done)⟩
+
+theorem recalibrate (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
+    (base : Address) (storage : AllocatedStorage objects heap base) :
+    RecalibrateOutcome objects heap (cleared heap base) base ∧
+      MethodResult unusedKernel objects recalibrateName heap (cleared heap base) base := by
+  exact recalibrate_in (program unusedKernel) objects heap base storage
+    (method_defined unusedKernel recalibrateFunction (by simp [TensorProduction.functions]))
 
 theorem startup (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
     (base : Address) (storage : AllocatedStorage objects heap base) :

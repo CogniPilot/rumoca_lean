@@ -12,6 +12,20 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Table-parametric method adoption — repair prerequisite; stage OPEN
+
+No grammar, admission, C tree, artifact or permission-policy change. Existing
+EFMI owners now prove numerical helpers and whole DoStep on any enclosing table
+extending the actual numerical definitions, with exact method lookup for public
+entry; Recalibrate needs only its definition lookup and allocated storage.
+All current production APIs specialize those proofs without changing their
+statements or outcomes. Twelve new roots passed owner checks (session66052,
+3,502 jobs, 705 complete whitelisted reports, ten frozen owner hashes).
+The required full gate is pending; evidence prefix `build/method-table-`.
+This enables the coupled repair but does not promote the candidate Startup or
+close source/target, actual-artifact, lifecycle, input-policy, native or MISRA
+findings. Retain all prior admitted-subset clause mappings and open findings.
+
 ### Whole-state handoff adoption — repair prerequisite; stage OPEN
 
 No grammar expansion, source admission, policy or emitted artifact changes.

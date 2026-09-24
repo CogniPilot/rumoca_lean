@@ -1,5 +1,24 @@
 # Exact verification contract
 
+**Owned table-parametric method proofs (owner checks passed; full gate pending):**
+The existing EFMI owners now contain numerical-extension RHS/Jacobian helpers,
+whole DoStep execution/behavior, checked public entry/completion, finite-primal
+DoStep with derived AD arithmetic, and table-independent Recalibrate execution.
+The original production APIs are specializations of these reusable proofs.
+All 23 existing theorem statements, target outcomes and current Startup proof
+are unchanged. There is no grammar, parser, emitter, source-admission, C tree,
+artifact-predicate or axiom-whitelist change, and no package imports scratch.
+The repaired tensor Startup/source/artifact promotion remains a separate task.
+
+Implementation check passed 2,171 jobs; `check-efmi check-compiler` owner run
+session66052 passed 3,502 jobs, 705 complete unchanged-whitelist reports, all
+12 new roots and ten frozen owner source/audit hashes. Evidence prefix:
+`build/method-table-`. The required full artifact gate is still pending for this
+increment; the latest completed production gate remains `bac8f61` below.
+Main read the complete independent adoption review, which confirmed old API/
+outcome preservation and all registrations with no substantive finding:
+`build/method-table-adoption-review.md`.
+
 **Candidate tensor source/Startup byte pair (checked scratch, not promotion):**
 `build/galec-tensor-contract-draft/` now has a combined frozen scratch receipt
 for original three-method source semantics, finite primal/AD correspondence,

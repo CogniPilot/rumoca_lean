@@ -1,5 +1,25 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## Table-parametric methods — owner checks passed; full gate pending
+
+The five existing EFMI owners for RHS/Jacobian helpers, DoStep, public method
+entry and Startup/Recalibrate now own the reusable table-parametric proofs.
+The original APIs are specializations; all old statements/outcomes and the
+current Startup proof are unchanged. Numerical-library extension suffices for
+DoStep; public calls additionally require exact method lookup. Finite primal
+execution derives AD coefficient arithmetic. Recalibrate requires allocated
+storage without a finite-input or numerical-table premise. Twelve roots are
+registered in the existing audit leaves. Owner session66052 passed 3,502 jobs,
+705 unchanged-whitelist reports and ten frozen input hashes. The required full
+artifact gate is pending. No emitted byte, grammar, admission or artifact
+contract changed, and repaired candidate Startup remains unpromoted.
+
+The preceding candidate all-method/source/physical-handoff proofs remain in
+`build/galec-{tensor-contract,method-table,recalibrate-table}-draft/`. Their
+frozen scratch receipts describe their prior dependency snapshots; rebase and
+recheck consumers of the newly owned APIs before relying on a new combined
+receipt. Do not mistake proof ownership for parser/emitter/artifact cutover.
+
 ## Whole-block preparation and state handoff — full gate passed
 
 The generic portions of `galec-block-preparation-draft` and

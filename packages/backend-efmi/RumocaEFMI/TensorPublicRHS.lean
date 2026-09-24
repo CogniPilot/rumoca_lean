@@ -8,6 +8,7 @@ noncomputable section
 namespace Rumoca.EFMI.PublicRHS
 open CMemory CMemory.TensorView CDeclaredMembers CDeclaredMembers.MemberStorage
 open CTensor Solve.Tensor TensorProduction TensorPublicStorage TensorNumericalLinkage
+open CContextMachine TensorContextCalls
 
 def addresses (base : Address) (name : String) : Address :=
   if name = "dx" then base.member squareVar.name else base.member inputVar.name
@@ -47,9 +48,33 @@ theorem storage_after (storage : Storage objects heap base input)
     simpa only [Address.index_zero] using member_preserved frame
       (show statusName ≠ squareVar.name by decide +kernel) 0
 
-/-- On the actual ten-tree table and array-aware machine, the emitted RHS
-returns the finite Solve result and preserves the SAME finite input/storage.
-Header bindings, table lookup and output/input separation are derived. -/
+/-- Reuse the actual numerical library in any enclosing table that preserves
+its definitions; unrelated public methods need not agree. -/
+theorem helper_in (p : CCalls.Program) (linked : CCalls.Typed.Extends definitions p)
+    (objects : Objects) (heap : Heap) (base : Address) (input result : Values inputShape)
+    (storage : Storage objects heap base input)
+    (executed : Finite.Executes (ArrayProfile.squareProgram inputShape)
+      (ArrayProfile.environment input input) result) :
+    letI : CInterface := NumericalInterface.interface
+    ∃ finalHeap, Storage objects finalHeap base input ∧
+      Reads finalHeap (base.member squareVar.name) result ∧
+      (∀ q, (∀ i < squareShape.volume, q ≠ (base.member squareVar.name).index i) →
+        finalHeap q = heap q) ∧
+      CallResult (expressions objects) p "rumoca_rhs"
+        [.pointer (some (base.member inputVar.name)), .pointer (some (base.member inputVar.name)),
+          .pointer (some (base.member squareVar.name)), .integer inputVar.volume] heap finalHeap := by
+  letI : CInterface := NumericalInterface.interface
+  obtain ⟨finalHeap, reads, writes, frame, ran⟩ :=
+    AddressedIVP.derivative_call definitions (derivative_library_numerical inputShape)
+      (derivative_defined inputShape) heap (PublicRHS.addresses base) input input result
+      (by decide +kernel) storage.input_reads storage.input_reads storage.square
+      (PublicRHS.separate base) executed
+  refine ⟨finalHeap, PublicRHS.storage_after storage writes frame, reads, frame, ?_⟩
+  have contextual := loop_call_result_context TensorArrayMembers.declarations objects p
+    definitions linked TensorNumericalFieldFree.definition_body ((ran _).2 rfl)
+  simpa only [PublicRHS.argument_values] using contextual
+
+/-- The production table is an instance of the numerical extension theorem. -/
 theorem helper (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
     (base : Address) (input result : Values inputShape)
     (storage : Storage objects heap base input)
@@ -63,13 +88,8 @@ theorem helper (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap
       CContextMachine.CallResult (TensorContextCalls.expressions objects) (program unusedKernel)
         "rumoca_rhs"
         [.pointer (some (base.member inputVar.name)), .pointer (some (base.member inputVar.name)),
-          .pointer (some (base.member squareVar.name)), .integer inputVar.volume] heap finalHeap := by
-  letI : CInterface := NumericalInterface.interface
-  obtain ⟨finalHeap, reads, writes, frame, ran⟩ :=
-    ContextIVP.derivative TensorArrayMembers.declarations objects unusedKernel heap (addresses base)
-      input input result (by decide +kernel) storage.input_reads storage.input_reads storage.square
-      (separate base) executed
-  refine ⟨finalHeap, storage_after storage writes frame, reads, frame, ?_⟩
-  simpa only [argument_values] using ran
+          .pointer (some (base.member squareVar.name)), .integer inputVar.volume] heap finalHeap :=
+  helper_in (program unusedKernel) (numerical_in_actual unusedKernel)
+    objects heap base input result storage executed
 
 end Rumoca.EFMI.PublicRHS

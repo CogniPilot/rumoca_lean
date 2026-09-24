@@ -1,5 +1,31 @@
 # Resume handoff — 2026-09-23 UTC
 
+## Latest owned increment — full gate pending
+
+The reviewed reusable table-parametric mechanisms are now in existing EFMI
+owners: `TensorPublicRHS`, `TensorPublicJacobian`, `TensorDoStep`,
+`TensorMethodEntry`, and `TensorStartup`, with matching audit leaves. Old APIs
+specialize the new proofs. All 23 old theorem statements and the entire current
+Startup proof are unchanged; no runtime/emitter/parser/grammar/artifact predicate
+changes. Twelve new roots. Main implementation build passed 2,171 jobs; owner
+`check-efmi check-compiler` session66052 passed 3,502 jobs, 705 whitelisted reports,
+12 selected roots and ten frozen owner hashes. Evidence: `build/method-table-`.
+Independent adoption review is complete, no substantive findings; main read
+`build/method-table-adoption-review.md` fully. Both bounded agents are finished.
+
+Required next validation: `build/run-method-table-full-gate-v1.sh`, followed by
+`build/run-method-table-post-audit-v1.sh`. Check exit files/session state before
+launching; never restart an already live/completed gate. The post audit expects
+646 selected roots (634 retained + 12), unchanged FMI retained roots and identical
+scalar/tensor Algorithm/C members. Scripts require a clean committed tree.
+No full-gate success is claimed by this pending snapshot.
+
+After this gate, rebase downstream candidate composition onto the owned APIs
+and complete the coupled parser/emitter/actual-artifact repair, preserving all
+existing scalar/total-helper contracts. Frozen scratch receipts below describe
+their original snapshots: changed owned dependency hashes after this adoption
+are expected, and downstream rechecks must rebuild/re-snapshot deliberately.
+
 ## Active resumption after latest wrap-up
 
 The user explicitly resumed the goal with more tokens. Work is active again.

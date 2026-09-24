@@ -36,7 +36,8 @@ theorem status_expression (objects : Objects) (heap : Heap) (base : Address)
   rw [TensorArrayMembers.status_scalar storage.represents bound,
     TensorNumericalLinkage.selfField_eval env heap base statusName bound, status]
 
-theorem body (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
+/-- Whole body on any extension of the actual numerical library. -/
+theorem body_in (p : CCalls.Program) (linked : CCalls.Typed.Extends definitions p) (objects : Objects) (heap : Heap)
     (base : Address) (input rhs coefficients : Values inputShape)
     (storage : Storage objects heap base input)
     (executed : Finite.Executes (ArrayProfile.squareProgram inputShape)
@@ -49,14 +50,14 @@ theorem body (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
     (stack : CCalls.Typed.Continuation) :
     letI : CInterface := NumericalInterface.interface
     ∃ finalHeap, Outcome objects heap finalHeap base input rhs coefficients ∧
-      Transition.Reaches (machine (expressions objects) (program unusedKernel)).step
+      Transition.Reaches (machine (expressions objects) p).step
         (.body (.running doStepFunction.body env types heap) statusAlias stack)
         (.returning (.integer 0) finalHeap stack) := by
   letI : CInterface := NumericalInterface.interface
   obtain ⟨rhsHeap, rhsStorage, rhsReads, rhsFrame, rhsRan⟩ :=
-    PublicRHS.helper unusedKernel objects (cleared heap base) base input rhs storage.after_clear executed
+    PublicRHS.helper_in p linked objects (cleared heap base) base input rhs storage.after_clear executed
   obtain ⟨jacStorage, ad, jacRan, jacReads, observes, jacFrame⟩ :=
-    PublicJacobian.helper unusedKernel objects rhsHeap base input rhs coefficients rhsStorage executed adds
+    PublicJacobian.helper_in p linked objects rhsHeap base input rhs coefficients rhsStorage executed adds
   let finalHeap := Diagonal.resultHeap rhsHeap (base.member jacobianVar.name) coefficients
   have finalSquare : Reads finalHeap (base.member squareVar.name) rhs :=
     reads_framed rhsReads (PublicRHS.member_preserved jacFrame (by decide +kernel))
@@ -79,26 +80,66 @@ theorem body (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
       jacClock.trans (rhsClock.trans storage.clock_after_clear.1),
       fun q status outsideX outsideJ =>
         (jacFrame q outsideJ).trans ((rhsFrame q outsideX).trans (cleared_other status))⟩
-  have dispatched := doStep_rhs_dispatch (program unusedKernel) objects env types heap
+  have dispatched := doStep_rhs_dispatch p objects env types heap
     (cleared heap base) base storage.represents bound rhsUnshadowed storage.clear_store stack
   have rhsDone := (rhsRan.1 (.caller .discard afterRhs env types statusAlias stack)).trans
-    (Transition.Reaches.next (show next (expressions objects) (program unusedKernel)
+    (Transition.Reaches.next (show next (expressions objects) p
       (.returning .void rhsHeap (.caller .discard afterRhs env types statusAlias stack)) =
       some (.body (.running afterRhs env types rhsHeap) statusAlias stack) from rfl) (.refl _))
-  have jacDone := invoke_reaches (expressions objects) (program unusedKernel) jacRan jacobianArgs
+  have jacDone := invoke_reaches (expressions objects) p jacRan jacobianArgs
     [.ret (some (selfField statusName))] env types statusAlias stack (by decide +kernel)
     jacUnshadowed (by rfl) (jacobian_arguments rhsStorage.represents bound)
   have evaluated := status_expression objects finalHeap base input jacStorage env bound finalStatus
   have typed : typedEval (expressions objects) env types finalHeap (selfField statusName) =
       some (.integer 0) := evaluated
-  have returnStep : next (expressions objects) (program unusedKernel)
+  have returnStep : next (expressions objects) p
       (.body (.running [.ret (some (selfField statusName))] env types finalHeap) statusAlias stack) =
       some (.body (.returned ⟨.integer 0, finalHeap⟩) statusAlias stack) := by
     simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, CLoops.nextWith, typed, bind, Option.bind_some, pure]
-  have castStep : next (expressions objects) (program unusedKernel)
+  have castStep : next (expressions objects) p
       (.body (.returned ⟨.integer 0, finalHeap⟩) statusAlias stack) =
       some (.returning (.integer 0) finalHeap stack) := by rfl
   exact ⟨finalHeap, outcome, dispatched.trans (rhsDone.trans
     (jacDone.trans (.next returnStep (.next castStep (.refl _)))))⟩
+
+theorem body_behavior_in (p : CCalls.Program) (linked : CCalls.Typed.Extends definitions p)
+    (objects : Objects) (heap : Heap) (base : Address) (input rhs coefficients : Values inputShape)
+    (storage : Storage objects heap base input)
+    (executed : Finite.Executes (ArrayProfile.squareProgram inputShape)
+      (ArrayProfile.environment input input) rhs)
+    (adds : ∀ i : Fin inputShape.volume, Binary64.Adds input[i] input[i] (.finite coefficients[i]))
+    (env : CBody.Locals) (types : CLoops.Types)
+    (bound : env "self" = some (.pointer (some base)))
+    (rhsUnshadowed : env "rumoca_rhs" = none)
+    (jacUnshadowed : env "rumoca_square_jacobian_diag" = none) :
+    letI : CInterface := NumericalInterface.interface
+    ∃ after, Outcome objects heap after base input rhs coefficients ∧
+      ∀ behavior, (machine (expressions objects) p).Behaves
+        (.body (.running doStepFunction.body env types heap) statusAlias .done) behavior ↔
+          behavior = .terminates ⟨.integer 0, after⟩ := by
+  letI : CInterface := NumericalInterface.interface
+  obtain ⟨after, outcome, ran⟩ := body_in p linked objects heap base input rhs coefficients
+    storage executed adds env types bound rhsUnshadowed jacUnshadowed .done
+  exact ⟨after, outcome, fun _ =>
+    (machine (expressions objects) p).behavior_iff (ran.trans (.next rfl (.refl _))) rfl⟩
+
+theorem body (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
+    (base : Address) (input rhs coefficients : Values inputShape)
+    (storage : Storage objects heap base input)
+    (executed : Finite.Executes (ArrayProfile.squareProgram inputShape)
+      (ArrayProfile.environment input input) rhs)
+    (adds : ∀ i : Fin inputShape.volume, Binary64.Adds input[i] input[i] (.finite coefficients[i]))
+    (env : CBody.Locals) (types : CLoops.Types)
+    (bound : env "self" = some (.pointer (some base)))
+    (rhsUnshadowed : env "rumoca_rhs" = none)
+    (jacUnshadowed : env "rumoca_square_jacobian_diag" = none)
+    (stack : CCalls.Typed.Continuation) :
+    letI : CInterface := NumericalInterface.interface
+    ∃ finalHeap, Outcome objects heap finalHeap base input rhs coefficients ∧
+      Transition.Reaches (machine (expressions objects) (program unusedKernel)).step
+        (.body (.running doStepFunction.body env types heap) statusAlias stack)
+        (.returning (.integer 0) finalHeap stack) :=
+  body_in (program unusedKernel) (numerical_in_actual unusedKernel) objects heap base
+    input rhs coefficients storage executed adds env types bound rhsUnshadowed jacUnshadowed stack
 
 end Rumoca.EFMI.ContextDoStep
