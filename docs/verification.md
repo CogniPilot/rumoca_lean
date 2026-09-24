@@ -159,6 +159,27 @@ This certifies candidate directory members, not complete archive bytes, XSD/
 prose conformance, lifecycle/native integration or production promotion. The
 whole-archive adapter is pending; the last production full gate remains above.
 
+**Candidate complete archive binding (checked scratch):**
+`build/galec-candidate-archive-draft/` check-v3/session6776 passed at `1363a27`:
+three exact source-to-production/manifest/archive roots under the unchanged
+axiom whitelist, empty Options/Check logs, five local/2,665 tracked/312 selected
+hashes, the actual archive hash and three output objects. Main rechecked all
+hashes and read the complete independent source/runner/options/control reviews,
+no blocking source finding. The final archive root retains the SAME compiled
+artifact/model/kernel, full aligned code contract, XML/identity/checksum graph
+and complete existing stored-ZIP contract, with the exact 50-member roster.
+The existing actual-payload comparison/I/O/quotation boundary stays explicit.
+
+Boundary-v1/session84236 passed trailing-byte and correctly re-encoded changed
+pinned-schema rejections, plus refusal to overwrite the existing archive.
+Primary diagnostics, no accepted archive root/output object and unchanged
+baseline hashes were checked. These controls exercise native rejection guards;
+whole transport/EOF proof comes from the positive kernel certificate. V1/V2
+producer invocation/option-initialization failures happened before archive
+creation; an imported Options module fixed them without a checker change.
+This closes the candidate file/XML/ZIP binding prerequisite, not production
+promotion, native execution, lifecycle, normative findings or MISRA compliance.
+
 **Whole-block preparation and whole-state method handoff (full gate passed):**
 Core now owns `Elaboration.Block.{Headers,Preparation}`,
 `Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface

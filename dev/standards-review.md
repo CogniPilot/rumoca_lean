@@ -233,6 +233,17 @@ correspondence only. Complete ZIP, native/lifecycle and normative findings are
 not discharged, and neither production promotion nor grammar expansion is
 authorized by this receipt.
 
+R5 candidate archive update: `build/galec-candidate-archive-draft/`
+check-v3/session6776 at `1363a27` passed three exact unchanged-whitelist roots,
+retaining one source artifact/model/kernel and code/XML record through complete
+stored-ZIP transport. Main checked five local/2,665 tracked/312 selected hashes,
+actual archive and three objects, and read complete independent reviews.
+Boundary-v1/session84236 passed trailing ZIP, resealed changed pinned schema
+and output-overwrite rejections with required primary diagnostics and unchanged
+baseline bytes. This completes the candidate file/XML/ZIP binding prerequisite,
+not the production cutover or native/lifecycle/standards obligations. The stage
+decision and all normative/MISRA findings remain unchanged.
+
 | Recurring checklist | Current repair decision and evidence |
 | --- | --- |
 | Scope and identity | Scalar unit C/FMU/Algorithm/eFMU, fixed extent-two square/Jacobian FMU/Algorithm/eFMU, pinned two-state constant FMU only. No new Modelica case or product. |

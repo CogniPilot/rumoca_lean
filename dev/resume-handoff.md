@@ -131,12 +131,22 @@ invalid ID rejections with required primary diagnostics/no accepted final root/
 no output object. V1 generator syntax and V2 expected diagnostic wording were
 fixed without checker/contract changes. Do not restart completed runs.
 
-Next: actual whole-archive binding using owned ZIP/schema certifiers in
-`build/galec-candidate-archive-draft/`. Main read worker source and the owned
-transport certifier. Archive V1 failed old option names; V2 failed evaluating
-an init option declared in the emitting module itself, before archive creation.
-The output option now lives in imported CandidateArchiveDraft.Options. No proof
-was changed. Check the ignored live checkpoint for the next run and review.
+Actual whole-archive binding is now checked in
+`build/galec-candidate-archive-draft/`: check-v3/session6776 at `1363a27` passed
+the exact three source/code/manifest/archive roots with the unchanged whitelist,
+empty Options/Check logs, five local/2,665 tracked/312 selected hashes, actual
+archive hash and three output objects. Boundary-v1/session84236 passed trailing
+ZIP, resealed changed-schema and overwrite-refusal controls. Main checked all
+hashes and primary logs and read the complete independent reviews, no finding.
+V1/V2 producer option invocation/initialization failures preceded archive
+creation; the imported Options module fixes those without changing Check.
+These runs are completed; do not restart. The actual-file quotation/payload
+comparison boundary remains explicit. No production or conformance claim.
+
+Next: adopt the checked reusable explicit-code manifest construction into its
+existing backend owner while preserving current bytes/contracts. Then continue
+the coupled parser/source/C integration, native/lifecycle obligations and
+standards closure. Check the ignored live checkpoint before changing inputs.
 Preserve the exact model/kernel link, every existing scalar/tensor/total-helper
 field and allocated-only branch.
 Same candidate parameters alone are not an arbitrary lifecycle or host input
