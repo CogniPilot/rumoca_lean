@@ -22,6 +22,16 @@ removed five certificate directories (523.85 MiB); 90 entries/5,405.74 MiB were
 present before, ten most recently used per kind are retained. Free disk: 393 GB.
 Source, review logs, receipts and private dependency caches were preserved.
 
+Between-milestone cleanup (user standing instruction, 2026-09-24): do not wait
+for a major milestone to reclaim disk. Removed two stale prunable worktrees
+from the renamed repository path (`build/wt-a`, `build/wt-b`, about 10.6 GB)
+and the compiled cache/lib copies of completed private adoption checks
+(`c-static-storage/address-workspace`, `debug/factory/output/tensor-array/
+tensor-float64/float64/count-condition-adoption` object copies, 6,080 MiB).
+Patches, overlays, READMEs, logs, hash lists and receipts were kept; their
+input hashes over deleted object copies can no longer be rechecked, and the
+recorded production full gates supersede them. Free disk: 390 GB.
+
 Residual MISRA observation from the actual adapters after this repair: no
 implicit pointer truth test remains; `!busy` is `_Bool`. Each adapter still
 emits 90 `|| 0)` and 14 `&& 0)` fold terminals from `Runtime.any`/`Runtime.all`
