@@ -67,16 +67,13 @@ def main : IO Unit := do
           ((kernel.problem.rhs ops 0 1 state input).data.toArray == #[4, 9] &&
             (matrix.eval ops 0 1 (kernel.problem.environment state input)).data.toArray == #[4, 0, 0, 6])
         -- Development tensor eFMI Algorithm Code product. The array/tensor
-        -- profile is not admitted to CLI eFMI output; this renders the actual
-        -- GALEC text for the prepared square kernel and checks it parses to the
-        -- resolved tensor block, the boundary the Lean product proves.
-        let algorithmSource := EFMI.renderTensorAlgorithm
-          (⟨EFMI.squareKernel ArrayProfile.stateShape, rfl⟩ : EFMI.TensorModel ArrayProfile.stateShape)
-        match GALEC.Syntax.parseTensor algorithmSource with
+        -- profile is not admitted to CLI eFMI output; this writes the emitted
+        -- GALEC text and checks that one parse and whole-block preparation
+        -- accept it, the boundary the Lean product proves.
+        let algorithmSource := EFMI.tensorAlgorithmSource
+        match GALEC.Elaboration.Block.fromSource algorithmSource with
         | .error e => throw (IO.userError s!"tensor Algorithm Code rejected: {e}")
-        | .ok algParsed =>
-          expect "tensor Algorithm Code parses to the resolved tensor square block"
-            (algParsed.ast == GALEC.Syntax.tensorUnit)
+        | .ok _ => pure ()
         IO.FS.createDirAll "build/tensor-efmi"
         IO.FS.writeFile "build/tensor-efmi/AlgorithmCode.alg" algorithmSource
         -- Development tensor eFMI Production Code and manifest product. The
@@ -85,7 +82,8 @@ def main : IO Unit := do
         -- Production/container manifests for the prepared square kernel and
         -- retains them under build/tensor-efmi/ for the boundary XSD check.
         let tensorIdentity := EFMIIdentity.derivedIdentity "TensorSquare" arraySquare 1700000000
-        let tensorDocs := EFMI.TensorManifest.prepare "TensorSquare" tensorIdentity algorithmSource
+        let tensorDocs := EFMI.TensorManifest.prepareWithCode "TensorSquare" tensorIdentity
+          algorithmSource EFMI.TensorProduction.render
         expect "tensor eFMI manifests lie in the checked XML output profile"
           tensorDocs.valid
         IO.FS.writeFile "build/tensor-efmi/ProductionCode.c" EFMI.TensorProduction.render

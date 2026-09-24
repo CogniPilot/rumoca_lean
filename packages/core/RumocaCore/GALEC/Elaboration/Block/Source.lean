@@ -58,6 +58,18 @@ theorem fromSource_iff (source : String) (result : Result) :
   rw [← option_iff]
   cases prepared : fromSource source <;> simp [Except.toOption]
 
+/-- A witnessed tree that the block preparer rejects makes the source text fail,
+although its syntax is accepted. -/
+theorem fromSource_rejected (witness : Syntax.Witness source block)
+    (rejected : fromBlock Static.Bounded.integerCeiling block = none) :
+    ∀ product, fromSource source ≠ .ok product := by
+  intro product accepted
+  obtain ⟨other, witnessed, prepared⟩ := (fromSource_iff source product.result).mp
+    ⟨product, accepted, rfl⟩
+  cases Syntax.witness_unique witness witnessed
+  rw [(fromBlock_iff _ _ _).mpr prepared] at rejected
+  cases rejected
+
 theorem fromSource_parse_error (failed : Syntax.parse source = .error diagnostic) :
     fromSource source = .error diagnostic := by
   simp only [fromSource, failed]

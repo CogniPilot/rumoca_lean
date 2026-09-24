@@ -146,8 +146,8 @@ def check (input : EFMICheckOptions.Code) (c : String) : CommandElabM Unit := do
   let .ok _candidate := compileTensor input.input | throwError "tensor source compilation failed"
   if c != EFMI.TensorProduction.render then
     throwError "actual tensor Production C differs from the certified translation unit"
-  if algorithm != EFMI.tensorUnitSource then
-    throwError "actual tensor Algorithm Code differs from the pinned tensor square profile"
+  if algorithm != EFMI.tensorAlgorithmSource then
+    throwError "actual tensor Algorithm Code differs from the emitted tensor square block"
   EFMITensorArtifactCheck.check input
   let (modelChars, renderEq) ← certifyRender c
   let inputTerm ← input.inputTerm

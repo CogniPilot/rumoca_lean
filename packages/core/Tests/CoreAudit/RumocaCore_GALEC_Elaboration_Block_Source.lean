@@ -10,3 +10,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Block.erase_fromSource
 #audit axioms Rumoca.GALEC.Elaboration.Block.fromSource_iff
 #audit axioms Rumoca.GALEC.Elaboration.Block.fromSource_parse_error
+#audit axioms Rumoca.GALEC.Elaboration.Block.fromSource_rejected

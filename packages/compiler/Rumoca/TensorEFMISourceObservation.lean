@@ -1,19 +1,18 @@
 import Rumoca.TensorEFMISourceJacobian
 import RumocaEFMI.TensorJacobianExact
 
-/-! Scratch artifact-own source observation, not whole-method execution. -/
+/-! Artifact-own source observation, not whole-method execution. -/
 noncomputable section
 namespace Rumoca.EFMI.SourceObservation
 open ArrayProfile Rumoca.Tensor CMemory CMemory.TensorView CTensor Solve.Tensor
 open CTensor.SquareJacobianObservation
 
-/-- The SAME artifact's stored lowering proof and parsed Algorithm denotation
-exclude the driven-only source body. No extra pinned-AST assumption is supplied. -/
+/-- The SAME artifact's stored lowering proof and a square kernel index exclude
+the driven-only source body. No pinned source AST is assumed. -/
 theorem source_jacobian_body (a : TensorArtifact input)
-    (contract : TensorProductionContract a algorithm c) :
+    (index : a.prepared.kernel = ProgramFixture.IVPEntry.kernel stateShape) :
     ∃ output derivative rhs assigned call,
       a.prepared.parsed.parsed.ast.body = .jacobian output derivative rhs assigned call := by
-  have index := JacobianObservation.prepared_index a contract
   let dae := ArrayProfile.DAE.lower
     (ArrayProfile.Flat.lower a.prepared.parsed.parsed.ast a.prepared.resolved)
   have checked := Solved.lower_checked dae
@@ -45,9 +44,9 @@ def SourceMatrix (a : TensorArtifact input)
         (values a.prepared.parsed.parsed.ast.header.input))
 
 theorem source_matrix (a : TensorArtifact input)
-    (contract : TensorProductionContract a algorithm c) (values : String → Values stateShape) :
-    SourceMatrix a values := by
-  obtain ⟨output, derivative, rhs, assigned, call, body⟩ := source_jacobian_body a contract
+    (index : a.prepared.kernel = ProgramFixture.IVPEntry.kernel stateShape)
+    (values : String → Values stateShape) : SourceMatrix a values := by
+  obtain ⟨output, derivative, rhs, assigned, call, body⟩ := source_jacobian_body a index
   have resolved := a.prepared.resolved
   obtain ⟨_, _, _, _, components⟩ := resolved
   rw [body] at components
@@ -102,7 +101,7 @@ theorem artifact_helper (a : TensorArtifact source)
       (values a.prepared.parsed.parsed.ast.header.state)
       (values a.prepared.parsed.parsed.ast.header.input) rhs result heap squareRHS
       separate reads adds writable (by decide +kernel)
-  refine ⟨source_matrix a contract values, JacobianObservation.actual_trees a contract,
+  refine ⟨source_matrix a index values, JacobianObservation.actual_trees a contract,
     squareJacobianProgram stateShape, ?_, executed, ran, matrixReads, observes, frame⟩
   rw [index]
   rfl

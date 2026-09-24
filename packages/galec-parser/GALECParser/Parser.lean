@@ -75,6 +75,14 @@ theorem success_iff (source : String) (ast : AST.Block) :
   rw [witness_iff, ← erase_parse]
   cases result : parse source <;> simp [Except.toOption]
 
+/-- A source text has at most one witnessed tree. -/
+theorem witness_unique (first : Witness source a) (second : Witness source b) : a = b := by
+  obtain ⟨left, parsedLeft, sameLeft⟩ := (success_iff source a).mpr first
+  obtain ⟨right, parsedRight, sameRight⟩ := (success_iff source b).mpr second
+  rw [parsedLeft] at parsedRight
+  cases parsedRight
+  exact sameLeft.symm.trans sameRight
+
 theorem lexical_error (failure : Scanner.lex scanner source = .error diagnostic) :
     parse source = .error diagnostic := by
   unfold parse

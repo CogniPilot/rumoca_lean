@@ -16,3 +16,11 @@ import ProofAudit.Audit
 #audit axioms Rumoca.tensor_executed_archive_correct
 #audit axioms Rumoca.tensor_executed_manifests_correct
 #audit axioms Rumoca.tensor_executed_production_correct
+#audit axioms Rumoca.TensorExecutedProductionContract.methods
+#audit axioms Rumoca.TensorExecutedProductionContract.aligned
+#audit axioms Rumoca.AlignedStep
+#audit axioms Rumoca.AlignedStep.updated
+#audit axioms Rumoca.AlignedStep.source_iff
+#audit axioms Rumoca.AlignedStep.completed_heap_unique
+#audit axioms Rumoca.AlignedStep.ModelicaAt
+#audit axioms Rumoca.aligned_step

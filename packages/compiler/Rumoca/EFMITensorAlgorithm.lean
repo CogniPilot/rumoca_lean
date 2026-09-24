@@ -31,15 +31,15 @@ structure TensorAlgorithmArtifact (source : String) where
 def TensorAlgorithmArtifact.model (a : TensorAlgorithmArtifact source) :
     EFMI.TensorModel ArrayProfile.stateShape := ⟨a.prepared.kernel, a.square⟩
 
-def TensorAlgorithmArtifact.algorithmSource (a : TensorAlgorithmArtifact source) : String :=
-  EFMI.renderTensorAlgorithm a.model
+def TensorAlgorithmArtifact.algorithmSource (_a : TensorAlgorithmArtifact source) : String :=
+  EFMI.tensorAlgorithmSource
 
 /-- Compiler correctness: the emitted tensor Algorithm Code parses to the
-resolved tensor square block that denotes the artifact's prepared kernel. -/
+emitter tree, and its one-pass source preparation satisfies the source contract
+for the artifact's prepared kernel. -/
 theorem TensorAlgorithmArtifact.algorithm_correct (a : TensorAlgorithmArtifact source) :
-    ∃ parsed, GALEC.Syntax.parseTensor a.algorithmSource = .ok parsed ∧
-      EFMI.TensorDenotes parsed.ast a.prepared.kernel :=
-  EFMI.tensor_render_denotes a.model
+    EFMI.TensorAlgorithm.AlgorithmContract a.model a.algorithmSource :=
+  EFMI.TensorAlgorithm.algorithm_correct a.model rfl
 
 /-- The pinned `TensorSquare` fixture yields a tensor Algorithm Code artifact,
 so the correctness theorem applies to the actual development source case. -/

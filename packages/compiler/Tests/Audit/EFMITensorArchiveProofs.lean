@@ -10,3 +10,9 @@ import ProofAudit.Audit
 #audit axioms Rumoca.TensorArchiveContract.code_members
 #audit axioms Rumoca.TensorArchiveContract.schema_members
 #audit axioms Rumoca.TensorArchiveContract.roster
+#audit axioms Rumoca.TensorAlgorithmContract
+#audit axioms Rumoca.TensorAlgorithmContract.kernel
+#audit axioms Rumoca.TensorAlgorithmContract.source
+#audit axioms Rumoca.TensorAlgorithmContract.model
+#audit axioms Rumoca.TensorManifestContract
+#audit axioms Rumoca.TensorManifestContract.origin_checksum

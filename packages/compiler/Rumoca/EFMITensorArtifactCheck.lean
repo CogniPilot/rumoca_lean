@@ -6,7 +6,7 @@ open _root_.Parser
 /-! Trusted actual-file adapter for the tensor square Algorithm Code member. It
 fixes the proposition from independently read Modelica, GALEC and grammar files,
 compiles the source through the array/tensor path (`compileTensor`), and binds the
-pinned tensor square Algorithm Code to the parsed square profile. Producer-supplied
+read Algorithm Code to the emitted tensor square block and its source contract. Producer-supplied
 commands or theorem statements are never executed. -/
 namespace Rumoca.EFMITensorArtifactCheck
 open Lean Elab Command
@@ -16,8 +16,8 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
   if grammar != Generated.source || algGrammar != GALEC.Generated.source then
     throwError "actual EBNF differs from its certified source"
   let .ok _candidate := compileTensor input.input | throwError "tensor source compilation failed"
-  if emitted != EFMI.tensorUnitSource then
-    throwError "actual tensor Algorithm Code differs from the pinned tensor square profile"
+  if emitted != EFMI.tensorAlgorithmSource then
+    throwError "actual tensor Algorithm Code differs from the emitted tensor square block"
   let inputTerm ← input.inputTerm
   let src := Syntax.mkStrLit source
   let out := Syntax.mkStrLit emitted

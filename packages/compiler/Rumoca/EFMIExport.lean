@@ -71,7 +71,7 @@ def writeTensorAlgorithm (_artifact : TensorArtifact input) (output : FilePath) 
     let sourceFile := staging / "Source.mo"
     let algorithmFile := staging / "model.alg"
     IO.FS.writeFile sourceFile input.source
-    IO.FS.writeFile algorithmFile EFMI.tensorUnitSource
+    IO.FS.writeFile algorithmFile EFMI.tensorAlgorithmSource
     let log ← EFMICheck.run .tensorAlgorithm algorithmFile sourceFile (sourceName := some input.name)
     IO.FS.writeFile (staging / "kernel-audit.log") log
     let _ ← command "bash" #["scripts/audit-lean.sh", (staging / "kernel-audit.log").toString]

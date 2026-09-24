@@ -15,7 +15,7 @@ The C contract covers syntax, typed entry, finite IEEE execution and the
 entire resulting heap. Archive/XML and host scheduling are separate layers. -/
 structure ProductionContract (a : Artifact source) (algorithm c : String) : Prop where
   algorithm_contract : AlgorithmContract a algorithm
-  algorithm_names : ∃ parsed, GALEC.Syntax.parse algorithm = .ok parsed ∧ parsed.ast = GALEC.Syntax.unit
+  algorithm_names : ∃ parsed, GALEC.Syntax.parse algorithm = .ok parsed ∧ parsed.ast = GALEC.Elaboration.Scalar.source "UnitIntegrator" "x" "samplePeriod"
   bytes : a.productionSource = .ok c
   header : CHeader.Contract c
   startup_map : Production.StartupMap.Contract a.algorithmSolve c
@@ -61,7 +61,7 @@ theorem production_correct (a : Artifact source) (alg : AlgorithmContract a algo
     (hc : a.productionSource = .ok c) : ProductionContract a algorithm c := by
   have he := (production_source_is_unit a).symm.trans hc
   cases Except.ok.inj he
-  have named : ∃ parsed, GALEC.Syntax.parse algorithm = .ok parsed ∧ parsed.ast = GALEC.Syntax.unit := by
+  have named : ∃ parsed, GALEC.Syntax.parse algorithm = .ok parsed ∧ parsed.ast = GALEC.Elaboration.Scalar.source "UnitIntegrator" "x" "samplePeriod" := by
     rw [← alg.bytes]
     exact render_parses a.algorithmCode
   refine ⟨alg, named, hc, CHeader.render_contract _, Production.StartupMap.correct _ hc,
@@ -94,10 +94,12 @@ finite initialized-entry theorem does not replace the allocated-only Startup
 branch, public ABI, or host scheduling obligations in the existing contract. -/
 theorem ProductionContract.original_methods (contract : ProductionContract a algorithm c) :
     ∃ parsed module, GALEC.Syntax.parse algorithm = .ok parsed ∧
+      parsed.ast = GALEC.Elaboration.Scalar.source "UnitIntegrator" "x" "samplePeriod" ∧
       Production.lower a.algorithmSolve = .ok module ∧ module.render = c ∧
       ∀ ceiling method heap p (before : GALEC.UnitProfile.State Binary64.Value),
         Production.Represents heap p before → ∃ after,
-        GALEC.Elaboration.Scalar.StateBridge.SourceExec parsed.ast ceiling Solve.Tensor.Finite.Result
+        GALEC.Elaboration.Scalar.StateBridge.SourceExec "x" "samplePeriod" ceiling
+          Solve.Tensor.Finite.Result
           Binary64.positiveZero Binary64.one method before after ∧
         (∀ behavior, CArithmetic.machine.Behaves
           (.running (module.method method).body (Production.parameters p) heap) behavior ↔
@@ -108,7 +110,7 @@ theorem ProductionContract.original_methods (contract : ProductionContract a alg
           Production.resultHeap heap p before method q = heap q) := by
   obtain ⟨parsed, accepted, sourceSemantics⟩ := contract.algorithm_contract.original_source
   obtain ⟨module, lowered, rendered, _, _, _, _, methods, _, _, _⟩ := contract.target
-  refine ⟨parsed, module, accepted, lowered, rendered, ?_⟩
+  refine ⟨parsed, module, accepted, sourceSemantics.source, lowered, rendered, ?_⟩
   intro ceiling method heap p before represented
   obtain ⟨behavior, result, frame⟩ := methods method heap p before represented
   refine ⟨GALEC.UnitProfile.solveExecute a.algorithmSolve.block Binary64.positiveZero

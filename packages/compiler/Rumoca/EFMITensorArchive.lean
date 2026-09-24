@@ -2,7 +2,7 @@ import Rumoca.EFMITensorProduction
 import RumocaEFMI.Archive
 
 /-! Pure assembly of the frozen tensor eFMU product from a development tensor
-artifact. The archive members are the pinned tensor square Algorithm Code, the
+artifact. The archive members are the emitted tensor square Algorithm Code, the
 certified-kernel tensor Production Code, and the three manifests for a packaging
 identity and the artifact's model name; the vendored schemas are embedded by the
 shared archive generator. Identity fields are supplied explicitly and checked by
@@ -12,13 +12,14 @@ namespace Rumoca
 open EFMI
 
 /-- The five in-archive code/manifest members of the tensor square eFMU, reusing
-the shared `Archive.Code` roster: the pinned tensor Algorithm Code, the
+the shared `Archive.Code` roster: the emitted tensor Algorithm Code, the
 certified-kernel tensor Production Code, and the Algorithm/Production/container
 manifests for the artifact's model name and packaging identity. -/
 def TensorArtifact.efmiCode (a : TensorArtifact input) (identity : Manifest.Identity) :
     Archive.Code :=
-  let documents := TensorManifest.prepare a.name identity EFMI.tensorUnitSource
-  ⟨EFMI.tensorUnitSource, EFMI.TensorProduction.render,
+  let documents := TensorManifest.prepareWithCode a.name identity EFMI.tensorAlgorithmSource
+    EFMI.TensorProduction.render
+  ⟨EFMI.tensorAlgorithmSource, EFMI.TensorProduction.render,
     XML.document documents.algorithm, XML.document documents.production,
     XML.document documents.content⟩
 

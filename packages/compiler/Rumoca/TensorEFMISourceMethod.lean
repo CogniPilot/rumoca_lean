@@ -1,7 +1,7 @@
 import RumocaEFMI.TensorMethodEntry
 import Rumoca.TensorEFMISourceObservation
 
-/-! Source-owned whole DoStep composition, still a conditional scratch product.
+/-! Source-owned whole DoStep composition, conditional on finite execution.
 No new producer-supplied statement is accepted as an artifact certificate. -/
 noncomputable section
 namespace Rumoca.ArrayProfile.StateIrrelevant
@@ -90,7 +90,7 @@ theorem doStep (a : TensorArtifact source)
     (values a.prepared.parsed.parsed.ast.header.input) rhs).1 squareRHS
   obtain ⟨finalHeap, outcome, ran, behaviors⟩ := ContextMethod.doStep unusedKernel objects heap base
     (values a.prepared.parsed.parsed.ast.header.input) rhs result storage inputRHS adds
-  refine ⟨SourceObservation.source_matrix a contract values, JacobianObservation.actual_trees a contract,
+  refine ⟨SourceObservation.source_matrix a index values, JacobianObservation.actual_trees a contract,
     squareJacobianProgram stateShape, ?_, finalHeap, outcome, ?_, ?_, ?_, ran, behaviors⟩
   · rw [index]; rfl
   · exact (StateIrrelevant.coefficients _ _ _ _).1 outcome.derivative

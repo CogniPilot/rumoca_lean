@@ -14,13 +14,17 @@ compilation and full prose-standard conformance remain separate layers. -/
 namespace Rumoca
 open EFMI
 
-/-- The tensor Algorithm Code member contract: the emitted bytes are the pinned
-tensor square Algorithm Code, and that text parses to the resolved tensor block
-denoting the artifact's prepared kernel. -/
+/-- The tensor Algorithm Code member contract: the artifact's prepared kernel is
+the square kernel, and the emitted bytes satisfy the Algorithm Code contract for
+that kernel (emitted text, parse to the emitter tree and original-method source
+contract). -/
 structure TensorAlgorithmContract (a : TensorArtifact input) (emitted : String) : Prop where
-  bytes : EFMI.tensorUnitSource = emitted
-  parsed : ∃ p, GALEC.Syntax.parseTensor emitted = .ok p ∧
-    EFMI.TensorDenotes p.ast a.prepared.kernel
+  kernel : a.prepared.kernel = EFMI.squareKernel ArrayProfile.stateShape
+  source : EFMI.TensorAlgorithm.AlgorithmContract ⟨a.prepared.kernel, kernel⟩ emitted
+
+/-- The prepared kernel of an Algorithm Code contract as a tensor model. -/
+def TensorAlgorithmContract.model (contract : TensorAlgorithmContract a emitted) :
+    EFMI.TensorModel ArrayProfile.stateShape := ⟨a.prepared.kernel, contract.kernel⟩
 
 /-- The tensor Production Code member contract: the emitted translation unit is
 the certified-kernel tensor Production Code, so the derivative method computes the
@@ -32,42 +36,41 @@ structure TensorProductionContract (a : TensorArtifact input) (algorithm c : Str
   code : EFMI.TensorProduction.Contract c
 
 /-- The tensor manifest member contract: the actual Algorithm/Production/container
-XML strings are the serialized tensor manifests of the artifact's model name and
-the packaging identity, they lie in the checked XML output grammar, and the origin
+XML strings are the serialized tensor manifests of the artifact's model name, the
+packaging identity and the same Algorithm Code and Production C strings whose
+contracts are carried, they lie in the checked XML output grammar, and the origin
 reference hashes the serialized Algorithm Code manifest. -/
 structure TensorManifestContract (a : TensorArtifact input) (identity : Manifest.Identity)
     (algorithm c algorithmXML productionXML contentXML : String) : Prop where
   identity_valid : identity.Valid
   code : TensorProductionContract a algorithm c
   algorithmXMLBytes :
-    XML.document (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).algorithm = algorithmXML
+    XML.document (TensorManifest.prepareWithCode a.name identity algorithm c).algorithm = algorithmXML
   productionXMLBytes :
-    XML.document (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).production = productionXML
+    XML.document (TensorManifest.prepareWithCode a.name identity algorithm c).production = productionXML
   contentXMLBytes :
-    XML.document (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).content = contentXML
-  valid : (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).valid = true
+    XML.document (TensorManifest.prepareWithCode a.name identity algorithm c).content = contentXML
+  valid : (TensorManifest.prepareWithCode a.name identity algorithm c).valid = true
   wellformed_algorithm :
-    XML.Document (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).algorithm algorithmXML
+    XML.Document (TensorManifest.prepareWithCode a.name identity algorithm c).algorithm algorithmXML
   wellformed_production :
-    XML.Document (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).production productionXML
+    XML.Document (TensorManifest.prepareWithCode a.name identity algorithm c).production productionXML
   wellformed_content :
-    XML.Document (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).content contentXML
+    XML.Document (TensorManifest.prepareWithCode a.name identity algorithm c).content contentXML
   origin_checksum : ∃ origin,
-    Manifest.select (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).production
+    Manifest.select (TensorManifest.prepareWithCode a.name identity algorithm c).production
       ["ManifestReferences", "ManifestReference"] = [origin] ∧
     origin.attributes.lookup "checksum" =
       some (SHA1.hash (XML.document
-        (TensorManifest.prepare a.name identity EFMI.tensorUnitSource).algorithm).toUTF8)
+        (TensorManifest.prepareWithCode a.name identity algorithm c).algorithm).toUTF8)
 
-/-- The pinned tensor Algorithm Code of a square artifact parses to the resolved
-tensor block denoting its prepared kernel. -/
+/-- The emitted tensor Algorithm Code of a square artifact satisfies the Algorithm
+Code contract for its prepared kernel. -/
 theorem tensor_algorithm_correct (a : TensorArtifact input)
-    (hast : a.prepared.parsed.parsed.ast = squareAst) (he : EFMI.tensorUnitSource = emitted) :
-    TensorAlgorithmContract a emitted := by
-  subst he
-  refine ⟨rfl, ?_⟩
-  obtain ⟨p, hp, hd⟩ := (squareAlgorithmArtifact a hast).algorithm_correct
-  exact ⟨p, hp, hd⟩
+    (hast : a.prepared.parsed.parsed.ast = squareAst) (he : EFMI.tensorAlgorithmSource = emitted) :
+    TensorAlgorithmContract a emitted :=
+  ⟨(squareAlgorithmArtifact a hast).square,
+    EFMI.TensorAlgorithm.algorithm_correct _ he⟩
 
 /-- The certified-kernel tensor Production Code satisfies its contract. -/
 theorem tensor_production_correct (a : TensorArtifact input)
@@ -82,7 +85,7 @@ theorem tensor_manifests_correct_of_documents (a : TensorArtifact input)
     (identity : Manifest.Identity) (identityValid : identity.Valid)
     (code : TensorProductionContract a algorithm c)
     (algorithmTree productionTree contentTree : XML.Element)
-    (graph : TensorManifest.prepare a.name identity EFMI.tensorUnitSource =
+    (graph : TensorManifest.prepareWithCode a.name identity algorithm c =
       TensorManifest.Documents.mk algorithmTree productionTree contentTree)
     (valid : (TensorManifest.Documents.mk algorithmTree productionTree contentTree).valid = true)
     (algorithmBytes : XML.document algorithmTree = algorithmXML)
@@ -90,7 +93,7 @@ theorem tensor_manifests_correct_of_documents (a : TensorArtifact input)
     (contentBytes : XML.document contentTree = contentXML) :
     TensorManifestContract a identity algorithm c algorithmXML productionXML contentXML := by
   have wf := TensorManifest.documents_valid _ valid
-  have checks := (TensorManifest.prepare_checksums a.name identity EFMI.tensorUnitSource).1
+  have checks := (TensorManifest.prepareWithCode_checksums a.name identity algorithm c).1
   exact {
     identity_valid := identityValid
     code := code

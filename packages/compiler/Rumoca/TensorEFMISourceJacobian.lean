@@ -7,13 +7,12 @@ open CMemory CMemory.TensorView Rumoca.Tensor CTensor
 open CTensor.SquareJacobianObservation
 open TensorNumericalLinkage
 
-/-- The existing parsed Algorithm contract already pins the SAME artifact's
-prepared IVP to the square plan; no extra source/index hypothesis is needed. -/
+/-- The Algorithm Code contract already pins the SAME artifact's prepared IVP
+to the square plan; no extra source or index hypothesis is needed. -/
 theorem prepared_index (a : TensorArtifact input)
     (contract : TensorProductionContract a algorithm c) :
-    a.prepared.kernel = CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape := by
-  obtain ⟨parsed, _, denotes⟩ := contract.algorithm_contract.parsed
-  exact denotes.2.trans rfl
+    a.prepared.kernel = CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape :=
+  contract.algorithm_contract.kernel.trans rfl
 
 /-- Actual production bytes determine the exact seven numerical and three
 method trees. This is a byte/table identity, not a method-execution theorem. -/

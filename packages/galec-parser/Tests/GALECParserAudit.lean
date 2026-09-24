@@ -71,6 +71,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Syntax.erase_parse
 #audit axioms Rumoca.GALEC.Syntax.success_iff
 #audit axioms Rumoca.GALEC.Syntax.lexical_error
+#audit axioms Rumoca.GALEC.Syntax.witness_unique
 #audit axioms Rumoca.GALEC.Syntax.accepts_iff
 #audit axioms Rumoca.GALEC.Syntax.successful_tree
 
