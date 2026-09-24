@@ -66,16 +66,22 @@ The next-stage candidate composition is now checked:
   `handoff-review.md`. Earlier V1 errors were resolved without weakening claims.
 
 The reusable parametric adoption and full gate are now complete as recorded
-above. Two source-only follow-ups await checking:
+above. Two follow-ups now have a combined checked scratch receipt:
 `build/galec-owned-method-composition-draft/` rebases the candidate all-method
 contract onto owned APIs (29 roots); `build/galec-candidate-numerical-draft/`
 retains the total encoded helper and universal refinement groups (11 roots).
-Neither is a passing receipt yet. The first directory's `rebuild.sh VERSION`
-checks the completed gate/post receipts and owner hashes, then rebuilds 18
-affected dependencies plus six new modules to a fresh overlay. Read its README
-and `build/method-table-live-checkpoint.md` for current session state before
-launching; compile success still needs frozen inputs/outputs, exact-root audit
-and independent review. Do not import build modules into packages.
+Rebuild-v2/session30918 passed all 24 modules in an isolated overlay. Combined
+final-v1/session93031 passed on `634a287`: all 40 exact roots, four empty
+implementation logs, 2,665 tracked/209 selected input hashes and six output
+hashes. Both complete independent reviews were read, no substantive findings.
+Rebuild-v1 failed on module-root path shadowing; v2 seeds the complete old
+scratch roots and replaces only the affected closure. No proof source changed
+for that repair, and old objects/receipts remain intact. Do not rerun completed
+checks or import build modules into packages. Original Modelica source/diagonal
+observation fields still need candidate-table composition; a new bounded
+source-only `build/galec-candidate-source-draft/` is being authored for that
+purpose, not yet checked. Consult `build/method-table-live-checkpoint.md` for
+its current worker/session state before starting overlapping work.
 Then complete coupled parser/source/C/actual-artifact repair,
 preserving every existing scalar and tensor contract field. Ordinary expansion
 and production promotion remain blocked by the standards ledger. Scratch

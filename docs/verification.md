@@ -60,6 +60,19 @@ method behavior, independent emitted files/archives, native ABI or standards
 closure. Total helper outcomes and all existing production fields must remain
 in the eventual coupled artifact repair.
 
+The candidate method composition is now rebased onto the owned APIs, and a
+separate candidate numerical contract retains all three total-helper outcome
+groups plus universal derivative/Jacobian equalities on the same rendered C
+table. Combined scratch final-v1/session93031 passed at `634a287`: 40 exact
+roots (29 method + 11 numerical), four empty implementation logs, 2,665 tracked
+and 209 selected input hashes, six output hashes. The isolated rebuild refreshed
+18 affected dependencies; old receipts/objects remain intact. Main read both
+independent reviews, including the final runner/receipt, no substantive findings.
+Evidence: `build/galec-owned-method-composition-draft/` and
+`build/galec-candidate-numerical-draft/`. This does not yet retain the original
+Modelica artifact's source/diagonal observation fields in one candidate bundle,
+nor establish actual emitted-file/XML/archive or production-promotion evidence.
+
 **Whole-block preparation and whole-state method handoff (full gate passed):**
 Core now owns `Elaboration.Block.{Headers,Preparation}`,
 `Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface
