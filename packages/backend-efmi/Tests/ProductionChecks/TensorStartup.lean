@@ -1,8 +1,8 @@
 import RumocaEFMI.TensorStartup
 import ProofAudit.Audit
-
 #audit axioms Rumoca.EFMI.AllocatedMethods.after_clock
 #audit axioms Rumoca.EFMI.AllocatedMethods.after_initial
+#audit axioms Rumoca.EFMI.AllocatedMethods.after_jacobian
 #audit axioms Rumoca.EFMI.AllocatedMethods.allocated_frame
 #audit axioms Rumoca.EFMI.AllocatedMethods.clock_frame
 #audit axioms Rumoca.EFMI.AllocatedMethods.clock_reads
@@ -10,8 +10,31 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.AllocatedMethods.clock_store
 #audit axioms Rumoca.EFMI.AllocatedMethods.complete
 #audit axioms Rumoca.EFMI.AllocatedMethods.initial_arguments
+#audit axioms Rumoca.EFMI.AllocatedMethods.initialization_executes
+#audit axioms Rumoca.EFMI.AllocatedMethods.initializationPrefix
+#audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome
+#audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.mk
+#audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.storage
+#audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.square
+#audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.jacobian
+#audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.input
+#audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.frame
+#audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.member_frame
+#audit axioms Rumoca.EFMI.AllocatedMethods.jacobian_arguments
+#audit axioms Rumoca.EFMI.AllocatedMethods.jacobianArgs
 #audit axioms Rumoca.EFMI.AllocatedMethods.recalibrate
 #audit axioms Rumoca.EFMI.AllocatedMethods.recalibrate_body_in
 #audit axioms Rumoca.EFMI.AllocatedMethods.recalibrate_in
 #audit axioms Rumoca.EFMI.AllocatedMethods.return_zero
 #audit axioms Rumoca.EFMI.AllocatedMethods.startup
+#audit axioms Rumoca.EFMI.AllocatedMethods.startup_body
+#audit axioms Rumoca.EFMI.AllocatedMethods.startup_method
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome.mk
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome.storage
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome.square
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome.jacobian
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome.status
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome.clock
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome.input
+#audit axioms Rumoca.EFMI.AllocatedMethods.StartupOutcome.frame

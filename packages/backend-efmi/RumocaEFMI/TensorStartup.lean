@@ -62,17 +62,6 @@ theorem after_clock (storage : AllocatedStorage objects heap base) :
     simpa only [Address.index_zero] using
       (clock_frame (heap := heap) (base := base) (name := statusName) (by decide +kernel) 0)
 
-/-- Exact finite bit-pattern observations, not only real-number equality. -/
-structure StartupOutcome (objects : Objects) (before after : Heap) (base : Address) : Prop where
-  storage : AllocatedStorage objects after base
-  square : Reads after (base.member squareVar.name) (Tensor.Value.fill squareShape Binary64.positiveZero)
-  status : load after (base.member statusName) = some (.integer 0)
-  clock : load after (base.member clockName) = some (.finite Binary64.one)
-  input : ∀ i, after ((base.member inputVar.name).index i) = before ((base.member inputVar.name).index i)
-  jacobian : ∀ i, after ((base.member jacobianVar.name).index i) = before ((base.member jacobianVar.name).index i)
-  frame : ∀ q, q ≠ base.member statusName → q ≠ base.member clockName →
-    (∀ i < squareShape.volume, q ≠ (base.member squareVar.name).index i) → after q = before q
-
 structure RecalibrateOutcome (objects : Objects) (before after : Heap) (base : Address) : Prop where
   storage : AllocatedStorage objects after base
   exactHeap : after = cleared before base
@@ -207,74 +196,196 @@ theorem recalibrate (unusedKernel : CSyntax.Program) (objects : Objects) (heap :
   exact recalibrate_in (program unusedKernel) objects heap base storage
     (method_defined unusedKernel recalibrateFunction (by simp [TensorProduction.functions]))
 
+theorem after_jacobian (storage : AllocatedStorage objects heap base)
+    (writes : Writable after (base.member jacobianVar.name) jacobianShape.volume)
+    (frame : ∀ q, (∀ i < jacobianShape.volume, q ≠ (base.member jacobianVar.name).index i) →
+      after q = heap q) : AllocatedStorage objects after base := by
+  refine ⟨storage.object, ?_, ?_, writes, ?_, ?_⟩
+  · exact allocated_frame storage.input (PublicRHS.member_preserved frame (by decide +kernel))
+  · exact writable_framed storage.square (PublicRHS.member_preserved frame (by decide +kernel))
+  · apply storage.clock.framed
+    simpa only [Address.index_zero] using PublicRHS.member_preserved frame
+      (show clockName ≠ jacobianVar.name by decide +kernel) 0
+  · apply storage.status.framed
+    simpa only [Address.index_zero] using PublicRHS.member_preserved frame
+      (show statusName ≠ jacobianVar.name by decide +kernel) 0
+
+def jacobianArgs : List Expr := [selfField jacobianVar.name, .nat jacobianVar.volume]
+
+theorem jacobian_arguments (objects : Objects) (heap : Heap) (base : Address)
+    (storage : AllocatedStorage objects heap base) (env : CBody.Locals)
+    (bound : env "self" = some (.pointer (some base))) :
+    letI : CInterface := NumericalInterface.interface
+    arguments (expressions objects) env heap jacobianArgs =
+      some [.pointer (some (base.member jacobianVar.name)), .integer jacobianVar.volume] := by
+  letI : CInterface := NumericalInterface.interface
+  have output := (TensorArrayMembers.array_argument storage.represents jacobianVar
+    (by simp [modelVars]) bound).1
+  simp only [jacobianArgs, arguments, CCalls.argumentsWith, expressions, declared,
+    CBody.declaredExpressions, output, CBody.evalWith, bind, Option.bind_some, pure]
+
+/-- The two initializer calls of the Startup body: `x`, then `J`. -/
+def initializationPrefix : List Stmt :=
+  [.eval (.call (.id "rumoca_initialize") initialArgs),
+   .eval (.call (.id "rumoca_initialize") jacobianArgs)]
+
+structure InitializationOutcome (objects : Objects) (before after : Heap) (base : Address) : Prop where
+  storage : AllocatedStorage objects after base
+  square : Reads after (base.member squareVar.name)
+    (Tensor.Value.fill squareShape Binary64.positiveZero)
+  jacobian : Reads after (base.member jacobianVar.name)
+    (Tensor.Value.fill jacobianShape Binary64.positiveZero)
+  input : ∀ i, after ((base.member inputVar.name).index i) = before ((base.member inputVar.name).index i)
+  frame : ∀ q,
+    (∀ i < squareShape.volume, q ≠ (base.member squareVar.name).index i) →
+    (∀ i < jacobianShape.volume, q ≠ (base.member jacobianVar.name).index i) →
+    after q = before q
+
+theorem InitializationOutcome.member_frame (h : InitializationOutcome objects before after base)
+    (name : String) (notSquare : name ≠ squareVar.name) (notJacobian : name ≠ jacobianVar.name)
+    (i : Nat) : after ((base.member name).index i) = before ((base.member name).index i) :=
+  h.frame _ (fun j _ => Address.fields_separate base name squareVar.name notSquare i j)
+    (fun j _ => Address.fields_separate base name jacobianVar.name notJacobian i j)
+
+/-- Both existing initializer calls execute under the actual numerical table.
+No old finite reads or initialization of the input are required. The arbitrary
+tail is restored with unchanged caller locals, types, return type and stack. -/
+theorem initialization_executes (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
+    (base : Address) (storage : AllocatedStorage objects heap base)
+    (env : CBody.Locals) (types : CLoops.Types) (resultType : String)
+    (bound : env "self" = some (.pointer (some base)))
+    (unshadowed : env "rumoca_initialize" = none)
+    (tail : List Stmt) (stack : CCalls.Typed.Continuation) :
+    letI : CInterface := NumericalInterface.interface
+    ∃ after, InitializationOutcome objects heap after base ∧
+      Transition.Reaches (machine (expressions objects) (program unusedKernel)).step
+        (.body (.running (initializationPrefix ++ tail) env types heap) resultType stack)
+        (.body (.running tail env types after) resultType stack) := by
+  letI : CInterface := NumericalInterface.interface
+  obtain ⟨xHeap, xReads, xWrites, xFrame, xRan⟩ :=
+    ContextIVP.initial TensorArrayMembers.declarations objects unusedKernel heap
+      (fun _ => base.member squareVar.name) squareShape (by decide +kernel) storage.square
+  change Reads xHeap (base.member squareVar.name)
+    (Tensor.Value.fill squareShape Binary64.positiveZero) at xReads
+  change CallResult (expressions objects) (program unusedKernel) "rumoca_initialize"
+    [.pointer (some (base.member squareVar.name)), .integer squareVar.volume] heap xHeap at xRan
+  have xStorage := after_initial storage xWrites xFrame
+  obtain ⟨jHeap, jReads, jWrites, jFrame, jRan⟩ :=
+    ContextIVP.initial TensorArrayMembers.declarations objects unusedKernel xHeap
+      (fun _ => base.member jacobianVar.name) jacobianShape (by decide +kernel) xStorage.jacobian
+  change Reads jHeap (base.member jacobianVar.name)
+    (Tensor.Value.fill jacobianShape Binary64.positiveZero) at jReads
+  change CallResult (expressions objects) (program unusedKernel) "rumoca_initialize"
+    [.pointer (some (base.member jacobianVar.name)), .integer jacobianVar.volume] xHeap jHeap at jRan
+  have jStorage := after_jacobian xStorage jWrites jFrame
+  have finalSquare := reads_framed xReads
+    (PublicRHS.member_preserved jFrame (show squareVar.name ≠ jacobianVar.name by decide +kernel))
+  have outcome : InitializationOutcome objects heap jHeap base :=
+    ⟨jStorage, finalSquare, jReads,
+      fun i => (PublicRHS.member_preserved jFrame
+        (show inputVar.name ≠ jacobianVar.name by decide +kernel) i).trans
+        (PublicRHS.member_preserved xFrame (show inputVar.name ≠ squareVar.name by decide +kernel) i),
+      fun q outsideX outsideJ => (jFrame q outsideJ).trans (xFrame q outsideX)⟩
+  have first := invoke_reaches (expressions objects) (program unusedKernel) xRan initialArgs
+    (.eval (.call (.id "rumoca_initialize") jacobianArgs) :: tail) env types resultType stack
+    (by decide +kernel) unshadowed (by rfl)
+    (initial_arguments objects heap base storage env bound)
+  have second := invoke_reaches (expressions objects) (program unusedKernel) jRan jacobianArgs
+    tail env types resultType stack (by decide +kernel) unshadowed (by rfl)
+    (jacobian_arguments objects xHeap base xStorage env bound)
+  exact ⟨jHeap, outcome, first.trans second⟩
+
+/-- The emitted Startup method is the initialization prefix followed by the
+sample-period assignment. -/
+theorem startup_method : startupFunction =
+    method startupName
+      (initializationPrefix ++ [.assign (selfField clockName) (.cast "double" (.nat 1))]) :=
+  rfl
+
+/-- Exact finite bit-pattern observations, not only real-number equality: both
+outputs read positive zero, the period is one and the status is zero. Only the
+two output buffers and the two scalar fields may change. -/
+structure StartupOutcome (objects : Objects) (before after : Heap) (base : Address) : Prop where
+  storage : AllocatedStorage objects after base
+  square : Reads after (base.member squareVar.name)
+    (Tensor.Value.fill squareShape Binary64.positiveZero)
+  jacobian : Reads after (base.member jacobianVar.name)
+    (Tensor.Value.fill jacobianShape Binary64.positiveZero)
+  status : load after (base.member statusName) = some (.integer 0)
+  clock : load after (base.member clockName) = some (.finite Binary64.one)
+  input : ∀ i, after ((base.member inputVar.name).index i) = before ((base.member inputVar.name).index i)
+  frame : ∀ q, q ≠ base.member statusName → q ≠ base.member clockName →
+    (∀ i < squareShape.volume, q ≠ (base.member squareVar.name).index i) →
+    (∀ i < jacobianShape.volume, q ≠ (base.member jacobianVar.name).index i) →
+    after q = before q
+
+/-- The emitted Startup body returns status zero to any saved caller. Input
+storage is allocated only; old output, status and clock contents are arbitrary. -/
+theorem startup_body (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
+    (base : Address) (storage : AllocatedStorage objects heap base)
+    (env : CBody.Locals) (types : CLoops.Types)
+    (bound : env "self" = some (.pointer (some base)))
+    (unshadowed : env "rumoca_initialize" = none)
+    (stack : CCalls.Typed.Continuation) :
+    letI : CInterface := NumericalInterface.interface
+    ∃ after, StartupOutcome objects heap after base ∧
+      Transition.Reaches (machine (expressions objects) (program unusedKernel)).step
+        (.body (.running startupFunction.body env types heap) statusAlias stack)
+        (.returning (.integer 0) after stack) := by
+  letI : CInterface := NumericalInterface.interface
+  obtain ⟨initialized, outcome, initializedRan⟩ := initialization_executes unusedKernel objects
+    (cleared heap base) base storage.after_clear env types statusAlias bound unshadowed
+    afterInitial stack
+  let finalHeap := clocked initialized base
+  have finalStorage : AllocatedStorage objects finalHeap base := after_clock outcome.storage
+  have finalSquare : Reads finalHeap (base.member squareVar.name)
+      (Tensor.Value.fill squareShape Binary64.positiveZero) :=
+    reads_framed outcome.square (clock_frame (by decide +kernel))
+  have finalJacobian : Reads finalHeap (base.member jacobianVar.name)
+      (Tensor.Value.fill jacobianShape Binary64.positiveZero) :=
+    reads_framed outcome.jacobian (clock_frame (by decide +kernel))
+  have initializedStatus : initialized (base.member statusName) =
+      (cleared heap base) (base.member statusName) := by
+    simpa only [Address.index_zero] using
+      outcome.member_frame statusName (by decide +kernel) (by decide +kernel) 0
+  have finalStatusCell : finalHeap (base.member statusName) = initialized (base.member statusName) := by
+    simpa only [Address.index_zero] using
+      (clock_frame (heap := initialized) (base := base) (name := statusName) (by decide +kernel) 0)
+  have finalStatus : load finalHeap (base.member statusName) = some (.integer 0) := by
+    simpa only [load, finalStatusCell, initializedStatus] using
+      (cleared_status_reads (heap := heap) (base := base))
+  have finalOutcome : StartupOutcome objects heap finalHeap base :=
+    ⟨finalStorage, finalSquare, finalJacobian, finalStatus, clock_reads,
+      fun i => (clock_frame (by decide +kernel) i).trans
+        ((outcome.input i).trans (storage.input_frame i)),
+      fun q status clock outsideX outsideJ => (replace_other _ _ _ _ clock).trans
+        ((outcome.frame q outsideX outsideJ).trans (cleared_other status))⟩
+  have first := method_clear startupName
+    (initializationPrefix ++ [.assign (selfField clockName) (.cast "double" (.nat 1))])
+    objects env types heap (cleared heap base) base bound storage.clear_store
+  have start : next (expressions objects) (program unusedKernel)
+      (.body (.running startupFunction.body env types heap) statusAlias stack) =
+      some (.body (.running (initializationPrefix ++ afterInitial) env types (cleared heap base))
+        statusAlias stack) := by
+    simp only [startup_method, next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, first]
+    rfl
+  exact ⟨finalHeap, finalOutcome, .next start (initializedRan.trans
+    (.next (clock_step (program unusedKernel) objects initialized base outcome.storage
+      env types bound stack)
+      (return_zero (program unusedKernel) objects finalHeap base finalStorage
+        env types bound finalStatus stack)))⟩
+
 theorem startup (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
     (base : Address) (storage : AllocatedStorage objects heap base) :
     ∃ finalHeap, StartupOutcome objects heap finalHeap base ∧
       MethodResult unusedKernel objects startupName heap finalHeap base := by
-  letI : CInterface := NumericalInterface.interface
-  obtain ⟨initialHeap, initialReads, initialWrites, initialFrame, initialRan⟩ :=
-    ContextIVP.initial TensorArrayMembers.declarations objects unusedKernel (cleared heap base)
-      (fun _ => base.member squareVar.name) squareShape (by decide +kernel) storage.after_clear.square
-  change Reads initialHeap (base.member squareVar.name)
-    (Tensor.Value.fill squareShape Binary64.positiveZero) at initialReads
-  change CallResult (expressions objects) (program unusedKernel) "rumoca_initialize"
-    [.pointer (some (base.member squareVar.name)), .integer squareVar.volume]
-    (cleared heap base) initialHeap at initialRan
-  have initialStorage := after_initial storage.after_clear initialWrites initialFrame
-  let finalHeap := clocked initialHeap base
-  have finalStorage : AllocatedStorage objects finalHeap base := after_clock initialStorage
-  have finalSquare : Reads finalHeap (base.member squareVar.name)
-      (Tensor.Value.fill squareShape Binary64.positiveZero) :=
-    reads_framed initialReads (clock_frame (by decide +kernel))
-  have initialStatus : initialHeap (base.member statusName) = (cleared heap base) (base.member statusName) := by
-    simpa only [Address.index_zero] using PublicRHS.member_preserved initialFrame
-      (show statusName ≠ squareVar.name by decide +kernel) 0
-  have finalStatusCell : finalHeap (base.member statusName) = initialHeap (base.member statusName) := by
-    simpa only [Address.index_zero] using
-      (clock_frame (heap := initialHeap) (base := base) (name := statusName) (by decide +kernel) 0)
-  have finalStatus : load finalHeap (base.member statusName) = some (.integer 0) := by
-    simpa only [load, finalStatusCell, initialStatus] using
-      (cleared_status_reads (heap := heap) (base := base))
-  have inputFrame : ∀ i, finalHeap ((base.member inputVar.name).index i) =
-      heap ((base.member inputVar.name).index i) := fun i =>
-    (clock_frame (by decide +kernel) i).trans
-      ((PublicRHS.member_preserved initialFrame (show inputVar.name ≠ squareVar.name by decide +kernel) i).trans
-        (storage.input_frame i))
-  have jacFrame : ∀ i, finalHeap ((base.member jacobianVar.name).index i) =
-      heap ((base.member jacobianVar.name).index i) := fun i =>
-    (clock_frame (by decide +kernel) i).trans
-      ((PublicRHS.member_preserved initialFrame (show jacobianVar.name ≠ squareVar.name by decide +kernel) i).trans
-        (storage.clear_member jacobianVar.name (by decide +kernel) i))
-  have outcome : StartupOutcome objects heap finalHeap base :=
-    ⟨finalStorage, finalSquare, finalStatus, clock_reads, inputFrame, jacFrame,
-      fun q status clock outside =>
-        (replace_other _ _ _ _ clock).trans ((initialFrame q outside).trans (cleared_other status))⟩
-  refine ⟨finalHeap, outcome, complete unusedKernel objects startupName
-    [.eval (.call (.id "rumoca_initialize") initialArgs),
-      .assign (selfField clockName) (.cast "double" (.nat 1))] ?_ heap finalHeap base ?_⟩
-  · simp [TensorProduction.functions, startupFunction, initialArgs]
-  · have first := method_clear startupName
-      [.eval (.call (.id "rumoca_initialize") initialArgs),
-        .assign (selfField clockName) (.cast "double" (.nat 1))]
-      objects (ContextMethod.locals base) ContextMethod.types heap (cleared heap base) base rfl storage.clear_store
-    have step : next (expressions objects) (program unusedKernel)
-        (.body (.running (method startupName
-          [.eval (.call (.id "rumoca_initialize") initialArgs),
-            .assign (selfField clockName) (.cast "double" (.nat 1))]).body
-          (ContextMethod.locals base) ContextMethod.types heap) statusAlias .done) =
-        some (.body (.running (.eval (.call (.id "rumoca_initialize") initialArgs) :: afterInitial)
-          (ContextMethod.locals base) ContextMethod.types (cleared heap base)) statusAlias .done) := by
-      simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, first]
-      rfl
-    have initialDone := invoke_reaches (expressions objects) (program unusedKernel) initialRan initialArgs
-      afterInitial (ContextMethod.locals base) ContextMethod.types statusAlias .done (by decide +kernel)
-      (by rfl) (by rfl)
-      (initial_arguments objects (cleared heap base) base storage.after_clear (ContextMethod.locals base) rfl)
-    exact .next step (initialDone.trans
-      (.next (clock_step (program unusedKernel) objects initialHeap base initialStorage
-        (ContextMethod.locals base) ContextMethod.types rfl .done)
-        (return_zero (program unusedKernel) objects finalHeap base finalStorage
-          (ContextMethod.locals base) ContextMethod.types rfl finalStatus .done)))
-
+  obtain ⟨finalHeap, outcome, ran⟩ := startup_body unusedKernel objects heap base storage
+    (ContextMethod.locals base) ContextMethod.types rfl rfl .done
+  rw [startup_method] at ran
+  have member : startupFunction ∈ TensorProduction.functions := by
+    simp [TensorProduction.functions]
+  rw [startup_method] at member
+  exact ⟨finalHeap, outcome, complete unusedKernel objects startupName _ member
+    heap finalHeap base ran⟩
 
 end Rumoca.EFMI.AllocatedMethods

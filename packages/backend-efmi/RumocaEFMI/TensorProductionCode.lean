@@ -128,11 +128,13 @@ def startupName : String := "TensorSquare_Startup"
 def recalibrateName : String := "TensorSquare_Recalibrate"
 def doStepName : String := "TensorSquare_DoStep"
 
-/-- Startup initializes the output/state array to zero through the prepared
-initializer entry. -/
+/-- Startup initializes the state output `x` and the Jacobian output `J` to
+positive zero through the prepared initializer entry, each with its own volume,
+then sets the sample period. -/
 def startupFunction : Function :=
   method startupName
     [.eval (.call (.id "rumoca_initialize") [selfField squareVar.name, .nat squareVar.volume]),
+     .eval (.call (.id "rumoca_initialize") [selfField jacobianVar.name, .nat jacobianVar.volume]),
      .assign (selfField clockName) (.cast "double" (.nat 1))]
 
 /-- Recalibrate has no periodic clock work in the tensor square profile. -/

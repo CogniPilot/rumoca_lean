@@ -40,7 +40,7 @@ static void one_case(double first, double second, double square_first,
                UINT64_C(0xfedcba9876543210)};
   Model *model = &guarded.model;
   const double input[2] = {first, second};
-  const double initial_jacobian[4] = {23.0, 29.0, 31.0, 37.0};
+  const double zero_jacobian[4] = {0.0, 0.0, 0.0, 0.0};
   const double zero_state[2] = {0.0, 0.0};
   const double square[2] = {square_first, square_second};
   const double jacobian[4] = {diagonal_first, 0.0, 0.0, diagonal_second};
@@ -50,7 +50,7 @@ static void one_case(double first, double second, double square_first,
   assert(bits(model->samplePeriod) == bits(1.0));
   same_values(model->u, input, 2);
   same_values(model->x, zero_state, 2);
-  same_values(model->J, initial_jacobian, 4);
+  same_values(model->J, zero_jacobian, 4);
 
   model->samplePeriod = 0.25;
   model->errorSignalStatus = 11;
@@ -59,7 +59,7 @@ static void one_case(double first, double second, double square_first,
   assert(bits(model->samplePeriod) == bits(0.25));
   same_values(model->u, input, 2);
   same_values(model->x, zero_state, 2);
-  same_values(model->J, initial_jacobian, 4);
+  same_values(model->J, zero_jacobian, 4);
 
   model->errorSignalStatus = -13;
   assert(TensorSquare_DoStep(model) == 0);
