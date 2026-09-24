@@ -1,6 +1,6 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
-Scalar array-access repair update (2026-09-24; full gate pending): the four
+Scalar array-access repair update (2026-09-24; full gate passed): the four
 scalar state/derivative/nominal guards now spell the pointer test as equality
 to `(void *)0`. MISRA C:2025 Rules 11.11/11.9 motivate this local repair; the
 already-reviewed null semantics and literal printer apply. Count-first order,
@@ -13,11 +13,22 @@ and overall conformance remain open.
 
 Owner-v3/session52894 passed 4,013 jobs, 3,511 whitelisted reports, seven exact
 selected roots and ten frozen inputs. Two direct state-run audits supplement
-the existing caller audits. The actual-artifact gate and post-audit are pending;
-their required inventory retains all 659 previous roots and adds these two.
-The post check must show exactly four scalar adapter line changes and unchanged
-other selected C/Algorithm files. Evidence: `build/scalar-access-null/` and
-`build/scalar-access-null-review.md`. No tensor-candidate promotion or grammar expansion.
+the existing caller audits. Required full gate23511 and post-audit65518 passed
+`33bdf34`, both terminal0: 2,665 frozen tracked inputs, 8,807 unchanged-whitelist
+reports, all 661 selected roots and four retained actual FMU roots. All three
+FMI matrices passed 75/75 functions (526/650/526 cells), zero discrepancies or
+unexpected results. The whole scalar adapter has exactly the four expected
+guard changes; both other adapters, all three model C files and four eFMI
+Algorithm/C members stayed byte-identical. Evidence: `build/scalar-access-null/`
+and `build/scalar-access-null-review.md`. No tensor-candidate promotion, grammar
+expansion or normative finding closure follows.
+
+The next bounded repair is prepared only: `build/float64-null-adoption/` retains
+all 92 old theorem statements while changing the scalar Float64 pointer leaves.
+Its isolated 37-module/13-root check and independent review passed, but adoption,
+owner checks and actual-artifact evidence remain pending. Numeric count
+truthiness and other implicit guards remain open. The same admitted-subset
+MLS/FMI/eFMI mappings and all unresolved findings carry forward unchanged.
 
 Owned repair-prerequisite update (2026-09-24): TensorManifest now owns the
 checked explicit-code constructors and 11 universal graph/reference proofs.

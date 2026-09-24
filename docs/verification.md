@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Scalar array-access explicit null guards (owner checks passed; full gate pending):**
+**Scalar array-access explicit null guards (full gate passed):**
 `Runtime.scalarAccessCheck` now uses explicit equality to `Expr.nullPointer`
 instead of pointer negation. The count-first short circuit, rejection message,
 continuation and all existing public/artifact predicates are unchanged. The
@@ -18,8 +18,39 @@ missing nominal-proof unfold; V2's Lean build passed but its receipt correctly
 failed because those two roots were not directly registered yet. No contract
 or audit requirement was removed. Independent review found no source finding;
 its root-substring runner finding was repaired with exact-name checks. Required
-`lake test` and post-audit are pending: the prior full gate does not establish
-the changed adapter's actual-artifact behavior. Evidence: `build/scalar-access-null/`.
+`nix develop .#verification --command lake test` session23511 and post-audit
+session65518 passed `33bdf34`, both terminal0: 2,665 frozen tracked inputs,
+8,807 complete unchanged-whitelist reports, all 661 selected roots and four
+retained actual FMU roots. Three FMI matrices passed 75/75 functions
+(526/650/526 behavior cells), zero discrepancies/unexpected results. The whole
+scalar adapter matches exactly the baseline-derived four-guard delta; both
+other adapters, all three numerical C files and four eFMI Algorithm/C members
+are byte-identical. Main read the diff and rechecked archive hashes and exact
+roots. Evidence: `build/scalar-access-null/`. Residual MISRA and standards
+findings remain open; native compilation is still a tested boundary.
+
+**Next scalar Float64 repair (prepared, not adopted):**
+`build/float64-null-adoption/production.patch` coordinates Runtime emission,
+the proof-facing alias and both concrete guard consumers through a shared
+Runtime constructor. It retains the old arbitrary-interface guard and theorem;
+only the new explicit helper needs the null-type lookup, derived locally by
+existing concrete callers. A separate zero-count theorem needs no pointer
+bindings or null-type lookup. All 92 old theorem statements in nine proposed
+files are unchanged. Isolated check-v3/session93138 passed 37 modules with empty
+implementation logs and 13 exact approved roots (four new, nine retained).
+Main read the independent source/runner review and final addendum, and checked
+the patch hash, logs, roots and whitelist. This uses existing caches and is not
+a frozen full dependency or downstream/public/artifact check. The production
+patch and `build/float64-null-gate/` runners remain unexecuted/unadopted here.
+
+The preceding `build/float64-null-guard-draft/final-v1` also checked 26 exact
+roots at `33bdf34`: 13 new and 13 freshly recompiled context roots, three
+audit-only warning-free logs, four local/34 selected-input/three output hashes.
+Main and independent review checked those hashes. Its canonical same-program
+guard-point behavior equivalence retains callback/failure/divergence outcomes;
+it is not definition-table replacement or actual-artifact evidence. The proposed
+owned patch uses existing CNull lemmas, not scratch imports. Count truthiness,
+other implicit guards and tensor-candidate promotion remain separate open work.
 
 **Owned explicit-code manifest constructors (full gate passed):**
 The existing TensorManifest owner now has `productionWithCode` and

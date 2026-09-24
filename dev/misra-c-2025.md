@@ -167,13 +167,19 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   candidate; an epsilon repair is not an equivalent fix, and the exact FMI time
   semantics must be preserved.
 - **Pointer comparisons (Rule 11.11, Rule 11.9).** Current bounded repair
-  (2026-09-24, artifact gate pending): `Runtime.scalarAccessCheck` now uses
+  (2026-09-24, full artifact gate passed): `Runtime.scalarAccessCheck` now uses
   explicit null comparison for the four scalar state/derivative/nominal
   functions. Existing theorem statements and complete public contracts are
   retained; owner-v3 passed 4,013 jobs and 3,511 whitelisted reports, including
-  two newly direct state-run audit registrations. No native/actual-byte pass is
-  claimed before the required full gate. Other implicit guards remain below;
-  Rule 11.11 is not closed. The earlier scan counted
+  two newly direct state-run audit registrations. Required gate23511 and
+  post-audit65518 passed `33bdf34`: 2,665 frozen inputs, 8,807 approved reports,
+  all 661 selected roots and four actual FMU roots. Whole-file comparison
+  confirms exactly four scalar guard changes and unchanged selected other
+  adapter/numerical/eFMI code. Three native FMI matrices passed with zero
+  discrepancies/unexpected results; this is not a native compilation proof.
+  The next scalar Float64 repair has only preparatory isolated proof/review
+  evidence, not production adoption or actual-byte evidence. Other implicit
+  guards remain below; Rule 11.11 is not closed. The earlier scan counted
   75 `(ptr == ((void *)0))` / `!=` comparisons in unit `fmi3.c`, 77 in
   the tensor adapter, and zero direct `if (!ptr)` / `if (ptr)` tests. That scan
   missed the implicit pointer operand in the logger's `&&` expression and does

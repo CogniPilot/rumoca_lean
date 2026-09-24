@@ -1,6 +1,6 @@
 # Resume handoff — 2026-09-24 UTC
 
-## Current owned scalar-access repair — owner checks passed, full gate pending
+## Current owned scalar-access repair — full gate passed
 
 `Runtime.scalarAccessCheck` now emits explicit pointer equality to `(void *)0`
 with the same leading count test and failure continuation. Six source/proof
@@ -18,23 +18,56 @@ proof unfold; v2's Lean build passed but its root check found the two state-run
 roots had only indirect caller audits. Added direct registrations; no expected
 root or whitelist restriction was removed. All earlier runs are terminal.
 
-Next run the required full gate once after the signed clean commit:
-`nix develop .#verification --command bash build/scalar-access-null/full-gate.sh`.
-Check the live checkpoint/handle before launching: it may already be running.
-Only after exit0 run `post-audit.sh` in the same verification environment.
-Scripts freeze tracked inputs and runner/normalizer/root inventories, retain
-all 659 old plus two new roots, require four exact actual FMU roots, and compare
-the whole scalar adapter against a baseline-derived four-guard delta. The other
-two adapters, three model C files and four eFMI Algorithm/C members must stay
-unchanged. Baseline-v1 is complete; do not recreate it from new artifacts.
-Required full gate has not yet passed this repair. Prior snapshots below are
-historical; the changed Runtime source intentionally invalidates their current
-dependency hashes. Rebuild/re-snapshot scratch only when needed, never overwrite
-old receipts. No push is authorized by this continuation.
+Required full gate23511 and post-audit65518 finished0 on `33bdf34`. Do not
+restart them. Evidence: `build/scalar-access-null/full-v1/`: 2,665 frozen tracked
+inputs, 8,807 approved reports, all 661 selected roots and four retained FMU
+roots. Three matrices passed 75/75 functions (526/650/526 cells), zero recorded
+discrepancies/unexpected results. The entire scalar adapter matches exactly
+four baseline-derived guard changes; both other adapters, all three model C
+files and four eFMI Algorithm/C members stayed identical. Main read the diff,
+roots and matrices and rechecked the five archive hashes. No conformance claim.
+Prior receipts below remain historical; never overwrite them or interpret
+intentional later source changes as failures of their frozen snapshots.
+No push is authorized by this continuation.
 
-## Latest owned increment — full gate passed
+## Next owned repair — scalar Float64 patch ready, not adopted
 
-The newest full-gated implementation is `6b7f9e9`: explicit-code manifest
+Apply `build/float64-null-adoption/production.patch` only after recording the
+completed scalar evidence and capturing the new baseline. Its SHA-256 is
+`b3295fb37bf4361432be6c8190354ca6e1d98df140de38ddfa4714dc0e4fb90d`.
+Nine proposed owner files; all 92 old theorem statements unchanged. The shared
+Runtime constructor retains the old logical ArrayAccess guard; a new explicit
+helper uses owned CNull proofs and an explicit null-type premise. The two
+existing concrete consumers discharge that premise by rfl. Zero counts skip
+pointer leaves without pointer/null-type assumptions. No scratch imports,
+count-policy changes or tensor/constant Float64 guard changes.
+
+Isolated check-v3/session93138 passed 37 modules (empty implementation logs)
+and 13 exact approved roots, four new and nine old. Main read the complete
+independent review/addendum and rechecked hashes, exact roots and whitelist.
+This uses copied caches and is not a frozen complete downstream/owner/artifact
+check. Both agents are closed. The earlier Float64 context scratch final-v1
+also passed 26 roots with selected-input hashes; see docs/verification.md for
+its narrower same-program behavior-equivalence boundary. Do not import scratch.
+
+`build/float64-null-gate/` contains independently reviewed, syntax-checked but
+unexecuted baseline/owner/full-gate/post-audit scripts. Run baseline.sh in the
+verification environment BEFORE generating any changed Float64 artifacts; it
+requires the completed scalar gate/post and validates their archive hashes.
+Then apply the reviewed patch with apply_patch, register four new direct audits
+in existing Runtime/ArrayAccess audit leaves, and retain every old audit.
+Run owner.sh with a fresh receipt name. After owner success, update pending
+claims, sign a clean commit, run full-gate.sh and then post-audit.sh after
+terminal0. Required selected union: 674 = old661 +13 disjoint selections.
+The whole scalar adapter must show exactly two changed guard lines/four pointer
+leaves; both other adapters/all three model C/four eFMI members stay identical.
+Check the live checkpoint before starting anything: later continuations may
+already have advanced this sequence. Tensor promotion remains unapproved and
+all broader standards findings remain open.
+
+## Previous owned increment — full gate passed
+
+The previous full-gated implementation is `6b7f9e9`: explicit-code manifest
 constructors and universal metadata/checksum proofs in the existing EFMI owner,
 with only a constructor-unfold addition in the existing actual-file checker.
 Full gate session46842 and post-audit session22719 both finished with exit0.
