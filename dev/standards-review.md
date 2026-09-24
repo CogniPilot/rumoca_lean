@@ -1,6 +1,6 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
-Shared output-pointer repair (2026-09-24; owner passed, artifacts pending):
+Shared output-pointer repair (2026-09-24; full gate passed):
 Runtime now selects explicit null equality in five shared output-guard functions
 for all three FMI profiles. This is another bounded Rules 11.11/11.9 repair,
 not grammar expansion or policy change. Two old generic helper statements name
@@ -14,8 +14,12 @@ Owner-v1/session62663 passed 4,338 jobs, 5,166 approved reports, all 25 selected
 roots, 2,665 frozen tracked inputs and four runner hashes. Main checked the
 receipt and independent review; its initial patch/overlay discrepancy is closed.
 Baseline80822 captured the prior completed Float64 artifacts before adoption.
-Required full/post remain pending, selecting 699 roots and requiring exactly
-five changed lines/14 pointer leaves per adapter, unchanged numerical/eFMI code.
+Required gate77020 and post-audit19832 passed `fedf089`, both terminal0: 2,665
+frozen inputs, 8,826 approved reports, all 699 selected roots and four retained
+FMU roots. Three matrices passed 75/75 functions (526/650/526 cells), zero
+discrepancies/unexpected results. All three whole adapters have exactly five
+changed lines/14 pointer leaves each; three numerical C and four eFMI Algorithm/C
+members stayed identical. Main read the diffs and rechecked archive hashes.
 Evidence: `build/output-null-gate/`. No normative finding is closed. The current
 whole-subset MLS/FMI/eFMI mappings and expansion/promotion blocks remain.
 

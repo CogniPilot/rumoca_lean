@@ -174,8 +174,11 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   Owner-v1/session62663 passed 4,338 jobs, 5,166 approved reports and all 25
   selected roots with 2,665 tracked/four runner hashes checked. Independent
   review cleared the synchronized patch and 12 additive audit registrations.
-  Full gate/post remain pending: expected five lines/14 leaves per adapter,
-  all 699 selected roots and unchanged numerical/eFMI members. This does not
+  Required gate77020 and post-audit19832 passed `fedf089`: 2,665 frozen inputs,
+  8,826 approved reports, all 699 selected roots and four retained FMU roots.
+  Exact whole-adapter comparison confirms five lines/14 leaves per adapter;
+  three numerical C and four eFMI Algorithm/C members stayed identical. Three
+  FMI matrices passed 75/75 functions, zero discrepancies/unexpected results. This does not
   close Rule 11.11 or the essential-type findings. Evidence: `build/output-null-gate/`.
   Earlier bounded repair
   (2026-09-24, full artifact gate passed): `Runtime.scalarAccessCheck` now uses

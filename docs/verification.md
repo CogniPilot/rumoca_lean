@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Shared output-pointer explicit null guards (owner checks passed; full gate pending):**
+**Shared output-pointer explicit null guards (full gate passed):**
 The shared Runtime guard now uses explicit null equality in discrete update,
 completed step, both count queries and DoStep for scalar/tensor/constant FMI.
 Reusable CPointerConditions proofs transfer the ordered lazy predicate under
@@ -24,11 +24,15 @@ scratch import or whitelist change. Evidence: `build/output-null-adoption/`,
 `build/output-null-gate/`, `build/output-null-adoption-review.md`.
 
 Baseline80822 captures the completed Float64 gate's actual archives before this
-adoption. Required full gate/post remain pending: all 674 prior selected roots
-plus 25 disjoint selections (699), exact five-line/14-pointer-leaf changes in
-each of three whole adapters, unchanged three numerical C and four eFMI
-Algorithm/C members. Owner success does not establish those changed artifacts
-or MISRA conformance. Other implicit guards and essential-type findings remain.
+adoption. Required full gate77020 and post-audit19832 passed `fedf089`, both
+terminal0: 2,665 frozen tracked inputs, 8,826 complete approved reports, all 699
+selected roots and four retained actual FMU roots. Three matrices passed 75/75
+functions (526/650/526 cells), zero discrepancies/unexpected results. Whole-file
+comparison confirms exactly five changed lines/14 pointer leaves in each of
+three adapters; three numerical C files and four eFMI Algorithm/C members remain
+byte-identical. Main read all three diffs and matrices and rechecked five archive
+hashes. This establishes the bounded repair, not MISRA conformance. Other
+implicit guards and essential-type findings remain.
 
 **Scalar array-access explicit null guards (full gate passed):**
 `Runtime.scalarAccessCheck` now uses explicit equality to `Expr.nullPointer`
