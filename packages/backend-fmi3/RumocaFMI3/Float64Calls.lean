@@ -78,11 +78,11 @@ theorem get_guard_run (model : Solve.FMI3Model source) (heap : Heap) (p : Addres
   have accepted := LifecycleGuard.accept (parameters (some p) references values n m) heap p
     .get kind mode getTail (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm allowed
   rw [getter_body, show 4 = 3 + 1 from rfl, run_add, accepted]
-  exact ArrayAccess.run_explicit_guard (locals p references values n m) heap "valueReferences" "values"
+  exact ArrayAccess.run_count_guard (locals p references values n m) heap "valueReferences" "values"
     "nValueReferences" "nValues" "Invalid Float64 array lengths or pointers" references values n m afterGuard
     (by simp [locals, parameters, CBody.bind, resolve]) (by simp [locals, parameters, CBody.bind, resolve])
     (by simp [locals, parameters, CBody.bind, resolve]) (by simp [locals, parameters, CBody.bind, resolve])
-    rfl
+    rfl rfl
 
 end
 

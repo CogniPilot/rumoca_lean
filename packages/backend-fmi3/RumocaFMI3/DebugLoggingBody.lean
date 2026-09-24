@@ -63,7 +63,13 @@ theorem prepare_code_explicit (nullType : interface.types "void *" = some .point
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.body (.running code env types heap) "fmi3Status" .done)
       (.body (.running (validation :: finish) (working env 0) (workingTypes types) heap) "fmi3Status" .done) := by
-  exact prepare_code_with explicitMissing (explicit_missing_law nullType) program library env types heap p pointer n enabled scope readable
+  have first := missing_step_typed nullType library.size env types heap pointer n
+    (.declare "int" "difference" (.nat 0) :: .declare "size_t" "k" (.nat 0) :: validation :: finish)
+    scope.count scope.array
+  rw [if_pos readable] at first
+  exact .next (CCalls.Events.body_step program first "fmi3Status" .done)
+    (declarations_reaches program env types heap (validation :: finish) "fmi3Status" .done
+      scope.differenceFresh scope.counterFresh library.integer library.size)
 
 omit interface in
 theorem Entries.readable (entries : Entries heap pointer n selected bytes) :
@@ -133,6 +139,9 @@ theorem code_success_behaviors_explicit (nullType : interface.types "void *" = s
     (CCalls.Events.machine program).Behaves
       (.body (.running code env types heap) "fmi3Status" .done) behavior ↔
     behavior = .terminates [] ⟨.integer 0, written heap p enabled⟩ := by
+  apply (code_count_behaviors explicitMissing (explicit_missing_law nullType)
+    program env types heap pointer n [] "fmi3Status" .done library.size
+    scope.count scope.array behavior).trans
   exact code_success_behaviors_with explicitMissing (explicit_missing_law nullType) program library env types heap p expected pointer n enabled old scope bounded selected bytes expectedBytes literal expectedStored entries valid storage behavior
 
 theorem code_unknown_behaviors_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
@@ -192,6 +201,9 @@ theorem code_unknown_behaviors_explicit (nullType : interface.types "void *" = s
     (failed : FailureContract program heap p "Unknown log category" outcomes) (behavior) :
     (CCalls.Events.machine program).Behaves
       (.body (.running code env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
+  apply (code_count_behaviors explicitMissing (explicit_missing_law nullType)
+    program env types heap pointer n [] "fmi3Status" .done library.size
+    scope.count scope.array behavior).trans
   exact code_unknown_behaviors_with explicitMissing (explicit_missing_law nullType) program library env types heap p expected pointer n bad enabled scope inside bounded selected bytes expectedBytes literal expectedStored entries prior invalid outcomes failed behavior
 
 theorem code_missing_behaviors_with (pointerMissing : Expr → Expr) (law : PointerMissingLaw pointerMissing)
@@ -226,7 +238,23 @@ theorem code_missing_behaviors_explicit (nullType : interface.types "void *" = s
     (outcomes : Transition.Events.Observation E CBody.Result → Prop)
     (failed : FailureContract program heap p "Missing log categories" outcomes) (behavior) :
     (CCalls.Events.machine program).Behaves
+      (.body (.running rawCountCode env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
+  exact code_missing_behaviors_with explicitMissing (explicit_missing_law nullType) program env types heap p n enabled scope positive outcomes failed behavior
+
+/-- Actual early rejection; unlike its retained generic predecessor, this
+new helper requires the size lookup. Public callers already provide it. -/
+theorem code_missing_behaviors_typed (nullType : interface.types "void *" = some .pointer)
+    (sizeType : interface.types "size_t" = some .size)
+    (program : CCalls.Events.Program E)
+    (env : Locals) (types : Types) (heap : Heap) (p : Address) (n : Nat)
+    (enabled : Bool) (scope : Scope env p none n enabled) (positive : 0 < n)
+    (outcomes : Transition.Events.Observation E CBody.Result → Prop)
+    (failed : FailureContract program heap p "Missing log categories" outcomes) (behavior) :
+    (CCalls.Events.machine program).Behaves
       (.body (.running code env types heap) "fmi3Status" .done) behavior ↔ outcomes behavior := by
+  apply (code_count_behaviors explicitMissing (explicit_missing_law nullType)
+    program env types heap none n [] "fmi3Status" .done sizeType
+    scope.count scope.array behavior).trans
   exact code_missing_behaviors_with explicitMissing (explicit_missing_law nullType) program env types heap p n enabled scope positive outcomes failed behavior
 
 /-- One statement covers every represented category request. A nonnull caller
@@ -322,6 +350,9 @@ theorem code_behaviors_explicit (nullType : interface.types "void *" = some .poi
         behavior = .terminates [] ⟨.integer 0, written heap p enabled⟩
       else unknownOutcomes behavior
      else missingOutcomes behavior) := by
+  apply (code_count_behaviors explicitMissing (explicit_missing_law nullType)
+    program env types heap pointer n [] "fmi3Status" .done library.size
+    scope.count scope.array behavior).trans
   exact code_behaviors_with explicitMissing (explicit_missing_law nullType) program library env types heap p expected pointer n enabled old scope bounded selected bytes expectedBytes literal expectedStored caller storage missingOutcomes unknownOutcomes missingContract unknownContract behavior
 
 end Rumoca.FMI3.DebugLogging

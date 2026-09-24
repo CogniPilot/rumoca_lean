@@ -181,7 +181,7 @@ def PreparedContract (model : Solve.FMI3Model source) (sigs : List Signature)
 theorem failure_message_collected (model : Solve.FMI3Model source) (reason : GetFailure) :
     failureMessage reason ∈ functionTexts (Runtime.function model (signature false)) := by
   cases reason <;> simp [failureMessage, Runtime.function, Runtime.body, signature,
-    Runtime.getFloat64, Runtime.require, Runtime.arrayAccessGuardWith, Runtime.instancePrefix, Runtime.reject, Runtime.branch, Runtime.fail,
+    Runtime.getFloat64, Runtime.require, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions, Runtime.instancePrefix, Runtime.reject, Runtime.branch, Runtime.fail,
     Runtime.ret, Runtime.countLoop, Runtime.negate, Runtime.call, Runtime.v, Runtime.n,
     functionTexts, statementTexts, expressionTexts]
 

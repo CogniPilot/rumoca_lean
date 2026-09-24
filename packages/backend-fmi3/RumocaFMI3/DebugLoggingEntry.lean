@@ -40,7 +40,7 @@ theorem public_scope (p : Address) (enabled : Bool) (count : UInt64) (categories
 theorem function_closed : function.body.all CBodyEmbedding.closedBlocks = true := by
   simp [function, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
     Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret,
-    code, codeWith, missingWith, rejectNullWith, iterationWith, validationWith,
+    code, codeWith, codeWithConditions, missingWith, missingWithConditions, rejectNullWith, iterationWith, validationWith,
       explicitMissing, Expr.nullPointer, failure, loop, comparison,
     rejectDifference, finish, writeLogging, counterStep, CBodyEmbedding.closedBlocks, noDeclarations]
 

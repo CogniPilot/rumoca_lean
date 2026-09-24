@@ -1,5 +1,40 @@
 # Exact verification contract
 
+**Explicit size-count guards (owner passed; full gate pending):**
+Shared backend-C syntax and canonical evaluator laws replace scalar Float64
+and debug missing-array count operands with `count != ((size_t)0)`. Integer
+truth, lazy conjunction/disjunction and exact optional branch successors are
+proved, including failed evaluation and skipped operands. Size typing is a
+real obligation: the missing-type obstruction is proved, old generic zero
+helpers retain raw-count syntax, and actual callers derive typing from existing
+interfaces. New actual zero helpers need no pointer binding, storage or null
+typing. No public premise or native essential-type theorem is introduced.
+
+The twenty-source proposal retains 163 old theorem headers; three legacy debug
+helper conclusions name raw-count views with their old domains/full results.
+Mismatch-first order, scalar nullable-zero policy, debug iteration/first-invalid
+behavior and complete heap/frame/callback/continuation outcomes remain. Shared
+constructors and one evaluator/table are retained; tensor-specific count policy,
+fold terminals, numerical operations and grammar admission are unchanged.
+
+Private final-v2/session74352 passed 93 fresh modules plus Audit, 60 exact roots,
+1,637 input/94 output hashes and 1,193 frozen dependency-link checks. Its 28
+warnings in 13 logs remain visible; they are not claimed all old. Cached imports
+are not a fresh owner closure. Final-v1 failed only at import-root shadowing;
+the versioned runner fixes paths without changing proofs or old receipts.
+Main read independent source, runner, terminal and adoption-identity reviews.
+
+After baseline28568 passed at `d04c75a`, all twenty adopted files matched the
+reviewed overlays. Six audit files add 35 registrations and retain all old
+roots/whitelist. Owner-v1/session75875 passed 4,341 jobs, 5,361 approved reports,
+all 60 selected roots, 2,668 frozen tracked inputs and four runner hashes,
+rechecked by main. No owner correction was needed. The required full `lake test`
+and post-audit remain outstanding: 1,019 selected roots, five predicted guard
+lines/seven count operands across three adapters, with numerical/eFMI code
+required unchanged. These predictions are not actual-file evidence. See
+`build/count-condition-adoption/` and `build/count-condition-gate/`.
+No standards, native-promotion or MISRA essential-type finding is closed.
+
 **Factory callback explicit null guards (full gate passed):**
 The shared factory rejection syntax now compares the logger callback explicitly
 to null before the existing logging flag. Predicate-parametric constructors

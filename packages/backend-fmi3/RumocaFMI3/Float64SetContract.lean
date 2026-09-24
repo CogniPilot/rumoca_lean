@@ -220,7 +220,7 @@ theorem failure_message_collected (model : Solve.FMI3Model source) (reason : Fai
     failureMessage reason ∈ functionTexts (Runtime.function model (signature true)) := by
   cases reason <;> simp [failureMessage, message, ErrorCalls.rejectionMessage,
     Runtime.function, Runtime.body, signature, Runtime.setFloat64, Runtime.setFloat64Values,
-    Runtime.instancePrefix, Runtime.arrayAccessGuardWith, Runtime.reject, Runtime.branch, Runtime.fail,
+    Runtime.instancePrefix, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions, Runtime.reject, Runtime.branch, Runtime.fail,
     Runtime.ret, Runtime.countLoop, Runtime.negate, Runtime.call, Runtime.v, Runtime.n,
     functionTexts, statementTexts, expressionTexts]
 

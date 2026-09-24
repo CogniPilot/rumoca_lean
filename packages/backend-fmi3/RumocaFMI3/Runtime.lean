@@ -1,6 +1,7 @@
 import RumocaCore.FMI3.Lifecycle
 import RumocaFMI3.Metadata
 import RumocaC.Interface
+import RumocaC.CountConditionCode
 import RumocaC.Body
 import RumocaC.InitializationCode
 import RumocaFMI3.IdentityCode
@@ -102,16 +103,21 @@ def makeInstance (m : Solve.FMI3Model source) (kind : Kind) : List Stmt :=
 def scalarAccessCheck (array count : String) : List Stmt := [
   reject (either (nev (v count) (n 1)) (eqv (v array) Expr.nullPointer)) "Expected one continuous state"]
 
-/-- Equal-length scalar array validation, with count-gated pointer tests.
-The pointer predicate varies without changing count truthiness or evaluation order. -/
-def arrayAccessGuardWith (pointerMissing : Expr → Expr)
+/-- One ordered guard constructor: count mismatch first, then lazy left/right
+pointer checks. Predicate specialization does not change the empty-array policy. -/
+def arrayAccessGuardWithConditions (countActive pointerMissing : Expr → Expr)
     (left right leftCount rightCount message : String) : Stmt :=
   reject (any [nev (v leftCount) (v rightCount),
-    both (v leftCount) (pointerMissing (v left)),
-    both (v rightCount) (pointerMissing (v right))]) message
+    both (countActive (v leftCount)) (pointerMissing (v left)),
+    both (countActive (v rightCount)) (pointerMissing (v right))]) message
+
+/-- Retained raw-count specialization for the existing arbitrary-interface API. -/
+def arrayAccessGuardWith (pointerMissing : Expr → Expr)
+    (left right leftCount rightCount message : String) : Stmt :=
+  arrayAccessGuardWithConditions id pointerMissing left right leftCount rightCount message
 
 def getFloat64 : List Stmt := require .get ++ [
-  arrayAccessGuardWith (fun p => eqv p Expr.nullPointer)
+  arrayAccessGuardWithConditions CCountConditions.nonzero (fun p => eqv p Expr.nullPointer)
     "valueReferences" "values" "nValueReferences" "nValues"
     "Invalid Float64 array lengths or pointers"] ++
   countLoop (v "nValueReferences") [
@@ -126,7 +132,7 @@ def getFloat64 : List Stmt := require .get ++ [
 
 /-- Value validation and writes after the setter's instance/lifecycle guards. -/
 def setFloat64Values : List Stmt := [
-  arrayAccessGuardWith (fun p => eqv p Expr.nullPointer)
+  arrayAccessGuardWithConditions CCountConditions.nonzero (fun p => eqv p Expr.nullPointer)
     "valueReferences" "values" "nValueReferences" "nValues"
     "Invalid Float64 array lengths or pointers"] ++
   countLoop (v "nValueReferences") [

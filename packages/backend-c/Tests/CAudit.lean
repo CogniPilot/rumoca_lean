@@ -1,4 +1,5 @@
 import Tests.CAudit.LedgerFreshness
+import Tests.CAudit.RumocaC_CountConditions
 import Tests.CAudit.RumocaC_MultiplicationResults
 import Tests.CAudit.RumocaC_TensorEncodedMemory
 import Tests.CAudit.RumocaC_TensorEncodedWriter

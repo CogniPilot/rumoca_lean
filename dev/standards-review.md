@@ -1,5 +1,26 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Explicit size-count repair (2026-09-24; owner passed, full pending):
+bounded Rules 10.1/10.4 work, not grammar expansion or essential-type closure.
+Shared count guards use explicit inequality to a typed size_t zero. Canonical
+evaluator proofs retain failed/skipped outcomes and lazy order; missing-size
+typing is a proved obstruction. Actual callers supply existing size typing;
+legacy zero/generic helpers retain raw-count views without stronger domains.
+Scalar nullable-zero behavior, debug iteration, public contracts and complete
+heap/frame/callback outcomes remain. Of 166 old theorem headers, 163 stay
+unchanged and three name retained views. No native-promotion theorem is inferred.
+
+Twenty source files match independently reviewed overlays; six audit files add
+35 registrations without removing roots or changing the whitelist. Private
+93-module/60-root evidence was independently checked within its cached-import
+boundary. Baseline28568 passed after completed factory evidence `d04c75a`.
+Owner-v1/session75875 passed 4,341 jobs, 5,361 approved reports, all 60 selected
+roots and frozen 2,668 tracked/four runner hashes, rechecked by main. No owner
+correction was needed. Required full/post checks remain outstanding, including
+1,019 roots and the predicted five-line/seven-count-operand adapter delta with
+numerical/eFMI members unchanged. Evidence: `build/count-condition-gate/`.
+No MLS/FMI/eFMI or MISRA finding closes; expansion/promotion blocks remain.
+
 Factory callback pointer repair (2026-09-24; full gate passed):
 bounded continuation of the Rules 11.11/11.9 work, not grammar expansion.
 The shared logger guard uses explicit null inequality while retaining lazy

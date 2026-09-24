@@ -117,14 +117,16 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
     | skip
   all_goals
     simp only [FactoryRejection.code, FactoryRejection.codeWith, FactoryRejection.explicitPresent, FactoryRejection.logCall,
-      DebugLogging.code, DebugLogging.codeWith, DebugLogging.missingWith,
+      DebugLogging.code, DebugLogging.codeWith, DebugLogging.codeWithConditions,
+      DebugLogging.missingWith, DebugLogging.missingWithConditions,
       DebugLogging.rejectNullWith, DebugLogging.iterationWith, DebugLogging.validationWith,
       DebugLogging.explicitMissing, DebugLogging.failure,
       DebugLogging.rejectNull,
       DebugLogging.comparison, DebugLogging.rejectDifference, DebugLogging.category,
       DebugLogging.finish, DebugLogging.writeLogging, CLoops.loop, CLoops.counterStep,
       Runtime.instancePrefix, Runtime.countLoop,
-      Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith,
+      Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions,
+    CCountConditions.nonzero, CCountConditions.sizeZero,
       Runtime.scalarAccessCheck, Runtime.pointerCheck, Runtime.pointerCheckWith,
       Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
       Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,

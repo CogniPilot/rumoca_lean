@@ -1,5 +1,36 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current count-condition repair — owner passed, full gate pending
+
+This section supersedes older count prospective/adoption status below.
+After signed factory evidence `d04c75a`, baseline-v1/session28568 passed.
+Main rechecked hashes/provenance and read all three predicted diffs: five lines,
+seven count operands, unchanged numerical C and eFMI members required.
+Private final-v2/session74352 and independent terminal review passed before
+adoption; main rechecked its 1,637 input/94 output hashes and all 18 existing
+target baselines before applying the unchanged reviewed production/audit patches.
+All twenty owned source files match overlays. Six audit files add 35 direct
+registrations; two new C modules and the new C audit leaf were indexed before
+the owner snapshot. No unrelated tracked changes or whitelist changes.
+
+Owner-v1/session75875 passed 4,341 jobs, 5,361 approved complete reports and all
+60 exact selected roots, with 2,668 tracked/four runner hashes rechecked by main.
+No owner proof correction was needed. Main read the complete independent owned
+identity/audit review, `build/count-condition-owned-adoption-review.md`: no
+findings. Source review preserves 163 old headers and three raw-count view
+substitutions with unchanged generic domains/results. Actual caller signatures
+and full public/artifact/heap/frame/callback contracts remain.
+
+Next: sign this implementation, then run `build/count-condition-gate/full-gate.sh`
+inside the verification environment, followed by post-audit.sh after terminal0.
+The full runner invokes the required lake test; exact union is 1,019 roots
+(60 count roots, 24 overlap with factory983). Actual artifacts must match the
+five-line/seven-count-operand prediction byte-for-byte; preserve three numerical
+C files, four eFMI members and all four FMU roots. Full/post have NOT run.
+Freeze tracked inputs/runners during any live gate. Do not restart a live run.
+After completion, record evidence and perform milestone cleanup per AGENTS.md.
+No grammar expansion, candidate promotion, normative/native closure or push.
+
 ## Current factory callback repair — full gate passed
 
 This section supersedes the older factory/count prospective status below.

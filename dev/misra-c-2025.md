@@ -155,7 +155,18 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   Being Mandatory, Rule 9.1 admits no deviation; it stays Open pending an
   independent definite-initialization predicate and a native storage/lifetime
   correspondence (MC05).
-- **Essential types / floating equality (Rules 10.1-10.8).** Exactly two
+- **Essential types / floating equality (Rules 10.1-10.8).**
+  Count-guard repair (owner passed; full gate pending): shared scalar Float64
+  and debug guards now use `count != ((size_t)0)`. Canonical Lean laws preserve
+  full optional results and lazy order; actual zero cases require size typing
+  but no pointer binding/storage. Old generic helpers retain their domains via
+  raw-count views. No essential-type/promotion or machine theorem is implied.
+  Owner-v1/session75875 passed 4,341 jobs, 5,361 approved reports, 60 exact
+  roots and frozen 2,668 tracked/four runner hashes, rechecked by main. All
+  twenty source files match reviewed overlays; six audit files add 35 roots.
+  Full/post evidence for the predicted five guard lines/seven count operands
+  and unchanged numerical/eFMI code remains outstanding. No guideline closes.
+  Evidence: `build/count-condition-gate/`. Independently of this repair, two
   floating variable-to-variable inequalities remain, both exact FMI time-grid
   checks not covered by Rule 10.1's zero/infinity exceptions:
   `currentCommunicationPoint != (m->time)` and `floored != communicationStepSize`

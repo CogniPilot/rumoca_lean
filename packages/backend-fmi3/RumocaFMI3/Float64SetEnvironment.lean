@@ -14,7 +14,8 @@ theorem body_agrees (header : CFenv.Header) (objects : Objects)
       (Runtime.body model (signature true)) := by
   rw [Float64Set.body_eq]
   simp [CodeAgrees, StmtAgrees, ExprAgrees, names, Runtime.setFloat64,
-    Runtime.setFloat64Values, Runtime.countLoop, Runtime.arrayAccessGuardWith, Runtime.instancePrefix,
+    Runtime.setFloat64Values, Runtime.countLoop, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions,
+    CCountConditions.nonzero, CCountConditions.sizeZero, Runtime.instancePrefix,
     Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.mode,
     Runtime.ok, Runtime.reject, Runtime.fail, Runtime.branch, Runtime.ret,
     Runtime.any, Runtime.both, Runtime.either, Runtime.negate, Runtime.eqv,

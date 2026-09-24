@@ -21,3 +21,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.DebugLogging.code_unknown_behaviors
 #audit axioms Rumoca.FMI3.DebugLogging.code_missing_behaviors
 #audit axioms Rumoca.FMI3.DebugLogging.code_behaviors
+
+#audit axioms Rumoca.FMI3.DebugLogging.code_missing_behaviors_typed

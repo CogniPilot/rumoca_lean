@@ -15,3 +15,13 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.DebugLogging.declarations_reaches
 #audit axioms Rumoca.FMI3.DebugLogging.write_logging_step
 #audit axioms Rumoca.FMI3.DebugLogging.finish_reaches
+
+#audit axioms Rumoca.FMI3.DebugLogging.missingWithConditions
+#audit axioms Rumoca.FMI3.DebugLogging.codeWithConditions
+#audit axioms Rumoca.FMI3.DebugLogging.rawCountMissing
+#audit axioms Rumoca.FMI3.DebugLogging.rawCountCode
+#audit axioms Rumoca.FMI3.DebugLogging.missing_count_next
+#audit axioms Rumoca.FMI3.DebugLogging.missing_step_count
+#audit axioms Rumoca.FMI3.DebugLogging.missing_step_typed
+#audit axioms Rumoca.FMI3.DebugLogging.missing_zero_step_typed
+#audit axioms Rumoca.FMI3.DebugLogging.code_count_behaviors

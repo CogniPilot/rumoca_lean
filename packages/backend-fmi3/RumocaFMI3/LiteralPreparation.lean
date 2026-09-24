@@ -172,7 +172,8 @@ theorem declarations_correct (m : Solve.FMI3Model source) (signatures : List Sig
 
 macro "fmi_literal_calls" : tactic => `(tactic|
   simp [CLiteral.Lowering.CallsWellFormed, CLiteral.Lowering.CallHeadSafe,
-    DebugLogging.code, DebugLogging.codeWith, DebugLogging.missingWith,
+    DebugLogging.code, DebugLogging.codeWith, DebugLogging.codeWithConditions,
+      DebugLogging.missingWith, DebugLogging.missingWithConditions,
       DebugLogging.rejectNullWith, DebugLogging.iterationWith, DebugLogging.validationWith,
       DebugLogging.explicitMissing, DebugLogging.failure,
     DebugLogging.rejectNull,
@@ -191,7 +192,8 @@ macro "fmi_literal_calls" : tactic => `(tactic|
     InstanceInitialization.put, InstanceInitialization.field, InstanceInitialization.state,
     InstanceInitialization.returnHandle, CAtomicScan.function,
     CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
-    Runtime.makeInstance, Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith,
+    Runtime.makeInstance, Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions,
+    CCountConditions.nonzero, CCountConditions.sizeZero,
     Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
     Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,
     CInitialization.Emission.statement, CInitialization.value,

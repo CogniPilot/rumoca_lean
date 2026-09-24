@@ -14,7 +14,8 @@ omit static in
 theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     (Runtime.body m sig).all CBodyEmbedding.closedBlocks = true := by
   unfold Runtime.body
-  split <;> simp_all [DebugLogging.code, DebugLogging.codeWith, DebugLogging.missingWith,
+  split <;> simp_all [DebugLogging.code, DebugLogging.codeWith, DebugLogging.codeWithConditions,
+      DebugLogging.missingWith, DebugLogging.missingWithConditions,
       DebugLogging.rejectNullWith, DebugLogging.iterationWith, DebugLogging.validationWith,
       DebugLogging.explicitMissing, DebugLogging.failure,
       DebugLogging.rejectNull,
@@ -31,7 +32,7 @@ theorem body_closed (m : Solve.FMI3Model source) (sig : Signature) :
     InstanceInitialization.returnHandle, CAtomicScan.function,
     CAtomicScan.scan, CAtomicScan.attempt, CAtomicScan.selected, CAtomicScan.advance,
     Runtime.makeInstance, Runtime.require, Runtime.instancePrefix, Runtime.countLoop,
-    Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith,
+    Runtime.getFloat64, Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions,
     Runtime.scalarAccessCheck, Runtime.pointerCheck, Runtime.pointerCheckWith,
     Runtime.doStep, Runtime.stepRounding, Runtime.stepClock, Runtime.stepGrid,
     Runtime.stepSolve, Runtime.stepDiscard, Runtime.initialTime, Runtime.eventTime, Runtime.completedTime,

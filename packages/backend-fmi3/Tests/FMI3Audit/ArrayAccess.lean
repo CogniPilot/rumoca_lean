@@ -9,3 +9,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ArrayAccess.explicitGuard
 #audit axioms Rumoca.FMI3.ArrayAccess.run_explicit_guard
 #audit axioms Rumoca.FMI3.ArrayAccess.run_explicit_guard_zero
+
+#audit axioms Rumoca.FMI3.ArrayAccess.countGuard
+#audit axioms Rumoca.FMI3.ArrayAccess.count_condition_eval
+#audit axioms Rumoca.FMI3.ArrayAccess.count_guard_next
+#audit axioms Rumoca.FMI3.ArrayAccess.run_count_guard
+#audit axioms Rumoca.FMI3.ArrayAccess.run_count_guard_zero
+#audit axioms Rumoca.FMI3.ArrayAccess.float64Guard

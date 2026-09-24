@@ -305,7 +305,7 @@ omit static in
 /-- The emitted setter satisfies the existing scope check. -/
 theorem closed :
     Runtime.setFloat64.all CBodyEmbedding.closedBlocks = true := by
-  simp [Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith, Runtime.instancePrefix, Runtime.countLoop,
+  simp [Runtime.setFloat64, Runtime.setFloat64Values, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions, Runtime.instancePrefix, Runtime.countLoop,
     CBodyEmbedding.closedBlocks, CLoops.noDeclarations, Runtime.branch, Runtime.reject,
     Runtime.ret, Runtime.ok, Runtime.fail, Runtime.modeGuard]
 
