@@ -207,6 +207,18 @@ current dispatch, both production grammars, selected actual artifacts and pinned
 references at `7cef7b0`, carrying all unresolved findings forward. Its live-gate
 observations are historical; the completed gate evidence is recorded above.
 
+R5 candidate evidence update (2026-09-24 UTC): the fixed actual source/both
+grammars/Algorithm/C adapter retains the full aligned original-source contract
+on one compiled artifact and exact final heap. Frozen final-v2/session83321 at
+`9bae2f4` passed three exact roots, nine local/2,665 tracked/247 selected hashes,
+13 retained boundary-evidence files and five outputs. Boundary-v2/session81797
+passed whitespace acceptance, six file rejections and guard-independent kernel
+C EOF rejection. Main inspected the evidence and complete independent review;
+the review's two generic-error-only negative-runner gaps were fixed and rerun.
+Evidence: `build/galec-candidate-artifact-draft/`. This supplies candidate file
+binding, not production cutover, manifest/checksum/ZIP binding, native/lifecycle
+evidence or compliance. All normative findings and the stage decision remain.
+
 | Recurring checklist | Current repair decision and evidence |
 | --- | --- |
 | Scope and identity | Scalar unit C/FMU/Algorithm/eFMU, fixed extent-two square/Jacobian FMU/Algorithm/eFMU, pinned two-state constant FMU only. No new Modelica case or product. |

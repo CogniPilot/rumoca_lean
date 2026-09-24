@@ -107,6 +107,29 @@ checked the frozen receipt. Evidence: `build/galec-environment-alignment-draft/`
 This closes single-call alignment, not arbitrary lifecycle/history, actual-file
 cutover, public overflow policy or any standards/native finding.
 
+**Candidate actual source/grammar/Algorithm/C files (checked scratch):**
+The fixed adapter in `build/galec-candidate-artifact-draft/` independently reads
+the Modelica source, both grammar files and the emitted Algorithm/C pair. Its
+kernel-checked root retains the entire aligned contract on the same compiled
+artifact/model/kernel. The C certificate checks every rendered fragment and
+exact EOF; native string comparisons supply no proof authority. No producer
+Lean code is accepted. This is development evidence, not production cutover.
+
+Final-v2/session83321 passed at `9bae2f4`: three exact approved-whitelist roots,
+empty helper/checker/producer logs, nine local sources/scripts, 2,665 tracked
+and 247 selected inputs, 13 retained boundary-evidence files and five outputs.
+Main rechecked all current hashes and inspected the primary negative logs.
+Boundary-v2/session81797 accepts source whitespace, rejects six changed-file
+cases, and separately rejects trailing C through the kernel EOF certificate
+with the native comparison bypassed. Independent review found two rejection
+controls accepted generic errors; their runner now requires the intended lexical
+and kernel EOF diagnostics as well as nonzero exit/no output/no accepted root.
+Main read the complete review and its patch disposition. The earlier V1 failures
+were manually confirmed correct; V2 makes those diagnostics required checks.
+Selected dependency hashes are not a complete imported-object closure. XML,
+checksums, ZIP, native/lifecycle integration and production promotion remain
+separate obligations; no standards finding or source admission changes here.
+
 **Whole-block preparation and whole-state method handoff (full gate passed):**
 Core now owns `Elaboration.Block.{Headers,Preparation}`,
 `Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface

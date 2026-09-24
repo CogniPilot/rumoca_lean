@@ -103,18 +103,34 @@ input alignment, retaining the full output store and both source observations
 at one exact public final heap. GALEC x is an RHS buffer, not integrated state.
 It retains the whole previous bundle and existing period/storage premises.
 
-Next: the coupled actual-artifact repair. An isolated fixed file checker and
-candidate producer are being authored under `build/galec-candidate-artifact-draft/`;
-they are not yet compiled or evidence. Check the ignored live checkpoint for
-worker/terminal status before overlapping that work. Preserve the exact model/kernel
-link, every existing scalar/tensor/total-helper field and allocated-only branch.
+The fixed actual-file candidate now passed: `build/galec-candidate-artifact-draft/`
+final-v2/session83321 at `9bae2f4`, three exact approved-whitelist roots, empty
+implementation/producer logs, nine local/2,665 tracked/247 selected input hashes,
+13 boundary-evidence files and five outputs. Boundary-v2/session81797 passed
+whitespace acceptance, six file mutations and guard-independent kernel C EOF
+rejection. Main rechecked hashes and primary failure logs, and read the full
+independent review. Its two generic-error-only runner gaps were repaired and
+the strengthened controls passed. No checker/proof weakening was involved.
+V1 and V2 are completed receipts; do not restart them. V1's runner hash is
+historical after the patch. The contract retains the full aligned original-source
+proof on the actual source/both grammars/Algorithm/C files, not XML or ZIP yet.
+
+Next: bind candidate manifests/checksums and the existing archive format to the
+same stronger contract. `build/galec-code-manifest-draft/` parameterizes the code
+hash with exact old-renderer specializations. `build/galec-candidate-manifest-draft/`
+retains the full aligned contract through conditional manifest/archive APIs.
+Combined check-v1/session66965 passed 31 roots, two empty implementation logs,
+five local/2,665 tracked/247 selected input hashes and four outputs. Independent
+review and actual XML checker work are ongoing; consult the live checkpoint.
+Preserve the exact model/kernel link, every existing scalar/tensor/total-helper
+field and allocated-only branch.
 Same candidate parameters alone are not an arbitrary lifecycle or host input
-protocol. Read the latest draft README/review and standards ledger; no actual
-file/manifest/archive cutover or production promotion is claimed.
+protocol. Read the latest draft README/review and standards ledger; no production
+file/manifest/archive cutover or promotion is claimed.
 Then complete coupled parser/source/C/actual-artifact repair,
 preserving every existing scalar and tensor contract field. Ordinary expansion
 and production promotion remain blocked by the standards ledger. Scratch
-success is not actual-file/archive evidence or a sequential lifecycle theorem.
+proof checks alone are not actual-file/archive evidence or a lifecycle theorem.
 
 ## Historical wrap-up — superseded by active resumption above
 
