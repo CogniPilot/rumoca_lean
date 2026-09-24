@@ -1,6 +1,6 @@
 # Resume handoff — 2026-09-24 UTC
 
-## Current tensor/constant Float64 repair — owner passed, full gate pending
+## Current tensor/constant Float64 repair — full gate passed
 
 Applied reviewed tensor-float64-null production.patch plus audit.patch after
 signed output evidence commit `dd7fc57` and baseline89972 success. The one source
@@ -19,22 +19,36 @@ used copied dependency caches, not an exhaustive closure. D1's README overcount
 was corrected to 98 and independently closed. Historical private input hashes
 include the pre-adoption source; do not rerun them against later intentional edits.
 
-Next after signed clean implementation commit: run in verification environment
-`build/tensor-float64-null-gate/full-gate.sh`, then post-audit.sh only after
-terminal0. Neither has passed this repair yet. Expected 717-root union retains
-699 prior names plus 18 disjoint selections. Whole-file comparison must show
+Required full gate83500 and post-audit71988 passed `db8276f`, both terminal0.
+Do not restart them. Evidence: `build/tensor-float64-null-gate/full-v1/`, 2,665
+frozen tracked inputs, 8,831 complete approved reports, all 717 selected roots
+and four retained FMU roots. Three matrices passed 75/75 functions (526/650/526
+cells), zero discrepancies/unexpected results. Whole-file comparison confirms
 exactly four guard lines/eight pointer leaves across TensorSquare/ConstantRates;
-Integrator, three numerical C and four eFMI Algorithm/C members stay identical.
-Baseline-v1 is complete; do not recreate it. Check the ignored live checkpoint
-before starting anything: later continuations may already have launched a run.
+Integrator, three numerical C and four eFMI Algorithm/C members stayed identical.
+Main read both diffs and matrices and rechecked the five archive hashes.
 
-Aristotle/Astra is preparing the next state/derivative/nominal array-guard repair
-only in `build/tensor-array-null-adoption/`. No tracked/shared writes permitted
-during the gate. Preserve old logical count-pass helpers and add typed explicit
-counterparts, with the same matched-zero-volume non-null policy. Expected next
-scope is eight lines/eight pointer leaves across tensor/constant adapters; no
-next array repair adopted. Broader standards/native/essential-type findings
-remain open, tensor candidate promotion unapproved, and no push authorized.
+Next reviewed repair: `build/tensor-array-null-adoption/production.patch`, hash
+`ab5afa2e2e3653936b6d170e7098dda745fc00b9338ae485603f26ba5f6a82e6`. Five files
+change three guard leaves/add four explicit helpers, retaining all 70 old theorem
+headers, old logical count-pass lemmas, full contracts and zero-volume non-null
+policy. Private final-v1 passed 13 modules/31 exact approved roots, 24 selected
+input/14 output hashes, with 22 warnings at unchanged sites. Copied dependencies
+outside the selection are not a complete import closure. Main read the complete
+patch/review/README/inventory and checked hashes/roots. D1's prose-contaminated
+inventory was corrected to 70 (38/0/5/15/12); the missing real deriv_copy_delivers
+entry was restored and independently checked. Both agents are closed.
+
+All prospective `build/tensor-array-null-gate/` runners and audit.patch are
+independently reviewed, unexecuted. First capture baseline.sh after this completed
+gate/post, BEFORE new artifacts. Then adopt production.patch plus seven additive
+audits in three existing leaves, run owner.sh with a fresh receipt, sign the
+implementation, and run full/post. Expected union748=717+31 disjoint roots;
+eight guard lines/eight leaves across TensorSquare/ConstantRates, unchanged
+Integrator/numerical/eFMI members. No array repair adopted yet. Check the ignored
+live checkpoint before acting; later continuations may have advanced this.
+Broader standards/native/essential-type findings remain open, tensor candidate
+promotion unapproved, and no push authorized.
 
 ## Current output-pointer repair — full gate passed
 

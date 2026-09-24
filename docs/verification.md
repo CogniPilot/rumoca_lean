@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Tensor/constant Float64 explicit null guards (owner passed; full gate pending):**
+**Tensor/constant Float64 explicit null guards (full gate passed):**
 `TensorFloat64.basicReject`, shared by both profiles' getters/setters, now uses
 explicit equality for its two pointer leaves. The reference-count-equals-one
 policy, lazy order, final zero, failure message, later value-count check and
@@ -22,9 +22,13 @@ caches; it is preparatory evidence, not an exhaustive import closure. D1's prose
 count was corrected from 99 to 98 and independently closed; no proof change.
 
 Baseline89972 captured the completed output-guard gate before adoption. Required
-full/post are pending: 717 selected roots (699 retained plus 18 disjoint), exactly
-four changed guard lines/eight pointer leaves across TensorSquare/ConstantRates,
-unchanged Integrator adapter, three numerical C and four eFMI Algorithm/C members.
+full gate83500 and post-audit71988 passed `db8276f`, both terminal0: 2,665 frozen
+tracked inputs, 8,831 complete approved reports, all 717 selected roots and four
+retained FMU roots. Three matrices passed 75/75 functions (526/650/526 cells),
+zero discrepancies/unexpected results. Whole-file comparison confirms exactly
+four changed guard lines/eight pointer leaves across TensorSquare/ConstantRates;
+Integrator, three numerical C and four eFMI Algorithm/C members stayed identical.
+Main read both diffs and matrices and rechecked the five archive hashes.
 Evidence: `build/tensor-float64-null-gate/`, `build/tensor-float64-null-adoption/`
 and its independent review. No grammar/admission or standards finding is closed.
 

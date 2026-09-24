@@ -1,6 +1,6 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
-Tensor/constant Float64 repair (2026-09-24; owner passed, artifacts pending):
+Tensor/constant Float64 repair (2026-09-24; full gate passed):
 the shared `basicReject` now uses explicit null equality for its two pointer
 leaves. This bounded Rules 11.11/11.9 repair preserves count-equals-one, lazy
 order, zero-volume non-null policy, later value-count validation and all 98 old
@@ -12,9 +12,13 @@ Owner-v1/session30579 passed 4,338 jobs, 5,171 approved reports, 18 exact roots,
 2,665 frozen tracked inputs and four runner hashes. One source and one existing
 audit leaf changed, with five additive registrations. Main checked the receipt
 and independent review; D1's README count correction is closed. Baseline89972
-captured completed output-guard artifacts before adoption. Full gate/post remain
-pending with 717 selected roots and an exact four-line/eight-leaf expected delta
-across two adapters; other adapter/numerical/eFMI members must stay identical.
+captured completed output-guard artifacts before adoption. Required gate83500
+and post-audit71988 passed `db8276f`, both terminal0: 2,665 frozen inputs, 8,831
+approved reports, all 717 selected roots and four retained FMU roots. Three
+matrices passed 75/75 functions (526/650/526 cells), zero discrepancies/unexpected
+results. Whole-file comparison confirms four lines/eight leaves across the two
+adapters, with Integrator, three numerical C and four eFMI Algorithm/C members
+identical. Main read the diffs and rechecked archive hashes.
 Evidence: `build/tensor-float64-null-gate/`. No normative finding is closed;
 whole-subset MLS/FMI/eFMI mappings and expansion/promotion restrictions remain.
 
