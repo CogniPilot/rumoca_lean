@@ -36,7 +36,7 @@ theorem body_agrees (model : Solve.FMI3Model source) (objects : Objects) (litera
   simp [CodeAgrees, StmtAgrees, ExprAgrees, names, tail,
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.put, Runtime.mode, Runtime.ok, Runtime.reject,
-    Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
+    Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.call, Runtime.v, Runtime.n,
     Runtime.completedTime, Runtime.raiseField, Runtime.lt, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out,
     Expr.nullPointer, executionInterface, objectConstants]
@@ -167,7 +167,7 @@ theorem output_prefix (model : Solve.FMI3Model source) (literals : CLiteralAddre
     cases event <;> cases terminate <;>
       simp_all only [Option.some_ne_none, or_self, or_true, true_or]
     all_goals
-      simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.reject, Runtime.any, Runtime.eqv, comparison, Runtime.either,
+      simp [run, CBody.next, CBody.nextWith, CBody.legacyExpressions, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.reject, Runtime.any, Runtime.eqv, comparison,
         Runtime.branch, Runtime.v, parameters, CBody.bind, CBody.resolve, CBody.eval, CBody.evalWith, Value.truth, boolean]
   · simp [parameters, CBody.bind]
   · simp [CBody.bind, CBody.resolve]

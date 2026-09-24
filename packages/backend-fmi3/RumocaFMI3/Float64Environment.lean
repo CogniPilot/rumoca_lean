@@ -18,7 +18,7 @@ theorem body_agrees (header : CFenv.Header) (objects : Objects)
     CCountConditions.nonzero, CCountConditions.sizeZero, Runtime.instancePrefix,
     Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.mode,
     Runtime.ok, Runtime.reject, Runtime.fail, Runtime.branch, Runtime.ret,
-    Runtime.any, Runtime.both, Runtime.either, Runtime.negate, Runtime.eqv,
+    Runtime.any, Runtime.both, Runtime.negate, Runtime.eqv,
     Runtime.nev, Runtime.lt, Runtime.gt, Runtime.field, Runtime.x, Runtime.call, Runtime.v,
     Runtime.n, Expr.nullPointer, RuntimeEnvironment.interface, CFenv.Header.interface,
     CInterface.constants, objectConstants]

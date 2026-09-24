@@ -13,3 +13,9 @@ import ProofAudit.Audit
 
 -- Factory pointer migration: retained generic domains and actual typed routes.
 #audit axioms Rumoca.FMI3.Runtime.body
+
+-- Ordered guard disjunctions and lifecycle kind disjuncts.
+#audit axioms Rumoca.FMI3.Kind.code
+#audit axioms Rumoca.FMI3.Runtime.any
+#audit axioms Rumoca.FMI3.Runtime.kindModes
+#audit axioms Rumoca.FMI3.Runtime.allowedExpression

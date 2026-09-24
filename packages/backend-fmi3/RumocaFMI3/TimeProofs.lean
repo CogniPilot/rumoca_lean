@@ -48,18 +48,18 @@ private theorem guard_finite (heap : Heap) (p : Address) (minimum time : Binary6
   cases stop with
   | none =>
     cases hl : Rumoca.Float64.test .lt (toBits time).val (toBits minimum).val <;>
-      simp [Runtime.invalidTime, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
+      simp [Runtime.invalidTime, Runtime.any, Runtime.both, Runtime.negate,
       Runtime.finite, Runtime.call, Runtime.lt, Runtime.gt, Runtime.field, Runtime.v,
       CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, locals, parameters, CBody.bind, resolve, constants, Value.address,
-      comparison, floatComparison, hm, hd, hf, Value.finite, rejects, Runtime.n, Value.truth, boolean, hl]
+      comparison, floatComparison, hm, hd, hf, Value.finite, rejects, Value.truth, boolean, hl]
   | some bound =>
     have hb := hs bound rfl
     cases hl : Rumoca.Float64.test .lt (toBits time).val (toBits minimum).val <;>
       cases hu : Rumoca.Float64.test .gt (toBits time).val (toBits bound).val <;>
-      simp [Runtime.invalidTime, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
+      simp [Runtime.invalidTime, Runtime.any, Runtime.both, Runtime.negate,
       Runtime.finite, Runtime.call, Runtime.lt, Runtime.gt, Runtime.field, Runtime.v,
       CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, locals, parameters, CBody.bind, resolve, constants, Value.address,
-      comparison, floatComparison, hm, hd, hf, hb, Value.finite, rejects, Runtime.n, Value.truth, boolean, hl, hu]
+      comparison, floatComparison, hm, hd, hf, hb, Value.finite, rejects, Value.truth, boolean, hl, hu]
 
 /-- The actual generated expression accepts precisely the reference time
 window, conditional on the representation of its history and optional stop. -/
@@ -81,7 +81,7 @@ non-null error path still needs the logging/lifecycle body theorem. -/
 theorem guard_nonfinite (heap : Heap) (p : Address) (bits : BitVec 64)
     (hn : (Value.float64 bits).isFinite = some false) :
     eval (locals p bits) heap Runtime.invalidTime = some (boolean true) := by
-  simp [Runtime.invalidTime, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
+  simp [Runtime.invalidTime, Runtime.any, Runtime.both, Runtime.negate,
     Runtime.finite, Runtime.call, Runtime.lt, Runtime.gt, Runtime.field, Runtime.v,
     CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, locals, parameters, CBody.bind, resolve, constants, hn, boolean, Value.truth]
 
@@ -105,7 +105,7 @@ theorem set_run (m : Solve.FMI3Model source) (sig : Signature)
   simp [Runtime.body, hsig, Runtime.require, Runtime.instancePrefix, Runtime.reject,
     Runtime.allowedExpression, Runtime.any, permittedModes, Runtime.mode, Mode.code,
     Runtime.branch, Runtime.ret, Runtime.fail, Runtime.ok, Runtime.put,
-    Runtime.field, Runtime.eqv, Runtime.both, Runtime.either, Runtime.negate, Runtime.v, Runtime.n,
+    Runtime.field, Runtime.eqv, Runtime.both, Runtime.negate, Runtime.v, Runtime.n,
     run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalue, CBody.lvalueWith, parameters, CBody.bind, resolve, constants,
     CBody.cast, convert, comparison, boolean, Value.truth, Value.address,
     hk, hmode, guard, store_float64 heap (p.member "time") old _ ht, StateProofs.written]

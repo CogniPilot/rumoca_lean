@@ -11,9 +11,10 @@ open CTree _root_.Parser
 
 private def memberTokens (name : String) : List String := ["(", "m", "->", name, ")"]
 private def modeTokens : List String → List String
-  | [] => ["0"]
-  | n :: ns => ["(", "("] ++ memberTokens "mode" ++ ["==", n, ")", "||"] ++
-      modeTokens ns ++ [")"]
+  | [] => ["(", "0", "!=", "0", ")"]
+  | [n] => ["("] ++ memberTokens "mode" ++ ["==", n, ")"]
+  | n :: m :: ns => ["(", "("] ++ memberTokens "mode" ++ ["==", n, ")", "||"] ++
+      modeTokens (m :: ns) ++ [")"]
 private def kindTokens (kind : String) : List String :=
   ["(", "("] ++ memberTokens "kind" ++ ["==", kind, ")", "&&"] ++
     modeTokens ["0", "1", "2", "3", "4", "5"] ++ [")"]
@@ -51,7 +52,7 @@ private def opening : String :=
   "  if ((m == ((void *)0))) {\n" ++
   "    return fmi3Error;\n" ++
   "  }\n" ++
-  "  if ((!((((m->kind) == 0) && (((m->mode) == 0) || (((m->mode) == 1) || (((m->mode) == 2) || (((m->mode) == 3) || (((m->mode) == 4) || (((m->mode) == 5) || 0))))))) || (((m->kind) == 1) && (((m->mode) == 0) || (((m->mode) == 1) || (((m->mode) == 2) || (((m->mode) == 3) || (((m->mode) == 4) || (((m->mode) == 5) || 0)))))))))) {\n" ++
+  "  if ((!((((m->kind) == 0) && (((m->mode) == 0) || (((m->mode) == 1) || (((m->mode) == 2) || (((m->mode) == 3) || (((m->mode) == 4) || ((m->mode) == 5))))))) || (((m->kind) == 1) && (((m->mode) == 0) || (((m->mode) == 1) || (((m->mode) == 2) || (((m->mode) == 3) || (((m->mode) == 4) || ((m->mode) == 5)))))))))) {\n" ++
   "    return fail(m, "
 
 private def closing : String :=
@@ -92,7 +93,7 @@ theorem printed (m : Solve.FMI3Model source) :
   simp [Runtime.function, Runtime.body, signature, Function.render, Signature.render,
     Parameter.render, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
     Runtime.reject, Runtime.branch, Runtime.negate, Runtime.allowedExpression,
-    Runtime.either, Runtime.both, Runtime.eqv, Runtime.any, Runtime.field,
+    Runtime.both, Runtime.eqv, Runtime.any, Runtime.field,
     Runtime.mode, permittedModes, Mode.code, Runtime.fail, Runtime.call,
     Runtime.ret, Runtime.v, Runtime.n, Runtime.x, Runtime.put, Runtime.setMode,
     Runtime.ok, CInitialization.Emission.statement, CInitialization.value_zero,

@@ -53,7 +53,7 @@ theorem body_agrees (model : Solve.FMI3Model source) (objects : Objects) (litera
   simp [CodeAgrees, StmtAgrees, ExprAgrees, CLiteral.Interface.names, tail, names, layouts,
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject,
-    Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
+    Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.call, Runtime.v, Runtime.n,
     Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Expr.nullPointer, executionInterface, objectConstants]
 

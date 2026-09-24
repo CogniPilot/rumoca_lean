@@ -21,23 +21,12 @@ theorem pointer_condition (names : List String) (addresses : String → Option A
     (bound : ∀ name ∈ names, eval env heap (Runtime.v name) = some (.pointer (addresses name))) :
     eval env heap (Runtime.any (names.map fun name => Runtime.negate (Runtime.v name))) =
       some (boolean (names.any fun name => (addresses name).isNone)) := by
-  induction names with
-  | nil => rfl
-  | cons name names ih =>
-    have head := bound name (by simp)
-    have tail := ih (fun n member => bound n (List.mem_cons_of_mem _ member))
-    simp only [List.map_cons, Runtime.any, List.foldr_cons] at *
-    change ((eval env heap (.not (Runtime.v name))).bind fun a => a.truth.bind fun b =>
-      if b then some (boolean true) else
-        (eval env heap ((names.map fun n => Runtime.negate (Runtime.v n)).foldr
-          Runtime.either (Runtime.n 0))).bind fun c =>
-          c.truth.bind fun d => some (boolean d)) = _
-    have negated : eval env heap (.not (Runtime.v name)) =
-        some (boolean (addresses name).isNone) := by
-      simp only [CBody.eval, CBody.evalWith, head]
-      cases addresses name <;> rfl
-    rw [negated, tail]
-    cases value : addresses name <;> simp [List.any_cons, value, Value.truth, boolean]
+  apply BoolProofs.eval_disjunction
+  intro name member
+  have head := bound name member
+  simp only [Runtime.negate, CBody.eval, CBody.evalWith] at head ⊢
+  rw [head]
+  cases addresses name <;> rfl
 
 theorem pointerCheck_run (names : List String) (addresses : String → Option Address)
     (env : Locals) (heap : Heap) (tail : List Stmt)

@@ -39,7 +39,7 @@ theorem exit_agrees (model : Solve.FMI3Model source) (objects : Objects) (litera
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.put, Runtime.setMode, Runtime.mode, Runtime.ok,
     Runtime.reject, Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any,
-    Runtime.both, Runtime.either, Runtime.negate, Runtime.eqv,
+    Runtime.both, Runtime.negate, Runtime.eqv,
     Runtime.field, Runtime.call, Runtime.v, Runtime.n, Expr.nullPointer,
     executionInterface, objectConstants]
 

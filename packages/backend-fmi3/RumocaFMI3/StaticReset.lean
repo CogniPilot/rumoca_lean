@@ -17,7 +17,7 @@ theorem body_agrees (model : Solve.FMI3Model source) (objects : Objects)
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
     Runtime.allowedExpression, permittedModes, Runtime.put, Runtime.setMode,
     Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail, Runtime.branch,
-    Runtime.ret, Runtime.any, Runtime.both, Runtime.either, Runtime.negate,
+    Runtime.ret, Runtime.any, Runtime.both, Runtime.negate,
     Runtime.eqv, Runtime.field, Runtime.x, Runtime.call, Runtime.v, Runtime.n,
     Expr.nullPointer, executionInterface, objectConstants]
 

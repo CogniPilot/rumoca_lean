@@ -21,8 +21,6 @@ def guardEval (kind mode : Nat) : Expr → Option Nat
   | .not a => do return if (← guardEval kind mode a) = 0 then 1 else 0
   | _ => none
 
-def Kind.code : Kind → Nat | .me => 0 | .cs => 1
-
 set_option maxRecDepth 4000 in
 set_option maxHeartbeats 2000000 in
 theorem guard_correct (c : Command) (k : Kind) (m : Mode) :

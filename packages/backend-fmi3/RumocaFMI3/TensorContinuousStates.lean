@@ -81,7 +81,7 @@ theorem count_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume :
     CBody.eval (guardEnv p buffer count) heap
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
         Runtime.negate (Runtime.v "continuousStates")]) = some (boolean false) := by
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
+  simp [Runtime.any, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, matched]
 
 /-- The actual guard's null type comes from the existing fixed FMI interface. -/
@@ -506,11 +506,11 @@ theorem getBody_printable (shape : Tensor.Shape) :
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   simp only [getFunction, getBody, getTail, countReject, getLoopSuffix, Runtime.region, Runtime.require,
-      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
-      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
+      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,
       Runtime.mode, Runtime.call, getCopyBody, TensorFloat64.srcCell, Float64Calls.output,
-      CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
+      CLoops.loop, CLoops.counterStep, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
@@ -552,12 +552,12 @@ theorem setBody_printable (shape : Tensor.Shape) :
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   simp only [setFunction, setBody, setTail, countReject, setLoopSuffix, Runtime.region, Runtime.require,
-      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
-      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
+      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,
       Runtime.mode, Runtime.call, Runtime.finite, setCopyBody, validateBody,
-      TensorFloat64.dstCell, Float64Calls.output, CLoops.loop, CLoops.counterStep, List.foldr_cons,
-      List.foldr_nil, List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
+      TensorFloat64.dstCell, Float64Calls.output, CLoops.loop, CLoops.counterStep,
+      List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
       or_false, or_imp, forall_and, List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact CNull.literal_printable _
@@ -686,7 +686,7 @@ theorem derivCount_pass (heap : Heap) (p buffer : Address) (count : UInt64) (vol
     CBody.eval (derivGuardEnv p buffer count) heap
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
         Runtime.negate (Runtime.v "derivatives")]) = some (boolean false) := by
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
+  simp [Runtime.any, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     derivGuardEnv, derivParameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, matched]
 
 /-- Explicit derivative guard, shared with the actual checked admission path. -/
@@ -1115,11 +1115,11 @@ theorem derivBody_printable (shape : Tensor.Shape) (hasOutput : Bool) :
       Rumoca.CTensor.FinitePreflight.iteration, Rumoca.CTensor.FiniteScan.iterationFor,
       Rumoca.CTensor.indexed, CLoops.counted, Discard.body, Runtime.log,
       derivCountReject, derivEntryArgs, Runtime.region,
-      Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+      Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
-      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
+      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,
       Runtime.mode, Runtime.call, getCopyBody, TensorFloat64.srcCell, Float64Calls.output,
-      CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
+      CLoops.loop, CLoops.counterStep, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first

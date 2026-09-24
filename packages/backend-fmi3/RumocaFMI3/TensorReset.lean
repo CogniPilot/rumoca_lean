@@ -502,11 +502,11 @@ theorem body_printable (shape : Tensor.Shape) :
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   simp only [function, body, resetTail, bookkeepingTail, zeroBody, dstCell, Runtime.region, Runtime.require,
       Runtime.instancePrefix,
-      Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.reject, Runtime.branch,
+      Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes, Runtime.reject, Runtime.branch,
       Runtime.fail, Runtime.ret, Runtime.ok, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
-      Runtime.eqv, Runtime.both, Runtime.either, Runtime.negate, Runtime.any, Runtime.setMode, Runtime.mode,
+      Runtime.eqv, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction, Runtime.setMode, Runtime.mode,
       Runtime.call,
-      CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
+      CLoops.loop, CLoops.counterStep, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append, List.nil_append,
       forall_eq] <;>
     repeat first

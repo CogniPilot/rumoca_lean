@@ -58,24 +58,39 @@ private theorem void_type : TypeSpelling typedefs "void" :=
 private theorem any_printable (each : ∀ e ∈ es, Printable typedefs e) :
     Printable typedefs (Runtime.any es) := by
   induction es with
-  | nil => exact .natural
+  | nil => exact .binary .natural .natural
   | cons e es ih =>
+    cases es with
+    | nil => exact each e (by simp)
+    | cons f rest =>
       exact .binary (each e (by simp)) (ih (fun e member => each e (by simp [member])))
 
-private theorem allowed_printable (command : Command) :
-    Printable typedefs (Runtime.allowedExpression command) := by
-  unfold Runtime.allowedExpression Runtime.either Runtime.both Runtime.eqv Runtime.field
-  apply Printable.binary <;> apply Printable.binary
-  all_goals first
-    | apply Printable.binary
+private theorem kindModes_printable (command : Command) (kind : Kind) :
+    ∀ expr ∈ Runtime.kindModes command kind, Printable typedefs expr := by
+  unfold Runtime.kindModes
+  split
+  · simp
+  · simp only [List.mem_singleton]
+    rintro expr rfl
+    unfold Runtime.both Runtime.eqv Runtime.field
+    apply Printable.binary
+    · apply Printable.binary
       · exact .field (.identifier (by decide +kernel)) trivial trivial (by decide +kernel)
       · exact .natural
-    | apply any_printable
+    · apply any_printable
       intro expr member
       obtain ⟨mode, member, rfl⟩ := List.mem_map.mp member
       apply Printable.binary
       · exact .field (.identifier (by decide +kernel)) trivial trivial (by decide +kernel)
       · exact .natural
+
+private theorem allowed_printable (command : Command) :
+    Printable typedefs (Runtime.allowedExpression command) := by
+  unfold Runtime.allowedExpression
+  apply any_printable
+  intro expr member
+  rcases List.mem_append.mp member with member | member <;>
+    exact kindModes_printable _ _ expr member
 
 private theorem require_printable (command : Command) :
     ∀ stmt ∈ Runtime.require command, ItemPrintable typedefs stmt := by
@@ -136,7 +151,7 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
       Runtime.v, Runtime.n, Runtime.call, Runtime.field, Runtime.x,
       Runtime.eqv, Runtime.nev, Runtime.lt, Runtime.gt, Runtime.le,
       Runtime.both, Runtime.either, Runtime.negate, Runtime.finite, Runtime.mode,
-      Runtime.any, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
+      Runtime.any, Expr.disjunction, List.map_cons, List.map_nil,
       List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq]
     repeat first

@@ -12,3 +12,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorCallPolicy.functions_rankT
 #audit axioms Rumoca.FMI3.TensorCallPolicy.functions_isSomeT
 #audit axioms Rumoca.FMI3.TensorCallPolicy.tensor_acyclic
+#audit axioms Rumoca.FMI3.TensorCallPolicy.statementAdmits_mono

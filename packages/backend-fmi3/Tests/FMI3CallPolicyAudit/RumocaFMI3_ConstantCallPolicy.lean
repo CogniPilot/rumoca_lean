@@ -12,3 +12,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConstantCallPolicy.functions_rankC
 #audit axioms Rumoca.FMI3.ConstantCallPolicy.functions_isSomeC
 #audit axioms Rumoca.FMI3.ConstantCallPolicy.constant_acyclic
+#audit axioms Rumoca.FMI3.ConstantCallPolicy.statementAdmits_mono

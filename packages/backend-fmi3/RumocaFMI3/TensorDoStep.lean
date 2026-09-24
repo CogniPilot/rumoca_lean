@@ -1906,7 +1906,7 @@ theorem doStepBody_closed (shape : Tensor.Shape) (hasOutput : Bool) :
       Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.stepRounding,
       Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.fail, Runtime.ret,
       Runtime.ok, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, Runtime.any, Runtime.negate,
-      Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.either,
+      Runtime.finite, Runtime.nev, Runtime.le, Runtime.both,
       CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop, CLoops.counterStep,
       List.all_append, stepBodyT_noDecl]
 
@@ -3991,11 +3991,11 @@ theorem body_printable (shape : Tensor.Shape) (hasOutput : Bool) :
       stepBodyT, stepBody, eulerBody, timeAdvance, oneExpr,
       dstCell, srcCell, TensorContinuousStates.derivEntryArgs, Runtime.region, Runtime.require,
       Runtime.instancePrefix,
-      Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.mode, Runtime.reject, Runtime.branch,
+      Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes, Runtime.mode, Runtime.reject, Runtime.branch,
       Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding,
-      Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call, Runtime.any,
+      Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call, Runtime.any, Expr.disjunction,
       Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le, Runtime.gt, Runtime.both,
-      Runtime.either, CAlgorithm.literal, CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil,
+      CAlgorithm.literal, CLoops.loop, CLoops.counterStep,
       List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first

@@ -103,7 +103,7 @@ theorem doStepBody_closed : doStepBody.all CBodyEmbedding.closedBlocks = true :=
     Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.put, Runtime.stepRounding, Runtime.stepClock,
     Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.fail, Runtime.ret, Runtime.ok,
     Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, Runtime.any, Runtime.negate,
-    Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.either, Runtime.put,
+    Runtime.finite, Runtime.nev, Runtime.le, Runtime.both, Runtime.put,
     CAlgorithm.literal, CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop,
     CLoops.counterStep]
 
@@ -124,13 +124,13 @@ theorem body_printable :
   have intType : TypeSpelling RuntimePrinter.typedefs "int" := .named (.primitive (by decide +kernel))
   have doubleType : TypeSpelling RuntimePrinter.typedefs "double" := .named (.primitive (by decide +kernel))
   simp only [function, doStepBody, stepSolve, stepPublishTail, stepBodyT, stepBody, timeAdvance, oneExpr,
-      Runtime.region, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
+      Runtime.region, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes,
       permittedModes, Runtime.mode, Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out,
       Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding, Runtime.stepClock,
       Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call,
-      Runtime.any, Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le,
-      Runtime.gt, Runtime.both, Runtime.either, CAlgorithm.literal, CLoops.loop, CLoops.counterStep,
-      List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil, List.mem_cons,
+      Runtime.any, Expr.disjunction, Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le,
+      Runtime.gt, Runtime.both, CAlgorithm.literal, CLoops.loop, CLoops.counterStep,
+      List.map_cons, List.map_nil, List.mem_cons,
       List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
       | exact CNull.literal_printable _

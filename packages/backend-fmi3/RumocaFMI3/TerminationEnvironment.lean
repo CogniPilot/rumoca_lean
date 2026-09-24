@@ -13,7 +13,7 @@ theorem body_agrees (header : CFenv.Header) (model : Solve.FMI3Model source)
   simp [CodeAgrees, StmtAgrees, ExprAgrees, names, Runtime.require, Runtime.instancePrefix,
     Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.put,
     Runtime.setMode, Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail,
-    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
+    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.call, Runtime.v, Runtime.n,
     Expr.nullPointer, RuntimeEnvironment.interface, CFenv.Header.interface,
     CInterface.constants, objectConstants]

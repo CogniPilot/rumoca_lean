@@ -14,14 +14,22 @@ private theorem plain_iff_all (text : List Char) :
 private theorem any_inputs (values : List Expr) :
     ExprInputs (Runtime.any values) ↔ ∀ value ∈ values, ExprInputs value := by
   induction values with
-  | nil => simp [Runtime.any, Runtime.n, ExprInputs]
+  | nil => simp [Runtime.any, ExprInputs]
   | cons value values ih =>
-      simpa [Runtime.any, Runtime.either, ExprInputs] using and_congr Iff.rfl ih
+    cases values with
+    | nil => simp [Runtime.any]
+    | cons next rest => simpa [Runtime.any, ExprInputs] using and_congr Iff.rfl ih
+
+private theorem kindModes_inputs (command : Command) (kind : Kind) :
+    ∀ value ∈ Runtime.kindModes command kind, ExprInputs value := by
+  unfold Runtime.kindModes
+  split <;> simp [Runtime.both, Runtime.eqv, Runtime.field, Runtime.mode, Runtime.n,
+    Runtime.v, ExprInputs, plain_iff_all, any_inputs]
 
 private theorem allowed_inputs (command : Command) :
     ExprInputs (Runtime.allowedExpression command) := by
-  simp [Runtime.allowedExpression, Runtime.either, Runtime.both, Runtime.eqv,
-    Runtime.field, Runtime.mode, Runtime.n, Runtime.v, ExprInputs, plain_iff_all, any_inputs]
+  simp only [Runtime.allowedExpression, any_inputs, List.mem_append]
+  rintro value (member | member) <;> exact kindModes_inputs _ _ value member
 
 private theorem require_inputs (command : Command) :
     ∀ stmt ∈ Runtime.require command, StmtInputs stmt := by

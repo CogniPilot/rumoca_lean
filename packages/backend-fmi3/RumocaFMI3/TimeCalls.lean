@@ -32,7 +32,7 @@ theorem body_agrees (model : Solve.FMI3Model source) (objects : Objects) (litera
   simp [CodeAgrees, StmtAgrees, ExprAgrees, names, tail, Runtime.require, Runtime.instancePrefix,
     Runtime.modeGuard, Runtime.allowedExpression, permittedModes, Runtime.put, Runtime.invalidTime,
     Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail,
-    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
+    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.finite, Runtime.lt, Runtime.gt,
     Runtime.call, Runtime.v, Runtime.n, Expr.nullPointer, executionInterface, objectConstants]
 
@@ -216,18 +216,18 @@ theorem window_rejected_eval (heap : Heap) (p : Address) (window : Time.Window)
   cases stop : window.stopTime with
   | none =>
     cases lower : Rumoca.Float64.test .lt (toBits time).val (toBits minimum).val <;>
-      simp_all [Runtime.invalidTime, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
+      simp_all [Runtime.invalidTime, Runtime.any, Runtime.both, Runtime.negate,
         Runtime.finite, Runtime.call, Runtime.lt, Runtime.gt, Runtime.field, Runtime.v,
         CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, TimeProofs.locals, TimeProofs.parameters, CBody.bind, CBody.resolve, constants, Value.address,
-        comparison, floatComparison, Value.finite, TimeProofs.rejects, Runtime.n, Value.truth, boolean]
+        comparison, floatComparison, Value.finite, TimeProofs.rejects, Value.truth, boolean]
   | some bound =>
     have stored := stopValue bound stop
     cases lower : Rumoca.Float64.test .lt (toBits time).val (toBits minimum).val <;>
       cases upper : Rumoca.Float64.test .gt (toBits time).val (toBits bound).val <;>
-      simp_all [Runtime.invalidTime, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
+      simp_all [Runtime.invalidTime, Runtime.any, Runtime.both, Runtime.negate,
         Runtime.finite, Runtime.call, Runtime.lt, Runtime.gt, Runtime.field, Runtime.v,
         CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, TimeProofs.locals, TimeProofs.parameters, CBody.bind, CBody.resolve, constants, Value.address,
-        comparison, floatComparison, Value.finite, TimeProofs.rejects, Runtime.n, Value.truth, boolean]
+        comparison, floatComparison, Value.finite, TimeProofs.rejects, Value.truth, boolean]
 
 theorem failure_prefix (model : Solve.FMI3Model source) (heap : Heap) (p : Address)
     (bits : BitVec 64) (kind : Kind) (mode : Mode) (window : Time.Window)

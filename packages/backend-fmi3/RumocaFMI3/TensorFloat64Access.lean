@@ -325,7 +325,7 @@ theorem basic_explicit_pass (heap : Heap) (p refs buffer : Address) (n m : UInt6
   rw [basic_condition_eq _ _ (some refs) (some buffer) rfl
     (by simp [guardEnv, parameters, CBody.bind, resolve])
     (by simp [guardEnv, parameters, CBody.bind, resolve])]
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n,
+  simp [Runtime.any, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n,
     CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve,
     CBody.comparison, boolean, Value.truth, nref]
 
@@ -1423,11 +1423,11 @@ theorem getBodyFor_printable (dispatch : Stmt)
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   simp only [getBodyFor, getLoopSuffix, basicReject, countReject, Runtime.require,
-      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
-      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
+      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,
       Runtime.mode, Runtime.call, getCopyBody, srcCell, output, CLoops.loop,
-      CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
+      CLoops.counterStep, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
@@ -1471,11 +1471,11 @@ theorem setBodyFor_printable (dispatch : Stmt)
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   simp only [setBodyFor, setLoopSuffix, validateBody, basicReject, countReject, Runtime.require,
-      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
-      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
+      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,
       Runtime.mode, Runtime.call, Runtime.finite, setCopyBody, dstCell, output, CLoops.loop,
-      CLoops.counterStep, List.foldr_cons, List.foldr_nil, List.map_cons, List.map_nil,
+      CLoops.counterStep, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first
@@ -1665,7 +1665,7 @@ private theorem basic_pass (heap : Heap) (p refs buffer : Address) (n m : UInt64
       (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
         Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) =
       some (boolean false) := by
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
+  simp [Runtime.any, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, nref]
 
 /-- The getter's memory-machine execution reaches its `fail` statement before the

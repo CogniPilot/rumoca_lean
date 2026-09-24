@@ -342,10 +342,10 @@ theorem body_printable (ph : Phase) :
     .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   cases ph <;>
     (simp only [function, body, tail, Phase.command, Runtime.require,
-        Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+        Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
         Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.setMode, Runtime.put,
-        Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.both, Runtime.either,
-        Runtime.negate, Runtime.any, Runtime.mode, Runtime.call, List.foldr_cons, List.foldr_nil,
+        Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.both,
+        Runtime.negate, Runtime.any, Expr.disjunction, Runtime.mode, Runtime.call,
         List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
         List.cons_append, List.nil_append, forall_eq] <;>
       repeat first

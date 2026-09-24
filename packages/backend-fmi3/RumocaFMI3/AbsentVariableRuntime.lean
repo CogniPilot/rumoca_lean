@@ -18,7 +18,7 @@ theorem body_agrees (header : CFenv.Header) (objects : Objects)
   cases write <;> simp [accessCommand, CodeAgrees, StmtAgrees, ExprAgrees, names, suffix, Runtime.require,
     Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail,
-    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
+    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.call, Runtime.v, Runtime.n,
     Expr.nullPointer, RuntimeEnvironment.interface, CFenv.Header.interface,
     CInterface.constants, objectConstants]
@@ -31,7 +31,7 @@ theorem body_agrees_static (objects : Objects) (literals : CLiteralAddresses)
   cases write <;> simp [accessCommand, CodeAgrees, StmtAgrees, ExprAgrees, names, suffix, Runtime.require,
     Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail,
-    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either,
+    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both,
     Runtime.negate, Runtime.eqv, Runtime.field, Runtime.call, Runtime.v, Runtime.n,
     Expr.nullPointer, executionInterface, CInterface.constants, objectConstants]
 

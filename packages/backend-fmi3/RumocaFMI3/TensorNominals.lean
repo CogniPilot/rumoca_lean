@@ -139,7 +139,7 @@ theorem body_closed (shape : Tensor.Shape) :
     (function shape).body.all CBodyEmbedding.closedBlocks = true := by
   simp [function, body, nominalTail, countReject, oneBody, Runtime.require, Runtime.instancePrefix,
     Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok,
-    Runtime.v, Runtime.any, Runtime.either, Runtime.nev, Runtime.negate, dstCell,
+    Runtime.v, Runtime.any, Runtime.nev, Runtime.negate, dstCell,
     CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
 
 section
@@ -161,7 +161,7 @@ theorem count_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume :
     CBody.eval (guardEnv p buffer count) heap
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
         Runtime.negate (Runtime.v "nominals")]) = some (boolean false) := by
-  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
+  simp [Runtime.any, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
     guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, matched]
 
 /-- The actual guard's null type comes from the existing fixed FMI interface. -/
@@ -339,10 +339,10 @@ theorem body_printable (shape : Tensor.Shape) :
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   simp only [function, body, nominalTail, countReject, oneBody, dstCell, Runtime.require,
-      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+      Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
-      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either, Runtime.negate, Runtime.any,
-      Runtime.mode, Runtime.call, CLoops.loop, CLoops.counterStep, List.foldr_cons, List.foldr_nil,
+      Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,
+      Runtime.mode, Runtime.call, CLoops.loop, CLoops.counterStep,
       List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>
     repeat first

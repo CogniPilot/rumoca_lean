@@ -89,7 +89,7 @@ macro "cadmit" : tactic => `(tactic| (
   fmi_literal_calls
   all_goals simp [StatementAdmits, ExpressionAdmits, acceptedC, accepted, classify,
     Runtime.finite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
-    Runtime.any, Runtime.all, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
+    Runtime.any, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
     Runtime.lt, Runtime.le, Runtime.gt, Runtime.ge, Runtime.negate, Runtime.region, Runtime.x,
     Runtime.field, Runtime.setMode, Runtime.mode, Runtime.v, Runtime.n, Runtime.call, Runtime.out,
     Runtime.put, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.scalarAccessCheck, Runtime.countLoop,

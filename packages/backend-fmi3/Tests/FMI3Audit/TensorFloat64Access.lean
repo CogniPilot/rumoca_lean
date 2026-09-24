@@ -46,3 +46,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorFloat64.set_fail_prefix
 #audit axioms Rumoca.FMI3.TensorFloat64.get_fail_behaviors
 #audit axioms Rumoca.FMI3.TensorFloat64.set_fail_behaviors
+#audit axioms Rumoca.FMI3.TensorFloat64.getBodyFor_printable
+#audit axioms Rumoca.FMI3.TensorFloat64.setBodyFor_printable

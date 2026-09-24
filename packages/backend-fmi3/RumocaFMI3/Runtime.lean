@@ -2,7 +2,7 @@ import RumocaCore.FMI3.Lifecycle
 import RumocaFMI3.Metadata
 import RumocaC.Interface
 import RumocaC.CountConditionCode
-import RumocaC.Body
+import RumocaC.BooleanProofs
 import RumocaC.InitializationCode
 import RumocaFMI3.IdentityCode
 import RumocaFMI3.StaticFactoryCode
@@ -14,6 +14,13 @@ import RumocaFMI3.DebugLoggingCode
 verified Solve/C kernel. The lifecycle table supplies guards. C memory,
 callbacks and the emitted adapter still need a full execution bridge; they
 must not be included in the scalar compiler's existing correctness claim. -/
+namespace Rumoca.FMI3
+
+/-- The instance kind value stored in the `kind` member. -/
+@[simp] def Kind.code : Kind → Nat | .me => 0 | .cs => 1
+
+end Rumoca.FMI3
+
 namespace Rumoca.FMI3.Runtime
 open CTree
 
@@ -64,15 +71,18 @@ def finite (e : Expr) := call "isfinite" [e]
 def mode (m : Mode) := n m.code
 def setMode (m : Mode) := put "mode" (mode m)
 
-def any (es : List Expr) : Expr := es.foldr either (n 0)
-def all (es : List Expr) : Expr := es.foldr both (n 1)
+def any (es : List Expr) : Expr := Expr.disjunction es
+
+/-- The instance kind test conjoined with the disjunction of the modes that
+kind permits. A kind permitting no mode contributes no disjunct. -/
+@[simp] def kindModes (cmd : Command) (kind : Kind) : List Expr :=
+  match permittedModes cmd kind with
+  | [] => []
+  | modes => [both (eqv (field "kind") (n kind.code))
+      (any (modes.map fun m => eqv (field "mode") (mode m)))]
 
 def allowedExpression (cmd : Command) : Expr :=
-  either
-    (both (eqv (field "kind") (n 0))
-      (any ((permittedModes cmd .me).map fun m => eqv (field "mode") (mode m))))
-    (both (eqv (field "kind") (n 1))
-      (any ((permittedModes cmd .cs).map fun m => eqv (field "mode") (mode m))))
+  any (kindModes cmd .me ++ kindModes cmd .cs)
 
 def instancePrefix : List Stmt := [
   .declare "Instance *" "m" (.cast "Instance *" (v "instance")),

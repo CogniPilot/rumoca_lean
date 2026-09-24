@@ -25,7 +25,7 @@ theorem time_body_agrees (header : CFenv.Header) (model : Solve.FMI3Model source
   simp [CodeAgrees, StmtAgrees, ExprAgrees, names, TimeCalls.tail, Runtime.require,
     Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
     Runtime.put, Runtime.invalidTime, Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail,
-    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.either, Runtime.negate,
+    Runtime.branch, Runtime.ret, Runtime.any, Runtime.both, Runtime.negate,
     Runtime.eqv, Runtime.field, Runtime.finite, Runtime.lt, Runtime.gt, Runtime.call,
     Runtime.v, Runtime.n, Expr.nullPointer, interface, CFenv.Header.interface, CInterface.constants,
     objectConstants]

@@ -8,50 +8,78 @@ independently authored lifecycle predicate. Instance bindings and represented
 kind/mode fields are explicit; printed bytes, ABI validity and logging remain
 separate obligations. No additional command or lifecycle state is admitted. -/
 namespace Rumoca.FMI3.LifecycleGuard
-variable [static : StaticLiterals]
-private local instance targetInterface : CInterface := cInterface static.addresses
 open CTree CMemory CBody
 
-omit static in
 theorem mode_code_beq (a b : Mode) : ((a.code : Int) == (b.code : Int)) = (a == b) := by
   cases a <;> cases b <;> rfl
+
+/-- Every lifecycle guard has at least one kind disjunct. -/
+theorem allowed_disjuncts_nonempty (cmd : Command) :
+    Runtime.kindModes cmd .me ++ Runtime.kindModes cmd .cs ≠ [] := by
+  cases cmd <;> simp [permittedModes]
+
+section Interface
+variable [interface : CInterface]
+
+/-- The mode disjunction evaluates to membership of the current mode, in any
+C interface. -/
+theorem mode_disjunction_eval (env : Locals) (heap : Heap) (p : Address) (current : Mode)
+    (hm : resolve env "m" = some (.pointer (some p)))
+    (hc : load heap (p.member "mode") = some (.integer current.code)) (modes : List Mode) :
+    eval env heap (Runtime.any (modes.map fun m =>
+      Runtime.eqv (Runtime.field "mode") (Runtime.mode m))) =
+      some (boolean (modes.contains current)) := by
+  rw [← List.any_beq]
+  apply BoolProofs.eval_disjunction
+  intro m _
+  simp [Runtime.eqv, Runtime.field, Runtime.mode, Runtime.v, Runtime.n,
+    eval, evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt,
+    CDeclaredMembers.fieldAt, hm, hc, Value.address, comparison, mode_code_beq]
+
+/-- The lifecycle guard evaluates to the authored predicate, in any C interface. -/
+theorem allowed_eval (env : Locals) (heap : Heap) (p : Address)
+    (cmd : Command) (kind : Kind) (mode : Mode)
+    (hp : resolve env "m" = some (.pointer (some p)))
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code)) :
+    eval env heap (Runtime.allowedExpression cmd) = some (boolean (allowed cmd kind mode)) := by
+  have test : ∀ k : Kind, eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n k.code)) =
+      some (boolean (decide (kind = k))) := by
+    intro k
+    cases kind <;> cases k <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, eval, evalWith,
+      CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+      hp, hk, Value.address, comparison, Kind.code, boolean]
+  have me := BoolProofs.eval_and (test .me) (mode_disjunction_eval env heap p mode hp hm (permittedModes cmd .me))
+  have cs := BoolProofs.eval_and (test .cs) (mode_disjunction_eval env heap p mode hp hm (permittedModes cmd .cs))
+  unfold Runtime.allowedExpression
+  cases hmeModes : permittedModes cmd .me <;> cases hcsModes : permittedModes cmd .cs <;>
+    simp only [Runtime.kindModes, hmeModes, hcsModes, List.nil_append, List.cons_append,
+      Runtime.any, Runtime.both, Expr.disjunction] at me cs ⊢
+  · cases kind <;> simp [allowed, hmeModes, hcsModes, eval, evalWith, comparison]
+  · rw [cs]; cases kind <;> simp [allowed, hmeModes, hcsModes]
+  · rw [me]; cases kind <;> simp [allowed, hmeModes, hcsModes]
+  · rw [BoolProofs.eval_or me cs]; cases kind <;> simp [allowed, hmeModes, hcsModes]
+
+end Interface
+
+variable [static : StaticLiterals]
+private local instance targetInterface : CInterface := cInterface static.addresses
 
 theorem modes_eval (env : Locals) (heap : Heap) (p : Address) (current : Mode)
     (hm : resolve env "m" = some (.pointer (some p)))
     (hc : load heap (p.member "mode") = some (.integer current.code)) (modes : List Mode) :
     eval env heap (Runtime.any (modes.map fun m =>
       Runtime.eqv (Runtime.field "mode") (Runtime.mode m))) =
-      some (boolean (modes.contains current)) := by
-  induction modes with
-  | nil => rfl
-  | cons head tail ih =>
-    have hhead : eval env heap (Runtime.eqv (Runtime.field "mode") (Runtime.mode head)) =
-        some (boolean (current == head)) := by
-      simp [Runtime.eqv, Runtime.field, Runtime.mode, Runtime.v, Runtime.n,
-        eval, evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt,
-        CDeclaredMembers.fieldAt, hm, hc, Value.address, comparison, mode_code_beq]
-    simpa [Runtime.any, List.contains_cons] using BoolProofs.eval_or hhead ih
+      some (boolean (modes.contains current)) :=
+  mode_disjunction_eval env heap p current hm hc modes
 
 theorem eval_correct (env : Locals) (heap : Heap) (p : Address)
     (cmd : Command) (kind : Kind) (mode : Mode)
     (hp : resolve env "m" = some (.pointer (some p)))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code)) :
-    eval env heap (Runtime.allowedExpression cmd) = some (boolean (allowed cmd kind mode)) := by
-  have hme : eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n 0)) =
-      some (boolean (kind.code == 0)) := by
-    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, eval, evalWith,
-      CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
-      hp, hk, Value.address, comparison, Kind.code, boolean]
-  have hcs : eval env heap (Runtime.eqv (Runtime.field "kind") (Runtime.n 1)) =
-      some (boolean (kind.code == 1)) := by
-    cases kind <;> simp [Runtime.eqv, Runtime.field, Runtime.v, Runtime.n, eval, evalWith,
-      CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
-      hp, hk, Value.address, comparison, Kind.code, boolean]
-  have h := BoolProofs.eval_or
-    (BoolProofs.eval_and hme (modes_eval env heap p mode hp hm (permittedModes cmd .me)))
-    (BoolProofs.eval_and hcs (modes_eval env heap p mode hp hm (permittedModes cmd .cs)))
-  cases kind <;> simpa [Runtime.allowedExpression, Runtime.either, Runtime.both, allowed, Kind.code] using h
+    eval env heap (Runtime.allowedExpression cmd) = some (boolean (allowed cmd kind mode)) :=
+  allowed_eval env heap p cmd kind mode hp hk hm
 
 theorem reference (env : Locals) (heap : Heap) (p : Address)
     (cmd : Command) (kind : Kind) (mode : Mode)

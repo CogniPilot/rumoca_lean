@@ -126,7 +126,7 @@ theorem pointer_pass (events : Bool) (heap : Heap) (p buffer : Address) :
     CBody.eval (guardEnv events p buffer) heap
       (Runtime.any [Runtime.negate (Runtime.v (outputName events))]) = some (boolean false) := by
   cases events <;>
-    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, guardEnv,
+    simp [Runtime.any, Runtime.negate, Runtime.v, CBody.eval, CBody.evalWith, guardEnv,
       parameters, outputName, CBody.bind, CBody.resolve, Value.truth, boolean]
 
 /-- The actual explicit guard uses the fixed interface's null type. -/
@@ -134,8 +134,8 @@ theorem explicit_pointer_pass (events : Bool) (heap : Heap) (p buffer : Address)
     CBody.eval (guardEnv events p buffer) heap
       (Runtime.any [Runtime.eqv (Runtime.v (outputName events)) Expr.nullPointer]) = some (boolean false) := by
   cases events <;>
-    simp [Runtime.any, Runtime.either, Runtime.eqv, comparison, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, guardEnv,
-      parameters, outputName, CBody.bind, CBody.resolve, Value.truth, boolean]
+    simp [Runtime.any, Runtime.eqv, comparison, Runtime.v, CBody.eval, CBody.evalWith, guardEnv,
+      parameters, outputName, CBody.bind, CBody.resolve, boolean]
 
 /-- The whole count-query body runs to the successful count write. Composed from
 the guard, pointer check, single write and return, so the `size_t` conversion is
@@ -247,10 +247,10 @@ theorem body_printable (shape : Tensor.Shape) (events : Bool) :
     .pointer (text := "Instance") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   cases events <;>
     (simp only [function, body, rest, outputName, Bool.false_eq_true, ↓reduceIte, Runtime.require,
-        Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, permittedModes,
+        Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
         Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.pointerCheck, Runtime.pointerCheckWith,
-        Runtime.out, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.both, Runtime.either,
-        Runtime.negate, Runtime.any, Runtime.mode, Runtime.call, List.foldr_cons, List.foldr_nil, List.map_cons,
+        Runtime.out, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv, Runtime.both,
+        Runtime.negate, Runtime.any, Expr.disjunction, Runtime.mode, Runtime.call, List.map_cons,
         List.map_nil, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append,
         List.nil_append, forall_eq] <;>
       repeat first

@@ -74,14 +74,14 @@ theorem progress_condition (env : Locals) (heap : Heap) (p : Address)
     have finite : (Value.float64 (Binary64.toBits next).val).isFinite = some true :=
       Value.isFinite_finite next
     by_cases advances : Binary64.value time < Binary64.value next <;>
-      simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.finite,
-      Runtime.call, Runtime.v, Runtime.n, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
+      simp [Runtime.any, Runtime.negate, Runtime.finite,
+      Runtime.call, Runtime.v, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
       instanceValue, nextValue, Value.address, clock, Float64.Number.encode,
       finite, comparison, floatComparison, Value.finite, boolean, Value.truth,
       finite_comparison, Float64.Relation.Holds, Progress, advances, not_lt.mp, not_le.mpr]
   | negativeInfinity | positiveInfinity | nan =>
-    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.finite,
-      Runtime.call, Runtime.v, Runtime.n, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
+    simp [Runtime.any, Runtime.negate, Runtime.finite,
+      Runtime.call, Runtime.v, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
       instanceValue, nextValue, Value.address, clock, negative, positive, unordered, Progress]
 
 theorem grid_condition (env : Locals) (heap : Heap) (step : Binary64.Value)
@@ -93,7 +93,7 @@ theorem grid_condition (env : Locals) (heap : Heap) (step : Binary64.Value)
       some (boolean (decide (¬ StepAdmission.AdmittedDuration step))) := by
   by_cases integral : Binary64.value (Binary64.floorValue step) = Binary64.value step <;>
     by_cases bounded : Binary64.value step ≤ 1000000 <;>
-    simp [Runtime.any, Runtime.either, Runtime.nev, Runtime.gt, Runtime.v, Runtime.n,
+    simp [Runtime.any, Runtime.nev, Runtime.gt, Runtime.v, Runtime.n,
     CBody.eval, CBody.evalWith, resolve, stepValue, floorValue, Value.finite, comparison, floatComparison,
     CIntegerConversions.integer_float64 1000000 (by decide +kernel),
     finite_comparison, Float64.Relation.Holds, Binary64.ofSmallInt_value,

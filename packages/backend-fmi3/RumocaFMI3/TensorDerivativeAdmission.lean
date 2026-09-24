@@ -42,7 +42,7 @@ theorem count_pass (heap : Heap) (p buffer : Address) (count : UInt64) (volume :
     eval (derivGuardEnv p buffer count) heap
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
         Runtime.negate (Runtime.v "derivatives")]) = some (.integer 0) := by
-  simp [Runtime.any, Runtime.either, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n,
+  simp [Runtime.any, Runtime.nev, Runtime.negate, Runtime.v, Runtime.n,
     CBody.eval, CBody.evalWith, CBody.resolve, derivGuardEnv, derivParameters, CBody.bind,
     matched, CBody.comparison, Value.truth, boolean]
 

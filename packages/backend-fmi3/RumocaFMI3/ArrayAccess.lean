@@ -52,7 +52,7 @@ theorem run_guard (env : Locals) (heap : Heap) (left right leftCount rightCount 
     by_cases nz : n.toNat = 0 <;> by_cases mz : m.toNat = 0 <;>
     cases lp <;> cases rp <;>
     simp_all [guard, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions, id_eq, Valid, Runtime.reject, Runtime.branch, Runtime.any,
-      Runtime.either, Runtime.both, Runtime.nev, Runtime.v, Runtime.n,
+      Runtime.both, Runtime.nev, Runtime.v,
       run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, comparison, boolean, Value.truth]
   all_goals have nonzero : (0 : Int) ≠ m.toNat := by omega
   all_goals simp [nonzero]
@@ -79,8 +79,7 @@ theorem run_explicit_guard (env : Locals) (heap : Heap) (left right leftCount ri
       run 1 (.running (explicitGuard left right leftCount rightCount message :: tail) env heap) =
       run 1 (.running (guard left right leftCount rightCount message :: tail) env heap) := by
     simp only [explicitGuard, guard, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions, id_eq, Runtime.reject, Runtime.branch,
-      Runtime.any, Runtime.nev, Runtime.v, Runtime.both, Runtime.either, Runtime.n,
-      List.foldr_cons, List.foldr_nil, run, next, nextWith, legacyExpressions, eval, evalWith, hl, hr]
+      Runtime.any, Expr.disjunction, Runtime.nev, Runtime.v, Runtime.both, run, next, nextWith, legacyExpressions, eval, evalWith, hl, hr]
   rw [same]
   exact run_guard env heap left right leftCount rightCount message lp rp n m tail
     leftBound rightBound nBound mBound
@@ -94,7 +93,7 @@ theorem run_explicit_guard_zero (env : Locals) (heap : Heap)
     run 1 (.running (explicitGuard left right leftCount rightCount message :: tail) env heap) =
       some (.running tail env heap) := by
   simp [explicitGuard, Runtime.arrayAccessGuardWith, Runtime.arrayAccessGuardWithConditions, id_eq, Runtime.reject, Runtime.branch,
-    Runtime.any, Runtime.nev, Runtime.v, Runtime.both, Runtime.either, Runtime.n,
+    Runtime.any, Runtime.nev, Runtime.v, Runtime.both,
     run, next, nextWith, legacyExpressions, eval, evalWith, nBound, mBound,
     comparison, Value.truth, boolean]
 
@@ -121,8 +120,7 @@ theorem count_condition_eval (declarations : CDeclaredMembers.Declarations)
   have hr := CCountConditions.and_nonzero_eval declarations objects env heap
     (.id rightCount) (pointerMissing (.id right)) sizeType mInteger
   exact CCountConditions.or_eval_congr declarations objects env heap _ _ _ _ rfl
-    (CCountConditions.or_eval_congr declarations objects env heap _ _ _ _ hl
-      (CCountConditions.or_eval_congr declarations objects env heap _ _ _ _ hr rfl))
+    (CCountConditions.or_eval_congr declarations objects env heap _ _ _ _ hl hr)
 
 /-- Complete optional body successor, with the existing count-first order,
 arbitrary suffix and unchanged full locals/heap. -/

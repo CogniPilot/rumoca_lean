@@ -38,12 +38,12 @@ theorem function_printable (m : Solve.FMI3Model source) :
       exact ⟨handle_type, by decide +kernel⟩
   · simp only [Runtime.function, Runtime.body, signature,
       Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
-      Runtime.branch, Runtime.negate, Runtime.allowedExpression, Runtime.either,
-      Runtime.both, Runtime.eqv, Runtime.any, Runtime.field, Runtime.mode,
+      Runtime.branch, Runtime.negate, Runtime.allowedExpression, Runtime.kindModes,
+      Runtime.both, Runtime.eqv, Runtime.any, Expr.disjunction, Runtime.field, Runtime.mode,
       permittedModes, Mode.code, Runtime.fail, Runtime.call, Runtime.ret,
       Runtime.v, Runtime.n, Runtime.x, Runtime.put, Runtime.setMode, Runtime.ok,
       CInitialization.Emission.statement, CInitialization.value_zero,
-      List.map_cons, List.map_nil, List.foldr_cons, List.foldr_nil,
+      List.map_cons, List.map_nil,
       List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false,
       forall_eq_or_imp, forall_eq]
     repeat first
