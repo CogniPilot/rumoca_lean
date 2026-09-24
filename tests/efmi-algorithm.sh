@@ -106,21 +106,35 @@ for declaration in input state jacobian; do
       > "$tensor_stage/rejected-dimension-$declaration.log" 2>&1; then
     printf 'accepted old tensor dimension position: %s\n' "$declaration" >&2; exit 1
   fi
-  rg -q 'differs from the pinned tensor square profile' "$tensor_stage/rejected-dimension-$declaration.log"
+  rg -q 'differs from the emitted tensor square block' "$tensor_stage/rejected-dimension-$declaration.log"
 done
 cp "$tensor_stage/original.alg" "$tensor_stage/model.alg"
 echo 'Tensor GALEC: all three old declaration-dimension positions rejected'
-# A mutated tensor Algorithm Code method must fail the fixed certificate.
-sed 's/self.samplePeriod := 1.0/self.samplePeriod := 0.0/' "$tensor_stage/original.alg" > "$tensor_stage/model.alg"
-if cmp -s "$tensor_stage/original.alg" "$tensor_stage/model.alg"; then
-  echo 'ineffective tensor Algorithm Code mutation' >&2; exit 1
-fi
-if lake run verify-artifact tensor-algorithm "$tensor_stage/Source.mo" "$tensor_stage/model.alg" \
-    packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
-    > "$tensor_stage/rejected.log" 2>&1; then
-  echo 'accepted mutated tensor Algorithm Code' >&2; exit 1
-fi
-rg -q 'differs from the pinned tensor square profile' "$tensor_stage/rejected.log"
+# Each mutated tensor Algorithm Code method must fail the fixed certificate.
+# Every mutation starts from the certified original and must change its bytes:
+# the period, a loop bound, an index, a coefficient, the operation order, the
+# DoStep matrix clear, and the pointwise `.*` and `jacobian(...)` spellings.
+reject_tensor() {
+  perl -0pe "$2" "$tensor_stage/original.alg" > "$tensor_stage/model.alg"
+  if cmp -s "$tensor_stage/original.alg" "$tensor_stage/model.alg"; then
+    printf 'ineffective tensor Algorithm Code mutation: %s\n' "$1" >&2; exit 1
+  fi
+  if lake run verify-artifact tensor-algorithm "$tensor_stage/Source.mo" "$tensor_stage/model.alg" \
+      packages/modelica-parser/grammar/Modelica.ebnf packages/galec-parser/grammar/GALEC.ebnf \
+      > "$tensor_stage/rejected-$1.log" 2>&1; then
+    printf 'accepted mutated tensor Algorithm Code: %s\n' "$1" >&2; exit 1
+  fi
+  rg -q 'differs from the emitted tensor square block' "$tensor_stage/rejected-$1.log"
+}
+reject_tensor period 's/self\.samplePeriod := 1\.0/self.samplePeriod := 0.0/'
+reject_tensor loop-bound 's/(method DoStep.*?for k in 1:1:size\(self\.u, )1/${1}2/s'
+reject_tensor index 's/self\.x\[k\] := self\.u\[k\] \* self\.u\[k\]/self.x[k] := self.u[1] * self.u[k]/'
+reject_tensor coefficient 's/self\.u\[k\] \+ self\.u\[k\]/self.u[k] * self.u[k]/'
+reject_tensor order 's/(method DoStep\n    algorithm\n)(.*?end for;\n)(.*?end for;\n        end for;\n)/$1$3$2/s'
+reject_tensor matrix-clear 's/(method DoStep.*?end for;\n)        for r in .*?end for;\n        end for;\n/$1/s'
+reject_tensor pointwise 's/self\.u\[k\] \* self\.u\[k\]/self.u[k] .* self.u[k]/'
+reject_tensor jacobian 's/self\.J\[k, k\] := self\.u\[k\] \+ self\.u\[k\]/self.J[k, k] := jacobian(self.u[k] * self.u[k], self.u[k])/'
+echo 'Tensor GALEC: period, loop, index, coefficient, order, clear and obsolete-spelling mutations rejected'
 rm -rf "$tensor_stage"
 
 echo 'GALEC EBNF freshness, reuse, actual-file certificate and mutation checks passed'
