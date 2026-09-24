@@ -188,6 +188,19 @@ evidence, not actual Algorithm/C publication, R5 file/archive evidence, normativ
 input/lifecycle policy, overflow-method behavior or conformance. Production
 files are unchanged. The stage decision below and all open findings remain.
 
+Further candidate composition: the owned-method rebase and total-numerical
+retention passed 40 roots (final-v1/session93031), then original Modelica
+artifact/source/diagonal observations and both source DoStep forms composed
+with those same GALEC/numerical contracts in a 23-root bundle
+(final-v1/session6551). Both have frozen input/output receipts and independent
+reviews read by main, no blocking finding. Exact artifact/model kernel equality,
+finite primal domains, full outcomes and allocation-only Startup/Recalibrate
+remain explicit. Evidence: `build/galec-{owned-method-composition,candidate-numerical,candidate-source}-draft/`.
+This improves R3/R4 candidate coverage only. Joint execution histories still
+need environment alignment; R5 independent file/archive evidence, normative
+input/lifecycle policy, public overflow, native and MISRA findings remain open.
+No admitted subset, emitted byte, policy or stage decision changes.
+
 Before changing the prospective grammar, main read the complete independent
 266-line review `build/galec-startup-grammar-review/review.md`. It inspects
 current dispatch, both production grammars, selected actual artifacts and pinned

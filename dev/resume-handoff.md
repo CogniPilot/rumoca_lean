@@ -77,11 +77,28 @@ hashes. Both complete independent reviews were read, no substantive findings.
 Rebuild-v1 failed on module-root path shadowing; v2 seeds the complete old
 scratch roots and replaces only the affected closure. No proof source changed
 for that repair, and old objects/receipts remain intact. Do not rerun completed
-checks or import build modules into packages. Original Modelica source/diagonal
-observation fields still need candidate-table composition; a new bounded
-source-only `build/galec-candidate-source-draft/` is being authored for that
-purpose, not yet checked. Consult `build/method-table-live-checkpoint.md` for
-its current worker/session state before starting overlapping work.
+checks or import build modules into packages.
+
+`build/galec-candidate-source-draft/` is now checked too. Source/Method generalize
+the original Modelica SourceMatrix and both source DoStep forms to the candidate
+table using the same artifact's prepared kernel; Composition retains those,
+the full GALEC methods and numerical groups on one artifact/model/Algorithm/C
+pair, plus allocation-only Recalibrate independently of finite source views.
+Allocation-only repaired Startup remains inside the full Target contract.
+V3/session30855 and final-v1/session6551 passed; final receipt at `9bacf30`
+checks 23 exact roots, three empty implementation logs, six source/script,
+2,665 tracked/225 selected input hashes and four outputs. V1/V2 extensionality
+tactic errors were repaired without statement changes. Main read all four
+implementations and the complete independent review, no blocking finding;
+main checked final hashes and audit receipt. Both Astra agents are closed;
+no terminal session remains live. Do not rerun these completed checks.
+
+Next: explicit Modelica/GALEC environment alignment for a joint execution
+history, and the coupled actual-artifact repair. Preserve the exact model/kernel
+link, every existing scalar/tensor/total-helper field and allocated-only branch.
+Same candidate parameters alone are not an arbitrary lifecycle or host input
+protocol. Read the latest draft README/review and standards ledger; no actual
+file/manifest/archive cutover or production promotion is claimed.
 Then complete coupled parser/source/C/actual-artifact repair,
 preserving every existing scalar and tensor contract field. Ordinary expansion
 and production promotion remain blocked by the standards ledger. Scratch

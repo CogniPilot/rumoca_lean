@@ -36,7 +36,7 @@ review found no substantive finding; main separately reviewed the worker's
 Target implementation. Only Startup is source/public composed in this bundle.
 Supplied-string renderer equality is not independent emitted-file evidence.
 Production parser/emitter/contracts remain unchanged; the required production
-gate remains the `bac8f61` result below, not this scratch receipt.
+gate is the `37d23c3` result above, not this scratch receipt.
 
 **Candidate all-method composition and represented-input handoff (checked
 scratch):** The same candidate table now has original parsed Recalibrate and
@@ -69,9 +69,28 @@ and 209 selected input hashes, six output hashes. The isolated rebuild refreshed
 18 affected dependencies; old receipts/objects remain intact. Main read both
 independent reviews, including the final runner/receipt, no substantive findings.
 Evidence: `build/galec-owned-method-composition-draft/` and
-`build/galec-candidate-numerical-draft/`. This does not yet retain the original
-Modelica artifact's source/diagonal observation fields in one candidate bundle,
-nor establish actual emitted-file/XML/archive or production-promotion evidence.
+`build/galec-candidate-numerical-draft/`.
+
+**Same-artifact candidate composition (checked scratch):**
+`build/galec-candidate-source-draft/` now retains the original Modelica artifact's
+source built-in, prepared diagonal, exact matrix/mathematical observations and
+both explicit-addition and finite-primal-derived DoStep fields. Exact equality
+of the model kernel and that artifact's prepared kernel is mandatory; no pinned
+Modelica AST or old Production C predicate is assumed. `Composition` retains
+those fields, the entire GALEC MethodsContract and all numerical groups on one
+artifact/model/Algorithm/C byte pair. Allocation-only Recalibrate is independent
+of finite source views; allocation-only repaired Startup remains in Target.
+
+Final-v1/session6551 passed at `9bacf30`: all 23 exact roots, three empty
+implementation logs, six source/script hashes, 2,665 tracked/225 selected input
+hashes and four output hashes. Main read the complete independent source review,
+no blocking finding, and checked the final receipt and hashes. V1/V2 proof-tactic
+errors were corrected without statement changes; V3/session30855 passed before
+the frozen final run. Source and GALEC environments still require alignment for
+a joint execution history; no arbitrary lifecycle/input-update theorem follows.
+Supplied renderer/kernel equalities are not independently read source/grammar/
+Algorithm/C/XML/archive evidence. Actual-artifact cutover, public overflow
+policy, native boundaries and standards findings remain open.
 
 **Whole-block preparation and whole-state method handoff (full gate passed):**
 Core now owns `Elaboration.Block.{Headers,Preparation}`,
