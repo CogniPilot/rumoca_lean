@@ -38,7 +38,7 @@ def read (declarations : List Descriptor) : List String → Option Shape
   | _ => none
 
 /-- Source declaration meaning, independent of descriptor-list lookup. -/
-def HasShape (ceiling : Nat) (sources : List AST.Declaration) (key : List String) (shape : Shape) : Prop :=
+def HasShape (ceiling : Nat) (sources : List (AST.Visibility × AST.Declaration)) (key : List String) (shape : Shape) : Prop :=
   ∃ source ∈ sources, ∃ declaration, Declares ceiling source declaration ∧
     key = [declaration.name] ∧ shape = declaration.shape
 

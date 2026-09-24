@@ -28,6 +28,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.startupMethod
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.recalibrateMethod
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.stepMethod
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.stateDeclaration
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.clockDeclaration
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.sourceDeclarations
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.source
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.interface

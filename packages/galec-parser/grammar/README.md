@@ -17,8 +17,8 @@ binary operators; further operators are additive alternatives.
 The dialect writes rule names with underscores; ISO 14977-style hyphenated
 meta-identifiers are not implemented. GALEC comments, quoted names, signed
 numerals and exponents remain outside the scanner. Numbers are scanned as
-`Token.number` on the `IDENT` grammar symbol. The obsolete `.*` spelling has no
-token and is rejected by the grammar.
+`Token.number` on the `IDENT` grammar symbol. `.*` is not a token
+(`Syntax.no_pointwise_token`): `.` and `*` scan separately.
 
 The [standards review](../../../dev/efmi.md) records a Beta 1 discrepancy between
 the state-declaration production and its specified input/output interface.

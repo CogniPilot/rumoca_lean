@@ -13,14 +13,14 @@ def blockName (block : AST.Block) : Option String :=
   | _, _ => none
 
 inductive Named : AST.Block → String → Prop where
-  | matched : Named ⟨.ident name, declarations, methods, .ident name⟩ name
+  | matched : Named ⟨.ident name, visible, hidden, methods, .ident name⟩ name
 
 theorem blockName_iff (block : AST.Block) (name : String) :
     blockName block = some name ↔ Named block name := by
   constructor
   · intro found
     cases block with
-    | mk first declarations methods last =>
+    | mk first visible hidden methods last =>
       cases first <;> cases last <;> simp only [blockName] at found <;> try contradiction
       split at found
       · rename_i same

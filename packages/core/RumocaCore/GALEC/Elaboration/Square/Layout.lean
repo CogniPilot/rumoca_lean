@@ -11,17 +11,23 @@ declarations still need actual scanner/parser and emitted-text provenance. -/
 namespace Rumoca.GALEC.Elaboration.Square
 open Elaboration Rumoca.Tensor Rumoca.Solve.Tensor Coefficients VectorBodies
 
-def squareDeclarations (extent : Nat) : List AST.Declaration :=
-  [⟨.public, .input, .variable, .literal "Real", [Surface.natural extent], .ident "u"⟩,
-   ⟨.public, .output, .variable, .literal "Real", [Surface.natural extent], .ident "x"⟩,
-   ⟨.public, .output, .variable, .literal "Real", [Surface.natural extent, Surface.natural extent], .ident "J"⟩,
-   ⟨.protected, .local, .constant, .literal "Real", [], .ident "samplePeriod"⟩]
+def squarePublic (extent : Nat) : List AST.Declaration :=
+  [⟨.input, .literal "Real", [Surface.natural extent], .ident "u"⟩,
+   ⟨.output, .literal "Real", [Surface.natural extent], .ident "x"⟩,
+   ⟨.output, .literal "Real", [Surface.natural extent, Surface.natural extent], .ident "J"⟩]
+
+def squareProtected : List AST.Declaration :=
+  [⟨.constant, .literal "Real", [], .ident "samplePeriod"⟩]
+
+/-- The declarations of a block with sections `squarePublic` and `squareProtected`. -/
+def squareDeclarations (extent : Nat) : List (AST.Visibility × AST.Declaration) :=
+  (squarePublic extent).map (.public, ·) ++ squareProtected.map (.protected, ·)
 
 def squareFields (extent : Nat) : List Layout.Field :=
-  [⟨⟨"u", .public, .input, .variable, ⟨[extent]⟩⟩, .readOnly⟩,
-   ⟨⟨"x", .public, .output, .variable, ⟨[extent]⟩⟩, .writable⟩,
-   ⟨⟨"J", .public, .output, .variable, matrixShape extent extent⟩, .writable⟩,
-   ⟨⟨"samplePeriod", .protected, .local, .constant, ⟨[]⟩⟩, .readOnly⟩]
+  [⟨⟨"u", .public, .input, ⟨[extent]⟩⟩, .readOnly⟩,
+   ⟨⟨"x", .public, .output, ⟨[extent]⟩⟩, .writable⟩,
+   ⟨⟨"J", .public, .output, matrixShape extent extent⟩, .writable⟩,
+   ⟨⟨"samplePeriod", .protected, .constant, ⟨[]⟩⟩, .readOnly⟩]
 
 theorem square_declared (positive : 0 < extent) (within : extent ≤ ceiling) :
     Declarations.Real.DeclaresAll ceiling (squareDeclarations extent)

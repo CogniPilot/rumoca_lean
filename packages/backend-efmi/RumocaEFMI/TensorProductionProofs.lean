@@ -20,14 +20,13 @@ open Rumoca.CTensor.ProgramFixture
 The DoStep method's derivative call supplies the readable input register `u` for
 both the (unused) state register and the input register of the square right-hand
 side. The prepared derivative the entry computes is therefore the elementwise
-product `u .* u`, which is exactly the tensor Algorithm Code derivative method's
-denotation. This holds for every rank, extent, arithmetic interpretation and
+product `u * u`, the pointwise product the tensor Algorithm Code DoStep
+assigns to `x`. This holds for every rank, extent, arithmetic interpretation and
 input, so no backend can substitute a different derivative. -/
 theorem doStep_derivative_refines (shape : Shape) (ops : ScalarOps α) (zero one : α)
     (input : Value α shape) :
     (squareKernel shape).problem.rhs ops zero one input input =
-      (derivativeExpr shape).eval ops input :=
-  (square_derivative_refines shape ops zero one input input).symm
+      BinaryOp.eval ops .mul input input := rfl
 
 /-! ### The Jacobian output computes the diagonal Jacobian
 
@@ -62,10 +61,10 @@ structure Contract (productionC : String) : Prop where
   /-- The certified kernel entries (initial, derivative, diagonal) carry their
   tokenization, execution and storage contracts and their source byte identity. -/
   kernel : IVPEntry.ArtifactContract IVPEntry.sources IVPEntry.jacobianDiagSource
-  /-- The derivative method computes the prepared derivative `u .* u`, which is
-  the tensor Algorithm Code derivative method's denotation, for every shape. -/
+  /-- The derivative method computes the prepared derivative, the pointwise
+  product `u * u`, for every shape. -/
   derivative : ∀ (shape : Shape) {α} (ops : ScalarOps α) (zero one : α) (input : Value α shape),
-    (squareKernel shape).problem.rhs ops zero one input input = (derivativeExpr shape).eval ops input
+    (squareKernel shape).problem.rhs ops zero one input input = BinaryOp.eval ops .mul input input
   /-- The Jacobian output computes the doubled input `u + u`, the diagonal the
   scratch-free Jacobian entry materializes, for every shape. -/
   jacobian : ∀ (shape : Shape) {α} (ops : ScalarOps α) (zero one : α) (input : Value α shape),

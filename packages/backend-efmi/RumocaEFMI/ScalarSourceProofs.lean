@@ -9,31 +9,34 @@ noncomputable section
 namespace Rumoca.EFMI
 open GALEC.Elaboration
 
-structure ScalarSourceSemantics (parsed : GALEC.Syntax.Block)
+structure ScalarSourceSemantics (parsed : GALEC.AST.Block)
     (block : GALEC.Block Tensor.scalar) : Prop where
-  resolved : GALEC.Syntax.Resolved parsed
+  source : parsed = Scalar.source "UnitIntegrator" "x" "samplePeriod"
+  prepared : ∀ ceiling, Block.Prepares ceiling parsed
+    (Scalar.result "UnitIntegrator" "x" "samplePeriod")
   startup_prepared : ∀ ceiling,
-    Methods.Preparation.fromBlock (.literal "Startup") Capabilities.Initialization.role ceiling
-      (GALEC.ProfileProjection.ofScalar parsed) = some (Scalar.startupResult parsed)
+    Methods.Preparation.fromBlock (.ident "Startup") Capabilities.Initialization.role ceiling
+      parsed = some (Scalar.startupResult "x" "samplePeriod")
   recalibrate_prepared : ∀ ceiling,
-    Methods.Preparation.fromBlock (.literal "Recalibrate") Capabilities.DoStep.role ceiling
-      (GALEC.ProfileProjection.ofScalar parsed) = some (Scalar.recalibrateResult parsed)
+    Methods.Preparation.fromBlock (.ident "Recalibrate") Capabilities.DoStep.role ceiling
+      parsed = some (Scalar.recalibrateResult "x" "samplePeriod")
   step_prepared : ∀ ceiling,
-    Methods.Preparation.fromBlock (.literal "DoStep") Capabilities.DoStep.role ceiling
-      (GALEC.ProfileProjection.ofScalar parsed) = some (Scalar.stepResult parsed)
+    Methods.Preparation.fromBlock (.ident "DoStep") Capabilities.DoStep.role ceiling
+      parsed = some (Scalar.stepResult "x" "samplePeriod")
   execution : ∀ ceiling method (before after : GALEC.UnitProfile.State Binary64.Value),
-    Scalar.StateBridge.SourceExec parsed ceiling Solve.Tensor.Finite.Result
+    Scalar.StateBridge.SourceExec "x" "samplePeriod" ceiling Solve.Tensor.Finite.Result
       Binary64.positiveZero Binary64.one method before after ↔
       after = GALEC.UnitProfile.execute block Binary64.positiveZero Binary64.one
         GALEC.roundedAdd method before
 
 theorem scalar_source_semantics (denotes : Denotes parsed block) :
     ScalarSourceSemantics parsed block := by
-  refine ⟨denotes.1, Scalar.startup_lowered parsed denotes.1,
-    Scalar.recalibrate_lowered parsed denotes.1, Scalar.step_lowered parsed denotes.1, ?_⟩
+  obtain ⟨rfl, rfl⟩ := denotes
+  have different : "x" ≠ "samplePeriod" := by decide
+  refine ⟨rfl, Scalar.prepared "UnitIntegrator" different, Scalar.startup_lowered _ different,
+    Scalar.recalibrate_lowered _ different, Scalar.step_lowered _ different, ?_⟩
   intro ceiling method before after
-  rw [denotes.2]
-  exact Scalar.StateBridge.sourceExec_iff_unitBlock parsed denotes.1 ceiling Solve.Tensor.Finite.Result
+  exact Scalar.StateBridge.sourceExec_iff_unitBlock different ceiling Solve.Tensor.Finite.Result
     Binary64.positiveZero Binary64.one GALEC.roundedAdd Scalar.finite_add_one method before after
 
 theorem render_source_semantics (model : GALEC.Model source) :

@@ -1,7 +1,7 @@
 import RumocaEFMI.CInterface
 import RumocaEFMI.Metadata
 import RumocaEFMI.ProductionProofs
-import GALECParser.Syntax
+import RumocaEFMI.AlgorithmProofs
 
 open _root_.Parser
 
@@ -19,10 +19,14 @@ def Variable.value (var : Variable) (state : GALEC.UnitProfile.State α) :
 def Variable.scalarValue (var : Variable) (state : GALEC.UnitProfile.State α) : α :=
   (var.value state)[0]'(by change 0 < 1; decide)
 
-/-- Logical variable names describe the actual emitted GALEC declarations. -/
+/-- Logical variable names are the declared names of the parsed emitted GALEC
+block. -/
 theorem algorithm_variables :
-    Variable.state.name = GALEC.Syntax.unit.state ∧
-    Variable.clock.name = GALEC.Syntax.unit.clock := ⟨rfl, rfl⟩
+    ∃ parsed, GALEC.Syntax.parse unitSource = .ok parsed ∧
+      parsed.ast = GALEC.Elaboration.Scalar.source "UnitIntegrator" Variable.state.name
+        Variable.clock.name := by
+  obtain ⟨parsed, accepted, same⟩ := unitAlgorithm.parsed
+  exact ⟨parsed, accepted, same.trans unit_ast⟩
 
 theorem fields_declared (var : Variable) :
     ⟨var.name, var.scalar⟩ ∈ CHeader.stateFields := by

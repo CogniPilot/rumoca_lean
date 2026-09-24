@@ -18,12 +18,12 @@ bounds. These are reusable prerequisites, not production source admission or
 normative Startup permission checks.
 
 `Elaboration.Block.Source` parses once and prepares that exact tree with
-`Block.fromBlock` under `Static.Bounded.integerCeiling`, the largest 32-bit eFMI
-Integer; success holds iff the tree has source provenance and prepares to the
+`Block.fromBlock` under `Static.Bounded.integerCeiling`, the adopted target
+Integer bound (`int32_t` in the Production C interfaces); success holds iff the tree has source provenance and prepares to the
 result. Static extents, bounds and axes admit only canonical decimal numerals
 (`Static.Numeral`); declaration extents are evaluated without any shape lookup.
-`Declarations.Real.Legal` confines directions to the public section and
-`constant` to the protected section. `Elaboration.Scalar` states the scalar unit
+`Declarations.Real.Legal` confines the `input` and `output` kinds to the leading
+(public) section and `constant` to the protected section. `Elaboration.Scalar` states the scalar unit
 block as a source tree and proves its whole-block preparation and method
 semantics for arbitrary distinct state and clock names.
 

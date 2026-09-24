@@ -36,7 +36,7 @@ static void one_case(double first, double second, double square_first,
     Model model;
     uint64_t after;
   } guarded = {UINT64_C(0x123456789abcdef0),
-               {{first, second}, {17.0, 19.0}, {23.0, 29.0, 31.0, 37.0}, 41.0, -7},
+               {{first, second}, {17.0, 19.0}, {23.0, -0.0, 31.0, 37.0}, 41.0, -7},
                UINT64_C(0xfedcba9876543210)};
   Model *model = &guarded.model;
   const double input[2] = {first, second};

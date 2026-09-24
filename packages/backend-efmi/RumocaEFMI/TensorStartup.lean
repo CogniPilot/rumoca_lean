@@ -94,19 +94,19 @@ theorem return_zero (p : CCalls.Program) (objects : Objects) (heap : Heap) (base
     simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, CLoops.nextWith, typed, bind, Option.bind_some, pure]
   exact .next ret (.next rfl (.refl _))
 
-def initialArgs : List Expr := [selfField squareVar.name, .nat squareVar.volume]
-def afterInitial : List Stmt :=
+/-- The Startup body after both initializer calls. -/
+def afterInitialization : List Stmt :=
   [.assign (selfField clockName) (.cast "double" (.nat 1)), .ret (some (selfField statusName))]
 
 theorem initial_arguments (objects : Objects) (heap : Heap) (base : Address)
     (storage : AllocatedStorage objects heap base) (env : CBody.Locals)
     (bound : env "self" = some (.pointer (some base))) :
     letI : CInterface := NumericalInterface.interface
-    arguments (expressions objects) env heap initialArgs =
+    arguments (expressions objects) env heap squareInitializerArgs =
       some [.pointer (some (base.member squareVar.name)), .integer squareVar.volume] := by
   letI : CInterface := NumericalInterface.interface
   have output := (TensorArrayMembers.array_argument storage.represents squareVar (by simp [modelVars]) bound).1
-  simp only [initialArgs, arguments, CCalls.argumentsWith, expressions, declared,
+  simp only [squareInitializerArgs, arguments, CCalls.argumentsWith, expressions, declared,
     CBody.declaredExpressions, output, CBody.evalWith,
     bind, Option.bind_some, pure]
 
@@ -114,7 +114,7 @@ theorem clock_step (p : CCalls.Program) (objects : Objects) (heap : Heap) (base 
     (storage : AllocatedStorage objects heap base) (env : CBody.Locals) (types : CLoops.Types)
     (bound : env "self" = some (.pointer (some base))) (stack : CCalls.Typed.Continuation) :
     letI : CInterface := NumericalInterface.interface
-    next (expressions objects) p (.body (.running afterInitial env types heap) statusAlias stack) =
+    next (expressions objects) p (.body (.running afterInitialization env types heap) statusAlias stack) =
       some (.body (.running [.ret (some (selfField statusName))] env types (clocked heap base)) statusAlias stack) := by
   letI : CInterface := NumericalInterface.interface
   have value : typedEval (expressions objects) env types heap (.cast "double" (.nat 1)) =
@@ -123,7 +123,7 @@ theorem clock_step (p : CCalls.Program) (objects : Objects) (heap : Heap) (base 
     simp [expressions, declared, CBody.declaredExpressions, selfField, CBody.lvalueWith, CBody.evalWith,
       CBody.resolve, bound, Value.address]
   simp only [selfField] at address
-  simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, afterInitial, selfField, CLoops.nextWith, value, address, clock_store storage.clock,
+  simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, afterInitialization, selfField, CLoops.nextWith, value, address, clock_store storage.clock,
     bind, Option.bind_some, pure]
 
 /-- Ordinary call result on the SAME actual ten-tree table and declared
@@ -210,24 +210,17 @@ theorem after_jacobian (storage : AllocatedStorage objects heap base)
     simpa only [Address.index_zero] using PublicRHS.member_preserved frame
       (show statusName ≠ jacobianVar.name by decide +kernel) 0
 
-def jacobianArgs : List Expr := [selfField jacobianVar.name, .nat jacobianVar.volume]
-
 theorem jacobian_arguments (objects : Objects) (heap : Heap) (base : Address)
     (storage : AllocatedStorage objects heap base) (env : CBody.Locals)
     (bound : env "self" = some (.pointer (some base))) :
     letI : CInterface := NumericalInterface.interface
-    arguments (expressions objects) env heap jacobianArgs =
+    arguments (expressions objects) env heap jacobianInitializerArgs =
       some [.pointer (some (base.member jacobianVar.name)), .integer jacobianVar.volume] := by
   letI : CInterface := NumericalInterface.interface
   have output := (TensorArrayMembers.array_argument storage.represents jacobianVar
     (by simp [modelVars]) bound).1
-  simp only [jacobianArgs, arguments, CCalls.argumentsWith, expressions, declared,
+  simp only [jacobianInitializerArgs, arguments, CCalls.argumentsWith, expressions, declared,
     CBody.declaredExpressions, output, CBody.evalWith, bind, Option.bind_some, pure]
-
-/-- The two initializer calls of the Startup body: `x`, then `J`. -/
-def initializationPrefix : List Stmt :=
-  [.eval (.call (.id "rumoca_initialize") initialArgs),
-   .eval (.call (.id "rumoca_initialize") jacobianArgs)]
 
 structure InitializationOutcome (objects : Objects) (before after : Heap) (base : Address) : Prop where
   storage : AllocatedStorage objects after base
@@ -247,8 +240,8 @@ theorem InitializationOutcome.member_frame (h : InitializationOutcome objects be
   h.frame _ (fun j _ => Address.fields_separate base name squareVar.name notSquare i j)
     (fun j _ => Address.fields_separate base name jacobianVar.name notJacobian i j)
 
-/-- Both existing initializer calls execute under the actual numerical table.
-No old finite reads or initialization of the input are required. The arbitrary
+/-- The initializer calls for `x` and `J` execute under the actual numerical
+table. They require neither finite prior values nor an initialized input. The arbitrary
 tail is restored with unchanged caller locals, types, return type and stack. -/
 theorem initialization_executes (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap)
     (base : Address) (storage : AllocatedStorage objects heap base)
@@ -286,11 +279,11 @@ theorem initialization_executes (unusedKernel : CSyntax.Program) (objects : Obje
         (show inputVar.name ≠ jacobianVar.name by decide +kernel) i).trans
         (PublicRHS.member_preserved xFrame (show inputVar.name ≠ squareVar.name by decide +kernel) i),
       fun q outsideX outsideJ => (jFrame q outsideJ).trans (xFrame q outsideX)⟩
-  have first := invoke_reaches (expressions objects) (program unusedKernel) xRan initialArgs
-    (.eval (.call (.id "rumoca_initialize") jacobianArgs) :: tail) env types resultType stack
+  have first := invoke_reaches (expressions objects) (program unusedKernel) xRan squareInitializerArgs
+    (.eval (.call (.id "rumoca_initialize") jacobianInitializerArgs) :: tail) env types resultType stack
     (by decide +kernel) unshadowed (by rfl)
     (initial_arguments objects heap base storage env bound)
-  have second := invoke_reaches (expressions objects) (program unusedKernel) jRan jacobianArgs
+  have second := invoke_reaches (expressions objects) (program unusedKernel) jRan jacobianInitializerArgs
     tail env types resultType stack (by decide +kernel) unshadowed (by rfl)
     (jacobian_arguments objects xHeap base xStorage env bound)
   exact ⟨jHeap, outcome, first.trans second⟩
@@ -335,7 +328,7 @@ theorem startup_body (unusedKernel : CSyntax.Program) (objects : Objects) (heap 
   letI : CInterface := NumericalInterface.interface
   obtain ⟨initialized, outcome, initializedRan⟩ := initialization_executes unusedKernel objects
     (cleared heap base) base storage.after_clear env types statusAlias bound unshadowed
-    afterInitial stack
+    afterInitialization stack
   let finalHeap := clocked initialized base
   have finalStorage : AllocatedStorage objects finalHeap base := after_clock outcome.storage
   have finalSquare : Reads finalHeap (base.member squareVar.name)
@@ -365,7 +358,7 @@ theorem startup_body (unusedKernel : CSyntax.Program) (objects : Objects) (heap 
     objects env types heap (cleared heap base) base bound storage.clear_store
   have start : next (expressions objects) (program unusedKernel)
       (.body (.running startupFunction.body env types heap) statusAlias stack) =
-      some (.body (.running (initializationPrefix ++ afterInitial) env types (cleared heap base))
+      some (.body (.running (initializationPrefix ++ afterInitialization) env types (cleared heap base))
         statusAlias stack) := by
     simp only [startup_method, next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, first]
     rfl

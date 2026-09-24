@@ -7,9 +7,12 @@ namespace Rumoca.GALEC.Elaboration.Static.Bounded
 open _root_.Parser
 open Rumoca.Tensor Elaboration
 
-/-- Target static Integer ceiling: the largest eFMI Integer, a 32-bit two's
-complement value (eFMI 1.0.0 Beta 1 3.2.6 L-2). Static extents, bounds and
-axes elaborate under this ceiling; smaller ceilings remain proof parameters. -/
+/-- Target static Integer ceiling: the largest value of the target Integer
+representation, `int32_t` in the Production C interfaces. It is an adopted
+target-profile constant; eFMI 1.0.0 Beta 1 3.2.6 L-2 only makes static
+evaluation target-dependent and does not state this value. Static extents,
+bounds and axes elaborate under this ceiling; smaller ceilings remain proof
+parameters. -/
 def integerCeiling : Nat := 2147483647
 
 def fit (ceiling value : Nat) : Option Nat :=

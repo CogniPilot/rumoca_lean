@@ -11,23 +11,23 @@ open Rumoca.Tensor Rumoca.Solve.Tensor
 
 /-- Independent writable-state condition, not an invocation of the classifier. -/
 def Writable (declaration : Declarations.Real.Descriptor) : Prop :=
-  declaration.variability = .variable ∧ declaration.direction ≠ .input
+  declaration.kind ≠ .input ∧ declaration.kind ≠ .constant
 
 def role (declaration : Declarations.Real.Descriptor) : Layout.Role :=
-  match declaration.direction, declaration.variability with
-  | .input, _ | _, .constant => .readOnly
-  | _, .variable => .writable
+  match declaration.kind with
+  | .input | .constant => .readOnly
+  | .variable | .output => .writable
 
 theorem role_writable_iff (declaration : Declarations.Real.Descriptor) :
     role declaration = .writable ↔ Writable declaration := by
-  obtain ⟨name, visibility, direction, variability, shape⟩ := declaration
-  cases direction <;> cases variability <;> simp [role, Writable]
+  obtain ⟨name, visibility, kind, shape⟩ := declaration
+  cases kind <;> simp [role, Writable]
 
 theorem role_readOnly_iff (declaration : Declarations.Real.Descriptor) :
     role declaration = .readOnly ↔
-      declaration.direction = .input ∨ declaration.variability = .constant := by
-  obtain ⟨name, visibility, direction, variability, shape⟩ := declaration
-  cases direction <;> cases variability <;> simp [role]
+      declaration.kind = .input ∨ declaration.kind = .constant := by
+  obtain ⟨name, visibility, kind, shape⟩ := declaration
+  cases kind <;> simp [role]
 
 def fields (declarations : List Declarations.Real.Descriptor) : List Layout.Field :=
   declarations.map fun declaration => ⟨declaration, role declaration⟩

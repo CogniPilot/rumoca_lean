@@ -17,6 +17,8 @@ import Tests.ProductionChecks.TensorPublicJacobian
 import Tests.ProductionChecks.TensorPublicRHS
 import Tests.ProductionChecks.TensorPublicStorage
 import Tests.ProductionChecks.TensorStartup
+import Tests.ProductionChecks.TensorAlgorithmProofs
+import Tests.ProductionChecks.TensorSourceMethods
 import RumocaEFMI.CInterface
 import RumocaEFMI.AlgorithmProofs
 import RumocaEFMI.TensorAlgorithmProofs
@@ -181,16 +183,18 @@ end Rumoca.EFMI.ProductionChecks
 
 #audit axioms Rumoca.EFMI.grammar_processed
 
+#audit axioms Rumoca.EFMI.unitAlgorithm.lexed
+#audit axioms Rumoca.EFMI.unitAlgorithm.checked
+#audit axioms Rumoca.EFMI.unitAlgorithm.structure_built
+#audit axioms Rumoca.EFMI.unitAlgorithm.denotes
+#audit axioms Rumoca.EFMI.unitAlgorithm.witness
+#audit axioms Rumoca.EFMI.unitAlgorithm.parsed
+#audit axioms Rumoca.EFMI.unit_ast
+#audit axioms Rumoca.EFMI.render_parses
+#audit axioms Rumoca.EFMI.Denotes
 #audit axioms Rumoca.EFMI.render_denotes
 
--- Tensor square Algorithm Code product: refinement of the prepared kernel and
--- the actual grammar processing of the emitted derivative and Jacobian text.
-#audit axioms Rumoca.EFMI.square_derivative_refines
 #audit axioms Rumoca.EFMI.square_jacobian_coefficients
-#audit axioms Rumoca.EFMI.tensor_lexical
-#audit axioms Rumoca.EFMI.tensor_parsed
-#audit axioms Rumoca.EFMI.tensor_render_parses
-#audit axioms Rumoca.EFMI.tensor_render_denotes
 
 #audit axioms Rumoca.EFMI.TensorProduction.production_correct
 #audit axioms Rumoca.EFMI.TensorProduction.doStep_derivative_refines

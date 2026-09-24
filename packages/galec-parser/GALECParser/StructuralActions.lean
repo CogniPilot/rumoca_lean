@@ -11,8 +11,8 @@ open _root_.Parser LALR.Frontend
 
 def Result : String → Type
   | "block" => AST.Block
-  | "declaration" => AST.Visibility → AST.Declaration
-  | "direction" => AST.Direction
+  | "declaration" => AST.Declaration
+  | "direction" => AST.Kind
   | "primitive_type" | "additive_operator" | "multiplicative_operator" => Token
   | "method" => AST.Method
   | "statement" | "single_assignment" | "for_loop" => AST.Statement
@@ -27,42 +27,33 @@ def lit (s : String) : Action Token := .terminal (.literal s)
 def ident : Action Token := .terminal .ident
 local infixr:60 " ⋄ " => StructuralActions.Action.seq
 
-/-- Declarations before `protected` are public; the section supplies visibility. -/
-def blockSyntax (name : Token) (visible : List (AST.Visibility → AST.Declaration))
-    (hidden : List (AST.Visibility → AST.Declaration)) (methods : List AST.Method)
-    (endName : Token) : AST.Block :=
-  ⟨name, visible.map (· .public) ++ hidden.map (· .protected), methods, endName⟩
-
+/-- The two declaration sections stay separate lists, in source order. -/
 def block : Action AST.Block :=
   .map (fun (_, name, visible, _, hidden, _, methods, _, endName, _) =>
-    blockSyntax name visible hidden methods endName)
+    (⟨name, visible, hidden, methods, endName⟩ : AST.Block))
     (lit "block" ⋄ ident ⋄ .many (.ref "declaration") ⋄ lit "protected" ⋄
       .many (.ref "declaration") ⋄ lit "public" ⋄ .many (.ref "method") ⋄
       lit "end" ⋄ ident ⋄ lit ";")
 
 /-- A direction and `constant` are mutually exclusive; absence of both is a
-local variable. Section legality is static semantics, not parsing. -/
-def declarationSyntax (kind : Option (AST.Direction × AST.Variability)) (typeName name : Token)
-    (extents : Option (Token × List AST.Expr × Token)) (visibility : AST.Visibility) :
-    AST.Declaration :=
-  let (direction, variability) := kind.getD (.local, .variable)
-  ⟨visibility, direction, variability, typeName, (extents.map fun parsed => parsed.2.1).getD [],
-    name⟩
+variable. Legality of a kind in its section is static semantics, not parsing. -/
+def declarationSyntax (kind : Option AST.Kind) (typeName name : Token)
+    (extents : Option (Token × List AST.Expr × Token)) : AST.Declaration :=
+  ⟨kind.getD .variable, typeName, (extents.map fun parsed => parsed.2.1).getD [], name⟩
 
-def declaration : Action (AST.Visibility → AST.Declaration) :=
+def declaration : Action AST.Declaration :=
   .map (fun (kind, typeName, name, extents, _) => declarationSyntax kind typeName name extents)
-    (.optional (.alt (.map (fun direction => (direction, .variable)) (.ref "direction"))
-        (.map (fun _ => (.local, .constant)) (lit "constant"))) ⋄
+    (.optional (.alt (.ref "direction") (.map (fun _ => AST.Kind.constant) (lit "constant"))) ⋄
       .ref "primitive_type" ⋄ ident ⋄
       .optional (lit "[" ⋄ .ref "expression_list" ⋄ lit "]") ⋄ lit ";")
 
-def direction : Action AST.Direction :=
+def direction : Action AST.Kind :=
   .alt (.map (fun _ => .input) (lit "input")) (.map (fun _ => .output) (lit "output"))
 
 def primitiveType : Action Token := .alt (lit "Real") (.alt (lit "Integer") (lit "Boolean"))
 
 def method : Action AST.Method :=
-  .map (fun (_, name, _, body, _, endName, _) => ⟨.public, name, body, endName⟩)
+  .map (fun (_, name, _, body, _, endName, _) => (⟨name, body, endName⟩ : AST.Method))
     (lit "method" ⋄ ident ⋄ lit "algorithm" ⋄ .many (.ref "statement") ⋄
       lit "end" ⋄ ident ⋄ lit ";")
 

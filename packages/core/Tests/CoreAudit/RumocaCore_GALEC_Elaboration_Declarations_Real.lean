@@ -16,5 +16,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Real.names_unique
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Real.source_names_unique
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Real.Legal
-#audit axioms Rumoca.GALEC.Elaboration.Declarations.Real.Legal.exclusive
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Real.legal_preserved

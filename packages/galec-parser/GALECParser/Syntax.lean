@@ -5,9 +5,8 @@ open _root_.Parser
 /-! GALEC lexical policy. Words are classified into reserved words and names;
 digit-initial runs are `Token.number`, whose grammar symbol is `IDENT`, so a
 number never becomes a name token. Method names are ordinary names. GALEC
-comments, quoted names, exponents and signed numerals are not scanned. The
-obsolete pointwise `.*` spelling has no token: `.` and `*` are separate
-symbols, so that spelling is rejected by the grammar. -/
+comments, quoted names, exponents and signed numerals are not scanned. `.*` is
+not a token: `.` and `*` are separate symbols (`no_pointwise_token`). -/
 namespace Rumoca.GALEC.Syntax
 
 def reserved : List String :=

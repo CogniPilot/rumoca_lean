@@ -20,7 +20,7 @@ formal parameter.
 
 This file resolves no names, solves no equations and selects no numerical
 policy. The prepared `Solve.PointwiseIVP` square kernel is the source of truth:
-the derivative method computes the prepared derivative `u .* u`, and the Jacobian
+the derivative method computes the prepared derivative `u * u` (pointwise), and the Jacobian
 output computes the dense diagonal Jacobian `diag(2*u)`; a backend cannot invent
 a different problem. Tensor rank and extents stay symbolic in every semantic
 theorem; the concrete extents appear only in the pinned artifact text. -/
@@ -72,7 +72,7 @@ bodies; each fragment is a certified render. -/
 
 /-- The shared tensor helpers and the prepared square IVP entries, in emission
 order. `rumoca_initialize` writes the zero state, `rumoca_rhs` writes the
-elementwise product `u .* u`, and `rumoca_square_jacobian_diag` writes the dense
+elementwise product `u * u`, and `rumoca_square_jacobian_diag` writes the dense
 diagonal Jacobian `diag(2*u)` with no coefficient buffer. -/
 def kernelPieces : List String :=
   ["#include <stddef.h>\n#include <stdint.h>\n",
@@ -128,14 +128,23 @@ def startupName : String := "TensorSquare_Startup"
 def recalibrateName : String := "TensorSquare_Recalibrate"
 def doStepName : String := "TensorSquare_DoStep"
 
+/-- Arguments of the initializer call for the state output `x`. -/
+def squareInitializerArgs : List Expr := [selfField squareVar.name, .nat squareVar.volume]
+
+/-- Arguments of the initializer call for the Jacobian output `J`. -/
+def jacobianInitializerArgs : List Expr := [selfField jacobianVar.name, .nat jacobianVar.volume]
+
+/-- The two initializer calls of the Startup body: `x`, then `J`. -/
+def initializationPrefix : List Stmt :=
+  [.eval (.call (.id "rumoca_initialize") squareInitializerArgs),
+   .eval (.call (.id "rumoca_initialize") jacobianInitializerArgs)]
+
 /-- Startup initializes the state output `x` and the Jacobian output `J` to
 positive zero through the prepared initializer entry, each with its own volume,
 then sets the sample period. -/
 def startupFunction : Function :=
   method startupName
-    [.eval (.call (.id "rumoca_initialize") [selfField squareVar.name, .nat squareVar.volume]),
-     .eval (.call (.id "rumoca_initialize") [selfField jacobianVar.name, .nat jacobianVar.volume]),
-     .assign (selfField clockName) (.cast "double" (.nat 1))]
+    (initializationPrefix ++ [.assign (selfField clockName) (.cast "double" (.nat 1))])
 
 /-- Recalibrate has no periodic clock work in the tensor square profile. -/
 def recalibrateFunction : Function := method recalibrateName []
@@ -143,7 +152,7 @@ def recalibrateFunction : Function := method recalibrateName []
 /-- DoStep computes the prepared derivative into the square output `x` and the
 dense diagonal Jacobian into `J`. The derivative entry's unused state register is
 pointed at the readable input `u`; the square right-hand side ignores it, so the
-written value is exactly `u .* u`. -/
+written value is exactly `u * u` (pointwise). -/
 def doStepFunction : Function :=
   method doStepName
     [.eval (.call (.id "rumoca_rhs")

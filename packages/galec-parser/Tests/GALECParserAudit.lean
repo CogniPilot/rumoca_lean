@@ -6,11 +6,13 @@ import GALECParser.Print
 import ProofAudit.Audit
 
 #audit axioms Rumoca.GALEC.AST.Reference.unindexed
+#audit axioms Rumoca.GALEC.AST.Block.declarations
 
 #audit axioms Rumoca.GALEC.Syntax.scanner_preserves_text
 #audit axioms Rumoca.GALEC.Syntax.scanner_preserves_numbers
 #audit axioms Rumoca.GALEC.Syntax.scanner_locations
 #audit axioms Rumoca.GALEC.Syntax.Parsed.locations_exist
+#audit axioms Rumoca.GALEC.Syntax.no_pointwise_token
 
 #audit axioms Rumoca.GALEC.Generated.safety_checked
 #audit axioms Rumoca.GALEC.Generated.execution_safe

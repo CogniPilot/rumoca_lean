@@ -7,22 +7,22 @@ namespace Rumoca.GALEC.Elaboration.Capabilities.Initialization
 open Elaboration Rumoca.Tensor Rumoca.Solve.Tensor
 
 def Writable (declaration : Declarations.Real.Descriptor) : Prop :=
-  declaration.direction ≠ .input
+  declaration.kind ≠ .input
 
 def role (declaration : Declarations.Real.Descriptor) : Layout.Role :=
-  match declaration.direction with
+  match declaration.kind with
   | .input => .readOnly
   | _ => .writable
 
 theorem role_writable_iff (declaration : Declarations.Real.Descriptor) :
     role declaration = .writable ↔ Writable declaration := by
-  obtain ⟨name, visibility, direction, variability, shape⟩ := declaration
-  cases direction <;> simp [role, Writable]
+  obtain ⟨name, visibility, kind, shape⟩ := declaration
+  cases kind <;> simp [role, Writable]
 
 theorem role_readOnly_iff (declaration : Declarations.Real.Descriptor) :
-    role declaration = .readOnly ↔ declaration.direction = .input := by
-  obtain ⟨name, visibility, direction, variability, shape⟩ := declaration
-  cases direction <;> simp [role]
+    role declaration = .readOnly ↔ declaration.kind = .input := by
+  obtain ⟨name, visibility, kind, shape⟩ := declaration
+  cases kind <;> simp [role]
 
 def fields (declarations : List Declarations.Real.Descriptor) : List Layout.Field :=
   Capabilities.Generic.fields role declarations

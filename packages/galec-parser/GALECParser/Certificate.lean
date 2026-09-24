@@ -1,6 +1,7 @@
 import GALECParser.Parser
 import Parser.LALR.ExactTree
 import Parser.LALR.ActionCertificate
+import Parser.Quotation
 import Lean
 
 /-! Kernel-checked parse certificates for concrete GALEC text. Native execution
@@ -9,18 +10,11 @@ reflexivity, and the typed-action result is certified by syntax-directed
 `Denotes` constructors. Quotation instances give no semantic authority. -/
 namespace Rumoca.GALEC.Certificate
 open Lean Elab Command
-open _root_.Parser
+open _root_.Parser Parser.Quotation
 
-deriving instance ToExpr for Parser.Token
-deriving instance ToExpr for Parser.Symbol
-deriving instance ToExpr for Parser.EBNF.Expr
-deriving instance ToExpr for Parser.LALR.Tree
-deriving instance ToExpr for Parser.LALR.Frontend.Structure.Value
 deriving instance ToExpr for AST.Expr, AST.Reference, AST.Component
 deriving instance ToExpr for AST.Statement
-deriving instance ToExpr for AST.Visibility
-deriving instance ToExpr for AST.Direction
-deriving instance ToExpr for AST.Variability
+deriving instance ToExpr for AST.Kind
 deriving instance ToExpr for AST.Declaration
 deriving instance ToExpr for AST.Method
 deriving instance ToExpr for AST.Block
@@ -63,25 +57,12 @@ theorem parse_of_certificates (source : String) (tokens : List Token)
   (Syntax.success_iff source ast).mpr
     (witness_of_certificates source tokens tree value ast lexed checked built denotes)
 
-private def quoteData {α : Type} [ToExpr α] (name : Name) (value : α) : CommandElabM Unit :=
-  liftTermElabM do
-    addDecl (.defnDecl {
-      name := name
-      levelParams := []
-      type := toTypeExpr α
-      value := toExpr value
-      hints := .abbrev
-      safety := .safe })
-
-private def checkEquation (name : Name) (type : TSyntax `term)
-    (right : TSyntax `term) : CommandElabM Unit :=
-  liftTermElabM do
-    let type ← Term.elabType type
-    let right ← Term.elabTerm right none
-    Term.synthesizeSyntheticMVarsNoPostponing
-    let type ← instantiateMVars type
-    let proof ← Meta.mkEqRefl (← instantiateMVars right)
-    addDecl (.thmDecl { name, levelParams := [], type, value := proof })
+/-- Native evaluation of the closed source term, used only to propose tokens,
+tree, structural value and AST. It is confined to this elaborator; a wrong
+result can only make certification fail, because every equation below is
+stated about the elaborated term itself and checked by the kernel. -/
+private unsafe def evaluateSource (source : Expr) : TermElabM String :=
+  Meta.evalExpr String (mkConst ``String) source
 
 /-- `certify_source name text` evaluates the closed `String` term `text`,
 proposes its tokens, tree, structural value and AST, and adds the kernel-checked
@@ -102,8 +83,7 @@ elab "certify_source " certificateName:ident text:term : command => do
       value := sourceExpr
       hints := .abbrev
       safety := .safe })
-  let source ← liftTermElabM do
-    unsafe Meta.evalExpr String (mkConst ``String) sourceExpr
+  let source ← liftTermElabM (unsafe evaluateSource sourceExpr)
   let tokens ← match Scanner.lex Syntax.scanner source with
     | .ok tokens => pure tokens
     | .error diagnostic => throwError "scanner rejected source: {diagnostic}"
@@ -121,10 +101,10 @@ elab "certify_source " certificateName:ident text:term : command => do
   let treeId := mkIdent (root.str "tree")
   let valueId := mkIdent (root.str "value")
   let astId := mkIdent (root.str "ast")
-  quoteData tokensId.getId tokens
-  quoteData treeId.getId tree
-  quoteData valueId.getId structuralValue
-  quoteData (α := AST.Block) astId.getId ast
+  quoteDefinition tokensId.getId tokens
+  quoteDefinition treeId.getId tree
+  quoteDefinition valueId.getId structuralValue
+  quoteDefinition (α := AST.Block) astId.getId ast
   let lexId := mkIdent (root.str "lexed")
   let checkedId := mkIdent (root.str "checked")
   let builtId := mkIdent (root.str "structure_built")

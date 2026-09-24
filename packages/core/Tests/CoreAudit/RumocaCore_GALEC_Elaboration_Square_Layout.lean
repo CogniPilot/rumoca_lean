@@ -1,6 +1,8 @@
 import RumocaCore.GALEC.Elaboration.Square.Layout
 import ProofAudit.Audit
 
+#audit axioms Rumoca.GALEC.Elaboration.Square.squarePublic
+#audit axioms Rumoca.GALEC.Elaboration.Square.squareProtected
 #audit axioms Rumoca.GALEC.Elaboration.Square.squareDeclarations
 #audit axioms Rumoca.GALEC.Elaboration.Square.squareFields
 #audit axioms Rumoca.GALEC.Elaboration.Square.square_declared

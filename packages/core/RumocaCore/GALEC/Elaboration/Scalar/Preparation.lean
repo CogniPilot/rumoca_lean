@@ -2,37 +2,42 @@ import RumocaCore.GALEC.Elaboration.Block.Preparation
 import RumocaCore.GALEC.Elaboration.Surface
 
 /-! The scalar unit block as a source tree, and its preparation by the generic
-whole-block preparer. `source` is the tree the parser produces for the scalar
-layout; it is proof data, not a runtime body matcher. The state and clock names
+whole-block preparer. `source` is a specification tree for the scalar layout,
+not a runtime body matcher; the parse of the emitted scalar text is shown equal
+to it where that text is certified. The state and clock names
 are arbitrary distinct names. No lifecycle or actual-artifact claim. -/
 namespace Rumoca.GALEC.Elaboration.Scalar
 open Elaboration Elaboration.Surface Rumoca.Tensor Rumoca.Solve.Tensor
 
 def startupMethod (state clock : String) : AST.Method :=
-  ⟨.public, .ident "Startup",
+  ⟨.ident "Startup",
     [.assign (stateReference state []) (.literal (.number "0.0")),
      .assign (stateReference clock []) (.literal (.number "1.0"))], .ident "Startup"⟩
 
 def recalibrateMethod : AST.Method :=
-  ⟨.public, .ident "Recalibrate", [], .ident "Recalibrate"⟩
+  ⟨.ident "Recalibrate", [], .ident "Recalibrate"⟩
 
 def stepMethod (state : String) : AST.Method :=
-  ⟨.public, .ident "DoStep",
+  ⟨.ident "DoStep",
     [.assign (stateReference state []) (.parens
       (.binary (.literal "+") (.reference (stateReference state [])) (.literal (.number "1.0"))))],
     .ident "DoStep"⟩
 
-def sourceDeclarations (state clock : String) : List AST.Declaration :=
-  [⟨.public, .output, .variable, .literal "Real", [], .ident state⟩,
-   ⟨.protected, .local, .constant, .literal "Real", [], .ident clock⟩]
+def stateDeclaration (state : String) : AST.Declaration :=
+  ⟨.output, .literal "Real", [], .ident state⟩
+
+def clockDeclaration (clock : String) : AST.Declaration :=
+  ⟨.constant, .literal "Real", [], .ident clock⟩
+
+def sourceDeclarations (state clock : String) : List (AST.Visibility × AST.Declaration) :=
+  [(.public, stateDeclaration state), (.protected, clockDeclaration clock)]
 
 def source (name state clock : String) : AST.Block :=
-  ⟨.ident name, sourceDeclarations state clock,
+  ⟨.ident name, [stateDeclaration state], [clockDeclaration clock],
     [startupMethod state clock, recalibrateMethod, stepMethod state], .ident name⟩
 
 def declarations (state clock : String) : List Declarations.Real.Descriptor :=
-  [⟨state, .public, .output, .variable, scalar⟩,
-   ⟨clock, .protected, .local, .constant, scalar⟩]
+  [⟨state, .public, .output, scalar⟩, ⟨clock, .protected, .constant, scalar⟩]
 
 def startupFields (state clock : String) : List Layout.Field :=
   Capabilities.Generic.fields Capabilities.Initialization.role (declarations state clock)

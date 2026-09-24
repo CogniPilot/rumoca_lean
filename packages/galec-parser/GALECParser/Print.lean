@@ -54,29 +54,28 @@ mutual
     | first :: rest => statement indent first ++ statements indent rest
 end
 
-def kind : AST.Direction → AST.Variability → String
-  | .input, _ => "input "
-  | .output, _ => "output "
-  | .local, .constant => "constant "
-  | .local, .variable => ""
+def kind : AST.Kind → String
+  | .variable => ""
+  | .input => "input "
+  | .output => "output "
+  | .constant => "constant "
 
 def declaration (d : AST.Declaration) : String :=
   let extents := match d.extents with
     | [] => ""
     | first :: rest => "[" ++ exprs (first :: rest) ++ "]"
-  "    " ++ kind d.direction d.variability ++ d.typeName.text ++ " " ++ d.name.text ++
-    extents ++ ";\n"
+  "    " ++ kind d.kind ++ d.typeName.text ++ " " ++ d.name.text ++ extents ++ ";\n"
 
-def declarations (visibility : AST.Visibility) (ds : List AST.Declaration) : String :=
-  String.join ((ds.filter (·.visibility = visibility)).map declaration)
+def declarations (ds : List AST.Declaration) : String :=
+  String.join (ds.map declaration)
 
 def method (m : AST.Method) : String :=
   "    method " ++ m.name.text ++ "\n    algorithm\n" ++ statements "        " m.body ++
     "    end " ++ m.endName.text ++ ";\n"
 
 def block (b : AST.Block) : String :=
-  "block " ++ b.name.text ++ "\n" ++ declarations .public b.declarations ++
-    "protected\n" ++ declarations .protected b.declarations ++
+  "block " ++ b.name.text ++ "\n" ++ declarations b.publicDeclarations ++
+    "protected\n" ++ declarations b.protectedDeclarations ++
     "public\n" ++ String.join (b.methods.map method) ++
     "end " ++ b.endName.text ++ ";\n"
 

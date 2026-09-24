@@ -1,0 +1,35 @@
+import RumocaEFMI.TensorAlgorithmProofs
+import ProofAudit.Audit
+#audit axioms Rumoca.EFMI.squareKernel
+#audit axioms Rumoca.EFMI.squareExtent
+#audit axioms Rumoca.EFMI.square_extent
+#audit axioms Rumoca.EFMI.squareStartup
+#audit axioms Rumoca.EFMI.squareDoStep
+#audit axioms Rumoca.EFMI.squareBlock
+#audit axioms Rumoca.EFMI.squareBlock_declarations
+#audit axioms Rumoca.EFMI.tensorAlgorithmSource
+#audit axioms Rumoca.EFMI.TensorAlgorithm.startupResult
+#audit axioms Rumoca.EFMI.TensorAlgorithm.recalibrateResult
+#audit axioms Rumoca.EFMI.TensorAlgorithm.stepResult
+#audit axioms Rumoca.EFMI.TensorAlgorithm.preparedResult
+#audit axioms Rumoca.EFMI.TensorAlgorithm.SourceExec
+#audit axioms Rumoca.EFMI.TensorAlgorithm.StartupSemantics
+#audit axioms Rumoca.EFMI.TensorAlgorithm.RecalibrateSemantics
+#audit axioms Rumoca.EFMI.TensorAlgorithm.StepSemantics
+#audit axioms Rumoca.EFMI.TensorAlgorithm.ADSemantics
+#audit axioms Rumoca.EFMI.TensorAlgorithm.SourceContract
+#audit axioms Rumoca.EFMI.TensorAlgorithm.source_contract
+#audit axioms Rumoca.EFMI.TensorAlgorithm.interface
+#audit axioms Rumoca.EFMI.TensorAlgorithm.square_prepared
+#audit axioms Rumoca.EFMI.TensorAlgorithm.prepared
+#audit axioms Rumoca.EFMI.TensorAlgorithm.square.lexed
+#audit axioms Rumoca.EFMI.TensorAlgorithm.square.checked
+#audit axioms Rumoca.EFMI.TensorAlgorithm.square.structure_built
+#audit axioms Rumoca.EFMI.TensorAlgorithm.square.denotes
+#audit axioms Rumoca.EFMI.TensorAlgorithm.square.witness
+#audit axioms Rumoca.EFMI.TensorAlgorithm.square.parsed
+#audit axioms Rumoca.EFMI.TensorAlgorithm.square_ast
+#audit axioms Rumoca.EFMI.TensorAlgorithm.emitted_parses
+#audit axioms Rumoca.EFMI.TensorAlgorithm.emitted_prepared
+#audit axioms Rumoca.EFMI.TensorAlgorithm.AlgorithmContract
+#audit axioms Rumoca.EFMI.TensorAlgorithm.algorithm_correct

@@ -11,7 +11,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.AllocatedMethods.complete
 #audit axioms Rumoca.EFMI.AllocatedMethods.initial_arguments
 #audit axioms Rumoca.EFMI.AllocatedMethods.initialization_executes
-#audit axioms Rumoca.EFMI.AllocatedMethods.initializationPrefix
+#audit axioms Rumoca.EFMI.TensorProduction.initializationPrefix
+#audit axioms Rumoca.EFMI.TensorProduction.squareInitializerArgs
+#audit axioms Rumoca.EFMI.TensorProduction.jacobianInitializerArgs
+#audit axioms Rumoca.EFMI.AllocatedMethods.afterInitialization
 #audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome
 #audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.mk
 #audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.storage
@@ -21,7 +24,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.frame
 #audit axioms Rumoca.EFMI.AllocatedMethods.InitializationOutcome.member_frame
 #audit axioms Rumoca.EFMI.AllocatedMethods.jacobian_arguments
-#audit axioms Rumoca.EFMI.AllocatedMethods.jacobianArgs
 #audit axioms Rumoca.EFMI.AllocatedMethods.recalibrate
 #audit axioms Rumoca.EFMI.AllocatedMethods.recalibrate_body_in
 #audit axioms Rumoca.EFMI.AllocatedMethods.recalibrate_in
