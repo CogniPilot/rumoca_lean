@@ -1,5 +1,33 @@
 # Exact verification contract
 
+**Tensor/constant Float64 explicit null guards (owner passed; full gate pending):**
+`TensorFloat64.basicReject`, shared by both profiles' getters/setters, now uses
+explicit equality for its two pointer leaves. The reference-count-equals-one
+policy, lazy order, final zero, failure message, later value-count check and
+zero-volume non-null policy are unchanged. It does not use the different scalar
+nullable-zero-count policy. All 98 old theorem statements, including private
+`basic_pass`, are retained. Two new helpers reuse owned CPointerConditions:
+complete condition-result equality (including failed evaluation) with explicit
+pointer bindings/null typing, then a fixed-interface specialization deriving the
+null type locally. No new public premise, storage access or contract weakening.
+
+One source/proof file matches the reviewed overlay. Its existing audit leaf adds
+five direct registrations (two new helpers, actual guard and two old entry proofs),
+retaining every old audit and the whitelist. Owner-v1/session30579 passed 4,338
+jobs, 5,171 complete approved reports, 18 exact selected roots, 2,665 frozen
+tracked inputs and four runner hashes. Main rechecked hashes/roots and read the
+complete independent source/runner/registration review. The earlier private
+three-module/18-root check had five warnings and reused provisional dependency
+caches; it is preparatory evidence, not an exhaustive import closure. D1's prose
+count was corrected from 99 to 98 and independently closed; no proof change.
+
+Baseline89972 captured the completed output-guard gate before adoption. Required
+full/post are pending: 717 selected roots (699 retained plus 18 disjoint), exactly
+four changed guard lines/eight pointer leaves across TensorSquare/ConstantRates,
+unchanged Integrator adapter, three numerical C and four eFMI Algorithm/C members.
+Evidence: `build/tensor-float64-null-gate/`, `build/tensor-float64-null-adoption/`
+and its independent review. No grammar/admission or standards finding is closed.
+
 **Shared output-pointer explicit null guards (full gate passed):**
 The shared Runtime guard now uses explicit null equality in discrete update,
 completed step, both count queries and DoStep for scalar/tensor/constant FMI.

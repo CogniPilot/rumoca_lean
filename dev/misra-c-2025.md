@@ -167,6 +167,17 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   candidate; an epsilon repair is not an equivalent fix, and the exact FMI time
   semantics must be preserved.
 - **Pointer comparisons (Rule 11.11, Rule 11.9).** Current bounded repair
+  also includes tensor/constant Float64 guards (owner passed; artifact gate
+  pending). The shared basicReject changes two pointer leaves, retaining the
+  one-reference/non-null-array policy and all 98 old theorem statements. New
+  helpers derive concrete null typing without strengthening public contracts.
+  Owner-v1/session30579 passed 4,338 jobs, 5,171 approved reports, all 18 selected
+  roots and frozen 2,665 tracked/four runner hashes. Independent review cleared
+  source and five additive audits; D1's old-theorem count is corrected to 98.
+  Full/post require 717 roots and exactly four guard lines/eight pointer leaves
+  across TensorSquare/ConstantRates, unchanged remaining selected code. No
+  guideline closure follows; evidence: `build/tensor-float64-null-gate/`.
+  The preceding fully gated repair
   now also includes shared output-pointer guards: 25 source/proof files use
   explicit null comparisons with full public/artifact contracts retained.
   Two generic helper statements name retained logical trees (same old domain

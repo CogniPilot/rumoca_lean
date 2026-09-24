@@ -3,6 +3,12 @@ import ProofAudit.Audit
 
 -- Axiom audit for the roots defined in RumocaFMI3.TensorFloat64Access.
 
+#audit axioms Rumoca.FMI3.TensorFloat64.basicReject
+#audit axioms Rumoca.FMI3.TensorFloat64.basic_condition_eq
+#audit axioms Rumoca.FMI3.TensorFloat64.basic_explicit_pass
+#audit axioms Rumoca.FMI3.TensorFloat64.guard_reaches
+#audit axioms Rumoca.FMI3.TensorFloat64.set_guard_reaches
+
 #audit axioms Rumoca.FMI3.TensorFloat64.getBody_closed
 #audit axioms Rumoca.FMI3.TensorFloat64.setBody_closed
 #audit axioms Rumoca.FMI3.TensorFloat64.validate_reaches

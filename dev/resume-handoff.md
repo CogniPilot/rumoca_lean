@@ -1,5 +1,41 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current tensor/constant Float64 repair — owner passed, full gate pending
+
+Applied reviewed tensor-float64-null production.patch plus audit.patch after
+signed output evidence commit `dd7fc57` and baseline89972 success. The one source
+file matches its reviewed overlay; one existing audit leaf adds five direct
+roots, retaining all prior audits. All 98 old theorem statements remain. The
+new generic condition equality preserves the complete Option result, including
+failure, under pointer bindings/null typing; the concrete helper derives the
+null type locally. Count-equals-one, non-null zero-volume arrays, later value
+count, full heaps/frames/failure/public/artifact contracts are unchanged.
+
+Owner-v1/session30579 finished0: 4,338 jobs, 5,171 complete approved reports,
+all 18 exact selected roots, 2,665 frozen tracked inputs and four runner hashes.
+Main rechecked hashes/roots and read the complete independent review. No source
+correction was needed. Private final-v1's three modules/18 roots (five warnings)
+used copied dependency caches, not an exhaustive closure. D1's README overcount
+was corrected to 98 and independently closed. Historical private input hashes
+include the pre-adoption source; do not rerun them against later intentional edits.
+
+Next after signed clean implementation commit: run in verification environment
+`build/tensor-float64-null-gate/full-gate.sh`, then post-audit.sh only after
+terminal0. Neither has passed this repair yet. Expected 717-root union retains
+699 prior names plus 18 disjoint selections. Whole-file comparison must show
+exactly four guard lines/eight pointer leaves across TensorSquare/ConstantRates;
+Integrator, three numerical C and four eFMI Algorithm/C members stay identical.
+Baseline-v1 is complete; do not recreate it. Check the ignored live checkpoint
+before starting anything: later continuations may already have launched a run.
+
+Aristotle/Astra is preparing the next state/derivative/nominal array-guard repair
+only in `build/tensor-array-null-adoption/`. No tracked/shared writes permitted
+during the gate. Preserve old logical count-pass helpers and add typed explicit
+counterparts, with the same matched-zero-volume non-null policy. Expected next
+scope is eight lines/eight pointer leaves across tensor/constant adapters; no
+next array repair adopted. Broader standards/native/essential-type findings
+remain open, tensor candidate promotion unapproved, and no push authorized.
+
 ## Current output-pointer repair — full gate passed
 
 Applied reviewed output-null production.patch plus audit.patch after signed
@@ -26,7 +62,7 @@ guard lines/14 pointer leaves. Three numerical C files and four eFMI Algorithm/C
 members stayed identical. Main read all three diffs and matrices and rechecked
 the five archive hashes. No overall compliance/native compilation proof follows.
 
-Next reviewed private repair: `build/tensor-float64-null-adoption/production.patch`
+Subsequently adopted repair (current status above): `build/tensor-float64-null-adoption/production.patch`
 SHA-256 `da85c2799c821d76fe6bcb8369ab06c33ca111eb4641e7b014dac25bb80837a8`
 changes only TensorFloat64Access: two pointer leaves, two reusable helpers and
 four proof applications; all 98 old theorem statements retained. Final-v1 passed
@@ -34,16 +70,12 @@ three selected modules/18 exact approved roots, ten selected-input/four output
 hashes; five warnings at retained proof sites. Copied caches outside the selection
 are not an exhaustive dependency closure. Independent review found no substantive
 issue; D1's prose overcount (99 vs 98) was corrected and independently closed.
-Main read the full patch/review and checked hashes/roots. Both agents are closed.
+Main read the full patch/review and checked hashes/roots. Those review tasks are complete.
 
-Before producing changed artifacts, run `build/tensor-float64-null-gate/baseline.sh`
-in the verification environment. Then adopt production.patch plus its separate
-audit.patch (five additive direct registrations in the existing audit leaf),
-run owner.sh with a fresh receipt, sign the implementation and run full/post.
-All four runners and registrations were independently reviewed. Predicted delta:
-four lines/eight pointer leaves across TensorSquare/ConstantRates Get/SetFloat64;
-Integrator, numerical C and eFMI members unchanged; selected union717. Do not
-substitute the different scalar zero-count policy. No next repair is adopted yet.
+Baseline89972 captured these artifacts before the reviewed repair's adoption.
+All four runners and registrations were independently reviewed; current owner
+success and pending full/post are recorded above. Do not substitute the different
+scalar zero-count policy.
 Check `build/method-table-live-checkpoint.md` before acting: later continuations
 may have advanced this sequence. Standards/native/essential-type findings remain
 open, candidate promotion unapproved, and no push authorized.

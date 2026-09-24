@@ -2,6 +2,7 @@ import RumocaFMI3.TensorFloat64Copy
 import RumocaFMI3.Float64Get
 import RumocaFMI3.DerivativeCalls
 import RumocaFMI3.Float64Dispatch
+import RumocaC.PointerConditions
 
 /-! Tensor `fmi3GetFloat64` / `fmi3SetFloat64` bodies over a static tensor
 instance record, as package-checked products.
@@ -223,8 +224,43 @@ theorem d1_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
 /-- The initial request check: a single value reference and non-null arrays. -/
 def basicReject : Stmt :=
   Runtime.reject (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
-    Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")])
+    Runtime.eqv (Runtime.v "valueReferences") Expr.nullPointer,
+    Runtime.eqv (Runtime.v "values") Expr.nullPointer])
     "Invalid Float64 array lengths or pointers"
+
+/-- Explicit pointer leaves preserve the complete condition result, including
+failure, without assumptions on the count expression or pointed-to storage. -/
+theorem basic_condition_eq [interface : CInterface] (env : Locals) (heap : Heap)
+    (refs buffer : Option Address) (nullType : interface.types "void *" = some .pointer)
+    (refsBound : resolve env "valueReferences" = some (.pointer refs))
+    (valuesBound : resolve env "values" = some (.pointer buffer)) :
+    eval env heap (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
+      Runtime.eqv (Runtime.v "valueReferences") Expr.nullPointer,
+      Runtime.eqv (Runtime.v "values") Expr.nullPointer]) =
+    eval env heap (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
+      Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) := by
+  let addresses : String → Option Address := fun name =>
+    if name = "valueReferences" then refs else buffer
+  have bound : ∀ name ∈ ["valueReferences", "values"],
+      resolve env name = some (.pointer (addresses name)) := by
+    intro name member
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at member
+    rcases member with rfl | rfl <;> simp [addresses, refsBound, valuesBound]
+  have tail := CPointerConditions.explicit_missing_eq env heap
+    ["valueReferences", "values"] addresses bound nullType
+  change eval env heap (Runtime.any [
+    Runtime.eqv (Runtime.v "valueReferences") Expr.nullPointer,
+    Runtime.eqv (Runtime.v "values") Expr.nullPointer]) =
+    eval env heap (Runtime.any [
+      Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) at tail
+  change ((eval env heap (Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1))).bind
+    fun a => a.truth.bind fun b => if b then some (boolean true) else
+      (eval env heap (Runtime.any [
+        Runtime.eqv (Runtime.v "valueReferences") Expr.nullPointer,
+        Runtime.eqv (Runtime.v "values") Expr.nullPointer])).bind
+        fun c => c.truth.bind fun d => some (boolean d)) = _
+  rw [tail]
+  rfl
 
 /-- The count check between the dispatch and the copy loop. -/
 def countReject : Stmt :=
@@ -279,6 +315,20 @@ section
 variable [static : StaticLiterals]
 private local instance targetInterface : CInterface := cInterface static.addresses
 
+/-- Fixed FMI typing discharges null comparison locally for the shared guard. -/
+theorem basic_explicit_pass (heap : Heap) (p refs buffer : Address) (n m : UInt64)
+    (nref : n.toNat = 1) :
+    CBody.eval (guardEnv p refs buffer n m) heap
+      (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
+        Runtime.eqv (Runtime.v "valueReferences") Expr.nullPointer,
+        Runtime.eqv (Runtime.v "values") Expr.nullPointer]) = some (boolean false) := by
+  rw [basic_condition_eq _ _ (some refs) (some buffer) rfl
+    (by simp [guardEnv, parameters, CBody.bind, resolve])
+    (by simp [guardEnv, parameters, CBody.bind, resolve])]
+  simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n,
+    CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve,
+    CBody.comparison, boolean, Value.truth, nref]
+
 /-- The guard, executed in memory, reaches the typed statements after it. -/
 theorem guard_reaches (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
     (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer : Address) (n m : UInt64)
@@ -295,12 +345,7 @@ theorem guard_reaches (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
   have accepted := LifecycleGuard.accept (parameters (some p) (some refs) (some buffer) n m) heap p
     .get kind mode (basicReject :: getRest shape outputShape)
     (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm allowed
-  have hc : CBody.eval (guardEnv p refs buffer n m) heap
-      (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
-        Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) =
-      some (boolean false) := by
-    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
-      guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, nref]
+  have hc := basic_explicit_pass heap p refs buffer n m nref
   have prefix_run : CBody.run 4 (.running (getBody shape outputShape)
       (parameters (some p) (some refs) (some buffer) n m) heap) =
       some (.running (getRest shape outputShape) (guardEnv p refs buffer n m) heap) := by
@@ -1041,12 +1086,7 @@ theorem set_guard_reaches (shape : Tensor.Shape) (program : CCalls.Events.Progra
   have accepted := LifecycleGuard.accept (parameters (some p) (some refs) (some buffer) n m) heap p
     .setStart kind mode (basicReject :: setRest shape)
     (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm allowed
-  have hc : CBody.eval (guardEnv p refs buffer n m) heap
-      (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
-        Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) =
-      some (boolean false) := by
-    simp [Runtime.any, Runtime.either, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
-      guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, nref]
+  have hc := basic_explicit_pass heap p refs buffer n m nref
   have prefix_run : CBody.run 4 (.running (setBody shape)
       (parameters (some p) (some refs) (some buffer) n m) heap) =
       some (.running (setRest shape) (guardEnv p refs buffer n m) heap) := by
@@ -1653,7 +1693,7 @@ theorem get_fail_prefix (shape : Tensor.Shape) (outputShape : Option Tensor.Shap
   have s_reject : CBody.run 1 (.running (basicReject :: getRest shape outputShape) g heap) =
       some (.running (getRest shape outputShape) g heap) :=
     run_one (reject_false g heap _ "Invalid Float64 array lengths or pointers" (getRest shape outputShape)
-      (basic_pass heap p refs buffer n m nref))
+      (basic_explicit_pass heap p refs buffer n m nref))
   -- stage the two declarations
   have s_src : CBody.run 1 (.running (getRest shape outputShape) g heap) =
       some (.running (.declare "size_t" "expected" (Runtime.n 0) ::
@@ -1730,7 +1770,7 @@ theorem set_fail_prefix (shape : Tensor.Shape)
   have s_reject : CBody.run 1 (.running (basicReject :: setRest shape) g heap) =
       some (.running (setRest shape) g heap) :=
     run_one (reject_false g heap _ "Invalid Float64 array lengths or pointers" (setRest shape)
-      (basic_pass heap p refs buffer n m nref))
+      (basic_explicit_pass heap p refs buffer n m nref))
   have s_dst : CBody.run 1 (.running (setRest shape) g heap) =
       some (.running (.declare "size_t" "expected" (Runtime.n 0) ::
         setDispatch shape :: countReject :: setLoopSuffix)
