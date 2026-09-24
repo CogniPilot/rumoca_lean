@@ -1,6 +1,6 @@
-# Resume handoff — 2026-09-23 UTC
+# Resume handoff — 2026-09-24 UTC
 
-## Latest owned increment — full gate pending
+## Latest owned increment — full gate passed
 
 The reviewed reusable table-parametric mechanisms are now in existing EFMI
 owners: `TensorPublicRHS`, `TensorPublicJacobian`, `TensorDoStep`,
@@ -13,14 +13,18 @@ changes. Twelve new roots. Main implementation build passed 2,171 jobs; owner
 Independent adoption review is complete, no substantive findings; main read
 `build/method-table-adoption-review.md` fully. Both bounded agents are finished.
 
-Required next validation: `build/run-method-table-full-gate-v1.sh`, followed by
-`build/run-method-table-post-audit-v1.sh`. Check exit files/session state before
-launching; never restart an already live/completed gate. The post audit expects
-646 selected roots (634 retained + 12), unchanged FMI retained roots and identical
-scalar/tensor Algorithm/C members. Scripts require a clean committed tree.
-No full-gate success is claimed by this pending snapshot.
+Required full gate V2/session59980 and post-audit V2/session29027 completed
+successfully on `37d23c3`; both `.exit` files are 0. Do not restart them.
+2,665 frozen tracked inputs, 8,792 complete unchanged-whitelist reports, all
+646 selected roots (634 retained + 12), and four retained actual FMU roots
+passed. Three FMI matrices passed 75/75 functions and 526/650/526 cells with
+zero discrepancies/unexpected results. Scalar/tensor Algorithm and Production
+C members stayed byte-identical. Evidence: `build/method-table-full-gate-v2.*`,
+`method-table-post-audit-v2.*`, member/root/hash inventories with that prefix.
+V1 failed before invoking `lake test` because the outer shell lacked unzip;
+V2 ran inside the verification environment. No gate process remains live.
 
-After this gate, rebase downstream candidate composition onto the owned APIs
+Next, rebase downstream candidate composition onto the owned APIs
 and complete the coupled parser/emitter/actual-artifact repair, preserving all
 existing scalar/total-helper contracts. Frozen scratch receipts below describe
 their original snapshots: changed owned dependency hashes after this adoption
@@ -61,21 +65,27 @@ The next-stage candidate composition is now checked:
   README, `independent-review.md` (including DoStep addendum) and
   `handoff-review.md`. Earlier V1 errors were resolved without weakening claims.
 
-Current implementation next: adopt the reusable parametric helper/body/public
-proofs into their existing EFMI owners without changing emitted bytes or source
-admission. Keep old APIs as specializations; extract generic public completion
-into method-entry ownership to avoid a Startup/MethodEntry import cycle. Add
-all audit roots and run owner/required full gates. Do not import build modules
-into packages. Then complete coupled parser/source/C/actual-artifact repair,
+The reusable parametric adoption and full gate are now complete as recorded
+above. Two source-only follow-ups await checking:
+`build/galec-owned-method-composition-draft/` rebases the candidate all-method
+contract onto owned APIs (29 roots); `build/galec-candidate-numerical-draft/`
+retains the total encoded helper and universal refinement groups (11 roots).
+Neither is a passing receipt yet. The first directory's `rebuild.sh VERSION`
+checks the completed gate/post receipts and owner hashes, then rebuilds 18
+affected dependencies plus six new modules to a fresh overlay. Read its README
+and `build/method-table-live-checkpoint.md` for current session state before
+launching; compile success still needs frozen inputs/outputs, exact-root audit
+and independent review. Do not import build modules into packages.
+Then complete coupled parser/source/C/actual-artifact repair,
 preserving every existing scalar and tensor contract field. Ordinary expansion
 and production promotion remain blocked by the standards ledger. Scratch
 success is not actual-file/archive evidence or a sequential lifecycle theorem.
 
-## Latest wrap-up — start here
+## Historical wrap-up — superseded by active resumption above
 
-The user requested another wrap-up and handoff. Development is stopped; resume
-only when asked. This section supersedes all live-status/next-action statements
-below. The overall compiler goal remains incomplete.
+The user previously requested a wrap-up and subsequently resumed. The following
+records that earlier snapshot, not the current work state. The overall compiler
+goal remains incomplete.
 
 Before this documentation-only wrap-up, HEAD was `6ec6d8c`, with clean tracked
 files and `main` three commits ahead of `origin/main`. Latest full-gated code is

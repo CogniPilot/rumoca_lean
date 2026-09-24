@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Owned table-parametric method proofs (owner checks passed; full gate pending):**
+**Owned table-parametric method proofs (full gate passed):**
 The existing EFMI owners now contain numerical-extension RHS/Jacobian helpers,
 whole DoStep execution/behavior, checked public entry/completion, finite-primal
 DoStep with derived AD arithmetic, and table-independent Recalibrate execution.
@@ -13,8 +13,14 @@ The repaired tensor Startup/source/artifact promotion remains a separate task.
 Implementation check passed 2,171 jobs; `check-efmi check-compiler` owner run
 session66052 passed 3,502 jobs, 705 complete unchanged-whitelist reports, all
 12 new roots and ten frozen owner source/audit hashes. Evidence prefix:
-`build/method-table-`. The required full artifact gate is still pending for this
-increment; the latest completed production gate remains `bac8f61` below.
+`build/method-table-`. Required full gate V2/session59980 and post-audit
+V2/session29027 passed `37d23c3`, both terminal0: 2,665 frozen tracked inputs,
+8,792 complete unchanged-whitelist reports, all 646 selected roots and four
+retained actual FMU roots. All three FMI matrices passed 75/75 functions with
+526/650/526 behavior cells and zero discrepancies/unexpected results. Scalar
+and tensor Algorithm/Production C members stayed byte-identical. The V1 launcher
+failed before `lake test` because its outer shell lacked unzip; V2 ran inside
+the verification environment. This gate covers owned proofs, not scratch drafts.
 Main read the complete independent adoption review, which confirmed old API/
 outcome preservation and all registrations with no substantive finding:
 `build/method-table-adoption-review.md`.

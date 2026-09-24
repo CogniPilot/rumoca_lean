@@ -1,6 +1,6 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
-## Table-parametric methods — owner checks passed; full gate pending
+## Table-parametric methods — full gate passed
 
 The five existing EFMI owners for RHS/Jacobian helpers, DoStep, public method
 entry and Startup/Recalibrate now own the reusable table-parametric proofs.
@@ -10,8 +10,13 @@ DoStep; public calls additionally require exact method lookup. Finite primal
 execution derives AD coefficient arithmetic. Recalibrate requires allocated
 storage without a finite-input or numerical-table premise. Twelve roots are
 registered in the existing audit leaves. Owner session66052 passed 3,502 jobs,
-705 unchanged-whitelist reports and ten frozen input hashes. The required full
-artifact gate is pending. No emitted byte, grammar, admission or artifact
+705 unchanged-whitelist reports and ten frozen input hashes. Required full
+gate V2/session59980 and post-audit V2/session29027 passed `37d23c3`, both
+terminal0: 2,665 frozen inputs, 8,792 complete unchanged-whitelist reports,
+all 646 selected roots and four retained FMU roots. All three FMI matrices
+passed 75/75 functions, 526/650/526 cells and zero discrepancies/unexpected
+results. Algorithm/Production C members stayed byte-identical. Evidence prefix:
+`build/method-table-`. No emitted byte, grammar, admission or artifact
 contract changed, and repaired candidate Startup remains unpromoted.
 
 The preceding candidate all-method/source/physical-handoff proofs remain in

@@ -21,7 +21,13 @@ entry; Recalibrate needs only its definition lookup and allocated storage.
 All current production APIs specialize those proofs without changing their
 statements or outcomes. Twelve new roots passed owner checks (session66052,
 3,502 jobs, 705 complete whitelisted reports, ten frozen owner hashes).
-The required full gate is pending; evidence prefix `build/method-table-`.
+Required full gate V2/session59980 and post-audit V2/session29027 passed
+`37d23c3`, both terminal0: 2,665 frozen inputs, 8,792 complete unchanged-whitelist
+reports, all 646 selected roots and four retained FMU roots. Three FMI matrices
+passed 75/75 functions (526/650/526 cells), zero discrepancies/unexpected results.
+Scalar/tensor Algorithm and Production C members stayed byte-identical.
+Evidence prefix `build/method-table-`; V1 was a pre-gate launcher failure, not
+a `lake test` result. Candidate scratch is outside this production gate.
 This enables the coupled repair but does not promote the candidate Startup or
 close source/target, actual-artifact, lifecycle, input-policy, native or MISRA
 findings. Retain all prior admitted-subset clause mappings and open findings.
