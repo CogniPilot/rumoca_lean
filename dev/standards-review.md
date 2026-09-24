@@ -224,7 +224,7 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
-### GALEC loop cutover grammar - 2026-09-24; stage OPEN
+### GALEC loop cutover grammar - 2026-09-24; full gate passed, GJ01/GJ03 closed; stage OPEN for all other findings
 
 Recurring whole-subset review for the GALEC grammar actually adopted for the
 GJ01/GJ03 cutover. It supersedes the grammar shape reviewed in the prospective
@@ -236,14 +236,14 @@ core, emitter or artifact file is changed by this record.
 | Required record | Entire admitted subset, evidence and open obligations |
 | --- | --- |
 | Scope and identity | Unchanged admitted sources and products: scalar Integrator C/FMU/Algorithm Code/eFMU; fixed extent-two TensorSquare FMU/Algorithm Code/eFMU (no standalone C); pinned two-state ConstantRates FMU only. No new Modelica case, extent, rank, rate, callee, operator, type, method or literal value is admitted. Driven sources, constant eFMI and broader development parses stay outside production admission. |
-| Architecture continuity | One general start-symbol `block` grammar on the reusable in-tree LALR engine with signed resource credits, structural typed actions and generated certificates (476 canonical/125 LALR states, 21 rules, measured with the existing generator). Numbers become a scanner token class (`Token.number`, grammar symbol `IDENT`, Modelica precedent); method names become `IDENT`. Admission is core static semantics over the generic AST, not grammar enumeration or token-pattern recognition. Tensor Algorithm Code is printed from an AST assembled by core builders; loops keep rank/extents and never enumerate cells. The old profile/fixture parser path is deleted, not retained beside the new one. |
+| Architecture continuity | One general start-symbol `block` grammar on the reusable in-tree LALR engine with signed resource credits, structural typed actions and generated certificates (471 canonical/121 LALR states, 20 rules after C1, generated and kernel-checked). Numbers become a scanner token class (`Token.number`, grammar symbol `IDENT`, Modelica precedent); method names become `IDENT`. Admission is core static semantics over the generic AST, not grammar enumeration or token-pattern recognition. Tensor Algorithm Code is printed from an AST assembled by core builders; loops keep rank/extents and never enumerate cells. The old profile/fixture parser path is deleted, not retained beside the new one. |
 | Normative baseline | MLS 3.7, FMI 3.0.2 ME/CS, eFMI 1.0.0 Beta 1; pinned vendor schemas/headers unchanged. Extract/grammar hashes below verified at review time. TODO-labelled eFMI productions and rules stay labelled; each restricted interpretation is recorded below. No version migration or schema-only conformance inference. |
 | MLS | Modelica EBNF bytes, source semantics and all retained clause mappings of the prospective record are unchanged: lexical §§2.1-2.4/A.1, syntax A.2.1/A.2.2/A.2.4/A.2.6-A.2.7, equations §§8.2-8.3.1, `der`, Real §4.9.1, initialization §8.6. Source `jacobian` remains an explicit extension resolved upstream. S01/SR08 and ideal-Real/finite-storage limits remain open. |
 | FMI | No FMI source, adapter, kernel, XML or archive byte changes; FMI3 packages do not import GALEC. All three FMUs keep §§2.2.4, 2.3, 2.4, 2.4.7.2, 2.4.10, 2.5.1.3, 3.2.1 and 4.2.1 obligations and existing finite/history/native limitations. |
 | eFMI | §3.2.4 G-2/G-3 and TODO-labelled statement productions instantiated as a strict subset (clause table below). Tensor target `.*` (GJ03) and undeclared target `jacobian` (GJ01) are replaced by one-based indexed loops using `+` and `*` on scalar cells. Startup/Recalibrate/DoStep meanings, sample period and §3.2.5 signal behavior are unchanged. Chapters 2/3/5 container, manifest and Production Code correspondence must rebind the revised Algorithm Code. N01, block-direction TODO and the Startup input conflict remain. |
-| Formal correspondence | Required, not yet established on the new grammar: generated LALR certificates and action coverage for the 21 rules; typed elaboration of the actual parsed AST through the owned `Declarations`, `Expressions`, `Static`, `Loops`, `Methods` and `Block` checks with the named target Integer ceiling; composition with prepared square/AD execution and target execution (R1-R4). Scalar proofs are rebased onto `AST.Block` without changing scalar bytes. |
-| Artifact evidence | None yet for this grammar. Predicted deltas and byte-identity requirements are listed below; they are gate obligations, not results. The last passed gate (`8a4a433`) certifies only the pre-cutover artifacts, which still contain GJ01/GJ03. |
-| Decision | OPEN. Grammar edit may proceed as the authorized GJ01/GJ03 repair under the restrictions below. GJ01/GJ03 close only after the actual-artifact chain and required gate pass. Normative concerns C1-C4 below must be resolved in the same change. All other findings continue to block ordinary expansion and broad conformance/native/MISRA claims. |
+| Formal correspondence | Established at `8a3a513` (owner 4,497 jobs/7,222 reports; 1,263 required roots), as previously required: generated LALR certificates and action coverage for the 21 rules; typed elaboration of the actual parsed AST through the owned `Declarations`, `Expressions`, `Static`, `Loops`, `Methods` and `Block` checks with the named target Integer ceiling; composition with prepared square/AD execution and target execution (R1-R4). Scalar proofs are rebased onto `AST.Block` without changing scalar bytes. |
+| Artifact evidence | Required full gate and post-audit passed `8a3a513`, both exit 0: 2,672 tracked inputs, 9,129 approved reports, 1,263 selected roots, four retained FMU roots, three matrices 75/75 (526/650/526 cells) with zero discrepancies. FMU adapters/kernels and all scalar eFMU members byte-identical; tensor `model.alg` SHA-256 `3cf2432e75cc2a34996b6b66edf3ff7aa2401ebd8d3dbac2eb2f5a72c42b6f97`, `production.c` `631023dcec572d90cb61f04f2e51e8f169d12f9bcb30954fba002064041ff866` (one added Startup line), manifests changed only in checksum attributes, roster unchanged. Evidence: `build/galec-cutover-gate/`. |
+| Decision | GJ01 and GJ03 CLOSED by the actual-artifact chain and the passed gate; C1-C5 resolved in the same change (C1 grammar, C2 `Declarations.Real.Legal`, C3 `Static.Numeral`, C4 `loop_three_part`, C5 `no_pointwise_token`, each with a certified rejection). All other findings remain OPEN and continue to block ordinary expansion and broad conformance/native/MISRA claims. |
 
 Adopted grammar (map section 6.1 without `-` and `/`):
 
@@ -1009,7 +1009,10 @@ terminal success evidence and is not counted as a pass.
 Pinned MLS/FMI/eFMI coverage is unchanged. Classifier compatibility and frontend
 AST cutover remain open; this does not complete the recurring stage review.
 
-### GJ01 — open: undeclared tensor GALEC `jacobian`
+### GJ01 — closed 2026-09-24: undeclared tensor GALEC `jacobian`
+
+Closed by the GALEC loop cutover (`8a3a513`, full gate passed; see the stage record above): the emitted tensor Algorithm Code contains no `jacobian` call; the Jacobian is the matrix clear and diagonal scatter of prepared coefficients, certified against the parsed text and the actual archive. The original finding follows.
+
 
 The actual tensor Algorithm Code emitted by
 `RumocaEFMI/TensorAlgorithmCode.lean` calls
@@ -1059,7 +1062,10 @@ Beta 1's block-state direction grammar still contains TODOs. This bounded
 positional closure does not establish full declaration conformance. GJ01,
 GJ03 and N01 remain separate findings; no failure policy is changed.
 
-### GJ03 — open: nonstandard GALEC pointwise operator spelling
+### GJ03 — closed 2026-09-24: nonstandard GALEC pointwise operator spelling
+
+Closed by the GALEC loop cutover (`8a3a513`, full gate passed): the emitted text uses scalar `*` inside a bounded loop, the scanner never produces a `.*` token (`no_pointwise_token`), and the obsolete spelling is a certified rejection. The original finding follows.
+
 
 Main independently inspected the pinned Beta 1 §3.2.4 G-3.5–G-3.10 arithmetic
 production (`build/standards-review/efmi.txt`, lines2458–2470): its alternatives

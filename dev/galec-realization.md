@@ -1,5 +1,23 @@
 # Bounded tensor realization prerequisites — 2026-09-22
 
+## GALEC loop cutover — full gate passed (2026-09-24)
+
+The prerequisites below are now consumed by production. The general grammar
+(20 rules, 471/121 states), typed actions, `Print.block`, kernel certificates,
+core static checks (`Declarations.Real.Legal`, `Static.Numeral`,
+`Static.Bounded.integerCeiling`, `Block.fromSource`), the tensor source
+contract with the method correspondences (`TensorSourceMethods`), the repaired
+Production C Startup (x and J cleared, period set) and the rebased compiler
+contracts/checkers replace the profile parser, `TensorDenotes`,
+`tensorUnitSource`, the fixture certificates and the candidate drafts, which
+are deleted or retired. The missing Startup J initialization recorded below is
+repaired. Owner 4,497 jobs/7,222 reports; full gate `8a3a513` with
+2,672 inputs, 9,129 reports, 1,263 roots, four FMU roots and
+three clean matrices. Tensor `model.alg` `3cf2432e75cc2a34996b6b66edf3ff7aa2401ebd8d3dbac2eb2f5a72c42b6f97`, `production.c`
+`631023dcec572d90cb61f04f2e51e8f169d12f9bcb30954fba002064041ff866`, archive `767b8dd266552d811ef360857678b66500f8adda256026d188e27edf983f3997`; scalar and FMU products byte-identical.
+Evidence: `build/galec-cutover-gate/`. Scratch drafts under `build/galec-*`
+are historical; their receipts describe pre-cutover snapshots.
+
 ## Table-parametric methods — full gate passed
 
 The five existing EFMI owners for RHS/Jacobian helpers, DoStep, public method

@@ -1,5 +1,34 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current: GALEC loop cutover and fold-terminal repair both fully gated
+
+This section supersedes everything below. HEAD `8a3a513` plus the evidence
+commit carries: the fold-terminal repair (`630ef4a`, gate `build/fold-terminal-gate/`)
+and the GALEC loop cutover (ten commits, gate `build/galec-cutover-gate/`,
+owner-v1 4,497 jobs/7,222 reports/1,263 roots; full gate 2,672 inputs,
+9,129 reports, matrices 75/75, tensor `model.alg` `3cf2432e75cc2a34996b6b66edf3ff7aa2401ebd8d3dbac2eb2f5a72c42b6f97`,
+`production.c` `631023dcec572d90cb61f04f2e51e8f169d12f9bcb30954fba002064041ff866`, archive `767b8dd266552d811ef360857678b66500f8adda256026d188e27edf983f3997`). GJ01 and GJ03 are closed.
+The compiler has no profile parser, no fixture certificates and no parallel
+manifest path. Planning/review documents are under
+`~/.claude_documents/home/jgoppert/git/rumoca_lean/` (promotion map, decisions,
+four review files, fold-terminal design). Worktrees were removed after merge.
+
+Standing user rules (2026-09-24): no legacy or deprecated code; keep the
+compiler minimal (that is what keeps it verifiable); keep only what the final
+MSL-scale compiler will use; get each mechanism right the first time so it is
+not revisited; clean disk between milestones, not only at major ones. Run
+gates with `LC_ALL=C`; never `pkill` by a pattern that matches the operator
+shell; a receipt whose exit file was written by a termination trap is not a
+result (`full-v0-stopped`).
+
+Next slices, in order: (1) unify scalar Algorithm Code emission onto the same
+`AST.Block` builder and `Print.block`, deleting the core GALEC IR renderer,
+with scalar bytes unchanged; (2) MISRA Rule 10.1 residue `!isfinite(...)`
+(int result used as Boolean) and the two exact time-grid inequalities
+(deviation record or equivalent explicit comparison); (3) the recurring
+whole-subset standards review for N01 (numerical error signaling) before any
+ordinary grammar expansion. No push authorization.
+
 ## Current count-condition repair — full gate passed; next slice is the GALEC loop cutover
 
 This section supersedes the count status below. The required full gate

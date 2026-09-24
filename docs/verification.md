@@ -1,5 +1,55 @@
 # Exact verification contract
 
+**GALEC loop cutover (full gate passed; GJ01 and GJ03 closed):**
+The production GALEC grammar is the general block grammar of the stage record
+(20 rules, 471 canonical/121 LALR states): general declarations with one kind
+(variable, input, output, constant), IDENT method names, statement lists,
+single assignments, bounded `for` loops with explicit step, indexed local and
+`self` references, `size` queries, `+` and `*`. Numbers are a scanner token
+class of the generic engine (`Config.number`, default `.literal`, so Modelica
+and C scanners are byte-identical). Admission is static semantics in core:
+declaration kind per section, canonical numerals, the named target Integer
+ceiling, exact method selection, positive unit ranges, allowed operators and
+callees. The old profile parser, projections, compatibility and fixture
+modules are deleted; nothing remains beside the new mechanism.
+
+Tensor Algorithm Code is printed by `Print.block` from the block assembled by
+the core builders for the prepared model's extent (Startup clears x and J
+and sets the period; DoStep is the pointwise square, the matrix clear and
+the diagonal scatter with `u[k] + u[k]`). A kernel certificate proves the
+emitted text parses to that block; the source contract composes the parsed
+typed bodies with prepared square/AD execution and the authored C at the
+same heap, retaining the primal-square finite domain, addition order, signed
+zeros and positive off-diagonal zero. `coefficient_rejected` and
+`uncleared_rejected` show the contract rejects a changed coefficient and a
+missing clear. The scalar text is certified to parse to `Scalar.source`,
+so the scalar semantics are linked to the real parser; scalar bytes are
+unchanged. Production C Startup clears J (one added line). The compiler
+tensor contracts, manifests (one constructor over the explicit code strings),
+checkers and export consume this chain; ten certified rejections cover the
+C2/C3/C4 cases, the obsolete `.*`/`jacobian` spellings and mutants of bound,
+index, coefficient, order and clear. Independent reviews of each stage were
+read and their findings resolved before adoption.
+
+Owner-v1 (`lake build audit`) passed 4,497 jobs and 7,222 complete approved
+reports; 1,048 prior required roots are retained, 37 are removed with their
+deleted or renamed subjects, and 215 new roots are required: 1,263 in total.
+Required full gate `build/galec-cutover-gate/full-v1/` passed at `8a3a513`,
+exit 0, post-audit exit 0 under `LC_ALL=C`: 2,672 frozen tracked
+inputs, 9,129 complete approved reports, all 1,263 selected roots and
+four retained FMU roots. Three matrices passed 75/75 functions (526/650/526
+behavior cells), zero discrepancies/unexpected results. All three FMU
+adapters and kernels and every `Integrator.efmu` member are byte-identical to
+the baseline. `TensorSquare.efmu` keeps its 50-member roster: `model.alg` is
+the printed loop text (SHA-256 `3cf2432e75cc2a34996b6b66edf3ff7aa2401ebd8d3dbac2eb2f5a72c42b6f97`), `production.c` gains exactly the
+`rumoca_initialize((self->J), 4);` line (SHA-256 `631023dcec572d90cb61f04f2e51e8f169d12f9bcb30954fba002064041ff866`), and the three
+manifests differ only in checksum attributes. Archive SHA-256
+`767b8dd266552d811ef360857678b66500f8adda256026d188e27edf983f3997`. Historical entries below that cite `ProfileProjection`,
+`TensorDenotes`, `tensorUnitSource` or the positional GJ02 rejection proofs
+describe superseded mechanisms; the general grammar and the certified
+rejections replace them. N01, S01/SR08, the Startup input-initialization
+conflict, block-direction TODO and native/MISRA findings remain open.
+
 **Lifecycle guard disjunctions without integer fold terminals (full gate passed):**
 `Runtime.any` is now the shared ordered disjunction `CTree.Expr.disjunction`
 owned by backend-c: one operand is emitted as itself, several fold right as
