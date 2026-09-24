@@ -2,18 +2,24 @@ import Parser.LALR.EBNFActions
 import GALECParser.AST
 import GALECParser.Generated
 
-/-! The entire current GALEC grammar as typed, table-delegating actions.
+/-! The entire GALEC grammar as typed, table-delegating actions.
 Rule bodies contain only references to other rules, not their expansions.
 AST constructors retain the original Token payloads, including lexical category.
-There is no source-name resolution, inferred shape, or special jacobian action. -/
+There is no source-name resolution, inferred shape, or special call action. -/
 namespace Rumoca.GALEC.Structural
 open _root_.Parser LALR.Frontend
 
 def Result : String → Type
-  | "reference" => AST.Reference
-  | "product" => AST.Expr
-  | "startup" | "recalibrate" | "do_step" | "tensor_do_step" => AST.Method
-  | "block" | "tensor_block" | "program" => AST.Block
+  | "block" => AST.Block
+  | "declaration" => AST.Visibility → AST.Declaration
+  | "direction" => AST.Direction
+  | "primitive_type" | "additive_operator" | "multiplicative_operator" => Token
+  | "method" => AST.Method
+  | "statement" | "single_assignment" | "for_loop" => AST.Statement
+  | "reference" | "local_reference" | "state_reference" => AST.Reference
+  | "component_reference" => AST.Component
+  | "expression_list" => List AST.Expr
+  | "expression" | "term" | "primary" | "function_call" | "dimension_query" => AST.Expr
   | _ => Unit
 
 abbrev Action := StructuralActions.Action Token Result
@@ -21,84 +27,159 @@ def lit (s : String) : Action Token := .terminal (.literal s)
 def ident : Action Token := .terminal .ident
 local infixr:60 " ⋄ " => StructuralActions.Action.seq
 
+/-- Declarations before `protected` are public; the section supplies visibility. -/
+def blockSyntax (name : Token) (visible : List (AST.Visibility → AST.Declaration))
+    (hidden : List (AST.Visibility → AST.Declaration)) (methods : List AST.Method)
+    (endName : Token) : AST.Block :=
+  ⟨name, visible.map (· .public) ++ hidden.map (· .protected), methods, endName⟩
+
+def block : Action AST.Block :=
+  .map (fun (_, name, visible, _, hidden, _, methods, _, endName, _) =>
+    blockSyntax name visible hidden methods endName)
+    (lit "block" ⋄ ident ⋄ .many (.ref "declaration") ⋄ lit "protected" ⋄
+      .many (.ref "declaration") ⋄ lit "public" ⋄ .many (.ref "method") ⋄
+      lit "end" ⋄ ident ⋄ lit ";")
+
+/-- A direction and `constant` are mutually exclusive; absence of both is a
+local variable. Section legality is static semantics, not parsing. -/
+def declarationSyntax (kind : Option (AST.Direction × AST.Variability)) (typeName name : Token)
+    (extents : Option (Token × List AST.Expr × Token)) (visibility : AST.Visibility) :
+    AST.Declaration :=
+  let (direction, variability) := kind.getD (.local, .variable)
+  ⟨visibility, direction, variability, typeName, (extents.map fun parsed => parsed.2.1).getD [],
+    name⟩
+
+def declaration : Action (AST.Visibility → AST.Declaration) :=
+  .map (fun (kind, typeName, name, extents, _) => declarationSyntax kind typeName name extents)
+    (.optional (.alt (.map (fun direction => (direction, .variable)) (.ref "direction"))
+        (.map (fun _ => (.local, .constant)) (lit "constant"))) ⋄
+      .ref "primitive_type" ⋄ ident ⋄
+      .optional (lit "[" ⋄ .ref "expression_list" ⋄ lit "]") ⋄ lit ";")
+
+def direction : Action AST.Direction :=
+  .alt (.map (fun _ => .input) (lit "input")) (.map (fun _ => .output) (lit "output"))
+
+def primitiveType : Action Token := .alt (lit "Real") (.alt (lit "Integer") (lit "Boolean"))
+
+def method : Action AST.Method :=
+  .map (fun (_, name, _, body, _, endName, _) => ⟨.public, name, body, endName⟩)
+    (lit "method" ⋄ ident ⋄ lit "algorithm" ⋄ .many (.ref "statement") ⋄
+      lit "end" ⋄ ident ⋄ lit ";")
+
+def statement : Action AST.Statement :=
+  .map Prod.fst ((.alt (.ref "single_assignment") (.ref "for_loop")) ⋄ lit ";")
+
+def singleAssignment : Action AST.Statement :=
+  .map (fun (target, _, value) => AST.Statement.assign target value)
+    (.ref "reference" ⋄ lit ":=" ⋄ .ref "expression")
+
+/-- Two range expressions mean `start:stop`; three mean `start:step:stop`,
+so the middle expression of a three-part range is the step. -/
+def loopSyntax (binder : Token) (start second : AST.Expr)
+    (third : Option (Token × AST.Expr)) (body : List AST.Statement) : AST.Statement :=
+  match third with
+  | none => .forLoop binder start none second body
+  | some (_, stop) => .forLoop binder start (some second) stop body
+
+theorem loop_two_part (binder : Token) (start stop : AST.Expr) (body : List AST.Statement) :
+    loopSyntax binder start stop none body = .forLoop binder start none stop body := rfl
+
+theorem loop_three_part (binder colon : Token) (start step stop : AST.Expr)
+    (body : List AST.Statement) :
+    loopSyntax binder start step (some (colon, stop)) body =
+      .forLoop binder start (some step) stop body := rfl
+
+def forLoop : Action AST.Statement :=
+  .map (fun (_, binder, _, start, _, second, third, _, body, _, _) =>
+    loopSyntax binder start second third body)
+    (lit "for" ⋄ ident ⋄ lit "in" ⋄ .ref "expression" ⋄ lit ":" ⋄ .ref "expression" ⋄
+      .optional (lit ":" ⋄ .ref "expression") ⋄ lit "loop" ⋄ .many (.ref "statement") ⋄
+      lit "end" ⋄ lit "for")
+
 def reference : Action AST.Reference :=
-  .map (fun (base, _, field) => AST.Reference.unindexed base [field])
-    (lit "self" ⋄ lit "." ⋄ ident)
+  .alt (.ref "local_reference") (.ref "state_reference")
 
-def product : Action AST.Expr :=
-  .map (fun (left, op, right) => .binary op (.reference left) (.reference right))
-    (.ref "reference" ⋄ lit ".*" ⋄ .ref "reference")
+def localReference : Action AST.Reference :=
+  .map (fun component => ⟨component, []⟩) (.ref "component_reference")
 
-def startup : Action AST.Method :=
-  .map (fun (_, name, _, state, _, zero, _, clock, _, one, _, _, endName, _) =>
-    ⟨.public, name, [.assign state (.literal zero), .assign clock (.literal one)], endName⟩)
-    (lit "method" ⋄ lit "Startup" ⋄ lit "algorithm" ⋄
-      .ref "reference" ⋄ lit ":=" ⋄ lit "0.0" ⋄ lit ";" ⋄
-      .ref "reference" ⋄ lit ":=" ⋄ lit "1.0" ⋄ lit ";" ⋄
-      lit "end" ⋄ lit "Startup" ⋄ lit ";")
+def stateSyntax (selfToken : Token) (head : AST.Component)
+    (tail : List (Token × AST.Component)) : AST.Reference :=
+  ⟨⟨selfToken, []⟩, head :: tail.map Prod.snd⟩
 
-def recalibrate : Action AST.Method :=
-  .map (fun (_, name, _, _, endName, _) => ⟨.public, name, [], endName⟩)
-    (lit "method" ⋄ lit "Recalibrate" ⋄ lit "algorithm" ⋄
-      lit "end" ⋄ lit "Recalibrate" ⋄ lit ";")
+def stateReference : Action AST.Reference :=
+  .map (fun (selfToken, _, head, tail) => stateSyntax selfToken head tail)
+    (lit "self" ⋄ lit "." ⋄ .ref "component_reference" ⋄
+      .many (lit "." ⋄ .ref "component_reference"))
 
-def doStep : Action AST.Method :=
-  .map (fun (_, name, _, target, _, _, read, op, one, _, _, _, endName, _) =>
-    ⟨.public, name,
-      [.assign target (.parens (.binary op (.reference read) (.literal one)))], endName⟩)
-    (lit "method" ⋄ lit "DoStep" ⋄ lit "algorithm" ⋄
-      .ref "reference" ⋄ lit ":=" ⋄ lit "(" ⋄ .ref "reference" ⋄ lit "+" ⋄
-      lit "1.0" ⋄ lit ")" ⋄ lit ";" ⋄ lit "end" ⋄ lit "DoStep" ⋄ lit ";")
+def componentSyntax (name : Token) (indices : Option (Token × List AST.Expr × Token)) :
+    AST.Component :=
+  ⟨name, (indices.map fun parsed => parsed.2.1).getD []⟩
 
-def tensorDoStep : Action AST.Method :=
-  .map (fun (_, name, _, target, _, rhs, _, jacTarget, _, callee, _, arg, _, wrt, _, _,
-      _, endName, _) =>
-    ⟨.public, name,
-      [.assign target rhs, .assign jacTarget (.call callee [arg, .reference wrt])], endName⟩)
-    (lit "method" ⋄ lit "DoStep" ⋄ lit "algorithm" ⋄
-      .ref "reference" ⋄ lit ":=" ⋄ .ref "product" ⋄ lit ";" ⋄
-      .ref "reference" ⋄ lit ":=" ⋄ ident ⋄ lit "(" ⋄ .ref "product" ⋄ lit "," ⋄
-      .ref "reference" ⋄ lit ")" ⋄ lit ";" ⋄ lit "end" ⋄ lit "DoStep" ⋄ lit ";")
+def componentReference : Action AST.Component :=
+  .map (fun (name, indices) => componentSyntax name indices)
+    (ident ⋄ .optional (lit "[" ⋄ .ref "expression_list" ⋄ lit "]"))
 
-def scalarBlock : Action AST.Block :=
-  .map (fun (_, name, _, real, state, _, _, _, clockReal, clock, _, _, init, reset, step,
-      _, endName, _) =>
-    ⟨name, [⟨.public, .output, .variable, real, [], state⟩,
-      ⟨.protected, .local, .constant, clockReal, [], clock⟩], [init, reset, step], endName⟩)
-    (lit "block" ⋄ ident ⋄ lit "output" ⋄ lit "Real" ⋄ ident ⋄ lit ";" ⋄
-      lit "protected" ⋄ lit "constant" ⋄ lit "Real" ⋄ ident ⋄ lit ";" ⋄
-      lit "public" ⋄ .ref "startup" ⋄ .ref "recalibrate" ⋄ .ref "do_step" ⋄
-      lit "end" ⋄ ident ⋄ lit ";")
+def expressionList : Action (List AST.Expr) :=
+  .map (fun (first, rest) => first :: rest.map Prod.snd)
+    (.ref "expression" ⋄ .many (lit "," ⋄ .ref "expression"))
 
-def tensorBlock : Action AST.Block :=
-  .map (fun (_, name, _, inputReal, input, _, n, _, _,
-      _, stateReal, state, _, m, _, _,
-      _, jacReal, jac, _, rows, _, cols, _, _,
-      _, _, clockReal, clock, _, _, init, reset, step, _, endName, _) =>
-    ⟨name, [⟨.public, .input, .variable, inputReal, [n], input⟩,
-      ⟨.public, .output, .variable, stateReal, [m], state⟩,
-      ⟨.public, .output, .variable, jacReal, [rows, cols], jac⟩,
-      ⟨.protected, .local, .constant, clockReal, [], clock⟩], [init, reset, step], endName⟩)
-    (lit "block" ⋄ ident ⋄
-      lit "input" ⋄ lit "Real" ⋄ ident ⋄ lit "[" ⋄ lit "2" ⋄ lit "]" ⋄ lit ";" ⋄
-      lit "output" ⋄ lit "Real" ⋄ ident ⋄ lit "[" ⋄ lit "2" ⋄ lit "]" ⋄ lit ";" ⋄
-      lit "output" ⋄ lit "Real" ⋄ ident ⋄ lit "[" ⋄ lit "2" ⋄ lit "," ⋄ lit "2" ⋄ lit "]" ⋄ lit ";" ⋄
-      lit "protected" ⋄ lit "constant" ⋄ lit "Real" ⋄ ident ⋄ lit ";" ⋄
-      lit "public" ⋄ .ref "startup" ⋄ .ref "recalibrate" ⋄ .ref "tensor_do_step" ⋄
-      lit "end" ⋄ ident ⋄ lit ";")
+/-- Preserve written left-to-right association; do not reassociate arithmetic. -/
+def leftAssociate (first : AST.Expr) (rest : List (Token × AST.Expr)) : AST.Expr :=
+  rest.foldl (fun left (op, right) => .binary op left right) first
 
-def program : Action AST.Block := .alt (.ref "block") (.ref "tensor_block")
+def expression : Action AST.Expr :=
+  .map (fun (first, rest) => leftAssociate first rest)
+    (.ref "term" ⋄ .many (.ref "additive_operator" ⋄ .ref "term"))
+
+def additiveOperator : Action Token := lit "+"
+
+def term : Action AST.Expr :=
+  .map (fun (first, rest) => leftAssociate first rest)
+    (.ref "primary" ⋄ .many (.ref "multiplicative_operator" ⋄ .ref "primary"))
+
+def multiplicativeOperator : Action Token := lit "*"
+
+/-- A bare unindexed component whose token is a number is a literal; every
+other reference, including a number token with indices, stays a reference. -/
+def referenceExpr : AST.Reference → AST.Expr
+  | ⟨⟨.number spelling, []⟩, []⟩ => .literal (.number spelling)
+  | reference => .reference reference
+
+def primary : Action AST.Expr :=
+  .alt (.map referenceExpr (.ref "reference"))
+    (.alt (.map (fun (_, body, _) => AST.Expr.parens body)
+      (lit "(" ⋄ .ref "expression" ⋄ lit ")"))
+      (.alt (.ref "function_call") (.ref "dimension_query")))
+
+def functionCall : Action AST.Expr :=
+  .map (fun (callee, _, arguments, _) => AST.Expr.call callee (arguments.getD []))
+    (ident ⋄ lit "(" ⋄ .optional (.ref "expression_list") ⋄ lit ")")
+
+def dimensionQuery : Action AST.Expr :=
+  .map (fun (_, _, ref, _, axis, _) => AST.Expr.size ref axis)
+    (lit "size" ⋄ lit "(" ⋄ .ref "reference" ⋄ lit "," ⋄ .ref "expression" ⋄ lit ")")
 
 def rules : StructuralActions.Rules Token Result
+  | "block" => some block
+  | "declaration" => some declaration
+  | "direction" => some direction
+  | "primitive_type" => some primitiveType
+  | "method" => some method
+  | "statement" => some statement
+  | "single_assignment" => some singleAssignment
+  | "for_loop" => some forLoop
   | "reference" => some reference
-  | "product" => some product
-  | "startup" => some startup
-  | "recalibrate" => some recalibrate
-  | "do_step" => some doStep
-  | "tensor_do_step" => some tensorDoStep
-  | "block" => some scalarBlock
-  | "tensor_block" => some tensorBlock
-  | "program" => some program
+  | "local_reference" => some localReference
+  | "state_reference" => some stateReference
+  | "component_reference" => some componentReference
+  | "expression_list" => some expressionList
+  | "expression" => some expression
+  | "additive_operator" => some additiveOperator
+  | "term" => some term
+  | "multiplicative_operator" => some multiplicativeOperator
+  | "primary" => some primary
+  | "function_call" => some functionCall
+  | "dimension_query" => some dimensionQuery
   | _ => none
 
 end Rumoca.GALEC.Structural

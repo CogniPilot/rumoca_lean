@@ -4,7 +4,8 @@ import Parser.Token
 Names keep the original token, including its category. In particular, raw token
 parsing must not silently turn a `Token.number` (also classified IDENT by the
 shared token API) into an identifier. Scanner and resolution contracts remain
-separate. Extents are source syntax, not inferred or enumerated tensor shapes.
+separate. Declaration extents are unevaluated source expressions (G-2
+constant dimensions), not inferred or enumerated tensor shapes.
 Computed reference indices belong to each path component. Loop bounds remain
 unresolved expressions; their representation does not establish boundedness. -/
 namespace Rumoca.GALEC.AST
@@ -60,9 +61,9 @@ structure Declaration where
   direction : Direction
   variability : Variability
   typeName : Name
-  extents : List Token
+  extents : List Expr
   name : Name
-  deriving Repr, DecidableEq
+  deriving Repr
 
 def Declaration.rank (d : Declaration) : Nat := d.extents.length
 

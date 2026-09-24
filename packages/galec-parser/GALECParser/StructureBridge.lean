@@ -87,9 +87,9 @@ theorem build_sound (parsed : parser.run tokens = .ok tree)
 theorem root_valid (parsed : parser.run tokens = .ok tree)
     (root : Structure.Root Generated.sourceGrammar Generated.grammar.start decode parser.encode
       Generated.runtimeRules tree tokens v) :
-    Structure.Valid Generated.sourceGrammar Token.symbol v ∧ v.expr = .ref "program" := by
+    Structure.Valid Generated.sourceGrammar Token.symbol v ∧ v.expr = .ref "block" := by
   obtain ⟨recovered, _, name, body, tail, source, shape, valid, _, _⟩ := root
-  have nameEq : name = "program" := by
+  have nameEq : name = "block" := by
     have heads := congrArg List.head? source
     simpa [Generated.sourceGrammar] using (congrArg (Option.map Prod.fst) heads).symm
   subst name

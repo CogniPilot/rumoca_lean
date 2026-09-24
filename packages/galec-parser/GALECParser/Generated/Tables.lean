@@ -18,91 +18,93 @@ namespace Rumoca.GALEC.Generated
 set_option maxRecDepth 100000
 set_option maxHeartbeats 8000000
 
-def source : String := "// Authored tiny eFMI 1.0.0 Beta 1 Algorithm Code profile.\n// Standard authority: https://www.efmi-standard.org/media/home/eFMI-Standard-1.0.0-Beta-1.html\n// References: 3.2.3 (lifecycle), 3.2.4 G-2 (declarations), G-3 (expressions),\n// G-4 (statements). This is a restriction, not the full published grammar.\n// Declaration/reference names and matching end names require checked actions.\n// The first production is the start symbol; it admits the scalar unit profile\n// and the fixed-extent tensor square profile (elementwise product and Jacobian\n// output). The scalar block productions below are unchanged.\n\nprogram = block | tensor_block;\n\nblock = \"block\", IDENT,\n    \"output\", \"Real\", IDENT, \";\",\n    \"protected\", \"constant\", \"Real\", IDENT, \";\",\n    \"public\", startup, recalibrate, do_step, \"end\", IDENT, \";\";\n\nstartup = \"method\", \"Startup\", \"algorithm\",\n    reference, \":=\", \"0.0\", \";\",\n    reference, \":=\", \"1.0\", \";\",\n    \"end\", \"Startup\", \";\";\n\nrecalibrate = \"method\", \"Recalibrate\", \"algorithm\", \"end\", \"Recalibrate\", \";\";\n\ndo_step = \"method\", \"DoStep\", \"algorithm\",\n    reference, \":=\", \"(\", reference, \"+\", \"1.0\", \")\", \";\",\n    \"end\", \"DoStep\", \";\";\n\nreference = \"self\", \".\", IDENT;\n\ntensor_block = \"block\", IDENT,\n    \"input\", \"Real\", IDENT, \"[\", \"2\", \"]\", \";\",\n    \"output\", \"Real\", IDENT, \"[\", \"2\", \"]\", \";\",\n    \"output\", \"Real\", IDENT, \"[\", \"2\", \",\", \"2\", \"]\", \";\",\n    \"protected\", \"constant\", \"Real\", IDENT, \";\",\n    \"public\", startup, recalibrate, tensor_do_step, \"end\", IDENT, \";\";\n\ntensor_do_step = \"method\", \"DoStep\", \"algorithm\",\n    reference, \":=\", product, \";\",\n    reference, \":=\", IDENT, \"(\", product, \",\", reference, \")\", \";\",\n    \"end\", \"DoStep\", \";\";\n\nproduct = reference, \".*\", reference;\n"
+def source : String := "// Authored eFMI 1.0.0 Beta 1 Algorithm Code syntax subset.\n// Standard authority: https://www.efmi-standard.org/media/home/eFMI-Standard-1.0.0-Beta-1.html\n// References: 3.2.4 G-2 (block declarations), G-3 (expressions) and the\n// TODO-labelled statement productions (assignment, bounded for loop).\n// Admission restrictions (declaration kinds per section, extent values, types,\n// callees, operators, method set, names, literal values) are static semantics\n// checked after parsing. The first production is the start symbol.\n\nblock = \"block\", IDENT, { declaration },\n    \"protected\", { declaration },\n    \"public\", { method }, \"end\", IDENT, \";\";\ndeclaration = [ direction | \"constant\" ], primitive_type, IDENT,\n    [ \"[\", expression_list, \"]\" ], \";\";\ndirection = \"input\" | \"output\";\nprimitive_type = \"Real\" | \"Integer\" | \"Boolean\";\nmethod = \"method\", IDENT, \"algorithm\", { statement }, \"end\", IDENT, \";\";\n\nstatement = ( single_assignment | for_loop ), \";\";\nsingle_assignment = reference, \":=\", expression;\nfor_loop = \"for\", IDENT, \"in\", expression, \":\", expression,\n    [ \":\", expression ], \"loop\", { statement }, \"end\", \"for\";\n\nreference = local_reference | state_reference;\nlocal_reference = component_reference;\nstate_reference = \"self\", \".\", component_reference, { \".\", component_reference };\ncomponent_reference = IDENT, [ \"[\", expression_list, \"]\" ];\nexpression_list = expression, { \",\", expression };\n\nexpression = term, { additive_operator, term };\nadditive_operator = \"+\";\nterm = primary, { multiplicative_operator, primary };\nmultiplicative_operator = \"*\";\nprimary = reference | \"(\", expression, \")\" | function_call | dimension_query;\nfunction_call = IDENT, \"(\", [ expression_list ], \")\";\ndimension_query = \"size\", \"(\", reference, \",\", expression, \")\";\n"
 
-def sourceChars0 : List Char := ['/', '/', ' ', 'A', 'u', 't', 'h', 'o', 'r', 'e', 'd', ' ', 't', 'i', 'n', 'y', ' ', 'e', 'F', 'M', 'I', ' ', '1', '.',
- '0', '.', '0', ' ', 'B', 'e', 't', 'a', ' ', '1', ' ', 'A', 'l', 'g', 'o', 'r', 'i', 't', 'h', 'm', ' ', 'C', 'o', 'd',
- 'e', ' ', 'p', 'r', 'o', 'f', 'i', 'l', 'e', '.', '\n', '/', '/', ' ', 'S', 't', 'a', 'n', 'd', 'a', 'r', 'd', ' ',
- 'a', 'u', 't', 'h', 'o', 'r', 'i', 't', 'y', ':', ' ', 'h', 't', 't', 'p', 's', ':', '/', '/', 'w', 'w', 'w', '.', 'e',
- 'f', 'm', 'i', '-', 's', 't', 'a', 'n', 'd', 'a', 'r', 'd', '.', 'o', 'r', 'g', '/', 'm', 'e', 'd', 'i', 'a', '/', 'h',
- 'o', 'm', 'e', '/', 'e', 'F', 'M', 'I', '-', 'S', 't', 'a', 'n', 'd', 'a', 'r', 'd', '-', '1', '.', '0', '.', '0', '-',
- 'B', 'e', 't', 'a', '-', '1', '.', 'h', 't', 'm', 'l', '\n', '/', '/', ' ', 'R', 'e', 'f', 'e', 'r', 'e', 'n', 'c',
- 'e', 's', ':', ' ', '3', '.', '2', '.', '3', ' ', '(', 'l', 'i', 'f', 'e', 'c', 'y', 'c', 'l', 'e', ')', ',', ' ', '3',
- '.', '2', '.', '4', ' ', 'G', '-', '2', ' ', '(', 'd', 'e', 'c', 'l', 'a', 'r', 'a', 't', 'i', 'o', 'n', 's', ')', ',',
- ' ', 'G', '-', '3', ' ', '(', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', 's', ')', ',', '\n', '/', '/', ' ',
- 'G', '-', '4', ' ', '(', 's', 't', 'a', 't', 'e', 'm', 'e', 'n', 't', 's', ')', '.', ' ', 'T', 'h', 'i', 's', ' ', 'i',
- 's', ' ', 'a', ' ', 'r', 'e', 's', 't', 'r', 'i', 'c', 't', 'i', 'o', 'n', ',', ' ', 'n', 'o', 't', ' ', 't', 'h', 'e',
- ' ', 'f', 'u', 'l', 'l', ' ', 'p', 'u', 'b', 'l', 'i', 's', 'h', 'e', 'd', ' ', 'g', 'r', 'a', 'm', 'm', 'a', 'r', '.']
+def sourceChars0 : List Char := ['/', '/', ' ', 'A', 'u', 't', 'h', 'o', 'r', 'e', 'd', ' ', 'e', 'F', 'M', 'I', ' ', '1', '.', '0', '.', '0', ' ', 'B',
+ 'e', 't', 'a', ' ', '1', ' ', 'A', 'l', 'g', 'o', 'r', 'i', 't', 'h', 'm', ' ', 'C', 'o', 'd', 'e', ' ', 's', 'y', 'n',
+ 't', 'a', 'x', ' ', 's', 'u', 'b', 's', 'e', 't', '.', '\n', '/', '/', ' ', 'S', 't', 'a', 'n', 'd', 'a', 'r', 'd',
+ ' ', 'a', 'u', 't', 'h', 'o', 'r', 'i', 't', 'y', ':', ' ', 'h', 't', 't', 'p', 's', ':', '/', '/', 'w', 'w', 'w', '.',
+ 'e', 'f', 'm', 'i', '-', 's', 't', 'a', 'n', 'd', 'a', 'r', 'd', '.', 'o', 'r', 'g', '/', 'm', 'e', 'd', 'i', 'a', '/',
+ 'h', 'o', 'm', 'e', '/', 'e', 'F', 'M', 'I', '-', 'S', 't', 'a', 'n', 'd', 'a', 'r', 'd', '-', '1', '.', '0', '.', '0',
+ '-', 'B', 'e', 't', 'a', '-', '1', '.', 'h', 't', 'm', 'l', '\n', '/', '/', ' ', 'R', 'e', 'f', 'e', 'r', 'e', 'n',
+ 'c', 'e', 's', ':', ' ', '3', '.', '2', '.', '4', ' ', 'G', '-', '2', ' ', '(', 'b', 'l', 'o', 'c', 'k', ' ', 'd', 'e',
+ 'c', 'l', 'a', 'r', 'a', 't', 'i', 'o', 'n', 's', ')', ',', ' ', 'G', '-', '3', ' ', '(', 'e', 'x', 'p', 'r', 'e', 's',
+ 's', 'i', 'o', 'n', 's', ')', ' ', 'a', 'n', 'd', ' ', 't', 'h', 'e', '\n', '/', '/', ' ', 'T', 'O', 'D', 'O', '-',
+ 'l', 'a', 'b', 'e', 'l', 'l', 'e', 'd', ' ', 's', 't', 'a', 't', 'e', 'm', 'e', 'n', 't', ' ', 'p', 'r', 'o', 'd', 'u',
+ 'c', 't', 'i', 'o', 'n', 's', ' ', '(', 'a', 's', 's', 'i', 'g', 'n', 'm', 'e', 'n', 't', ',', ' ', 'b', 'o', 'u', 'n',
+ 'd', 'e', 'd', ' ', 'f', 'o', 'r', ' ', 'l', 'o', 'o', 'p', ')', '.']
 
-def sourceChars1 : List Char := ['\n', '/', '/', ' ', 'D', 'e', 'c', 'l', 'a', 'r', 'a', 't', 'i', 'o', 'n', '/', 'r', 'e', 'f', 'e', 'r', 'e', 'n',
- 'c', 'e', ' ', 'n', 'a', 'm', 'e', 's', ' ', 'a', 'n', 'd', ' ', 'm', 'a', 't', 'c', 'h', 'i', 'n', 'g', ' ', 'e', 'n',
- 'd', ' ', 'n', 'a', 'm', 'e', 's', ' ', 'r', 'e', 'q', 'u', 'i', 'r', 'e', ' ', 'c', 'h', 'e', 'c', 'k', 'e', 'd', ' ',
- 'a', 'c', 't', 'i', 'o', 'n', 's', '.', '\n', '/', '/', ' ', 'T', 'h', 'e', ' ', 'f', 'i', 'r', 's', 't', ' ', 'p',
- 'r', 'o', 'd', 'u', 'c', 't', 'i', 'o', 'n', ' ', 'i', 's', ' ', 't', 'h', 'e', ' ', 's', 't', 'a', 'r', 't', ' ', 's',
- 'y', 'm', 'b', 'o', 'l', ';', ' ', 'i', 't', ' ', 'a', 'd', 'm', 'i', 't', 's', ' ', 't', 'h', 'e', ' ', 's', 'c', 'a',
- 'l', 'a', 'r', ' ', 'u', 'n', 'i', 't', ' ', 'p', 'r', 'o', 'f', 'i', 'l', 'e', '\n', '/', '/', ' ', 'a', 'n', 'd',
- ' ', 't', 'h', 'e', ' ', 'f', 'i', 'x', 'e', 'd', '-', 'e', 'x', 't', 'e', 'n', 't', ' ', 't', 'e', 'n', 's', 'o', 'r',
- ' ', 's', 'q', 'u', 'a', 'r', 'e', ' ', 'p', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '(', 'e', 'l', 'e', 'm', 'e', 'n', 't',
- 'w', 'i', 's', 'e', ' ', 'p', 'r', 'o', 'd', 'u', 'c', 't', ' ', 'a', 'n', 'd', ' ', 'J', 'a', 'c', 'o', 'b', 'i', 'a',
- 'n', '\n', '/', '/', ' ', 'o', 'u', 't', 'p', 'u', 't', ')', '.', ' ', 'T', 'h', 'e', ' ', 's', 'c', 'a', 'l', 'a',
- 'r', ' ', 'b', 'l', 'o', 'c', 'k', ' ', 'p', 'r', 'o', 'd', 'u', 'c', 't', 'i', 'o', 'n', 's', ' ', 'b', 'e', 'l', 'o',
- 'w', ' ', 'a', 'r', 'e', ' ', 'u', 'n', 'c', 'h', 'a', 'n', 'g', 'e', 'd', '.']
+def sourceChars1 : List Char := ['\n', '/', '/', ' ', 'A', 'd', 'm', 'i', 's', 's', 'i', 'o', 'n', ' ', 'r', 'e', 's', 't', 'r', 'i', 'c', 't', 'i',
+ 'o', 'n', 's', ' ', '(', 'd', 'e', 'c', 'l', 'a', 'r', 'a', 't', 'i', 'o', 'n', ' ', 'k', 'i', 'n', 'd', 's', ' ', 'p',
+ 'e', 'r', ' ', 's', 'e', 'c', 't', 'i', 'o', 'n', ',', ' ', 'e', 'x', 't', 'e', 'n', 't', ' ', 'v', 'a', 'l', 'u', 'e',
+ 's', ',', ' ', 't', 'y', 'p', 'e', 's', ',', '\n', '/', '/', ' ', 'c', 'a', 'l', 'l', 'e', 'e', 's', ',', ' ', 'o',
+ 'p', 'e', 'r', 'a', 't', 'o', 'r', 's', ',', ' ', 'm', 'e', 't', 'h', 'o', 'd', ' ', 's', 'e', 't', ',', ' ', 'n', 'a',
+ 'm', 'e', 's', ',', ' ', 'l', 'i', 't', 'e', 'r', 'a', 'l', ' ', 'v', 'a', 'l', 'u', 'e', 's', ')', ' ', 'a', 'r', 'e',
+ ' ', 's', 't', 'a', 't', 'i', 'c', ' ', 's', 'e', 'm', 'a', 'n', 't', 'i', 'c', 's', '\n', '/', '/', ' ', 'c', 'h',
+ 'e', 'c', 'k', 'e', 'd', ' ', 'a', 'f', 't', 'e', 'r', ' ', 'p', 'a', 'r', 's', 'i', 'n', 'g', '.', ' ', 'T', 'h', 'e',
+ ' ', 'f', 'i', 'r', 's', 't', ' ', 'p', 'r', 'o', 'd', 'u', 'c', 't', 'i', 'o', 'n', ' ', 'i', 's', ' ', 't', 'h', 'e',
+ ' ', 's', 't', 'a', 'r', 't', ' ', 's', 'y', 'm', 'b', 'o', 'l', '.', '\n', '\n', 'b', 'l', 'o', 'c', 'k', ' ', '=',
+ ' ', '\"', 'b', 'l', 'o', 'c', 'k', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '{', ' ', 'd', 'e', 'c', 'l',
+ 'a', 'r', 'a', 't', 'i', 'o', 'n', ' ', '}', ',']
 
-def sourceChars2 : List Char := ['\n', '\n', 'p', 'r', 'o', 'g', 'r', 'a', 'm', ' ', '=', ' ', 'b', 'l', 'o', 'c', 'k', ' ', '|', ' ', 't', 'e', 'n',
- 's', 'o', 'r', '_', 'b', 'l', 'o', 'c', 'k', ';', '\n', '\n', 'b', 'l', 'o', 'c', 'k', ' ', '=', ' ', '\"', 'b', 'l',
- 'o', 'c', 'k', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', '\n', ' ', ' ', ' ', ' ', '\"', 'o', 'u', 't', 'p', 'u',
- 't', '\"', ',', ' ', '\"', 'R', 'e', 'a', 'l', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '\"', ';', '\"', ',',
- '\n', ' ', ' ', ' ', ' ', '\"', 'p', 'r', 'o', 't', 'e', 'c', 't', 'e', 'd', '\"', ',', ' ', '\"', 'c', 'o', 'n', 's',
- 't', 'a', 'n', 't', '\"', ',', ' ', '\"', 'R', 'e', 'a', 'l', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '\"',
- ';', '\"', ',', '\n', ' ', ' ', ' ', ' ', '\"', 'p', 'u', 'b', 'l', 'i', 'c', '\"', ',', ' ', 's', 't', 'a', 'r', 't',
- 'u', 'p', ',', ' ', 'r', 'e', 'c', 'a', 'l', 'i', 'b', 'r', 'a', 't', 'e', ',', ' ', 'd', 'o', '_', 's', 't', 'e', 'p',
- ',', ' ', '\"', 'e', 'n', 'd', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '\"', ';', '\"', ';', '\n', '\n',
- 's', 't', 'a', 'r', 't', 'u', 'p', ' ', '=', ' ', '\"', 'm', 'e', 't', 'h', 'o', 'd', '\"', ',', ' ', '\"', 'S', 't',
- 'a', 'r', 't', 'u', 'p', '\"', ',', ' ', '\"', 'a', 'l', 'g', 'o', 'r', 'i', 't', 'h', 'm', '\"', ',', '\n', ' ', ' ',
- ' ', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"', ':', '=', '\"', ',', ' ', '\"', '0', '.', '0',
- '\"', ',', ' ', '\"', ';', '\"', ',']
+def sourceChars2 : List Char := ['\n', ' ', ' ', ' ', ' ', '\"', 'p', 'r', 'o', 't', 'e', 'c', 't', 'e', 'd', '\"', ',', ' ', '{', ' ', 'd', 'e', 'c',
+ 'l', 'a', 'r', 'a', 't', 'i', 'o', 'n', ' ', '}', ',', '\n', ' ', ' ', ' ', ' ', '\"', 'p', 'u', 'b', 'l', 'i', 'c',
+ '\"', ',', ' ', '{', ' ', 'm', 'e', 't', 'h', 'o', 'd', ' ', '}', ',', ' ', '\"', 'e', 'n', 'd', '\"', ',', ' ', 'I',
+ 'D', 'E', 'N', 'T', ',', ' ', '\"', ';', '\"', ';', '\n', 'd', 'e', 'c', 'l', 'a', 'r', 'a', 't', 'i', 'o', 'n', ' ',
+ '=', ' ', '[', ' ', 'd', 'i', 'r', 'e', 'c', 't', 'i', 'o', 'n', ' ', '|', ' ', '\"', 'c', 'o', 'n', 's', 't', 'a',
+ 'n', 't', '\"', ' ', ']', ',', ' ', 'p', 'r', 'i', 'm', 'i', 't', 'i', 'v', 'e', '_', 't', 'y', 'p', 'e', ',', ' ',
+ 'I', 'D', 'E', 'N', 'T', ',', '\n', ' ', ' ', ' ', ' ', '[', ' ', '\"', '[', '\"', ',', ' ', 'e', 'x', 'p', 'r', 'e',
+ 's', 's', 'i', 'o', 'n', '_', 'l', 'i', 's', 't', ',', ' ', '\"', ']', '\"', ' ', ']', ',', ' ', '\"', ';', '\"', ';',
+ '\n', 'd', 'i', 'r', 'e', 'c', 't', 'i', 'o', 'n', ' ', '=', ' ', '\"', 'i', 'n', 'p', 'u', 't', '\"', ' ', '|', ' ',
+ '\"', 'o', 'u', 't', 'p', 'u', 't', '\"', ';', '\n', 'p', 'r', 'i', 'm', 'i', 't', 'i', 'v', 'e', '_', 't', 'y', 'p',
+ 'e', ' ', '=', ' ', '\"', 'R', 'e', 'a', 'l', '\"', ' ', '|', ' ', '\"', 'I', 'n', 't', 'e', 'g', 'e', 'r', '\"', ' ',
+ '|', ' ', '\"', 'B', 'o', 'o', 'l', 'e', 'a', 'n', '\"', ';']
 
-def sourceChars3 : List Char := ['\n', ' ', ' ', ' ', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"', ':', '=', '\"', ',', ' ', '\"',
- '1', '.', '0', '\"', ',', ' ', '\"', ';', '\"', ',', '\n', ' ', ' ', ' ', ' ', '\"', 'e', 'n', 'd', '\"', ',', ' ',
- '\"', 'S', 't', 'a', 'r', 't', 'u', 'p', '\"', ',', ' ', '\"', ';', '\"', ';', '\n', '\n', 'r', 'e', 'c', 'a', 'l',
- 'i', 'b', 'r', 'a', 't', 'e', ' ', '=', ' ', '\"', 'm', 'e', 't', 'h', 'o', 'd', '\"', ',', ' ', '\"', 'R', 'e', 'c',
- 'a', 'l', 'i', 'b', 'r', 'a', 't', 'e', '\"', ',', ' ', '\"', 'a', 'l', 'g', 'o', 'r', 'i', 't', 'h', 'm', '\"', ',',
- ' ', '\"', 'e', 'n', 'd', '\"', ',', ' ', '\"', 'R', 'e', 'c', 'a', 'l', 'i', 'b', 'r', 'a', 't', 'e', '\"', ',', ' ',
- '\"', ';', '\"', ';', '\n', '\n', 'd', 'o', '_', 's', 't', 'e', 'p', ' ', '=', ' ', '\"', 'm', 'e', 't', 'h', 'o', 'd',
- '\"', ',', ' ', '\"', 'D', 'o', 'S', 't', 'e', 'p', '\"', ',', ' ', '\"', 'a', 'l', 'g', 'o', 'r', 'i', 't', 'h', 'm',
- '\"', ',', '\n', ' ', ' ', ' ', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"', ':', '=', '\"', ',',
- ' ', '\"', '(', '\"', ',', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"', '+', '\"', ',', ' ', '\"',
- '1', '.', '0', '\"', ',', ' ', '\"', ')', '\"', ',', ' ', '\"', ';', '\"', ',', '\n', ' ', ' ', ' ', ' ', '\"', 'e',
- 'n', 'd', '\"', ',', ' ', '\"', 'D', 'o', 'S', 't', 'e', 'p', '\"', ',', ' ', '\"', ';', '\"', ';']
+def sourceChars3 : List Char := ['\n', 'm', 'e', 't', 'h', 'o', 'd', ' ', '=', ' ', '\"', 'm', 'e', 't', 'h', 'o', 'd', '\"', ',', ' ', 'I', 'D', 'E',
+ 'N', 'T', ',', ' ', '\"', 'a', 'l', 'g', 'o', 'r', 'i', 't', 'h', 'm', '\"', ',', ' ', '{', ' ', 's', 't', 'a', 't',
+ 'e', 'm', 'e', 'n', 't', ' ', '}', ',', ' ', '\"', 'e', 'n', 'd', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ',
+ '\"', ';', '\"', ';', '\n', '\n', 's', 't', 'a', 't', 'e', 'm', 'e', 'n', 't', ' ', '=', ' ', '(', ' ', 's', 'i', 'n',
+ 'g', 'l', 'e', '_', 'a', 's', 's', 'i', 'g', 'n', 'm', 'e', 'n', 't', ' ', '|', ' ', 'f', 'o', 'r', '_', 'l', 'o', 'o',
+ 'p', ' ', ')', ',', ' ', '\"', ';', '\"', ';', '\n', 's', 'i', 'n', 'g', 'l', 'e', '_', 'a', 's', 's', 'i', 'g', 'n',
+ 'm', 'e', 'n', 't', ' ', '=', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"', ':', '=', '\"', ',',
+ ' ', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', ';', '\n', 'f', 'o', 'r', '_', 'l', 'o', 'o', 'p', ' ', '=',
+ ' ', '\"', 'f', 'o', 'r', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '\"', 'i', 'n', '\"', ',', ' ', 'e', 'x',
+ 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', ',', ' ', '\"', ':', '\"', ',', ' ', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i',
+ 'o', 'n', ',', '\n', ' ', ' ', ' ', ' ', '[', ' ', '\"', ':', '\"', ',', ' ', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i',
+ 'o', 'n', ' ', ']', ',', ' ', '\"', 'l', 'o', 'o', 'p', '\"', ',', ' ', '{', ' ', 's', 't', 'a', 't', 'e', 'm', 'e',
+ 'n', 't', ' ', '}', ',', ' ', '\"', 'e', 'n', 'd', '\"', ',', ' ', '\"', 'f', 'o', 'r', '\"', ';']
 
-def sourceChars4 : List Char := ['\n', '\n', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ' ', '=', ' ', '\"', 's', 'e', 'l', 'f', '\"', ',', ' ', '\"',
- '.', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ';', '\n', '\n', 't', 'e', 'n', 's', 'o', 'r', '_', 'b', 'l', 'o', 'c',
- 'k', ' ', '=', ' ', '\"', 'b', 'l', 'o', 'c', 'k', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', '\n', ' ', ' ', ' ',
- ' ', '\"', 'i', 'n', 'p', 'u', 't', '\"', ',', ' ', '\"', 'R', 'e', 'a', 'l', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T',
- ',', ' ', '\"', '[', '\"', ',', ' ', '\"', '2', '\"', ',', ' ', '\"', ']', '\"', ',', ' ', '\"', ';', '\"', ',', '\n',
- ' ', ' ', ' ', ' ', '\"', 'o', 'u', 't', 'p', 'u', 't', '\"', ',', ' ', '\"', 'R', 'e', 'a', 'l', '\"', ',', ' ', 'I',
- 'D', 'E', 'N', 'T', ',', ' ', '\"', '[', '\"', ',', ' ', '\"', '2', '\"', ',', ' ', '\"', ']', '\"', ',', ' ', '\"',
- ';', '\"', ',', '\n', ' ', ' ', ' ', ' ', '\"', 'o', 'u', 't', 'p', 'u', 't', '\"', ',', ' ', '\"', 'R', 'e', 'a', 'l',
- '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '\"', '[', '\"', ',', ' ', '\"', '2', '\"', ',', ' ', '\"', ',',
- '\"', ',', ' ', '\"', '2', '\"', ',', ' ', '\"', ']', '\"', ',', ' ', '\"', ';', '\"', ',', '\n', ' ', ' ', ' ', ' ',
- '\"', 'p', 'r', 'o', 't', 'e', 'c', 't', 'e', 'd', '\"', ',', ' ', '\"', 'c', 'o', 'n', 's', 't', 'a', 'n', 't', '\"',
- ',', ' ', '\"', 'R', 'e', 'a', 'l', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '\"', ';', '\"', ',']
+def sourceChars4 : List Char := ['\n', '\n', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ' ', '=', ' ', 'l', 'o', 'c', 'a', 'l', '_', 'r', 'e', 'f',
+ 'e', 'r', 'e', 'n', 'c', 'e', ' ', '|', ' ', 's', 't', 'a', 't', 'e', '_', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e',
+ ';', '\n', 'l', 'o', 'c', 'a', 'l', '_', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ' ', '=', ' ', 'c', 'o', 'm',
+ 'p', 'o', 'n', 'e', 'n', 't', '_', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ';', '\n', 's', 't', 'a', 't', 'e',
+ '_', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ' ', '=', ' ', '\"', 's', 'e', 'l', 'f', '\"', ',', ' ', '\"', '.',
+ '\"', ',', ' ', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', '_', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',',
+ ' ', '{', ' ', '\"', '.', '\"', ',', ' ', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', '_', 'r', 'e', 'f', 'e', 'r',
+ 'e', 'n', 'c', 'e', ' ', '}', ';', '\n', 'c', 'o', 'm', 'p', 'o', 'n', 'e', 'n', 't', '_', 'r', 'e', 'f', 'e', 'r',
+ 'e', 'n', 'c', 'e', ' ', '=', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '[', ' ', '\"', '[', '\"', ',', ' ', 'e', 'x',
+ 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', '_', 'l', 'i', 's', 't', ',', ' ', '\"', ']', '\"', ' ', ']', ';', '\n', 'e',
+ 'x', 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', '_', 'l', 'i', 's', 't', ' ', '=', ' ', 'e', 'x', 'p', 'r', 'e', 's', 's',
+ 'i', 'o', 'n', ',', ' ', '{', ' ', '\"', ',', '\"', ',', ' ', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', ' ',
+ '}', ';']
 
-def sourceChars5 : List Char := ['\n', ' ', ' ', ' ', ' ', '\"', 'p', 'u', 'b', 'l', 'i', 'c', '\"', ',', ' ', 's', 't', 'a', 'r', 't', 'u', 'p', ',',
- ' ', 'r', 'e', 'c', 'a', 'l', 'i', 'b', 'r', 'a', 't', 'e', ',', ' ', 't', 'e', 'n', 's', 'o', 'r', '_', 'd', 'o', '_',
- 's', 't', 'e', 'p', ',', ' ', '\"', 'e', 'n', 'd', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',', ' ', '\"', ';', '\"',
- ';', '\n', '\n', 't', 'e', 'n', 's', 'o', 'r', '_', 'd', 'o', '_', 's', 't', 'e', 'p', ' ', '=', ' ', '\"', 'm', 'e',
- 't', 'h', 'o', 'd', '\"', ',', ' ', '\"', 'D', 'o', 'S', 't', 'e', 'p', '\"', ',', ' ', '\"', 'a', 'l', 'g', 'o', 'r',
- 'i', 't', 'h', 'm', '\"', ',', '\n', ' ', ' ', ' ', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"',
- ':', '=', '\"', ',', ' ', 'p', 'r', 'o', 'd', 'u', 'c', 't', ',', ' ', '\"', ';', '\"', ',', '\n', ' ', ' ', ' ', ' ',
- 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"', ':', '=', '\"', ',', ' ', 'I', 'D', 'E', 'N', 'T', ',',
- ' ', '\"', '(', '\"', ',', ' ', 'p', 'r', 'o', 'd', 'u', 'c', 't', ',', ' ', '\"', ',', '\"', ',', ' ', 'r', 'e', 'f',
- 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"', ')', '\"', ',', ' ', '\"', ';', '\"', ',', '\n', ' ', ' ', ' ', ' ',
- '\"', 'e', 'n', 'd', '\"', ',', ' ', '\"', 'D', 'o', 'S', 't', 'e', 'p', '\"', ',', ' ', '\"', ';', '\"', ';', '\n',
- '\n', 'p', 'r', 'o', 'd', 'u', 'c', 't', ' ', '=', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"',
- '.', '*', '\"', ',', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ';']
+def sourceChars5 : List Char := ['\n', '\n', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', ' ', '=', ' ', 't', 'e', 'r', 'm', ',', ' ', '{', ' ',
+ 'a', 'd', 'd', 'i', 't', 'i', 'v', 'e', '_', 'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', ',', ' ', 't', 'e', 'r', 'm', ' ',
+ '}', ';', '\n', 'a', 'd', 'd', 'i', 't', 'i', 'v', 'e', '_', 'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', ' ', '=', ' ',
+ '\"', '+', '\"', ';', '\n', 't', 'e', 'r', 'm', ' ', '=', ' ', 'p', 'r', 'i', 'm', 'a', 'r', 'y', ',', ' ', '{', ' ',
+ 'm', 'u', 'l', 't', 'i', 'p', 'l', 'i', 'c', 'a', 't', 'i', 'v', 'e', '_', 'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', ',',
+ ' ', 'p', 'r', 'i', 'm', 'a', 'r', 'y', ' ', '}', ';', '\n', 'm', 'u', 'l', 't', 'i', 'p', 'l', 'i', 'c', 'a', 't',
+ 'i', 'v', 'e', '_', 'o', 'p', 'e', 'r', 'a', 't', 'o', 'r', ' ', '=', ' ', '\"', '*', '\"', ';', '\n', 'p', 'r', 'i',
+ 'm', 'a', 'r', 'y', ' ', '=', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ' ', '|', ' ', '\"', '(', '\"', ',',
+ ' ', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', ',', ' ', '\"', ')', '\"', ' ', '|', ' ', 'f', 'u', 'n', 'c',
+ 't', 'i', 'o', 'n', '_', 'c', 'a', 'l', 'l', ' ', '|', ' ', 'd', 'i', 'm', 'e', 'n', 's', 'i', 'o', 'n', '_', 'q', 'u',
+ 'e', 'r', 'y', ';', '\n', 'f', 'u', 'n', 'c', 't', 'i', 'o', 'n', '_', 'c', 'a', 'l', 'l', ' ', '=', ' ', 'I', 'D',
+ 'E', 'N', 'T', ',', ' ', '\"', '(', '\"', ',', ' ', '[', ' ', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', '_',
+ 'l', 'i', 's', 't', ' ', ']', ',', ' ', '\"', ')', '\"', ';']
 
-def sourceChars6 : List Char := ['\n']
+def sourceChars6 : List Char := ['\n', 'd', 'i', 'm', 'e', 'n', 's', 'i', 'o', 'n', '_', 'q', 'u', 'e', 'r', 'y', ' ', '=', ' ', '\"', 's', 'i', 'z',
+ 'e', '\"', ',', ' ', '\"', '(', '\"', ',', ' ', 'r', 'e', 'f', 'e', 'r', 'e', 'n', 'c', 'e', ',', ' ', '\"', ',', '\"',
+ ',', ' ', 'e', 'x', 'p', 'r', 'e', 's', 's', 'i', 'o', 'n', ',', ' ', '\"', ')', '\"', ';', '\n']
 
 def sourceChars : List Char := sourceChars0 ++ sourceChars1 ++ sourceChars2 ++ sourceChars3 ++ sourceChars4 ++ sourceChars5 ++ sourceChars6
 
@@ -114,1152 +116,1393 @@ theorem source_ofList : source = String.ofList sourceChars := by rfl
 theorem source_toList : source.toList = sourceChars := by
   rw [source_ofList, String.toList_ofList]
 
-theorem sourceChars0_length : sourceChars0.length = 309 := by decide
+theorem sourceChars0_length : sourceChars0.length = 299 := by decide
 
-theorem sourceChars1_length : sourceChars1.length = 300 := by decide
+theorem sourceChars1_length : sourceChars1.length = 269 := by decide
 
-theorem sourceChars2_length : sourceChars2.length = 283 := by decide
+theorem sourceChars2_length : sourceChars2.length = 265 := by decide
 
-theorem sourceChars3_length : sourceChars3.length = 269 := by decide
+theorem sourceChars3_length : sourceChars3.length = 296 := by decide
 
-theorem sourceChars4_length : sourceChars4.length = 270 := by decide
+theorem sourceChars4_length : sourceChars4.length = 280 := by decide
 
-theorem sourceChars5_length : sourceChars5.length = 290 := by decide
+theorem sourceChars5_length : sourceChars5.length = 291 := by decide
 
-theorem sourceChars6_length : sourceChars6.length = 1 := by decide
+theorem sourceChars6_length : sourceChars6.length = 65 := by decide
 
 set_option linter.unusedSimpArgs false in
-theorem source_length : source.toList.length = 1722 := by
+theorem source_length : source.toList.length = 1765 := by
   rw [source_toList]
   unfold sourceChars
   simp only [List.length_append, sourceChars0_length, sourceChars1_length, sourceChars2_length, sourceChars3_length, sourceChars4_length, sourceChars5_length, sourceChars6_length]
 
-def alphabet : Array Parser.Symbol := #[Parser.Symbol.literal "block", Parser.Symbol.ident, Parser.Symbol.literal "output", Parser.Symbol.literal "Real",
-  Parser.Symbol.literal ";", Parser.Symbol.literal "protected", Parser.Symbol.literal "constant",
-  Parser.Symbol.literal "public", Parser.Symbol.literal "end", Parser.Symbol.literal "method",
-  Parser.Symbol.literal "Startup", Parser.Symbol.literal "algorithm", Parser.Symbol.literal ":=",
-  Parser.Symbol.literal "0.0", Parser.Symbol.literal "1.0", Parser.Symbol.literal "Recalibrate",
-  Parser.Symbol.literal "DoStep", Parser.Symbol.literal "(", Parser.Symbol.literal "+", Parser.Symbol.literal ")",
-  Parser.Symbol.literal "self", Parser.Symbol.literal ".", Parser.Symbol.literal "input", Parser.Symbol.literal "[",
-  Parser.Symbol.literal "2", Parser.Symbol.literal "]", Parser.Symbol.literal ",", Parser.Symbol.literal ".*"]
+def alphabet : Array Parser.Symbol := #[Parser.Symbol.literal "block", Parser.Symbol.ident, Parser.Symbol.literal "protected", Parser.Symbol.literal "public",
+  Parser.Symbol.literal "end", Parser.Symbol.literal ";", Parser.Symbol.literal "constant", Parser.Symbol.literal "[",
+  Parser.Symbol.literal "]", Parser.Symbol.literal "input", Parser.Symbol.literal "output",
+  Parser.Symbol.literal "Real", Parser.Symbol.literal "Integer", Parser.Symbol.literal "Boolean",
+  Parser.Symbol.literal "method", Parser.Symbol.literal "algorithm", Parser.Symbol.literal ":=",
+  Parser.Symbol.literal "for", Parser.Symbol.literal "in", Parser.Symbol.literal ":", Parser.Symbol.literal "loop",
+  Parser.Symbol.literal "self", Parser.Symbol.literal ".", Parser.Symbol.literal ",", Parser.Symbol.literal "+",
+  Parser.Symbol.literal "*", Parser.Symbol.literal "(", Parser.Symbol.literal ")", Parser.Symbol.literal "size"]
 
-def grammar : LALR.Grammar := ⟨28, 10, 0, #[⟨9, [.nonterminal 1]⟩, ⟨9, [.nonterminal 6]⟩, ⟨0, [.nonterminal 9]⟩, ⟨1, [.terminal 0, .terminal 1, .terminal 2, .terminal 3, .terminal 1, .terminal 4, .terminal 5, .terminal 6, .terminal 3, .terminal 1, .terminal 4, .terminal 7, .nonterminal 2, .nonterminal 3, .nonterminal 4, .terminal 8, .terminal 1, .terminal 4]⟩, ⟨2, [.terminal 9, .terminal 10, .terminal 11, .nonterminal 5, .terminal 12, .terminal 13, .terminal 4, .nonterminal 5, .terminal 12, .terminal 14, .terminal 4, .terminal 8, .terminal 10, .terminal 4]⟩, ⟨3, [.terminal 9, .terminal 15, .terminal 11, .terminal 8, .terminal 15, .terminal 4]⟩, ⟨4, [.terminal 9, .terminal 16, .terminal 11, .nonterminal 5, .terminal 12, .terminal 17, .nonterminal 5, .terminal 18, .terminal 14, .terminal 19, .terminal 4, .terminal 8, .terminal 16, .terminal 4]⟩, ⟨5, [.terminal 20, .terminal 21, .terminal 1]⟩, ⟨6, [.terminal 0, .terminal 1, .terminal 22, .terminal 3, .terminal 1, .terminal 23, .terminal 24, .terminal 25, .terminal 4, .terminal 2, .terminal 3, .terminal 1, .terminal 23, .terminal 24, .terminal 25, .terminal 4, .terminal 2, .terminal 3, .terminal 1, .terminal 23, .terminal 24, .terminal 26, .terminal 24, .terminal 25, .terminal 4, .terminal 5, .terminal 6, .terminal 3, .terminal 1, .terminal 4, .terminal 7, .nonterminal 2, .nonterminal 3, .nonterminal 7, .terminal 8, .terminal 1, .terminal 4]⟩, ⟨7, [.terminal 9, .terminal 16, .terminal 11, .nonterminal 5, .terminal 12, .nonterminal 8, .terminal 4, .nonterminal 5, .terminal 12, .terminal 1, .terminal 17, .nonterminal 8, .terminal 26, .nonterminal 5, .terminal 19, .terminal 4, .terminal 8, .terminal 16, .terminal 4]⟩, ⟨8, [.nonterminal 5, .terminal 27, .nonterminal 5]⟩]⟩
+def grammar : LALR.Grammar := ⟨29, 43, 0, #[⟨20, []⟩, ⟨20, [.nonterminal 1, .nonterminal 20]⟩, ⟨21, []⟩, ⟨21, [.nonterminal 1, .nonterminal 21]⟩, ⟨22, []⟩, ⟨22, [.nonterminal 4, .nonterminal 22]⟩, ⟨0, [.terminal 0, .terminal 1, .nonterminal 20, .terminal 2, .nonterminal 21, .terminal 3, .nonterminal 22, .terminal 4, .terminal 1, .terminal 5]⟩, ⟨23, [.nonterminal 2]⟩, ⟨23, [.terminal 6]⟩, ⟨24, []⟩, ⟨24, [.nonterminal 23]⟩, ⟨25, []⟩, ⟨25, [.terminal 7, .nonterminal 12, .terminal 8]⟩, ⟨1, [.nonterminal 24, .nonterminal 3, .terminal 1, .nonterminal 25, .terminal 5]⟩, ⟨26, [.terminal 9]⟩, ⟨26, [.terminal 10]⟩, ⟨2, [.nonterminal 26]⟩, ⟨27, [.terminal 12]⟩, ⟨27, [.terminal 13]⟩, ⟨28, [.terminal 11]⟩, ⟨28, [.nonterminal 27]⟩, ⟨3, [.nonterminal 28]⟩, ⟨29, []⟩, ⟨29, [.nonterminal 5, .nonterminal 29]⟩, ⟨4, [.terminal 14, .terminal 1, .terminal 15, .nonterminal 29, .terminal 4, .terminal 1, .terminal 5]⟩, ⟨30, [.nonterminal 6]⟩, ⟨30, [.nonterminal 7]⟩, ⟨5, [.nonterminal 30, .terminal 5]⟩, ⟨6, [.nonterminal 8, .terminal 16, .nonterminal 13]⟩, ⟨31, []⟩, ⟨31, [.terminal 19, .nonterminal 13]⟩, ⟨32, []⟩, ⟨32, [.nonterminal 5, .nonterminal 32]⟩, ⟨7, [.terminal 17, .terminal 1, .terminal 18, .nonterminal 13, .terminal 19, .nonterminal 13, .nonterminal 31, .terminal 20, .nonterminal 32, .terminal 4, .terminal 17]⟩, ⟨33, [.nonterminal 9]⟩, ⟨33, [.nonterminal 10]⟩, ⟨8, [.nonterminal 33]⟩, ⟨9, [.nonterminal 11]⟩, ⟨34, []⟩, ⟨34, [.terminal 22, .nonterminal 11, .nonterminal 34]⟩, ⟨10, [.terminal 21, .terminal 22, .nonterminal 11, .nonterminal 34]⟩, ⟨35, []⟩, ⟨35, [.terminal 7, .nonterminal 12, .terminal 8]⟩, ⟨11, [.terminal 1, .nonterminal 35]⟩, ⟨36, []⟩, ⟨36, [.terminal 23, .nonterminal 13, .nonterminal 36]⟩, ⟨12, [.nonterminal 13, .nonterminal 36]⟩, ⟨37, []⟩, ⟨37, [.nonterminal 14, .nonterminal 15, .nonterminal 37]⟩, ⟨13, [.nonterminal 15, .nonterminal 37]⟩, ⟨14, [.terminal 24]⟩, ⟨38, []⟩, ⟨38, [.nonterminal 16, .nonterminal 17, .nonterminal 38]⟩, ⟨15, [.nonterminal 17, .nonterminal 38]⟩, ⟨16, [.terminal 25]⟩, ⟨39, [.nonterminal 18]⟩, ⟨39, [.nonterminal 19]⟩, ⟨40, [.terminal 26, .nonterminal 13, .terminal 27]⟩, ⟨40, [.nonterminal 39]⟩, ⟨41, [.nonterminal 8]⟩, ⟨41, [.nonterminal 40]⟩, ⟨17, [.nonterminal 41]⟩, ⟨42, []⟩, ⟨42, [.nonterminal 12]⟩, ⟨18, [.terminal 1, .terminal 26, .nonterminal 42, .terminal 27]⟩, ⟨19, [.terminal 28, .terminal 26, .nonterminal 8, .terminal 23, .nonterminal 13, .terminal 27]⟩]⟩
 
-noncomputable def sourceGrammar : Parser.EBNF.Grammar := [("program", Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "block") (Parser.EBNF.Expr.ref "tensor_block")),
- ("block",
+noncomputable def sourceGrammar : Parser.EBNF.Grammar := [("block",
   Parser.EBNF.Expr.seq
     (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "block"))
     (Parser.EBNF.Expr.seq
       (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
       (Parser.EBNF.Expr.seq
-        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "output"))
+        (Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "declaration"))
         (Parser.EBNF.Expr.seq
-          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "protected"))
           (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+            (Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "declaration"))
             (Parser.EBNF.Expr.seq
-              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "public"))
               (Parser.EBNF.Expr.seq
-                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "protected"))
+                (Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "method"))
                 (Parser.EBNF.Expr.seq
-                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "constant"))
+                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
                   (Parser.EBNF.Expr.seq
-                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
-                    (Parser.EBNF.Expr.seq
-                      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
-                      (Parser.EBNF.Expr.seq
-                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                        (Parser.EBNF.Expr.seq
-                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "public"))
-                          (Parser.EBNF.Expr.seq
-                            (Parser.EBNF.Expr.ref "startup")
-                            (Parser.EBNF.Expr.seq
-                              (Parser.EBNF.Expr.ref "recalibrate")
-                              (Parser.EBNF.Expr.seq
-                                (Parser.EBNF.Expr.ref "do_step")
-                                (Parser.EBNF.Expr.seq
-                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
-                                  (Parser.EBNF.Expr.seq
-                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
-                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))))))))))))))),
- ("startup",
+                    (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))))))),
+ ("declaration",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.optional
+      (Parser.EBNF.Expr.alt
+        (Parser.EBNF.Expr.ref "direction")
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "constant"))))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.ref "primitive_type")
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.optional
+            (Parser.EBNF.Expr.seq
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+              (Parser.EBNF.Expr.seq
+                (Parser.EBNF.Expr.ref "expression_list")
+                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]")))))
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";")))))),
+ ("direction",
+  Parser.EBNF.Expr.alt
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "input"))
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "output"))),
+ ("primitive_type",
+  Parser.EBNF.Expr.alt
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+    (Parser.EBNF.Expr.alt
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Integer"))
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Boolean")))),
+ ("method",
   Parser.EBNF.Expr.seq
     (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "method"))
     (Parser.EBNF.Expr.seq
-      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Startup"))
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
       (Parser.EBNF.Expr.seq
         (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "algorithm"))
         (Parser.EBNF.Expr.seq
-          (Parser.EBNF.Expr.ref "reference")
+          (Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "statement"))
           (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
             (Parser.EBNF.Expr.seq
-              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "0.0"))
-              (Parser.EBNF.Expr.seq
-                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                (Parser.EBNF.Expr.seq
-                  (Parser.EBNF.Expr.ref "reference")
-                  (Parser.EBNF.Expr.seq
-                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
-                    (Parser.EBNF.Expr.seq
-                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "1.0"))
-                      (Parser.EBNF.Expr.seq
-                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                        (Parser.EBNF.Expr.seq
-                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
-                          (Parser.EBNF.Expr.seq
-                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Startup"))
-                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))))))))))),
- ("recalibrate",
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";")))))))),
+ ("statement",
   Parser.EBNF.Expr.seq
-    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "method"))
-    (Parser.EBNF.Expr.seq
-      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Recalibrate"))
-      (Parser.EBNF.Expr.seq
-        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "algorithm"))
-        (Parser.EBNF.Expr.seq
-          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
-          (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Recalibrate"))
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))),
- ("do_step",
+    (Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "single_assignment") (Parser.EBNF.Expr.ref "for_loop"))
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))),
+ ("single_assignment",
   Parser.EBNF.Expr.seq
-    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "method"))
+    (Parser.EBNF.Expr.ref "reference")
     (Parser.EBNF.Expr.seq
-      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "DoStep"))
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
+      (Parser.EBNF.Expr.ref "expression"))),
+ ("for_loop",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "for"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
       (Parser.EBNF.Expr.seq
-        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "algorithm"))
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "in"))
         (Parser.EBNF.Expr.seq
-          (Parser.EBNF.Expr.ref "reference")
+          (Parser.EBNF.Expr.ref "expression")
           (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":"))
             (Parser.EBNF.Expr.seq
-              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+              (Parser.EBNF.Expr.ref "expression")
               (Parser.EBNF.Expr.seq
-                (Parser.EBNF.Expr.ref "reference")
-                (Parser.EBNF.Expr.seq
-                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "+"))
+                (Parser.EBNF.Expr.optional
                   (Parser.EBNF.Expr.seq
-                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "1.0"))
+                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":"))
+                    (Parser.EBNF.Expr.ref "expression")))
+                (Parser.EBNF.Expr.seq
+                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "loop"))
+                  (Parser.EBNF.Expr.seq
+                    (Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "statement"))
                     (Parser.EBNF.Expr.seq
-                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))
-                      (Parser.EBNF.Expr.seq
-                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                        (Parser.EBNF.Expr.seq
-                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
-                          (Parser.EBNF.Expr.seq
-                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "DoStep"))
-                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))))))))))))))),
- ("reference",
+                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
+                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "for")))))))))))),
+ ("reference", Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "local_reference") (Parser.EBNF.Expr.ref "state_reference")),
+ ("local_reference", Parser.EBNF.Expr.ref "component_reference"),
+ ("state_reference",
   Parser.EBNF.Expr.seq
     (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "self"))
     (Parser.EBNF.Expr.seq
       (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "."))
-      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident)))),
- ("tensor_block",
-  Parser.EBNF.Expr.seq
-    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "block"))
-    (Parser.EBNF.Expr.seq
-      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
       (Parser.EBNF.Expr.seq
-        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "input"))
-        (Parser.EBNF.Expr.seq
-          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+        (Parser.EBNF.Expr.ref "component_reference")
+        (Parser.EBNF.Expr.many
           (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
-            (Parser.EBNF.Expr.seq
-              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
-              (Parser.EBNF.Expr.seq
-                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
-                (Parser.EBNF.Expr.seq
-                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
-                  (Parser.EBNF.Expr.seq
-                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                    (Parser.EBNF.Expr.seq
-                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "output"))
-                      (Parser.EBNF.Expr.seq
-                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
-                        (Parser.EBNF.Expr.seq
-                          (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
-                          (Parser.EBNF.Expr.seq
-                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
-                            (Parser.EBNF.Expr.seq
-                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
-                              (Parser.EBNF.Expr.seq
-                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
-                                (Parser.EBNF.Expr.seq
-                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                                  (Parser.EBNF.Expr.seq
-                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "output"))
-                                    (Parser.EBNF.Expr.seq
-                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
-                                      (Parser.EBNF.Expr.seq
-                                        (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
-                                        (Parser.EBNF.Expr.seq
-                                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
-                                          (Parser.EBNF.Expr.seq
-                                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
-                                            (Parser.EBNF.Expr.seq
-                                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
-                                              (Parser.EBNF.Expr.seq
-                                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "2"))
-                                                (Parser.EBNF.Expr.seq
-                                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]"))
-                                                  (Parser.EBNF.Expr.seq
-                                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                                                    (Parser.EBNF.Expr.seq
-                                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "protected"))
-                                                      (Parser.EBNF.Expr.seq
-                                                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "constant"))
-                                                        (Parser.EBNF.Expr.seq
-                                                          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
-                                                          (Parser.EBNF.Expr.seq
-                                                            (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
-                                                            (Parser.EBNF.Expr.seq
-                                                              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                                                              (Parser.EBNF.Expr.seq
-                                                                (Parser.EBNF.Expr.terminal
-                                                                  (Parser.Symbol.literal "public"))
-                                                                (Parser.EBNF.Expr.seq
-                                                                  (Parser.EBNF.Expr.ref "startup")
-                                                                  (Parser.EBNF.Expr.seq
-                                                                    (Parser.EBNF.Expr.ref "recalibrate")
-                                                                    (Parser.EBNF.Expr.seq
-                                                                      (Parser.EBNF.Expr.ref "tensor_do_step")
-                                                                      (Parser.EBNF.Expr.seq
-                                                                        (Parser.EBNF.Expr.terminal
-                                                                          (Parser.Symbol.literal "end"))
-                                                                        (Parser.EBNF.Expr.seq
-                                                                          (Parser.EBNF.Expr.terminal
-                                                                            (Parser.Symbol.ident))
-                                                                          (Parser.EBNF.Expr.terminal
-                                                                            (Parser.Symbol.literal
-                                                                              ";")))))))))))))))))))))))))))))))))))))),
- ("tensor_do_step",
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "."))
+            (Parser.EBNF.Expr.ref "component_reference")))))),
+ ("component_reference",
   Parser.EBNF.Expr.seq
-    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "method"))
-    (Parser.EBNF.Expr.seq
-      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "DoStep"))
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+    (Parser.EBNF.Expr.optional
       (Parser.EBNF.Expr.seq
-        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "algorithm"))
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
         (Parser.EBNF.Expr.seq
-          (Parser.EBNF.Expr.ref "reference")
-          (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
-            (Parser.EBNF.Expr.seq
-              (Parser.EBNF.Expr.ref "product")
-              (Parser.EBNF.Expr.seq
-                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                (Parser.EBNF.Expr.seq
-                  (Parser.EBNF.Expr.ref "reference")
-                  (Parser.EBNF.Expr.seq
-                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":="))
-                    (Parser.EBNF.Expr.seq
-                      (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
-                      (Parser.EBNF.Expr.seq
-                        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
-                        (Parser.EBNF.Expr.seq
-                          (Parser.EBNF.Expr.ref "product")
-                          (Parser.EBNF.Expr.seq
-                            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
-                            (Parser.EBNF.Expr.seq
-                              (Parser.EBNF.Expr.ref "reference")
-                              (Parser.EBNF.Expr.seq
-                                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))
-                                (Parser.EBNF.Expr.seq
-                                  (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";"))
-                                  (Parser.EBNF.Expr.seq
-                                    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "end"))
-                                    (Parser.EBNF.Expr.seq
-                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "DoStep"))
-                                      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ";")))))))))))))))))))),
- ("product",
+          (Parser.EBNF.Expr.ref "expression_list")
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]")))))),
+ ("expression_list",
   Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.ref "expression")
+    (Parser.EBNF.Expr.many
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
+        (Parser.EBNF.Expr.ref "expression")))),
+ ("expression",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.ref "term")
+    (Parser.EBNF.Expr.many
+      (Parser.EBNF.Expr.seq (Parser.EBNF.Expr.ref "additive_operator") (Parser.EBNF.Expr.ref "term")))),
+ ("additive_operator", Parser.EBNF.Expr.terminal (Parser.Symbol.literal "+")),
+ ("term",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.ref "primary")
+    (Parser.EBNF.Expr.many
+      (Parser.EBNF.Expr.seq (Parser.EBNF.Expr.ref "multiplicative_operator") (Parser.EBNF.Expr.ref "primary")))),
+ ("multiplicative_operator", Parser.EBNF.Expr.terminal (Parser.Symbol.literal "*")),
+ ("primary",
+  Parser.EBNF.Expr.alt
     (Parser.EBNF.Expr.ref "reference")
-    (Parser.EBNF.Expr.seq (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ".*")) (Parser.EBNF.Expr.ref "reference")))]
+    (Parser.EBNF.Expr.alt
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.ref "expression")
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))))
+      (Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "function_call") (Parser.EBNF.Expr.ref "dimension_query")))),
+ ("function_call",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.optional (Parser.EBNF.Expr.ref "expression_list"))
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))))),
+ ("dimension_query",
+  Parser.EBNF.Expr.seq
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "size"))
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.ref "reference")
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ","))
+          (Parser.EBNF.Expr.seq
+            (Parser.EBNF.Expr.ref "expression")
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")")))))))]
 
-noncomputable def prepared : LALR.Frontend.Prepared := ⟨alphabet, #["program", "block", "startup", "recalibrate", "do_step", "reference", "tensor_block", "tensor_do_step", "product"], grammar⟩
+noncomputable def prepared : LALR.Frontend.Prepared := ⟨alphabet, #["block", "declaration", "direction", "primitive_type", "method", "statement", "single_assignment", "for_loop",
+  "reference", "local_reference", "state_reference", "component_reference", "expression_list", "expression",
+  "additive_operator", "term", "multiplicative_operator", "primary", "function_call", "dimension_query"], grammar⟩
 
-noncomputable def loweringWitness : LALR.Frontend.Witness := ⟨#[Parser.EBNF.Expr.ref "program", Parser.EBNF.Expr.ref "block", Parser.EBNF.Expr.ref "startup",
-  Parser.EBNF.Expr.ref "recalibrate", Parser.EBNF.Expr.ref "do_step", Parser.EBNF.Expr.ref "reference",
-  Parser.EBNF.Expr.ref "tensor_block", Parser.EBNF.Expr.ref "tensor_do_step", Parser.EBNF.Expr.ref "product",
-  Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "block") (Parser.EBNF.Expr.ref "tensor_block")],
-#[Parser.LALR.Frontend.Fragment.alt
-    9
-    (Parser.LALR.Frontend.Fragment.ref "block" 1)
-    (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6),
-  Parser.LALR.Frontend.Fragment.seq
+noncomputable def loweringWitness : LALR.Frontend.Witness := ⟨#[Parser.EBNF.Expr.ref "block", Parser.EBNF.Expr.ref "declaration", Parser.EBNF.Expr.ref "direction",
+  Parser.EBNF.Expr.ref "primitive_type", Parser.EBNF.Expr.ref "method", Parser.EBNF.Expr.ref "statement",
+  Parser.EBNF.Expr.ref "single_assignment", Parser.EBNF.Expr.ref "for_loop", Parser.EBNF.Expr.ref "reference",
+  Parser.EBNF.Expr.ref "local_reference", Parser.EBNF.Expr.ref "state_reference",
+  Parser.EBNF.Expr.ref "component_reference", Parser.EBNF.Expr.ref "expression_list", Parser.EBNF.Expr.ref "expression",
+  Parser.EBNF.Expr.ref "additive_operator", Parser.EBNF.Expr.ref "term", Parser.EBNF.Expr.ref "multiplicative_operator",
+  Parser.EBNF.Expr.ref "primary", Parser.EBNF.Expr.ref "function_call", Parser.EBNF.Expr.ref "dimension_query",
+  Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "declaration"),
+  Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "declaration"), Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "method"),
+  Parser.EBNF.Expr.alt
+    (Parser.EBNF.Expr.ref "direction")
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "constant")),
+  Parser.EBNF.Expr.optional
+    (Parser.EBNF.Expr.alt
+      (Parser.EBNF.Expr.ref "direction")
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "constant"))),
+  Parser.EBNF.Expr.optional
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.ref "expression_list")
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]")))),
+  Parser.EBNF.Expr.alt
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "input"))
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "output")),
+  Parser.EBNF.Expr.alt
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Integer"))
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Boolean")),
+  Parser.EBNF.Expr.alt
+    (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Real"))
+    (Parser.EBNF.Expr.alt
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Integer"))
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "Boolean"))),
+  Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "statement"),
+  Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "single_assignment") (Parser.EBNF.Expr.ref "for_loop"),
+  Parser.EBNF.Expr.optional
+    (Parser.EBNF.Expr.seq (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ":")) (Parser.EBNF.Expr.ref "expression")),
+  Parser.EBNF.Expr.many (Parser.EBNF.Expr.ref "statement"),
+  Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "local_reference") (Parser.EBNF.Expr.ref "state_reference"),
+  Parser.EBNF.Expr.many
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "."))
+      (Parser.EBNF.Expr.ref "component_reference")),
+  Parser.EBNF.Expr.optional
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "["))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.ref "expression_list")
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "]")))),
+  Parser.EBNF.Expr.many
+    (Parser.EBNF.Expr.seq (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ",")) (Parser.EBNF.Expr.ref "expression")),
+  Parser.EBNF.Expr.many (Parser.EBNF.Expr.seq (Parser.EBNF.Expr.ref "additive_operator") (Parser.EBNF.Expr.ref "term")),
+  Parser.EBNF.Expr.many
+    (Parser.EBNF.Expr.seq (Parser.EBNF.Expr.ref "multiplicative_operator") (Parser.EBNF.Expr.ref "primary")),
+  Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "function_call") (Parser.EBNF.Expr.ref "dimension_query"),
+  Parser.EBNF.Expr.alt
+    (Parser.EBNF.Expr.seq
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.ref "expression")
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))))
+    (Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "function_call") (Parser.EBNF.Expr.ref "dimension_query")),
+  Parser.EBNF.Expr.alt
+    (Parser.EBNF.Expr.ref "reference")
+    (Parser.EBNF.Expr.alt
+      (Parser.EBNF.Expr.seq
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+        (Parser.EBNF.Expr.seq
+          (Parser.EBNF.Expr.ref "expression")
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))))
+      (Parser.EBNF.Expr.alt (Parser.EBNF.Expr.ref "function_call") (Parser.EBNF.Expr.ref "dimension_query"))),
+  Parser.EBNF.Expr.optional (Parser.EBNF.Expr.ref "expression_list")],
+#[Parser.LALR.Frontend.Fragment.seq
     (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "block") 0)
     (Parser.LALR.Frontend.Fragment.seq
       (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
       (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
+        (Parser.LALR.Frontend.Fragment.many 20 (Parser.LALR.Frontend.Fragment.ref "declaration" 1))
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "protected") 2)
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+            (Parser.LALR.Frontend.Fragment.many 21 (Parser.LALR.Frontend.Fragment.ref "declaration" 1))
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "public") 3)
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "protected") 5)
+                (Parser.LALR.Frontend.Fragment.many 22 (Parser.LALR.Frontend.Fragment.ref "method" 4))
                 (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
                   (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "public") 7)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.ref "startup" 2)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.ref "recalibrate" 3)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.ref "do_step" 4)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                                    (Parser.LALR.Frontend.Fragment.terminal
-                                      (Parser.Symbol.literal ";")
-                                      4))))))))))))))))),
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5))))))))),
   Parser.LALR.Frontend.Fragment.seq
-    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
+    (Parser.LALR.Frontend.Fragment.optional
+      24
+      (Parser.LALR.Frontend.Fragment.alt
+        23
+        (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)))
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Startup") 10)
+      (Parser.LALR.Frontend.Fragment.ref "primitive_type" 3)
       (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+          (Parser.LALR.Frontend.Fragment.optional
+            25
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "0.0") 13)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1.0") 14)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Startup") 10)
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4))))))))))))),
+                (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))))
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5)))),
+  Parser.LALR.Frontend.Fragment.alt
+    26
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 9)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 10),
+  Parser.LALR.Frontend.Fragment.alt
+    28
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 11)
+    (Parser.LALR.Frontend.Fragment.alt
+      27
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13)),
   Parser.LALR.Frontend.Fragment.seq
-    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Recalibrate") 15)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
-        (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Recalibrate") 15)
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4))))),
-  Parser.LALR.Frontend.Fragment.seq
-    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
-        (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
-            (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 17)
-              (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 18)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1.0") 14)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 19)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4))))))))))))),
-  Parser.LALR.Frontend.Fragment.seq
-    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "self") 20)
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 21)
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)),
-  Parser.LALR.Frontend.Fragment.seq
-    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "block") 0)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 14)
     (Parser.LALR.Frontend.Fragment.seq
       (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
       (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 22)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 15)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+          (Parser.LALR.Frontend.Fragment.many 29 (Parser.LALR.Frontend.Fragment.ref "statement" 5))
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-              (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 25)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 25)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
-                                    (Parser.LALR.Frontend.Fragment.seq
-                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                                      (Parser.LALR.Frontend.Fragment.seq
-                                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                                        (Parser.LALR.Frontend.Fragment.seq
-                                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-                                          (Parser.LALR.Frontend.Fragment.seq
-                                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                                            (Parser.LALR.Frontend.Fragment.seq
-                                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 26)
-                                              (Parser.LALR.Frontend.Fragment.seq
-                                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                                                (Parser.LALR.Frontend.Fragment.seq
-                                                  (Parser.LALR.Frontend.Fragment.terminal
-                                                    (Parser.Symbol.literal "]")
-                                                    25)
-                                                  (Parser.LALR.Frontend.Fragment.seq
-                                                    (Parser.LALR.Frontend.Fragment.terminal
-                                                      (Parser.Symbol.literal ";")
-                                                      4)
-                                                    (Parser.LALR.Frontend.Fragment.seq
-                                                      (Parser.LALR.Frontend.Fragment.terminal
-                                                        (Parser.Symbol.literal "protected")
-                                                        5)
-                                                      (Parser.LALR.Frontend.Fragment.seq
-                                                        (Parser.LALR.Frontend.Fragment.terminal
-                                                          (Parser.Symbol.literal "constant")
-                                                          6)
-                                                        (Parser.LALR.Frontend.Fragment.seq
-                                                          (Parser.LALR.Frontend.Fragment.terminal
-                                                            (Parser.Symbol.literal "Real")
-                                                            3)
-                                                          (Parser.LALR.Frontend.Fragment.seq
-                                                            (Parser.LALR.Frontend.Fragment.terminal
-                                                              (Parser.Symbol.ident)
-                                                              1)
-                                                            (Parser.LALR.Frontend.Fragment.seq
-                                                              (Parser.LALR.Frontend.Fragment.terminal
-                                                                (Parser.Symbol.literal ";")
-                                                                4)
-                                                              (Parser.LALR.Frontend.Fragment.seq
-                                                                (Parser.LALR.Frontend.Fragment.terminal
-                                                                  (Parser.Symbol.literal "public")
-                                                                  7)
-                                                                (Parser.LALR.Frontend.Fragment.seq
-                                                                  (Parser.LALR.Frontend.Fragment.ref "startup" 2)
-                                                                  (Parser.LALR.Frontend.Fragment.seq
-                                                                    (Parser.LALR.Frontend.Fragment.ref "recalibrate" 3)
-                                                                    (Parser.LALR.Frontend.Fragment.seq
-                                                                      (Parser.LALR.Frontend.Fragment.ref
-                                                                        "tensor_do_step"
-                                                                        7)
-                                                                      (Parser.LALR.Frontend.Fragment.seq
-                                                                        (Parser.LALR.Frontend.Fragment.terminal
-                                                                          (Parser.Symbol.literal "end")
-                                                                          8)
-                                                                        (Parser.LALR.Frontend.Fragment.seq
-                                                                          (Parser.LALR.Frontend.Fragment.terminal
-                                                                            (Parser.Symbol.ident)
-                                                                            1)
-                                                                          (Parser.LALR.Frontend.Fragment.terminal
-                                                                            (Parser.Symbol.literal ";")
-                                                                            4)))))))))))))))))))))))))))))))))))),
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5)))))),
   Parser.LALR.Frontend.Fragment.seq
-    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
+    (Parser.LALR.Frontend.Fragment.alt
+      30
+      (Parser.LALR.Frontend.Fragment.ref "single_assignment" 6)
+      (Parser.LALR.Frontend.Fragment.ref "for_loop" 7))
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5),
+  Parser.LALR.Frontend.Fragment.seq
+    (Parser.LALR.Frontend.Fragment.ref "reference" 8)
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 16)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.Fragment.seq
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "for") 17)
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
       (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "in") 18)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+          (Parser.LALR.Frontend.Fragment.ref "expression" 13)
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.ref "product" 8)
+              (Parser.LALR.Frontend.Fragment.ref "expression" 13)
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+                (Parser.LALR.Frontend.Fragment.optional
+                  31
                   (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
+                    (Parser.LALR.Frontend.Fragment.ref "expression" 13)))
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "loop") 20)
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.many 32 (Parser.LALR.Frontend.Fragment.ref "statement" 5))
                     (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 17)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.ref "product" 8)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 26)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 19)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                                    (Parser.LALR.Frontend.Fragment.seq
-                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-                                      (Parser.LALR.Frontend.Fragment.terminal
-                                        (Parser.Symbol.literal ";")
-                                        4)))))))))))))))))),
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "for") 17)))))))))),
+  Parser.LALR.Frontend.Fragment.alt
+    33
+    (Parser.LALR.Frontend.Fragment.ref "local_reference" 9)
+    (Parser.LALR.Frontend.Fragment.ref "state_reference" 10),
+  Parser.LALR.Frontend.Fragment.ref "component_reference" 11,
   Parser.LALR.Frontend.Fragment.seq
-    (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "self") 21)
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".*") 27)
-      (Parser.LALR.Frontend.Fragment.ref "reference" 5))],
-#[Parser.LALR.Frontend.AnnotatedRule.altLeft
-    9
-    (Parser.LALR.Frontend.Fragment.ref "block" 1)
-    (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6),
-  Parser.LALR.Frontend.AnnotatedRule.altRight
-    9
-    (Parser.LALR.Frontend.Fragment.ref "block" 1)
-    (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6),
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)
+        (Parser.LALR.Frontend.Fragment.many
+          34
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+            (Parser.LALR.Frontend.Fragment.ref "component_reference" 11))))),
+  Parser.LALR.Frontend.Fragment.seq
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+    (Parser.LALR.Frontend.Fragment.optional
+      35
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8)))),
+  Parser.LALR.Frontend.Fragment.seq
+    (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+    (Parser.LALR.Frontend.Fragment.many
+      36
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+        (Parser.LALR.Frontend.Fragment.ref "expression" 13))),
+  Parser.LALR.Frontend.Fragment.seq
+    (Parser.LALR.Frontend.Fragment.ref "term" 15)
+    (Parser.LALR.Frontend.Fragment.many
+      37
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "additive_operator" 14)
+        (Parser.LALR.Frontend.Fragment.ref "term" 15))),
+  Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 24,
+  Parser.LALR.Frontend.Fragment.seq
+    (Parser.LALR.Frontend.Fragment.ref "primary" 17)
+    (Parser.LALR.Frontend.Fragment.many
+      38
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "multiplicative_operator" 16)
+        (Parser.LALR.Frontend.Fragment.ref "primary" 17))),
+  Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "*") 25,
+  Parser.LALR.Frontend.Fragment.alt
+    41
+    (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+    (Parser.LALR.Frontend.Fragment.alt
+      40
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+      (Parser.LALR.Frontend.Fragment.alt
+        39
+        (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+        (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19))),
+  Parser.LALR.Frontend.Fragment.seq
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.optional 42 (Parser.LALR.Frontend.Fragment.ref "expression_list" 12))
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27))),
+  Parser.LALR.Frontend.Fragment.seq
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "size") 28)
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))))],
+#[Parser.LALR.Frontend.AnnotatedRule.manyEmpty 20 (Parser.LALR.Frontend.Fragment.ref "declaration" 1),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 20 (Parser.LALR.Frontend.Fragment.ref "declaration" 1),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty 21 (Parser.LALR.Frontend.Fragment.ref "declaration" 1),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 21 (Parser.LALR.Frontend.Fragment.ref "declaration" 1),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty 22 (Parser.LALR.Frontend.Fragment.ref "method" 4),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 22 (Parser.LALR.Frontend.Fragment.ref "method" 4),
   Parser.LALR.Frontend.AnnotatedRule.named
     0
-    "program"
-    (Parser.LALR.Frontend.Fragment.alt
-      9
-      (Parser.LALR.Frontend.Fragment.ref "block" 1)
-      (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6)),
-  Parser.LALR.Frontend.AnnotatedRule.named
-    1
     "block"
     (Parser.LALR.Frontend.Fragment.seq
       (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "block") 0)
       (Parser.LALR.Frontend.Fragment.seq
         (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
+          (Parser.LALR.Frontend.Fragment.many 20 (Parser.LALR.Frontend.Fragment.ref "declaration" 1))
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "protected") 2)
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+              (Parser.LALR.Frontend.Fragment.many 21 (Parser.LALR.Frontend.Fragment.ref "declaration" 1))
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "public") 3)
                 (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "protected") 5)
+                  (Parser.LALR.Frontend.Fragment.many 22 (Parser.LALR.Frontend.Fragment.ref "method" 4))
                   (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
                     (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "public") 7)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.ref "startup" 2)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.ref "recalibrate" 3)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.ref "do_step" 4)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                                    (Parser.LALR.Frontend.Fragment.seq
-                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                                      (Parser.LALR.Frontend.Fragment.terminal
-                                        (Parser.Symbol.literal ";")
-                                        4)))))))))))))))))),
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5)))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    23
+    (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    23
+    (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty
+    24
+    (Parser.LALR.Frontend.Fragment.alt
+      23
+      (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome
+    24
+    (Parser.LALR.Frontend.Fragment.alt
+      23
+      (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty
+    25
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome
+    25
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    1
+    "declaration"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.optional
+        24
+        (Parser.LALR.Frontend.Fragment.alt
+          23
+          (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)))
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "primitive_type" 3)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.optional
+              25
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))))
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    26
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 9)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 10),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    26
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 9)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 10),
   Parser.LALR.Frontend.AnnotatedRule.named
     2
-    "startup"
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Startup") 10)
-        (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-            (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
-              (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "0.0") 13)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1.0") 14)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Startup") 10)
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))))))))))),
+    "direction"
+    (Parser.LALR.Frontend.Fragment.alt
+      26
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 9)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 10)),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    27
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    27
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    28
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 11)
+    (Parser.LALR.Frontend.Fragment.alt
+      27
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13)),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    28
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 11)
+    (Parser.LALR.Frontend.Fragment.alt
+      27
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13)),
   Parser.LALR.Frontend.AnnotatedRule.named
     3
-    "recalibrate"
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Recalibrate") 15)
-        (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-            (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Recalibrate") 15)
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))),
+    "primitive_type"
+    (Parser.LALR.Frontend.Fragment.alt
+      28
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 11)
+      (Parser.LALR.Frontend.Fragment.alt
+        27
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13))),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty 29 (Parser.LALR.Frontend.Fragment.ref "statement" 5),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 29 (Parser.LALR.Frontend.Fragment.ref "statement" 5),
   Parser.LALR.Frontend.AnnotatedRule.named
     4
-    "do_step"
+    "method"
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-        (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-            (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
-              (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 17)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 18)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1.0") 14)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 19)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))))))))))),
-  Parser.LALR.Frontend.AnnotatedRule.named
-    5
-    "reference"
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "self") 20)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 21)
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1))),
-  Parser.LALR.Frontend.AnnotatedRule.named
-    6
-    "tensor_block"
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "block") 0)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 14)
       (Parser.LALR.Frontend.Fragment.seq
         (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 22)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 15)
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+            (Parser.LALR.Frontend.Fragment.many 29 (Parser.LALR.Frontend.Fragment.ref "statement" 5))
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 25)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 25)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                                    (Parser.LALR.Frontend.Fragment.seq
-                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
-                                      (Parser.LALR.Frontend.Fragment.seq
-                                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                                        (Parser.LALR.Frontend.Fragment.seq
-                                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                                          (Parser.LALR.Frontend.Fragment.seq
-                                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-                                            (Parser.LALR.Frontend.Fragment.seq
-                                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                                              (Parser.LALR.Frontend.Fragment.seq
-                                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 26)
-                                                (Parser.LALR.Frontend.Fragment.seq
-                                                  (Parser.LALR.Frontend.Fragment.terminal
-                                                    (Parser.Symbol.literal "2")
-                                                    24)
-                                                  (Parser.LALR.Frontend.Fragment.seq
-                                                    (Parser.LALR.Frontend.Fragment.terminal
-                                                      (Parser.Symbol.literal "]")
-                                                      25)
-                                                    (Parser.LALR.Frontend.Fragment.seq
-                                                      (Parser.LALR.Frontend.Fragment.terminal
-                                                        (Parser.Symbol.literal ";")
-                                                        4)
-                                                      (Parser.LALR.Frontend.Fragment.seq
-                                                        (Parser.LALR.Frontend.Fragment.terminal
-                                                          (Parser.Symbol.literal "protected")
-                                                          5)
-                                                        (Parser.LALR.Frontend.Fragment.seq
-                                                          (Parser.LALR.Frontend.Fragment.terminal
-                                                            (Parser.Symbol.literal "constant")
-                                                            6)
-                                                          (Parser.LALR.Frontend.Fragment.seq
-                                                            (Parser.LALR.Frontend.Fragment.terminal
-                                                              (Parser.Symbol.literal "Real")
-                                                              3)
-                                                            (Parser.LALR.Frontend.Fragment.seq
-                                                              (Parser.LALR.Frontend.Fragment.terminal
-                                                                (Parser.Symbol.ident)
-                                                                1)
-                                                              (Parser.LALR.Frontend.Fragment.seq
-                                                                (Parser.LALR.Frontend.Fragment.terminal
-                                                                  (Parser.Symbol.literal ";")
-                                                                  4)
-                                                                (Parser.LALR.Frontend.Fragment.seq
-                                                                  (Parser.LALR.Frontend.Fragment.terminal
-                                                                    (Parser.Symbol.literal "public")
-                                                                    7)
-                                                                  (Parser.LALR.Frontend.Fragment.seq
-                                                                    (Parser.LALR.Frontend.Fragment.ref "startup" 2)
-                                                                    (Parser.LALR.Frontend.Fragment.seq
-                                                                      (Parser.LALR.Frontend.Fragment.ref
-                                                                        "recalibrate"
-                                                                        3)
-                                                                      (Parser.LALR.Frontend.Fragment.seq
-                                                                        (Parser.LALR.Frontend.Fragment.ref
-                                                                          "tensor_do_step"
-                                                                          7)
-                                                                        (Parser.LALR.Frontend.Fragment.seq
-                                                                          (Parser.LALR.Frontend.Fragment.terminal
-                                                                            (Parser.Symbol.literal "end")
-                                                                            8)
-                                                                          (Parser.LALR.Frontend.Fragment.seq
-                                                                            (Parser.LALR.Frontend.Fragment.terminal
-                                                                              (Parser.Symbol.ident)
-                                                                              1)
-                                                                            (Parser.LALR.Frontend.Fragment.terminal
-                                                                              (Parser.Symbol.literal ";")
-                                                                              4))))))))))))))))))))))))))))))))))))),
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5))))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    30
+    (Parser.LALR.Frontend.Fragment.ref "single_assignment" 6)
+    (Parser.LALR.Frontend.Fragment.ref "for_loop" 7),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    30
+    (Parser.LALR.Frontend.Fragment.ref "single_assignment" 6)
+    (Parser.LALR.Frontend.Fragment.ref "for_loop" 7),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    5
+    "statement"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.alt
+        30
+        (Parser.LALR.Frontend.Fragment.ref "single_assignment" 6)
+        (Parser.LALR.Frontend.Fragment.ref "for_loop" 7))
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    6
+    "single_assignment"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 16)
+        (Parser.LALR.Frontend.Fragment.ref "expression" 13))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty
+    31
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome
+    31
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty 32 (Parser.LALR.Frontend.Fragment.ref "statement" 5),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 32 (Parser.LALR.Frontend.Fragment.ref "statement" 5),
   Parser.LALR.Frontend.AnnotatedRule.named
     7
-    "tensor_do_step"
+    "for_loop"
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "for") 17)
       (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "in") 18)
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+            (Parser.LALR.Frontend.Fragment.ref "expression" 13)
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.ref "product" 8)
+                (Parser.LALR.Frontend.Fragment.ref "expression" 13)
                 (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+                  (Parser.LALR.Frontend.Fragment.optional
+                    31
                     (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
+                      (Parser.LALR.Frontend.Fragment.ref "expression" 13)))
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "loop") 20)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.many 32 (Parser.LALR.Frontend.Fragment.ref "statement" 5))
                       (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 17)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.ref "product" 8)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 26)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 19)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                                    (Parser.LALR.Frontend.Fragment.seq
-                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                                      (Parser.LALR.Frontend.Fragment.seq
-                                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-                                        (Parser.LALR.Frontend.Fragment.terminal
-                                          (Parser.Symbol.literal ";")
-                                          4))))))))))))))))))),
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "for") 17))))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    33
+    (Parser.LALR.Frontend.Fragment.ref "local_reference" 9)
+    (Parser.LALR.Frontend.Fragment.ref "state_reference" 10),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    33
+    (Parser.LALR.Frontend.Fragment.ref "local_reference" 9)
+    (Parser.LALR.Frontend.Fragment.ref "state_reference" 10),
   Parser.LALR.Frontend.AnnotatedRule.named
     8
-    "product"
+    "reference"
+    (Parser.LALR.Frontend.Fragment.alt
+      33
+      (Parser.LALR.Frontend.Fragment.ref "local_reference" 9)
+      (Parser.LALR.Frontend.Fragment.ref "state_reference" 10)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    9
+    "local_reference"
+    (Parser.LALR.Frontend.Fragment.ref "component_reference" 11),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty
+    34
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+      (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons
+    34
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+      (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    10
+    "state_reference"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "self") 21)
       (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".*") 27)
-        (Parser.LALR.Frontend.Fragment.ref "reference" 5)))]⟩
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)
+          (Parser.LALR.Frontend.Fragment.many
+            34
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+              (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)))))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty
+    35
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome
+    35
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    11
+    "component_reference"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+      (Parser.LALR.Frontend.Fragment.optional
+        35
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))))),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty
+    36
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons
+    36
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    12
+    "expression_list"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+      (Parser.LALR.Frontend.Fragment.many
+        36
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+          (Parser.LALR.Frontend.Fragment.ref "expression" 13)))),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty
+    37
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "additive_operator" 14)
+      (Parser.LALR.Frontend.Fragment.ref "term" 15)),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons
+    37
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "additive_operator" 14)
+      (Parser.LALR.Frontend.Fragment.ref "term" 15)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    13
+    "expression"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "term" 15)
+      (Parser.LALR.Frontend.Fragment.many
+        37
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "additive_operator" 14)
+          (Parser.LALR.Frontend.Fragment.ref "term" 15)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    14
+    "additive_operator"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 24),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty
+    38
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "multiplicative_operator" 16)
+      (Parser.LALR.Frontend.Fragment.ref "primary" 17)),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons
+    38
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "multiplicative_operator" 16)
+      (Parser.LALR.Frontend.Fragment.ref "primary" 17)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    15
+    "term"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "primary" 17)
+      (Parser.LALR.Frontend.Fragment.many
+        38
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "multiplicative_operator" 16)
+          (Parser.LALR.Frontend.Fragment.ref "primary" 17)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    16
+    "multiplicative_operator"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "*") 25),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    39
+    (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+    (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    39
+    (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+    (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    40
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+    (Parser.LALR.Frontend.Fragment.alt
+      39
+      (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+      (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19)),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    40
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+    (Parser.LALR.Frontend.Fragment.alt
+      39
+      (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+      (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19)),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    41
+    (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+    (Parser.LALR.Frontend.Fragment.alt
+      40
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+      (Parser.LALR.Frontend.Fragment.alt
+        39
+        (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+        (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    41
+    (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+    (Parser.LALR.Frontend.Fragment.alt
+      40
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+      (Parser.LALR.Frontend.Fragment.alt
+        39
+        (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+        (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    17
+    "primary"
+    (Parser.LALR.Frontend.Fragment.alt
+      41
+      (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+      (Parser.LALR.Frontend.Fragment.alt
+        40
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+        (Parser.LALR.Frontend.Fragment.alt
+          39
+          (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+          (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19)))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty 42 (Parser.LALR.Frontend.Fragment.ref "expression_list" 12),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome 42 (Parser.LALR.Frontend.Fragment.ref "expression_list" 12),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    18
+    "function_call"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.optional 42 (Parser.LALR.Frontend.Fragment.ref "expression_list" 12))
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    19
+    "dimension_query"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "size") 28)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27))))))]⟩
 
 -- Executable annotations; no runtime dependency on the proof-only witness.
-def runtimeRules : Array LALR.Frontend.AnnotatedRule := #[Parser.LALR.Frontend.AnnotatedRule.altLeft
-    9
-    (Parser.LALR.Frontend.Fragment.ref "block" 1)
-    (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6),
-  Parser.LALR.Frontend.AnnotatedRule.altRight
-    9
-    (Parser.LALR.Frontend.Fragment.ref "block" 1)
-    (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6),
+def runtimeRules : Array LALR.Frontend.AnnotatedRule := #[Parser.LALR.Frontend.AnnotatedRule.manyEmpty 20 (Parser.LALR.Frontend.Fragment.ref "declaration" 1),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 20 (Parser.LALR.Frontend.Fragment.ref "declaration" 1),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty 21 (Parser.LALR.Frontend.Fragment.ref "declaration" 1),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 21 (Parser.LALR.Frontend.Fragment.ref "declaration" 1),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty 22 (Parser.LALR.Frontend.Fragment.ref "method" 4),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 22 (Parser.LALR.Frontend.Fragment.ref "method" 4),
   Parser.LALR.Frontend.AnnotatedRule.named
     0
-    "program"
-    (Parser.LALR.Frontend.Fragment.alt
-      9
-      (Parser.LALR.Frontend.Fragment.ref "block" 1)
-      (Parser.LALR.Frontend.Fragment.ref "tensor_block" 6)),
-  Parser.LALR.Frontend.AnnotatedRule.named
-    1
     "block"
     (Parser.LALR.Frontend.Fragment.seq
       (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "block") 0)
       (Parser.LALR.Frontend.Fragment.seq
         (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
+          (Parser.LALR.Frontend.Fragment.many 20 (Parser.LALR.Frontend.Fragment.ref "declaration" 1))
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "protected") 2)
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+              (Parser.LALR.Frontend.Fragment.many 21 (Parser.LALR.Frontend.Fragment.ref "declaration" 1))
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "public") 3)
                 (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "protected") 5)
+                  (Parser.LALR.Frontend.Fragment.many 22 (Parser.LALR.Frontend.Fragment.ref "method" 4))
                   (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
                     (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "public") 7)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.ref "startup" 2)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.ref "recalibrate" 3)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.ref "do_step" 4)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                                    (Parser.LALR.Frontend.Fragment.seq
-                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                                      (Parser.LALR.Frontend.Fragment.terminal
-                                        (Parser.Symbol.literal ";")
-                                        4)))))))))))))))))),
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5)))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    23
+    (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    23
+    (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty
+    24
+    (Parser.LALR.Frontend.Fragment.alt
+      23
+      (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome
+    24
+    (Parser.LALR.Frontend.Fragment.alt
+      23
+      (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty
+    25
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome
+    25
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    1
+    "declaration"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.optional
+        24
+        (Parser.LALR.Frontend.Fragment.alt
+          23
+          (Parser.LALR.Frontend.Fragment.ref "direction" 2)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "constant") 6)))
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "primitive_type" 3)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.optional
+              25
+              (Parser.LALR.Frontend.Fragment.seq
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+                (Parser.LALR.Frontend.Fragment.seq
+                  (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))))
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    26
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 9)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 10),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    26
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 9)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 10),
   Parser.LALR.Frontend.AnnotatedRule.named
     2
-    "startup"
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Startup") 10)
-        (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-            (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
-              (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "0.0") 13)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1.0") 14)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Startup") 10)
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))))))))))),
+    "direction"
+    (Parser.LALR.Frontend.Fragment.alt
+      26
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 9)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 10)),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    27
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    27
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    28
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 11)
+    (Parser.LALR.Frontend.Fragment.alt
+      27
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13)),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    28
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 11)
+    (Parser.LALR.Frontend.Fragment.alt
+      27
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13)),
   Parser.LALR.Frontend.AnnotatedRule.named
     3
-    "recalibrate"
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Recalibrate") 15)
-        (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-            (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Recalibrate") 15)
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))),
+    "primitive_type"
+    (Parser.LALR.Frontend.Fragment.alt
+      28
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 11)
+      (Parser.LALR.Frontend.Fragment.alt
+        27
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Integer") 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Boolean") 13))),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty 29 (Parser.LALR.Frontend.Fragment.ref "statement" 5),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 29 (Parser.LALR.Frontend.Fragment.ref "statement" 5),
   Parser.LALR.Frontend.AnnotatedRule.named
     4
-    "do_step"
+    "method"
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-        (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
-          (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-            (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
-              (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 17)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 18)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "1.0") 14)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 19)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)))))))))))))),
-  Parser.LALR.Frontend.AnnotatedRule.named
-    5
-    "reference"
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "self") 20)
-      (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 21)
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1))),
-  Parser.LALR.Frontend.AnnotatedRule.named
-    6
-    "tensor_block"
-    (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "block") 0)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 14)
       (Parser.LALR.Frontend.Fragment.seq
         (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "input") 22)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 15)
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
+            (Parser.LALR.Frontend.Fragment.many 29 (Parser.LALR.Frontend.Fragment.ref "statement" 5))
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-                (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 25)
-                    (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                      (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 25)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                                    (Parser.LALR.Frontend.Fragment.seq
-                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "output") 2)
-                                      (Parser.LALR.Frontend.Fragment.seq
-                                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "Real") 3)
-                                        (Parser.LALR.Frontend.Fragment.seq
-                                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                                          (Parser.LALR.Frontend.Fragment.seq
-                                            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 23)
-                                            (Parser.LALR.Frontend.Fragment.seq
-                                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "2") 24)
-                                              (Parser.LALR.Frontend.Fragment.seq
-                                                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 26)
-                                                (Parser.LALR.Frontend.Fragment.seq
-                                                  (Parser.LALR.Frontend.Fragment.terminal
-                                                    (Parser.Symbol.literal "2")
-                                                    24)
-                                                  (Parser.LALR.Frontend.Fragment.seq
-                                                    (Parser.LALR.Frontend.Fragment.terminal
-                                                      (Parser.Symbol.literal "]")
-                                                      25)
-                                                    (Parser.LALR.Frontend.Fragment.seq
-                                                      (Parser.LALR.Frontend.Fragment.terminal
-                                                        (Parser.Symbol.literal ";")
-                                                        4)
-                                                      (Parser.LALR.Frontend.Fragment.seq
-                                                        (Parser.LALR.Frontend.Fragment.terminal
-                                                          (Parser.Symbol.literal "protected")
-                                                          5)
-                                                        (Parser.LALR.Frontend.Fragment.seq
-                                                          (Parser.LALR.Frontend.Fragment.terminal
-                                                            (Parser.Symbol.literal "constant")
-                                                            6)
-                                                          (Parser.LALR.Frontend.Fragment.seq
-                                                            (Parser.LALR.Frontend.Fragment.terminal
-                                                              (Parser.Symbol.literal "Real")
-                                                              3)
-                                                            (Parser.LALR.Frontend.Fragment.seq
-                                                              (Parser.LALR.Frontend.Fragment.terminal
-                                                                (Parser.Symbol.ident)
-                                                                1)
-                                                              (Parser.LALR.Frontend.Fragment.seq
-                                                                (Parser.LALR.Frontend.Fragment.terminal
-                                                                  (Parser.Symbol.literal ";")
-                                                                  4)
-                                                                (Parser.LALR.Frontend.Fragment.seq
-                                                                  (Parser.LALR.Frontend.Fragment.terminal
-                                                                    (Parser.Symbol.literal "public")
-                                                                    7)
-                                                                  (Parser.LALR.Frontend.Fragment.seq
-                                                                    (Parser.LALR.Frontend.Fragment.ref "startup" 2)
-                                                                    (Parser.LALR.Frontend.Fragment.seq
-                                                                      (Parser.LALR.Frontend.Fragment.ref
-                                                                        "recalibrate"
-                                                                        3)
-                                                                      (Parser.LALR.Frontend.Fragment.seq
-                                                                        (Parser.LALR.Frontend.Fragment.ref
-                                                                          "tensor_do_step"
-                                                                          7)
-                                                                        (Parser.LALR.Frontend.Fragment.seq
-                                                                          (Parser.LALR.Frontend.Fragment.terminal
-                                                                            (Parser.Symbol.literal "end")
-                                                                            8)
-                                                                          (Parser.LALR.Frontend.Fragment.seq
-                                                                            (Parser.LALR.Frontend.Fragment.terminal
-                                                                              (Parser.Symbol.ident)
-                                                                              1)
-                                                                            (Parser.LALR.Frontend.Fragment.terminal
-                                                                              (Parser.Symbol.literal ";")
-                                                                              4))))))))))))))))))))))))))))))))))))),
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+                (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5))))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    30
+    (Parser.LALR.Frontend.Fragment.ref "single_assignment" 6)
+    (Parser.LALR.Frontend.Fragment.ref "for_loop" 7),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    30
+    (Parser.LALR.Frontend.Fragment.ref "single_assignment" 6)
+    (Parser.LALR.Frontend.Fragment.ref "for_loop" 7),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    5
+    "statement"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.alt
+        30
+        (Parser.LALR.Frontend.Fragment.ref "single_assignment" 6)
+        (Parser.LALR.Frontend.Fragment.ref "for_loop" 7))
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 5)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    6
+    "single_assignment"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 16)
+        (Parser.LALR.Frontend.Fragment.ref "expression" 13))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty
+    31
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome
+    31
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty 32 (Parser.LALR.Frontend.Fragment.ref "statement" 5),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons 32 (Parser.LALR.Frontend.Fragment.ref "statement" 5),
   Parser.LALR.Frontend.AnnotatedRule.named
     7
-    "tensor_do_step"
+    "for_loop"
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "method") 9)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "for") 17)
       (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
         (Parser.LALR.Frontend.Fragment.seq
-          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "algorithm") 11)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "in") 18)
           (Parser.LALR.Frontend.Fragment.seq
-            (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+            (Parser.LALR.Frontend.Fragment.ref "expression" 13)
             (Parser.LALR.Frontend.Fragment.seq
-              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
               (Parser.LALR.Frontend.Fragment.seq
-                (Parser.LALR.Frontend.Fragment.ref "product" 8)
+                (Parser.LALR.Frontend.Fragment.ref "expression" 13)
                 (Parser.LALR.Frontend.Fragment.seq
-                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                  (Parser.LALR.Frontend.Fragment.seq
-                    (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+                  (Parser.LALR.Frontend.Fragment.optional
+                    31
                     (Parser.LALR.Frontend.Fragment.seq
-                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":=") 12)
+                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ":") 19)
+                      (Parser.LALR.Frontend.Fragment.ref "expression" 13)))
+                  (Parser.LALR.Frontend.Fragment.seq
+                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "loop") 20)
+                    (Parser.LALR.Frontend.Fragment.seq
+                      (Parser.LALR.Frontend.Fragment.many 32 (Parser.LALR.Frontend.Fragment.ref "statement" 5))
                       (Parser.LALR.Frontend.Fragment.seq
-                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
-                        (Parser.LALR.Frontend.Fragment.seq
-                          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 17)
-                          (Parser.LALR.Frontend.Fragment.seq
-                            (Parser.LALR.Frontend.Fragment.ref "product" 8)
-                            (Parser.LALR.Frontend.Fragment.seq
-                              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 26)
-                              (Parser.LALR.Frontend.Fragment.seq
-                                (Parser.LALR.Frontend.Fragment.ref "reference" 5)
-                                (Parser.LALR.Frontend.Fragment.seq
-                                  (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 19)
-                                  (Parser.LALR.Frontend.Fragment.seq
-                                    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ";") 4)
-                                    (Parser.LALR.Frontend.Fragment.seq
-                                      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 8)
-                                      (Parser.LALR.Frontend.Fragment.seq
-                                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "DoStep") 16)
-                                        (Parser.LALR.Frontend.Fragment.terminal
-                                          (Parser.Symbol.literal ";")
-                                          4))))))))))))))))))),
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "end") 4)
+                        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "for") 17))))))))))),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    33
+    (Parser.LALR.Frontend.Fragment.ref "local_reference" 9)
+    (Parser.LALR.Frontend.Fragment.ref "state_reference" 10),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    33
+    (Parser.LALR.Frontend.Fragment.ref "local_reference" 9)
+    (Parser.LALR.Frontend.Fragment.ref "state_reference" 10),
   Parser.LALR.Frontend.AnnotatedRule.named
     8
-    "product"
+    "reference"
+    (Parser.LALR.Frontend.Fragment.alt
+      33
+      (Parser.LALR.Frontend.Fragment.ref "local_reference" 9)
+      (Parser.LALR.Frontend.Fragment.ref "state_reference" 10)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    9
+    "local_reference"
+    (Parser.LALR.Frontend.Fragment.ref "component_reference" 11),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty
+    34
     (Parser.LALR.Frontend.Fragment.seq
-      (Parser.LALR.Frontend.Fragment.ref "reference" 5)
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+      (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons
+    34
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+      (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    10
+    "state_reference"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "self") 21)
       (Parser.LALR.Frontend.Fragment.seq
-        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".*") 27)
-        (Parser.LALR.Frontend.Fragment.ref "reference" 5)))]
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)
+          (Parser.LALR.Frontend.Fragment.many
+            34
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ".") 22)
+              (Parser.LALR.Frontend.Fragment.ref "component_reference" 11)))))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty
+    35
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome
+    35
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    11
+    "component_reference"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+      (Parser.LALR.Frontend.Fragment.optional
+        35
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "[") 7)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "expression_list" 12)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "]") 8))))),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty
+    36
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons
+    36
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    12
+    "expression_list"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+      (Parser.LALR.Frontend.Fragment.many
+        36
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+          (Parser.LALR.Frontend.Fragment.ref "expression" 13)))),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty
+    37
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "additive_operator" 14)
+      (Parser.LALR.Frontend.Fragment.ref "term" 15)),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons
+    37
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "additive_operator" 14)
+      (Parser.LALR.Frontend.Fragment.ref "term" 15)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    13
+    "expression"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "term" 15)
+      (Parser.LALR.Frontend.Fragment.many
+        37
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "additive_operator" 14)
+          (Parser.LALR.Frontend.Fragment.ref "term" 15)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    14
+    "additive_operator"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "+") 24),
+  Parser.LALR.Frontend.AnnotatedRule.manyEmpty
+    38
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "multiplicative_operator" 16)
+      (Parser.LALR.Frontend.Fragment.ref "primary" 17)),
+  Parser.LALR.Frontend.AnnotatedRule.manyCons
+    38
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "multiplicative_operator" 16)
+      (Parser.LALR.Frontend.Fragment.ref "primary" 17)),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    15
+    "term"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.ref "primary" 17)
+      (Parser.LALR.Frontend.Fragment.many
+        38
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "multiplicative_operator" 16)
+          (Parser.LALR.Frontend.Fragment.ref "primary" 17)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    16
+    "multiplicative_operator"
+    (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "*") 25),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    39
+    (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+    (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    39
+    (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+    (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    40
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+    (Parser.LALR.Frontend.Fragment.alt
+      39
+      (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+      (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19)),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    40
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+    (Parser.LALR.Frontend.Fragment.alt
+      39
+      (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+      (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19)),
+  Parser.LALR.Frontend.AnnotatedRule.altLeft
+    41
+    (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+    (Parser.LALR.Frontend.Fragment.alt
+      40
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+      (Parser.LALR.Frontend.Fragment.alt
+        39
+        (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+        (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19))),
+  Parser.LALR.Frontend.AnnotatedRule.altRight
+    41
+    (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+    (Parser.LALR.Frontend.Fragment.alt
+      40
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+      (Parser.LALR.Frontend.Fragment.alt
+        39
+        (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+        (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    17
+    "primary"
+    (Parser.LALR.Frontend.Fragment.alt
+      41
+      (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+      (Parser.LALR.Frontend.Fragment.alt
+        40
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))
+        (Parser.LALR.Frontend.Fragment.alt
+          39
+          (Parser.LALR.Frontend.Fragment.ref "function_call" 18)
+          (Parser.LALR.Frontend.Fragment.ref "dimension_query" 19)))),
+  Parser.LALR.Frontend.AnnotatedRule.optionalEmpty 42 (Parser.LALR.Frontend.Fragment.ref "expression_list" 12),
+  Parser.LALR.Frontend.AnnotatedRule.optionalSome 42 (Parser.LALR.Frontend.Fragment.ref "expression_list" 12),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    18
+    "function_call"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.ident) 1)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.optional 42 (Parser.LALR.Frontend.Fragment.ref "expression_list" 12))
+          (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27)))),
+  Parser.LALR.Frontend.AnnotatedRule.named
+    19
+    "dimension_query"
+    (Parser.LALR.Frontend.Fragment.seq
+      (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "size") 28)
+      (Parser.LALR.Frontend.Fragment.seq
+        (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal "(") 26)
+        (Parser.LALR.Frontend.Fragment.seq
+          (Parser.LALR.Frontend.Fragment.ref "reference" 8)
+          (Parser.LALR.Frontend.Fragment.seq
+            (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ",") 23)
+            (Parser.LALR.Frontend.Fragment.seq
+              (Parser.LALR.Frontend.Fragment.ref "expression" 13)
+              (Parser.LALR.Frontend.Fragment.terminal (Parser.Symbol.literal ")") 27))))))]
 
 theorem runtimeRules_eq : runtimeRules = loweringWitness.rules := rfl
 
-noncomputable def sourceTokens : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "program",
- Parser.EBNF.Lexeme.punct '=',
- Parser.EBNF.Lexeme.name "block",
- Parser.EBNF.Lexeme.punct '|',
- Parser.EBNF.Lexeme.name "tensor_block",
- Parser.EBNF.Lexeme.punct ';',
- Parser.EBNF.Lexeme.name "block",
+noncomputable def sourceTokens : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "block",
  Parser.EBNF.Lexeme.punct '=',
  Parser.EBNF.Lexeme.text "block",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "output",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Real",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct '{',
+ Parser.EBNF.Lexeme.name "declaration",
+ Parser.EBNF.Lexeme.punct '}',
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "protected",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "constant",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Real",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct '{',
+ Parser.EBNF.Lexeme.name "declaration",
+ Parser.EBNF.Lexeme.punct '}',
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "public",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "startup",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "recalibrate",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "do_step",
+ Parser.EBNF.Lexeme.punct '{',
+ Parser.EBNF.Lexeme.name "method",
+ Parser.EBNF.Lexeme.punct '}',
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "end",
  Parser.EBNF.Lexeme.punct ',',
@@ -1267,223 +1510,233 @@ noncomputable def sourceTokens : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ";",
  Parser.EBNF.Lexeme.punct ';',
- Parser.EBNF.Lexeme.name "startup",
+ Parser.EBNF.Lexeme.name "declaration",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.punct '[',
+ Parser.EBNF.Lexeme.name "direction",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.text "constant",
+ Parser.EBNF.Lexeme.punct ']',
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "primitive_type",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.punct '[',
+ Parser.EBNF.Lexeme.text "[",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "expression_list",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "]",
+ Parser.EBNF.Lexeme.punct ']',
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "direction",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "input",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.text "output",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "primitive_type",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "Real",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.text "Integer",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.text "Boolean",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "method",
  Parser.EBNF.Lexeme.punct '=',
  Parser.EBNF.Lexeme.text "method",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Startup",
+ Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "algorithm",
  Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.punct '{',
+ Parser.EBNF.Lexeme.name "statement",
+ Parser.EBNF.Lexeme.punct '}',
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "end",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "statement",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.punct '(',
+ Parser.EBNF.Lexeme.name "single_assignment",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.name "for_loop",
+ Parser.EBNF.Lexeme.punct ')',
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "single_assignment",
+ Parser.EBNF.Lexeme.punct '=',
  Parser.EBNF.Lexeme.name "reference",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ":=",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "0.0",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "reference",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ":=",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "1.0",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "end",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Startup",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.name "expression",
  Parser.EBNF.Lexeme.punct ';',
- Parser.EBNF.Lexeme.name "recalibrate",
+ Parser.EBNF.Lexeme.name "for_loop",
  Parser.EBNF.Lexeme.punct '=',
- Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.text "for",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Recalibrate",
+ Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.text "in",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "expression",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ":",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "expression",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.punct '[',
+ Parser.EBNF.Lexeme.text ":",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "expression",
+ Parser.EBNF.Lexeme.punct ']',
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "loop",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.punct '{',
+ Parser.EBNF.Lexeme.name "statement",
+ Parser.EBNF.Lexeme.punct '}',
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "end",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Recalibrate",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.text "for",
  Parser.EBNF.Lexeme.punct ';',
- Parser.EBNF.Lexeme.name "do_step",
+ Parser.EBNF.Lexeme.name "reference",
  Parser.EBNF.Lexeme.punct '=',
- Parser.EBNF.Lexeme.text "method",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "DoStep",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "algorithm",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "reference",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ":=",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "(",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "reference",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "+",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "1.0",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ")",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "end",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "DoStep",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.name "local_reference",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.name "state_reference",
  Parser.EBNF.Lexeme.punct ';',
- Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.name "local_reference",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.name "component_reference",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "state_reference",
  Parser.EBNF.Lexeme.punct '=',
  Parser.EBNF.Lexeme.text "self",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ".",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
+ Parser.EBNF.Lexeme.name "component_reference",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.punct '{',
+ Parser.EBNF.Lexeme.text ".",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "component_reference",
+ Parser.EBNF.Lexeme.punct '}',
  Parser.EBNF.Lexeme.punct ';',
- Parser.EBNF.Lexeme.name "tensor_block",
+ Parser.EBNF.Lexeme.name "component_reference",
  Parser.EBNF.Lexeme.punct '=',
- Parser.EBNF.Lexeme.text "block",
- Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "input",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Real",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.punct '[',
  Parser.EBNF.Lexeme.text "[",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "2",
+ Parser.EBNF.Lexeme.name "expression_list",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "]",
+ Parser.EBNF.Lexeme.punct ']',
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "expression_list",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.name "expression",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "output",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Real",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "[",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "2",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "]",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "output",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Real",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "[",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "2",
- Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.punct '{',
  Parser.EBNF.Lexeme.text ",",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "2",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "]",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "protected",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "constant",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "Real",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "public",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "startup",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "recalibrate",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "tensor_do_step",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "end",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "IDENT",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
+ Parser.EBNF.Lexeme.name "expression",
+ Parser.EBNF.Lexeme.punct '}',
  Parser.EBNF.Lexeme.punct ';',
- Parser.EBNF.Lexeme.name "tensor_do_step",
+ Parser.EBNF.Lexeme.name "expression",
  Parser.EBNF.Lexeme.punct '=',
- Parser.EBNF.Lexeme.text "method",
+ Parser.EBNF.Lexeme.name "term",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "DoStep",
+ Parser.EBNF.Lexeme.punct '{',
+ Parser.EBNF.Lexeme.name "additive_operator",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "algorithm",
+ Parser.EBNF.Lexeme.name "term",
+ Parser.EBNF.Lexeme.punct '}',
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "additive_operator",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "+",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "term",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.name "primary",
  Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.punct '{',
+ Parser.EBNF.Lexeme.name "multiplicative_operator",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "primary",
+ Parser.EBNF.Lexeme.punct '}',
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "multiplicative_operator",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "*",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "primary",
+ Parser.EBNF.Lexeme.punct '=',
  Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.text "(",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ":=",
+ Parser.EBNF.Lexeme.name "expression",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "product",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "reference",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ":=",
- Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ")",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.name "function_call",
+ Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.name "dimension_query",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "function_call",
+ Parser.EBNF.Lexeme.punct '=',
  Parser.EBNF.Lexeme.name "IDENT",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text "(",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "product",
+ Parser.EBNF.Lexeme.punct '[',
+ Parser.EBNF.Lexeme.name "expression_list",
+ Parser.EBNF.Lexeme.punct ']',
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text ")",
+ Parser.EBNF.Lexeme.punct ';',
+ Parser.EBNF.Lexeme.name "dimension_query",
+ Parser.EBNF.Lexeme.punct '=',
+ Parser.EBNF.Lexeme.text "size",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.text "(",
+ Parser.EBNF.Lexeme.punct ',',
+ Parser.EBNF.Lexeme.name "reference",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ",",
  Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "reference",
+ Parser.EBNF.Lexeme.name "expression",
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.text ")",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "end",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text "DoStep",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ";",
- Parser.EBNF.Lexeme.punct ';',
- Parser.EBNF.Lexeme.name "product",
- Parser.EBNF.Lexeme.punct '=',
- Parser.EBNF.Lexeme.name "reference",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.text ".*",
- Parser.EBNF.Lexeme.punct ',',
- Parser.EBNF.Lexeme.name "reference",
  Parser.EBNF.Lexeme.punct ';']
 
 def encode (symbol : Parser.Symbol) : Nat :=
   (alphabet.findIdx? (· == symbol)).getD (alphabet.size + 1)
 
-def tables : LALR.Tables := ⟨#[#[some (.shift 4), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 0)], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 1)], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 2)], #[none, some (.shift 6), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some .accept], #[none, none, some (.shift 7), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 8), none, none, none, none, none, none], #[none, none, none, some (.shift 9), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some (.shift 10), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 11), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 12), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 13), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 14), none, none, none, none, none], #[none, none, none, none, none, some (.shift 15), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 16), none, none, none, none], #[none, none, none, none, none, none, some (.shift 17), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 18), none, none, none], #[none, none, none, some (.shift 19), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 20), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 21), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, some (.shift 22), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 23), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some (.shift 24), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, some (.shift 25), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 26), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, some (.shift 28), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 29), none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, some (.shift 31), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, some (.shift 32), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 33), none, none, none, none], #[none, none, none, none, none, none, none, none, none, some (.shift 35), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 38), none, none, none], #[none, none, none, none, none, none, none, none, some (.shift 39), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 40), none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.shift 41), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 44), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 45), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.shift 46), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some (.shift 47), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 48), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 49), none, none, none, none, none, none, none], #[none, none, some (.shift 50), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 51), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 53), none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 54), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 55), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some (.shift 56), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 3)], #[none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 57), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 58), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 59), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.reduce 7), none, none, none, none, none, none, none, some (.reduce 7), none, none, none, none, none, some (.reduce 7), some (.reduce 7), none, none, none, none, none, none, some (.reduce 7), some (.reduce 7), none], #[none, some (.shift 60), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 61), none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, some (.reduce 5), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 63), none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 65), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 66), none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 67), none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 68), none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 69), none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 70), none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 71), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 72), none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 73), none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some (.shift 74), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 75), none, none, none], #[none, none, none, none, some (.shift 76), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, some (.shift 77), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 78), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some (.shift 79), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 80), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.shift 81), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 82), none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, some (.reduce 4), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, some (.shift 83), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 84), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some (.shift 85), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some (.reduce 6), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 86), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 87), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, some (.shift 88), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, some (.shift 28), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, some (.shift 31), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, some (.shift 92), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some (.shift 93), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 94), none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 95), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.shift 96), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 97), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 8)], #[none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 99), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 102), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 103), none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 106), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.reduce 10), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 10), none, none], #[none, some (.shift 107), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 108), none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 110), none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 43), none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 112), none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 113), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some (.shift 114), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 115), none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 116), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some (.reduce 9), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none]], #[#[some 5, some 1, none, none, none, none, some 2, none, none, some 3], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, some 27, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, some 30, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some 34, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 42, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 52, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 62, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 64, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, some 89, none, none, none, none, none, none, none], #[none, none, none, some 90, none, none, none, none, none, none], #[none, none, none, none, none, none, none, some 91, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 98, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 101, none, none, some 100, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 104, none, none, none, none], #[none, none, none, none, none, some 105, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 101, none, none, some 109, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 111, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none]]⟩
+def tables : LALR.Tables := ⟨#[#[some (.shift 1), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 3), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some .accept], #[none, none, some (.reduce 0), none, none, none, some (.shift 7), none, none, some (.shift 10), some (.shift 11), some (.reduce 9), some (.reduce 9), some (.reduce 9), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, some (.reduce 0), none, none, none, some (.shift 7), none, none, some (.shift 10), some (.shift 11), some (.reduce 9), some (.reduce 9), some (.reduce 9), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, some (.shift 14), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.reduce 7), some (.reduce 7), some (.reduce 7), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.reduce 8), some (.reduce 8), some (.reduce 8), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.reduce 10), some (.reduce 10), some (.reduce 10), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.shift 18), some (.shift 16), some (.shift 17), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.reduce 14), some (.reduce 14), some (.reduce 14), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.reduce 15), some (.reduce 15), some (.reduce 15), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some (.reduce 16), some (.reduce 16), some (.reduce 16), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, some (.reduce 1), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some (.reduce 2), none, none, some (.shift 7), none, none, some (.shift 10), some (.shift 11), some (.reduce 9), some (.reduce 9), some (.reduce 9), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 23), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.reduce 17), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.reduce 18), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.reduce 19), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.reduce 20), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.reduce 21), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some (.reduce 2), none, none, some (.shift 7), none, none, some (.shift 10), some (.shift 11), some (.reduce 9), some (.reduce 9), some (.reduce 9), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some (.shift 25), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 11), none, some (.shift 26), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some (.reduce 3), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.reduce 4), none, none, none, none, none, none, none, none, none, some (.shift 30), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, some (.shift 49), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.reduce 4), none, none, none, none, none, none, none, none, none, some (.shift 30), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 51), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 52), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some (.shift 53), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 34), none, none, some (.reduce 34), none, none, none, none, none, none, none, some (.reduce 34), none, none, some (.reduce 34), some (.reduce 34), none, none, some (.reduce 34), some (.reduce 34), some (.reduce 34), none, some (.reduce 34), none, none], #[none, none, none, none, none, some (.reduce 35), none, none, some (.reduce 35), none, none, none, none, none, none, none, some (.reduce 35), none, none, some (.reduce 35), some (.reduce 35), none, none, some (.reduce 35), some (.reduce 35), some (.reduce 35), none, some (.reduce 35), none, none], #[none, none, none, none, none, some (.reduce 36), none, none, some (.reduce 36), none, none, none, none, none, none, none, some (.reduce 36), none, none, some (.reduce 36), some (.reduce 36), none, none, some (.reduce 36), some (.reduce 36), some (.reduce 36), none, some (.reduce 36), none, none], #[none, none, none, none, none, some (.reduce 37), none, none, some (.reduce 37), none, none, none, none, none, none, none, some (.reduce 37), none, none, some (.reduce 37), some (.reduce 37), none, none, some (.reduce 37), some (.reduce 37), some (.reduce 37), none, some (.reduce 37), none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 54), none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 41), none, some (.shift 55), some (.reduce 41), none, none, none, none, none, none, none, none, none, none, some (.reduce 41), some (.reduce 41), none, none, some (.reduce 41), some (.reduce 41), some (.reduce 41), some (.shift 57), some (.reduce 41), none, none], #[none, none, none, none, none, none, none, none, some (.reduce 44), none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 58), none, none, none, some (.reduce 44), none, none], #[none, none, none, none, none, some (.reduce 47), none, none, some (.reduce 47), none, none, none, none, none, none, none, none, none, none, some (.reduce 47), some (.reduce 47), none, none, some (.reduce 47), some (.shift 62), none, none, some (.reduce 47), none, none], #[none, none, none, none, none, some (.reduce 51), none, none, some (.reduce 51), none, none, none, none, none, none, none, none, none, none, some (.reduce 51), some (.reduce 51), none, none, some (.reduce 51), some (.reduce 51), some (.shift 65), none, some (.reduce 51), none, none], #[none, none, none, none, none, some (.reduce 55), none, none, some (.reduce 55), none, none, none, none, none, none, none, none, none, none, some (.reduce 55), some (.reduce 55), none, none, some (.reduce 55), some (.reduce 55), some (.reduce 55), none, some (.reduce 55), none, none], #[none, none, none, none, none, some (.reduce 56), none, none, some (.reduce 56), none, none, none, none, none, none, none, none, none, none, some (.reduce 56), some (.reduce 56), none, none, some (.reduce 56), some (.reduce 56), some (.reduce 56), none, some (.reduce 56), none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, some (.reduce 58), none, none, some (.reduce 58), none, none, none, none, none, none, none, none, none, none, some (.reduce 58), some (.reduce 58), none, none, some (.reduce 58), some (.reduce 58), some (.reduce 58), none, some (.reduce 58), none, none], #[none, none, none, none, none, some (.reduce 59), none, none, some (.reduce 59), none, none, none, none, none, none, none, none, none, none, some (.reduce 59), some (.reduce 59), none, none, some (.reduce 59), some (.reduce 59), some (.reduce 59), none, some (.reduce 59), none, none], #[none, none, none, none, none, some (.reduce 60), none, none, some (.reduce 60), none, none, none, none, none, none, none, none, none, none, some (.reduce 60), some (.reduce 60), none, none, some (.reduce 60), some (.reduce 60), some (.reduce 60), none, some (.reduce 60), none, none], #[none, none, none, none, none, some (.reduce 61), none, none, some (.reduce 61), none, none, none, none, none, none, none, none, none, none, some (.reduce 61), some (.reduce 61), none, none, some (.reduce 61), some (.reduce 61), some (.reduce 61), none, some (.reduce 61), none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 67), none, none, none], #[none, none, some (.reduce 13), some (.reduce 13), none, none, some (.reduce 13), none, none, some (.reduce 13), some (.reduce 13), some (.reduce 13), some (.reduce 13), some (.reduce 13), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.reduce 5), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 68), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 69), none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 12), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 71), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, some (.reduce 43), none, none, some (.reduce 43), none, none, none, none, none, none, none, some (.reduce 43), none, none, some (.reduce 43), some (.reduce 43), none, some (.reduce 43), some (.reduce 43), some (.reduce 43), some (.reduce 43), none, some (.reduce 43), none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), some (.reduce 62), some (.shift 48), none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, none, none, none, some (.reduce 46), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 46), none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, some (.reduce 49), none, none, some (.reduce 49), none, none, none, none, none, none, none, none, none, none, some (.reduce 49), some (.reduce 49), none, none, some (.reduce 49), none, none, none, some (.reduce 49), none, none], #[none, some (.reduce 50), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 50), none, none, none, none, some (.reduce 50), none, some (.reduce 50), none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, some (.reduce 53), none, none, some (.reduce 53), none, none, none, none, none, none, none, none, none, none, some (.reduce 53), some (.reduce 53), none, none, some (.reduce 53), some (.reduce 53), none, none, some (.reduce 53), none, none], #[none, some (.reduce 54), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 54), none, none, none, none, some (.reduce 54), none, some (.reduce 54), none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 78), none, none], #[none, some (.shift 71), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.shift 80), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 71), none, none, some (.reduce 22), none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 87), none, none, none, some (.shift 36), none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 38), none, none, some (.reduce 38), none, none, none, none, none, none, none, some (.reduce 38), none, none, some (.reduce 38), some (.reduce 38), none, some (.shift 88), some (.reduce 38), some (.reduce 38), some (.reduce 38), none, some (.reduce 38), none, none], #[none, none, none, none, none, some (.reduce 41), none, some (.shift 55), some (.reduce 41), none, none, none, none, none, none, none, some (.reduce 41), none, none, some (.reduce 41), some (.reduce 41), none, some (.reduce 41), some (.reduce 41), some (.reduce 41), some (.reduce 41), none, some (.reduce 41), none, none], #[none, none, none, none, none, none, none, none, some (.shift 90), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 63), none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 91), none, none], #[none, none, none, none, none, none, none, none, some (.reduce 44), none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 58), none, none, none, some (.reduce 44), none, none], #[none, none, none, none, none, some (.reduce 47), none, none, some (.reduce 47), none, none, none, none, none, none, none, none, none, none, some (.reduce 47), some (.reduce 47), none, none, some (.reduce 47), some (.shift 62), none, none, some (.reduce 47), none, none], #[none, none, none, none, none, some (.reduce 51), none, none, some (.reduce 51), none, none, none, none, none, none, none, none, none, none, some (.reduce 51), some (.reduce 51), none, none, some (.reduce 51), some (.reduce 51), some (.shift 65), none, some (.reduce 51), none, none], #[none, none, none, none, none, some (.reduce 57), none, none, some (.reduce 57), none, none, none, none, none, none, none, none, none, none, some (.reduce 57), some (.reduce 57), none, none, some (.reduce 57), some (.reduce 57), some (.reduce 57), none, some (.reduce 57), none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 95), none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 6)], #[none, some (.shift 71), none, none, some (.reduce 22), none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 87), none, none, none, some (.shift 36), none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 97), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 25), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 26), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.shift 98), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 99), none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 100), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 71), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 40), none, none, some (.reduce 40), none, none, none, none, none, none, none, some (.reduce 40), none, none, some (.reduce 40), some (.reduce 40), none, none, some (.reduce 40), some (.reduce 40), some (.reduce 40), none, some (.reduce 40), none, none], #[none, none, none, none, none, some (.reduce 42), none, none, some (.reduce 42), none, none, none, none, none, none, none, some (.reduce 42), none, none, some (.reduce 42), some (.reduce 42), none, some (.reduce 42), some (.reduce 42), some (.reduce 42), some (.reduce 42), none, some (.reduce 42), none, none], #[none, none, none, none, none, some (.reduce 64), none, none, some (.reduce 64), none, none, none, none, none, none, none, none, none, none, some (.reduce 64), some (.reduce 64), none, none, some (.reduce 64), some (.reduce 64), some (.reduce 64), none, some (.reduce 64), none, none], #[none, none, none, none, none, none, none, none, some (.reduce 45), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 45), none, none], #[none, none, none, none, none, some (.reduce 48), none, none, some (.reduce 48), none, none, none, none, none, none, none, none, none, none, some (.reduce 48), some (.reduce 48), none, none, some (.reduce 48), none, none, none, some (.reduce 48), none, none], #[none, none, none, none, none, some (.reduce 52), none, none, some (.reduce 52), none, none, none, none, none, none, none, none, none, none, some (.reduce 52), some (.reduce 52), none, none, some (.reduce 52), some (.reduce 52), none, none, some (.reduce 52), none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, some (.reduce 23), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 103), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.reduce 27), none, none, some (.reduce 27), none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 27), none, none, none, some (.reduce 27), none, none, none, none, none, none, none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 105), none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 38), none, none, some (.reduce 38), none, none, none, none, none, none, none, some (.reduce 38), none, none, some (.reduce 38), some (.reduce 38), none, some (.shift 88), some (.reduce 38), some (.reduce 38), some (.reduce 38), none, some (.reduce 38), none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 107), none, none], #[none, none, none, none, none, some (.shift 108), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 28), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, some (.reduce 39), none, none, some (.reduce 39), none, none, none, none, none, none, none, some (.reduce 39), none, none, some (.reduce 39), some (.reduce 39), none, none, some (.reduce 39), some (.reduce 39), some (.reduce 39), none, some (.reduce 39), none, none], #[none, none, none, none, none, some (.reduce 65), none, none, some (.reduce 65), none, none, none, none, none, none, none, none, none, none, some (.reduce 65), some (.reduce 65), none, none, some (.reduce 65), some (.reduce 65), some (.reduce 65), none, some (.reduce 65), none, none], #[none, none, none, none, some (.reduce 24), none, none, none, none, none, none, none, none, none, some (.reduce 24), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 110), none, none, none, none, none, none, none, none, none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 112), some (.reduce 29), none, none, none, none, none, none, none, none, none], #[none, some (.shift 37), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 36), none, none, none, none, some (.shift 43), none, some (.shift 48), none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 115), none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.reduce 30), none, none, none, none, none, none, none, none, none], #[none, some (.shift 71), none, none, some (.reduce 31), none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 87), none, none, none, some (.shift 36), none, none, none, none, none, none, none, none], #[none, some (.shift 71), none, none, some (.reduce 31), none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 87), none, none, none, some (.shift 36), none, none, none, none, none, none, none, none], #[none, none, none, none, some (.shift 119), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some (.reduce 32), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some (.shift 120), none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some (.reduce 33), none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none]], #[#[some 2, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some 4, some 6, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 5, none, none, some 8, some 9, none, some 12, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some 4, some 6, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 13, none, none, some 8, some 9, none, some 12, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, some 15, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 19, some 20, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some 21, some 6, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 22, none, some 8, some 9, none, some 12, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, some 21, some 6, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 24, none, some 8, some 9, none, some 12, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 27, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some 28, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 29, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, some 31, some 38, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, some 28, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 50, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 56, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 59, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 60, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 61, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 63, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 64, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, some 66, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some 70, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, some 72, some 38, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, some 73, some 38, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, some 74], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, some 75, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, none, none, some 76, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, none, none, none, none, some 77, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 79, some 32, some 33, some 35, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 81, some 83, some 84, some 86, some 32, some 33, some 35, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 82, some 85, none, none, some 34, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 89, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 56, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 92, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 60, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 93, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 63, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 94, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 81, some 83, some 84, some 86, some 32, some 33, some 35, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 96, some 85, none, none, some 34, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, some 101, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, some 102, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, some 104, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 106, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, some 109, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, some 111, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 113, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, some 45, some 32, some 33, some 35, none, some 114, none, some 39, none, some 40, some 41, some 42, none, none, none, none, none, none, none, none, none, none, none, none, none, some 34, none, none, none, none, none, some 44, some 46, some 47, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 116, some 83, some 84, some 86, some 32, some 33, some 35, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 85, none, some 117, some 34, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, some 116, some 83, some 84, some 86, some 32, some 33, some 35, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, some 85, none, some 118, some 34, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none], #[none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none, none]]⟩
 
-def edges : List LALR.Edge := [⟨0, .nonterminal 1, 1⟩, ⟨0, .nonterminal 6, 2⟩, ⟨0, .nonterminal 9, 3⟩, ⟨0, .terminal 0, 4⟩, ⟨0, .nonterminal 0, 5⟩, ⟨4, .terminal 1, 6⟩, ⟨6, .terminal 2, 7⟩, ⟨6, .terminal 22, 8⟩, ⟨7, .terminal 3, 9⟩, ⟨8, .terminal 3, 10⟩, ⟨9, .terminal 1, 11⟩, ⟨10, .terminal 1, 12⟩, ⟨11, .terminal 4, 13⟩, ⟨12, .terminal 23, 14⟩, ⟨13, .terminal 5, 15⟩, ⟨14, .terminal 24, 16⟩, ⟨15, .terminal 6, 17⟩, ⟨16, .terminal 25, 18⟩, ⟨17, .terminal 3, 19⟩, ⟨18, .terminal 4, 20⟩, ⟨19, .terminal 1, 21⟩, ⟨20, .terminal 2, 22⟩, ⟨21, .terminal 4, 23⟩, ⟨22, .terminal 3, 24⟩, ⟨23, .terminal 7, 25⟩, ⟨24, .terminal 1, 26⟩, ⟨25, .nonterminal 2, 27⟩, ⟨25, .terminal 9, 28⟩, ⟨26, .terminal 23, 29⟩, ⟨27, .nonterminal 3, 30⟩, ⟨27, .terminal 9, 31⟩, ⟨28, .terminal 10, 32⟩, ⟨29, .terminal 24, 33⟩, ⟨30, .nonterminal 4, 34⟩, ⟨30, .terminal 9, 35⟩, ⟨31, .terminal 15, 36⟩, ⟨32, .terminal 11, 37⟩, ⟨33, .terminal 25, 38⟩, ⟨34, .terminal 8, 39⟩, ⟨35, .terminal 16, 40⟩, ⟨36, .terminal 11, 41⟩, ⟨37, .nonterminal 5, 42⟩, ⟨37, .terminal 20, 43⟩, ⟨38, .terminal 4, 44⟩, ⟨39, .terminal 1, 45⟩, ⟨40, .terminal 11, 46⟩, ⟨41, .terminal 8, 47⟩, ⟨42, .terminal 12, 48⟩, ⟨43, .terminal 21, 49⟩, ⟨44, .terminal 2, 50⟩, ⟨45, .terminal 4, 51⟩, ⟨46, .nonterminal 5, 52⟩, ⟨46, .terminal 20, 43⟩, ⟨47, .terminal 15, 53⟩, ⟨48, .terminal 13, 54⟩, ⟨49, .terminal 1, 55⟩, ⟨50, .terminal 3, 56⟩, ⟨52, .terminal 12, 57⟩, ⟨53, .terminal 4, 58⟩, ⟨54, .terminal 4, 59⟩, ⟨56, .terminal 1, 60⟩, ⟨57, .terminal 17, 61⟩, ⟨59, .nonterminal 5, 62⟩, ⟨59, .terminal 20, 43⟩, ⟨60, .terminal 23, 63⟩, ⟨61, .nonterminal 5, 64⟩, ⟨61, .terminal 20, 43⟩, ⟨62, .terminal 12, 65⟩, ⟨63, .terminal 24, 66⟩, ⟨64, .terminal 18, 67⟩, ⟨65, .terminal 14, 68⟩, ⟨66, .terminal 26, 69⟩, ⟨67, .terminal 14, 70⟩, ⟨68, .terminal 4, 71⟩, ⟨69, .terminal 24, 72⟩, ⟨70, .terminal 19, 73⟩, ⟨71, .terminal 8, 74⟩, ⟨72, .terminal 25, 75⟩, ⟨73, .terminal 4, 76⟩, ⟨74, .terminal 10, 77⟩, ⟨75, .terminal 4, 78⟩, ⟨76, .terminal 8, 79⟩, ⟨77, .terminal 4, 80⟩, ⟨78, .terminal 5, 81⟩, ⟨79, .terminal 16, 82⟩, ⟨81, .terminal 6, 83⟩, ⟨82, .terminal 4, 84⟩, ⟨83, .terminal 3, 85⟩, ⟨85, .terminal 1, 86⟩, ⟨86, .terminal 4, 87⟩, ⟨87, .terminal 7, 88⟩, ⟨88, .terminal 9, 28⟩, ⟨88, .nonterminal 2, 89⟩, ⟨89, .terminal 9, 31⟩, ⟨89, .nonterminal 3, 90⟩, ⟨90, .nonterminal 7, 91⟩, ⟨90, .terminal 9, 92⟩, ⟨91, .terminal 8, 93⟩, ⟨92, .terminal 16, 94⟩, ⟨93, .terminal 1, 95⟩, ⟨94, .terminal 11, 96⟩, ⟨95, .terminal 4, 97⟩, ⟨96, .terminal 20, 43⟩, ⟨96, .nonterminal 5, 98⟩, ⟨98, .terminal 12, 99⟩, ⟨99, .terminal 20, 43⟩, ⟨99, .nonterminal 8, 100⟩, ⟨99, .nonterminal 5, 101⟩, ⟨100, .terminal 4, 102⟩, ⟨101, .terminal 27, 103⟩, ⟨102, .terminal 20, 43⟩, ⟨102, .nonterminal 5, 104⟩, ⟨103, .terminal 20, 43⟩, ⟨103, .nonterminal 5, 105⟩, ⟨104, .terminal 12, 106⟩, ⟨106, .terminal 1, 107⟩, ⟨107, .terminal 17, 108⟩, ⟨108, .terminal 20, 43⟩, ⟨108, .nonterminal 8, 109⟩, ⟨108, .nonterminal 5, 101⟩, ⟨109, .terminal 26, 110⟩, ⟨110, .terminal 20, 43⟩, ⟨110, .nonterminal 5, 111⟩, ⟨111, .terminal 19, 112⟩, ⟨112, .terminal 4, 113⟩, ⟨113, .terminal 8, 114⟩, ⟨114, .terminal 16, 115⟩, ⟨115, .terminal 4, 116⟩]
+def edges : List LALR.Edge := [⟨0, .terminal 0, 1⟩, ⟨0, .nonterminal 0, 2⟩, ⟨1, .terminal 1, 3⟩, ⟨3, .nonterminal 1, 4⟩, ⟨3, .nonterminal 20, 5⟩, ⟨3, .nonterminal 2, 6⟩, ⟨3, .terminal 6, 7⟩, ⟨3, .nonterminal 23, 8⟩, ⟨3, .nonterminal 24, 9⟩, ⟨3, .terminal 9, 10⟩, ⟨3, .terminal 10, 11⟩, ⟨3, .nonterminal 26, 12⟩, ⟨4, .nonterminal 1, 4⟩, ⟨4, .nonterminal 20, 13⟩, ⟨4, .nonterminal 2, 6⟩, ⟨4, .terminal 6, 7⟩, ⟨4, .nonterminal 23, 8⟩, ⟨4, .nonterminal 24, 9⟩, ⟨4, .terminal 9, 10⟩, ⟨4, .terminal 10, 11⟩, ⟨4, .nonterminal 26, 12⟩, ⟨5, .terminal 2, 14⟩, ⟨9, .nonterminal 3, 15⟩, ⟨9, .terminal 12, 16⟩, ⟨9, .terminal 13, 17⟩, ⟨9, .terminal 11, 18⟩, ⟨9, .nonterminal 27, 19⟩, ⟨9, .nonterminal 28, 20⟩, ⟨14, .nonterminal 1, 21⟩, ⟨14, .nonterminal 21, 22⟩, ⟨14, .nonterminal 2, 6⟩, ⟨14, .terminal 6, 7⟩, ⟨14, .nonterminal 23, 8⟩, ⟨14, .nonterminal 24, 9⟩, ⟨14, .terminal 9, 10⟩, ⟨14, .terminal 10, 11⟩, ⟨14, .nonterminal 26, 12⟩, ⟨15, .terminal 1, 23⟩, ⟨21, .nonterminal 1, 21⟩, ⟨21, .nonterminal 21, 24⟩, ⟨21, .nonterminal 2, 6⟩, ⟨21, .terminal 6, 7⟩, ⟨21, .nonterminal 23, 8⟩, ⟨21, .nonterminal 24, 9⟩, ⟨21, .terminal 9, 10⟩, ⟨21, .terminal 10, 11⟩, ⟨21, .nonterminal 26, 12⟩, ⟨22, .terminal 3, 25⟩, ⟨23, .terminal 7, 26⟩, ⟨23, .nonterminal 25, 27⟩, ⟨25, .nonterminal 4, 28⟩, ⟨25, .nonterminal 22, 29⟩, ⟨25, .terminal 14, 30⟩, ⟨26, .nonterminal 12, 31⟩, ⟨26, .nonterminal 9, 32⟩, ⟨26, .nonterminal 10, 33⟩, ⟨26, .nonterminal 33, 34⟩, ⟨26, .nonterminal 11, 35⟩, ⟨26, .terminal 21, 36⟩, ⟨26, .terminal 1, 37⟩, ⟨26, .nonterminal 13, 38⟩, ⟨26, .nonterminal 15, 39⟩, ⟨26, .nonterminal 17, 40⟩, ⟨26, .nonterminal 18, 41⟩, ⟨26, .nonterminal 19, 42⟩, ⟨26, .terminal 26, 43⟩, ⟨26, .nonterminal 39, 44⟩, ⟨26, .nonterminal 8, 45⟩, ⟨26, .nonterminal 40, 46⟩, ⟨26, .nonterminal 41, 47⟩, ⟨26, .terminal 28, 48⟩, ⟨27, .terminal 5, 49⟩, ⟨28, .nonterminal 4, 28⟩, ⟨28, .nonterminal 22, 50⟩, ⟨28, .terminal 14, 30⟩, ⟨29, .terminal 4, 51⟩, ⟨30, .terminal 1, 52⟩, ⟨31, .terminal 8, 53⟩, ⟨36, .terminal 22, 54⟩, ⟨37, .terminal 7, 55⟩, ⟨37, .nonterminal 35, 56⟩, ⟨37, .terminal 26, 57⟩, ⟨38, .terminal 23, 58⟩, ⟨38, .nonterminal 36, 59⟩, ⟨39, .nonterminal 14, 60⟩, ⟨39, .nonterminal 37, 61⟩, ⟨39, .terminal 24, 62⟩, ⟨40, .nonterminal 16, 63⟩, ⟨40, .nonterminal 38, 64⟩, ⟨40, .terminal 25, 65⟩, ⟨43, .nonterminal 9, 32⟩, ⟨43, .nonterminal 10, 33⟩, ⟨43, .nonterminal 33, 34⟩, ⟨43, .nonterminal 11, 35⟩, ⟨43, .terminal 21, 36⟩, ⟨43, .terminal 1, 37⟩, ⟨43, .nonterminal 15, 39⟩, ⟨43, .nonterminal 17, 40⟩, ⟨43, .nonterminal 18, 41⟩, ⟨43, .nonterminal 19, 42⟩, ⟨43, .terminal 26, 43⟩, ⟨43, .nonterminal 13, 66⟩, ⟨43, .nonterminal 39, 44⟩, ⟨43, .nonterminal 8, 45⟩, ⟨43, .nonterminal 40, 46⟩, ⟨43, .nonterminal 41, 47⟩, ⟨43, .terminal 28, 48⟩, ⟨48, .terminal 26, 67⟩, ⟨51, .terminal 1, 68⟩, ⟨52, .terminal 15, 69⟩, ⟨54, .nonterminal 11, 70⟩, ⟨54, .terminal 1, 71⟩, ⟨55, .nonterminal 9, 32⟩, ⟨55, .nonterminal 10, 33⟩, ⟨55, .nonterminal 33, 34⟩, ⟨55, .nonterminal 11, 35⟩, ⟨55, .terminal 21, 36⟩, ⟨55, .nonterminal 12, 72⟩, ⟨55, .terminal 1, 37⟩, ⟨55, .nonterminal 13, 38⟩, ⟨55, .nonterminal 15, 39⟩, ⟨55, .nonterminal 17, 40⟩, ⟨55, .nonterminal 18, 41⟩, ⟨55, .nonterminal 19, 42⟩, ⟨55, .terminal 26, 43⟩, ⟨55, .nonterminal 39, 44⟩, ⟨55, .nonterminal 8, 45⟩, ⟨55, .nonterminal 40, 46⟩, ⟨55, .nonterminal 41, 47⟩, ⟨55, .terminal 28, 48⟩, ⟨57, .nonterminal 9, 32⟩, ⟨57, .nonterminal 10, 33⟩, ⟨57, .nonterminal 33, 34⟩, ⟨57, .nonterminal 11, 35⟩, ⟨57, .terminal 21, 36⟩, ⟨57, .terminal 1, 37⟩, ⟨57, .nonterminal 13, 38⟩, ⟨57, .nonterminal 15, 39⟩, ⟨57, .nonterminal 17, 40⟩, ⟨57, .nonterminal 18, 41⟩, ⟨57, .nonterminal 19, 42⟩, ⟨57, .terminal 26, 43⟩, ⟨57, .nonterminal 39, 44⟩, ⟨57, .nonterminal 8, 45⟩, ⟨57, .nonterminal 40, 46⟩, ⟨57, .nonterminal 41, 47⟩, ⟨57, .nonterminal 12, 73⟩, ⟨57, .nonterminal 42, 74⟩, ⟨57, .terminal 28, 48⟩, ⟨58, .nonterminal 9, 32⟩, ⟨58, .nonterminal 10, 33⟩, ⟨58, .nonterminal 33, 34⟩, ⟨58, .nonterminal 11, 35⟩, ⟨58, .terminal 21, 36⟩, ⟨58, .terminal 1, 37⟩, ⟨58, .nonterminal 13, 75⟩, ⟨58, .nonterminal 15, 39⟩, ⟨58, .nonterminal 17, 40⟩, ⟨58, .nonterminal 18, 41⟩, ⟨58, .nonterminal 19, 42⟩, ⟨58, .terminal 26, 43⟩, ⟨58, .nonterminal 39, 44⟩, ⟨58, .nonterminal 8, 45⟩, ⟨58, .nonterminal 40, 46⟩, ⟨58, .nonterminal 41, 47⟩, ⟨58, .terminal 28, 48⟩, ⟨60, .nonterminal 9, 32⟩, ⟨60, .nonterminal 10, 33⟩, ⟨60, .nonterminal 33, 34⟩, ⟨60, .nonterminal 11, 35⟩, ⟨60, .terminal 21, 36⟩, ⟨60, .terminal 1, 37⟩, ⟨60, .nonterminal 15, 76⟩, ⟨60, .nonterminal 17, 40⟩, ⟨60, .nonterminal 18, 41⟩, ⟨60, .nonterminal 19, 42⟩, ⟨60, .terminal 26, 43⟩, ⟨60, .nonterminal 39, 44⟩, ⟨60, .nonterminal 8, 45⟩, ⟨60, .nonterminal 40, 46⟩, ⟨60, .nonterminal 41, 47⟩, ⟨60, .terminal 28, 48⟩, ⟨63, .nonterminal 9, 32⟩, ⟨63, .nonterminal 10, 33⟩, ⟨63, .nonterminal 33, 34⟩, ⟨63, .nonterminal 11, 35⟩, ⟨63, .terminal 21, 36⟩, ⟨63, .terminal 1, 37⟩, ⟨63, .nonterminal 17, 77⟩, ⟨63, .nonterminal 18, 41⟩, ⟨63, .nonterminal 19, 42⟩, ⟨63, .terminal 26, 43⟩, ⟨63, .nonterminal 39, 44⟩, ⟨63, .nonterminal 8, 45⟩, ⟨63, .nonterminal 40, 46⟩, ⟨63, .nonterminal 41, 47⟩, ⟨63, .terminal 28, 48⟩, ⟨66, .terminal 27, 78⟩, ⟨67, .nonterminal 9, 32⟩, ⟨67, .nonterminal 10, 33⟩, ⟨67, .nonterminal 33, 34⟩, ⟨67, .nonterminal 11, 35⟩, ⟨67, .terminal 21, 36⟩, ⟨67, .terminal 1, 71⟩, ⟨67, .nonterminal 8, 79⟩, ⟨68, .terminal 5, 80⟩, ⟨69, .nonterminal 5, 81⟩, ⟨69, .nonterminal 29, 82⟩, ⟨69, .nonterminal 6, 83⟩, ⟨69, .nonterminal 7, 84⟩, ⟨69, .nonterminal 30, 85⟩, ⟨69, .nonterminal 8, 86⟩, ⟨69, .terminal 17, 87⟩, ⟨69, .nonterminal 9, 32⟩, ⟨69, .nonterminal 10, 33⟩, ⟨69, .nonterminal 33, 34⟩, ⟨69, .nonterminal 11, 35⟩, ⟨69, .terminal 21, 36⟩, ⟨69, .terminal 1, 71⟩, ⟨70, .terminal 22, 88⟩, ⟨70, .nonterminal 34, 89⟩, ⟨71, .terminal 7, 55⟩, ⟨71, .nonterminal 35, 56⟩, ⟨72, .terminal 8, 90⟩, ⟨74, .terminal 27, 91⟩, ⟨75, .terminal 23, 58⟩, ⟨75, .nonterminal 36, 92⟩, ⟨76, .nonterminal 14, 60⟩, ⟨76, .nonterminal 37, 93⟩, ⟨76, .terminal 24, 62⟩, ⟨77, .nonterminal 16, 63⟩, ⟨77, .nonterminal 38, 94⟩, ⟨77, .terminal 25, 65⟩, ⟨79, .terminal 23, 95⟩, ⟨81, .nonterminal 5, 81⟩, ⟨81, .nonterminal 29, 96⟩, ⟨81, .nonterminal 6, 83⟩, ⟨81, .nonterminal 7, 84⟩, ⟨81, .nonterminal 30, 85⟩, ⟨81, .nonterminal 8, 86⟩, ⟨81, .terminal 17, 87⟩, ⟨81, .nonterminal 9, 32⟩, ⟨81, .nonterminal 10, 33⟩, ⟨81, .nonterminal 33, 34⟩, ⟨81, .nonterminal 11, 35⟩, ⟨81, .terminal 21, 36⟩, ⟨81, .terminal 1, 71⟩, ⟨82, .terminal 4, 97⟩, ⟨85, .terminal 5, 98⟩, ⟨86, .terminal 16, 99⟩, ⟨87, .terminal 1, 100⟩, ⟨88, .nonterminal 11, 101⟩, ⟨88, .terminal 1, 71⟩, ⟨95, .nonterminal 9, 32⟩, ⟨95, .nonterminal 10, 33⟩, ⟨95, .nonterminal 33, 34⟩, ⟨95, .nonterminal 11, 35⟩, ⟨95, .terminal 21, 36⟩, ⟨95, .terminal 1, 37⟩, ⟨95, .nonterminal 15, 39⟩, ⟨95, .nonterminal 17, 40⟩, ⟨95, .nonterminal 18, 41⟩, ⟨95, .nonterminal 19, 42⟩, ⟨95, .terminal 26, 43⟩, ⟨95, .nonterminal 39, 44⟩, ⟨95, .nonterminal 8, 45⟩, ⟨95, .nonterminal 40, 46⟩, ⟨95, .nonterminal 41, 47⟩, ⟨95, .terminal 28, 48⟩, ⟨95, .nonterminal 13, 102⟩, ⟨97, .terminal 1, 103⟩, ⟨99, .nonterminal 13, 104⟩, ⟨99, .nonterminal 9, 32⟩, ⟨99, .nonterminal 10, 33⟩, ⟨99, .nonterminal 33, 34⟩, ⟨99, .nonterminal 11, 35⟩, ⟨99, .terminal 21, 36⟩, ⟨99, .terminal 1, 37⟩, ⟨99, .nonterminal 15, 39⟩, ⟨99, .nonterminal 17, 40⟩, ⟨99, .nonterminal 18, 41⟩, ⟨99, .nonterminal 19, 42⟩, ⟨99, .terminal 26, 43⟩, ⟨99, .nonterminal 39, 44⟩, ⟨99, .nonterminal 8, 45⟩, ⟨99, .nonterminal 40, 46⟩, ⟨99, .nonterminal 41, 47⟩, ⟨99, .terminal 28, 48⟩, ⟨100, .terminal 18, 105⟩, ⟨101, .terminal 22, 88⟩, ⟨101, .nonterminal 34, 106⟩, ⟨102, .terminal 27, 107⟩, ⟨103, .terminal 5, 108⟩, ⟨105, .nonterminal 13, 109⟩, ⟨105, .nonterminal 9, 32⟩, ⟨105, .nonterminal 10, 33⟩, ⟨105, .nonterminal 33, 34⟩, ⟨105, .nonterminal 11, 35⟩, ⟨105, .terminal 21, 36⟩, ⟨105, .terminal 1, 37⟩, ⟨105, .nonterminal 15, 39⟩, ⟨105, .nonterminal 17, 40⟩, ⟨105, .nonterminal 18, 41⟩, ⟨105, .nonterminal 19, 42⟩, ⟨105, .terminal 26, 43⟩, ⟨105, .nonterminal 39, 44⟩, ⟨105, .nonterminal 8, 45⟩, ⟨105, .nonterminal 40, 46⟩, ⟨105, .nonterminal 41, 47⟩, ⟨105, .terminal 28, 48⟩, ⟨109, .terminal 19, 110⟩, ⟨110, .nonterminal 13, 111⟩, ⟨110, .nonterminal 9, 32⟩, ⟨110, .nonterminal 10, 33⟩, ⟨110, .nonterminal 33, 34⟩, ⟨110, .nonterminal 11, 35⟩, ⟨110, .terminal 21, 36⟩, ⟨110, .terminal 1, 37⟩, ⟨110, .nonterminal 15, 39⟩, ⟨110, .nonterminal 17, 40⟩, ⟨110, .nonterminal 18, 41⟩, ⟨110, .nonterminal 19, 42⟩, ⟨110, .terminal 26, 43⟩, ⟨110, .nonterminal 39, 44⟩, ⟨110, .nonterminal 8, 45⟩, ⟨110, .nonterminal 40, 46⟩, ⟨110, .nonterminal 41, 47⟩, ⟨110, .terminal 28, 48⟩, ⟨111, .terminal 19, 112⟩, ⟨111, .nonterminal 31, 113⟩, ⟨112, .nonterminal 13, 114⟩, ⟨112, .nonterminal 9, 32⟩, ⟨112, .nonterminal 10, 33⟩, ⟨112, .nonterminal 33, 34⟩, ⟨112, .nonterminal 11, 35⟩, ⟨112, .terminal 21, 36⟩, ⟨112, .terminal 1, 37⟩, ⟨112, .nonterminal 15, 39⟩, ⟨112, .nonterminal 17, 40⟩, ⟨112, .nonterminal 18, 41⟩, ⟨112, .nonterminal 19, 42⟩, ⟨112, .terminal 26, 43⟩, ⟨112, .nonterminal 39, 44⟩, ⟨112, .nonterminal 8, 45⟩, ⟨112, .nonterminal 40, 46⟩, ⟨112, .nonterminal 41, 47⟩, ⟨112, .terminal 28, 48⟩, ⟨113, .terminal 20, 115⟩, ⟨115, .nonterminal 6, 83⟩, ⟨115, .nonterminal 7, 84⟩, ⟨115, .nonterminal 30, 85⟩, ⟨115, .nonterminal 8, 86⟩, ⟨115, .nonterminal 5, 116⟩, ⟨115, .terminal 17, 87⟩, ⟨115, .nonterminal 32, 117⟩, ⟨115, .nonterminal 9, 32⟩, ⟨115, .nonterminal 10, 33⟩, ⟨115, .nonterminal 33, 34⟩, ⟨115, .nonterminal 11, 35⟩, ⟨115, .terminal 21, 36⟩, ⟨115, .terminal 1, 71⟩, ⟨116, .nonterminal 6, 83⟩, ⟨116, .nonterminal 7, 84⟩, ⟨116, .nonterminal 30, 85⟩, ⟨116, .nonterminal 8, 86⟩, ⟨116, .nonterminal 5, 116⟩, ⟨116, .nonterminal 32, 118⟩, ⟨116, .terminal 17, 87⟩, ⟨116, .nonterminal 9, 32⟩, ⟨116, .nonterminal 10, 33⟩, ⟨116, .nonterminal 33, 34⟩, ⟨116, .nonterminal 11, 35⟩, ⟨116, .terminal 21, 36⟩, ⟨116, .terminal 1, 71⟩, ⟨117, .terminal 4, 119⟩, ⟨119, .terminal 17, 120⟩]
 
-def firstFacts : Array LALR.First := #[⟨false, [0]⟩, ⟨false, [0]⟩, ⟨false, [9]⟩, ⟨false, [9]⟩, ⟨false, [9]⟩, ⟨false, [20]⟩, ⟨false, [0]⟩, ⟨false, [9]⟩, ⟨false, [20]⟩, ⟨false, [0]⟩]
+def firstFacts : Array LALR.First := #[⟨false, [0]⟩, ⟨false, [6, 9, 10, 11, 12, 13]⟩, ⟨false, [9, 10]⟩, ⟨false, [11, 12, 13]⟩, ⟨false, [14]⟩, ⟨false, [1, 17, 21]⟩, ⟨false, [1, 21]⟩, ⟨false, [17]⟩, ⟨false, [1, 21]⟩, ⟨false, [1]⟩, ⟨false, [21]⟩, ⟨false, [1]⟩, ⟨false, [1, 21, 26, 28]⟩, ⟨false, [1, 21, 26, 28]⟩, ⟨false, [24]⟩, ⟨false, [1, 21, 26, 28]⟩, ⟨false, [25]⟩, ⟨false, [1, 21, 26, 28]⟩, ⟨false, [1]⟩, ⟨false, [28]⟩, ⟨true, [6, 9, 10, 11, 12, 13]⟩, ⟨true, [6, 9, 10, 11, 12, 13]⟩, ⟨true, [14]⟩, ⟨false, [6, 9, 10]⟩, ⟨true, [6, 9, 10]⟩, ⟨true, [7]⟩, ⟨false, [9, 10]⟩, ⟨false, [12, 13]⟩, ⟨false, [11, 12, 13]⟩, ⟨true, [1, 17, 21]⟩, ⟨false, [1, 17, 21]⟩, ⟨true, [19]⟩, ⟨true, [1, 17, 21]⟩, ⟨false, [1, 21]⟩, ⟨true, [22]⟩, ⟨true, [7]⟩, ⟨true, [23]⟩, ⟨true, [24]⟩, ⟨true, [25]⟩, ⟨false, [1, 28]⟩, ⟨false, [1, 26, 28]⟩, ⟨false, [1, 21, 26, 28]⟩, ⟨true, [1, 21, 26, 28]⟩]
 
-noncomputable def itemStates : Array LALR.ItemSet := #[[⟨0, 0, 28⟩, ⟨1, 0, 28⟩, ⟨2, 0, 28⟩, ⟨3, 0, 28⟩, ⟨8, 0, 28⟩, ⟨11, 0, 28⟩], [⟨0, 1, 28⟩], [⟨1, 1, 28⟩], [⟨2, 1, 28⟩], [⟨3, 1, 28⟩, ⟨8, 1, 28⟩], [⟨11, 1, 28⟩], [⟨3, 2, 28⟩, ⟨8, 2, 28⟩], [⟨3, 3, 28⟩], [⟨8, 3, 28⟩], [⟨3, 4, 28⟩], [⟨8, 4, 28⟩], [⟨3, 5, 28⟩], [⟨8, 5, 28⟩], [⟨3, 6, 28⟩], [⟨8, 6, 28⟩], [⟨3, 7, 28⟩], [⟨8, 7, 28⟩], [⟨3, 8, 28⟩], [⟨8, 8, 28⟩], [⟨3, 9, 28⟩], [⟨8, 9, 28⟩], [⟨3, 10, 28⟩], [⟨8, 10, 28⟩], [⟨3, 11, 28⟩], [⟨8, 11, 28⟩], [⟨3, 12, 28⟩, ⟨4, 0, 9⟩], [⟨8, 12, 28⟩], [⟨3, 13, 28⟩, ⟨5, 0, 9⟩], [⟨4, 1, 9⟩], [⟨8, 13, 28⟩], [⟨3, 14, 28⟩, ⟨6, 0, 8⟩], [⟨5, 1, 9⟩], [⟨4, 2, 9⟩], [⟨8, 14, 28⟩], [⟨3, 15, 28⟩], [⟨6, 1, 8⟩], [⟨5, 2, 9⟩], [⟨4, 3, 9⟩, ⟨7, 0, 12⟩], [⟨8, 15, 28⟩], [⟨3, 16, 28⟩], [⟨6, 2, 8⟩], [⟨5, 3, 9⟩], [⟨4, 4, 9⟩], [⟨7, 1, 4⟩, ⟨7, 1, 12⟩, ⟨7, 1, 18⟩, ⟨7, 1, 19⟩, ⟨7, 1, 26⟩, ⟨7, 1, 27⟩], [⟨8, 16, 28⟩], [⟨3, 17, 28⟩], [⟨6, 3, 8⟩, ⟨7, 0, 12⟩], [⟨5, 4, 9⟩], [⟨4, 5, 9⟩], [⟨7, 2, 4⟩, ⟨7, 2, 12⟩, ⟨7, 2, 18⟩, ⟨7, 2, 19⟩, ⟨7, 2, 26⟩, ⟨7, 2, 27⟩], [⟨8, 17, 28⟩], [⟨3, 18, 28⟩], [⟨6, 4, 8⟩], [⟨5, 5, 9⟩], [⟨4, 6, 9⟩], [⟨7, 3, 4⟩, ⟨7, 3, 12⟩, ⟨7, 3, 18⟩, ⟨7, 3, 19⟩, ⟨7, 3, 26⟩, ⟨7, 3, 27⟩], [⟨8, 18, 28⟩], [⟨6, 5, 8⟩], [⟨5, 6, 9⟩], [⟨4, 7, 9⟩, ⟨7, 0, 12⟩], [⟨8, 19, 28⟩], [⟨6, 6, 8⟩, ⟨7, 0, 18⟩], [⟨4, 8, 9⟩], [⟨8, 20, 28⟩], [⟨6, 7, 8⟩], [⟨4, 9, 9⟩], [⟨8, 21, 28⟩], [⟨6, 8, 8⟩], [⟨4, 10, 9⟩], [⟨8, 22, 28⟩], [⟨6, 9, 8⟩], [⟨4, 11, 9⟩], [⟨8, 23, 28⟩], [⟨6, 10, 8⟩], [⟨4, 12, 9⟩], [⟨8, 24, 28⟩], [⟨6, 11, 8⟩], [⟨4, 13, 9⟩], [⟨8, 25, 28⟩], [⟨6, 12, 8⟩], [⟨4, 14, 9⟩], [⟨8, 26, 28⟩], [⟨6, 13, 8⟩], [⟨8, 27, 28⟩], [⟨6, 14, 8⟩], [⟨8, 28, 28⟩], [⟨8, 29, 28⟩], [⟨8, 30, 28⟩], [⟨4, 0, 9⟩, ⟨8, 31, 28⟩], [⟨5, 0, 9⟩, ⟨8, 32, 28⟩], [⟨8, 33, 28⟩, ⟨9, 0, 8⟩], [⟨8, 34, 28⟩], [⟨9, 1, 8⟩], [⟨8, 35, 28⟩], [⟨9, 2, 8⟩], [⟨8, 36, 28⟩], [⟨7, 0, 12⟩, ⟨9, 3, 8⟩], [⟨8, 37, 28⟩], [⟨9, 4, 8⟩], [⟨7, 0, 27⟩, ⟨9, 5, 8⟩, ⟨10, 0, 4⟩], [⟨9, 6, 8⟩], [⟨10, 1, 4⟩, ⟨10, 1, 26⟩], [⟨7, 0, 12⟩, ⟨9, 7, 8⟩], [⟨7, 0, 4⟩, ⟨7, 0, 26⟩, ⟨10, 2, 4⟩, ⟨10, 2, 26⟩], [⟨9, 8, 8⟩], [⟨10, 3, 4⟩, ⟨10, 3, 26⟩], [⟨9, 9, 8⟩], [⟨9, 10, 8⟩], [⟨7, 0, 27⟩, ⟨9, 11, 8⟩, ⟨10, 0, 26⟩], [⟨9, 12, 8⟩], [⟨7, 0, 19⟩, ⟨9, 13, 8⟩], [⟨9, 14, 8⟩], [⟨9, 15, 8⟩], [⟨9, 16, 8⟩], [⟨9, 17, 8⟩], [⟨9, 18, 8⟩], [⟨9, 19, 8⟩]]
+noncomputable def itemStates : Array LALR.ItemSet := #[[⟨6, 0, 29⟩, ⟨66, 0, 29⟩], [⟨6, 1, 29⟩], [⟨66, 1, 29⟩], [⟨0, 0, 2⟩, ⟨1, 0, 2⟩, ⟨6, 2, 29⟩, ⟨7, 0, 11⟩, ⟨7, 0, 12⟩, ⟨7, 0, 13⟩, ⟨8, 0, 11⟩, ⟨8, 0, 12⟩, ⟨8, 0, 13⟩, ⟨9, 0, 11⟩, ⟨9, 0, 12⟩, ⟨9, 0, 13⟩, ⟨10, 0, 11⟩, ⟨10, 0, 12⟩, ⟨10, 0, 13⟩, ⟨13, 0, 2⟩, ⟨13, 0, 6⟩, ⟨13, 0, 9⟩, ⟨13, 0, 10⟩, ⟨13, 0, 11⟩, ⟨13, 0, 12⟩, ⟨13, 0, 13⟩, ⟨14, 0, 11⟩, ⟨14, 0, 12⟩, ⟨14, 0, 13⟩, ⟨15, 0, 11⟩, ⟨15, 0, 12⟩, ⟨15, 0, 13⟩, ⟨16, 0, 11⟩, ⟨16, 0, 12⟩, ⟨16, 0, 13⟩], [⟨0, 0, 2⟩, ⟨1, 0, 2⟩, ⟨1, 1, 2⟩, ⟨7, 0, 11⟩, ⟨7, 0, 12⟩, ⟨7, 0, 13⟩, ⟨8, 0, 11⟩, ⟨8, 0, 12⟩, ⟨8, 0, 13⟩, ⟨9, 0, 11⟩, ⟨9, 0, 12⟩, ⟨9, 0, 13⟩, ⟨10, 0, 11⟩, ⟨10, 0, 12⟩, ⟨10, 0, 13⟩, ⟨13, 0, 2⟩, ⟨13, 0, 6⟩, ⟨13, 0, 9⟩, ⟨13, 0, 10⟩, ⟨13, 0, 11⟩, ⟨13, 0, 12⟩, ⟨13, 0, 13⟩, ⟨14, 0, 11⟩, ⟨14, 0, 12⟩, ⟨14, 0, 13⟩, ⟨15, 0, 11⟩, ⟨15, 0, 12⟩, ⟨15, 0, 13⟩, ⟨16, 0, 11⟩, ⟨16, 0, 12⟩, ⟨16, 0, 13⟩], [⟨6, 3, 29⟩], [⟨7, 1, 11⟩, ⟨7, 1, 12⟩, ⟨7, 1, 13⟩], [⟨8, 1, 11⟩, ⟨8, 1, 12⟩, ⟨8, 1, 13⟩], [⟨10, 1, 11⟩, ⟨10, 1, 12⟩, ⟨10, 1, 13⟩], [⟨13, 1, 2⟩, ⟨13, 1, 3⟩, ⟨13, 1, 6⟩, ⟨13, 1, 9⟩, ⟨13, 1, 10⟩, ⟨13, 1, 11⟩, ⟨13, 1, 12⟩, ⟨13, 1, 13⟩, ⟨17, 0, 1⟩, ⟨18, 0, 1⟩, ⟨19, 0, 1⟩, ⟨20, 0, 1⟩, ⟨21, 0, 1⟩], [⟨14, 1, 11⟩, ⟨14, 1, 12⟩, ⟨14, 1, 13⟩], [⟨15, 1, 11⟩, ⟨15, 1, 12⟩, ⟨15, 1, 13⟩], [⟨16, 1, 11⟩, ⟨16, 1, 12⟩, ⟨16, 1, 13⟩], [⟨1, 2, 2⟩], [⟨2, 0, 3⟩, ⟨3, 0, 3⟩, ⟨6, 4, 29⟩, ⟨7, 0, 11⟩, ⟨7, 0, 12⟩, ⟨7, 0, 13⟩, ⟨8, 0, 11⟩, ⟨8, 0, 12⟩, ⟨8, 0, 13⟩, ⟨9, 0, 11⟩, ⟨9, 0, 12⟩, ⟨9, 0, 13⟩, ⟨10, 0, 11⟩, ⟨10, 0, 12⟩, ⟨10, 0, 13⟩, ⟨13, 0, 3⟩, ⟨13, 0, 6⟩, ⟨13, 0, 9⟩, ⟨13, 0, 10⟩, ⟨13, 0, 11⟩, ⟨13, 0, 12⟩, ⟨13, 0, 13⟩, ⟨14, 0, 11⟩, ⟨14, 0, 12⟩, ⟨14, 0, 13⟩, ⟨15, 0, 11⟩, ⟨15, 0, 12⟩, ⟨15, 0, 13⟩, ⟨16, 0, 11⟩, ⟨16, 0, 12⟩, ⟨16, 0, 13⟩], [⟨13, 2, 2⟩, ⟨13, 2, 3⟩, ⟨13, 2, 6⟩, ⟨13, 2, 9⟩, ⟨13, 2, 10⟩, ⟨13, 2, 11⟩, ⟨13, 2, 12⟩, ⟨13, 2, 13⟩], [⟨17, 1, 1⟩], [⟨18, 1, 1⟩], [⟨19, 1, 1⟩], [⟨20, 1, 1⟩], [⟨21, 1, 1⟩], [⟨2, 0, 3⟩, ⟨3, 0, 3⟩, ⟨3, 1, 3⟩, ⟨7, 0, 11⟩, ⟨7, 0, 12⟩, ⟨7, 0, 13⟩, ⟨8, 0, 11⟩, ⟨8, 0, 12⟩, ⟨8, 0, 13⟩, ⟨9, 0, 11⟩, ⟨9, 0, 12⟩, ⟨9, 0, 13⟩, ⟨10, 0, 11⟩, ⟨10, 0, 12⟩, ⟨10, 0, 13⟩, ⟨13, 0, 3⟩, ⟨13, 0, 6⟩, ⟨13, 0, 9⟩, ⟨13, 0, 10⟩, ⟨13, 0, 11⟩, ⟨13, 0, 12⟩, ⟨13, 0, 13⟩, ⟨14, 0, 11⟩, ⟨14, 0, 12⟩, ⟨14, 0, 13⟩, ⟨15, 0, 11⟩, ⟨15, 0, 12⟩, ⟨15, 0, 13⟩, ⟨16, 0, 11⟩, ⟨16, 0, 12⟩, ⟨16, 0, 13⟩], [⟨6, 5, 29⟩], [⟨11, 0, 5⟩, ⟨12, 0, 5⟩, ⟨13, 3, 2⟩, ⟨13, 3, 3⟩, ⟨13, 3, 6⟩, ⟨13, 3, 9⟩, ⟨13, 3, 10⟩, ⟨13, 3, 11⟩, ⟨13, 3, 12⟩, ⟨13, 3, 13⟩], [⟨3, 2, 3⟩], [⟨4, 0, 4⟩, ⟨5, 0, 4⟩, ⟨6, 6, 29⟩, ⟨24, 0, 4⟩, ⟨24, 0, 14⟩], [⟨12, 1, 5⟩, ⟨34, 0, 8⟩, ⟨34, 0, 23⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨35, 0, 8⟩, ⟨35, 0, 23⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨36, 0, 8⟩, ⟨36, 0, 23⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨37, 0, 8⟩, ⟨37, 0, 23⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨40, 0, 8⟩, ⟨40, 0, 23⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨43, 0, 8⟩, ⟨43, 0, 23⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨46, 0, 8⟩, ⟨49, 0, 8⟩, ⟨49, 0, 23⟩, ⟨53, 0, 8⟩, ⟨53, 0, 23⟩, ⟨53, 0, 24⟩, ⟨55, 0, 8⟩, ⟨55, 0, 23⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨56, 0, 8⟩, ⟨56, 0, 23⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨57, 0, 8⟩, ⟨57, 0, 23⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨58, 0, 8⟩, ⟨58, 0, 23⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨59, 0, 8⟩, ⟨59, 0, 23⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨60, 0, 8⟩, ⟨60, 0, 23⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨61, 0, 8⟩, ⟨61, 0, 23⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨64, 0, 8⟩, ⟨64, 0, 23⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨65, 0, 8⟩, ⟨65, 0, 23⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩], [⟨13, 4, 2⟩, ⟨13, 4, 3⟩, ⟨13, 4, 6⟩, ⟨13, 4, 9⟩, ⟨13, 4, 10⟩, ⟨13, 4, 11⟩, ⟨13, 4, 12⟩, ⟨13, 4, 13⟩], [⟨4, 0, 4⟩, ⟨5, 0, 4⟩, ⟨5, 1, 4⟩, ⟨24, 0, 4⟩, ⟨24, 0, 14⟩], [⟨6, 7, 29⟩], [⟨24, 1, 4⟩, ⟨24, 1, 14⟩], [⟨12, 2, 5⟩], [⟨34, 1, 5⟩, ⟨34, 1, 8⟩, ⟨34, 1, 16⟩, ⟨34, 1, 19⟩, ⟨34, 1, 20⟩, ⟨34, 1, 23⟩, ⟨34, 1, 24⟩, ⟨34, 1, 25⟩, ⟨34, 1, 27⟩], [⟨35, 1, 5⟩, ⟨35, 1, 8⟩, ⟨35, 1, 16⟩, ⟨35, 1, 19⟩, ⟨35, 1, 20⟩, ⟨35, 1, 23⟩, ⟨35, 1, 24⟩, ⟨35, 1, 25⟩, ⟨35, 1, 27⟩], [⟨36, 1, 5⟩, ⟨36, 1, 8⟩, ⟨36, 1, 16⟩, ⟨36, 1, 19⟩, ⟨36, 1, 20⟩, ⟨36, 1, 23⟩, ⟨36, 1, 24⟩, ⟨36, 1, 25⟩, ⟨36, 1, 27⟩], [⟨37, 1, 5⟩, ⟨37, 1, 8⟩, ⟨37, 1, 16⟩, ⟨37, 1, 19⟩, ⟨37, 1, 20⟩, ⟨37, 1, 23⟩, ⟨37, 1, 24⟩, ⟨37, 1, 25⟩, ⟨37, 1, 27⟩], [⟨40, 1, 5⟩, ⟨40, 1, 8⟩, ⟨40, 1, 16⟩, ⟨40, 1, 19⟩, ⟨40, 1, 20⟩, ⟨40, 1, 23⟩, ⟨40, 1, 24⟩, ⟨40, 1, 25⟩, ⟨40, 1, 27⟩], [⟨41, 0, 5⟩, ⟨41, 0, 8⟩, ⟨41, 0, 19⟩, ⟨41, 0, 20⟩, ⟨41, 0, 23⟩, ⟨41, 0, 24⟩, ⟨41, 0, 25⟩, ⟨41, 0, 27⟩, ⟨42, 0, 5⟩, ⟨42, 0, 8⟩, ⟨42, 0, 19⟩, ⟨42, 0, 20⟩, ⟨42, 0, 23⟩, ⟨42, 0, 24⟩, ⟨42, 0, 25⟩, ⟨42, 0, 27⟩, ⟨43, 1, 5⟩, ⟨43, 1, 8⟩, ⟨43, 1, 19⟩, ⟨43, 1, 20⟩, ⟨43, 1, 23⟩, ⟨43, 1, 24⟩, ⟨43, 1, 25⟩, ⟨43, 1, 27⟩, ⟨64, 1, 5⟩, ⟨64, 1, 8⟩, ⟨64, 1, 19⟩, ⟨64, 1, 20⟩, ⟨64, 1, 23⟩, ⟨64, 1, 24⟩, ⟨64, 1, 25⟩, ⟨64, 1, 27⟩], [⟨44, 0, 8⟩, ⟨44, 0, 27⟩, ⟨45, 0, 8⟩, ⟨45, 0, 27⟩, ⟨46, 1, 8⟩, ⟨46, 1, 27⟩], [⟨47, 0, 5⟩, ⟨47, 0, 8⟩, ⟨47, 0, 19⟩, ⟨47, 0, 20⟩, ⟨47, 0, 23⟩, ⟨47, 0, 27⟩, ⟨48, 0, 5⟩, ⟨48, 0, 8⟩, ⟨48, 0, 19⟩, ⟨48, 0, 20⟩, ⟨48, 0, 23⟩, ⟨48, 0, 27⟩, ⟨49, 1, 5⟩, ⟨49, 1, 8⟩, ⟨49, 1, 19⟩, ⟨49, 1, 20⟩, ⟨49, 1, 23⟩, ⟨49, 1, 27⟩, ⟨50, 0, 1⟩, ⟨50, 0, 21⟩, ⟨50, 0, 26⟩, ⟨50, 0, 28⟩], [⟨51, 0, 5⟩, ⟨51, 0, 8⟩, ⟨51, 0, 19⟩, ⟨51, 0, 20⟩, ⟨51, 0, 23⟩, ⟨51, 0, 24⟩, ⟨51, 0, 27⟩, ⟨52, 0, 5⟩, ⟨52, 0, 8⟩, ⟨52, 0, 19⟩, ⟨52, 0, 20⟩, ⟨52, 0, 23⟩, ⟨52, 0, 24⟩, ⟨52, 0, 27⟩, ⟨53, 1, 5⟩, ⟨53, 1, 8⟩, ⟨53, 1, 19⟩, ⟨53, 1, 20⟩, ⟨53, 1, 23⟩, ⟨53, 1, 24⟩, ⟨53, 1, 27⟩, ⟨54, 0, 1⟩, ⟨54, 0, 21⟩, ⟨54, 0, 26⟩, ⟨54, 0, 28⟩], [⟨55, 1, 5⟩, ⟨55, 1, 8⟩, ⟨55, 1, 19⟩, ⟨55, 1, 20⟩, ⟨55, 1, 23⟩, ⟨55, 1, 24⟩, ⟨55, 1, 25⟩, ⟨55, 1, 27⟩], [⟨56, 1, 5⟩, ⟨56, 1, 8⟩, ⟨56, 1, 19⟩, ⟨56, 1, 20⟩, ⟨56, 1, 23⟩, ⟨56, 1, 24⟩, ⟨56, 1, 25⟩, ⟨56, 1, 27⟩], [⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨34, 0, 27⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨35, 0, 27⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨36, 0, 27⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨37, 0, 27⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨40, 0, 27⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨43, 0, 27⟩, ⟨49, 0, 27⟩, ⟨53, 0, 24⟩, ⟨53, 0, 27⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨55, 0, 27⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨56, 0, 27⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨57, 0, 27⟩, ⟨57, 1, 5⟩, ⟨57, 1, 8⟩, ⟨57, 1, 19⟩, ⟨57, 1, 20⟩, ⟨57, 1, 23⟩, ⟨57, 1, 24⟩, ⟨57, 1, 25⟩, ⟨57, 1, 27⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨58, 0, 27⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨59, 0, 27⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨60, 0, 27⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨61, 0, 27⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨64, 0, 27⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩, ⟨65, 0, 27⟩], [⟨58, 1, 5⟩, ⟨58, 1, 8⟩, ⟨58, 1, 19⟩, ⟨58, 1, 20⟩, ⟨58, 1, 23⟩, ⟨58, 1, 24⟩, ⟨58, 1, 25⟩, ⟨58, 1, 27⟩], [⟨59, 1, 5⟩, ⟨59, 1, 8⟩, ⟨59, 1, 19⟩, ⟨59, 1, 20⟩, ⟨59, 1, 23⟩, ⟨59, 1, 24⟩, ⟨59, 1, 25⟩, ⟨59, 1, 27⟩], [⟨60, 1, 5⟩, ⟨60, 1, 8⟩, ⟨60, 1, 19⟩, ⟨60, 1, 20⟩, ⟨60, 1, 23⟩, ⟨60, 1, 24⟩, ⟨60, 1, 25⟩, ⟨60, 1, 27⟩], [⟨61, 1, 5⟩, ⟨61, 1, 8⟩, ⟨61, 1, 19⟩, ⟨61, 1, 20⟩, ⟨61, 1, 23⟩, ⟨61, 1, 24⟩, ⟨61, 1, 25⟩, ⟨61, 1, 27⟩], [⟨65, 1, 5⟩, ⟨65, 1, 8⟩, ⟨65, 1, 19⟩, ⟨65, 1, 20⟩, ⟨65, 1, 23⟩, ⟨65, 1, 24⟩, ⟨65, 1, 25⟩, ⟨65, 1, 27⟩], [⟨13, 5, 2⟩, ⟨13, 5, 3⟩, ⟨13, 5, 6⟩, ⟨13, 5, 9⟩, ⟨13, 5, 10⟩, ⟨13, 5, 11⟩, ⟨13, 5, 12⟩, ⟨13, 5, 13⟩], [⟨5, 2, 4⟩], [⟨6, 8, 29⟩], [⟨24, 2, 4⟩, ⟨24, 2, 14⟩], [⟨12, 3, 5⟩], [⟨40, 2, 5⟩, ⟨40, 2, 8⟩, ⟨40, 2, 16⟩, ⟨40, 2, 19⟩, ⟨40, 2, 20⟩, ⟨40, 2, 23⟩, ⟨40, 2, 24⟩, ⟨40, 2, 25⟩, ⟨40, 2, 27⟩, ⟨43, 0, 5⟩, ⟨43, 0, 8⟩, ⟨43, 0, 16⟩, ⟨43, 0, 19⟩, ⟨43, 0, 20⟩, ⟨43, 0, 22⟩, ⟨43, 0, 23⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨43, 0, 27⟩], [⟨34, 0, 8⟩, ⟨34, 0, 23⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨35, 0, 8⟩, ⟨35, 0, 23⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨36, 0, 8⟩, ⟨36, 0, 23⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨37, 0, 8⟩, ⟨37, 0, 23⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨40, 0, 8⟩, ⟨40, 0, 23⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨42, 1, 5⟩, ⟨42, 1, 8⟩, ⟨42, 1, 16⟩, ⟨42, 1, 19⟩, ⟨42, 1, 20⟩, ⟨42, 1, 22⟩, ⟨42, 1, 23⟩, ⟨42, 1, 24⟩, ⟨42, 1, 25⟩, ⟨42, 1, 27⟩, ⟨43, 0, 8⟩, ⟨43, 0, 23⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨46, 0, 8⟩, ⟨49, 0, 8⟩, ⟨49, 0, 23⟩, ⟨53, 0, 8⟩, ⟨53, 0, 23⟩, ⟨53, 0, 24⟩, ⟨55, 0, 8⟩, ⟨55, 0, 23⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨56, 0, 8⟩, ⟨56, 0, 23⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨57, 0, 8⟩, ⟨57, 0, 23⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨58, 0, 8⟩, ⟨58, 0, 23⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨59, 0, 8⟩, ⟨59, 0, 23⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨60, 0, 8⟩, ⟨60, 0, 23⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨61, 0, 8⟩, ⟨61, 0, 23⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨64, 0, 8⟩, ⟨64, 0, 23⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨65, 0, 8⟩, ⟨65, 0, 23⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩], [⟨43, 2, 5⟩, ⟨43, 2, 8⟩, ⟨43, 2, 16⟩, ⟨43, 2, 19⟩, ⟨43, 2, 20⟩, ⟨43, 2, 22⟩, ⟨43, 2, 23⟩, ⟨43, 2, 24⟩, ⟨43, 2, 25⟩, ⟨43, 2, 27⟩], [⟨34, 0, 23⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨34, 0, 27⟩, ⟨35, 0, 23⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨35, 0, 27⟩, ⟨36, 0, 23⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨36, 0, 27⟩, ⟨37, 0, 23⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨37, 0, 27⟩, ⟨40, 0, 23⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨40, 0, 27⟩, ⟨43, 0, 23⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨43, 0, 27⟩, ⟨46, 0, 27⟩, ⟨49, 0, 23⟩, ⟨49, 0, 27⟩, ⟨53, 0, 23⟩, ⟨53, 0, 24⟩, ⟨53, 0, 27⟩, ⟨55, 0, 23⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨55, 0, 27⟩, ⟨56, 0, 23⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨56, 0, 27⟩, ⟨57, 0, 23⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨57, 0, 27⟩, ⟨58, 0, 23⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨58, 0, 27⟩, ⟨59, 0, 23⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨59, 0, 27⟩, ⟨60, 0, 23⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨60, 0, 27⟩, ⟨61, 0, 23⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨61, 0, 27⟩, ⟨62, 0, 27⟩, ⟨63, 0, 27⟩, ⟨64, 0, 23⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨64, 0, 27⟩, ⟨64, 2, 5⟩, ⟨64, 2, 8⟩, ⟨64, 2, 19⟩, ⟨64, 2, 20⟩, ⟨64, 2, 23⟩, ⟨64, 2, 24⟩, ⟨64, 2, 25⟩, ⟨64, 2, 27⟩, ⟨65, 0, 23⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩, ⟨65, 0, 27⟩], [⟨34, 0, 8⟩, ⟨34, 0, 23⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨34, 0, 27⟩, ⟨35, 0, 8⟩, ⟨35, 0, 23⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨35, 0, 27⟩, ⟨36, 0, 8⟩, ⟨36, 0, 23⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨36, 0, 27⟩, ⟨37, 0, 8⟩, ⟨37, 0, 23⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨37, 0, 27⟩, ⟨40, 0, 8⟩, ⟨40, 0, 23⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨40, 0, 27⟩, ⟨43, 0, 8⟩, ⟨43, 0, 23⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨43, 0, 27⟩, ⟨45, 1, 8⟩, ⟨45, 1, 27⟩, ⟨49, 0, 8⟩, ⟨49, 0, 23⟩, ⟨49, 0, 27⟩, ⟨53, 0, 8⟩, ⟨53, 0, 23⟩, ⟨53, 0, 24⟩, ⟨53, 0, 27⟩, ⟨55, 0, 8⟩, ⟨55, 0, 23⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨55, 0, 27⟩, ⟨56, 0, 8⟩, ⟨56, 0, 23⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨56, 0, 27⟩, ⟨57, 0, 8⟩, ⟨57, 0, 23⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨57, 0, 27⟩, ⟨58, 0, 8⟩, ⟨58, 0, 23⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨58, 0, 27⟩, ⟨59, 0, 8⟩, ⟨59, 0, 23⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨59, 0, 27⟩, ⟨60, 0, 8⟩, ⟨60, 0, 23⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨60, 0, 27⟩, ⟨61, 0, 8⟩, ⟨61, 0, 23⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨61, 0, 27⟩, ⟨64, 0, 8⟩, ⟨64, 0, 23⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨64, 0, 27⟩, ⟨65, 0, 8⟩, ⟨65, 0, 23⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩, ⟨65, 0, 27⟩], [⟨46, 2, 8⟩, ⟨46, 2, 27⟩], [⟨34, 0, 5⟩, ⟨34, 0, 8⟩, ⟨34, 0, 19⟩, ⟨34, 0, 20⟩, ⟨34, 0, 23⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨34, 0, 27⟩, ⟨35, 0, 5⟩, ⟨35, 0, 8⟩, ⟨35, 0, 19⟩, ⟨35, 0, 20⟩, ⟨35, 0, 23⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨35, 0, 27⟩, ⟨36, 0, 5⟩, ⟨36, 0, 8⟩, ⟨36, 0, 19⟩, ⟨36, 0, 20⟩, ⟨36, 0, 23⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨36, 0, 27⟩, ⟨37, 0, 5⟩, ⟨37, 0, 8⟩, ⟨37, 0, 19⟩, ⟨37, 0, 20⟩, ⟨37, 0, 23⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨37, 0, 27⟩, ⟨40, 0, 5⟩, ⟨40, 0, 8⟩, ⟨40, 0, 19⟩, ⟨40, 0, 20⟩, ⟨40, 0, 23⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨40, 0, 27⟩, ⟨43, 0, 5⟩, ⟨43, 0, 8⟩, ⟨43, 0, 19⟩, ⟨43, 0, 20⟩, ⟨43, 0, 23⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨43, 0, 27⟩, ⟨48, 1, 5⟩, ⟨48, 1, 8⟩, ⟨48, 1, 19⟩, ⟨48, 1, 20⟩, ⟨48, 1, 23⟩, ⟨48, 1, 27⟩, ⟨53, 0, 5⟩, ⟨53, 0, 8⟩, ⟨53, 0, 19⟩, ⟨53, 0, 20⟩, ⟨53, 0, 23⟩, ⟨53, 0, 24⟩, ⟨53, 0, 27⟩, ⟨55, 0, 5⟩, ⟨55, 0, 8⟩, ⟨55, 0, 19⟩, ⟨55, 0, 20⟩, ⟨55, 0, 23⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨55, 0, 27⟩, ⟨56, 0, 5⟩, ⟨56, 0, 8⟩, ⟨56, 0, 19⟩, ⟨56, 0, 20⟩, ⟨56, 0, 23⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨56, 0, 27⟩, ⟨57, 0, 5⟩, ⟨57, 0, 8⟩, ⟨57, 0, 19⟩, ⟨57, 0, 20⟩, ⟨57, 0, 23⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨57, 0, 27⟩, ⟨58, 0, 5⟩, ⟨58, 0, 8⟩, ⟨58, 0, 19⟩, ⟨58, 0, 20⟩, ⟨58, 0, 23⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨58, 0, 27⟩, ⟨59, 0, 5⟩, ⟨59, 0, 8⟩, ⟨59, 0, 19⟩, ⟨59, 0, 20⟩, ⟨59, 0, 23⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨59, 0, 27⟩, ⟨60, 0, 5⟩, ⟨60, 0, 8⟩, ⟨60, 0, 19⟩, ⟨60, 0, 20⟩, ⟨60, 0, 23⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨60, 0, 27⟩, ⟨61, 0, 5⟩, ⟨61, 0, 8⟩, ⟨61, 0, 19⟩, ⟨61, 0, 20⟩, ⟨61, 0, 23⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨61, 0, 27⟩, ⟨64, 0, 5⟩, ⟨64, 0, 8⟩, ⟨64, 0, 19⟩, ⟨64, 0, 20⟩, ⟨64, 0, 23⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨64, 0, 27⟩, ⟨65, 0, 5⟩, ⟨65, 0, 8⟩, ⟨65, 0, 19⟩, ⟨65, 0, 20⟩, ⟨65, 0, 23⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩, ⟨65, 0, 27⟩], [⟨49, 2, 5⟩, ⟨49, 2, 8⟩, ⟨49, 2, 19⟩, ⟨49, 2, 20⟩, ⟨49, 2, 23⟩, ⟨49, 2, 27⟩], [⟨50, 1, 1⟩, ⟨50, 1, 21⟩, ⟨50, 1, 26⟩, ⟨50, 1, 28⟩], [⟨34, 0, 5⟩, ⟨34, 0, 8⟩, ⟨34, 0, 19⟩, ⟨34, 0, 20⟩, ⟨34, 0, 23⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨34, 0, 27⟩, ⟨35, 0, 5⟩, ⟨35, 0, 8⟩, ⟨35, 0, 19⟩, ⟨35, 0, 20⟩, ⟨35, 0, 23⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨35, 0, 27⟩, ⟨36, 0, 5⟩, ⟨36, 0, 8⟩, ⟨36, 0, 19⟩, ⟨36, 0, 20⟩, ⟨36, 0, 23⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨36, 0, 27⟩, ⟨37, 0, 5⟩, ⟨37, 0, 8⟩, ⟨37, 0, 19⟩, ⟨37, 0, 20⟩, ⟨37, 0, 23⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨37, 0, 27⟩, ⟨40, 0, 5⟩, ⟨40, 0, 8⟩, ⟨40, 0, 19⟩, ⟨40, 0, 20⟩, ⟨40, 0, 23⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨40, 0, 27⟩, ⟨43, 0, 5⟩, ⟨43, 0, 8⟩, ⟨43, 0, 19⟩, ⟨43, 0, 20⟩, ⟨43, 0, 23⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨43, 0, 27⟩, ⟨52, 1, 5⟩, ⟨52, 1, 8⟩, ⟨52, 1, 19⟩, ⟨52, 1, 20⟩, ⟨52, 1, 23⟩, ⟨52, 1, 24⟩, ⟨52, 1, 27⟩, ⟨55, 0, 5⟩, ⟨55, 0, 8⟩, ⟨55, 0, 19⟩, ⟨55, 0, 20⟩, ⟨55, 0, 23⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨55, 0, 27⟩, ⟨56, 0, 5⟩, ⟨56, 0, 8⟩, ⟨56, 0, 19⟩, ⟨56, 0, 20⟩, ⟨56, 0, 23⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨56, 0, 27⟩, ⟨57, 0, 5⟩, ⟨57, 0, 8⟩, ⟨57, 0, 19⟩, ⟨57, 0, 20⟩, ⟨57, 0, 23⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨57, 0, 27⟩, ⟨58, 0, 5⟩, ⟨58, 0, 8⟩, ⟨58, 0, 19⟩, ⟨58, 0, 20⟩, ⟨58, 0, 23⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨58, 0, 27⟩, ⟨59, 0, 5⟩, ⟨59, 0, 8⟩, ⟨59, 0, 19⟩, ⟨59, 0, 20⟩, ⟨59, 0, 23⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨59, 0, 27⟩, ⟨60, 0, 5⟩, ⟨60, 0, 8⟩, ⟨60, 0, 19⟩, ⟨60, 0, 20⟩, ⟨60, 0, 23⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨60, 0, 27⟩, ⟨61, 0, 5⟩, ⟨61, 0, 8⟩, ⟨61, 0, 19⟩, ⟨61, 0, 20⟩, ⟨61, 0, 23⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨61, 0, 27⟩, ⟨64, 0, 5⟩, ⟨64, 0, 8⟩, ⟨64, 0, 19⟩, ⟨64, 0, 20⟩, ⟨64, 0, 23⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨64, 0, 27⟩, ⟨65, 0, 5⟩, ⟨65, 0, 8⟩, ⟨65, 0, 19⟩, ⟨65, 0, 20⟩, ⟨65, 0, 23⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩, ⟨65, 0, 27⟩], [⟨53, 2, 5⟩, ⟨53, 2, 8⟩, ⟨53, 2, 19⟩, ⟨53, 2, 20⟩, ⟨53, 2, 23⟩, ⟨53, 2, 24⟩, ⟨53, 2, 27⟩], [⟨54, 1, 1⟩, ⟨54, 1, 21⟩, ⟨54, 1, 26⟩, ⟨54, 1, 28⟩], [⟨57, 2, 5⟩, ⟨57, 2, 8⟩, ⟨57, 2, 19⟩, ⟨57, 2, 20⟩, ⟨57, 2, 23⟩, ⟨57, 2, 24⟩, ⟨57, 2, 25⟩, ⟨57, 2, 27⟩], [⟨34, 0, 23⟩, ⟨35, 0, 23⟩, ⟨36, 0, 23⟩, ⟨37, 0, 23⟩, ⟨40, 0, 23⟩, ⟨43, 0, 23⟩, ⟨65, 2, 5⟩, ⟨65, 2, 8⟩, ⟨65, 2, 19⟩, ⟨65, 2, 20⟩, ⟨65, 2, 23⟩, ⟨65, 2, 24⟩, ⟨65, 2, 25⟩, ⟨65, 2, 27⟩], [⟨6, 9, 29⟩], [⟨22, 0, 4⟩, ⟨23, 0, 4⟩, ⟨24, 3, 4⟩, ⟨24, 3, 14⟩, ⟨25, 0, 5⟩, ⟨26, 0, 5⟩, ⟨27, 0, 1⟩, ⟨27, 0, 4⟩, ⟨27, 0, 17⟩, ⟨27, 0, 21⟩, ⟨28, 0, 5⟩, ⟨33, 0, 5⟩, ⟨34, 0, 16⟩, ⟨35, 0, 16⟩, ⟨36, 0, 16⟩, ⟨37, 0, 16⟩, ⟨40, 0, 16⟩, ⟨43, 0, 16⟩], [⟨38, 0, 5⟩, ⟨38, 0, 8⟩, ⟨38, 0, 16⟩, ⟨38, 0, 19⟩, ⟨38, 0, 20⟩, ⟨38, 0, 23⟩, ⟨38, 0, 24⟩, ⟨38, 0, 25⟩, ⟨38, 0, 27⟩, ⟨39, 0, 5⟩, ⟨39, 0, 8⟩, ⟨39, 0, 16⟩, ⟨39, 0, 19⟩, ⟨39, 0, 20⟩, ⟨39, 0, 23⟩, ⟨39, 0, 24⟩, ⟨39, 0, 25⟩, ⟨39, 0, 27⟩, ⟨40, 3, 5⟩, ⟨40, 3, 8⟩, ⟨40, 3, 16⟩, ⟨40, 3, 19⟩, ⟨40, 3, 20⟩, ⟨40, 3, 23⟩, ⟨40, 3, 24⟩, ⟨40, 3, 25⟩, ⟨40, 3, 27⟩], [⟨41, 0, 5⟩, ⟨41, 0, 8⟩, ⟨41, 0, 16⟩, ⟨41, 0, 19⟩, ⟨41, 0, 20⟩, ⟨41, 0, 22⟩, ⟨41, 0, 23⟩, ⟨41, 0, 24⟩, ⟨41, 0, 25⟩, ⟨41, 0, 27⟩, ⟨42, 0, 5⟩, ⟨42, 0, 8⟩, ⟨42, 0, 16⟩, ⟨42, 0, 19⟩, ⟨42, 0, 20⟩, ⟨42, 0, 22⟩, ⟨42, 0, 23⟩, ⟨42, 0, 24⟩, ⟨42, 0, 25⟩, ⟨42, 0, 27⟩, ⟨43, 1, 5⟩, ⟨43, 1, 8⟩, ⟨43, 1, 16⟩, ⟨43, 1, 19⟩, ⟨43, 1, 20⟩, ⟨43, 1, 22⟩, ⟨43, 1, 23⟩, ⟨43, 1, 24⟩, ⟨43, 1, 25⟩, ⟨43, 1, 27⟩], [⟨42, 2, 5⟩, ⟨42, 2, 8⟩, ⟨42, 2, 16⟩, ⟨42, 2, 19⟩, ⟨42, 2, 20⟩, ⟨42, 2, 22⟩, ⟨42, 2, 23⟩, ⟨42, 2, 24⟩, ⟨42, 2, 25⟩, ⟨42, 2, 27⟩], [⟨63, 1, 27⟩], [⟨64, 3, 5⟩, ⟨64, 3, 8⟩, ⟨64, 3, 19⟩, ⟨64, 3, 20⟩, ⟨64, 3, 23⟩, ⟨64, 3, 24⟩, ⟨64, 3, 25⟩, ⟨64, 3, 27⟩], [⟨44, 0, 8⟩, ⟨44, 0, 27⟩, ⟨45, 0, 8⟩, ⟨45, 0, 27⟩, ⟨45, 2, 8⟩, ⟨45, 2, 27⟩], [⟨47, 0, 5⟩, ⟨47, 0, 8⟩, ⟨47, 0, 19⟩, ⟨47, 0, 20⟩, ⟨47, 0, 23⟩, ⟨47, 0, 27⟩, ⟨48, 0, 5⟩, ⟨48, 0, 8⟩, ⟨48, 0, 19⟩, ⟨48, 0, 20⟩, ⟨48, 0, 23⟩, ⟨48, 0, 27⟩, ⟨48, 2, 5⟩, ⟨48, 2, 8⟩, ⟨48, 2, 19⟩, ⟨48, 2, 20⟩, ⟨48, 2, 23⟩, ⟨48, 2, 27⟩, ⟨50, 0, 1⟩, ⟨50, 0, 21⟩, ⟨50, 0, 26⟩, ⟨50, 0, 28⟩], [⟨51, 0, 5⟩, ⟨51, 0, 8⟩, ⟨51, 0, 19⟩, ⟨51, 0, 20⟩, ⟨51, 0, 23⟩, ⟨51, 0, 24⟩, ⟨51, 0, 27⟩, ⟨52, 0, 5⟩, ⟨52, 0, 8⟩, ⟨52, 0, 19⟩, ⟨52, 0, 20⟩, ⟨52, 0, 23⟩, ⟨52, 0, 24⟩, ⟨52, 0, 27⟩, ⟨52, 2, 5⟩, ⟨52, 2, 8⟩, ⟨52, 2, 19⟩, ⟨52, 2, 20⟩, ⟨52, 2, 23⟩, ⟨52, 2, 24⟩, ⟨52, 2, 27⟩, ⟨54, 0, 1⟩, ⟨54, 0, 21⟩, ⟨54, 0, 26⟩, ⟨54, 0, 28⟩], [⟨57, 3, 5⟩, ⟨57, 3, 8⟩, ⟨57, 3, 19⟩, ⟨57, 3, 20⟩, ⟨57, 3, 23⟩, ⟨57, 3, 24⟩, ⟨57, 3, 25⟩, ⟨57, 3, 27⟩], [⟨65, 3, 5⟩, ⟨65, 3, 8⟩, ⟨65, 3, 19⟩, ⟨65, 3, 20⟩, ⟨65, 3, 23⟩, ⟨65, 3, 24⟩, ⟨65, 3, 25⟩, ⟨65, 3, 27⟩], [⟨6, 10, 29⟩], [⟨22, 0, 4⟩, ⟨23, 0, 4⟩, ⟨23, 1, 4⟩, ⟨25, 0, 5⟩, ⟨26, 0, 5⟩, ⟨27, 0, 1⟩, ⟨27, 0, 4⟩, ⟨27, 0, 17⟩, ⟨27, 0, 21⟩, ⟨28, 0, 5⟩, ⟨33, 0, 5⟩, ⟨34, 0, 16⟩, ⟨35, 0, 16⟩, ⟨36, 0, 16⟩, ⟨37, 0, 16⟩, ⟨40, 0, 16⟩, ⟨43, 0, 16⟩], [⟨24, 4, 4⟩, ⟨24, 4, 14⟩], [⟨25, 1, 5⟩], [⟨26, 1, 5⟩], [⟨27, 1, 1⟩, ⟨27, 1, 4⟩, ⟨27, 1, 17⟩, ⟨27, 1, 21⟩], [⟨28, 1, 5⟩], [⟨33, 1, 5⟩], [⟨39, 1, 5⟩, ⟨39, 1, 8⟩, ⟨39, 1, 16⟩, ⟨39, 1, 19⟩, ⟨39, 1, 20⟩, ⟨39, 1, 23⟩, ⟨39, 1, 24⟩, ⟨39, 1, 25⟩, ⟨39, 1, 27⟩, ⟨43, 0, 5⟩, ⟨43, 0, 8⟩, ⟨43, 0, 16⟩, ⟨43, 0, 19⟩, ⟨43, 0, 20⟩, ⟨43, 0, 22⟩, ⟨43, 0, 23⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨43, 0, 27⟩], [⟨40, 4, 5⟩, ⟨40, 4, 8⟩, ⟨40, 4, 16⟩, ⟨40, 4, 19⟩, ⟨40, 4, 20⟩, ⟨40, 4, 23⟩, ⟨40, 4, 24⟩, ⟨40, 4, 25⟩, ⟨40, 4, 27⟩], [⟨42, 3, 5⟩, ⟨42, 3, 8⟩, ⟨42, 3, 16⟩, ⟨42, 3, 19⟩, ⟨42, 3, 20⟩, ⟨42, 3, 22⟩, ⟨42, 3, 23⟩, ⟨42, 3, 24⟩, ⟨42, 3, 25⟩, ⟨42, 3, 27⟩], [⟨64, 4, 5⟩, ⟨64, 4, 8⟩, ⟨64, 4, 19⟩, ⟨64, 4, 20⟩, ⟨64, 4, 23⟩, ⟨64, 4, 24⟩, ⟨64, 4, 25⟩, ⟨64, 4, 27⟩], [⟨45, 3, 8⟩, ⟨45, 3, 27⟩], [⟨48, 3, 5⟩, ⟨48, 3, 8⟩, ⟨48, 3, 19⟩, ⟨48, 3, 20⟩, ⟨48, 3, 23⟩, ⟨48, 3, 27⟩], [⟨52, 3, 5⟩, ⟨52, 3, 8⟩, ⟨52, 3, 19⟩, ⟨52, 3, 20⟩, ⟨52, 3, 23⟩, ⟨52, 3, 24⟩, ⟨52, 3, 27⟩], [⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨34, 0, 27⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨35, 0, 27⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨36, 0, 27⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨37, 0, 27⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨40, 0, 27⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨43, 0, 27⟩, ⟨49, 0, 27⟩, ⟨53, 0, 24⟩, ⟨53, 0, 27⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨55, 0, 27⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨56, 0, 27⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨57, 0, 27⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨58, 0, 27⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨59, 0, 27⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨60, 0, 27⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨61, 0, 27⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨64, 0, 27⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩, ⟨65, 0, 27⟩, ⟨65, 4, 5⟩, ⟨65, 4, 8⟩, ⟨65, 4, 19⟩, ⟨65, 4, 20⟩, ⟨65, 4, 23⟩, ⟨65, 4, 24⟩, ⟨65, 4, 25⟩, ⟨65, 4, 27⟩], [⟨23, 2, 4⟩], [⟨24, 5, 4⟩, ⟨24, 5, 14⟩], [⟨27, 2, 1⟩, ⟨27, 2, 4⟩, ⟨27, 2, 17⟩, ⟨27, 2, 21⟩], [⟨28, 2, 5⟩, ⟨34, 0, 5⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨35, 0, 5⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨36, 0, 5⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨37, 0, 5⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨40, 0, 5⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨43, 0, 5⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨49, 0, 5⟩, ⟨53, 0, 5⟩, ⟨53, 0, 24⟩, ⟨55, 0, 5⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨56, 0, 5⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨57, 0, 5⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨58, 0, 5⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨59, 0, 5⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨60, 0, 5⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨61, 0, 5⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨64, 0, 5⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨65, 0, 5⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩], [⟨33, 2, 5⟩], [⟨38, 0, 5⟩, ⟨38, 0, 8⟩, ⟨38, 0, 16⟩, ⟨38, 0, 19⟩, ⟨38, 0, 20⟩, ⟨38, 0, 23⟩, ⟨38, 0, 24⟩, ⟨38, 0, 25⟩, ⟨38, 0, 27⟩, ⟨39, 0, 5⟩, ⟨39, 0, 8⟩, ⟨39, 0, 16⟩, ⟨39, 0, 19⟩, ⟨39, 0, 20⟩, ⟨39, 0, 23⟩, ⟨39, 0, 24⟩, ⟨39, 0, 25⟩, ⟨39, 0, 27⟩, ⟨39, 2, 5⟩, ⟨39, 2, 8⟩, ⟨39, 2, 16⟩, ⟨39, 2, 19⟩, ⟨39, 2, 20⟩, ⟨39, 2, 23⟩, ⟨39, 2, 24⟩, ⟨39, 2, 25⟩, ⟨39, 2, 27⟩], [⟨65, 5, 5⟩, ⟨65, 5, 8⟩, ⟨65, 5, 19⟩, ⟨65, 5, 20⟩, ⟨65, 5, 23⟩, ⟨65, 5, 24⟩, ⟨65, 5, 25⟩, ⟨65, 5, 27⟩], [⟨24, 6, 4⟩, ⟨24, 6, 14⟩], [⟨28, 3, 5⟩], [⟨33, 3, 5⟩, ⟨34, 0, 19⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨35, 0, 19⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨36, 0, 19⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨37, 0, 19⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨40, 0, 19⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨43, 0, 19⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨49, 0, 19⟩, ⟨53, 0, 19⟩, ⟨53, 0, 24⟩, ⟨55, 0, 19⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨56, 0, 19⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨57, 0, 19⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨58, 0, 19⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨59, 0, 19⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨60, 0, 19⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨61, 0, 19⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨64, 0, 19⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨65, 0, 19⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩], [⟨39, 3, 5⟩, ⟨39, 3, 8⟩, ⟨39, 3, 16⟩, ⟨39, 3, 19⟩, ⟨39, 3, 20⟩, ⟨39, 3, 23⟩, ⟨39, 3, 24⟩, ⟨39, 3, 25⟩, ⟨39, 3, 27⟩], [⟨65, 6, 5⟩, ⟨65, 6, 8⟩, ⟨65, 6, 19⟩, ⟨65, 6, 20⟩, ⟨65, 6, 23⟩, ⟨65, 6, 24⟩, ⟨65, 6, 25⟩, ⟨65, 6, 27⟩], [⟨24, 7, 4⟩, ⟨24, 7, 14⟩], [⟨33, 4, 5⟩], [⟨33, 5, 5⟩, ⟨34, 0, 19⟩, ⟨34, 0, 20⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨35, 0, 19⟩, ⟨35, 0, 20⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨36, 0, 19⟩, ⟨36, 0, 20⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨37, 0, 19⟩, ⟨37, 0, 20⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨40, 0, 19⟩, ⟨40, 0, 20⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨43, 0, 19⟩, ⟨43, 0, 20⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨49, 0, 19⟩, ⟨49, 0, 20⟩, ⟨53, 0, 19⟩, ⟨53, 0, 20⟩, ⟨53, 0, 24⟩, ⟨55, 0, 19⟩, ⟨55, 0, 20⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨56, 0, 19⟩, ⟨56, 0, 20⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨57, 0, 19⟩, ⟨57, 0, 20⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨58, 0, 19⟩, ⟨58, 0, 20⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨59, 0, 19⟩, ⟨59, 0, 20⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨60, 0, 19⟩, ⟨60, 0, 20⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨61, 0, 19⟩, ⟨61, 0, 20⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨64, 0, 19⟩, ⟨64, 0, 20⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨65, 0, 19⟩, ⟨65, 0, 20⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩], [⟨29, 0, 20⟩, ⟨30, 0, 20⟩, ⟨33, 6, 5⟩], [⟨30, 1, 20⟩, ⟨34, 0, 20⟩, ⟨34, 0, 24⟩, ⟨34, 0, 25⟩, ⟨35, 0, 20⟩, ⟨35, 0, 24⟩, ⟨35, 0, 25⟩, ⟨36, 0, 20⟩, ⟨36, 0, 24⟩, ⟨36, 0, 25⟩, ⟨37, 0, 20⟩, ⟨37, 0, 24⟩, ⟨37, 0, 25⟩, ⟨40, 0, 20⟩, ⟨40, 0, 24⟩, ⟨40, 0, 25⟩, ⟨43, 0, 20⟩, ⟨43, 0, 24⟩, ⟨43, 0, 25⟩, ⟨49, 0, 20⟩, ⟨53, 0, 20⟩, ⟨53, 0, 24⟩, ⟨55, 0, 20⟩, ⟨55, 0, 24⟩, ⟨55, 0, 25⟩, ⟨56, 0, 20⟩, ⟨56, 0, 24⟩, ⟨56, 0, 25⟩, ⟨57, 0, 20⟩, ⟨57, 0, 24⟩, ⟨57, 0, 25⟩, ⟨58, 0, 20⟩, ⟨58, 0, 24⟩, ⟨58, 0, 25⟩, ⟨59, 0, 20⟩, ⟨59, 0, 24⟩, ⟨59, 0, 25⟩, ⟨60, 0, 20⟩, ⟨60, 0, 24⟩, ⟨60, 0, 25⟩, ⟨61, 0, 20⟩, ⟨61, 0, 24⟩, ⟨61, 0, 25⟩, ⟨64, 0, 20⟩, ⟨64, 0, 24⟩, ⟨64, 0, 25⟩, ⟨65, 0, 20⟩, ⟨65, 0, 24⟩, ⟨65, 0, 25⟩], [⟨33, 7, 5⟩], [⟨30, 2, 20⟩], [⟨25, 0, 5⟩, ⟨26, 0, 5⟩, ⟨27, 0, 1⟩, ⟨27, 0, 4⟩, ⟨27, 0, 17⟩, ⟨27, 0, 21⟩, ⟨28, 0, 5⟩, ⟨31, 0, 4⟩, ⟨32, 0, 4⟩, ⟨33, 0, 5⟩, ⟨33, 8, 5⟩, ⟨34, 0, 16⟩, ⟨35, 0, 16⟩, ⟨36, 0, 16⟩, ⟨37, 0, 16⟩, ⟨40, 0, 16⟩, ⟨43, 0, 16⟩], [⟨25, 0, 5⟩, ⟨26, 0, 5⟩, ⟨27, 0, 1⟩, ⟨27, 0, 4⟩, ⟨27, 0, 17⟩, ⟨27, 0, 21⟩, ⟨28, 0, 5⟩, ⟨31, 0, 4⟩, ⟨32, 0, 4⟩, ⟨32, 1, 4⟩, ⟨33, 0, 5⟩, ⟨34, 0, 16⟩, ⟨35, 0, 16⟩, ⟨36, 0, 16⟩, ⟨37, 0, 16⟩, ⟨40, 0, 16⟩, ⟨43, 0, 16⟩], [⟨33, 9, 5⟩], [⟨32, 2, 4⟩], [⟨33, 10, 5⟩], [⟨33, 11, 5⟩]]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -1491,13 +1744,14 @@ theorem edge_source_bound : ∀ e ∈ edges, e.source < tables.actions.size := b
 
 theorem gotos_size_eq : tables.gotos.size = tables.actions.size := rfl
 
-theorem state_count : tables.actions.size = 117 := rfl
+theorem state_count : tables.actions.size = 121 := rfl
 
-noncomputable def fuelBudget : LALR.Fuel.Budget := ⟨1, #[17, 8, 3, 1, 3, 1, 15, 10, 3, 16]⟩
+noncomputable def fuelBudget : LALR.Fuel.Budget := ⟨8, #[-8, -8, -5, -4, -8, -8, -4, -8, -2, -4, -8, -5, 6, 4, -6, 2, -6, 0, -8, -8, 1, 1, 1, -4, 1, 1, -6, -6, -5, 1, -3, 1,
+  1, -3, 1, 1, 1, 1, 1, -7, -6, -1, 7]⟩
 
-noncomputable def progressCredits : LALR.Progress.Credits := ⟨#[0, 8, 15, 16, 0, 17, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 4, 3, 0, 0, 7, 4, 3, 0,
-  0, 7, 4, 3, 1, 12, 0, 7, 4, 3, 1, 12, 0, 7, 5, 3, 1, 12, 0, 5, 3, 1, 0, 5, 2, 0, 6, 2, 0, 6, 2, 0, 6, 2, 0, 6, 2, 0,
-  6, 2, 0, 6, 2, 0, 6, 0, 6, 0, 0, 0, 0, 3, 4, 14, 4, 14, 4, 14, 4, 14, 5, 5, 8, 10, 8, 10, 9, 11, 9, 9, 9, 12, 12, 13,
-  13, 13, 13, 13, 13], 17⟩
+noncomputable def progressCredits : LALR.Progress.Credits := ⟨#[0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 1, 0, 1, 0, 6, 0, 0, 0, 0, 0, 0, 4,
+  2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 5, 0, 3, 0, 0, 1, 0, 4, 0, 0, 0, 0, 0, 6, 6, 7, 4, 2, 0,
+  0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 5, 3, 1, 0, 1, 0, 0, 0, 0, 0, 4, 0, 4, 0, 1, 0, 0, 4, 0, 4, 0, 5, 4, 0, 0,
+  1, 1, 0, 0], 7⟩
 
 end Rumoca.GALEC.Generated

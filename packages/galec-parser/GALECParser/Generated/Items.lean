@@ -94,9 +94,16 @@ private theorem items_chunk_100_checked :
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem items_chunk_110_checked :
-    ∀ j : Fin 7, ∀ i ∈ (LALR.ItemCheck.items itemStates (110 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (110 + j.val)), LALR.ItemCheck.Valid grammar i ∧
       LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (110 + j.val)) i ∧
       LALR.ItemCheck.Advances grammar tables itemStates (110 + j.val) i := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem items_chunk_120_checked :
+    ∀ j : Fin 1, ∀ i ∈ (LALR.ItemCheck.items itemStates (120 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (120 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (120 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -106,7 +113,7 @@ theorem items_checked :
   refine ⟨by decide +kernel, by decide +kernel, first_checked, by decide +kernel, ?_⟩
   intro q
   rcases q with ⟨q, bound⟩
-  change q < 117 at bound
+  change q < 121 at bound
   match q with
     | 0 => exact items_chunk_0_checked ⟨0, by decide⟩
     | 1 => exact items_chunk_0_checked ⟨1, by decide⟩
@@ -225,6 +232,10 @@ theorem items_checked :
     | 114 => exact items_chunk_110_checked ⟨4, by decide⟩
     | 115 => exact items_chunk_110_checked ⟨5, by decide⟩
     | 116 => exact items_chunk_110_checked ⟨6, by decide⟩
-    | n+117 => omega
+    | 117 => exact items_chunk_110_checked ⟨7, by decide⟩
+    | 118 => exact items_chunk_110_checked ⟨8, by decide⟩
+    | 119 => exact items_chunk_110_checked ⟨9, by decide⟩
+    | 120 => exact items_chunk_120_checked ⟨0, by decide⟩
+    | n+121 => omega
 
 end Rumoca.GALEC.Generated

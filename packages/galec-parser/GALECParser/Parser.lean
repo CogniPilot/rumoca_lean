@@ -1,145 +1,124 @@
 import GALECParser.Syntax
-import GALECParser.Generated
-import Parser.LALR.Soundness
-import GALECParser.ProfileBuild
+import GALECParser.StructuralParser
 
+/-! GALEC source entrypoint. The scanner runs once, the certified LALR parser
+runs once, and structural actions consume that same CST once. Provenance is a
+proof field recording the actual tokens, tree, structural value and typed-action
+denotation; it never reruns parsing. This is syntax only: declarations, names,
+shapes and method admission are static semantics checked after parsing. -/
+namespace Rumoca.GALEC.Syntax
 open _root_.Parser
 
-namespace Rumoca.GALEC.Syntax
-
-def encode (token : Token) : Nat := Generated.encode token.symbol
-
-def parseTree (tokens : List Token) : Except LALR.Failure LALR.Tree :=
-  Generated.parseSymbols (tokens.map Token.symbol)
-
-theorem in_grammar (b : Block) :
-    EBNF.Accepts Generated.sourceGrammar (b.tokens.map Token.symbol) := by
-  rw [Generated.start_rule, Generated.rule_program, EBNF.Derives.alt_iff]
-  refine Or.inl ?_
-  simp [Generated.rule_block, Generated.rule_startup,
-    Generated.rule_recalibrate, Generated.rule_do_step, Generated.rule_reference,
-    EBNF.Derives.seq_iff, EBNF.Derives.terminal_iff, Block.tokens, Token.symbol]
-
-theorem tree_complete (b : Block) : ∃ tree, parseTree b.tokens = .ok tree :=
-  (Generated.source_parse_correct _).2.1.mp (in_grammar b)
-
-private theorem tree_language (parsed : parseTree tokens = .ok tree) :
-    Generated.grammar.Accepts (tokens.map encode) := by
-  have accepted := (Generated.parse_correct
-    ((tokens.map Token.symbol).map Generated.encode)).1.mpr ⟨tree, parsed⟩
-  simpa only [List.map_map, Function.comp_def, encode] using accepted
+def Witness (source : String) (block : AST.Block) : Prop :=
+  ∃ tokens tree value,
+    Scanner.Lexes scanner source.toList tokens ∧
+    StructureBridge.parser.run tokens = .ok tree ∧
+    StructureBridge.build tree tokens = some value ∧
+    LALR.Frontend.StructuralActions.Denotes Structural.rules Token.symbol
+      (.ref "block") value block
 
 structure Parsed (source : String) where
-  ast : Block
-  lexical : Scanner.Lexes scanner source.toList ast.tokens
-  grammar : Generated.grammar.Accepts (ast.tokens.map encode)
-  resolved : Resolved ast
+  ast : AST.Block
+  witnessed : Witness source ast
+
+theorem witnessed_build (lexed : Scanner.lex scanner source = .ok tokens)
+    (parsed : StructureBridge.parser.run tokens = .ok tree)
+    (built : Structural.build tree tokens = some ast) : Witness source ast := by
+  obtain ⟨value, structured, action⟩ := (Structural.build_iff tree tokens ast).mp built
+  exact ⟨tokens, tree, value, (Scanner.lex_correct _ _ _).mp lexed, parsed, structured, action⟩
 
 def parse (source : String) : Except Diagnostic (Parsed source) :=
-  match hl : Scanner.lex scanner source with
-  | .error e => .error e
-  | .ok tokens => match ht : parseTree tokens with
-    | .error _ => .error ⟨"GALEC syntax", 0, "outside the certified unit grammar profile"⟩
-    | .ok tree => match ha : Structural.buildScalar tree tokens with
-      | none => .error ⟨"GALEC action", 0, "outside the unit action profile"⟩
-      | some ast =>
-        if hr : Resolved ast then
-          .ok ⟨ast, ((Structural.buildScalar_tokens_iff ht ast).mp ha) ▸
-              (Scanner.lex_correct scanner source tokens).mp hl,
-            ((Structural.buildScalar_tokens_iff ht ast).mp ha) ▸ tree_language ht, hr⟩
-        else .error ⟨"GALEC resolve", 0, "mismatched block/state/clock name"⟩
+  match lexed : Scanner.lex scanner source with
+  | .error diagnostic => .error diagnostic
+  | .ok tokens =>
+    match parsed : StructureBridge.parser.run tokens with
+    | .error _ => .error ⟨"GALEC syntax", 0, "outside the certified grammar"⟩
+    | .ok tree =>
+      match built : Structural.build tree tokens with
+      | none => .error ⟨"GALEC action", 0, "invalid structural action result"⟩
+      | some ast => .ok ⟨ast, witnessed_build lexed parsed built⟩
 
-theorem parse_complete (source : String) (b : Block)
-    (lexical : Scanner.Lexes scanner source.toList b.tokens) (resolved : Resolved b) :
-    ∃ p : Parsed source, parse source = .ok p ∧ p.ast = b := by
-  obtain ⟨tree, ht⟩ := tree_complete b
-  have hl := (Scanner.lex_correct scanner source b.tokens).mpr lexical
-  refine ⟨⟨b, lexical, tree_language ht, resolved⟩, ?_, rfl⟩
+/-- The successful AST is exactly the token-level structural parse of the
+scanner output. The right side is a specification, not a second parse. -/
+theorem erase_parse (source : String) :
+    (parse source).toOption.map Parsed.ast =
+      (Scanner.lex scanner source).toOption.bind Structural.parse := by
   unfold parse
   split
-  · rename_i e he
-    rw [hl] at he
-    contradiction
-  · rename_i tokens he
-    have heq := Except.ok.inj (he.symm.trans hl)
-    subst tokens
+  · rename_i diagnostic lexed
+    simp [lexed, Except.toOption]
+  · rename_i tokens lexed
     split
-    · rename_i e he
-      rw [ht] at he
-      contradiction
+    · rename_i failure parsed
+      simp [Structural.parse, lexed, parsed, Except.toOption]
     · rename_i tree parsed
-      have hb := (Structural.buildScalar_tokens_iff parsed b).mpr rfl
       split
-      · rename_i he
-        rw [hb] at he
-        contradiction
-      · rename_i ast he
-        have heq := Option.some.inj (hb.symm.trans he)
-        subst ast
-        simp only [dif_pos resolved]
+      · rename_i built
+        simp [Structural.parse, lexed, parsed, built, Except.toOption]
+      · rename_i ast built
+        simp [Structural.parse, lexed, parsed, built, Except.toOption]
 
-set_option maxRecDepth 40000 in
-set_option maxHeartbeats 4000000 in
-theorem in_grammar_tensor (b : TensorBlock) :
-    EBNF.Accepts Generated.sourceGrammar (b.tokens.map Token.symbol) := by
-  rw [Generated.start_rule, Generated.rule_program, EBNF.Derives.alt_iff]
-  refine Or.inr ?_
-  simp [Generated.rule_tensor_block, Generated.rule_startup, Generated.rule_recalibrate,
-    Generated.rule_tensor_do_step, Generated.rule_product, Generated.rule_reference,
-    EBNF.Derives.seq_iff, EBNF.Derives.terminal_iff, TensorBlock.tokens, Token.symbol]
+private theorem witness_iff (source : String) (ast : AST.Block) :
+    Witness source ast ↔ (Scanner.lex scanner source).toOption.bind Structural.parse = some ast := by
+  unfold Witness
+  simp only [← Scanner.lex_correct]
+  cases lexed : Scanner.lex scanner source with
+  | error diagnostic => simp [Except.toOption]
+  | ok tokens =>
+    simp only [Except.toOption, Option.bind_some, Except.ok.injEq, exists_and_left,
+      exists_eq_left', Structural.parse_iff]
 
-theorem tree_complete_tensor (b : TensorBlock) : ∃ tree, parseTree b.tokens = .ok tree :=
-  (Generated.source_parse_correct _).2.1.mp (in_grammar_tensor b)
+/-- All-source success equivalence, with actual provenance rather than a
+free AST or an example-specific certificate. -/
+theorem success_iff (source : String) (ast : AST.Block) :
+    (∃ result, parse source = .ok result ∧ result.ast = ast) ↔ Witness source ast := by
+  rw [witness_iff, ← erase_parse]
+  cases result : parse source <;> simp [Except.toOption]
 
-/-- Independently checked tensor parse. The lexical, grammar and resolution
-certificates mirror the scalar `Parsed`, over the fixed-extent tensor scanner. -/
-structure TensorParsed (source : String) where
-  ast : TensorBlock
-  lexical : Scanner.Lexes tensorScanner source.toList ast.tokens
-  grammar : Generated.grammar.Accepts (ast.tokens.map encode)
-  resolved : ResolvedTensor ast
-
-def parseTensor (source : String) : Except Diagnostic (TensorParsed source) :=
-  match hl : Scanner.lex tensorScanner source with
-  | .error e => .error e
-  | .ok tokens => match ht : parseTree tokens with
-    | .error _ => .error ⟨"GALEC syntax", 0, "outside the certified tensor grammar profile"⟩
-    | .ok tree => match ha : Structural.buildTensor tree tokens with
-      | none => .error ⟨"GALEC action", 0, "outside the tensor square action profile"⟩
-      | some ast =>
-        if hr : ResolvedTensor ast then
-          .ok ⟨ast, ((Structural.buildTensor_tokens_iff ht ast).mp ha) ▸
-              (Scanner.lex_correct tensorScanner source tokens).mp hl,
-            ((Structural.buildTensor_tokens_iff ht ast).mp ha) ▸ tree_language ht, hr⟩
-        else .error ⟨"GALEC resolve", 0, "mismatched tensor block/state/input name"⟩
-
-theorem parseTensor_complete (source : String) (b : TensorBlock)
-    (lexical : Scanner.Lexes tensorScanner source.toList b.tokens) (resolved : ResolvedTensor b) :
-    ∃ p : TensorParsed source, parseTensor source = .ok p ∧ p.ast = b := by
-  obtain ⟨tree, ht⟩ := tree_complete_tensor b
-  have hl := (Scanner.lex_correct tensorScanner source b.tokens).mpr lexical
-  refine ⟨⟨b, lexical, tree_language ht, resolved⟩, ?_, rfl⟩
-  unfold parseTensor
+theorem lexical_error (failure : Scanner.lex scanner source = .error diagnostic) :
+    parse source = .error diagnostic := by
+  unfold parse
   split
-  · rename_i e he
-    rw [hl] at he
+  · rename_i other found
+    have same := Except.error.inj (found.symm.trans failure)
+    cases same
+    rfl
+  · rename_i tokens found
+    rw [failure] at found
     contradiction
-  · rename_i tokens he
-    have heq := Except.ok.inj (he.symm.trans hl)
-    subst tokens
-    split
-    · rename_i e he
-      rw [ht] at he
-      contradiction
-    · rename_i tree parsed
-      have hb := (Structural.buildTensor_tokens_iff parsed b).mpr rfl
-      split
-      · rename_i he
-        rw [hb] at he
-        contradiction
-      · rename_i ast he
-        have heq := Option.some.inj (hb.symm.trans he)
-        subst ast
-        simp only [dif_pos resolved]
+
+/-- Exact accepted language, inherited from the reusable LALR/structural
+certificates for all source strings, not a collection of successful examples. -/
+theorem accepts_iff (source : String) :
+    (∃ result, parse source = .ok result) ↔ ∃ tokens,
+      Scanner.Lexes scanner source.toList tokens ∧
+      EBNF.Accepts Generated.sourceGrammar (tokens.map Token.symbol) := by
+  have erased := erase_parse source
+  simp only [← Scanner.lex_correct]
+  constructor
+  · rintro ⟨result, parsed⟩
+    rw [parsed] at erased
+    cases lexed : Scanner.lex scanner source with
+    | error diagnostic => simp [lexed, Except.toOption] at erased
+    | ok tokens =>
+      simp only [lexed, Except.toOption, Option.map_some, Option.bind_some] at erased
+      exact ⟨tokens, rfl, (Structural.accepts_iff tokens).mp ⟨result.ast, erased.symm⟩⟩
+  · rintro ⟨tokens, lexed, accepted⟩
+    obtain ⟨ast, success⟩ := (Structural.accepts_iff tokens).mpr accepted
+    simp only [lexed, Except.toOption, Option.bind_some, success] at erased
+    cases result : parse source with
+    | error diagnostic => simp [result] at erased
+    | ok value => exact ⟨value, rfl⟩
+
+/-- A successful certified CST cannot fail the structural action stage. -/
+theorem successful_tree (lexed : Scanner.lex scanner source = .ok tokens)
+    (parsed : StructureBridge.parser.run tokens = .ok tree) :
+    ∃ result, parse source = .ok result := by
+  obtain ⟨ast, built⟩ := Structural.build_total parsed
+  have erased := erase_parse source
+  simp only [lexed, Except.toOption, Option.bind_some, Structural.parse, parsed, built] at erased
+  cases result : parse source with
+  | error diagnostic => simp [result] at erased
+  | ok value => exact ⟨value, rfl⟩
 
 end Rumoca.GALEC.Syntax

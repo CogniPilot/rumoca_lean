@@ -1,21 +1,26 @@
-# Tiny GALEC grammar
+# GALEC grammar
 
-`GALEC.ebnf` is an authored restriction of eFMI **1.0.0 Beta 1**, using the
-official specification and accompanying schemas as authority. It contains
-the zero-start, unit-period scalar integrator and fixed extent-two tensor
-square/Jacobian profile. Both use the shared LALR engine and typed structural
-actions, without adding Modelica equation cases. Tensor declarations place
-dimensions after the name, as required by Beta 1 §3.2.4 G-2; the old
-type/dimensions/name spelling is rejected. The ordinary call named `jacobian`
-still has the separate GJ01 definition/interface finding.
+`GALEC.ebnf` is an authored subset of the eFMI **1.0.0 Beta 1** Algorithm Code
+syntax, using the official specification and accompanying schemas as authority.
+It follows §3.2.4 G-2 (block declarations: an optional direction or `constant`,
+a primitive type, a name and optional expression-list dimensions after the
+name), G-3 (expressions) and the TODO-labelled statement productions
+(assignment and bounded `for` loops; in `a:b:c` the middle expression is the
+step). `block` is the start symbol. Method names are ordinary names.
 
-The file is not copied verbatim from the full standard grammar. In particular,
-`do_step` is a rule name in our small EBNF dialect; ISO 14977-style hyphenated
-meta-identifiers are not implemented. GALEC comments, quoted names and general
-numeric forms remain outside this source profile. The exact-profile scanner
-and actions are separate from the EBNF reader and the generic LR engine.
+The grammar is general; admission is static semantics after parsing. Section
+legality of declaration kinds, extent values, types, callees, operators, the
+method set, names and literal values are checked by core elaboration, so the
+admitted source language does not grow with the grammar. Only `+` and `*` are
+binary operators; further operators are additive alternatives.
+
+The dialect writes rule names with underscores; ISO 14977-style hyphenated
+meta-identifiers are not implemented. GALEC comments, quoted names, signed
+numerals and exponents remain outside the scanner. Numbers are scanned as
+`Token.number` on the `IDENT` grammar symbol. The obsolete `.*` spelling has no
+token and is rejected by the grammar.
 
 The [standards review](../../../dev/efmi.md) records a Beta 1 discrepancy between
 the state-declaration production and its specified input/output interface.
-Our `output Real x;` follows the interface rules and examples. Neither grammar
-freshness nor parser proofs alone establish full GALEC/eFMI conformance.
+Neither grammar freshness nor parser proofs alone establish full GALEC/eFMI
+conformance.

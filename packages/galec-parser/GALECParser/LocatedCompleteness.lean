@@ -10,32 +10,24 @@ theorem scanner_preserves_text (word : String) : (scanner.classify word).text = 
   dsimp only [scanner]
   split <;> rfl
 
+theorem scanner_preserves_numbers (spelling : String) : (scanner.number spelling).text = spelling :=
+  rfl
+
 /-- Every accepted GALEC lexical sequence receives exact UTF-8 locations. -/
 theorem scanner_locations (source : String) (tokens : List Token)
     (accepted : Scanner.lex scanner source = .ok tokens) :
     ∃ xs, Source.attach scanner.space source.startPos tokens = some xs :=
-  Scanner.lex_locations scanner scanner_preserves_text (fun _ => rfl) source tokens accepted
+  Scanner.lex_locations scanner scanner_preserves_text scanner_preserves_numbers
+    source tokens accepted
 
-/-- The independently checked GALEC parse supplies all premises of attachment
-completeness. Its source has no additional location-related rejection case. -/
+/-- The actual scanned tokens of every successful parse receive locations. The
+parse has no additional location-related rejection case. -/
 theorem Parsed.locations_exist (parsed : Parsed source) :
-    ∃ xs, Source.attach scanner.space source.startPos parsed.ast.tokens = some xs :=
-  scanner_locations source parsed.ast.tokens ((Scanner.lex_correct scanner source _).mpr parsed.lexical)
-
-theorem tensorScanner_preserves_text (word : String) :
-    (tensorScanner.classify word).text = word := by
-  dsimp only [tensorScanner]
-  split <;> rfl
-
-/-- Every accepted tensor lexical sequence receives exact UTF-8 locations. -/
-theorem tensorScanner_locations (source : String) (tokens : List Token)
-    (accepted : Scanner.lex tensorScanner source = .ok tokens) :
-    ∃ xs, Source.attach tensorScanner.space source.startPos tokens = some xs :=
-  Scanner.lex_locations tensorScanner tensorScanner_preserves_text (fun _ => rfl) source tokens accepted
-
-theorem TensorParsed.locations_exist (parsed : TensorParsed source) :
-    ∃ xs, Source.attach tensorScanner.space source.startPos parsed.ast.tokens = some xs :=
-  tensorScanner_locations source parsed.ast.tokens
-    ((Scanner.lex_correct tensorScanner source _).mpr parsed.lexical)
+    ∃ tokens xs, Scanner.lex scanner source = .ok tokens ∧
+      Source.attach scanner.space source.startPos tokens = some xs := by
+  obtain ⟨tokens, _, _, lexed, _⟩ := parsed.witnessed
+  have accepted := (Scanner.lex_correct scanner source tokens).mpr lexed
+  obtain ⟨xs, attached⟩ := scanner_locations source tokens accepted
+  exact ⟨tokens, xs, accepted, attached⟩
 
 end Rumoca.GALEC.Syntax

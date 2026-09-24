@@ -1,42 +1,35 @@
-// Authored tiny eFMI 1.0.0 Beta 1 Algorithm Code profile.
+// Authored eFMI 1.0.0 Beta 1 Algorithm Code syntax subset.
 // Standard authority: https://www.efmi-standard.org/media/home/eFMI-Standard-1.0.0-Beta-1.html
-// References: 3.2.3 (lifecycle), 3.2.4 G-2 (declarations), G-3 (expressions),
-// G-4 (statements). This is a restriction, not the full published grammar.
-// Declaration/reference names and matching end names require checked actions.
-// The first production is the start symbol; it admits the scalar unit profile
-// and the fixed-extent tensor square profile (elementwise product and Jacobian
-// output). The scalar block productions below are unchanged.
+// References: 3.2.4 G-2 (block declarations), G-3 (expressions) and the
+// TODO-labelled statement productions (assignment, bounded for loop).
+// Admission restrictions (declaration kinds per section, extent values, types,
+// callees, operators, method set, names, literal values) are static semantics
+// checked after parsing. The first production is the start symbol.
 
-program = block | tensor_block;
+block = "block", IDENT, { declaration },
+    "protected", { declaration },
+    "public", { method }, "end", IDENT, ";";
+declaration = [ direction | "constant" ], primitive_type, IDENT,
+    [ "[", expression_list, "]" ], ";";
+direction = "input" | "output";
+primitive_type = "Real" | "Integer" | "Boolean";
+method = "method", IDENT, "algorithm", { statement }, "end", IDENT, ";";
 
-block = "block", IDENT,
-    "output", "Real", IDENT, ";",
-    "protected", "constant", "Real", IDENT, ";",
-    "public", startup, recalibrate, do_step, "end", IDENT, ";";
+statement = ( single_assignment | for_loop ), ";";
+single_assignment = reference, ":=", expression;
+for_loop = "for", IDENT, "in", expression, ":", expression,
+    [ ":", expression ], "loop", { statement }, "end", "for";
 
-startup = "method", "Startup", "algorithm",
-    reference, ":=", "0.0", ";",
-    reference, ":=", "1.0", ";",
-    "end", "Startup", ";";
+reference = local_reference | state_reference;
+local_reference = component_reference;
+state_reference = "self", ".", component_reference, { ".", component_reference };
+component_reference = IDENT, [ "[", expression_list, "]" ];
+expression_list = expression, { ",", expression };
 
-recalibrate = "method", "Recalibrate", "algorithm", "end", "Recalibrate", ";";
-
-do_step = "method", "DoStep", "algorithm",
-    reference, ":=", "(", reference, "+", "1.0", ")", ";",
-    "end", "DoStep", ";";
-
-reference = "self", ".", IDENT;
-
-tensor_block = "block", IDENT,
-    "input", "Real", IDENT, "[", "2", "]", ";",
-    "output", "Real", IDENT, "[", "2", "]", ";",
-    "output", "Real", IDENT, "[", "2", ",", "2", "]", ";",
-    "protected", "constant", "Real", IDENT, ";",
-    "public", startup, recalibrate, tensor_do_step, "end", IDENT, ";";
-
-tensor_do_step = "method", "DoStep", "algorithm",
-    reference, ":=", product, ";",
-    reference, ":=", IDENT, "(", product, ",", reference, ")", ";",
-    "end", "DoStep", ";";
-
-product = reference, ".*", reference;
+expression = term, { additive_operator, term };
+additive_operator = "+";
+term = primary, { multiplicative_operator, primary };
+multiplicative_operator = "*";
+primary = reference | "(", expression, ")" | function_call | dimension_query;
+function_call = IDENT, "(", [ expression_list ], ")";
+dimension_query = "size", "(", reference, ",", expression, ")";
