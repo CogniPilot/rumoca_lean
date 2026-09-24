@@ -130,6 +130,35 @@ Selected dependency hashes are not a complete imported-object closure. XML,
 checksums, ZIP, native/lifecycle integration and production promotion remain
 separate obligations; no standards finding or source admission changes here.
 
+**Candidate manifest/checksum binding (checked scratch):**
+`CodeManifestDraft` parameterizes the existing production-code checksum input;
+the old complete document trees are exact specializations. The compiler's
+candidate ManifestContract retains the entire aligned code contract and every
+identity, three-document byte/validity and origin-checksum obligation. Its
+conditional archive contract retains one code record and complete ZIP transport.
+The combined 31-root check passed (session66965): two empty implementation logs,
+five local/2,665 tracked/247 selected hashes and four outputs. Main read all
+implementations and the complete independent review, no blocking finding.
+
+The fixed actual-file manifest adapter then passed files-v1/session56319 at
+`54bd695`: exact source-to-production and source-to-manifests roots under the
+unchanged whitelist, empty checker/producer logs, five local/2,665 tracked/
+286 selected hashes, eight actual files and two outputs. Main rechecked all
+hashes. Owned XML and SHA-1 certificates bind the complete actual documents,
+both code files and both hashed manifest dependencies to the SAME semantic
+artifact/model/code witnesses. Native metadata comparisons are rejection guards.
+
+Boundary-v3/session94837 passed corrupted-checksum, consistently resealed old-C
+and consistently resealed invalid-identity rejections. Main inspected the exact
+primary errors and absence of accepted manifest roots/output objects. V1 failed
+only in the mutation generator's record syntax; V2 rejected all cases but the
+runner expected different `decide` wording. V3 requires the observed identity
+proposition/false diagnostic, not a generic failure. The positive checker and
+contract did not change. Evidence: `build/galec-{code-manifest,candidate-manifest}-draft/`.
+This certifies candidate directory members, not complete archive bytes, XSD/
+prose conformance, lifecycle/native integration or production promotion. The
+whole-archive adapter is pending; the last production full gate remains above.
+
 **Whole-block preparation and whole-state method handoff (full gate passed):**
 Core now owns `Elaboration.Block.{Headers,Preparation}`,
 `Methods.{Correspondence,Sequence}` and `Layout.State`. The restricted interface

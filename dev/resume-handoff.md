@@ -115,13 +115,28 @@ V1 and V2 are completed receipts; do not restart them. V1's runner hash is
 historical after the patch. The contract retains the full aligned original-source
 proof on the actual source/both grammars/Algorithm/C files, not XML or ZIP yet.
 
-Next: bind candidate manifests/checksums and the existing archive format to the
-same stronger contract. `build/galec-code-manifest-draft/` parameterizes the code
+The candidate manifest/checksum binding is now checked.
+`build/galec-code-manifest-draft/` parameterizes the code
 hash with exact old-renderer specializations. `build/galec-candidate-manifest-draft/`
 retains the full aligned contract through conditional manifest/archive APIs.
 Combined check-v1/session66965 passed 31 roots, two empty implementation logs,
-five local/2,665 tracked/247 selected input hashes and four outputs. Independent
-review and actual XML checker work are ongoing; consult the live checkpoint.
+five local/2,665 tracked/247 selected input hashes and four outputs. Main read
+all implementations and complete independent review, no blocking source finding.
+Actual files-v1/session56319 at `54bd695` passed exact source-to-production and
+source-to-manifests roots, empty checker/producer logs, five local/2,665 tracked/
+286 selected hashes, eight actual files and two outputs; main rechecked hashes.
+The actual XML/SHA-1 graph retains the same aligned source/C contract.
+Boundary-v3/session94837 passed corrupt checksum, resealed old C and resealed
+invalid ID rejections with required primary diagnostics/no accepted final root/
+no output object. V1 generator syntax and V2 expected diagnostic wording were
+fixed without checker/contract changes. Do not restart completed runs.
+
+Next: actual whole-archive binding using owned ZIP/schema certifiers in
+`build/galec-candidate-archive-draft/`. Main read worker source and the owned
+transport certifier. Archive V1 failed old option names; V2 failed evaluating
+an init option declared in the emitting module itself, before archive creation.
+The output option now lives in imported CandidateArchiveDraft.Options. No proof
+was changed. Check the ignored live checkpoint for the next run and review.
 Preserve the exact model/kernel link, every existing scalar/tensor/total-helper
 field and allocated-only branch.
 Same candidate parameters alone are not an arbitrary lifecycle or host input

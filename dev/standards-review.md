@@ -219,6 +219,20 @@ Evidence: `build/galec-candidate-artifact-draft/`. This supplies candidate file
 binding, not production cutover, manifest/checksum/ZIP binding, native/lifecycle
 evidence or compliance. All normative findings and the stage decision remain.
 
+R5 candidate manifest update: generic document/conditional contract check passed
+31 roots; actual files-v1/session56319 at `54bd695` passed the two fixed code/
+manifest roots with the unchanged whitelist and complete actual XML/SHA-1 graph.
+The original aligned code contract remains mandatory on the same artifact/model
+and code bytes. Main checked five local/2,665 tracked/286 selected hashes, eight
+actual files and two outputs, and read the complete independent source review.
+Boundary-v3/session94837 rejected corrupt checksums, old C with consistently
+regenerated manifests and invalid identity with regenerated manifests; primary
+diagnostics and no accepted final root/output are required. Evidence:
+`build/galec-candidate-manifest-draft/`. This advances candidate directory-file
+correspondence only. Complete ZIP, native/lifecycle and normative findings are
+not discharged, and neither production promotion nor grammar expansion is
+authorized by this receipt.
+
 | Recurring checklist | Current repair decision and evidence |
 | --- | --- |
 | Scope and identity | Scalar unit C/FMU/Algorithm/eFMU, fixed extent-two square/Jacobian FMU/Algorithm/eFMU, pinned two-state constant FMU only. No new Modelica case or product. |
