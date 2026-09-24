@@ -17,7 +17,7 @@ certified-kernel tensor Production Code, and the Algorithm/Production/container
 manifests for the artifact's model name and packaging identity. -/
 def TensorArtifact.efmiCode (a : TensorArtifact input) (identity : Manifest.Identity) :
     Archive.Code :=
-  let documents := TensorManifest.prepareWithCode a.name identity EFMI.tensorAlgorithmSource
+  let documents := TensorManifest.prepare a.name identity EFMI.tensorAlgorithmSource
     EFMI.TensorProduction.render
   ⟨EFMI.tensorAlgorithmSource, EFMI.TensorProduction.render,
     XML.document documents.algorithm, XML.document documents.production,

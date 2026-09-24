@@ -45,24 +45,24 @@ structure TensorManifestContract (a : TensorArtifact input) (identity : Manifest
   identity_valid : identity.Valid
   code : TensorProductionContract a algorithm c
   algorithmXMLBytes :
-    XML.document (TensorManifest.prepareWithCode a.name identity algorithm c).algorithm = algorithmXML
+    XML.document (TensorManifest.prepare a.name identity algorithm c).algorithm = algorithmXML
   productionXMLBytes :
-    XML.document (TensorManifest.prepareWithCode a.name identity algorithm c).production = productionXML
+    XML.document (TensorManifest.prepare a.name identity algorithm c).production = productionXML
   contentXMLBytes :
-    XML.document (TensorManifest.prepareWithCode a.name identity algorithm c).content = contentXML
-  valid : (TensorManifest.prepareWithCode a.name identity algorithm c).valid = true
+    XML.document (TensorManifest.prepare a.name identity algorithm c).content = contentXML
+  valid : (TensorManifest.prepare a.name identity algorithm c).valid = true
   wellformed_algorithm :
-    XML.Document (TensorManifest.prepareWithCode a.name identity algorithm c).algorithm algorithmXML
+    XML.Document (TensorManifest.prepare a.name identity algorithm c).algorithm algorithmXML
   wellformed_production :
-    XML.Document (TensorManifest.prepareWithCode a.name identity algorithm c).production productionXML
+    XML.Document (TensorManifest.prepare a.name identity algorithm c).production productionXML
   wellformed_content :
-    XML.Document (TensorManifest.prepareWithCode a.name identity algorithm c).content contentXML
+    XML.Document (TensorManifest.prepare a.name identity algorithm c).content contentXML
   origin_checksum : ∃ origin,
-    Manifest.select (TensorManifest.prepareWithCode a.name identity algorithm c).production
+    Manifest.select (TensorManifest.prepare a.name identity algorithm c).production
       ["ManifestReferences", "ManifestReference"] = [origin] ∧
     origin.attributes.lookup "checksum" =
       some (SHA1.hash (XML.document
-        (TensorManifest.prepareWithCode a.name identity algorithm c).algorithm).toUTF8)
+        (TensorManifest.prepare a.name identity algorithm c).algorithm).toUTF8)
 
 /-- The emitted tensor Algorithm Code of a square artifact satisfies the Algorithm
 Code contract for its prepared kernel. -/
@@ -85,7 +85,7 @@ theorem tensor_manifests_correct_of_documents (a : TensorArtifact input)
     (identity : Manifest.Identity) (identityValid : identity.Valid)
     (code : TensorProductionContract a algorithm c)
     (algorithmTree productionTree contentTree : XML.Element)
-    (graph : TensorManifest.prepareWithCode a.name identity algorithm c =
+    (graph : TensorManifest.prepare a.name identity algorithm c =
       TensorManifest.Documents.mk algorithmTree productionTree contentTree)
     (valid : (TensorManifest.Documents.mk algorithmTree productionTree contentTree).valid = true)
     (algorithmBytes : XML.document algorithmTree = algorithmXML)
@@ -93,7 +93,7 @@ theorem tensor_manifests_correct_of_documents (a : TensorArtifact input)
     (contentBytes : XML.document contentTree = contentXML) :
     TensorManifestContract a identity algorithm c algorithmXML productionXML contentXML := by
   have wf := TensorManifest.documents_valid _ valid
-  have checks := (TensorManifest.prepareWithCode_checksums a.name identity algorithm c).1
+  have checks := (TensorManifest.prepare_checksums a.name identity algorithm c).1
   exact {
     identity_valid := identityValid
     code := code

@@ -28,7 +28,7 @@ def TensorProductionArtifact.algorithmSource (a : TensorProductionArtifact sourc
 identity and model name. -/
 def TensorProductionArtifact.documents (a : TensorProductionArtifact source)
     (modelName : String) (identity : Manifest.Identity) : TensorManifest.Documents :=
-  TensorManifest.prepareWithCode modelName identity a.algorithmSource a.productionSource
+  TensorManifest.prepare modelName identity a.algorithmSource a.productionSource
 
 /-- Compiler correctness for the Production Code member: the emitted translation
 unit satisfies its contract, so the derivative method computes the prepared
@@ -57,7 +57,7 @@ theorem TensorProductionArtifact.manifests_correct (a : TensorProductionArtifact
         some (SHA1.hash (document (a.documents modelName identity).algorithm).toUTF8)) := by
   refine ⟨(documents_valid _ valid).1, (documents_valid _ valid).2.1,
     (documents_valid _ valid).2.2, ?_⟩
-  exact (prepareWithCode_checksums modelName identity a.algorithmSource a.productionSource).1
+  exact (prepare_checksums modelName identity a.algorithmSource a.productionSource).1
 
 /-- The pinned `TensorSquare` fixture yields a tensor Production artifact, so the
 correctness theorems apply to the actual development source case. -/

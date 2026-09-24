@@ -82,7 +82,7 @@ def main : IO Unit := do
         -- Production/container manifests for the prepared square kernel and
         -- retains them under build/tensor-efmi/ for the boundary XSD check.
         let tensorIdentity := EFMIIdentity.derivedIdentity "TensorSquare" arraySquare 1700000000
-        let tensorDocs := EFMI.TensorManifest.prepareWithCode "TensorSquare" tensorIdentity
+        let tensorDocs := EFMI.TensorManifest.prepare "TensorSquare" tensorIdentity
           algorithmSource EFMI.TensorProduction.render
         expect "tensor eFMI manifests lie in the checked XML output profile"
           tensorDocs.valid

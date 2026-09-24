@@ -8,16 +8,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorManifest.prepare_graph
 #audit axioms Rumoca.EFMI.TensorManifest.prepare_named
 
-#audit axioms Rumoca.EFMI.TensorManifest.productionWithCode
-#audit axioms Rumoca.EFMI.TensorManifest.prepareWithCode
-#audit axioms Rumoca.EFMI.TensorManifest.productionWithCode_specialization
-#audit axioms Rumoca.EFMI.TensorManifest.prepareWithCode_specialization
-#audit axioms Rumoca.EFMI.TensorManifest.prepareWithCode_graph
-#audit axioms Rumoca.EFMI.TensorManifest.prepareWithCode_named
-#audit axioms Rumoca.EFMI.TensorManifest.origin_reference_withCode
-#audit axioms Rumoca.EFMI.TensorManifest.prepareWithCode_file_checksums
-#audit axioms Rumoca.EFMI.TensorManifest.prepareWithCode_checksums
-#audit axioms Rumoca.EFMI.TensorManifest.prepareWithCode_container_checksums
-#audit axioms Rumoca.EFMI.TensorManifest.data_nodes_withCode
-#audit axioms Rumoca.EFMI.TensorManifest.function_nodes_withCode
-#audit axioms Rumoca.EFMI.TensorManifest.function_declarations_withCode
+#audit axioms Rumoca.EFMI.TensorManifest.production
+#audit axioms Rumoca.EFMI.TensorManifest.prepare
+#audit axioms Rumoca.EFMI.TensorManifest.origin_reference
+#audit axioms Rumoca.EFMI.TensorManifest.prepare_file_checksums
+#audit axioms Rumoca.EFMI.TensorManifest.prepare_checksums
+#audit axioms Rumoca.EFMI.TensorManifest.prepare_container_checksums
+#audit axioms Rumoca.EFMI.TensorManifest.function_declarations

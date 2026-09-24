@@ -25,9 +25,4 @@ theorem read_iff (spelling : String) (value : Nat) :
   · rintro rfl
     simp only [read, DecimalNat.parse_render, Option.bind_some, if_true]
 
-theorem canonical_denotes (canonical : spelling = toString value) :
-    DecimalNat.Denotes spelling value := by
-  subst canonical
-  exact DecimalNat.render_denotes value
-
 end Rumoca.GALEC.Elaboration.Static.Numeral

@@ -173,15 +173,15 @@ theorem executes_iff_unitBlock (step : BinaryOp → α → α → α → Prop) (
       rfl
     simp only [UnitProfile.execute, Block.execute, unitBlock, Block.body, Expr.eval, valueEq]
 
-/-- The original embedded method, with every source spelling retained. -/
-def originalMethod (stateName clockName : String) : Method → AST.Method
+/-- The scalar source method of a lifecycle method, with every source spelling retained. -/
+def sourceMethod (stateName clockName : String) : Method → AST.Method
   | .startup => startupMethod stateName clockName
   | .recalibrate => recalibrateMethod
   | .doStep => stepMethod stateName
 
-theorem selected_original (name stateName clockName : String) (method : Method) :
-    Methods.Headers.Selects (originalMethod stateName clockName method).name
-      (source name stateName clockName).methods (originalMethod stateName clockName method) := by
+theorem selected_source (name stateName clockName : String) (method : Method) :
+    Methods.Headers.Selects (sourceMethod stateName clockName method).name
+      (source name stateName clockName).methods (sourceMethod stateName clockName method) := by
   cases method with
   | startup => exact startup_selected name stateName clockName
   | recalibrate => exact recalibrate_selected name stateName clockName
@@ -198,13 +198,13 @@ def SourceExec (stateName clockName : String) (ceiling : Nat)
       Bodies.Source.statements (Layout.bindings (startupFields stateName clockName))
         (Declarations.ShapeLookup.HasShape ceiling (sourceDeclarations stateName clockName))
         ceiling step zero one Env.empty .nil IteratorEnv.empty
-        (originalMethod stateName clockName .startup).body (startupPack stateName clockName before) @next ∧
+        (sourceMethod stateName clockName .startup).body (startupPack stateName clockName before) @next ∧
           after = startupUnpack stateName clockName @next
   | method, before, after => ∃ next : Env α (Layout.outputShapes (stepFields stateName clockName)),
       Bodies.Source.statements (Layout.bindings (stepFields stateName clockName))
         (Declarations.ShapeLookup.HasShape ceiling (sourceDeclarations stateName clockName))
         ceiling step zero one (stepInput stateName clockName before) .nil IteratorEnv.empty
-        (originalMethod stateName clockName method).body (stepPack stateName clockName before) @next ∧
+        (sourceMethod stateName clockName method).body (stepPack stateName clockName before) @next ∧
           after = stepUnpack stateName clockName (stepInput stateName clockName before) @next
 
 /-- All original resolved names, all ceilings (including zero), all states,
@@ -217,7 +217,7 @@ theorem source_iff (different : stateName ≠ clockName) (ceiling : Nat)
       Executes step zero one method before after := by
   cases method with
   | startup =>
-    simp only [SourceExec, originalMethod, startup_source_iff different ceiling,
+    simp only [SourceExec, sourceMethod, startup_source_iff different ceiling,
       startup_roundtrip]
     constructor
     · rintro ⟨next, executed, rfl⟩
@@ -226,7 +226,7 @@ theorem source_iff (different : stateName ≠ clockName) (ceiling : Nat)
       exact ⟨startupPack stateName clockName after, by simpa only [startup_roundtrip] using executed,
         (startup_roundtrip stateName clockName after).symm⟩
   | recalibrate =>
-    simp only [SourceExec, originalMethod, recalibrate_source_iff different ceiling,
+    simp only [SourceExec, sourceMethod, recalibrate_source_iff different ceiling,
       step_roundtrip]
     constructor
     · rintro ⟨next, executed, rfl⟩
@@ -237,7 +237,7 @@ theorem source_iff (different : stateName ≠ clockName) (ceiling : Nat)
       exact ⟨stepPack stateName clockName before, by rw [step_roundtrip]; rfl,
         (step_roundtrip stateName clockName before).symm⟩
   | doStep =>
-    simp only [SourceExec, originalMethod, step_source_iff different ceiling,
+    simp only [SourceExec, sourceMethod, step_source_iff different ceiling,
       step_roundtrip]
     constructor
     · rintro ⟨next, executed, rfl⟩

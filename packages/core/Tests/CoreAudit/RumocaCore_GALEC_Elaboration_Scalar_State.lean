@@ -20,8 +20,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.recalibrate_source_iff
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.step_source_iff
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.executes_iff_unitBlock
-#audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.originalMethod
-#audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.selected_original
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.sourceMethod
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.selected_source
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.SourceExec
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.source_iff
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.StateBridge.sourceExec_iff_unitBlock

@@ -26,7 +26,7 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
   if algorithm != EFMI.tensorAlgorithmSource then
     throwError "actual tensor Algorithm Code differs from the emitted tensor square block"
   let modelName := candidate.name
-  let docs := EFMI.TensorManifest.prepareWithCode modelName identity algorithm c
+  let docs := EFMI.TensorManifest.prepare modelName identity algorithm c
   if XML.document docs.algorithm != algorithmXML ||
       XML.document docs.production != productionXML ||
       XML.document docs.content != contentXML then
@@ -83,8 +83,8 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
       simp only [EFMI.TensorManifest.algorithm, EFMI.Manifest.files, EFMI.Manifest.file, $aHash:ident]
       rfl))
   elabCommand (← `(command|
-    theorem $pEq:ident : EFMI.TensorManifest.productionWithCode $nameLit $identityName $ax $out = $pTree := by
-      simp only [EFMI.TensorManifest.productionWithCode, EFMI.Manifest.files, EFMI.Manifest.file,
+    theorem $pEq:ident : EFMI.TensorManifest.production $nameLit $identityName $ax $out = $pTree := by
+      simp only [EFMI.TensorManifest.production, EFMI.Manifest.files, EFMI.Manifest.file,
         $cHash:ident, $axHash:ident]
       rfl))
   elabCommand (← `(command|
@@ -93,9 +93,9 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
       rfl))
   let graph := mkIdent `Rumoca.CheckedTensorEFMIFiles.manifest_graph
   elabCommand (← `(command|
-    theorem $graph:ident : EFMI.TensorManifest.prepareWithCode $nameLit $identityName $alg $out =
+    theorem $graph:ident : EFMI.TensorManifest.prepare $nameLit $identityName $alg $out =
         EFMI.TensorManifest.Documents.mk $aTree $pTree $cTree := by
-      simp only [EFMI.TensorManifest.prepareWithCode, $aEq:ident, $aText:ident, $pEq:ident, $pText:ident, $cEq:ident]))
+      simp only [EFMI.TensorManifest.prepare, $aEq:ident, $aText:ident, $pEq:ident, $pText:ident, $cEq:ident]))
   let valid := mkIdent `Rumoca.CheckedTensorEFMIFiles.manifest_xml_valid
   let aValid := mkIdent (aTree.getId.str "valid_eq")
   let pValid := mkIdent (pTree.getId.str "valid_eq")
@@ -105,7 +105,7 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
       simp only [EFMI.TensorManifest.Documents.valid, $aValid:ident, $pValid:ident, $cValid:ident, Bool.and_self]))
   let theoremName := `Rumoca.CheckedTensorEFMIFiles.source_to_manifests
   let theoremId := mkIdent theoremName
-  elabCommand (← `(command| attribute [local irreducible] EFMI.TensorManifest.prepareWithCode XML.document))
+  elabCommand (← `(command| attribute [local irreducible] EFMI.TensorManifest.prepare XML.document))
   elabCommand (← `(command|
     theorem $theoremId:ident :
         Generated.source = $ebnf ∧ GALEC.Generated.source = $algEbnf ∧

@@ -156,7 +156,7 @@ def logicalData : Element :=
 
 /-- Metadata for an explicitly supplied Production C string. This hashes bytes;
 the compiler's artifact contract separately requires their execution semantics. -/
-def productionWithCode (modelName : String) (identity : Identity)
+def production (modelName : String) (identity : Identity)
     (algorithmXML productionSource : String) : Element :=
   node "Manifest"
     ([("xsdVersion", "0.17.0"), ("kind", "ProductionCode")] ++
@@ -172,11 +172,6 @@ def productionWithCode (modelName : String) (identity : Identity)
             [targetType realTargetId "efmiFloat64" "double",
              targetType statusTargetId "efmiInteger32" "int32_t"],
           node "CodeFiles" [] [codeFile], logicalData]]
-
-/-- The existing production profile is an exact specialization of the explicit
-code constructor. No metadata or emitted byte changes with this extraction. -/
-def production (modelName : String) (identity : Identity) (algorithmXML : String) : Element :=
-  productionWithCode modelName identity algorithmXML TensorProduction.render
 
 /-! ### The manifest documents
 
@@ -203,17 +198,10 @@ def Documents.valid (documents : Documents) : Bool :=
 
 /-- Correlate explicitly supplied Algorithm and C bytes, serializing each
 dependency once before hashing its complete text into the dependent document. -/
-def prepareWithCode (modelName : String) (identity : Identity)
+def prepare (modelName : String) (identity : Identity)
     (algorithmSource productionSource : String) : Documents :=
   let a := algorithm modelName identity algorithmSource
-  let p := productionWithCode modelName identity (document a) productionSource
-  ⟨a, p, content modelName identity (document a) (document p)⟩
-
-/-- Hash each already serialized dependency before constructing its dependents,
-with no XML reformatting between the steps. -/
-def prepare (modelName : String) (identity : Identity) (algorithmSource : String) : Documents :=
-  let a := algorithm modelName identity algorithmSource
-  let p := production modelName identity (document a)
+  let p := production modelName identity (document a) productionSource
   ⟨a, p, content modelName identity (document a) (document p)⟩
 
 end Rumoca.EFMI.TensorManifest
