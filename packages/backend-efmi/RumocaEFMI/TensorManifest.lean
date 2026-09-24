@@ -154,14 +154,17 @@ def logicalData : Element :=
       ((methods.flatMap fun m => mappedVariables.map (dataMapping m)) ++ methods.map statusMapping),
       node "FunctionReferences" [] (methods.map functionMapping)]
 
-def production (modelName : String) (identity : Identity) (algorithmXML : String) : Element :=
+/-- Metadata for an explicitly supplied Production C string. This hashes bytes;
+the compiler's artifact contract separately requires their execution semantics. -/
+def productionWithCode (modelName : String) (identity : Identity)
+    (algorithmXML productionSource : String) : Element :=
   node "Manifest"
     ([("xsdVersion", "0.17.0"), ("kind", "ProductionCode")] ++
       baseAttributes modelName identity identity.production)
     [node "ManifestReferences" [] [node "ManifestReference" [("id", originId),
       ("manifestRefId", identity.algorithm), ("checksum", SHA1.hash algorithmXML.toUTF8),
       ("origin", "true")]],
-      files productionFileId "production.c" TensorProduction.render.toUTF8,
+      files productionFileId "production.c" productionSource.toUTF8,
       node "CodeContainer" [("language", "C"), ("standard", "C11"), ("platform", "Legacy"),
         ("floatPrecision", "64-bit")]
         [{ name := "Target", text := "Generic" },
@@ -169,6 +172,11 @@ def production (modelName : String) (identity : Identity) (algorithmXML : String
             [targetType realTargetId "efmiFloat64" "double",
              targetType statusTargetId "efmiInteger32" "int32_t"],
           node "CodeFiles" [] [codeFile], logicalData]]
+
+/-- The existing production profile is an exact specialization of the explicit
+code constructor. No metadata or emitted byte changes with this extraction. -/
+def production (modelName : String) (identity : Identity) (algorithmXML : String) : Element :=
+  productionWithCode modelName identity algorithmXML TensorProduction.render
 
 /-! ### The manifest documents
 
@@ -192,6 +200,14 @@ structure Documents where
 
 def Documents.valid (documents : Documents) : Bool :=
   documents.algorithm.valid && documents.production.valid && documents.content.valid
+
+/-- Correlate explicitly supplied Algorithm and C bytes, serializing each
+dependency once before hashing its complete text into the dependent document. -/
+def prepareWithCode (modelName : String) (identity : Identity)
+    (algorithmSource productionSource : String) : Documents :=
+  let a := algorithm modelName identity algorithmSource
+  let p := productionWithCode modelName identity (document a) productionSource
+  ⟨a, p, content modelName identity (document a) (document p)⟩
 
 /-- Hash each already serialized dependency before constructing its dependents,
 with no XML reformatting between the steps. -/

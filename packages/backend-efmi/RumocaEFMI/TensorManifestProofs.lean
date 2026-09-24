@@ -13,7 +13,7 @@ each logical data reference names the Algorithm Code variable and the C formal i
 maps. These hold universally in the model name and packaging identity. -/
 namespace Rumoca.EFMI.TensorManifest
 open XML
-open Rumoca.EFMI.Manifest (select node Identity)
+open Rumoca.EFMI.Manifest (select node Identity algorithmFileId productionFileId originId)
 
 /-! ### Well-formedness
 
@@ -169,5 +169,92 @@ theorem function_present (modelName : String) (identity : Identity) (algorithmXM
       ["CodeContainer", "LogicalData", "FunctionReferences", "FunctionReference"] := by
   rw [function_nodes]
   exact List.mem_map_of_mem hm
+
+
+/-! ### Explicit-code checksum graph
+
+These universally quantified facts preserve the existing metadata while tying
+both code File nodes and all manifest dependencies to the supplied bytes.
+They do not assign execution semantics or standards conformance to arbitrary C. -/
+
+theorem productionWithCode_specialization (name : String) (id : Identity) (algorithmXML : String) :
+    productionWithCode name id algorithmXML TensorProduction.render = TensorManifest.production name id algorithmXML := rfl
+
+theorem prepareWithCode_specialization (name : String) (id : Identity) (algorithmSource : String) :
+    prepareWithCode name id algorithmSource TensorProduction.render = TensorManifest.prepare name id algorithmSource := rfl
+
+theorem prepareWithCode_graph (name : String) (id : Identity) (algorithmSource productionSource : String) :
+    let documents := prepareWithCode name id algorithmSource productionSource
+    documents.algorithm = algorithm name id algorithmSource ∧
+    documents.production = productionWithCode name id (document documents.algorithm) productionSource ∧
+    documents.content = content name id (document documents.algorithm) (document documents.production) :=
+  ⟨rfl, rfl, rfl⟩
+
+theorem prepareWithCode_named (name : String) (id : Identity) (algorithmSource productionSource : String) :
+    let documents := prepareWithCode name id algorithmSource productionSource
+    documents.algorithm.attributes.lookup "name" = some name ∧
+    documents.production.attributes.lookup "name" = some name ∧
+    documents.content.attributes.lookup "name" = some name := ⟨rfl, rfl, rfl⟩
+
+theorem origin_reference_withCode (name : String) (id : Identity) (algorithmXML productionSource : String) :
+    ∃ origin, select (productionWithCode name id algorithmXML productionSource)
+        ["ManifestReferences", "ManifestReference"] = [origin] ∧
+      origin.attributes.lookup "id" = some originId ∧
+      origin.attributes.lookup "origin" = some "true" ∧
+      origin.attributes.lookup "manifestRefId" = some id.algorithm ∧
+      origin.attributes.lookup "checksum" = some (SHA1.hash algorithmXML.toUTF8) :=
+  ⟨_, rfl, rfl, rfl, rfl, rfl⟩
+
+/-- Read both code hashes from the actual selected File nodes, with their IDs
+and names; no positional XML rewriting or producer checksum is accepted. -/
+theorem prepareWithCode_file_checksums (name : String) (id : Identity) (algorithmSource productionSource : String) :
+    let documents := prepareWithCode name id algorithmSource productionSource
+    ∃ manifest algorithmFile productionFile,
+      select documents.algorithm ["Files", "File"] = [manifest, algorithmFile] ∧
+      select documents.production ["Files", "File"] = [manifest, productionFile] ∧
+      algorithmFile.attributes.lookup "id" = some algorithmFileId ∧
+      algorithmFile.attributes.lookup "name" = some "model.alg" ∧
+      algorithmFile.attributes.lookup "checksum" = some (SHA1.hash algorithmSource.toUTF8) ∧
+      productionFile.attributes.lookup "id" = some productionFileId ∧
+      productionFile.attributes.lookup "name" = some "production.c" ∧
+      productionFile.attributes.lookup "checksum" = some (SHA1.hash productionSource.toUTF8) :=
+  ⟨_, _, _, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem prepareWithCode_checksums (name : String) (id : Identity) (algorithmSource productionSource : String) :
+    let documents := prepareWithCode name id algorithmSource productionSource
+    (∃ origin, select documents.production ["ManifestReferences", "ManifestReference"] = [origin] ∧
+      origin.attributes.lookup "checksum" = some (SHA1.hash (document documents.algorithm).toUTF8)) ∧
+    (representation "AlgorithmCode" "AlgorithmCode" id.algorithm
+        (document documents.algorithm)).attributes.lookup "checksum" =
+      some (SHA1.hash (document documents.algorithm).toUTF8) ∧
+    (representation "ProductionCode" "ProductionCode" id.production
+        (document documents.production)).attributes.lookup "checksum" =
+      some (SHA1.hash (document documents.production).toUTF8) := ⟨⟨_, rfl, rfl⟩, rfl, rfl⟩
+
+/-- The hashed representations are exactly the container's selected nodes. -/
+theorem prepareWithCode_container_checksums (name : String) (id : Identity) (algorithmSource productionSource : String) :
+    let documents := prepareWithCode name id algorithmSource productionSource
+    ∃ a p, select documents.content ["ModelRepresentation"] = [a, p] ∧
+      a.attributes.lookup "name" = some "AlgorithmCode" ∧
+      a.attributes.lookup "manifestRefId" = some id.algorithm ∧
+      a.attributes.lookup "checksum" = some (SHA1.hash (document documents.algorithm).toUTF8) ∧
+      p.attributes.lookup "name" = some "ProductionCode" ∧
+      p.attributes.lookup "manifestRefId" = some id.production ∧
+      p.attributes.lookup "checksum" = some (SHA1.hash (document documents.production).toUTF8) :=
+  ⟨_, _, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩
+
+theorem data_nodes_withCode (name : String) (id : Identity) (algorithmXML productionSource : String) :
+    select (productionWithCode name id algorithmXML productionSource)
+      ["CodeContainer", "LogicalData", "DataReferences", "DataReference"] =
+      (methods.flatMap fun m => mappedVariables.map (dataMapping m)) ++ methods.map statusMapping := rfl
+
+theorem function_nodes_withCode (name : String) (id : Identity) (algorithmXML productionSource : String) :
+    select (productionWithCode name id algorithmXML productionSource)
+      ["CodeContainer", "LogicalData", "FunctionReferences", "FunctionReference"] =
+      methods.map functionMapping := rfl
+
+theorem function_declarations_withCode (name : String) (id : Identity) (algorithmXML productionSource : String) :
+    Manifest.functionNodes (productionWithCode name id algorithmXML productionSource) = methods.map function := rfl
+
 
 end Rumoca.EFMI.TensorManifest

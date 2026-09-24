@@ -143,8 +143,16 @@ creation; the imported Options module fixes those without changing Check.
 These runs are completed; do not restart. The actual-file quotation/payload
 comparison boundary remains explicit. No production or conformance claim.
 
-Next: adopt the checked reusable explicit-code manifest construction into its
-existing backend owner while preserving current bytes/contracts. Then continue
+The explicit-code manifest construction is now in its existing backend owner.
+Implementation session57530 passed 2,293 jobs; owner session38903 passed 3,502
+jobs, 718 approved reports, all 13 new roots and four frozen hashes. Main read
+the complete independent adoption review: all 17 old proof declarations and
+old document trees are preserved; the compiler change only unfolds the new
+constructor. Required full gate is pending, not covered by the older gate.
+Evidence prefix `build/code-manifest-`; inspect the live checkpoint/handles
+before launching any build. The full/post runners require 659 selected roots
+(646 retained + 13 new), existing FMU roots and unchanged Algorithm/C members.
+Then continue
 the coupled parser/source/C integration, native/lifecycle obligations and
 standards closure. Check the ignored live checkpoint before changing inputs.
 Preserve the exact model/kernel link, every existing scalar/tensor/total-helper

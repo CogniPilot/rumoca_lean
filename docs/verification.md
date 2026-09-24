@@ -1,5 +1,19 @@
 # Exact verification contract
 
+**Owned explicit-code manifest constructors (owner checks passed; full gate pending):**
+The existing TensorManifest owner now has `productionWithCode` and
+`prepareWithCode`, with 11 migrated universal document/checksum/reference proofs.
+Old production/prepare outputs are exact specializations; all 17 preexisting
+proof declarations remain unchanged. The compiler checker only unfolds the
+extracted constructor in its existing tree proof. No artifact predicate, parser,
+grammar, emitted code, source admission or whitelist changes, and no scratch
+imports. Implementation check passed 2,293 jobs; owner session38903 passed
+3,502 jobs, 718 complete unchanged-whitelist reports, all 13 new roots and four
+frozen source/audit hashes. Main read the complete independent adoption review,
+no blocking finding. Evidence prefix: `build/code-manifest-`. The required
+`lake test` gate for this extraction is pending; the earlier gate below does
+not establish this changed checker's actual-artifact behavior.
+
 **Owned table-parametric method proofs (full gate passed):**
 The existing EFMI owners now contain numerical-extension RHS/Jacobian helpers,
 whole DoStep execution/behavior, checked public entry/completion, finite-primal

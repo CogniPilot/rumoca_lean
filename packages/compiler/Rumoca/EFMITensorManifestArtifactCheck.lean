@@ -94,7 +94,8 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
       rfl))
   elabCommand (← `(command|
     theorem $pEq:ident : EFMI.TensorManifest.production $nameLit $identityName $ax = $pTree := by
-      simp only [EFMI.TensorManifest.production, EFMI.Manifest.files, EFMI.Manifest.file,
+      simp only [EFMI.TensorManifest.production, EFMI.TensorManifest.productionWithCode,
+        EFMI.Manifest.files, EFMI.Manifest.file,
         $renderBridge:ident, $cHash:ident, $axHash:ident]
       rfl))
   elabCommand (← `(command|
