@@ -1,5 +1,17 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Lifecycle guard fold-terminal repair (2026-09-24; full gate passed): bounded
+Rules 10.1/2.2 work on the emitted FMI adapters, not grammar expansion. The
+shared disjunction has no seed and the lifecycle guard omits kinds with no
+permitted mode; evaluation order and laziness are unchanged and all theorem
+headers are retained. Owner-v2 passed 4,341 jobs/5,377 reports/84 roots.
+Required full gate and post-audit passed `630ef4a`, both exit 0: 2,668 tracked
+inputs, 9,056 approved reports, 1,085 selected roots, four retained FMU roots,
+three matrices 75/75 (526/650/526 cells) with zero discrepancies. Adapters match
+the frozen prediction byte for byte (58/59/59 lines); numerical C and eFMI
+members unchanged. Evidence: `build/fold-terminal-gate/`. No MLS/FMI/eFMI or
+MISRA finding closes; expansion/promotion blocks remain.
+
 Explicit size-count repair (2026-09-24; full gate passed):
 bounded Rules 10.1/10.4 work, not grammar expansion or essential-type closure.
 Shared count guards use explicit inequality to a typed size_t zero. Canonical

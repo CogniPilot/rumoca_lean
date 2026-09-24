@@ -32,12 +32,14 @@ Patches, overlays, READMEs, logs, hash lists and receipts were kept; their
 input hashes over deleted object copies can no longer be rechecked, and the
 recorded production full gates supersede them. Free disk: 390 GB.
 
-Residual MISRA observation from the actual adapters after this repair: no
-implicit pointer truth test remains; `!busy` is `_Bool`. Each adapter still
-emits 90 `|| 0)` and 14 `&& 0)` fold terminals from `Runtime.any`/`Runtime.all`
-(`packages/backend-fmi3/RumocaFMI3/Runtime.lean:67-68`, `foldr` with seeds
-`n 0`/`n 1`), which are integer constants as `||`/`&&` operands (Rule 10.1).
-That is a bounded follow-up repair, prepared privately in scratch only.
+Fold-terminal repair (full gate passed `630ef4a`): the 90 `|| 0)` and 14
+`&& 0)` terminals per adapter came from the seeded `Runtime.any` fold and the
+`both (kind == k) (any [])` lifecycle guards, not from `Runtime.all`, which
+had no emitting caller and is deleted. Proposal, independent review and
+receipts: `build/fold-terminal-adoption/` and `build/fold-terminal-gate/`
+(baseline-v2, owner-v2, full-v1 with post-exit 0; full-v0-stopped is an
+operator-stopped start, not a result). Remaining Rule 10.1 operands are the
+`!isfinite(...)` sites and the two exact time-grid inequalities.
 
 Next slice (authorized repair, not expansion): promote the checked GALEC loop
 candidate to production, closing GJ01/GJ03 through the actual artifact chain.

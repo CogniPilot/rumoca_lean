@@ -173,7 +173,20 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   attempt failed only on en_US collation of the roots list; the C-collated
   rerun passed and the failed attempt is retained. No guideline closes and no
   essential-type or promotion theorem follows.
-  Evidence: `build/count-condition-gate/`. Independently of this repair, two
+  Evidence: `build/count-condition-gate/`.
+  Fold-terminal repair (full gate passed `630ef4a`): the emitted mode/kind
+  guards no longer contain integer constants as `||`/`&&` operands. The shared
+  disjunction `CTree.Expr.disjunction` is seedless, `Runtime.all` is deleted
+  and the lifecycle guard omits kinds with no permitted mode, removing the 90
+  `|| 0)` and 14 `&& 0)` terminals per adapter (Rule 10.1 operands; the
+  always-false disjuncts were also Rule 2.2 dead code, not Rule 14.3, which
+  concerns whole invariant controlling expressions). Owner-v2 4,341 jobs/5,377
+  reports/84 roots; full gate 2,668 inputs/9,056 reports/1,085 roots/four FMU
+  roots; matrices 75/75 with zero discrepancies; adapters match the frozen
+  prediction byte for byte (58/59/59 lines, 1,036 bytes smaller each), numerical
+  and eFMI members unchanged. Remaining Rule 10.1 operands: `!isfinite(...)`
+  returns `int` (8/7/6 sites per adapter). Evidence: `build/fold-terminal-gate/`.
+  Independently of this repair, two
   floating variable-to-variable inequalities remain, both exact FMI time-grid
   checks not covered by Rule 10.1's zero/infinity exceptions:
   `currentCommunicationPoint != (m->time)` and `floored != communicationStepSize`

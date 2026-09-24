@@ -1,5 +1,37 @@
 # Exact verification contract
 
+**Lifecycle guard disjunctions without integer fold terminals (full gate passed):**
+`Runtime.any` is now the shared ordered disjunction `CTree.Expr.disjunction`
+owned by backend-c: one operand is emitted as itself, several fold right as
+`a || (b || c)`, and the empty list is the essentially Boolean constant
+`(0 != 0)`, which no adapter emits. `Runtime.all` is deleted. The lifecycle
+guard `kindModes` omits any kind that permits no mode, so the always-false
+`(kind == k) && 0` disjuncts cannot be constructed for any mode table. The
+law `BoolProofs.eval_disjunction` gives left-to-right lazy evaluation of
+Boolean-valued operands with no interface premise; `LifecycleGuard.
+mode_disjunction_eval`, `allowed_eval` and `allowed_disjuncts_nonempty` are
+proved for all 20 commands. No theorem statement changed (1,115 declaration
+headers in 50 files compared); the certified reset guard text describes the
+new bytes. Independent review found no semantic finding; its audit and
+naming items were applied before adoption.
+
+Owner-v2 passed 4,341 jobs, 5,377 complete approved reports, all 84 selected
+roots and frozen 2,668 tracked/four runner hashes. Required full gate
+`build/fold-terminal-gate/full-v1/` passed at `630ef4a`, exit 0, with
+post-audit exit 0 under `LC_ALL=C`: 2,668 frozen tracked inputs, 9,056
+complete approved reports, all 1,085 selected roots and four retained FMU
+roots. Three matrices passed 75/75 functions (526/650/526 behavior cells),
+zero discrepancies/unexpected results. Whole-file comparison against the
+frozen prediction confirms each adapter byte for byte: 58/59/59 changed lines
+in Integrator/TensorSquare/ConstantRates, every `|| 0)` and `&& 0)` removed,
+line counts unchanged, 1,036 bytes smaller each; three numerical `model.c`
+files and four eFMI Algorithm/C members identical. A first gate start was
+stopped by the operator after about one minute and is retained as
+`full-v0-stopped` (its exit file was written by the termination trap and is
+not a result). Residual Rule 10.1 operands: `!isfinite(...)` (8/7/6 sites)
+returns `int`; the two exact FMI time-grid inequalities remain. No guideline
+closes; no native compilation claim follows.
+
 **Explicit size-count guards (full gate passed):**
 Shared backend-C syntax and canonical evaluator laws replace scalar Float64
 and debug missing-array count operands with `count != ((size_t)0)`. Integer
