@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Explicit size-count guards (owner passed; full gate pending):**
+**Explicit size-count guards (full gate passed):**
 Shared backend-C syntax and canonical evaluator laws replace scalar Float64
 and debug missing-array count operands with `count != ((size_t)0)`. Integer
 truth, lazy conjunction/disjunction and exact optional branch successors are
@@ -28,11 +28,24 @@ After baseline28568 passed at `d04c75a`, all twenty adopted files matched the
 reviewed overlays. Six audit files add 35 registrations and retain all old
 roots/whitelist. Owner-v1/session75875 passed 4,341 jobs, 5,361 approved reports,
 all 60 selected roots, 2,668 frozen tracked inputs and four runner hashes,
-rechecked by main. No owner correction was needed. The required full `lake test`
-and post-audit remain outstanding: 1,019 selected roots, five predicted guard
-lines/seven count operands across three adapters, with numerical/eFMI code
-required unchanged. These predictions are not actual-file evidence. See
-`build/count-condition-adoption/` and `build/count-condition-gate/`.
+rechecked by main. No owner correction was needed.
+
+The required full gate `build/count-condition-gate/full-v1/` passed at
+`8a4a433`, exit 0: 2,668 frozen tracked inputs, eleven runner hashes, 9,037
+complete approved reports, all 1,019 selected roots and four retained FMU
+roots. Three matrices passed 75/75 functions (526/650/526 behavior cells),
+zero discrepancies/unexpected results. Whole-file comparison against the
+baseline confirms exactly five changed guard lines and seven `!= ((size_t)0)`
+count operands across three adapters (Integrator three lines/five operands,
+TensorSquare and ConstantRates one line/one operand each); the three
+numerical `model.c` files and four eFMI Algorithm/C members stayed identical.
+The first post-audit invocation failed only at the required-roots ordering
+diff because the invoking shell collated in en_US while the gate wrote a
+C-collated list; the root sets were identical and no receipt was reused. That
+attempt is retained as `post-exit-attempt1-en_US-collation`. The rerun with
+`LC_ALL=C` inside the verification environment passed, post-exit 0. Main read
+all three adapter diffs, matrices and FMU roots before these ledger updates.
+See `build/count-condition-adoption/` and `build/count-condition-gate/`.
 No standards, native-promotion or MISRA essential-type finding is closed.
 
 **Factory callback explicit null guards (full gate passed):**

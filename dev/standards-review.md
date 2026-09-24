@@ -1,6 +1,6 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
-Explicit size-count repair (2026-09-24; owner passed, full pending):
+Explicit size-count repair (2026-09-24; full gate passed):
 bounded Rules 10.1/10.4 work, not grammar expansion or essential-type closure.
 Shared count guards use explicit inequality to a typed size_t zero. Canonical
 evaluator proofs retain failed/skipped outcomes and lazy order; missing-size
@@ -16,9 +16,16 @@ Twenty source files match independently reviewed overlays; six audit files add
 boundary. Baseline28568 passed after completed factory evidence `d04c75a`.
 Owner-v1/session75875 passed 4,341 jobs, 5,361 approved reports, all 60 selected
 roots and frozen 2,668 tracked/four runner hashes, rechecked by main. No owner
-correction was needed. Required full/post checks remain outstanding, including
-1,019 roots and the predicted five-line/seven-count-operand adapter delta with
-numerical/eFMI members unchanged. Evidence: `build/count-condition-gate/`.
+correction was needed. Required full gate and post-audit passed `8a4a433`,
+both exit 0: 2,668 tracked inputs, 9,037 approved reports, all 1,019 selected
+roots and four retained FMU roots. Three matrices passed 75/75 functions
+(526/650/526 cells), zero discrepancies or unexpected results. Whole-file
+comparisons confirm exactly five guard lines and seven count operands across
+three adapters, with three numerical C and four eFMI Algorithm/C members
+unchanged. The first post-audit attempt failed only on roots-list collation
+(en_US shell versus C-collated gate output, identical sets); the C-collated
+rerun passed and the failed attempt is retained. Main read the diffs, matrices
+and FMU roots and rechecked frozen inputs. Evidence: `build/count-condition-gate/`.
 No MLS/FMI/eFMI or MISRA finding closes; expansion/promotion blocks remain.
 
 Factory callback pointer repair (2026-09-24; full gate passed):

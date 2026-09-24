@@ -1,8 +1,54 @@
 # Resume handoff — 2026-09-24 UTC
 
-## Current count-condition repair — owner passed, full gate pending
+## Current count-condition repair — full gate passed; next slice is the GALEC loop cutover
 
-This section supersedes older count prospective/adoption status below.
+This section supersedes the count status below. The required full gate
+`build/count-condition-gate/full-v1/` ran at `8a4a433` and exited 0 (started
+09:53, finished 10:52 local): 2,668 frozen tracked inputs, eleven runner hashes,
+9,037 complete approved reports, all 1,019 selected roots and four retained FMU
+roots. Three matrices passed 75/75 functions (526/650/526 cells), zero
+discrepancies/unexpected results. Whole-file comparison confirms exactly five
+changed guard lines and seven `!= ((size_t)0)` operands across three adapters;
+three numerical `model.c` files and four eFMI Algorithm/C members are identical.
+The first post-audit attempt failed only at the required-roots ordering diff:
+the invoking shell collated in en_US while the gate wrote a C-collated list.
+The sets were identical; the attempt is retained as
+`post-exit-attempt1-en_US-collation`. The rerun with `LC_ALL=C` inside the
+verification environment passed (post-exit 0). Run every gate/post-audit with
+`LC_ALL=C` from now on. Main read the diffs, matrices and FMU roots.
+
+Milestone cleanup after evidence capture: `lake run prune-certificates 10`
+removed five certificate directories (523.85 MiB); 90 entries/5,405.74 MiB were
+present before, ten most recently used per kind are retained. Free disk: 393 GB.
+Source, review logs, receipts and private dependency caches were preserved.
+
+Residual MISRA observation from the actual adapters after this repair: no
+implicit pointer truth test remains; `!busy` is `_Bool`. Each adapter still
+emits 90 `|| 0)` and 14 `&& 0)` fold terminals from `Runtime.any`/`Runtime.all`
+(`packages/backend-fmi3/RumocaFMI3/Runtime.lean:67-68`, `foldr` with seeds
+`n 0`/`n 1`), which are integer constants as `||`/`&&` operands (Rule 10.1).
+That is a bounded follow-up repair, prepared privately in scratch only.
+
+Next slice (authorized repair, not expansion): promote the checked GALEC loop
+candidate to production, closing GJ01/GJ03 through the actual artifact chain.
+Scope per `build/galec-production-cutover-review.md` and the R1–R5 record in
+`dev/standards-review.md`: replace the production GALEC grammar with the
+statement-list/indexed/loop grammar (`build/galec-startup-parser-draft/GALEC.ebnf`),
+regenerate tables/certificates, adopt the fresh actions with the universal old
+scalar compatibility proof, replace `tensorUnitSource` with the candidate loop
+source (`build/galec-candidate-manifest-draft/emitted-v1/AlgorithmCode/model.alg`),
+change the tensor C Startup to clear x and J and set the period, rebase
+`TensorStartup`/executed contracts/artifact checks, update the tensor native
+boundary expectations, then run the required full gate and post-audit. Scalar
+Algorithm/Production C members and all three FMU adapters/kernels must stay
+byte-identical; only the tensor `.alg`, tensor `production.c` Startup,
+manifests/checksums and archive identities change. Planning/review documents
+for this work live under `~/.claude_documents/home/jgoppert/git/rumoca_lean/`;
+gate receipts stay under `build/`. No push authorization.
+
+## Count-condition repair — owner passed (historical)
+
+This section is superseded by the section above.
 After signed factory evidence `d04c75a`, baseline-v1/session28568 passed.
 Main rechecked hashes/provenance and read all three predicted diffs: five lines,
 seven count operands, unchanged numerical C and eFMI members required.

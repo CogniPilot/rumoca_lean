@@ -156,7 +156,7 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   independent definite-initialization predicate and a native storage/lifetime
   correspondence (MC05).
 - **Essential types / floating equality (Rules 10.1-10.8).**
-  Count-guard repair (owner passed; full gate pending): shared scalar Float64
+  Count-guard repair (full gate passed): shared scalar Float64
   and debug guards now use `count != ((size_t)0)`. Canonical Lean laws preserve
   full optional results and lazy order; actual zero cases require size typing
   but no pointer binding/storage. Old generic helpers retain their domains via
@@ -164,8 +164,15 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   Owner-v1/session75875 passed 4,341 jobs, 5,361 approved reports, 60 exact
   roots and frozen 2,668 tracked/four runner hashes, rechecked by main. All
   twenty source files match reviewed overlays; six audit files add 35 roots.
-  Full/post evidence for the predicted five guard lines/seven count operands
-  and unchanged numerical/eFMI code remains outstanding. No guideline closes.
+  Required full gate and post-audit passed `8a4a433`, both exit 0: 2,668
+  frozen inputs, 9,037 approved reports, 1,019 selected roots and four retained
+  FMU roots. Three matrices passed 75/75 (526/650/526 cells), zero
+  discrepancies/unexpected. Whole-file comparisons confirm exactly five guard
+  lines and seven typed-zero count operands across three adapters, with three
+  numerical C and four eFMI Algorithm/C members unchanged. The first post-audit
+  attempt failed only on en_US collation of the roots list; the C-collated
+  rerun passed and the failed attempt is retained. No guideline closes and no
+  essential-type or promotion theorem follows.
   Evidence: `build/count-condition-gate/`. Independently of this repair, two
   floating variable-to-variable inequalities remain, both exact FMI time-grid
   checks not covered by Rule 10.1's zero/infinity exceptions:
