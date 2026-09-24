@@ -11,6 +11,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.rank_preserved
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.axis_bounds
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.bounds
-#audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.AxisDenotes.literal
+#audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.AxisDenotes.static
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.Denotes.nil
 #audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.Denotes.cons
+#audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.noShape
+#audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.Unknown
+#audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.noShape_iff
+#audit axioms Rumoca.GALEC.Elaboration.Declarations.Extents.natural_denotes

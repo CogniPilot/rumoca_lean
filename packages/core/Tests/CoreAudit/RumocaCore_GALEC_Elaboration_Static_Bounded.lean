@@ -14,3 +14,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Static.Bounded.integer_bounds
 #audit axioms Rumoca.GALEC.Elaboration.Static.Bounded.bindingRead
 #audit axioms Rumoca.GALEC.Elaboration.Static.Bounded.binding_read_iff
+#audit axioms Rumoca.GALEC.Elaboration.Static.Bounded.integerCeiling

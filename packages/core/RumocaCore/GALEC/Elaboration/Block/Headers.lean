@@ -33,7 +33,7 @@ theorem blockName_iff (block : AST.Block) (name : String) :
     simp [blockName]
 
 def Known (name : Token) : Prop :=
-  name = .literal "Startup" ∨ name = .literal "Recalibrate" ∨ name = .literal "DoStep"
+  name = .ident "Startup" ∨ name = .ident "Recalibrate" ∨ name = .ident "DoStep"
 
 instance knownDecidable (name : Token) : Decidable (Known name) := by unfold Known; infer_instance
 
@@ -45,18 +45,18 @@ structure Interface where
 
 def read (block : AST.Block) : Option Interface := do
   let name ← blockName block
-  let startup ← Headers.select (.literal "Startup") block.methods
-  let recalibrate ← Headers.select (.literal "Recalibrate") block.methods
-  let doStep ← Headers.select (.literal "DoStep") block.methods
+  let startup ← Headers.select (.ident "Startup") block.methods
+  let recalibrate ← Headers.select (.ident "Recalibrate") block.methods
+  let doStep ← Headers.select (.ident "DoStep") block.methods
   if ∀ method ∈ block.methods, Known method.name then
     some ⟨name, startup, recalibrate, doStep⟩
   else none
 
 structure Valid (block : AST.Block) (interface : Interface) : Prop where
   name : Named block interface.name
-  startup : Headers.Selects (.literal "Startup") block.methods interface.startup
-  recalibrate : Headers.Selects (.literal "Recalibrate") block.methods interface.recalibrate
-  doStep : Headers.Selects (.literal "DoStep") block.methods interface.doStep
+  startup : Headers.Selects (.ident "Startup") block.methods interface.startup
+  recalibrate : Headers.Selects (.ident "Recalibrate") block.methods interface.recalibrate
+  doStep : Headers.Selects (.ident "DoStep") block.methods interface.doStep
   known : ∀ method ∈ block.methods, Known method.name
 
 theorem read_iff (block : AST.Block) (interface : Interface) :

@@ -7,6 +7,11 @@ namespace Rumoca.GALEC.Elaboration.Static.Bounded
 open _root_.Parser
 open Rumoca.Tensor Elaboration
 
+/-- Target static Integer ceiling: the largest eFMI Integer, a 32-bit two's
+complement value (eFMI 1.0.0 Beta 1 3.2.6 L-2). Static extents, bounds and
+axes elaborate under this ceiling; smaller ceilings remain proof parameters. -/
+def integerCeiling : Nat := 2147483647
+
 def fit (ceiling value : Nat) : Option Nat :=
   if value ≤ ceiling then some value else none
 
@@ -16,15 +21,15 @@ theorem fit_iff (ceiling candidate value : Nat) :
   split <;> simp_all <;> omega
 
 def read (lookupShape : List String → Option Shape) (ceiling : Nat) : AST.Expr → Option Nat
-  | .literal (.literal spelling) => (DecimalNat.parse spelling).bind (fit ceiling)
+  | .literal (.number spelling) => (Numeral.read spelling).bind (fit ceiling)
   | .size reference axis => (read lookupShape ceiling axis).bind fun position =>
       (Dimensions.read lookupShape reference position).bind (fit ceiling)
   | .parens body => read lookupShape ceiling body
   | _ => none
 
 inductive Evaluates (HasShape : List String → Shape → Prop) (ceiling : Nat) : AST.Expr → Nat → Prop where
-  | literal : DecimalNat.Denotes spelling value → value ≤ ceiling →
-      Evaluates HasShape ceiling (.literal (.literal spelling)) value
+  | literal : spelling = toString value → value ≤ ceiling →
+      Evaluates HasShape ceiling (.literal (.number spelling)) value
   | size : Evaluates HasShape ceiling axis position →
       Dimensions.Denotes HasShape reference position extent → extent ≤ ceiling →
       Evaluates HasShape ceiling (.size reference axis) extent
@@ -39,7 +44,7 @@ theorem read_sound (lookupShape : List String → Option Shape)
   split at found
   · obtain ⟨candidate, spelled, fitted⟩ := Option.bind_eq_some_iff.mp found
     obtain ⟨rfl, bounded⟩ := (fit_iff ceiling candidate value).mp fitted
-    exact .literal ((DecimalNat.parse_iff _ _).mp spelled) bounded
+    exact .literal ((Numeral.read_iff _ _).mp spelled) bounded
   · rename_i reference axis
     simp only [Option.bind_eq_some_iff] at found
     obtain ⟨position, axisFound, extent, dimension, fitted⟩ := found
@@ -58,7 +63,7 @@ theorem read_complete (lookupShape : List String → Option Shape)
     read lookupShape ceiling source = some value := by
   induction evaluated with
   | literal spelling bounded =>
-    simp only [read, (DecimalNat.parse_iff _ _).mpr spelling, Option.bind_some]
+    simp only [read, (Numeral.read_iff _ _).mpr spelling, Option.bind_some]
     exact (fit_iff _ _ _).mpr ⟨rfl, bounded⟩
   | size axis dimension bounded ih =>
     simp only [read, ih, Option.bind_some, (Dimensions.read_iff _ _ correct _ _ _).mpr dimension]

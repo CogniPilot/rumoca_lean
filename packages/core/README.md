@@ -17,6 +17,16 @@ generic lowerer to that semantics, retaining explicit bindings, shapes and
 bounds. These are reusable prerequisites, not production source admission or
 normative Startup permission checks.
 
+`Elaboration.Block.Source` parses once and prepares that exact tree with
+`Block.fromBlock` under `Static.Bounded.integerCeiling`, the largest 32-bit eFMI
+Integer; success holds iff the tree has source provenance and prepares to the
+result. Static extents, bounds and axes admit only canonical decimal numerals
+(`Static.Numeral`); declaration extents are evaluated without any shape lookup.
+`Declarations.Real.Legal` confines directions to the public section and
+`constant` to the protected section. `Elaboration.Scalar` states the scalar unit
+block as a source tree and proves its whole-block preparation and method
+semantics for arbitrary distinct state and clock names.
+
 Use `lake build check-core` from the repository root for incremental core proofs and
 axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/FiniteChecks.lean` belong to the
 `RumocaCoreChecks` library, also selected by this package's `lake test`. See

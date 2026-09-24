@@ -9,7 +9,7 @@ open Elaboration Elaboration.Surface Rumoca.Tensor Rumoca.Solve.Tensor
 open StatementRelations
 
 def periodSource (name : String) : AST.Statement :=
-  .assign (stateReference name []) (.literal (.literal "1.0"))
+  .assign (stateReference name []) (.literal (.number "1.0"))
 
 def source (vectorName matrixName periodName : String) : List AST.Statement :=
   [VectorClear.source vectorName "k", Square.clearSource matrixName, periodSource periodName]

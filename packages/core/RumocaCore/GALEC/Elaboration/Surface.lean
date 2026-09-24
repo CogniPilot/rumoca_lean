@@ -15,7 +15,7 @@ def stateReference (name : String) (indices : List AST.Expr) : AST.Reference :=
 def iterator (name : String) : AST.Expr :=
   .reference (AST.Reference.unindexed (.ident name) [])
 
-def natural (value : Nat) : AST.Expr := .literal (.literal (toString value))
+def natural (value : Nat) : AST.Expr := .literal (.number (toString value))
 
 def dimension (name : String) (axis : Nat) : AST.Expr :=
   .size (stateReference name []) (natural axis)
@@ -28,7 +28,7 @@ theorem state_spelling (name : String) (indices : List AST.Expr) :
 
 theorem natural_evaluates (bounded : value ≤ ceiling) :
     Static.Bounded.Evaluates HasShape ceiling (natural value) value :=
-  .literal (_root_.Parser.DecimalNat.render_denotes value) bounded
+  .literal rfl bounded
 
 theorem dimension_header (names : IteratorNames bounds)
     (fresh : Loops.Binder.Fresh names binder)

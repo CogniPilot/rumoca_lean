@@ -4,8 +4,9 @@ import GALECParser.AST
 import RumocaCore.Tensor
 import Mathlib.Data.List.Nodup
 
-/-! AST-level Real declaration elaboration. Syntax metadata is preserved,
-not interpreted as method write permissions. The caller must still validate
+/-! AST-level Real declaration elaboration. Section legality of the declaration
+kind is checked; other syntax metadata is preserved, not interpreted as method
+write permissions. The caller must still validate
 block/function namespaces, scanner origins and the method-specific policy. -/
 namespace Rumoca.GALEC.Elaboration.Declarations.Real
 open _root_.Parser Rumoca.Tensor
@@ -18,14 +19,36 @@ structure Descriptor where
   shape : Shape
   deriving Repr, DecidableEq
 
+/-- Section legality of a declaration kind: a direction only in the public
+interface, `constant` only in the protected section, hence never both. -/
+def Legal (visibility : AST.Visibility) (direction : AST.Direction)
+    (variability : AST.Variability) : Prop :=
+  (direction ≠ .local → visibility = .public) ∧ (variability = .constant → visibility = .protected)
+
+instance (visibility : AST.Visibility) (direction : AST.Direction) (variability : AST.Variability) :
+    Decidable (Legal visibility direction variability) := by
+  unfold Legal; infer_instance
+
+theorem Legal.exclusive (legal : Legal visibility direction variability) :
+    ¬ (direction ≠ .local ∧ variability = .constant) := by
+  rintro ⟨directed, constant⟩
+  have visible := legal.1 directed
+  have hidden := legal.2 constant
+  rw [visible] at hidden
+  cases hidden
+
 def read (ceiling : Nat) (source : AST.Declaration) : Option Descriptor :=
   match source.name, source.typeName with
-  | .ident name, .literal "Real" => (Extents.read ceiling source.extents).map fun dims =>
-      ⟨name, source.visibility, source.direction, source.variability, ⟨dims⟩⟩
+  | .ident name, .literal "Real" =>
+      if Legal source.visibility source.direction source.variability then
+        (Extents.read ceiling source.extents).map fun dims =>
+          ⟨name, source.visibility, source.direction, source.variability, ⟨dims⟩⟩
+      else none
   | _, _ => none
 
 inductive Declares (ceiling : Nat) : AST.Declaration → Descriptor → Prop where
-  | real (dimensions : Extents.Denotes ceiling extents dims) :
+  | real (legal : Legal visibility direction variability)
+      (dimensions : Extents.Denotes ceiling extents dims) :
       Declares ceiling ⟨visibility, direction, variability, .literal "Real", extents, .ident name⟩
         ⟨name, visibility, direction, variability, ⟨dims⟩⟩
 
@@ -38,14 +61,17 @@ theorem read_iff (ceiling : Nat) (source : AST.Declaration) (declaration : Descr
       unfold read at found
       dsimp only at found
       split at found
-      · obtain ⟨dims, lowered, same⟩ := Option.map_eq_some_iff.mp found
-        cases same
-        exact .real ((Extents.read_iff _ _ _).mp lowered)
+      · split at found
+        · rename_i legal
+          obtain ⟨dims, lowered, same⟩ := Option.map_eq_some_iff.mp found
+          cases same
+          exact .real legal ((Extents.read_iff _ _ _).mp lowered)
+        · contradiction
       · contradiction
   · intro declared
     cases declared with
-    | real dimensions =>
-      simp only [read, (Extents.read_iff _ _ _).mpr dimensions, Option.map_some]
+    | real legal dimensions =>
+      simp only [read, if_pos legal, (Extents.read_iff _ _ _).mpr dimensions, Option.map_some]
 
 theorem metadata_preserved (declared : Declares ceiling source declaration) :
     source.name = .ident declaration.name ∧ source.typeName = .literal "Real" ∧
@@ -54,15 +80,20 @@ theorem metadata_preserved (declared : Declares ceiling source declaration) :
   cases declared
   exact ⟨rfl, rfl, rfl, rfl, rfl⟩
 
+theorem legal_preserved (declared : Declares ceiling source declaration) :
+    Legal declaration.visibility declaration.direction declaration.variability := by
+  cases declared with
+  | real legal _ => exact legal
+
 theorem rank_preserved (declared : Declares ceiling source declaration) :
     declaration.shape.dimensions.length = source.rank := by
   cases declared with
-  | real dimensions => exact Extents.rank_preserved dimensions
+  | real _ dimensions => exact Extents.rank_preserved dimensions
 
 theorem extent_bounds (declared : Declares ceiling source declaration) :
     ∀ extent ∈ declaration.shape.dimensions, 0 < extent ∧ extent ≤ ceiling := by
   cases declared with
-  | real dimensions => exact Extents.bounds dimensions
+  | real _ dimensions => exact Extents.bounds dimensions
 
 def readAll (ceiling : Nat) : List AST.Declaration → Option (List Descriptor) :=
   NamedLists.lower (read ceiling) Descriptor.name

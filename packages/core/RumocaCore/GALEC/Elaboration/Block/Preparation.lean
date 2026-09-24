@@ -18,21 +18,21 @@ structure Result where
 
 def fromBlock (ceiling : Nat) (block : AST.Block) : Option Result := do
   let interface ← Headers.read block
-  let startup ← Methods.Preparation.fromBlock (.literal "Startup")
+  let startup ← Methods.Preparation.fromBlock (.ident "Startup")
     Capabilities.Initialization.role ceiling block
-  let recalibrate ← Methods.Preparation.fromBlock (.literal "Recalibrate")
+  let recalibrate ← Methods.Preparation.fromBlock (.ident "Recalibrate")
     Capabilities.DoStep.role ceiling block
-  let doStep ← Methods.Preparation.fromBlock (.literal "DoStep")
+  let doStep ← Methods.Preparation.fromBlock (.ident "DoStep")
     Capabilities.DoStep.role ceiling block
   pure ⟨interface, startup, recalibrate, doStep⟩
 
 structure Prepares (ceiling : Nat) (block : AST.Block) (result : Result) : Prop where
   headers : Headers.Valid block result.interface
-  startup : Methods.Preparation.Prepares (.literal "Startup")
+  startup : Methods.Preparation.Prepares (.ident "Startup")
     Capabilities.Initialization.role ceiling block result.startup
-  recalibrate : Methods.Preparation.Prepares (.literal "Recalibrate")
+  recalibrate : Methods.Preparation.Prepares (.ident "Recalibrate")
     Capabilities.DoStep.role ceiling block result.recalibrate
-  doStep : Methods.Preparation.Prepares (.literal "DoStep")
+  doStep : Methods.Preparation.Prepares (.ident "DoStep")
     Capabilities.DoStep.role ceiling block result.doStep
 
 theorem fromBlock_iff (ceiling : Nat) (block : AST.Block) (result : Result) :

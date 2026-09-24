@@ -17,7 +17,7 @@ def pointwiseSource (inputName rhsName : String) : AST.Statement :=
 def clearSource (jacobianName : String) : AST.Statement :=
   unitLoop "r" (dimension jacobianName 1)
     [unitLoop "c" (dimension jacobianName 2)
-      [.assign (stateReference jacobianName [iterator "r", iterator "c"]) (.literal (.literal "0.0"))]]
+      [.assign (stateReference jacobianName [iterator "r", iterator "c"]) (.literal (.number "0.0"))]]
 
 def scatterSource (inputName jacobianName : String) : AST.Statement :=
   unitLoop "k" (dimension inputName 1)

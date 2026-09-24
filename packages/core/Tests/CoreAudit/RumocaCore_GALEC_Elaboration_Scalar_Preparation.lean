@@ -25,3 +25,13 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.startup_lowered
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.recalibrate_lowered
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.step_lowered
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.startupMethod
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.recalibrateMethod
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.stepMethod
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.sourceDeclarations
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.source
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.interface
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.result
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.headers
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.prepared
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.fromBlock_source

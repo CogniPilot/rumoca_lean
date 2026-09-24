@@ -10,7 +10,7 @@ open StatementRelations
 
 def source (name binder : String) : AST.Statement :=
   unitLoop binder (dimension name 1)
-    [.assign (stateReference name [iterator binder]) (.literal (.literal "0.0"))]
+    [.assign (stateReference name [iterator binder]) (.literal (.number "0.0"))]
 
 def lowered (target : Ref outputs ⟨[extent]⟩) : Statement inputs outputs bounds :=
   .bounded extent (.seq (.assign target vectorSubscripts (.literal .zero)) .skip)

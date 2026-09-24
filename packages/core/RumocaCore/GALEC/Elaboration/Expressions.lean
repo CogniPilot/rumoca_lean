@@ -32,8 +32,8 @@ theorem operator_iff (token : Token) (op : BinaryOp) :
 def lower (table : BindingTable inputs outputs) (names : IteratorNames bounds) :
     AST.Expr → Option (ScalarTerm inputs outputs bounds)
   | .reference ref => (ReadLowering.lower table names ref).map Read.term
-  | .literal (.literal "0.0") => some (.literal .zero)
-  | .literal (.literal "1.0") => some (.literal .one)
+  | .literal (.number "0.0") => some (.literal .zero)
+  | .literal (.number "1.0") => some (.literal .one)
   | .binary token left right =>
       (operator token).bind fun op => (lower table names left).bind fun l =>
         (lower table names right).map (ScalarTerm.binary op l)
@@ -45,8 +45,8 @@ inductive Elaborates (table : BindingTable inputs outputs) (names : IteratorName
   | reference {ref : AST.Reference} {read : Read inputs outputs bounds} :
       ReadLowering.Elaborates table names ref read →
       Elaborates table names (.reference ref) read.term
-  | zero : Elaborates table names (.literal (.literal "0.0")) (.literal .zero)
-  | one : Elaborates table names (.literal (.literal "1.0")) (.literal .one)
+  | zero : Elaborates table names (.literal (.number "0.0")) (.literal .zero)
+  | one : Elaborates table names (.literal (.number "1.0")) (.literal .one)
   | binary : Operator token op → Elaborates table names left l → Elaborates table names right r →
       Elaborates table names (.binary token left right) (.binary op l r)
   | parens : Elaborates table names body term → Elaborates table names (.parens body) term
@@ -96,8 +96,8 @@ inductive Evaluates (table : BindingTable inputs outputs) (names : IteratorNames
     (input : Env α inputs) (state : Env α outputs) (env : IteratorEnv bounds) : AST.Expr → α → Prop where
   | reference : ReadLowering.Evaluates table names input state env ref value →
       Evaluates table names step zero one input state env (.reference ref) value
-  | zero : Evaluates table names step zero one input state env (.literal (.literal "0.0")) zero
-  | one : Evaluates table names step zero one input state env (.literal (.literal "1.0")) one
+  | zero : Evaluates table names step zero one input state env (.literal (.number "0.0")) zero
+  | one : Evaluates table names step zero one input state env (.literal (.number "1.0")) one
   | binary : Operator token op →
       Evaluates table names step zero one input state env left a →
       Evaluates table names step zero one input state env right b → step op a b value →
@@ -128,14 +128,14 @@ theorem lowering_correct (typed : Elaborates table names source term)
   | zero =>
     constructor
     · intro evaluated
-      generalize spelling : AST.Expr.literal (.literal "0.0") = other at evaluated
+      generalize spelling : AST.Expr.literal (.number "0.0") = other at evaluated
       cases evaluated <;> simp_all
       exact .literal .zero
     · intro evaluated; cases evaluated; exact .zero
   | one =>
     constructor
     · intro evaluated
-      generalize spelling : AST.Expr.literal (.literal "1.0") = other at evaluated
+      generalize spelling : AST.Expr.literal (.number "1.0") = other at evaluated
       cases evaluated <;> simp_all
       exact .literal .one
     · intro evaluated; cases evaluated; exact .one

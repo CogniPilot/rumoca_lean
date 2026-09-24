@@ -36,30 +36,30 @@ theorem scalar_literal_iff (ref : Ref outputs scalar) (literal : Literal)
   · intro same
     exact ⟨_, .literal literal, same⟩
 
-def startupUpdated (b : Syntax.Block) (zero one : α)
-    (before : Env α (Layout.outputShapes (startupFields b))) :
-    Env α (Layout.outputShapes (startupFields b)) :=
-  Env.update (Env.update before (startupState b) (Value.fill scalar zero))
-    (startupClock b) (Value.fill scalar one)
+def startupUpdated (state clock : String) (zero one : α)
+    (before : Env α (Layout.outputShapes (startupFields state clock))) :
+    Env α (Layout.outputShapes (startupFields state clock)) :=
+  Env.update (Env.update before (startupState state clock) (Value.fill scalar zero))
+    (startupClock state clock) (Value.fill scalar one)
 
-theorem startup_executes (b : Syntax.Block)
+theorem startup_executes (state clock : String)
     (step : BinaryOp → α → α → α → Prop) (zero one : α)
-    (input : Env α (Layout.inputShapes (startupFields b))) (env : IteratorEnv [])
-    (before after : Env α (Layout.outputShapes (startupFields b))) :
-    (startupResult b).2.Executes step zero one @input @env @before @after ↔
-      @after = @startupUpdated α b zero one @before := by
-  change (∃ middle, (Statement.assign (startupState b) .nil (.literal .zero)).Executes
+    (input : Env α (Layout.inputShapes (startupFields state clock))) (env : IteratorEnv [])
+    (before after : Env α (Layout.outputShapes (startupFields state clock))) :
+    (startupResult state clock).2.Executes step zero one @input @env @before @after ↔
+      @after = @startupUpdated α state clock zero one @before := by
+  change (∃ middle, (Statement.assign (startupState state clock) .nil (.literal .zero)).Executes
     step zero one @input @env @before @middle ∧ ∃ next,
-    (Statement.assign (startupClock b) .nil (.literal .one)).Executes
+    (Statement.assign (startupClock state clock) .nil (.literal .one)).Executes
       step zero one @input @env @middle @next ∧ @after = @next) ↔ _
   simp only [scalar_literal_iff, Literal.eval, exists_eq_left]
   rfl
 
-theorem recalibrate_executes (b : Syntax.Block)
+theorem recalibrate_executes (state clock : String)
     (step : BinaryOp → α → α → α → Prop) (zero one : α)
-    (input : Env α (Layout.inputShapes (stepFields b))) (env : IteratorEnv [])
-    (before after : Env α (Layout.outputShapes (stepFields b))) :
-    (recalibrateResult b).2.Executes step zero one @input @env @before @after ↔
+    (input : Env α (Layout.inputShapes (stepFields state clock))) (env : IteratorEnv [])
+    (before after : Env α (Layout.outputShapes (stepFields state clock))) :
+    (recalibrateResult state clock).2.Executes step zero one @input @env @before @after ↔
       @after = @before := Iff.rfl
 
 theorem increment_evaluates (ref : Ref outputs scalar)
@@ -78,62 +78,62 @@ theorem increment_evaluates (ref : Ref outputs scalar)
   · intro arithmetic
     exact .binary (.output ref .nil) (.literal .one) arithmetic
 
-theorem step_executes (b : Syntax.Block)
+theorem step_executes (state clock : String)
     (step : BinaryOp → α → α → α → Prop) (zero one : α)
-    (input : Env α (Layout.inputShapes (stepFields b))) (env : IteratorEnv [])
-    (before after : Env α (Layout.outputShapes (stepFields b))) :
-    (stepResult b).2.Executes step zero one @input @env @before @after ↔
-      ∃ value, step .add ((before (stepState b))[Coordinate.index .nil]) one value ∧
-        @after = @Env.update α _ scalar @before (stepState b) (Value.fill scalar value) := by
+    (input : Env α (Layout.inputShapes (stepFields state clock))) (env : IteratorEnv [])
+    (before after : Env α (Layout.outputShapes (stepFields state clock))) :
+    (stepResult state clock).2.Executes step zero one @input @env @before @after ↔
+      ∃ value, step .add ((before (stepState state clock))[Coordinate.index .nil]) one value ∧
+        @after = @Env.update α _ scalar @before (stepState state clock) (Value.fill scalar value) := by
   exact (StatementRelations.seq_skip_right step zero one @input _ @env @before @after).trans
     ((scalar_assign_iff _ _ step zero one @input @env @before @after).trans
       (by simp only [increment_evaluates]))
 
-theorem startup_source_executes (b : Syntax.Block) (resolved : Syntax.Resolved b) (ceiling : Nat)
+theorem startup_source_executes (different : state ≠ clock) (ceiling : Nat)
     (step : BinaryOp → α → α → α → Prop) (zero one : α)
-    (input : Env α (Layout.inputShapes (startupFields b))) (env : IteratorEnv [])
-    (before after : Env α (Layout.outputShapes (startupFields b))) :
-    Bodies.Source.statements (Layout.bindings (startupFields b))
-      (Declarations.ShapeLookup.HasShape ceiling (ProfileProjection.ofScalar b).declarations)
+    (input : Env α (Layout.inputShapes (startupFields state clock))) (env : IteratorEnv [])
+    (before after : Env α (Layout.outputShapes (startupFields state clock))) :
+    Bodies.Source.statements (Layout.bindings (startupFields state clock))
+      (Declarations.ShapeLookup.HasShape ceiling (sourceDeclarations state clock))
       ceiling step zero one @input .nil @env
-      (ProfileProjection.startup b.initialState b.initialClock).body @before @after ↔
-      @after = @startupUpdated α b zero one @before := by
+      (startupMethod state clock).body @before @after ↔
+      @after = @startupUpdated α state clock zero one @before := by
   have fieldsDeclared := Methods.Preparation.declared_fields Capabilities.Initialization.role
-    (declared b resolved.2.1 ceiling)
-  have lowered := (Layout.body_iff _ fieldsDeclared _ _).mpr (startup_typed b resolved ceiling)
+    (declared different ceiling)
+  have lowered := (Layout.body_iff _ fieldsDeclared _ _).mpr (startup_typed different ceiling)
   exact (Layout.source_to_body _ fieldsDeclared _ _ lowered step zero one @input @env @before @after).trans
-    (startup_executes b step zero one @input @env @before @after)
+    (startup_executes state clock step zero one @input @env @before @after)
 
-theorem recalibrate_source_executes (b : Syntax.Block) (resolved : Syntax.Resolved b) (ceiling : Nat)
+theorem recalibrate_source_executes (different : state ≠ clock) (ceiling : Nat)
     (step : BinaryOp → α → α → α → Prop) (zero one : α)
-    (input : Env α (Layout.inputShapes (stepFields b))) (env : IteratorEnv [])
-    (before after : Env α (Layout.outputShapes (stepFields b))) :
-    Bodies.Source.statements (Layout.bindings (stepFields b))
-      (Declarations.ShapeLookup.HasShape ceiling (ProfileProjection.ofScalar b).declarations)
-      ceiling step zero one @input .nil @env ProfileProjection.recalibrate.body @before @after ↔
+    (input : Env α (Layout.inputShapes (stepFields state clock))) (env : IteratorEnv [])
+    (before after : Env α (Layout.outputShapes (stepFields state clock))) :
+    Bodies.Source.statements (Layout.bindings (stepFields state clock))
+      (Declarations.ShapeLookup.HasShape ceiling (sourceDeclarations state clock))
+      ceiling step zero one @input .nil @env recalibrateMethod.body @before @after ↔
       @after = @before := by
   have fieldsDeclared := Methods.Preparation.declared_fields Capabilities.DoStep.role
-    (declared b resolved.2.1 ceiling)
+    (declared different ceiling)
   have lowered := (Layout.body_iff _ fieldsDeclared _ .skip).mpr
-    (Bodies.BodyElaborates.nil (table := Layout.bindings (stepFields b))
-      (HasShape := Declarations.ShapeLookup.HasShape ceiling (ProfileProjection.ofScalar b).declarations)
+    (Bodies.BodyElaborates.nil (table := Layout.bindings (stepFields state clock))
+      (HasShape := Declarations.ShapeLookup.HasShape ceiling (sourceDeclarations state clock))
       (ceiling := ceiling) (names := .nil))
   exact Layout.source_to_body _ fieldsDeclared _ .skip lowered step zero one @input @env @before @after
 
-theorem step_source_executes (b : Syntax.Block) (resolved : Syntax.Resolved b) (ceiling : Nat)
+theorem step_source_executes (different : state ≠ clock) (ceiling : Nat)
     (step : BinaryOp → α → α → α → Prop) (zero one : α)
-    (input : Env α (Layout.inputShapes (stepFields b))) (env : IteratorEnv [])
-    (before after : Env α (Layout.outputShapes (stepFields b))) :
-    Bodies.Source.statements (Layout.bindings (stepFields b))
-      (Declarations.ShapeLookup.HasShape ceiling (ProfileProjection.ofScalar b).declarations)
+    (input : Env α (Layout.inputShapes (stepFields state clock))) (env : IteratorEnv [])
+    (before after : Env α (Layout.outputShapes (stepFields state clock))) :
+    Bodies.Source.statements (Layout.bindings (stepFields state clock))
+      (Declarations.ShapeLookup.HasShape ceiling (sourceDeclarations state clock))
       ceiling step zero one @input .nil @env
-      (ProfileProjection.scalarStep b.stepTarget b.stepRead).body @before @after ↔
-      ∃ value, step .add ((before (stepState b))[Coordinate.index .nil]) one value ∧
-        @after = @Env.update α _ scalar @before (stepState b) (Value.fill scalar value) := by
+      (stepMethod state).body @before @after ↔
+      ∃ value, step .add ((before (stepState state clock))[Coordinate.index .nil]) one value ∧
+        @after = @Env.update α _ scalar @before (stepState state clock) (Value.fill scalar value) := by
   have fieldsDeclared := Methods.Preparation.declared_fields Capabilities.DoStep.role
-    (declared b resolved.2.1 ceiling)
-  have lowered := (Layout.body_iff _ fieldsDeclared _ _).mpr (step_typed b resolved ceiling)
+    (declared different ceiling)
+  have lowered := (Layout.body_iff _ fieldsDeclared _ _).mpr (step_typed state clock ceiling)
   exact (Layout.source_to_body _ fieldsDeclared _ _ lowered step zero one @input @env @before @after).trans
-    (step_executes b step zero one @input @env @before @after)
+    (step_executes state clock step zero one @input @env @before @after)
 
 end Rumoca.GALEC.Elaboration.Scalar
