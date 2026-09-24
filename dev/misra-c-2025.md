@@ -167,15 +167,20 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   candidate; an epsilon repair is not an equivalent fix, and the exact FMI time
   semantics must be preserved.
 - **Pointer comparisons (Rule 11.11, Rule 11.9).** Current bounded repair
-  includes tensor/constant state-array guards (owner passed; full gate pending).
+  includes tensor/constant state-array guards (full gate passed).
   Three shared constructors change only their pointer leaves, retaining count
   order, zero-volume non-null policy and all 70 old theorem headers. Four new
   helpers derive null typing locally without strengthening public contracts.
   Owner-v1/session41170 passed 4,338 jobs, 5,178 approved reports, all 31 selected
   roots and frozen 2,665 tracked/four runner hashes. Independent review cleared
   five source files/seven additive audits; the corrected old-header inventory
-  was verified. Full/post require 748 roots and an exact eight-line/eight-leaf
-  delta across tensor/constant adapters, unchanged remaining selected code.
+  was verified. Required gate36165 and post-audit67754 passed `3ee9dd2`, both
+  terminal0: 2,665 frozen inputs, 8,838 approved reports, all 748 selected roots
+  and four retained FMU roots. Whole-file comparison confirms eight lines/eight
+  pointer leaves across tensor/constant adapters; Integrator, three numerical C
+  and four eFMI Algorithm/C members stayed identical. Three matrices passed
+  75/75 functions with zero discrepancies/unexpected results. Main read the
+  diffs/matrices and rechecked the five archive hashes.
   No guideline closure follows; evidence: `build/tensor-array-null-gate/`.
   The preceding fully gated repair
   also includes tensor/constant Float64 guards (full gate passed).

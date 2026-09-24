@@ -1,6 +1,6 @@
 # Resume handoff — 2026-09-24 UTC
 
-## Current tensor/constant state-array repair — owner passed, full gate pending
+## Current tensor/constant state-array repair — full gate passed
 
 Applied reviewed array production.patch plus audit.patch after signed Float64
 evidence commit `df5c343` and baseline78901 success. All five source files match
@@ -18,20 +18,38 @@ hashes and 22 warnings are preparatory evidence over reused caches, not a full
 import closure. D1's prose-contaminated inventory was corrected to 70 and
 independently verified, including the missing deriv_copy_delivers entry.
 
-Next after signed clean implementation commit: run in verification environment
-`build/tensor-array-null-gate/full-gate.sh`, then post-audit.sh only after terminal0.
-Neither has passed this repair yet. Selected union748 = retained717 +31 disjoint
-names. Whole-file expectation: eight guard lines/eight pointer leaves across
-TensorSquare/ConstantRates, unchanged Integrator, three model C files and four
-eFMI Algorithm/C members. Baseline-v1 is complete; do not recreate it. Consult
-the ignored live checkpoint before starting: later work may have launched a run.
+Required full gate36165 and post-audit67754 passed `3ee9dd2`, both terminal0.
+Do not restart them. Evidence: `build/tensor-array-null-gate/full-v1/`, 2,665
+frozen tracked inputs, 8,838 complete approved reports, all 748 selected roots
+and four retained FMU roots. Three matrices passed 75/75 functions (526/650/526
+cells), zero discrepancies/unexpected results. Whole-file comparison confirms
+exactly eight guard lines/eight pointer leaves across TensorSquare/ConstantRates;
+Integrator, three numerical C and four eFMI Algorithm/C members stayed identical.
+Main read both diffs/matrices and rechecked the five archive hashes.
 
-Aristotle/Astra is preparing a READ-ONLY debug-category null-guard migration map
-in `build/debug-null-migration-map.md`, no implementation/overlay/builds. The
-remaining arbitrary-interface helper domains require explicit analysis before
-changing actual debug code. No new debug repair is adopted. Broader standards/
-native/essential-type findings remain open, candidate promotion unapproved, and
-no push authorized.
+Next debug repair is private, checked and independently reviewed, not adopted:
+`build/debug-null-adoption/` and `build/debug-null-adoption-review.md`. Main read
+the complete review and patch. Final-v1/session44979 passed 68 selected modules,
+71 exact roots, 104 input/69 output hashes; copied unselected dependencies mean
+this is not a full owner closure. Five warnings remain, none suppressed. All 96
+old theorem headers are retained: 84 unchanged, 12 naming definitionally old
+logical syntax with unchanged domains/results. Actual callers derive null typing
+from existing EntryTypes. Public/artifact and callback/full-heap contracts stay
+unchanged. Prospective `build/debug-null-gate/` scripts are reviewed, unexecuted:
+capture baseline first, adopt 14 source files plus 48 registrations in six
+existing audit leaves, run owner checks, then the required 819-root full/post
+gate. Expected delta is six guard lines/leaves across three adapters.
+
+Aristotle/Astra is implementing the next factory callback repair privately in
+`build/factory-null-adoption/`. Main read the factory migration map, including
+the generic TensorFactory exhaustion/bundle boundary. Preserve old logical
+domains and the complete actual-tree bundle at adapter consumers; no stronger
+public premises. The future factory baseline is independently reviewed but
+unexecuted; it requires debug full/post success and predicts 18 changed lines.
+Huygens completed reviews and is closed; resume for the final factory patch.
+Consult `build/method-table-live-checkpoint.md` before starting anything: later
+work may have launched a run. Broader standards/native/essential-type findings
+remain open, candidate promotion unapproved, and no push authorized.
 
 ## Current tensor/constant Float64 repair — full gate passed
 

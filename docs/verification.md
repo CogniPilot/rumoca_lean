@@ -1,6 +1,6 @@
 # Exact verification contract
 
-**Tensor/constant state-array explicit null guards (owner passed; full gate pending):**
+**Tensor/constant state-array explicit null guards (full gate passed):**
 The shared state, derivative and nominal guard constructors now compare their
 buffer pointers explicitly to null. Count mismatch remains first, with identical
 lazy OR/final zero, messages and continuations; even matched zero-volume requests
@@ -22,9 +22,14 @@ dependency caches and is not a complete import closure. All five adopted source
 files match the reviewed overlays. No proof or whitelist weakening.
 
 Baseline78901 captures the preceding completed Float64 gate before adoption.
-Full/post remain pending: 748 selected roots (717 retained plus 31 disjoint),
-exactly eight guard lines/eight pointer leaves across TensorSquare/ConstantRates,
-unchanged Integrator, three numerical C and four eFMI Algorithm/C members.
+Required full gate36165 and post-audit67754 passed `3ee9dd2`, both terminal0:
+2,665 frozen tracked inputs, 8,838 complete approved reports, all 748 selected
+roots (717 retained plus 31 disjoint) and four retained FMU roots. Three matrices
+passed 75/75 functions (526/650/526 cells), zero discrepancies/unexpected results.
+Whole-file comparison confirms exactly eight guard lines/eight pointer leaves
+across TensorSquare/ConstantRates; Integrator, three numerical C and four eFMI
+Algorithm/C members stayed identical. Main read both diffs and matrices and
+rechecked the five archive hashes.
 Evidence: `build/tensor-array-null-gate/`, `build/tensor-array-null-adoption/`
 and its independent review. No source-admission or standards finding is closed.
 
