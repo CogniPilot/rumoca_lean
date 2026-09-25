@@ -92,7 +92,10 @@ def _matrix_config(md):
     if name == "TensorSquare":
         return dict(input_vr=1, input_n=2, start=[1.0, 2.0], n_states=2, get_vr=2, get_n=2,
                     dirty=[3.0, -4.0],
-                    starts=[(1, [0.0, 0.0]), (2, [0.0, 0.0]), (3, [0.0, 0.0]), (4, [0.0, 0.0, 0.0, 0.0])])
+                    starts=[(1, [0.0, 0.0]), (2, [0.0, 0.0]), (3, [0.0, 0.0]), (4, [0.0, 0.0, 0.0, 0.0])],
+                    # Calculated variables after setting u = dirty in Initialization Mode:
+                    # der(x) = u .* u and J = diag(2 u).
+                    calculated=[(3, [9.0, 16.0]), (4, [6.0, 0.0, 0.0, -8.0])])
     if name == "ConstantRates":
         # The constant-rate profile exposes no input and no output: the value
         # references are 0 (time), 1 (the writable two-element state) and 2 (the
@@ -351,6 +354,20 @@ def behavior_matrix(fmu_path, label):
     check(reset(handle) == OK, "fmi3Reset after a step returns fmi3OK")
     check_starts(handle, "after fmi3Reset")
     free(handle)
+
+    # -- calculated variables are evaluated from the current inputs when read --
+    if cfg.get("calculated"):
+        handle = cs()
+        check(enter_init(handle, False, 0.0, 0.0, False, 0.0) == OK
+              and set_f64(handle, (VR * 1)(cfg["input_vr"]), 1,
+                          (D * cfg["input_n"])(*cfg["dirty"]), cfg["input_n"]) == OK,
+              "calculated-variable fixture sets the input in Initialization Mode")
+        for reference, expected in cfg["calculated"]:
+            values = (D * len(expected))()
+            status = get_f64(handle, (VR * 1)(reference), 1, values, len(expected))
+            check(status == OK and list(values) == expected,
+                  "value reference %d is calculated from the input just set" % reference)
+        free(handle)
 
     # -- fmi3SetDebugLogging with valid and invalid category lists --
     handle = cs(True)

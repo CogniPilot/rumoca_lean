@@ -19,13 +19,10 @@ def derivCountReject (volume : Nat) : Stmt :=
   Runtime.reject (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n volume),
     Runtime.eqv (Runtime.v "derivatives") Expr.nullPointer]) "Invalid continuous state count or pointer"
 
-def derivEntryArgs : List Expr :=
-  [Runtime.region stateName, Runtime.region inputName, Runtime.region derivativeName,
-    Runtime.v "nContinuousStates"]
+def derivEntryArgs : List Expr := TensorEntry.rhsArgs (Runtime.v "nContinuousStates")
 
 def jacobianEntryArgs (shape : Tensor.Shape) : List Expr :=
-  [Runtime.region inputName, Runtime.region outputName, Runtime.v "nContinuousStates",
-    Runtime.n (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume]
+  TensorEntry.jacobianArgs (Runtime.v "nContinuousStates") shape
 
 def derivCopyTail (shape : Tensor.Shape) : List Stmt :=
   .declare "fmi3Float64 *" "src" (Runtime.region derivativeName) ::

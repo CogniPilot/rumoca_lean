@@ -3987,9 +3987,9 @@ theorem body_printable (shape : Tensor.Shape) (hasOutput : Bool) :
   have doubleType : TypeSpelling RuntimePrinter.typedefs "double" := .named (.primitive (by decide +kernel))
   cases hasOutput <;>
   simp only [function, doStepBody, tensorStepSolve, jacobianTail, stepPublishTail,
-      TensorContinuousStates.jacobianCall, TensorContinuousStates.jacobianEntryArgs,
+      TensorContinuousStates.jacobianCall, TensorContinuousStates.jacobianEntryArgs, TensorEntry.jacobianArgs,
       stepBodyT, stepBody, eulerBody, timeAdvance, oneExpr,
-      dstCell, srcCell, TensorContinuousStates.derivEntryArgs, Runtime.region, Runtime.require,
+      dstCell, srcCell, TensorContinuousStates.derivEntryArgs, TensorEntry.rhsArgs, Runtime.region, Runtime.require,
       Runtime.instancePrefix,
       Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes, Runtime.mode, Runtime.reject, Runtime.branch,
       Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding,

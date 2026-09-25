@@ -1,4 +1,7 @@
 import RumocaFMI3.TensorFloat64Copy
+import RumocaFMI3.TensorEntryCalls
+import RumocaFMI3.TensorInstanceRhs
+import RumocaFMI3.TensorInstanceJacobian
 import RumocaFMI3.Float64Get
 import RumocaFMI3.DerivativeCalls
 import RumocaFMI3.Float64Dispatch
@@ -147,21 +150,26 @@ def getLoopSuffix : List Stmt :=
 def getArm (member : String) (count : Nat) : List Stmt :=
   [.assign (Runtime.v "src") (memberPointer member), .assign (Runtime.v "expected") (Runtime.n count)]
 
-/-- The `J` arm is present only when the instance record carries the output. -/
-def getOutputArm (outputShape : Option Tensor.Shape) : List Stmt :=
+/-- The `J` arm is present only when the instance record carries the output. The
+dense Jacobian is calculated, so the arm evaluates it before staging it. -/
+def getOutputArm (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
   match outputShape with
-  | some os => getArm outputName os.volume
+  | some os => TensorEntry.jacobianCall (Runtime.n shape.volume) shape :: getArm outputName os.volume
   | none => [Runtime.fail "Unknown value reference"]
 
+/-- The `der(x)` arm evaluates the derivative before staging it. -/
+def getDerivativeArm (shape : Tensor.Shape) : List Stmt :=
+  TensorEntry.rhsCall (Runtime.n shape.volume) :: getArm derivativeName shape.volume
+
 /-- Dispatch tail for reference 4 (the output). -/
-def getDispatch4 (outputShape : Option Tensor.Shape) : List Stmt :=
-  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 4)) (getOutputArm outputShape)
+def getDispatch4 (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
+  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 4)) (getOutputArm shape outputShape)
     [Runtime.fail "Unknown value reference"]]
 
 /-- Dispatch tail for references 3 and above. -/
 def getDispatch3 (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
-  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 3)) (getArm derivativeName shape.volume)
-    (getDispatch4 outputShape)]
+  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 3)) (getDerivativeArm shape)
+    (getDispatch4 shape outputShape)]
 
 /-- Dispatch tail for references 2 and above. -/
 def getDispatch2 (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
@@ -183,7 +191,7 @@ regions. The tensor getter is the generic `Float64Dispatch.dispatchChain` over
 this list; `getDispatch_chain` records the identity. -/
 def getArms (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List (Nat × List Stmt) :=
   [(0, getArm timeName 1), (1, getArm inputName shape.volume), (2, getArm stateName shape.volume),
-    (3, getArm derivativeName shape.volume), (4, getOutputArm outputShape)]
+    (3, getDerivativeArm shape), (4, getOutputArm shape outputShape)]
 
 theorem getDispatch_chain (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
     Float64Dispatch.dispatchChain vr0 (getArms shape outputShape)
@@ -193,32 +201,36 @@ theorem getArm_noDecl (member : String) (count : Nat) :
     (getArm member count).all CLoops.noDeclarations = true := by
   simp [getArm, CLoops.noDeclarations]
 
-theorem outputArm_noDecl (outputShape : Option Tensor.Shape) :
-    (getOutputArm outputShape).all CLoops.noDeclarations = true := by
-  cases outputShape <;> simp [getOutputArm, getArm, Runtime.fail, Runtime.ret, CLoops.noDeclarations]
+theorem derivativeArm_noDecl (shape : Tensor.Shape) :
+    (getDerivativeArm shape).all CLoops.noDeclarations = true := by
+  simp [getDerivativeArm, TensorEntry.rhsCall, getArm, CLoops.noDeclarations]
 
-theorem d4_noDecl (outputShape : Option Tensor.Shape) :
-    (getDispatch4 outputShape).all CLoops.noDeclarations = true := by
+theorem outputArm_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
+    (getOutputArm shape outputShape).all CLoops.noDeclarations = true := by
+  cases outputShape <;> simp [getOutputArm, TensorEntry.jacobianCall, getArm, Runtime.fail, Runtime.ret, CLoops.noDeclarations]
+
+theorem d4_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
+    (getDispatch4 shape outputShape).all CLoops.noDeclarations = true := by
   cases outputShape <;>
-    simp [getDispatch4, getOutputArm, getArm, Runtime.branch, Runtime.eqv, Runtime.fail, Runtime.ret,
+    simp [getDispatch4, getOutputArm, TensorEntry.jacobianCall, getArm, Runtime.branch, Runtime.eqv, Runtime.fail, Runtime.ret,
       Runtime.v, CLoops.noDeclarations]
 
 theorem d3_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
     (getDispatch3 shape outputShape).all CLoops.noDeclarations = true := by
   cases outputShape <;>
-    simp [getDispatch3, getDispatch4, getOutputArm, getArm, Runtime.branch, Runtime.eqv, Runtime.fail,
+    simp [getDispatch3, getDispatch4, getOutputArm, getDerivativeArm, TensorEntry.rhsCall, TensorEntry.jacobianCall, getArm, Runtime.branch, Runtime.eqv, Runtime.fail,
       Runtime.ret, Runtime.v, CLoops.noDeclarations]
 
 theorem d2_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
     (getDispatch2 shape outputShape).all CLoops.noDeclarations = true := by
   cases outputShape <;>
-    simp [getDispatch2, getDispatch3, getDispatch4, getOutputArm, getArm, Runtime.branch, Runtime.eqv,
+    simp [getDispatch2, getDispatch3, getDispatch4, getOutputArm, getDerivativeArm, TensorEntry.rhsCall, TensorEntry.jacobianCall, getArm, Runtime.branch, Runtime.eqv,
       Runtime.fail, Runtime.ret, Runtime.v, CLoops.noDeclarations]
 
 theorem d1_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
     (getDispatch1 shape outputShape).all CLoops.noDeclarations = true := by
   cases outputShape <;>
-    simp [getDispatch1, getDispatch2, getDispatch3, getDispatch4, getOutputArm, getArm, Runtime.branch,
+    simp [getDispatch1, getDispatch2, getDispatch3, getDispatch4, getOutputArm, getDerivativeArm, TensorEntry.rhsCall, TensorEntry.jacobianCall, getArm, Runtime.branch,
       Runtime.eqv, Runtime.fail, Runtime.ret, Runtime.v, CLoops.noDeclarations]
 
 /-- The initial request check: a single value reference and non-null arrays. -/
@@ -290,7 +302,8 @@ theorem getBody_closed (shape : Tensor.Shape) (outputShape : Option Tensor.Shape
     (getFunction shape outputShape).body.all CBodyEmbedding.closedBlocks = true := by
   cases outputShape <;>
     simp [getFunction, getBody, getRest, getDispatch, getDispatch1, getDispatch2, getDispatch3,
-      getDispatch4, basicReject, countReject, getLoopSuffix, getArm, getOutputArm, Runtime.require,
+      getDispatch4, basicReject, countReject, getLoopSuffix, getArm, getOutputArm, getDerivativeArm,
+      TensorEntry.rhsCall, TensorEntry.jacobianCall, Runtime.call, Runtime.require,
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail,
       Runtime.ret, Runtime.ok, getCopyBody, CBodyEmbedding.closedBlocks, CLoops.noDeclarations,
       CLoops.loop, CLoops.counterStep]
@@ -329,7 +342,45 @@ theorem basic_explicit_pass (heap : Heap) (p refs buffer : Address) (n m : UInt6
     CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve,
     CBody.comparison, boolean, Value.truth, nref]
 
-/-- The guard, executed in memory, reaches the typed statements after it. -/
+/-- The getter function around an abstract dispatch statement. -/
+def getFunctionFor (dispatch : Stmt) : CTree.Function :=
+  ⟨Float64Calls.signature false, getBodyFor dispatch, false⟩
+
+/-- The guard of every profile's getter, executed in memory, reaches the typed
+statements after it. -/
+theorem guard_reaches_for (dispatch : Stmt)
+    (closed : (getFunctionFor dispatch).body.all CBodyEmbedding.closedBlocks = true)
+    (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer : Address) (n m : UInt64)
+    (kind : Kind) (mode : Mode)
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunctionFor dispatch)))
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .get kind mode)
+    (nref : n.toNat = 1) (stack : CCalls.Typed.Continuation) :
+    ∃ types0, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap stack)
+      (.body (.running ([.declare "fmi3Float64 *" "src" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
+          dispatch, countReject] ++ getLoopSuffix) (guardEnv p refs buffer n m) types0 heap)
+        "fmi3Status" stack) := by
+  let rest : List Stmt := [.declare "fmi3Float64 *" "src" Expr.nullPointer,
+    .declare "size_t" "expected" (Runtime.n 0), dispatch, countReject] ++ getLoopSuffix
+  have accepted := LifecycleGuard.accept (parameters (some p) (some refs) (some buffer) n m) heap p
+    .get kind mode (basicReject :: rest)
+    (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm allowed
+  have hc := basic_explicit_pass heap p refs buffer n m nref
+  have prefix_run : CBody.run 4 (.running (getBodyFor dispatch)
+      (parameters (some p) (some refs) (some buffer) n m) heap) =
+      some (.running rest (guardEnv p refs buffer n m) heap) := by
+    rw [show getBodyFor dispatch = Runtime.require .get ++ basicReject :: rest from rfl,
+      show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
+    exact run_one (reject_false (guardEnv p refs buffer n m) heap _
+      "Invalid Float64 array lengths or pointers" rest hc)
+  exact CCalls.Events.body_prefix_reaches program (getFunctionFor dispatch)
+    (arguments (some p) (some refs) (some buffer) n m) (parameters (some p) (some refs) (some buffer) n m)
+    (guardEnv p refs buffer n m) heap heap rest stack 4 defined
+    (parameters_bound false _ _ _ _ _) closed prefix_run
+
+/-- The guard of the tensor getter, executed in memory, reaches the typed statements after it. -/
 theorem guard_reaches (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
     (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer : Address) (n m : UInt64)
     (kind : Kind) (mode : Mode)
@@ -341,47 +392,46 @@ theorem guard_reaches (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
     ∃ types0, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap stack)
       (.body (.running (getRest shape outputShape) (guardEnv p refs buffer n m) types0 heap)
-        "fmi3Status" stack) := by
-  have accepted := LifecycleGuard.accept (parameters (some p) (some refs) (some buffer) n m) heap p
-    .get kind mode (basicReject :: getRest shape outputShape)
-    (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm allowed
-  have hc := basic_explicit_pass heap p refs buffer n m nref
-  have prefix_run : CBody.run 4 (.running (getBody shape outputShape)
-      (parameters (some p) (some refs) (some buffer) n m) heap) =
-      some (.running (getRest shape outputShape) (guardEnv p refs buffer n m) heap) := by
-    rw [getBody, show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
-    exact run_one (reject_false (guardEnv p refs buffer n m) heap _
-      "Invalid Float64 array lengths or pointers" (getRest shape outputShape) hc)
-  exact CCalls.Events.body_prefix_reaches program (getFunction shape outputShape)
-    (arguments (some p) (some refs) (some buffer) n m) (parameters (some p) (some refs) (some buffer) n m)
-    (guardEnv p refs buffer n m) heap heap (getRest shape outputShape) stack 4 defined
-    (parameters_bound false _ _ _ _ _) (getBody_closed shape outputShape) prefix_run
-
-/-- The two staging declarations, executed in the typed machine. -/
-theorem declares_reaches (program : CCalls.Events.Program E) (shape : Tensor.Shape)
-    (outputShape : Option Tensor.Shape) (env0 : Locals) (types0 : Types) (heap : Heap)
+        "fmi3Status" stack) :=
+  guard_reaches_for (getDispatch shape outputShape) (getBody_closed shape outputShape) program heap p refs
+    buffer n m kind mode defined hk hm allowed nref stack
+/-- The two staging declarations of every profile's getter, executed in the typed machine. -/
+theorem declares_reaches_for (program : CCalls.Events.Program E) (dispatch : Stmt)
+    (env0 : Locals) (types0 : Types) (heap : Heap)
     (stack : CCalls.Typed.Continuation) (fresh_src : env0 "src" = none) (fresh_exp : env0 "expected" = none) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getRest shape outputShape) env0 types0 heap) "fmi3Status" stack)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
+      (.body (.running ([.declare "fmi3Float64 *" "src" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
+          dispatch, countReject] ++ getLoopSuffix) env0 types0 heap) "fmi3Status" stack)
+      (.body (.running (dispatch :: countReject :: getLoopSuffix)
         (declaredEnv env0) (declaredTypes types0) heap) "fmi3Status" stack) := by
-  have s1 : CLoops.next (.running (getRest shape outputShape) env0 types0 heap) =
+  have s1 : CLoops.next (.running ([.declare "fmi3Float64 *" "src" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
+          dispatch, countReject] ++ getLoopSuffix) env0 types0 heap) =
       some (.running (.declare "size_t" "expected" (Runtime.n 0) ::
-        getDispatch shape outputShape :: countReject :: getLoopSuffix)
+        dispatch :: countReject :: getLoopSuffix)
         (CBody.bind env0 "src" (.pointer none)) (CLoops.bindType types0 "src" .pointer) heap) :=
     declare_step_e env0 types0 heap "fmi3Float64 *" "src" Expr.nullPointer .pointer (.pointer none)
       (.pointer none) _ fresh_src rfl
       (by simp [Expr.nullPointer, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.zeroLiteral]) rfl
   have s2 : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n 0) ::
-        getDispatch shape outputShape :: countReject :: getLoopSuffix)
+        dispatch :: countReject :: getLoopSuffix)
         (CBody.bind env0 "src" (.pointer none)) (CLoops.bindType types0 "src" .pointer) heap) =
-      some (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
+      some (.running (dispatch :: countReject :: getLoopSuffix)
         (declaredEnv env0) (declaredTypes types0) heap) :=
     declare_step_e (CBody.bind env0 "src" (.pointer none)) (CLoops.bindType types0 "src" .pointer) heap
       "size_t" "expected" (Runtime.n 0) .size (.integer 0) (.integer 0) _
       (by simp [CBody.bind, fresh_exp]) rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) rfl
   exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
+
+/-- The two staging declarations of the tensor getter. -/
+theorem declares_reaches (program : CCalls.Events.Program E) (shape : Tensor.Shape)
+    (outputShape : Option Tensor.Shape) (env0 : Locals) (types0 : Types) (heap : Heap)
+    (stack : CCalls.Typed.Continuation) (fresh_src : env0 "src" = none) (fresh_exp : env0 "expected" = none) :
+    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+      (.body (.running (getRest shape outputShape) env0 types0 heap) "fmi3Status" stack)
+      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
+        (declaredEnv env0) (declaredTypes types0) heap) "fmi3Status" stack) :=
+  declares_reaches_for program (getDispatch shape outputShape) env0 types0 heap stack fresh_src fresh_exp
 
 /-- The count check and copy loop, run in the typed machine after the dispatch
 has staged the region pointer and count. Region-agnostic. -/
@@ -633,7 +683,7 @@ theorem get_nav_deriv (refRead : load heap (refs.index 0) = some (.integer 3)) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
         (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (getArm derivativeName shape.volume ++ (countReject :: getLoopSuffix))
+      (.body (.running (getDerivativeArm shape ++ (countReject :: getLoopSuffix))
         (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack) := by
   refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
     (by simp [getArm_noDecl, d1_noDecl]) (cvr0_ne _ _ heap refs 3 0 (navRefs p n m refs buffer) refRead (by decide)))
@@ -645,7 +695,7 @@ theorem get_nav_deriv (refRead : load heap (refs.index 0) = some (.integer 3)) :
     (by simp [getArm_noDecl, d3_noDecl]) (cvr0_ne _ _ heap refs 3 2 (navRefs p n m refs buffer) refRead (by decide)))
     "fmi3Status" stack) ?_
   exact .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d4_noDecl]) (cvr0_eq _ _ heap refs 3 (navRefs p n m refs buffer) refRead))
+    (by simp [derivativeArm_noDecl, d4_noDecl shape]) (cvr0_eq _ _ heap refs 3 (navRefs p n m refs buffer) refRead))
     "fmi3Status" stack) (.refl _)
 
 /-- Navigate the dispatch to reference 4 (the output `J`), present in the record. -/
@@ -654,7 +704,8 @@ theorem get_nav_output (os : Tensor.Shape) (present : outputShape = some os)
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
         (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (getArm outputName os.volume ++ (countReject :: getLoopSuffix))
+      (.body (.running (TensorEntry.jacobianCall (Runtime.n shape.volume) shape :: getArm outputName os.volume ++
+          (countReject :: getLoopSuffix))
         (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack) := by
   subst present
   refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
@@ -667,10 +718,10 @@ theorem get_nav_output (os : Tensor.Shape) (present : outputShape = some os)
     (by simp [getArm_noDecl, d3_noDecl]) (cvr0_ne _ _ heap refs 4 2 (navRefs p n m refs buffer) refRead (by decide)))
     "fmi3Status" stack) ?_
   refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d4_noDecl]) (cvr0_ne _ _ heap refs 4 3 (navRefs p n m refs buffer) refRead (by decide)))
+    (by simp [derivativeArm_noDecl, d4_noDecl shape]) (cvr0_ne _ _ heap refs 4 3 (navRefs p n m refs buffer) refRead (by decide)))
     "fmi3Status" stack) ?_
   exact .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, getOutputArm, Runtime.fail, Runtime.ret, CLoops.noDeclarations])
+    (by simp [getArm_noDecl, getOutputArm, TensorEntry.jacobianCall, Runtime.fail, Runtime.ret, CLoops.noDeclarations])
       (cvr0_eq _ _ heap refs 4 (navRefs p n m refs buffer) refRead)) "fmi3Status" stack) (.refl _)
 
 end
@@ -776,38 +827,6 @@ theorem get_behaviors_state (values : Values shape) (nref : n.toNat = 1) (nval :
     nref nval (nval ▸ m.toNat_lt_size) defined hk hm allowed readable writable separate
     (fun types0 => get_nav_state program shape outputShape p refs buffer n m types0 heap .done refRead) behavior
 
-/-- The tensor getter reading the derivative `der(x)`. -/
-theorem get_behaviors_deriv (values : Values shape) (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code)) (allowed : Reference.Allowed .get kind mode)
-    (refRead : load heap (refs.index 0) = some (.integer 3))
-    (readable : Reads heap (p.member derivativeName) values) (writable : Writable heap buffer shape.volume)
-    (separate : ∀ a < shape.volume, ∀ b < shape.volume, (p.member derivativeName).index a ≠ buffer.index b) (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap buffer values shape.volume⟩ :=
-  get_behaviors_of shape outputShape program heap p refs buffer n m kind mode derivativeName shape values
-    nref nval (nval ▸ m.toNat_lt_size) defined hk hm allowed readable writable separate
-    (fun types0 => get_nav_deriv program shape outputShape p refs buffer n m types0 heap .done refRead) behavior
-
-/-- The tensor getter reading the output `J`, present in the record. -/
-theorem get_behaviors_output (os : Tensor.Shape) (present : outputShape = some os) (values : Values os)
-    (nref : n.toNat = 1) (nval : m.toNat = os.volume)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code)) (allowed : Reference.Allowed .get kind mode)
-    (refRead : load heap (refs.index 0) = some (.integer 4))
-    (readable : Reads heap (p.member outputName) values) (writable : Writable heap buffer os.volume)
-    (separate : ∀ a < os.volume, ∀ b < os.volume, (p.member outputName).index a ≠ buffer.index b) (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap buffer values os.volume⟩ :=
-  get_behaviors_of shape outputShape program heap p refs buffer n m kind mode outputName os values
-    nref nval (nval ▸ m.toNat_lt_size) defined hk hm allowed readable writable separate
-    (fun types0 => get_nav_output program shape outputShape p refs buffer n m types0 heap .done os present refRead)
-    behavior
-
 end
 
 /-! ### The getter bound to the static tensor instance record -/
@@ -890,59 +909,255 @@ theorem get_instance_behaviors_time (nref : n.toNat = 1) (nval : m.toNat = 1)
     n m kind mode time nref nval defined hk hm allowed refRead
     (reads_time backing pool i shape oshape time state input output) writable separate behavior
 
-/-- The tensor getter reading the output region of instance `i`, present in the record. -/
-theorem get_instance_behaviors_output (J : Values oshape) (nref : n.toNat = 1) (nval : m.toNat = oshape.volume)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape (some oshape))))
-    (hk : load (TensorInstance.store backing pool i shape oshape time state input (some J))
-      ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
-    (hm : load (TensorInstance.store backing pool i shape oshape time state input (some J))
-      ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .get kind mode)
-    (refRead : load (TensorInstance.store backing pool i shape oshape time state input (some J))
-      (refs.index 0) = some (.integer 4))
-    (writable : Writable (TensorInstance.store backing pool i shape oshape time state input (some J))
-      buffer oshape.volume)
-    (separate : ∀ a < oshape.volume, ∀ b < oshape.volume,
-      (TensorInstance.field pool i outputName).index a ≠ buffer.index b) (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3GetFloat64" (arguments (some (TensorInstance.record pool i)) (some refs) (some buffer) n m)
-        (TensorInstance.store backing pool i shape oshape time state input (some J)) .done) behavior ↔
-      behavior = .terminates []
-        ⟨.integer 0, written (TensorInstance.store backing pool i shape oshape time state input (some J))
-          buffer J oshape.volume⟩ :=
-  get_behaviors_output shape (some oshape) program _ (TensorInstance.record pool i) refs buffer n m kind mode
-    oshape rfl J nref nval defined hk hm allowed refRead
-    (reads_output backing pool i shape oshape time state input J) writable separate behavior
+end
 
-/-- The tensor getter reading the derivative region of instance `i`, after the
-right-hand side has written it (the derivative values are the current contents). -/
-theorem get_instance_behaviors_deriv (derivatives : Values shape) (nref : n.toNat = 1)
-    (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape (output.map fun _ => oshape))))
-    (hk : load (written (TensorInstance.store backing pool i shape oshape time state input output)
-      (TensorInstance.field pool i derivativeName) derivatives shape.volume)
+/-! ### Calculated variables are evaluated when they are read
+
+The `der(x)` and `J` arms of the getter call the prepared kernel entries before
+staging the region, so the value returned is the one the prepared model
+calculates from the current input and state, never a value left in the region
+by an earlier call. -/
+
+section
+variable [static : StaticLiterals]
+private local instance computedInterface : CInterface := cInterface static.addresses
+variable (program : CCalls.Events.Program E)
+
+/-- The derivative evaluation enters `rumoca_rhs` over the instance regions with
+the record's state volume, from any locals that bind `m` and do not shadow the
+entry name. -/
+theorem rhs_read_enter (shape : Tensor.Shape) (env : Locals) (prior : Types) (heap : Heap) (p : Address)
+    (rest : List Stmt) (resultType : String) (stack : CCalls.Typed.Continuation)
+    (instanceValue : env "m" = some (.pointer (some p))) (unbound : env "rumoca_rhs" = none) :
+    CCalls.Events.internalNext program
+      (.body (.running (TensorEntry.rhsCall (Runtime.n shape.volume) :: rest) env prior heap) resultType stack) =
+      some (.calling "rumoca_rhs"
+        [.pointer (some (p.member stateName)), .pointer (some (p.member inputName)),
+         .pointer (some (p.member derivativeName)), .integer shape.volume] heap
+        (.caller .discard rest env prior resultType stack)) := by
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+    CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, TensorEntry.rhsCall, TensorEntry.rhsArgs,
+    Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
+    CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith,
+    CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand,
+    CCalls.Indirect.resolveWith, CCalls.argumentsWith, CBody.resolve, CBody.constants,
+    Value.address, instanceValue, unbound]
+
+/-- The Jacobian evaluation enters `rumoca_square_jacobian_diag` over the instance
+regions with the record's state volume and matrix cell count. -/
+theorem jacobian_read_enter (shape : Tensor.Shape) (env : Locals) (prior : Types) (heap : Heap)
+    (p : Address) (rest : List Stmt) (resultType : String) (stack : CCalls.Typed.Continuation)
+    (instanceValue : env "m" = some (.pointer (some p)))
+    (unbound : env "rumoca_square_jacobian_diag" = none) :
+    CCalls.Events.internalNext program
+      (.body (.running (TensorEntry.jacobianCall (Runtime.n shape.volume) shape :: rest) env prior heap)
+        resultType stack) =
+      some (.calling "rumoca_square_jacobian_diag"
+        [.pointer (some (p.member inputName)), .pointer (some (p.member outputName)),
+         .integer shape.volume, .integer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume] heap
+        (.caller .discard rest env prior resultType stack)) := by
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+    CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, TensorEntry.jacobianCall,
+    TensorEntry.jacobianArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n,
+    CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt,
+    CDeclaredMembers.fieldAt, CBody.lvalueWith, CCalls.Events.enterCallWith, CCalls.Events.resolveWith,
+    CCalls.Indirect.operand, CCalls.Indirect.resolveWith, CCalls.argumentsWith, CBody.resolve,
+    CBody.constants, Value.address, instanceValue, unbound]
+
+/-- A call returning to a discarding caller resumes the caller's statements. -/
+theorem resume_discard (heap : Heap) (rest : List Stmt) (env : Locals) (prior : Types)
+    (resultType : String) (stack : CCalls.Typed.Continuation) :
+    CCalls.Events.internalNext program
+      (.returning .void heap (.caller .discard rest env prior resultType stack)) =
+      some (.body (.running rest env prior heap) resultType stack) := by
+  simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+    CCalls.Typed.resumeWith]
+
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
+/-- Reading `der(x)` of instance `i`: the getter evaluates the prepared derivative
+from the instance's state and input, returns it in the caller buffer with
+`fmi3OK`, leaves it in the `der(x)` region and preserves every other instance.
+This holds whatever the `der(x)` region held before the call. -/
+theorem get_deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree)
+    (backing : Heap) (pool : Address) (i : Nat)
+    (time : Values Tensor.scalar) (state input result : Values shape) (output : Option (Values oshape))
+    (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (stack : CCalls.Typed.Continuation)
+    (nref : n.toNat = 1) (nval : m.toNat = shape.volume) (bounded : shape.volume < 2 ^ 64)
+    (defined : program.internal.definitions "fmi3GetFloat64" =
+      some (.tree (getFunction shape (output.map fun _ => oshape))))
+    (hk : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
-    (hm : load (written (TensorInstance.store backing pool i shape oshape time state input output)
-      (TensorInstance.field pool i derivativeName) derivatives shape.volume)
+    (hm : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .get kind mode)
-    (refRead : load (written (TensorInstance.store backing pool i shape oshape time state input output)
-      (TensorInstance.field pool i derivativeName) derivatives shape.volume)
+    (refRead : load (TensorInstance.store backing pool i shape oshape time state input output)
       (refs.index 0) = some (.integer 3))
-    (writable : Writable (written (TensorInstance.store backing pool i shape oshape time state input output)
-      (TensorInstance.field pool i derivativeName) derivatives shape.volume) buffer shape.volume)
+    (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result)
+    (writable : Writable (TensorInstance.store backing pool i shape oshape time state input output)
+      buffer shape.volume)
     (separate : ∀ a < shape.volume, ∀ b < shape.volume,
-      (TensorInstance.field pool i derivativeName).index a ≠ buffer.index b) (behavior) :
-    (CCalls.Events.machine program).Behaves
+      (TensorInstance.field pool i derivativeName).index a ≠ buffer.index b)
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape))
+        (TensorInstance.store backing pool i shape oshape time state input output) .done) v →
+      CCalls.Events.Resolves program v) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i derivativeName) result ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) =
+          backing ((TensorInstance.field pool j b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling "fmi3GetFloat64" (arguments (some (TensorInstance.record pool i)) (some refs) (some buffer) n m)
+          (TensorInstance.store backing pool i shape oshape time state input output) stack)
+        (.returning (.integer 0) (written finalHeap buffer result shape.volume) stack) := by
+  set H := TensorInstance.store backing pool i shape oshape time state input output with hH
+  set p := TensorInstance.record pool i with hp
+  obtain ⟨types0, entered⟩ := guard_reaches shape (output.map fun _ => oshape) program H p refs buffer n m
+    kind mode defined hk hm allowed nref trivial trivial stack
+  have declared := declares_reaches program shape (output.map fun _ => oshape) (guardEnv p refs buffer n m)
+    types0 H stack (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])
+  have nav := get_nav_deriv program shape (output.map fun _ => oshape) p refs buffer n m types0 H stack refRead
+  set env := declaredEnv (guardEnv p refs buffer n m) with henv
+  set rest := countReject :: getLoopSuffix with hrest
+  have enterStep := rhs_read_enter program shape env (declaredTypes types0) H p
+    (getArm derivativeName shape.volume ++ rest) "fmi3Status" stack
+    (by simp [henv, declaredEnv, guardEnv, CBody.bind])
+    (by simp [henv, declaredEnv, guardEnv, parameters, CBody.bind])
+  have argsEq : [Value.pointer (some (p.member stateName)), .pointer (some (p.member inputName)),
+      .pointer (some (p.member derivativeName)), .integer shape.volume] =
+      Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+        (TensorInstanceRhs.args pool i shape) := by
+    rw [hp]; rfl
+  rw [argsEq] at enterStep
+  obtain ⟨finalHeap, reads, _writableDeriv, frameH, others, ran⟩ :=
+    TensorInstanceRhs.derivative_writes_events (shape := shape) definitions program linked library found
+      backing pool i oshape time state input result output bounded executed resolves
+      (.caller .discard (getArm derivativeName shape.volume ++ rest) env (declaredTypes types0) "fmi3Status" stack)
+  have writableFinal : Writable finalHeap buffer shape.volume := by
+    intro b hb
+    obtain ⟨old, ho⟩ := writable b hb
+    exact ⟨old, (frameH (buffer.index b)
+      (TensorInstanceRhs.buffer_outside pool i buffer b hb separate)).trans ho⟩
+  have staged := stage_reaches program (guardEnv p refs buffer n m) types0 finalHeap p (p.member derivativeName)
+    derivativeName shape.volume rest stack bounded (by simp [guardEnv, CBody.bind]) rfl
+  have tail := get_tail_reaches program (guardEnv p refs buffer n m) (declaredTypes types0) finalHeap
+    (p.member derivativeName) buffer shape result m stack bounded nval
+    (by simp [stagedEnv, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind]) reads writableFinal separate
+  refine ⟨finalHeap, reads, others, entered.trans (declared.trans (nav.trans ?_))⟩
+  exact .next enterStep (ran.trans (.next (resume_discard program _ _ _ _ _ _) (staged.trans tail)))
+
+open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
+/-- Reading the dense Jacobian `J` of instance `i`: the getter evaluates the
+prepared square-Jacobian diagonal from the instance's input, returns
+`diag(2*u)` in the caller buffer with `fmi3OK`, leaves it in the `J` region and
+preserves every other cell outside that region. This holds whatever the `J`
+region held before the call. -/
+theorem get_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (library : Rumoca.CTensor.Lowering.Library definitions)
+    (jacFound : definitions Rumoca.CTensor.SquareDiagonal.function.signature.name = some Rumoca.CTensor.SquareDiagonal.function)
+    (backing : Heap) (pool : Address) (i : Nat)
+    (time : Values Tensor.scalar) (state input : Values shape)
+    (J : Values (Rumoca.Tensor.matrixShape shape.volume shape.volume))
+    (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (stack : CCalls.Typed.Continuation)
+    (nref : n.toNat = 1) (nval : m.toNat = (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
+    (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
+    (defined : program.internal.definitions "fmi3GetFloat64" =
+      some (.tree (getFunction shape (some (Rumoca.Tensor.matrixShape shape.volume shape.volume)))))
+    (hk : load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
+    (hm : load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .get kind mode)
+    (refRead : load (TensorInstance.store backing pool i shape
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J))
+      (refs.index 0) = some (.integer 4))
+    (writable : Writable (TensorInstance.store backing pool i shape
+      (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J))
+      buffer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
+    (separate : ∀ a < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume,
+      ∀ b < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume,
+      (TensorInstance.field pool i outputName).index a ≠ buffer.index b)
+    (adds : ∀ k : Fin shape.volume,
+      Binary64.Adds input[k] input[k] (.finite (Rumoca.CTensor.SquareDiagonal.doubled input)[k]))
+    (jacResolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling Rumoca.CTensor.SquareDiagonal.function.signature.name
+        (Rumoca.CTensor.Diagonal.argumentValues (TensorInstance.field pool i inputName)
+          (TensorInstance.field pool i outputName) shape)
+        (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+          time state input (some J)) .done) v →
+      CCalls.Events.Resolves program v) :
+    Reads (Rumoca.CTensor.Diagonal.resultHeap (TensorInstance.store backing pool i shape
+        (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J))
+        (TensorInstance.field pool i outputName) (Rumoca.CTensor.SquareDiagonal.doubled input))
+      (TensorInstance.field pool i outputName) (Rumoca.CTensor.Diagonal.matrix (Rumoca.CTensor.SquareDiagonal.doubled input)) ∧
+    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.calling "fmi3GetFloat64" (arguments (some (TensorInstance.record pool i)) (some refs) (some buffer) n m)
-        (written (TensorInstance.store backing pool i shape oshape time state input output)
-          (TensorInstance.field pool i derivativeName) derivatives shape.volume) .done) behavior ↔
-      behavior = .terminates []
-        ⟨.integer 0, written (written (TensorInstance.store backing pool i shape oshape time state input output)
-          (TensorInstance.field pool i derivativeName) derivatives shape.volume) buffer derivatives shape.volume⟩ :=
-  get_behaviors_deriv shape (output.map fun _ => oshape) program _ (TensorInstance.record pool i) refs buffer
-    n m kind mode derivatives nref nval defined hk hm allowed refRead
-    (written_reads _ (TensorInstance.field pool i derivativeName) derivatives) writable separate behavior
+        (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+          time state input (some J)) stack)
+      (.returning (.integer 0)
+        (written (Rumoca.CTensor.Diagonal.resultHeap (TensorInstance.store backing pool i shape
+            (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J))
+            (TensorInstance.field pool i outputName) (Rumoca.CTensor.SquareDiagonal.doubled input))
+          buffer (Rumoca.CTensor.Diagonal.matrix (Rumoca.CTensor.SquareDiagonal.doubled input))
+          (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume) stack) := by
+  let os := Rumoca.Tensor.matrixShape shape.volume shape.volume
+  let H := TensorInstance.store backing pool i shape os time state input (some J)
+  let p := TensorInstance.record pool i
+  obtain ⟨types0, entered⟩ := guard_reaches shape (some os) program H p refs buffer n m
+    kind mode defined hk hm allowed nref trivial trivial stack
+  have declared := declares_reaches program shape (some os) (guardEnv p refs buffer n m)
+    types0 H stack (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])
+  have nav := get_nav_output program shape (some os) p refs buffer n m types0 H stack os rfl refRead
+  let env := declaredEnv (guardEnv p refs buffer n m)
+  let rest := countReject :: getLoopSuffix
+  have enterStep := jacobian_read_enter program shape (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) H p
+    (getArm outputName os.volume ++ rest) "fmi3Status" stack
+    (by simp [declaredEnv, guardEnv, CBody.bind])
+    (by simp [declaredEnv, guardEnv, parameters, CBody.bind])
+  have argsEq : [Value.pointer (some (p.member inputName)), .pointer (some (p.member outputName)),
+      .integer shape.volume, .integer os.volume] =
+      Rumoca.CTensor.Diagonal.argumentValues (TensorInstance.field pool i inputName)
+        (TensorInstance.field pool i outputName) shape := by
+    rfl
+  rw [argsEq] at enterStep
+  have readsInput : Reads H (TensorInstance.field pool i inputName) input :=
+    TensorInstance.reads_input backing pool i shape os time state input (some J)
+  have writableOutput : Writable H (TensorInstance.field pool i outputName) os.volume :=
+    TensorInstance.writable_output backing pool i shape os time state input J
+  obtain ⟨jacReads, jacFrame, jacRan⟩ :=
+    TensorInstanceJacobian.jacobian_writes_events (shape := shape) definitions program linked library jacFound
+      pool i input H bounded2 readsInput writableOutput adds jacResolves
+      (.caller .discard (getArm outputName os.volume ++ rest) env (declaredTypes types0) "fmi3Status" stack)
+  let F := Rumoca.CTensor.Diagonal.resultHeap H (TensorInstance.field pool i outputName) (Rumoca.CTensor.SquareDiagonal.doubled input)
+  have writableFinal : Writable F buffer os.volume := by
+    intro b hb
+    obtain ⟨old, ho⟩ := writable b hb
+    exact ⟨old, (jacFrame (buffer.index b) (fun a ha => (separate a ha b hb).symm)).trans ho⟩
+  have staged := stage_reaches program (guardEnv p refs buffer n m) types0 F p (p.member outputName)
+    outputName os.volume rest stack bounded2 (by simp [guardEnv, CBody.bind]) rfl
+  have tail := get_tail_reaches program (guardEnv p refs buffer n m) (declaredTypes types0) F
+    (p.member outputName) buffer os (Rumoca.CTensor.Diagonal.matrix (Rumoca.CTensor.SquareDiagonal.doubled input)) m stack bounded2 nval
+    (by simp [stagedEnv, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind]) jacReads writableFinal separate
+  refine ⟨jacReads, entered.trans (declared.trans (nav.trans ?_))⟩
+  exact .next enterStep (jacRan.trans (.next (resume_discard program _ _ _ _ _ _) (staged.trans tail)))
 
 end
 
@@ -1399,6 +1614,40 @@ theorem getArm_printable (member : String) (count : Nat) (hv : CIdentifier.valid
   · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) (memberPointer_printable member hv)
   · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) Printable.natural
 
+
+/-- The derivative evaluation over `count` elements prints its intended C token grammar. -/
+theorem rhsCall_printable (count : Nat) :
+    ItemPrintable RuntimePrinter.typedefs (TensorEntry.rhsCall (Runtime.n count)) := by
+  simp only [TensorEntry.rhsCall, TensorEntry.rhsArgs, Runtime.call, Runtime.region, Runtime.field,
+    Runtime.v, Runtime.n, stateName, inputName, derivativeName]
+  repeat first
+    | apply And.intro
+    | apply ItemPrintable.eval
+    | apply Printable.address
+    | apply Printable.call
+    | apply Printable.field
+    | apply Printable.index
+    | exact Printable.natural
+    | apply Printable.identifier
+    | decide +kernel
+    | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Postfix, FieldBase]
+
+/-- The Jacobian evaluation prints its intended C token grammar. -/
+theorem jacobianCall_printable (shape : Tensor.Shape) :
+    ItemPrintable RuntimePrinter.typedefs (TensorEntry.jacobianCall (Runtime.n shape.volume) shape) := by
+  simp only [TensorEntry.jacobianCall, TensorEntry.jacobianArgs, Runtime.call, Runtime.region, Runtime.field,
+    Runtime.v, Runtime.n, inputName, outputName]
+  repeat first
+    | apply And.intro
+    | apply ItemPrintable.eval
+    | apply Printable.address
+    | apply Printable.call
+    | apply Printable.field
+    | apply Printable.index
+    | exact Printable.natural
+    | apply Printable.identifier
+    | decide +kernel
+    | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Postfix, FieldBase]
 /-- Every statement of a setter dispatch arm prints its intended C token grammar. -/
 theorem setArm_printable (member : String) (count : Nat) (hv : CIdentifier.valid [] member = true) :
     ∀ stmt ∈ setArm member count, ItemPrintable RuntimePrinter.typedefs stmt := by
@@ -1515,13 +1764,20 @@ theorem getArms_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Sh
   · exact getArm_printable timeName 1 (by decide +kernel)
   · exact getArm_printable inputName shape.volume (by decide +kernel)
   · exact getArm_printable stateName shape.volume (by decide +kernel)
-  · exact getArm_printable derivativeName shape.volume (by decide +kernel)
+  · intro stmt hs
+    rcases List.mem_cons.mp hs with rfl | staged
+    · exact rhsCall_printable shape.volume
+    · exact getArm_printable derivativeName shape.volume (by decide +kernel) stmt staged
   · cases outputShape with
     | none =>
       intro stmt hs
       simp only [getOutputArm, List.mem_cons, List.not_mem_nil, or_false] at hs
       subst hs; exact fail_printable _
-    | some os => exact getArm_printable outputName os.volume (by decide +kernel)
+    | some os =>
+      intro stmt hs
+      rcases List.mem_cons.mp hs with rfl | staged
+      · exact jacobianCall_printable shape
+      · exact getArm_printable outputName os.volume (by decide +kernel) stmt staged
 
 /-- Each setter dispatch arm prints its intended C token grammar; supplied to the
 generic `dispatchChain_printable`. -/
@@ -1724,19 +1980,19 @@ theorem get_fail_prefix (shape : Tensor.Shape) (outputShape : Option Tensor.Shap
     run_one (branch_false d heap _ (getArm stateName shape.volume) (getDispatch3 shape outputShape) _
       (vr0_bne d heap refs r 2 rv refRead h2))
   have b3 : CBody.run 1 (.running (getDispatch3 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
-      some (.running (getDispatch4 outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
-    run_one (branch_false d heap _ (getArm derivativeName shape.volume) (getDispatch4 outputShape) _
+      some (.running (getDispatch4 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
+    run_one (branch_false d heap _ (getDerivativeArm shape) (getDispatch4 shape outputShape) _
       (vr0_bne d heap refs r 3 rv refRead h3))
   -- branch 4: either falls through (r ≠ 4) or takes the empty output arm (no output)
-  have b4 : CBody.run 1 (.running (getDispatch4 outputShape ++ (countReject :: getLoopSuffix)) d heap) =
+  have b4 : CBody.run 1 (.running (getDispatch4 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
       some (.running (Runtime.fail "Unknown value reference" :: countReject :: getLoopSuffix) d heap) := by
     by_cases hr4 : r = 4
     · have hnone : outputShape = none := h4 hr4
       subst hnone
-      refine run_one (branch_true d heap _ (getOutputArm none) [Runtime.fail "Unknown value reference"] _ ?_)
+      refine run_one (branch_true d heap _ (getOutputArm shape none) [Runtime.fail "Unknown value reference"] _ ?_)
       have := vr0_cmp d heap refs r 4 rv refRead
       simpa [hr4, getOutputArm] using this
-    · exact run_one (branch_false d heap _ (getOutputArm outputShape)
+    · exact run_one (branch_false d heap _ (getOutputArm shape outputShape)
         [Runtime.fail "Unknown value reference"] _ (vr0_bne d heap refs r 4 rv refRead hr4))
   have chain : CBody.run 11 (.running (getBody shape outputShape) env0 heap) =
       some (.running (Runtime.fail "Unknown value reference" :: countReject :: getLoopSuffix) d heap) :=
@@ -1962,7 +2218,97 @@ structure GetContract (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling "fmi3GetFloat64" (arguments none refs buffer n m) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩
-
+  /-- Reading `der(x)` evaluates the prepared derivative from the current state and
+  input and returns it; the region's earlier contents do not matter. -/
+  derivativeRead : ∀ {E} (program : CCalls.Events.Program E) (definitions : CLoops.Calls.Definitions)
+    (oshape : Tensor.Shape) (backing : Heap) (pool : Address) (i : Nat)
+    (time : Values Tensor.scalar) (state input result : Values shape) (output : Option (Values oshape))
+    (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode),
+    CCalls.Typed.Extends definitions program.internal →
+    Rumoca.CTensor.Lowering.Library definitions →
+    definitions (TensorInstanceRhs.plan shape).derivative.function.name =
+      some (TensorInstanceRhs.plan shape).derivative.function.tree →
+    output.map (fun _ => oshape) = outputShape →
+    n.toNat = 1 → m.toNat = shape.volume → shape.volume < 2 ^ 64 →
+    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)) →
+    load (TensorInstance.store backing pool i shape oshape time state input output)
+      ((TensorInstance.record pool i).member "kind") = some (.integer kind.code) →
+    load (TensorInstance.store backing pool i shape oshape time state input output)
+      ((TensorInstance.record pool i).member "mode") = some (.integer mode.code) →
+    Reference.Allowed .get kind mode →
+    load (TensorInstance.store backing pool i shape oshape time state input output)
+      (refs.index 0) = some (.integer 3) →
+    Rumoca.Solve.Tensor.Finite.Executes (TensorInstanceRhs.kernel shape).derivative
+      (ArrayProfile.environment state input) result →
+    Writable (TensorInstance.store backing pool i shape oshape time state input output) buffer shape.volume →
+    (∀ a < shape.volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i derivativeName).index a ≠ buffer.index b) →
+    (∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling (TensorInstanceRhs.plan shape).derivative.function.name
+        (Rumoca.CTensor.Lowering.Arguments.values (TensorInstanceRhs.plan shape).derivative.function.parameters
+          (TensorInstanceRhs.args pool i shape))
+        (TensorInstance.store backing pool i shape oshape time state input output) .done) v →
+      CCalls.Events.Resolves program v) →
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i derivativeName) result ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) =
+          backing ((TensorInstance.field pool j b).index k)) ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3GetFloat64" (arguments (some (TensorInstance.record pool i)) (some refs) (some buffer) n m)
+          (TensorInstance.store backing pool i shape oshape time state input output) .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, written finalHeap buffer result shape.volume⟩
+  /-- Reading `J` evaluates the prepared dense Jacobian `diag(2*u)` from the current
+  input and returns it; the region's earlier contents do not matter. -/
+  outputRead : ∀ {E} (program : CCalls.Events.Program E) (definitions : CLoops.Calls.Definitions)
+    (backing : Heap) (pool : Address) (i : Nat)
+    (time : Values Tensor.scalar) (state input : Values shape)
+    (J : Values (Rumoca.Tensor.matrixShape shape.volume shape.volume))
+    (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode),
+    CCalls.Typed.Extends definitions program.internal →
+    Rumoca.CTensor.Lowering.Library definitions →
+    definitions Rumoca.CTensor.SquareDiagonal.function.signature.name =
+      some Rumoca.CTensor.SquareDiagonal.function →
+    outputShape = some (Rumoca.Tensor.matrixShape shape.volume shape.volume) →
+    n.toNat = 1 → m.toNat = (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume →
+    (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64 →
+    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)) →
+    load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "kind") = some (.integer kind.code) →
+    load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) ((TensorInstance.record pool i).member "mode") = some (.integer mode.code) →
+    Reference.Allowed .get kind mode →
+    load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) (refs.index 0) = some (.integer 4) →
+    Writable (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+      time state input (some J)) buffer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume →
+    (∀ a < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume,
+      ∀ b < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume,
+      (TensorInstance.field pool i outputName).index a ≠ buffer.index b) →
+    (∀ k : Fin shape.volume,
+      Binary64.Adds input[k] input[k] (.finite (Rumoca.CTensor.SquareDiagonal.doubled input)[k])) →
+    (∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling Rumoca.CTensor.SquareDiagonal.function.signature.name
+        (Rumoca.CTensor.Diagonal.argumentValues (TensorInstance.field pool i inputName)
+          (TensorInstance.field pool i outputName) shape)
+        (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+          time state input (some J)) .done) v →
+      CCalls.Events.Resolves program v) →
+    Reads (Rumoca.CTensor.Diagonal.resultHeap (TensorInstance.store backing pool i shape
+        (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J))
+        (TensorInstance.field pool i outputName) (Rumoca.CTensor.SquareDiagonal.doubled input))
+      (TensorInstance.field pool i outputName)
+      (Rumoca.CTensor.Diagonal.matrix (Rumoca.CTensor.SquareDiagonal.doubled input)) ∧
+    ∀ behavior, (CCalls.Events.machine program).Behaves
+      (.calling "fmi3GetFloat64" (arguments (some (TensorInstance.record pool i)) (some refs) (some buffer) n m)
+        (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
+          time state input (some J)) .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 0,
+        written (Rumoca.CTensor.Diagonal.resultHeap (TensorInstance.store backing pool i shape
+            (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J))
+            (TensorInstance.field pool i outputName) (Rumoca.CTensor.SquareDiagonal.doubled input))
+          buffer (Rumoca.CTensor.Diagonal.matrix (Rumoca.CTensor.SquareDiagonal.doubled input))
+          (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume⟩
 /-- The tensor `fmi3SetFloat64` function contract. -/
 structure SetContract (shape : Tensor.Shape) (text : String) : Prop where
   printed : text = (setFunction shape).render
@@ -1982,6 +2328,23 @@ theorem get_contract (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) 
   denotes := getFunction_denotes shape outputShape
   rejected program heap refs buffer n m defined :=
     null_get_behaviors shape outputShape program heap refs buffer n m defined
+  derivativeRead program definitions oshape backing pool i time state input result output refs buffer n m kind
+      mode linked library found shaped nref nval bounded defined hk hm allowed refRead executed writable
+      separate resolves := by
+    subst shaped
+    obtain ⟨finalHeap, reads, others, ran⟩ := get_deriv_reaches program shape oshape definitions linked
+      library found backing pool i time state input result output refs buffer n m kind mode .done nref nval
+      bounded defined hk hm allowed refRead executed writable separate resolves
+    exact ⟨finalHeap, reads, others, fun behavior =>
+      (CCalls.Events.internal_prefix program ran (CCalls.Events.return_forced program _ _)).behaviors behavior⟩
+  outputRead program definitions backing pool i time state input J refs buffer n m kind mode linked library
+      jacFound present nref nval bounded2 defined hk hm allowed refRead writable separate adds jacResolves := by
+    subst present
+    obtain ⟨reads, ran⟩ := get_output_reaches program shape definitions linked library jacFound backing pool i
+      time state input J refs buffer n m kind mode .done nref nval bounded2 defined hk hm allowed refRead
+      writable separate adds jacResolves
+    exact ⟨reads, fun behavior =>
+      (CCalls.Events.internal_prefix program ran (CCalls.Events.return_forced program _ _)).behaviors behavior⟩
 
 theorem set_contract (shape : Tensor.Shape) : SetContract shape (setFunction shape).render where
   printed := rfl

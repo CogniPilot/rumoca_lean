@@ -381,6 +381,7 @@ import Tests.FMI3Audit.TensorScheduledCreation
 import Tests.FMI3Audit.TensorSetTime
 import Tests.FMI3Audit.TensorStaticFactory
 import Tests.FMI3Audit.TensorStorageCode
+import Tests.FMI3Audit.TensorStartValues
 import Tests.FMI3Audit.TensorVersion
 import Tests.FMI3Audit.Termination
 import Tests.FMI3Audit.TerminationContract

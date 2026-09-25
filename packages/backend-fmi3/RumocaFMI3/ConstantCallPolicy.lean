@@ -70,6 +70,8 @@ macro "cadmit" : tactic => `(tactic| (
     TensorContinuousStates.derivCopyTail, TensorContinuousStates.derivCountReject,
     TensorFloat64.getLoopSuffix, TensorFloat64.setLoopSuffix,
     TensorContinuousStates.derivEntryArgs, TensorContinuousStates.jacobianEntryArgs,
+    TensorEntry.rhsArgs, TensorEntry.jacobianArgs, TensorEntry.rhsCall, TensorEntry.jacobianCall,
+    TensorFloat64.getDerivativeArm,
     TensorContinuousStates.jacobianCall, TensorContinuousStates.countReject,
     TensorDoStep.function, TensorDoStep.doStepBody, TensorDoStep.tensorStepSolve,
     TensorDoStep.internalBody, TensorDoStep.eulerTail, TensorDoStep.eulerBody,

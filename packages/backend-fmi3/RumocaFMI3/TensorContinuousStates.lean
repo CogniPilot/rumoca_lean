@@ -1108,13 +1108,13 @@ theorem derivBody_printable (shape : Tensor.Shape) (hasOutput : Bool) :
     .named (.typedefName (by decide +kernel) (by decide +kernel))
   cases hasOutput <;>
     simp only [derivFunction, derivCheckedFunction, derivCheckedBody, derivCheckedTail,
-      derivCheckedCopyTail, jacobianCall, jacobianEntryArgs,
+      derivCheckedCopyTail, jacobianCall, jacobianEntryArgs, TensorEntry.jacobianArgs,
       TensorDerivativePreflight.body, TensorDerivativePreflight.code, TensorDerivativePreflight.reject,
       Rumoca.CTensor.ProductPreflight.Inline.code, Rumoca.CTensor.ProductPreflight.Inline.setup,
       Rumoca.CTensor.ProductPreflight.value, Rumoca.CTensor.FinitePreflight.coordinate, Rumoca.CTensor.FinitePreflight.segmentWith,
       Rumoca.CTensor.FinitePreflight.iteration, Rumoca.CTensor.FiniteScan.iterationFor,
       Rumoca.CTensor.indexed, CLoops.counted, Discard.body, Runtime.log,
-      derivCountReject, derivEntryArgs, Runtime.region,
+      derivCountReject, derivEntryArgs, TensorEntry.rhsArgs, Runtime.region,
       Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,

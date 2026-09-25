@@ -245,6 +245,8 @@ theorem entryCall_reaches (shape : Tensor.Shape) (rates : List Rumoca.ConstantPr
     ∃ finalHeap,
       Reads finalHeap (TensorInstance.field pool i derivativeName)
         (ConstantInstanceRhs.ratesVec rates shape len) ∧
+      (∀ q, (∀ k, k < shape.volume → q ≠ (TensorInstance.field pool i derivativeName).index k) →
+        finalHeap q = heap q) ∧
       (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
         finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
       Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
@@ -261,7 +263,7 @@ theorem entryCall_reaches (shape : Tensor.Shape) (rates : List Rumoca.ConstantPr
       CBody.lvalueWith, CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand,
       CCalls.Indirect.resolveWith, CCalls.argumentsWith, CBody.resolve, CBody.constants, Value.address,
       instanceBound, unbound, TensorInstance.field, TensorInstance.record]
-  obtain ⟨finalHeap, reads, _writableDeriv, _frame, others, ran⟩ :=
+  obtain ⟨finalHeap, reads, _writableDeriv, frame, others, ran⟩ :=
     ConstantInstanceRhs.rhs_writes_events (shape := shape) rates len definitions program linked found ptrTy heap
       pool i writable resolves (.caller .discard rest env types0 resultType stack)
   have resumeStep : CCalls.Events.internalNext program
@@ -269,7 +271,7 @@ theorem entryCall_reaches (shape : Tensor.Shape) (rates : List Rumoca.ConstantPr
       some (.body (.running rest env types0 finalHeap) resultType stack) := by
     simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
       CCalls.Typed.resumeWith]
-  exact ⟨finalHeap, reads, others, .next enterStep (ran.trans (.next resumeStep (.refl _)))⟩
+  exact ⟨finalHeap, reads, frame, others, .next enterStep (ran.trans (.next resumeStep (.refl _)))⟩
 /-- The fused single-run constant derivative getter over instance `i`: guarding,
 checking the count, invoking the constant kernel entry `rumoca_constant_rhs`
 through the transfer lemma, then copying the written `der(x)` region into the

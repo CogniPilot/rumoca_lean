@@ -27,6 +27,7 @@ noncomputable section
 namespace Rumoca.FMI3.ConstantFloat64
 open CTree CMemory CBody CLoops
 open Rumoca.FMI3.TensorInstance
+open Rumoca.CMemory.TensorView
 open Rumoca.FMI3.TensorFloat64 (vr0 getArm memberPointer getLoopSuffix basicReject countReject
   setArm setLoopSuffix validateBody getCopyBody setCopyBody srcCell dstCell)
 open Rumoca.FMI3.Float64Calls (signature parameters arguments parameters_bound output)
@@ -185,6 +186,117 @@ theorem setFunction_denotes (shape : Tensor.Shape) :
 
 end
 
+/-! ### The derivative is evaluated when it is read -/
+
+section
+variable [static : StaticLiterals]
+private local instance readInterface : CInterface := cInterface static.addresses
+variable (program : CCalls.Events.Program E)
+
+/-- Reading `der(x)` of instance `i`: the getter evaluates the rate vector through
+the constant kernel entry, returns its exactly rounded values with `fmi3OK`, leaves
+them in the `der(x)` region and preserves every other instance, whatever the region
+held before the call. -/
+theorem get_derivative_reaches (shape : Tensor.Shape) (rates : List Rumoca.ConstantProfile.Decimal)
+    (len : rates.length = shape.volume) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (found : definitions "rumoca_constant_rhs" = some (Rumoca.CConstant.rhsFunction rates))
+    (ptrTy : (cInterface static.addresses).types "double *" = some .pointer)
+    (backing : Heap) (pool : Address) (i : Nat) (time : Values Tensor.scalar) (state : Values shape)
+    (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (stack : CCalls.Typed.Continuation)
+    (nref : n.toNat = 1) (nval : m.toNat = shape.volume) (bounded : shape.volume < 2 ^ 64)
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape)))
+    (hk : load (TensorInstance.constantStore backing pool i shape time state)
+      ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
+    (hm : load (TensorInstance.constantStore backing pool i shape time state)
+      ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .get kind mode)
+    (refRead : load (TensorInstance.constantStore backing pool i shape time state)
+      (refs.index 0) = some (.integer 2))
+    (writable : Writable (TensorInstance.constantStore backing pool i shape time state) buffer shape.volume)
+    (separate : ∀ a < shape.volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i derivativeName).index a ≠ buffer.index b)
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling "rumoca_constant_rhs" [.pointer (some (TensorInstance.field pool i derivativeName))]
+        (TensorInstance.constantStore backing pool i shape time state) .done) v →
+      CCalls.Events.Resolves program v) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i derivativeName) (ConstantInstanceRhs.ratesVec rates shape len) ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) =
+          (TensorInstance.constantStore backing pool i shape time state) ((TensorInstance.field pool j b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.calling "fmi3GetFloat64" (arguments (some (TensorInstance.record pool i)) (some refs) (some buffer) n m)
+          (TensorInstance.constantStore backing pool i shape time state) stack)
+        (.returning (.integer 0)
+          (written finalHeap buffer (ConstantInstanceRhs.ratesVec rates shape len) shape.volume) stack) := by
+  let H := TensorInstance.constantStore backing pool i shape time state
+  let p := TensorInstance.record pool i
+  have closed : (TensorFloat64.getFunctionFor (getDispatch shape)).body.all CBodyEmbedding.closedBlocks = true :=
+    getBody_closed shape
+  obtain ⟨types0, entered⟩ := TensorFloat64.guard_reaches_for (getDispatch shape) closed program H p refs buffer
+    n m kind mode defined hk hm allowed nref stack
+  have declared := TensorFloat64.declares_reaches_for program (getDispatch shape)
+    (TensorFloat64.guardEnv p refs buffer n m) types0 H stack
+    (by simp [TensorFloat64.guardEnv, parameters, CBody.bind])
+    (by simp [TensorFloat64.guardEnv, parameters, CBody.bind])
+  have rv : resolve (TensorFloat64.declaredEnv (TensorFloat64.guardEnv p refs buffer n m)) "valueReferences" =
+      some (.pointer (some refs)) := by
+    simp [TensorFloat64.declaredEnv, TensorFloat64.guardEnv, parameters, CBody.bind, CBody.resolve]
+  have armClosed : (ConstantDerivative.entryCall :: getArm derivativeName shape.volume).all
+      CLoops.noDeclarations = true := by
+    simp [ConstantDerivative.entryCall, TensorFloat64.getArm, CLoops.noDeclarations]
+  have b0 := TensorFloat64.cbranch_false (TensorFloat64.declaredEnv (TensorFloat64.guardEnv p refs buffer n m))
+    (TensorFloat64.declaredTypes types0) H _ (getArm timeName 1) (getDispatch1 shape)
+    (countReject :: TensorFloat64.getLoopSuffix)
+    (by simp [getDispatch1, getDispatch2, ConstantDerivative.entryCall, TensorFloat64.getArm, Runtime.branch,
+      Runtime.fail, Runtime.ret, CLoops.noDeclarations])
+    (TensorFloat64.cvr0_ne _ _ H refs 2 0 rv refRead (by decide))
+  have b1 := TensorFloat64.cbranch_false (TensorFloat64.declaredEnv (TensorFloat64.guardEnv p refs buffer n m))
+    (TensorFloat64.declaredTypes types0) H _ (getArm stateName shape.volume) (getDispatch2 shape)
+    (countReject :: TensorFloat64.getLoopSuffix)
+    (by simp [getDispatch2, ConstantDerivative.entryCall, TensorFloat64.getArm, Runtime.branch,
+      Runtime.fail, Runtime.ret, CLoops.noDeclarations])
+    (TensorFloat64.cvr0_ne _ _ H refs 2 1 rv refRead (by decide))
+  have b2 := TensorFloat64.cbranch_true (TensorFloat64.declaredEnv (TensorFloat64.guardEnv p refs buffer n m))
+    (TensorFloat64.declaredTypes types0) H _ (ConstantDerivative.entryCall :: getArm derivativeName shape.volume)
+    [Runtime.fail "Unknown value reference"] (countReject :: TensorFloat64.getLoopSuffix)
+    (by simp [ConstantDerivative.entryCall, TensorFloat64.getArm, Runtime.fail, Runtime.ret,
+      CLoops.noDeclarations])
+    (TensorFloat64.cvr0_eq _ _ H refs 2 rv refRead)
+  obtain ⟨finalHeap, reads, frame, others, ran⟩ := ConstantDerivative.entryCall_reaches program shape rates len
+    definitions linked found ptrTy H pool i (TensorFloat64.declaredEnv (TensorFloat64.guardEnv p refs buffer n m))
+    (TensorFloat64.declaredTypes types0) (getArm derivativeName shape.volume ++ (countReject :: TensorFloat64.getLoopSuffix))
+    "fmi3Status" stack
+    (by simp [TensorFloat64.declaredEnv, TensorFloat64.guardEnv, CBody.bind, p])
+    (by simp [TensorFloat64.declaredEnv, TensorFloat64.guardEnv, parameters, CBody.bind])
+    (TensorInstance.constant_writable_derivative backing pool i shape time state) resolves
+  have writableFinal : Writable finalHeap buffer shape.volume := by
+    intro b hb
+    obtain ⟨old, ho⟩ := writable b hb
+    exact ⟨old, (frame (buffer.index b) (fun k hk => (separate k hk b hb).symm)).trans ho⟩
+  have staged := TensorFloat64.stage_reaches program (TensorFloat64.guardEnv p refs buffer n m) types0 finalHeap p
+    (p.member derivativeName) derivativeName shape.volume (countReject :: TensorFloat64.getLoopSuffix) stack
+    bounded (by simp [TensorFloat64.guardEnv, CBody.bind]) rfl
+  have tail := TensorFloat64.get_tail_reaches program (TensorFloat64.guardEnv p refs buffer n m)
+    (TensorFloat64.declaredTypes types0) finalHeap (p.member derivativeName) buffer shape
+    (ConstantInstanceRhs.ratesVec rates shape len) m stack bounded nval
+    (by simp [TensorFloat64.stagedEnv, CBody.bind, CBody.resolve])
+    (by simp [TensorFloat64.stagedEnv, CBody.bind, CBody.resolve])
+    (by simp [TensorFloat64.stagedEnv, TensorFloat64.declaredEnv, TensorFloat64.guardEnv, parameters, CBody.bind,
+      CBody.resolve])
+    (by simp [TensorFloat64.stagedEnv, TensorFloat64.declaredEnv, TensorFloat64.guardEnv, parameters, CBody.bind,
+      CBody.resolve])
+    (by simp [TensorFloat64.stagedEnv, TensorFloat64.declaredEnv, TensorFloat64.guardEnv, parameters, CBody.bind])
+    (by simp [TensorFloat64.stagedEnv, TensorFloat64.declaredEnv, TensorFloat64.guardEnv, parameters, CBody.bind])
+    reads writableFinal separate
+  refine ⟨finalHeap, reads, others, entered.trans (declared.trans ?_)⟩
+  exact .next (CCalls.Events.body_step program b0 _ stack)
+    (.next (CCalls.Events.body_step program b1 _ stack)
+      (.next (CCalls.Events.body_step program b2 _ stack) (ran.trans (staged.trans tail))))
+
+end
+
 /-! ### Null-handle rejections -/
 
 section
@@ -238,8 +350,37 @@ private local instance contractInterface : CInterface := cInterface static.addre
 /-- The constant-rate `fmi3GetFloat64` function contract. -/
 structure GetContract (shape : Tensor.Shape) (text : String) : Prop where
   printed : text = (getFunction shape).render
-  derivativeArm : (getArms shape).lookup 2 =
-    some (ConstantDerivative.entryCall :: getArm derivativeName shape.volume)
+  /-- Reading `der(x)` evaluates the exactly rounded rate vector through the constant
+  kernel entry and returns it; the region's earlier contents do not matter. -/
+  derivativeRead : ∀ {E} (program : CCalls.Events.Program E) (rates : List Rumoca.ConstantProfile.Decimal)
+    (len : rates.length = shape.volume) (definitions : CLoops.Calls.Definitions)
+    (backing : Heap) (pool : Address) (i : Nat) (time : Values Tensor.scalar) (state : Values shape)
+    (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode),
+    CCalls.Typed.Extends definitions program.internal →
+    definitions "rumoca_constant_rhs" = some (Rumoca.CConstant.rhsFunction rates) →
+    (cInterface static.addresses).types "double *" = some .pointer →
+    n.toNat = 1 → m.toNat = shape.volume → shape.volume < 2 ^ 64 →
+    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape)) →
+    load (TensorInstance.constantStore backing pool i shape time state)
+      ((TensorInstance.record pool i).member "kind") = some (.integer kind.code) →
+    load (TensorInstance.constantStore backing pool i shape time state)
+      ((TensorInstance.record pool i).member "mode") = some (.integer mode.code) →
+    Reference.Allowed .get kind mode →
+    load (TensorInstance.constantStore backing pool i shape time state) (refs.index 0) = some (.integer 2) →
+    Writable (TensorInstance.constantStore backing pool i shape time state) buffer shape.volume →
+    (∀ a < shape.volume, ∀ b < shape.volume,
+      (TensorInstance.field pool i derivativeName).index a ≠ buffer.index b) →
+    (∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling "rumoca_constant_rhs" [.pointer (some (TensorInstance.field pool i derivativeName))]
+        (TensorInstance.constantStore backing pool i shape time state) .done) v →
+      CCalls.Events.Resolves program v) →
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i derivativeName) (ConstantInstanceRhs.ratesVec rates shape len) ∧
+      ∀ behavior, (CCalls.Events.machine program).Behaves
+        (.calling "fmi3GetFloat64" (arguments (some (TensorInstance.record pool i)) (some refs) (some buffer) n m)
+          (TensorInstance.constantStore backing pool i shape time state) .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0,
+          written finalHeap buffer (ConstantInstanceRhs.ratesVec rates shape len) shape.volume⟩
   closed : (getFunction shape).body.all CBodyEmbedding.closedBlocks = true
   denotes : FunctionDenotes RuntimePrinter.typedefs text (getFunction shape)
   rejected : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (refs buffer : Option Address)
@@ -263,7 +404,13 @@ structure SetContract (shape : Tensor.Shape) (text : String) : Prop where
 
 theorem get_contract (shape : Tensor.Shape) : GetContract shape (getFunction shape).render where
   printed := rfl
-  derivativeArm := rfl
+  derivativeRead program rates len definitions backing pool i time state refs buffer n m kind mode linked found
+      ptrTy nref nval bounded defined hk hm allowed refRead writable separate resolves := by
+    obtain ⟨finalHeap, reads, _others, ran⟩ := get_derivative_reaches program shape rates len definitions
+      linked found ptrTy backing pool i time state refs buffer n m kind mode .done nref nval bounded defined
+      hk hm allowed refRead writable separate resolves
+    exact ⟨finalHeap, reads, fun behavior =>
+      (CCalls.Events.internal_prefix program ran (CCalls.Events.return_forced program _ _)).behaviors behavior⟩
   closed := getBody_closed shape
   denotes := getFunction_denotes shape
   rejected program heap refs buffer n m defined :=

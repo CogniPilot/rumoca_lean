@@ -11,3 +11,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConstantFloat64.null_set_behaviors
 #audit axioms Rumoca.FMI3.ConstantFloat64.get_contract
 #audit axioms Rumoca.FMI3.ConstantFloat64.set_contract
+#audit axioms Rumoca.FMI3.ConstantFloat64.get_derivative_reaches

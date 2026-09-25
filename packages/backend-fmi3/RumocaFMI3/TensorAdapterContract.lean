@@ -21,6 +21,7 @@ import RumocaFMI3.TensorStaticFactory
 import RumocaFMI3.TensorFree
 import RumocaFMI3.TensorStorageCode
 import RumocaFMI3.TensorMetadata
+import RumocaFMI3.TensorStartValues
 
 /-! First tensor adapter contract skeleton. It binds the rendered text of the
 tensor adapter function list to the model-free public-API coverage, the two
@@ -95,6 +96,17 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
       name ∈ TensorInstanceInit.handleNames ∨
         name ∈ (TensorStorage.regions shape true m.hasOutput).map Prod.fst ∨
         name ∈ TensorReset.restoredScalars) ∧
+    -- Every state-shaped region the factory and reset restore, the input `u` among
+    -- them, reads the values the declared start entries of the model description denote.
+    (∀ (heap : Heap) (p : Address) (name : String),
+      (name, shape) ∈ TensorStorage.regions shape true m.hasOutput →
+      ∃ v : CMemory.TensorView.Values shape,
+        CMemory.TensorView.Reads (TensorReset.restoreHeap heap p (TensorStorage.regions shape true m.hasOutput))
+          (p.member name) v ∧
+        ∀ (k : Fin shape.volume) (n : Nat),
+          CDecimal.Denotes ((TensorMetadata.startEntries shape)[k.val]'(by
+            rw [TensorMetadata.startEntries_length]; exact k.isLt)).toList n →
+          Binary64.value v[k] = n) ∧
     TensorNominals.Contract shape (TensorNominals.function shape).render ∧
     (∀ events, TensorCountQueries.Contract shape events (TensorCountQueries.function shape events).render) ∧
     TensorSetTime.Contract (TensorSetTime.function).render ∧
@@ -204,6 +216,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     fun objects literals => TensorCompletedStep.contract objects literals model,
     TensorReset.contract shape true m.hasOutput,
     TensorInstanceInit.covers shape true m.hasOutput,
+    (fun heap p name declared =>
+      TensorStartValues.restored_start shape true m.hasOutput heap p name declared),
     TensorNominals.contract shape,
     (fun events => TensorCountQueries.contract shape events),
     TensorSetTime.contract,

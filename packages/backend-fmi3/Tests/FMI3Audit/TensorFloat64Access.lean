@@ -16,8 +16,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_time
 #audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_input
 #audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_state
-#audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_deriv
-#audit axioms Rumoca.FMI3.TensorFloat64.get_behaviors_output
 #audit axioms Rumoca.FMI3.TensorFloat64.set_reaches_of
 #audit axioms Rumoca.FMI3.TensorFloat64.set_behaviors_input
 #audit axioms Rumoca.FMI3.TensorFloat64.set_behaviors_state
@@ -30,8 +28,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_time
 #audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_input
 #audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_state
-#audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_deriv
-#audit axioms Rumoca.FMI3.TensorFloat64.get_instance_behaviors_output
 #audit axioms Rumoca.FMI3.TensorFloat64.set_instance_behaviors_state
 #audit axioms Rumoca.FMI3.TensorFloat64.set_instance_behaviors_input
 #audit axioms Rumoca.FMI3.TensorFloat64.set_preserves_other_instances
@@ -50,3 +46,13 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorFloat64.setBodyFor_printable
 #audit axioms Rumoca.FMI3.TensorFloat64.validateBody
 #audit axioms Rumoca.FMI3.TensorFloat64.validate_step
+#audit axioms Rumoca.FMI3.TensorFloat64.derivativeArm_noDecl
+#audit axioms Rumoca.FMI3.TensorFloat64.guard_reaches_for
+#audit axioms Rumoca.FMI3.TensorFloat64.declares_reaches_for
+#audit axioms Rumoca.FMI3.TensorFloat64.rhs_read_enter
+#audit axioms Rumoca.FMI3.TensorFloat64.jacobian_read_enter
+#audit axioms Rumoca.FMI3.TensorFloat64.resume_discard
+#audit axioms Rumoca.FMI3.TensorFloat64.get_deriv_reaches
+#audit axioms Rumoca.FMI3.TensorFloat64.get_output_reaches
+#audit axioms Rumoca.FMI3.TensorFloat64.rhsCall_printable
+#audit axioms Rumoca.FMI3.TensorFloat64.jacobianCall_printable
