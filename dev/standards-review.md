@@ -1772,7 +1772,7 @@ the revision that admits the constant-rate profile to production FMU output.
 | eFMI coverage | Not extended: constant sources are rejected for Algorithm Code and eFMU output with a diagnostic. Open finding CF01 below. |
 | Proof correspondence | Per-function contracts in `packages/backend-fmi3/RumocaFMI3/Constant*.lean` and the reused `Tensor*.lean`, the executable kernel contract `Rumoca.CConstant.contract_correct`, and the compiler composition `constantSourceBuild_correct`; roots audited in `Tests/Audit.lean` on the three permitted axioms. Explicit premises retained, as for the scalar and array paths: the modeled round-to-nearest floating-environment constant, kernel entry resolution, and the per-cell finite-addition premises of the Euler step. |
 | Boundary evidence | The required `lake test` at this revision; `tests/fmi3.sh` (constant block: CLI publication, constant eFMU rejection, `constant-fmi3` certificate reuse with no build, adapter mutation rejection, the native all-behavior matrix over the constant variable set, and FMPy runs asserting the two states reach `(7.5, -3)` after three unit steps from zero in both interfaces). Native compilation, ZIP transport and the importer remain outside the proof model. |
-| Decision | The constant-rate profile is admitted to FMI 3 FMU output. Open findings carried forward with closure criteria: CF01 constant eFMI path (build the constant GALEC/Production Code path with its contracts or keep rejection documented); CF02 general state count and rates in the certificate (the grammar admits any state count, but the fixed checker binds the two-state `ConstantRates` instance; extension needs a source-general constant checker or a per-instance certificate); CF03 Euler-step finite-addition premises are explicit (overflow of the rate accumulation is not modeled); CF04 native ABI, floating-environment and callback correspondence, shared with the unit and array profiles; CF05 MISRA C:2025 inventory for the constant adapter, shared with K05. **Stage decision for further growth: open until K02 to K05 close for the unit profile.** |
+| Decision | The constant-rate profile is admitted to FMI 3 FMU output. Open findings carried forward with closure criteria: CF01 constant eFMI path (build the constant GALEC/Production Code path with its contracts or keep rejection documented); CF02 general state count and rates in the certificate (the grammar admits any state count, but the fixed checker binds the two-state `ConstantRates` instance; extension needs a source-general constant checker or a per-instance certificate); CF03 rate-accumulation overflow is now modeled and excluded by admission: resolution admits only rates below `2^969` (`Decimal.admitted`), and `Binary64.add_small_no_overflow`, `CConstant.no_overflow` and the required `ConstantSourceBuildContract.no_overflow` field discharge the finite-addition premises at every step count (commit 950b7a9; open only for the required `lake test` gate record and a derived premise-free step theorem); CF04 native ABI, floating-environment and callback correspondence, shared with the unit and array profiles; CF05 MISRA C:2025 inventory for the constant adapter, shared with K05. **Stage decision for further growth: open until K02 to K05 close for the unit profile.** |
 
 ### Constant-rate FMI 3 adapter assembly (Stage B4): standards impact
 
@@ -6383,14 +6383,15 @@ retained in `build/c-token/artifacts/`. No new example-based suite is added.
 
 ### S01 whole-subset MLS clause matrix
 
-This matrix extends the unit clause map below to the three production FMI 3
-sources: `Integrator` (`examples/Integrator.mo`), `TensorSquare`
-(`examples/TensorSquare.mo`) and `ConstantRates` (`examples/ConstantRates.mo`).
+This matrix extends the unit clause map below to the three admitted sources:
+`Integrator` (`examples/Integrator.mo`, FMI 3 and eFMI), `TensorSquare`
+(`examples/TensorSquare.mo`, FMI 3 and eFMI) and `ConstantRates`
+(`examples/ConstantRates.mo`, FMI 3 only).
 Annex A citations are to the pinned MLS 3.7 syntax extract
 `build/modelica-3.7-syntax-reference.html` (SHA-256
 `62c1756596f423dca0f21e86421a82b4e1836c04c558f870f7afabb685201ea1`), headings at
 lines 108 (A.1), 314 (A.2.1), 340 (A.2.2), 650 (A.2.4), 715 (A.2.5, `each` at
-776), 843 (A.2.6) and 1168 (A.2.7). Chapters 2-4, 8 and 10 are cited by URL
+776), 843 (A.2.6) and 1168 (A.2.7). Chapters 2-4, 7, 8 and 10 are cited by URL
 only; they are not pinned locally. Productions are those of
 `packages/modelica-parser/grammar/Modelica.ebnf`. Precondition classes:
 **proved** (a Lean theorem over every admitted input), **checked** (a decidable
@@ -6399,26 +6400,36 @@ resolution or actual-file check that rejects before any artifact exists) and
 Artifact certificates: `Rumoca.CheckedFMI3Files.source_to_build` and
 `Rumoca.CheckedEFMIFiles.source_to_archive` (Integrator),
 `Rumoca.CheckedTensorFMI3Files.source_to_build` (TensorSquare) and
-`Rumoca.CheckedConstantFMI3Files.source_to_build` (ConstantRates).
+`Rumoca.CheckedConstantFMI3Files.source_to_build` (ConstantRates) and
+`Rumoca.CheckedTensorEFMIFiles.source_to_archive` (TensorSquare eFMU).
 
 | Clause | Production and admitted form | Owning theorems | Class | Rejected or open |
 | --- | --- | --- | --- | --- |
-| A.1, §§2.1-2.4: identifiers, keywords, literals | ASCII `IDENT`; reserved words (`Rumoca.reserved`, including `model`, `Real`, `input`, `output`, `equation`, `der`, `each`, `true`, `end`); digit-run literals `0`, `1`, `2`; the `.*` token; a signed decimal (`2.5`, `-1`) as one number token of `real_literal`. | `Rumoca.lex_correct`, `scan_sound`, `scan_complete`, `Lexes.spelled`; `ConstantProfile.parseDecimal` records the exact base-ten content. | proved | Comments, quoted identifiers, strings and other literal forms. Interpretation: the token `-1` denotes the A.2.7 unary minus applied to the unsigned number `1`; its value is identical. |
+| A.1, §§2.1-2.4: identifiers, keywords, literals | ASCII `IDENT`; reserved words (`Rumoca.reserved`, including `model`, `Real`, `input`, `output`, `equation`, `der`, `each`, `true`, `end`); digit-run literals `0`, `1`, `2`; the `.*` token; a signed decimal (`2.5`, `-1`) as one number token of `real_literal`. | `Rumoca.lex_correct`, `scan_sound`, `scan_complete`, `Lexes.spelled`; `ConstantProfile.parseDecimal` records the exact base-ten content. | proved | Comments, quoted identifiers, strings and other literal forms. MLS-valid `UNSIGNED-REAL` spellings `1.` and `.5` are rejected, as are a spaced `- 1` and an unsigned Integer rate such as `der(x) = 3` (a pure digit run lexes as a literal token, not the `IDENT`-class `real_literal`, `packages/modelica-parser/ModelicaParser/Lexer.lean` 40-43). Interpretation: the token `-1` is the Integer expression `-(1)` (A.2.7 unary minus on an unsigned number) coerced to Real; its value is identical. |
 | A.2.1: stored definition | `stored_definition: class_definition ';'`; no `within`. All three sources. | `Rumoca.parsed_in_ebnf` (unit); `ArrayProfile.in_grammar`, `ConstantProfile.in_grammar`; completeness `compile_complete`, `compileTensor_complete`, `compileConstant_complete`. | proved | `within`, multiple definitions. No full MLS parser-completeness claim. |
 | A.2.2: class definition | `model IDENT composition end IDENT`; end name equal to the model name. | `AST.Resolved`, `ArrayProfile.Model.Resolved`, `ConstantProfile.Model.Resolved`; `LocatedParsed.resolve_error_locations`, `ArrayProfile.LocatedParsed.resolve_complete`, `ConstantProfile.LocatedParsed.resolve_complete`. | checked | Other class prefixes, extends, public/protected sections. |
-| A.2.4: component clause | Integrator: one `Real x`. TensorSquare: `input Real u[2]`, `output Real x[2](...)`, `output Real J[2,2]` (literal extent `2`). ConstantRates: two or more `Real` scalars. | `ArrayProfile.decode_sound`/`decode_complete`, `Model.stateDimensions`/`jacobianDimensions`; `ConstantProfile.decode_sound`/`decode_complete`; distinct names in each `Resolved`. | proved (syntax), checked (distinct names) | Other types, prefixes, extents and mixed profiles; a single-state constant model. |
+| A.2.4: component clause | Integrator: one `Real x`. TensorSquare: `input Real u[2]`, `output Real x[2](...)`, `output Real J[2,2]` (literal extent `2`). ConstantRates: two or more `Real` scalars. | `ArrayProfile.decode_sound`/`decode_complete` with the grammar extent literal `'2'`; `ConstantProfile.decode_sound`/`decode_complete`; distinct names in each `Resolved`. | proved (syntax), checked (distinct names) | Other types, prefixes, extents and mixed profiles; a single-state constant model. |
 | A.2.5: modification, `each` | TensorSquare only: `(each start=0, each fixed=true)` on the array state. Integrator and ConstantRates are unmodified. | `ArrayProfile.Model.Resolved` (attribute names `start`, `fixed`); `ArrayProfile.Model.Initial`, `Flat.lower_initial`, `dae_initialization_correct`, `initialization_chain_correct`, `ArrayCompiler.Prepared.initialization_correct`; `InitializationCorrespondence.tensorSquare_initialization`. | proved (semantics), checked (names) | Bindings, other attributes or values, unmodified array states, scalar modifications. |
+| §7.2.5: `each` | TensorSquare: `each` applies the scalar modifier value to every element of `x[2]`. | `ArrayProfile.Model.Initial` (every element zero), `Flat.lower_initial`, `ArrayCompiler.Prepared.initialization_correct`. | proved | Array-valued modifiers without `each`; `each` on scalars. |
+| §4.9.6 (Real attributes `start`, `fixed`) | TensorSquare: `start=0`, `fixed=true` on the state. Integrator and ConstantRates carry no attribute; their start is the Definition 4.7 fallback. | `ArrayProfile.Model.Resolved` (attribute spellings); `ArrayProfile.Model.Initial`; `Source.initializes_iff` and `Solve.Model.initialization_correct` for the fallback. | proved (semantics), checked (spellings) | Other attributes (`nominal`, `min`, `max`, `unit`), non-literal values, `fixed=false`. |
+| §10.1, A.2.4/A.2.7 `array-subscripts`: array declarations | TensorSquare: `u[2]`, `x[2]` through `array_subscripts: '[' subscript ']'`, `subscript: '2'`; `J[2,2]` inlined in `jacobian_body`. | Grammar productions `array_subscripts`, `subscript`, `jacobian_body` with `ArrayProfile.in_grammar` and `decode_complete`; the extent is the grammar literal `'2'`. | proved | Any other extent, rank or subscript expression; array equations other than the admitted two. |
+| §10.6.13: Integer-to-Real coercion | `der(x) = 1` (Integrator), `-1` (ConstantRates), `start=0` (TensorSquare): Integer literals in Real context. | `Source.Solves` (value `1`); `ConstantProfile.Decimal.rate_rounds` (exact content `-1`); `ArrayProfile.Model.Initial` (value `0`). | proved | No Integer variables or Integer-valued non-literal expressions. |
+| A.2.4 `output` prefix and FMI causality | TensorSquare: `output Real x[2]`, `output Real J[2,2]`. | `ArrayProfile.decode_sound`/`decode_complete` only. | open | **SR10:** the FMU exports `x` with causality `local` and no `<Output>` entry. |
+| Source-name to FMI-variable mapping | Integrator: `x`. TensorSquare: `u`, `x`, `der(x)`, `J`. ConstantRates: one array `x`. | Names are fixed in `TensorMetadata.lean` (lines 49, 56, 69, 523). | open | **SR11:** ConstantRates exports one 2-element `x` instead of its source scalars. |
 | A.2.6, §§8.2-8.3.1: equations | Integrator: `der(x) = 1`. TensorSquare: `der(x) = u .* u; J = jacobian(u .* u, u);`. ConstantRates: one `der(s) = <real_literal>` per state, in any order. | `LocatedParsed.resolved_references`; `ArrayProfile.Model.Resolved`; `ConstantProfile.Model.equation_unique`, `Model.decimalOf_perm`, `ConstantCompiler.prepare_perm_invariant`. | checked (lookup), proved (order invariance) | Unbound or duplicate references, uncovered states, general scopes. The literal `1` is an Integer converted to Real. |
-| A.2.7, Operator 3.12, §10.6: `der`, `.*`, literals | `der` of a declared state; elementwise `u .* u`; decimal rate literals. | `Source.trajectory_derivative`, `lowering_chain_behavior_correct` (unit); `ArrayProfile.lowering_chain_correct`, `dae_chain_correct`, `Call.square_denotes_iff`, `ArrayCompiler.prepare_correct`; `ConstantProfile.Model.lowering_chain`, `ConstantCompiler.prepare_correct`. | proved | Other operators and function calls; `.*` is admitted only as `u .* u`. |
+| A.2.7, Operator 3.12, §10.6.3: `der`, `.*`, literals | `der` of a declared state; elementwise `u .* u`; decimal rate literals. | `Source.trajectory_derivative`, `lowering_chain_behavior_correct` (unit); `ArrayProfile.lowering_chain_correct`, `dae_chain_correct`, `Call.square_denotes_iff`, `ArrayCompiler.prepare_correct`; `ConstantProfile.Model.lowering_chain`, `ConstantCompiler.prepare_correct`. | proved | Other operators and function calls; `.*` is admitted only as `u .* u`. |
 | §4.9.1: finite Real values | Binary64 storage; constant rates are the nearest-even rounding of their decimal content, with magnitude below `2^969`. | `Binary64.finiteEncodingEquiv`; `ConstantProfile.Decimal.rate_rounds`, `ConstantCompiler.Prepared.rate_exact`, `CConstant.rate_rounds`; `Decimal.admitted`, `Model.lower_admitted`, `CConstant.no_overflow`, `ConstantArtifact.no_overflow`. | proved (rounding, overflow), checked (magnitude), external (C translator conversion, C11 6.4.4.2) | Larger rate magnitudes (CF03 admission). Ideal unbounded trajectories are not stored values. |
 | §4.4.2.2: top-level input | TensorSquare `u`, FMI causality `input`. | FMI metadata and setter contracts. | external (host supplies finite values) | Startup initialization of the eFMI input stays open (Startup input policy). |
-| §8.6, Definition 4.7: initialization | Integrator: unmodified, fallback start `0` selected as fixed with both notices; any finite start is admissible. TensorSquare: `start=0` fixed. ConstantRates: every state at `+0`. | `Source.initializes_iff`, `Solve.Model.initialization_correct`, `initialized_solution_unique`; `ArrayCompiler.Prepared.initialization_correct`; `ConstantProfile.Model.initialization_chain`, `ConstantCompiler.Prepared.initialization_correct`; `InitializationCorrespondence.integrator_initialization`, `tensorSquare_initialization`, `constantRates_initialization`. | proved | Open SR08: host start values for TensorSquare and ConstantRates; ConstantRates states `+0` as a source constraint without the §8.6 notices; tensor eFMI Startup (SR08 part B). See [initialization](initialization.md#composed-initialization-correspondence-per-fmi-family). |
+| §8.6, Definition 4.7: initialization | Integrator: unmodified, fallback start `0` selected as fixed with both notices; any finite start is admissible. TensorSquare: `start=0` fixed. ConstantRates: every state at `+0`. | `Source.initializes_iff`, `Solve.Model.initialization_correct`, `initialized_solution_unique`; `ArrayCompiler.Prepared.initialization_correct`; `ConstantProfile.Model.initialization_chain`, `ConstantCompiler.Prepared.initialization_correct`; `InitializationCorrespondence.integrator_initialization`, `tensorSquare_initialization`, `constantRates_initialization`. | proved | Open: SR08-B host start values for TensorSquare and ConstantRates; SR12 ConstantRates fixes its unfixed start without the §8.6 diagnostic; tensor eFMI Startup. See [initialization](initialization.md#composed-initialization-correspondence-per-fmi-family). |
 | Non-MLS extension: `jacobian` | TensorSquare only: `J = jacobian(u .* u, u)` with both product operands and the differentiation variable equal to the declared input and the result assigned to the declared matrix output. | `ArrayProfile.Call.jacobian_iff`, `ArrayProfile.Model.Resolved`; `JacobianOf.square_iff`. | proved (derivative), checked (callee and operands) | Any other callee name, operand or output. This is an authorized extension, not an MLS conformance claim. |
 
 Manifest array start cardinality is resolved by the scalar encoding that eFMI
 Beta 1 §3.1.6 permits (extract lines 882-899). The residual obligation is the
-manifest-start-to-Startup correspondence, tracked with SR08 part B.
-S01 closes only after an independent review of this matrix against the pinned
+manifest-start-to-Startup correspondence, tracked with SR08-B.
+MLS chapters 3, 4, 7, 8 and 10 are not yet pinned locally, so the chapter
+citations above are not verifiable against pinned text. S01 stays open until
+they are pinned with line numbers, SR10-SR12 are resolved and an independent
+review of this matrix against the pinned
 text.
 
 ### Prior unit-stage baseline
@@ -7524,6 +7535,83 @@ choices, justify each from the clauses, then connect it to FMI initialization
 and eFMI Startup with lowering and actual-artifact proofs. Any required source
 diagnostic must point to the relevant declaration. Keep S01 and the stage gate
 open until this is checked; no new grammar is needed to resolve the policy.
+
+**Progress, not closure (SR08 part A, commit 4a02a4f):**
+`packages/compiler/Rumoca/InitializationCorrespondence.lean` composes, per FMI
+family, the source relation, the factory/reset/initialization-mode behavior and
+the actual-artifact contract as a hypothesis (`integrator_initialization`,
+`tensorSquare_initialization`, `constantRates_initialization`). It is not bound
+into any artifact contract as a required field, omits the scalar eFMI Startup
+value, and for TensorSquare and ConstantRates covers only the default start.
+SR08 remains OPEN.
+
+### SR08-B: OPEN, blocks expansion: host start values for fixed-start states
+
+FMI 3.0.2 §2.3.2 (`build/standards-review/fmi.txt` 1757-1767) permits
+`fmi3Set{VariableType}` in Instantiated mode on variables with
+`initial=exact`, including continuous states, "to set start and guess values".
+The TensorSquare and ConstantRates model descriptions declare `x` with
+`initial="exact" start="0 0"` (`TensorMetadata.stateVar`,
+`TensorMetadata.constantStateVar`), and `TensorFloat64.SetContract` and
+`ConstantFloat64.SetContract` accept every finite value. The source relations
+`ArrayProfile.Model.Initial` and `ConstantProfile.Model.Initial` fix the start
+at zero, so no theorem relates a nonzero host start to the source. This
+conflicts with `dev/initialization.md` 29-31: "A supplied FMI initial value must
+be described as an explicit experiment choice and checked against source
+constraints; the host cannot silently override a required source condition."
+**Close with:** a start-parameterized source relation (the FMI start as the
+`start` modification) recorded in the interpretation table, or rejection of
+host writes that violate `fixed=true`, and a setter-then-exit composition over
+the actual adapter. The tensor eFMI Startup/manifest-start correspondence is
+tracked here as well.
+
+### SR10: OPEN, blocks expansion: TensorSquare output state exported as local
+
+Source: `examples/TensorSquare.mo` line 3 declares `output Real x[2](each
+start=0, each fixed=true);`. The FMU model description
+(`build/TensorSquare.fmu` `modelDescription.xml`, from
+`packages/backend-fmi3/RumocaFMI3/TensorMetadata.lean` 55-58) declares
+`<Float64 name="x" valueReference="2" causality="local" variability="continuous"
+initial="exact" start="0 0">`, and `<ModelStructure>` lists `<Output
+valueReference="4">` (`J`) only. FMI 3.0.2 (`fmi.txt` 2721): "= output: The
+variable value may be used by the importer"; 2750: "A continuous-time state ...
+must have causality = local or output"; 3173: `<Output>` is the "Ordered list of
+all outputs ... every variable with causality = output must be listed here".
+The source `output` prefix is admitted by the grammar and decoded, but no
+theorem owns its semantics and the exported causality drops it.
+**Close with:** export `x` with causality `output` and an `<Output>` entry under
+the metadata, accessor and artifact contracts, or reject the `output` prefix on
+the state and record the restriction in the S01 matrix.
+
+### SR11: OPEN, blocks expansion: ConstantRates variables do not match the source
+
+Source: `examples/ConstantRates.mo` declares two scalars `Real x; Real y;`. The
+FMU model description (`build/ConstantRates.fmu` `modelDescription.xml`) exports
+one `<Float64 name="x" valueReference="1" causality="local" ... start="0 0">`
+with `<Dimension start="2"/>` and its derivative `der(x)`; there is no variable
+`y`. The names are fixed literals in
+`packages/backend-fmi3/RumocaFMI3/TensorMetadata.lean` 523 and 569
+(`("name", "x")`), not taken from the source declarations. The importer
+therefore observes `x[1]`/`x[2]` instead of the source variables `x` and `y`:
+a source-to-interface mismatch for accepted input.
+**Close with:** a name mapping from source declarations to FMI variables with
+its metadata and accessor contracts (one scalar variable per source state, or a
+recorded and reviewed aggregation with per-element aliases), bound into the
+constant artifact contract.
+
+### SR12: OPEN, blocks expansion: ConstantRates fixes an unfixed start silently
+
+MLS 3.7 §8.6 permits a tool to treat an unfixed start as fixed only with a
+diagnostic (cited by URL; see SR08). ConstantRates declares unmodified `Real`
+states, so `fixed=false` and the Definition 4.7 fallback start `0` apply. The
+constant path states `+0` as a source constraint
+(`ConstantProfile.Model.Initial`, `packages/core/RumocaCore/Constant/Semantics.lean`)
+and the CLI emits no notice. The Integrator path records `fallbackUsed` and
+`unfixedStartSelected` (`Solve.Model.initialization_correct`) and reports them
+at the declaration span. This contradicts `dev/initialization.md` 19 and 35-38.
+**Close with:** route constant initialization through the shared
+`Initialization` completion (free source relation, both notices at each
+declaration span) and restate `constantRates_initialization` over it.
 
 ## Items checked without a new defect
 

@@ -1,13 +1,16 @@
-# Initialization of the verified unit core
+# Initialization of the admitted sources
 
-Initialization is the next required compiler slice, ahead of further C-printer
-work or array/AD admission. The user explicitly requested binding equations,
-start values and default initialization on 2026-09-11. This work closes the
-existing SR08/S01 gap; it is not permission to grow unrelated grammar.
+Initialization covers the three admitted FMI 3 source families (scalar
+Integrator, TensorSquare and ConstantRates) and the scalar eFMI path. The user
+explicitly requested binding equations, start values and default initialization
+on 2026-09-11. This work addresses the SR08/S01 gap; it is not permission to
+grow unrelated grammar.
 
 The governing reference is the published **MLS 3.7 (May 19, 2026)**, not the
 neighboring Rust grammar's earlier 3.7-dev label or the specification's master
-branch. The current source has one unmodified continuous Real and `der(x)=1`.
+branch. The scalar source has one unmodified continuous Real and `der(x)=1`;
+TensorSquare fixes its array state with `each start=0, each fixed=true`;
+ConstantRates declares two or more unmodified scalar Reals.
 
 | Source distinction | Required interpretation | MLS clause |
 | --- | --- | --- |
@@ -157,9 +160,10 @@ factory, reset and initialization-mode bodies:
 - `constantRates_initialization`: the same composition over
   `ConstantAdapter.Contract` and the constant source relation.
 
-Open SR08 obligations for these families:
+These theorems record progress on SR08; they close nothing. Open obligations for
+these families, tracked in the standards review:
 
-- Host start values for TensorSquare and ConstantRates. Their model
+- SR08-B: host start values for TensorSquare and ConstantRates. Their model
   descriptions declare `x` with `initial="exact"` and `start="0 0"`, so FMI 3.0.2
   §2.3.2 permits `fmi3SetFloat64` on `x` in Instantiated and Initialization
   mode, and the setter contracts accept every finite value. The source relations
@@ -167,8 +171,8 @@ Open SR08 obligations for these families:
   at zero, so no theorem relates a nonzero host start to the source. Closure
   needs a start-parameterized source relation (the FMI start value as the
   `start` attribute) and a setter-then-exit composition over the actual adapter.
-- ConstantRates §8.6 selection. The declarations are unmodified, so MLS leaves
+- SR12: ConstantRates §8.6 selection. The declarations are unmodified, so MLS leaves
   the initial state free with fallback start zero, as for the scalar profile.
   `ConstantProfile.Model.Initial` instead states `+0` as a source constraint,
   and the constant path emits no `fallbackUsed`/`unfixedStartSelected` notice.
-- The tensor eFMI Startup and manifest-start correspondence (SR08 part B).
+- The tensor eFMI Startup and manifest-start correspondence (SR08-B).
