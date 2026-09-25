@@ -1,6 +1,7 @@
 import Rumoca.EFMITensorArtifactCheck
 import Rumoca.TensorEFMIExecutedContract
 import RumocaC.PrinterCertificate
+import RumocaC.FeatureCertificate
 import RumocaEFMI.TensorProductionText
 import RumocaEFMI.Directory
 
@@ -75,6 +76,8 @@ quoted character list and the byte-identity theorem `render = String.ofList <cha
 def certifyRender (c : String) : CommandElabM (Ident × Ident) := do
   let base := `Rumoca.CheckedTensorEFMIFiles
   let modelChars ← quoteCharacters (base.str "production_chars") c
+  -- Feature inventory of the actual Production C bytes: no allocation, no excluded feature.
+  discard <| CFeatures.Certificate.certify (base.str "production_chars") modelChars c
   -- The include lines and the interface header are plain strings; the twelve
   -- remaining fragments are each a concrete `CTree.Function`'s render.
   let kernelCount := 9
