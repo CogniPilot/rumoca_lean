@@ -57,7 +57,7 @@ structure Cycle.Admitted (cycle : Cycle) (header : CFenv.Header) (objects : Obje
 inductive Admitted (header : CFenv.Header) (objects : Objects) (retained : Address → Prop)
     (original : Heap) (p : Address) (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (readers : InitializationProtocol.ReadBank) : Plan → Prop where
   | finish : InitializationProtocol.ReferenceTrace .cs .reset actions state →
-      (∀ action ∈ actions, action.Prepared objects retained original p access readers) → state.phase.Finished →
+      (∀ action ∈ actions, action.Prepared objects retained original p access readers) →
       Admitted header objects retained original p access buffers readers (.finish actions state)
   | last : cycle.Admitted header objects retained original p access buffers readers →
       Admitted header objects retained original p access buffers readers (.last cycle)
@@ -130,6 +130,24 @@ theorem Plan.Outside.not_record {plan : Plan} {p q : Address}
 theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted header objects retained original p access buffers readers) :
     CSRun.CanFinish cycle.final.mode :=
   admitted.simulation.can_finish (Or.inl rfl)
+
+/-- Plans ending where fmi3Terminate is accepted or in Terminated. Every
+simulation cycle ends there; a final initialization segment does after exit
+or after an initialization error. -/
+def Plan.Finished : Plan → Prop
+  | .finish _ state => state.phase.Finished
+  | .last _ => True
+  | .next _ following => following.Finished
+
+theorem Admitted.can_finish (admitted : Admitted header objects retained original p access buffers readers plan)
+    (finished : plan.Finished) : LifecycleRelease.CanFinish .cs plan.mode := by
+  induction admitted with
+  | finish _ _ => exact InitializationProtocol.Phase.can_finish .cs _ finished
+  | last admitted =>
+    rcases admitted.can_finish with active | stopped
+    · exact Or.inl (by simp [Plan.mode, active, Reference.Allowed])
+    · exact Or.inr stopped
+  | next _ _ ih => exact ih finished
 
 end Rumoca.FMI3.CSProtocol
 end

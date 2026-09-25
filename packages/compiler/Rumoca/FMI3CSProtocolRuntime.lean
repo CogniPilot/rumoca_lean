@@ -67,12 +67,18 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 SourceTrace a.solve.prepareFMI3 header p buffers plan records ∧ CReadOnly.Preserves heap after ∧
                 InitializationProtocol.Retention plan.loggingUpdate p live after ∧
                 load after (p.member "logging") = some (CBody.boolean (plan.loggingUpdate.getD factoryArgs.logging)) ∧
-                LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .cs plan.mode ∧
                 SlotOwners.release (SlotOwners.update owners slot (some owner)) slot owner = some owners ∧
-                SlotOwners.Represents objects.flagsBlock (LifecycleRelease.releasedHeap after objects slot plan.mode) owners ∧
+                InitializationProtocol.Freed objects program tag after slot (SlotOwners.update owners slot (some owner)) owner ∧
+                SlotOwners.Represents objects.flagsBlock (InitializationProtocol.freedHeap after objects slot) owners ∧
                 (∀ q, CSRun.Protected objects buffers q → plan.Outside p access buffers q →
                   q ≠ AtomicSlots.address objects.flagsBlock slot →
-                  LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q) := by
+                  InitializationProtocol.freedHeap after objects slot q = heap q) ∧
+                (plan.Finished →
+                  LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .cs plan.mode ∧
+                  SlotOwners.Represents objects.flagsBlock (LifecycleRelease.releasedHeap after objects slot plan.mode) owners ∧
+                  (∀ q, CSRun.Protected objects buffers q → plan.Outside p access buffers q →
+                    q ≠ AtomicSlots.address objects.flagsBlock slot →
+                    LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q)) := by
   obtain ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, loggingMetadata, equation, sigs, pool, made, printed, functions,
     prepared, create⟩ := InitializationProtocol.runtime_create_release compiled build
   refine ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, loggingMetadata, equation, sigs, pool, made, printed, functions, ?_⟩
@@ -115,14 +121,21 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   have certified := correct initialization simulation reset outputs guarded (fun q inside => (resources.readerGuarded q inside).2.1) admitted invariant
   refine ⟨certified, ?_⟩
   intro records after completed
-  obtain ⟨sourceTrace, released, frame⟩ := certified.released objects tag slot finish releaseBindings rfl created.owned created.metadata completed
-  have discharged := released.discharged
-  have restored := released.ownersAfter
-  rw [SlotOwners.release_reserved_restore reserved] at discharged restored
+  obtain ⟨sourceTrace, freed, freedFrame⟩ := certified.freed objects tag slot releaseBindings rfl created.owned created.metadata completed
+  have discharged := freed.discharged
+  have freedOwners := freed.ownersAfter
+  rw [SlotOwners.release_reserved_restore reserved] at discharged freedOwners
   refine ⟨sourceTrace, creationReadonly.trans (certified.completed _ _ completed).2.2.1,
     (certified.completed _ _ completed).2.2.2.1,
     (certified.completed _ _ completed).2.2.2.1.logging_value created.initialized.loggingValue,
-    released, discharged, restored, ?_⟩
+    discharged, freed, freedOwners,
+    fun q inside outside notFlag => (freedFrame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag), ?_⟩
+  intro finished
+  obtain ⟨_, released, frame⟩ := certified.released objects tag slot finish releaseBindings rfl created.owned created.metadata
+    (admitted.can_finish finished) completed
+  have restored := released.ownersAfter
+  rw [SlotOwners.release_reserved_restore reserved] at restored
+  refine ⟨released, restored, ?_⟩
   intro q inside outside notFlag
   exact (frame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag)
 

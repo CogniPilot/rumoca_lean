@@ -5,3 +5,4 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.FMI3.CSProtocol.Plan.Outside.not_record
 #audit axioms Rumoca.FMI3.CSProtocol.Cycle.Admitted.can_finish
+#audit axioms Rumoca.FMI3.CSProtocol.Admitted.can_finish

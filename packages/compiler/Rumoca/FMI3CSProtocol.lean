@@ -76,24 +76,19 @@ structure Ready [CInterface] (program : Program Invocation) (objects : Objects) 
     (owners : SlotOwners.State objects.capacity) (original literals heap : Heap) (p : Address) (mode : Mode) (readers : ReadBank) : Prop where
   kindValue : load heap (p.member "kind") = some (.integer Kind.cs.code)
   modeValue : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩
-  finishable : LifecycleRelease.CanFinish .cs mode
   persistent : Persistent program objects retained owners original literals heap p readers
 
 variable [interface : CInterface] {program : Program Invocation} {objects : Objects} {owners : SlotOwners.State objects.capacity}
 
 theorem Ready.initialization
-    (invariant : Invariant program objects retained owners original literals heap p .cs state readers)
-    (finished : state.phase.Finished) : Ready program objects retained owners original literals heap p (state.phase.mode .cs) readers :=
-  ⟨invariant.stored.instanceStored.kind, invariant.stored.instanceStored.mode,
-    state.phase.can_finish .cs finished, invariant.persistent⟩
+    (invariant : Invariant program objects retained owners original literals heap p .cs state readers) :
+    Ready program objects retained owners original literals heap p (state.phase.mode .cs) readers :=
+  ⟨invariant.stored.instanceStored.kind, invariant.stored.instanceStored.mode, invariant.persistent⟩
 
 theorem Ready.simulation (stored : CSRun.Stored model.solve heap p buffers reference)
-    (persistent : Persistent program objects retained owners original literals heap p readers)
-    (finished : CSRun.CanFinish reference.mode) : Ready program objects retained owners original literals heap p reference.mode readers := by
-  refine ⟨stored.kind, stored.mode_cell, ?_, persistent⟩
-  rcases finished with active | stopped
-  · exact Or.inl (by simp [active, Reference.Allowed])
-  · exact Or.inr stopped
+    (persistent : Persistent program objects retained owners original literals heap p readers) :
+    Ready program objects retained owners original literals heap p reference.mode readers :=
+  ⟨stored.kind, stored.mode_cell, persistent⟩
 
 structure CycleContract (model : Solve.FMI3Model source) (header : CFenv.Header) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)
@@ -220,7 +215,7 @@ theorem interrupted_correct
     (actual : Interrupted program p access heap plan records stop) :
     SourceInterrupted model header p buffers plan records stop := by
   induction admitted generalizing heap records stop with
-  | finish reference prepared _ =>
+  | finish reference prepared =>
     cases actual with
     | finish interrupted => exact .finish (initialization.interrupted invariant reference prepared interrupted)
   | last admitted =>
@@ -259,7 +254,7 @@ theorem correct
     (invariant : Invariant program objects retained owners original literals heap p .cs .reset readers) :
     Contract model header program objects retained owners original literals heap p access buffers plan readers := by
   induction admitted generalizing heap with
-  | finish reference prepared finished =>
+  | finish reference prepared =>
     have certified := initialization heap _ _ invariant reference prepared
     constructor
     · rcases certified.progress with ⟨observed, after, checkpoints, executed⟩ | stopped
@@ -269,10 +264,10 @@ theorem correct
       cases executed with
       | finish called =>
         obtain ⟨observations, ivps, ready, readonly, keeps, frame⟩ := certified.completed _ _ _ called
-        exact ⟨.finish ⟨observations, ivps⟩, Ready.initialization ready finished, readonly, keeps,
+        exact ⟨.finish ⟨observations, ivps⟩, Ready.initialization ready, readonly, keeps,
           fun q inside outside => frame q (guarded.protects inside) outside⟩
     · intro records stop interrupted
-      exact interrupted_correct initialization simulation reset outputs guarded readerOutside (.finish reference prepared finished) invariant interrupted
+      exact interrupted_correct initialization simulation reset outputs guarded readerOutside (.finish reference prepared) invariant interrupted
   | last admitted =>
     have certified := cycle_contract initialization simulation outputs guarded admitted invariant
     constructor
@@ -285,7 +280,7 @@ theorem correct
       cases executed with
       | last initialized simulated =>
         obtain ⟨evidence, stored, persistent, readonly, keeps, frame⟩ := certified.completed initialized simulated guarded
-        exact ⟨.last evidence, Ready.simulation stored persistent admitted.can_finish,
+        exact ⟨.last evidence, Ready.simulation stored persistent,
           readonly, keeps, fun q inside outside => frame q inside outside.1 outside.2⟩
     · intro records stop interrupted
       exact interrupted_correct initialization simulation reset outputs guarded readerOutside (.last admitted) invariant interrupted
@@ -332,8 +327,9 @@ theorem Contract.progress_source
   · exact Or.inl ⟨records, after, completed, (certified.completed _ _ completed).1⟩
   · exact Or.inr (certified.stopped_source stopped)
 
-/-- Every completed recurring history can terminate and release the original
-slot. The suffix has complete actual call contracts, not assumed successes. -/
+/-- Every completed recurring history that ends where fmi3Terminate is
+accepted, or in Terminated, can terminate and release the original slot. The
+suffix has complete actual call contracts, not assumed successes. -/
 theorem Contract.released {program : Program Invocation}
     (objects : Objects) (tag : CAtomicBoolean.Calls.Event → Invocation) (slot : Fin objects.capacity)
     {owners : SlotOwners.State objects.capacity}
@@ -343,6 +339,7 @@ theorem Contract.released {program : Program Invocation}
     (flags : interface.constants "rumoca_instance_flags" = some (.pointer (some ⟨objects.flagsBlock, [], 0⟩)))
     (owned : owners slot = some owner)
     (metadata : load heap ((objects.instances.index slot.val).member "slot") = some (.integer slot.val))
+    (finishable : LifecycleRelease.CanFinish .cs plan.mode)
     (executed : Completed program (objects.instances.index slot.val) access heap plan records after) :
     SourceTrace model header (objects.instances.index slot.val) buffers plan records ∧
     LifecycleRelease.Released objects program tag after slot owners owner .cs plan.mode ∧
@@ -353,12 +350,46 @@ theorem Contract.released {program : Program Invocation}
   have metadataAfter : load after ((objects.instances.index slot.val).member "slot") = some (.integer slot.val) := by
     simpa only [load, keeps.fields "slot" (by decide) (by decide)] using metadata
   have released := LifecycleRelease.finish_correct objects program tag termination release flags after slot .cs plan.mode
-    owners owner ready.kindValue ready.modeValue ready.finishable ready.persistent.ownership owned metadataAfter
+    owners owner ready.kindValue ready.modeValue finishable ready.persistent.ownership owned metadataAfter
   refine ⟨sourceTrace, released, ?_⟩
   intro q inside outside notFlag
   have notMode : q ≠ (objects.instances.index slot.val).member "mode" :=
     fun same => outside.not_record (same ▸ (objects.instances.index slot.val).member_in_record "mode")
   exact (released.frame q notMode notFlag).trans (frame q inside outside)
+
+end Rumoca.FMI3.CSProtocol
+end
+
+noncomputable section
+namespace Rumoca.FMI3.CSProtocol
+open CMemory StaticFactory CCalls.Events
+open InitializationProtocol (ReadBank)
+
+variable [interface : CInterface] {source : AST.Model} {model : Solve.FMI3Model source} {readers : ReadBank}
+
+/-- Every completed recurring history, in any lifecycle state, can free the
+original slot without a preceding fmi3Terminate (FMI 3.0.2 §2.3.1). -/
+theorem Contract.freed {program : Program Invocation}
+    (objects : Objects) (tag : CAtomicBoolean.Calls.Event → Invocation) (slot : Fin objects.capacity)
+    {owners : SlotOwners.State objects.capacity}
+    (certified : Contract model header program objects retained owners original literals heap
+      (objects.instances.index slot.val) access buffers plan readers)
+    (release : StaticRelease.Bindings program tag)
+    (flags : interface.constants "rumoca_instance_flags" = some (.pointer (some ⟨objects.flagsBlock, [], 0⟩)))
+    (owned : owners slot = some owner)
+    (metadata : load heap ((objects.instances.index slot.val).member "slot") = some (.integer slot.val))
+    (executed : Completed program (objects.instances.index slot.val) access heap plan records after) :
+    SourceTrace model header (objects.instances.index slot.val) buffers plan records ∧
+    InitializationProtocol.Freed objects program tag after slot owners owner ∧
+    (∀ q, CSRun.Protected objects buffers q → plan.Outside (objects.instances.index slot.val) access buffers q →
+      q ≠ AtomicSlots.address objects.flagsBlock slot →
+      InitializationProtocol.freedHeap after objects slot q = heap q) := by
+  obtain ⟨sourceTrace, ready, _, keeps, frame⟩ := certified.completed _ _ executed
+  have metadataAfter : load after ((objects.instances.index slot.val).member "slot") = some (.integer slot.val) := by
+    simpa only [load, keeps.fields "slot" (by decide) (by decide)] using metadata
+  have freed := InitializationProtocol.freed_correct objects program tag release flags after slot owners owner
+    ready.persistent.ownership owned metadataAfter
+  exact ⟨sourceTrace, freed, fun q inside outside notFlag => (freed.frame q notFlag).trans (frame q inside outside)⟩
 
 end Rumoca.FMI3.CSProtocol
 end

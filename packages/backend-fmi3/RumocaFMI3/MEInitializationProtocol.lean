@@ -61,13 +61,28 @@ theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted obj
 inductive Admitted (objects : Objects) (retained : Address → Prop) (original : Heap)
     (p : Address) (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) (readers : InitializationProtocol.ReadBank) : Plan → Prop where
   | finish : InitializationProtocol.ReferenceTrace .me .reset actions state →
-      (∀ action ∈ actions, action.Prepared objects retained original p access readers) → state.phase.Finished →
+      (∀ action ∈ actions, action.Prepared objects retained original p access readers) →
       Admitted objects retained original p access addresses buffer readers (.finish actions state)
   | last : cycle.Admitted objects retained original p access addresses buffer readers →
       Admitted objects retained original p access addresses buffer readers (.last cycle)
   | next : cycle.Admitted objects retained original p access addresses buffer readers →
       Admitted objects retained original p access addresses buffer readers following →
       Admitted objects retained original p access addresses buffer readers (.next cycle following)
+
+/-- Plans ending where fmi3Terminate is accepted or in Terminated. Every
+simulation cycle ends there; a final initialization segment does after exit
+or after an initialization error. -/
+def Plan.Finished : Plan → Prop
+  | .finish _ state => state.phase.Finished
+  | .last _ => True
+  | .next _ following => following.Finished
+
+theorem Admitted.can_finish (admitted : Admitted objects retained original p access addresses buffer readers plan)
+    (finished : plan.Finished) : LifecycleRelease.CanFinish .me plan.mode := by
+  induction admitted with
+  | finish _ _ => exact InitializationProtocol.Phase.can_finish .me _ finished
+  | last admitted => exact admitted.can_finish
+  | next _ _ ih => exact ih finished
 
 inductive Record where
   | initialization (observed : List (Float64Access.Observation Invocation)) (checkpoints : List Heap) (heap : Heap)

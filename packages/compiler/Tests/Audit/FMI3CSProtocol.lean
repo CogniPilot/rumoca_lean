@@ -14,3 +14,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.CSProtocol.Contract.stopped_source
 #audit axioms Rumoca.FMI3.CSProtocol.Contract.progress_source
 #audit axioms Rumoca.FMI3.CSProtocol.Contract.released
+#audit axioms Rumoca.FMI3.CSProtocol.Contract.freed
