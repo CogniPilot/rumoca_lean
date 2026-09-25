@@ -78,7 +78,10 @@ Specific findings from the text, lifecycle diagram and official XSDs:
   this concrete Clock requirement in the selected version.
 - The §3.2.3 state diagram starts in initialization, then enters idle. Only
   idle admits output reads, recalibration and sampling. Shutdown is terminal.
-  The tiny profile has no input/parameter writes; it still needs the admitted
+  The scalar profile has no input or parameter writes. The tensor profile's
+  input `u` is set by the runtime environment before each DoStep (§3.2.3,
+  extract lines 1314-1328); its Startup initialization remains an open finding in
+  the standards review. Both profiles still need the admitted
   lifecycle trace and C memory contracts. Repeated Startup is not a normal
   sampling-cycle transition. Outputs cannot be written by the host.
 - §3.2.3 L-1 permits an explicitly agreed deployment restriction, such as

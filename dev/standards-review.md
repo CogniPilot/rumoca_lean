@@ -445,7 +445,7 @@ core, emitter or artifact file is changed by this record.
 | Scope and identity | Unchanged admitted sources and products: scalar Integrator C/FMU/Algorithm Code/eFMU; fixed extent-two TensorSquare FMU/Algorithm Code/eFMU (no standalone C); pinned two-state ConstantRates FMU only. No new Modelica case, extent, rank, rate, callee, operator, type, method or literal value is admitted. Driven sources, constant eFMI and broader development parses stay outside production admission. |
 | Architecture continuity | One general start-symbol `block` grammar on the reusable in-tree LALR engine with signed resource credits, structural typed actions and generated certificates (471 canonical/121 LALR states, 20 rules after C1, generated and kernel-checked). Numbers become a scanner token class (`Token.number`, grammar symbol `IDENT`, Modelica precedent); method names become `IDENT`. Admission is core static semantics over the generic AST, not grammar enumeration or token-pattern recognition. Tensor Algorithm Code is printed from an AST assembled by core builders; loops keep rank/extents and never enumerate cells. The old profile/fixture parser path is deleted, not retained beside the new one. |
 | Normative baseline | MLS 3.7, FMI 3.0.2 ME/CS, eFMI 1.0.0 Beta 1; pinned vendor schemas/headers unchanged. Extract/grammar hashes below verified at review time. TODO-labelled eFMI productions and rules stay labelled; each restricted interpretation is recorded below. No version migration or schema-only conformance inference. |
-| MLS | Modelica EBNF bytes, source semantics and all retained clause mappings of the prospective record are unchanged: lexical §§2.1-2.4/A.1, syntax A.2.1/A.2.2/A.2.4/A.2.6-A.2.7, equations §§8.2-8.3.1, `der`, Real §4.9.1, initialization §8.6. Source `jacobian` remains an explicit extension resolved upstream. S01/SR08 and ideal-Real/finite-storage limits remain open. |
+| MLS | Modelica EBNF bytes, source semantics and all retained clause mappings of the prospective record are unchanged: lexical §§2.1-2.4/A.1, syntax A.2.1/A.2.2/A.2.4/A.2.5/A.2.6-A.2.7, equations §§8.2-8.3.1, `der`, Real §4.9.1, initialization §8.6. Source `jacobian` remains an explicit extension resolved upstream. S01/SR08 and ideal-Real/finite-storage limits remain open. |
 | FMI | No FMI source, adapter, kernel, XML or archive byte changes; FMI3 packages do not import GALEC. All three FMUs keep §§2.2.4, 2.3, 2.4, 2.4.7.2, 2.4.10, 2.5.1.3, 3.2.1 and 4.2.1 obligations and existing finite/history/native limitations. |
 | eFMI | §3.2.4 G-2/G-3 and TODO-labelled statement productions instantiated as a strict subset (clause table below). Tensor target `.*` (GJ03) and undeclared target `jacobian` (GJ01) are replaced by one-based indexed loops using `+` and `*` on scalar cells. Startup/Recalibrate/DoStep meanings, sample period and §3.2.5 signal behavior are unchanged. Chapters 2/3/5 container, manifest and Production Code correspondence must rebind the revised Algorithm Code. N01, block-direction TODO and the Startup input conflict remain. |
 | Formal correspondence | Established at `8a3a513` (owner 4,497 jobs/7,222 reports; 1,263 required roots), as previously required: generated LALR certificates and action coverage for the 21 rules; typed elaboration of the actual parsed AST through the owned `Declarations`, `Expressions`, `Static`, `Loops`, `Methods` and `Block` checks with the named target Integer ceiling; composition with prepared square/AD execution and target execution (R1-R4). Scalar proofs are rebased onto `AST.Block` without changing scalar bytes. |
@@ -694,7 +694,7 @@ blockers remain, except the corrected manifest-cardinality concern below.
 ### Correction: scalar-encoded array manifest starts are permitted — 2026-09-23 UTC
 
 Main read the complete pinned eFMI Beta1 §3.1.6 variable/start description,
-including the text following the row-major example. Extract lines887–897
+including the text following the row-major example. Extract lines 882-899
 explicitly permit either a scalar encoding, used uniformly for every element,
 or a multi-dimensional encoding with element values. The earlier focused
 method-policy review cited only lines873–884 and failed to read this permission.
@@ -6381,6 +6381,46 @@ unchanged. Exact checked FMU/eFMU archives and their SHA-256 identities are
 retained in `build/c-token/artifacts/`. No new example-based suite is added.
 **Stage decision: open; grammar growth remains blocked.**
 
+### S01 whole-subset MLS clause matrix
+
+This matrix extends the unit clause map below to the three production FMI 3
+sources: `Integrator` (`examples/Integrator.mo`), `TensorSquare`
+(`examples/TensorSquare.mo`) and `ConstantRates` (`examples/ConstantRates.mo`).
+Annex A citations are to the pinned MLS 3.7 syntax extract
+`build/modelica-3.7-syntax-reference.html` (SHA-256
+`62c1756596f423dca0f21e86421a82b4e1836c04c558f870f7afabb685201ea1`), headings at
+lines 108 (A.1), 314 (A.2.1), 340 (A.2.2), 650 (A.2.4), 715 (A.2.5, `each` at
+776), 843 (A.2.6) and 1168 (A.2.7). Chapters 2-4, 8 and 10 are cited by URL
+only; they are not pinned locally. Productions are those of
+`packages/modelica-parser/grammar/Modelica.ebnf`. Precondition classes:
+**proved** (a Lean theorem over every admitted input), **checked** (a decidable
+resolution or actual-file check that rejects before any artifact exists) and
+**external** (a host or C-translator contract outside the proof model).
+Artifact certificates: `Rumoca.CheckedFMI3Files.source_to_build` and
+`Rumoca.CheckedEFMIFiles.source_to_archive` (Integrator),
+`Rumoca.CheckedTensorFMI3Files.source_to_build` (TensorSquare) and
+`Rumoca.CheckedConstantFMI3Files.source_to_build` (ConstantRates).
+
+| Clause | Production and admitted form | Owning theorems | Class | Rejected or open |
+| --- | --- | --- | --- | --- |
+| A.1, §§2.1-2.4: identifiers, keywords, literals | ASCII `IDENT`; reserved words (`Rumoca.reserved`, including `model`, `Real`, `input`, `output`, `equation`, `der`, `each`, `true`, `end`); digit-run literals `0`, `1`, `2`; the `.*` token; a signed decimal (`2.5`, `-1`) as one number token of `real_literal`. | `Rumoca.lex_correct`, `scan_sound`, `scan_complete`, `Lexes.spelled`; `ConstantProfile.parseDecimal` records the exact base-ten content. | proved | Comments, quoted identifiers, strings and other literal forms. Interpretation: the token `-1` denotes the A.2.7 unary minus applied to the unsigned number `1`; its value is identical. |
+| A.2.1: stored definition | `stored_definition: class_definition ';'`; no `within`. All three sources. | `Rumoca.parsed_in_ebnf` (unit); `ArrayProfile.in_grammar`, `ConstantProfile.in_grammar`; completeness `compile_complete`, `compileTensor_complete`, `compileConstant_complete`. | proved | `within`, multiple definitions. No full MLS parser-completeness claim. |
+| A.2.2: class definition | `model IDENT composition end IDENT`; end name equal to the model name. | `AST.Resolved`, `ArrayProfile.Model.Resolved`, `ConstantProfile.Model.Resolved`; `LocatedParsed.resolve_error_locations`, `ArrayProfile.LocatedParsed.resolve_complete`, `ConstantProfile.LocatedParsed.resolve_complete`. | checked | Other class prefixes, extends, public/protected sections. |
+| A.2.4: component clause | Integrator: one `Real x`. TensorSquare: `input Real u[2]`, `output Real x[2](...)`, `output Real J[2,2]` (literal extent `2`). ConstantRates: two or more `Real` scalars. | `ArrayProfile.decode_sound`/`decode_complete`, `Model.stateDimensions`/`jacobianDimensions`; `ConstantProfile.decode_sound`/`decode_complete`; distinct names in each `Resolved`. | proved (syntax), checked (distinct names) | Other types, prefixes, extents and mixed profiles; a single-state constant model. |
+| A.2.5: modification, `each` | TensorSquare only: `(each start=0, each fixed=true)` on the array state. Integrator and ConstantRates are unmodified. | `ArrayProfile.Model.Resolved` (attribute names `start`, `fixed`); `ArrayProfile.Model.Initial`, `Flat.lower_initial`, `dae_initialization_correct`, `initialization_chain_correct`, `ArrayCompiler.Prepared.initialization_correct`; `InitializationCorrespondence.tensorSquare_initialization`. | proved (semantics), checked (names) | Bindings, other attributes or values, unmodified array states, scalar modifications. |
+| A.2.6, §§8.2-8.3.1: equations | Integrator: `der(x) = 1`. TensorSquare: `der(x) = u .* u; J = jacobian(u .* u, u);`. ConstantRates: one `der(s) = <real_literal>` per state, in any order. | `LocatedParsed.resolved_references`; `ArrayProfile.Model.Resolved`; `ConstantProfile.Model.equation_unique`, `Model.decimalOf_perm`, `ConstantCompiler.prepare_perm_invariant`. | checked (lookup), proved (order invariance) | Unbound or duplicate references, uncovered states, general scopes. The literal `1` is an Integer converted to Real. |
+| A.2.7, Operator 3.12, §10.6: `der`, `.*`, literals | `der` of a declared state; elementwise `u .* u`; decimal rate literals. | `Source.trajectory_derivative`, `lowering_chain_behavior_correct` (unit); `ArrayProfile.lowering_chain_correct`, `dae_chain_correct`, `Call.square_denotes_iff`, `ArrayCompiler.prepare_correct`; `ConstantProfile.Model.lowering_chain`, `ConstantCompiler.prepare_correct`. | proved | Other operators and function calls; `.*` is admitted only as `u .* u`. |
+| §4.9.1: finite Real values | Binary64 storage; constant rates are the nearest-even rounding of their decimal content, with magnitude below `2^969`. | `Binary64.finiteEncodingEquiv`; `ConstantProfile.Decimal.rate_rounds`, `ConstantCompiler.Prepared.rate_exact`, `CConstant.rate_rounds`; `Decimal.admitted`, `Model.lower_admitted`, `CConstant.no_overflow`, `ConstantArtifact.no_overflow`. | proved (rounding, overflow), checked (magnitude), external (C translator conversion, C11 6.4.4.2) | Larger rate magnitudes (CF03 admission). Ideal unbounded trajectories are not stored values. |
+| §4.4.2.2: top-level input | TensorSquare `u`, FMI causality `input`. | FMI metadata and setter contracts. | external (host supplies finite values) | Startup initialization of the eFMI input stays open (Startup input policy). |
+| §8.6, Definition 4.7: initialization | Integrator: unmodified, fallback start `0` selected as fixed with both notices; any finite start is admissible. TensorSquare: `start=0` fixed. ConstantRates: every state at `+0`. | `Source.initializes_iff`, `Solve.Model.initialization_correct`, `initialized_solution_unique`; `ArrayCompiler.Prepared.initialization_correct`; `ConstantProfile.Model.initialization_chain`, `ConstantCompiler.Prepared.initialization_correct`; `InitializationCorrespondence.integrator_initialization`, `tensorSquare_initialization`, `constantRates_initialization`. | proved | Open SR08: host start values for TensorSquare and ConstantRates; ConstantRates states `+0` as a source constraint without the §8.6 notices; tensor eFMI Startup (SR08 part B). See [initialization](initialization.md#composed-initialization-correspondence-per-fmi-family). |
+| Non-MLS extension: `jacobian` | TensorSquare only: `J = jacobian(u .* u, u)` with both product operands and the differentiation variable equal to the declared input and the result assigned to the declared matrix output. | `ArrayProfile.Call.jacobian_iff`, `ArrayProfile.Model.Resolved`; `JacobianOf.square_iff`. | proved (derivative), checked (callee and operands) | Any other callee name, operand or output. This is an authorized extension, not an MLS conformance claim. |
+
+Manifest array start cardinality is resolved by the scalar encoding that eFMI
+Beta 1 §3.1.6 permits (extract lines 882-899). The residual obligation is the
+manifest-start-to-Startup correspondence, tracked with SR08 part B.
+S01 closes only after an independent review of this matrix against the pinned
+text.
+
 ### Prior unit-stage baseline
 
 Reviewed implementation: the previous checkpoint.
@@ -6399,7 +6439,8 @@ not imply production acceptance. Reviewed EBNF SHA-256 identities are:
 | `packages/modelica-parser/grammar/Modelica.ebnf` | `90be2d4fe36634a43af1c0c57c394054468b8ebfc1c08c572f6bdfc7cb412b0e` |
 | `packages/galec-parser/grammar/GALEC.ebnf` | `0cfa1a87ac98a207d6fd05628414763e0d4b7640641d6c262f246cecae40ab7a` |
 
-This is the initial clause map for S01, not closure of the full source-semantics
+This is the unit clause map for S01, extended to all admitted sources by the
+[whole-subset matrix](#s01-whole-subset-mls-clause-matrix); it is not closure of the full source-semantics
 review. A restriction of the supported language and a mismatch for accepted
 input are different findings.
 

@@ -82,8 +82,9 @@ subsequent required GALEC/Algorithm origin changes passed their full artifact
 gate. Unit FMI IVP operation origins and their relation to the actual initial
 plan also passed the full artifact gate in `build/fmi-provenance/full-gate.log`.
 Development tensor origins, emitted-byte maps, FMI allocation and
-host-set/lifecycle composition remain open. No binding/start/fixed grammar
-case is admitted by these changes. SR08 is not closed.
+host-set/lifecycle composition remain open. These changes admit no binding,
+start or fixed grammar case for the scalar profile; the array profile separately
+admits `each start=0, each fixed=true` (MLS A.2.5). SR08 is not closed.
 
 The following C increment makes the shared initializer's operation origins
 mandatory. FMI creation/reset consume its checked emission;
