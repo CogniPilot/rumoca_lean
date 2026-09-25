@@ -5,13 +5,8 @@ inputs may alias; no output or scratch buffer is used. -/
 namespace Rumoca.CTensor.ProductPreflight
 open CTree
 
-def value : Expr := .bin .mul (indexed "left") (indexed "right")
+def value : Expr := FinitePreflight.coordinate .mul
 
-def function : Function where
-  signature := ⟨"int32_t", "rumoca_tensor_mul_finite",
-    [⟨"const double *", "left", false⟩, ⟨"const double *", "right", false⟩,
-      ⟨"size_t", "count", false⟩]⟩
-  body := FinitePreflight.body value
-  static := false
+def function : Function := FinitePreflight.operation "rumoca_tensor_mul_finite" .mul
 
 end Rumoca.CTensor.ProductPreflight

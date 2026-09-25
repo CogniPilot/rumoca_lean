@@ -1111,7 +1111,7 @@ theorem derivBody_printable (shape : Tensor.Shape) (hasOutput : Bool) :
       derivCheckedCopyTail, jacobianCall, jacobianEntryArgs,
       TensorDerivativePreflight.body, TensorDerivativePreflight.code, TensorDerivativePreflight.reject,
       Rumoca.CTensor.ProductPreflight.Inline.code, Rumoca.CTensor.ProductPreflight.Inline.setup,
-      Rumoca.CTensor.ProductPreflight.value, Rumoca.CTensor.FinitePreflight.segmentWith,
+      Rumoca.CTensor.ProductPreflight.value, Rumoca.CTensor.FinitePreflight.coordinate, Rumoca.CTensor.FinitePreflight.segmentWith,
       Rumoca.CTensor.FinitePreflight.iteration, Rumoca.CTensor.FiniteScan.iterationFor,
       Rumoca.CTensor.indexed, CLoops.counted, Discard.body, Runtime.log,
       derivCountReject, derivEntryArgs, Runtime.region,

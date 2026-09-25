@@ -9,7 +9,7 @@ witness. This does not yet certify invocation or failure handling by a public
 FMI/eFMI method, nor the native compiler, floating environment or headers. -/
 noncomputable section
 namespace Rumoca.CTensor.ProductPreflight
-open CMemory CMemory.TensorView CMemory.EncodedTensor
+open CMemory CMemory.TensorView CMemory.EncodedTensor FinitePreflight
 
 theorem square_finite_execution (state input : Values shape) :
     Solve.Tensor.Numerical.allFiniteBits (MultiplicationTotal.result input input) = true ↔
@@ -30,17 +30,17 @@ def ArtifactContract (actual : String) : Prop :=
   (∀ (interface : CInterface) (declarations : CDeclaredMembers.Declarations)
     (objects : CDeclaredMembers.Objects) (p : CCalls.Program) (shape : Tensor.Shape)
     (a b : Values shape) (heap : Heap) (left right : Option Address),
-    HeaderTypes interface → p.definitions function.signature.name = some (.tree function) →
+    FinitePreflight.HeaderTypes interface → p.definitions function.signature.name = some (.tree function) →
     FiniteScan.Readable heap left (finiteBits a) → FiniteScan.Readable heap right (finiteBits b) →
     shape.volume < 2 ^ 64 →
     (∀ stack, Transition.Reaches
         (@CContextMachine.machine interface (@CContextMachine.declared interface declarations objects) p).step
-        (.calling function.signature.name (argumentValues left right shape.volume) heap stack)
+        (.calling function.signature.name (FinitePreflight.argumentValues left right shape.volume) heap stack)
         (.returning
           (CBody.boolean (Solve.Tensor.Numerical.allFiniteBits (MultiplicationTotal.result a b))) heap stack)) ∧
     (∀ behavior,
       (@CContextMachine.machine interface (@CContextMachine.declared interface declarations objects) p).Behaves
-        (.calling function.signature.name (argumentValues left right shape.volume) heap .done) behavior ↔
+        (.calling function.signature.name (FinitePreflight.argumentValues left right shape.volume) heap .done) behavior ↔
         behavior = .terminates
           ⟨CBody.boolean (Solve.Tensor.Numerical.allFiniteBits (MultiplicationTotal.result a b)), heap⟩) ∧
     (Solve.Tensor.Numerical.allFiniteBits (MultiplicationTotal.result a b) = true ↔

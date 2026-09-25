@@ -50,6 +50,16 @@ theorem negative_overflow_below (x : Binary64.Value) :
 section
 variable [interface : CInterface]
 
+/-- A floating addition whose left operand is an array element uses the
+floating rule, with no finite-result premise. -/
+theorem eval_index_add (expressions : CBody.Expressions) (env : CBody.Locals)
+    (types : CLoops.Types) (heap : Heap) (array index right : Expr) (a b : Binary64.Value)
+    (leftValue : expressions.value env heap (.index array index) = some (.finite a))
+    (rightValue : expressions.value env heap right = some (.finite b)) :
+    CLoops.evalWith expressions env types heap (.bin .add (.index array index) right) =
+      some (.float64 (addResult a b).encode) := by
+  simp only [CLoops.evalWith, leftValue, rightValue, bind, Option.bind_some, add_result]
+
 /-- The generic member-read addition used by adapter clock declarations,
 with no finite-result premise. Both operands must have finite values. -/
 theorem eval_member_add (env : CBody.Locals) (types : CLoops.Types) (heap : Heap)

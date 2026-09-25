@@ -70,7 +70,7 @@ macro "tadmit" : tactic => `(tactic| (
     TensorDerivativePreflight.body, TensorDerivativePreflight.code, TensorDerivativePreflight.reject,
     CTensor.ProductPreflight.Inline.code, CTensor.ProductPreflight.Inline.setup,
     CTensor.FinitePreflight.segmentWith, CTensor.FinitePreflight.iteration,
-    CTensor.FiniteScan.iterationFor, CTensor.ProductPreflight.value, CTensor.indexed,
+    CTensor.FiniteScan.iterationFor, CTensor.ProductPreflight.value, Rumoca.CTensor.FinitePreflight.coordinate, CTensor.indexed,
     CLoops.counted, Discard.body,
     TensorContinuousStates.derivTail,
     TensorContinuousStates.derivCopyTail, TensorContinuousStates.derivCountReject,

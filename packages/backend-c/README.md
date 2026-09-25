@@ -56,6 +56,7 @@ source/IR evidence and have their own composed correctness contracts.
 | `TensorCallContract`, `TensorFill*` | Stronger call/file contracts and exact Solve initialization/seed fills |
 | `Identifier` | Shared C11 identifier and lexical facts used by target printers |
 | `TensorProgramCode`, `TensorProgramMemory`, `TensorProgramProofs` | Shaped storage plans, thin whole-program emission and finite execution/frame proofs |
+| `TensorFinitePreflight`, `TensorOperationPreflight`, `TensorProductPreflight*`, `TensorSumPreflight*` | Shared read-only finiteness preflight of a binary tensor operation, heap-preserving call proofs, and its product and sum instances with byte contracts |
 | `TensorProgramSyntax`, `TensorProgramPrinter`, `TensorProgramContract` | Independent scoped function grammar, structural printer and complete-body artifact contract |
 
 `CInterface` is a parameter of the shared execution definitions. There is no
