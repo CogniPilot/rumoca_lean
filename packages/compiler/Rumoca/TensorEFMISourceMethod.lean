@@ -54,7 +54,7 @@ theorem doStep (a : TensorArtifact source)
         (values a.prepared.parsed.parsed.ast.header.input)[i] (.finite result[i])) :
     letI : CInterface := NumericalInterface.interface
     SourceObservation.SourceMatrix a values ∧
-    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+    c = TensorProduction.includes ++
       String.join (numericalFunctions.map CTree.Function.render) ++
       TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
     ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,

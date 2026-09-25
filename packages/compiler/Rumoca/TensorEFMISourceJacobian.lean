@@ -18,7 +18,7 @@ theorem prepared_index (a : TensorArtifact input)
 method trees. This is a byte/table identity, not a method-execution theorem. -/
 theorem actual_trees (a : TensorArtifact input)
     (contract : TensorProductionContract a algorithm c) :
-    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+    c = TensorProduction.includes ++
       String.join (numericalFunctions.map CTree.Function.render) ++
       TensorProduction.header ++
       String.join (TensorProduction.functions.map CTree.Function.render) :=

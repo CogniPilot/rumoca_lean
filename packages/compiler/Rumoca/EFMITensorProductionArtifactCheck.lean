@@ -75,14 +75,15 @@ quoted character list and the byte-identity theorem `render = String.ofList <cha
 def certifyRender (c : String) : CommandElabM (Ident × Ident) := do
   let base := `Rumoca.CheckedTensorEFMIFiles
   let modelChars ← quoteCharacters (base.str "production_chars") c
-  -- The literal header line and the interface header are plain strings; the ten
+  -- The include lines and the interface header are plain strings; the twelve
   -- remaining fragments are each a concrete `CTree.Function`'s render.
-  let literalPiece := "#include <stddef.h>\n#include <stdint.h>\n"
+  let kernelCount := 9
+  let literalPiece := TensorProduction.includes
   let chars0 ← quoteCharacters (base.str "piece_0") literalPiece
   let eq0 := mkIdent (base.str "piece_0_eq")
-  checkStringPiece eq0 (← `(term| ("#include <stddef.h>\n#include <stdint.h>\n").toList)) (← `(term| $chars0))
-  let headerChars ← quoteCharacters (base.str "piece_8") TensorProduction.header
-  let eq8 := mkIdent (base.str "piece_8_eq")
+  checkStringPiece eq0 (← `(term| Rumoca.EFMI.TensorProduction.includes.toList)) (← `(term| $chars0))
+  let headerChars ← quoteCharacters (base.str s!"piece_{kernelCount + 1}") TensorProduction.header
+  let eq8 := mkIdent (base.str s!"piece_{kernelCount + 1}_eq")
   checkStringPiece eq8 (← `(term| Rumoca.EFMI.TensorProduction.header.toList)) (← `(term| $headerChars))
   let funcTerms : Array (TSyntax `term) := #[
     ← `(term| Rumoca.CTensor.Fill.function),
@@ -92,6 +93,8 @@ def certifyRender (c : String) : CommandElabM (Ident × Ident) := do
     ← `(term| (Rumoca.CTensor.ProgramFixture.IVPEntry.plan Rumoca.ArrayProfile.stateShape).initial.function.tree),
     ← `(term| (Rumoca.CTensor.ProgramFixture.IVPEntry.plan Rumoca.ArrayProfile.stateShape).derivative.function.tree),
     ← `(term| Rumoca.CTensor.SquareDiagonal.function),
+    ← `(term| Rumoca.CTensor.ProductPreflight.function),
+    ← `(term| Rumoca.CTensor.SumPreflight.function),
     ← `(term| Rumoca.EFMI.TensorProduction.startupFunction),
     ← `(term| Rumoca.EFMI.TensorProduction.recalibrateFunction),
     ← `(term| Rumoca.EFMI.TensorProduction.doStepFunction)]
@@ -99,29 +102,29 @@ def certifyRender (c : String) : CommandElabM (Ident × Ident) := do
     Fill.function, function .add, function .mul, Diagonal.function,
     (ProgramFixture.IVPEntry.plan ArrayProfile.stateShape).initial.function.tree,
     (ProgramFixture.IVPEntry.plan ArrayProfile.stateShape).derivative.function.tree,
-    SquareDiagonal.function,
+    SquareDiagonal.function, ProductPreflight.function, SumPreflight.function,
     TensorProduction.startupFunction, TensorProduction.recalibrateFunction,
     TensorProduction.doStepFunction]
-  -- Fragment order in `renderPieces`: kernelPieces[0..7], header, then the three
-  -- method renders. Fragments 1..7 are kernel entries, 9..11 the method functions.
+  -- Fragment order in `renderPieces`: the include lines, the nine kernel renders,
+  -- the header, then the three method renders.
   let mut kernelChars : Array Ident := #[]
   let mut methodChars : Array Ident := #[]
   for j in [:funcTerms.size] do
-    let idx := if j < 7 then j + 1 else j + 2
+    let idx := if j < kernelCount then j + 1 else j + 2
     let some funcVal := funcVals[j]? | throwError "missing tensor Production fragment"
     let chars ← certifyFunctionPiece base idx funcTerms[j]! funcVal
-    if j < 7 then kernelChars := kernelChars.push chars
+    if j < kernelCount then kernelChars := kernelChars.push chars
     else methodChars := methodChars.push chars
   -- Assemble the chunk list in `renderPieces` order and the piece equalities.
   let pieceChars : Array Ident := #[chars0] ++ kernelChars ++ #[headerChars] ++ methodChars
   let pieceEqs : Array Ident := #[eq0]
-    ++ (Array.range 7).map (fun j => mkIdent (base.str s!"piece_{j + 1}_eq"))
+    ++ (Array.range kernelCount).map (fun j => mkIdent (base.str s!"piece_{j + 1}_eq"))
     ++ #[eq8]
-    ++ (Array.range 3).map (fun j => mkIdent (base.str s!"piece_{j + 9}_eq"))
+    ++ (Array.range 3).map (fun j => mkIdent (base.str s!"piece_{j + kernelCount + 2}_eq"))
   let pieceLengths : Array Nat := #[literalPiece.toList.length]
-    ++ (funcVals.toSubarray 0 7).toArray.map (fun f => f.render.toList.length)
+    ++ (funcVals.toSubarray 0 kernelCount).toArray.map (fun f => f.render.toList.length)
     ++ #[TensorProduction.header.toList.length]
-    ++ (funcVals.toSubarray 7 10).toArray.map (fun f => f.render.toList.length)
+    ++ (funcVals.toSubarray kernelCount (kernelCount + 3)).toArray.map (fun f => f.render.toList.length)
   let chunkList ← `(term| [$pieceChars,*])
   let matched := mkIdent (base.str "production_matched")
   let mut pairProof ← `(term| List.Forall₂.nil)

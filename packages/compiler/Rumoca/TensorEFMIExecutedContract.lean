@@ -32,24 +32,40 @@ def AlignedStep.updated (input : InputEnv) (before : OutputEnv) (rhs : Values st
     (diagonalValue Finite.ops Binary64.positiveZero Binary64.one doubledInput
       (input (Square.squareInput squareExtent)))
 
-/-- Original method execution has exactly the prepared Modelica derivative's
-finite domain and whole-store result, after aligning the shared input. -/
-theorem AlignedStep.source_iff {block : AST.Block} {method : AST.Method}
+/-- A finite original RHS execution, after aligning the shared input, is the
+ordinary signal-free source outcome: its squares are finite and so are its
+doublings. -/
+theorem AlignedStep.source_runs {block : AST.Block} {method : AST.Method}
     (a : TensorArtifact source) (model : TensorModel stateShape)
     (sameKernel : model.kernel = a.prepared.kernel)
     (semantics : StepSemantics squareExtent ceiling block method model.kernel)
     (values : String → Values stateShape) (input : InputEnv) (env : IteratorEnv [])
-    (before after : OutputEnv)
-    (aligned : input (Square.squareInput squareExtent) = values a.prepared.parsed.parsed.ast.header.input) :
-    SourceExec (Square.squareFields squareExtent) ceiling block method Finite.Result
-      Binary64.positiveZero Binary64.one @input @env @before @after ↔
-      ∃ rhs, Finite.Executes a.prepared.kernel.derivative
-        (environment (values a.prepared.parsed.parsed.ast.header.state)
-          (values a.prepared.parsed.parsed.ast.header.input)) rhs ∧
-        @after = @AlignedStep.updated @input @before rhs := by
-  unfold AlignedStep.updated
-  simpa only [sameKernel, aligned] using
-    semantics (values a.prepared.parsed.parsed.ast.header.state) @input @env @before @after
+    (before : OutputEnv) (rhs : Values stateShape)
+    (aligned : input (Square.squareInput squareExtent) = values a.prepared.parsed.parsed.ast.header.input)
+    (finiteRhs : Finite.Executes a.prepared.kernel.derivative
+      (environment (values a.prepared.parsed.parsed.ast.header.state)
+        (values a.prepared.parsed.parsed.ast.header.input)) rhs) :
+    SourceRuns (Square.squareFields squareExtent) ceiling block method Finite.Result (fun _ => True)
+      Binary64.positiveZero Binary64.one @input @env ⟨@before, SignalSet.empty⟩
+      ⟨@AlignedStep.updated @input @before rhs, SignalSet.empty⟩ := by
+  have squareRhs : Finite.Executes (squareProgram stateShape)
+      (environment (values a.prepared.parsed.parsed.ast.header.state)
+        (values a.prepared.parsed.parsed.ast.header.input)) rhs := by
+    rw [← sameKernel, model.profile] at finiteRhs
+    exact finiteRhs
+  have adds := ADExact.coefficient_adds_from_finite_rhs _ _ rhs squareRhs
+  have inputRhs := (StateIrrelevant.rhs _ (values a.prepared.parsed.parsed.ast.header.input) _ rhs).1
+    squareRhs
+  have checked : Square.Checked (input (Square.squareInput squareExtent)) := by
+    rw [Square.checked_iff, aligned, ← Numerical.allFiniteBits_encode,
+      Numerical.add_allFinite_iff]
+    refine ⟨(square_detection_finite_execution _ _).mpr ⟨rhs, inputRhs⟩, fun i => ?_⟩
+    exact ⟨(Binary64.sum_above_negative_overflow _ _).mp (adds i).1,
+      (Binary64.sum_below_overflow _ _).mp (adds i).2.1⟩
+  refine (semantics (values a.prepared.parsed.parsed.ast.header.state) @input @env @before _).mpr
+    (Or.inl ⟨checked, rfl, rhs, ?_, rfl⟩)
+  rw [sameKernel, aligned]
+  exact finiteRhs
 
 /-- Exact behavior equivalence already determines the entire returned heap. -/
 theorem AlignedStep.completed_heap_unique
@@ -65,7 +81,7 @@ def AlignedStep.ModelicaAt (a : TensorArtifact source) (c : String) (unusedKerne
     (values : String → Values stateShape) (objects : CDeclaredMembers.Objects)
     (heap finalHeap : Heap) (base : Address) (rhs result : Values stateShape) : Prop :=
   SourceObservation.SourceMatrix a values ∧
-  c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+  c = TensorProduction.includes ++
     String.join (numericalFunctions.map CTree.Function.render) ++
     TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
   ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,
@@ -103,9 +119,10 @@ def AlignedStep (a : TensorArtifact source) (model : TensorModel stateShape)
         (environment (values a.prepared.parsed.parsed.ast.header.state)
           (values a.prepared.parsed.parsed.ast.header.input)) rhs →
       ∃ finalHeap,
-        SourceExec (Square.squareFields squareExtent) Static.Bounded.integerCeiling
-          product.parsed.ast method Finite.Result Binary64.positiveZero Binary64.one
-          @input @env @before (@AlignedStep.updated @input @before rhs) ∧
+        SourceRuns (Square.squareFields squareExtent) Static.Bounded.integerCeiling
+          product.parsed.ast method Finite.Result (fun _ => True) Binary64.positiveZero Binary64.one
+          @input @env ⟨@before, SignalSet.empty⟩
+          ⟨@AlignedStep.updated @input @before rhs, SignalSet.empty⟩ ∧
         StateView finalHeap base @input (@AlignedStep.updated @input @before rhs) ∧
         AlignedStep.ModelicaAt a c unusedKernel values objects heap finalHeap base rhs
           ((squareJacobianProgram stateShape).coefficients.eval Finite.ops
@@ -118,55 +135,55 @@ theorem aligned_step (a : TensorArtifact source)
     (finite : SourceMethod.FiniteDoStep a c) :
     AlignedStep a algorithmContract.model algorithm c := by
   obtain ⟨product, parsed, sourceContract⟩ := algorithmContract.source.original_source
-  obtain ⟨startup, recalibrate, method, _, _, selected, _, _, semantics, _⟩ := sourceContract.original
+  obtain ⟨startup, recalibrate, method, _, _, selected, _, _, semantics, _, _⟩ := sourceContract.original
   refine ⟨product, method, parsed, sourceContract, selected, ?_⟩
   intro unusedKernel values objects heap base input env before rhs aligned storage period finiteRhs
-  have sourceRan := (AlignedStep.source_iff a algorithmContract.model rfl semantics
-    values @input @env @before (@AlignedStep.updated @input @before rhs) aligned).mpr
-      ⟨rhs, finiteRhs, rfl⟩
+  have sourceRan := AlignedStep.source_runs a algorithmContract.model rfl semantics
+    values @input @env @before rhs aligned finiteRhs
   have inputStorage : TensorPublicStorage.Storage objects heap base
       (input (Square.squareInput squareExtent)) := aligned.symm ▸ storage
-  obtain ⟨finalHeap, _, view, completed⟩ := original_step sourceContract selected
-    unusedKernel objects heap base @input @env @before (@AlignedStep.updated @input @before rhs)
-    inputStorage period sourceRan
-  obtain ⟨sourceMatrix, bytes, diagonal, index, other, outcome, executed, reads, math, ran, behaves⟩ :=
-    finite unusedKernel values objects heap base rhs storage finiteRhs
-  have same := AlignedStep.completed_heap_unique ⟨ran, behaves⟩ completed
-  subst other
-  exact ⟨finalHeap, sourceRan, view, sourceMatrix, bytes, diagonal, index, outcome, executed, reads,
-    math, completed⟩
-
+  rcases original_step sourceContract selected unusedKernel objects heap base @input @env @before _
+      inputStorage period sourceRan with ⟨_, finalHeap, _, view, completed⟩ | ⟨same, _⟩
+  · obtain ⟨sourceMatrix, bytes, diagonal, index, other, outcome, executed, reads, math, ran, behaves⟩ :=
+      finite unusedKernel values objects heap base rhs storage finiteRhs
+    have equal := AlignedStep.completed_heap_unique ⟨ran, behaves⟩ completed
+    subst other
+    exact ⟨finalHeap, sourceRan, view, sourceMatrix, bytes, diagonal, index, outcome, executed, reads,
+      math, completed⟩
+  · exact absurd (congrArg Prod.snd same) (show SignalSet.empty ≠ Square.overflowSet by decide)
 end Alignment
 
 /-- The complete ordinary methods, including the source-owned Jacobian, on the
 same source and independently checked Algorithm/Production Code bytes. -/
 structure TensorExecutedProductionContract (a : TensorArtifact source)
     (algorithm c : String) : Prop extends TensorProductionContract a algorithm c where
-  /-- Finite RHS execution suffices; no independent Jacobian-addition premise. -/
-  finiteSourceDoStep : SourceMethod.FiniteDoStep a c
+  /-- Exactly two DoStep outcomes for every represented finite input: the
+  ordinary source-bound result, or the `OVERFLOW` status with a real witness
+  and every other cell unchanged. -/
+  doStepOutcomes : SourceMethod.DoStepOutcomes a c
   /-- Total encoded helper outcomes, including overflow; all old finite public
   method and source derivative contracts remain separate and unchanged. -/
   jacobianOutcomes :
-    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+    c = TensorProduction.includes ++
       String.join (numericalFunctions.map CTree.Function.render) ++
       TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
     CTensor.SquareDiagonal.Total.ArtifactContract CTensor.SquareDiagonal.function.render
   /-- Same actual C table, with total finite-input multiplication outcomes.
   This is not a source/public-method overflow theorem. -/
   multiplicationOutcomes :
-    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+    c = TensorProduction.includes ++
       String.join (numericalFunctions.map CTree.Function.render) ++
       TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
     CTensor.MultiplicationTotal.ArtifactContract (CTensor.function .mul).render
   /-- Total prepared RHS execution in the same actual eFMI tables; finite
   source refinement is retained and infinity is never a real derivative. -/
   rhsOutcomes :
-    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+    c = TensorProduction.includes ++
       String.join (numericalFunctions.map CTree.Function.render) ++
       TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
     CTensor.SquareRhsTotal.ArtifactContract CTensor.ProgramFixture.IVPEntry.sources.derivative ∧
     CTensor.SquareRhsTotal.LinkedArtifactContract c numericalFunctions
-      "#include <stddef.h>\n#include <stdint.h>\n"
+      TensorProduction.includes
       (TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render)) ∧
     ContextRhsTotal.CallContract
   sourceDoStep (unusedKernel : CSyntax.Program)
@@ -182,7 +199,7 @@ structure TensorExecutedProductionContract (a : TensorArtifact source)
           (values a.prepared.parsed.parsed.ast.header.input)[i] (.finite result[i])) :
       letI : CInterface := NumericalInterface.interface
       SourceObservation.SourceMatrix a values ∧
-      c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+      c = TensorProduction.includes ++
         String.join (numericalFunctions.map CTree.Function.render) ++
         TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
       ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,
@@ -228,7 +245,7 @@ theorem tensor_executed_production_correct (a : TensorArtifact source)
     (base : TensorProductionContract a algorithm c) :
     TensorExecutedProductionContract a algorithm c where
   toTensorProductionContract := base
-  finiteSourceDoStep := SourceMethod.finiteDoStep a base
+  doStepOutcomes := SourceMethod.doStepOutcomes a base
   jacobianOutcomes := ⟨JacobianObservation.actual_trees a base,
     CTensor.SquareDiagonal.Total.artifact_correct _ rfl⟩
   multiplicationOutcomes := ⟨JacobianObservation.actual_trees a base,

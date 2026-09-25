@@ -72,7 +72,7 @@ theorem artifact_helper (a : TensorArtifact source)
     (writable : Writable heap output jacobianShape.volume) :
     letI : CInterface := TensorNumericalLinkage.NumericalInterface.interface
     SourceMatrix a values ∧
-    c = "#include <stddef.h>\n#include <stdint.h>\n" ++
+    c = TensorProduction.includes ++
       String.join (TensorNumericalLinkage.numericalFunctions.map CTree.Function.render) ++
       TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
     ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,

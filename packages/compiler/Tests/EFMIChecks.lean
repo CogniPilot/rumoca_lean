@@ -52,11 +52,11 @@ certify_source duplicate (Print.block { unitTree with
 /- A Real literal outside the admitted values. -/
 certify_source literal (Print.block { unitTree with
   methods := [Scalar.startupMethod "x" "samplePeriod", Scalar.recalibrateMethod,
-    ⟨.ident "DoStep", [.assign (stateReference "x" []) (.parens (.binary (.literal "+")
+    ⟨.ident "DoStep", [], [.assign (stateReference "x" []) (.parens (.binary (.literal "+")
       (.reference (stateReference "x" [])) (.literal (.number "2.0"))))], .ident "DoStep"⟩] })
 /- A method whose end name differs from its name. -/
 certify_source methodEnd (Print.block { unitTree with
-  methods := [Scalar.startupMethod "x" "samplePeriod", ⟨.ident "Recalibrate", [], .ident "Startup"⟩,
+  methods := [Scalar.startupMethod "x" "samplePeriod", ⟨.ident "Recalibrate", [], [], .ident "Startup"⟩,
     Scalar.stepMethod "x"] })
 /- A direction in the protected section. -/
 certify_source protectedInput (Print.block { unitTree with
@@ -72,7 +72,7 @@ certify_source leadingZero (Print.block { Square.source EFMI.squareExtent with
 has a non-unit step and is rejected. -/
 certify_source swappedRange (Print.block { Square.source EFMI.squareExtent with
   methods := [Square.startupMethod, Scalar.recalibrateMethod,
-    ⟨.ident "DoStep", [.forLoop (.ident "k") (natural 1) (some (dimension "u" 1)) (natural 1)
+    ⟨.ident "DoStep", [], [.forLoop (.ident "k") (natural 1) (some (dimension "u" 1)) (natural 1)
       [.assign (stateReference "x" [iterator "k"]) (.binary (.literal "*")
         (.reference (stateReference "u" [iterator "k"])) (.reference (stateReference "u" [iterator "k"])))],
       Square.clearSource "J", Square.scatterSource "u" "J"], .ident "DoStep"⟩] })
@@ -113,10 +113,76 @@ theorem single_faults :
       protectedDeclarations := [Scalar.clockDeclaration "samplePeriod", real .constant "y"] }).isSome := by
   decide +kernel
 
+/-! Error-signaling rejections on the tensor block: each text changes one part
+of the emitted checked DoStep, parses, and is rejected by preparation. -/
+
+open EFMI.TensorAlgorithm in
+/- The guards' `signal OVERFLOW` deleted: the check tests an unreachable signal. -/
+certify_source unsignaled (Print.block (withDoStep [Square.overflowName] unsignaledBody))
+open EFMI.TensorAlgorithm in
+/- The DoStep interface deleted: `OVERFLOW` reaches the exit but is not exposed. -/
+certify_source uninterfaced (Print.block (withDoStep [] (Square.checkedSource "u" "x" "J")))
+open EFMI.TensorAlgorithm in
+/- The re-raise deleted: the interface exposes a signal that never reaches the exit. -/
+certify_source unraised (Print.block (withDoStep [Square.overflowName] unraisedBody))
+open EFMI.TensorAlgorithm in
+/- A signal closure in the check. -/
+certify_source closureCheck (Print.block (withDoStep [Square.overflowName]
+  (checkFormBody (.signalCheck (some (.ident "closure")) false [Square.overflowName] none))))
+open EFMI.TensorAlgorithm in
+/- A negated check. -/
+certify_source negatedCheck (Print.block (withDoStep [Square.overflowName]
+  (checkFormBody (.signalCheck none true [Square.overflowName] none))))
+open EFMI.TensorAlgorithm in
+/- An unrestricted check. -/
+certify_source unrestrictedCheck (Print.block (withDoStep [Square.overflowName]
+  (checkFormBody (.signalCheck none false [] none))))
+open EFMI.TensorAlgorithm in
+/- A check with a fallback condition. -/
+certify_source fallbackCheck (Print.block (withDoStep [Square.overflowName]
+  (checkFormBody (.signalCheck none false [Square.overflowName]
+    (some (.call (.ident Names.finiteTest) [Square.sumSource "u"]))))))
+open EFMI.TensorAlgorithm in
+/- A user-defined signal name in the re-raise. -/
+certify_source userSignal (Print.block (withDoStep [Square.overflowName]
+  [Square.preflightSource "u", checkWith [.signal [.ident "OVERFLOWS"]] (Square.squareSource "u" "x" "J")]))
+open EFMI.TensorAlgorithm in
+/- A Boolean condition other than `isFinite`. -/
+certify_source otherCondition (Print.block (withDoStep [Square.overflowName]
+  [preflightWith [.ifThen [(.expr (.call (.ident "isNaN") [Square.productSource "u"]), [])]
+      (some reraise), Square.guardSource (Square.sumSource "u")],
+   checkWith reraise (Square.squareSource "u" "x" "J")]))
+
+theorem unsignaled_rejected : ∀ product, Block.fromSource unsignaled.source ≠ .ok product :=
+  rejected unsignaled.witness (by decide +kernel)
+theorem uninterfaced_rejected : ∀ product, Block.fromSource uninterfaced.source ≠ .ok product :=
+  rejected uninterfaced.witness (by decide +kernel)
+theorem unraised_rejected : ∀ product, Block.fromSource unraised.source ≠ .ok product :=
+  rejected unraised.witness (by decide +kernel)
+theorem closure_check_rejected : ∀ product, Block.fromSource closureCheck.source ≠ .ok product :=
+  rejected closureCheck.witness (by decide +kernel)
+theorem negated_check_rejected : ∀ product, Block.fromSource negatedCheck.source ≠ .ok product :=
+  rejected negatedCheck.witness (by decide +kernel)
+theorem unrestricted_check_rejected :
+    ∀ product, Block.fromSource unrestrictedCheck.source ≠ .ok product :=
+  rejected unrestrictedCheck.witness (by decide +kernel)
+theorem fallback_check_rejected : ∀ product, Block.fromSource fallbackCheck.source ≠ .ok product :=
+  rejected fallbackCheck.witness (by decide +kernel)
+theorem user_signal_rejected : ∀ product, Block.fromSource userSignal.source ≠ .ok product :=
+  rejected userSignal.witness (by decide +kernel)
+theorem other_condition_rejected : ∀ product, Block.fromSource otherCondition.source ≠ .ok product :=
+  rejected otherCondition.witness (by decide +kernel)
+
+/-- The emitted checked block, which every text above changes in one part,
+prepares. -/
+theorem signaling_single_faults :
+    (Block.fromBlock Static.Bounded.integerCeiling (Square.source EFMI.squareExtent)).isSome := by
+  decide +kernel
+
 /- A different well-formed program: DoStep reads the period instead of `x`. -/
 certify_source readsPeriod (Print.block { unitTree with
   methods := [Scalar.startupMethod "x" "samplePeriod", Scalar.recalibrateMethod,
-    ⟨.ident "DoStep", [.assign (stateReference "x" []) (.parens (.binary (.literal "+")
+    ⟨.ident "DoStep", [], [.assign (stateReference "x" []) (.parens (.binary (.literal "+")
       (.reference (stateReference "samplePeriod" [])) (.literal (.number "1.0"))))],
       .ident "DoStep"⟩] })
 
@@ -177,5 +243,15 @@ theorem changed_period :
 #audit axioms single_faults
 #audit axioms reads_period_rejected
 #audit axioms changed_period
+#audit axioms unsignaled_rejected
+#audit axioms uninterfaced_rejected
+#audit axioms unraised_rejected
+#audit axioms closure_check_rejected
+#audit axioms negated_check_rejected
+#audit axioms unrestricted_check_rejected
+#audit axioms fallback_check_rejected
+#audit axioms user_signal_rejected
+#audit axioms other_condition_rejected
+#audit axioms signaling_single_faults
 
 end Rumoca.EFMIChecks

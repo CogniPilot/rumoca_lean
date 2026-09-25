@@ -8,7 +8,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.TensorExecutedProductionContract.allocatedRecalibrate
 #audit axioms Rumoca.TensorExecutedProductionContract.allocatedStartup
 #audit axioms Rumoca.TensorExecutedProductionContract.sourceDoStep
-#audit axioms Rumoca.TensorExecutedProductionContract.finiteSourceDoStep
+#audit axioms Rumoca.TensorExecutedProductionContract.doStepOutcomes
 #audit axioms Rumoca.TensorExecutedProductionContract.jacobianOutcomes
 #audit axioms Rumoca.TensorExecutedProductionContract.multiplicationOutcomes
 #audit axioms Rumoca.TensorExecutedProductionContract.rhsOutcomes
@@ -20,7 +20,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.TensorExecutedProductionContract.aligned
 #audit axioms Rumoca.AlignedStep
 #audit axioms Rumoca.AlignedStep.updated
-#audit axioms Rumoca.AlignedStep.source_iff
+#audit axioms Rumoca.AlignedStep.source_runs
 #audit axioms Rumoca.AlignedStep.completed_heap_unique
 #audit axioms Rumoca.AlignedStep.ModelicaAt
 #audit axioms Rumoca.aligned_step

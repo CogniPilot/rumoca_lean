@@ -14,3 +14,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CContextMachine.resume_legacy
 #audit axioms Rumoca.CContextMachine.scalar_behaviors
 #audit axioms Rumoca.CContextMachine.typedEval_legacy
+#audit axioms Rumoca.CContextMachine.declared_declare_step
+#audit axioms Rumoca.CContextMachine.resume_declare
