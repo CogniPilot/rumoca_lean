@@ -80,9 +80,8 @@ static void one_case(double first, double second, double square_first,
   assert(guarded.after == UINT64_C(0xfedcba9876543210));
 }
 
-/* Exercise the actual helper separately: overflowing squares are not admitted
- * by the finite RHS/public-method theorem. This checks helper result encodings
- * only, and must not be read as source-level DoStep overflow coverage. */
+/* Exercise the actual helper separately on overflowing squares, which DoStep
+ * never passes to it. This checks helper result encodings only. */
 static void jacobian_case(double first, double second, uint64_t first_bits,
                           uint64_t second_bits) {
   const double input[2] = {first, second};
@@ -124,18 +123,71 @@ static void multiplication_case(double a0, double a1, double b0, double b1,
   assert(guarded.after == UINT64_C(0xfedcba9876543210));
 }
 
+/* DoStep with a non-finite product or sum: the method returns the OVERFLOW
+ * encoding 2, stores it, and changes no other storage; a finite step recovers. */
+static void overflow_case(double first, double second) {
+  struct {
+    uint64_t before;
+    Model model;
+    uint64_t after;
+  } guarded = {UINT64_C(0x123456789abcdef0),
+               {{first, second}, {17.0, 19.0}, {23.0, -0.0, 31.0, 37.0}, 41.0, -7},
+               UINT64_C(0xfedcba9876543210)};
+  Model *model = &guarded.model;
+  const double input[2] = {first, second};
+  const double sentinel_state[2] = {43.0, -47.0};
+  const double sentinel_jacobian[4] = {53.0, -0.0, 59.0, 61.0};
+
+  assert(TensorSquare_Startup(model) == 0);
+  memcpy(model->x, sentinel_state, sizeof sentinel_state);
+  memcpy(model->J, sentinel_jacobian, sizeof sentinel_jacobian);
+  model->samplePeriod = 0.25;
+  model->errorSignalStatus = -13;
+  assert(TensorSquare_DoStep(model) == 2);
+  assert(model->errorSignalStatus == 2);
+  assert(bits(model->samplePeriod) == bits(0.25));
+  same_values(model->u, input, 2);
+  same_values(model->x, sentinel_state, 2);
+  same_values(model->J, sentinel_jacobian, 4);
+  assert(guarded.before == UINT64_C(0x123456789abcdef0));
+  assert(guarded.after == UINT64_C(0xfedcba9876543210));
+
+  const double recovered_input[2] = {1.5, -0.5};
+  const double recovered_square[2] = {2.25, 0.25};
+  const double recovered_jacobian[4] = {3.0, 0.0, 0.0, -1.0};
+  memcpy(model->u, recovered_input, sizeof recovered_input);
+  assert(TensorSquare_DoStep(model) == 0);
+  assert(model->errorSignalStatus == 0);
+  assert(bits(model->samplePeriod) == bits(0.25));
+  same_values(model->x, recovered_square, 2);
+  same_values(model->J, recovered_jacobian, 4);
+  assert(guarded.before == UINT64_C(0x123456789abcdef0));
+  assert(guarded.after == UINT64_C(0xfedcba9876543210));
+}
+
 int main(void) {
   assert(fesetround(FE_TONEAREST) == 0);
   one_case(2.0, -3.0, 4.0, 9.0, 4.0, -6.0);
   one_case(1.5, -0.5, 2.25, 0.25, 3.0, -1.0);
   /* Exact bits distinguish negative diagonal zero from off-diagonal +0. */
   one_case(-0.0, 0.0, 0.0, 0.0, -0.0, 0.0);
+  /* The largest finite square and doubling. */
+  one_case(0x1.fffffffffffffp+511, -0x1.fffffffffffffp+511, 0x1.ffffffffffffep+1023,
+           0x1.ffffffffffffep+1023, 0x1.fffffffffffffp+512, -0x1.fffffffffffffp+512);
+  overflow_case(DBL_MAX, -DBL_MAX);
+  overflow_case(0x1p+512, 1.0);
   jacobian_case(DBL_MAX, -DBL_MAX, UINT64_C(0x7ff0000000000000),
                 UINT64_C(0xfff0000000000000));
   jacobian_case(DBL_MAX / 2.0, -DBL_MAX / 2.0, bits(DBL_MAX), bits(-DBL_MAX));
   double above_half = nextafter(DBL_MAX / 2.0, DBL_MAX);
   jacobian_case(above_half, -above_half, UINT64_C(0x7ff0000000000000),
                 UINT64_C(0xfff0000000000000));
+  overflow_case(above_half, -above_half);
+  /* Host-only directed rounding: the square of -DBL_MAX rounds down to the
+   * finite DBL_MAX, and the sum check detects -inf. */
+  assert(fesetround(FE_DOWNWARD) == 0);
+  overflow_case(-DBL_MAX, 1.0);
+  assert(fesetround(FE_TONEAREST) == 0);
   multiplication_case(DBL_MAX, -DBL_MAX, 2.0, 2.0,
                       UINT64_C(0x7ff0000000000000), UINT64_C(0xfff0000000000000));
   multiplication_case(DBL_MAX, -DBL_MAX, 0.5, 0.5,

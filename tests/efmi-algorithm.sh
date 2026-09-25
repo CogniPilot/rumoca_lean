@@ -113,11 +113,16 @@ echo 'Tensor GALEC: all three type-position declaration dimensions rejected'
 # Each mutated tensor Algorithm Code method must fail the fixed certificate.
 # Every mutation starts from the certified original and must change its bytes:
 # the period, a loop bound, an index, a coefficient, the matrix clear moved after
-# the diagonal scatter, the missing matrix clear, and the `.*` and `jacobian(...)`
-# spellings. The checker rejects all of them at its early byte comparison with
-# the emitted text; this script does not show semantic rejection. The Lean
-# evidence is `Syntax.no_pointwise_token`, the call-free expression lowering and
-# `TensorAlgorithm.coefficient_rejected`/`uncleared_rejected`.
+# the diagonal scatter, the missing matrix clear, the `.*` and `jacobian(...)`
+# spellings, and each error-signaling change: the product or sum guard deleted,
+# the guards' `signal OVERFLOW` deleted, the interface deleted, the re-raise
+# deleted, the guard argument changed and the writes moved before the checks.
+# The checker rejects all of them at its early byte comparison with the emitted
+# text; this script does not show semantic rejection. The Lean evidence is
+# `Syntax.no_pointwise_token`, the call-free expression lowering,
+# `TensorAlgorithm.coefficient_rejected`/`uncleared_rejected`/
+# `product_unchecked_rejected`/`sum_unchecked_rejected`/`argument_rejected`/
+# `writes_first_rejected`/`signals_rejected` and the `EFMIChecks` signaling rejections.
 reject_tensor() {
   perl -0pe "$2" "$tensor_stage/original.alg" > "$tensor_stage/model.alg"
   if cmp -s "$tensor_stage/original.alg" "$tensor_stage/model.alg"; then
@@ -133,12 +138,19 @@ reject_tensor() {
 reject_tensor period 's/self\.samplePeriod := 1\.0/self.samplePeriod := 0.0/'
 reject_tensor loop-bound 's/(method DoStep.*?for k in 1:1:size\(self\.u, )1/${1}2/s'
 reject_tensor index 's/self\.x\[k\] := self\.u\[k\] \* self\.u\[k\]/self.x[k] := self.u[1] * self.u[k]/'
-reject_tensor coefficient 's/self\.u\[k\] \+ self\.u\[k\]/self.u[k] * self.u[k]/'
-reject_tensor clear-after-scatter 's/(method DoStep\n    algorithm\n.*?end for;\n)(        for r in .*?end for;\n        end for;\n)(        for k in .*?end for;\n)/$1$3$2/s'
-reject_tensor matrix-clear 's/(method DoStep.*?end for;\n)        for r in .*?end for;\n        end for;\n/$1/s'
-reject_tensor pointwise 's/self\.u\[k\] \* self\.u\[k\]/self.u[k] .* self.u[k]/'
+reject_tensor coefficient 's/self\.J\[k, k\] := self\.u\[k\] \+ self\.u\[k\]/self.J[k, k] := self.u[k] * self.u[k]/'
+reject_tensor clear-after-scatter 's/(            for k in [^\n]*\n[^\n]*self\.x[^\n]*\n            end for;\n)(            for r in .*?\n            end for;\n)(            for k in .*?\n            end for;\n)/$1$3$2/s'
+reject_tensor matrix-clear 's/            for r in .*?\n            end for;\n//s'
+reject_tensor pointwise 's/self\.x\[k\] := self\.u\[k\] \* self\.u\[k\]/self.x[k] := self.u[k] .* self.u[k]/'
 reject_tensor jacobian 's/self\.J\[k, k\] := self\.u\[k\] \+ self\.u\[k\]/self.J[k, k] := jacobian(self.u[k] * self.u[k], self.u[k])/'
-echo 'Tensor GALEC: period, loop, index, coefficient, clear-order, clear and pointwise-spelling mutants rejected'
+reject_tensor product-guard 's/            if isFinite\(self\.u\[k\] \* self\.u\[k\]\) then\n            else\n                signal OVERFLOW;\n            end if;\n//'
+reject_tensor sum-guard 's/            if isFinite\(self\.u\[k\] \+ self\.u\[k\]\) then\n            else\n                signal OVERFLOW;\n            end if;\n//'
+reject_tensor guard-signal 's/            else\n                signal OVERFLOW;\n            end if;\n/            else\n            end if;\n/g'
+reject_tensor interface 's/        signals OVERFLOW;\n//'
+reject_tensor reraise 's/(        if signal in OVERFLOW then\n)            signal OVERFLOW;\n/$1/'
+reject_tensor guard-argument 's/isFinite\(self\.u\[k\] \* self\.u\[k\]\)/isFinite(self.u[k])/'
+reject_tensor writes-first 's/(    algorithm\n)(        for k in 1:1:size\(self\.u, 1\) loop\n            if isFinite.*?\n        end for;\n)(        if signal in OVERFLOW then\n            signal OVERFLOW;\n)        else\n(.*?)(        end if;\n    end DoStep;)/my ($a, $b, $c, $d, $e) = ($1, $2, $3, $4, $5); $d =~ s{^    }{}mg; "$a$d$b$c$e"/se'
+echo 'Tensor GALEC: period, loop, index, coefficient, clear-order, clear, spelling and error-signaling mutants rejected'
 rm -rf "$tensor_stage"
 
 echo 'GALEC EBNF freshness, reuse, actual-file certificate and mutation checks passed'

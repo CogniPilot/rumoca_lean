@@ -317,7 +317,10 @@ assert production.find('ManifestReferences/ManifestReference').get('checksum') =
 dims = {v.get('name'): [d.get('size') for d in v.findall('Dimensions/Dimension')]
         for v in algorithm.findall('Variables/RealVariable')}
 assert dims['u'] == ['2'] and dims['x'] == ['2'] and dims['J'] == ['2', '2'], dims
-print('tensor eFMU: 50 members, schemas match, XSD-valid, checksums correlated, array dimensions declared')
+signals = {m.get('kind'): [s.get('value') for s in m.findall('Signals/Signal')]
+           for m in algorithm.findall('BlockMethods/BlockMethod')}
+assert signals == {'Startup': [], 'Recalibrate': [], 'DoStep': ['OVERFLOW']}, signals
+print('tensor eFMU: 50 members, schemas match, XSD-valid, checksums correlated, array dimensions and DoStep signals declared')
 PY
 # Exercise the public tensor methods in the actual extracted translation unit.
 # This is tested host behavior, separate from the authored-C/IEEE Lean proofs.
@@ -325,9 +328,10 @@ cc -std=c11 -O2 -Wall -Wextra -Werror -Wno-unused-parameter \
   -fno-fast-math -ffp-contract=off -frounding-math \
   -I"$troot/ProductionCode" tests/efmi-tensor-native.c -lm -o "$tstage/tensor-native"
 "$tstage/tensor-native"
-echo 'tensor eFMU: native finite/signed-zero methods, Jacobian overflow and multiplication outcome checks passed'
+echo 'tensor eFMU: native finite/signed-zero methods, DoStep OVERFLOW status without writes and recovery, helper overflow and multiplication outcome checks passed'
 # Production C mutation controls: the extracted directory with a mutated kernel
-# call, or with the Startup Jacobian initialization deleted, must be rejected by
+# call, the Startup Jacobian initialization deleted, either DoStep preflight call
+# deleted, a changed OVERFLOW status or the failure branches swapped must be rejected by
 # the tensor directory checker (before any kernel certificate work) and must not
 # certify.
 tmut="$tstage/mutant"
@@ -337,7 +341,11 @@ cp "$troot/AlgorithmCode/manifest.xml" "$tmut/AlgorithmCode/manifest.xml"
 cp "$troot/ProductionCode/manifest.xml" "$tmut/ProductionCode/manifest.xml"
 cp "$troot/__content.xml" "$tmut/__content.xml"
 for mutation in 's/rumoca_tensor_mul(u, u/rumoca_tensor_add(u, u/' \
-    '/rumoca_initialize((self->J), 4);/d'; do
+    '/rumoca_initialize((self->J), 4);/d' \
+    's/int32_t squares = rumoca_tensor_mul_finite((self->u), (self->u), 2);/int32_t squares = 1;/' \
+    's/int32_t sums = rumoca_tensor_add_finite((self->u), (self->u), 2);/int32_t sums = 1;/' \
+    's/(self->errorSignalStatus) = 2;/(self->errorSignalStatus) = 4;/' \
+    's/((squares == 0) || (sums == 0))/((squares != 0) \&\& (sums != 0))/'; do
   sed "$mutation" "$troot/ProductionCode/production.c" > "$tmut/ProductionCode/production.c"
   if cmp -s "$troot/ProductionCode/production.c" "$tmut/ProductionCode/production.c"; then
     echo "ineffective tensor Production C mutation: $mutation" >&2; exit 1
