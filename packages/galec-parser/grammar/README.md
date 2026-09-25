@@ -17,7 +17,8 @@ The grammar is general; admission is static semantics after parsing. Section
 legality of declaration kinds, extent values, types, callees, operators, branch
 conditions, signal names and check forms, signal interfaces, the method set,
 names and literal values are checked by core elaboration, so the
-admitted source language does not grow with the grammar. Only `+` and `*` are
+admitted source language does not grow with the grammar. The grammar has 24 rules; its
+generated tables have 581 canonical and 180 LALR(1) states. Only `+` and `*` are
 binary operators; further operators are additive alternatives. The optional
 `or` fallback of a signal check is conflict-free only while no expression
 operator is spelled `or`; admitting logical operators requires rechecking it.

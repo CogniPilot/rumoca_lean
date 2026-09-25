@@ -1,5 +1,5 @@
 import RumocaC.TensorProductPreflightContract
-import RumocaC.TensorOperationPreflightSyntax
+import RumocaC.TensorOperationPreflightContract
 import ProofAudit.Audit
 
 #audit axioms Rumoca.CTensor.FiniteScan.iterationFor_reaches
@@ -17,8 +17,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CTensor.ProductPreflight.Syntax.render_denotes
 #audit axioms Rumoca.CTensor.ProductPreflight.artifact_correct
 #audit axioms Rumoca.CTensor.FiniteScan.iterationFor
-#audit axioms Rumoca.CTensor.ProductPreflight.Syntax.Denotes
-#audit axioms Rumoca.CTensor.ProductPreflight.Syntax.tokens
 #audit axioms Rumoca.CTensor.ProductPreflight.evaluates
 #audit axioms Rumoca.CTensor.FinitePreflight.coordinate
 #audit axioms Rumoca.CTensor.FinitePreflight.operation
@@ -35,3 +33,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CTensor.FinitePreflight.call_correct
 #audit axioms Rumoca.CTensor.FinitePreflight.Syntax.tokens
 #audit axioms Rumoca.CTensor.FinitePreflight.Syntax.Denotes
+#audit axioms Rumoca.CTensor.FinitePreflight.Syntax.denotes_of_lex
+#audit axioms Rumoca.CTensor.FinitePreflight.OperationContract
+#audit axioms Rumoca.CTensor.FinitePreflight.operation_contract

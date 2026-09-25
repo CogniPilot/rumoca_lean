@@ -39,8 +39,12 @@ total IEEE result for `+` and `*` terms. `Elaboration.Conditions` admits only
 `isFinite` of an admitted Real expression and `signal in S1, ...` checks of
 predefined signals; `Elaboration.Signals.Reachability` computes §1.5 reachability
 once over the AST, enforces the §1.4 test-set rule and requires every method
-interface to equal its out-reachable set. `Elaboration.Square.Outcomes` proves the
-two total outcomes of the checked tensor DoStep: every product and sum finite,
+interface to equal its out-reachable set; a loop is analyzed at the fixed point of
+its back edge. `Elaboration.Signals.Soundness` proves every execution stays
+within the computed sets, and `Methods.Preparation.prepared_signals` that every
+prepared method only sets signals it exposes. `Elaboration.Square.Outcomes` proves the
+two total outcomes of the checked tensor DoStep: every product and sum finite
+(IEEE `isFinite`, linked through `NumberTerms`),
 no signal and the existing square/AD update; otherwise `OVERFLOW` and the store
 unchanged, with a real overflow witness.
 

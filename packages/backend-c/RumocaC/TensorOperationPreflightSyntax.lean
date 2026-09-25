@@ -20,6 +20,18 @@ def tokens (name operator : String) : List Token :=
 def Denotes (name operator source : String) : Prop :=
   Scanner.Lexes FiniteScan.Syntax.config source.toList (tokens name operator)
 
+/-- Lexing the printed text to the operation tokens establishes their denotation. -/
+theorem denotes_of_lex {name operator source : String}
+    (lexed : (Scanner.lex FiniteScan.Syntax.config source).toOption = some (tokens name operator)) :
+    Denotes name operator source := by
+  apply (Scanner.lex_correct _ _ _).mp
+  cases found : Scanner.lex FiniteScan.Syntax.config source with
+  | error e => simp [found, Except.toOption] at lexed
+  | ok ts =>
+    have same : ts = tokens name operator := by
+      simpa only [found, Except.toOption, Option.some.injEq] using lexed
+    exact congrArg Except.ok same
+
 macro "tensor_expand_operation_preflight_printer" : tactic => `(tactic|
   simp [FinitePreflight.operation, FinitePreflight.coordinate, FinitePreflight.body,
     FinitePreflight.segment, FinitePreflight.segmentWith,

@@ -2,6 +2,12 @@ import RumocaCore.GALEC.Elaboration.Square.Outcomes
 import ProofAudit.Audit
 
 #audit axioms Rumoca.GALEC.Elaboration.Square.Checked
+#audit axioms Rumoca.GALEC.Elaboration.Square.guard_holds
+#audit axioms Rumoca.GALEC.Elaboration.Square.point
+#audit axioms Rumoca.GALEC.Elaboration.Square.guard_ieee
+#audit axioms Rumoca.GALEC.Elaboration.Square.point_number
+#audit axioms Rumoca.GALEC.Elaboration.Square.square_ieee
+#audit axioms Rumoca.GALEC.Elaboration.Square.sum_ieee
 #audit axioms Rumoca.GALEC.Elaboration.Square.squared_inDomain
 #audit axioms Rumoca.GALEC.Elaboration.Square.doubled_inDomain
 #audit axioms Rumoca.GALEC.Elaboration.Square.forall_vectorIndex

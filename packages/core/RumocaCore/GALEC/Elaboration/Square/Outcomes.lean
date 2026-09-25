@@ -1,22 +1,102 @@
 import RumocaCore.GALEC.Elaboration.Square.Execution
 import RumocaCore.Array.Numerical
+import RumocaCore.GALEC.NumberTerms
 
 /-! The two total outcomes of the lowered checked DoStep body under finite
 binary64 arithmetic, where a product or sum outside the finite range has no
-result and `isFinite` is therefore the existence of a result. From a store
+result. There `isFinite` holds exactly when its argument has a result, which
+is the IEEE meaning: `Checked` is IEEE `isFinite` of every product and sum
+(`guard_ieee` goes through `Condition.finite_holds_iff`). From a store
 with no signal set: when every product `u[k] * u[k]` and every sum
 `u[k] + u[k]` is finite, no signal is set and the store is exactly the existing
 square/AD update; otherwise `OVERFLOW` is set and the store is unchanged, with
 an independent real overflow witness at a failing coordinate. The sum is
-checked on its own; no finite-square-to-finite-sum fact is used. -/
+checked on its own: no statement relies on a finite square implying a finite
+sum, although the proof of the finite outcome reuses the existing square body
+theorem, which derives the coefficient domain from the square under
+round-to-nearest. -/
 noncomputable section
 namespace Rumoca.GALEC.Elaboration.Square
 open Elaboration Rumoca.Tensor Rumoca.Solve.Tensor Coefficients VectorBodies
 
-/-- Every product and every sum of the input coordinates is finite. -/
+/-- IEEE `isFinite` holds for every product and every sum of the input coordinates. -/
 def Checked (input : Value Binary64.Value ⟨[extent]⟩) : Prop :=
   ∀ i : Fin extent,
-    squaredInput.inDomain input[vectorIndex i] ∧ doubledInput.inDomain input[vectorIndex i]
+    (Float64.Number.mul (.finite input[vectorIndex i]) (.finite input[vectorIndex i])).isFinite = true ∧
+    (Float64.Number.add (.finite input[vectorIndex i]) (.finite input[vectorIndex i])).isFinite = true
+
+/-- The finiteness condition of a guard under finite arithmetic. -/
+theorem guard_holds (expression : ScalarExpr) (source : Ref inputs ⟨[extent]⟩)
+    (input : Env Binary64.Value inputs) (state : Signaled Binary64.Value outputs)
+    (env : IteratorEnv bounds) (i : Fin extent) :
+    (Condition.finite (outputs := outputs) (expression.toTerm source vectorSubscripts)).Holds
+      Finite.Result (fun _ => True) Binary64.positiveZero Binary64.one @input state
+      (IteratorEnv.push i @env) ↔ expression.inDomain (input source)[vectorIndex i] := by
+  simp only [Condition.Holds, and_true]
+  constructor
+  · rintro ⟨result, evaluated⟩
+    exact ((expression.executes_iff _ _).mp
+      ((expression.toTerm_executes source vectorSubscripts @input @state.1 _ result).mp evaluated)).1
+  · intro domain
+    exact ⟨_, (expression.toTerm_executes source vectorSubscripts @input @state.1 _ _).mpr
+      ((expression.executes_iff _ _).mpr ⟨domain, rfl⟩)⟩
+
+/-- A one-coordinate input store. -/
+def point (x : Binary64.Value) : Env Binary64.Value [⟨[1]⟩] :=
+  Env.push (Value.fill ⟨[1]⟩ x) Env.empty
+
+/-- The guard's condition under finite arithmetic is the same condition under
+IEEE arithmetic on the complete numerical domain (`number_eval_finite_iff`). -/
+theorem guard_ieee (expression : ScalarExpr)
+    (admitted : (expression.toTerm (outputs := []) (bounds := [1])
+      (Ref.here : Ref [⟨[1]⟩] ⟨[1]⟩) (vectorSubscripts (bounds := []))).Admitted) (x : Binary64.Value) :
+    expression.inDomain x ↔
+      (Condition.finite (outputs := []) (bounds := [1])
+        (expression.toTerm Ref.here (vectorSubscripts (bounds := [])))).Holds
+        numberStep (fun value => value.isFinite = true) (.finite Binary64.positiveZero)
+        (.finite Binary64.one) (Env.numbers (point x)) ⟨Env.numbers Env.empty, SignalSet.empty⟩
+        (IteratorEnv.push (0 : Fin 1) IteratorEnv.empty) := by
+  have holds := guard_holds expression Ref.here (point x) (⟨Env.empty, SignalSet.empty⟩ :
+    Signaled Binary64.Value []) IteratorEnv.empty (0 : Fin 1)
+  rw [Condition.finite_holds_iff _ admitted] at holds
+  exact holds.symm.trans (by rfl)
+
+theorem point_number (x : Binary64.Value) (index : Fin (Shape.mk [1]).volume) :
+    (Env.numbers (point x) Ref.here)[index] = .finite x := by
+  simp [Env.numbers, point, Env.push, Value.getElem_fill]
+
+theorem square_ieee (x : Binary64.Value) :
+    squaredInput.inDomain x ↔ (Float64.Number.mul (.finite x) (.finite x)).isFinite = true := by
+  rw [guard_ieee squaredInput ⟨Or.inr rfl, trivial, trivial⟩ x]
+  constructor
+  · rintro ⟨value, evaluated, finite⟩
+    obtain ⟨a, b, left, right, arithmetic⟩ := (ScalarTerm.evaluates_binary _ _ _ _ _ _ _ _ _ _).mp evaluated
+    simp only [ScalarExpr.toTerm, ScalarTerm.evaluates_input, point_number] at left right
+    subst left right
+    have same : value = Float64.Number.mul (.finite x) (.finite x) := arithmetic
+    rw [same] at finite
+    exact finite
+  · intro finite
+    refine ⟨_, (ScalarTerm.evaluates_binary _ _ _ _ _ _ _ _ _ _).mpr ⟨.finite x, .finite x,
+      (ScalarTerm.evaluates_input _ _ _ _ _ _ _ _ _).mpr (point_number x _).symm,
+      (ScalarTerm.evaluates_input _ _ _ _ _ _ _ _ _).mpr (point_number x _).symm, rfl⟩, finite⟩
+
+theorem sum_ieee (x : Binary64.Value) :
+    doubledInput.inDomain x ↔ (Float64.Number.add (.finite x) (.finite x)).isFinite = true := by
+  rw [guard_ieee doubledInput ⟨Or.inl rfl, trivial, trivial⟩ x]
+  constructor
+  · rintro ⟨value, evaluated, finite⟩
+    obtain ⟨a, b, left, right, arithmetic⟩ := (ScalarTerm.evaluates_binary _ _ _ _ _ _ _ _ _ _).mp evaluated
+    simp only [ScalarExpr.toTerm, ScalarTerm.evaluates_input, point_number] at left right
+    subst left right
+    have same : value = Float64.Number.add (.finite x) (.finite x) := arithmetic
+    rw [same] at finite
+    exact finite
+  · intro finite
+    refine ⟨_, (ScalarTerm.evaluates_binary _ _ _ _ _ _ _ _ _ _).mpr ⟨.finite x, .finite x,
+      (ScalarTerm.evaluates_input _ _ _ _ _ _ _ _ _).mpr (point_number x _).symm,
+      (ScalarTerm.evaluates_input _ _ _ _ _ _ _ _ _).mpr (point_number x _).symm, rfl⟩, finite⟩
+
 
 theorem squared_inDomain (x : Binary64.Value) :
     squaredInput.inDomain x ↔ Binary64.finiteProduct x x := by
@@ -40,7 +120,7 @@ theorem checked_iff (input : Value Binary64.Value ⟨[extent]⟩) :
     Checked input ↔ Numerical.allFinite (Numerical.multiply input input) = true ∧
       Numerical.allFinite (Numerical.add input input) = true := by
   rw [Numerical.multiply_allFinite_iff, Numerical.add_allFinite_iff]
-  simp only [Checked, squared_inDomain, doubled_inDomain]
+  simp only [Checked, ← square_ieee, ← sum_ieee, squared_inDomain, doubled_inDomain]
   rw [forall_and]
   exact and_congr (forall_vectorIndex (P := fun j => Binary64.finiteProduct input[j] input[j]))
     (forall_vectorIndex (P := fun j => -Binary64.overflowUnits < Binary64.units input[j] +
@@ -60,7 +140,7 @@ theorem unchecked_witness (input : Value Binary64.Value ⟨[extent]⟩) :
   simp only [Checked, not_forall]
   apply exists_congr
   intro i
-  rw [squared_inDomain, doubled_inDomain, Binary64.finiteProduct_real,
+  rw [← square_ieee, ← sum_ieee, squared_inDomain, doubled_inDomain, Binary64.finiteProduct_real,
     ← Binary64.sum_above_negative_overflow, ← Binary64.sum_below_overflow]
   have nonnegative := mul_self_nonneg (Binary64.value input[vectorIndex i])
   have positive := Binary64.overflowValue_pos
@@ -203,7 +283,8 @@ theorem preflight_runs (source : Ref inputs ⟨[extent]⟩) (input : Env Binary6
     (fun i current next => preflight_body_runs source input env i current next) before after,
     Iteration.run]
   have all : (∀ i : Fin extent, i.val < extent → Pass (input source) i) ↔ Checked (input source) :=
-    ⟨fun all i => all i i.isLt, fun checked i _ => checked i⟩
+    ⟨fun all i => by simpa only [Pass, square_ieee, sum_ieee] using all i i.isLt,
+      fun checked i _ => by simpa only [Pass, square_ieee, sum_ieee] using checked i⟩
   rcases preflight_prefix (input source) before extent (Nat.le_refl _) with
     ⟨passed, same⟩ | ⟨failed, same⟩
   · rw [same]

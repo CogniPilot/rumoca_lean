@@ -42,6 +42,8 @@ resulting `Syntax.parse` fact; quotation proposes data only. `Print.block`
 renders a syntax tree in the scalar Algorithm Code layout; it carries no proof.
 Located parsing attaches exact source ranges to the scanned tokens.
 
+The grammar has 24 rules and 581 canonical / 180 LALR(1) states.
+
 `GALECParserChecks` audits the scanner, parser, action and certificate
 contracts, and kernel-checks certificates and printer round trips for the scalar layout and
 for every error-signaling form. The eFMI

@@ -72,9 +72,7 @@ theorem artifact_helper (a : TensorArtifact source)
     (writable : Writable heap output jacobianShape.volume) :
     letI : CInterface := TensorNumericalLinkage.NumericalInterface.interface
     SourceMatrix a values ∧
-    c = TensorProduction.includes ++
-      String.join (TensorNumericalLinkage.numericalFunctions.map CTree.Function.render) ++
-      TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+    c = TensorProduction.render ∧
     ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,
       a.prepared.kernel.diagonal = some diagonal ∧
       Finite.Executes diagonal.coefficients
@@ -101,7 +99,7 @@ theorem artifact_helper (a : TensorArtifact source)
       (values a.prepared.parsed.parsed.ast.header.state)
       (values a.prepared.parsed.parsed.ast.header.input) rhs result heap squareRHS
       separate reads adds writable (by decide +kernel)
-  refine ⟨source_matrix a index values, JacobianObservation.actual_trees a contract,
+  refine ⟨source_matrix a index values, contract.bytes.symm,
     squareJacobianProgram stateShape, ?_, executed, ran, matrixReads, observes, frame⟩
   rw [index]
   rfl

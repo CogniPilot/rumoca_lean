@@ -1,7 +1,7 @@
 import RumocaCore.GALEC.Elaboration.Capabilities.Generic
 import RumocaCore.GALEC.Elaboration.Methods.Headers
 import RumocaCore.GALEC.Elaboration.Layout.Execution
-import RumocaCore.GALEC.Elaboration.Signals.Reachability
+import RumocaCore.GALEC.Elaboration.Signals.Soundness
 
 /-! Generic named-method preparation from original AST and declarations.
 The role policy is a frontend preparation parameter, never a target callback.
@@ -124,6 +124,22 @@ theorem prepared_runs (prepared : Prepares name role ceiling block result) :
     exact Bodies.statements_runs _ _ _
       (Layout.bindingShape_iff_source _ (declared_fields role declared)) ceiling .nil _ _ typed
       step finite zero one @input @env before after
+
+/-- The admission claim: every execution of the prepared method that starts
+with no signal set ends within the method's exposed set (§1.3, §1.5). -/
+theorem prepared_signals (prepared : Prepares name role ceiling block result) :
+    ∃ method exposed, Methods.Headers.Selects name block.methods method ∧
+      Reach.Exposes method exposed ∧
+      ∀ {α : Type} (step : BinaryOp → α → α → α → Prop) (finite : α → Prop) (zero one : α)
+        (input : Env α (Layout.inputShapes result.1)) (env : IteratorEnv [])
+        (before : Env α (Layout.outputShapes result.1))
+        (after : Signaled α (Layout.outputShapes result.1)),
+        result.2.Runs step finite zero one @input @env ⟨@before, SignalSet.empty⟩ after →
+        SignalSet.Subset after.2 exposed := by
+  cases prepared with
+  | body selected exposes _ typed =>
+    exact ⟨_, _, selected, exposes, fun step finite zero one input env before after ran =>
+      Reach.exposes_sound typed exposes step finite zero one @input @env @before after ran⟩
 
 theorem prepared_policy {Allowed : Declarations.Real.Descriptor → Prop}
     (correct : ∀ declaration, role declaration = .writable ↔ Allowed declaration)

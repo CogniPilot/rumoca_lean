@@ -14,7 +14,7 @@ theorem prepared_index (a : TensorArtifact input)
     a.prepared.kernel = CTensor.ProgramFixture.IVPEntry.kernel ArrayProfile.stateShape :=
   contract.algorithm_contract.kernel.trans rfl
 
-/-- Actual production bytes determine the exact seven numerical and three
+/-- Actual production bytes determine the exact nine numerical and three
 method trees. This is a byte/table identity, not a method-execution theorem. -/
 theorem actual_trees (a : TensorArtifact input)
     (contract : TensorProductionContract a algorithm c) :

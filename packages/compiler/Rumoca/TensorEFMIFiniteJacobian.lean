@@ -22,9 +22,7 @@ def FiniteCall (a : TensorArtifact source) (c : String) (unusedKernel : CSyntax.
     (environment (values a.prepared.parsed.parsed.ast.header.state)
       (values a.prepared.parsed.parsed.ast.header.input))
   SourceObservation.SourceMatrix a values ∧
-  c = TensorProduction.includes ++
-    String.join (numericalFunctions.map CTree.Function.render) ++
-    TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+  c = TensorProduction.render ∧
   ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,
     a.prepared.kernel.diagonal = some diagonal ∧
     ∃ finalHeap,

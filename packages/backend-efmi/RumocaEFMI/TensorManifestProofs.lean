@@ -1,6 +1,7 @@
 import RumocaEFMI.TensorManifest
 import RumocaEFMI.ManifestView
 import XML.Proofs
+import RumocaEFMI.TensorAlgorithmProofs
 
 /-! Well-formedness and correlation proofs for the tensor square manifests.
 
@@ -229,5 +230,39 @@ theorem block_method_signals :
 theorem block_methods (modelName : String) (identity : Identity) (source : String) :
     select (algorithm modelName identity source) ["BlockMethods", "BlockMethod"] =
       methods.map blockMethod := rfl
+
+/-- The manifest signals are those of the methods of the parsed emitted
+Algorithm Code, through its kernel-checked parse: each `BlockMethod` lists the
+interface names of the selected parsed method, which exposes that set, and the
+DoStep overflow status is the encoding of the parsed DoStep's exposed set. -/
+theorem parsed_signals (parsed : GALEC.Syntax.Parsed tensorAlgorithmSource)
+    (startupMethod recalibrateMethod doStepMethod : GALEC.AST.Method)
+    (startupSelected : GALEC.Elaboration.Methods.Headers.Selects (.ident "Startup")
+      parsed.ast.methods startupMethod)
+    (recalibrateSelected : GALEC.Elaboration.Methods.Headers.Selects (.ident "Recalibrate")
+      parsed.ast.methods recalibrateMethod)
+    (doStepSelected : GALEC.Elaboration.Methods.Headers.Selects (.ident "DoStep")
+      parsed.ast.methods doStepMethod) :
+    startup.signals = startupMethod.signals.map Parser.Token.text ∧
+    recalibrate.signals = recalibrateMethod.signals.map Parser.Token.text ∧
+    doStep.signals = doStepMethod.signals.map Parser.Token.text ∧
+    GALEC.Elaboration.Reach.Exposes startupMethod GALEC.SignalSet.empty ∧
+    GALEC.Elaboration.Reach.Exposes recalibrateMethod GALEC.SignalSet.empty ∧
+    GALEC.Elaboration.Reach.Exposes doStepMethod GALEC.Elaboration.Square.overflowSet ∧
+    TensorProduction.overflowStatus = GALEC.SignalSet.encode GALEC.Elaboration.Square.overflowSet := by
+  have tree : parsed.ast = GALEC.Elaboration.Square.source squareExtent :=
+    (GALEC.Syntax.witness_unique parsed.witnessed TensorAlgorithm.square.witness).trans
+      TensorAlgorithm.square_ast
+  have pick (name : Parser.Token) {chosen method : GALEC.AST.Method}
+      (selected : GALEC.Elaboration.Methods.Headers.Selects name parsed.ast.methods method)
+      (built : GALEC.Elaboration.Methods.Headers.select name
+        (GALEC.Elaboration.Square.source squareExtent).methods = some chosen) : method = chosen := by
+    rw [tree] at selected
+    exact Option.some.inj (((GALEC.Elaboration.Methods.Headers.select_iff _ _ _).mpr selected).symm.trans
+      built)
+  cases pick _ startupSelected rfl
+  cases pick _ recalibrateSelected rfl
+  cases pick _ doStepSelected rfl
+  exact signals_exposed
 
 end Rumoca.EFMI.TensorManifest

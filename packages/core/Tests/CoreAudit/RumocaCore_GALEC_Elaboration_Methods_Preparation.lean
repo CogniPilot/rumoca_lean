@@ -13,4 +13,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Methods.Preparation.prepared_execution
 #audit axioms Rumoca.GALEC.Elaboration.Methods.Preparation.prepared_exposes
 #audit axioms Rumoca.GALEC.Elaboration.Methods.Preparation.prepared_runs
+#audit axioms Rumoca.GALEC.Elaboration.Methods.Preparation.prepared_signals
 #audit axioms Rumoca.GALEC.Elaboration.Methods.Preparation.prepared_policy

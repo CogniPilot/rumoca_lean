@@ -81,9 +81,7 @@ def AlignedStep.ModelicaAt (a : TensorArtifact source) (c : String) (unusedKerne
     (values : String → Values stateShape) (objects : CDeclaredMembers.Objects)
     (heap finalHeap : Heap) (base : Address) (rhs result : Values stateShape) : Prop :=
   SourceObservation.SourceMatrix a values ∧
-  c = TensorProduction.includes ++
-    String.join (numericalFunctions.map CTree.Function.render) ++
-    TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+  c = TensorProduction.render ∧
   ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,
     a.prepared.kernel.diagonal = some diagonal ∧
     ContextDoStep.Outcome objects heap finalHeap base
@@ -164,23 +162,17 @@ structure TensorExecutedProductionContract (a : TensorArtifact source)
   /-- Total encoded helper outcomes, including overflow; all old finite public
   method and source derivative contracts remain separate and unchanged. -/
   jacobianOutcomes :
-    c = TensorProduction.includes ++
-      String.join (numericalFunctions.map CTree.Function.render) ++
-      TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+    c = TensorProduction.render ∧
     CTensor.SquareDiagonal.Total.ArtifactContract CTensor.SquareDiagonal.function.render
   /-- Same actual C table, with total finite-input multiplication outcomes.
   This is not a source/public-method overflow theorem. -/
   multiplicationOutcomes :
-    c = TensorProduction.includes ++
-      String.join (numericalFunctions.map CTree.Function.render) ++
-      TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+    c = TensorProduction.render ∧
     CTensor.MultiplicationTotal.ArtifactContract (CTensor.function .mul).render
   /-- Total prepared RHS execution in the same actual eFMI tables; finite
   source refinement is retained and infinity is never a real derivative. -/
   rhsOutcomes :
-    c = TensorProduction.includes ++
-      String.join (numericalFunctions.map CTree.Function.render) ++
-      TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+    c = TensorProduction.render ∧
     CTensor.SquareRhsTotal.ArtifactContract CTensor.ProgramFixture.IVPEntry.sources.derivative ∧
     CTensor.SquareRhsTotal.LinkedArtifactContract c numericalFunctions
       TensorProduction.includes
@@ -199,9 +191,7 @@ structure TensorExecutedProductionContract (a : TensorArtifact source)
           (values a.prepared.parsed.parsed.ast.header.input)[i] (.finite result[i])) :
       letI : CInterface := NumericalInterface.interface
       SourceObservation.SourceMatrix a values ∧
-      c = TensorProduction.includes ++
-        String.join (numericalFunctions.map CTree.Function.render) ++
-        TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+      c = TensorProduction.render ∧
       ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,
         a.prepared.kernel.diagonal = some diagonal ∧
         ∃ finalHeap,
@@ -246,11 +236,11 @@ theorem tensor_executed_production_correct (a : TensorArtifact source)
     TensorExecutedProductionContract a algorithm c where
   toTensorProductionContract := base
   doStepOutcomes := SourceMethod.doStepOutcomes a base
-  jacobianOutcomes := ⟨JacobianObservation.actual_trees a base,
+  jacobianOutcomes := ⟨base.bytes.symm,
     CTensor.SquareDiagonal.Total.artifact_correct _ rfl⟩
-  multiplicationOutcomes := ⟨JacobianObservation.actual_trees a base,
+  multiplicationOutcomes := ⟨base.bytes.symm,
     CTensor.MultiplicationTotal.artifact_correct _ rfl⟩
-  rhsOutcomes := ⟨JacobianObservation.actual_trees a base,
+  rhsOutcomes := ⟨base.bytes.symm,
     CTensor.SquareRhsTotal.artifact_correct _ rfl,
     CTensor.SquareRhsTotal.linked_artifact_correct c numericalFunctions _ _
       (by simpa only [String.append_assoc] using JacobianObservation.actual_trees a base)

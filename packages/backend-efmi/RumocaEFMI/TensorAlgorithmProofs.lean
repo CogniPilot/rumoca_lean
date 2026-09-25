@@ -85,6 +85,25 @@ def ADSemantics (extent ceiling : Nat) (block : AST.Block) (method : AST.Method)
             (ArrayProfile.environment state (input (Square.squareInput extent)))).toMatrix
               (vectorIndex row) (vectorIndex col)
 
+/-- DoStep is total: from every finite input and store with no signal set, an
+execution exists; `StepSemantics` places it in one of the two outcomes. -/
+def StepTotal (extent ceiling : Nat) (block : AST.Block) (method : AST.Method) : Prop :=
+  ∀ (input : Env Binary64.Value (Layout.inputShapes (Square.squareFields extent))) (env : IteratorEnv [])
+    (before : Env Binary64.Value (Layout.outputShapes (Square.squareFields extent))),
+    ∃ after, SourceRuns (Square.squareFields extent) ceiling block method Finite.Result (fun _ => True)
+      Binary64.positiveZero Binary64.one @input @env ⟨@before, SignalSet.empty⟩ after
+
+/-- The admission claim for DoStep under every arithmetic and finiteness
+interpretation: an execution from no set signal ends within the exposed set. -/
+def StepSignals (extent ceiling : Nat) (block : AST.Block) (method : AST.Method) : Prop :=
+  ∀ {α : Type} (step : BinaryOp → α → α → α → Prop) (finite : α → Prop) (zero one : α)
+    (input : Env α (Layout.inputShapes (Square.squareFields extent))) (env : IteratorEnv [])
+    (before : Env α (Layout.outputShapes (Square.squareFields extent)))
+    (after : Signaled α (Layout.outputShapes (Square.squareFields extent))),
+    SourceRuns (Square.squareFields extent) ceiling block method step finite zero one
+      @input @env ⟨@before, SignalSet.empty⟩ after →
+    SignalSet.Subset after.2 Square.overflowSet
+
 /-- The signal interfaces (eFMI §3.2.5 §1.3): Startup and Recalibrate expose
 nothing and DoStep exposes exactly `OVERFLOW`. -/
 def Interfaced (startup recalibrate doStep : AST.Method) : Prop :=
@@ -110,7 +129,8 @@ structure SourceContract (extent ceiling : Nat) (block : AST.Block)
     StartupSemantics extent ceiling block startup ∧
     RecalibrateSemantics extent ceiling block recalibrate ∧
     StepSemantics extent ceiling block doStep kernel ∧ ADSemantics extent ceiling block doStep kernel ∧
-    Interfaced startup recalibrate doStep
+    Interfaced startup recalibrate doStep ∧ StepTotal extent ceiling block doStep ∧
+    StepSignals extent ceiling block doStep
 
 theorem source_contract
     (prepared : Block.Prepares ceiling block (Square.preparedResult extent interface))
@@ -120,7 +140,7 @@ theorem source_contract
   subst kernel
   refine ⟨⟨interface, prepared⟩, rfl, interface.startup, interface.recalibrate, interface.doStep,
     prepared.headers.startup, prepared.headers.recalibrate, prepared.headers.doStep, ?_, ?_, ?_, ?_,
-    interfaces⟩
+    interfaces, ?_, ?_⟩
   · intro α step zero one input env before after
     exact (Methods.Correspondence.selected_execution prepared.startup prepared.headers.startup
       step zero one @input @env @before @after).trans
@@ -150,6 +170,24 @@ theorem source_contract
         (Square.squareRhs extent) (Square.squareJacobian extent) state @input @env @before @after.1 body
       exact ⟨ArrayProfile.squareJacobianProgram ⟨[extent]⟩, rfl, observed⟩
     · exact absurd checked unchecked
+  · intro input env before
+    obtain ⟨after, ran⟩ := Square.checked_total (Square.squareInput extent) (Square.squareRhs extent)
+      (Square.squareJacobian extent) (input (Square.squareInput extent)) @input @env @before
+    exact ⟨after, (Methods.Correspondence.selected_runs prepared.doStep prepared.headers.doStep
+      Finite.Result (fun _ => True) Binary64.positiveZero Binary64.one @input @env _ after).mpr ran⟩
+  · intro α step finite zero one input env before after ran
+    obtain ⟨method, exposed, chosen, exposes, within⟩ :=
+      Methods.Preparation.prepared_signals prepared.doStep
+    have same : method = interface.doStep := Option.some.inj
+      (((Methods.Headers.select_iff _ _ _).mpr chosen).symm.trans
+        ((Methods.Headers.select_iff _ _ _).mpr prepared.headers.doStep))
+    subst same
+    have exposedSame : exposed = Square.overflowSet :=
+      Option.some.inj (exposes.2.symm.trans interfaces.2.2.2)
+    subst exposedSame
+    exact within step finite zero one @input @env @before after
+      ((Methods.Correspondence.selected_runs prepared.doStep prepared.headers.doStep
+        step finite zero one @input @env _ after).mp ran)
 
 theorem prepared : Block.Prepares Static.Bounded.integerCeiling (Square.source squareExtent)
     (Square.preparedResult squareExtent Square.interface) :=

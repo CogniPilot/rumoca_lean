@@ -55,3 +55,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorAlgorithm.checkFormBody
 #audit axioms Rumoca.EFMI.TensorAlgorithm.rejectedChecks
 #audit axioms Rumoca.EFMI.TensorAlgorithm.signals_rejected
+#audit axioms Rumoca.EFMI.TensorAlgorithm.StepTotal
+#audit axioms Rumoca.EFMI.TensorAlgorithm.StepSignals

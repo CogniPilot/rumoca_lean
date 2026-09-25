@@ -67,7 +67,10 @@ product or sum is not finite it stores and returns the encoding of `{OVERFLOW}`
 (2) and changes no other cell, otherwise it runs the square/AD kernel calls
 (`ContextDoStep.body_outcomes_in`, `TensorSourceMethods.original_step`). The
 Algorithm manifest lists `OVERFLOW` under the DoStep `Signals` element, derived
-from the method interface. The complete C contract also checks
+from the method interface. The tensor source contract also states that DoStep
+has an execution from every finite input (`StepTotal`) and only sets exposed
+signals (`StepSignals`); `TensorManifest.parsed_signals` ties each manifest
+`Signals` element to the parsed method. The complete C contract also checks
 these declarations and the logical variable/function mappings. The manifest
 contract binds those mappings to the serialized XML. E05/E06 still require
 review of the official checker/layout discrepancy before a release claim.

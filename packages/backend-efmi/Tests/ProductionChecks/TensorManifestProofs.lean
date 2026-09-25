@@ -19,3 +19,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorManifest.signals_exposed
 #audit axioms Rumoca.EFMI.TensorManifest.block_method_signals
 #audit axioms Rumoca.EFMI.TensorManifest.block_methods
+#audit axioms Rumoca.EFMI.TensorManifest.parsed_signals

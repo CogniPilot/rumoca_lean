@@ -54,9 +54,7 @@ theorem doStep (a : TensorArtifact source)
         (values a.prepared.parsed.parsed.ast.header.input)[i] (.finite result[i])) :
     letI : CInterface := NumericalInterface.interface
     SourceObservation.SourceMatrix a values ∧
-    c = TensorProduction.includes ++
-      String.join (numericalFunctions.map CTree.Function.render) ++
-      TensorProduction.header ++ String.join (TensorProduction.functions.map CTree.Function.render) ∧
+    c = TensorProduction.render ∧
     ∃ diagonal : DiagonalProgram [stateShape, stateShape] stateShape,
       a.prepared.kernel.diagonal = some diagonal ∧
       ∃ finalHeap,
@@ -90,7 +88,7 @@ theorem doStep (a : TensorArtifact source)
     (values a.prepared.parsed.parsed.ast.header.input) rhs).1 squareRHS
   obtain ⟨finalHeap, outcome, ran, behaviors⟩ := ContextMethod.doStep unusedKernel objects heap base
     (values a.prepared.parsed.parsed.ast.header.input) rhs result storage inputRHS adds
-  refine ⟨SourceObservation.source_matrix a index values, JacobianObservation.actual_trees a contract,
+  refine ⟨SourceObservation.source_matrix a index values, contract.bytes.symm,
     squareJacobianProgram stateShape, ?_, finalHeap, outcome, ?_, ?_, ?_, ran, behaviors⟩
   · rw [index]; rfl
   · exact (StateIrrelevant.coefficients _ _ _ _).1 outcome.derivative
