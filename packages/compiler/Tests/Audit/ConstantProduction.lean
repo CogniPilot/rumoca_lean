@@ -10,3 +10,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ConstantArtifact.name_rates
 #audit axioms Rumoca.ConstantKernel.chars
 #audit axioms Rumoca.ConstantKernel.modelC_programText
+#audit axioms Rumoca.ConstantArtifact.no_overflow
+#audit axioms Rumoca.ConstantKernel.rates_source

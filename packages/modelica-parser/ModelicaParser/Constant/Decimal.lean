@@ -51,9 +51,23 @@ def parseDecimal (s : String) : Option Decimal :=
           ⟨sign, natOfDigits (intDs ++ fracDs), e - (fracDs.length : Int)⟩
     | _ => (parseExp cs2).map fun e => ⟨sign, natOfDigits intDs, e⟩
 
+/-- Rate magnitude admission: the exact value `|sign| * mantissa * 10 ^ power`
+is below `2^969`. Its nearest binary64 value is then below `2^970`, half the
+spacing of the largest finite doubles, so adding the rate to any finite double
+never overflows. A nonnegative exponent above 330 admits only zero; a negative
+exponent is capped at 330, so the check never forms a power of ten beyond
+`10^330` and conservatively rejects only literals with more than 600 significant
+digits. -/
+def Decimal.admitted (d : Decimal) : Bool :=
+  let twice := 2 * (d.sign.natAbs * d.mantissa)
+  if d.power < 0 then decide (twice < 2 ^ 970 * 10 ^ min (-d.power).toNat 330)
+  else twice == 0 || (decide (d.power.toNat ≤ 330) && decide (twice * 10 ^ d.power.toNat < 2 ^ 970))
+
 /-- The fixture literals decode to their exact base-ten content. -/
 example : parseDecimal "2.5" = some ⟨1, 25, -1⟩ := by decide
 example : parseDecimal "-1" = some ⟨-1, 1, 0⟩ := by decide
 example : parseDecimal "x" = none := by decide
+example : (parseDecimal "2.5").any Decimal.admitted = true := by decide +kernel
+example : (parseDecimal "1e300").any Decimal.admitted = false := by decide +kernel
 
 end Rumoca.ConstantProfile

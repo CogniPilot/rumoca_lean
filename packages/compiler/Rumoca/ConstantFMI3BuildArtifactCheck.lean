@@ -61,10 +61,11 @@ elab "verify_constant_fmi3_build_files" : command => do
           have hname : a.name = "ConstantRates" := rfl
           have hmodel : a.constantModel = Rumoca.constantRatesModel := rfl
           refine Rumoca.constantSourceBuild_correct a (String.ofList $(ctx.modelChars)) $(ctx.buildLit)
-            (String.ofList $(ctx.adapterChars)) $(ctx.mdLit) ?_ ?_ ?_ ?_ ?_ ?_ ?_
+            (String.ofList $(ctx.adapterChars)) $(ctx.mdLit) ?_ ?_ ?_ ?_ ?_ ?_ ?_ ?_
           · exact ($(ctx.modelEq):ident).symm
           · exact Rumoca.CConstant.contract_correct Rumoca.ConstantKernel.rates Rumoca.ConstantKernel.modelC
               Rumoca.ConstantKernel.modelC_programText.symm
+          · exact Rumoca.ConstantKernel.rates_source
           · rw [hname, ← (congrArg XML.document $(ctx.buildTreeEq):ident).trans $(ctx.buildBytesId):ident]
             exact FMI3.Build.artifact_correct "ConstantRates"
               ⟨_, _, rfl, by decide +kernel, by decide +kernel⟩

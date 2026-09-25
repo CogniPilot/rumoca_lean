@@ -29,6 +29,7 @@ compiler audit roots so Lake can check this numerical increment independently. -
 #audit axioms Rumoca.Binary64.Scaled.round_one
 #audit axioms Rumoca.Binary64.Scaled.rounded_zero
 #audit axioms Rumoca.Binary64.Scaled.round_underflow
+#audit axioms Rumoca.Binary64.Scaled.round_small
 #audit axioms Rumoca.Binary64.Scaled.round_nearest
 #audit axioms Rumoca.Binary64.roundedMul_spec
 #audit axioms Rumoca.Binary64.product_rounding_unique

@@ -83,7 +83,27 @@ existing `IDENT` terminal, and resolution recognizes the base-ten content with
 - the equations' derivative names are a permutation of the declared states, so
   every `der` reference is a declared state (no unbound name) and every state
   has exactly one equation (no uncovered state);
-- every rate spelling parses as a signed decimal literal.
+- every rate spelling parses as a signed decimal literal whose exact magnitude
+  is admitted by `Decimal.admitted`: below `2^969`, with a decimal exponent above
+  330 admitting only zero and a negative exponent capped at 330 so the check
+  never forms a larger power of ten (a literal needs more than 600 significant
+  digits to be rejected conservatively). A larger rate is rejected with
+  "rate magnitude must be below 2^969".
+
+The magnitude admission makes finite Euler stepping unconditional (CF03).
+`Binary64.add_small_no_overflow` proves that adding any addend below `2^970`
+(`2^2044` units, half the spacing of the largest finite doubles) to any finite
+binary64 value stays strictly inside the round-to-nearest overflow threshold;
+`advance_no_overflow` is its `+1` instance. `Scaled.round_small` bounds the
+nearest rounding of an input below `2^969` by `2^970`, so
+`CConstant.rateVal_small` holds for every admitted literal and
+`CConstant.no_overflow` gives `NoOverflow rates`: every rate added to every
+finite state stays finite. `NoOverflow.step`, `NoOverflow.sample` and
+`ConstantInstanceRhs.finite_of_noOverflow` discharge the finite-addition premises
+of `rumoca_constant_step`, the counted sample at every step count and every
+state of every do-step trajectory. `Model.lower_admitted` carries the admission
+into the lowered IVP, and `ConstantArtifact.no_overflow` states `NoOverflow` for
+every compiled constant artifact.
 
 `LocatedParsed.resolve` reports the first failing condition with a diagnostic
 range; `resolve_complete` shows a resolved model always succeeds.
@@ -413,7 +433,9 @@ certified constant kernel C text (`ConstantKernel.modelC`, the preamble and the
 three rendered `rumoca_constant_*` entries, equal to `CConstant.programText` over
 the source rates), the rendered constant adapter, the constant model description
 and the shared build description. `ConstantSourceBuildContract` bundles the
-executable kernel contract (`CConstant.contract_correct`), the constant adapter
+executable kernel contract (`CConstant.contract_correct`), the equality of the
+kernel rates with the prepared source literals (`ConstantKernel.rates_source`), the
+no-overflow property of those rates at every step count (`NoOverflow`), the constant adapter
 contract (`ConstantAdapter.Contract`, whose call graph is checked no-heap and
 acyclic), the build-description contract, the identifier and instantiation-token
 agreements and the constant model-description XML document; `constantSourceBuild_correct`

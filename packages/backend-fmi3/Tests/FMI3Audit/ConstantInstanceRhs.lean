@@ -20,3 +20,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConstantInstanceRhs.kernelDefinitions_sample
 #audit axioms Rumoca.FMI3.ConstantInstanceRhs.rhs_writes_events
 #audit axioms Rumoca.FMI3.ConstantInstanceRhs.step_writes_events
+#audit axioms Rumoca.FMI3.ConstantInstanceRhs.finite_of_noOverflow

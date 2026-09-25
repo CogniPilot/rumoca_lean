@@ -71,15 +71,25 @@ theorem units_bound (x : Value) : -(maxUnits : Int) ≤ units x ∧ units x ≤ 
   unfold units
   split <;> omega
 
+/-- The exact sum of any finite binary64 value and an addend of magnitude below
+`2^2044` units (`2^970`, half the spacing of the largest finite binary64 values)
+lies strictly below the IEEE nearest-rounding overflow threshold on both sides,
+even for the largest finite input. Repeated addition of such an addend therefore
+never overflows, at any step count. -/
+theorem add_small_no_overflow (x c : Value) (small : (units c).natAbs < 2 ^ 2044) :
+    -(maxUnits + 2 ^ 2044 : Int) < units x + units c ∧
+    units x + units c < (maxUnits + 2 ^ 2044 : Int) := by
+  have h := units_bound x
+  have hc : -(2 ^ 2044 : Int) < units c ∧ units c < 2 ^ 2044 := by omega
+  constructor <;> omega
+
 /-- Exact sum x+1 lies strictly below the IEEE nearest-rounding overflow
 threshold on both sides, even for the largest finite binary64 input. -/
 theorem advance_no_overflow (x : Value) :
     -(maxUnits + 2 ^ 2044 : Int) < units x + oneUnits ∧
     units x + oneUnits < (maxUnits + 2 ^ 2044 : Int) := by
-  have h := units_bound x
-  have hp : (oneUnits : Int) < 2 ^ 2044 := by decide +kernel
-  have ho : (0 : Int) < oneUnits := by exact_mod_cast oneUnits_pos
-  constructor <;> omega
+  have h := add_small_no_overflow x one (by rw [units_one]; decide +kernel)
+  rwa [units_one] at h
 
 /-- Fraction bit zero is also significand bit zero for normal numbers. -/
 def parity (x : Value) : Nat := fraction x % 2

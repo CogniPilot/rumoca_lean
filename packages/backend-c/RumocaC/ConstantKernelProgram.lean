@@ -521,6 +521,72 @@ theorem rate_rounds (d : Decimal) :
       (CBody.decimalNumerator (decide (d.sign < 0)) (d.sign.natAbs * d.mantissa) d.power) (rateVal d) :=
   CBody.decimalValue_rounds _ _ _
 
+/-! ### No overflow at any step count for admitted rates -/
+
+set_option exponentiation.threshold 2048 in
+omit interface in
+/-- An admitted rate literal rounds to a binary64 value below `2^970`. -/
+theorem rateVal_small (d : Decimal) (admitted : d.admitted = true) :
+    (Binary64.units (rateVal d)).natAbs < 2 ^ 2044 := by
+  apply Binary64.Scaled.round_small
+  have sign : ∀ (p : Prop) [Decidable p], (if p then (-1 : Int) else 1).natAbs = 1 := by
+    intro p _; split <;> rfl
+  have units : (Binary64.oneUnits : Int).natAbs = 2 ^ 1074 := Int.natAbs_natCast _
+  unfold Decimal.admitted at admitted
+  unfold CBody.decimalNumerator CBody.decimalScale
+  simp only [Int.natAbs_mul, sign, Int.natAbs_natCast, units, one_mul]
+  by_cases negative : d.power < 0
+  · simp only [negative, if_true, decide_eq_true_eq, Int.natAbs_one, mul_one] at admitted ⊢
+    have capped : 10 ^ min (-d.power).toNat 330 ≤ 10 ^ (-d.power).toNat :=
+      Nat.pow_le_pow_right (by decide) (Nat.min_le_left _ _)
+    calc 2 * (d.sign.natAbs * d.mantissa * 2 ^ 1074)
+        = 2 * (d.sign.natAbs * d.mantissa) * 2 ^ 1074 := (Nat.mul_assoc _ _ _).symm
+      _ < 2 ^ 970 * 10 ^ min (-d.power).toNat 330 * 2 ^ 1074 :=
+          Nat.mul_lt_mul_of_pos_right admitted (Nat.pow_pos (by decide))
+      _ ≤ 2 ^ 970 * 10 ^ (-d.power).toNat * 2 ^ 1074 := by gcongr
+      _ = 2 ^ 2044 * 10 ^ (-d.power).toNat := by ring
+  · simp only [negative, if_false, Bool.or_eq_true, beq_iff_eq, Bool.and_eq_true,
+      decide_eq_true_eq, Int.natAbs_pow] at admitted ⊢
+    rcases admitted with zero | ⟨_, bound⟩
+    · have : d.sign.natAbs * d.mantissa = 0 := by omega
+      rw [this]; simp
+    · calc 2 * (d.sign.natAbs * d.mantissa * Int.natAbs 10 ^ d.power.toNat * 2 ^ 1074)
+          = 2 * (d.sign.natAbs * d.mantissa) * 10 ^ d.power.toNat * 2 ^ 1074 := by norm_num; ring
+        _ < 2 ^ 970 * 2 ^ 1074 := Nat.mul_lt_mul_of_pos_right bound (Nat.pow_pos (by decide))
+        _ = 2 ^ 2044 * 1 := by ring
+
+/-- Adding any rate of the list to any finite binary64 value stays inside the
+finite rounding domain. This discharges the per-cell finite-addition premise of
+the step, the counted sample and every adapter step for every state and every
+step count. -/
+def NoOverflow (rates : List Decimal) : Prop :=
+  ∀ (x : Binary64.Value) (d : Decimal), d ∈ rates →
+    CExecution.finiteRoundDomain (Binary64.units x + Binary64.units (rateVal d))
+
+omit interface in
+/-- Every list of admitted rate literals never overflows, for any state and any
+number of steps. -/
+theorem no_overflow (rates : List Decimal) (admitted : ∀ d ∈ rates, d.admitted = true) :
+    NoOverflow rates := fun x d mem =>
+  Binary64.add_small_no_overflow x (rateVal d) (rateVal_small d (admitted d mem))
+
+omit interface in
+/-- The finite-addition premise of `rumoca_constant_step` for every state list. -/
+theorem NoOverflow.step {rates : List Decimal} (no : NoOverflow rates) (xs : List Binary64.Value)
+    (len : xs.length = rates.length) :
+    ∀ i (hi : i < rates.length),
+      CExecution.finiteRoundDomain (Binary64.units (xs[i]'(len ▸ hi)) + Binary64.units (rateVal rates[i])) :=
+  fun _ hi => no _ _ (List.getElem_mem hi)
+
+omit interface in
+/-- The finite-addition premise of `rumoca_constant_sample` at every step count. -/
+theorem NoOverflow.sample {rates : List Decimal} (no : NoOverflow rates) (xs0 : List Binary64.Value)
+    (len0 : xs0.length = rates.length) (N : Nat) :
+    ∀ i, i < N → ∀ k (hk : k < rates.length),
+      CExecution.finiteRoundDomain (Binary64.units ((stateAfter rates xs0 i)[k]'(by
+        rw [stateAfter_length rates xs0 len0 i]; exact hk)) + Binary64.units (rateVal rates[k])) :=
+  fun _ _ _ hk => no _ _ (List.getElem_mem hk)
+
 /-! ### The emitted numerical C: the three rendered functions -/
 
 /-- The constant-rate translation unit's preamble. `<stddef.h>` scopes `size_t`

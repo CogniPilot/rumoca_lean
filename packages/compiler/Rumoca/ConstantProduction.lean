@@ -120,7 +120,7 @@ states with the signed decimal rates `der(x) = 2.5` and `der(y) = -1`. -/
 def constantRatesAst : ConstantProfile.Model :=
   ⟨"ConstantRates", "x", "y", [], ⟨"x", "2.5"⟩, [⟨"y", "-1"⟩], "ConstantRates"⟩
 
-theorem constantRatesAst_resolved : constantRatesAst.Resolved := by decide
+theorem constantRatesAst_resolved : constantRatesAst.Resolved := by decide +kernel
 
 /-- The pinned constant model for the development `ConstantRates` source. -/
 def constantRatesModel : Solve.ConstantFMI3Model 2 :=
@@ -134,6 +134,16 @@ for a pinned parse, so the checker binds it by reflexivity. -/
 theorem name_rates (a : ConstantArtifact input)
     (hast : a.prepared.parsed.parsed.ast = constantRatesAst) : a.name = "ConstantRates" := by
   unfold ConstantArtifact.name; rw [hast]; rfl
+
+/-- Every rate of a compiled constant artifact passed the resolution magnitude
+admission, so adding any of its rounded rates to any finite state never
+overflows: every Euler step of every trajectory stays finite at any step count. -/
+theorem no_overflow (a : ConstantArtifact input) :
+    Rumoca.CConstant.NoOverflow (List.ofFn a.prepared.ivp.rates) :=
+  Rumoca.CConstant.no_overflow _ (fun d mem => by
+    obtain ⟨i, rfl⟩ := List.mem_ofFn.mp mem
+    rw [a.prepared.ivp_lowered]
+    exact a.prepared.parsed.parsed.ast.lower_admitted a.prepared.resolved i)
 
 end ConstantArtifact
 
@@ -150,6 +160,10 @@ open Rumoca.CConstant
 /-- The declaration-order source rate literals for the development `ConstantRates`
 fixture: `2.5 = 25 * 10^-1` and `-1 = -1 * 10^0`. -/
 def rates : List Decimal := [⟨1, 25, -1⟩, ⟨-1, 1, 0⟩]
+
+/-- The kernel rate literals are the resolved `ConstantRates` source literals in
+declaration order. -/
+theorem rates_source : rates = List.ofFn constantRatesAst.lower.rates := by decide
 
 /-- The certified private-kernel fragments in emission order: the binary64
 preamble and the three rendered kernel entries. -/
@@ -199,6 +213,12 @@ structure ConstantSourceBuildContract (a : ConstantArtifact input)
   exact-rounding contract: the rounded-rate write, the finite whole-vector Euler
   step, and its counted iteration. -/
   kernelContract : Rumoca.CConstant.Contract ConstantKernel.rates ConstantKernel.modelC
+  /-- The certified kernel rates are the prepared IVP's resolved source literals. -/
+  kernel_rates : ConstantKernel.rates = List.ofFn a.prepared.ivp.rates
+  /-- No overflow within any horizon: every kernel rate passed the resolution
+  magnitude admission, so the finite-addition premises of the step, sample and
+  do-step executions hold for every state and every step count. -/
+  no_overflow : Rumoca.CConstant.NoOverflow ConstantKernel.rates
   /-- The source-build recipe agrees with the required profile for the model. -/
   build : FMI3.Build.ArtifactContract a.name buildDescription
   /-- The complete rendered constant call graph obeys the checked no-heap policy (no
@@ -233,6 +253,7 @@ theorem constantSourceBuild_correct (a : ConstantArtifact input)
     (modelC buildDescription adapter metadata : String)
     (kernel : modelC = ConstantKernel.modelC)
     (kernelContract : Rumoca.CConstant.Contract ConstantKernel.rates ConstantKernel.modelC)
+    (kernelRates : ConstantKernel.rates = List.ofFn a.prepared.ivp.rates)
     (build : FMI3.Build.ArtifactContract a.name buildDescription)
     (adapter' : ∃ (src : AST.Model) (w : Solve.FMI3Model src), src.name = a.name ∧
       ∀ [FMI3.StaticLiterals], FMI3.ConstantAdapter.Contract w a.constantModel adapter)
@@ -245,7 +266,7 @@ theorem constantSourceBuild_correct (a : ConstantArtifact input)
     (metadataDocument : XML.Document
       (FMI3.TensorMetadata.constantModelDescription a.constantModel.shape a.constantModel.name) metadata) :
     ConstantSourceBuildContract a modelC buildDescription adapter metadata :=
-  ⟨kernel, kernelContract, build,
+  ⟨kernel, kernelContract, kernelRates, kernelRates ▸ a.no_overflow, build,
     (by
       obtain ⟨src, w, _, contractFn⟩ := adapter'
       letI : FMI3.StaticLiterals := ⟨fun _ => none⟩

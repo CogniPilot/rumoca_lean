@@ -5,6 +5,7 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.Binary64.round_spec
 #audit axioms Rumoca.Binary64.rounding_unique
+#audit axioms Rumoca.Binary64.add_small_no_overflow
 #audit axioms Rumoca.Binary64.advance_no_overflow
 #audit axioms Rumoca.Binary64.advance_exact
 #audit axioms Rumoca.Binary64.advance_half_spacing

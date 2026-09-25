@@ -50,6 +50,20 @@ def Model.decimalOf (m : Model) (state : String) : Decimal :=
   | some d => d
   | none => ⟨1, 0, 0⟩
 
+/-- Resolution admits the magnitude of every declared state's rate literal. -/
+theorem Model.decimalOf_admitted (m : Model) (h : m.Resolved) (state : String)
+    (mem : state ∈ m.states) : (m.decimalOf state).admitted = true := by
+  obtain ⟨e, he, hname⟩ := List.mem_map.mp (h.2.2.1.mem_iff.mpr mem)
+  obtain ⟨found, hfound⟩ := Option.isSome_iff_exists.mp
+    (List.find?_isSome.mpr ⟨e, he, by simp [hname]⟩ :
+      (m.equations.find? (fun e => e.derivative == state)).isSome)
+  have rate := h.2.2.2 found (List.mem_of_find?_eq_some hfound)
+  unfold Model.decimalOf Model.equationFor
+  rw [hfound, Option.bind_some]
+  cases hp : parseDecimal found.rate with
+  | none => rw [hp] at rate; simp at rate
+  | some d => rw [hp] at rate; simpa using rate
+
 /-- The rounded binary64 rate assigned to a state. -/
 noncomputable def Model.rateOf (m : Model) (state : String) : Value := (m.decimalOf state).rate
 
@@ -74,6 +88,11 @@ def Model.lower (m : Model) : ConstantIVP m.states.length :=
 
 theorem Model.lower_rate (m : Model) (i : Fin m.states.length) :
     (m.lower).rateValues i = m.rateOf (m.states.get i) := rfl
+
+/-- Every literal of the lowered IVP has an admitted magnitude. -/
+theorem Model.lower_admitted (m : Model) (h : m.Resolved) (i : Fin m.states.length) :
+    (m.lower.rates i).admitted = true :=
+  m.decimalOf_admitted h _ (m.states.get_mem i)
 
 /-! ### Source semantics and the lowering chain -/
 

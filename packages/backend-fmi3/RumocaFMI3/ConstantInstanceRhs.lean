@@ -333,4 +333,14 @@ theorem step_writes_events {shape : Shape} (rates : List Decimal) (len : rates.l
         exact Address.instances_separate pool j i different b stateName k m)
   · exact CCalls.Events.loop_call_reaches_events program definitions linked behaves resolves stack
 
+omit interface in
+/-- For rates that never overflow, the per-cell finite-addition premise of
+`step_writes_events` holds for every dense state, so every step of every
+trajectory, at any step count, stays finite. -/
+theorem finite_of_noOverflow {rates : List Decimal} {shape : Shape} (no : Rumoca.CConstant.NoOverflow rates)
+    (len : rates.length = shape.volume) (state : Values shape) :
+    ∀ (k : Fin shape.volume),
+      CExecution.finiteRoundDomain (Binary64.units state[k] + Binary64.units (rateVal (rates[k.val]'(idxLt len k)))) :=
+  fun k => no _ _ (List.getElem_mem (idxLt len k))
+
 end Rumoca.FMI3.ConstantInstanceRhs

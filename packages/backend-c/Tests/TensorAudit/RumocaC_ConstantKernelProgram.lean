@@ -14,4 +14,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CConstant.rhs_executes
 #audit axioms Rumoca.CConstant.step_executes
 #audit axioms Rumoca.CConstant.sample_executes
+#audit axioms Rumoca.CConstant.rateVal_small
+#audit axioms Rumoca.CConstant.no_overflow
+#audit axioms Rumoca.CConstant.NoOverflow.step
+#audit axioms Rumoca.CConstant.NoOverflow.sample
 #audit axioms Rumoca.CConstant.contract_correct

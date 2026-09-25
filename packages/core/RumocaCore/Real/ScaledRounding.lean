@@ -119,6 +119,20 @@ theorem round_underflow (small : 2 * numerator.natAbs < scale) :
   have lower := Nat.le_mul_of_pos_left scale positive
   omega
 
+/-- An exact input below `2^2043` units in magnitude rounds to a value below
+`2^2044` units: the nearest result is never farther from the input than
+positive zero, so its magnitude is at most twice the input's. -/
+theorem round_small (small : 2 * numerator.natAbs < 2 ^ 2044 * scale) :
+    (units (round scale numerator)).natAbs < 2 ^ 2044 := by
+  have hz : units positiveZero = 0 := by decide +kernel
+  have nearest := (round_spec scale numerator).nearest positiveZero
+  simp only [distance, hz, zero_mul, zero_sub, Int.natAbs_neg] at nearest
+  have triangle := Int.natAbs_add_le (units (round scale numerator) * scale - numerator) numerator
+  rw [sub_add_cancel, Int.natAbs_mul, Int.natAbs_natCast] at triangle
+  by_contra large
+  have scaled := Nat.mul_le_mul_right scale (Nat.le_of_not_lt large)
+  omega
+
 private theorem error_scale (scale : Nat) (positive : 0 < scale) (numerator : Int) (x : Value) :
     |value x - (numerator : ℝ) / (scale * oneUnits)| =
       (distance scale numerator x : ℝ) / (scale * oneUnits) := by
