@@ -5,12 +5,15 @@ noncomputable section
 namespace Rumoca.FMI3.CSProtocol
 open CTree CMemory CLiteral CStringMemory StaticFactory CCalls.Events
 
-/-- Actual source-bound creation, repeated initialization/simulation cycles,
-and final release share one prepared program and literal pool. Every resource
-after creation is derived; callers supply only original storage and effects. -/
-theorem runtime_create_release (compiled : compile input = .ok a)
-    (build : SourceBuildContract a c description adapter metadata) :
-    compile input = .ok a ∧ Rumoca.ArtifactContract a c .internal ∧
+/-- The Co-Simulation lifetime of the actual emitted adapter table: source-bound
+creation under an explicit slot owner, every admitted initialization/simulation
+history with its exact statuses, readbacks and callback events, and release by
+fmi3FreeInstance from any state or, where accepted, fmi3Terminate followed by
+fmi3FreeInstance. The original owner map is restored; other instances, the
+static pool and the literal pool are preserved outside the declared caller
+regions. Creation, simulation and release share one prepared program. -/
+abbrev Lifetime (a : Artifact input) (c description adapter metadata : String) : Prop :=
+    Rumoca.ArtifactContract a c .internal ∧
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧ Float64SetMetadata.Contract a.parsed.ast metadata ∧
     CountMetadata.Contract a.solve.prepareFMI3 metadata ∧
     NominalMetadata.Contract a.parsed.ast metadata ∧
@@ -73,12 +76,23 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 (∀ q, CSRun.Protected objects buffers q → plan.Outside p access buffers q →
                   q ≠ AtomicSlots.address objects.flagsBlock slot →
                   InitializationProtocol.freedHeap after objects slot q = heap q) ∧
+                (∀ other : Fin objects.capacity, other ≠ slot → ∀ q, (objects.instances.index other.val).InRecord q →
+                  plan.Outside p access buffers q → InitializationProtocol.freedHeap after objects slot q = heap q) ∧
                 (plan.Finished →
                   LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .cs plan.mode ∧
                   SlotOwners.Represents objects.flagsBlock (LifecycleRelease.releasedHeap after objects slot plan.mode) owners ∧
                   (∀ q, CSRun.Protected objects buffers q → plan.Outside p access buffers q →
                     q ≠ AtomicSlots.address objects.flagsBlock slot →
-                    LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q)) := by
+                    LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q) ∧
+                  (∀ other : Fin objects.capacity, other ≠ slot → ∀ q, (objects.instances.index other.val).InRecord q →
+                    plan.Outside p access buffers q → LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q))
+
+/-- Actual source-bound creation, repeated initialization/simulation cycles,
+and final release share one prepared program and literal pool. Every resource
+after creation is derived; callers supply only original storage and effects. -/
+theorem runtime_create_release (compiled : compile input = .ok a)
+    (build : SourceBuildContract a c description adapter metadata) :
+    compile input = .ok a ∧ Lifetime a c description adapter metadata := by
   obtain ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, loggingMetadata, equation, sigs, pool, made, printed, functions,
     prepared, create⟩ := InitializationProtocol.runtime_create_release compiled build
   refine ⟨compiled, numerical, numericMetadata, writableMetadata, countMetadata, nominalMetadata, loggingMetadata, equation, sigs, pool, made, printed, functions, ?_⟩
@@ -128,16 +142,23 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   refine ⟨sourceTrace, creationReadonly.trans (certified.completed _ _ completed).2.2.1,
     (certified.completed _ _ completed).2.2.2.1,
     (certified.completed _ _ completed).2.2.2.1.logging_value created.initialized.loggingValue,
-    discharged, freed, freedOwners,
-    fun q inside outside notFlag => (freedFrame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag), ?_⟩
+    discharged, freed, freedOwners, ?_, ?_, ?_⟩
+  · intro q inside outside notFlag
+    exact (freedFrame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag)
+  · intro other different q inside outside
+    obtain ⟨pooled, _, notFlag⟩ := InitializationProtocol.other_instance objects different inside
+    exact (freedFrame q (Or.inl pooled) outside notFlag).trans (creationFrame q outside.not_record notFlag)
   intro finished
   obtain ⟨_, released, frame⟩ := certified.released objects tag slot finish releaseBindings rfl created.owned created.metadata
     (admitted.can_finish finished) completed
   have restored := released.ownersAfter
   rw [SlotOwners.release_reserved_restore reserved] at restored
-  refine ⟨released, restored, ?_⟩
-  intro q inside outside notFlag
-  exact (frame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag)
+  refine ⟨released, restored, ?_, ?_⟩
+  · intro q inside outside notFlag
+    exact (frame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag)
+  · intro other different q inside outside
+    obtain ⟨pooled, _, notFlag⟩ := InitializationProtocol.other_instance objects different inside
+    exact (frame q (Or.inl pooled) outside notFlag).trans (creationFrame q outside.not_record notFlag)
 
 end Rumoca.FMI3.CSProtocol
 end

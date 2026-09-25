@@ -80,3 +80,22 @@ theorem Completed.release [interface : CInterface] {program : Program Invocation
 
 end Rumoca.FMI3.InitializationProtocol
 end
+
+noncomputable section
+namespace Rumoca.FMI3.InitializationProtocol
+open CMemory StaticFactory
+
+/-- Every cell of another instance record lies in the static pool, outside
+this instance's record and apart from its lease flag. -/
+theorem other_instance (objects : Objects) {slot other : Fin objects.capacity} (different : other ≠ slot)
+    (inside : (objects.instances.index other.val).InRecord q) :
+    q.block = objects.instances.block ∧ ¬ (objects.instances.index slot.val).InRecord q ∧
+      q ≠ AtomicSlots.address objects.flagsBlock slot := by
+  refine ⟨inside.1, fun mine => Address.records_separate objects.instances other.val slot.val
+    (fun same => different (Fin.ext same)) inside mine rfl, ?_⟩
+  intro same
+  subst same
+  exact objects.separate inside.1.symm
+
+end Rumoca.FMI3.InitializationProtocol
+end

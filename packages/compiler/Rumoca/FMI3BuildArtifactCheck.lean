@@ -11,6 +11,8 @@ import Rumoca.ArtifactCheck
 import Rumoca.FMI3CountProofs
 import Rumoca.FMI3VersionProofs
 import Rumoca.FMI3AdapterCertificate
+import Rumoca.FMI3MEProtocolRuntime
+import Rumoca.FMI3CSProtocolRuntime
 import RumocaFMI3.Header
 import XML.CertificateCheck
 
@@ -111,10 +113,20 @@ elab "verify_fmi3_build_files" : command => do
         subst a
         rw [$mdTreeEq:ident, ← $mdBytes:ident]
         exact XML.document_correct $mdTree $mdValid:ident))
-  let axioms ← collectAxioms theoremName
-  for dependency in axioms do
-    unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
-      throwError "unapproved axiom in FMI source-build contract: {dependency}"
-  logInfo m!"{theoremName} depends on axioms: {axioms.toList}"
+  -- Both interface lifetimes of these exact members, from creation to release.
+  let lifetimesName := `Rumoca.CheckedFMI3Files.lifetimes
+  let lifetimesId := mkIdent lifetimesName
+  elabCommand (← `(command|
+    theorem $lifetimesId:ident : ∃ a : Artifact $inputTerm, compile $inputTerm = .ok a ∧
+        FMI3.MEProtocol.Lifetime a $out $xml $api $md ∧ FMI3.CSProtocol.Lifetime a $out $xml $api $md := by
+      obtain ⟨_, a, compiled, contract⟩ := $theoremId:ident
+      exact ⟨a, compiled, (FMI3.MEProtocol.runtime_create_release compiled contract).2,
+        (FMI3.CSProtocol.runtime_create_release compiled contract).2⟩))
+  for name in [theoremName, lifetimesName] do
+    let axioms ← collectAxioms name
+    for dependency in axioms do
+      unless #[`propext, `Classical.choice, `Quot.sound].contains dependency do
+        throwError "unapproved axiom in FMI source-build contract: {dependency}"
+    logInfo m!"{name} depends on axioms: {axioms.toList}"
 
 end Rumoca.FMI3BuildArtifactCheck

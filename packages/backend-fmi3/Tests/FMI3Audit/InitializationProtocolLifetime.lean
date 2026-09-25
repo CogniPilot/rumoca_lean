@@ -7,3 +7,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.InitializationProtocol.Phase.can_finish
 #audit axioms Rumoca.FMI3.InitializationProtocol.Completed.release
 #audit axioms Rumoca.FMI3.InitializationProtocol.freed_correct
+#audit axioms Rumoca.FMI3.InitializationProtocol.other_instance
