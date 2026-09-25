@@ -2,6 +2,7 @@ import RumocaC.TensorFiniteScanCode
 import RumocaC.TensorEncodedMemory
 import RumocaC.LoopProofs
 import RumocaC.TypedCallProofs
+import RumocaC.BooleanProofs
 
 /-! Total finiteness scanning of readable encoded tensor storage. The invariant
 tracks every visited coordinate, including those after a failure. The helper
@@ -109,8 +110,8 @@ theorem iterationFor_reaches (value : Expr) (env : CBody.Locals) (types : CLoops
   | false =>
     have branch : CLoops.next (.running (iterationFor value ++ rest) env types heap) =
         some (.running (.assign (.id "valid") (.nat 0) :: rest) env types heap) := by
-      simp [iterationFor, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
-        CLoops.noDeclarations, CBody.eval, CBody.evalWith, loaded, classified, finite,
+      simp [iterationFor, CLoops.next, CLoops.nextWith, CBody.legacyExpressions,
+        CLoops.noDeclarations, CBody.eval, loaded, classified, finite,
         CBody.boolean, Value.truth]
     have assigned := CLoops.assign_local env types heap "valid" (.nat 0) rest
       (CBody.boolean before) (.integer 0) (.integer 0) .int32 flag typed rfl (by decide)
@@ -124,8 +125,8 @@ theorem iterationFor_reaches (value : Expr) (env : CBody.Locals) (types : CLoops
       · simp [CBody.bind, same]
     have branch : CLoops.next (.running (iterationFor value ++ rest) env types heap) =
         some (.running rest env types heap) := by
-      simp [iterationFor, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
-        CLoops.noDeclarations, CBody.eval, CBody.evalWith, loaded, classified, finite,
+      simp [iterationFor, CLoops.next, CLoops.nextWith, CBody.legacyExpressions,
+        CLoops.noDeclarations, CBody.eval, loaded, classified, finite,
         CBody.boolean, Value.truth]
     rw [Bool.and_true, unchanged]
     exact .next branch (.refl _)

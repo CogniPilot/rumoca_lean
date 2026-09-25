@@ -41,6 +41,14 @@ def evalWith (expressions : CBody.Expressions) (env : CBody.Locals) (types : Typ
   | .bin .div a b => do CArithmetic.floatDiv (← expressions.value env heap a) (← expressions.value env heap b)
   | e => expressions.value env heap e
 
+omit interface in
+/-- The loop fragment delegates the negated classification to the shared
+expression semantics. -/
+@[simp↓] theorem evalWith_nonfinite (expressions : CBody.Expressions) (env : CBody.Locals)
+    (types : Types) (heap : Heap) (a : Expr) :
+    evalWith expressions env types heap (Expr.nonfinite a) =
+      expressions.value env heap (Expr.nonfinite a) := rfl
+
 abbrev eval (env : CBody.Locals) (types : Types) (heap : Heap) : Expr → Option Value :=
   evalWith CBody.legacyExpressions env types heap
 

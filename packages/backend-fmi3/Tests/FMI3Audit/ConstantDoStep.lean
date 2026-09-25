@@ -30,3 +30,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConstantDoStep.stop_rejection_contract
 #audit axioms Rumoca.FMI3.ConstantDoStep.discard_rejection_contract
 #audit axioms Rumoca.FMI3.ConstantDoStep.body_printable
+#audit axioms Rumoca.FMI3.ConstantDoStep.doStepBody

@@ -35,7 +35,7 @@ theorem finite_check_step (env : Locals) (types : Types) (heap : Heap) (rest : L
       some (.running (if finite then rest else Runtime.fail message :: rest) env types heap) := by
   cases finite <;>
     simp [validation, Runtime.reject, Runtime.branch, Runtime.either, Runtime.nev, Runtime.n,
-      Runtime.negate, Runtime.finite, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations,
+      Expr.nonfinite, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations,
       Runtime.fail, Runtime.ret, Runtime.call, Runtime.v, CBody.eval, CBody.evalWith, referenceLoaded, valueLoaded,
       classified, comparison, boolean, Value.truth]
 

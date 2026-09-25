@@ -17,3 +17,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorSetTime.body_printable
 #audit axioms Rumoca.FMI3.TensorSetTime.function_denotes
 #audit axioms Rumoca.FMI3.TensorSetTime.contract
+#audit axioms Rumoca.FMI3.TensorSetTime.finiteReject

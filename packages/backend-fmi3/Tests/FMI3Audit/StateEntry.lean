@@ -16,3 +16,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.StateCalls.Entry.query_cases
 #audit axioms Rumoca.FMI3.StateCalls.Entry.failure_unique
 #audit axioms Rumoca.FMI3.StateCalls.Entry.failure_prefix
+#audit axioms Rumoca.FMI3.StateCalls.Entry.action

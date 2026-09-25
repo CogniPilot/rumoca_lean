@@ -69,7 +69,7 @@ theorem body_inputs (model : Solve.FMI3Model source) (signature : Signature) :
     Runtime.put, Runtime.out, Runtime.ok, Runtime.setMode, Runtime.log,
     Runtime.v, Runtime.n, Runtime.call, Runtime.field, Runtime.x,
     Runtime.eqv, Runtime.nev, Runtime.lt, Runtime.gt, Runtime.le,
-    Runtime.both, Runtime.either, Runtime.negate, Runtime.finite, Runtime.mode,
+    Runtime.both, Runtime.either, Runtime.negate, Expr.nonfinite, Runtime.mode,
     Runtime.modeGuard, allowed_inputs, any_inputs]
   all_goals try exact require_inputs _
   all_goals

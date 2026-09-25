@@ -64,8 +64,8 @@ def InputsValid (point step : BitVec 64) (time : Binary64.Value) : Prop :=
   | _, _ => False
 
 def inputCondition : Expr := Runtime.any [
-  Runtime.negate (Runtime.finite (Runtime.v "currentCommunicationPoint")),
-  Runtime.negate (Runtime.finite (Runtime.v "communicationStepSize")),
+  Expr.nonfinite (Runtime.v "currentCommunicationPoint"),
+  Expr.nonfinite (Runtime.v "communicationStepSize"),
   Runtime.nev (Runtime.v "currentCommunicationPoint") (Runtime.field "time"),
   Runtime.le (Runtime.v "communicationStepSize") (Runtime.n 0)]
 
@@ -163,7 +163,7 @@ theorem input_condition_all (env : Locals) (heap : Heap) (p : Address)
         Value.isFinite_finite duration
       by_cases same : Binary64.value current = Binary64.value time <;>
         by_cases positive : 0 < Binary64.value duration <;>
-        simp [inputCondition, Runtime.any, Runtime.negate, Runtime.finite, Runtime.call,
+        simp [inputCondition, Runtime.any, Expr.nonfinite,
           Runtime.v, Runtime.n, Runtime.nev, Runtime.field, Runtime.le,
           CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve, instanceValue, pointValue, stepValue, Value.address, clock,
           comparison, Value.finite, floatComparison, comparison_value,
@@ -172,12 +172,12 @@ theorem input_condition_all (env : Locals) (heap : Heap) (p : Address)
           Binary64.ofSmallInt_value, same, positive, not_le.mpr, le_of_not_gt]
     · have hp : (Value.float64 point).isFinite = some true := by simp [Value.isFinite, pointFinite]
       have hs : (Value.float64 step).isFinite = some false := by simp [Value.isFinite, stepFinite]
-      simp [inputCondition, Runtime.any, Runtime.negate, Runtime.finite, Runtime.call,
+      simp [inputCondition, Runtime.any,
         Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, resolve, pointValue, stepValue,
         hp, hs, boolean, Value.truth, InputsValid, Float64.decode, pointFinite, stepFinite]
       split_ifs <;> simp_all
   · have hp : (Value.float64 point).isFinite = some false := by simp [Value.isFinite, pointFinite]
-    simp [inputCondition, Runtime.any, Runtime.negate, Runtime.finite, Runtime.call,
+    simp [inputCondition, Runtime.any,
       Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, resolve, pointValue, hp,
       boolean, Value.truth, InputsValid, Float64.decode, pointFinite]
     split_ifs <;> simp_all

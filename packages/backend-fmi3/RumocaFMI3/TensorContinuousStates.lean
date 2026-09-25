@@ -555,7 +555,7 @@ theorem setBody_printable (shape : Tensor.Shape) :
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,
-      Runtime.mode, Runtime.call, Runtime.finite, setCopyBody, validateBody,
+      Runtime.mode, Runtime.call, Expr.nonfinite, setCopyBody, validateBody,
       TensorFloat64.dstCell, Float64Calls.output, CLoops.loop, CLoops.counterStep,
       List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil,
       or_false, or_imp, forall_and, List.cons_append, List.nil_append, forall_eq] <;>

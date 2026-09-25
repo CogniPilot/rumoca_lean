@@ -70,3 +70,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorDoStep.internalStep_reaches_for
 #audit axioms Rumoca.FMI3.TensorDoStep.execution_free_for
 #audit axioms Rumoca.FMI3.TensorDoStep.execution_output_for
+#audit axioms Rumoca.FMI3.TensorDoStep.doStepBody

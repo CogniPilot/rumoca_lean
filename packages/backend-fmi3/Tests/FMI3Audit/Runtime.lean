@@ -19,3 +19,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.Runtime.any
 #audit axioms Rumoca.FMI3.Runtime.kindModes
 #audit axioms Rumoca.FMI3.Runtime.allowedExpression
+#audit axioms Rumoca.FMI3.Runtime.doStep
+#audit axioms Rumoca.FMI3.Runtime.invalidTime
+#audit axioms Rumoca.FMI3.Runtime.stepClock

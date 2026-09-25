@@ -15,3 +15,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CTensor.ProductPreflight.square_overflow
 #audit axioms Rumoca.CTensor.ProductPreflight.Syntax.render_denotes
 #audit axioms Rumoca.CTensor.ProductPreflight.artifact_correct
+#audit axioms Rumoca.CTensor.FiniteScan.iterationFor
+#audit axioms Rumoca.CTensor.ProductPreflight.Syntax.Denotes
+#audit axioms Rumoca.CTensor.ProductPreflight.Syntax.tokens

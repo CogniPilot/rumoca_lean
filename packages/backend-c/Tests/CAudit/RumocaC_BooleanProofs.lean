@@ -8,3 +8,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CBody.BoolProofs.eval_not
 #audit axioms Rumoca.CTree.Expr.disjunction
 #audit axioms Rumoca.CBody.BoolProofs.eval_disjunction
+#audit axioms Rumoca.CTree.Expr.nonfinite
+#audit axioms Rumoca.CBody.evalWith_nonfinite

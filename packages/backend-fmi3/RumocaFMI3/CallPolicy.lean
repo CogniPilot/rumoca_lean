@@ -24,7 +24,7 @@ def accepted (callee : Expr) : Bool := (classify callee).isSome
 macro "check_fmi_call_policy" : tactic => `(tactic| (
   fmi_literal_calls
   all_goals simp [StatementAdmits, ExpressionAdmits, accepted, classify,
-    Runtime.finite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
+    Expr.nonfinite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
     Runtime.any, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
     Runtime.lt, Runtime.le, Runtime.gt, Runtime.ge, Runtime.negate,
     Runtime.field, Runtime.mode, Runtime.v, Runtime.n, Runtime.call]))
@@ -87,7 +87,7 @@ theorem classified_rank (callee : Expr) (allowed : accepted callee = true) :
 macro "check_fmi_call_rank" : tactic => `(tactic| (
   try fmi_literal_calls
   all_goals try simp [StatementAdmits, ExpressionAdmits, rankCallee, functionRank,
-    Runtime.finite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
+    Expr.nonfinite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
     Runtime.any, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
     Runtime.lt, Runtime.le, Runtime.gt, Runtime.ge, Runtime.negate,
     Runtime.field, Runtime.mode, Runtime.v, Runtime.n, Runtime.call]

@@ -67,7 +67,6 @@ def reject (c : Expr) (message : String) := branch c [fail message]
 def log (status : String) (message : Expr) :=
   branch (both (nev (field "logger") Expr.nullPointer) (field "logging"))
   [.eval (.call (field "logger") [field "environment", v status, .str "logStatus", message])]
-def finite (e : Expr) := call "isfinite" [e]
 def mode (m : Mode) := n m.code
 def setMode (m : Mode) := put "mode" (mode m)
 
@@ -147,7 +146,7 @@ def setFloat64Values : List Stmt := [
     "Invalid Float64 array lengths or pointers"] ++
   countLoop (v "nValueReferences") [
     reject (either (nev (.index (v "valueReferences") (v "k")) (n 1))
-      (negate (finite (.index (v "values") (v "k"))))) "Only a finite continuous state value may be set"] ++
+      (Expr.nonfinite (.index (v "values") (v "k")))) "Only a finite continuous state value may be set"] ++
   [Stmt.assign (v "k") (n 0), .whileLoop (lt (v "k") (v "nValueReferences")) [
     .assign x (.index (v "values") (v "k")), .assign (v "k") (.bin .add (v "k") (n 1))], ok]
 
@@ -168,7 +167,7 @@ def stepRounding : List Stmt := [
 def stepClock : List Stmt := [
   .declare "double" "next" (.bin .add (field "time") (v "communicationStepSize")),
   reject (both (field "stopDefined") (gt (v "next") (field "stop"))) "Step exceeds stopTime",
-  branch (any [negate (finite (v "next")), le (v "next") (field "time")]) stepDiscard]
+  branch (any [Expr.nonfinite (v "next"), le (v "next") (field "time")]) stepDiscard]
 
 def stepGrid : List Stmt := [
   .declare "double" "floored" (call "floor" [v "communicationStepSize"]),
@@ -185,13 +184,13 @@ def doStep : List Stmt := require .doStep ++ [
   pointerCheck ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"],
   out "eventHandlingNeeded" (n 0), out "terminateSimulation" (n 0), out "earlyReturn" (n 0),
   out "lastSuccessfulTime" (field "time"),
-  reject (any [negate (finite (v "currentCommunicationPoint")),
-    negate (finite (v "communicationStepSize")),
+  reject (any [Expr.nonfinite (v "currentCommunicationPoint"),
+    Expr.nonfinite (v "communicationStepSize"),
     nev (v "currentCommunicationPoint") (field "time"), le (v "communicationStepSize") (n 0)])
     "Invalid communication point or step size"] ++
   stepRounding ++ stepClock ++ stepGrid ++ stepSolve
 
-def invalidTime : Expr := any [negate (finite (v "time")), lt (v "time") (field "timeMin"),
+def invalidTime : Expr := any [Expr.nonfinite (v "time"), lt (v "time") (field "timeMin"),
   both (field "stopDefined") (gt (v "time") (field "stop"))]
 
 def raiseField (name : String) (candidate : Expr) : Stmt :=
@@ -219,8 +218,8 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
   | "fmi3FreeInstance" => StaticRelease.function.body
   | "fmi3SetDebugLogging" => require .logging ++ DebugLogging.code
   | "fmi3EnterInitializationMode" => require .enterInitialization ++ [
-    reject (any [negate (finite (v "startTime")),
-      both (v "stopTimeDefined") (either (negate (finite (v "stopTime"))) (lt (v "stopTime") (v "startTime")))])
+    reject (any [Expr.nonfinite (v "startTime"),
+      both (v "stopTimeDefined") (either (Expr.nonfinite (v "stopTime")) (lt (v "stopTime") (v "startTime")))])
       "Invalid initialization time interval"] ++ initialTime ++ [
     put "stop" (v "stopTime"), put "stopDefined" (v "stopTimeDefined"),
     setMode .initialization, ok]
@@ -246,7 +245,7 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
     reject invalidTime "Time is outside the permitted interval",
     put "time" (v "time"), ok]
   | "fmi3SetContinuousStates" => require .setStates ++ scalarAccessCheck "continuousStates" "nContinuousStates" ++ [
-    reject (negate (finite (.index (v "continuousStates") (n 0)))) "State must be finite",
+    reject (Expr.nonfinite (.index (v "continuousStates") (n 0))) "State must be finite",
     .assign x (.index (v "continuousStates") (n 0)), ok]
   | "fmi3GetContinuousStates" => require .getStates ++ scalarAccessCheck "continuousStates" "nContinuousStates" ++
     [.assign (.index (v "continuousStates") (n 0)) x, ok]

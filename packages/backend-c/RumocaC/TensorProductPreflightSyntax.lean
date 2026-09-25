@@ -12,7 +12,7 @@ def tokens : List Token :=
     "int32_t", "valid", "=", "1", ";", "size_t", "k", "=", "0", ";",
     "while", "(", "(", "k", "<", "count", ")", ")", "{", "sample", "=",
     "(", "left", "[", "k", "]", "*", "right", "[", "k", "]", ")", ";",
-    "if", "(", "(", "!", "isfinite", "(", "sample", ")", ")", ")", "{",
+    "if", "(", "(", "isfinite", "(", "sample", ")", "==", "0", ")", ")", "{",
     "valid", "=", "0", ";", "}", "k", "=", "(", "k", "+", "1", ")", ";", "}",
     "return", "valid", ";", "}"] : List String).map Token.literal
 
@@ -22,7 +22,7 @@ def Denotes (source : String) : Prop :=
 macro "tensor_expand_product_preflight_printer" : tactic => `(tactic|
   simp [ProductPreflight.function, ProductPreflight.value, FinitePreflight.body, FinitePreflight.segment,
     FinitePreflight.segmentWith,
-    FinitePreflight.iteration, FiniteScan.iterationFor, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep,
+    FinitePreflight.iteration, FiniteScan.iterationFor, CTree.Expr.nonfinite, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep,
     CTree.Function.render, CTree.Signature.render, CTree.Parameter.render,
     CTree.Stmt.render, CTree.Expr.render, CTree.BinOp.render])
 

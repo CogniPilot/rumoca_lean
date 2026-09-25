@@ -81,9 +81,9 @@ def locals (p : Address) (args : Raw) : Locals :=
   CBody.bind (parameters (some p) args) "m" (.pointer (some p))
 
 /-- Initialization guard for the existing unit profile. -/
-def guard : Expr := Runtime.any [Runtime.negate (Runtime.finite (Runtime.v "startTime")),
+def guard : Expr := Runtime.any [Expr.nonfinite (Runtime.v "startTime"),
   Runtime.both (Runtime.v "stopTimeDefined")
-    (Runtime.either (Runtime.negate (Runtime.finite (Runtime.v "stopTime")))
+    (Runtime.either (Expr.nonfinite (Runtime.v "stopTime"))
       (Runtime.lt (Runtime.v "stopTime") (Runtime.v "startTime")))]
 
 section
@@ -107,8 +107,8 @@ theorem guard_eval (heap : Heap) (p : Address) (args : Raw) :
     CBody.eval (locals p args) heap guard = some (boolean (rejects args)) := by
   have startFinite : Value.isFinite (.float64 args.start) = some (Initialization.finiteBits args.start) := rfl
   have stopFinite : Value.isFinite (.float64 args.stop) = some (Initialization.finiteBits args.stop) := rfl
-  simp [guard, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
-    Runtime.finite, Runtime.call, Runtime.lt, Runtime.v, CBody.eval, CBody.evalWith,
+  simp [guard, Runtime.any, Runtime.either, Runtime.both,
+    Expr.nonfinite, Runtime.lt, Runtime.v, CBody.eval, CBody.evalWith,
     locals, parameters, CBody.bind, resolve, constants, comparison, floatComparison,
     convert, startFinite, stopFinite, rejects]
   all_goals

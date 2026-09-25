@@ -11,7 +11,7 @@ open CTree CMemory CBody CLoops Float64Calls
 
 def message : String := "Only a finite continuous state value may be set"
 def validation : Stmt := Runtime.reject (Runtime.either (Runtime.nev reference (Runtime.n 1))
-  (Runtime.negate (Runtime.finite output))) message
+  (Expr.nonfinite output)) message
 def writeBody : List Stmt := [.assign Runtime.x output]
 def afterValidation : List Stmt := [.assign (Runtime.v "k") (Runtime.n 0),
   loop "k" (Runtime.v "nValueReferences") writeBody, Runtime.ok]

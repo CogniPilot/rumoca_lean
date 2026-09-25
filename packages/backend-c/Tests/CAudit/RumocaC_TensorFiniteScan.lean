@@ -16,3 +16,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.CTensor.FiniteScan.call_correct
 #audit axioms Rumoca.CTensor.FiniteScan.Syntax.render_denotes
 #audit axioms Rumoca.CTensor.FiniteScan.artifact_correct
+#audit axioms Rumoca.CTensor.FiniteScan.Syntax.Denotes
+#audit axioms Rumoca.CTensor.FiniteScan.Syntax.config
+#audit axioms Rumoca.CTensor.FiniteScan.Syntax.tokens

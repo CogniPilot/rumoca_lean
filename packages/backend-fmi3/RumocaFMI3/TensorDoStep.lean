@@ -1874,8 +1874,8 @@ def doStepBody (shape : Tensor.Shape) (hasOutput : Bool) : List Stmt :=
   [Runtime.pointerCheck ["eventHandlingNeeded", "terminateSimulation", "earlyReturn", "lastSuccessfulTime"],
    Runtime.out "eventHandlingNeeded" (Runtime.n 0), Runtime.out "terminateSimulation" (Runtime.n 0),
    Runtime.out "earlyReturn" (Runtime.n 0), Runtime.out "lastSuccessfulTime" (Runtime.field "time"),
-   Runtime.reject (Runtime.any [Runtime.negate (Runtime.finite (Runtime.v "currentCommunicationPoint")),
-     Runtime.negate (Runtime.finite (Runtime.v "communicationStepSize")),
+   Runtime.reject (Runtime.any [Expr.nonfinite (Runtime.v "currentCommunicationPoint"),
+     Expr.nonfinite (Runtime.v "communicationStepSize"),
      Runtime.nev (Runtime.v "currentCommunicationPoint") (Runtime.field "time"),
      Runtime.le (Runtime.v "communicationStepSize") (Runtime.n 0)])
      "Invalid communication point or step size"] ++
@@ -1906,7 +1906,7 @@ theorem doStepBody_closed (shape : Tensor.Shape) (hasOutput : Bool) :
       Runtime.reject, Runtime.branch, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.stepRounding,
       Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.fail, Runtime.ret,
       Runtime.ok, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, Runtime.any, Runtime.negate,
-      Runtime.finite, Runtime.nev, Runtime.le, Runtime.both,
+      Expr.nonfinite, Runtime.nev, Runtime.le, Runtime.both,
       CBodyEmbedding.closedBlocks, CLoops.noDeclarations, CLoops.loop, CLoops.counterStep,
       List.all_append, stepBodyT_noDecl]
 
@@ -3994,7 +3994,7 @@ theorem body_printable (shape : Tensor.Shape) (hasOutput : Bool) :
       Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes, Runtime.mode, Runtime.reject, Runtime.branch,
       Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.out, Runtime.put, Runtime.ok, Runtime.ret, Runtime.fail, Runtime.stepRounding,
       Runtime.stepClock, Runtime.stepGrid, Runtime.stepDiscard, Runtime.log, Runtime.field, Runtime.v, Runtime.n, Runtime.call, Runtime.any, Expr.disjunction,
-      Runtime.negate, Runtime.finite, Runtime.nev, Runtime.eqv, Runtime.le, Runtime.gt, Runtime.both,
+      Runtime.negate, Expr.nonfinite, Runtime.nev, Runtime.eqv, Runtime.le, Runtime.gt, Runtime.both,
       CAlgorithm.literal, CLoops.loop, CLoops.counterStep,
       List.map_cons, List.map_nil, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>

@@ -17,6 +17,26 @@ D.7.3). -/
 
 end Rumoca.CTree
 
+namespace Rumoca.CBody
+open CTree
+
+/-- `(isfinite(e) == 0)` evaluates `e` once and yields the negated
+classification of its value. -/
+@[simp] theorem evalWith_nonfinite [CInterface] (declarations : CDeclaredMembers.Declarations)
+    (objects : CDeclaredMembers.Objects) (env : Locals) (heap : CMemory.Heap) (a : Expr) :
+    evalWith declarations objects env heap (Expr.nonfinite a) =
+      (evalWith declarations objects env heap a).bind
+        fun v => v.isFinite.map fun finite => boolean (!finite) := by
+  cases value : evalWith declarations objects env heap a with
+  | none => simp [Expr.nonfinite, evalWith, value]
+  | some v =>
+    cases classified : v.isFinite with
+    | none => simp [Expr.nonfinite, evalWith, value, classified]
+    | some finite =>
+      cases finite <;> simp [Expr.nonfinite, evalWith, value, classified, comparison, boolean]
+
+end Rumoca.CBody
+
 namespace Rumoca.CBody.BoolProofs
 open CTree CMemory
 variable [interface : CInterface]

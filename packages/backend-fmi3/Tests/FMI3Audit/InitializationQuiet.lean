@@ -5,3 +5,4 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.FMI3.InitializationCalls.quiet_execution_correct
 #audit axioms Rumoca.FMI3.InitializationCalls.QuietExecutionContract.initialize
+#audit axioms Rumoca.FMI3.InitializationCalls.guard

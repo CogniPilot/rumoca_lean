@@ -33,7 +33,7 @@ def command (write : Bool) : Command := if write then .setStates else .getStates
 
 def action (write : Bool) : List Stmt :=
     if write then
-      [Runtime.reject (Runtime.negate (Runtime.finite (.index (Runtime.v "continuousStates") (Runtime.n 0))))
+      [Runtime.reject (Expr.nonfinite (.index (Runtime.v "continuousStates") (Runtime.n 0)))
         "State must be finite", .assign Runtime.x (.index (Runtime.v "continuousStates") (Runtime.n 0)), Runtime.ok]
     else [.assign (.index (Runtime.v "continuousStates") (Runtime.n 0)) Runtime.x, Runtime.ok]
 
@@ -174,7 +174,7 @@ theorem nonfinite_run (model : Solve.FMI3Model source) (heap : Heap) (p buffer :
     (by simp [parameters, CBody.bind, resolve]) (by simp [parameters, CBody.bind, resolve])
   simp only [Option.bind_some, tail]
   rw [show 2 = 1 + 1 from rfl, run_add, checked]
-  simp [action, Runtime.reject, Runtime.branch, Runtime.negate, Runtime.finite, Runtime.call,
+  simp [action, Runtime.reject, Runtime.branch,
     Runtime.v, Runtime.n, run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, parameters, CBody.bind, resolve, constants,
     Value.address, boolean, Value.truth, input, nonfinite]
 

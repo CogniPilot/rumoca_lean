@@ -2,13 +2,13 @@ import RumocaC.EulerPreflightCode
 import RumocaC.TensorFiniteScanSyntax
 
 /-! Independent fixed token specification of the scalar C preflight. This
-scanner configuration adds != to the existing FiniteScan token profile. This is not a claim to recognize the complete C language. -/
+scanner configuration adds != to the existing FiniteScan token profile, which pairs ==. This is not a claim to recognize the complete C language. -/
 namespace Rumoca.CEulerPreflight.Syntax
 open _root_.Parser
 
 def config : Scanner.Config :=
   { CTensor.FiniteScan.Syntax.config with
-    pair := fun c => if c == '!' then some '=' else none }
+    pair := fun c => if c == '!' || c == '=' then some '=' else none }
 
 def tokens : List Token :=
   (["int32_t", "rumoca_euler_finite", "(", "double", "initial", ",", "double", "rate", ",",
@@ -18,7 +18,7 @@ def tokens : List Token :=
     "while", "(", "(", "n", "<", "count", ")", ")", "{",
     "if", "(", "(", "valid", "!=", "0", ")", ")", "{",
     "candidate", "=", "(", "sample", "+", "rate", ")", ";",
-    "if", "(", "(", "!", "isfinite", "(", "candidate", ")", ")", ")", "{",
+    "if", "(", "(", "isfinite", "(", "candidate", ")", "==", "0", ")", ")", "{",
     "valid", "=", "0", ";", "}",
     "if", "(", "(", "valid", "!=", "0", ")", ")", "{",
     "sample", "=", "candidate", ";", "}", "}",
@@ -29,7 +29,7 @@ def Denotes (source : String) : Prop := Scanner.Lexes config source.toList token
 
 macro "euler_expand_preflight_printer" : tactic => `(tactic|
   simp [CEulerPreflight.function, segment, iteration, active, copySample, guard,
-    CTensor.FiniteScan.iterationFor, CLoops.counted, CLoops.loop, CLoops.counterStep,
+    CTensor.FiniteScan.iterationFor, CTree.Expr.nonfinite, CLoops.counted, CLoops.loop, CLoops.counterStep,
     CTree.Function.render, CTree.Signature.render, CTree.Parameter.render,
     CTree.Stmt.render, CTree.Expr.render, CTree.BinOp.render])
 

@@ -25,9 +25,9 @@ def parameters (p : Address) (args : Arguments) : Locals := fun name =>
 def locals (p : Address) (args : Arguments) : Locals :=
   bind (parameters p args) "m" (.pointer (some p))
 
-def guard : Expr := Runtime.any [Runtime.negate (Runtime.finite (Runtime.v "startTime")),
+def guard : Expr := Runtime.any [Expr.nonfinite (Runtime.v "startTime"),
   Runtime.both (Runtime.v "stopTimeDefined")
-    (Runtime.either (Runtime.negate (Runtime.finite (Runtime.v "stopTime")))
+    (Runtime.either (Expr.nonfinite (Runtime.v "stopTime"))
       (Runtime.lt (Runtime.v "stopTime") (Runtime.v "startTime")))]
 
 def rejects (args : Arguments) : Bool :=
@@ -44,8 +44,8 @@ theorem guard_eval (heap : Heap) (p : Address) (args : Arguments) :
   have hf := Value.isFinite_finite args.start
   change Value.isFinite (.float64 (toBits args.start).val) = some true at hf
   have hstop : Value.isFinite (.float64 args.stop) = some (finiteBits args.stop) := rfl
-  simp [guard, Runtime.any, Runtime.either, Runtime.both, Runtime.negate,
-    Runtime.finite, Runtime.call, Runtime.lt, Runtime.v, CBody.eval, CBody.evalWith,
+  simp [guard, Runtime.any, Runtime.either, Runtime.both,
+    Expr.nonfinite, Runtime.lt, Runtime.v, CBody.eval, CBody.evalWith,
     locals, parameters, CBody.bind, resolve, constants, comparison, floatComparison,
     convert, Value.finite, hf, hstop, rejects, atLeast]
   all_goals

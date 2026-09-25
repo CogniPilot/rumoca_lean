@@ -209,7 +209,7 @@ theorem failure_message_collected (model : Solve.FMI3Model source) (reason : Ent
     Entry.failureMessage reason ∈ functionTexts (Runtime.function model (signature true)) := by
   cases reason <;> simp [Entry.failureMessage, ErrorCalls.rejectionMessage, Runtime.function, Runtime.body,
     signature, Runtime.require, Runtime.instancePrefix, Runtime.reject, Runtime.branch, Runtime.fail,
-    Runtime.ret, Runtime.scalarAccessCheck, Runtime.finite, Runtime.negate, Runtime.call, Runtime.v, Runtime.n,
+    Runtime.ret, Runtime.scalarAccessCheck, Expr.nonfinite, Runtime.negate, Runtime.call, Runtime.v, Runtime.n,
     functionTexts, statementTexts, expressionTexts]
 
 theorem prepared_correct (model : Solve.FMI3Model source) (sigs : List Signature)

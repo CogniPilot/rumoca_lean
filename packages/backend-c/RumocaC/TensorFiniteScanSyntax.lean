@@ -13,19 +13,19 @@ def config : Scanner.Config :=
     numberRest := fun c => identRest c || c == '.'
     classify := Token.literal
     single := fun c => ['(', ')', '{', '}', '[', ']', '*', '/', '-', ';', '=', '+', '<', ',', '!'].contains c
-    pair := fun _ => none }
+    pair := fun c => if c == '=' then some '=' else none }
 
 def tokens : List Token :=
   (["int32_t", "rumoca_tensor_all_finite", "(", "const", "double", "*", "values", ",",
     "size_t", "count", ")", "{", "int32_t", "valid", "=", "1", ";", "size_t", "k", "=", "0", ";",
-    "while", "(", "(", "k", "<", "count", ")", ")", "{", "if", "(", "(", "!", "isfinite", "(",
-    "values", "[", "k", "]", ")", ")", ")", "{", "valid", "=", "0", ";", "}", "k", "=", "(",
+    "while", "(", "(", "k", "<", "count", ")", ")", "{", "if", "(", "(", "isfinite", "(",
+    "values", "[", "k", "]", ")", "==", "0", ")", ")", "{", "valid", "=", "0", ";", "}", "k", "=", "(",
     "k", "+", "1", ")", ";", "}", "return", "valid", ";", "}"] : List String).map Token.literal
 
 def Denotes (source : String) : Prop := Scanner.Lexes config source.toList tokens
 
 macro "tensor_expand_finite_scan_printer" : tactic => `(tactic|
-  simp [FiniteScan.function, FiniteScan.iteration, FiniteScan.iterationFor, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep,
+  simp [FiniteScan.function, FiniteScan.iteration, FiniteScan.iterationFor, CTree.Expr.nonfinite, indexed, CLoops.counted, CLoops.loop, CLoops.counterStep,
     CTree.Function.render, CTree.Signature.render, CTree.Parameter.render,
     CTree.Stmt.render, CTree.Expr.render, CTree.BinOp.render])
 

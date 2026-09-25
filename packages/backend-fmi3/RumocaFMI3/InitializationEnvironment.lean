@@ -13,7 +13,7 @@ theorem enter_agrees (header : CFenv.Header) (objects : Objects) (literals : CLi
     Runtime.allowedExpression, permittedModes, Runtime.initialTime, Runtime.put, Runtime.setMode,
     Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail, Runtime.branch, Runtime.ret,
     Runtime.any, Runtime.both, Runtime.either, Runtime.negate, Runtime.eqv, Runtime.lt,
-    Runtime.field, Runtime.finite, Runtime.call, Runtime.v, Runtime.n, Expr.nullPointer,
+    Runtime.field, Expr.nonfinite, Runtime.call, Runtime.v, Runtime.n, Expr.nullPointer,
     RuntimeEnvironment.interface, CFenv.Header.interface, CInterface.constants,
     objectConstants]
 

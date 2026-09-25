@@ -63,7 +63,7 @@ theorem progress_condition (env : Locals) (heap : Heap) (p : Address)
     (instanceValue : env "m" = some (.pointer (some p)))
     (nextValue : env "next" = some (.float64 next.encode))
     (clock : load heap (p.member "time") = some (.finite time)) :
-    eval env heap (Runtime.any [Runtime.negate (Runtime.finite (Runtime.v "next")),
+    eval env heap (Runtime.any [Expr.nonfinite (Runtime.v "next"),
       Runtime.le (Runtime.v "next") (Runtime.field "time")]) =
       some (boolean (decide (¬ Progress time next))) := by
   have negative : (Value.float64 Float64.Number.negativeInfinity.encode).isFinite = some false := by decide +kernel
@@ -74,14 +74,14 @@ theorem progress_condition (env : Locals) (heap : Heap) (p : Address)
     have finite : (Value.float64 (Binary64.toBits next).val).isFinite = some true :=
       Value.isFinite_finite next
     by_cases advances : Binary64.value time < Binary64.value next <;>
-      simp [Runtime.any, Runtime.negate, Runtime.finite,
-      Runtime.call, Runtime.v, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
+      simp [Runtime.any, Expr.nonfinite,
+      Runtime.v, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
       instanceValue, nextValue, Value.address, clock, Float64.Number.encode,
       finite, comparison, floatComparison, Value.finite, boolean, Value.truth,
       finite_comparison, Float64.Relation.Holds, Progress, advances, not_lt.mp, not_le.mpr]
   | negativeInfinity | positiveInfinity | nan =>
-    simp [Runtime.any, Runtime.negate, Runtime.finite,
-      Runtime.call, Runtime.v, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
+    simp [Runtime.any,
+      Runtime.v, Runtime.le, Runtime.field, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, resolve,
       instanceValue, nextValue, Value.address, clock, negative, positive, unordered, Progress]
 
 theorem grid_condition (env : Locals) (heap : Heap) (step : Binary64.Value)
@@ -184,7 +184,7 @@ theorem clock_path (program : Events.Program E) (env : Locals) (types : CLoops.T
   · have progressGuard := progress_condition later heap p time candidate
       (by simpa [later, CBody.bind] using instanceValue) (by simp [later, CBody.bind]) clock
     have progressPath := branch_path program later laterTypes heap
-      (Runtime.any [Runtime.negate (Runtime.finite (Runtime.v "next")),
+      (Runtime.any [Expr.nonfinite (Runtime.v "next"),
         Runtime.le (Runtime.v "next") (Runtime.field "time")]) Runtime.stepDiscard [] rest
       (decide (¬ Progress time candidate)) resultType stack (by decide +kernel) rfl progressGuard
     have afterStop : Transition.Events.Prefix (Events.machine program)

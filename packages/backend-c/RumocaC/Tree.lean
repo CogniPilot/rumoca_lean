@@ -37,6 +37,16 @@ inductive Expr where
 identifier bindings. C11 6.3.2.3p3; MISRA C:2025 Rule 11.9 permits this form. -/
 def Expr.nullPointer : Expr := .cast "void *" (.nat 0)
 
+/-- The negated floating classification `(isfinite(e) == 0)`. The `isfinite`
+result has type `int` (C17 7.12.3.2), so it is essentially signed and is
+compared with the essentially signed constant `0` (MISRA C:2025 Rule 10.4)
+instead of being used as an operand of `!`, `&&` or `||` (Rule 10.1). The
+comparison is essentially Boolean (Appendix D.7.3), so it may be a logical
+operand or a controlling expression (Rule 14.4). `e` is evaluated once, by one
+`isfinite` call. -/
+def Expr.nonfinite (e : Expr) : Expr :=
+  .bin .eq (.call (.id "isfinite") [e]) (.nat 0)
+
 /-- Three-digit octal escapes cannot absorb the next byte's digit. Escaping
 question marks also prevents C11 trigraph replacement before tokenization. -/
 def quoteByte (b : UInt8) : String :=

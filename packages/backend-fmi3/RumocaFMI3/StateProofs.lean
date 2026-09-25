@@ -86,7 +86,7 @@ theorem set_run (m : Solve.FMI3Model source) (sig : Signature)
     Runtime.allowedExpression, Runtime.any, permittedModes, Runtime.mode, Mode.code,
     Runtime.scalarAccessCheck, Runtime.branch, Runtime.ret, Runtime.fail, Runtime.ok,
     Runtime.field, Runtime.x, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
-    Runtime.negate, Runtime.v, Runtime.n, Runtime.call, Runtime.finite,
+    Runtime.negate, Runtime.v, Runtime.n, Runtime.call, Expr.nonfinite,
     run, next, nextWith, legacyExpressions, eval, evalWith, lvalue, lvalueWith,
     CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
     parameters, CBody.bind, resolve, constants, CBody.cast, convert,

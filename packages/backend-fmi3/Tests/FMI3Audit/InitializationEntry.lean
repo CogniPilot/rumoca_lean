@@ -17,3 +17,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.InitializationEntry.behaviors
 #audit axioms Rumoca.FMI3.InitializationEntry.correct
 #audit axioms Rumoca.FMI3.InitializationEntry.then_exit
+#audit axioms Rumoca.FMI3.InitializationEntry.guard

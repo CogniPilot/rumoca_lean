@@ -950,7 +950,7 @@ end
 
 /-- The setter finiteness check applied to each caller value before any write. -/
 def validateBody : List Stmt :=
-  [Runtime.reject (Runtime.negate (Runtime.finite output)) "Only finite Float64 values may be set"]
+  [Runtime.reject (Expr.nonfinite output) "Only finite Float64 values may be set"]
 
 theorem validateBody_closed : validateBody.all CLoops.noDeclarations = true := by
   simp [validateBody, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, CLoops.noDeclarations]
@@ -1040,8 +1040,8 @@ theorem validate_step (env : Locals) (types : Types) (heap : Heap) (buffer : Add
     CLoops.next (.running (validateBody ++ rest) env types heap) = some (.running rest env types heap) := by
   have valueLoaded : CBody.eval env heap output = some (.finite values[i]) := by
     simp [output, Runtime.v, CBody.eval, CBody.evalWith, valuesBound, counter, Value.address, read]
-  simp [validateBody, Runtime.reject, Runtime.branch, Runtime.negate, Runtime.finite, Runtime.call,
-    Runtime.v, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CLoops.noDeclarations, Runtime.fail, Runtime.ret, CBody.eval, CBody.evalWith,
+  simp [validateBody, Runtime.reject, Runtime.branch, Runtime.call,
+    Runtime.v, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, CLoops.noDeclarations, Runtime.fail, Runtime.ret, CBody.eval,
     valueLoaded, boolean, Value.truth, Value.isFinite_finite]
 
 /-- The validation loop accepts every finite caller value, heap fixed. -/
@@ -1474,7 +1474,7 @@ theorem setBodyFor_printable (dispatch : Stmt)
       Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes,
       Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v,
       Runtime.n, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction,
-      Runtime.mode, Runtime.call, Runtime.finite, setCopyBody, dstCell, output, CLoops.loop,
+      Runtime.mode, Runtime.call, Expr.nonfinite, setCopyBody, dstCell, output, CLoops.loop,
       CLoops.counterStep, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq] <;>

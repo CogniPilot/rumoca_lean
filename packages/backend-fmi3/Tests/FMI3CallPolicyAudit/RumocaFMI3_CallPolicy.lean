@@ -15,3 +15,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.CallPolicy.program_tree_name
 #audit axioms Rumoca.FMI3.CallPolicy.program_rank
 #audit axioms Rumoca.FMI3.CallPolicy.complete_program_no_cycle
+#audit axioms Rumoca.FMI3.CallPolicy.accepted

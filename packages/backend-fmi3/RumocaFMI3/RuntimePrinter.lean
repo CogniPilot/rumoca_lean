@@ -150,7 +150,7 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
       Runtime.put, Runtime.out, Runtime.ok, Runtime.setMode, Runtime.log,
       Runtime.v, Runtime.n, Runtime.call, Runtime.field, Runtime.x,
       Runtime.eqv, Runtime.nev, Runtime.lt, Runtime.gt, Runtime.le,
-      Runtime.both, Runtime.either, Runtime.negate, Runtime.finite, Runtime.mode,
+      Runtime.both, Runtime.either, Expr.nonfinite, Runtime.mode,
       Runtime.any, Expr.disjunction, List.map_cons, List.map_nil,
       List.mem_append, List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and,
       List.cons_append, List.nil_append, forall_eq]

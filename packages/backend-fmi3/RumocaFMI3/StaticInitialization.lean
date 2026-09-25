@@ -28,7 +28,7 @@ theorem enter_agrees (objects : Objects) (literals : CLiteralAddresses) :
     Runtime.allowedExpression, permittedModes, Runtime.initialTime, Runtime.put, Runtime.setMode,
     Runtime.mode, Runtime.ok, Runtime.reject, Runtime.fail, Runtime.branch, Runtime.ret,
     Runtime.any, Runtime.both, Runtime.either, Runtime.negate, Runtime.eqv, Runtime.lt,
-    Runtime.field, Runtime.finite, Runtime.call, Runtime.v, Runtime.n, Expr.nullPointer,
+    Runtime.field, Expr.nonfinite, Runtime.call, Runtime.v, Runtime.n, Expr.nullPointer,
     executionInterface, objectConstants]
 
 theorem exit_agrees (model : Solve.FMI3Model source) (objects : Objects) (literals : CLiteralAddresses) :

@@ -38,7 +38,7 @@ def parameters (handle : Option Address) (bits : BitVec 64) : Locals :=
 
 /-- The finiteness rejection: a non-finite time is refused before any write. -/
 def finiteReject : Stmt :=
-  Runtime.reject (Runtime.negate (Runtime.finite (Runtime.v "time"))) message
+  Runtime.reject (Expr.nonfinite (Runtime.v "time")) message
 
 def tail : List Stmt := [Runtime.put "time" (Runtime.v "time"), Runtime.ok]
 
@@ -57,7 +57,7 @@ def guardEnv (p : Address) (bits : BitVec 64) : Locals :=
 theorem body_closed : function.body.all CBodyEmbedding.closedBlocks = true := by
   simp [function, body, tail, finiteReject, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard,
     Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, Runtime.put, Runtime.field,
-    Runtime.v, Runtime.negate, Runtime.finite, Runtime.call, CBodyEmbedding.closedBlocks,
+    Runtime.v, Runtime.negate, Expr.nonfinite, Runtime.call, CBodyEmbedding.closedBlocks,
     CLoops.noDeclarations]
 
 section
@@ -73,10 +73,10 @@ theorem parameters_bound (handle : Option Address) (bits : BitVec 64) :
 /-- A finite time value passes the finiteness rejection. -/
 theorem finite_pass (heap : Heap) (p : Address) (time : Binary64.Value) :
     CBody.eval (guardEnv p (toBits time).val) heap
-      (Runtime.negate (Runtime.finite (Runtime.v "time"))) = some (boolean false) := by
+      (Expr.nonfinite (Runtime.v "time")) = some (boolean false) := by
   have hfin : (Value.float64 (toBits time).val).isFinite = some true := Value.isFinite_finite time
-  simp (config := { decide := true }) [Runtime.negate, Runtime.finite, Runtime.call, Runtime.v,
-    CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve, hfin, Value.truth, boolean]
+  simp (config := { decide := true }) [Runtime.v,
+    CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve, hfin, boolean]
 
 /-- The time write stores the value into the instance time cell. -/
 theorem time_write (heap : Heap) (p : Address) (bits : BitVec 64) (old : Option Value)
@@ -165,13 +165,13 @@ theorem nonfinite_prefix (heap : Heap) (p : Address) (bits : BitVec 64) (kind : 
       (finiteReject :: tail) (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind])
       hk hm allowed
   have hcond : CBody.eval (guardEnv p bits) heap
-      (Runtime.negate (Runtime.finite (Runtime.v "time"))) = some (boolean true) := by
-    simp (config := { decide := true }) [Runtime.negate, Runtime.finite, Runtime.call, Runtime.v,
-      CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve, nonfinite, Value.truth, boolean]
+      (Expr.nonfinite (Runtime.v "time")) = some (boolean true) := by
+    simp (config := { decide := true }) [Runtime.v,
+      CBody.eval, CBody.evalWith, guardEnv, parameters, CBody.bind, CBody.resolve, nonfinite, boolean]
   have s_reject : CBody.run 1 (.running (finiteReject :: tail) (guardEnv p bits) heap) =
       some (.running (Runtime.fail message :: tail) (guardEnv p bits) heap) :=
     run_one (Rumoca.FMI3.TensorFloat64.branch_true (guardEnv p bits) heap
-      (Runtime.negate (Runtime.finite (Runtime.v "time"))) [Runtime.fail message] [] tail hcond)
+      (Expr.nonfinite (Runtime.v "time")) [Runtime.fail message] [] tail hcond)
   refine ⟨rfl, body_closed, parameters (some p) bits, guardEnv p bits, tail, 4,
     parameters_bound _ _, ?_, ?_, ?_⟩
   · show CBody.run 4 (.running body (parameters (some p) bits) heap) =
@@ -225,7 +225,7 @@ theorem body_printable :
       Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes, Runtime.reject, Runtime.branch,
       Runtime.fail, Runtime.ret, Runtime.ok, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
       Runtime.eqv, Runtime.both, Runtime.negate, Runtime.any, Expr.disjunction, Runtime.mode,
-      Runtime.finite, Runtime.call, List.map_cons, List.map_nil,
+      Expr.nonfinite, Runtime.call, List.map_cons, List.map_nil,
       List.mem_cons, List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append,
       List.nil_append, forall_eq] <;>
     repeat first

@@ -7,7 +7,7 @@ namespace Rumoca.CTensor.FiniteScan
 open CTree
 
 def iterationFor (value : Expr) : List Stmt :=
-  [.branch (.not (.call (.id "isfinite") [value]))
+  [.branch (.nonfinite value)
     [.assign (.id "valid") (.nat 0)] []]
 
 def iteration : List Stmt := iterationFor (indexed "values")

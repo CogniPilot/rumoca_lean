@@ -55,7 +55,7 @@ theorem body_field_free : CDeclaredMembers.FieldFree.AdmittedBody function.body 
     CDeclaredMembers.FieldFree.expressions, CDeclaredMembers.FieldFree.sites,
     CDeclaredMembers.FieldFree.expression, CDeclaredMembers.FieldFree.argumentList,
     function, segment, iteration, active, copySample, guard, CTensor.FiniteScan.iterationFor,
-    CLoops.counted, CLoops.loop, CLoops.counterStep]
+    Expr.nonfinite, CLoops.counted, CLoops.loop, CLoops.counterStep]
 
 /-- Stop at return to the saved caller; no claim about what that caller does
 afterward. Every declared-object context and saved continuation is allowed. -/

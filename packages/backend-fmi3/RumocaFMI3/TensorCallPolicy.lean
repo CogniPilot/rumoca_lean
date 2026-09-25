@@ -85,7 +85,7 @@ macro "tadmit" : tactic => `(tactic| (
     TensorInstance.derivativeName, TensorInstance.outputName]
   fmi_literal_calls
   all_goals simp [StatementAdmits, ExpressionAdmits, acceptedT, accepted, classify,
-    Runtime.finite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
+    Expr.nonfinite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
     Runtime.any, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
     Runtime.lt, Runtime.le, Runtime.gt, Runtime.ge, Runtime.negate, Runtime.region, Runtime.x,
     Runtime.field, Runtime.setMode, Runtime.mode, Runtime.v, Runtime.n, Runtime.call, Runtime.out,
