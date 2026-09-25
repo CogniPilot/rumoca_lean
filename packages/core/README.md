@@ -25,7 +25,8 @@ result. Static extents, bounds and axes admit only canonical decimal numerals
 `Declarations.Real.Legal` confines the `input` and `output` kinds to the leading
 (public) section and `constant` to the protected section. `Elaboration.Scalar` states the scalar unit
 block as a source tree and proves its whole-block preparation and method
-semantics for arbitrary distinct state and clock names.
+semantics for arbitrary distinct state and clock names; `Elaboration.Square.Block`
+states the tensor square block for any extent and proves its preparation.
 
 Use `lake build check-core` from the repository root for incremental core proofs and
 axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/FiniteChecks.lean` belong to the
@@ -51,9 +52,9 @@ axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/Finit
 | `RumocaCore.Solve.Tensor.Finite` | Independent ordered finite execution, all-intermediate domain characterization and unique evaluator result |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
 | `RumocaCore.Solve.Tensor.Origins`, `Solve.IVPOrigins`, `Solve.FMI3OriginProofs` | Required unit FMI operation origins and a composed value/source/actual-annotation preparation contract |
-| `RumocaCore.GALEC.IR`, `GALEC.Semantics`, `GALEC.UnitProfile` | Checked unit Algorithm Code product of DAE, explicit state/clock initialization and independent method semantics |
-| `RumocaCore.GALEC.Origins`, `GALEC.UnitOrigins`, `GALEC.OriginProofs` | Required operation/operand/method origins, independent rule/parent requirements and source ancestry |
-| `RumocaCore.Solve.Algorithm`, `AlgorithmOrigins`, `AlgorithmOriginProofs` | Tensor register refinement of GALEC with required traces and composed value/origin preservation |
+| `RumocaCore.GALEC.Method`, `GALEC.UnitProfile` | Lifecycle methods, the unit state with its clock and Solve-block method execution |
+| `RumocaCore.GALEC.UnitOrigins`, `GALEC.TraceProofs`, `GALEC.OriginLowering` | Required operation/operand/method origins of the unit block, independent rule/parent requirements |
+| `RumocaCore.Solve.Algorithm`, `AlgorithmOrigins`, `AlgorithmOriginProofs` | Algorithm Code prepared from DAE: tensor register block with its unit profile, required traces, source ancestry and the source-to-Solve refinement |
 | `RumocaCore.GALEC.Protocol` | Restricted eFMI lifecycle reference and complete permitted-trace refinement |
 | `RumocaCore.Driven.IR`, `Driven.Lowering` | Draft driven profile's Flat/DAE/Solve equations, initialization and per-pass proofs |
 | `RumocaCore.Pass` | Generic behavior-preservation composition and property transfer |
@@ -86,10 +87,13 @@ end-to-end composition with parsing and output artifacts. Each backend consumes
 Solve IR from this package and owns its target syntax, rendering and execution
 contracts.
 
-The eFMI branch is DAE → checked GALEC → Solve algorithm. Algorithm Code
-rendering consumes the GALEC product; Production C must consume its Solve
-refinement. This branch does not reconstruct DAE from GALEC or replace the
-numerical IVP root. The [eFMI roadmap](../../dev/efmi.md) records the remaining
+The eFMI branch prepares the Solve algorithm from DAE. The GALEC block builders
+(`Elaboration.Scalar.source`, `Elaboration.Square.source`) give the Algorithm
+Code trees; `Scalar.StateBridge.sourceExec_iff_solve` proves that original
+source execution of any block that prepares to the scalar results is the
+prepared Solve block's execution. Production C consumes that Solve block.
+This branch does not reconstruct DAE from GALEC or replace the numerical IVP
+root. The [eFMI roadmap](../../dev/efmi.md) records the remaining
 target, lifecycle-memory and actual-archive obligations.
 
 The tensor IVP is the direction for the new input/state profile. The older

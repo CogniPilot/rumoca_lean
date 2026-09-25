@@ -1,34 +1,20 @@
-import RumocaCore.GALEC.IR
+import RumocaCore.Solve.Algorithm
+import RumocaCore.GALEC.Elaboration.Scalar.Preparation
+import GALECParser.Print
 
-/-! Thin Algorithm Code rendering from the checked DAE-derived GALEC product.
-Canonical names are deliberately fixed in the tiny profile. There is no name
-resolution, equation solving, or selection of a numerical policy in this file. -/
+/-! Algorithm Code emission for the scalar unit profile. The block is the core
+scalar builder's tree with the canonical names; the text is `Print.block` of
+that tree. This file resolves no names, solves no equations and selects no
+numerical policy; the prepared `Solve.Algorithm.Model` is the source of truth. -/
 namespace Rumoca.EFMI
 
-def expression (stateName : String) : GALEC.Expr Rumoca.Tensor.scalar → String
-  | .state => "self." ++ stateName
-  | .zero => "0.0"
-  | .one => "1.0"
-  | .add a b => "(" ++ expression stateName a ++ " + " ++ expression stateName b ++ ")"
+/-- The scalar unit block: output `x`, the protected sample period and the
+Startup, Recalibrate and DoStep methods. -/
+def scalarBlock : GALEC.AST.Block :=
+  GALEC.Elaboration.Scalar.source "UnitIntegrator" "x" "samplePeriod"
 
-def assignment (body : Option (GALEC.Expr Rumoca.Tensor.scalar)) : String :=
-  body.elim "" (fun expr => "        self.x := " ++ expression "x" expr ++ ";\n")
-
-def renderBlock (b : GALEC.Block Rumoca.Tensor.scalar) : String :=
-  "block UnitIntegrator\n    output Real x;\nprotected\n    constant Real samplePeriod;\npublic\n" ++
-  "    method Startup\n    algorithm\n" ++ assignment b.startup ++
-  "        self.samplePeriod := " ++ expression "samplePeriod" b.startupPeriod ++
-  ";\n    end Startup;\n" ++
-  "    method Recalibrate\n    algorithm\n" ++ assignment b.recalibrate ++
-  "    end Recalibrate;\n    method DoStep\n    algorithm\n" ++ assignment b.doStep ++
-  "    end DoStep;\nend UnitIntegrator;\n"
-
-def renderAlgorithm (m : GALEC.Model source) : String := renderBlock m.block
-
-def unitSource : String := renderBlock GALEC.unitBlock
-
-theorem emission_is_unit (m : GALEC.Model source) : renderAlgorithm m = unitSource := by
-  rw [renderAlgorithm, m.profile]
-  rfl
+/-- The scalar Algorithm Code text of a prepared unit model. -/
+def renderAlgorithm (_model : Solve.Algorithm.Model source) : String :=
+  GALEC.Print.block scalarBlock
 
 end Rumoca.EFMI

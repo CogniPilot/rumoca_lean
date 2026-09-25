@@ -1,4 +1,4 @@
-import RumocaCore.GALEC.Origins
+import RumocaCore.Solve.AlgorithmOrigins
 import RumocaCore.IR.DAE
 
 /-! Independent provenance requirements for the admitted unit Algorithm Code.
@@ -39,18 +39,28 @@ structure References (table : Provenance.Table context) where
   origin : Field → Ref table
   stateDeclaration : Ref table
 
-def References.trace (refs : References table) : Block.Origins table unitBlock where
+/-- Every required origin attached to its occurrence in the prepared unit
+block: the operation and operand of each register instruction, the returned
+value, and the explicit method, target and declaration occurrences. -/
+def References.trace (refs : References table) :
+    Solve.Algorithm.Block.Origins table Solve.Algorithm.unitBlock where
   model := refs.origin .model
   stateDeclaration := refs.stateDeclaration
-  startup := .assign (refs.origin .startup) (refs.origin .startupAssignment) (refs.origin .startupTarget)
-    (.zero (refs.origin .initial))
-  recalibrate := .empty (refs.origin .recalibrate)
-  doStep := .assign (refs.origin .doStep) (refs.origin .stepAssignment) (refs.origin .stepTarget)
-    (.add (refs.origin .addition) (.state (refs.origin .stepRead)) (.one (refs.origin .increment)))
+  startupMethod := refs.origin .startup
+  startupTarget := refs.origin .startupTarget
+  startup := .fill (refs.origin .initial) (.ret (refs.origin .startupAssignment) (refs.origin .initial))
+  recalibrateMethod := refs.origin .recalibrate
+  recalibrateTarget := refs.stateDeclaration
+  recalibrate := .ret (refs.origin .recalibrate) refs.stateDeclaration
+  doStepMethod := refs.origin .doStep
+  doStepTarget := refs.origin .stepTarget
+  doStep := .fill (refs.origin .increment)
+    (.add (refs.origin .addition) (refs.origin .stepRead) (refs.origin .increment)
+      (.ret (refs.origin .stepAssignment) (refs.origin .addition)))
   periodDeclaration := refs.origin .periodDeclaration
-  periodAssignment := refs.origin .periodAssignment
   periodTarget := refs.origin .periodTarget
-  periodValue := .one (refs.origin .periodValue)
+  period := .fill (refs.origin .periodValue)
+    (.ret (refs.origin .periodAssignment) (refs.origin .periodValue))
 
 /-- The specified parent relationship uses semantic roles, not the builder's
 array positions. Reads and writes identify the original declared state; the

@@ -1,16 +1,13 @@
 import RumocaCore.Array.Solve
 import RumocaCore.Solve.PointwiseProofs
-import RumocaCore.GALEC.Elaboration.Square.Layout
-import RumocaCore.GALEC.Elaboration.Scalar.Preparation
+import RumocaCore.GALEC.Elaboration.Square.Block
 import GALECParser.Print
 
-/-! Algorithm Code emission for the tensor square profile. The block is a source
-tree assembled from the core builders: the square declarations, the Startup
-initialization body, the empty Recalibrate method and the DoStep square body.
-Loops keep rank and extents through `size` queries; no tensor cell is
-enumerated. The text is `Print.block` of that tree. This file resolves no names,
-solves no equations and selects no numerical policy; the prepared
-`Solve.PointwiseIVP` kernel is the source of truth for the problem. -/
+/-! Algorithm Code emission for the tensor square profile. The block is the core
+square builder's tree for the prepared state extent; the text is `Print.block`
+of that tree. This file resolves no names, solves no equations and selects no
+numerical policy; the prepared `Solve.PointwiseIVP` kernel is the source of
+truth for the problem. -/
 namespace Rumoca.EFMI
 open Rumoca.Tensor Rumoca.Solve Rumoca.Solve.Tensor
 open GALEC GALEC.Elaboration
@@ -24,8 +21,9 @@ def squareKernel (shape : Shape) : PointwiseIVP shape :=
     some (ArrayProfile.squareJacobianProgram shape)⟩
 
 /-- Admission token for the tensor Algorithm Code: it binds a rendered block to
-the prepared square kernel of its shape, mirroring the scalar `GALEC.Model`
-profile field. It does not license an arbitrary pointwise problem. -/
+the prepared square kernel of its shape, as `Solve.Algorithm.Model.profile`
+binds the scalar block to the unit profile. It does not license an arbitrary
+pointwise problem. -/
 structure TensorModel (shape : Shape) where
   kernel : PointwiseIVP shape
   profile : kernel = squareKernel shape
@@ -45,26 +43,10 @@ theorem square_jacobian_coefficients (shape : Shape) (ops : ScalarOps α) (zero 
   rw [Program.forward_correct]
   rfl
 
-/-- Startup clears the state output `x` and the Jacobian output `J`, then sets
-the sample period. -/
-def squareStartup : AST.Method :=
-  ⟨.ident "Startup", Initialization.Body.source "x" "J" "samplePeriod", .ident "Startup"⟩
-
-/-- DoStep assigns the pointwise product `u[k] * u[k]` to `x`, clears `J` and
-scatters the diagonal coefficients `u[k] + u[k]`. -/
-def squareDoStep : AST.Method :=
-  ⟨.ident "DoStep", Square.squareSource "u" "x" "J", .ident "DoStep"⟩
-
-/-- The tensor square block for a state extent: input `u`, outputs `x` and `J`,
-the protected sample period, and the Startup, Recalibrate and DoStep methods. -/
-def squareBlock (extent : Nat) : AST.Block :=
-  ⟨.ident "TensorSquare", Square.squarePublic extent, Square.squareProtected,
-    [squareStartup, Scalar.recalibrateMethod, squareDoStep], .ident "TensorSquare"⟩
-
 /-- The tensor Algorithm Code text of a prepared square model: the square block
 at the state extent of the model's shape. -/
 def renderTensorAlgorithm (_model : TensorModel ⟨[extent]⟩) : String :=
-  Print.block (squareBlock extent)
+  Print.block (Square.source extent)
 
 /-- The state extent of the admitted array profile, read from its prepared shape. -/
 def squareExtent : Nat := ArrayProfile.stateShape.dimensions.headD 0

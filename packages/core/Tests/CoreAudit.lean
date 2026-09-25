@@ -69,6 +69,7 @@ import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Surface
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Square_Lowering
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Square_Execution
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Square_Layout
+import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Square_Block
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Square_Finite
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_StatementLists
 import Tests.CoreAudit.RumocaCore_GALEC_IntegerIteration
@@ -84,10 +85,7 @@ import Tests.CoreAudit.RumocaCore_GALEC_Statements
 import Tests.CoreAudit.RumocaCore_GALEC_TensorWrites
 import Tests.CoreAudit.RumocaCore_GALEC_CoefficientRealization
 import Tests.CoreAudit.RumocaCore_GALEC_SquareRealization
-import Tests.CoreAudit.RumocaCore_GALEC_OriginProofs
-import Tests.CoreAudit.RumocaCore_GALEC_Origins
 import Tests.CoreAudit.RumocaCore_GALEC_Protocol
-import Tests.CoreAudit.RumocaCore_GALEC_Semantics
 import Tests.CoreAudit.RumocaCore_GALEC_TraceProofs
 import Tests.CoreAudit.RumocaCore_GALEC_UnitProfile
 import Tests.CoreAudit.RumocaCore_Initialization_DiagnosticProofs
@@ -108,8 +106,6 @@ import Tests.CoreAudit.RumocaCore_Real_Encoding
 import Tests.CoreAudit.RumocaCore_Real_Floor
 import Tests.CoreAudit.RumocaCore_Real_IntegerConversion
 import Tests.CoreAudit.RumocaCore_Solve_AlgorithmOriginProofs
-import Tests.CoreAudit.RumocaCore_Solve_AlgorithmOrigins
-import Tests.CoreAudit.RumocaCore_Solve_AlgorithmProofs
 import Tests.CoreAudit.RumocaCore_Solve_ConstantFMI3
 import Tests.CoreAudit.RumocaCore_Solve_FMI3
 import Tests.CoreAudit.RumocaCore_Solve_FMI3OriginLowering

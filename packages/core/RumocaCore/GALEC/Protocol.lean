@@ -76,11 +76,4 @@ theorem trace_congr (h : ∀ method state, execute₁ method state = execute₂ 
   have he : execute₁ = execute₂ := funext fun method => funext (h method)
   rw [he]
 
-theorem lower_trace_correct (block : GALEC.Block Rumoca.Tensor.scalar)
-    (zero one : α) (add : α → α → α)
-    (before after : Configuration α) (events : List Event) :
-    Trace (solveExecute (Solve.Algorithm.lower block) zero one add) before events after ↔
-      Trace (execute block zero one add) before events after :=
-  trace_congr (UnitProfile.lower_correct block zero one add)
-
 end Rumoca.GALEC.Protocol

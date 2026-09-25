@@ -22,7 +22,7 @@ def Variable.scalarValue (var : Variable) (state : GALEC.UnitProfile.State α) :
 /-- Logical variable names are the declared names of the parsed emitted GALEC
 block. -/
 theorem algorithm_variables :
-    ∃ parsed, GALEC.Syntax.parse unitSource = .ok parsed ∧
+    ∃ parsed, GALEC.Syntax.parse unitAlgorithm.source = .ok parsed ∧
       parsed.ast = GALEC.Elaboration.Scalar.source "UnitIntegrator" Variable.state.name
         Variable.clock.name := by
   obtain ⟨parsed, accepted, same⟩ := unitAlgorithm.parsed

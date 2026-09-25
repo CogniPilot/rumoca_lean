@@ -85,9 +85,11 @@ The compiler also depends on both language frontends, core, backend-c, backend-f
 backend-efmi. The runner uses only Std and the external FMPy executable. Core
 uses the source AST. Both FMI backends use backend-c; neither depends on the
 other. Shared C consumes Solve IR and arithmetic, with explicit adapter-owned
-constant/type bindings for object and call execution. The eFMI backend consumes
-the DAE-derived checked GALEC product for Algorithm Code; Production Code must
-consume its Solve algorithm refinement. Neither backend performs that lowering.
+constant/type bindings for object and call execution. The eFMI backend prints
+Algorithm Code from the core GALEC block builders and emits Production Code
+from the Solve algorithm prepared from the DAE; a proved refinement relation
+states that the printed block's methods execute as that Solve algorithm, for
+the scalar and tensor profiles alike. Neither backend performs that preparation.
 Parser, core and all backends never import the compiler package. A new backend belongs beside backend-fmi3 and
 must supply its own target contract before its output gains a formal guarantee.
 

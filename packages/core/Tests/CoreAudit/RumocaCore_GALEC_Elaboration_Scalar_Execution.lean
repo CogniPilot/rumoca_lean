@@ -8,6 +8,3 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.recalibrate_executes
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.increment_evaluates
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.step_executes
-#audit axioms Rumoca.GALEC.Elaboration.Scalar.startup_source_executes
-#audit axioms Rumoca.GALEC.Elaboration.Scalar.recalibrate_source_executes
-#audit axioms Rumoca.GALEC.Elaboration.Scalar.step_source_executes

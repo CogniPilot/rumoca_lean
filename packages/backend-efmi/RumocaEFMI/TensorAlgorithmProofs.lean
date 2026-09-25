@@ -12,20 +12,6 @@ namespace Rumoca.EFMI.TensorAlgorithm
 open Rumoca.Tensor Rumoca.Solve Rumoca.Solve.Tensor
 open GALEC GALEC.Elaboration GALEC.Coefficients GALEC.VectorBodies
 
-def startupResult (extent : Nat) : Methods.Preparation.Result :=
-  ⟨Square.startupFields extent, Initialization.Body.lowered
-    (Square.startupRhs extent) (Square.startupJacobian extent) (Square.startupPeriod extent)⟩
-
-def recalibrateResult (extent : Nat) : Methods.Preparation.Result :=
-  ⟨Square.squareFields extent, .skip⟩
-
-def stepResult (extent : Nat) : Methods.Preparation.Result :=
-  ⟨Square.squareFields extent, Square.loweredSquare
-    (Square.squareInput extent) (Square.squareRhs extent) (Square.squareJacobian extent)⟩
-
-def preparedResult (extent : Nat) (interface : Block.Headers.Interface) : Block.Result :=
-  ⟨interface, startupResult extent, recalibrateResult extent, stepResult extent⟩
-
 def SourceExec (fields : List Layout.Field) (ceiling : Nat) (block : AST.Block)
     (method : AST.Method) (step : BinaryOp → α → α → α → Prop) (zero one : α)
     (input : Env α (Layout.inputShapes fields)) (env : IteratorEnv [])
@@ -82,7 +68,7 @@ Startup specifies zero x/J and one period; DoStep retains the original finite
 primal domain, exact whole-store updates and the prepared AD matrix. -/
 structure SourceContract (extent ceiling : Nat) (block : AST.Block)
     (kernel : PointwiseIVP ⟨[extent]⟩) : Prop where
-  prepared : ∃ interface, Block.Prepares ceiling block (preparedResult extent interface)
+  prepared : ∃ interface, Block.Prepares ceiling block (Square.preparedResult extent interface)
   kernel_profile : kernel = squareKernel ⟨[extent]⟩
   original : ∃ startup recalibrate doStep,
     Methods.Headers.Selects (.ident "Startup") block.methods startup ∧
@@ -93,7 +79,7 @@ structure SourceContract (extent ceiling : Nat) (block : AST.Block)
     StepSemantics extent ceiling block doStep kernel ∧ ADSemantics extent ceiling block doStep kernel
 
 theorem source_contract
-    (prepared : Block.Prepares ceiling block (preparedResult extent interface))
+    (prepared : Block.Prepares ceiling block (Square.preparedResult extent interface))
     (profile : kernel = squareKernel ⟨[extent]⟩) : SourceContract extent ceiling block kernel := by
   subst kernel
   refine ⟨⟨interface, prepared⟩, rfl, interface.startup, interface.recalibrate, interface.doStep,
@@ -128,35 +114,9 @@ theorem source_contract
       (Square.squareRhs extent) (Square.squareJacobian extent) state @input @env @before @after body
     exact ⟨ArrayProfile.squareJacobianProgram ⟨[extent]⟩, rfl, observed⟩
 
-/-- The three selected methods of the emitted tensor square block. -/
-def interface : Block.Headers.Interface :=
-  ⟨"TensorSquare", squareStartup, Scalar.recalibrateMethod, squareDoStep⟩
-
-/-- The emitter's block prepares to the square profile result for every
-positive extent within the ceiling; the extent is never enumerated. -/
-theorem square_prepared (positive : 0 < extent) (within : extent ≤ ceiling)
-    (axisBound : 2 ≤ ceiling) :
-    Block.Prepares ceiling (squareBlock extent) (preparedResult extent interface) := by
-  have declared := Square.square_declared positive within
-  refine ⟨(Block.Headers.read_iff _ _).mp rfl, ?_, ?_, ?_⟩
-  · exact .body ((Methods.Headers.select_iff _ _ _).mp rfl) declared
-      ((Layout.body_iff _ (Methods.Preparation.declared_fields _ declared) _ _).mp
-        (Square.startup_lowered positive within axisBound))
-  · show Methods.Preparation.Prepares _ Capabilities.DoStep.role ceiling (squareBlock extent)
-      ⟨Capabilities.Generic.fields Capabilities.DoStep.role
-        ((Square.squareFields extent).map Layout.Field.declaration), .skip⟩
-    exact .body ((Methods.Headers.select_iff _ _ _).mp rfl) declared .nil
-  · show Methods.Preparation.Prepares _ Capabilities.DoStep.role ceiling (squareBlock extent)
-      ⟨Capabilities.Generic.fields Capabilities.DoStep.role
-        ((Square.squareFields extent).map Layout.Field.declaration),
-        Square.loweredSquare (Square.squareInput extent) (Square.squareRhs extent)
-          (Square.squareJacobian extent)⟩
-    exact .body ((Methods.Headers.select_iff _ _ _).mp rfl) declared ((Layout.body_iff _ (Methods.Preparation.declared_fields Capabilities.DoStep.role
-        declared) _ _).mp (Square.layout_body_lowered positive within axisBound))
-
-theorem prepared : Block.Prepares Static.Bounded.integerCeiling (squareBlock squareExtent)
-    (preparedResult squareExtent interface) :=
-  square_prepared (by decide) (by decide) (by decide)
+theorem prepared : Block.Prepares Static.Bounded.integerCeiling (Square.source squareExtent)
+    (Square.preparedResult squareExtent Square.interface) :=
+  Square.prepared (by decide) (by decide) (by decide)
 
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 16000000 in
@@ -164,18 +124,18 @@ set_option maxHeartbeats 16000000 in
 certify_source square tensorAlgorithmSource
 
 /-- The parsed tree of the emitted text is exactly the emitter's tree. -/
-theorem square_ast : square.ast = squareBlock squareExtent := rfl
+theorem square_ast : square.ast = Square.source squareExtent := rfl
 
 theorem emitted_parses :
     ∃ parsed, Syntax.parse tensorAlgorithmSource = .ok parsed ∧
-      parsed.ast = squareBlock squareExtent := by
+      parsed.ast = Square.source squareExtent := by
   obtain ⟨parsed, accepted, same⟩ := square.parsed
   exact ⟨parsed, accepted, same.trans square_ast⟩
 
 theorem emitted_prepared :
     ∃ product, Block.fromSource tensorAlgorithmSource = .ok product ∧
-      product.result = preparedResult squareExtent interface :=
-  (Block.fromSource_iff _ _).mpr ⟨squareBlock squareExtent, square_ast ▸ square.witness, prepared⟩
+      product.result = Square.preparedResult squareExtent Square.interface :=
+  (Block.fromSource_iff _ _).mpr ⟨Square.source squareExtent, square_ast ▸ square.witness, prepared⟩
 
 /-- Predicate on the supplied Algorithm bytes: they are the emitted text, which
 parses to the emitter's tree, and the one-pass source pipeline returns an
@@ -183,7 +143,7 @@ original AST whose three bodies satisfy the source contract. No original-body
 execution premise is supplied by the checker. -/
 structure AlgorithmContract (model : TensorModel ArrayProfile.stateShape) (emitted : String) : Prop where
   bytes : renderTensorAlgorithm model = emitted
-  parsed : ∃ parsed, Syntax.parse emitted = .ok parsed ∧ parsed.ast = squareBlock squareExtent
+  parsed : ∃ parsed, Syntax.parse emitted = .ok parsed ∧ parsed.ast = Square.source squareExtent
   original_source : ∃ product,
     Block.fromSource emitted = .ok product ∧
     SourceContract squareExtent Static.Bounded.integerCeiling product.parsed.ast model.kernel
@@ -215,14 +175,14 @@ def observe (result : Methods.Preparation.Result) : Nat :=
 
 theorem step_lowered (contract : SourceContract extent ceiling block kernel) :
     Methods.Preparation.fromBlock (.ident "DoStep") Capabilities.DoStep.role ceiling block =
-      some (stepResult extent) := by
+      some (Square.stepResult extent) := by
   obtain ⟨interface, prepared⟩ := contract.prepared
   exact (Methods.Preparation.fromBlock_iff _ _ _ _ _).mpr prepared.doStep
 
 /-- The emitted block with another DoStep body. -/
 def withDoStep (body : List AST.Statement) : AST.Block :=
-  { squareBlock squareExtent with
-    methods := [squareStartup, Scalar.recalibrateMethod, ⟨.ident "DoStep", body, .ident "DoStep"⟩] }
+  { Square.source squareExtent with
+    methods := [Square.startupMethod, Scalar.recalibrateMethod, ⟨.ident "DoStep", body, .ident "DoStep"⟩] }
 
 open GALEC.Elaboration.Surface in
 /-- The diagonal coefficient `u[k] * u[k]` in place of `u[k] + u[k]`. -/

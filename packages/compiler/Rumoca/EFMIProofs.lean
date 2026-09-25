@@ -1,8 +1,6 @@
 import Rumoca.EFMI
-import Rumoca.GALEC
+import Rumoca.AlgorithmSemantics
 import RumocaEFMI.AlgorithmProofs
-import RumocaEFMI.ScalarSourceProofs
-import RumocaCore.GALEC.Protocol
 
 open _root_.Parser
 
@@ -17,39 +15,56 @@ structure AlgorithmContract (a : Artifact source) (emitted : String) : Prop wher
   source_ebnf : EBNF.Accepts Generated.sourceGrammar (a.parsed.tokens.map Token.symbol)
   grammar_processed :
     (LALR.Frontend.compile GALEC.Generated.source).map (·.grammar) = .ok GALEC.Generated.grammar
-  parsed : ∃ p, GALEC.Syntax.parse emitted = .ok p ∧ Denotes p.ast a.algorithmCode.block
-  original_source : ∃ p, GALEC.Syntax.parse emitted = .ok p ∧
-    ScalarSourceSemantics p.ast a.algorithmCode.block
+  parsed : ∃ p, GALEC.Syntax.parse emitted = .ok p ∧ p.ast = scalarBlock ∧
+    a.algorithmSolve.block = Solve.Algorithm.unitBlock
+  original_source : ∃ product, GALEC.Elaboration.Block.fromSource emitted = .ok product ∧
+    ScalarSourceSemantics product.parsed.ast a.algorithmSolve.block
   dae_admission : ∀ dx : ℝ, a.solve.dae.Holds dx ↔ dx = 1
-  startup : ∀ x, a.algorithmCode.execute .startup x = Binary64.positiveZero
-  recalibrate : ∀ x, a.algorithmCode.execute .recalibrate x = x
-  step : ∀ x, a.algorithmCode.execute .doStep x = a.solve.advance x
-  samples : ∀ x n, a.algorithmCode.run x n = a.solve.run x n
-  solve_refinement : ∀ method (state : GALEC.UnitProfile.State Binary64.Value),
-    GALEC.UnitProfile.solveExecute (Solve.Algorithm.lower a.algorithmCode.block)
-      Binary64.positiveZero Binary64.one GALEC.roundedAdd method state =
-    GALEC.UnitProfile.execute a.algorithmCode.block
-      Binary64.positiveZero Binary64.one GALEC.roundedAdd method state
-  lifecycle_refinement : ∀ (before after : GALEC.Protocol.Configuration Binary64.Value) events,
-    GALEC.Protocol.Trace
-      (GALEC.UnitProfile.solveExecute (Solve.Algorithm.lower a.algorithmCode.block)
-        Binary64.positiveZero Binary64.one GALEC.roundedAdd) before events after ↔
-    GALEC.Protocol.Trace
-      (GALEC.UnitProfile.execute a.algorithmCode.block
-        Binary64.positiveZero Binary64.one GALEC.roundedAdd) before events after
+  startup : ∀ x, a.algorithmSolve.execute .startup x = Binary64.positiveZero
+  recalibrate : ∀ x, a.algorithmSolve.execute .recalibrate x = x
+  step : ∀ x, a.algorithmSolve.execute .doStep x = a.solve.advance x
+  samples : ∀ x n, a.algorithmSolve.run x n = a.solve.run x n
 
 theorem algorithm_correct (a : Artifact source) (he : a.algorithmSource = emitted) :
     AlgorithmContract a emitted := by
-  refine ⟨he, parsed_lexes a.parsed, parsed_in_ebnf a.parsed, EFMI.grammar_processed,
-    he ▸ render_denotes a.algorithmCode, he ▸ render_source_semantics a.algorithmCode,
-    GALEC.lower_equation_correct a.solve.dae,
-    GALEC.startup_correct _, GALEC.recalibrate_correct _, ?_, ?_, ?_, ?_⟩
+  subst emitted
+  obtain ⟨parsed, accepted, same⟩ := render_parses a.algorithmSolve
+  refine ⟨rfl, parsed_lexes a.parsed, parsed_in_ebnf a.parsed, EFMI.grammar_processed,
+    ⟨parsed, accepted, same, a.algorithmSolve.profile⟩, render_source_semantics a.algorithmSolve,
+    Solve.Algorithm.lower_equation_correct a.solve.dae,
+    Solve.Algorithm.Model.startup_correct _, Solve.Algorithm.Model.recalibrate_correct _, ?_, ?_⟩
   · intro x
-    rw [GALEC.doStep_correct, Solve.Model.advance_correct]
+    rw [Solve.Algorithm.Model.doStep_correct, Solve.Model.advance_correct]
   · intro x n
-    rw [GALEC.run_correct, Solve.Model.run_correct]
-  · exact fun method state => GALEC.UnitProfile.lower_correct _ _ _ _ method state
-  · exact GALEC.Protocol.lower_trace_correct _ _ _ _
+    rw [Solve.Algorithm.Model.run_correct, Solve.Model.run_correct]
+
+/-- Every prepared Solve method result is an original source execution of the
+emitted text's selected method, at every ceiling and for every state. -/
+theorem AlgorithmContract.solve_refinement (contract : AlgorithmContract a emitted) :
+    ∃ product, GALEC.Elaboration.Block.fromSource emitted = .ok product ∧
+      ∀ ceiling method (state : GALEC.UnitProfile.State Binary64.Value),
+        GALEC.Elaboration.Scalar.StateBridge.SourceExec product.parsed.ast "x" "samplePeriod"
+          ceiling Solve.Tensor.Finite.Result Binary64.positiveZero Binary64.one method state
+          (GALEC.UnitProfile.solveExecute a.algorithmSolve.block Binary64.positiveZero
+            Binary64.one GALEC.roundedAdd method state) := by
+  obtain ⟨product, compiled, semantics⟩ := contract.original_source
+  exact ⟨product, compiled, semantics.refines⟩
+
+/-- Every executor realizing the emitted text's original source methods has
+exactly the lifecycle traces of the prepared Solve block. -/
+theorem AlgorithmContract.lifecycle_refinement (contract : AlgorithmContract a emitted) :
+    ∃ product, GALEC.Elaboration.Block.fromSource emitted = .ok product ∧
+      ∀ ceiling (execute : GALEC.Method → GALEC.UnitProfile.State Binary64.Value →
+          GALEC.UnitProfile.State Binary64.Value),
+        (∀ method before, GALEC.Elaboration.Scalar.StateBridge.SourceExec product.parsed.ast
+          "x" "samplePeriod" ceiling Solve.Tensor.Finite.Result Binary64.positiveZero
+          Binary64.one method before (execute method before)) →
+        ∀ (before after : GALEC.Protocol.Configuration Binary64.Value) events,
+          GALEC.Protocol.Trace execute before events after ↔
+            GALEC.Protocol.Trace (GALEC.UnitProfile.solveExecute a.algorithmSolve.block
+              Binary64.positiveZero Binary64.one GALEC.roundedAdd) before events after := by
+  obtain ⟨product, compiled, semantics⟩ := contract.original_source
+  exact ⟨product, compiled, semantics.lifecycle⟩
 
 theorem compile_algorithm_verified (h : compile source = .ok a)
     (he : a.algorithmSource = emitted) :

@@ -2,16 +2,9 @@ import RumocaEFMI.TensorAlgorithmProofs
 import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.squareKernel
 #audit axioms Rumoca.EFMI.squareExtent
-#audit axioms Rumoca.EFMI.squareStartup
-#audit axioms Rumoca.EFMI.squareDoStep
-#audit axioms Rumoca.EFMI.squareBlock
 #audit axioms Rumoca.EFMI.renderTensorAlgorithm
 #audit axioms Rumoca.EFMI.admittedModel
 #audit axioms Rumoca.EFMI.tensorAlgorithmSource
-#audit axioms Rumoca.EFMI.TensorAlgorithm.startupResult
-#audit axioms Rumoca.EFMI.TensorAlgorithm.recalibrateResult
-#audit axioms Rumoca.EFMI.TensorAlgorithm.stepResult
-#audit axioms Rumoca.EFMI.TensorAlgorithm.preparedResult
 #audit axioms Rumoca.EFMI.TensorAlgorithm.SourceExec
 #audit axioms Rumoca.EFMI.TensorAlgorithm.StartupSemantics
 #audit axioms Rumoca.EFMI.TensorAlgorithm.RecalibrateSemantics
@@ -19,8 +12,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorAlgorithm.ADSemantics
 #audit axioms Rumoca.EFMI.TensorAlgorithm.SourceContract
 #audit axioms Rumoca.EFMI.TensorAlgorithm.source_contract
-#audit axioms Rumoca.EFMI.TensorAlgorithm.interface
-#audit axioms Rumoca.EFMI.TensorAlgorithm.square_prepared
 #audit axioms Rumoca.EFMI.TensorAlgorithm.prepared
 #audit axioms Rumoca.EFMI.TensorAlgorithm.square.lexed
 #audit axioms Rumoca.EFMI.TensorAlgorithm.square.checked

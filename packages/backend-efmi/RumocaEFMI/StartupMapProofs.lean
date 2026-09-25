@@ -74,10 +74,10 @@ def Contract (model : Solve.Algorithm.Model source) (c : String) : Prop :=
     (StartupOrigins.inputs model).TraceCorrect (emission.module_eq ▸ emission.startup) ∧
     (_root_.Parser.Provenance.TracesTo (StartupOrigins.inputs model).outputTable
       ((StartupOrigins.inputs model).original (StartupOrigins.inputs model).stateLiteral)
-      (model.origin.dae.flat.context.site .declaration)) ∧
+      (model.dae.flat.context.site .declaration)) ∧
     (_root_.Parser.Provenance.TracesTo (StartupOrigins.inputs model).outputTable
       ((StartupOrigins.inputs model).original (StartupOrigins.inputs model).periodLiteral)
-      (model.origin.dae.flat.context.site .model)) ∧
+      (model.dae.flat.context.site .model)) ∧
     (∀ entry, entry ∈ emission.document.entries ↔
       ∃ beforeText segment suffix,
         Region emission.document.body entry.origin beforeText segment suffix ∧

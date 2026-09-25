@@ -1,5 +1,5 @@
 import RumocaEFMI.StartupOrigins
-import RumocaCore.GALEC.OriginProofs
+import RumocaCore.Solve.AlgorithmOriginProofs
 
 /-! Independent requirements inspect each actual C occurrence. In particular,
 period initialization and state initialization use distinct Solve operands;
@@ -9,23 +9,21 @@ open Rumoca.CTree
 open _root_.Parser.Provenance (Ref)
 variable {table : _root_.Parser.Provenance.Table Site Provenance.Rule}
 
-/-- The actual Solve trace retains the source-stage roles through both prior
-lowerings. This proof does not change the executable emitter's input. -/
+/-- The actual prepared Solve trace carries the required DAE-stage roles. This
+proof does not change the executable emitter's input. -/
 theorem inputs_lowered (model : Solve.Algorithm.Model source) :
     inputs model =
-      ⟨model.origin.origins.references.origin .startup,
-        model.origin.origins.references.origin .initial,
-        model.origin.origins.references.origin .startupAssignment,
-        model.origin.origins.references.origin .startupTarget,
-        model.origin.origins.references.origin .initial,
-        model.origin.origins.references.origin .periodValue,
-        model.origin.origins.references.origin .periodAssignment,
-        model.origin.origins.references.origin .periodTarget,
-        model.origin.origins.references.origin .periodValue⟩ := by
-  rcases model with ⟨⟨dae, galec, profile, gaOrigins⟩, block, lowered, origins, correct⟩
+      ⟨model.origins.references.origin .startup,
+        model.origins.references.origin .initial,
+        model.origins.references.origin .startupAssignment,
+        model.origins.references.origin .startupTarget,
+        model.origins.references.origin .initial,
+        model.origins.references.origin .periodValue,
+        model.origins.references.origin .periodAssignment,
+        model.origins.references.origin .periodTarget,
+        model.origins.references.origin .periodValue⟩ := by
+  rcases model with ⟨dae, origins, block, profile⟩
   cases profile
-  cases lowered
-  cases correct
   rfl
 
 theorem Inputs.original_traces (input : Inputs table) (ref : Ref table)
@@ -36,18 +34,18 @@ theorem Inputs.original_traces (input : Inputs table) (ref : Ref table)
 theorem state_literal_source (model : Solve.Algorithm.Model source) :
     _root_.Parser.Provenance.TracesTo (inputs model).outputTable
       ((inputs model).original (inputs model).stateLiteral)
-      (model.origin.dae.flat.context.site .declaration) := by
+      (model.dae.flat.context.site .declaration) := by
   apply Inputs.original_traces
   rw [inputs_lowered]
-  exact model.origin.initial_ancestry
+  exact model.initial_ancestry
 
 theorem period_literal_source (model : Solve.Algorithm.Model source) :
     _root_.Parser.Provenance.TracesTo (inputs model).outputTable
       ((inputs model).original (inputs model).periodLiteral)
-      (model.origin.dae.flat.context.site .model) := by
+      (model.dae.flat.context.site .model) := by
   apply Inputs.original_traces
   rw [inputs_lowered]
-  exact model.origin.period_ancestry
+  exact model.period_ancestry
 
 def Inputs.Generated (input : Inputs table) (role : Role)
     (refs : List (Ref input.outputTable)) : Prop :=

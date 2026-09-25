@@ -61,7 +61,7 @@ def lower (model : Solve.Algorithm.Model source) : Except String Module := lower
 theorem lower_is_unit (model : Solve.Algorithm.Model source) :
     lower model = .ok unitModule := by
   unfold lower
-  rw [model.block_is_unit]
+  rw [model.profile]
   rfl
 
 

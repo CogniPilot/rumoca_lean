@@ -33,6 +33,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.sourceDeclarations
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.source
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.interface
+#audit axioms Rumoca.GALEC.Elaboration.Scalar.preparedResult
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.result
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.headers
 #audit axioms Rumoca.GALEC.Elaboration.Scalar.prepared

@@ -17,7 +17,7 @@ checks cover the composed contracts. See
 | `Rumoca/Provenance.lean`, `Initialization.lean`, `InitializationDiagnosticProofs.lean` | Exact input identity, source-to-Solve initialization and declaration-based compiler/editor notices |
 | `Rumoca/ArrayCompiler.lean`, `ArrayProofs.lean` | Development array preparation, located source binding and complete Real equation/initialization preservation through stored Solve IR |
 | `Rumoca/FMU.lean` | Staged FMU build, actual-kernel checker invocation and atomic publication |
-| `Rumoca/GALEC.lean`, `EFMIProofs.lean` | DAE/GALEC/Solve algorithm composition and Algorithm Code artifact contract |
+| `Rumoca/AlgorithmSemantics.lean`, `EFMIProofs.lean` | DAE-to-prepared-algorithm composition and Algorithm Code artifact contract |
 | `Rumoca/EFMIExport.lean` | Candidate identities, staged `.alg`/`.efmu` checking and atomic publication |
 | `Rumoca/EFMIArchive.lean`, `EFMIArchiveProofs.lean` | Pure archive preparation and source-to-archive preservation theorem |
 | `Rumoca/EFMIInitializationProofs.lean` | Actual Production C Startup result, completed source initialization and exact-archive consequence |
@@ -45,9 +45,11 @@ certificate. See [certificate reuse](../../docs/development.md#cached-artifact-c
 
 The C target machinery is shared by both output routes:
 DAE → GALEC → Solve → C for eFMI, and DAE → Solve → C for FMI 3.
-GALEC text is rendered from the same checked GALEC product that is refined
-into Solve. Compiler composition binds both eFMI code members to that common
-origin. C emission itself only consumes prepared Solve programs.
+The eFMI Solve algorithm is prepared from the DAE; GALEC text is printed from
+the core builder's block, and a proved relation shows that the parsed text's
+methods execute as that Solve algorithm. Compiler composition binds both eFMI
+code members to that common prepared model. C emission itself only consumes
+prepared Solve programs.
 
 `Rumoca.ArrayCompiler.prepare` is the development array entry point. Its result
 retains the located parse and a stored executable tensor IVP with its lowering

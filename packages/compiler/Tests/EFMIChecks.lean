@@ -31,7 +31,7 @@ so one-pass source preparation of the actual text fails. -/
 section Rejected
 open GALEC GALEC.Elaboration GALEC.Elaboration.Surface
 
-private def unitTree : AST.Block := Scalar.source "UnitIntegrator" "x" "samplePeriod"
+private def unitTree : AST.Block := EFMI.scalarBlock
 
 private def real (kind : AST.Kind) (name : String) (extents : List AST.Expr := []) :
     AST.Declaration :=
@@ -65,13 +65,13 @@ certify_source protectedInput (Print.block { unitTree with
 certify_source publicConstant (Print.block { unitTree with
   publicDeclarations := [Scalar.stateDeclaration "x", real .constant "extra"] })
 /- A non-canonical extent numeral. -/
-certify_source leadingZero (Print.block { EFMI.squareBlock EFMI.squareExtent with
+certify_source leadingZero (Print.block { Square.source EFMI.squareExtent with
   publicDeclarations := real .input "u" [.literal (.number "02")] ::
     (Square.squarePublic EFMI.squareExtent).tail })
 /- The middle expression of a three-part range is its step: `1:size(self.u, 1):1`
 has a non-unit step and is rejected. -/
-certify_source swappedRange (Print.block { EFMI.squareBlock EFMI.squareExtent with
-  methods := [EFMI.squareStartup, Scalar.recalibrateMethod,
+certify_source swappedRange (Print.block { Square.source EFMI.squareExtent with
+  methods := [Square.startupMethod, Scalar.recalibrateMethod,
     ⟨.ident "DoStep", [.forLoop (.ident "k") (natural 1) (some (dimension "u" 1)) (natural 1)
       [.assign (stateReference "x" [iterator "k"]) (.binary (.literal "*")
         (.reference (stateReference "u" [iterator "k"])) (.reference (stateReference "u" [iterator "k"])))],
@@ -120,42 +120,51 @@ certify_source readsPeriod (Print.block { unitTree with
       (.reference (stateReference "samplePeriod" [])) (.literal (.number "1.0"))))],
       .ident "DoStep"⟩] })
 
-/-- A different well-formed program is not the scalar specification tree, so the
-scalar Algorithm Code denotation rejects it. This is a syntactic rejection:
-the parsed tree differs from the specification tree. -/
-theorem reads_period_rejected : ¬ EFMI.Denotes readsPeriod.ast GALEC.unitBlock := by
-  intro denotes
-  have printed := congrArg Print.block denotes.1
+/-- A different well-formed program is not the scalar builder's tree, so the
+scalar source semantics rejects it for every prepared block. This is a
+syntactic rejection: the parsed tree differs from the builder's tree. -/
+theorem reads_period_rejected (block : Solve.Algorithm.Block scalar) :
+    ¬ EFMI.ScalarSourceSemantics readsPeriod.ast block := by
+  intro semantics
+  have printed := congrArg Print.block semantics.source
   exact absurd printed (by decide +kernel)
 
 end Rejected
 
+/-- A prepared block with a zero period program is not the meaning of the
+emitted source: its Startup leaves a different sample period. -/
 theorem changed_period :
-    ¬ EFMI.Denotes (GALEC.Elaboration.Scalar.source "UnitIntegrator" "x" "samplePeriod")
-      { GALEC.unitBlock with startupPeriod := .zero } := by
-  intro h
-  have hc : (GALEC.Expr.zero : GALEC.Expr scalar) = .one :=
-    congrArg (·.startupPeriod) h.2
-  cases hc
+    ¬ EFMI.ScalarSourceSemantics EFMI.scalarBlock
+      { Solve.Algorithm.unitBlock with startupPeriod := .fill .zero (.ret .here) } := by
+  intro semantics
+  let state : GALEC.UnitProfile.State Binary64.Value :=
+    ⟨Value.fill scalar Binary64.one, Value.fill scalar Binary64.one⟩
+  have same := (semantics.execution 0 .startup state _).mp
+    ((EFMI.scalar_source_semantics rfl rfl).refines 0 .startup state)
+  have period := congrArg (fun after : GALEC.UnitProfile.State Binary64.Value =>
+    after.samplePeriod[0]'(by decide)) same
+  exact absurd period (by decide +kernel)
 
 /-- The arithmetic interpretation is deliberately order-sensitive. All six
-coordinates survive without changing the tensor shape during compilation. -/
+coordinates survive without changing the tensor shape. -/
 theorem tensor_operation_order :
-    ((Solve.Algorithm.compileExpr (.add .state (.add .one .one))).eval
+    ((Solve.Algorithm.Program.fill .one (.fill .one (.add (.there .here) .here
+        (.add (.there (.there (.there .here))) .here (.ret .here)))) :
+        Solve.Algorithm.Program [⟨[2, 3]⟩] ⟨[2, 3]⟩).eval
       0 1 (fun a b : Nat => 10 * a + b)
       (Solve.Tensor.Env.push (Value.fill ⟨[2, 3]⟩ 2) Solve.Tensor.Env.empty)).data.toArray =
         #[31, 31, 31, 31, 31, 31] := by decide +kernel
 
 theorem initial_state_and_period (old : GALEC.UnitProfile.State Nat) :
-    GALEC.UnitProfile.solveExecute (Solve.Algorithm.lower GALEC.unitBlock)
-      0 1 (· + ·) .startup old = ⟨Value.fill scalar 0, Value.fill scalar 1⟩ := by
-  rw [GALEC.UnitProfile.lower_correct]
-  exact GALEC.UnitProfile.startup_initializes _ _ _ _
+    GALEC.UnitProfile.solveExecute Solve.Algorithm.unitBlock
+      0 1 (· + ·) .startup old = ⟨Value.fill scalar 0, Value.fill scalar 1⟩ :=
+  GALEC.UnitProfile.startup_initializes _ _ _ _
 
-#audit axioms GALEC.lower_equation_correct
-#audit axioms GALEC.lower_step_correct
-#audit axioms GALEC.algorithm_step_correct
-#audit axioms GALEC.unit_no_overflow
+#audit axioms Solve.Algorithm.lower_equation_correct
+#audit axioms Solve.Algorithm.prepare_step_correct
+#audit axioms Solve.Algorithm.unit_no_overflow
+#audit axioms EFMI.AlgorithmContract.solve_refinement
+#audit axioms EFMI.AlgorithmContract.lifecycle_refinement
 #audit axioms EFMI.algorithm_correct
 #audit axioms EFMI.compile_algorithm_verified
 #audit axioms EFMI.production_correct

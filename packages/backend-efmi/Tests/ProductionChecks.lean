@@ -1,5 +1,4 @@
 import Tests.ProductionChecks.CInterface
-import Tests.ProductionChecks.ScalarSourceProofs
 import Tests.ProductionChecks.TensorArrayMembers
 import Tests.ProductionChecks.TensorContextCalls
 import Tests.ProductionChecks.TensorContextIVP
@@ -53,7 +52,8 @@ theorem tensor_fill_not_scalarized :
       (Production.initialName "x") (Production.stateField "x") 0 =
         .error "Production C storage currently requires rank-zero tensors" := by rfl
 
-#audit axioms Solve.Algorithm.Model.block_is_unit
+#audit axioms Solve.Algorithm.Model.profile
+#audit axioms Solve.Algorithm.prepare
 #audit axioms CSyntax.scanner_unchanged
 #audit axioms Production.lower_is_unit
 #audit axioms Production.StartupOrigins.roles_index
@@ -191,8 +191,17 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.unitAlgorithm.parsed
 #audit axioms Rumoca.EFMI.unit_ast
 #audit axioms Rumoca.EFMI.render_parses
-#audit axioms Rumoca.EFMI.Denotes
-#audit axioms Rumoca.EFMI.render_denotes
+#audit axioms Rumoca.EFMI.scalarBlock
+#audit axioms Rumoca.EFMI.renderAlgorithm
+#audit axioms Rumoca.EFMI.emitted_prepared
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics.source
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics.prepared
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics.execution
+#audit axioms Rumoca.EFMI.scalar_source_semantics
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics.refines
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics.lifecycle
+#audit axioms Rumoca.EFMI.render_source_semantics
 
 #audit axioms Rumoca.EFMI.square_jacobian_coefficients
 

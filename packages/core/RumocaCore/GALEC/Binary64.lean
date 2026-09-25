@@ -1,4 +1,3 @@
-import RumocaCore.GALEC.Semantics
 import RumocaCore.Real.Binary64
 
 /-! The numerical proof interpretation is separate from generic algorithm

@@ -151,9 +151,12 @@ theorem step_lowered (name : String) (different : state ≠ clock) (ceiling : Na
 def interface (name state clock : String) : Block.Headers.Interface :=
   ⟨name, startupMethod state clock, recalibrateMethod, stepMethod state⟩
 
+/-- The scalar method results under a header interface. -/
+def preparedResult (state clock : String) (interface : Block.Headers.Interface) : Block.Result :=
+  ⟨interface, startupResult state clock, recalibrateResult state clock, stepResult state clock⟩
+
 def result (name state clock : String) : Block.Result :=
-  ⟨interface name state clock, startupResult state clock, recalibrateResult state clock,
-    stepResult state clock⟩
+  preparedResult state clock (interface name state clock)
 
 theorem headers (name state clock : String) :
     Block.Headers.Valid (source name state clock) (interface name state clock) :=

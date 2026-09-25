@@ -1,8 +1,9 @@
 # Tiny eFMI backend
 
-This package renders the checked GALEC Algorithm Code product and emits
-Production C directly from its prepared Solve algorithm. DAE admission,
-numerical policy and GALEC-to-Solve algorithm lowering belong to core/compiler.
+This package prints Algorithm Code from the core GALEC block builders and emits
+Production C directly from the prepared Solve algorithm. DAE admission,
+numerical policy, algorithm preparation and the block builders belong to
+core/compiler.
 The backend must consume those prepared products without repeating those phases.
 
 Use `lake build check-efmi` from the repository root for incremental backend proofs
@@ -20,10 +21,13 @@ The pinned authority is the official **eFMI 1.0.0 Beta 1** specification and its
 accompanying schemas. This is a candidate draft, not a final 1.0.0 release.
 See [the standard review and completion gates](../../dev/efmi.md).
 
-`RumocaEFMI.AlgorithmProofs` checks that the emitted unit block parses through
-the shared LALR engine, denotes the admitted named profile, and uses the CFG
-processed from the actual embedded EBNF. The compiler composes those results
-with the source/DAE and Solve refinement theorems. Its fixed actual-file adapter
+`RumocaEFMI.AlgorithmProofs` checks that the printed scalar block parses through
+the shared LALR engine to the core builder's tree, prepares through one-pass
+`Block.fromSource`, and uses the CFG processed from the actual embedded EBNF.
+Its source semantics states that each selected original method executes exactly
+as the prepared Solve block; this is the GALEC-to-Solve refinement, the same
+mechanism as the tensor source contract. The compiler composes it with the
+source/DAE theorems. Its fixed actual-file adapter
 reads both grammars, the Modelica input and the `.alg` member independently.
 
 From the workspace, after building:
@@ -104,9 +108,10 @@ correctness theorems take priority over adding example test matrices.
 Run the complete repository gate with
 `nix develop .#verification --command lake test`.
 
-Production C consumes the checked GALEC-to-Solve refinement through the shared
+Production C consumes the prepared Solve algorithm through the shared
 [backend-c package](../backend-c/README.md). GALEC text and the C member have a
-common checked GALEC origin; C generation reads the resulting Solve algorithm.
+common prepared model; the source contract proves the text's methods refine to
+its Solve block, and C generation reads that block.
 This package owns method interfaces, variable mappings, complete-function
 printer proofs, manifests and packaging. `CInterface` derives real/status alias
 bindings from the actual header declarations; `CHeader.interface_return`

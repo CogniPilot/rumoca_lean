@@ -1,21 +1,34 @@
-import RumocaCore.Solve.AlgorithmOrigins
+import RumocaCore.GALEC.OriginLowering
+import RumocaCore.IR
 
 namespace Rumoca.Solve.Algorithm
 open Rumoca.Tensor
 
-/-- Prepared executable root with provenance. Backends read `block`; they do
-not repeat GALEC refinement or inspect DAE equations to select a solver. -/
+/-- Required source/rule/parent correspondence for every occurrence of the
+prepared block. Its compact field references expand to the block trace. -/
+structure Origins (dae : DAE.Model source) where
+  table : Provenance.Table dae.flat.context
+  extension : dae.origins.table.Extension table
+  references : GALEC.UnitOrigins.References table
+  correct : references.Correct dae
+
+/-- Prepared executable root with provenance. It binds the Algorithm Code to
+its original DAE and to the explicit unit-step/zero-start profile; it does not
+license arbitrary DAEs. Backends read `block`; they do not select a solver or
+inspect DAE equations. -/
 structure Model (source : AST.Model) where
-  origin : GALEC.Model source
+  dae : DAE.Model source
+  origins : Origins dae
   block : Block scalar
-  lowered : block = lower origin.block
-  origins : Block.Origins origin.origins.table block
-  origins_lowered : (lowered ▸ origins) = lowerOrigins origin.originTrace
+  profile : block = unitBlock
 
-def prepare (model : GALEC.Model source) : Model source :=
-  ⟨model, lower model.block, rfl, lowerOrigins model.originTrace, rfl⟩
+def prepare (dae : DAE.Model source) : Model source :=
+  ⟨dae, ⟨GALEC.OriginLowering.table dae, GALEC.OriginLowering.extension dae,
+    GALEC.OriginLowering.references dae, GALEC.OriginLowering.references_correct dae⟩,
+    unitBlock, rfl⟩
 
-theorem Model.block_is_unit (model : Model source) : model.block = lower GALEC.unitBlock := by
-  rw [model.lowered, model.origin.profile]
+/-- The origins of the actual prepared block. -/
+def Model.trace (model : Model source) : Block.Origins model.origins.table model.block :=
+  model.profile.symm ▸ model.origins.references.trace
 
 end Rumoca.Solve.Algorithm

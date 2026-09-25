@@ -10,4 +10,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Solve.Model.initialization_correct
 #audit axioms Rumoca.Solve.Model.initialized_solution_unique
 #audit axioms Rumoca.Solve.FMI3Model.initialization_matches
-#audit axioms Rumoca.GALEC.initialization_matches
+#audit axioms Rumoca.Solve.Algorithm.initialization_matches

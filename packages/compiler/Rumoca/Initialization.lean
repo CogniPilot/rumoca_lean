@@ -2,6 +2,7 @@ import Rumoca.Source
 import RumocaCore.Initialization.Real
 import RumocaCore.Solve.FMI3
 import RumocaCore.GALEC.UnitProfile
+import RumocaCore.Solve.Algorithm
 
 /-! Initialization correspondence for the actually admitted unmodified Real
 declaration. The source is underdetermined; the checked compiler plan completes
@@ -66,10 +67,10 @@ theorem Solve.FMI3Model.initialization_matches (m : Solve.FMI3Model source)
   change Tensor.Value.fill _ (0 : ℝ) = Tensor.Value.fill _ ((0 : Nat) : ℝ)
   rw [Nat.cast_zero]
 
-/-- The GALEC path selects the same default from the same DAE problem. -/
-theorem GALEC.initialization_matches (dae : DAE.Model source)
-    (state : UnitProfile.State ℝ) :
-    (UnitProfile.execute (lower dae).block 0 1 (· + ·) .startup state).x =
+/-- The prepared algorithm selects the same default from the same DAE problem. -/
+theorem Solve.Algorithm.initialization_matches (dae : DAE.Model source)
+    (state : GALEC.UnitProfile.State ℝ) :
+    (GALEC.UnitProfile.solveExecute (Solve.Algorithm.prepare dae).block 0 1 (· + ·) .startup state).x =
       Tensor.Value.fill _ ((Solve.lower dae).initial.initial : ℝ) := by
   rw [(Solve.lower dae).initial_default]
   change Tensor.Value.fill _ (0 : ℝ) = Tensor.Value.fill _ ((0 : Nat) : ℝ)

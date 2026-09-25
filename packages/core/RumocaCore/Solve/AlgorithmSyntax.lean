@@ -1,7 +1,7 @@
-import RumocaCore.GALEC.Semantics
+import RumocaCore.GALEC.Method
 import RumocaCore.Solve.Tensor
 
-/-! Executable Algorithm Code refinement. The numerical IVP and algorithm roots
+/-! The prepared executable Algorithm Code. The numerical IVP and algorithm roots
 are separate products. Production code consumes this root, never GALEC syntax
 or a reconstructed DAE. Register references retain complete tensor shapes. -/
 namespace Rumoca.Solve.Algorithm
@@ -20,40 +20,16 @@ def Program.eval (zero one : α) (add : α → α → α) :
   | .fill value next, env =>
       next.eval zero one add (env.push (Value.fill _ (value.eval zero one)))
   | .add left right next, env =>
-      next.eval zero one add (env.push (GALEC.zipWith add (env left) (env right)))
+      next.eval zero one add (env.push ((env left).zipWith add (env right)))
 
-/-- Continuation lowering emits a tensor instruction per source operation,
-not one per coordinate. `state` is explicitly threaded as registers are added. -/
-abbrev Ren (Γ Δ : List Shape) := {s : Shape} → Ref Γ s → Ref Δ s
-
-def lowerExpr (expr : GALEC.Expr shape) (state : Ref Γ shape)
-    (k : {Δ : List Shape} → Ren Γ Δ → Ref Δ shape → Program Δ result) : Program Γ result :=
-  match expr with
-  | .state => k (fun r => r) state
-  | .zero => .fill .zero (k (fun r => .there r) .here)
-  | .one => .fill .one (k (fun r => .there r) .here)
-  | .add a b =>
-      lowerExpr a state fun ren left =>
-        lowerExpr b (ren state) fun ren' right =>
-          .add (ren' left) right (k (fun r => .there (ren' (ren r))) .here)
-
-def compileExpr (e : GALEC.Expr shape) : Program [shape] shape :=
-  lowerExpr e .here (fun _ result => .ret result)
-
+/-- One register program per lifecycle method; `startupPeriod` initializes the
+immutable sampling-period constant after the Startup state program. -/
 structure Block (shape : Shape) where
   startup : Program [shape] shape
   recalibrate : Program [shape] shape
   doStep : Program [shape] shape
   startupPeriod : Program [scalar] scalar
   deriving Repr
-
-def compileBody : Option (GALEC.Expr shape) → Program [shape] shape
-  | none => .ret .here
-  | some e => compileExpr e
-
-def lower (b : GALEC.Block shape) : Block shape :=
-  ⟨compileBody b.startup, compileBody b.recalibrate, compileBody b.doStep,
-    compileExpr b.startupPeriod⟩
 
 def Block.body (b : Block shape) : GALEC.Method → Program [shape] shape
   | .startup => b.startup
@@ -69,5 +45,10 @@ def Block.trace (b : Block shape) (zero one : α) (add : α → α → α)
   | [] => state
   | m :: ms => b.trace zero one add (b.execute zero one add m state) ms
 
+/-- The unit-step, zero-start profile: Startup fills zero, Recalibrate returns
+the state, DoStep adds the filled one to the state, and the period is one. -/
+def unitBlock : Block scalar :=
+  ⟨.fill .zero (.ret .here), .ret .here, .fill .one (.add (.there .here) .here (.ret .here)),
+    .fill .one (.ret .here)⟩
 
 end Rumoca.Solve.Algorithm

@@ -51,8 +51,8 @@ structure Inputs (table : _root_.Parser.Provenance.Table Site Provenance.Rule) w
   periodValue : Ref table
 
 /-- The equality changes only the index of the already prepared trace. -/
-def inputs (model : Solve.Algorithm.Model source) : Inputs model.origin.origins.table :=
-  let trace := model.block_is_unit ▸ model.origins
+def inputs (model : Solve.Algorithm.Model source) : Inputs model.origins.table :=
+  let trace := model.profile ▸ model.trace
   match trace.startup, trace.period with
   | .fill initial (.ret assignment value), .fill period (.ret periodAssignment periodValue) =>
       ⟨trace.startupMethod, initial, assignment, trace.startupTarget, value,

@@ -42,8 +42,8 @@ Located parsing attaches exact source ranges to the scanned tokens.
 
 `GALECParserChecks` audits the scanner, parser, action and certificate
 contracts, and kernel-checks a certificate for the scalar layout. The eFMI
-backend separately proves the relationship to GALEC/Solve IR and emitted
-artifacts. The full artifact gate is required in addition to these owner
+backend separately proves the relationship to the prepared Solve algorithm
+and emitted artifacts. The full artifact gate is required in addition to these owner
 checks; see [current evidence](../../docs/verification.md). These proofs do not
 establish full eFMI compliance. See the [grammar](grammar/README.md) and
 [standards review](../../dev/efmi.md).

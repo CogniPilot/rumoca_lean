@@ -143,11 +143,12 @@ theorem result_represents (model : Solve.Algorithm.Model source) (method : GALEC
     Represents (resultHeap heap p state method) p
       (GALEC.UnitProfile.solveExecute model.block Binary64.positiveZero Binary64.one
         GALEC.roundedAdd method state) := by
-  rw [model.block_is_unit, GALEC.UnitProfile.lower_correct]
+  rw [model.profile]
   cases method <;>
     simp [Represents, resultHeap, initialized, written, replace, h.2.1, StatusStorage, clearStatus, CHeader.statusName,
-      GALEC.UnitProfile.execute, GALEC.unitBlock, GALEC.Block.execute, GALEC.Block.body,
-      GALEC.Expr.eval, GALEC.roundedAdd, Binary64.roundedAdd_one]
+      GALEC.UnitProfile.solveExecute, Solve.Algorithm.unitBlock, Solve.Algorithm.Block.execute,
+      Solve.Algorithm.Block.body, Solve.Algorithm.Program.eval, Solve.Tensor.Env.push,
+      Solve.Tensor.Literal.eval, GALEC.roundedAdd, Binary64.roundedAdd_one]
 
 theorem result_frame (heap : Heap) (p q : Address) (state : GALEC.UnitProfile.State Binary64.Value)
     (method : GALEC.Method) (hx : q ≠ p.member "x") (hp : q ≠ p.member "samplePeriod")
