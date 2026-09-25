@@ -183,6 +183,7 @@ theorem body_printable (model : Solve.FMI3Model source) (signature : Signature) 
       | apply Printable.field
       | apply Printable.index
       | exact Printable.natural
+      | exact Printable.decimal
       | exact Printable.string
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible
@@ -247,6 +248,7 @@ theorem helpers_printable : ∀ fn ∈ Runtime.helpers, FunctionPrintable typede
     | apply Printable.call
     | apply Printable.field
     | exact Printable.natural
+    | exact Printable.decimal
     | exact Printable.string
     | apply Printable.identifier
     | solve | intro stmt impossible; cases impossible

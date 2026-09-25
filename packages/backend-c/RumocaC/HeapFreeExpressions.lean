@@ -8,7 +8,7 @@ open CTree CMemory
 
 mutual
   def heapFreeValue : Expr → Bool
-    | .id _ | .nat _ | .str _ => true
+    | .id _ | .nat _ | .decimal _ _ _ | .str _ => true
     | .cast _ value | .not value => heapFreeValue value
     | .bin _ left right => heapFreeValue left && heapFreeValue right
     | .address target => heapFreeAddress target
@@ -29,7 +29,7 @@ theorem heap_free (expr : Expr) :
     (heapFreeValue expr = true → ∀ env before after, eval env before expr = eval env after expr) ∧
     (heapFreeAddress expr = true → ∀ env before after, lvalue env before expr = lvalue env after expr) := by
   cases expr with
-  | id | nat | str => constructor <;> simp [heapFreeValue, heapFreeAddress, eval, evalWith, lvalue, lvalueWith]
+  | id | nat | decimal | str => constructor <;> simp [heapFreeValue, heapFreeAddress, eval, evalWith, lvalue, lvalueWith]
   | cast type value =>
     constructor
     · intro accepted env before after
@@ -77,7 +77,7 @@ theorem heap_free (expr : Expr) :
         cases base <;> simp_all [heapFreeValue, lvalue, lvalueWith]
       simp only [lvalue, lvalueWith, (heap_free base).1 b env before after, (heap_free index).1 i env before after,
         lvNone]
-  | call | decimal | sizeof => simp [heapFreeValue, heapFreeAddress]
+  | call | sizeof => simp [heapFreeValue, heapFreeAddress]
 termination_by sizeOf expr
 
 end Rumoca.CBody.Footprint

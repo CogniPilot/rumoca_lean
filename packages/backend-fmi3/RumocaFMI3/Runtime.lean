@@ -4,6 +4,7 @@ import RumocaC.Interface
 import RumocaC.CountConditionCode
 import RumocaC.BooleanProofs
 import RumocaC.InitializationCode
+import RumocaC.RealConstants
 import RumocaFMI3.IdentityCode
 import RumocaFMI3.StaticFactoryCode
 import RumocaFMI3.StaticReleaseCode
@@ -172,7 +173,7 @@ def stepClock : List Stmt := [
 def stepGrid : List Stmt := [
   .declare "double" "floored" (call "floor" [v "communicationStepSize"]),
   branch (any [nev (v "floored") (v "communicationStepSize"),
-    gt (v "communicationStepSize") (n 1000000)]) stepDiscard]
+    gt (v "communicationStepSize") (Expr.real 1000000)]) stepDiscard]
 
 def stepSolve : List Stmt := [
   .eval (call "model_advance" [.address (field "model"), .cast "uint64_t" (v "communicationStepSize")]),
@@ -186,7 +187,7 @@ def doStep : List Stmt := require .doStep ++ [
   out "lastSuccessfulTime" (field "time"),
   reject (any [Expr.nonfinite (v "currentCommunicationPoint"),
     Expr.nonfinite (v "communicationStepSize"),
-    nev (v "currentCommunicationPoint") (field "time"), le (v "communicationStepSize") (n 0)])
+    nev (v "currentCommunicationPoint") (field "time"), le (v "communicationStepSize") (Expr.real 0)])
     "Invalid communication point or step size"] ++
   stepRounding ++ stepClock ++ stepGrid ++ stepSolve
 
@@ -233,12 +234,12 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
       "valuesOfContinuousStatesChanged", "nextEventTimeDefined", "nextEventTime"],
     out "discreteStatesNeedUpdate" (n 0), out "terminateSimulation" (n 0),
     out "nominalsOfContinuousStatesChanged" (n 0), out "valuesOfContinuousStatesChanged" (n 0),
-    out "nextEventTimeDefined" (n 0), out "nextEventTime" (n 0), ok]
+    out "nextEventTimeDefined" (n 0), out "nextEventTime" (Expr.real 0), ok]
   | "fmi3Terminate" => require .terminate ++ [setMode .terminated, ok]
   | "fmi3Reset" => require .reset ++ [
     (CInitialization.emit m.solve x).statement,
-    put "time" (n 0), put "timeMin" (n 0), put "eventTime" (n 0), put "lastCompleted" (n 0),
-    put "stop" (n 0), put "stopDefined" (n 0), setMode .instantiated, ok]
+    put "time" (Expr.real 0), put "timeMin" (Expr.real 0), put "eventTime" (Expr.real 0),
+    put "lastCompleted" (Expr.real 0), put "stop" (Expr.real 0), put "stopDefined" (n 0), setMode .instantiated, ok]
   | "fmi3GetFloat64" => getFloat64
   | "fmi3SetFloat64" => setFloat64
   | "fmi3SetTime" => require .setTime ++ [
@@ -252,7 +253,7 @@ def body (m : Solve.FMI3Model source) (sig : Signature) : List Stmt :=
   | "fmi3GetContinuousStateDerivatives" => require .getDerivatives ++ scalarAccessCheck "derivatives" "nContinuousStates" ++
     [.assign (.index (v "derivatives") (n 0)) (call "model_rhs" [.address (field "model")]), ok]
   | "fmi3GetNominalsOfContinuousStates" => require .getNominals ++ scalarAccessCheck "nominals" "nContinuousStates" ++
-    [.assign (.index (v "nominals") (n 0)) (n 1), ok]
+    [.assign (.index (v "nominals") (n 0)) (Expr.real 1), ok]
   | "fmi3GetNumberOfContinuousStates" => require .getCounts ++ [pointerCheck ["nContinuousStates"], out "nContinuousStates" (n 1), ok]
   | "fmi3GetNumberOfEventIndicators" => require .getCounts ++ [pointerCheck ["nEventIndicators"], out "nEventIndicators" (n 0), ok]
   | "fmi3GetEventIndicators" => require .getDerivatives ++ [reject (nev (v "nEventIndicators") (n 0)) "There are no event indicators", ok]

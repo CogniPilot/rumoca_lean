@@ -27,12 +27,13 @@ def openingTokens : List Token :=
     "if", "(", "(", "!", "("] ++ kindTokens "0" ++ ["||"] ++ kindTokens "1" ++
     [")", ")", ")", "{", "return", "fail", "(", "m", ","]).map Token.literal
 
-private def zeroStore (name : String) : List String := memberTokens name ++ ["=", "0", ";"]
+private def store (value name : String) : List String := memberTokens name ++ ["=", value, ";"]
 
 def closingTokens : List Token :=
   ([")", ";", "}", "(", "(", "m", "->", "model", ")", ".", "x", ")", "=",
     "(", "(", "double", ")", "0", ")", ";"] ++
-    ["time", "timeMin", "eventTime", "lastCompleted", "stop", "stopDefined", "mode"].flatMap zeroStore ++
+    ["time", "timeMin", "eventTime", "lastCompleted", "stop"].flatMap (store "0e0") ++
+    ["stopDefined", "mode"].flatMap (store "0") ++
     ["return", "fmi3OK", ";", "}"]).map Token.literal
 
 def message : String := "Call is not allowed in the current FMI state"
@@ -59,11 +60,11 @@ private def closing : String :=
   ");\n" ++
   "  }\n" ++
   "  ((m->model).x) = ((double)0);\n" ++
-  "  (m->time) = 0;\n" ++
-  "  (m->timeMin) = 0;\n" ++
-  "  (m->eventTime) = 0;\n" ++
-  "  (m->lastCompleted) = 0;\n" ++
-  "  (m->stop) = 0;\n" ++
+  "  (m->time) = 0e0;\n" ++
+  "  (m->timeMin) = 0e0;\n" ++
+  "  (m->eventTime) = 0e0;\n" ++
+  "  (m->lastCompleted) = 0e0;\n" ++
+  "  (m->stop) = 0e0;\n" ++
   "  (m->stopDefined) = 0;\n" ++
   "  (m->mode) = 0;\n" ++
   "  return fmi3OK;\n" ++

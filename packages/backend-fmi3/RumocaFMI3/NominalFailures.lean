@@ -107,7 +107,7 @@ theorem reject_silent_behaviors (model : Solve.FMI3Model source)
 def accessMessage : String := "Expected one continuous state"
 
 def accessRest : List Stmt :=
-  [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Runtime.n 1), Runtime.ok]
+  [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Expr.real 1), Runtime.ok]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 2000000 in

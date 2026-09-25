@@ -65,6 +65,7 @@ import Tests.CAudit.RumocaC_AtomicScanPrinter
 import Tests.CAudit.RumocaC_AtomicScanProofs
 import Tests.CAudit.RumocaC_AtomicStorage
 import Tests.CAudit.RumocaC_Body
+import Tests.CAudit.RumocaC_RealConstants
 import Tests.CAudit.RumocaC_BodyCallInterface
 import Tests.CAudit.RumocaC_BodyEmbedding
 import Tests.CAudit.RumocaC_BodyEvents

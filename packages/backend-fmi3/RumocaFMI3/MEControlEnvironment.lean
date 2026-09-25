@@ -289,7 +289,7 @@ open DiscreteCalls
 theorem body_agrees (header : CFenv.Header) (model : Solve.FMI3Model source) (objects : Objects) (literals : CLiteralAddresses) :
     CodeAgrees (cInterface literals) (RuntimeEnvironment.interface header objects literals) (Runtime.body model signature) := by
   rw [body]
-  simp [CodeAgrees, StmtAgrees, ExprAgrees, CLiteral.Interface.names, tail, DiscreteCalls.names, layouts,
+  simp [CodeAgrees, StmtAgrees, ExprAgrees, CLiteral.Interface.names, tail, DiscreteCalls.names, layouts, zeroConstant,
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject,
     Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both,

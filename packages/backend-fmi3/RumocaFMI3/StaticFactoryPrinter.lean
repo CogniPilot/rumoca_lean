@@ -67,6 +67,7 @@ theorem factory_printable (model : Solve.FMI3Model source) (kind : Kind) :
       | apply Printable.field
       | apply Printable.index
       | exact Printable.natural
+      | exact Printable.decimal
       | exact Printable.string
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible
@@ -98,6 +99,7 @@ theorem release_printable : FunctionPrintable RuntimePrinter.typedefs StaticRele
       | apply Printable.field
       | apply Printable.index
       | exact Printable.natural
+      | exact Printable.decimal
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible
       | decide +kernel

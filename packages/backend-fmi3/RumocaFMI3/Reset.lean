@@ -35,9 +35,9 @@ def finalHeap (heap : Heap) (p : Address) : Heap :=
     p .instantiated
 
 def tail : List Stmt := [
-  Runtime.put "time" (Runtime.n 0), Runtime.put "timeMin" (Runtime.n 0),
-  Runtime.put "eventTime" (Runtime.n 0), Runtime.put "lastCompleted" (Runtime.n 0),
-  Runtime.put "stop" (Runtime.n 0), Runtime.put "stopDefined" (Runtime.n 0),
+  Runtime.put "time" (Expr.real 0), Runtime.put "timeMin" (Expr.real 0),
+  Runtime.put "eventTime" (Expr.real 0), Runtime.put "lastCompleted" (Expr.real 0),
+  Runtime.put "stop" (Expr.real 0), Runtime.put "stopDefined" (Runtime.n 0),
   Runtime.setMode .instantiated, Runtime.ok]
 
 def locals (p : Address) : Locals :=

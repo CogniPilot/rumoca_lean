@@ -47,6 +47,13 @@ operand or a controlling expression (Rule 14.4). `e` is evaluated once, by one
 def Expr.nonfinite (e : Expr) : Expr :=
   .bin .eq (.call (.id "isfinite") [e]) (.nat 0)
 
+/-- The floating constant `ke0` of a nonnegative integer `k`, spelled as one
+preprocessing number of type `double` (C11 6.4.4.2). A store to a floating object
+and a comparison with a floating operand use it instead of the integer constant
+`k`, so both operands share the essentially floating category (MISRA C:2025
+Rules 10.3 and 10.4). Every `k` below 2^53 converts exactly. -/
+@[simp] def Expr.real (k : Nat) : Expr := .decimal false k 0
+
 /-- Three-digit octal escapes cannot absorb the next byte's digit. Escaping
 question marks also prevents C11 trigraph replacement before tokenization. -/
 def quoteByte (b : UInt8) : String :=

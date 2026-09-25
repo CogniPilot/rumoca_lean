@@ -39,3 +39,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorReset.fillCode_reaches
 #audit axioms Rumoca.FMI3.TensorReset.restore_reaches
 #audit axioms Rumoca.FMI3.TensorReset.restoreCode_printable
+#audit axioms Rumoca.FMI3.TensorReset.putReal_step

@@ -33,16 +33,24 @@ def parameters (handle : Option Address) (addresses : String → Option Address)
 def zeroValue (type : CType) : Value :=
   if type = .float64 then .finite Binary64.positiveZero else .integer 0
 
+/-- The constant stored into an output of the given type: the floating constant
+`0e0` for a `double` output, the integer constant `0` otherwise. -/
+def zeroConstant (type : CType) : Expr :=
+  if type = .float64 then Expr.real 0 else .nat 0
+
+def zeroInput (type : CType) : Value :=
+  if type = .float64 then .finite Binary64.positiveZero else .integer 0
+
 def output (addresses : String → Address) (layout : String × CType) : COutputAssignments.Entry :=
-  ⟨layout.1, addresses layout.1, layout.2, .nat 0, .integer 0, zeroValue layout.2⟩
+  ⟨layout.1, addresses layout.1, layout.2, zeroConstant layout.2, zeroInput layout.2, zeroValue layout.2⟩
 
 def outputs (addresses : String → Address) : List COutputAssignments.Entry := layouts.map (output addresses)
 
-def tail : List Stmt := names.map (fun name => Runtime.out name (Runtime.n 0)) ++ [Runtime.ok]
+def tail : List Stmt := layouts.map (fun layout => Runtime.out layout.1 (zeroConstant layout.2)) ++ [Runtime.ok]
 
 theorem body (model : Solve.FMI3Model source) :
     Runtime.body model signature = Runtime.require .updateDiscrete ++ Runtime.pointerCheck names :: tail := by
-  simp [Runtime.body, signature, names, layouts, tail]
+  simp [Runtime.body, signature, names, layouts, tail, zeroConstant, Runtime.n]
 
 theorem tail_outputs (addresses : String → Address) :
     tail = (outputs addresses).map COutputAssignments.statement ++ [Runtime.ok] := rfl
@@ -50,7 +58,7 @@ theorem tail_outputs (addresses : String → Address) :
 theorem body_agrees (model : Solve.FMI3Model source) (objects : Objects) (literals : CLiteralAddresses) :
     CodeAgrees (cInterface literals) (executionInterface objects literals) (Runtime.body model signature) := by
   rw [body]
-  simp [CodeAgrees, StmtAgrees, ExprAgrees, CLiteral.Interface.names, tail, names, layouts,
+  simp [CodeAgrees, StmtAgrees, ExprAgrees, CLiteral.Interface.names, tail, names, layouts, zeroConstant,
     Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.allowedExpression,
     permittedModes, Runtime.mode, Runtime.ok, Runtime.reject,
     Runtime.fail, Runtime.branch, Runtime.ret, Runtime.any, Runtime.both,
@@ -83,11 +91,11 @@ theorem outputs_ready [interface : CInterface] (heap : Heap) (p : Address) (addr
   intro entry member
   obtain ⟨layout, declared, rfl⟩ := List.mem_map.mp member
   refine ⟨output_bound _ _ p layout.1 (List.mem_map.mpr ⟨layout, declared, rfl⟩),
-    fun _ => rfl, ?_, ?_, writable _ (List.mem_map.mpr ⟨layout, declared, rfl⟩)⟩
+    fun _ => ?_, ?_, ?_, writable _ (List.mem_map.mpr ⟨layout, declared, rfl⟩)⟩
   all_goals
     simp only [layouts, List.mem_cons, List.not_mem_nil, or_false] at declared
     rcases declared with rfl | rfl | rfl | rfl | rfl | rfl <;>
-      simp [output, zeroValue, convert, Value.truth]
+      simp [output, zeroValue, zeroConstant, zeroInput, convert, Value.truth, Value.finite, CBody.eval, CBody.evalWith]
 
 theorem body_run (model : Solve.FMI3Model source) (literals : CLiteralAddresses)
     (heap : Heap) (p : Address) (addresses : String → Address)

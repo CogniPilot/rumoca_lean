@@ -89,14 +89,14 @@ theorem grid_condition (env : Locals) (heap : Heap) (step : Binary64.Value)
     (floorValue : env "floored" = some (.finite (Binary64.floorValue step)))
     (positive : 0 < Binary64.value step) :
     eval env heap (Runtime.any [Runtime.nev (Runtime.v "floored") (Runtime.v "communicationStepSize"),
-      Runtime.gt (Runtime.v "communicationStepSize") (Runtime.n 1000000)]) =
+      Runtime.gt (Runtime.v "communicationStepSize") (Expr.real 1000000)]) =
       some (boolean (decide (¬ StepAdmission.AdmittedDuration step))) := by
   by_cases integral : Binary64.value (Binary64.floorValue step) = Binary64.value step <;>
     by_cases bounded : Binary64.value step ≤ 1000000 <;>
-    simp [Runtime.any, Runtime.nev, Runtime.gt, Runtime.v, Runtime.n,
+    simp [Runtime.any, Runtime.nev, Runtime.gt, Runtime.v,
     CBody.eval, CBody.evalWith, resolve, stepValue, floorValue, Value.finite, comparison, floatComparison,
-    CIntegerConversions.integer_float64 1000000 (by decide +kernel),
-    finite_comparison, Float64.Relation.Holds, Binary64.ofSmallInt_value,
+    CBody.decimal_value 1000000 (by decide +kernel),
+    finite_comparison, Float64.Relation.Holds,
     StepAdmission.AdmittedDuration, positive, integral, bounded, boolean, Value.truth,
     not_lt.mpr, lt_of_not_ge]
 
@@ -222,7 +222,7 @@ theorem grid_path (program : Events.Program E) (env : Locals) (types : CLoops.Ty
     (by simpa [later, CBody.bind] using stepValue) (by simp [later, CBody.bind]) positive
   have checked := branch_path program later laterTypes heap
     (Runtime.any [Runtime.nev (Runtime.v "floored") (Runtime.v "communicationStepSize"),
-      Runtime.gt (Runtime.v "communicationStepSize") (Runtime.n 1000000)])
+      Runtime.gt (Runtime.v "communicationStepSize") (Expr.real 1000000)])
     Runtime.stepDiscard [] rest (decide (¬ StepAdmission.AdmittedDuration step))
     resultType stack (by decide +kernel) rfl condition
   have all := entered.trans checked

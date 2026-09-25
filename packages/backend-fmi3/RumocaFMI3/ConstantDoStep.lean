@@ -85,7 +85,7 @@ def doStepBody : List Stmt :=
    Runtime.reject (Runtime.any [Expr.nonfinite (Runtime.v "currentCommunicationPoint"),
      Expr.nonfinite (Runtime.v "communicationStepSize"),
      Runtime.nev (Runtime.v "currentCommunicationPoint") (Runtime.field "time"),
-     Runtime.le (Runtime.v "communicationStepSize") (Runtime.n 0)])
+     Runtime.le (Runtime.v "communicationStepSize") (Expr.real 0)])
      "Invalid communication point or step size"] ++
   Runtime.stepRounding ++ Runtime.stepClock ++ Runtime.stepGrid ++ stepSolve
 
@@ -155,6 +155,7 @@ theorem body_printable :
       | apply Printable.field
       | apply Printable.index
       | exact Printable.natural
+      | exact Printable.decimal
       | exact Printable.string
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible

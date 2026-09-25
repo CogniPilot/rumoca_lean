@@ -61,6 +61,7 @@ theorem function_printable (m : Solve.FMI3Model source) :
       | apply Printable.call
       | apply Printable.field
       | exact Printable.natural
+      | exact Printable.decimal
       | exact Printable.string
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible

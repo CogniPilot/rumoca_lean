@@ -43,7 +43,7 @@ def zeroValues (shape : Tensor.Shape) : Values shape := Tensor.Value.fill shape 
 
 /-- The fill loop body: `dst[k] = 0;`, writing `+0` into the staged region cell.
 The integer literal `0` converts to the `+0` binary64 value. -/
-def zeroBody : List Stmt := [.assign dstCell (Runtime.n 0)]
+def zeroBody : List Stmt := [.assign dstCell (Expr.real 0)]
 
 theorem zeroBody_closed : zeroBody.all CLoops.noDeclarations = true := by
   simp [zeroBody, dstCell, CLoops.noDeclarations]
@@ -69,12 +69,12 @@ theorem zeroCopy_step (env : Locals) (types : Types) (heap : Heap) (regionBase :
         (StateProofs.written heap (regionBase.index i.val) (toBits Binary64.positiveZero).val)) := by
   have address : CBody.lvalue env heap dstCell = some (regionBase.index i.val) :=
     dstCell_lvalue env heap regionBase i.val dstBound counter
-  have rhs : CLoops.eval env types heap (Runtime.n 0) = some (.integer 0) := by
-    simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]
-  simp only [CLoops.eval, CBody.legacyExpressions] at rhs
+  have rhs : CLoops.eval env types heap (Expr.real 0) = some (.finite Binary64.positiveZero) := by
+    simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]
+  simp only [CLoops.eval, CBody.legacyExpressions, Expr.real] at rhs
   simp only [dstCell] at address
   simp [zeroBody, dstCell, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, address, rhs, CMemory.store, regionStore, convert,
-    Binary64.exactInteger_zero, Value.finite, StateProofs.written]
+    Value.finite, StateProofs.written]
 
 /-- One scalar bookkeeping write `m->name = 0;` in the call scheduler, resolving
 the instance pointer and storing the integer literal `0` converted to the cell's
@@ -93,6 +93,21 @@ theorem putZero_step (env : Locals) (types : Types) (heap : Heap) (p : Address) 
     store_of_convert heap (p.member name) old (.integer 0) result t hne cell hconv
   simp [Runtime.put, Runtime.field, Runtime.v, Runtime.n, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith,
     CBody.lvalue, CBody.lvalueWith, mBound, Value.address, hstore]
+
+/-- One floating bookkeeping write `m->name = 0e0;`: the floating constant `0e0`
+evaluates to `+0`, which the `double` cell stores unchanged. -/
+theorem putReal_step (env : Locals) (types : Types) (heap : Heap) (p : Address) (name : String)
+    (old : Option Value) (rest : List Stmt)
+    (mBound : resolve env "m" = some (.pointer (some p)))
+    (cell : heap (p.member name) = some ⟨.float64, true, old⟩) :
+    CLoops.next (.running (Runtime.put name (Expr.real 0) :: rest) env types heap) =
+      some (.running rest env types
+        (replace heap (p.member name) ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)) := by
+  have hstore : CMemory.store heap (p.member name) (.finite Binary64.positiveZero) =
+      some (replace heap (p.member name) ⟨.float64, true, some (.finite Binary64.positiveZero)⟩) :=
+    store_of_convert heap (p.member name) old _ _ .float64 (by decide) cell (by simp [convert, Value.finite])
+  simp [Runtime.put, Runtime.field, Runtime.v, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+    CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, mBound, Value.address, hstore]
 
 end
 
@@ -164,9 +179,9 @@ def fillCode : Regions → List Stmt
 bookkeeping cells (`timeMin`, `eventTime`, `lastCompleted`, `stop`) become `+0`,
 `stopDefined` becomes false and the lifecycle mode becomes Instantiated. -/
 def bookkeepingCode : List Stmt := [
-  Runtime.put "time" (Runtime.n 0), Runtime.put "timeMin" (Runtime.n 0),
-  Runtime.put "eventTime" (Runtime.n 0), Runtime.put "lastCompleted" (Runtime.n 0),
-  Runtime.put "stop" (Runtime.n 0), Runtime.put "stopDefined" (Runtime.n 0),
+  Runtime.put "time" (Expr.real 0), Runtime.put "timeMin" (Expr.real 0),
+  Runtime.put "eventTime" (Expr.real 0), Runtime.put "lastCompleted" (Expr.real 0),
+  Runtime.put "stop" (Expr.real 0), Runtime.put "stopDefined" (Runtime.n 0),
   Runtime.setMode .instantiated]
 
 /-- The restore block shared by the factory and `fmi3Reset`. -/
@@ -540,43 +555,32 @@ theorem bookkeeping_reaches (F : Heap) (p : Address) (env : Locals) (types : Typ
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.body (.running (bookkeepingCode ++ tail) env types F) resultType stack)
       (.body (.running tail env types (bookHeap F p)) resultType stack) := by
-  have hF : convert .float64 (.integer 0) = some (.finite Binary64.positiveZero) := by
-    simp [convert, Binary64.exactInteger_zero, Option.map_some]
   have hB : convert .boolean (.integer 0) = some (boolean false) := by decide
   have hI : convert .int32 (.integer 0) = some (.integer 0) := by decide
   simp only [bookkeepingCode, List.cons_append, List.nil_append]
   refine .next (CCalls.Events.body_step program
-    (putZero_step env types F p "time" (.finite Binary64.positiveZero) .float64 timeOld _
-      (by decide) mBound timeCell hF) resultType stack) ?_
+    (putReal_step env types F p "time" timeOld _ mBound timeCell) resultType stack) ?_
   refine .next (CCalls.Events.body_step program
-    (putZero_step env types _ p "timeMin" (.finite Binary64.positiveZero) .float64 minOld _
-      (by decide) mBound
-      (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]; exact minCell)
-      hF) resultType stack) ?_
+    (putReal_step env types _ p "timeMin" minOld _ mBound
+      (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]; exact minCell)) resultType stack) ?_
   refine .next (CCalls.Events.body_step program
-    (putZero_step env types _ p "eventTime" (.finite Binary64.positiveZero) .float64 eventOld _
-      (by decide) mBound
+    (putReal_step env types _ p "eventTime" eventOld _ mBound
       (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
              replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]
-          exact eventCell)
-      hF) resultType stack) ?_
+          exact eventCell)) resultType stack) ?_
   refine .next (CCalls.Events.body_step program
-    (putZero_step env types _ p "lastCompleted" (.finite Binary64.positiveZero) .float64 completedOld _
-      (by decide) mBound
+    (putReal_step env types _ p "lastCompleted" completedOld _ mBound
       (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
              replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
              replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]
-          exact completedCell)
-      hF) resultType stack) ?_
+          exact completedCell)) resultType stack) ?_
   refine .next (CCalls.Events.body_step program
-    (putZero_step env types _ p "stop" (.finite Binary64.positiveZero) .float64 stopOld _
-      (by decide) mBound
+    (putReal_step env types _ p "stop" stopOld _ mBound
       (by rw [replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
              replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
              replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide),
              replace_other _ _ _ _ (by simp only [ne_eq, Address.member_inj]; decide)]
-          exact stopCell)
-      hF) resultType stack) ?_
+          exact stopCell)) resultType stack) ?_
   refine .next (CCalls.Events.body_step program
     (putZero_step env types _ p "stopDefined" (boolean false) .boolean stopDefinedOld _
       (by decide) mBound
@@ -843,6 +847,7 @@ theorem restoreCode_printable (shape : Tensor.Shape) (hasInput hasOutput : Bool)
       | apply Printable.field
       | apply Printable.index
       | exact Printable.natural
+      | exact Printable.decimal
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible
       | decide +kernel
@@ -892,6 +897,7 @@ theorem body_printable (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
       | apply Printable.field
       | apply Printable.index
       | exact Printable.natural
+      | exact Printable.decimal
       | exact Printable.string
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible

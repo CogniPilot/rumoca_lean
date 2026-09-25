@@ -115,12 +115,12 @@ theorem nominals_reject_run (m : Solve.FMI3Model source) (sig : Signature)
     run 3 (.running (Runtime.body m sig) env heap) =
       some (.running ([Runtime.fail "Call is not allowed in the current FMI state"] ++
         Runtime.scalarAccessCheck "nominals" "nContinuousStates" ++
-        [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Runtime.n 1), Runtime.ok])
+        [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Expr.real 1), Runtime.ok])
         (CBody.bind env "m" (.pointer (some p))) heap) := by
   simpa [Runtime.body, hsig, List.append_assoc] using
     LifecycleGuard.reject_prefix env heap p .getNominals kind .instantiated
       (Runtime.scalarAccessCheck "nominals" "nContinuousStates" ++
-        [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Runtime.n 1), Runtime.ok])
+        [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Expr.real 1), Runtime.ok])
       hi hn hk hm (nominals_reject_instantiated kind)
 
 noncomputable section
@@ -137,7 +137,7 @@ theorem nominals_reject_reaches (m : Solve.FMI3Model source) (sig : Signature)
       (.body (.running (Runtime.body m sig) env types heap) "fmi3Status" stack)
       (.body (.running ([Runtime.fail "Call is not allowed in the current FMI state"] ++
         Runtime.scalarAccessCheck "nominals" "nContinuousStates" ++
-        [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Runtime.n 1), Runtime.ok])
+        [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Expr.real 1), Runtime.ok])
         (CBody.bind env "m" (.pointer (some p))) types' heap) "fmi3Status" stack) := by
   obtain ⟨types', run, _⟩ := CBodyEmbedding.run_refines 3
     (.running (Runtime.body m sig) env heap) _ types

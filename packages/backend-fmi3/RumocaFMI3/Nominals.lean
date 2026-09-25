@@ -34,7 +34,7 @@ theorem body_run (model : Solve.FMI3Model source)
   simp [tail, ErrorCalls.nominalRest, Runtime.scalarAccessCheck, Runtime.reject, Runtime.branch,
     Runtime.ret, Runtime.ok, Runtime.either, Runtime.nev, Runtime.eqv, Runtime.v, Runtime.n,
     run, CBody.next, CBody.nextWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, ErrorCalls.nominalEnv, CBody.bind, resolve, constants,
-    CBody.cast, convert, comparison, boolean, Value.truth, Value.address, store, storage, written]
+    CBody.cast, convert, comparison, boolean, Value.truth, Value.address, Value.finite, store, storage, written]
 
 theorem call_behaviors (model : Solve.FMI3Model source) (program : CCalls.Events.Program E)
     (heap : Heap) (p buffer : Address) (kind : Kind) (mode : Mode) (old : Option Value)

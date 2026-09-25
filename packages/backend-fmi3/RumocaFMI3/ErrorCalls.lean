@@ -127,7 +127,7 @@ def rejectionMessage : String := "Call is not allowed in the current FMI state"
 
 def nominalRest : List Stmt :=
   Runtime.scalarAccessCheck "nominals" "nContinuousStates" ++
-    [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Runtime.n 1), Runtime.ok]
+    [.assign (.index (Runtime.v "nominals") (Runtime.n 0)) (Expr.real 1), Runtime.ok]
 
 /-- The public call binds its actual parameters, rejects Instantiated before
 any output-pointer dereference, executes the ordinary failure helper and

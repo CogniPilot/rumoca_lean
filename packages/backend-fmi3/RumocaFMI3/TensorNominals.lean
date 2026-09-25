@@ -30,7 +30,7 @@ def oneValues (shape : Tensor.Shape) : Values shape := Tensor.Value.fill shape B
 
 /-- The nominal loop body: `dst[k] = 1;`, writing the fixed nominal into the
 staged buffer cell. The integer literal `1` converts to the `1.0` binary64 value. -/
-def oneBody : List Stmt := [.assign dstCell (Runtime.n 1)]
+def oneBody : List Stmt := [.assign dstCell (Expr.real 1)]
 
 theorem oneBody_closed : oneBody.all CLoops.noDeclarations = true := by
   simp [oneBody, dstCell, CLoops.noDeclarations]
@@ -49,12 +49,12 @@ theorem oneCopy_step (env : Locals) (types : Types) (heap : Heap) (regionBase : 
         (StateProofs.written heap (regionBase.index i.val) (toBits Binary64.one).val)) := by
   have address : CBody.lvalue env heap dstCell = some (regionBase.index i.val) :=
     dstCell_lvalue env heap regionBase i.val dstBound counter
-  have rhs : CLoops.eval env types heap (Runtime.n 1) = some (.integer 1) := by
-    simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]
-  simp only [CLoops.eval, CBody.legacyExpressions] at rhs
+  have rhs : CLoops.eval env types heap (Expr.real 1) = some (.finite Binary64.one) := by
+    simp [CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]
+  simp only [CLoops.eval, CBody.legacyExpressions, Expr.real] at rhs
   simp only [dstCell] at address
   simp [oneBody, dstCell, CLoops.next, CLoops.nextWith, CBody.legacyExpressions, address, rhs, CMemory.store, regionStore, convert,
-    Binary64.exactInteger_one, Value.finite, StateProofs.written]
+    Value.finite, StateProofs.written]
 
 end
 
@@ -365,6 +365,7 @@ theorem body_printable (shape : Tensor.Shape) :
       | apply Printable.field
       | apply Printable.index
       | exact Printable.natural
+      | exact Printable.decimal
       | exact Printable.string
       | apply Printable.identifier
       | solve | intro stmt impossible; cases impossible

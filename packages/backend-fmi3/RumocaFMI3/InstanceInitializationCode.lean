@@ -13,8 +13,8 @@ def put (name : String) (value : Expr) : Stmt := .assign (field name) value
 
 def code (model : Solve.Model source) (kind : Kind) : List Stmt := [
   (CInitialization.emit model state).statement,
-  put "time" (.nat 0), put "timeMin" (.nat 0), put "eventTime" (.nat 0),
-  put "lastCompleted" (.nat 0), put "stop" (.nat 0), put "stopDefined" (.nat 0),
+  put "time" (Expr.real 0), put "timeMin" (Expr.real 0), put "eventTime" (Expr.real 0),
+  put "lastCompleted" (Expr.real 0), put "stop" (Expr.real 0), put "stopDefined" (.nat 0),
   put "mode" (.nat Mode.instantiated.code), put "kind" (.nat (match kind with | .me => 0 | .cs => 1)),
   put "environment" (.id "instanceEnvironment"), put "logger" (.id "logMessage"),
   put "logging" (.id "loggingOn")]
