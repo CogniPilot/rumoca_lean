@@ -9,7 +9,14 @@ say "K02-K05 remain open" ([trust-ledger.md](trust-ledger.md),
 **Gate rule.** No Modelica or GALEC grammar spiral stage and no release may be
 accepted while any K02-K05 exit item below is open. The N01 repair (GALEC error
 signaling, [standards-review.md](standards-review.md)) is the one admitted
-exception: it repairs an existing finding and adds no source case. Each item
+exception: it repairs an existing finding and adds no source case. A second
+exception (user decision, 2026-09-25): recognition-only grammar slices toward
+`Modelica.Blocks.Sources.Constant` may be accepted while K02-K05 items are open,
+provided each slice keeps every published artifact byte-identical (admission
+of anything new remains a semantic rejection with a certified rejection) and
+passes its own review and the required gate. Admitting the block as a fourth
+FMU waits until K02-K05 and the open findings SR08-B, SR10-SR12 and S01 cover
+it. Each item
 closes only with its stated evidence for the whole frozen subset (Integrator,
 TensorSquare and ConstantRates FMUs; Integrator and TensorSquare eFMUs) and a
 passing `nix develop .#verification --command lake test`. A package-level
