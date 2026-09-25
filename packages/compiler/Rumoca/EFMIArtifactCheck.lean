@@ -50,7 +50,7 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
       let a : Artifact $inputTerm := Artifact.ofParsed $inputTerm parsed resolved
       have hc : compile $inputTerm = .ok a := compile_eq_parsed $inputTerm parsed resolved
       refine ⟨a, EFMI.compile_algorithm_verified hc ?_⟩
-      change EFMI.renderAlgorithm a.algorithmSolve = $out
+      change GALEC.Print.block EFMI.scalarBlock = $out
       decide +kernel))
   let axioms ← collectAxioms theoremName
   for dependency in axioms do
