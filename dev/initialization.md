@@ -131,3 +131,43 @@ frame. Complete adapter-byte binding passes the fixed actual-file check in
 inventoried inputs unchanged.
 Allocation, host-set/initialization composition
 and SR08 remain open. See [the reset contract](fmi3/contracts.md#reset-and-complete-adapter-bytes).
+
+## Composed initialization correspondence per FMI family
+
+`packages/compiler/Rumoca/InitializationCorrespondence.lean` states one theorem
+per admitted FMI 3 source family. Each takes the source-build contract that the
+fixed actual-file checker proves for the emitted bytes and composes it with the
+MLS §8.6 source relation and the FMI initialization behavior of the emitted
+factory, reset and initialization-mode bodies:
+
+- `integrator_initialization`: the completed plan records `fallbackUsed` and
+  `unfixedStartSelected`; its default is a source initialization with a unique
+  trajectory; every finite start is a source initialization; the actual adapter
+  satisfies `AdapterContract`; static creation and reset store the completed
+  default; exit from initialization mode after any represented (default or
+  host-written) state stores a source initialization with a unique trajectory.
+  `InitializationAccess.runtime_create_release` remains the complete
+  creation, host-write, exit and release history over the actual adapter.
+- `tensorSquare_initialization`: the actual adapter satisfies
+  `TensorAdapter.Contract`; the heaps its factory, reset and
+  initialization-mode transitions terminate in hold a state satisfying the
+  source relation for `each start=0, each fixed=true` and the prepared kernel's
+  initial condition.
+- `constantRates_initialization`: the same composition over
+  `ConstantAdapter.Contract` and the constant source relation.
+
+Open SR08 obligations for these families:
+
+- Host start values for TensorSquare and ConstantRates. Their model
+  descriptions declare `x` with `initial="exact"` and `start="0 0"`, so FMI 3.0.2
+  §2.3.2 permits `fmi3SetFloat64` on `x` in Instantiated and Initialization
+  mode, and the setter contracts accept every finite value. The source relations
+  `ArrayProfile.Model.Initial` and `ConstantProfile.Model.Initial` fix the start
+  at zero, so no theorem relates a nonzero host start to the source. Closure
+  needs a start-parameterized source relation (the FMI start value as the
+  `start` attribute) and a setter-then-exit composition over the actual adapter.
+- ConstantRates §8.6 selection. The declarations are unmodified, so MLS leaves
+  the initial state free with fallback start zero, as for the scalar profile.
+  `ConstantProfile.Model.Initial` instead states `+0` as a source constraint,
+  and the constant path emits no `fallbackUsed`/`unfixedStartSelected` notice.
+- The tensor eFMI Startup and manifest-start correspondence (SR08 part B).

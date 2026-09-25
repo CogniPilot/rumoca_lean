@@ -1,0 +1,12 @@
+import Rumoca.InitializationCorrespondence
+import ProofAudit.Audit
+
+-- Axiom audit for the roots defined in Rumoca.InitializationCorrespondence.
+
+#audit axioms Rumoca.InitializationCorrespondence.writeMode_reads
+#audit axioms Rumoca.InitializationCorrespondence.integrator_initialization
+#audit axioms Rumoca.InitializationCorrespondence.realValues_get
+#audit axioms Rumoca.InitializationCorrespondence.tensor_zero_initial
+#audit axioms Rumoca.InitializationCorrespondence.tensorSquare_initialization
+#audit axioms Rumoca.InitializationCorrespondence.constant_zero_initial
+#audit axioms Rumoca.InitializationCorrespondence.constantRates_initialization
