@@ -1,5 +1,85 @@
 # Exact verification contract
 
+**GALEC error signaling, N01 closed; initialization composition; scalar lifetimes (one full gate passed):**
+Three reviewed lanes were merged and gated together at `682f88f`.
+
+N01 (GALEC error signaling, stage record in dev/standards-review.md): the
+GALEC grammar gains eFMI §3.2.5 §1 exposed error signaling as one construct
+(24 rules, 581 canonical/180 LALR states): method `signals` interface,
+`signal` statement, `if`/`elseif`/`else` with `isFinite(e)` or `signal in S`
+conditions in the pinned general shape. Core owns the six predefined signals
+and encoding, §1.5 reachability with a soundness theorem against
+`Statement.Runs` (`statements_sound`, `exposes_sound`, fixed-point widening
+with `later_check_accepted`), statement semantics over (store, signal set)
+with the `signalFree_executes` bridge, an IEEE meaning of `isFinite` linked
+into the chain (`square_ieee`, `number_eval_finite_iff`), and static
+admission (predefined signals only, `signal in S` checks only, `isFinite(e)`
+conditions only, interface = out-reachable set, write policy through
+branches), each with a certified rejection. The emitted tensor DoStep guards
+both `isFinite(self.u[k] * self.u[k])` and `isFinite(self.u[k] + self.u[k])`
+in one preflight loop before any write, then signals OVERFLOW or runs the
+unchanged kernel. Production C realizes it with the shared read-only
+preflight in product and sum variants (`TensorOperationPreflight`; product
+bytes unchanged), `#include <math.h>` and `int32_t` once through
+`TensorProduction.includes`. The DoStep has exactly two total outcomes
+(`checked_outcomes`, `checked_total` as a contract field): finite checks give
+today's result with status 0; a non-finite check returns 2 with only
+`errorSignalStatus` changed. `SourceMethod.DoStepOutcomes` replaces the
+finite-only field (`finiteDoStep` is derived). The Algorithm manifest carries
+`Signals`/`OVERFLOW` on DoStep, proved on the parsed method. Restated:
+`Statement.execute`/`execute_correct` (signals), `Prepares.body` (+`exposes`),
+`square_lowered`→`checked_lowered`, `square_source_executes`→
+`checked_source_runs`, `layout_source_executes`→`layout_source_runs`,
+`squareExecutes`/`finite_source_iff`/`finite_source_outputs`→`checkedRuns`/
+`checked_source_outcomes`/`checked_source_outputs`, `StepSemantics`/
+`ADSemantics`/`SourceContract`(+`Interfaced`, `StepTotal`, `StepSignals`)/
+`source_contract`, `envTotal`→`run`/`outputCells`, `ContextDoStep.body*`→
+`body_outcomes_in`/`kernel_in`, `doStep_rhs_dispatch`→`kernel_rhs_dispatch`,
+`ContextMethod.coefficients`→`ContextDoStep.coefficients`,
+`doStep_from_rhs_in`→`doStep_outcomes_in`, `Completes := Returns 0`,
+`ProductPreflight.Syntax.*`→`FinitePreflight`, `seven_free`→`numerical_free`,
+`AlignedStep.source_iff`→`source_runs`, `finiteSourceDoStep`→
+`doStepOutcomes`; removed `SumPreflight.value`. No statement is weaker; the
+independent review found no proof or byte defect. Remaining limits recorded:
+NaN inputs signal OVERFLOW (ES07); native traps and sticky flags are outside
+the model; the rounding-dependent finite-square-to-finite-sum lemma is used
+only as a proof device in derived theorems.
+
+Findings lane: CF03 (`Binary64.add_small_no_overflow`, admission rejects
+rates of magnitude 2^969 or more, `ConstantSourceBuildContract` gains the
+kernel-rate equality and no-overflow fields); SR08 part A
+(`InitializationCorrespondence.lean`, one composed initialization theorem per
+FMI family, recorded as progress, not closure); S01 clause matrix for all
+three sources (stays open: MLS chapters 3, 4, 7, 8 and 10 are not pinned
+locally); new findings SR08-B, SR10, SR11, SR12 recorded OPEN.
+
+Scalar lifetimes lane (K03.3/K03.4 scalar): one `InstanceQuery` request
+family composed into the ME and CS scripts; `MEProtocol.Lifetime` and
+`CSProtocol.Lifetime` cover the actual emitted adapter from creation to
+release under host ownership (caller cells outside the instance pool), with
+exact statuses, readbacks, callback events and frames on other instances;
+bound as `Rumoca.CheckedFMI3Files.lifetimes` in the FMU build certificate.
+`Contract.released` now takes `CanFinish`, which the review showed equals the
+removed `Admitted.finish` premise. Residue: the adapter answers empty-selection
+Clock/Interval/Shift accessors and empty `fmi3GetOutputDerivatives` with
+`fmi3Error` where the standard requires `fmi3OK` (open finding at
+dev/standards-review.md:2730); multi-instance interleaving not composed.
+
+Owner-v1 (`lake build audit`) passed 4,523 jobs and 7,630 approved reports;
+1,319 prior required roots retained, 14 removed with restated subjects (listed
+above), 405 new: 1,724 required. Required full gate `build/n01-gate/full-v1/`
+passed at `682f88f`, exit 0, post-audit exit 0 under `LC_ALL=C`: 2,699
+frozen tracked inputs, 9,584 complete approved reports, all 1,724
+selected roots and four retained FMU roots. Three matrices passed 75/75
+functions (526/650/526 cells), zero discrepancies/unexpected results. All FMU
+adapters and kernels and every `Integrator.efmu` member are byte-identical to
+the isfinite gate; `TensorSquare.efmu` keeps its 50-member roster with
+`model.alg` `851d2b15…`, `production.c` `f37c041c…`, Algorithm manifest
+`67f516f2…` (Signals plus checksum) and checksum-only changes in the
+Production manifest and `__content.xml`. Archive SHA-256 `01a6f08d37b10fa7b2bbf592440d3df5c43a49dda8f475d85eb121502981b6a8`.
+N01 is CLOSED by this gate; GJ01/GJ03 stay closed; SR08-B, SR10-SR12, S01,
+K02-K05 and the native/MISRA rows remain open.
+
 **Explicit isfinite comparisons (full gate passed):**
 The FMI adapters no longer negate the `int` result of the `isfinite`
 classification macro. One backend-c syntax constructor, `CTree.Expr.nonfinite`,

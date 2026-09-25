@@ -232,7 +232,7 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
-### GALEC error signaling (N01 repair) - 2026-09-24; stage OPEN
+### GALEC error signaling (N01 repair) - 2026-09-24; full gate passed 2026-09-25, N01 CLOSED; stage OPEN for all other findings
 
 Recurring whole-subset review for the GALEC grammar growth that repairs N01
 (`dev/numerical-outcomes-review.md`, "Concrete finding N01" and "Closure

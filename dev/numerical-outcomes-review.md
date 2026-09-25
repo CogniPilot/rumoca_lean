@@ -40,7 +40,7 @@ contracts, not MISRA compliance.
   and its mathematical derivative must remain distinct from encoded numerical
   outcomes; infinity is not a real-valued derivative witness.
 
-## Concrete finding N01: tensor eFMI has no output exception detection
+## Concrete finding N01: tensor eFMI has no output exception detection (CLOSED 2026-09-25 by the GALEC error-signaling gate `682f88f`; see docs/verification.md)
 
 The actual `ProductionCode/production.c` sets `errorSignalStatus` to zero on
 line 89, calls the square RHS and diagonal Jacobian on lines 90–91, and returns

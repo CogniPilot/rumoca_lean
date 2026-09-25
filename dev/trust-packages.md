@@ -141,13 +141,13 @@ native execution remain separate claims.
   (`FMI3InitializationProtocol*.lean`), rejection/recovery and logging
   variants. Package gates recorded to 1,007 inputs; included in every later
   full gate.
-- **K03.3 Remaining public interactions in created lifetimes. Open.**
+- **K03.3 Remaining public interactions in created lifetimes. Scalar near done (2026-09-25 gate `682f88f`): `InstanceQuery` composes Float64 get/set, the empty accessors of the other types and Terminate into the ME/CS scripts; residue: empty-selection Clock/Interval/Shift and OutputDerivatives calls (adapter returns Error where OK is required) and multi-instance interleaving; tensor and constant open.**
   Access interleavings at later restarts and public calls outside the
   composed scripts (event indicators, nominals, time/entry calls interleaved
   with Float64 access in CS) are not composed. Tensor and constant have no
   lifetime histories beyond `TensorLifecycleHistory`. L (scalar) + L (tensor,
   constant), proof.
-- **K03.4 ME/CS trace refinement. Open.** One theorem per interface from
+- **K03.4 ME/CS trace refinement. Scalar partial (2026-09-25): `MEProtocol.Lifetime`/`CSProtocol.Lifetime` bound as `CheckedFMI3Files.lifetimes`; tensor and constant open.** One theorem per interface from
   creation to release under explicit host ownership, including preservation of
   other instances and observable callback traces, for all three FMI products.
   Depends on K03.3 and K02.4. XL, proof.

@@ -1,4 +1,28 @@
-# Resume handoff — 2026-09-24 UTC
+# Resume handoff — 2026-09-25 UTC
+
+## Current: N01 closed; four lanes merged; MISRA and interface lanes pending
+
+HEAD after this record: the combined gate `build/n01-gate/` (N01 error
+signaling, findings lane, scalar lifetimes) passed at `682f88f` (owner 4,523
+jobs/7,630 reports/1,724 roots; full gate 2,699 inputs/9,584
+reports; tensor eFMU `01a6f08d37b10fa7b2bbf592440d3df5c43a49dda8f475d85eb121502981b6a8`). Pending in worktrees: `build/wt-misra`
+(A0 slot-reuse/Reset restore, A1 typed floating constants, B1/B4 predicates;
+review at ~/.claude_documents/.../misra-lane-review.md; being rebased onto
+main with the review fixes) and `build/wt-interface` (FMU interface from the
+resolved declaration list, SR10-SR12; map fmu-interface-mismatch-map.md).
+Their gate follows (predicted adapters in `build/misra-typed-adoption/`).
+User decisions 2026-09-25: K02-K05 (`dev/trust-packages.md`) gate every
+spiral, with a recorded exception for byte-identical recognition-only grammar
+slices toward `Modelica.Blocks.Sources.Constant` (plan at
+~/.claude_documents/.../constant-block-chunk-plan.md; source text
+msl-constant-block.mo; annotations parsed fully and discarded, meaning-
+changing ones rejected; MSL text in examples/msl with BSD-3 license; one gate
+per two or three slices). The Constant chunk starts after the two pending
+lanes are merged, gated and recorded. Standing rules: one construct per
+spiral in its permanent general form; tensors native in every IR and in the
+interface metadata (arrays exported with dimensions, scalars as scalars);
+no legacy code; minimal; Opus 5.5 workers in separate worktrees; clean disk
+between milestones; gates detached with `LC_ALL=C`.
 
 ## Current: one GALEC representation; three slices fully gated today
 
