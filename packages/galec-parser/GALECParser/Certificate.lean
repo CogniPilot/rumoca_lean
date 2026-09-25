@@ -13,6 +13,7 @@ open Lean Elab Command
 open _root_.Parser Parser.Quotation
 
 deriving instance ToExpr for AST.Expr, AST.Reference, AST.Component
+deriving instance ToExpr for AST.Condition
 deriving instance ToExpr for AST.Statement
 deriving instance ToExpr for AST.Kind
 deriving instance ToExpr for AST.Declaration

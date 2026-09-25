@@ -24,7 +24,9 @@ EBNF preprocessing result to these tables.
 reusable recursive action engine; `ActionCoverage` proves exhaustive coverage and
 licensing for the whole grammar. `AST` keeps original token payloads and
 categories: names, per-component indices, extents as unevaluated expressions,
-calls, dimension queries and nested loops with an optional step. A bare number
+calls, dimension queries, nested loops with an optional step, `if` statements
+with their ordered branches and optional `else` body, error-signal checks and
+statements, and method signal interfaces (empty when absent). A bare number
 component becomes a literal; no shape inference or name resolution occurs.
 
 `Syntax.parse` scans once, runs the certified LALR parser once and builds from
@@ -41,7 +43,8 @@ renders a syntax tree in the scalar Algorithm Code layout; it carries no proof.
 Located parsing attaches exact source ranges to the scanned tokens.
 
 `GALECParserChecks` audits the scanner, parser, action and certificate
-contracts, and kernel-checks a certificate for the scalar layout. The eFMI
+contracts, and kernel-checks certificates and printer round trips for the scalar layout and
+for every error-signaling form. The eFMI
 backend separately proves the relationship to the prepared Solve algorithm
 and emitted artifacts. The full artifact gate is required in addition to these owner
 checks; see [current evidence](../../docs/verification.md). These proofs do not

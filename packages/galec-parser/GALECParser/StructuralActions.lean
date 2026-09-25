@@ -15,7 +15,10 @@ def Result : String → Type
   | "direction" => AST.Kind
   | "primitive_type" | "additive_operator" | "multiplicative_operator" => Token
   | "method" => AST.Method
-  | "statement" | "single_assignment" | "for_loop" => AST.Statement
+  | "signal_interface" => List AST.Name
+  | "statement" | "single_assignment" | "if_statement" | "for_loop"
+    | "error_signal_statement" => AST.Statement
+  | "error_signal_check" => AST.Condition
   | "reference" | "local_reference" | "state_reference" => AST.Reference
   | "component_reference" => AST.Component
   | "expression_list" => List AST.Expr
@@ -52,14 +55,61 @@ def direction : Action AST.Kind :=
 
 def primitiveType : Action Token := .alt (lit "Real") (.alt (lit "Integer") (lit "Boolean"))
 
+/-- A leading name followed by comma-separated names, in source order. -/
+def nameList (first : Token) (rest : List (Token × Token)) : List Token :=
+  first :: rest.map Prod.snd
+
+/-- An absent signal interface is the empty name list. -/
 def method : Action AST.Method :=
-  .map (fun (_, name, _, body, _, endName, _) => (⟨name, body, endName⟩ : AST.Method))
-    (lit "method" ⋄ ident ⋄ lit "algorithm" ⋄ .many (.ref "statement") ⋄
-      lit "end" ⋄ ident ⋄ lit ";")
+  .map (fun (_, name, signals, _, body, _, endName, _) =>
+    (⟨name, signals.getD [], body, endName⟩ : AST.Method))
+    (lit "method" ⋄ ident ⋄ .optional (.ref "signal_interface") ⋄ lit "algorithm" ⋄
+      .many (.ref "statement") ⋄ lit "end" ⋄ ident ⋄ lit ";")
+
+def signalInterface : Action (List AST.Name) :=
+  .map (fun (_, first, rest, _) => nameList first rest)
+    (lit "signals" ⋄ ident ⋄ .many (lit "," ⋄ ident) ⋄ lit ";")
 
 def statement : Action AST.Statement :=
-  .map Prod.fst ((.alt (.ref "single_assignment") (.ref "for_loop")) ⋄ lit ";")
+  .map Prod.fst ((.alt (.ref "single_assignment") (.alt (.ref "if_statement")
+    (.alt (.ref "for_loop") (.ref "error_signal_statement")))) ⋄ lit ";")
 
+/-- A branch condition is an expression or an error-signal check. Condition
+typing and the admitted check forms are static semantics. -/
+def condition : Action AST.Condition :=
+  .alt (.map AST.Condition.expr (.ref "expression")) (.ref "error_signal_check")
+
+/-- The `if` branch first, then every `elseif` branch in source order. -/
+def ifSyntax (first : AST.Condition) (body : List AST.Statement)
+    (elseifs : List (Token × AST.Condition × Token × List AST.Statement))
+    (otherwise : Option (Token × List AST.Statement)) : AST.Statement :=
+  .ifThen ((first, body) :: elseifs.map fun (_, condition, _, branch) => (condition, branch))
+    (otherwise.map Prod.snd)
+
+def ifStatement : Action AST.Statement :=
+  .map (fun (_, first, _, body, elseifs, otherwise, _, _) => ifSyntax first body elseifs otherwise)
+    (lit "if" ⋄ condition ⋄ lit "then" ⋄ .many (.ref "statement") ⋄
+      .many (lit "elseif" ⋄ condition ⋄ lit "then" ⋄ .many (.ref "statement")) ⋄
+      .optional (lit "else" ⋄ .many (.ref "statement")) ⋄ lit "end" ⋄ lit "if")
+
+/-- Without an `in` part the check is unrestricted: not negated, no names. -/
+def checkSyntax (closure : Option Token)
+    (tested : Option (Option Token × Token × Token × List (Token × Token)))
+    (fallback : Option (Token × AST.Expr)) : AST.Condition :=
+  match tested with
+  | none => .signalCheck closure false [] (fallback.map Prod.snd)
+  | some (negation, _, first, rest) =>
+      .signalCheck closure negation.isSome (nameList first rest) (fallback.map Prod.snd)
+
+def errorSignalCheck : Action AST.Condition :=
+  .map (fun (_, closure, tested, fallback) => checkSyntax closure tested fallback)
+    (lit "signal" ⋄ .optional ident ⋄
+      .optional (.optional (lit "not") ⋄ lit "in" ⋄ ident ⋄ .many (lit "," ⋄ ident)) ⋄
+      .optional (lit "or" ⋄ .ref "expression"))
+
+def errorSignalStatement : Action AST.Statement :=
+  .map (fun (_, first, rest) => AST.Statement.signal (nameList first rest))
+    (lit "signal" ⋄ ident ⋄ .many (lit "," ⋄ ident))
 def singleAssignment : Action AST.Statement :=
   .map (fun (target, _, value) => AST.Statement.assign target value)
     (.ref "reference" ⋄ lit ":=" ⋄ .ref "expression")
@@ -156,9 +206,13 @@ def rules : StructuralActions.Rules Token Result
   | "direction" => some direction
   | "primitive_type" => some primitiveType
   | "method" => some method
+  | "signal_interface" => some signalInterface
   | "statement" => some statement
   | "single_assignment" => some singleAssignment
+  | "if_statement" => some ifStatement
+  | "error_signal_check" => some errorSignalCheck
   | "for_loop" => some forLoop
+  | "error_signal_statement" => some errorSignalStatement
   | "reference" => some reference
   | "local_reference" => some localReference
   | "state_reference" => some stateReference

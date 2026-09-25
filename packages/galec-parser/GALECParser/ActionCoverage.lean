@@ -11,19 +11,33 @@ below erases semantic maps once; coverage and licensing never simplify inside
 the AST-building functions or repeatedly expand every action definition. -/
 
 local macro "well_formed " name:ident : tactic =>
-  `(tactic| (simp only [$name:ident, lit, ident, StructuralActions.Action.WellFormed]; decide))
+  `(tactic| (simp only [$name:ident, condition, lit, ident, StructuralActions.Action.WellFormed]; decide))
 
 private theorem block_wellFormed : block.WellFormed := by well_formed block
 private theorem declaration_wellFormed : declaration.WellFormed := by well_formed declaration
 private theorem direction_wellFormed : direction.WellFormed := by well_formed direction
 private theorem primitiveType_wellFormed : primitiveType.WellFormed := by well_formed primitiveType
 private theorem method_wellFormed : method.WellFormed := by well_formed method
+private theorem signalInterface_wellFormed : signalInterface.WellFormed := by
+  well_formed signalInterface
 private theorem statement_wellFormed : statement.WellFormed := by
-  change (True ∧ True) ∧ (Symbol.literal ";" ≠ .literal "")
+  change (True ∧ True ∧ True ∧ True) ∧ (Symbol.literal ";" ≠ .literal "")
   decide
 private theorem singleAssignment_wellFormed : singleAssignment.WellFormed := by
   well_formed singleAssignment
+private theorem lit_wellFormed (text : String) (nonempty : text ≠ "") : (lit text).WellFormed :=
+  fun same => nonempty (Symbol.literal.inj same)
+
+local macro "literal" : term => `(lit_wellFormed _ (by decide))
+
+private theorem ifStatement_wellFormed : ifStatement.WellFormed :=
+  ⟨literal, ⟨trivial, trivial⟩, literal, trivial, ⟨literal, ⟨trivial, trivial⟩, literal, trivial⟩,
+    ⟨literal, trivial⟩, literal, literal⟩
+private theorem errorSignalCheck_wellFormed : errorSignalCheck.WellFormed := by
+  well_formed errorSignalCheck
 private theorem forLoop_wellFormed : forLoop.WellFormed := by well_formed forLoop
+private theorem errorSignalStatement_wellFormed : errorSignalStatement.WellFormed := by
+  well_formed errorSignalStatement
 private theorem reference_wellFormed : reference.WellFormed := ⟨trivial, trivial⟩
 private theorem localReference_wellFormed : localReference.WellFormed := True.intro
 private theorem stateReference_wellFormed : stateReference.WellFormed := by
@@ -52,9 +66,13 @@ private theorem grammar_actions : Generated.sourceGrammar =
      ("direction", direction.expr),
      ("primitive_type", primitiveType.expr),
      ("method", method.expr),
+     ("signal_interface", signalInterface.expr),
      ("statement", statement.expr),
      ("single_assignment", singleAssignment.expr),
+     ("if_statement", ifStatement.expr),
+     ("error_signal_check", errorSignalCheck.expr),
      ("for_loop", forLoop.expr),
+     ("error_signal_statement", errorSignalStatement.expr),
      ("reference", reference.expr),
      ("local_reference", localReference.expr),
      ("state_reference", stateReference.expr),
@@ -73,16 +91,21 @@ theorem covered : StructuralActions.Covers Generated.sourceGrammar rules := by
   intro name e member
   rw [grammar_actions] at member
   simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at member
-  rcases member with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h
+  rcases member with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h |
+    h | h | h | h | h | h
   all_goals obtain ⟨rfl, rfl⟩ := h
   · exact ⟨block, rfl, rfl, block_wellFormed⟩
   · exact ⟨declaration, rfl, rfl, declaration_wellFormed⟩
   · exact ⟨direction, rfl, rfl, direction_wellFormed⟩
   · exact ⟨primitiveType, rfl, rfl, primitiveType_wellFormed⟩
   · exact ⟨method, rfl, rfl, method_wellFormed⟩
+  · exact ⟨signalInterface, rfl, rfl, signalInterface_wellFormed⟩
   · exact ⟨statement, rfl, rfl, statement_wellFormed⟩
   · exact ⟨singleAssignment, rfl, rfl, singleAssignment_wellFormed⟩
+  · exact ⟨ifStatement, rfl, rfl, ifStatement_wellFormed⟩
+  · exact ⟨errorSignalCheck, rfl, rfl, errorSignalCheck_wellFormed⟩
   · exact ⟨forLoop, rfl, rfl, forLoop_wellFormed⟩
+  · exact ⟨errorSignalStatement, rfl, rfl, errorSignalStatement_wellFormed⟩
   · exact ⟨reference, rfl, rfl, reference_wellFormed⟩
   · exact ⟨localReference, rfl, rfl, localReference_wellFormed⟩
   · exact ⟨stateReference, rfl, rfl, stateReference_wellFormed⟩
@@ -110,9 +133,13 @@ theorem licensed : StructuralActions.Licensed Generated.sourceGrammar rules := b
   · exact ⟨by listed, direction_wellFormed⟩
   · exact ⟨by listed, primitiveType_wellFormed⟩
   · exact ⟨by listed, method_wellFormed⟩
+  · exact ⟨by listed, signalInterface_wellFormed⟩
   · exact ⟨by listed, statement_wellFormed⟩
   · exact ⟨by listed, singleAssignment_wellFormed⟩
+  · exact ⟨by listed, ifStatement_wellFormed⟩
+  · exact ⟨by listed, errorSignalCheck_wellFormed⟩
   · exact ⟨by listed, forLoop_wellFormed⟩
+  · exact ⟨by listed, errorSignalStatement_wellFormed⟩
   · exact ⟨by listed, reference_wellFormed⟩
   · exact ⟨by listed, localReference_wellFormed⟩
   · exact ⟨by listed, stateReference_wellFormed⟩

@@ -79,6 +79,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Certificate.witness_of_certificates
 #audit axioms Rumoca.GALEC.Certificate.parse_of_certificates
 #audit axioms Rumoca.GALEC.Print.block
+#audit axioms Rumoca.GALEC.Print.condition
+#audit axioms Rumoca.GALEC.Print.signalInterface
+#audit axioms Rumoca.GALEC.Structural.ifSyntax
+#audit axioms Rumoca.GALEC.Structural.checkSyntax
 
 namespace Rumoca.GALEC.CertificateCheck
 
@@ -116,5 +120,39 @@ theorem unit_printed : Print.block unit.ast = unit.source := by decide +kernel
 #audit axioms unit.witness
 #audit axioms unit.parsed
 #audit axioms unit_printed
+
+/- Kernel regression of every error-signaling form: a method interface, an `if`
+with `elseif` and `else` branches, empty branch bodies, Boolean and signal-check
+conditions (tested set, closure with negation and fallback, unrestricted) and
+error-signal statements. Admission of these forms is static semantics. -/
+certify_source signaling "block SignalingBlock
+    input Real u;
+protected
+public
+    method DoStep
+        signals OVERFLOW, NAN;
+    algorithm
+        if isFinite(self.u) then
+        elseif signal in OVERFLOW, NAN then
+            signal OVERFLOW;
+        elseif signal closure not in NAN or isFinite(self.u + self.u) then
+        elseif signal then
+            signal NAN, OVERFLOW;
+        else
+            signal NAN;
+        end if;
+    end DoStep;
+end SignalingBlock;
+"
+
+theorem signaling_printed : Print.block signaling.ast = signaling.source := by decide +kernel
+
+#audit axioms signaling.lexed
+#audit axioms signaling.checked
+#audit axioms signaling.structure_built
+#audit axioms signaling.denotes
+#audit axioms signaling.witness
+#audit axioms signaling.parsed
+#audit axioms signaling_printed
 
 end Rumoca.GALEC.CertificateCheck

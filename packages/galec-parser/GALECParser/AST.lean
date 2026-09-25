@@ -38,10 +38,24 @@ end
 def Reference.unindexed (base : Name) (fields : List Name) : Reference :=
   ⟨⟨base, []⟩, fields.map (fun name => ⟨name, []⟩)⟩
 
+/-- An `if` or `elseif` branch condition: a Boolean expression, or an
+error-signal check with its optional signal closure, optional negation, tested
+signal names (empty for an unrestricted check) and optional fallback condition. -/
+inductive Condition where
+  | expr (value : Expr)
+  | signalCheck (closure : Option Name) (negated : Bool) (tested : List Name)
+      (fallback : Option Expr)
+  deriving Repr
+
+/-- Statements. `ifThen` keeps the `if` branch followed by every `elseif`
+branch in source order, and the optional `else` body; `signal` names the
+signals an error-signal statement sets. -/
 inductive Statement where
   | assign (target : Reference) (value : Expr)
+  | ifThen (branches : List (Condition × List Statement)) (otherwise : Option (List Statement))
   | forLoop (binder : Name) (start : Expr) (step : Option Expr) (stop : Expr)
       (body : List Statement)
+  | signal (names : List Name)
   deriving Repr
 
 /-- The block section containing a declaration. -/
@@ -64,8 +78,11 @@ structure Declaration where
 
 def Declaration.rank (d : Declaration) : Nat := d.extents.length
 
+/-- A method with the names of its signal interface; an absent interface is
+the empty list (the grammar requires at least one name when it is present). -/
 structure Method where
   name : Name
+  signals : List Name
   body : List Statement
   endName : Name
   deriving Repr

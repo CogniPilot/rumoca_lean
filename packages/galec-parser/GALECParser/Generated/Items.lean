@@ -101,9 +101,44 @@ private theorem items_chunk_110_checked :
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem items_chunk_120_checked :
-    ∀ j : Fin 1, ∀ i ∈ (LALR.ItemCheck.items itemStates (120 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (120 + j.val)), LALR.ItemCheck.Valid grammar i ∧
       LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (120 + j.val)) i ∧
       LALR.ItemCheck.Advances grammar tables itemStates (120 + j.val) i := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem items_chunk_130_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (130 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (130 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (130 + j.val) i := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem items_chunk_140_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (140 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (140 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (140 + j.val) i := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem items_chunk_150_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (150 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (150 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (150 + j.val) i := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem items_chunk_160_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (160 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (160 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (160 + j.val) i := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem items_chunk_170_checked :
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (170 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+      LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (170 + j.val)) i ∧
+      LALR.ItemCheck.Advances grammar tables itemStates (170 + j.val) i := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -113,7 +148,7 @@ theorem items_checked :
   refine ⟨by decide +kernel, by decide +kernel, first_checked, by decide +kernel, ?_⟩
   intro q
   rcases q with ⟨q, bound⟩
-  change q < 121 at bound
+  change q < 180 at bound
   match q with
     | 0 => exact items_chunk_0_checked ⟨0, by decide⟩
     | 1 => exact items_chunk_0_checked ⟨1, by decide⟩
@@ -236,6 +271,65 @@ theorem items_checked :
     | 118 => exact items_chunk_110_checked ⟨8, by decide⟩
     | 119 => exact items_chunk_110_checked ⟨9, by decide⟩
     | 120 => exact items_chunk_120_checked ⟨0, by decide⟩
-    | n+121 => omega
+    | 121 => exact items_chunk_120_checked ⟨1, by decide⟩
+    | 122 => exact items_chunk_120_checked ⟨2, by decide⟩
+    | 123 => exact items_chunk_120_checked ⟨3, by decide⟩
+    | 124 => exact items_chunk_120_checked ⟨4, by decide⟩
+    | 125 => exact items_chunk_120_checked ⟨5, by decide⟩
+    | 126 => exact items_chunk_120_checked ⟨6, by decide⟩
+    | 127 => exact items_chunk_120_checked ⟨7, by decide⟩
+    | 128 => exact items_chunk_120_checked ⟨8, by decide⟩
+    | 129 => exact items_chunk_120_checked ⟨9, by decide⟩
+    | 130 => exact items_chunk_130_checked ⟨0, by decide⟩
+    | 131 => exact items_chunk_130_checked ⟨1, by decide⟩
+    | 132 => exact items_chunk_130_checked ⟨2, by decide⟩
+    | 133 => exact items_chunk_130_checked ⟨3, by decide⟩
+    | 134 => exact items_chunk_130_checked ⟨4, by decide⟩
+    | 135 => exact items_chunk_130_checked ⟨5, by decide⟩
+    | 136 => exact items_chunk_130_checked ⟨6, by decide⟩
+    | 137 => exact items_chunk_130_checked ⟨7, by decide⟩
+    | 138 => exact items_chunk_130_checked ⟨8, by decide⟩
+    | 139 => exact items_chunk_130_checked ⟨9, by decide⟩
+    | 140 => exact items_chunk_140_checked ⟨0, by decide⟩
+    | 141 => exact items_chunk_140_checked ⟨1, by decide⟩
+    | 142 => exact items_chunk_140_checked ⟨2, by decide⟩
+    | 143 => exact items_chunk_140_checked ⟨3, by decide⟩
+    | 144 => exact items_chunk_140_checked ⟨4, by decide⟩
+    | 145 => exact items_chunk_140_checked ⟨5, by decide⟩
+    | 146 => exact items_chunk_140_checked ⟨6, by decide⟩
+    | 147 => exact items_chunk_140_checked ⟨7, by decide⟩
+    | 148 => exact items_chunk_140_checked ⟨8, by decide⟩
+    | 149 => exact items_chunk_140_checked ⟨9, by decide⟩
+    | 150 => exact items_chunk_150_checked ⟨0, by decide⟩
+    | 151 => exact items_chunk_150_checked ⟨1, by decide⟩
+    | 152 => exact items_chunk_150_checked ⟨2, by decide⟩
+    | 153 => exact items_chunk_150_checked ⟨3, by decide⟩
+    | 154 => exact items_chunk_150_checked ⟨4, by decide⟩
+    | 155 => exact items_chunk_150_checked ⟨5, by decide⟩
+    | 156 => exact items_chunk_150_checked ⟨6, by decide⟩
+    | 157 => exact items_chunk_150_checked ⟨7, by decide⟩
+    | 158 => exact items_chunk_150_checked ⟨8, by decide⟩
+    | 159 => exact items_chunk_150_checked ⟨9, by decide⟩
+    | 160 => exact items_chunk_160_checked ⟨0, by decide⟩
+    | 161 => exact items_chunk_160_checked ⟨1, by decide⟩
+    | 162 => exact items_chunk_160_checked ⟨2, by decide⟩
+    | 163 => exact items_chunk_160_checked ⟨3, by decide⟩
+    | 164 => exact items_chunk_160_checked ⟨4, by decide⟩
+    | 165 => exact items_chunk_160_checked ⟨5, by decide⟩
+    | 166 => exact items_chunk_160_checked ⟨6, by decide⟩
+    | 167 => exact items_chunk_160_checked ⟨7, by decide⟩
+    | 168 => exact items_chunk_160_checked ⟨8, by decide⟩
+    | 169 => exact items_chunk_160_checked ⟨9, by decide⟩
+    | 170 => exact items_chunk_170_checked ⟨0, by decide⟩
+    | 171 => exact items_chunk_170_checked ⟨1, by decide⟩
+    | 172 => exact items_chunk_170_checked ⟨2, by decide⟩
+    | 173 => exact items_chunk_170_checked ⟨3, by decide⟩
+    | 174 => exact items_chunk_170_checked ⟨4, by decide⟩
+    | 175 => exact items_chunk_170_checked ⟨5, by decide⟩
+    | 176 => exact items_chunk_170_checked ⟨6, by decide⟩
+    | 177 => exact items_chunk_170_checked ⟨7, by decide⟩
+    | 178 => exact items_chunk_170_checked ⟨8, by decide⟩
+    | 179 => exact items_chunk_170_checked ⟨9, by decide⟩
+    | n+180 => omega
 
 end Rumoca.GALEC.Generated

@@ -4,6 +4,8 @@ import GALECParser.Generated.Reductions0
 import GALECParser.Generated.Reductions1
 import GALECParser.Generated.Reductions2
 import GALECParser.Generated.Reductions3
+import GALECParser.Generated.Reductions4
+import GALECParser.Generated.Reductions5
 
 open Parser
 
@@ -12,7 +14,7 @@ namespace Rumoca.GALEC.Generated
 set_option maxRecDepth 100000
 set_option maxHeartbeats 8000000
 
-private noncomputable def reductions : Array (Array Bool) := #[reduction_0, reduction_1, reduction_2, reduction_3, reduction_4, reduction_5, reduction_6, reduction_7, reduction_8, reduction_9, reduction_10, reduction_11, reduction_12, reduction_13, reduction_14, reduction_15, reduction_16, reduction_17, reduction_18, reduction_19, reduction_20, reduction_21, reduction_22, reduction_23, reduction_24, reduction_25, reduction_26, reduction_27, reduction_28, reduction_29, reduction_30, reduction_31, reduction_32, reduction_33, reduction_34, reduction_35, reduction_36, reduction_37, reduction_38, reduction_39, reduction_40, reduction_41, reduction_42, reduction_43, reduction_44, reduction_45, reduction_46, reduction_47, reduction_48, reduction_49, reduction_50, reduction_51, reduction_52, reduction_53, reduction_54, reduction_55, reduction_56, reduction_57, reduction_58, reduction_59, reduction_60, reduction_61, reduction_62, reduction_63, reduction_64, reduction_65]
+private noncomputable def reductions : Array (Array Bool) := #[reduction_0, reduction_1, reduction_2, reduction_3, reduction_4, reduction_5, reduction_6, reduction_7, reduction_8, reduction_9, reduction_10, reduction_11, reduction_12, reduction_13, reduction_14, reduction_15, reduction_16, reduction_17, reduction_18, reduction_19, reduction_20, reduction_21, reduction_22, reduction_23, reduction_24, reduction_25, reduction_26, reduction_27, reduction_28, reduction_29, reduction_30, reduction_31, reduction_32, reduction_33, reduction_34, reduction_35, reduction_36, reduction_37, reduction_38, reduction_39, reduction_40, reduction_41, reduction_42, reduction_43, reduction_44, reduction_45, reduction_46, reduction_47, reduction_48, reduction_49, reduction_50, reduction_51, reduction_52, reduction_53, reduction_54, reduction_55, reduction_56, reduction_57, reduction_58, reduction_59, reduction_60, reduction_61, reduction_62, reduction_63, reduction_64, reduction_65, reduction_66, reduction_67, reduction_68, reduction_69, reduction_70, reduction_71, reduction_72, reduction_73, reduction_74, reduction_75, reduction_76, reduction_77, reduction_78, reduction_79, reduction_80, reduction_81, reduction_82, reduction_83, reduction_84, reduction_85, reduction_86, reduction_87, reduction_88, reduction_89, reduction_90, reduction_91, reduction_92, reduction_93, reduction_94, reduction_95, reduction_96, reduction_97, reduction_98, reduction_99, reduction_100, reduction_101, reduction_102, reduction_103]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -22,7 +24,7 @@ private theorem reductions_checked :
   · simp only [LALR.Safety.reductionStates, Array.size_map]
     rfl
   · intro i hi _
-    have bound : i < 66 := by
+    have bound : i < 104 := by
       simpa only [LALR.Safety.reductionStates, Array.size_map] using hi
     simp only [LALR.Safety.reductionStates, Array.getElem_map]
     match i with
@@ -92,7 +94,45 @@ private theorem reductions_checked :
     | 63 => exact reduction_63_checked
     | 64 => exact reduction_64_checked
     | 65 => exact reduction_65_checked
-    | n+66 => omega
+    | 66 => exact reduction_66_checked
+    | 67 => exact reduction_67_checked
+    | 68 => exact reduction_68_checked
+    | 69 => exact reduction_69_checked
+    | 70 => exact reduction_70_checked
+    | 71 => exact reduction_71_checked
+    | 72 => exact reduction_72_checked
+    | 73 => exact reduction_73_checked
+    | 74 => exact reduction_74_checked
+    | 75 => exact reduction_75_checked
+    | 76 => exact reduction_76_checked
+    | 77 => exact reduction_77_checked
+    | 78 => exact reduction_78_checked
+    | 79 => exact reduction_79_checked
+    | 80 => exact reduction_80_checked
+    | 81 => exact reduction_81_checked
+    | 82 => exact reduction_82_checked
+    | 83 => exact reduction_83_checked
+    | 84 => exact reduction_84_checked
+    | 85 => exact reduction_85_checked
+    | 86 => exact reduction_86_checked
+    | 87 => exact reduction_87_checked
+    | 88 => exact reduction_88_checked
+    | 89 => exact reduction_89_checked
+    | 90 => exact reduction_90_checked
+    | 91 => exact reduction_91_checked
+    | 92 => exact reduction_92_checked
+    | 93 => exact reduction_93_checked
+    | 94 => exact reduction_94_checked
+    | 95 => exact reduction_95_checked
+    | 96 => exact reduction_96_checked
+    | 97 => exact reduction_97_checked
+    | 98 => exact reduction_98_checked
+    | 99 => exact reduction_99_checked
+    | 100 => exact reduction_100_checked
+    | 101 => exact reduction_101_checked
+    | 102 => exact reduction_102_checked
+    | 103 => exact reduction_103_checked
+    | n+104 => omega
 
 private noncomputable def acceptance : Array Bool := #[false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
@@ -101,7 +141,10 @@ private noncomputable def acceptance : Array Bool := #[false, false, true, false
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false]
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -171,7 +214,32 @@ private theorem chunk_110_checked :
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem chunk_120_checked :
-    ∀ i : Fin 1, LALR.Safety.rowValid grammar tables edges reductions acceptance (120 + i.val) := by decide +kernel
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (120 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_130_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (130 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_140_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (140 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_150_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (150 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_160_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (160 + i.val) := by decide +kernel
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+private theorem chunk_170_checked :
+    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (170 + i.val) := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -186,7 +254,7 @@ theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by
   · decide +kernel
   · intro q
     rcases q with ⟨q, bound⟩
-    change q < 121 at bound
+    change q < 180 at bound
     match q with
     | 0 => exact chunk_0_checked ⟨0, by decide⟩
     | 1 => exact chunk_0_checked ⟨1, by decide⟩
@@ -309,6 +377,65 @@ theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by
     | 118 => exact chunk_110_checked ⟨8, by decide⟩
     | 119 => exact chunk_110_checked ⟨9, by decide⟩
     | 120 => exact chunk_120_checked ⟨0, by decide⟩
-    | n+121 => omega
+    | 121 => exact chunk_120_checked ⟨1, by decide⟩
+    | 122 => exact chunk_120_checked ⟨2, by decide⟩
+    | 123 => exact chunk_120_checked ⟨3, by decide⟩
+    | 124 => exact chunk_120_checked ⟨4, by decide⟩
+    | 125 => exact chunk_120_checked ⟨5, by decide⟩
+    | 126 => exact chunk_120_checked ⟨6, by decide⟩
+    | 127 => exact chunk_120_checked ⟨7, by decide⟩
+    | 128 => exact chunk_120_checked ⟨8, by decide⟩
+    | 129 => exact chunk_120_checked ⟨9, by decide⟩
+    | 130 => exact chunk_130_checked ⟨0, by decide⟩
+    | 131 => exact chunk_130_checked ⟨1, by decide⟩
+    | 132 => exact chunk_130_checked ⟨2, by decide⟩
+    | 133 => exact chunk_130_checked ⟨3, by decide⟩
+    | 134 => exact chunk_130_checked ⟨4, by decide⟩
+    | 135 => exact chunk_130_checked ⟨5, by decide⟩
+    | 136 => exact chunk_130_checked ⟨6, by decide⟩
+    | 137 => exact chunk_130_checked ⟨7, by decide⟩
+    | 138 => exact chunk_130_checked ⟨8, by decide⟩
+    | 139 => exact chunk_130_checked ⟨9, by decide⟩
+    | 140 => exact chunk_140_checked ⟨0, by decide⟩
+    | 141 => exact chunk_140_checked ⟨1, by decide⟩
+    | 142 => exact chunk_140_checked ⟨2, by decide⟩
+    | 143 => exact chunk_140_checked ⟨3, by decide⟩
+    | 144 => exact chunk_140_checked ⟨4, by decide⟩
+    | 145 => exact chunk_140_checked ⟨5, by decide⟩
+    | 146 => exact chunk_140_checked ⟨6, by decide⟩
+    | 147 => exact chunk_140_checked ⟨7, by decide⟩
+    | 148 => exact chunk_140_checked ⟨8, by decide⟩
+    | 149 => exact chunk_140_checked ⟨9, by decide⟩
+    | 150 => exact chunk_150_checked ⟨0, by decide⟩
+    | 151 => exact chunk_150_checked ⟨1, by decide⟩
+    | 152 => exact chunk_150_checked ⟨2, by decide⟩
+    | 153 => exact chunk_150_checked ⟨3, by decide⟩
+    | 154 => exact chunk_150_checked ⟨4, by decide⟩
+    | 155 => exact chunk_150_checked ⟨5, by decide⟩
+    | 156 => exact chunk_150_checked ⟨6, by decide⟩
+    | 157 => exact chunk_150_checked ⟨7, by decide⟩
+    | 158 => exact chunk_150_checked ⟨8, by decide⟩
+    | 159 => exact chunk_150_checked ⟨9, by decide⟩
+    | 160 => exact chunk_160_checked ⟨0, by decide⟩
+    | 161 => exact chunk_160_checked ⟨1, by decide⟩
+    | 162 => exact chunk_160_checked ⟨2, by decide⟩
+    | 163 => exact chunk_160_checked ⟨3, by decide⟩
+    | 164 => exact chunk_160_checked ⟨4, by decide⟩
+    | 165 => exact chunk_160_checked ⟨5, by decide⟩
+    | 166 => exact chunk_160_checked ⟨6, by decide⟩
+    | 167 => exact chunk_160_checked ⟨7, by decide⟩
+    | 168 => exact chunk_160_checked ⟨8, by decide⟩
+    | 169 => exact chunk_160_checked ⟨9, by decide⟩
+    | 170 => exact chunk_170_checked ⟨0, by decide⟩
+    | 171 => exact chunk_170_checked ⟨1, by decide⟩
+    | 172 => exact chunk_170_checked ⟨2, by decide⟩
+    | 173 => exact chunk_170_checked ⟨3, by decide⟩
+    | 174 => exact chunk_170_checked ⟨4, by decide⟩
+    | 175 => exact chunk_170_checked ⟨5, by decide⟩
+    | 176 => exact chunk_170_checked ⟨6, by decide⟩
+    | 177 => exact chunk_170_checked ⟨7, by decide⟩
+    | 178 => exact chunk_170_checked ⟨8, by decide⟩
+    | 179 => exact chunk_170_checked ⟨9, by decide⟩
+    | n+180 => omega
 
 end Rumoca.GALEC.Generated

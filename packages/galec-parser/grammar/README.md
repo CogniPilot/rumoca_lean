@@ -4,15 +4,23 @@
 syntax, using the official specification and accompanying schemas as authority.
 It follows §3.2.4 G-2 (block declarations: an optional direction or `constant`,
 a primitive type, a name and optional expression-list dimensions after the
-name), G-3 (expressions) and the TODO-labelled statement productions
-(assignment and bounded `for` loops; in `a:b:c` the middle expression is the
-step). `block` is the start symbol. Method names are ordinary names.
+name; methods with an optional `signals` interface), G-3 (expressions) and the
+TODO-labelled statement productions (assignment, `if` statements with `elseif`
+and `else` branches, and bounded `for` loops; in `a:b:c` the middle expression
+is the step). §3.2.5 §1 supplies the error-signal statement `signal S1, ...;`,
+admitted as a statement alternative although the pinned `statement` production
+omits it, and the error-signal check `signal [closure] [[not] in S1, ...] [or e]`
+as an `if` branch condition. `block` is the start symbol. Method names are
+ordinary names.
 
 The grammar is general; admission is static semantics after parsing. Section
-legality of declaration kinds, extent values, types, callees, operators, the
-method set, names and literal values are checked by core elaboration, so the
+legality of declaration kinds, extent values, types, callees, operators, branch
+conditions, signal names and check forms, signal interfaces, the method set,
+names and literal values are checked by core elaboration, so the
 admitted source language does not grow with the grammar. Only `+` and `*` are
-binary operators; further operators are additive alternatives.
+binary operators; further operators are additive alternatives. The optional
+`or` fallback of a signal check is conflict-free only while no expression
+operator is spelled `or`; admitting logical operators requires rechecking it.
 
 The dialect writes rule names with underscores; ISO 14977-style hyphenated
 meta-identifiers are not implemented. GALEC comments, quoted names, signed

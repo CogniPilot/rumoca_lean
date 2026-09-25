@@ -1,10 +1,14 @@
 // Authored eFMI 1.0.0 Beta 1 Algorithm Code syntax subset.
 // Standard authority: https://www.efmi-standard.org/media/home/eFMI-Standard-1.0.0-Beta-1.html
-// References: 3.2.4 G-2 (block declarations), G-3 (expressions) and the
-// TODO-labelled statement productions (assignment, bounded for loop).
+// References: 3.2.4 G-2 (block declarations, method signal interface), G-3
+// (expressions) and the TODO-labelled statement productions (assignment,
+// if statement, bounded for loop); 3.2.5 §1.2-§1.4 (error-signal statement,
+// signal interface, error-signal check). The error-signal statement is a
+// statement alternative although the pinned statement production omits it.
 // Admission restrictions (declaration kinds per section, extent values, types,
-// callees, operators, method set, names, literal values) are static semantics
-// checked after parsing. The first production is the start symbol.
+// callees, operators, conditions, signal names and check forms, method set,
+// names, literal values) are static semantics checked after parsing. The first
+// production is the start symbol.
 
 block = "block", IDENT, { declaration },
     "protected", { declaration },
@@ -13,12 +17,21 @@ declaration = [ direction | "constant" ], primitive_type, IDENT,
     [ "[", expression_list, "]" ], ";";
 direction = "input" | "output";
 primitive_type = "Real" | "Integer" | "Boolean";
-method = "method", IDENT, "algorithm", { statement }, "end", IDENT, ";";
+method = "method", IDENT, [ signal_interface ], "algorithm", { statement },
+    "end", IDENT, ";";
+signal_interface = "signals", IDENT, { ",", IDENT }, ";";
 
-statement = ( single_assignment | for_loop ), ";";
+statement = ( single_assignment | if_statement | for_loop
+    | error_signal_statement ), ";";
 single_assignment = reference, ":=", expression;
+if_statement = "if", ( expression | error_signal_check ), "then", { statement },
+    { "elseif", ( expression | error_signal_check ), "then", { statement } },
+    [ "else", { statement } ], "end", "if";
+error_signal_check = "signal", [ IDENT ],
+    [ [ "not" ], "in", IDENT, { ",", IDENT } ], [ "or", expression ];
 for_loop = "for", IDENT, "in", expression, ":", expression,
     [ ":", expression ], "loop", { statement }, "end", "for";
+error_signal_statement = "signal", IDENT, { ",", IDENT };
 
 reference = local_reference | state_reference;
 local_reference = component_reference;
