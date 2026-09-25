@@ -184,8 +184,14 @@ bytes; the tool wrapper in this environment matches case-insensitively, so
   reports/84 roots; full gate 2,668 inputs/9,056 reports/1,085 roots/four FMU
   roots; matrices 75/75 with zero discrepancies; adapters match the frozen
   prediction byte for byte (58/59/59 lines, 1,036 bytes smaller each), numerical
-  and eFMI members unchanged. Remaining Rule 10.1 operands: `!isfinite(...)`
-  returns `int` (8/7/6 sites per adapter). Evidence: `build/fold-terminal-gate/`.
+  and eFMI members unchanged. Evidence: `build/fold-terminal-gate/`.
+  Isfinite repair (full gate passed `6e8c5b8`): `(isfinite(x) == 0)` replaces
+  `!isfinite(x)` at 8/7/6 sites through `CTree.Expr.nonfinite`; owner-v2
+  4,358 jobs/5,524 reports/64 roots; full gate 2,664 inputs/9,164 reports/1,333
+  roots/four FMU roots; matrices 75/75, zero discrepancies; adapters match the
+  frozen prediction byte for byte, numerical and eFMI members unchanged.
+  Evidence: `build/misra-isfinite-gate/`. Remaining Rule 10.1 operands: the two
+  exact time-grid inequalities.
   Independently of this repair, two
   floating variable-to-variable inequalities remain, both exact FMI time-grid
   checks not covered by Rule 10.1's zero/infinity exceptions:

@@ -1,5 +1,13 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Isfinite comparison repair (2026-09-24; full gate passed `6e8c5b8`): bounded
+Rules 10.1/10.4/14.4 work on the emitted FMI adapters, not grammar expansion.
+Owner-v2 4,358 jobs/5,524 reports/64 roots; full gate 2,664 inputs/9,164
+reports/1,333 roots/four FMU roots; matrices 75/75 with zero discrepancies;
+adapters match the frozen prediction (6/6/5 lines); numerical C and eFMI
+members unchanged. Evidence: `build/misra-isfinite-gate/`. No MLS/FMI/eFMI or
+MISRA finding closes; expansion/promotion blocks remain.
+
 Lifecycle guard fold-terminal repair (2026-09-24; full gate passed): bounded
 Rules 10.1/2.2 work on the emitted FMI adapters, not grammar expansion. The
 shared disjunction has no seed and the lifecycle guard omits kinds with no

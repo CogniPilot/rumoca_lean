@@ -1,5 +1,34 @@
 # Exact verification contract
 
+**Explicit isfinite comparisons (full gate passed):**
+The FMI adapters no longer negate the `int` result of the `isfinite`
+classification macro. One backend-c syntax constructor, `CTree.Expr.nonfinite`,
+emits `(isfinite(x) == 0)`; `Runtime.finite` is deleted and every guard,
+including the shared tensor finiteness scan, uses the constructor. Two
+evaluation lemmas (general and loop evaluator) give exactly the former
+`!isfinite(x)` truth value for every double, including NaN, infinities and
+signed zeros, with `x` evaluated once in the same order. Only the two theorem
+headers that named the removed expression changed (`StepGuards.
+progress_condition`, `TensorSetTime.finite_pass`), with unchanged conclusions.
+MISRA: the `int` result is essentially signed, `0` is a signed constant and
+the comparison result is essentially Boolean (Rules 10.1, 10.4, 14.4,
+Appendix D). Independent review found no blocking item; its module-placement
+fix was applied before adoption.
+
+Owner-v2 passed 4,358 jobs, 5,524 complete approved reports, all 64 selected
+roots (23 previously unaudited changed definitions were registered in their
+existing leaves after owner-v1 found them missing) and frozen tracked/runner
+hashes. Required full gate `build/misra-isfinite-gate/full-v1/` passed at
+`6e8c5b8`, exit 0, post-audit exit 0 under `LC_ALL=C`: 2,664 frozen
+tracked inputs, 9,164 complete approved reports, all 1,333 selected
+roots and four retained FMU roots. Three matrices passed 75/75 functions
+(526/650/526 cells), zero discrepancies/unexpected results. Each adapter
+matches the frozen prediction byte for byte: 6/6/5 changed lines at 8/7/6
+sites, line counts unchanged, no `!isfinite(` remaining; the three numerical
+`model.c` files and the four eFMI Algorithm/C members are identical.
+Remaining Rule 10.1 operands: the two exact FMI time-grid inequalities
+(deviation rationale to be recorded). No guideline closes; no native claim.
+
 **One GALEC representation for scalar and tensor (full gate passed):**
 The core GALEC IR (`GALEC.Model`, `unitBlock`, `renderBlock`, `lower`, the
 `Origins` chain and the IR-lowering theorems) is deleted. `Solve.Algorithm.
