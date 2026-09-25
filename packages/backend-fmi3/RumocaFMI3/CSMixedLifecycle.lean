@@ -10,6 +10,7 @@ theorem Change.rehandle (changed : Change header p buffers before action after s
   cases changed with
   | run changed => exact .run (changed.rehandle q)
   | logging => exact .logging
+  | query ready allowed => exact .query ready allowed
 
 theorem ReferenceTrace.rehandle (trace : ReferenceTrace header p buffers before actions after statuses) (q : Address) :
     ReferenceTrace header q buffers before actions after statuses := by
@@ -25,6 +26,10 @@ theorem Change.can_finish (changed : Change header p buffers before action after
     cases failed : request.failed with
     | false => simpa only [CSLoggingCalls.next, failed, Bool.false_eq_true, if_false] using ready
     | true => exact Or.inr (by simp only [CSLoggingCalls.next, failed, if_true])
+  | @query request ready allowed =>
+    cases request with
+    | terminate => exact Or.inr rfl
+    | access | absent => exact ready
 
 theorem ReferenceTrace.can_finish (trace : ReferenceTrace header p buffers before actions after statuses)
     (ready : CSRun.CanFinish before.mode) : CSRun.CanFinish after.mode := by
@@ -65,11 +70,11 @@ theorem Trace.released_frame [interface : CInterface] {program : Program Invocat
     (policy : capability.Requires (fun _ effect =>
       ∀ args before value after, effect.execute args before value after → ∀ q, region q → after q = before q)) :
     ∀ q, region q → CSRun.Outside (objects.instances.index slot.val) buffers q →
-      q ≠ AtomicSlots.address objects.flagsBlock slot →
+      (∀ action ∈ actions, ¬ action.CallerRegion q) → q ≠ AtomicSlots.address objects.flagsBlock slot →
       CSRun.releasedHeap after objects slot final.mode q = heap q := by
-  intro q inside outside notFlag
+  intro q inside outside untouched notFlag
   exact (released.frame q (outside.field "mode") notFlag).trans
-    (certified.callerFrame completed policy q inside outside)
+    (certified.callerFrame completed policy q inside outside untouched)
 
 end Rumoca.FMI3.CSMixedRun
 end

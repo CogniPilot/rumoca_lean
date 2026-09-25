@@ -1,19 +1,23 @@
 import RumocaFMI3.CSLoggingCalls
 import RumocaFMI3.CSRunProgress
 import RumocaFMI3.CSRunLoggedExecution
+import RumocaFMI3.InstanceQuery
 
 noncomputable section
 namespace Rumoca.FMI3.CSMixedRun
 open CTree CMemory CBody StaticFactory CCalls.Events
 
-/-- Lifecycle and logging surround the existing numerical CS actions. -/
+/-- Lifecycle, logging and instance queries surround the existing numerical
+CS actions. -/
 inductive Action where
   | run (action : CSRun.Action)
   | logging (request : DebugLogging.Request)
+  | query (request : InstanceQuery.Request)
 
 def Action.loggingUpdate : Action → Option Bool
   | .run _ => none
   | .logging request => request.loggingUpdate
+  | .query _ => none
 
 def loggingUpdate : List Action → Option Bool
   | [] => none
@@ -25,18 +29,34 @@ theorem loggingUpdate_cons_getD (action : Action) (rest : List Action) (enabled 
   cases found : loggingUpdate rest <;> simp [loggingUpdate, found]
 
 def Action.ReaderRegion : Action → Address → Prop
-  | .run _ => fun _ => False
   | .logging request => request.Region
+  | _ => fun _ => False
 
-def Action.Prepared : Action → Heap → Prop
-  | .run _ => fun _ => True
-  | .logging request => request.Inputs
+/-- Caller cells written by an action. Only accessor queries write them. -/
+def Action.CallerRegion : Action → Address → Prop
+  | .query request => request.CallerRegion
+  | _ => fun _ => False
 
-theorem Action.Prepared.framed (action : Action) (prepared : action.Prepared before)
-    (frame : ∀ q, action.ReaderRegion q → after q = before q) : action.Prepared after := by
+/-- Caller storage required by an action. Accessor arrays are typed caller
+cells outside every location protected by the CS histories. -/
+def Action.Prepared (action : Action) (objects : Objects) (buffers : StepEntry.Buffers) (heap : Heap) : Prop :=
+  match action with
+  | .run _ => True
+  | .logging request => request.Inputs heap
+  | .query request => request.Storage heap ∧ request.Separate objects.instances ∧
+      ∀ q, request.CallerRegion q → ¬ CSRun.Protected objects buffers q
+
+theorem Action.Prepared.preserved (action : Action) (prepared : action.Prepared objects buffers before)
+    (storage : CStorage.PreservesOn action.CallerRegion before after)
+    (frame : ∀ q, action.ReaderRegion q → after q = before q) : action.Prepared objects buffers after := by
   cases action with
   | run _ => trivial
   | logging request => exact DebugLogging.Request.Inputs.framed prepared frame
+  | query request => exact ⟨InstanceQuery.Request.Storage.preserved request prepared.1 storage, prepared.2⟩
+
+/-- A query leaves the Solve epoch unchanged; termination enters Terminated. -/
+def queried (request : InstanceQuery.Request) (reference : CSRun.Reference) : CSRun.Reference :=
+  { reference with mode := request.nextMode reference.mode }
 
 inductive Change (header : CFenv.Header) (p : Address) (buffers : StepEntry.Buffers) :
     CSRun.Reference → Action → CSRun.Reference → Int → Prop where
@@ -44,6 +64,8 @@ inductive Change (header : CFenv.Header) (p : Address) (buffers : StepEntry.Buff
       Change header p buffers before (.run action) after status
   | logging : Change header p buffers before (.logging request)
       (CSLoggingCalls.next request before) (if request.failed then 3 else 0)
+  | query : CSRun.CanFinish before.mode → request.Allowed .cs before.mode →
+      Change header p buffers before (.query request) (queried request before) 0
 
 inductive ReferenceTrace (header : CFenv.Header) (p : Address) (buffers : StepEntry.Buffers) :
     CSRun.Reference → List Action → CSRun.Reference → List Int → Prop where
@@ -62,6 +84,10 @@ inductive Performed [CInterface] (program : Program Invocation) (p : Address) :
       (.calling (request.call p).1 (request.call p).2 heap .done)
       (.terminates events ⟨status, after⟩) →
       Performed program p heap (.logging request) status events after
+  | query : request.hostRun heap = some ready → (machine program).Behaves
+      (.calling (request.call p).1 (request.call p).2 ready .done)
+      (.terminates events ⟨status, after⟩) →
+      Performed program p heap (.query request) status events after
 
 inductive Completed [CInterface] (program : Program Invocation) (p : Address) :
     Heap → List Action → List Value → List Invocation → Heap → Prop where
@@ -75,6 +101,9 @@ inductive Faulted [CInterface] (program : Program Invocation) (p : Address) : He
   | logging : (machine program).Behaves
       (.calling (request.call p).1 (request.call p).2 heap .done) (.wrong []) →
       Faulted program p heap (.logging request)
+  | query : request.hostRun heap = some ready → (machine program).Behaves
+      (.calling (request.call p).1 (request.call p).2 ready .done) (.wrong []) →
+      Faulted program p heap (.query request)
 
 inductive Stopped [CInterface] (program : Program Invocation) (p : Address) : Heap → List Action → Prop where
   | here : Faulted program p heap action → Stopped program p heap (action :: rest)
@@ -82,7 +111,8 @@ inductive Stopped [CInterface] (program : Program Invocation) (p : Address) : He
       Stopped program p middle rest → Stopped program p heap (action :: rest)
 
 /-- A branching contract reuses numerical call semantics and the actual
-prepared logging setter, including every callback return and no-return case. -/
+prepared logging setter, including every callback return and no-return case.
+An instance query has one returning behavior after its typed host transfer. -/
 inductive ActionContract [CInterface] (program : Program Invocation) (p : Address) :
     Heap → Action → (List Invocation → Value → Heap → Prop) → Prop → Prop where
   | run : CSRun.ActionContract program p heap action status outcomes blocked →
@@ -91,6 +121,11 @@ inductive ActionContract [CInterface] (program : Program Invocation) (p : Addres
   | logging : CSLoggingCalls.Contract model program objects owners capability enabled
       heap p buffers reference request outcomes blocked →
       ActionContract program p heap (.logging request) outcomes blocked
+  | query : request.hostRun heap = some ready →
+      (∀ behavior, (machine program).Behaves (.calling (request.call p).1 (request.call p).2 ready .done) behavior ↔
+        behavior = .terminates [] ⟨.integer 0, after⟩) →
+      ActionContract program p heap (.query request)
+        (fun events value next => events = [] ∧ value = .integer 0 ∧ next = after) False
 
 theorem ActionContract.returned [CInterface] {program : Program Invocation}
     (certified : ActionContract program p heap action returns blocked)
@@ -106,6 +141,11 @@ theorem ActionContract.returned [CInterface] {program : Program Invocation}
       · cases same
         exact outcome
       · cases impossible
+  | query host executed => cases certified with
+    | query prepared called =>
+      cases Option.some.inj (prepared.symm.trans host)
+      cases (called _).mp executed
+      exact ⟨rfl, rfl, rfl⟩
 
 theorem ActionContract.realizes [CInterface] {program : Program Invocation}
     (certified : ActionContract program p heap action returns blocked)
@@ -116,6 +156,9 @@ theorem ActionContract.realizes [CInterface] {program : Program Invocation}
     exact .run (called.realizes returned)
   | logging called =>
     exact .logging ((called.behaviors _).mpr (Or.inl ⟨events, status, after, outcome, rfl⟩))
+  | query prepared called =>
+    obtain ⟨rfl, rfl, rfl⟩ := outcome
+    exact .query prepared ((called _).mpr rfl)
 
 theorem ActionContract.performed_iff [CInterface] {program : Program Invocation}
     (certified : ActionContract program p heap action returns blocked) :
@@ -135,10 +178,15 @@ theorem ActionContract.faulted_iff [CInterface] {program : Program Invocation}
         rcases (called.behaviors _).mp faulted with ⟨_, _, _, _, impossible⟩ | ⟨blocked, _⟩
         · cases impossible
         · exact blocked
+    | query host faulted => cases certified with
+      | query prepared called =>
+        cases Option.some.inj (prepared.symm.trans host)
+        cases (called _).mp faulted
   · intro blocked
     cases certified with
     | run called => exact .run (called.faulted_iff.mpr blocked)
     | logging called => exact .logging ((called.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
+    | query => exact blocked.elim
 
 theorem ActionContract.progress [CInterface] {program : Program Invocation}
     (certified : ActionContract program p heap action returns blocked) :
@@ -151,15 +199,23 @@ theorem ActionContract.progress [CInterface] {program : Program Invocation}
       · exact Or.inl ⟨events, _, after, rfl, returned⟩
       · exact Or.inr blocked
     | logging called => exact called.available
+    | query => exact Or.inl ⟨[], .integer 0, _, rfl, rfl, rfl⟩
   rcases available with ⟨events, status, after, returned⟩ | blocked
   · exact Or.inl ⟨events, status, after, returned, certified.realizes returned⟩
   · exact Or.inr ⟨blocked, certified.faulted_iff.mpr blocked⟩
 
-def Action.Observed (action : Action) (buffers : StepEntry.Buffers)
+/-- The CS instance cells as seen by public queries: the current Solve sample
+and communication time. -/
+def instanceState (model : Solve.Model source) (reference : CSRun.Reference) : ModelExchange.State :=
+  ⟨model.run reference.seed reference.current.elapsed⟩
+
+def Action.Observed (action : Action) (model : Solve.Model source) (buffers : StepEntry.Buffers)
     (reference : CSRun.Reference) (expected : Int) (events : List Invocation) (status : Value) (heap : Heap) : Prop :=
   status = .integer expected ∧ match action with
   | .run action => CSRun.Observation buffers reference action expected heap
   | .logging request => CSLoggingCalls.CorrectObservation request events status
+  | .query request => events = [] ∧
+      request.readback heap = request.expected model (instanceState model reference) reference.current.time
 
 structure Returned [CInterface] (objects : Objects) (owners : SlotOwners.State objects.capacity)
     (model : Solve.Model source) (capability : Logging.Capability) (enabled : Bool)
@@ -169,7 +225,7 @@ structure Returned [CInterface] (objects : Objects) (owners : SlotOwners.State o
   configuration : capability.Configured after p (action.loggingUpdate.getD enabled)
   retention : InitializationProtocol.Retention action.loggingUpdate p before after
   ownership : SlotOwners.Represents objects.flagsBlock after owners
-  observed : action.Observed buffers reference expected events status after
+  observed : action.Observed model buffers reference expected events status after
   readonly : CReadOnly.Preserves before after
   frame : ∀ q, CSRun.Protected objects buffers q → CSRun.Outside p buffers q → after q = before q
   storage : ∀ region, capability.Requires (fun _ effect =>
@@ -177,7 +233,7 @@ structure Returned [CInterface] (objects : Objects) (owners : SlotOwners.State o
     CStorage.PreservesOn region before after
   callerFrame : ∀ region : Address → Prop, capability.Requires (fun _ effect =>
     ∀ args before value after, effect.execute args before value after → ∀ q, region q → after q = before q) →
-    ∀ q, region q → CSRun.Outside p buffers q → after q = before q
+    ∀ q, region q → CSRun.Outside p buffers q → ¬ action.CallerRegion q → after q = before q
 
 inductive Trace [CInterface] (header : CFenv.Header) (objects : Objects) (owners : SlotOwners.State objects.capacity)
     (model : Solve.Model source) (capability : Logging.Capability) (program : Program Invocation)
@@ -251,15 +307,16 @@ theorem Trace.callerFrame [CInterface] {program : Program Invocation}
     (completed : Completed program p heap actions observed events after)
     (policy : capability.Requires (fun _ effect =>
       ∀ args before value after, effect.execute args before value after → ∀ q, region q → after q = before q)) :
-    ∀ q, region q → CSRun.Outside p buffers q → after q = heap q := by
+    ∀ q, region q → CSRun.Outside p buffers q → (∀ action ∈ actions, ¬ action.CallerRegion q) → after q = heap q := by
   induction completed generalizing enabled before final statuses with
-  | nil => exact fun _ _ _ => rfl
+  | nil => exact fun _ _ _ _ => rfl
   | cons performed _ ih => cases certified with
     | cons _ called returned following =>
       have outcome := called.returned performed
-      intro q inside outside
-      exact (ih (following _ _ _ outcome) q inside outside).trans
-        ((returned _ _ _ outcome).callerFrame region policy q inside outside)
+      intro q inside outside untouched
+      exact (ih (following _ _ _ outcome) q inside outside
+        (fun action member => untouched action (List.mem_cons_of_mem _ member))).trans
+        ((returned _ _ _ outcome).callerFrame region policy q inside outside (untouched _ (by simp)))
 
 end Rumoca.FMI3.CSMixedRun
 end

@@ -1,6 +1,7 @@
 import RumocaFMI3.InitializationSimulation
 import RumocaFMI3.CSMixedExecution
 import RumocaFMI3.CSMixedPrefixes
+import RumocaFMI3.InstanceQueryEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.CSMixedRun
@@ -33,6 +34,7 @@ theorem execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : CSRunEnvironment.PreparedContract model sigs pool)
     (logging : DebugLogging.PreparedContract model sigs pool)
+    (queries : InstanceQuery.PreparedContract model sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (range : -(2^31) ≤ header.nearest ∧ header.nearest < 2^31),
@@ -47,15 +49,18 @@ theorem execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI
       p.block = objects.instances.block → InitializationProtocol.CSOutputsGuarded objects retained buffers →
       (∀ q, readers.Region q → Float64Rejection.Protected objects retained q ∧ CSRun.Outside p buffers q) →
       CSRun.Stored model.solve heap p buffers before → ReferenceTrace header p buffers before actions final statuses →
-      (∀ action ∈ actions, action.Prepared original) →
+      (∀ action ∈ actions, action.Prepared objects buffers original) →
       (∀ action ∈ actions, ∀ q, action.ReaderRegion q → readers.Region q) →
+      (∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q) →
+      (∀ action ∈ actions, ∀ q, readers.Region q → ¬ action.CallerRegion q) →
       Execution model header program objects retained owners original (pool.install baseHeap firstBlock signed)
         heap p buffers before actions final statuses readers := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
   intro program range actual rounding floorBound compare retained owners original heap p buffers before final actions statuses readers
-    persistent inPool guarded readerGuarded stored admitted requests included
+    persistent inPool guarded readerGuarded stored admitted requests included regions readerSafe
   obtain ⟨capability, enabled, configured, bound, required, writable⟩ := persistent.logging
-  obtain ⟨reset, enterDefined, exitDefined, _, _⟩ := prepared.execution header objects firstBlock program actual
+  obtain ⟨reset, enterDefined, exitDefined, termination, _⟩ := prepared.execution header objects firstBlock program actual
+  have quietQuery := queries.quiet header objects firstBlock program actual termination
   have memoryPolicy (region : Address → Prop)
       (subset : ∀ q, region q → Float64Rejection.Protected objects retained q) :
       capability.Requires (fun _ effect => ∀ args before value after,
@@ -75,15 +80,18 @@ theorem execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI
     apply Logging.Capability.requires_mono required
     exact fun name effect respects args before value after performed q inside =>
       respects args before value after performed q (guarded.protects inside)
-  have current : ∀ action ∈ actions, action.Prepared heap := by
+  have current : ∀ action ∈ actions, action.Prepared objects buffers heap := by
     intro action member
-    exact Action.Prepared.framed action (requests action member)
+    exact Action.Prepared.preserved action (requests action member)
+      (fun q inside => persistent.caller q (regions action member q inside))
       (fun q inside => persistent.readerFrame q (included action member q inside))
   have certified := trace_correct header objects model sigs pool prepared.step logging baseHeap firstBlock signed p buffers inPool
-    program capability enabled range actual rounding floorBound compare bound csRequired reset enterDefined exitDefined
-    heap before final actions statuses owners persistent.readonly stored configured writable persistent.ownership admitted current
+    program capability enabled range actual rounding floorBound compare bound csRequired reset quietQuery enterDefined
+    exitDefined heap before final actions statuses owners persistent.readonly stored configured writable persistent.ownership
+    admitted current (fun action member => memoryPolicy action.CallerRegion (regions action member))
     (fun action member => exactPolicy action.ReaderRegion (fun q inside => (readerGuarded q (included action member q inside)).1))
     (fun action member q inside => (readerGuarded q (included action member q inside)).2)
+    (fun writer written reader read q inside => readerSafe writer written q (included reader read q inside))
   refine ⟨⟨capability, enabled, configured, certified⟩, certified.progress, ?_, ?_⟩
   · intro observed events after completed
     obtain ⟨values, nextStored, _, keeps, ownership, readonly, frame⟩ := certified.completed completed
@@ -91,7 +99,8 @@ theorem execution (header : CFenv.Header) (objects : Objects) (model : Solve.FMI
       ⟨ownership, persistent.caller.trans (certified.storage completed (memoryPolicy _ (fun _ inside => inside))),
         persistent.readonly.trans readonly, persistent.logging.updated keeps,
         persistent.readerFrame.trans (fun q inside => certified.callerFrame completed
-          (exactPolicy readers.Region (fun q inside => (readerGuarded q inside).1)) q inside (readerGuarded q inside).2)⟩,
+          (exactPolicy readers.Region (fun q inside => (readerGuarded q inside).1)) q inside (readerGuarded q inside).2
+          (fun action member => readerSafe action member q inside))⟩,
       keeps, readonly, frame⟩
   · intro action rest same actual
     cases same

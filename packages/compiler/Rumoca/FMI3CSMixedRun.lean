@@ -4,6 +4,9 @@ import RumocaFMI3.CSMixedPrefixes
 import Rumoca.FMI3BuildProofs
 import RumocaFMI3.ResetEnvironment
 import RumocaFMI3.DebugLoggingMetadata
+import RumocaFMI3.InstanceQueryEnvironment
+import RumocaFMI3.Float64Environment
+import RumocaFMI3.Float64SetEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.CSMixedRun
@@ -72,11 +75,15 @@ theorem runtime_history (compiled : compile input = .ok a)
           p.block = objects.instances.block → SlotOwners.Represents objects.flagsBlock heap owners →
           CReadOnly.Preserves (pool.install literalBase firstBlock signed) heap →
           CSRun.Stored a.solve heap p buffers before → ReferenceTrace header p buffers before actions final statuses →
-          (∀ action ∈ actions, action.Prepared heap) →
+          (∀ action ∈ actions, action.Prepared objects buffers heap) →
+          (∀ action ∈ actions, capability.Requires (fun _ effect =>
+            ∀ args before value after, effect.execute args before value after →
+              CStorage.PreservesOn action.CallerRegion before after)) →
           (∀ action ∈ actions, capability.Requires (fun _ effect =>
             ∀ args before value after, effect.execute args before value after →
               ∀ q, action.ReaderRegion q → after q = before q)) →
           (∀ action ∈ actions, ∀ q, action.ReaderRegion q → CSRun.Outside p buffers q) →
+          (∀ writer ∈ actions, ∀ reader ∈ actions, ∀ q, reader.ReaderRegion q → ¬ writer.CallerRegion q) →
           Trace header objects owners a.solve capability program p buffers heap enabled before actions final statuses ∧
           (∀ observed events after, Completed program p heap actions observed events after →
             observed = statuses.map Value.integer ∧ CSRun.Stored a.solve after p buffers final ∧
@@ -86,7 +93,7 @@ theorem runtime_history (compiled : compile input = .ok a)
             (∀ q, CSRun.Protected objects buffers q → CSRun.Outside p buffers q → after q = heap q) ∧
             ReferenceTrace header p buffers before actions final statuses ∧ CSRun.SourceSample a.parsed.ast p final after) ∧
           (∀ observed events after records, Recorded program p heap actions observed events after records →
-            SourceTrace a.parsed.ast header p buffers heap before actions observed records after final) ∧
+            SourceTrace a.solve header p buffers heap before actions observed records after final) ∧
           ((∃ observed events after, Completed program p heap actions observed events after) ∨ Stopped program p heap actions) ∧
           (Stopped program p heap actions →
             ∃ left action rest observed events middle current expected remaining,
@@ -98,9 +105,13 @@ theorem runtime_history (compiled : compile input = .ok a)
               InitializationProtocol.Retention (loggingUpdate left) p heap middle ∧
               SlotOwners.Represents objects.flagsBlock middle owners ∧ CReadOnly.Preserves heap middle ∧
               (∀ q, CSRun.Protected objects buffers q → CSRun.Outside p buffers q → middle q = heap q)) := by
-  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, _, _, _, _,
-    initialization, _, _, _, _, _, _, _, _, stepContract, loggingContract, _⟩ := build.adapter
+  obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, _, ready, _, _, _, _, _, _, getter, setter,
+    initialization, _, _, _, termination, _, _, _, _, stepContract, loggingContract, _, _, absentContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
+  have queries : InstanceQuery.PreparedContract a.solve.prepareFMI3 sigs pool :=
+    ⟨Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made,
+      Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made,
+      fun ty write => (absentContract ty write).prepared pool made⟩
   have step := stepContract.prepared pool made
   have logging := loggingContract.prepared pool made
   refine ⟨compiled, build.numerical, DebugLogging.artifact_category _ _ build.metadata,
@@ -110,7 +121,7 @@ theorem runtime_history (compiled : compile input = .ok a)
   letI : CInterface := RuntimeEnvironment.interface header objects literals
   intro program capability enabled range actual rounding floorBound compare bound
     heap p buffers before final actions statuses owners required configured writable inPool represented
-    readonly stored admitted requests policies guarded
+    readonly stored admitted requests storagePolicies policies guarded separate
   have reset : StaticReset.ExecutionContract program := by
     apply ResetEnvironment.execution_correct header objects literals a.solve.prepareFMI3 program
     rw [actual]
@@ -122,9 +133,13 @@ theorem runtime_history (compiled : compile input = .ok a)
       some (.tree (Runtime.function a.solve.prepareFMI3 InitializationExit.signature)) := by
     rw [actual]
     exact LiteralPreparation.function_bound _ sigs unique _ initialization.exitMember
+  have quietQuery := queries.quiet header objects firstBlock program actual
+    (TerminationEnvironment.quiet_correct header objects literals a.solve.prepareFMI3 program
+      (by rw [actual]; exact LiteralPreparation.function_bound _ sigs unique _ termination.member))
   have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool step logging literalBase firstBlock signed p buffers
-    inPool program capability enabled range actual rounding floorBound compare bound required reset enterDefined exitDefined
-    heap before final actions statuses owners readonly stored configured writable represented admitted requests policies guarded
+    inPool program capability enabled range actual rounding floorBound compare bound required reset quietQuery enterDefined
+    exitDefined heap before final actions statuses owners readonly stored configured writable represented admitted requests
+    storagePolicies policies guarded separate
   refine ⟨certified, ?_, (fun _ _ _ _ recorded => certified.recorded_source recorded), certified.progress, certified.stopped_source stored configured represented⟩
   intro observed events after completed
   obtain ⟨values, nextStored, nextConfig, retention, ownership, nextReadonly, frame⟩ := certified.completed completed

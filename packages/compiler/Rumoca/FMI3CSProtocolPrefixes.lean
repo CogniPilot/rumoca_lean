@@ -11,14 +11,14 @@ theorem CSMixedRun.Execution.recorded_source [CInterface] {source : AST.Model} {
     (certified : CSMixedRun.Execution model header program objects retained owners original literals heap p buffers
       before actions final statuses readers)
     (actual : CSMixedRun.Recorded program p heap actions observed events after records) :
-    CSMixedRun.SourceTrace source header p buffers heap before actions observed records after final := by
+    CSMixedRun.SourceTrace model.solve header p buffers heap before actions observed records after final := by
   obtain ⟨capability, enabled, _, trace⟩ := certified.trace
   exact trace.recorded_source actual
 
-def CSMixedRun.SourcePrefix (source : AST.Model) (header : CFenv.Header) (p : Address) (buffers : StepEntry.Buffers)
+def CSMixedRun.SourcePrefix {source : AST.Model} (model : Solve.Model source) (header : CFenv.Header) (p : Address) (buffers : StepEntry.Buffers)
     (heap : Heap) (before : CSRun.Reference) (actions : List CSMixedRun.Action) (stop : CSMixedRun.StopRecord) : Prop :=
   actions = stop.done ++ stop.pending :: stop.rest ∧
-  ∃ reference, CSMixedRun.SourceTrace source header p buffers heap before stop.done stop.statuses stop.calls stop.heap reference ∧
+  ∃ reference, CSMixedRun.SourceTrace model header p buffers heap before stop.done stop.statuses stop.calls stop.heap reference ∧
     CSRun.SourceSample source p reference stop.heap ∧
     (∃ next status, CSMixedRun.Change header p buffers reference stop.pending next status) ∧
     stop.pending.MayBlock ∧ InitializationProtocol.Retention (CSMixedRun.loggingUpdate stop.done) p heap stop.heap
@@ -41,8 +41,10 @@ def SimulationCompiler [CInterface] (model : Solve.FMI3Model source) (program : 
   ∀ heap before final actions statuses,
     Persistent program objects retained owners original literals heap p readers →
     CSRun.Stored model.solve heap p buffers before → CSMixedRun.ReferenceTrace header p buffers before actions final statuses →
-    (∀ action ∈ actions, action.Prepared original) →
+    (∀ action ∈ actions, action.Prepared objects buffers original) →
     (∀ action ∈ actions, ∀ q, action.ReaderRegion q → readers.Region q) →
+    (∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q) →
+    (∀ action ∈ actions, ∀ q, readers.Region q → ¬ action.CallerRegion q) →
     CSMixedRun.Execution model header program objects retained owners original literals heap p buffers before actions final statuses readers
 
 variable [CInterface] {source : AST.Model} {model : Solve.FMI3Model source} {program : Program Invocation}
@@ -62,10 +64,12 @@ theorem SimulationCompiler.interrupted
     (persistent : Persistent program objects retained owners original literals heap p readers)
     (stored : CSRun.Stored model.solve heap p buffers before)
     (reference : CSMixedRun.ReferenceTrace header p buffers before actions final statuses)
-    (requests : ∀ action ∈ actions, action.Prepared original)
+    (requests : ∀ action ∈ actions, action.Prepared objects buffers original)
     (included : ∀ action ∈ actions, ∀ q, action.ReaderRegion q → readers.Region q)
+    (regions : ∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q)
+    (readerSafe : ∀ action ∈ actions, ∀ q, readers.Region q → ¬ action.CallerRegion q)
     (actual : CSMixedRun.Interrupted program p heap actions stop) :
-    CSMixedRun.SourcePrefix source header p buffers heap before actions stop := by
+    CSMixedRun.SourcePrefix model.solve header p buffers heap before actions stop := by
   have split := reference
   rw [actual.1] at split
   obtain ⟨middle, prefixStatuses, suffixStatuses, _, prefixTrace, suffixTrace⟩ := split.split
@@ -77,11 +81,13 @@ theorem SimulationCompiler.interrupted
     exact List.mem_append_right _ member
   have certified := compiler heap before middle stop.done prefixStatuses persistent stored prefixTrace
     (fun action member => requests action (prefixMember member)) (fun action member => included action (prefixMember member))
+    (fun action member => regions action (prefixMember member)) (fun action member => readerSafe action (prefixMember member))
   obtain ⟨_, storedAtStop, persistentAtStop, keeps, _, _⟩ := certified.completed _ _ _ actual.2.1.completed
   have sourceTrace := certified.recorded_source actual.2.1
   have pending := compiler stop.heap middle final (stop.pending :: stop.rest) suffixStatuses
     persistentAtStop storedAtStop suffixTrace
     (fun action member => requests action (suffixMember member)) (fun action member => included action (suffixMember member))
+    (fun action member => regions action (suffixMember member)) (fun action member => readerSafe action (suffixMember member))
   have mayBlock := pending.faulted stop.pending stop.rest rfl actual.2.2
   cases suffixTrace with
   | cons changed _ => exact ⟨actual.1, middle, sourceTrace, storedAtStop.source_sample, ⟨_, _, changed⟩, mayBlock, keeps⟩

@@ -8,4 +8,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.CSMixedRun.Returned.quiet
 #audit axioms Rumoca.FMI3.CSMixedRun.action_correct
 #audit axioms Rumoca.FMI3.CSMixedRun.configuration_cases
+#audit axioms Rumoca.FMI3.CSMixedRun.query_correct
 #audit axioms Rumoca.FMI3.CSMixedRun.trace_correct

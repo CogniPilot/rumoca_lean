@@ -8,6 +8,7 @@ def Action.MayBlock : Action → Prop
   | .run (.step _ _) => True
   | .run (.restart _) => False
   | .logging request => request.failed = true
+  | .query _ => False
 
 theorem ActionContract.faulted_kind [CInterface] {program : Program Invocation}
     (certified : ActionContract program p heap action returns blocked)
@@ -23,6 +24,10 @@ theorem ActionContract.faulted_kind [CInterface] {program : Program Invocation}
       rcases (called.behaviors _).mp faulted with ⟨_, _, _, _, impossible⟩ | ⟨blocked, _⟩
       · cases impossible
       · exact called.failure blocked
+  | query host faulted => cases certified with
+    | query prepared called =>
+      cases Option.some.inj (prepared.symm.trans host)
+      cases (called _).mp faulted
 
 /-- An actual completed prefix derives its own reference state, statuses,
 exact logging update and the continuation certificate for the remaining calls. -/

@@ -39,16 +39,20 @@ def Plan.loggingUpdate : Plan → Option Bool
   | .next cycle following => following.loggingUpdate.orElse
       (fun _ => cycle.loggingUpdate)
 
-def Cycle.Admitted (cycle : Cycle) (header : CFenv.Header) (objects : Objects)
+/-- Admission of one cycle. Query arrays are retained caller storage, never
+borrowed logging inputs, so their writes preserve every later request. -/
+structure Cycle.Admitted (cycle : Cycle) (header : CFenv.Header) (objects : Objects)
     (retained : Address → Prop) (original : Heap) (p : Address)
-    (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (readers : InitializationProtocol.ReadBank) : Prop :=
-  InitializationProtocol.ReferenceTrace .cs .reset cycle.initialization cycle.state ∧
-  (∀ action ∈ cycle.initialization, action.Prepared objects retained original p access readers) ∧
-  cycle.state.phase = .initialized cycle.args ∧
-  CSMixedRun.ReferenceTrace header p buffers (InitializationProtocol.csReference cycle.state cycle.args)
-    cycle.simulation cycle.final cycle.statuses ∧
-  (∀ action ∈ cycle.simulation, action.Prepared original) ∧
-  (∀ action ∈ cycle.simulation, ∀ q, action.ReaderRegion q → readers.Region q)
+    (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (readers : InitializationProtocol.ReadBank) : Prop where
+  initialization : InitializationProtocol.ReferenceTrace .cs .reset cycle.initialization cycle.state
+  requests : ∀ action ∈ cycle.initialization, action.Prepared objects retained original p access readers
+  initialized : cycle.state.phase = .initialized cycle.args
+  simulation : CSMixedRun.ReferenceTrace header p buffers (InitializationProtocol.csReference cycle.state cycle.args)
+    cycle.simulation cycle.final cycle.statuses
+  resources : ∀ action ∈ cycle.simulation, action.Prepared objects buffers original
+  readerIncluded : ∀ action ∈ cycle.simulation, ∀ q, action.ReaderRegion q → readers.Region q
+  regions : ∀ action ∈ cycle.simulation, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q
+  readerSafe : ∀ action ∈ cycle.simulation, ∀ q, readers.Region q → ¬ action.CallerRegion q
 
 inductive Admitted (header : CFenv.Header) (objects : Objects) (retained : Address → Prop)
     (original : Heap) (p : Address) (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) (readers : InitializationProtocol.ReadBank) : Plan → Prop where
@@ -125,7 +129,7 @@ theorem Plan.Outside.not_record {plan : Plan} {p q : Address}
 
 theorem Cycle.Admitted.can_finish {cycle : Cycle} (admitted : cycle.Admitted header objects retained original p access buffers readers) :
     CSRun.CanFinish cycle.final.mode :=
-  admitted.2.2.2.1.can_finish (Or.inl rfl)
+  admitted.simulation.can_finish (Or.inl rfl)
 
 end Rumoca.FMI3.CSProtocol
 end

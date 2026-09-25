@@ -6,6 +6,7 @@ import RumocaFMI3.CSRunEnvironment
 import RumocaFMI3.MEEnvironment
 import RumocaFMI3.CountEnvironment
 import RumocaFMI3.NominalEnvironment
+import RumocaFMI3.InstanceQueryEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationAccess
@@ -32,6 +33,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       NominalEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       DebugLogging.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       EventIndicatorEnvironment.PreparedContract a.solve.prepareFMI3 sigs pool ∧
+      InstanceQuery.PreparedContract a.solve.prepareFMI3 sigs pool ∧
       ∀ (E : Type) (header : CFenv.Header) (instances flags : Nat) (separate : instances ≠ flags)
         (baseHeap : Heap) (firstBlock : Nat) (signed : Bool),
         let objects := StaticRuntime.objects instances flags separate
@@ -93,7 +95,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               (∀ q, ¬ p.InRecord q → Outside buffers q → q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot (nextMode .exitInitialization kind .initialization) q = heap q) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
-    _, _, _, nominalContract, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract, evaluationContract, _⟩ := build.adapter
+    _, _, _, nominalContract, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries, completed, discrete, step, logging, eventContract, evaluationContract, absentContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
   have countPrepared : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
@@ -118,7 +120,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       MEControlEnvironment.DiscreteControl.prepared_correct a.solve.prepareFMI3 sigs unique discrete.member made,
       evaluationContract.prepared pool made⟩
   refine ⟨compiled, build.numerical, Float64Metadata.artifact_variables _ _ build.metadata,
-    Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, runPrepared, mePrepared, countPrepared, nominalPrepared, loggingPrepared, eventPrepared, ?_⟩
+    Float64SetMetadata.artifact_state _ _ build.metadata, sigs, pool, made, printed, functions, runPrepared, mePrepared, countPrepared, nominalPrepared, loggingPrepared, eventPrepared,
+    ⟨getPrepared, setPrepared, fun ty write => (absentContract ty write).prepared pool made⟩, ?_⟩
   intro E header instances flags separate baseHeap firstBlock signed
   let objects := StaticRuntime.objects instances flags separate
   let literals := pool.addresses firstBlock

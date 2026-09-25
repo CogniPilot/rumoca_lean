@@ -102,11 +102,13 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     exact InitializationProtocol.source_contract initializeCalls reference requests ready
   have simulation : SimulationCompiler a.solve.prepareFMI3 program header objects retained
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p buffers readers := by
-    intro current before final actions statuses persistent stored reference requests included
-    exact CSMixedRun.execution header objects a.solve.prepareFMI3 sigs pool prepared.cs prepared.logging baseHeap firstBlock signed
+    intro current before final actions statuses persistent stored reference requests included regions readerSafe
+    exact CSMixedRun.execution header objects a.solve.prepareFMI3 sigs pool prepared.cs prepared.logging
+      ⟨prepared.getter, prepared.setter, prepared.absent⟩ baseHeap firstBlock signed
       program range actual rounding floorBound identity.compareBinding retained (SlotOwners.update owners slot (some owner)) heap current p buffers
       before final actions statuses readers persistent rfl guarded
       (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside⟩) stored reference requests included
+      regions readerSafe
   obtain ⟨reset, _, _, termination, releaseDefined⟩ := prepared.cs.execution header objects firstBlock program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := TerminationEnvironment.release_correct header objects (pool.addresses firstBlock) program tag termination releaseBindings

@@ -4,6 +4,7 @@ import RumocaFMI3.CSMixedLifecycle
 import RumocaFMI3.InitializationCSRun
 import RumocaC.StorageAtomic
 import RumocaFMI3.LoggingCapabilityCreation
+import RumocaFMI3.InstanceQueryEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationAccess
@@ -58,7 +59,7 @@ def Continuation [CInterface] (model : Solve.FMI3Model source) (header : CFenv.H
     InitializationProtocol.Retention (CSMixedRun.loggingUpdate actions) p exited after ∧
     InitializationAccess.RunOutcome model objects program tag slot owners owner original access buffers final after) ∧
   (∀ observed events after records, CSMixedRun.Recorded program p exited actions observed events after records →
-    CSMixedRun.SourceTrace source header p buffers exited initial actions observed records after final)
+    CSMixedRun.SourceTrace model.solve header p buffers exited initial actions observed records after final)
 
 theorem Certificate.cs_continuation (header : CFenv.Header) (objects : Objects)
     (sigs : List Signature)
@@ -66,6 +67,7 @@ theorem Certificate.cs_continuation (header : CFenv.Header) (objects : Objects)
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : CSRunEnvironment.PreparedContract model sigs pool)
     (loggingPrepared : DebugLogging.PreparedContract model sigs pool)
+    (queries : InstanceQuery.PreparedContract model sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) (slot : Fin objects.capacity)
     (access : Float64Buffers.Layout) (buffers : StepEntry.Buffers) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -93,11 +95,14 @@ theorem Certificate.cs_continuation (header : CFenv.Header) (objects : Objects)
     capability.Requires (fun _ effect => ∀ args before value after,
       effect.execute args before value after → CSRun.ProtectedFrame objects buffers before after) →
     CSMixedRun.ReferenceTrace header p buffers (runReference state args before during) actions final statuses →
-    (∀ action ∈ actions, action.Prepared original) →
+    (∀ action ∈ actions, action.Prepared objects buffers original) →
+    (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
+      effect.execute args before value after → CStorage.PreservesOn action.CallerRegion before after)) →
     (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
       effect.execute args before value after → ∀ q, action.ReaderRegion q → after q = before q)) →
     (∀ action ∈ actions, ∀ q, action.ReaderRegion q → ¬ p.InRecord q ∧
       Float64Access.Outside access q ∧ CSRun.Outside p buffers q) →
+    (∀ writer ∈ actions, ∀ reader ∈ actions, ∀ q, reader.ReaderRegion q → ¬ writer.CallerRegion q) →
     Continuation model header objects program tag slot owners owner original
       (InitializationBodies.exitHeap atExit p .cs) access buffers (runReference state args before during)
       final actions statuses capability factoryArgs.logging := by
@@ -106,7 +111,8 @@ theorem Certificate.cs_continuation (header : CFenv.Header) (objects : Objects)
     owners owner
   let p := objects.instances.index slot.val
   dsimp only
-  intro certified initialized literals liveReadonly liveStorage liveFrame admissible outputs represented owned metadata capability actions final statuses matching bound required admitted requests policies readerOutside
+  intro certified initialized literals liveReadonly liveStorage liveFrame admissible outputs represented owned metadata capability actions final statuses matching bound required admitted requests storagePolicies policies readerOutside
+    separateRegions
   obtain ⟨reset, enterDefined, exitDefined, termination, releaseDefined⟩ := prepared.execution header objects firstBlock program actual
   have releaseBindings : StaticRelease.Bindings program tag := ⟨releaseDefined, rfl, rfl, rfl, rfl, rfl, rfl, write⟩
   have finish := TerminationEnvironment.release_correct header objects (pool.addresses firstBlock) program tag termination releaseBindings
@@ -139,9 +145,10 @@ theorem Certificate.cs_continuation (header : CFenv.Header) (objects : Objects)
     simpa only [matching.1, matching.2] using initialized
   have configured := certified.configuration originalConfig
   have writable := certified.retention.writable initialized.storage.logging
-  have current : ∀ action ∈ actions, action.Prepared exited := by
+  have current : ∀ action ∈ actions, action.Prepared objects buffers exited := by
     intro action member
-    apply CSMixedRun.Action.Prepared.framed action (requests action member)
+    apply CSMixedRun.Action.Prepared.preserved action (requests action member)
+      (fun q _ => (certified.storage q).trans (liveStorage q))
     intro q inside
     obtain ⟨notRecord, accessOutside, _⟩ := readerOutside action member q inside
     have field (name : String) : q ≠ p.member name := fun same => notRecord (same ▸ p.member_in_record name)
@@ -155,12 +162,14 @@ theorem Certificate.cs_continuation (header : CFenv.Header) (objects : Objects)
         intro same
         subst q
         exact readable (liveStorage.atomic_unreadable (represented slot) rfl)
+      | query _ => cases inside
     exact (certified.frame q ⟨accessOutside, notState, fun name _ => field name⟩).trans
       (liveFrame q notRecord notFlag)
   have trace := CSMixedRun.trace_correct header objects model sigs pool prepared.step loggingPrepared baseHeap firstBlock signed
     p buffers rfl program capability factoryArgs.logging range actual rounding floorBound compare bound required
-    reset enterDefined exitDefined exited _ final actions statuses owners poolFrame stored configured writable ownership
-    admitted current policies (fun action member q inside => (readerOutside action member q inside).2.2)
+    reset (queries.quiet header objects firstBlock program actual termination) enterDefined exitDefined exited _ final actions
+    statuses owners poolFrame stored configured writable ownership admitted current storagePolicies policies
+    (fun action member q inside => (readerOutside action member q inside).2.2) separateRegions
   refine ⟨trace, ?_, fun _ _ _ _ recorded => trace.recorded_source recorded⟩
   intro observed events after completed
   obtain ⟨statusValues, finalStored, finalConfig, retention, finalOwners, runReadonly, frame⟩ := trace.completed completed
@@ -250,15 +259,18 @@ theorem runtime_create_cs_histories (compiled : compile input = .ok a)
                 actions final statuses →
               program.externals "fegetround" = some (CMathCalls.roundingExternal rfl header.nearest range) →
               program.externals "floor" = some (CMathCalls.floorExternal rfl) →
-              (∀ action ∈ actions, action.Prepared heap) →
+              (∀ action ∈ actions, action.Prepared objects stepBuffers heap) →
+              (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
+                effect.execute args before value after → CStorage.PreservesOn action.CallerRegion before after)) →
               (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
                 effect.execute args before value after → ∀ q, action.ReaderRegion q → after q = before q)) →
               (∀ action ∈ actions, ∀ q, action.ReaderRegion q → ¬ p.InRecord q ∧
                 Float64Access.Outside buffers q ∧ CSRun.Outside p stepBuffers q) →
+              (∀ writer ∈ actions, ∀ reader ∈ actions, ∀ q, reader.ReaderRegion q → ¬ writer.CallerRegion q) →
               Continuation a.solve.prepareFMI3 header objects program tag slot (SlotOwners.update owners slot (some owner)) owner
                 heap (InitializationBodies.exitHeap atExit p .cs) buffers stepBuffers (runReference ⟨initial⟩ args before during)
                 final actions statuses capability factoryArgs.logging := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, prepared, _, _, _, loggingPrepared, _, create⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, prepared, _, _, _, loggingPrepared, _, queries, create⟩ :=
     InitializationAccess.runtime_create_release compiled build
   refine ⟨compiled, numerical, metadataVariables, writable, DebugLogging.artifact_category _ _ build.metadata,
     sigs, pool, made, printed, functions, prepared, loggingPrepared, ?_⟩
@@ -280,13 +292,13 @@ theorem runtime_create_cs_histories (compiled : compile input = .ok a)
     admissible beforeFits beforeAllowed duringFits duringAllowed
   obtain ⟨_, initialized, uniqueSource⟩ := certified.completed_source executed
   refine ⟨beforeEntry, atExit, certified, executed, initialized, uniqueSource, fun _ _ => certified.execution_iff, ?_⟩
-  intro stepBuffers capability actions final statuses range outputs matching bound required admitted rounding floorBound requests policies readerOutside
-  exact Certificate.cs_continuation header objects sigs pool prepared loggingPrepared baseHeap firstBlock signed slot buffers stepBuffers
+  intro stepBuffers capability actions final statuses range outputs matching bound required admitted rounding floorBound requests storagePolicies policies readerOutside separateRegions
+  exact Certificate.cs_continuation header objects sigs pool prepared loggingPrepared queries baseHeap firstBlock signed slot buffers stepBuffers
     program tag range actual identity.compareBinding write rounding floorBound heap live beforeEntry atExit ⟨initial⟩ args before during factoryArgs
       (SlotOwners.update owners slot (some owner)) owner certified created.initialized literalFrame
       (termination_preserves ((creation _).mpr rfl)) preserved createdFrame admissible (outputs.at_index slot.val)
       created.represented created.owned created.metadata capability actions final statuses matching bound required
-      (admitted.rehandle p) requests policies readerOutside
+      (admitted.rehandle p) requests storagePolicies policies readerOutside separateRegions
 
 end Rumoca.FMI3.InitializationAccess
 end

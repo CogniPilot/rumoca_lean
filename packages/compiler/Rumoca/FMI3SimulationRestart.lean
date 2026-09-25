@@ -54,13 +54,14 @@ theorem restart_after_cs [CInterface] {program : Program Invocation}
     (readerPolicy : capability.Requires (fun _ effect => ∀ args before value after,
       effect.execute args before value after → ∀ q, readers.Region q → after q = before q))
     (readerOutside : ∀ q, readers.Region q → CSRun.Outside p buffers q)
+    (readerSafe : ∀ q, readers.Region q → ∀ action ∈ simulation, ¬ action.CallerRegion q)
     (compileProtocol : ∀ next, Invariant program objects retained owners original literals next p .cs State.reset readers →
       SourceContract model program objects retained owners original literals next p access .cs State.reset nextState actions readers) :
     RestartSourceContract model program objects retained owners original literals after p access .cs nextState actions readers := by
   obtain ⟨_, stored, _, keeps, represented, readonly, _⟩ := certified.completed executed
   exact restart_source model reset stored.reset stored.kind stored.mode represented
     (caller.trans (certified.storage executed policy)) (literalFrame.trans readonly) (logging.updated keeps)
-    (readerFrame.trans (fun q inside => certified.callerFrame executed readerPolicy q inside (readerOutside q inside)))
+    (readerFrame.trans (fun q inside => certified.callerFrame executed readerPolicy q inside (readerOutside q inside) (readerSafe q inside)))
     (fun q inside => (readerOutside q inside).1) compileProtocol
 
 

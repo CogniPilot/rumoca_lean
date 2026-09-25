@@ -19,6 +19,9 @@ inductive RecordedAction [CInterface] (program : Program Invocation) (p : Addres
   | logging : (machine program).Behaves
       (.calling (request.call p).1 (request.call p).2 heap .done) (.terminates events ⟨status, after⟩) →
       RecordedAction program p heap (.logging request) status events after [(events, ⟨status, after⟩)]
+  | query : request.hostRun heap = some ready → (machine program).Behaves
+      (.calling (request.call p).1 (request.call p).2 ready .done) (.terminates events ⟨status, after⟩) →
+      RecordedAction program p heap (.query request) status events after [(events, ⟨status, after⟩)]
 
 inductive Recorded [CInterface] (program : Program Invocation) (p : Address) :
     Heap → List Action → List Value → List Invocation → Heap → List CallRecord → Prop where
@@ -33,6 +36,7 @@ theorem RecordedAction.performed [CInterface] {program : Program Invocation}
   cases recorded with
   | run actual => exact .run actual.performed
   | logging actual => exact .logging actual
+  | query host actual => exact .query host actual
 
 theorem Performed.records [CInterface] {program : Program Invocation}
     (performed : Performed program p heap action status events after) :
@@ -42,6 +46,7 @@ theorem Performed.records [CInterface] {program : Program Invocation}
     obtain ⟨records, recorded⟩ := actual.records
     exact ⟨records.map runRecord, .run recorded⟩
   | logging actual => exact ⟨_, .logging actual⟩
+  | query host actual => exact ⟨_, .query host actual⟩
 
 theorem Recorded.completed [CInterface] {program : Program Invocation}
     (recorded : Recorded program p heap actions observed events after records) :

@@ -3,6 +3,7 @@ import Rumoca.FMI3CSMixedRun
 import RumocaFMI3.CSMixedLifecycle
 import RumocaFMI3.LoggingCapabilityCreation
 import RumocaFMI3.InitializationProtocolRunFrames
+import RumocaFMI3.InstanceQueryEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
@@ -50,7 +51,7 @@ def CSContinuation [CInterface] (model : Solve.FMI3Model source) (header : CFenv
     InitializationProtocol.Retention (CSMixedRun.loggingUpdate actions) p exited after ∧
     InitializationProtocol.CSRunOutcome model objects program tag slot owners owner original access initialization buffers final after) ∧
   (∀ observed events after records, CSMixedRun.Recorded program p exited actions observed events after records →
-    CSMixedRun.SourceTrace source header p buffers exited initial actions observed records after final)
+    CSMixedRun.SourceTrace model.solve header p buffers exited initial actions observed records after final)
 
 theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects : Objects)
     (sigs : List Signature)
@@ -58,6 +59,7 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
       (LiteralPreparation.functions model sigs).flatMap CLiteral.functionNames))
     (prepared : CSRunEnvironment.PreparedContract model sigs pool)
     (loggingPrepared : DebugLogging.PreparedContract model sigs pool)
+    (queries : InstanceQuery.PreparedContract model sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation)
@@ -87,8 +89,12 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
       capability.Requires (fun _ effect => ∀ args before value after,
         effect.execute args before value after → CSRun.ProtectedFrame objects buffers before after) →
       CSMixedRun.ReferenceTrace header p buffers (csReference state args) actions final statuses →
-      (∀ action ∈ actions, action.Prepared original) →
+      (∀ action ∈ actions, action.Prepared objects buffers original) →
       (∀ action ∈ actions, ∀ q, action.ReaderRegion q → readers.Region q) →
+      (∀ action ∈ actions, ∀ q, action.CallerRegion q → Float64Rejection.Protected objects retained q) →
+      (∀ action ∈ actions, ∀ q, readers.Region q → ¬ action.CallerRegion q) →
+      (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
+        effect.execute args before value after → CStorage.PreservesOn action.CallerRegion before after)) →
       (∀ action ∈ actions, capability.Requires (fun _ effect => ∀ args before value after,
         effect.execute args before value after → ∀ q, action.ReaderRegion q → after q = before q)) →
       (∀ action ∈ actions, ∀ q, action.ReaderRegion q → CSRun.Outside p buffers q) →
@@ -99,7 +105,8 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
     initialization state initObserved initCheckpoints args buffers readers
   let p := objects.instances.index slot.val
   dsimp only
-  intro initialized created reserved creationFrame executed phase outputs guarded capability actions final statuses matching bound required admitted requests included policies readerOutside
+  intro initialized created reserved creationFrame executed phase outputs guarded capability actions final statuses matching bound required admitted requests included
+    regions readerSafe storagePolicies policies readerOutside
   obtain ⟨_, _, invariant, _, keeps, initialFrame⟩ := initialized.initialized.completed _ _ _ executed
   have readonly := (initialized.completed _ _ _ executed).1
   have stored := invariant.cs_ready model.solve phase outputs guarded
@@ -130,15 +137,18 @@ theorem CreatedSourceContract.cs_continuation (header : CFenv.Header) (objects :
       ((initialFrame q (guarded.protects protectedOutput) untouched).trans (creationFrame q untouched.1 notFlag)))
   have configured := keeps.configured (Logging.Capability.created matching created)
   have writable := keeps.writable created.initialized.storage.logging
-  have current : ∀ action ∈ actions, action.Prepared exited := by
+  have current : ∀ action ∈ actions, action.Prepared objects buffers exited := by
     intro action member
-    exact CSMixedRun.Action.Prepared.framed action (requests action member)
+    exact CSMixedRun.Action.Prepared.preserved action (requests action member)
+      (fun q inside => invariant.caller q (regions action member q inside))
       (fun q inside => invariant.readerFrame q (included action member q inside))
   have certified := CSMixedRun.trace_correct header objects model sigs pool prepared.step loggingPrepared baseHeap firstBlock signed
     p buffers rfl program capability ((loggingUpdate initialization).getD factoryArgs.logging)
-    range actual rounding floorBound compare bound required reset enterDefined exitDefined
+    range actual rounding floorBound compare bound required reset
+    (queries.quiet header objects firstBlock program actual termination) enterDefined exitDefined
     exited _ final actions statuses (SlotOwners.update owners slot (some owner)) invariant.readonly stored
-    configured writable invariant.ownership admitted current policies readerOutside
+    configured writable invariant.ownership admitted current storagePolicies policies readerOutside
+    (fun writer written reader read q inside => readerSafe writer written q (included reader read q inside))
   refine ⟨certified, ?_, fun _ _ _ _ recorded => certified.recorded_source recorded⟩
   intro observed events after completed
   obtain ⟨statusValues, finalStored, finalConfig, retention, finalOwners, runReadonly, frame⟩ := certified.completed completed

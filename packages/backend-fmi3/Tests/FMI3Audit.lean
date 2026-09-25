@@ -216,6 +216,8 @@ import Tests.FMI3Audit.InitializationSimulation
 import Tests.FMI3Audit.InitializationStorage
 import Tests.FMI3Audit.InstanceInitialization
 import Tests.FMI3Audit.InstanceInitializationCalls
+import Tests.FMI3Audit.InstanceQuery
+import Tests.FMI3Audit.InstanceQueryEnvironment
 import Tests.FMI3Audit.InstanceSlot
 import Tests.FMI3Audit.InstanceStorage
 import Tests.FMI3Audit.LifecycleBodies

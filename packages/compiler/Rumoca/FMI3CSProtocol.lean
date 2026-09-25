@@ -23,7 +23,7 @@ structure CycleEvidence (model : Solve.FMI3Model source) (header : CFenv.Header)
     (exited : Heap) (statuses : List Value) (calls : List CSMixedRun.CallRecord) (after : Heap) : Prop where
   initialization : InitializationEvidence model p cycle.initialization initial checkpoints
   statuses_eq : statuses = cycle.statuses.map Value.integer
-  callSources : CSMixedRun.SourceTrace source header p buffers exited
+  callSources : CSMixedRun.SourceTrace model.solve header p buffers exited
     (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation statuses calls after cycle.final
   sourceEpoch : ∃! trajectory, CSRun.SourceEpoch source cycle.final trajectory
   sample : ∀ trajectory, CSRun.SourceEpoch source cycle.final trajectory →
@@ -59,11 +59,11 @@ inductive SourceInterrupted (model : Solve.FMI3Model source) (header : CFenv.Hea
   | nextInitialization : InitializationProtocol.SourcePrefix model p .cs .reset cycle.initialization stop →
       SourceInterrupted model header p buffers (.next cycle following) [] (.initialization stop)
   | lastSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
-      CSMixedRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
+      CSMixedRun.SourcePrefix model.solve header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
       SourceInterrupted model header p buffers (.last cycle)
         [.initialization initial checkpoints exited] (.simulation stop)
   | nextSimulation : InitializationEvidence model p cycle.initialization initial checkpoints →
-      CSMixedRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
+      CSMixedRun.SourcePrefix model.solve header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop →
       SourceInterrupted model header p buffers (.next cycle following)
         [.initialization initial checkpoints exited] (.simulation stop)
   | later : CycleEvidence model header p buffers cycle initial checkpoints exited statuses calls simulated →
@@ -109,7 +109,7 @@ structure CycleContract (model : Solve.FMI3Model source) (header : CFenv.Header)
   simulationStopped : ∀ observed exited checkpoints,
     InitializationProtocol.Completed program p access heap cycle.initialization observed exited checkpoints →
     ∀ stop, CSMixedRun.Interrupted program p exited cycle.simulation stop →
-      CSMixedRun.SourcePrefix source header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop
+      CSMixedRun.SourcePrefix model.solve header p buffers exited (InitializationProtocol.csReference cycle.state cycle.args) cycle.simulation stop
 
 theorem CycleContract.completed
     (certified : CycleContract model header program objects retained owners original literals heap p access buffers cycle readers)
@@ -139,20 +139,20 @@ theorem cycle_contract
     (admitted : cycle.Admitted header objects retained original p access buffers readers)
     (invariant : Invariant program objects retained owners original literals heap p .cs .reset readers) :
     CycleContract model header program objects retained owners original literals heap p access buffers cycle readers := by
-  have certified := initialization heap cycle.initialization cycle.state invariant admitted.1 admitted.2.1
+  have certified := initialization heap cycle.initialization cycle.state invariant admitted.initialization admitted.requests
   refine ⟨certified, ?_, ?_, ?_⟩
   · intro observed exited checkpoints executed
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation exited _ cycle.final cycle.simulation cycle.statuses ready.persistent
-      (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2.1
-      admitted.2.2.2.2.1 admitted.2.2.2.2.2
+      (ready.cs_ready model.solve admitted.initialized outputs guarded) admitted.simulation
+      admitted.resources admitted.readerIncluded admitted.regions admitted.readerSafe
   · intro stop interrupted
-    exact initialization.interrupted invariant admitted.1 admitted.2.1 interrupted
+    exact initialization.interrupted invariant admitted.initialization admitted.requests interrupted
   · intro observed exited checkpoints executed stop interrupted
     have ready := (certified.completed _ _ _ executed).2.2.1
     exact simulation.interrupted ready.persistent
-      (ready.cs_ready model.solve admitted.2.2.1 outputs guarded) admitted.2.2.2.1
-      admitted.2.2.2.2.1 admitted.2.2.2.2.2 interrupted
+      (ready.cs_ready model.solve admitted.initialized outputs guarded) admitted.simulation
+      admitted.resources admitted.readerIncluded admitted.regions admitted.readerSafe interrupted
 
 structure Contract (model : Solve.FMI3Model source) (header : CFenv.Header) (program : Program Invocation) (objects : Objects)
     (retained : Address → Prop) (owners : SlotOwners.State objects.capacity)

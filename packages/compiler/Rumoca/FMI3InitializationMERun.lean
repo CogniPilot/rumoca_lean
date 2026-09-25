@@ -261,7 +261,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
               MEContinuation a.solve objects program tag slot owners owner heap
                 (InitializationBodies.exitHeap atExit p .me) buffers addresses buffer (meReference ⟨initial⟩ args before during)
                 final (Time.Clock.initial args.start) finalClock actions capability factoryArgs.logging := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, nominals, loggingPrepared, eventPrepared, create⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, nominals, loggingPrepared, eventPrepared, _, create⟩ :=
     runtime_create_release compiled build
   refine ⟨compiled, numerical, metadataVariables, writable, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
     CountMetadata.artifact_counts _ _ build.metadata, NominalMetadata.artifact_nominals _ _ build.metadata,
