@@ -45,7 +45,7 @@ theorem writeMode_reads {shape : Tensor.Shape} (heap : Heap) (p : Address) (mode
     Reads (LifecycleBodies.writeMode heap p mode) (p.member TensorInstance.stateName) v := by
   intro i
   have frame := LifecycleBodies.write_frame heap p ((p.member TensorInstance.stateName).index i.val) mode
-    (TensorReset.state_ne_member p "mode" (by decide) i.val)
+    (TensorReset.region_ne_member p TensorInstance.stateName "mode" (by decide) i.val)
   simp only [load, frame]
   exact reads i
 
@@ -140,7 +140,7 @@ theorem tensor_zero_initial (a : TensorArtifact input) (heap : Heap) (base : Add
 /-- The TensorSquare family. For every tensor artifact whose emitted bytes satisfy
 the tensor source-build contract, the actual adapter satisfies the tensor adapter
 contract, whose factory terminates in `TensorInstanceInit.finalHeap`, whose reset
-terminates in `TensorReset.finalHeap` and whose initialization-mode transitions
+terminates in `TensorReset.restoreHeap` over the record regions and whose initialization-mode transitions
 terminate in `LifecycleBodies.writeMode`. Each of those heaps holds a state that
 satisfies the MLS §8.6 source initialization (`each start=0, each fixed=true`)
 and the prepared kernel's initial condition. -/
@@ -151,19 +151,23 @@ theorem tensorSquare_initialization (a : TensorArtifact input)
     (∀ (heap : Heap) (p : Address) (slot : Nat) (kind : Kind) (environment logger : Option Address)
       (logging : Bool),
       TensorStateInitial a
-        (TensorInstanceInit.finalHeap heap p slot kind environment logger logging ArrayProfile.stateShape)
+        (TensorInstanceInit.finalHeap heap p slot kind environment logger logging
+          (TensorStorage.regions ArrayProfile.stateShape true a.tensorModel.hasOutput))
         (p.member TensorInstance.stateName)) ∧
     (∀ (heap : Heap) (p : Address),
-      TensorStateInitial a (TensorReset.finalHeap heap p ArrayProfile.stateShape)
+      TensorStateInitial a
+        (TensorReset.restoreHeap heap p (TensorStorage.regions ArrayProfile.stateShape true a.tensorModel.hasOutput))
         (p.member TensorInstance.stateName)) ∧
     (∀ (heap : Heap) (p : Address) (mode : Mode),
       TensorStateInitial a heap (p.member TensorInstance.stateName) →
       TensorStateInitial a (LifecycleBodies.writeMode heap p mode) (p.member TensorInstance.stateName)) :=
   ⟨build.adapter,
     fun heap p slot kind environment logger logging => tensor_zero_initial a _ _
-      (TensorInstanceInit.reads_state heap p slot kind environment logger logging _),
-    fun heap p => letI : StaticLiterals := ⟨fun _ => none⟩
-      tensor_zero_initial a _ _ (TensorReset.reads_initialization _ heap p),
+      (TensorReset.restoreHeap_reads _ p _ (TensorStorage.regions_distinct _ true _)
+        (TensorInstance.stateName, ArrayProfile.stateShape) (by simp [TensorStorage.regions])),
+    fun heap p => tensor_zero_initial a _ _
+      (TensorReset.restoreHeap_reads heap p _ (TensorStorage.regions_distinct _ true _)
+        (TensorInstance.stateName, ArrayProfile.stateShape) (by simp [TensorStorage.regions])),
     fun heap p mode ⟨v, reads, source, kernel⟩ => ⟨v, writeMode_reads heap p mode v reads, source, kernel⟩⟩
 
 /-! ### ConstantRates -/
@@ -201,10 +205,12 @@ theorem constantRates_initialization (a : ConstantArtifact input)
     (∀ (heap : Heap) (p : Address) (slot : Nat) (kind : Kind) (environment logger : Option Address)
       (logging : Bool),
       ConstantStateInitial a
-        (TensorInstanceInit.finalHeap heap p slot kind environment logger logging a.constantModel.shape)
+        (TensorInstanceInit.finalHeap heap p slot kind environment logger logging
+          (ConstantInstanceInit.regions a.constantModel.shape))
         (p.member TensorInstance.stateName)) ∧
     (∀ (heap : Heap) (p : Address),
-      ConstantStateInitial a (TensorReset.finalHeap heap p a.constantModel.shape)
+      ConstantStateInitial a
+        (TensorReset.restoreHeap heap p (ConstantInstanceInit.regions a.constantModel.shape))
         (p.member TensorInstance.stateName)) ∧
     (∀ (heap : Heap) (p : Address) (mode : Mode),
       ConstantStateInitial a heap (p.member TensorInstance.stateName) →
@@ -212,8 +218,10 @@ theorem constantRates_initialization (a : ConstantArtifact input)
   ⟨build.adapter,
     fun heap p slot kind environment logger logging => constant_zero_initial a _ _
       (ConstantInstanceInit.reads_state heap p slot kind environment logger logging _),
-    fun heap p => letI : StaticLiterals := ⟨fun _ => none⟩
-      constant_zero_initial a _ _ (TensorReset.reads_initialization _ heap p),
+    fun heap p => constant_zero_initial a _ _
+      (TensorReset.restoreHeap_reads heap p _ (TensorStorage.regions_distinct _ false false)
+        (TensorInstance.stateName, a.constantModel.shape)
+        (by simp [TensorStorage.regions])),
     fun heap p mode ⟨v, reads, source⟩ => ⟨v, writeMode_reads heap p mode v reads, source⟩⟩
 
 end Rumoca.InitializationCorrespondence
