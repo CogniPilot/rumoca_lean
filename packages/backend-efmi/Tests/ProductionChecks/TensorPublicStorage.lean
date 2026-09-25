@@ -37,3 +37,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorPublicStorage.cleared_status_reads
 #audit axioms Rumoca.EFMI.TensorPublicStorage.method_prefix
 #audit axioms Rumoca.EFMI.TensorPublicStorage.storage_iff_allocated
+#audit axioms Rumoca.EFMI.TensorPublicStorage.raised
+#audit axioms Rumoca.EFMI.TensorPublicStorage.raised_status_reads
+#audit axioms Rumoca.EFMI.TensorPublicStorage.raised_other
+#audit axioms Rumoca.EFMI.TensorPublicStorage.raise_of_status
+#audit axioms Rumoca.EFMI.TensorPublicStorage.Storage.after_raise

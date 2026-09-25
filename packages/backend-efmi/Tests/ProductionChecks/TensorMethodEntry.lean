@@ -7,5 +7,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.ContextMethod.entry_in
 #audit axioms Rumoca.EFMI.ContextMethod.complete_in
 #audit axioms Rumoca.EFMI.ContextMethod.doStep_in
-#audit axioms Rumoca.EFMI.ContextMethod.coefficients
-#audit axioms Rumoca.EFMI.ContextMethod.doStep_from_rhs_in
+#audit axioms Rumoca.EFMI.ContextMethod.Returns
+#audit axioms Rumoca.EFMI.ContextMethod.returns_in
+#audit axioms Rumoca.EFMI.ContextMethod.fresh
+#audit axioms Rumoca.EFMI.ContextMethod.coefficients_unique
+#audit axioms Rumoca.EFMI.ContextMethod.doStep_outcomes_in

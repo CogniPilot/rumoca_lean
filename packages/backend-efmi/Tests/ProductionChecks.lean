@@ -212,6 +212,12 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.TensorProduction.doStep_derivative_refines
 #audit axioms Rumoca.EFMI.TensorProduction.doStep_jacobian_refines
 #audit axioms Rumoca.EFMI.TensorProduction.render_chars
+#audit axioms Rumoca.EFMI.TensorProduction.includes
+#audit axioms Rumoca.EFMI.TensorProduction.preflightArgs
+#audit axioms Rumoca.EFMI.TensorProduction.overflowStatus
+#audit axioms Rumoca.EFMI.TensorProduction.unchecked
+#audit axioms Rumoca.EFMI.TensorProduction.kernelCalls
+#audit axioms Rumoca.EFMI.TensorProduction.doStepFunction
 
 #audit axioms Rumoca.EFMI.TensorManifest.lifecycle
 #audit axioms Rumoca.EFMI.TensorManifest.documents_valid

@@ -5,14 +5,14 @@ namespace Rumoca.EFMI.TensorNumericalFieldFree
 open CTree CMemory CDeclaredMembers.FieldFree
 open TensorNumericalLinkage CTensor.ProgramFixture
 
-/-- Kernel reduction of the seven ACTUAL printed trees, not a name-based
+/-- Kernel reduction of the nine ACTUAL printed trees, not a name-based
 execution rule. The predicate descends through every loop and expression. -/
-theorem seven_free : numericalFunctions.all (fun fn => body fn.body) = true := by
+theorem numerical_free : numericalFunctions.all (fun fn => body fn.body) = true := by
   rfl
 
 theorem numerical_member (fn : Function) (member : fn ∈ numericalFunctions) :
     AdmittedBody fn.body :=
-  List.all_eq_true.mp seven_free fn member
+  List.all_eq_true.mp numerical_free fn member
 
 theorem definition_body (name : String) (fn : Function)
     (found : definitions name = some fn) : AdmittedBody fn.body := by
@@ -31,16 +31,16 @@ theorem derivative_free (shape : Tensor.Shape) :
 theorem square_diagonal_free : AdmittedBody CTensor.SquareDiagonal.function.body :=
   definition_body _ _ square_diagonal_defined
 
-theorem seven_render_and_free :
+theorem render_and_free :
     TensorProduction.kernelPieces =
-      "#include <stddef.h>\n#include <stdint.h>\n" :: numericalFunctions.map Function.render ∧
+      TensorProduction.includes :: numericalFunctions.map Function.render ∧
     ∀ fn ∈ numericalFunctions, AdmittedBody fn.body :=
   ⟨pieces_exact, numerical_member⟩
 
 section
 variable [interface : CInterface]
 
-/-- Lookup, syntax and evaluator compatibility share the exact seven-tree table. -/
+/-- Lookup, syntax and evaluator compatibility share the exact nine-tree table. -/
 theorem helper_expression_agreement (declarations : CDeclaredMembers.Declarations)
     (objects : CDeclaredMembers.Objects) (env : CBody.Locals) (heap : Heap)
     (name : String) (fn : Function) (found : definitions name = some fn)

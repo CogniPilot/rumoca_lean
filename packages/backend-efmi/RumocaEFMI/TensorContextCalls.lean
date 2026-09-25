@@ -3,11 +3,12 @@ import RumocaEFMI.TensorArrayMembers
 import RumocaEFMI.TensorNumericalLinkage
 
 /-! Actual eFMI tensor call arguments and status-clear/RHS dispatch in the
-shared context-aware machine. This is a method PREFIX, not helper completion. -/
+shared context-aware machine: the method prefix, the preflight dispatches and the
+kernel dispatch. This is not helper completion. -/
 noncomputable section
 namespace Rumoca.EFMI.TensorContextCalls
 open CTree CMemory CDeclaredMembers CContextMachine
-open TensorProduction
+open TensorProduction CTensor
 variable [interface : CInterface]
 
 def expressions (objects : Objects) : Expressions := declared TensorArrayMembers.declarations objects
@@ -21,10 +22,23 @@ def jacobianArgs : List Expr :=
 def afterRhs : List Stmt :=
   [.eval (.call (.id "rumoca_square_jacobian_diag") jacobianArgs), .ret (some (selfField statusName))]
 
+/-- DoStep after both preflight declarations: the failure test and the return. -/
+def afterPreflights : List Stmt :=
+  [.branch unchecked [.assign (selfField statusName) (.nat overflowStatus)] kernelCalls,
+    .ret (some (selfField statusName))]
+
 omit interface in
 theorem doStep_body : doStepFunction.body =
     .assign (selfField statusName) (.nat 0) ::
-      .eval (.call (.id "rumoca_rhs") rhsArgs) :: afterRhs := rfl
+      .declare "int32_t" "squares"
+        (.call (.id CTensor.ProductPreflight.function.signature.name) preflightArgs) ::
+      .declare "int32_t" "sums"
+        (.call (.id CTensor.SumPreflight.function.signature.name) preflightArgs) ::
+      afterPreflights := rfl
+
+omit interface in
+theorem kernel_body : kernelCalls ++ [.ret (some (selfField statusName))] =
+    .eval (.call (.id "rumoca_rhs") rhsArgs) :: afterRhs := rfl
 
 theorem rhs_arguments (rep : Represents TensorArrayMembers.declarations objects
     TensorArrayMembers.record heap base)
@@ -48,6 +62,17 @@ theorem jacobian_arguments (rep : Represents TensorArrayMembers.declarations obj
   simp only [jacobianArgs, arguments, CCalls.argumentsWith, expressions, declared, CBody.declaredExpressions, input, output,
     CBody.evalWith, bind, Option.bind_some, pure]
 
+theorem preflight_arguments (rep : Represents TensorArrayMembers.declarations objects
+    TensorArrayMembers.record heap base)
+    (bound : env "self" = some (.pointer (some base))) :
+    arguments (expressions objects) env heap preflightArgs =
+      some (FinitePreflight.argumentValues (some (base.member inputVar.name))
+        (some (base.member inputVar.name)) inputVar.volume) := by
+  have input := (TensorArrayMembers.array_argument rep inputVar (by simp [modelVars]) bound).1
+  simp only [preflightArgs, arguments, CCalls.argumentsWith, expressions, declared,
+    CBody.declaredExpressions, input, CBody.evalWith, bind, Option.bind_some, pure,
+    FinitePreflight.argumentValues]
+
 /-- Status clearing changes no declaration context. Its actual store may be
 proved from caller storage; array allocation/type representation survives it. -/
 theorem method_clear (name : String) (body : List Stmt) (objects : Objects)
@@ -61,35 +86,24 @@ theorem method_clear (name : String) (body : List Stmt) (objects : Objects)
     selfField, CBody.lvalueWith, CBody.resolve, bound, Option.orElse_some,
     Value.address, if_true, Nat.cast_zero, stored, bind, Option.bind_some, pure]
 
-/-- The real DoStep prefix clears status and dispatches RHS with pointers
-derived from actual array declarations. No fabricated array-pointer cells. -/
-theorem doStep_rhs_dispatch (p : CCalls.Program) (objects : Objects)
-    (env : CBody.Locals) (types : CLoops.Types) (heap after : Heap) (base : Address)
+/-- The kernel calls dispatch the RHS with pointers derived from actual array
+declarations. No fabricated array-pointer cells. -/
+theorem kernel_rhs_dispatch (p : CCalls.Program) (objects : Objects)
+    (env : CBody.Locals) (types : CLoops.Types) (heap : Heap) (base : Address)
     (rep : Represents TensorArrayMembers.declarations objects TensorArrayMembers.record heap base)
     (bound : env "self" = some (.pointer (some base)))
     (unshadowed : env "rumoca_rhs" = none)
-    (stored : store heap (base.member statusName) (.integer 0) = some after)
     (stack : CCalls.Typed.Continuation) :
-    Transition.Reaches (machine (expressions objects) p).step
-      (.body (.running doStepFunction.body env types heap) statusAlias stack)
-      (.calling "rumoca_rhs"
+    next (expressions objects) p
+      (.body (.running (kernelCalls ++ [.ret (some (selfField statusName))]) env types heap)
+        statusAlias stack) =
+      some (.calling "rumoca_rhs"
         [.pointer (some (base.member inputVar.name)), .pointer (some (base.member inputVar.name)),
           .pointer (some (base.member squareVar.name)), .integer inputVar.volume]
-        after (.caller .discard afterRhs env types statusAlias stack)) := by
-  have cleared := method_clear doStepName
-    [.eval (.call (.id "rumoca_rhs") rhsArgs),
-      .eval (.call (.id "rumoca_square_jacobian_diag") jacobianArgs)]
-    objects env types heap after base bound stored
-  change loopNext (expressions objects) (.running doStepFunction.body env types heap) =
-    some (.running (.eval (.call (.id "rumoca_rhs") rhsArgs) :: afterRhs) env types after) at cleared
-  have first : next (expressions objects) p
-      (.body (.running doStepFunction.body env types heap) statusAlias stack) =
-      some (.body (.running (.eval (.call (.id "rumoca_rhs") rhsArgs) :: afterRhs)
-        env types after) statusAlias stack) := by
-    simp only [next, CCalls.Typed.nextIn, CCalls.Typed.nextWithExpressions, cleared]
-  have dispatched := declared_invoke_step TensorArrayMembers.declarations objects p "rumoca_rhs"
-    rhsArgs _ afterRhs env types after statusAlias stack (by decide +kernel) unshadowed
-    (rhs_arguments (rep.after_store stored) bound)
-  exact .next first (.next dispatched (.refl _))
+        heap (.caller .discard afterRhs env types statusAlias stack)) := by
+  rw [kernel_body]
+  exact declared_invoke_step TensorArrayMembers.declarations objects p "rumoca_rhs"
+    rhsArgs _ afterRhs env types heap statusAlias stack (by decide +kernel) unshadowed
+    (rhs_arguments rep bound)
 
 end Rumoca.EFMI.TensorContextCalls

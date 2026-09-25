@@ -48,16 +48,22 @@ structure Method where
   cr : String
   name : String
   fn : String
+  signals : List String
   deriving Repr
 
-/-- The manifest identifiers of a lifecycle method, derived from its name. -/
-def lifecycle (method : GALEC.Method) (fn : String) : Method :=
+/-- The manifest identifiers of a lifecycle method, derived from its name, and
+the signal names of the Algorithm Code method's interface. -/
+def lifecycle (method : GALEC.Method) (fn : String) (source : GALEC.AST.Method) : Method :=
   let name := GALEC.Names.method method
-  ⟨"AF_" ++ name, "CF_" ++ name, "CP_" ++ name ++ "_self", "CR_" ++ name, name, fn⟩
+  ⟨"AF_" ++ name, "CF_" ++ name, "CP_" ++ name ++ "_self", "CR_" ++ name, name, fn,
+    source.signals.map Parser.Token.text⟩
 
-def startup : Method := lifecycle .startup TensorProduction.startupName
-def recalibrate : Method := lifecycle .recalibrate TensorProduction.recalibrateName
-def doStep : Method := lifecycle .doStep TensorProduction.doStepName
+def startup : Method :=
+  lifecycle .startup TensorProduction.startupName GALEC.Elaboration.Square.startupMethod
+def recalibrate : Method :=
+  lifecycle .recalibrate TensorProduction.recalibrateName GALEC.Elaboration.Scalar.recalibrateMethod
+def doStep : Method :=
+  lifecycle .doStep TensorProduction.doStepName GALEC.Elaboration.Square.stepMethod
 
 def methods : List Method := [startup, recalibrate, doStep]
 
@@ -88,8 +94,14 @@ def algorithmVariable (v : Var) : Element :=
       ("start", v.start)],
     children := dimensionNodes v.dims }
 
+/-- The exposed signals of a method; an empty interface has no element. -/
+def signalNodes : List String → List Element
+  | [] => []
+  | first :: rest =>
+      [node "Signals" [] ((first :: rest).map fun value => node "Signal" [("value", value)])]
+
 def blockMethod (m : Method) : Element :=
-  node "BlockMethod" [("id", m.af), ("kind", m.name)]
+  node "BlockMethod" [("id", m.af), ("kind", m.name)] (signalNodes m.signals)
 
 def algorithm (modelName : String) (identity : Identity) (source : String) : Element :=
   node "Manifest"

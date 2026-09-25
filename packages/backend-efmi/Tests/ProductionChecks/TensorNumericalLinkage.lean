@@ -40,3 +40,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorNumericalLinkage.selfField_missing
 #audit axioms Rumoca.EFMI.TensorNumericalLinkage.square_diagonal_defined
 #audit axioms Rumoca.EFMI.TensorNumericalLinkage.text_exact
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.product_preflight_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.sum_preflight_defined
+#audit axioms Rumoca.EFMI.TensorNumericalLinkage.NumericalInterface.preflight_header

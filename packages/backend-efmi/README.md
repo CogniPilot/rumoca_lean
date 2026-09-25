@@ -59,7 +59,15 @@ identity through staging remain separate obligations; see
 [the provenance status](../../dev/provenance.md#actual-efmi-startup-emission).
 
 The interface declares `EfmiReal` (`double`) and `EfmiStatus` (`int32_t`);
-every verified method returns status zero. The complete C contract also checks
+every verified method returns the §1.6 encoding of the signals its Algorithm
+Code method sets: zero, except the tensor DoStep overflow outcome. The tensor
+DoStep first calls the read-only product and sum preflights
+(`rumoca_tensor_mul_finite`, `rumoca_tensor_add_finite`) on `u`; if any
+product or sum is not finite it stores and returns the encoding of `{OVERFLOW}`
+(2) and changes no other cell, otherwise it runs the square/AD kernel calls
+(`ContextDoStep.body_outcomes_in`, `TensorSourceMethods.original_step`). The
+Algorithm manifest lists `OVERFLOW` under the DoStep `Signals` element, derived
+from the method interface. The complete C contract also checks
 these declarations and the logical variable/function mappings. The manifest
 contract binds those mappings to the serialized XML. E05/E06 still require
 review of the official checker/layout discrepancy before a release claim.

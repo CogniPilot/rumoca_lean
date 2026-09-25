@@ -247,6 +247,42 @@ theorem Storage.after_clear_via_allocated (storage : Storage objects heap base i
     Storage objects (cleared heap base) base input :=
   storage.after_clear
 
+
+/-! ### The overflow status store -/
+
+/-- The store of the overflow outcome: only the status cell changes, to the
+encoding of `{OVERFLOW}`. -/
+def raised (heap : Heap) (base : Address) : Heap :=
+  replace heap (base.member statusName) ⟨.int32, true, some (.integer overflowStatus)⟩
+
+theorem raised_status_reads :
+    load (raised heap base) (base.member statusName) = some (.integer overflowStatus) := by
+  simp [load, raised, convert, overflowStatus, GALEC.SignalSet.encode, GALEC.Signal.all,
+    GALEC.Elaboration.Square.overflowSet, GALEC.Signal.bit]
+
+theorem raised_other (different : address ≠ base.member statusName) :
+    raised heap base address = heap address :=
+  replace_other _ _ _ _ different
+
+theorem raise_of_status {heap : Heap} {base : Address}
+    (status : ScalarWritable heap (base.member statusName) .int32) :
+    store heap (base.member statusName) (.integer overflowStatus) = some (raised heap base) := by
+  obtain ⟨old, found⟩ := status
+  simp [store, found, convert, raised, overflowStatus, GALEC.SignalSet.encode, GALEC.Signal.all,
+    GALEC.Elaboration.Square.overflowSet, GALEC.Signal.bit]
+
+theorem Storage.after_raise (storage : Storage objects heap base input) :
+    Storage objects (raised heap base) base input := by
+  have stored := raise_of_status storage.status
+  have frame (name : String) (different : name ≠ statusName) (i : Nat) :=
+    member_frame stored different i
+  refine ⟨storage.object, storage.inputCells.framed (frame inputVar.name (by decide +kernel)),
+    writable_framed storage.square (frame squareVar.name (by decide +kernel)),
+    writable_framed storage.jacobian (frame jacobianVar.name (by decide +kernel)), ?_, ?_⟩
+  · apply storage.clock.framed
+    simpa only [Address.index_zero] using frame GALEC.Names.clock (by decide +kernel) 0
+  · exact ⟨some (.integer overflowStatus), by simp [raised]⟩
+
 section
 variable [interface : CInterface]
 

@@ -199,4 +199,35 @@ theorem function_present (modelName : String) (identity : Identity) (algorithmXM
   rw [function_nodes]
   exact List.mem_map_of_mem hm
 
+/-! ### Exposed signals
+
+Each `BlockMethod` lists exactly the signal names of its Algorithm Code
+method's interface, and those names denote the method's §1.3 exposed set: the
+out-reachable set of its body. The DoStep status of the overflow outcome is
+the §1.6 encoding of that set. -/
+
+theorem signals_exposed :
+    startup.signals = GALEC.Elaboration.Square.startupMethod.signals.map Parser.Token.text ∧
+    recalibrate.signals = GALEC.Elaboration.Scalar.recalibrateMethod.signals.map Parser.Token.text ∧
+    doStep.signals = GALEC.Elaboration.Square.stepMethod.signals.map Parser.Token.text ∧
+    GALEC.Elaboration.Reach.Exposes GALEC.Elaboration.Square.startupMethod GALEC.SignalSet.empty ∧
+    GALEC.Elaboration.Reach.Exposes GALEC.Elaboration.Scalar.recalibrateMethod GALEC.SignalSet.empty ∧
+    GALEC.Elaboration.Reach.Exposes GALEC.Elaboration.Square.stepMethod
+      GALEC.Elaboration.Square.overflowSet ∧
+    TensorProduction.overflowStatus = GALEC.SignalSet.encode GALEC.Elaboration.Square.overflowSet :=
+  ⟨rfl, rfl, rfl, GALEC.Elaboration.Square.startup_exposes,
+    GALEC.Elaboration.Square.recalibrate_exposes, GALEC.Elaboration.Square.step_exposes, rfl⟩
+
+/-- The rendered method nodes: only DoStep has a `Signals` element, with the
+single value `OVERFLOW`; its status value is 2. -/
+theorem block_method_signals :
+    (blockMethod startup).children = [] ∧ (blockMethod recalibrate).children = [] ∧
+    (blockMethod doStep).children =
+      [node "Signals" [] [node "Signal" [("value", GALEC.Signal.overflow.name)]]] ∧
+    TensorProduction.overflowStatus = 2 := ⟨rfl, rfl, rfl, rfl⟩
+
+theorem block_methods (modelName : String) (identity : Identity) (source : String) :
+    select (algorithm modelName identity source) ["BlockMethods", "BlockMethod"] =
+      methods.map blockMethod := rfl
+
 end Rumoca.EFMI.TensorManifest

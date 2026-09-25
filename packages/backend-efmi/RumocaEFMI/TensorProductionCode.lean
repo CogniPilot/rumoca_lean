@@ -4,6 +4,8 @@ import RumocaC.TensorCode
 import RumocaC.TensorDiagonalCode
 import RumocaC.TensorSquareDiagonal
 import RumocaC.TensorSquareIVPEntry
+import RumocaC.TensorProductPreflightCode
+import RumocaC.TensorSumPreflightCode
 
 /-! Production Code rendering for the fixed-extent tensor square profile.
 
@@ -62,23 +64,30 @@ theorem jacobianVar_volume : jacobianVar.volume = 4 := rfl
 /-! ### The certified kernel translation-unit text
 
 The numerical code is the join of the certified kernel renders in dependency
-order, with `<stddef.h>` prepended so `size_t` is in scope, exactly the emission
+order, with `<math.h>`, `<stddef.h>` and `<stdint.h>` prepended, exactly the emission
 the tensor C artifact checks certify. Nothing here re-derives the numerical
 bodies; each fragment is a certified render. -/
 
-/-- The shared tensor helpers and the prepared square IVP entries, in emission
-order. `rumoca_initialize` writes the zero state, `rumoca_rhs` writes the
-elementwise product `u * u`, and `rumoca_square_jacobian_diag` writes the dense
-diagonal Jacobian `diag(2*u)` with no coefficient buffer. -/
+/-- The headers of the translation unit: `isfinite` needs `<math.h>`. -/
+def includes : String := "#include <math.h>\n#include <stddef.h>\n#include <stdint.h>\n"
+
+/-- The shared tensor helpers, the prepared square IVP entries and the two
+read-only preflights, in emission order. `rumoca_initialize` writes the zero
+state, `rumoca_rhs` writes the elementwise product `u * u`,
+`rumoca_square_jacobian_diag` writes the dense diagonal Jacobian `diag(2*u)`
+with no coefficient buffer, and `rumoca_tensor_mul_finite` and
+`rumoca_tensor_add_finite` report whether every product and every sum is finite. -/
 def kernelPieces : List String :=
-  ["#include <stddef.h>\n#include <stdint.h>\n",
+  [includes,
    Rumoca.CTensor.Fill.function.render,
    (Rumoca.CTensor.function .add).render,
    (Rumoca.CTensor.function .mul).render,
    Rumoca.CTensor.Diagonal.function.render,
    IVPEntry.sources.initial,
    IVPEntry.sources.derivative,
-   IVPEntry.jacobianDiagSource]
+   IVPEntry.jacobianDiagSource,
+   Rumoca.CTensor.ProductPreflight.function.render,
+   Rumoca.CTensor.SumPreflight.function.render]
 
 /-- The certified kernel translation-unit text. -/
 def kernelText : String := String.join kernelPieces
@@ -145,18 +154,40 @@ def startupFunction : Function :=
 /-- Recalibrate has no periodic clock work in the tensor square profile. -/
 def recalibrateFunction : Function := method recalibrateName []
 
-/-- DoStep computes the prepared derivative into the square output `x` and the
-dense diagonal Jacobian into `J`. The derivative entry's unused state register is
-pointed at the readable input `u`; the square right-hand side ignores it, so the
-written value is exactly `u * u` (pointwise). -/
+/-- The arguments of both preflight calls: the input `u`, twice, and its volume. -/
+def preflightArgs : List Expr := [selfField inputVar.name, selfField inputVar.name, .nat inputVar.volume]
+
+/-- The status of the overflow outcome: the §1.6 encoding of the signal set
+`{OVERFLOW}` that the DoStep method of the Algorithm Code exposes. -/
+def overflowStatus : Nat := GALEC.SignalSet.encode GALEC.Elaboration.Square.overflowSet
+
+/-- The failure test: a product or a sum of the input is not finite. -/
+def unchecked : Expr :=
+  .bin .or (.bin .eq (.id "squares") (.nat 0)) (.bin .eq (.id "sums") (.nat 0))
+
+/-- The numerical kernel calls of DoStep: the prepared derivative into the
+square output `x` and the dense diagonal Jacobian into `J`. The derivative
+entry's unused state register is pointed at the readable input `u`; the square
+right-hand side ignores it, so the written value is exactly `u * u` (pointwise). -/
+def kernelCalls : List Stmt :=
+  [.eval (.call (.id "rumoca_rhs")
+    [selfField inputVar.name, selfField inputVar.name, selfField squareVar.name,
+      .nat inputVar.volume]),
+   .eval (.call (.id "rumoca_square_jacobian_diag")
+    [selfField inputVar.name, selfField jacobianVar.name,
+      .nat inputVar.volume, .nat jacobianVar.volume])]
+
+/-- DoStep first checks, with the read-only preflights and before any write,
+that every product `u[k] * u[k]` and every sum `u[k] + u[k]` is finite. If a
+check fails it stores the `OVERFLOW` status and writes nothing else; otherwise
+it runs the kernel calls. -/
 def doStepFunction : Function :=
   method doStepName
-    [.eval (.call (.id "rumoca_rhs")
-      [selfField inputVar.name, selfField inputVar.name, selfField squareVar.name,
-        .nat inputVar.volume]),
-     .eval (.call (.id "rumoca_square_jacobian_diag")
-      [selfField inputVar.name, selfField jacobianVar.name,
-        .nat inputVar.volume, .nat jacobianVar.volume])]
+    [.declare "int32_t" "squares"
+      (.call (.id Rumoca.CTensor.ProductPreflight.function.signature.name) preflightArgs),
+     .declare "int32_t" "sums"
+      (.call (.id Rumoca.CTensor.SumPreflight.function.signature.name) preflightArgs),
+     .branch unchecked [.assign (selfField statusName) (.nat overflowStatus)] kernelCalls]
 
 def functions : List Function := [startupFunction, recalibrateFunction, doStepFunction]
 

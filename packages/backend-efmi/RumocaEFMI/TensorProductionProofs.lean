@@ -1,4 +1,6 @@
 import RumocaEFMI.TensorProductionCode
+import RumocaC.TensorProductPreflightContract
+import RumocaC.TensorSumPreflightContract
 
 /-! Refinement of the tensor square Production Code to the tensor Algorithm Code
 semantics, and the certified numerical contract of the emitted translation unit.
@@ -65,6 +67,11 @@ structure Contract (productionC : String) : Prop where
   product `u * u`, for every shape. -/
   derivative : ∀ (shape : Shape) {α} (ops : ScalarOps α) (zero one : α) (input : Value α shape),
     (squareKernel shape).problem.rhs ops zero one input input = BinaryOp.eval ops .mul input input
+  /-- The read-only product and sum preflights carry their token, call and
+  finite-domain contracts, the checks DoStep performs before any write. -/
+  productPreflight : Rumoca.CTensor.ProductPreflight.ArtifactContract
+    Rumoca.CTensor.ProductPreflight.function.render
+  sumPreflight : Rumoca.CTensor.SumPreflight.ArtifactContract Rumoca.CTensor.SumPreflight.function.render
   /-- The Jacobian output computes the doubled input `u + u`, the diagonal the
   scratch-free Jacobian entry materializes, for every shape. -/
   jacobian : ∀ (shape : Shape) {α} (ops : ScalarOps α) (zero one : α) (input : Value α shape),
@@ -83,6 +90,8 @@ theorem production_correct (productionC : String) (printed : productionC = rende
   ⟨printed,
     IVPEntry.artifact_correct IVPEntry.sources IVPEntry.jacobianDiagSource rfl rfl,
     fun shape _ ops zero one input => doStep_derivative_refines shape ops zero one input,
+    Rumoca.CTensor.ProductPreflight.artifact_correct _ rfl,
+    Rumoca.CTensor.SumPreflight.artifact_correct _ rfl,
     fun shape _ ops zero one input => doStep_jacobian_refines shape ops zero one input⟩
 
 end Rumoca.EFMI.TensorProduction

@@ -100,4 +100,34 @@ theorem declared_invoke_step (declarations : CDeclaredMembers.Declarations)
   apply invoke_step _ p name args values rest env types heap type stack ordinary unshadowed ?_ evaluated
   simp [declared, CBody.declaredExpressions, CBody.evalWith, ordinary]
 
+/-- A declaration initialized by a direct call dispatches the call with the
+declaration as its destination. -/
+theorem declared_declare_step (declarations : CDeclaredMembers.Declarations)
+    (objects : CDeclaredMembers.Objects) (p : CCalls.Program) (name : String)
+    (args : List Expr) (values : List Value) (localType binding : String) (declaredType : CType)
+    (rest : List Stmt) (env : CBody.Locals)
+    (types : Types) (heap : Heap) (type : String) (stack : Typed.Continuation)
+    (ordinary : name ≠ "isfinite") (unshadowed : env name = none)
+    (typed : interface.types localType = some declaredType)
+    (evaluated : arguments (declared declarations objects) env heap args = some values) :
+    next (declared declarations objects) p
+      (.body (.running (.declare localType binding (.call (.id name) args) :: rest) env types heap)
+        type stack) =
+      some (.calling name values heap (.caller (.declare localType binding) rest env types type stack)) := by
+  simp only [arguments, declared, CBody.declaredExpressions] at evaluated
+  simp [next, Typed.nextIn, Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith,
+    declared, CBody.declaredExpressions, CBody.evalWith, ordinary, typed,
+    Typed.enterCallWith, callOperand, unshadowed, evaluated]
+
+/-- A returned value initializes the declared binding of its caller. -/
+theorem resume_declare (expressions : Expressions) (p : CCalls.Program) (value converted : Value)
+    (heap : Heap) (localType binding : String) (declaredType : CType) (rest : List Stmt)
+    (env : CBody.Locals) (types : Types) (type : String) (stack : Typed.Continuation)
+    (fresh : env binding = none) (typed : interface.types localType = some declaredType)
+    (conversion : convert declaredType value = some converted) :
+    next expressions p (.returning value heap (.caller (.declare localType binding) rest env types type stack)) =
+      some (.body (.running rest (CBody.bind env binding converted)
+        (bindType types binding declaredType) heap) type stack) := by
+  simp [next, Typed.nextIn, Typed.nextWithExpressions, Typed.resumeWith, fresh, typed, conversion]
+
 end Rumoca.CContextMachine

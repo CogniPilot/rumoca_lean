@@ -15,3 +15,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorManifest.prepare_checksums
 #audit axioms Rumoca.EFMI.TensorManifest.prepare_container_checksums
 #audit axioms Rumoca.EFMI.TensorManifest.function_declarations
+#audit axioms Rumoca.EFMI.TensorManifest.signalNodes
+#audit axioms Rumoca.EFMI.TensorManifest.signals_exposed
+#audit axioms Rumoca.EFMI.TensorManifest.block_method_signals
+#audit axioms Rumoca.EFMI.TensorManifest.block_methods

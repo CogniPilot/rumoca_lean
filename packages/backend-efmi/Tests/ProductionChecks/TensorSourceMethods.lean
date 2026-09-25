@@ -19,6 +19,9 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.TensorSourceMethods.startup_ready
 #audit axioms Rumoca.EFMI.TensorSourceMethods.StartupReady
 #audit axioms Rumoca.EFMI.TensorSourceMethods.source_startup_ready
+#audit axioms Rumoca.EFMI.TensorSourceMethods.checked_iff_preflights
+#audit axioms Rumoca.EFMI.TensorSourceMethods.StepOutcome
+#audit axioms Rumoca.EFMI.TensorSourceMethods.view_unchanged
 #audit axioms Rumoca.EFMI.TensorSourceMethods.original_step
 #audit axioms Rumoca.EFMI.TensorSourceMethods.StepCorrespondence
 #audit axioms Rumoca.EFMI.TensorSourceMethods.step_correspondence

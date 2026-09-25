@@ -2,6 +2,8 @@ import RumocaEFMI.TensorProductionProofs
 import RumocaEFMI.CInterface
 import RumocaC.TreeTable
 import RumocaC.TensorProgramCalls
+import RumocaC.TensorProductPreflightCalls
+import RumocaC.TensorSumPreflight
 
 /-! Exact tensor eFMI numerical tree linkage with the actual backend type
 bindings. Public-method execution is composed by downstream contracts. -/
@@ -9,28 +11,29 @@ namespace Rumoca.EFMI.TensorNumericalLinkage
 open CTree CMemory CTensor CTensor.Lowering Solve.Tensor CCalls.TreeTable
 open CTensor.ProgramFixture
 
-/-- The seven printed trees, in existing dependency order. No coefficient entry. -/
+/-- The nine printed trees, in dependency order: the numerical helpers and
+entries, then the product and sum preflights. No coefficient entry. -/
 def numericalFunctions : List Function :=
   [Fill.function, CTensor.function .add, CTensor.function .mul, Diagonal.function,
    (IVPEntry.plan ArrayProfile.stateShape).initial.function.tree,
    (IVPEntry.plan ArrayProfile.stateShape).derivative.function.tree,
-   SquareDiagonal.function]
+   SquareDiagonal.function, ProductPreflight.function, SumPreflight.function]
 
-theorem numerical_count : numericalFunctions.length = 7 := rfl
+theorem numerical_count : numericalFunctions.length = 9 := rfl
 
 theorem pieces_exact :
     TensorProduction.kernelPieces =
-      "#include <stddef.h>\n#include <stdint.h>\n" ::
+      TensorProduction.includes ::
         numericalFunctions.map Function.render := rfl
 
 theorem text_exact :
     TensorProduction.kernelText =
-      "#include <stddef.h>\n#include <stdint.h>\n" ++
+      TensorProduction.includes ++
         String.join (numericalFunctions.map Function.render) := rfl
 
 theorem production_exact :
     TensorProduction.render =
-      "#include <stddef.h>\n#include <stdint.h>\n" ++
+      TensorProduction.includes ++
         String.join (numericalFunctions.map Function.render) ++
         TensorProduction.header ++
         String.join (TensorProduction.functions.map Function.render) := rfl
@@ -39,7 +42,7 @@ theorem numerical_names :
     numericalFunctions.map (fun f => f.signature.name) =
       ["rumoca_tensor_fill", "rumoca_tensor_add", "rumoca_tensor_mul",
        "rumoca_tensor_diagonal", "rumoca_initialize", "rumoca_rhs",
-       "rumoca_square_jacobian_diag"] := rfl
+       "rumoca_square_jacobian_diag", "rumoca_tensor_mul_finite", "rumoca_tensor_add_finite"] := rfl
 
 theorem numerical_unique :
     (numericalFunctions.map (fun f => f.signature.name)).Nodup := by
@@ -82,6 +85,14 @@ theorem square_diagonal_defined :
     definitions SquareDiagonal.function.signature.name = some SquareDiagonal.function :=
   defined_member _ (by simp [numericalFunctions])
 
+theorem product_preflight_defined :
+    definitions ProductPreflight.function.signature.name = some ProductPreflight.function :=
+  defined_member _ (by simp [numericalFunctions])
+
+theorem sum_preflight_defined :
+    definitions SumPreflight.function.signature.name = some SumPreflight.function :=
+  defined_member _ (by simp [numericalFunctions])
+
 /-- Explicitly exclude the two unprinted binary helpers and both coefficient entries. -/
 theorem absent_unprinted :
     definitions "rumoca_tensor_sub" = none ∧ definitions "rumoca_tensor_div" = none ∧
@@ -106,7 +117,7 @@ theorem numerical_extends (unusedKernel : CSyntax.Program) :
 /-- Same ordered numerical prefix plus the three actual emitted method trees. -/
 def allFunctions : List Function := numericalFunctions ++ TensorProduction.functions
 
-theorem all_count : allFunctions.length = 10 := rfl
+theorem all_count : allFunctions.length = 12 := rfl
 
 theorem all_unique : (allFunctions.map (fun f => f.signature.name)).Nodup := by
   decide +kernel
@@ -166,6 +177,7 @@ theorem constants_unchanged : interface.constants = EFMI.cInterface.constants :=
 theorem literals_unchanged : interface.literals = EFMI.cInterface.literals := rfl
 theorem binary_header : CTensor.HeaderTypes interface := ⟨rfl, rfl, rfl⟩
 theorem fill_header : Fill.HeaderTypes interface := ⟨rfl, rfl, rfl⟩
+theorem preflight_header : FinitePreflight.HeaderTypes interface := ⟨⟨rfl, rfl, rfl⟩, rfl⟩
 
 end NumericalInterface
 

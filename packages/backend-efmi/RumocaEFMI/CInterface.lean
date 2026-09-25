@@ -2,7 +2,8 @@ import RumocaC.Interface
 import RumocaEFMI.CHeader
 
 /-! Bind the eFMI C type names to the actual interface declaration nodes.
-The wrapper supplies its Model pointer spelling and the C double primitive;
+The wrapper supplies its Model pointer spelling and the C double and int32_t
+primitives;
 real/status aliases are looked up in the emitted header declarations. -/
 namespace Rumoca.EFMI
 open CMemory
@@ -33,12 +34,14 @@ end CHeader
   if type = "Model *" || type = "double *" || type = "const double *" then some .pointer
   else if type = "size_t" then some .size
   else if type = "double" then some .float64
+  else if type = "int32_t" then some .int32
   else (CHeader.scalarNamed type CHeader.declarations).map CHeader.Scalar.memoryType
 
 /-- Primitive spellings in the actual tensor numerical trees. -/
 @[simp] theorem cTypes_size : cTypes "size_t" = some .size := rfl
 @[simp] theorem cTypes_output_pointer : cTypes "double *" = some .pointer := rfl
 @[simp] theorem cTypes_input_pointer : cTypes "const double *" = some .pointer := rfl
+@[simp] theorem cTypes_int32 : cTypes "int32_t" = some .int32 := rfl
 
 abbrev cInterface : CInterface := { constants := cConstants, types := cTypes }
 

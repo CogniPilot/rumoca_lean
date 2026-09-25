@@ -6,3 +6,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.EFMI.cTypes_input_pointer
 #audit axioms Rumoca.EFMI.cTypes_output_pointer
 #audit axioms Rumoca.EFMI.cTypes_size
+#audit axioms Rumoca.EFMI.cTypes_int32

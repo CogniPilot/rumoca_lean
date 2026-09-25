@@ -284,62 +284,109 @@ theorem source_startup_ready (correspondence : StartupCorrespondence model algor
   obtain ⟨finalStorage, finalView⟩ := startup_ready @input @after storage outcome observed
   exact ⟨@after, finalHeap, sourceRan, outcome, publicRan, finalStorage, finalView⟩
 
-/-! ### DoStep: the same original body and the same post-store -/
+/-! ### DoStep: the same original body, the same post-store and the same signals -/
+
+/-- The source finiteness check is exactly both preflight results. -/
+theorem checked_iff_preflights (input : Values inputShape) :
+    Square.Checked (extent := squareExtent) input ↔
+      ContextDoStep.products input = true ∧ ContextDoStep.sums input = true := by
+  rw [Square.checked_iff, ContextDoStep.products, ContextDoStep.sums,
+    CTensor.MultiplicationTotal.result_core, CTensor.SumPreflight.result,
+    Numerical.allFiniteBits_encode, Numerical.allFiniteBits_encode]
+  exact Iff.rfl
+
+/-- The two DoStep outcomes of one source execution and the public call:
+without a signal the heap views the source post-store; with `OVERFLOW` the call
+returns its encoding and changes only the status, so every view of the source
+pre-store survives. -/
+def StepOutcome (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap) (base : Address)
+    (input : InputEnv) (before : OutputEnv) (after : Signaled Binary64.Value
+      (Layout.outputShapes (Square.squareFields squareExtent))) : Prop :=
+  (after.2 = SignalSet.empty ∧ ∃ finalHeap,
+    ContextDoStep.Outcome objects heap finalHeap base (input (Square.squareInput squareExtent))
+      (after.1 (Square.squareRhs squareExtent))
+      (ContextDoStep.coefficients (input (Square.squareInput squareExtent))) ∧
+    StateView finalHeap base @input @after.1 ∧
+    ContextMethod.Completes (program unusedKernel) objects doStepName heap finalHeap base) ∨
+  (after = ⟨@before, Square.overflowSet⟩ ∧
+    ContextDoStep.OverflowOutcome objects heap (raised (cleared heap base) base) base
+      (input (Square.squareInput squareExtent)) ∧
+    (StateView heap base @input @before → StateView (raised (cleared heap base) base) base @input @before) ∧
+    ContextMethod.Returns (program unusedKernel) objects doStepName heap
+      (raised (cleared heap base) base) base (SignalSet.encode Square.overflowSet))
+
+theorem view_unchanged (outcome : ContextDoStep.OverflowOutcome objects heap after base input')
+    (view : StateView heap base @input @state) : StateView after base @input @state := by
+  have frame (name : String) (different : name ≠ statusName) (i : Nat) :
+      after ((base.member name).index i) = heap ((base.member name).index i) :=
+    outcome.frame _ (by
+      simpa only [Address.index_zero] using Address.fields_separate base name statusName different i 0)
+  refine ⟨⟨reads_framed view.numerical.input (frame inputVar.name (by decide +kernel)),
+    reads_framed view.numerical.rhs (frame squareVar.name (by decide +kernel)),
+    reads_framed view.numerical.jacobian (frame jacobianVar.name (by decide +kernel))⟩, ?_⟩
+  exact reads_framed view.period (frame GALEC.Names.clock (by decide +kernel))
 
 theorem original_step {block : AST.Block} {method : AST.Method}
     (sourceContract : SourceContract squareExtent ceiling block kernel)
     (selected : Methods.Headers.Selects (.ident "DoStep") block.methods method)
     (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap) (base : Address)
-    (input : InputEnv) (env : IteratorEnv []) (before after : OutputEnv)
+    (input : InputEnv) (env : IteratorEnv []) (before : OutputEnv)
+    (after : Signaled Binary64.Value (Layout.outputShapes (Square.squareFields squareExtent)))
     (storage : Storage objects heap base (input (Square.squareInput squareExtent)))
     (period : Reads heap (base.member GALEC.Names.clock) (input periodRef))
-    (executed : SourceExec (Square.squareFields squareExtent) ceiling block method Finite.Result
-      Binary64.positiveZero Binary64.one @input @env @before @after) :
-    ∃ finalHeap,
-      ContextDoStep.Outcome objects heap finalHeap base (input (Square.squareInput squareExtent))
-        (after (Square.squareRhs squareExtent))
-        (ContextMethod.coefficients (input (Square.squareInput squareExtent))) ∧
-      StateView finalHeap base @input @after ∧
-      ContextMethod.Completes (program unusedKernel) objects doStepName heap finalHeap base := by
+    (executed : SourceRuns (Square.squareFields squareExtent) ceiling block method Finite.Result
+      (fun _ => True) Binary64.positiveZero Binary64.one @input @env ⟨@before, SignalSet.empty⟩ after) :
+    StepOutcome unusedKernel objects heap base @input @before after := by
   obtain ⟨interface, prepared⟩ := sourceContract.prepared
-  have lowered := (Methods.Correspondence.selected_execution prepared.doStep selected
-    Finite.Result Binary64.positiveZero Binary64.one @input @env @before @after).mp executed
-  have bodyRan := (Square.square_equivalent (Square.squareInput squareExtent)
-    (Square.squareRhs squareExtent) (Square.squareJacobian squareExtent) Finite.Result
-    Binary64.positiveZero Binary64.one @input @env @before @after).mp lowered
-  obtain ⟨rhsRan, jacobian⟩ := prepared_results @input @env @before @after bodyRan
-  obtain ⟨finalHeap, outcome, completed⟩ := ContextMethod.doStep_from_rhs_in
-    (program unusedKernel) (numerical_in_actual unusedKernel)
+  have lowered := (Methods.Correspondence.selected_runs prepared.doStep selected
+    Finite.Result (fun _ => True) Binary64.positiveZero Binary64.one @input @env _ after).mp executed
+  have callOutcomes := ContextMethod.doStep_outcomes_in (program unusedKernel)
+    (numerical_in_actual unusedKernel)
     (method_defined unusedKernel doStepFunction (by simp [TensorProduction.functions]))
-    objects heap base (input (Square.squareInput squareExtent))
-    (after (Square.squareRhs squareExtent)) storage rhsRan
-  refine ⟨finalHeap, outcome, ⟨⟨outcome.storage.input_reads, outcome.square, ?_⟩, ?_⟩, completed⟩
-  · rw [jacobian]
-    exact outcome.jacobian
-  · intro i
-    have zero : i.val = 0 := by have bound := i.isLt; change i.val < 1 at bound; omega
-    simpa only [zero, Address.index_zero, load, outcome.clock] using period i
+    objects heap base (input (Square.squareInput squareExtent)) storage
+  rcases (Square.checked_outcomes (Square.squareInput squareExtent) (Square.squareRhs squareExtent)
+      (Square.squareJacobian squareExtent) (input (Square.squareInput squareExtent)) @input @env
+      @before after).mp lowered with
+    ⟨checked, kept, rhs, ran, updated⟩ | ⟨unchecked, same⟩
+  · have bodyRan := (SquareBodies.body_executes (Square.squareInput squareExtent)
+      (Square.squareRhs squareExtent) (Square.squareJacobian squareExtent)
+      (input (Square.squareInput squareExtent)) @input @env @before @after.1).mpr ⟨rhs, ran, updated⟩
+    obtain ⟨rhsRan, jacobian⟩ := prepared_results @input @env @before @after.1 bodyRan
+    rcases callOutcomes with ⟨_, _, other, finalHeap, otherRan, outcome, completed⟩ | ⟨failed, _, _⟩
+    · have same := Finite.execution_unique otherRan rhsRan
+      subst same
+      refine Or.inl ⟨kept, finalHeap, outcome, ⟨⟨outcome.storage.input_reads, outcome.square, ?_⟩, ?_⟩,
+        completed⟩
+      · rw [jacobian]
+        exact outcome.jacobian
+      · intro i
+        have zero : i.val = 0 := by have bound := i.isLt; change i.val < 1 at bound; omega
+        simpa only [zero, Address.index_zero, load, outcome.clock] using period i
+    · obtain ⟨products, sums⟩ := (checked_iff_preflights _).mp checked
+      rcases failed with failed | failed
+      · exact Bool.noConfusion (products.symm.trans failed)
+      · exact Bool.noConfusion (sums.symm.trans failed)
+  · rcases callOutcomes with ⟨products, sums, _⟩ | ⟨_, outcome, returned⟩
+    · exact absurd ((checked_iff_preflights _).mpr ⟨products, sums⟩) unchecked
+    · exact Or.inr ⟨same, outcome, view_unchanged outcome, returned⟩
 
 /-- The selected original DoStep method and the public DoStep call: every
-source execution from a represented finite input is matched by one public call
-whose final heap views the same source post-store. -/
+source execution from a represented finite input and no set signal is matched
+by one public call with the same outcome. -/
 def StepCorrespondence (model : TensorModel ArrayProfile.stateShape) (algorithm : String) : Prop :=
   ∃ product method,
     Block.fromSource algorithm = .ok product ∧
     SourceContract squareExtent Static.Bounded.integerCeiling product.parsed.ast model.kernel ∧
     Methods.Headers.Selects (.ident "DoStep") product.parsed.ast.methods method ∧
     ∀ (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap) (base : Address)
-      (input : InputEnv) (env : IteratorEnv []) (before after : OutputEnv),
+      (input : InputEnv) (env : IteratorEnv []) (before : OutputEnv)
+      (after : Signaled Binary64.Value (Layout.outputShapes (Square.squareFields squareExtent))),
       Storage objects heap base (input (Square.squareInput squareExtent)) →
       Reads heap (base.member GALEC.Names.clock) (input periodRef) →
-      SourceExec (Square.squareFields squareExtent) Static.Bounded.integerCeiling product.parsed.ast
-        method Finite.Result Binary64.positiveZero Binary64.one @input @env @before @after →
-      ∃ finalHeap,
-        ContextDoStep.Outcome objects heap finalHeap base (input (Square.squareInput squareExtent))
-          (after (Square.squareRhs squareExtent))
-          (ContextMethod.coefficients (input (Square.squareInput squareExtent))) ∧
-        StateView finalHeap base @input @after ∧
-        ContextMethod.Completes (program unusedKernel) objects doStepName heap finalHeap base
+      SourceRuns (Square.squareFields squareExtent) Static.Bounded.integerCeiling product.parsed.ast
+        method Finite.Result (fun _ => True) Binary64.positiveZero Binary64.one @input @env
+        ⟨@before, SignalSet.empty⟩ after →
+      StepOutcome unusedKernel objects heap base @input @before after
 
 theorem step_correspondence (algorithmContract : AlgorithmContract model algorithm) :
     StepCorrespondence model algorithm := by
