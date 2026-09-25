@@ -10,6 +10,7 @@ def Action.Outside (action : Action) (q : Address) : Prop :=
   | .reject request => request.Outside q
   | .counts request => request.Outside q
   | .nominals request => request.Outside q
+  | .states buffer | .derivatives buffer => q ≠ buffer
   | _ => True
 
 structure Result (objects : Objects) (retained : Address → Prop)

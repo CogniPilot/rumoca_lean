@@ -186,7 +186,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   intro retained buffers actions final readers resources logging reference prepared
   exact after_creation objects tag owners slot owner created reserved represented preserved (termination_preserves ((creation _).mpr rfl))
     literalFrame createdFrame logging
-    (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared loggingPrepared eventPrepared mePrepared.evaluation absentPrepared runPrepared.toPreparedContract
+    (execution_contract header objects a.solve.prepareFMI3 sigs pool getPrepared setPrepared countPrepared nominalPrepared loggingPrepared eventPrepared mePrepared.evaluation mePrepared.states mePrepared.derivatives absentPrepared runPrepared.toPreparedContract
       baseHeap firstBlock signed program actual identity.compareBinding retained (SlotOwners.update owners slot (some owner)) heap _ buffers kind readers resources)
     reference prepared finish releaseBindings rfl
 

@@ -31,6 +31,8 @@ def Action.Prepared (action : Action) (objects : Objects) (retained : Address �
       request.Guarded (Float64Rejection.Protected objects retained) ∧
       ∀ q, p.InRecord q → request.Outside q
   | .logging request => request ∈ readers
+  | .states buffer | .derivatives buffer => (∃ old, original buffer = some ⟨.float64, true, old⟩) ∧
+      Float64Rejection.Protected objects retained buffer ∧ ¬ p.InRecord buffer
   | _ => True
 
 structure Invariant [CInterface] (program : Program Invocation) (objects : Objects) (retained : Address → Prop)

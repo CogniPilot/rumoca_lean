@@ -41,6 +41,8 @@ inductive Action where
   | eventIndicators (request : EventIndicatorAccess.Request)
   | evaluation (request : DiscreteEvaluation.Request)
   | absent (request : AbsentVariables.Request)
+  | states (buffer : Address)
+  | derivatives (buffer : Address)
   | enter (args : Initialization.Arguments)
   | exit
   | reset
@@ -54,6 +56,7 @@ def Action.next (action : Action) (state : State) : State :=
   | .eventIndicators request => if request.failed then { state with phase := .failed } else state
   | .evaluation request => if request.failed then { state with phase := .failed } else state
   | .absent request => if request.failed then { state with phase := .failed } else state
+  | .states _ | .derivatives _ => state
   | .logging request => if request.failed then { state with phase := .failed } else state
   | .enter args => { state with phase := .initializing args, time := args.start }
   | .exit => match state.phase with
@@ -87,6 +90,8 @@ def Action.Allowed (action : Action) (kind : Kind) (state : State) : Prop :=
   | .eventIndicators request => request.Allowed kind (state.phase.mode kind)
   | .evaluation request => request.Allowed kind (state.phase.mode kind)
   | .absent request => request.Condition kind (state.phase.mode kind)
+  | .states _ => kind = .me ∧ Reference.Allowed .getStates .me (state.phase.mode kind)
+  | .derivatives _ => kind = .me ∧ Reference.Allowed .getDerivatives .me (state.phase.mode kind)
   | .logging _ => True
   | .enter args => state.phase = .instantiated ∧ args.Admissible
   | .exit => ∃ args, state.phase = .initializing args
@@ -108,6 +113,8 @@ def Action.call (action : Action) (p : Address) (buffers : Float64Buffers.Layout
   | .evaluation request => request.call p
   | .absent request => request.call p
   | .logging request => request.call p
+  | .states buffer => ((StateCalls.signature false).name, StateCalls.arguments p buffer)
+  | .derivatives buffer => (DerivativeCalls.signature.name, DerivativeCalls.values (some p) (some buffer) 1)
   | .enter args => (InitializationCalls.signature.name,
       InitializationCalls.arguments (some p) (InitializationCalls.Raw.ofFinite args))
   | .exit => (InitializationExit.signature.name, InitializationExit.arguments (some p))
@@ -125,6 +132,7 @@ def Action.readback (action : Action) (heap : Heap) (buffers : Float64Buffers.La
   | .access request => request.readback heap buffers
   | .counts request => request.readback heap
   | .nominals request => request.readback heap
+  | .states buffer | .derivatives buffer => fun i => if i = 0 then load heap buffer else none
   | _ => fun _ => none
 
 def Action.Observed (action : Action) (model : Solve.FMI3Model source) (state : State)
@@ -150,6 +158,10 @@ def Action.Observed (action : Action) (model : Solve.FMI3Model source) (state : 
   | .absent request => if request.failed then
       observed.status = .integer 3 ∧ observed.values = fun _ => none
     else observed = .ok (fun _ => none)
+  | .states _ => observed = .ok (fun i => if i = 0 then
+      some (.finite (ModelExchange.getContinuousState state.value)) else none)
+  | .derivatives _ => observed = .ok (fun i => if i = 0 then
+      some (.finite (ModelExchange.derivative model.solve state.value)) else none)
   | _ => observed = .ok (fun _ => none)
 
 /-- An exit checkpoint keeps the actual heap. Source initialization is proved

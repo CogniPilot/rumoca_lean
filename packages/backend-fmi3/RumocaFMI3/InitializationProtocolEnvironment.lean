@@ -5,6 +5,7 @@ import RumocaFMI3.InitializationProtocolEventIndicators
 import RumocaFMI3.InitializationProtocolEvaluation
 import RumocaFMI3.CSRunEnvironment
 import RumocaFMI3.MEEnvironment
+import RumocaFMI3.InitializationProtocolStates
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
@@ -38,6 +39,8 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
     (logging : DebugLogging.PreparedContract model sigs pool)
     (eventIndicators : EventIndicatorEnvironment.PreparedContract model sigs pool)
     (evaluation : DiscreteEvaluation.PreparedContract model sigs pool)
+    (states : StateEnvironment.PreparedContract model sigs pool)
+    (derivatives : DerivativeEnvironment.PreparedContract model sigs pool)
     (absent : ∀ ty write, AbsentVariables.PreparedContract model sigs ty write pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
@@ -127,6 +130,16 @@ theorem execution_contract (header : CFenv.Header) (objects : Objects)
         header objects model sigs pool (absent ty write)
         baseHeap firstBlock signed program actual heap p buffers kind state owners retained
         invariant.readonly invariant.stored allowed resources.inPool invariant.ownership invariant.logging
+  | states buffer =>
+    obtain ⟨⟨old, cell⟩, guarded, separate⟩ := prepared
+    obtain ⟨current, storage⟩ := CStorage.PreservesOn.cell invariant.caller guarded cell
+    exact states_call model program (states.quiet header Invocation objects firstBlock program actual)
+      invariant.stored invariant.ownership buffer current storage separate allowed
+  | derivatives buffer =>
+    obtain ⟨⟨old, cell⟩, guarded, separate⟩ := prepared
+    obtain ⟨current, storage⟩ := CStorage.PreservesOn.cell invariant.caller guarded cell
+    exact derivatives_call model program (derivatives.quiet header Invocation objects firstBlock program actual)
+      invariant.stored invariant.ownership buffer current storage separate allowed
   | logging request =>
     have inputs : request.Inputs heap := (resources.readerInputs.framed invariant.readerFrame) request prepared
     exact logging_call request header objects model sigs pool logging baseHeap firstBlock signed

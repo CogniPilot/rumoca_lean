@@ -208,6 +208,7 @@ import Tests.FMI3Audit.InitializationProtocolNominals
 import Tests.FMI3Audit.InitializationProtocolRejection
 import Tests.FMI3Audit.InitializationProtocolRestart
 import Tests.FMI3Audit.InitializationProtocolRunFrames
+import Tests.FMI3Audit.InitializationProtocolStates
 import Tests.FMI3Audit.InitializationProtocolStorage
 import Tests.FMI3Audit.InitializationQuiet
 import Tests.FMI3Audit.InitializationRetention
