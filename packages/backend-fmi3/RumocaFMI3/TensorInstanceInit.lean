@@ -9,31 +9,32 @@ import RumocaC.StorageTransfer
 package-checked product.
 
 After a slot is reserved and its array element selected, the tensor factory
-initializes the reserved record entirely inline: it stores the reserved slot
-index `m->slot`, writes the FMI lifecycle metadata (`kind`, mode `Instantiated`,
-the captured environment and logger, the logging flag), resets the independent
-time base to `+0`, and zero-fills the state region `x` with the same counted
-`size_t` loop the tensor reset uses (`FMI3.TensorReset.zeroBody`). The loop bound
-is the symbolic state volume, so no tensor coordinate is enumerated. The block
-ends by returning the record cast to `fmi3Instance`.
+initializes every member of the reserved record inline. It stores the handle
+members (the reserved slot index `m->slot`, the instance `kind`, the captured
+environment and logger, the logging flag), then runs the restore block
+`TensorReset.restoreCode` that `fmi3Reset` also runs: every region of the record
+layout is zero-filled, one counted `size_t` loop per region whose bound is the
+region's symbolic volume, and the time base, the event-time and stop-time
+bookkeeping, the stop flag and the lifecycle mode are reset. The block ends by
+returning the record cast to `fmi3Instance`.
 
-The metadata writes are single-cell stores established by a bounded body run and
-lifted into the observable call machine; the state-region fill and the handle
-return complete in the same call machine. No tensor solver value is initialized
-here: the initialization program value of the admitted kernel is the fixed-zero
-fill, which the loop re-establishes (`FMI3.TensorReset.initialization_is_zero`).
+Every member of the record layout is written (`covers`), and every restored cell
+is determined independently of the slot's earlier contents, so an instance that
+reuses a freed slot starts from the declared start values, exactly like a reset
+instance (`reset_matches`). No tensor solver value is initialized here: the
+initialization program value of the admitted kernel is the fixed-zero fill
+(`FMI3.TensorReset.initialization_is_zero`).
 
 The tensor adapter consumes these bodies and proofs. This module alone does
 not establish source acceptance or certify an actual artifact; those obligations
-belong to the composed adapter/compiler contracts. Every theorem is universal in the tensor shape,
-the instance address and the heap. -/
+belong to the composed adapter/compiler contracts. Every theorem is universal in
+the region shapes, the instance address and the heap. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorInstanceInit
 open CTree CMemory CBody CLoops
 open Rumoca.CMemory.TensorView Rumoca.CMemory.TensorRegion
-open Rumoca.FMI3.TensorFloat64 (declare_step_e)
 open Rumoca.FMI3.TensorInstance
-open Rumoca.FMI3.TensorReset (zeroValues zeroBody zeroBody_closed zeroCopy_reaches)
+open Rumoca.FMI3.TensorReset (Regions zeroValues restoreCode restoreHeap Restored restoredScalars)
 open Rumoca.FMI3.InstanceInitialization (returnHandle)
 open Binary64 (toBits)
 
@@ -42,34 +43,40 @@ so it is handled by a single size-typed store, separately from the concrete
 metadata block. -/
 def slotStore : Stmt := Runtime.put "slot" (Runtime.v "slot")
 
-/-- The concrete FMI lifecycle metadata and time base of the reserved record:
-`kind`, `mode = Instantiated`, the captured environment and logger, the logging
-flag, and the time base at `+0`. Every statement is a single-cell assignment
-whose right-hand value is concrete or a captured pointer/flag. -/
+/-- The handle members fixed at instantiation after the slot index: the instance
+kind, the captured environment and logger, and the logging flag. -/
 def metaCode (kind : Kind) : List Stmt := [
   Runtime.put "kind" (Runtime.n kind.code),
-  Runtime.put "mode" (Runtime.n Mode.instantiated.code),
   Runtime.put "environment" (Runtime.v "instanceEnvironment"),
   Runtime.put "logger" (Runtime.v "logMessage"),
-  Runtime.put "logging" (Runtime.v "loggingOn"),
-  Runtime.put "time" (Runtime.n 0),
-  Runtime.put "timeMin" (Runtime.n 0),
-  Runtime.put "eventTime" (Runtime.n 0),
-  Runtime.put "lastCompleted" (Runtime.n 0)]
+  Runtime.put "logging" (Runtime.v "loggingOn")]
 
-/-- The state-region fill and handle return: stage the region pointer and count,
-run the zero-fill loop, then return the record cast to `fmi3Instance`. -/
-def stateTail (shape : Tensor.Shape) : List Stmt :=
-  .declare "fmi3Float64 *" "dst" ((Runtime.region stateName)) ::
-  .declare "size_t" "expected" (Runtime.n shape.volume) ::
-  .declare "size_t" "k" (Runtime.n 0) ::
-  loop "k" (Runtime.v "expected") zeroBody :: [returnHandle]
+/-- The handle members the initializer stores and `fmi3Reset` keeps. -/
+def handleNames : List String := ["slot", "kind", "environment", "logger", "logging"]
 
-/-- The complete reserved-record initializer: slot store, metadata, state fill,
-handle return. Selecting storage (`InstanceSlot.selectInstance`) is prepended by
-the factory reservation suffix, not here. -/
-def code (shape : Tensor.Shape) (kind : Kind) : List Stmt :=
-  slotStore :: metaCode kind ++ stateTail shape
+/-- The complete reserved-record initializer: slot store, handle members, the
+shared restore block, handle return. Selecting storage
+(`InstanceSlot.selectInstance`) is prepended by the factory reservation suffix,
+not here. -/
+def code (regions : Regions) (kind : Kind) : List Stmt :=
+  slotStore :: metaCode kind ++ (restoreCode regions ++ [returnHandle])
+
+/-- Every member of the record layout is written by the initializer: a handle
+member, a restored region or a restored scalar. -/
+theorem covers (shape : Tensor.Shape) (hasInput hasOutput : Bool) :
+    ∀ name ∈ (TensorStorage.membersG shape hasInput hasOutput).map TensorStorage.Member.baseName,
+      name ∈ handleNames ∨ name ∈ (TensorStorage.regions shape hasInput hasOutput).map Prod.fst ∨
+        name ∈ restoredScalars := by
+  rw [TensorStorage.members_names]
+  intro name member
+  simp only [List.mem_cons, List.mem_append] at member
+  rcases member with rfl | inRegions | inBook
+  · exact Or.inr (Or.inr (by simp [restoredScalars, TensorInstance.timeName]))
+  · exact Or.inr (Or.inl inRegions)
+  · simp only [TensorStorage.bookkeepingMembers, TensorStorage.Member.baseName, List.map_cons,
+      List.map_nil, List.mem_cons, List.not_mem_nil, or_false] at inBook
+    rcases inBook with rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl | rfl <;>
+      simp [handleNames, restoredScalars]
 
 /-! ### Bindings and storage premises -/
 
@@ -91,9 +98,9 @@ structure Bindings (env : Locals) (p : Address) (slot : Nat)
 
 end
 
-/-- The writable cells of the reserved record: the FMI metadata members, the
-time base, and the full state region. Every extent is symbolic in the shape. -/
-structure Storage (heap : Heap) (p : Address) (shape : Tensor.Shape) : Prop where
+/-- The writable cells of the reserved record: every scalar member and every
+region of the layout. Every extent is symbolic in the region shapes. -/
+structure Storage (heap : Heap) (p : Address) (regions : Regions) : Prop where
   slot : ∃ old, heap (p.member "slot") = some ⟨.size, true, old⟩
   kind : ∃ old, heap (p.member "kind") = some ⟨.int32, true, old⟩
   mode : ∃ old, heap (p.member "mode") = some ⟨.int32, true, old⟩
@@ -104,19 +111,22 @@ structure Storage (heap : Heap) (p : Address) (shape : Tensor.Shape) : Prop wher
   timeMin : ∃ old, heap (p.member "timeMin") = some ⟨.float64, true, old⟩
   eventTime : ∃ old, heap (p.member "eventTime") = some ⟨.float64, true, old⟩
   lastCompleted : ∃ old, heap (p.member "lastCompleted") = some ⟨.float64, true, old⟩
-  state : Writable heap (p.member stateName) shape.volume
+  stop : ∃ old, heap (p.member "stop") = some ⟨.float64, true, old⟩
+  stopDefined : ∃ old, heap (p.member "stopDefined") = some ⟨.boolean, true, old⟩
+  regions : ∀ r ∈ regions, Writable heap (p.member r.1) r.2.volume
 
 /-- The reserved-record storage survives an atomic-scan reservation (or any
 storage-preserving execution), so initialization can proceed after reservation. -/
-theorem Storage.preserved {before after : Heap} {p : Address} {shape : Tensor.Shape}
-    (storage : Storage before p shape) (preserved : CStorage.Preserves before after) :
-    Storage after p shape := by
+theorem Storage.preserved {before after : Heap} {p : Address} {regions : Regions}
+    (storage : Storage before p regions) (preserved : CStorage.Preserves before after) :
+    Storage after p regions := by
   obtain ⟨⟨_, hs⟩, ⟨_, hk⟩, ⟨_, hm⟩, ⟨_, hv⟩, ⟨_, hl⟩, ⟨_, hg⟩, ⟨_, ht⟩,
-    ⟨_, htm⟩, ⟨_, het⟩, ⟨_, hlc⟩, hstate⟩ := storage
+    ⟨_, htm⟩, ⟨_, het⟩, ⟨_, hlc⟩, ⟨_, hst⟩, ⟨_, hsd⟩, hregions⟩ := storage
   refine ⟨preserved.cell hs, preserved.cell hk, preserved.cell hm, preserved.cell hv,
     preserved.cell hl, preserved.cell hg, preserved.cell ht,
-    preserved.cell htm, preserved.cell het, preserved.cell hlc, fun i hi => ?_⟩
-  obtain ⟨_, h⟩ := hstate i hi
+    preserved.cell htm, preserved.cell het, preserved.cell hlc, preserved.cell hst, preserved.cell hsd,
+    fun r member i hi => ?_⟩
+  obtain ⟨_, h⟩ := hregions r member i hi
   exact preserved.cell h
 
 /-! ### The initialized heap -/
@@ -125,189 +135,178 @@ theorem Storage.preserved {before after : Heap} {p : Address} {shape : Tensor.Sh
 def slotHeap (heap : Heap) (p : Address) (slot : Nat) : Heap :=
   replace heap (p.member "slot") ⟨.size, true, some (.integer slot)⟩
 
-/-- The heap after the metadata block: the reserved slot, `kind`, mode
-`Instantiated`, the captured environment and logger, the logging flag, and the
-time base at `+0`, over the reserved-record backing. -/
+/-- The heap after the handle members: the reserved slot, `kind`, the captured
+environment and logger, and the logging flag, over the reserved-record backing. -/
 def metaHeap (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
     (environment logger : Option Address) (logging : Bool) : Heap :=
-  replace (replace (replace (replace (replace (replace (replace (replace (replace (slotHeap heap p slot)
+  replace (replace (replace (replace (slotHeap heap p slot)
     (p.member "kind") ⟨.int32, true, some (.integer kind.code)⟩)
-    (p.member "mode") ⟨.int32, true, some (.integer Mode.instantiated.code)⟩)
     (p.member "environment") ⟨.pointer, true, some (.pointer environment)⟩)
     (p.member "logger") ⟨.pointer, true, some (.pointer logger)⟩)
-    (p.member "logging") ⟨.boolean, true, some (boolean logging)⟩)
-    (p.member "time") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
-    (p.member "timeMin") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
-    (p.member "eventTime") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩)
-    (p.member "lastCompleted") ⟨.float64, true, some (.finite Binary64.positiveZero)⟩
+    (p.member "logging") ⟨.boolean, true, some (boolean logging)⟩
 
-/-- The heap after the full initializer: the metadata heap with the state region
-`x` zero-filled. -/
+/-- The heap after the full initializer: the handle members, then the shared
+restore block. -/
 def finalHeap (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (shape : Tensor.Shape) : Heap :=
-  written (metaHeap heap p slot kind environment logger logging) (p.member stateName)
-    (zeroValues shape) shape.volume
+    (environment logger : Option Address) (logging : Bool) (regions : Regions) : Heap :=
+  restoreHeap (metaHeap heap p slot kind environment logger logging) p regions
 
-theorem code_closed (shape : Tensor.Shape) (kind : Kind) :
-    (code shape kind).all CBodyEmbedding.closedBlocks = true := by
+theorem code_closed (regions : Regions) (kind : Kind) :
+    (code regions kind).all CBodyEmbedding.closedBlocks = true := by
+  simp only [code, List.all_cons, List.all_append, TensorReset.restoreCode_closed, Bool.true_and]
   cases kind <;>
-    simp [code, slotStore, metaCode, stateTail, zeroBody, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
-      returnHandle, CLoops.loop, CLoops.counterStep, CLoops.noDeclarations,
-      CBodyEmbedding.closedBlocks]
+    simp [slotStore, metaCode, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
+      returnHandle, CBodyEmbedding.closedBlocks]
 
-/-- Distinct scalar metadata members of the record never share a cell. -/
+/-- Distinct scalar members of the record never share a cell. -/
 theorem member_ne (p : Address) (a b : String) (different : a ≠ b) : p.member a ≠ p.member b := by
   simpa using member_separate p a b different 0 0
 
-theorem state_ne_meta (p : Address) (name : String) (different : name ≠ stateName) (i : Nat) :
-    (p.member stateName).index i ≠ p.member name := by
-  simpa using member_separate p stateName name (fun h => different h.symm) i 0
+/-- The handle stores write only the handle members. -/
+theorem metaHeap_frame (heap : Heap) (p q : Address) (slot : Nat) (kind : Kind)
+    (environment logger : Option Address) (logging : Bool)
+    (outside : ∀ name ∈ handleNames, q ≠ p.member name) :
+    metaHeap heap p slot kind environment logger logging q = heap q := by
+  simp only [handleNames, List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp,
+    forall_eq] at outside
+  obtain ⟨hs, hk, he, hl, hg⟩ := outside
+  simp only [metaHeap, slotHeap, replace_other _ _ _ _ hg, replace_other _ _ _ _ hl,
+    replace_other _ _ _ _ he, replace_other _ _ _ _ hk, replace_other _ _ _ _ hs]
 
-/-- The metadata block never touches a state-region cell. -/
-theorem metaHeap_state (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (i : Nat) :
-    metaHeap heap p slot kind environment logger logging ((p.member stateName).index i) =
-      heap ((p.member stateName).index i) := by
-  unfold metaHeap slotHeap
-  rw [replace_other _ _ _ _ (state_ne_meta p "lastCompleted" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "eventTime" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "timeMin" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "time" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "logging" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "logger" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "environment" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "mode" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "kind" (by decide +kernel) i),
-    replace_other _ _ _ _ (state_ne_meta p "slot" (by decide +kernel) i)]
-
-theorem metaHeap_state_writable (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (shape : Tensor.Shape)
-    (writable : Writable heap (p.member stateName) shape.volume) :
-    Writable (metaHeap heap p slot kind environment logger logging) (p.member stateName) shape.volume := by
-  intro i hi
-  obtain ⟨old, ho⟩ := writable i hi
-  exact ⟨old, (metaHeap_state heap p slot kind environment logger logging i).trans ho⟩
+/-- A handle member is neither a region cell nor a restored scalar. -/
+theorem handle_not_restored (p : Address) (regions : Regions) (distinct : TensorStorage.Distinct regions)
+    (name : String) (handle : name ∈ handleNames) : ¬ Restored p regions (p.member name) := by
+  have scalar : name ∈ TensorStorage.scalarNames := by
+    simp only [handleNames, List.mem_cons, List.not_mem_nil, or_false] at handle
+    rcases handle with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+  rintro (⟨r, member, i, _, same⟩ | ⟨other, named, same⟩)
+  · exact TensorReset.region_ne_member p r.1 name
+      (fun equal => distinct.2 r member (equal ▸ scalar)) i same.symm
+  · have equal : name = other := by simpa [Address.member_inj] using same
+    subst equal
+    simp only [handleNames, List.mem_cons, List.not_mem_nil, or_false] at handle
+    simp only [restoredScalars, List.mem_cons, List.not_mem_nil, or_false] at named
+    rcases handle with rfl | rfl | rfl | rfl | rfl <;> simp at named
 
 /-! ### Framing outside the record and the initialized values -/
 
 /-- The initializer never touches a cell outside the reserved record. -/
 theorem frame (heap : Heap) (p query : Address) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (shape : Tensor.Shape)
+    (environment logger : Option Address) (logging : Bool) (regions : Regions)
     (outside : ¬ p.InRecord query) :
-    finalHeap heap p slot kind environment logger logging shape query = heap query := by
-  have ne (name : String) : query ≠ p.member name := fun h => outside (h ▸ p.member_in_record name)
-  rw [finalHeap, written_frame _ _ _ _ query
-    (fun i _ h => outside (h ▸ (p.member_in_record stateName).index i))]
-  unfold metaHeap slotHeap
-  rw [replace_other _ _ _ _ (ne "lastCompleted"), replace_other _ _ _ _ (ne "eventTime"),
-    replace_other _ _ _ _ (ne "timeMin"),
-    replace_other _ _ _ _ (ne "time"), replace_other _ _ _ _ (ne "logging"),
-    replace_other _ _ _ _ (ne "logger"), replace_other _ _ _ _ (ne "environment"),
-    replace_other _ _ _ _ (ne "mode"), replace_other _ _ _ _ (ne "kind"),
-    replace_other _ _ _ _ (ne "slot")]
+    finalHeap heap p slot kind environment logger logging regions query = heap query := by
+  rw [finalHeap, TensorReset.restoreHeap_frame _ p query regions outside]
+  exact metaHeap_frame heap p query slot kind environment logger logging
+    (fun name _ h => outside (h ▸ p.member_in_record name))
 
 /-- Preparing instance `i`'s storage leaves every cell of another instance of the
 static pool untouched. -/
 theorem other_instance (heap : Heap) (base : Address) (i j : Nat) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (shape : Tensor.Shape) (query : Address)
+    (environment logger : Option Address) (logging : Bool) (regions : Regions) (query : Address)
     (different : i ≠ j) (inside : (base.index j).InRecord query) :
-    finalHeap heap (base.index i) slot kind environment logger logging shape query = heap query :=
-  frame heap (base.index i) query slot kind environment logger logging shape
+    finalHeap heap (base.index i) slot kind environment logger logging regions query = heap query :=
+  frame heap (base.index i) query slot kind environment logger logging regions
     (fun own => Address.records_separate base i j different own inside rfl)
 
-/-- The post-initialization state region reads the fixed-zero fill. -/
-theorem reads_state (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (shape : Tensor.Shape) :
-    Reads (finalHeap heap p slot kind environment logger logging shape) (p.member stateName)
-      (zeroValues shape) := by
-  intro i
-  have cell := written_at (metaHeap heap p slot kind environment logger logging) (p.member stateName)
-    (zeroValues shape) shape.volume (le_refl _) i
-  simp only [i.isLt, if_true] at cell
-  simp [finalHeap, load, cell, convert, Value.finite]
-
-/-- The initialized record exposes the metadata and state values the tensor
-lifecycle, derivative and free bodies consume. -/
+/-- The initialized record exposes the handle members the lifecycle, derivative
+and free bodies consume, and the restored value of every other member. -/
 structure Initialized (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (shape : Tensor.Shape) : Prop where
-  slotValue : load (finalHeap heap p slot kind environment logger logging shape) (p.member "slot") =
+    (environment logger : Option Address) (logging : Bool) (regions : Regions) : Prop where
+  slotValue : load (finalHeap heap p slot kind environment logger logging regions) (p.member "slot") =
     some (.integer slot)
-  kindValue : load (finalHeap heap p slot kind environment logger logging shape) (p.member "kind") =
+  kindValue : load (finalHeap heap p slot kind environment logger logging regions) (p.member "kind") =
     some (.integer kind.code)
-  modeCell : finalHeap heap p slot kind environment logger logging shape (p.member "mode") =
+  modeCell : finalHeap heap p slot kind environment logger logging regions (p.member "mode") =
     some ⟨.int32, true, some (.integer Mode.instantiated.code)⟩
-  environmentValue : load (finalHeap heap p slot kind environment logger logging shape)
+  environmentValue : load (finalHeap heap p slot kind environment logger logging regions)
     (p.member "environment") = some (.pointer environment)
-  loggerValue : load (finalHeap heap p slot kind environment logger logging shape)
+  loggerValue : load (finalHeap heap p slot kind environment logger logging regions)
     (p.member "logger") = some (.pointer logger)
-  loggingValue : load (finalHeap heap p slot kind environment logger logging shape)
+  loggingValue : load (finalHeap heap p slot kind environment logger logging regions)
     (p.member "logging") = some (boolean logging)
-  state : Reads (finalHeap heap p slot kind environment logger logging shape) (p.member stateName)
-    (zeroValues shape)
+  clocks : ∀ name ∈ ["time", "timeMin", "eventTime", "lastCompleted", "stop"],
+    load (finalHeap heap p slot kind environment logger logging regions) (p.member name) =
+      some (.finite Binary64.positiveZero)
+  stopDefinedValue : load (finalHeap heap p slot kind environment logger logging regions)
+    (p.member "stopDefined") = some (boolean false)
+  regions : ∀ r ∈ regions,
+    Reads (finalHeap heap p slot kind environment logger logging regions) (p.member r.1) (zeroValues r.2)
 
-/-- Reading a metadata member of the final heap frames past the state fill. -/
-private theorem final_meta (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (shape : Tensor.Shape) (name : String)
-    (different : name ≠ stateName) :
-    finalHeap heap p slot kind environment logger logging shape (p.member name) =
+/-- The post-initialization handle cells hold the stored handle values. -/
+private theorem final_handle (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
+    (environment logger : Option Address) (logging : Bool) (regions : Regions)
+    (distinct : TensorStorage.Distinct regions) (name : String) (handle : name ∈ handleNames) :
+    finalHeap heap p slot kind environment logger logging regions (p.member name) =
       metaHeap heap p slot kind environment logger logging (p.member name) := by
-  rw [finalHeap, written_frame _ _ _ _ (p.member name)
-    (fun i _ => (state_ne_meta p name different i).symm)]
+  have scalar : name ∈ TensorStorage.scalarNames := by
+    simp only [handleNames, List.mem_cons, List.not_mem_nil, or_false] at handle
+    rcases handle with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+  have notRestored : name ∉ restoredScalars := by
+    simp only [handleNames, List.mem_cons, List.not_mem_nil, or_false] at handle
+    rcases handle with rfl | rfl | rfl | rfl | rfl <;> simp [restoredScalars]
+  rw [finalHeap, TensorReset.restoreHeap, TensorReset.bookHeap_frame _ p _
+      (fun other named same => notRestored (by
+        have equal : name = other := by simpa [Address.member_inj] using same
+        exact equal ▸ named)),
+    TensorReset.fillHeap_frame _ p _ regions (fun r member i _ same =>
+      TensorReset.region_ne_member p r.1 name (fun equal => distinct.2 r member (equal ▸ scalar)) i same.symm)]
 
 theorem initialized (heap : Heap) (p : Address) (slot : Nat) (kind : Kind)
-    (environment logger : Option Address) (logging : Bool) (shape : Tensor.Shape)
-    (bounded : slot < 2 ^ 64) :
-    Initialized heap p slot kind environment logger logging shape := by
+    (environment logger : Option Address) (logging : Bool) (regions : Regions)
+    (distinct : TensorStorage.Distinct regions) (bounded : slot < 2 ^ 64) :
+    Initialized heap p slot kind environment logger logging regions := by
   have mne : ∀ a b, a ≠ b → p.member a ≠ p.member b := fun a b h => member_ne p a b h
-  have fm : ∀ name, name ≠ stateName →
-      finalHeap heap p slot kind environment logger logging shape (p.member name) =
-        metaHeap heap p slot kind environment logger logging (p.member name) :=
-    fun name diff => final_meta heap p slot kind environment logger logging shape name diff
-  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, reads_state heap p slot kind environment logger logging shape⟩
-  · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "slot") =
+  have fm := final_handle heap p slot kind environment logger logging regions distinct
+  have scalars := TensorReset.restoreHeap_scalars (metaHeap heap p slot kind environment logger logging) p regions
+  refine ⟨?_, ?_, ?_, ?_, ?_, ?_, ?_, ?_, fun r member =>
+    TensorReset.restoreHeap_reads _ p regions distinct r member⟩
+  · have cell : finalHeap heap p slot kind environment logger logging regions (p.member "slot") =
         some ⟨.size, true, some (.integer slot)⟩ :=
-      (fm "slot" (by decide +kernel)).trans (by
-        simp [metaHeap, slotHeap, replace, mne "slot" "time", mne "slot" "logging", mne "slot" "logger",
-          mne "slot" "environment", mne "slot" "mode", mne "slot" "kind",
-          mne "slot" "timeMin", mne "slot" "eventTime", mne "slot" "lastCompleted"])
+      (fm "slot" (by simp [handleNames])).trans (by
+        simp [metaHeap, slotHeap, replace, mne "slot" "logging", mne "slot" "logger",
+          mne "slot" "environment", mne "slot" "kind"])
     exact load_converted _ _ .size true (.integer slot) cell (by decide +kernel)
       (CLoops.convert_size_nat slot bounded)
-  · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "kind") =
+  · have cell : finalHeap heap p slot kind environment logger logging regions (p.member "kind") =
         some ⟨.int32, true, some (.integer kind.code)⟩ :=
-      (fm "kind" (by decide +kernel)).trans (by
-        simp [metaHeap, replace, mne "kind" "time", mne "kind" "logging", mne "kind" "logger",
-          mne "kind" "environment", mne "kind" "mode",
-          mne "kind" "timeMin", mne "kind" "eventTime", mne "kind" "lastCompleted"])
+      (fm "kind" (by simp [handleNames])).trans (by
+        simp [metaHeap, replace, mne "kind" "logging", mne "kind" "logger", mne "kind" "environment"])
     cases kind <;> exact load_converted _ _ .int32 true _ cell (by decide +kernel) (by decide +kernel)
-  · rw [fm "mode" (by decide +kernel)]
-    simp [metaHeap, replace, mne "mode" "time", mne "mode" "logging", mne "mode" "logger",
-      mne "mode" "environment",
-      mne "mode" "timeMin", mne "mode" "eventTime", mne "mode" "lastCompleted"]
-  · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "environment") =
+  · simpa [finalHeap, Mode.code] using scalars.2.2.2.2.2.2
+  · have cell : finalHeap heap p slot kind environment logger logging regions (p.member "environment") =
         some ⟨.pointer, true, some (.pointer environment)⟩ :=
-      (fm "environment" (by decide +kernel)).trans (by
-        simp [metaHeap, replace, mne "environment" "time", mne "environment" "logging",
-          mne "environment" "logger",
-          mne "environment" "timeMin", mne "environment" "eventTime", mne "environment" "lastCompleted"])
+      (fm "environment" (by simp [handleNames])).trans (by
+        simp [metaHeap, replace, mne "environment" "logging", mne "environment" "logger"])
     exact load_converted _ _ .pointer true _ cell (by decide +kernel) (by simp [convert])
-  · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "logger") =
+  · have cell : finalHeap heap p slot kind environment logger logging regions (p.member "logger") =
         some ⟨.pointer, true, some (.pointer logger)⟩ :=
-      (fm "logger" (by decide +kernel)).trans (by
-        simp [metaHeap, replace, mne "logger" "time", mne "logger" "logging",
-          mne "logger" "timeMin", mne "logger" "eventTime", mne "logger" "lastCompleted"])
+      (fm "logger" (by simp [handleNames])).trans (by
+        simp [metaHeap, replace, mne "logger" "logging"])
     exact load_converted _ _ .pointer true _ cell (by decide +kernel) (by simp [convert])
-  · have cell : finalHeap heap p slot kind environment logger logging shape (p.member "logging") =
+  · have cell : finalHeap heap p slot kind environment logger logging regions (p.member "logging") =
         some ⟨.boolean, true, some (boolean logging)⟩ :=
-      (fm "logging" (by decide +kernel)).trans (by
-        simp [metaHeap, replace, mne "logging" "time",
-          mne "logging" "timeMin", mne "logging" "eventTime", mne "logging" "lastCompleted"])
+      (fm "logging" (by simp [handleNames])).trans (by simp [metaHeap, replace])
     cases logging <;> exact load_converted _ _ .boolean true _ cell (by decide +kernel) (by decide +kernel)
+  · intro name named
+    simp only [List.mem_cons, List.not_mem_nil, or_false] at named
+    rcases named with rfl | rfl | rfl | rfl | rfl <;>
+      simp [finalHeap, load, scalars.1, scalars.2.1, scalars.2.2.1, scalars.2.2.2.1, scalars.2.2.2.2.1,
+        convert, Value.finite]
+  · exact load_converted _ _ .boolean true _ scalars.2.2.2.2.2.1 (by decide +kernel) (by decide +kernel)
 
+/-- A newly created instance and a reset instance agree on every restored cell,
+whatever either heap held before: instantiation and `fmi3Reset` restore the
+same values. -/
+theorem reset_matches (before heap : Heap) (p q : Address) (slot : Nat) (kind : Kind)
+    (environment logger : Option Address) (logging : Bool) (regions : Regions)
+    (distinct : TensorStorage.Distinct regions) (restored : Restored p regions q) :
+    restoreHeap before p regions q = finalHeap heap p slot kind environment logger logging regions q :=
+  TensorReset.restoreHeap_restored _ _ p q regions distinct restored
 
 section
 variable [interface : CInterface]
 
-/-- One metadata store: evaluate the right-hand value and write a single writable
+/-- One handle store: evaluate the right-hand value and write a single writable
 member cell of the record. -/
 theorem put_step (name : String) (rhs : Expr) (env : Locals) (heap : Heap) (p : Address)
     (type : CType) (v out : Value) (old : Option Value) (rest : List Stmt)
@@ -332,38 +331,24 @@ theorem slot_step (env : Locals) (heap : Heap) (p : Address) (slot : Nat) (rest 
     (.integer slot) old rest instanceBound (by simp [Runtime.v, CBody.eval, CBody.evalWith, slotBound]) cell (by decide +kernel)
     (CLoops.convert_size_nat slot bounded)
 
-set_option maxHeartbeats 1600000 in
-/-- The concrete metadata block runs to the metadata heap over the slot heap in
-the bounded body machine. No `size_t` conversion appears, so the whole block
-reduces without evaluating the 64-bit bound. -/
-theorem metaCode_run (shape : Tensor.Shape) (kind : Kind) (env : Locals) (heap : Heap) (p : Address)
+/-- The handle stores run to the handle heap over the slot heap in the bounded body
+machine. -/
+theorem metaCode_run (regions : Regions) (kind : Kind) (env : Locals) (heap : Heap) (p : Address)
     (slot : Nat) (environment logger : Option Address) (logging : Bool) (rest : List Stmt)
-    (storage : Storage heap p shape) (bindings : Bindings env p slot environment logger logging) :
-    CBody.run 9 (.running (metaCode kind ++ rest) env (slotHeap heap p slot)) =
+    (storage : Storage heap p regions) (bindings : Bindings env p slot environment logger logging) :
+    CBody.run 4 (.running (metaCode kind ++ rest) env (slotHeap heap p slot)) =
       some (.running rest env (metaHeap heap p slot kind environment logger logging)) := by
-  obtain ⟨_, ⟨kindOld, hkind⟩, ⟨modeOld, hmode⟩, ⟨envOld, henv⟩,
-    ⟨logOld, hlog⟩, ⟨lgOld, hlg⟩, ⟨timeOld, htime⟩,
-    ⟨tmOld, htm⟩, ⟨etOld, het⟩, ⟨lcOld, hlc⟩, _⟩ := storage
+  obtain ⟨_, ⟨kindOld, hkind⟩, _, ⟨envOld, henv⟩, ⟨logOld, hlog⟩, ⟨lgOld, hlg⟩, _⟩ := storage
   have mne : ∀ a b, a ≠ b → p.member a ≠ p.member b := fun a b h => member_ne p a b h
   cases kind <;> cases logging <;>
     simp [metaCode, Runtime.put, Runtime.field, Runtime.v, Runtime.n, CBody.run, CBody.next, CBody.nextWith, CBody.legacyExpressions,
       CBody.eval, CBody.evalWith, CBody.lvalue, CBody.lvalueWith, bindings.instanceBound, bindings.environmentBound, bindings.loggerBound,
-      bindings.loggingBound, Value.address, Value.finite, CMemory.store, convert, boolean, Value.truth,
-      slotHeap, replace, metaHeap, Mode.code, Kind.code, hkind, hmode, henv, hlog, hlg, htime,
-      htm, het, hlc,
-      mne "kind" "slot", mne "mode" "slot", mne "mode" "kind", mne "environment" "slot",
-      mne "environment" "kind", mne "environment" "mode", mne "logger" "slot", mne "logger" "kind",
-      mne "logger" "mode", mne "logger" "environment", mne "logging" "slot", mne "logging" "kind",
-      mne "logging" "mode", mne "logging" "environment", mne "logging" "logger", mne "time" "slot",
-      mne "time" "kind", mne "time" "mode", mne "time" "environment", mne "time" "logger",
-      mne "time" "logging",
-      mne "timeMin" "slot", mne "timeMin" "kind", mne "timeMin" "mode", mne "timeMin" "environment",
-      mne "timeMin" "logger", mne "timeMin" "logging", mne "timeMin" "time",
-      mne "eventTime" "slot", mne "eventTime" "kind", mne "eventTime" "mode", mne "eventTime" "environment",
-      mne "eventTime" "logger", mne "eventTime" "logging", mne "eventTime" "time", mne "eventTime" "timeMin",
-      mne "lastCompleted" "slot", mne "lastCompleted" "kind", mne "lastCompleted" "mode",
-      mne "lastCompleted" "environment", mne "lastCompleted" "logger", mne "lastCompleted" "logging",
-      mne "lastCompleted" "time", mne "lastCompleted" "timeMin", mne "lastCompleted" "eventTime"]
+      bindings.loggingBound, Value.address, CMemory.store, convert, boolean, Value.truth,
+      slotHeap, replace, metaHeap, Kind.code, hkind, henv, hlog, hlg,
+      mne "kind" "slot", mne "environment" "slot",
+      mne "environment" "kind", mne "logger" "slot", mne "logger" "kind",
+      mne "logger" "environment", mne "logging" "slot", mne "logging" "kind",
+      mne "logging" "environment", mne "logging" "logger"]
 
 end
 
@@ -374,101 +359,100 @@ variable [interface : CInterface] (program : CCalls.Events.Program E)
 
 /-- The complete reserved-record initializer runs to the initialized heap and
 returns the record as an `fmi3Instance` handle, in the observable call machine.
-The metadata block runs in the bounded body machine and is lifted; the state
-region is zero-filled by the same loop the tensor reset uses. -/
-theorem return_reaches (shape : Tensor.Shape) (kind : Kind) (env : Locals) (types : CLoops.Types)
+The handle stores run in the bounded body machine and are lifted; the shared
+restore block then fills every region and resets every restored scalar. -/
+theorem return_reaches (regions : Regions) (kind : Kind) (env : Locals) (types : CLoops.Types)
     (heap : Heap) (p : Address) (slot : Nat) (environment logger : Option Address) (logging : Bool)
-    (stack : CCalls.Typed.Continuation) (storage : Storage heap p shape)
+    (stack : CCalls.Typed.Continuation) (storage : Storage heap p regions)
     (bindings : Bindings env p slot environment logger logging)
-    (bounded : slot < 2 ^ 64) (volumeBounded : shape.volume < 2 ^ 64)
+    (distinct : TensorStorage.Distinct regions)
+    (bounded : slot < 2 ^ 64) (volumeBounded : ∀ r ∈ regions, r.2.volume < 2 ^ 64)
     (float : interface.types "fmi3Float64 *" = some .pointer)
     (size : interface.types "size_t" = some .size)
     (handle : interface.types "fmi3Instance" = some .pointer) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (code shape kind) env types heap) "fmi3Instance" stack)
-      (.returning (.pointer (some p)) (finalHeap heap p slot kind environment logger logging shape) stack) := by
+      (.body (.running (code regions kind) env types heap) "fmi3Instance" stack)
+      (.returning (.pointer (some p)) (finalHeap heap p slot kind environment logger logging regions) stack) := by
   set mh := metaHeap heap p slot kind environment logger logging with hmh
-  -- Phase A: the slot store and metadata block reach the metadata heap.
-  have runA : CBody.run 10 (.running (code shape kind) env heap) =
-      some (.running (stateTail shape) env mh) := by
-    rw [code, show (10 : Nat) = 1 + 9 from rfl, CBody.run_add]
-    rw [show slotStore :: metaCode kind ++ stateTail shape =
-        slotStore :: (metaCode kind ++ stateTail shape) from rfl, CBody.run,
-      slot_step env heap p slot (metaCode kind ++ stateTail shape) bindings.instanceBound
-        bindings.slotBound storage.slot bounded]
-    simpa using metaCode_run shape kind env heap p slot environment logger logging (stateTail shape)
-      storage bindings
-  obtain ⟨types', executed, _⟩ := CBodyEmbedding.run_refines 10 (.running (code shape kind) env heap)
-    (.running (stateTail shape) env mh) types (code_closed shape kind) runA
+  -- Phase A: the slot store and handle stores reach the handle heap.
+  have runA : CBody.run 5 (.running (code regions kind) env heap) =
+      some (.running (restoreCode regions ++ [returnHandle]) env mh) := by
+    rw [code, show (5 : Nat) = 1 + 4 from rfl, CBody.run_add]
+    rw [show slotStore :: metaCode kind ++ (restoreCode regions ++ [returnHandle]) =
+        slotStore :: (metaCode kind ++ (restoreCode regions ++ [returnHandle])) from rfl, CBody.run,
+      slot_step env heap p slot (metaCode kind ++ (restoreCode regions ++ [returnHandle]))
+        bindings.instanceBound bindings.slotBound storage.slot bounded]
+    simpa using metaCode_run regions kind env heap p slot environment logger logging
+      (restoreCode regions ++ [returnHandle]) storage bindings
+  obtain ⟨types', executed, _⟩ := CBodyEmbedding.run_refines 5 (.running (code regions kind) env heap)
+    (.running (restoreCode regions ++ [returnHandle]) env mh) types (code_closed regions kind) runA
   refine (CCalls.Events.body_reaches program (CLoops.run_reaches executed) "fmi3Instance" stack).trans ?_
-  -- Phase B: stage the region pointer and count, run the fill loop, return the handle.
-  have mBound : resolve env "m" = some (.pointer (some p)) := bindings.instanceBound
-  set stagedEnv := CBody.bind (CBody.bind env "dst" (.pointer (some (p.member stateName)))) "expected"
-    (.integer shape.volume) with hstaged
-  set stagedTypes := CLoops.bindType (CLoops.bindType types' "dst" .pointer) "expected" .size with hstyp
-  have s_dst : CLoops.next (.running (stateTail shape) env types' mh) =
-      some (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
-        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: [returnHandle])
-        (CBody.bind env "dst" (.pointer (some (p.member stateName)))) (CLoops.bindType types' "dst" .pointer) mh) :=
-    declare_step_e env types' mh "fmi3Float64 *" "dst" ((Runtime.region stateName)) .pointer
-      (.pointer (some (p.member stateName))) (.pointer (some (p.member stateName))) _ bindings.dstFresh float
-      (by apply CBodyEmbedding.eval_refines
-          simp [Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt, CBody.lvalueWith, mBound, Value.address]) rfl
-  have s_exp : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n shape.volume) ::
-        .declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: [returnHandle])
-        (CBody.bind env "dst" (.pointer (some (p.member stateName)))) (CLoops.bindType types' "dst" .pointer) mh) =
-      some (.running (.declare "size_t" "k" (Runtime.n 0) :: loop "k" (Runtime.v "expected") zeroBody :: [returnHandle])
-        stagedEnv stagedTypes mh) :=
-    declare_step_e _ _ mh "size_t" "expected" (Runtime.n shape.volume) .size (.integer shape.volume)
-      (.integer shape.volume) _ bindings.expectedFresh size (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith])
-      (CLoops.convert_size_nat _ volumeBounded)
-  refine .next (CCalls.Events.body_step program s_dst "fmi3Instance" stack)
-    (.next (CCalls.Events.body_step program s_exp "fmi3Instance" stack) ?_)
-  have fresh_k : stagedEnv "k" = none := by
-    simp [hstaged, CBody.bind, bindings.counterFresh]
-  have expBound : resolve stagedEnv "expected" = some (.integer shape.volume) := by
-    simp [hstaged, CBody.bind, CBody.resolve]
-  have dstBound : resolve stagedEnv "dst" = some (.pointer (some (p.member stateName))) := by
-    simp [hstaged, CBody.bind, CBody.resolve]
-  have writable : Writable mh (p.member stateName) shape.volume :=
-    metaHeap_state_writable heap p slot kind environment logger logging shape storage.state
-  refine .next (CCalls.Events.body_step program
-    (CLoops.counter_initialize stagedEnv stagedTypes mh "k"
-      (loop "k" (Runtime.v "expected") zeroBody :: [returnHandle]) fresh_k size) _ stack) ?_
-  refine (zeroCopy_reaches program stagedEnv (CLoops.bindType stagedTypes "k" .size) mh
-    (p.member stateName) [returnHandle] "fmi3Instance" stack volumeBounded (by simp [CLoops.bindType])
-    expBound dstBound writable).trans ?_
+  -- Phase B: the shared restore block over the handle heap.
+  have keep (name : String) (named : name ∈ restoredScalars) : mh (p.member name) = heap (p.member name) :=
+    metaHeap_frame heap p _ slot kind environment logger logging (fun other handle same => by
+      have equal : name = other := by simpa [Address.member_inj] using same
+      subst equal
+      simp only [handleNames, List.mem_cons, List.not_mem_nil, or_false] at handle
+      simp only [restoredScalars, List.mem_cons, List.not_mem_nil, or_false] at named
+      rcases handle with rfl | rfl | rfl | rfl | rfl <;> simp at named)
+  obtain ⟨_, hmode⟩ := storage.mode
+  obtain ⟨_, htime⟩ := storage.time
+  obtain ⟨_, hmin⟩ := storage.timeMin
+  obtain ⟨_, hevent⟩ := storage.eventTime
+  obtain ⟨_, hlast⟩ := storage.lastCompleted
+  obtain ⟨_, hstop⟩ := storage.stop
+  obtain ⟨_, hdefined⟩ := storage.stopDefined
+  have writable : ∀ r ∈ regions, Writable mh (p.member r.1) r.2.volume := by
+    intro r member i hi
+    obtain ⟨old, ho⟩ := storage.regions r member i hi
+    refine ⟨old, (metaHeap_frame heap p _ slot kind environment logger logging ?_).trans ho⟩
+    intro name handle same
+    have scalar : name ∈ TensorStorage.scalarNames := by
+      simp only [handleNames, List.mem_cons, List.not_mem_nil, or_false] at handle
+      rcases handle with rfl | rfl | rfl | rfl | rfl <;> decide +kernel
+    exact TensorReset.region_ne_member p r.1 name (fun equal => distinct.2 r member (equal ▸ scalar)) i same
+  obtain ⟨envB, typesB, frameB, restored⟩ := TensorReset.restore_reaches program regions [returnHandle] env
+    types' mh p "fmi3Instance" stack distinct volumeBounded bindings.instanceBound bindings.dstFresh
+    bindings.expectedFresh bindings.counterFresh float size writable _ _ _ _ _ _ _
+    ((keep "time" (by simp [restoredScalars])).trans htime)
+    ((keep "timeMin" (by simp [restoredScalars])).trans hmin)
+    ((keep "eventTime" (by simp [restoredScalars])).trans hevent)
+    ((keep "lastCompleted" (by simp [restoredScalars])).trans hlast)
+    ((keep "stop" (by simp [restoredScalars])).trans hstop)
+    ((keep "stopDefined" (by simp [restoredScalars])).trans hdefined)
+    ((keep "mode" (by simp [restoredScalars])).trans hmode)
+  refine restored.trans ?_
   -- Return the record cast to `fmi3Instance`.
-  set envK := counterEnv stagedEnv "k" shape.volume with henvK
-  have mBoundK : resolve envK "m" = some (.pointer (some p)) := by
-    simpa [henvK, counterEnv, CBody.bind, resolve, hstaged] using mBound
-  have retStep : CLoops.next (.running [returnHandle] envK (CLoops.bindType stagedTypes "k" .size)
-      (finalHeap heap p slot kind environment logger logging shape)) =
-      some (.returned ⟨.pointer (some p), finalHeap heap p slot kind environment logger logging shape⟩) := by
-    simp [returnHandle, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.cast, mBoundK, handle, convert]
+  have mBoundB : resolve envB "m" = some (.pointer (some p)) := by
+    simpa [resolve, frameB "m" (by decide) (by decide) (by decide)] using bindings.instanceBound
+  have retStep : CLoops.next (.running [returnHandle] envB typesB
+      (finalHeap heap p slot kind environment logger logging regions)) =
+      some (.returned ⟨.pointer (some p), finalHeap heap p slot kind environment logger logging regions⟩) := by
+    simp [returnHandle, CLoops.next, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.cast, mBoundB, handle, convert]
   refine .next (CCalls.Events.body_step program retStep "fmi3Instance" stack) (.next ?_ (.refl _))
   simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CCalls.returnCast, CBody.cast, handle, convert]
 
 /-- The reserved-record initializer terminates returning the initialized handle,
 and preserves every existing object cell (it only writes the reserved record's own
 cells). This is the successful-creation suffix from the selected-slot body state. -/
-theorem complete (shape : Tensor.Shape) (kind : Kind) (env : Locals) (types : CLoops.Types)
+theorem complete (regions : Regions) (kind : Kind) (env : Locals) (types : CLoops.Types)
     (heap : Heap) (p : Address) (slot : Nat) (environment logger : Option Address) (logging : Bool)
-    (storage : Storage heap p shape) (bindings : Bindings env p slot environment logger logging)
-    (bounded : slot < 2 ^ 64) (volumeBounded : shape.volume < 2 ^ 64)
+    (storage : Storage heap p regions) (bindings : Bindings env p slot environment logger logging)
+    (distinct : TensorStorage.Distinct regions)
+    (bounded : slot < 2 ^ 64) (volumeBounded : ∀ r ∈ regions, r.2.volume < 2 ^ 64)
     (float : interface.types "fmi3Float64 *" = some .pointer)
     (size : interface.types "size_t" = some .size)
     (handle : interface.types "fmi3Instance" = some .pointer) :
     (∀ behavior, (CCalls.Events.machine program).Behaves
-      (.body (.running (code shape kind) env types heap) "fmi3Instance" .done) behavior ↔
+      (.body (.running (code regions kind) env types heap) "fmi3Instance" .done) behavior ↔
       behavior = .terminates [] ⟨.pointer (some p),
-        finalHeap heap p slot kind environment logger logging shape⟩) ∧
-    CStorage.Preserves heap (finalHeap heap p slot kind environment logger logging shape) := by
-  have path := return_reaches program shape kind env types heap p slot environment logger logging .done
-    storage bindings bounded volumeBounded float size handle
+        finalHeap heap p slot kind environment logger logging regions⟩) ∧
+    CStorage.Preserves heap (finalHeap heap p slot kind environment logger logging regions) := by
+  have path := return_reaches program regions kind env types heap p slot environment logger logging .done
+    storage bindings distinct bounded volumeBounded float size handle
   exact ⟨(CCalls.Events.internal_prefix program path
     (CCalls.Events.return_forced program (.pointer (some p))
-      (finalHeap heap p slot kind environment logger logging shape))).behaviors,
+      (finalHeap heap p slot kind environment logger logging regions))).behaviors,
     CStorage.internal_reaches program path⟩
 
 end

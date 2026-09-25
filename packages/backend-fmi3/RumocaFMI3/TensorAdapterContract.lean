@@ -87,7 +87,14 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
       letI : CInterface := executionInterface objects literals
       TensorCompletedStep.Contract model (Runtime.function model CompletedCalls.signature).render) ∧
     -- Genuinely tensor bodies over the symbolic state volume.
-    TensorReset.Contract shape (TensorReset.function shape).render ∧
+    TensorReset.Contract (TensorStorage.regions shape true m.hasOutput)
+      (TensorReset.function (TensorStorage.regions shape true m.hasOutput)).render ∧
+    -- Every record member is written by the factory: a handle member, a restored
+    -- region or a restored scalar, so a reused slot carries no earlier value.
+    (∀ name ∈ (TensorStorage.membersG shape true m.hasOutput).map TensorStorage.Member.baseName,
+      name ∈ TensorInstanceInit.handleNames ∨
+        name ∈ (TensorStorage.regions shape true m.hasOutput).map Prod.fst ∨
+        name ∈ TensorReset.restoredScalars) ∧
     TensorNominals.Contract shape (TensorNominals.function shape).render ∧
     (∀ events, TensorCountQueries.Contract shape events (TensorCountQueries.function shape events).render) ∧
     TensorSetTime.Contract (TensorSetTime.function).render ∧
@@ -103,7 +110,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
       (TensorContinuousStates.derivFunction shape m.hasOutput).render ∧
     -- Factory and release over the static tensor instance pool.
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
-      TensorFactory.FunctionContract prog tag model (TensorMetadata.token m) shape) ∧
+      TensorFactory.FunctionContract prog tag model (TensorMetadata.token m)
+        (TensorStorage.regions shape true m.hasOutput)) ∧
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
       StaticRelease.Bindings prog tag → TensorFree.Contract prog tag) ∧
     -- Declaration preamble: the tensor storage block (`TensorStorage.declarations`)
@@ -194,7 +202,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     fun objects literals => TensorDiscreteEvaluation.contract objects literals model,
     fun objects literals => TensorDiscreteUpdate.contract objects literals model,
     fun objects literals => TensorCompletedStep.contract objects literals model,
-    TensorReset.contract shape,
+    TensorReset.contract shape true m.hasOutput,
+    TensorInstanceInit.covers shape true m.hasOutput,
     TensorNominals.contract shape,
     (fun events => TensorCountQueries.contract shape events),
     TensorSetTime.contract,
@@ -205,7 +214,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     TensorContinuousStates.get_contract shape,
     TensorContinuousStates.set_contract shape,
     TensorContinuousStates.deriv_contract shape m.hasOutput,
-    (fun _E prog tag => TensorFactory.contract_explicit (by rfl) prog tag model (TensorMetadata.token m) shape),
+    (fun _E prog tag => TensorFactory.contract_explicit (by rfl) prog tag model (TensorMetadata.token m)
+      (TensorStorage.regions shape true m.hasOutput) (TensorStorage.regions_distinct shape true m.hasOutput)),
     (fun _E prog tag bindings => TensorFree.contract prog tag bindings),
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n",
       String.join (TensorFunctions.helpers.map Function.render) ++

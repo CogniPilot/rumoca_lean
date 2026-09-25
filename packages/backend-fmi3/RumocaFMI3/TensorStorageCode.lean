@@ -282,6 +282,56 @@ theorem layout_state_extent_constant (shape : Shape) :
     Member.region TensorInstance.derivativeName shape.volume ∈ regionMembersG shape false false := by
   refine ⟨?_, ?_⟩ <;> simp [regionMembersG]
 
+/-! ### Region shapes and scalar members
+
+Every member of an instance record is the scalar time base, one contiguous region
+or one bookkeeping scalar (`members_names`). The regions carry their element
+shapes, so one fill loop per region, bounded by its symbolic volume, restores the
+whole record without enumerating a tensor coordinate. -/
+
+/-- The contiguous regions of the profile-generic instance record, each member name
+paired with its element shape, in declaration order: the state `x`, the input `u`
+when present, the derivative `dx`, and the flattened square Jacobian `J` when
+present. -/
+def regions (shape : Shape) (hasInput hasOutput : Bool) : List (String × Shape) :=
+  [(TensorInstance.stateName, shape)] ++
+  (if hasInput then [(TensorInstance.inputName, shape)] else []) ++
+  [(TensorInstance.derivativeName, shape)] ++
+  (if hasOutput then [(TensorInstance.outputName, matrixShape shape.volume shape.volume)] else [])
+
+/-- The declared region members are exactly the region shapes after the scalar
+time base, each with its shape volume as the array extent. -/
+theorem regions_layout (shape : Shape) (hasInput hasOutput : Bool) :
+    Member.scalar "double" TensorInstance.timeName ::
+      (regions shape hasInput hasOutput).map (fun r => Member.region r.1 r.2.volume) =
+      regionMembersG shape hasInput hasOutput := by
+  cases hasInput <;> cases hasOutput <;> simp [regions, regionMembersG]
+
+/-- The scalar members of every instance record: the time base and the bookkeeping
+fields. -/
+def scalarNames : List String := TensorInstance.timeName :: bookkeepingMembers.map Member.baseName
+
+/-- Region names are pairwise distinct and distinct from every scalar member name,
+so the cells of distinct members never coincide. -/
+def Distinct (regions : List (String × Shape)) : Prop :=
+  (regions.map Prod.fst).Nodup ∧ ∀ r ∈ regions, r.1 ∉ scalarNames
+
+theorem regions_distinct (shape : Shape) (hasInput hasOutput : Bool) :
+    Distinct (regions shape hasInput hasOutput) := by
+  cases hasInput <;> cases hasOutput <;>
+    simp [Distinct, regions, scalarNames, bookkeepingMembers, Member.baseName, TensorInstance.timeName,
+      TensorInstance.stateName, TensorInstance.inputName, TensorInstance.derivativeName,
+      TensorInstance.outputName]
+
+/-- Every member of the profile-generic record is the time base, one region or one
+bookkeeping scalar. -/
+theorem members_names (shape : Shape) (hasInput hasOutput : Bool) :
+    (membersG shape hasInput hasOutput).map Member.baseName =
+      TensorInstance.timeName :: ((regions shape hasInput hasOutput).map Prod.fst ++
+        bookkeepingMembers.map Member.baseName) := by
+  cases hasInput <;> cases hasOutput <;>
+    simp [membersG, regionMembersG, regions, Member.baseName]
+
 /-! ### Tokenization under the shared C scanner
 
 The tensor storage section scans, under the shared maximal-munch scanner

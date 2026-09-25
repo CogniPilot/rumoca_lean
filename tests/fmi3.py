@@ -87,15 +87,20 @@ def _matrix_config(md):
     """Value references and cardinalities used by the model-facing cells."""
     name = md.modelName
     if name == "Integrator":
-        return dict(input_vr=1, input_n=1, start=[0.5], n_states=1, get_vr=1, get_n=1)
+        return dict(input_vr=1, input_n=1, start=[0.5], n_states=1, get_vr=1, get_n=1,
+                    dirty=[0.5], starts=[(1, [0.0]), (2, [1.0])])
     if name == "TensorSquare":
-        return dict(input_vr=1, input_n=2, start=[1.0, 2.0], n_states=2, get_vr=2, get_n=2)
+        return dict(input_vr=1, input_n=2, start=[1.0, 2.0], n_states=2, get_vr=2, get_n=2,
+                    dirty=[3.0, -4.0],
+                    starts=[(1, [0.0, 0.0]), (2, [0.0, 0.0]), (3, [0.0, 0.0]), (4, [0.0, 0.0, 0.0, 0.0])])
     if name == "ConstantRates":
         # The constant-rate profile exposes no input and no output: the value
         # references are 0 (time), 1 (the writable two-element state) and 2 (the
         # read-only derivative). The state reference 1 is both the writable and
         # the observed cell for the matrix, set to zero at initialization.
-        return dict(input_vr=1, input_n=2, start=[0.0, 0.0], n_states=2, get_vr=1, get_n=2)
+        # The derivative is calculated, so it reads the rate vector in every mode.
+        return dict(input_vr=1, input_n=2, start=[0.0, 0.0], n_states=2, get_vr=1, get_n=2,
+                    dirty=[3.0, -4.0], starts=[(1, [0.0, 0.0]), (2, [2.5, -1.0])])
     raise SystemExit("behavior matrix: unsupported model " + name)
 
 
@@ -311,6 +316,40 @@ def behavior_matrix(fmu_path, label):
     check(reset(handle) == OK, "fmi3Reset returns fmi3OK")
     check(initialize(handle), "re-initialization after reset")
     check(do_step(handle, 0.0, 1.0) == OK, "a step after reset and re-initialization succeeds")
+    free(handle)
+
+    # -- slot reuse and fmi3Reset restore every declared start value --
+    # A freed slot is handed out again (lowest free slot first), so a new instance
+    # and a reset instance must both read the modelDescription start values (and
+    # the calculated values at those starts) in Initialization Mode, whatever the
+    # slot held before (FMI 3.0.2: instantiation initializes variables with their
+    # start values; after fmi3Reset all variables have their default values).
+    def run_dirty(handle):
+        return (enter_init(handle, False, 0.0, 0.0, False, 0.0) == OK
+                and set_f64(handle, (VR * 1)(cfg["input_vr"]), 1,
+                            (D * cfg["input_n"])(*cfg["dirty"]), cfg["input_n"]) == OK
+                and exit_init(handle) == OK and do_step(handle, 0.0, 1.0) == OK)
+
+    def check_starts(handle, description):
+        check(enter_init(handle, False, 0.0, 0.0, False, 0.0) == OK,
+              "%s: fmi3EnterInitializationMode" % description)
+        for reference, expected in cfg["starts"]:
+            values = (D * len(expected))()
+            status = get_f64(handle, (VR * 1)(reference), 1, values, len(expected))
+            check(status == OK and list(values) == expected,
+                  "%s: value reference %d reads its start value" % (description, reference))
+
+    first = cs()
+    check(bool(first) and run_dirty(first), "slot reuse fixture runs with non-start values")
+    free(first)
+    reused = cs()
+    check(bool(reused) and reused == first, "a new instance reuses the freed slot")
+    check_starts(reused, "reused slot")
+    free(reused)
+    handle = cs()
+    check(bool(handle) and run_dirty(handle), "reset fixture runs with non-start values")
+    check(reset(handle) == OK, "fmi3Reset after a step returns fmi3OK")
+    check_starts(handle, "after fmi3Reset")
     free(handle)
 
     # -- fmi3SetDebugLogging with valid and invalid category lists --

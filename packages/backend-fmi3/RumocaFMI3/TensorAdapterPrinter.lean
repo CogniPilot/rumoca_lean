@@ -20,10 +20,11 @@ variable {source : AST.Model} {shape : Rumoca.Tensor.Shape}
 
 /-- The tensor public factory function is printable: the profile-generic
 reserved-record factory printability at the tensor state shape. -/
-theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tensor.Shape) (kind : Kind)
-    (tok : String := token model) :
-    FunctionPrintable RuntimePrinter.typedefs (TensorFactory.function model shape kind tok) :=
-  AdapterFunctionsPrinter.factory_printable model shape kind tok
+theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tensor.Shape) (hasOutput : Bool)
+    (kind : Kind) (tok : String := token model) :
+    FunctionPrintable RuntimePrinter.typedefs
+      (TensorFactory.function model (TensorStorage.regions shape true hasOutput) kind tok) :=
+  AdapterFunctionsPrinter.factory_printable model shape true hasOutput kind tok
 
 /-- Every dispatched tensor function is printable: the 19 shape-dependent bodies
 use their proved printability, and every other signature uses the scalar body
@@ -40,7 +41,7 @@ theorem tensorFunction_printable (model : Solve.FMI3Model source)
   unfold TensorFunctions.tensorDispatch
   split <;>
     first
-      | exact TensorReset.body_printable shape
+      | exact TensorReset.body_printable shape true m.hasOutput
       | exact TensorNominals.body_printable shape
       | exact TensorCountQueries.body_printable shape false
       | exact TensorCountQueries.body_printable shape true
@@ -51,8 +52,8 @@ theorem tensorFunction_printable (model : Solve.FMI3Model source)
       | exact TensorLifecycleModes.body_printable .enterContinuous
       | exact TensorLifecycleModes.body_printable .terminate
       | exact StaticFactory.Printer.release_printable.2
-      | exact (factory_printable model shape .me (TensorMetadata.token m)).2
-      | exact (factory_printable model shape .cs (TensorMetadata.token m)).2
+      | exact (factory_printable model shape m.hasOutput .me (TensorMetadata.token m)).2
+      | exact (factory_printable model shape m.hasOutput .cs (TensorMetadata.token m)).2
       | exact TensorFloat64.getBody_printable shape (TensorFunctions.outputShape m)
       | exact TensorFloat64.setBody_printable shape
       | exact TensorContinuousStates.getBody_printable shape

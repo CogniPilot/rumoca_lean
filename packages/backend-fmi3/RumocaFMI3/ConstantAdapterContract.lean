@@ -92,7 +92,14 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
       letI : CInterface := executionInterface objects literals
       TensorCompletedStep.Contract model (Runtime.function model CompletedCalls.signature).render) ∧
     -- Reused tensor bodies over the symbolic constant state volume.
-    TensorReset.Contract m.shape (TensorReset.function m.shape).render ∧
+    TensorReset.Contract (TensorStorage.regions m.shape false false)
+      (TensorReset.function (TensorStorage.regions m.shape false false)).render ∧
+    -- Every record member is written by the factory: a handle member, a restored
+    -- region or a restored scalar, so a reused slot carries no earlier value.
+    (∀ name ∈ (TensorStorage.membersG m.shape false false).map TensorStorage.Member.baseName,
+      name ∈ TensorInstanceInit.handleNames ∨
+        name ∈ (TensorStorage.regions m.shape false false).map Prod.fst ∨
+        name ∈ TensorReset.restoredScalars) ∧
     TensorNominals.Contract m.shape (TensorNominals.function m.shape).render ∧
     (∀ events, TensorCountQueries.Contract m.shape events (TensorCountQueries.function m.shape events).render) ∧
     TensorSetTime.Contract (TensorSetTime.function).render ∧
@@ -108,7 +115,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     ConstantDerivative.DerivContract m.shape (ConstantDerivative.derivFunction m.shape).render ∧
     -- Factory and release over the static constant instance pool.
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
-      TensorFactory.FunctionContract prog tag model (TensorMetadata.constantToken m.name) m.shape) ∧
+      TensorFactory.FunctionContract prog tag model (TensorMetadata.constantToken m.name)
+        (TensorStorage.regions m.shape false false)) ∧
     (∀ (E : Type) (prog : CCalls.Events.Program E) (tag : CAtomicBoolean.Calls.Event → E),
       StaticRelease.Bindings prog tag → TensorFree.Contract prog tag) ∧
     -- Declaration preamble: the constant storage block (no input, no output) is the
@@ -188,7 +196,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3
     fun objects literals => TensorDiscreteEvaluation.contract objects literals model,
     fun objects literals => TensorDiscreteUpdate.contract objects literals model,
     fun objects literals => TensorCompletedStep.contract objects literals model,
-    TensorReset.contract m.shape,
+    TensorReset.contract m.shape false false,
+    TensorInstanceInit.covers m.shape false false,
     TensorNominals.contract m.shape,
     (fun events => TensorCountQueries.contract m.shape events),
     TensorSetTime.contract,
@@ -199,7 +208,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3
     TensorContinuousStates.get_contract m.shape,
     TensorContinuousStates.set_contract m.shape,
     ConstantDerivative.deriv_contract m.shape,
-    (fun _E prog tag => TensorFactory.contract_explicit (by rfl) prog tag model (TensorMetadata.constantToken m.name) m.shape),
+    (fun _E prog tag => TensorFactory.contract_explicit (by rfl) prog tag model (TensorMetadata.constantToken m.name)
+      (TensorStorage.regions m.shape false false) (TensorStorage.regions_distinct m.shape false false)),
     (fun _E prog tag bindings => TensorFree.contract prog tag bindings),
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n",
       String.join (ConstantFunctions.helpers.map Function.render) ++

@@ -8,7 +8,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorInstanceInit.return_reaches
 #audit axioms Rumoca.FMI3.TensorInstanceInit.complete
 #audit axioms Rumoca.FMI3.TensorInstanceInit.initialized
-#audit axioms Rumoca.FMI3.TensorInstanceInit.reads_state
 #audit axioms Rumoca.FMI3.TensorInstanceInit.frame
 #audit axioms Rumoca.FMI3.TensorInstanceInit.other_instance
 #audit axioms Rumoca.FMI3.TensorInstanceInit.Storage.preserved
+#audit axioms Rumoca.FMI3.TensorInstanceInit.covers
+#audit axioms Rumoca.FMI3.TensorInstanceInit.metaHeap_frame
+#audit axioms Rumoca.FMI3.TensorInstanceInit.handle_not_restored
+#audit axioms Rumoca.FMI3.TensorInstanceInit.reset_matches

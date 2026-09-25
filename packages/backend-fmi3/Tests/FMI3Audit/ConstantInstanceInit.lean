@@ -7,3 +7,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.ConstantInstanceInit.initialized
 #audit axioms Rumoca.FMI3.ConstantInstanceInit.reads_state
 #audit axioms Rumoca.FMI3.ConstantInstanceInit.other_instance
+#audit axioms Rumoca.FMI3.ConstantInstanceInit.reads_derivative

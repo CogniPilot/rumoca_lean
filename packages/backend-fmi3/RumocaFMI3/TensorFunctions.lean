@@ -59,7 +59,7 @@ the extra parameters unused by the body. -/
 def tensorDispatch (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (sig : Signature) : Function :=
   match sig.name with
-  | "fmi3Reset" => TensorReset.function shape
+  | "fmi3Reset" => TensorReset.function (TensorStorage.regions shape true m.hasOutput)
   | "fmi3GetNominalsOfContinuousStates" => TensorNominals.function shape
   | "fmi3GetNumberOfContinuousStates" => TensorCountQueries.function shape false
   | "fmi3GetNumberOfEventIndicators" => TensorCountQueries.function shape true
@@ -70,8 +70,8 @@ def tensorDispatch (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model s
   | "fmi3EnterContinuousTimeMode" => TensorLifecycleModes.function .enterContinuous
   | "fmi3Terminate" => TensorLifecycleModes.function .terminate
   | "fmi3FreeInstance" => TensorFree.function
-  | "fmi3InstantiateModelExchange" => TensorFactory.function model shape .me (TensorMetadata.token m)
-  | "fmi3InstantiateCoSimulation" => TensorFactory.function model shape .cs (TensorMetadata.token m)
+  | "fmi3InstantiateModelExchange" => TensorFactory.function model (TensorStorage.regions shape true m.hasOutput) .me (TensorMetadata.token m)
+  | "fmi3InstantiateCoSimulation" => TensorFactory.function model (TensorStorage.regions shape true m.hasOutput) .cs (TensorMetadata.token m)
   | "fmi3GetFloat64" => TensorFloat64.getFunction shape (outputShape m)
   | "fmi3SetFloat64" => TensorFloat64.setFunction shape
   | "fmi3GetContinuousStates" => TensorContinuousStates.getFunction shape

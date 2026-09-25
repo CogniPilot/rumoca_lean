@@ -39,8 +39,7 @@ theorem statementAdmits_mono {p q : Expr → Prop} (imp : ∀ e, p e → q e) (s
     (fun callee mem => imp callee ((statement_calls_complete p stmt).mpr h callee mem))
 
 macro "tadmit" : tactic => `(tactic| (
-  simp only [TensorReset.function, TensorReset.body, TensorReset.resetTail, TensorReset.bookkeepingTail,
-    TensorReset.zeroBody,
+  simp only [TensorReset.function, TensorReset.body,
     TensorNominals.function, TensorNominals.body, TensorNominals.nominalTail, TensorNominals.oneBody,
     TensorNominals.countReject,
     TensorCountQueries.function, TensorCountQueries.body, TensorCountQueries.rest,
@@ -50,7 +49,6 @@ macro "tadmit" : tactic => `(tactic| (
     TensorFree.function,
     TensorFactory.function, TensorFactory.functionWith, TensorFactory.code, TensorFactory.codeWith, TensorFactory.initializeInstance,
     TensorInstanceInit.code, TensorInstanceInit.slotStore, TensorInstanceInit.metaCode,
-    TensorInstanceInit.stateTail,
     FactoryPrefix.body, FactoryPrefix.bodyWith, FactoryPrefix.entry, FactoryPrefix.entryWith,
     TensorFloat64.getFunction, TensorFloat64.getBody, TensorFloat64.getRest, TensorFloat64.getDispatch,
     TensorFloat64.getDispatch1, TensorFloat64.getDispatch2, TensorFloat64.getDispatch3,
@@ -85,6 +83,7 @@ macro "tadmit" : tactic => `(tactic| (
     TensorInstance.derivativeName, TensorInstance.outputName]
   fmi_literal_calls
   all_goals simp [StatementAdmits, ExpressionAdmits, acceptedT, accepted, classify,
+    TensorReset.restoreCode_admits, or_imp, forall_and,
     Expr.nonfinite, Runtime.invalidTime, Runtime.allowedExpression, permittedModes,
     Runtime.any, Runtime.eqv, Runtime.nev, Runtime.both, Runtime.either,
     Runtime.lt, Runtime.le, Runtime.gt, Runtime.ge, Runtime.negate, Runtime.region, Runtime.x,

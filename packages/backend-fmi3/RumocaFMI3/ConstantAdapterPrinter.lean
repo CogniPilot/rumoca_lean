@@ -35,7 +35,7 @@ theorem constantFunction_printable (model : Solve.FMI3Model source)
   unfold ConstantFunctions.constantDispatch
   split <;>
     first
-      | exact TensorReset.body_printable m.shape
+      | exact TensorReset.body_printable m.shape false false
       | exact TensorNominals.body_printable m.shape
       | exact TensorCountQueries.body_printable m.shape false
       | exact TensorCountQueries.body_printable m.shape true
@@ -46,8 +46,8 @@ theorem constantFunction_printable (model : Solve.FMI3Model source)
       | exact TensorLifecycleModes.body_printable .enterContinuous
       | exact TensorLifecycleModes.body_printable .terminate
       | exact StaticFactory.Printer.release_printable.2
-      | exact (AdapterFunctionsPrinter.factory_printable model m.shape .me (TensorMetadata.constantToken m.name)).2
-      | exact (AdapterFunctionsPrinter.factory_printable model m.shape .cs (TensorMetadata.constantToken m.name)).2
+      | exact (AdapterFunctionsPrinter.factory_printable model m.shape false false .me (TensorMetadata.constantToken m.name)).2
+      | exact (AdapterFunctionsPrinter.factory_printable model m.shape false false .cs (TensorMetadata.constantToken m.name)).2
       | exact ConstantFloat64.getBody_printable m.shape
       | exact ConstantFloat64.setBody_printable m.shape
       | exact TensorContinuousStates.getBody_printable m.shape

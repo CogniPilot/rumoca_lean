@@ -20,3 +20,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.TensorStorage.recordG_printed
 #audit axioms Rumoca.FMI3.TensorStorage.storageG_printed
 #audit axioms Rumoca.FMI3.TensorStorage.declarationsG_header
+#audit axioms Rumoca.FMI3.TensorStorage.regions_layout
+#audit axioms Rumoca.FMI3.TensorStorage.regions_distinct
+#audit axioms Rumoca.FMI3.TensorStorage.members_names

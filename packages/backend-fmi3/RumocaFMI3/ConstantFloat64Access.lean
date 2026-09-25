@@ -1,4 +1,5 @@
 import RumocaFMI3.TensorFloat64Access
+import RumocaFMI3.ConstantDerivative
 
 /-! Constant-rate `fmi3GetFloat64` / `fmi3SetFloat64` bodies over the static
 constant-rate instance record, as package-checked products.
@@ -10,7 +11,10 @@ base (element count 1), `1` the state vector `x`, `2` the state derivative
 three references; the setter admits only the state reference `1` (writable) and
 rejects the derivative reference `2` as read-only, matching the constant-rate
 model description (`TensorMetadata.constantModelDescription`, `1` state, `2`
-derivative). The shared request-check, staging, copy-loop and finiteness
+derivative). The derivative is a calculated variable: before staging reference
+`2` the getter evaluates it through the constant kernel entry
+(`ConstantDerivative.entryCall`), as the derivative getter does, so the returned
+value is the rate vector whatever the region held before. The shared request-check, staging, copy-loop and finiteness
 machinery of the tensor accessor (`Rumoca.FMI3.TensorFloat64`) is reused verbatim;
 only the value-reference dispatch differs. The copy uses one counted `size_t`
 loop over the symbolic state count, so no coordinate is enumerated.
@@ -31,7 +35,8 @@ open Rumoca.FMI3.Float64Calls (signature parameters arguments parameters_bound o
 
 /-- Dispatch tail for reference 2 (the derivative `der(x)`). -/
 def getDispatch2 (shape : Tensor.Shape) : List Stmt :=
-  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 2)) (getArm derivativeName shape.volume)
+  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 2))
+    (ConstantDerivative.entryCall :: getArm derivativeName shape.volume)
     [Runtime.fail "Unknown value reference"]]
 
 /-- Dispatch tail for references 1 and above (the state `x`). -/
@@ -48,7 +53,7 @@ def getDispatch (shape : Tensor.Shape) : Stmt :=
 `0..2` staging the time, state and derivative regions. The constant getter is the
 generic `Float64Dispatch.dispatchChain` over this list. -/
 def getArms (shape : Tensor.Shape) : List (Nat × List Stmt) :=
-  [(0, getArm timeName 1), (1, getArm stateName shape.volume), (2, getArm derivativeName shape.volume)]
+  [(0, getArm timeName 1), (1, getArm stateName shape.volume), (2, ConstantDerivative.entryCall :: getArm derivativeName shape.volume)]
 
 theorem getDispatch_chain (shape : Tensor.Shape) :
     Float64Dispatch.dispatchChain vr0 (getArms shape)
@@ -68,7 +73,8 @@ def getFunction (shape : Tensor.Shape) : CTree.Function :=
 theorem getBody_closed (shape : Tensor.Shape) :
     (getFunction shape).body.all CBodyEmbedding.closedBlocks = true := by
   simp [getFunction, getBody, getRest, getDispatch, getDispatch1, getDispatch2, basicReject, countReject,
-    getLoopSuffix, getArm, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
+    getLoopSuffix, getArm, ConstantDerivative.entryCall, ConstantDerivative.entryArgs, Runtime.call,
+    Runtime.region, Runtime.field, Runtime.v, Runtime.n, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
     Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, getCopyBody, CBodyEmbedding.closedBlocks,
     CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
 
@@ -122,7 +128,10 @@ theorem getArms_printable (shape : Tensor.Shape) :
   rcases ha with rfl | rfl | rfl
   · exact TensorFloat64.getArm_printable timeName 1 (by decide +kernel)
   · exact TensorFloat64.getArm_printable stateName shape.volume (by decide +kernel)
-  · exact TensorFloat64.getArm_printable derivativeName shape.volume (by decide +kernel)
+  · intro stmt member
+    rcases List.mem_cons.mp member with rfl | staged
+    · exact ConstantDerivative.entryCall_printable
+    · exact TensorFloat64.getArm_printable derivativeName shape.volume (by decide +kernel) stmt staged
 
 /-- The constant-rate setter dispatch arm prints its intended C token grammar. -/
 theorem setArms_printable (shape : Tensor.Shape) :
@@ -229,6 +238,8 @@ private local instance contractInterface : CInterface := cInterface static.addre
 /-- The constant-rate `fmi3GetFloat64` function contract. -/
 structure GetContract (shape : Tensor.Shape) (text : String) : Prop where
   printed : text = (getFunction shape).render
+  derivativeArm : (getArms shape).lookup 2 =
+    some (ConstantDerivative.entryCall :: getArm derivativeName shape.volume)
   closed : (getFunction shape).body.all CBodyEmbedding.closedBlocks = true
   denotes : FunctionDenotes RuntimePrinter.typedefs text (getFunction shape)
   rejected : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (refs buffer : Option Address)
@@ -252,6 +263,7 @@ structure SetContract (shape : Tensor.Shape) (text : String) : Prop where
 
 theorem get_contract (shape : Tensor.Shape) : GetContract shape (getFunction shape).render where
   printed := rfl
+  derivativeArm := rfl
   closed := getBody_closed shape
   denotes := getFunction_denotes shape
   rejected program heap refs buffer n m defined :=

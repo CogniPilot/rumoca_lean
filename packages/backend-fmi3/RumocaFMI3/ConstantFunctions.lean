@@ -69,7 +69,7 @@ and every remaining signature selects the scalar body `Runtime.function model si
 def constantDispatch (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (sig : Signature) : Function :=
   match sig.name with
-  | "fmi3Reset" => TensorReset.function m.shape
+  | "fmi3Reset" => TensorReset.function (TensorStorage.regions m.shape false false)
   | "fmi3GetNominalsOfContinuousStates" => TensorNominals.function m.shape
   | "fmi3GetNumberOfContinuousStates" => TensorCountQueries.function m.shape false
   | "fmi3GetNumberOfEventIndicators" => TensorCountQueries.function m.shape true
@@ -81,9 +81,9 @@ def constantDispatch (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Mod
   | "fmi3Terminate" => TensorLifecycleModes.function .terminate
   | "fmi3FreeInstance" => TensorFree.function
   | "fmi3InstantiateModelExchange" =>
-      TensorFactory.function model m.shape .me (TensorMetadata.constantToken m.name)
+      TensorFactory.function model (TensorStorage.regions m.shape false false) .me (TensorMetadata.constantToken m.name)
   | "fmi3InstantiateCoSimulation" =>
-      TensorFactory.function model m.shape .cs (TensorMetadata.constantToken m.name)
+      TensorFactory.function model (TensorStorage.regions m.shape false false) .cs (TensorMetadata.constantToken m.name)
   | "fmi3GetFloat64" => ConstantFloat64.getFunction m.shape
   | "fmi3SetFloat64" => ConstantFloat64.setFunction m.shape
   | "fmi3GetContinuousStates" => TensorContinuousStates.getFunction m.shape

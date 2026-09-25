@@ -46,9 +46,14 @@ instance's derivative region `&(m->dx[0])`. The rate vector needs no state or
 input, so the entry takes only the written region. -/
 def entryArgs : List Expr := [Runtime.region derivativeName]
 
+/-- The constant-rate derivative evaluation `rumoca_constant_rhs(&(m->dx[0]));`. It
+writes the rate vector into the instance's derivative region; the derivative getter
+and the Float64 getter's `der(x)` reference both run it before reading the region. -/
+def entryCall : Stmt := .eval (Runtime.call "rumoca_constant_rhs" entryArgs)
+
 def derivBody (shape : Tensor.Shape) : List Stmt :=
   Runtime.require .getDerivatives ++
-    (derivCountReject shape.volume :: .eval (Runtime.call "rumoca_constant_rhs" entryArgs) ::
+    (derivCountReject shape.volume :: entryCall ::
       derivCopyTail shape)
 
 def derivFunction (shape : Tensor.Shape) : CTree.Function :=
@@ -56,7 +61,7 @@ def derivFunction (shape : Tensor.Shape) : CTree.Function :=
 
 theorem derivBody_closed (shape : Tensor.Shape) :
     (derivFunction shape).body.all CBodyEmbedding.closedBlocks = true := by
-  simp [derivFunction, derivBody, derivCopyTail, derivCountReject, entryArgs,
+  simp [derivFunction, derivBody, derivCopyTail, derivCountReject, entryCall, entryArgs,
     TensorFloat64.getLoopSuffix, TensorFloat64.getCopyBody, Runtime.require, Runtime.instancePrefix,
     Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok,
     Runtime.field, Runtime.v, Runtime.n, Runtime.region, Runtime.call, CBodyEmbedding.closedBlocks,
@@ -76,7 +81,7 @@ theorem derivBody_printable (shape : Tensor.Shape) :
     .pointer (text := "fmi3Float64") (.named (.typedefName (by decide +kernel) (by decide +kernel)))
   have sType : TypeSpelling RuntimePrinter.typedefs "size_t" :=
     .named (.typedefName (by decide +kernel) (by decide +kernel))
-  simp only [derivFunction, derivBody, derivCopyTail, derivCountReject, entryArgs,
+  simp only [derivFunction, derivBody, derivCopyTail, derivCountReject, entryCall, entryArgs,
       TensorFloat64.getLoopSuffix, Runtime.region, Runtime.require, Runtime.instancePrefix,
       Runtime.modeGuard, Runtime.allowedExpression, Runtime.kindModes, permittedModes, Runtime.reject, Runtime.branch,
       Runtime.fail, Runtime.ret, Runtime.ok, Runtime.field, Runtime.v, Runtime.n, Runtime.eqv,
@@ -117,6 +122,22 @@ theorem derivFunction_denotes (shape : Tensor.Shape) :
     FunctionDenotes RuntimePrinter.typedefs (derivFunction shape).render (derivFunction shape) :=
   CTree.Printer.function_denotes ⟨derivSignature_printable, derivBody_printable shape⟩
 
+/-- The derivative evaluation prints its intended C token grammar. -/
+theorem entryCall_printable : ItemPrintable RuntimePrinter.typedefs entryCall := by
+  simp only [entryCall, entryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n,
+    derivativeName]
+  repeat first
+    | apply And.intro
+    | apply ItemPrintable.eval
+    | apply Printable.address
+    | apply Printable.call
+    | apply Printable.field
+    | apply Printable.index
+    | exact Printable.natural
+    | apply Printable.identifier
+    | decide +kernel
+    | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq, Postfix, FieldBase]
+
 end
 
 /-! ### Null-handle rejection and copy-suffix delivery -/
@@ -136,7 +157,7 @@ theorem null_deriv_behaviors (shape : Tensor.Shape) (program : CCalls.Events.Pro
       behavior = .terminates [] ⟨.integer 3, heap⟩ := by
   apply GuardedCalls.null_behaviors program (derivFunction shape)
     (Runtime.modeGuard .getDerivatives :: derivCountReject shape.volume ::
-      .eval (Runtime.call "rumoca_constant_rhs" entryArgs) :: derivCopyTail shape)
+      entryCall :: derivCopyTail shape)
     (DerivativeCalls.values none buffer count) (derivParameters none buffer count) heap defined
     (derivParameters_bound _ _ _)
     (by simp [derivFunction, derivBody, Runtime.require, List.append_assoc])
@@ -193,16 +214,62 @@ copy suffix saved as the caller continuation. -/
 theorem constant_deriv_enter (shape : Tensor.Shape) (p buffer : Address) (count : UInt64)
     (types0 : Types) (H : Heap) (rest : List Stmt) (stack : CCalls.Typed.Continuation) :
     CCalls.Events.internalNext program
-      (.body (.running (.eval (Runtime.call "rumoca_constant_rhs" entryArgs) :: rest)
+      (.body (.running (entryCall :: rest)
         (derivGuardEnv p buffer count) types0 H) "fmi3Status" stack) =
       some (.calling "rumoca_constant_rhs" [.pointer (some (p.member derivativeName))] H
         (.caller .discard rest (derivGuardEnv p buffer count) types0 "fmi3Status" stack)) := by
   simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions, CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
-    entryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+    entryCall, entryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
     CBody.lvalueWith, CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand,
     CCalls.Indirect.resolveWith, CBody.legacyExpressions, CCalls.argumentsWith, CBody.legacyExpressions, derivGuardEnv, derivParameters, CBody.bind,
     CBody.resolve, CBody.constants, Value.address]
 
+
+/-- Evaluating `der(x)` from any body state whose `m` names instance `i`: the entry
+call writes the exactly rounded rate vector into the instance's derivative region
+and resumes with the same locals, preserving every other instance. -/
+theorem entryCall_reaches (shape : Tensor.Shape) (rates : List Rumoca.ConstantProfile.Decimal)
+    (len : rates.length = shape.volume) (definitions : CLoops.Calls.Definitions)
+    (linked : CCalls.Typed.Extends definitions program.internal)
+    (found : definitions "rumoca_constant_rhs" = some (Rumoca.CConstant.rhsFunction rates))
+    (ptrTy : (cInterface static.addresses).types "double *" = some .pointer)
+    (heap : Heap) (pool : Address) (i : Nat) (env : Locals) (types0 : Types) (rest : List Stmt)
+    (resultType : String) (stack : CCalls.Typed.Continuation)
+    (instanceBound : env "m" = some (.pointer (some (TensorInstance.record pool i))))
+    (unbound : env "rumoca_constant_rhs" = none)
+    (writable : Writable heap (TensorInstance.field pool i derivativeName) shape.volume)
+    (resolves : ∀ v, Transition.Reaches (CLoops.Calls.machine definitions).step
+      (.calling "rumoca_constant_rhs" [.pointer (some (TensorInstance.field pool i derivativeName))]
+        heap .done) v →
+      CCalls.Events.Resolves program v) :
+    ∃ finalHeap,
+      Reads finalHeap (TensorInstance.field pool i derivativeName)
+        (ConstantInstanceRhs.ratesVec rates shape len) ∧
+      (∀ (j : Nat) (b : String) (k : Nat), j ≠ i →
+        finalHeap ((TensorInstance.field pool j b).index k) = heap ((TensorInstance.field pool j b).index k)) ∧
+      Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
+        (.body (.running (entryCall :: rest) env types0 heap) resultType stack)
+        (.body (.running rest env types0 finalHeap) resultType stack) := by
+  have enterStep : CCalls.Events.internalNext program
+      (.body (.running (entryCall :: rest) env types0 heap) resultType stack) =
+      some (.calling "rumoca_constant_rhs" [.pointer (some (TensorInstance.field pool i derivativeName))] heap
+        (.caller .discard rest env types0 resultType stack)) := by
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+      CLoops.nextWith, CLoops.evalWith, CBody.legacyExpressions,
+      entryCall, entryArgs, Runtime.call, Runtime.region, Runtime.field, Runtime.v, Runtime.n, CBody.eval,
+      CBody.evalWith, CDeclaredMembers.memberValue, CDeclaredMembers.arrayAt, CDeclaredMembers.fieldAt,
+      CBody.lvalueWith, CCalls.Events.enterCallWith, CCalls.Events.resolveWith, CCalls.Indirect.operand,
+      CCalls.Indirect.resolveWith, CCalls.argumentsWith, CBody.resolve, CBody.constants, Value.address,
+      instanceBound, unbound, TensorInstance.field, TensorInstance.record]
+  obtain ⟨finalHeap, reads, _writableDeriv, _frame, others, ran⟩ :=
+    ConstantInstanceRhs.rhs_writes_events (shape := shape) rates len definitions program linked found ptrTy heap
+      pool i writable resolves (.caller .discard rest env types0 resultType stack)
+  have resumeStep : CCalls.Events.internalNext program
+      (.returning .void finalHeap (.caller .discard rest env types0 resultType stack)) =
+      some (.body (.running rest env types0 finalHeap) resultType stack) := by
+    simp [CCalls.Events.internalNext, CCalls.Events.internalNextWith, CCalls.Typed.nextWithExpressions,
+      CCalls.Typed.resumeWith]
+  exact ⟨finalHeap, reads, others, .next enterStep (ran.trans (.next resumeStep (.refl _)))⟩
 /-- The fused single-run constant derivative getter over instance `i`: guarding,
 checking the count, invoking the constant kernel entry `rumoca_constant_rhs`
 through the transfer lemma, then copying the written `der(x)` region into the
@@ -251,25 +318,25 @@ theorem deriv_reaches (shape : Tensor.Shape) (rates : List Rumoca.ConstantProfil
   set m := TensorInstance.record pool i with hm'
   have accepted := LifecycleGuard.accept (derivParameters (some m) (some buffer) count) H m
     .getDerivatives kind mode
-    (derivCountReject shape.volume :: .eval (Runtime.call "rumoca_constant_rhs" entryArgs) :: derivCopyTail shape)
+    (derivCountReject shape.volume :: entryCall :: derivCopyTail shape)
     (by simp [derivParameters, CBody.bind]) (by simp [derivParameters, CBody.bind]) hk hm allowed
   have prefixRun : CBody.run 4 (.running (derivBody shape) (derivParameters (some m) (some buffer) count) H) =
-      some (.running (.eval (Runtime.call "rumoca_constant_rhs" entryArgs) :: derivCopyTail shape)
+      some (.running (entryCall :: derivCopyTail shape)
         (derivGuardEnv m buffer count) H) := by
     rw [derivBody]
     rw [show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
     exact TensorFloat64.run_one (TensorFloat64.reject_false (derivGuardEnv m buffer count) H
       (Runtime.any [Runtime.nev (Runtime.v "nContinuousStates") (Runtime.n shape.volume),
         Runtime.eqv (Runtime.v "derivatives") Expr.nullPointer]) "Invalid continuous state count or pointer"
-      (.eval (Runtime.call "rumoca_constant_rhs" entryArgs) :: derivCopyTail shape)
+      (entryCall :: derivCopyTail shape)
       (TensorContinuousStates.derivCount_explicit_pass H m buffer count shape.volume matched))
   obtain ⟨types0, entered⟩ := CCalls.Events.body_prefix_reaches program (derivFunction shape)
     (DerivativeCalls.values (some m) (some buffer) count) (derivParameters (some m) (some buffer) count)
     (derivGuardEnv m buffer count) H H
-    (.eval (Runtime.call "rumoca_constant_rhs" entryArgs) :: derivCopyTail shape) stack 4 defined
+    (entryCall :: derivCopyTail shape) stack 4 defined
     (derivParameters_bound _ _ _) (derivBody_closed shape) prefixRun
   have enterStep : CCalls.Events.internalNext program
-      (.body (.running (.eval (Runtime.call "rumoca_constant_rhs" entryArgs) :: derivCopyTail shape)
+      (.body (.running (entryCall :: derivCopyTail shape)
         (derivGuardEnv m buffer count) types0 H) "fmi3Status" stack) =
       some (.calling "rumoca_constant_rhs" [.pointer (some (m.member derivativeName))] H
         (.caller .discard (derivCopyTail shape) (derivGuardEnv m buffer count) types0 "fmi3Status" stack)) :=

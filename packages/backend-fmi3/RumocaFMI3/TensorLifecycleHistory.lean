@@ -186,7 +186,8 @@ history proceeds create, enter/exit initialization, one derivative query, free. 
 returned handle, the observed statuses and the final owner map, equal to the
 original free pool, are all derived. -/
 theorem lifecycle_from_creation (tag : CAtomicBoolean.Calls.Event → E)
-    (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+    (shape oshape : Tensor.Shape)
+    (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
@@ -209,13 +210,13 @@ theorem lifecycle_from_creation (tag : CAtomicBoolean.Calls.Event → E)
       some (.tree (TensorContinuousStates.derivFunction shape false)))
     -- the proved creation call
     (scope : TensorFactory.Scope env pool ⟨block, [], 0⟩ capacity environment logger logging)
-    (storage : ∀ s : Fin capacity, TensorInstanceInit.Storage before (pool.index s.val) shape)
+    (storage : ∀ s : Fin capacity, TensorInstanceInit.Storage before (pool.index s.val) (TensorStorage.regions shape true false))
     (reservationBindings : StaticFactory.ReservationBindings program tag)
     (represented0 : SlotOwners.Represents block before owners0)
     (outcome : CAtomicScan.Outcome ⟨block, [], 0⟩ capacity 0 before trace slot.val after)
     -- the reached Event-Mode heap is a well-formed tensor instance heap
     (coherent : writeMode (writeMode
-      (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging shape)
+      (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging (TensorStorage.regions shape true false))
       (TensorInstance.record pool slot.val) .initialization)
       (TensorInstance.record pool slot.val) .event =
       TensorInstance.store backing2 pool slot.val shape oshape time state input output)
@@ -242,17 +243,17 @@ theorem lifecycle_from_creation (tag : CAtomicBoolean.Calls.Event → E)
     ∃ finalHeap : Heap,
       -- the creation call: returns the initialized handle to the reserved free slot
       (∀ behavior, (CCalls.Events.machine program).Behaves
-        (.body (.running (TensorFactory.code shape Kind.me) env types before) "fmi3Instance" .done) behavior ↔
+        (.body (.running (TensorFactory.code (TensorStorage.regions shape true false) Kind.me) env types before) "fmi3Instance" .done) behavior ↔
         behavior = .terminates (trace.map tag) ⟨.pointer (some (pool.index slot.val)),
-          TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging shape⟩) ∧
+          TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging (TensorStorage.regions shape true false)⟩) ∧
       -- enter/exit Initialization Mode: fmi3OK, writing the mode cell
       (∀ behavior, (CCalls.Events.machine program).Behaves
         (.calling (TensorLifecycleModes.signature .enterInitialization).name
           (TensorLifecycleModes.arguments .enterInitialization (some (TensorInstance.record pool slot.val)))
-          (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging shape)
+          (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging (TensorStorage.regions shape true false))
           .done) behavior ↔
         behavior = .terminates [] ⟨.integer 0, writeMode
-          (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging shape)
+          (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging (TensorStorage.regions shape true false))
           (TensorInstance.record pool slot.val) .initialization⟩) ∧
       Reads finalHeap (TensorInstance.field pool slot.val derivativeName) result ∧
       (∀ behavior, (CCalls.Events.machine program).Behaves
@@ -269,13 +270,16 @@ theorem lifecycle_from_creation (tag : CAtomicBoolean.Calls.Event → E)
           ⟨.void, replace (TensorInstance.store backing2 pool slot.val shape oshape time state input output)
             (AtomicSlots.address block slot) (CAtomicBoolean.cell false)⟩) ∧
       SlotOwners.update (SlotOwners.update owners0 slot (some owner)) slot none = owners0 := by
-  obtain ⟨reserved, created, createCall⟩ := TensorFactory.successful_owned program tag shape Kind.me env types
+  obtain ⟨reserved, created, createCall⟩ := TensorFactory.successful_owned program tag (TensorStorage.regions shape true false) Kind.me env types
     before after pool block capacity environment logger logging scope storage reservationBindings rfl rfl rfl
-    capBound bounded owners0 represented0 owner slot outcome
+    capBound (TensorStorage.regions_distinct shape true false)
+    (by intro r member; simp only [TensorStorage.regions, List.mem_append, List.mem_cons, List.not_mem_nil,
+      or_false, if_true, if_false, Bool.false_eq_true] at member; rcases member with ((rfl | rfl) | rfl) <;> exact bounded)
+    owners0 represented0 owner slot outcome
   obtain ⟨finalHeap, ei, xi, reads, derivBehaviors, _rel, freeBehaviors⟩ :=
     lifecycle_history program tag shape oshape definitions linked library found pool slot block owner
       (SlotOwners.update owners0 slot (some owner))
-      (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging shape)
+      (TensorInstanceInit.finalHeap after (pool.index slot.val) slot.val Kind.me environment logger logging (TensorStorage.regions shape true false))
       backing2 time state input result output buffer count matched bounded eiDef xiDef derivDef
       created.initialized.kindValue created.initialized.modeCell created.initialized.slotValue coherent
       executed writable separate resolves releaseBindings flagsBound represented

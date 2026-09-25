@@ -27,13 +27,14 @@ private theorem named_type (name : String) (member : name ∈ RuntimePrinter.typ
   exact .named (.typedefName member (List.all_eq_true.mp valid name member))
 
 /-- The reserved-record public factory function is printable: the shared admission
-prefix followed by the reserved-record initializer (slot store, lifecycle
-metadata, the counted state-region zero fill and the handle return). This is the
+prefix followed by the reserved-record initializer (slot store, handle members,
+the shared restore block and the handle return). This is the
 one dispatched factory body without an existing printability theorem, and it is
 identical across profiles. -/
-theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tensor.Shape) (kind : Kind)
-    (tok : String) :
-    FunctionPrintable RuntimePrinter.typedefs (TensorFactory.function model shape kind tok) := by
+theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tensor.Shape)
+    (hasInput hasOutput : Bool) (kind : Kind) (tok : String) :
+    FunctionPrintable RuntimePrinter.typedefs
+      (TensorFactory.function model (TensorStorage.regions shape hasInput hasOutput) kind tok) := by
   refine ⟨StaticFactory.Printer.signature_printable kind, ?_⟩
   have iType : TypeSpelling RuntimePrinter.typedefs "Instance *" :=
     .pointer (text := "Instance") (named_type _ (by decide +kernel))
@@ -51,14 +52,13 @@ theorem factory_printable (model : Solve.FMI3Model source) (shape : Rumoca.Tenso
       StaticFactory.exhaustedWith, TensorFactory.initializeInstance,
       StaticFactory.selectInstance,
       TensorInstanceInit.code, TensorInstanceInit.slotStore, TensorInstanceInit.metaCode,
-      TensorInstanceInit.stateTail, TensorReset.zeroBody, TensorFloat64.dstCell,
-      InstanceInitialization.returnHandle, TensorInstance.stateName, CAtomicScan.function,
-      Identity.function, Runtime.region, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
-      CLoops.loop, CLoops.counterStep,
+      InstanceInitialization.returnHandle, CAtomicScan.function, List.mem_append,
+      Identity.function, Runtime.put, Runtime.field, Runtime.v, Runtime.n,
       List.mem_cons,
       List.not_mem_nil, or_false, or_imp, forall_and, List.cons_append, List.nil_append,
       forall_eq] <;>
     repeat first
+      | exact TensorReset.restoreCode_printable shape hasInput hasOutput
       | exact CNull.literal_printable _
       | exact iType
       | exact fType
