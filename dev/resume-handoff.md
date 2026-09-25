@@ -1,5 +1,29 @@
 # Resume handoff — 2026-09-24 UTC
 
+## Current: one GALEC representation; three slices fully gated today
+
+HEAD `26a7be5` plus the evidence commit. Today's gated slices, in order:
+fold-terminal repair (`630ef4a`), GALEC loop cutover (`8a3a513`, GJ01/GJ03
+closed), and the scalar/tensor unification (`26a7be5`: core GALEC IR deleted,
+scalar Algorithm Code printed from the core builder, canonical names defined
+once in `GALEC/Names.lean`, gate `build/galec-unify-gate/`: owner 4,489
+jobs/7,219 reports, 1,290 required roots; full gate
+2,664 inputs/9,126 reports, matrices 75/75, all five archives
+byte-identical). The `AlgorithmContract` fields `solve_refinement` and
+`lifecycle_refinement` became derived theorems of the same statements; the
+user should acknowledge this field-list change (recorded in
+docs/verification.md). AGENTS.md's "DAE → GALEC → Solve" wording is the
+user's; it now denotes the proved refinement relation.
+
+Prepared and reviewed, not yet adopted: the MISRA `isfinite` repair
+(`build/misra-isfinite-adoption/`, `(isfinite(x) == 0)` via `Expr.nonfinite`,
+64 roots, predicted 6/6/5 changed lines; gate scripts in
+`build/misra-isfinite-gate/` with ROOTCOUNT to fill from the unify gate).
+Next: adopt it (baseline, owner, full gate, post-audit, ledgers), then the
+recurring whole-subset review for N01 before any ordinary grammar expansion,
+then record a Rule 10.1 deviation for the two exact time-grid inequalities.
+Standing rules and gate practice: see the section below and memory.
+
 ## Current: GALEC loop cutover and fold-terminal repair both fully gated
 
 This section supersedes everything below. HEAD `8a3a513` plus the evidence
@@ -897,7 +921,7 @@ for Startup/Recalibrate/literal-one DoStep; whole-shaped state/clock adapters
 have two-sided inverses. Only the actual finite addition-with-one domain is
 discharged, not arbitrary arithmetic totality.
 
-Backend `RumocaEFMI/ScalarSourceProofs.lean` supplies `ScalarSourceSemantics`.
+Backend `RumocaEFMI/AlgorithmProofs.lean` supplies `ScalarSourceSemantics` (since 2026-09-24; formerly `ScalarSourceProofs.lean`).
 Compiler `AlgorithmContract.original_source` makes it mandatory for the actual
 parsed member, carried by Production/Manifest/Archive contracts.
 `ProductionContract.original_methods` composes source execution with authored

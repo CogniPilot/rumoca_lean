@@ -424,11 +424,11 @@ count`) and a single IVP member and confirms rejection.
 | `source_lexes` (`:17`) | `parsed_lexes` | proved |
 | `source_ebnf` (`:18`) | `parsed_in_ebnf`; Modelica/GALEC grammar identities checked on the actual `.ebnf` files | proved (+ **checked**) |
 | `grammar_processed` (`:19`) | `EFMI.grammar_processed` (the LALR engine compiles the GALEC grammar to the pinned tables) | proved |
-| `parsed` (`:21`) | `render_denotes a.algorithmCode` | proved |
+| `parsed` (`:21`) | kernel certificate: `parse renderAlgorithm = .ok p`, `p.ast = scalarBlock`, `algorithmSolve.block = unitBlock` (2026-09-24; formerly `render_denotes`) | proved |
 | `dae_admission` (`:22`) | `GALEC.lower_equation_correct` | proved |
 | `startup` / `recalibrate` / `step` / `samples` (`:23-26`) | `GALEC.startup_correct`, `recalibrate_correct`, `doStep_correct`, `run_correct` composed with `Solve.Model.*` | proved |
-| `solve_refinement` (`:27`) | `GALEC.UnitProfile.lower_correct` | proved |
-| `lifecycle_refinement` (`:33`) | `GALEC.Protocol.lower_trace_correct` | proved |
+| `solve_refinement` | theorem `AlgorithmContract.solve_refinement` from `ScalarSourceSemantics.refines` and `sourceExec_iff_solve` (2026-09-24; formerly a field proved by the deleted `UnitProfile.lower_correct`) | proved |
+| `lifecycle_refinement` | theorem `AlgorithmContract.lifecycle_refinement` from `ScalarSourceSemantics.lifecycle` (2026-09-24; formerly a field proved by the deleted `Protocol.lower_trace_correct`) | proved |
 
 **External.** Production Code member, XML, checksums, ZIP transport, and the
 host lifecycle scheduler are explicitly not certified here (`:11-12`).

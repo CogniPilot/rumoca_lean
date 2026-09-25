@@ -1,5 +1,76 @@
 # Exact verification contract
 
+**One GALEC representation for scalar and tensor (full gate passed):**
+The core GALEC IR (`GALEC.Model`, `unitBlock`, `renderBlock`, `lower`, the
+`Origins` chain and the IR-lowering theorems) is deleted. `Solve.Algorithm.
+prepare` builds the prepared scalar model directly with an explicit
+`unitBlock`, a `profile` field and the provenance formerly carried by the IR.
+Scalar Algorithm Code is `Print.block scalarBlock`, where `scalarBlock` is the
+core builder `Scalar.source` over the canonical names defined once in
+`GALEC/Names.lean` (block, state, clock, method and function names; every
+emitted spelling in the C tree, header, metadata, tensor code and manifests
+derives from it). A kernel certificate proves the emitted text parses to that
+block, `Block.fromSource` elaborates it, and the existing selected-execution
+theorems, restated as `executes_iff_solve`/`sourceExec_iff_solve` against
+`solveExecute unitBlock`, are the GALEC to Solve correctness. The tensor block
+builders moved from backend-efmi into core (`Elaboration/Square/Block.lean`).
+Production C is still emitted from `Solve.Algorithm.Block`; both archives are
+byte-identical (`Integrator.efmu` c52be2f9…, `TensorSquare.efmu` 767b8dd2…).
+
+Statement inventory for this change (reviewed independently; no surviving
+statement is weaker). Restated on the new representation:
+`executes_iff_unitBlock`/`sourceExec_iff_unitBlock` (now `*_iff_solve`);
+`SourceExec`, `source_iff` and the per-method `*_source_iff` (generalized to
+any block that prepares, method selected by name; they replace `sourceMethod`,
+`selected_source` and the fixed-tree `Scalar.*_source_executes`);
+`lowering_preserves` (now `Model.preparation_preserves`, with `TraceCorrect`
+over all 17 roles plus seven operand/return equalities); `startup_initializes`
+and `clock_preserved`; the origin/ancestry theorems (now on
+`Solve.Algorithm.Model`); `AlgorithmContract.parsed` (now
+`p.ast = scalarBlock ∧ a.algorithmSolve.block = unitBlock`),
+`original_source` (through `Block.fromSource`, execution against
+`solveExecute a.algorithmSolve.block`), `original_methods` (now `SourceExec
+parsed.ast …`), `startup/recalibrate/step/samples` (on `a.algorithmSolve`),
+`lower_step_correct` (now `prepare_step_correct`), `initialization_matches`
+(moved to `Solve.Algorithm`); test rejections `reads_period_rejected`,
+`changed_period` (now semantic). Removed with their deleted subject:
+`Solve.Algorithm.lower_correct`, `lower_trace_correct`, `lowerExpr_correct`,
+`compileExpr_value_and_origins`, the `lowerOrigins_events` family,
+`UnitProfile.lower_correct`, `Protocol.lower_trace_correct`,
+`GALEC.execute_correct`, `Expr.Origins.extend_*`, `algorithm_step_correct`,
+`EFMI.Denotes`, `render_denotes`, `Model.block_is_unit` (replaced by the
+`profile` field), `Block.trace`, `algorithmMethodName`,
+`TensorProduction.clockName`, `GALEC.zipWith`, the checks
+`tensor_operation_order` and `initial_state_and_period`.
+Contract field change requiring the user's acknowledgement: the
+`AlgorithmContract` fields `solve_refinement` and `lifecycle_refinement` are no
+longer assumed fields; they are theorems `AlgorithmContract.solve_refinement`
+and `AlgorithmContract.lifecycle_refinement` of the same statements, derived
+from the remaining fields (`ScalarSourceSemantics.refines`/`.lifecycle`). The
+reviewer confirmed the derived theorems are at least as strong as the removed
+fields, so nothing the contract asserted is lost; the change is recorded here
+because it alters the contract's field list. AGENTS.md's phrase "DAE → GALEC →
+Solve" now denotes the proved refinement relation between the printed GALEC
+block and the prepared Solve program, as it already did for tensor.
+
+Owner-v1 (`lake build audit`) passed 4,489 jobs and 7,219
+approved reports; 1,246 prior required roots retained, 17
+removed with deleted or renamed subjects, 44 new: 1,290 required.
+Required full gate `build/galec-unify-gate/full-v1/` passed at `26a7be5`,
+exit 0, post-audit exit 0 under `LC_ALL=C`: 2,664 frozen tracked
+inputs, 9,126 complete approved reports, all 1,290 selected
+roots and four retained FMU roots. Three matrices passed 75/75 functions
+(526/650/526 cells), zero discrepancies/unexpected results. All five archives
+are byte-identical to the cutover gate: both eFMU archives by whole-archive
+hash, the three FMUs by adapter/kernel bytes, retained kernel-audit roots and
+every member CRC. The first post-audit attempt failed only at a whole-FMU-ZIP
+hash comparison: FMU ZIP entry timestamps are wall-clock, so FMU archives are
+not byte-reproducible across gates even when every member is identical (the
+attempt is retained as `post-exit-attempt1-fmu-zip-hash`); the member-level
+`post-audit-v2.sh` passed and future gates compare FMU members. Historical
+entries below that cite `GALEC.Model`, `renderBlock`, `render_denotes`,
+`lower_correct` or `ScalarSourceProofs` describe the superseded IR.
+
 **GALEC loop cutover (full gate passed; GJ01 and GJ03 closed):**
 The production GALEC grammar is the general block grammar of the stage record
 (20 rules, 471 canonical/121 LALR states): general declarations with one kind

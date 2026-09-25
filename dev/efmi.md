@@ -830,9 +830,9 @@ have been rebuilt against these bindings.
 The two logical routes are intentional:
 
 ```text
-DAE → checked GALEC IR ──→ GALEC text
-                     └─→ Solve IR → C → eFMI artifacts
-DAE ───────────────────→ Solve IR → C → FMI 3 artifacts
+DAE → prepared Solve algorithm ──→ C → eFMI artifacts
+        (refined by)  GALEC block → printed text (certified parse)
+DAE → Solve IR → C → FMI 3 artifacts
 ```
 
 C consumes prepared Solve programs on both paths. GALEC restrictions and its

@@ -300,6 +300,11 @@ subsequent required GALEC/Algorithm integration and its completed artifact gate.
 
 ### GALEC and Solve Algorithm origin contracts
 
+Superseded 2026-09-24: `GALEC.Model` and its lowering are deleted. The origin
+graph, block trace and `TraceCorrect` now live on `Solve.Algorithm.Model`,
+and `Model.preparation_preserves` replaces `lowering_preserves` (see
+docs/verification.md). The description below is the historical record.
+
 `GALEC.Model` now requires a checked origin graph and a complete block trace.
 Its seventeen generated fields cover the algorithm root, default selection,
 lifecycle methods, sampling policy, state reads/writes and assignments. The
