@@ -75,8 +75,7 @@ theorem access_call [CInterface] (program : Program Invocation)
   have permitted : request.Allowed kind (state.phase.mode kind) := by
     cases phase : state.phase with
     | instantiated => exact InitializationAccess.start_allowed request kind (by simpa [Action.Allowed, phase] using allowed)
-    | initializing args => simpa [Action.Allowed, phase, Phase.mode] using allowed
-    | initialized args | failed => simp [Action.Allowed, phase] at allowed
+    | initializing args | initialized args | failed => simpa [Action.Allowed, phase] using allowed
   obtain ⟨prepared, called, instanceAfter, _, observed, storage, readonly, frame⟩ :=
     Float64Access.step program get set request stored.instanceStored outputs fits separate permitted
   have fields (name : String) := frame (p.member name) (Ne.symm (HistoryBodies.state_ne_field p name))

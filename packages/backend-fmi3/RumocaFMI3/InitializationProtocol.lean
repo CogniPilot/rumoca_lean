@@ -74,13 +74,13 @@ def loggingUpdate : List Action → Option Bool
 /-- Subsequent simulation is handled by the existing ME/CS histories; count
 queries may also observe the instantiated or post-exit Event Mode. Reset can
 start another epoch here. Before entry, variable reads concern start values,
-not an evaluated equation system. -/
+not an evaluated equation system. Accessors remain available after exit and,
+for reads, in Terminated after an error (FMI 3.0.2 §§2.3.4, 2.3.8). -/
 def Action.Allowed (action : Action) (kind : Kind) (state : State) : Prop :=
   match action with
   | .access request => match state.phase with
     | .instantiated => request.StartQuery
-    | .initializing _ => request.Allowed kind .initialization
-    | _ => False
+    | phase => request.Allowed kind (phase.mode kind)
   | .reject request => request.Condition kind (state.phase.mode kind)
   | .counts request => request.Allowed kind (state.phase.mode kind)
   | .nominals request => request.Allowed kind (state.phase.mode kind)
