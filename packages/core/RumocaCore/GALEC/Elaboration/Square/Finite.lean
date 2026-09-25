@@ -13,7 +13,7 @@ def squareExecutes (extent ceiling : Nat) (step : BinaryOp → α → α → α 
     (before after : Env α (Layout.outputShapes (squareFields extent))) : Prop :=
   Bodies.Source.statements (Layout.bindings (squareFields extent))
     (Declarations.ShapeLookup.HasShape ceiling (squareDeclarations extent)) ceiling step zero one
-    @input .nil @env (squareSource "u" "x" "J") @before @after
+    @input .nil @env (squareSource "u" Names.state "J") @before @after
 
 noncomputable section
 

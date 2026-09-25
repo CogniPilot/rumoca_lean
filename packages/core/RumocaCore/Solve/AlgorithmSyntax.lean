@@ -40,11 +40,6 @@ def Block.execute (b : Block shape) (zero one : α) (add : α → α → α)
     (method : GALEC.Method) (state : Value α shape) : Value α shape :=
   (b.body method).eval zero one add (Env.push state Env.empty)
 
-def Block.trace (b : Block shape) (zero one : α) (add : α → α → α)
-    (state : Value α shape) : List GALEC.Method → Value α shape
-  | [] => state
-  | m :: ms => b.trace zero one add (b.execute zero one add m state) ms
-
 /-- The unit-step, zero-start profile: Startup fills zero, Recalibrate returns
 the state, DoStep adds the filled one to the state, and the period is one. -/
 def unitBlock : Block scalar :=

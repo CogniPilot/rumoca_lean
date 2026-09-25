@@ -4,15 +4,15 @@ import RumocaEFMI.ProductionProofs
 namespace Rumoca.EFMI.CSyntax
 
 def unitProgram : Program :=
-  ⟨⟨"UnitIntegrator_Startup", "self",
-    [.declare "v0" (.atom .zero), .assign (.member "self" "x") (.atom (.variable "v0")),
-     .declare "v1" (.atom .one), .assign (.member "self" "samplePeriod") (.atom (.variable "v1"))]⟩,
-   ⟨"UnitIntegrator_Recalibrate", "self",
-    [.assign (.member "self" "x") (.atom (.member "self" "x"))]⟩,
-   ⟨"UnitIntegrator_DoStep", "self",
+  ⟨⟨(GALEC.Names.function GALEC.Names.unitBlock .startup), "self",
+    [.declare "v0" (.atom .zero), .assign (.member "self" GALEC.Names.state) (.atom (.variable "v0")),
+     .declare "v1" (.atom .one), .assign (.member "self" GALEC.Names.clock) (.atom (.variable "v1"))]⟩,
+   ⟨(GALEC.Names.function GALEC.Names.unitBlock .recalibrate), "self",
+    [.assign (.member "self" GALEC.Names.state) (.atom (.member "self" GALEC.Names.state))]⟩,
+   ⟨(GALEC.Names.function GALEC.Names.unitBlock .doStep), "self",
     [.declare "v0" (.atom .one),
-     .declare "v1" (.add (.member "self" "x") (.variable "v0")),
-     .assign (.member "self" "x") (.atom (.variable "v1"))]⟩⟩
+     .declare "v1" (.add (.member "self" GALEC.Names.state) (.variable "v0")),
+     .assign (.member "self" GALEC.Names.state) (.atom (.variable "v1"))]⟩⟩
 
 theorem unit_tree : unitProgram.tree = Production.unitModule := rfl
 

@@ -23,7 +23,7 @@ def Variable.scalarValue (var : Variable) (state : GALEC.UnitProfile.State α) :
 block. -/
 theorem algorithm_variables :
     ∃ parsed, GALEC.Syntax.parse unitAlgorithm.source = .ok parsed ∧
-      parsed.ast = GALEC.Elaboration.Scalar.source "UnitIntegrator" Variable.state.name
+      parsed.ast = GALEC.Elaboration.Scalar.source GALEC.Names.unitBlock Variable.state.name
         Variable.clock.name := by
   obtain ⟨parsed, accepted, same⟩ := unitAlgorithm.parsed
   exact ⟨parsed, accepted, same.trans unit_ast⟩
@@ -50,7 +50,7 @@ formal, with a status type backed by a real typedef. -/
 def FunctionsCorrect (module : Production.Module) : Prop := ∀ method,
   let description := functionDescription module method
   (module.method method).static = false ∧
-  (module.method method).signature.name = "UnitIntegrator_" ++ algorithmMethodName method ∧
+  (module.method method).signature.name = GALEC.Names.function GALEC.Names.unitBlock method ∧
   (module.method method).signature.result = CHeader.Scalar.status32.alias ∧
   (module.method method).signature.parameters = [⟨"Model *", description.parameterName, false⟩] ∧
   description.returnTypeId = scalarTypeId .status32 ∧
@@ -70,9 +70,9 @@ theorem read_correct (module : Production.Module) (method : GALEC.Method) (var :
     (represents : Production.Represents heap p state) :
     CBody.eval (Production.parameters p) heap (referenceExpression module method var) =
       some (.finite (var.scalarValue state)) := by
-  have lx : load heap (p.member "x") = some (.finite state.x[0]) := by
+  have lx : load heap (p.member GALEC.Names.state) = some (.finite state.x[0]) := by
     simp [load, represents.1, convert, Value.finite]
-  have lp : load heap (p.member "samplePeriod") = some (.finite state.samplePeriod[0]) := by
+  have lp : load heap (p.member GALEC.Names.clock) = some (.finite state.samplePeriod[0]) := by
     simp [load, represents.2.1, convert, Value.finite]
   cases var <;> simp [referenceExpression, functionDescription, dataReference,
     Variable.name, Variable.value, Variable.scalarValue, CBody.eval, CBody.evalWith,

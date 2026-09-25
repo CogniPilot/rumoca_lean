@@ -70,7 +70,7 @@ theorem header_declares : Declares render.toList := by
 theorem real_alias : scalarNamed "EfmiReal" declarations = some .real64 := rfl
 theorem status_alias : scalarNamed "EfmiStatus" declarations = some .status32 := rfl
 theorem model_fields : fieldsNamed "Model" declarations =
-    some [⟨"x", .real64⟩, ⟨"samplePeriod", .real64⟩, ⟨"errorSignalStatus", .status32⟩] := rfl
+    some [⟨GALEC.Names.state, .real64⟩, ⟨GALEC.Names.clock, .real64⟩, ⟨"errorSignalStatus", .status32⟩] := rfl
 
 theorem success_return : returnValue "EfmiStatus" (.integer 0) = some (.integer 0) := rfl
 
@@ -85,7 +85,7 @@ structure Contract (source : String) : Prop where
   interface_returns : ∀ (scalar : Scalar) (value : Value),
     CBody.cast (interface := cInterface) scalar.alias value = returnValue scalar.alias value
   storage : fieldsNamed "Model" declarations =
-    some [⟨"x", .real64⟩, ⟨"samplePeriod", .real64⟩, ⟨"errorSignalStatus", .status32⟩]
+    some [⟨GALEC.Names.state, .real64⟩, ⟨GALEC.Names.clock, .real64⟩, ⟨"errorSignalStatus", .status32⟩]
 
 theorem render_contract (module : Production.Module) : Contract module.render := by
   refine ⟨⟨(module.startup.render ++ module.recalibrate.render ++ module.doStep.render).toList, ?_⟩,

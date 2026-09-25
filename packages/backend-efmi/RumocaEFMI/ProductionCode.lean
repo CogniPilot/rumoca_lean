@@ -34,27 +34,27 @@ def Module.method (module : Module) : GALEC.Method → Function
 
 /-- The explicit unit-profile C tree used by the independent execution contract. -/
 def unitModule : Module :=
-  ⟨function "UnitIntegrator_Startup"
+  ⟨function (GALEC.Names.function GALEC.Names.unitBlock .startup)
     [.declare "double" "v0" (.cast "double" (.nat 0)),
-     .assign (stateField "x") (.id "v0"),
+     .assign (stateField GALEC.Names.state) (.id "v0"),
      .declare "double" "v1" (.cast "double" (.nat 1)),
-     .assign (stateField "samplePeriod") (.id "v1")],
-   function "UnitIntegrator_Recalibrate" [.assign (stateField "x") (stateField "x")],
-   function "UnitIntegrator_DoStep"
+     .assign (stateField GALEC.Names.clock) (.id "v1")],
+   function (GALEC.Names.function GALEC.Names.unitBlock .recalibrate) [.assign (stateField GALEC.Names.state) (stateField GALEC.Names.state)],
+   function (GALEC.Names.function GALEC.Names.unitBlock .doStep)
     [.declare "double" "v0" (.cast "double" (.nat 1)),
-     .declare "double" "v1" (.bin .add (stateField "x") (.id "v0")),
-     .assign (stateField "x") (.id "v1")]⟩
+     .declare "double" "v1" (.bin .add (stateField GALEC.Names.state) (.id "v0")),
+     .assign (stateField GALEC.Names.state) (.id "v1")]⟩
 
 
 def lowerBlock (block : Solve.Algorithm.Block scalar) : Except String Module := do
-  let (nextId, startup) ← emitProgram block.startup (initialName "x") (stateField "x") 0
-  let (_, period) ← emitProgram block.startupPeriod (initialName "samplePeriod")
-    (stateField "samplePeriod") nextId
-  let (_, recalibrate) ← emitProgram block.recalibrate (initialName "x") (stateField "x") 0
-  let (_, doStep) ← emitProgram block.doStep (initialName "x") (stateField "x") 0
-  return ⟨function "UnitIntegrator_Startup" (startup ++ period),
-    function "UnitIntegrator_Recalibrate" recalibrate,
-    function "UnitIntegrator_DoStep" doStep⟩
+  let (nextId, startup) ← emitProgram block.startup (initialName GALEC.Names.state) (stateField GALEC.Names.state) 0
+  let (_, period) ← emitProgram block.startupPeriod (initialName GALEC.Names.clock)
+    (stateField GALEC.Names.clock) nextId
+  let (_, recalibrate) ← emitProgram block.recalibrate (initialName GALEC.Names.state) (stateField GALEC.Names.state) 0
+  let (_, doStep) ← emitProgram block.doStep (initialName GALEC.Names.state) (stateField GALEC.Names.state) 0
+  return ⟨function (GALEC.Names.function GALEC.Names.unitBlock .startup) (startup ++ period),
+    function (GALEC.Names.function GALEC.Names.unitBlock .recalibrate) recalibrate,
+    function (GALEC.Names.function GALEC.Names.unitBlock .doStep) doStep⟩
 
 def lower (model : Solve.Algorithm.Model source) : Except String Module := lowerBlock model.block
 

@@ -39,7 +39,7 @@ def algorithmVariable (var : Variable) : Element :=
     ("start", match var with | .state => "0" | .clock => "1")]
 
 def blockMethod (method : GALEC.Method) : Element :=
-  node "BlockMethod" [("id", algorithmMethodId method), ("kind", algorithmMethodName method)]
+  node "BlockMethod" [("id", algorithmMethodId method), ("kind", GALEC.Names.method method)]
 
 def algorithm (modelName : String) (identity : Identity) (source : String) : Element :=
   node "Manifest"

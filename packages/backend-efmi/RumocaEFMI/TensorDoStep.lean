@@ -19,7 +19,7 @@ structure Outcome (objects : Objects) (before after : Heap) (base : Address)
     (ArrayProfile.environment input input) coefficients
   mathematical : SquareJacobianObservation.Observes after (base.member jacobianVar.name) input input
   status : load after (base.member statusName) = some (.integer 0)
-  clock : after (base.member clockName) = before (base.member clockName)
+  clock : after (base.member GALEC.Names.clock) = before (base.member GALEC.Names.clock)
   frame : ∀ q, q ≠ base.member statusName →
     (∀ i < squareShape.volume, q ≠ (base.member squareVar.name).index i) →
     (∀ i < jacobianShape.volume, q ≠ (base.member jacobianVar.name).index i) →
@@ -69,12 +69,12 @@ theorem body_in (p : CCalls.Program) (linked : CCalls.Typed.Extends definitions 
       (show statusName ≠ jacobianVar.name by decide +kernel) 0
   have finalStatus : load finalHeap (base.member statusName) = some (.integer 0) := by
     simpa only [load, jacStatus, rhsStatus] using (cleared_status_reads (heap := heap) (base := base))
-  have rhsClock : rhsHeap (base.member clockName) = (cleared heap base) (base.member clockName) := by
+  have rhsClock : rhsHeap (base.member GALEC.Names.clock) = (cleared heap base) (base.member GALEC.Names.clock) := by
     simpa only [Address.index_zero] using PublicRHS.member_preserved rhsFrame
-      (show clockName ≠ squareVar.name by decide +kernel) 0
-  have jacClock : finalHeap (base.member clockName) = rhsHeap (base.member clockName) := by
+      (show GALEC.Names.clock ≠ squareVar.name by decide +kernel) 0
+  have jacClock : finalHeap (base.member GALEC.Names.clock) = rhsHeap (base.member GALEC.Names.clock) := by
     simpa only [Address.index_zero] using PublicRHS.member_preserved jacFrame
-      (show clockName ≠ jacobianVar.name by decide +kernel) 0
+      (show GALEC.Names.clock ≠ jacobianVar.name by decide +kernel) 0
   have outcome : Outcome objects heap finalHeap base input rhs coefficients :=
     ⟨jacStorage, finalSquare, jacReads, ad, observes, finalStatus,
       jacClock.trans (rhsClock.trans storage.clock_after_clear.1),

@@ -77,8 +77,8 @@ theorem mapped_status (model : Solve.Algorithm.Model source) (module : Productio
 theorem mapped_startup_status (model : Solve.Algorithm.Model source) (module : Production.Module)
     (lowered : Production.lower model = .ok module) (modelName : String) (identity : Identity)
     (algorithmSource algorithmXML : String) (heap : Heap) (p : Address) (oldX oldPeriod : Option Value)
-    (hx : heap (p.member "x") = some ⟨.float64, true, oldX⟩)
-    (hp : heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩)
+    (hx : heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩)
+    (hp : heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩)
     (hs : Production.StatusStorage heap p) (result : CBody.Result)
     (executed : CArithmetic.machine.Behaves
       (.running module.startup.body (Production.parameters p) heap) (.terminates result)) :

@@ -1,3 +1,4 @@
+import RumocaCore.GALEC.Names
 import Std
 
 /-! Explicit C declarations for the tiny eFMI interface. The manifest must
@@ -30,7 +31,7 @@ inductive Declaration where
 
 def statusName : String := "errorSignalStatus"
 def stateFields : List Field :=
-  [⟨"x", .real64⟩, ⟨"samplePeriod", .real64⟩, ⟨statusName, .status32⟩]
+  [⟨GALEC.Names.state, .real64⟩, ⟨GALEC.Names.clock, .real64⟩, ⟨statusName, .status32⟩]
 def declarations : List Declaration :=
   [.alias .real64, .alias .status32, .structureType "Model" stateFields]
 

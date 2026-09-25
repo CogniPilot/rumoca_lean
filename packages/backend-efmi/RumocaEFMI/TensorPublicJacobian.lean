@@ -17,7 +17,7 @@ theorem storage_after (storage : Storage objects heap base input)
   · exact writable_framed storage.square (PublicRHS.member_preserved frame (by decide +kernel))
   · apply storage.clock.framed
     simpa only [Address.index_zero] using PublicRHS.member_preserved frame
-      (show clockName ≠ jacobianVar.name by decide +kernel) 0
+      (show GALEC.Names.clock ≠ jacobianVar.name by decide +kernel) 0
   · apply storage.status.framed
     simpa only [Address.index_zero] using PublicRHS.member_preserved frame
       (show statusName ≠ jacobianVar.name by decide +kernel) 0

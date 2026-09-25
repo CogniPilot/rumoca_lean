@@ -197,6 +197,9 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.ScalarSourceSemantics
 #audit axioms Rumoca.EFMI.ScalarSourceSemantics.source
 #audit axioms Rumoca.EFMI.ScalarSourceSemantics.prepared
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics.startup_prepared
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics.recalibrate_prepared
+#audit axioms Rumoca.EFMI.ScalarSourceSemantics.step_prepared
 #audit axioms Rumoca.EFMI.ScalarSourceSemantics.execution
 #audit axioms Rumoca.EFMI.scalar_source_semantics
 #audit axioms Rumoca.EFMI.ScalarSourceSemantics.refines
@@ -210,6 +213,7 @@ end Rumoca.EFMI.ProductionChecks
 #audit axioms Rumoca.EFMI.TensorProduction.doStep_jacobian_refines
 #audit axioms Rumoca.EFMI.TensorProduction.render_chars
 
+#audit axioms Rumoca.EFMI.TensorManifest.lifecycle
 #audit axioms Rumoca.EFMI.TensorManifest.documents_valid
 #audit axioms Rumoca.EFMI.TensorManifest.variable_declared
 #audit axioms Rumoca.EFMI.TensorManifest.jacobian_dimensions

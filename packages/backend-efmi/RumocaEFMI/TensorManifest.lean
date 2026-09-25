@@ -30,9 +30,9 @@ structure Var where
   deriving Repr
 
 def inputVar : Var := ⟨"AV_Input", "C_Input", "u", "input", "0", [2]⟩
-def squareVar : Var := ⟨"AV_State", "C_State", "x", "output", "0", [2]⟩
+def squareVar : Var := ⟨"AV_State", "C_State", GALEC.Names.state, "output", "0", [2]⟩
 def jacobianVar : Var := ⟨"AV_Jacobian", "C_Jacobian", "J", "output", "0", [2, 2]⟩
-def clockVar : Var := ⟨"AV_Clock", "C_Clock", "samplePeriod", "constant", "1", []⟩
+def clockVar : Var := ⟨"AV_Clock", "C_Clock", GALEC.Names.clock, "constant", "1", []⟩
 
 /-- Every logical variable of the profile, in declaration order. -/
 def logicalVars : List Var := [inputVar, squareVar, jacobianVar, clockVar]
@@ -50,12 +50,14 @@ structure Method where
   fn : String
   deriving Repr
 
-def startup : Method := ⟨"AF_Startup", "CF_Startup", "CP_Startup_self", "CR_Startup", "Startup",
-  TensorProduction.startupName⟩
-def recalibrate : Method := ⟨"AF_Recalibrate", "CF_Recalibrate", "CP_Recalibrate_self", "CR_Recalibrate",
-  "Recalibrate", TensorProduction.recalibrateName⟩
-def doStep : Method := ⟨"AF_DoStep", "CF_DoStep", "CP_DoStep_self", "CR_DoStep", "DoStep",
-  TensorProduction.doStepName⟩
+/-- The manifest identifiers of a lifecycle method, derived from its name. -/
+def lifecycle (method : GALEC.Method) (fn : String) : Method :=
+  let name := GALEC.Names.method method
+  ⟨"AF_" ++ name, "CF_" ++ name, "CP_" ++ name ++ "_self", "CR_" ++ name, name, fn⟩
+
+def startup : Method := lifecycle .startup TensorProduction.startupName
+def recalibrate : Method := lifecycle .recalibrate TensorProduction.recalibrateName
+def doStep : Method := lifecycle .doStep TensorProduction.doStepName
 
 def methods : List Method := [startup, recalibrate, doStep]
 

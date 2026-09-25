@@ -9,12 +9,12 @@ restrictions, infer shapes or choose a solver.
 The two paths are:
 
 ```text
-DAE → GALEC IR → Solve algorithm → C → eFMI wrapper and package
-DAE → numerical Solve product  → C → FMI 3 wrapper and package
+DAE → prepared Solve algorithm → C → eFMI wrapper and package
+DAE → numerical Solve product → C → FMI 3 wrapper and package
 ```
 
-GALEC text is another rendering of the checked GALEC product. It is not the
-input to C generation. The tiny core currently has distinct `Solve.Model`
+GALEC text is printed from the core block builder and proved to refine to the
+prepared Solve algorithm. It is not the input to C generation. The tiny core currently has distinct `Solve.Model`
 and `Solve.Algorithm.Program` representations; extracting this package does
 not unify those types or broaden their accepted language. Both preserve
 source/IR evidence and have their own composed correctness contracts.

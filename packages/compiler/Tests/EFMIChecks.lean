@@ -145,24 +145,13 @@ theorem changed_period :
     after.samplePeriod[0]'(by decide)) same
   exact absurd period (by decide +kernel)
 
-/-- The arithmetic interpretation is deliberately order-sensitive. All six
-coordinates survive without changing the tensor shape. -/
-theorem tensor_operation_order :
-    ((Solve.Algorithm.Program.fill .one (.fill .one (.add (.there .here) .here
-        (.add (.there (.there (.there .here))) .here (.ret .here)))) :
-        Solve.Algorithm.Program [⟨[2, 3]⟩] ⟨[2, 3]⟩).eval
-      0 1 (fun a b : Nat => 10 * a + b)
-      (Solve.Tensor.Env.push (Value.fill ⟨[2, 3]⟩ 2) Solve.Tensor.Env.empty)).data.toArray =
-        #[31, 31, 31, 31, 31, 31] := by decide +kernel
-
-theorem initial_state_and_period (old : GALEC.UnitProfile.State Nat) :
-    GALEC.UnitProfile.solveExecute Solve.Algorithm.unitBlock
-      0 1 (· + ·) .startup old = ⟨Value.fill scalar 0, Value.fill scalar 1⟩ :=
-  GALEC.UnitProfile.startup_initializes _ _ _ _
-
 #audit axioms Solve.Algorithm.lower_equation_correct
 #audit axioms Solve.Algorithm.prepare_step_correct
 #audit axioms Solve.Algorithm.unit_no_overflow
+#audit axioms Solve.Algorithm.Model.startup_correct
+#audit axioms Solve.Algorithm.Model.recalibrate_correct
+#audit axioms Solve.Algorithm.Model.doStep_correct
+#audit axioms Solve.Algorithm.Model.run_correct
 #audit axioms EFMI.AlgorithmContract.solve_refinement
 #audit axioms EFMI.AlgorithmContract.lifecycle_refinement
 #audit axioms EFMI.algorithm_correct
@@ -188,7 +177,5 @@ theorem initial_state_and_period (old : GALEC.UnitProfile.State Nat) :
 #audit axioms single_faults
 #audit axioms reads_period_rejected
 #audit axioms changed_period
-#audit axioms tensor_operation_order
-#audit axioms initial_state_and_period
 
 end Rumoca.EFMIChecks

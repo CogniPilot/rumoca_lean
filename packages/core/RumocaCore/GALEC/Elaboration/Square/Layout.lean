@@ -1,3 +1,4 @@
+import RumocaCore.GALEC.Names
 import RumocaCore.GALEC.Elaboration.Square.Execution
 import RumocaCore.GALEC.Elaboration.Layout.Execution
 import RumocaCore.GALEC.Elaboration.Layout.NoAlias
@@ -13,11 +14,11 @@ open Elaboration Rumoca.Tensor Rumoca.Solve.Tensor Coefficients VectorBodies
 
 def squarePublic (extent : Nat) : List AST.Declaration :=
   [⟨.input, .literal "Real", [Surface.natural extent], .ident "u"⟩,
-   ⟨.output, .literal "Real", [Surface.natural extent], .ident "x"⟩,
+   ⟨.output, .literal "Real", [Surface.natural extent], .ident Names.state⟩,
    ⟨.output, .literal "Real", [Surface.natural extent, Surface.natural extent], .ident "J"⟩]
 
 def squareProtected : List AST.Declaration :=
-  [⟨.constant, .literal "Real", [], .ident "samplePeriod"⟩]
+  [⟨.constant, .literal "Real", [], .ident Names.clock⟩]
 
 /-- The declarations of a block with sections `squarePublic` and `squareProtected`. -/
 def squareDeclarations (extent : Nat) : List (AST.Visibility × AST.Declaration) :=
@@ -25,9 +26,9 @@ def squareDeclarations (extent : Nat) : List (AST.Visibility × AST.Declaration)
 
 def squareFields (extent : Nat) : List Layout.Field :=
   [⟨⟨"u", .public, .input, ⟨[extent]⟩⟩, .readOnly⟩,
-   ⟨⟨"x", .public, .output, ⟨[extent]⟩⟩, .writable⟩,
+   ⟨⟨Names.state, .public, .output, ⟨[extent]⟩⟩, .writable⟩,
    ⟨⟨"J", .public, .output, matrixShape extent extent⟩, .writable⟩,
-   ⟨⟨"samplePeriod", .protected, .constant, ⟨[]⟩⟩, .readOnly⟩]
+   ⟨⟨Names.clock, .protected, .constant, ⟨[]⟩⟩, .readOnly⟩]
 
 theorem square_declared (positive : 0 < extent) (within : extent ≤ ceiling) :
     Declarations.Real.DeclaresAll ceiling (squareDeclarations extent)
@@ -36,7 +37,8 @@ theorem square_declared (positive : 0 < extent) (within : extent ≤ ceiling) :
   exact .cons (.real (by decide) (.cons axis .nil))
     (.cons (.real (by decide) (.cons axis .nil))
       (.cons (.real (by decide) (.cons axis (.cons axis .nil)))
-        (.cons (.real (by decide) .nil) .nil (by simp)) (by simp)) (by simp)) (by simp)
+        (.cons (.real (by decide) .nil) .nil (by simp)) (by simp)) (by simp))
+    (by simp)
 
 def squareInput (extent : Nat) : Ref (Layout.inputShapes (squareFields extent)) ⟨[extent]⟩ := .here
 def squareRhs (extent : Nat) : Ref (Layout.outputShapes (squareFields extent)) ⟨[extent]⟩ := .here
@@ -48,7 +50,7 @@ theorem input_bound (extent : Nat) :
   (BindingTable.lookup_iff _ _ _).mp rfl
 
 theorem rhs_bound (extent : Nat) :
-    BindingTable.Resolves (Layout.bindings (squareFields extent)) ["x"] ⟨_, .writable (squareRhs extent)⟩ :=
+    BindingTable.Resolves (Layout.bindings (squareFields extent)) [Names.state] ⟨_, .writable (squareRhs extent)⟩ :=
   (BindingTable.lookup_iff _ _ _).mp rfl
 
 theorem jacobian_bound (extent : Nat) :
@@ -66,7 +68,7 @@ theorem jacobian_known (positive : 0 < extent) (within : extent ≤ ceiling) :
 /-- No caller-supplied binding or shape oracle: all are built from these
 ordered, independently validated declarations. The extent is not enumerated. -/
 theorem layout_body_lowered (positive : 0 < extent) (within : extent ≤ ceiling) (axisBound : 2 ≤ ceiling) :
-    Layout.body (squareFields extent) ceiling (squareSource "u" "x" "J") =
+    Layout.body (squareFields extent) ceiling (squareSource "u" Names.state "J") =
       some (loweredSquare (squareInput extent) (squareRhs extent) (squareJacobian extent)) :=
   square_lowered _ _ _ (Layout.bindingShape_iff_source _ (square_declared positive within))
     _ _ _ (input_bound extent) (rhs_bound extent) (jacobian_bound extent)
@@ -78,7 +80,7 @@ theorem layout_source_executes (positive : 0 < extent) (within : extent ≤ ceil
     (before after : Env α (Layout.outputShapes (squareFields extent))) :
     Bodies.Source.statements (Layout.bindings (squareFields extent))
       (Declarations.ShapeLookup.HasShape ceiling (squareDeclarations extent)) ceiling step zero one
-      @input .nil @env (squareSource "u" "x" "J") @before @after ↔
+      @input .nil @env (squareSource "u" Names.state "J") @before @after ↔
     (SquareBodies.body (squareInput extent) (squareRhs extent) (squareJacobian extent)).Executes
       step zero one @input @env @before @after :=
   square_source_executes _ _ _ (Layout.bindingShape_iff_source _ (square_declared positive within))
@@ -87,7 +89,7 @@ theorem layout_source_executes (positive : 0 < extent) (within : extent ≤ ceil
     step zero one @input @env @before @after
 
 theorem rhs_known (positive : 0 < extent) (within : extent ≤ ceiling) :
-    Declarations.ShapeLookup.HasShape ceiling (squareDeclarations extent) ["x"] ⟨[extent]⟩ :=
+    Declarations.ShapeLookup.HasShape ceiling (squareDeclarations extent) [Names.state] ⟨[extent]⟩ :=
   (Layout.bindingShape_iff_source _ (square_declared positive within) _ _).mp rfl
 
 /-! The same four declarations in the Startup role layout that whole-block
@@ -104,7 +106,7 @@ def startupPeriod (extent : Nat) : Ref (Layout.outputShapes (startupFields exten
   .there (.there .here)
 
 theorem startup_rhs_bound (extent : Nat) :
-    BindingTable.Resolves (Layout.bindings (startupFields extent)) ["x"]
+    BindingTable.Resolves (Layout.bindings (startupFields extent)) [Names.state]
       ⟨_, .writable (startupRhs extent)⟩ :=
   (BindingTable.lookup_iff _ _ _).mp rfl
 
@@ -114,14 +116,14 @@ theorem startup_jacobian_bound (extent : Nat) :
   (BindingTable.lookup_iff _ _ _).mp rfl
 
 theorem startup_period_bound (extent : Nat) :
-    BindingTable.Resolves (Layout.bindings (startupFields extent)) ["samplePeriod"]
+    BindingTable.Resolves (Layout.bindings (startupFields extent)) [Names.clock]
       ⟨_, .writable (startupPeriod extent)⟩ :=
   (BindingTable.lookup_iff _ _ _).mp rfl
 
 /-- Generic lowering, with no caller-supplied shape oracle or target bindings. -/
 theorem startup_lowered (positive : 0 < extent) (within : extent ≤ ceiling)
     (axisBound : 2 ≤ ceiling) :
-    Layout.body (startupFields extent) ceiling (Initialization.Body.source "x" "J" "samplePeriod") =
+    Layout.body (startupFields extent) ceiling (Initialization.Body.source Names.state "J" Names.clock) =
       some (Initialization.Body.lowered (startupRhs extent) (startupJacobian extent)
         (startupPeriod extent)) :=
   Initialization.Body.lower _ _ _
@@ -137,7 +139,7 @@ theorem startup_source_executes (positive : 0 < extent) (within : extent ≤ cei
     (before after : Env α (Layout.outputShapes (startupFields extent))) :
     Bodies.Source.statements (Layout.bindings (startupFields extent))
       (Declarations.ShapeLookup.HasShape ceiling (squareDeclarations extent)) ceiling step zero one
-      @input .nil @env (Initialization.Body.source "x" "J" "samplePeriod") @before @after ↔
+      @input .nil @env (Initialization.Body.source Names.state "J" Names.clock) @before @after ↔
       InitializationBodies.Initializes (startupRhs extent) (startupJacobian extent)
         (startupPeriod extent) zero one @before @after :=
   Initialization.Body.source_executes _ _ _

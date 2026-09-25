@@ -11,6 +11,7 @@ import Tests.CoreAudit.RumocaCore_FMI3_Initialization
 import Tests.CoreAudit.RumocaCore_FMI3_Lifecycle
 import Tests.CoreAudit.RumocaCore_FMI3_Time
 import Tests.CoreAudit.RumocaCore_GALEC_OriginLowering
+import Tests.CoreAudit.RumocaCore_GALEC_Names
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Block_Headers
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Block_Preparation
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Block_Source

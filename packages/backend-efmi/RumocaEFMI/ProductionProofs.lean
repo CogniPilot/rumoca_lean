@@ -49,8 +49,8 @@ def written (heap : Heap) (p : Address) (x : Binary64.Value) : Heap :=
   replace heap p ⟨.float64, true, some (.finite x)⟩
 
 def initialized (heap : Heap) (p : Address) : Heap :=
-  written (written (clearStatus heap p) (p.member "x") Binary64.positiveZero)
-    (p.member "samplePeriod") Binary64.one
+  written (written (clearStatus heap p) (p.member GALEC.Names.state) Binary64.positiveZero)
+    (p.member GALEC.Names.clock) Binary64.one
 
 theorem written_frame (heap : Heap) (p q : Address) (x : Binary64.Value) (hne : q ≠ p) :
     written heap p x q = heap q := replace_other _ _ _ _ hne
@@ -58,8 +58,8 @@ theorem written_frame (heap : Heap) (p q : Address) (x : Binary64.Value) (hne : 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 2000000 in
 theorem startup_run (heap : Heap) (p : Address) (oldX oldPeriod : Option Value)
-    (hx : heap (p.member "x") = some ⟨.float64, true, oldX⟩)
-    (hp : heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩)
+    (hx : heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩)
+    (hp : heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩)
     (hs : StatusStorage heap p) :
     CArithmetic.run 6 (.running unitModule.startup.body (parameters p) heap) =
       some (.returned ⟨.integer 0, initialized heap p⟩) := by
@@ -76,10 +76,10 @@ theorem startup_run (heap : Heap) (p : Address) (oldX oldPeriod : Option Value)
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 2000000 in
 theorem recalibrate_run (heap : Heap) (p : Address) (x : Binary64.Value)
-    (hx : heap (p.member "x") = some ⟨.float64, true, some (.finite x)⟩)
+    (hx : heap (p.member GALEC.Names.state) = some ⟨.float64, true, some (.finite x)⟩)
     (hs : StatusStorage heap p) :
     CArithmetic.run 3 (.running unitModule.recalibrate.body (parameters p) heap) =
-      some (.returned ⟨.integer 0, written (clearStatus heap p) (p.member "x") x⟩) := by
+      some (.returned ⟨.integer 0, written (clearStatus heap p) (p.member GALEC.Names.state) x⟩) := by
   obtain ⟨oldStatus, hs⟩ := hs
   simp only [CHeader.statusName] at hs
   simp [CArithmetic.run, CArithmetic.next, CArithmetic.nextWith, CBody.nextWith,
@@ -93,10 +93,10 @@ theorem recalibrate_run (heap : Heap) (p : Address) (x : Binary64.Value)
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 2000000 in
 theorem doStep_run (heap : Heap) (p : Address) (x : Binary64.Value)
-    (hx : heap (p.member "x") = some ⟨.float64, true, some (.finite x)⟩)
+    (hx : heap (p.member GALEC.Names.state) = some ⟨.float64, true, some (.finite x)⟩)
     (hs : StatusStorage heap p) :
     CArithmetic.run 5 (.running unitModule.doStep.body (parameters p) heap) =
-      some (.returned ⟨.integer 0, written (clearStatus heap p) (p.member "x")
+      some (.returned ⟨.integer 0, written (clearStatus heap p) (p.member GALEC.Names.state)
         (Binary64.advance x)⟩) := by
   obtain ⟨oldStatus, hs⟩ := hs
   simp only [CHeader.statusName] at hs
@@ -111,15 +111,15 @@ theorem doStep_run (heap : Heap) (p : Address) (x : Binary64.Value)
     clearStatus, CHeader.statusName, store, replace, load, add, Value.finite]
 
 def Represents (heap : Heap) (p : Address) (state : GALEC.UnitProfile.State Binary64.Value) : Prop :=
-  heap (p.member "x") = some ⟨.float64, true, some (.finite state.x[0])⟩ ∧
-  heap (p.member "samplePeriod") = some ⟨.float64, true, some (.finite state.samplePeriod[0])⟩ ∧
+  heap (p.member GALEC.Names.state) = some ⟨.float64, true, some (.finite state.x[0])⟩ ∧
+  heap (p.member GALEC.Names.clock) = some ⟨.float64, true, some (.finite state.samplePeriod[0])⟩ ∧
   StatusStorage heap p
 
 def resultHeap (heap : Heap) (p : Address) (state : GALEC.UnitProfile.State Binary64.Value) :
     GALEC.Method → Heap
   | .startup => initialized heap p
-  | .recalibrate => written (clearStatus heap p) (p.member "x") state.x[0]
-  | .doStep => written (clearStatus heap p) (p.member "x") (Binary64.advance state.x[0])
+  | .recalibrate => written (clearStatus heap p) (p.member GALEC.Names.state) state.x[0]
+  | .doStep => written (clearStatus heap p) (p.member GALEC.Names.state) (Binary64.advance state.x[0])
 
 def methodFuel : GALEC.Method → Nat
   | .startup => 6 | .recalibrate => 3 | .doStep => 5
@@ -151,7 +151,7 @@ theorem result_represents (model : Solve.Algorithm.Model source) (method : GALEC
       Solve.Tensor.Literal.eval, GALEC.roundedAdd, Binary64.roundedAdd_one]
 
 theorem result_frame (heap : Heap) (p q : Address) (state : GALEC.UnitProfile.State Binary64.Value)
-    (method : GALEC.Method) (hx : q ≠ p.member "x") (hp : q ≠ p.member "samplePeriod")
+    (method : GALEC.Method) (hx : q ≠ p.member GALEC.Names.state) (hp : q ≠ p.member GALEC.Names.clock)
     (hs : q ≠ p.member CHeader.statusName) :
     resultHeap heap p state method q = heap q := by
   cases method <;> simp [resultHeap, initialized, written, clearStatus, replace, hx, hp, hs]
@@ -184,13 +184,13 @@ theorem method_correct (model : Solve.Algorithm.Model source) (module : Module)
     Represents (resultHeap heap p state method) p
       (GALEC.UnitProfile.solveExecute model.block Binary64.positiveZero Binary64.one
         GALEC.roundedAdd method state) ∧
-    (∀ q, q ≠ p.member "x" → q ≠ p.member "samplePeriod" → q ≠ p.member CHeader.statusName →
+    (∀ q, q ≠ p.member GALEC.Names.state → q ≠ p.member GALEC.Names.clock → q ≠ p.member CHeader.statusName →
       resultHeap heap p state method q = heap q) :=
   ⟨CArithmetic.behaviors_of_run (method_run model module lowered method heap p state h),
     result_represents model method heap p state h, fun q => result_frame heap p q state method⟩
 
 theorem read_output (heap : Heap) (p : Address) (state : GALEC.UnitProfile.State Binary64.Value)
-    (h : Represents heap p state) : load heap (p.member "x") = some (.finite state.x[0]) := by
+    (h : Represents heap p state) : load heap (p.member GALEC.Names.state) = some (.finite state.x[0]) := by
   simp [load, h.1, convert, Value.finite]
 
 end Rumoca.EFMI.Production

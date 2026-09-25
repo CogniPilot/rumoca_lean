@@ -11,7 +11,7 @@ open TensorProduction
 def arrayField (v : ArrayVar) : CDeclaredMembers.Field :=
   ⟨v.name, realAlias, .float64, some ⟨v.dims⟩⟩
 
-def clockField : CDeclaredMembers.Field := ⟨clockName, realAlias, .float64, none⟩
+def clockField : CDeclaredMembers.Field := ⟨GALEC.Names.clock, realAlias, .float64, none⟩
 def statusField : CDeclaredMembers.Field := ⟨statusName, statusAlias, .int32, none⟩
 
 def record : CDeclaredMembers.Record :=
@@ -91,8 +91,8 @@ theorem array_argument_after_store (rep : Represents declarations objects record
 /-- Scalar fields inside this ARRAY-containing record still use the old load. -/
 theorem clock_scalar (rep : Represents declarations objects record heap base)
     (bound : env "self" = some (.pointer (some base))) :
-    CDeclaredMembers.eval declarations objects env heap (selfField clockName) =
-      CBody.eval env heap (selfField clockName) :=
+    CDeclaredMembers.eval declarations objects env heap (selfField GALEC.Names.clock) =
+      CBody.eval env heap (selfField GALEC.Names.clock) :=
   scalar_field_eval rep clockField (by simp [record]) rfl bound
 
 theorem status_scalar (rep : Represents declarations objects record heap base)

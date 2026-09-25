@@ -98,7 +98,7 @@ def AlignedStep (a : TensorArtifact source) (model : TensorModel stateShape)
       (input : InputEnv) (env : IteratorEnv []) (before : OutputEnv) (rhs : Values stateShape),
       input (Square.squareInput squareExtent) = values a.prepared.parsed.parsed.ast.header.input →
       TensorPublicStorage.Storage objects heap base (values a.prepared.parsed.parsed.ast.header.input) →
-      Reads heap (base.member clockName) (input periodRef) →
+      Reads heap (base.member GALEC.Names.clock) (input periodRef) →
       Finite.Executes a.prepared.kernel.derivative
         (environment (values a.prepared.parsed.parsed.ast.header.state)
           (values a.prepared.parsed.parsed.ast.header.input)) rhs →

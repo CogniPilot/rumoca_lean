@@ -10,18 +10,18 @@ open Elaboration Rumoca.Tensor
 /-- Startup clears the state output `x` and the Jacobian output `J`, then sets
 the sample period. -/
 def startupMethod : AST.Method :=
-  ⟨.ident "Startup", Initialization.Body.source "x" "J" "samplePeriod", .ident "Startup"⟩
+  ⟨.ident "Startup", Initialization.Body.source Names.state "J" Names.clock, .ident "Startup"⟩
 
 /-- DoStep assigns the pointwise product `u[k] * u[k]` to `x`, clears `J` and
 scatters the diagonal coefficients `u[k] + u[k]`. -/
 def stepMethod : AST.Method :=
-  ⟨.ident "DoStep", squareSource "u" "x" "J", .ident "DoStep"⟩
+  ⟨.ident "DoStep", squareSource "u" Names.state "J", .ident "DoStep"⟩
 
 /-- The tensor square block for a state extent: input `u`, outputs `x` and `J`,
 the protected sample period, and the Startup, Recalibrate and DoStep methods. -/
 def source (extent : Nat) : AST.Block :=
-  ⟨.ident "TensorSquare", squarePublic extent, squareProtected,
-    [startupMethod, Scalar.recalibrateMethod, stepMethod], .ident "TensorSquare"⟩
+  ⟨.ident Names.squareBlock, squarePublic extent, squareProtected,
+    [startupMethod, Scalar.recalibrateMethod, stepMethod], .ident Names.squareBlock⟩
 
 def startupResult (extent : Nat) : Methods.Preparation.Result :=
   ⟨startupFields extent, Initialization.Body.lowered
@@ -39,7 +39,7 @@ def preparedResult (extent : Nat) (interface : Block.Headers.Interface) : Block.
 
 /-- The three selected methods of the square block. -/
 def interface : Block.Headers.Interface :=
-  ⟨"TensorSquare", startupMethod, Scalar.recalibrateMethod, stepMethod⟩
+  ⟨Names.squareBlock, startupMethod, Scalar.recalibrateMethod, stepMethod⟩
 
 /-- The square block prepares to the square method results for every positive
 extent within the ceiling; the extent is never enumerated. -/

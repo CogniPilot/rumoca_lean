@@ -40,7 +40,7 @@ theorem render_parses (model : Solve.Algorithm.Model source) :
 
 theorem emitted_prepared (model : Solve.Algorithm.Model source) :
     ∃ product, Block.fromSource (renderAlgorithm model) = .ok product ∧
-      product.result = Scalar.result "UnitIntegrator" "x" "samplePeriod" :=
+      product.result = Scalar.result GALEC.Names.unitBlock GALEC.Names.state GALEC.Names.clock :=
   (Block.fromSource_iff _ _).mpr ⟨scalarBlock, unit_ast ▸ unitAlgorithm.witness,
     Scalar.prepared _ (by decide) _⟩
 
@@ -51,18 +51,18 @@ structure ScalarSourceSemantics (parsed : GALEC.AST.Block)
     (block : Solve.Algorithm.Block Tensor.scalar) : Prop where
   source : parsed = scalarBlock
   prepared : ∀ ceiling, Block.Prepares ceiling parsed
-    (Scalar.result "UnitIntegrator" "x" "samplePeriod")
+    (Scalar.result GALEC.Names.unitBlock GALEC.Names.state GALEC.Names.clock)
   startup_prepared : ∀ ceiling,
     Methods.Preparation.fromBlock (.ident "Startup") Capabilities.Initialization.role ceiling
-      parsed = some (Scalar.startupResult "x" "samplePeriod")
+      parsed = some (Scalar.startupResult GALEC.Names.state GALEC.Names.clock)
   recalibrate_prepared : ∀ ceiling,
     Methods.Preparation.fromBlock (.ident "Recalibrate") Capabilities.DoStep.role ceiling
-      parsed = some (Scalar.recalibrateResult "x" "samplePeriod")
+      parsed = some (Scalar.recalibrateResult GALEC.Names.state GALEC.Names.clock)
   step_prepared : ∀ ceiling,
     Methods.Preparation.fromBlock (.ident "DoStep") Capabilities.DoStep.role ceiling
-      parsed = some (Scalar.stepResult "x" "samplePeriod")
+      parsed = some (Scalar.stepResult GALEC.Names.state GALEC.Names.clock)
   execution : ∀ ceiling method (before after : GALEC.UnitProfile.State Binary64.Value),
-    Scalar.StateBridge.SourceExec parsed "x" "samplePeriod" ceiling Solve.Tensor.Finite.Result
+    Scalar.StateBridge.SourceExec parsed GALEC.Names.state GALEC.Names.clock ceiling Solve.Tensor.Finite.Result
       Binary64.positiveZero Binary64.one method before after ↔
       after = GALEC.UnitProfile.solveExecute block Binary64.positiveZero Binary64.one
         GALEC.roundedAdd method before
@@ -71,18 +71,18 @@ theorem scalar_source_semantics (source : parsed = scalarBlock)
     (profile : block = Solve.Algorithm.unitBlock) : ScalarSourceSemantics parsed block := by
   subst source
   subst profile
-  have different : "x" ≠ "samplePeriod" := by decide
-  refine ⟨rfl, Scalar.prepared "UnitIntegrator" different, Scalar.startup_lowered _ different,
+  have different : GALEC.Names.state ≠ GALEC.Names.clock := by decide
+  refine ⟨rfl, Scalar.prepared GALEC.Names.unitBlock different, Scalar.startup_lowered _ different,
     Scalar.recalibrate_lowered _ different, Scalar.step_lowered _ different, ?_⟩
   intro ceiling method before after
-  exact Scalar.StateBridge.sourceExec_iff_solve (Scalar.prepared "UnitIntegrator" different ceiling)
+  exact Scalar.StateBridge.sourceExec_iff_solve (Scalar.prepared GALEC.Names.unitBlock different ceiling)
     Solve.Tensor.Finite.Result Binary64.positiveZero Binary64.one GALEC.roundedAdd
     Scalar.finite_add_one method before after
 
 /-- The Solve result of every method is a source execution of that method. -/
 theorem ScalarSourceSemantics.refines (semantics : ScalarSourceSemantics parsed block)
     (ceiling : Nat) (method : GALEC.Method) (before : GALEC.UnitProfile.State Binary64.Value) :
-    Scalar.StateBridge.SourceExec parsed "x" "samplePeriod" ceiling Solve.Tensor.Finite.Result
+    Scalar.StateBridge.SourceExec parsed GALEC.Names.state GALEC.Names.clock ceiling Solve.Tensor.Finite.Result
       Binary64.positiveZero Binary64.one method before
       (GALEC.UnitProfile.solveExecute block Binary64.positiveZero Binary64.one
         GALEC.roundedAdd method before) :=
@@ -95,7 +95,7 @@ theorem ScalarSourceSemantics.lifecycle (semantics : ScalarSourceSemantics parse
     (ceiling : Nat)
     (execute : GALEC.Method → GALEC.UnitProfile.State Binary64.Value →
       GALEC.UnitProfile.State Binary64.Value)
-    (realizes : ∀ method before, Scalar.StateBridge.SourceExec parsed "x" "samplePeriod" ceiling
+    (realizes : ∀ method before, Scalar.StateBridge.SourceExec parsed GALEC.Names.state GALEC.Names.clock ceiling
       Solve.Tensor.Finite.Result Binary64.positiveZero Binary64.one method before
       (execute method before))
     (before after : GALEC.Protocol.Configuration Binary64.Value) (events : List GALEC.Protocol.Event) :

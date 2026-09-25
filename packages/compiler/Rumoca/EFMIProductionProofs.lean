@@ -35,12 +35,12 @@ structure ProductionContract (a : Artifact source) (algorithm c : String) : Prop
       Production.Represents (Production.resultHeap heap p state method) p
         (GALEC.UnitProfile.solveExecute a.algorithmSolve.block Binary64.positiveZero
           Binary64.one GALEC.roundedAdd method state) ∧
-      (∀ q, q ≠ p.member "x" → q ≠ p.member "samplePeriod" →
+      (∀ q, q ≠ p.member GALEC.Names.state → q ≠ p.member GALEC.Names.clock →
         q ≠ p.member CHeader.statusName →
         Production.resultHeap heap p state method q = heap q)) ∧
     (∀ heap p oldX oldPeriod,
-      heap (p.member "x") = some ⟨.float64, true, oldX⟩ →
-      heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩ →
+      heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩ →
+      heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩ →
       Production.StatusStorage heap p →
       ∀ behavior, CArithmetic.machine.Behaves
         (.running module.startup.body (Production.parameters p) heap) behavior ↔
@@ -98,14 +98,14 @@ theorem ProductionContract.original_methods (contract : ProductionContract a alg
       Production.lower a.algorithmSolve = .ok module ∧ module.render = c ∧
       ∀ ceiling method heap p (before : GALEC.UnitProfile.State Binary64.Value),
         Production.Represents heap p before → ∃ after,
-        GALEC.Elaboration.Scalar.StateBridge.SourceExec parsed.ast "x" "samplePeriod" ceiling
+        GALEC.Elaboration.Scalar.StateBridge.SourceExec parsed.ast GALEC.Names.state GALEC.Names.clock ceiling
           Solve.Tensor.Finite.Result
           Binary64.positiveZero Binary64.one method before after ∧
         (∀ behavior, CArithmetic.machine.Behaves
           (.running (module.method method).body (Production.parameters p) heap) behavior ↔
           behavior = .terminates ⟨.integer 0, Production.resultHeap heap p before method⟩) ∧
         Production.Represents (Production.resultHeap heap p before method) p after ∧
-        (∀ q, q ≠ p.member "x" → q ≠ p.member "samplePeriod" →
+        (∀ q, q ≠ p.member GALEC.Names.state → q ≠ p.member GALEC.Names.clock →
           q ≠ p.member CHeader.statusName →
           Production.resultHeap heap p before method q = heap q) := by
   obtain ⟨parsed, accepted, named, _⟩ := contract.algorithm_contract.parsed

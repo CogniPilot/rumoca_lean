@@ -36,7 +36,7 @@ structure AllocatedStorage (objects : Objects) (heap : Heap) (base : Address) : 
   input : ArrayStorage heap (base.member inputVar.name) .float64 inputShape
   square : TensorView.Writable heap (base.member squareVar.name) squareShape.volume
   jacobian : TensorView.Writable heap (base.member jacobianVar.name) jacobianShape.volume
-  clock : ScalarWritable heap (base.member clockName) .float64
+  clock : ScalarWritable heap (base.member GALEC.Names.clock) .float64
   status : ScalarWritable heap (base.member statusName) .int32
 
 theorem AllocatedStorage.represents (storage : AllocatedStorage objects heap base) :
@@ -81,7 +81,7 @@ theorem AllocatedStorage.after_clear (storage : AllocatedStorage objects heap ba
   · exact writable_framed storage.square (storage.clear_member squareVar.name (by decide +kernel))
   · exact writable_framed storage.jacobian (storage.clear_member jacobianVar.name (by decide +kernel))
   · apply storage.clock.framed
-    simpa only [Address.index_zero] using storage.clear_member clockName (by decide +kernel) 0
+    simpa only [Address.index_zero] using storage.clear_member GALEC.Names.clock (by decide +kernel) 0
   · exact ⟨some (.integer 0), cleared_status⟩
 
 theorem AllocatedStorage.input_frame (storage : AllocatedStorage objects heap base) (i : Nat) :
@@ -90,9 +90,9 @@ theorem AllocatedStorage.input_frame (storage : AllocatedStorage objects heap ba
   storage.clear_member inputVar.name (by decide +kernel) i
 
 theorem AllocatedStorage.clock_frame (storage : AllocatedStorage objects heap base) :
-    cleared heap base (base.member clockName) = heap (base.member clockName) ∧
-    load (cleared heap base) (base.member clockName) = load heap (base.member clockName) := by
-  have frame := storage.clear_member clockName (by decide +kernel) 0
+    cleared heap base (base.member GALEC.Names.clock) = heap (base.member GALEC.Names.clock) ∧
+    load (cleared heap base) (base.member GALEC.Names.clock) = load heap (base.member GALEC.Names.clock) := by
+  have frame := storage.clear_member GALEC.Names.clock (by decide +kernel) 0
   simp only [Address.index_zero] at frame
   exact ⟨frame, by simp only [load, frame]⟩
 
@@ -147,7 +147,7 @@ structure Storage (objects : Objects) (heap : Heap) (base : Address)
   inputCells : FiniteCells heap (base.member inputVar.name) input
   square : TensorView.Writable heap (base.member squareVar.name) squareShape.volume
   jacobian : TensorView.Writable heap (base.member jacobianVar.name) jacobianShape.volume
-  clock : ScalarWritable heap (base.member clockName) .float64
+  clock : ScalarWritable heap (base.member GALEC.Names.clock) .float64
   status : ScalarWritable heap (base.member statusName) .int32
 
 variable {input : TensorView.Values inputShape}
@@ -222,9 +222,9 @@ theorem Storage.output_reads_after_clear (storage : Storage objects heap base in
   rcases output with rfl | rfl <;> simp [modelVars]
 
 theorem Storage.clock_after_clear (storage : Storage objects heap base input) :
-    cleared heap base (base.member clockName) = heap (base.member clockName) ∧
-    load (cleared heap base) (base.member clockName) = load heap (base.member clockName) ∧
-    ScalarWritable (cleared heap base) (base.member clockName) .float64 :=
+    cleared heap base (base.member GALEC.Names.clock) = heap (base.member GALEC.Names.clock) ∧
+    load (cleared heap base) (base.member GALEC.Names.clock) = load heap (base.member GALEC.Names.clock) ∧
+    ScalarWritable (cleared heap base) (base.member GALEC.Names.clock) .float64 :=
   ⟨storage.toAllocated.clock_frame.1, storage.toAllocated.clock_frame.2, storage.after_clear.clock⟩
 
 theorem Storage.clear_spec (storage : Storage objects heap base input) :

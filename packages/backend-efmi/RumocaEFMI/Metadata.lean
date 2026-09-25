@@ -14,8 +14,8 @@ def modelVariables : List Variable := [.state, .clock]
 def methods : List GALEC.Method := [.startup, .recalibrate, .doStep]
 
 def Variable.name : Variable → String
-  | .state => "x"
-  | .clock => "samplePeriod"
+  | .state => GALEC.Names.state
+  | .clock => GALEC.Names.clock
 
 def Variable.id : Variable → String
   | .state => "AV_State"
@@ -28,15 +28,10 @@ def Variable.componentId : Variable → String
 def Variable.shape (_ : Variable) : Tensor.Shape := Tensor.scalar
 def Variable.scalar (_ : Variable) : CHeader.Scalar := .real64
 
-def algorithmMethodName : GALEC.Method → String
-  | .startup => "Startup"
-  | .recalibrate => "Recalibrate"
-  | .doStep => "DoStep"
-
-def algorithmMethodId (method : GALEC.Method) : String := "AF_" ++ algorithmMethodName method
-def functionId (method : GALEC.Method) : String := "CF_" ++ algorithmMethodName method
-def parameterId (method : GALEC.Method) : String := "CP_" ++ algorithmMethodName method ++ "_self"
-def returnId (method : GALEC.Method) : String := "CR_" ++ algorithmMethodName method
+def algorithmMethodId (method : GALEC.Method) : String := "AF_" ++ GALEC.Names.method method
+def functionId (method : GALEC.Method) : String := "CF_" ++ GALEC.Names.method method
+def parameterId (method : GALEC.Method) : String := "CP_" ++ GALEC.Names.method method ++ "_self"
+def returnId (method : GALEC.Method) : String := "CR_" ++ GALEC.Names.method method
 
 def targetKind : CHeader.Scalar → String
   | .real64 => "efmiFloat64"

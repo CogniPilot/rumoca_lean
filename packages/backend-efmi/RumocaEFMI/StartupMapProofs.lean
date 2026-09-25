@@ -56,8 +56,8 @@ theorem Emission.map_allowed (emission : Emission model)
 contract, including initially uninitialized state/period/status storage. -/
 theorem Emission.startup_behaviors (emission : Emission model)
     (heap : CMemory.Heap) (p : CMemory.Address) (oldX oldPeriod : Option CMemory.Value)
-    (hx : heap (p.member "x") = some ⟨.float64, true, oldX⟩)
-    (hp : heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩)
+    (hx : heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩)
+    (hp : heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩)
     (hs : StatusStorage heap p) :
     ∀ behavior, CArithmetic.machine.Behaves
       (.running emission.module.startup.body (parameters p) heap) behavior ↔
@@ -87,8 +87,8 @@ def Contract (model : Solve.Algorithm.Model source) (c : String) : Prop :=
         c.toByteArray.extract entry.start entry.stop = segment.toByteArray) ∧
     (∀ entry, entry ∈ emission.document.entries → (StartupOrigins.inputs model).Allowed entry.origin) ∧
     (∀ heap p oldX oldPeriod,
-      heap (p.member "x") = some ⟨.float64, true, oldX⟩ →
-      heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩ →
+      heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩ →
+      heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩ →
       StatusStorage heap p →
       ∀ behavior, CArithmetic.machine.Behaves
         (.running emission.module.startup.body (parameters p) heap) behavior ↔

@@ -28,29 +28,29 @@ theorem after_initial (storage : AllocatedStorage objects heap base)
   · exact writable_framed storage.jacobian (PublicRHS.member_preserved frame (by decide +kernel))
   · apply storage.clock.framed
     simpa only [Address.index_zero] using PublicRHS.member_preserved frame
-      (show clockName ≠ squareVar.name by decide +kernel) 0
+      (show GALEC.Names.clock ≠ squareVar.name by decide +kernel) 0
   · apply storage.status.framed
     simpa only [Address.index_zero] using PublicRHS.member_preserved frame
       (show statusName ≠ squareVar.name by decide +kernel) 0
 
 def clocked (heap : Heap) (base : Address) : Heap :=
-  replace heap (base.member clockName) ⟨.float64, true, some (.finite Binary64.one)⟩
+  replace heap (base.member GALEC.Names.clock) ⟨.float64, true, some (.finite Binary64.one)⟩
 
 theorem clock_store {heap : Heap} {base : Address}
-    (writable : ScalarWritable heap (base.member clockName) .float64) :
-    store heap (base.member clockName) (.finite Binary64.one) = some (clocked heap base) := by
+    (writable : ScalarWritable heap (base.member GALEC.Names.clock) .float64) :
+    store heap (base.member GALEC.Names.clock) (.finite Binary64.one) = some (clocked heap base) := by
   obtain ⟨old, found⟩ := writable
-  exact store_float64 heap (base.member clockName) old _ found
+  exact store_float64 heap (base.member GALEC.Names.clock) old _ found
 
-theorem clock_reads : load (clocked heap base) (base.member clockName) =
+theorem clock_reads : load (clocked heap base) (base.member GALEC.Names.clock) =
     some (.finite Binary64.one) := by
   simp [clocked, load, convert, Value.finite]
 
 theorem clock_frame {heap : Heap} {base : Address} {name : String}
-    (different : name ≠ clockName) (i : Nat) :
+    (different : name ≠ GALEC.Names.clock) (i : Nat) :
     clocked heap base ((base.member name).index i) = heap ((base.member name).index i) := by
   apply replace_other
-  simpa only [Address.index_zero] using Address.fields_separate base name clockName different i 0
+  simpa only [Address.index_zero] using Address.fields_separate base name GALEC.Names.clock different i 0
 
 theorem after_clock (storage : AllocatedStorage objects heap base) :
     AllocatedStorage objects (clocked heap base) base := by
@@ -69,7 +69,7 @@ structure RecalibrateOutcome (objects : Objects) (before after : Heap) (base : A
   input : ∀ i, after ((base.member inputVar.name).index i) = before ((base.member inputVar.name).index i)
   square : ∀ i, after ((base.member squareVar.name).index i) = before ((base.member squareVar.name).index i)
   jacobian : ∀ i, after ((base.member jacobianVar.name).index i) = before ((base.member jacobianVar.name).index i)
-  clock : after (base.member clockName) = before (base.member clockName)
+  clock : after (base.member GALEC.Names.clock) = before (base.member GALEC.Names.clock)
   frame : ∀ q, q ≠ base.member statusName → after q = before q
 
 theorem return_zero (p : CCalls.Program) (objects : Objects) (heap : Heap) (base : Address)
@@ -96,7 +96,7 @@ theorem return_zero (p : CCalls.Program) (objects : Objects) (heap : Heap) (base
 
 /-- The Startup body after both initializer calls. -/
 def afterInitialization : List Stmt :=
-  [.assign (selfField clockName) (.cast "double" (.nat 1)), .ret (some (selfField statusName))]
+  [.assign (selfField GALEC.Names.clock) (.cast "double" (.nat 1)), .ret (some (selfField statusName))]
 
 theorem initial_arguments (objects : Objects) (heap : Heap) (base : Address)
     (storage : AllocatedStorage objects heap base) (env : CBody.Locals)
@@ -119,7 +119,7 @@ theorem clock_step (p : CCalls.Program) (objects : Objects) (heap : Heap) (base 
   letI : CInterface := NumericalInterface.interface
   have value : typedEval (expressions objects) env types heap (.cast "double" (.nat 1)) =
       some (.finite Binary64.one) := by rfl
-  have address : (expressions objects).address env heap (selfField clockName) = some (base.member clockName) := by
+  have address : (expressions objects).address env heap (selfField GALEC.Names.clock) = some (base.member GALEC.Names.clock) := by
     simp [expressions, declared, CBody.declaredExpressions, selfField, CBody.lvalueWith, CBody.evalWith,
       CBody.resolve, bound, Value.address]
   simp only [selfField] at address
@@ -205,7 +205,7 @@ theorem after_jacobian (storage : AllocatedStorage objects heap base)
   · exact writable_framed storage.square (PublicRHS.member_preserved frame (by decide +kernel))
   · apply storage.clock.framed
     simpa only [Address.index_zero] using PublicRHS.member_preserved frame
-      (show clockName ≠ jacobianVar.name by decide +kernel) 0
+      (show GALEC.Names.clock ≠ jacobianVar.name by decide +kernel) 0
   · apply storage.status.framed
     simpa only [Address.index_zero] using PublicRHS.member_preserved frame
       (show statusName ≠ jacobianVar.name by decide +kernel) 0
@@ -292,7 +292,7 @@ theorem initialization_executes (unusedKernel : CSyntax.Program) (objects : Obje
 sample-period assignment. -/
 theorem startup_method : startupFunction =
     method startupName
-      (initializationPrefix ++ [.assign (selfField clockName) (.cast "double" (.nat 1))]) :=
+      (initializationPrefix ++ [.assign (selfField GALEC.Names.clock) (.cast "double" (.nat 1))]) :=
   rfl
 
 /-- Exact finite bit-pattern observations, not only real-number equality: both
@@ -305,9 +305,9 @@ structure StartupOutcome (objects : Objects) (before after : Heap) (base : Addre
   jacobian : Reads after (base.member jacobianVar.name)
     (Tensor.Value.fill jacobianShape Binary64.positiveZero)
   status : load after (base.member statusName) = some (.integer 0)
-  clock : load after (base.member clockName) = some (.finite Binary64.one)
+  clock : load after (base.member GALEC.Names.clock) = some (.finite Binary64.one)
   input : ∀ i, after ((base.member inputVar.name).index i) = before ((base.member inputVar.name).index i)
-  frame : ∀ q, q ≠ base.member statusName → q ≠ base.member clockName →
+  frame : ∀ q, q ≠ base.member statusName → q ≠ base.member GALEC.Names.clock →
     (∀ i < squareShape.volume, q ≠ (base.member squareVar.name).index i) →
     (∀ i < jacobianShape.volume, q ≠ (base.member jacobianVar.name).index i) →
     after q = before q
@@ -354,7 +354,7 @@ theorem startup_body (unusedKernel : CSyntax.Program) (objects : Objects) (heap 
       fun q status clock outsideX outsideJ => (replace_other _ _ _ _ clock).trans
         ((outcome.frame q outsideX outsideJ).trans (cleared_other status))⟩
   have first := method_clear startupName
-    (initializationPrefix ++ [.assign (selfField clockName) (.cast "double" (.nat 1))])
+    (initializationPrefix ++ [.assign (selfField GALEC.Names.clock) (.cast "double" (.nat 1))])
     objects env types heap (cleared heap base) base bound storage.clear_store
   have start : next (expressions objects) (program unusedKernel)
       (.body (.running startupFunction.body env types heap) statusAlias stack) =

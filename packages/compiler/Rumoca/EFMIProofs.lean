@@ -43,7 +43,7 @@ emitted text's selected method, at every ceiling and for every state. -/
 theorem AlgorithmContract.solve_refinement (contract : AlgorithmContract a emitted) :
     ∃ product, GALEC.Elaboration.Block.fromSource emitted = .ok product ∧
       ∀ ceiling method (state : GALEC.UnitProfile.State Binary64.Value),
-        GALEC.Elaboration.Scalar.StateBridge.SourceExec product.parsed.ast "x" "samplePeriod"
+        GALEC.Elaboration.Scalar.StateBridge.SourceExec product.parsed.ast GALEC.Names.state GALEC.Names.clock
           ceiling Solve.Tensor.Finite.Result Binary64.positiveZero Binary64.one method state
           (GALEC.UnitProfile.solveExecute a.algorithmSolve.block Binary64.positiveZero
             Binary64.one GALEC.roundedAdd method state) := by
@@ -57,7 +57,7 @@ theorem AlgorithmContract.lifecycle_refinement (contract : AlgorithmContract a e
       ∀ ceiling (execute : GALEC.Method → GALEC.UnitProfile.State Binary64.Value →
           GALEC.UnitProfile.State Binary64.Value),
         (∀ method before, GALEC.Elaboration.Scalar.StateBridge.SourceExec product.parsed.ast
-          "x" "samplePeriod" ceiling Solve.Tensor.Finite.Result Binary64.positiveZero
+          GALEC.Names.state GALEC.Names.clock ceiling Solve.Tensor.Finite.Result Binary64.positiveZero
           Binary64.one method before (execute method before)) →
         ∀ (before after : GALEC.Protocol.Configuration Binary64.Value) events,
           GALEC.Protocol.Trace execute before events after ↔

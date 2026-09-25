@@ -37,10 +37,6 @@ members with their dimensions. -/
 /-- The error word member, as in the scalar Production Code profile. -/
 def statusName : String := "errorSignalStatus"
 
-/-- The scalar sample-period constant member (the block clock), as in the scalar
-Production Code profile and the pinned tensor Algorithm Code. -/
-def clockName : String := "samplePeriod"
-
 /-- A logical array variable of the tensor square profile: its C member name and
 its fixed dimensions (row-major element count is the product of the extents). -/
 structure ArrayVar where
@@ -53,7 +49,7 @@ def ArrayVar.volume (v : ArrayVar) : Nat := v.dims.foldl (· * ·) 1
 /-- Input `u`, output square `x` and dense Jacobian `J`, matching the pinned
 tensor Algorithm Code `input Real u[2]; output Real x[2]; output Real J[2, 2];`. -/
 def inputVar : ArrayVar := ⟨"u", [2]⟩
-def squareVar : ArrayVar := ⟨"x", [2]⟩
+def squareVar : ArrayVar := ⟨GALEC.Names.state, [2]⟩
 def jacobianVar : ArrayVar := ⟨"J", [2, 2]⟩
 
 def modelVars : List ArrayVar := [inputVar, squareVar, jacobianVar]
@@ -107,7 +103,7 @@ def header : String :=
   "typedef int32_t " ++ statusAlias ++ ";\n" ++
   "typedef struct {\n" ++
   String.join (modelVars.map memberDecl) ++
-  "  " ++ realAlias ++ " " ++ clockName ++ ";\n" ++
+  "  " ++ realAlias ++ " " ++ GALEC.Names.clock ++ ";\n" ++
   "  " ++ statusAlias ++ " " ++ statusName ++ ";\n" ++
   "} Model;\n\n"
 
@@ -124,9 +120,9 @@ def method (name : String) (body : List Stmt) : Function :=
   ⟨⟨statusAlias, name, [⟨"Model *", "self", false⟩]⟩,
     .assign (selfField statusName) (.nat 0) :: (body ++ [.ret (some (selfField statusName))]), false⟩
 
-def startupName : String := "TensorSquare_Startup"
-def recalibrateName : String := "TensorSquare_Recalibrate"
-def doStepName : String := "TensorSquare_DoStep"
+def startupName : String := GALEC.Names.function GALEC.Names.squareBlock .startup
+def recalibrateName : String := GALEC.Names.function GALEC.Names.squareBlock .recalibrate
+def doStepName : String := GALEC.Names.function GALEC.Names.squareBlock .doStep
 
 /-- Arguments of the initializer call for the state output `x`. -/
 def squareInitializerArgs : List Expr := [selfField squareVar.name, .nat squareVar.volume]
@@ -144,7 +140,7 @@ positive zero through the prepared initializer entry, each with its own volume,
 then sets the sample period. -/
 def startupFunction : Function :=
   method startupName
-    (initializationPrefix ++ [.assign (selfField clockName) (.cast "double" (.nat 1))])
+    (initializationPrefix ++ [.assign (selfField GALEC.Names.clock) (.cast "double" (.nat 1))])
 
 /-- Recalibrate has no periodic clock work in the tensor square profile. -/
 def recalibrateFunction : Function := method recalibrateName []

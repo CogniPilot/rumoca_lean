@@ -44,7 +44,7 @@ directories. Native checks still run, and fresh eFMU metadata requires a fresh
 certificate. See [certificate reuse](../../docs/development.md#cached-artifact-certificates).
 
 The C target machinery is shared by both output routes:
-DAE → GALEC → Solve → C for eFMI, and DAE → Solve → C for FMI 3.
+DAE → prepared Solve algorithm → C for eFMI, and DAE → Solve → C for FMI 3.
 The eFMI Solve algorithm is prepared from the DAE; GALEC text is printed from
 the core builder's block, and a proved relation shows that the parsed text's
 methods execute as that Solve algorithm. Compiler composition binds both eFMI

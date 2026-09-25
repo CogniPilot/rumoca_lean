@@ -13,7 +13,7 @@ open CMemory
 def InitializedSourceResult (a : Artifact input) (p : Address) (result : CBody.Result)
     (t₀ : ℝ) : Prop :=
   result.value = .integer 0 ∧ ∃ initial : Binary64.Value,
-    load result.heap (p.member "x") = some (.finite initial) ∧
+    load result.heap (p.member GALEC.Names.state) = some (.finite initial) ∧
     Binary64.value initial = (a.solve.initial.initial : ℝ) ∧
     Source.Initializes a.parsed.ast t₀ (Initialization.trajectory t₀ (Binary64.value initial)) ∧
     ∀ x, Source.Initializes a.parsed.ast t₀ x → x t₀ = Binary64.value initial →
@@ -26,8 +26,8 @@ the same explicit boundary as in ProductionContract. -/
 theorem ProductionContract.startup_source (contract : ProductionContract a algorithm c)
     (module : Production.Module) (lowered : Production.lower a.algorithmSolve = .ok module)
     (heap : Heap) (p : Address) (oldX oldPeriod : Option Value)
-    (hx : heap (p.member "x") = some ⟨.float64, true, oldX⟩)
-    (hp : heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩)
+    (hx : heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩)
+    (hp : heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩)
     (hs : Production.StatusStorage heap p) (result : CBody.Result)
     (observed : CArithmetic.machine.Behaves
       (.running module.startup.body (Production.parameters p) heap) (.terminates result))
@@ -64,8 +64,8 @@ def ArchiveStartupContract (a : Artifact input) (bytes : ByteArray) : Prop :=
         StoredZIP.Format.localRecord ⟨Archive.Member.production.name, code.production.toUTF8⟩ ++ after) ∧
       (∃ printed, printed.tree = module ∧ CSyntax.Denotes code.production printed) ∧
       ∀ heap p oldX oldPeriod,
-        heap (p.member "x") = some ⟨.float64, true, oldX⟩ →
-        heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩ →
+        heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩ →
+        heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩ →
         Production.StatusStorage heap p → ∀ t₀, ∃ result,
         (∀ behavior, CArithmetic.machine.Behaves
           (.running module.startup.body (Production.parameters p) heap) behavior ↔

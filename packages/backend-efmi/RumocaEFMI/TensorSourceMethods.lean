@@ -69,7 +69,7 @@ def Observes (heap : Heap) (base : Address) (after : Env Binary64.Value outputs)
     (period : Ref outputs scalar) : Prop :=
   Reads heap (base.member squareVar.name) (after vector) ∧
   Reads heap (base.member jacobianVar.name) (after matrix) ∧
-  Reads heap (base.member clockName) (after period)
+  Reads heap (base.member GALEC.Names.clock) (after period)
 
 /-- The emitted Startup body returns status zero with the owned Startup outcome
 and a final heap that observes the given source post-values. -/
@@ -188,7 +188,7 @@ def periodRef : Ref (Layout.inputShapes (Square.squareFields squareExtent)) scal
 allocation and status are separately retained by the target outcome. -/
 structure StateView (heap : Heap) (base : Address) (input : InputEnv) (state : OutputEnv) : Prop where
   numerical : NumericalView heap base @input @state
-  period : Reads heap (base.member clockName) (input periodRef)
+  period : Reads heap (base.member GALEC.Names.clock) (input periodRef)
 
 theorem preserved (outcome : AllocatedMethods.RecalibrateOutcome objects heap after base)
     (view : StateView heap base @input @state) : StateView after base @input @state := by
@@ -199,7 +199,7 @@ theorem preserved (outcome : AllocatedMethods.RecalibrateOutcome objects heap af
   intro i
   apply outcome.frame
   simpa only [Address.index_zero] using
-    (Address.fields_separate base clockName statusName (by decide +kernel) i 0)
+    (Address.fields_separate base GALEC.Names.clock statusName (by decide +kernel) i 0)
 
 /-- The selected original Recalibrate method leaves every source field
 unchanged, and the public Recalibrate call preserves the view of all four. -/
@@ -292,7 +292,7 @@ theorem original_step {block : AST.Block} {method : AST.Method}
     (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap) (base : Address)
     (input : InputEnv) (env : IteratorEnv []) (before after : OutputEnv)
     (storage : Storage objects heap base (input (Square.squareInput squareExtent)))
-    (period : Reads heap (base.member clockName) (input periodRef))
+    (period : Reads heap (base.member GALEC.Names.clock) (input periodRef))
     (executed : SourceExec (Square.squareFields squareExtent) ceiling block method Finite.Result
       Binary64.positiveZero Binary64.one @input @env @before @after) :
     ∃ finalHeap,
@@ -331,7 +331,7 @@ def StepCorrespondence (model : TensorModel ArrayProfile.stateShape) (algorithm 
     ∀ (unusedKernel : CSyntax.Program) (objects : Objects) (heap : Heap) (base : Address)
       (input : InputEnv) (env : IteratorEnv []) (before after : OutputEnv),
       Storage objects heap base (input (Square.squareInput squareExtent)) →
-      Reads heap (base.member clockName) (input periodRef) →
+      Reads heap (base.member GALEC.Names.clock) (input periodRef) →
       SourceExec (Square.squareFields squareExtent) Static.Bounded.integerCeiling product.parsed.ast
         method Finite.Result Binary64.positiveZero Binary64.one @input @env @before @after →
       ∃ finalHeap,

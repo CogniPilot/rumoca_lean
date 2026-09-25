@@ -42,8 +42,8 @@ structure ManifestContract (a : Artifact source) (identity : Manifest.Identity)
         (.running (module.method method).body (Production.parameters p) heap) (.terminates result) →
       Manifest.MappedStatus module documents.algorithm documents.production method p result) ∧
     (∀ heap p oldX oldPeriod,
-      heap (p.member "x") = some ⟨.float64, true, oldX⟩ →
-      heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩ →
+      heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩ →
+      heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩ →
       Production.StatusStorage heap p → ∀ result : CBody.Result,
       CArithmetic.machine.Behaves
         (.running module.startup.body (Production.parameters p) heap) (.terminates result) →
@@ -117,8 +117,8 @@ theorem ManifestContract.status_observations
           (.running (module.method method).body (Production.parameters p) heap) (.terminates result) →
         Manifest.MappedStatus module algorithmRoot productionRoot method p result) ∧
       (∀ heap p oldX oldPeriod,
-        heap (p.member "x") = some ⟨.float64, true, oldX⟩ →
-        heap (p.member "samplePeriod") = some ⟨.float64, true, oldPeriod⟩ →
+        heap (p.member GALEC.Names.state) = some ⟨.float64, true, oldX⟩ →
+        heap (p.member GALEC.Names.clock) = some ⟨.float64, true, oldPeriod⟩ →
         Production.StatusStorage heap p → ∀ result : CBody.Result,
         CArithmetic.machine.Behaves
           (.running module.startup.body (Production.parameters p) heap) (.terminates result) →

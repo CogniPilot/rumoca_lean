@@ -1,3 +1,4 @@
+import RumocaCore.GALEC.Names
 import RumocaCore.Solve.Algorithm
 import RumocaCore.GALEC.Elaboration.Scalar.Preparation
 import GALECParser.Print
@@ -11,7 +12,7 @@ namespace Rumoca.EFMI
 /-- The scalar unit block: output `x`, the protected sample period and the
 Startup, Recalibrate and DoStep methods. -/
 def scalarBlock : GALEC.AST.Block :=
-  GALEC.Elaboration.Scalar.source "UnitIntegrator" "x" "samplePeriod"
+  GALEC.Elaboration.Scalar.source GALEC.Names.unitBlock GALEC.Names.state GALEC.Names.clock
 
 /-- The scalar Algorithm Code text of a prepared unit model. -/
 def renderAlgorithm (_model : Solve.Algorithm.Model source) : String :=
