@@ -100,7 +100,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       (SlotOwners.update owners slot (some owner)) heap (pool.install baseHeap firstBlock signed) p addresses buffer readers := by
     intro current before final clock finalClock actions persistent stored storage reference requests regions readerSafe included
     exact InitializationProtocol.me_execution header objects a.solve.prepareFMI3 sigs pool prepared.me prepared.counts prepared.nominals prepared.logging prepared.eventIndicators
-      prepared.cs.toPreparedContract baseHeap firstBlock signed program actual identity.compareBinding retained
+      prepared.cs.toPreparedContract ⟨prepared.getter, prepared.setter, prepared.absent⟩ baseHeap firstBlock signed program actual identity.compareBinding retained
       (SlotOwners.update owners slot (some owner)) heap current p addresses buffer before final clock finalClock actions readers
       persistent rfl guarded (fun q inside => ⟨(resources.readerGuarded q inside).1, readerOutside q inside,
         by intro same; exact (resources.readerGuarded q inside).2.1 (same ▸ p.member_in_record "logging")⟩)

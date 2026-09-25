@@ -59,6 +59,11 @@ def Request.after (model : Solve.FMI3Model source) (request : Request) (heap : H
   | .absent _ _ _ _ _ => heap
   | .terminate => LifecycleBodies.writeMode heap p .terminated
 
+/-- Number of selected values returned by the request. -/
+def Request.count : Request → Nat
+  | .access _ request => request.shape.volume
+  | _ => 0
+
 def Request.readback (request : Request) (heap : Heap) : Nat → Option Value :=
   match request with
   | .access buffers request => request.readback heap buffers

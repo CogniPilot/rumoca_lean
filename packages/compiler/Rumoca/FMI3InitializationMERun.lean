@@ -5,6 +5,7 @@ import RumocaFMI3.MEMixedLifecycle
 import RumocaFMI3.LifecycleEnvironment
 import RumocaC.StorageAtomic
 import RumocaFMI3.LoggingCapabilityCreation
+import RumocaFMI3.InstanceQueryEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationAccess
@@ -29,7 +30,7 @@ def MEContinuation [CInterface] (model : Solve.Model source) (objects : Objects)
     MENumericalHistory.Stored after p finalClock final addresses buffer ∧ Reset.Storage after p ∧
     capability.Configured after p ((MEMixedRun.loggingUpdate actions).getD enabled) ∧
     InitializationProtocol.Retention (MEMixedRun.loggingUpdate actions) p exited after ∧
-    MEMixedRun.SourceObservations model actions observed ∧
+    MEMixedRun.SourceObservations model initial actions observed ∧
     MENumericalRun.InitializedEpochs source p epochs ∧ CReadOnly.Preserves original after ∧
     LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner))
       owner .me final.control.mode ∧
@@ -51,6 +52,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
     (nominals : NominalEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (loggingPrepared : DebugLogging.PreparedContract model.prepareFMI3 sigs pool)
     (eventPrepared : EventIndicatorEnvironment.PreparedContract model.prepareFMI3 sigs pool)
+    (queries : InstanceQuery.PreparedContract model.prepareFMI3 sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) (slot : Fin objects.capacity)
     (access : Float64Buffers.Layout) (addresses : String → Address) (buffer : Address) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
@@ -121,7 +123,7 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
           fun same => notRecord (same ▸ (p.member_in_record "model").member "x")
         have notFlag : q ≠ AtomicSlots.address objects.flagsBlock slot := by
           cases action with
-          | run _ | reject _ _ | counts _ | nominals _ | eventIndicators _ => cases inside
+          | run _ | reject _ _ | counts _ | nominals _ | eventIndicators _ | query _ => cases inside
           | logging request =>
             have readable := (show request.Inputs original from requests (.logging request) member).load_ne_none inside
             intro same
@@ -130,7 +132,9 @@ theorem Certificate.me_continuation {source : AST.Model} (model : Solve.Model so
         exact (initialized.frame q ⟨accessOutside, notState, fun name _ => field name⟩).trans
           (liveFrame q notRecord notFlag))
   have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals loggingPrepared eventPrepared baseHeap firstBlock signed
-    program capability factoryArgs.logging actual compare bound reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
+    program capability factoryArgs.logging actual compare bound reset
+      (queries.quiet header objects firstBlock program actual termination) enterDefined exitDefined exited p _ _ final finalClock
+      addresses buffer actions
       (SlotOwners.update owners slot (some owner)) required configured writable rfl ownership (literals.trans readonly)
       stored resetStorage admitted current policies readPolicies
       (fun action member q inside => ⟨(readerOutside action member q inside).2.2,
@@ -261,7 +265,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
               MEContinuation a.solve objects program tag slot owners owner heap
                 (InitializationBodies.exitHeap atExit p .me) buffers addresses buffer (meReference ⟨initial⟩ args before during)
                 final (Time.Clock.initial args.start) finalClock actions capability factoryArgs.logging := by
-  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, nominals, loggingPrepared, eventPrepared, _, create⟩ :=
+  obtain ⟨compiled, numerical, metadataVariables, writable, sigs, pool, made, printed, functions, csPrepared, prepared, counts, nominals, loggingPrepared, eventPrepared, queries, create⟩ :=
     runtime_create_release compiled build
   refine ⟨compiled, numerical, metadataVariables, writable, DerivativeMetadata.artifact_derivatives _ _ build.metadata,
     CountMetadata.artifact_counts _ _ build.metadata, NominalMetadata.artifact_nominals _ _ build.metadata,
@@ -286,7 +290,7 @@ theorem runtime_create_me_histories (compiled : compile input = .ok a)
   obtain ⟨_, initialized, uniqueSource⟩ := certified.completed_source executed
   refine ⟨beforeEntry, atExit, certified, executed, initialized, uniqueSource, fun _ _ => certified.execution_iff, ?_⟩
   intro addresses buffer capability actions final finalClock outputs matching bound required admitted requests policies readPolicies readerOutside separateReaders
-  exact certified.me_continuation a.solve header objects sigs pool csPrepared.toPreparedContract prepared counts nominals loggingPrepared eventPrepared
+  exact certified.me_continuation a.solve header objects sigs pool csPrepared.toPreparedContract prepared counts nominals loggingPrepared eventPrepared queries
     baseHeap firstBlock signed slot buffers addresses buffer program tag actual identity.compareBinding write heap live beforeEntry atExit ⟨initial⟩ args
       before during factoryArgs owners owner created.initialized literalFrame
       (termination_preserves ((creation _).mpr rfl)) preserved createdFrame admissible (outputs.at_index slot.val)

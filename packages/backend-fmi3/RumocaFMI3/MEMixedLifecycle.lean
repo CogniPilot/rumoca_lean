@@ -29,6 +29,10 @@ theorem Action.can_finish (action : Action)
     cases request with
     | get _ => exact ready
     | reject _ _ _ => exact Or.inr rfl
+  | query request =>
+    cases request with
+    | terminate => exact Or.inr rfl
+    | access | absent => exact ready
   | run command =>
     cases command with
     | restart _ => exact Or.inl (by simp [Action.next, MENumericalHistory.ReferenceState.restart,

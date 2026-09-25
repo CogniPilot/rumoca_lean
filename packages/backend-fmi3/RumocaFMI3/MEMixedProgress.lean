@@ -76,6 +76,9 @@ inductive Faulted [CInterface] (program : Program Invocation) (p : Address)
       Faulted program p addresses buffer heap (.logging request)
   | eventIndicators : (machine program).Behaves (.calling (request.call p).1 (request.call p).2 heap .done) (.wrong []) →
       Faulted program p addresses buffer heap (.eventIndicators request)
+  | query : request.hostRun heap = some ready →
+      (machine program).Behaves (.calling (request.call p).1 (request.call p).2 ready .done) (.wrong []) →
+      Faulted program p addresses buffer heap (.query request)
 inductive Stopped [CInterface] (program : Program Invocation) (p : Address)
     (addresses : String → Address) (buffer : Address) : Heap → List Action → Prop where
   | here : Faulted program p addresses buffer heap action →
@@ -134,9 +137,14 @@ theorem ActionContract.faulted_iff
         rcases (contract.behaviors _).mp faulted with ⟨_, _, _, _, impossible⟩ | ⟨blocked, _⟩
         · cases impossible
         · exact blocked
+    | query host faulted =>
+      cases certified with
+      | query prepared called =>
+        cases Option.some.inj (prepared.symm.trans host)
+        cases (called _).mp faulted
   · intro blocked
     cases certified with
-    | run _ | quiet _ _ => exact False.elim blocked
+    | run _ | quiet _ _ | query _ _ => exact False.elim blocked
     | logged _ _ _ prepared called => exact .reject prepared ((called _).mpr (Or.inr ⟨blocked, rfl⟩))
     | counts contract => exact .counts ((contract.behaviors _).mpr (Or.inr ⟨blocked, rfl⟩))
 
@@ -148,7 +156,7 @@ theorem ActionContract.faulted_rejection
     (actual : Faulted program p addresses buffer heap action) : action.Rejection := by
   have blocked := certified.faulted_iff.mp actual
   cases certified with
-  | run _ | quiet _ _ => exact False.elim blocked
+  | run _ | quiet _ _ | query _ _ => exact False.elim blocked
   | logged _ _ _ _ _ => trivial
   | counts contract => exact contract.failure blocked
 
@@ -166,6 +174,7 @@ theorem ActionContract.progress
     cases certified with
     | run _ => exact Or.inl ⟨_, _, _, rfl, rfl, rfl⟩
     | quiet _ _ => exact Or.inl ⟨_, _, _, rfl, rfl, rfl⟩
+    | query _ _ => exact Or.inl ⟨_, _, _, rfl, rfl, rfl⟩
     | logged name effect args prepared called =>
       rename_i input heap ready callbackHeap request
       by_cases returning : ∃ value after, effect.execute args callbackHeap value after

@@ -4,41 +4,49 @@ import RumocaFMI3.MEMixedInterrupted
 import RumocaFMI3.ResetEnvironment
 import RumocaFMI3.CountMetadata
 import RumocaFMI3.NominalMetadata
+import RumocaFMI3.InstanceQueryEnvironment
+import RumocaFMI3.TerminationEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.MEMixedRun
 open CTree CMemory CBody CLiteral StaticFactory CCalls.Events
 
-/-- Source observations retain each success status and derivative equation.
-Rejected calls expose Error and callback events without validating failed outputs. -/
-inductive SourceObservations (model : Solve.Model source) : List Action →
+/-- Source observations retain each success status and derivative equation,
+and each query value of the current reference state. Rejected calls expose
+Error and callback events without validating failed outputs. -/
+inductive SourceObservations (model : Solve.Model source) : MENumericalHistory.ReferenceState → List Action →
     List (MENumericalHistory.Observation Invocation) → Prop where
-  | nil : SourceObservations model [] []
+  | nil : SourceObservations model reference [] []
   | run : MENumericalRun.DerivativeObservations source [action] head →
       (∀ observed ∈ head, observed.status = .integer 0 ∧ observed.events = []) →
-      SourceObservations model rest tail →
-      SourceObservations model (.run action :: rest) (head ++ tail)
-  | reject : SourceObservations model rest tail →
-      SourceObservations model (.reject request input :: rest) (⟨events, .integer 3, none⟩ :: tail)
-  | count : SourceObservations model rest tail →
-      SourceObservations model (.counts (.get events output) :: rest)
+      SourceObservations model ((Action.run action).next reference) rest tail →
+      SourceObservations model reference (.run action :: rest) (head ++ tail)
+  | reject : SourceObservations model ((Action.reject request input).next reference) rest tail →
+      SourceObservations model reference (.reject request input :: rest) (⟨events, .integer 3, none⟩ :: tail)
+  | count : SourceObservations model ((Action.counts (.get events output)).next reference) rest tail →
+      SourceObservations model reference (.counts (.get events output) :: rest)
         (MENumericalHistory.Observation.ok ((CountAccess.Request.get events output).expected model.prepareFMI3 0) :: tail)
-  | countRejected : SourceObservations model rest tail →
-      SourceObservations model (.counts (.reject which missing output) :: rest) (⟨events, .integer 3, none⟩ :: tail)
-  | nominal : SourceObservations model rest tail →
-      SourceObservations model (.nominals (.get output) :: rest)
+  | countRejected : SourceObservations model ((Action.counts (.reject which missing output)).next reference) rest tail →
+      SourceObservations model reference (.counts (.reject which missing output) :: rest) (⟨events, .integer 3, none⟩ :: tail)
+  | nominal : SourceObservations model ((Action.nominals (.get output)).next reference) rest tail →
+      SourceObservations model reference (.nominals (.get output) :: rest)
         (MENumericalHistory.Observation.ok ((NominalAccess.Request.get output).expected model.prepareFMI3 0) :: tail)
-  | nominalRejected : SourceObservations model rest tail →
-      SourceObservations model (.nominals (.reject access output count) :: rest) (⟨events, .integer 3, none⟩ :: tail)
-
-  | logging : request.failed = false → SourceObservations model rest tail →
-      SourceObservations model (.logging request :: rest) (MENumericalHistory.Observation.ok none :: tail)
-  | eventIndicators : request.failed = false → SourceObservations model rest tail →
-      SourceObservations model (.eventIndicators request :: rest) (MENumericalHistory.Observation.ok none :: tail)
-  | loggingRejected : request.failed = true → SourceObservations model rest tail →
-      SourceObservations model (.logging request :: rest) (⟨events, .integer 3, none⟩ :: tail)
-  | eventIndicatorsRejected : request.failed = true → SourceObservations model rest tail →
-      SourceObservations model (.eventIndicators request :: rest) (⟨events, .integer 3, none⟩ :: tail)
+  | nominalRejected : SourceObservations model ((Action.nominals (.reject access output count)).next reference) rest tail →
+      SourceObservations model reference (.nominals (.reject access output count) :: rest) (⟨events, .integer 3, none⟩ :: tail)
+  | logging : request.failed = false → SourceObservations model ((Action.logging request).next reference) rest tail →
+      SourceObservations model reference (.logging request :: rest) (MENumericalHistory.Observation.ok none :: tail)
+  | eventIndicators : request.failed = false →
+      SourceObservations model ((Action.eventIndicators request).next reference) rest tail →
+      SourceObservations model reference (.eventIndicators request :: rest) (MENumericalHistory.Observation.ok none :: tail)
+  | loggingRejected : request.failed = true → SourceObservations model ((Action.logging request).next reference) rest tail →
+      SourceObservations model reference (.logging request :: rest) (⟨events, .integer 3, none⟩ :: tail)
+  | eventIndicatorsRejected : request.failed = true →
+      SourceObservations model ((Action.eventIndicators request).next reference) rest tail →
+      SourceObservations model reference (.eventIndicators request :: rest) (⟨events, .integer 3, none⟩ :: tail)
+  | query : SourceObservations model (queried request reference) rest tail →
+      SourceObservations model reference (.query request :: rest)
+        (queryObservations [] (.integer 0) (request.expected model reference.state reference.control.history.time)
+          request.count ++ tail)
 theorem ActionContract.epochs_source [CInterface] {source : AST.Model} {program : Program Invocation}
     (model : Solve.Model source) (certified : ActionContract program p addresses buffer heap action returns blocked)
     (performed : Performed program p addresses buffer heap action observed after epochs) :
@@ -54,13 +62,14 @@ theorem ActionContract.epochs_source [CInterface] {source : AST.Model} {program 
   | nominals _ => intro epoch member; cases member
   | logging _ => intro epoch member; cases member
   | eventIndicators _ => intro epoch member; cases member
+  | query _ _ => intro epoch member; cases member
 /-- The actual completed script, including arbitrary observed statuses and
 callback returns, inherits the source equations and every reset's source IVP. -/
 theorem Trace.source [CInterface] {source : AST.Model} {program : Program Invocation}
     (model : Solve.Model source) {owners : SlotOwners.State objects.capacity} {capability : Logging.Capability}
     (certified : Trace model.prepareFMI3 objects owners capability program p addresses buffer heap enabled reference clock actions final finalClock)
     (completed : Completed program p addresses buffer heap actions observed after epochs) :
-    SourceObservations model actions observed ∧ MENumericalRun.InitializedEpochs source p epochs := by
+    SourceObservations model reference actions observed ∧ MENumericalRun.InitializedEpochs source p epochs := by
   induction completed generalizing enabled reference clock final finalClock with
   | nil => exact ⟨.nil, fun _ member => by cases member⟩
   | @cons heap action head middle headEpochs rest tail after tailEpochs performed _ ih =>
@@ -130,6 +139,11 @@ theorem Trace.source [CInterface] {source : AST.Model} {program : Program Invoca
             obtain ⟨events, values⟩ := values
             rw [values]
             exact .eventIndicatorsRejected failed sourceTail
+        | query request =>
+          have values := post.observation
+          change head = _ at values
+          rw [values]
+          exact .query sourceTail
       · intro epoch member
         rcases List.mem_append.mp member with member | member
         · exact epochHead epoch member
@@ -144,7 +158,7 @@ structure SourcePrefix [CInterface] (model : Solve.Model source)
   decomposition : actions = stop.done ++ stop.pending :: stop.rest
   configuration : capability.Configured stop.heap p ((loggingUpdate stop.done).getD enabled)
   retention : InitializationProtocol.Retention (loggingUpdate stop.done) p heap stop.heap
-  observations : SourceObservations model stop.done stop.observed
+  observations : SourceObservations model before stop.done stop.observed
   checkpoints : MENumericalRun.InitializedEpochs source p stop.epochs
   pending : ∃ middle middleClock,
     ReferenceTrace buffer before clock stop.done middle middleClock ∧
@@ -247,14 +261,19 @@ theorem runtime_history (compiled : compile input = .ok a)
             CReadOnly.Preserves heap after ∧
             (∀ q, MEFailure.Protected objects addresses buffer q → MENumericalRun.Outside p addresses buffer q →
               q ≠ p.member "logging" → after q = heap q) ∧
-            SourceObservations a.solve actions observed ∧ MENumericalRun.InitializedEpochs a.parsed.ast p epochs) ∧
+            SourceObservations a.solve reference actions observed ∧ MENumericalRun.InitializedEpochs a.parsed.ast p epochs) ∧
           ((∃ observed after epochs, Completed program p addresses buffer heap actions observed after epochs) ∨
             Stopped program p addresses buffer heap actions) ∧
           (∀ stop, Interrupted program p addresses buffer heap actions stop →
             SourcePrefix a.solve capability enabled heap p addresses buffer reference clock actions stop) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
-    _, _, _, nominalContract, states, derivative, _, _, initialization, _, _, _, _, time, entries, completed, discrete, _, loggingContract, eventContract, evaluationContract, _⟩ := build.adapter
+    _, _, _, nominalContract, states, derivative, getter, setter, initialization, _, _, _, termination, time, entries, completed,
+    discrete, _, loggingContract, eventContract, evaluationContract, absentContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
+  have queryPrepared : InstanceQuery.PreparedContract a.solve.prepareFMI3 sigs pool :=
+    ⟨Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made,
+      Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made,
+      fun ty write => (absentContract ty write).prepared pool made⟩
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
@@ -290,7 +309,11 @@ theorem runtime_history (compiled : compile input = .ok a)
     rw [actual]
     exact LiteralPreparation.function_bound _ sigs unique _ initialization.exitMember
   have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals logging eventIndicators literalBase firstBlock signed
-    program capability enabled actual compare bound reset enterDefined exitDefined heap p clock reference final finalClock addresses buffer actions owners
+    program capability enabled actual compare bound reset
+    (queryPrepared.quiet header objects firstBlock program actual
+      (TerminationEnvironment.quiet_correct header objects literals a.solve.prepareFMI3 program
+        (by rw [actual]; exact LiteralPreparation.function_bound _ sigs unique _ termination.member)))
+    enterDefined exitDefined heap p clock reference final finalClock addresses buffer actions owners
     required configured writable inPool represented readonly stored storage admitted requests policies readPolicies readerOutside separate
   refine ⟨certified, ?_, certified.progress, ?_⟩
   · intro observed after epochs executed

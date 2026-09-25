@@ -46,6 +46,85 @@ theorem Returned.of_frame [CInterface] {model : Solve.FMI3Model source} {objects
   · simpa only [unchanged] using keeps.configured configured
   · simpa only [unchanged] using keeps
 
+/-- The numerical invariant survives a query: every protected control, clock
+and output cell is framed, and the instance cells give the new trial state
+and mode. -/
+theorem queried_stored {request : InstanceQuery.Request} {objects : Objects}
+    (stored : MENumericalHistory.Stored heap p clock reference addresses buffer)
+    (inPool : p.block = objects.instances.block)
+    (unprotected : ∀ q, request.CallerRegion q → ¬ MEFailure.Protected objects addresses buffer q)
+    (frame : ∀ q, q ≠ StateProofs.stateAddress p → q ≠ p.member "mode" → ¬ request.CallerRegion q → after q = heap q)
+    (instanceAfter : Float64Access.Instance after p .me (request.nextMode reference.control.mode)
+      (request.nextState reference.state) clock.time) :
+    MENumericalHistory.Stored after p clock (queried request reference) addresses buffer := by
+  have guarded (q : Address) (shielded : MEFailure.Protected objects addresses buffer q) : ¬ request.CallerRegion q :=
+    fun caller => unprotected q caller shielded
+  have field (name : String) (different : name ≠ "mode") : after (p.member name) = heap (p.member name) :=
+    frame _ (Ne.symm (HistoryBodies.state_ne_field p name))
+      (fun same => different ((Address.member_inj _ _ _).mp same)) (guarded _ (Or.inl inPool))
+  have outputs (name : String) (member : name ∈ DiscreteCalls.names) : after (addresses name) = heap (addresses name) := by
+    apply frame _ _ _ (guarded _ (Or.inr (Or.inr (Or.inr ⟨name, member, rfl⟩))))
+    · intro same
+      exact stored.control.outside name member (by simpa [StateProofs.stateAddress] using congrArg Address.block same)
+    · intro same
+      exact stored.control.outside name member (by simpa using congrArg Address.block same)
+  refine ⟨?_, instanceAfter.state, ?_, stored.bufferOutside, stored.bufferSeparate⟩
+  · constructor
+    · simpa only [load, field "kind" (by decide)] using stored.control.kind
+    · exact instanceAfter.mode
+    · exact ⟨(field "time" (by decide)).trans stored.control.clockStored.time,
+        (field "timeMin" (by decide)).trans stored.control.clockStored.minimum,
+        (field "eventTime" (by decide)).trans stored.control.clockStored.eventTime,
+        (field "lastCompleted" (by decide)).trans stored.control.clockStored.lastCompleted⟩
+    · exact stored.control.history
+    · exact instanceAfter.represented
+    · simpa only [load, field "stopDefined" (by decide)] using stored.control.stopDefined
+    · intro stop bound
+      simpa only [load, field "stop" (by decide)] using stored.control.stopValue stop bound
+    · apply stored.control.buffers.transport
+      intro layout member
+      exact outputs layout.1 (List.mem_map.mpr ⟨layout, member, rfl⟩)
+    · exact stored.control.outside
+  · obtain ⟨old, cell⟩ := stored.bufferCell
+    refine ⟨old, (frame _ (Ne.symm stored.state_ne_buffer) (Ne.symm (stored.field_ne_buffer "mode"))
+      (guarded _ (Or.inr (Or.inr (Or.inl rfl))))).trans cell⟩
+
+/-- An accepted query is one quiet call; the numerical invariant, clock,
+logger configuration and every protected cell outside its effect survive. -/
+theorem query_correct [CInterface] {program : Program Invocation} {model : Solve.FMI3Model source}
+    {objects : Objects} {owners : SlotOwners.State objects.capacity} {capability : Logging.Capability}
+    (quiet : InstanceQuery.QuietContract model program) (request : InstanceQuery.Request)
+    (configured : capability.Configured heap p enabled)
+    (stored : MENumericalHistory.Stored heap p clock reference addresses buffer) (storage : Reset.Storage heap p)
+    (inPool : p.block = objects.instances.block) (represented : SlotOwners.Represents objects.flagsBlock heap owners)
+    (prepared : (Action.query request).Prepared objects heap addresses buffer)
+    (allowed : request.Allowed .me reference.control.mode) :
+    ∃ after, ActionContract program p addresses buffer heap (.query request)
+        (fun observed next checkpoints => observed = queryObservations [] (.integer 0) (request.readback after) request.count ∧
+          next = after ∧ checkpoints = []) False ∧
+      Returned model objects owners capability enabled p addresses buffer heap after reference clock (.query request)
+        (queryObservations [] (.integer 0) (request.readback after) request.count) := by
+  obtain ⟨callerStorage, separateInstances, unprotected⟩ := prepared
+  have separate := separateInstances.rebase inPool
+  have instanceStored : Float64Access.Instance heap p .me reference.control.mode reference.state clock.time :=
+    ⟨by simpa [Kind.code] using stored.control.kind, stored.control.mode, stored.stateCell,
+      by simp [load, stored.control.clockStored.time, HistoryProofs.cell, convert, Value.finite]⟩
+  obtain ⟨transferred, host, called, instanceAfter, readback, preserved, readonly, atomic, frame⟩ :=
+    request.step quiet instanceStored callerStorage separate allowed
+  have guarded (q : Address) (shielded : MEFailure.Protected objects addresses buffer q) : ¬ request.CallerRegion q :=
+    fun caller => unprotected q caller shielded
+  refine ⟨_, .query host called, ?_⟩
+  apply Returned.of_frame configured stored inPool rfl
+    (queried_stored stored inPool unprotected frame instanceAfter) (storage.preserved preserved)
+    (SlotOwners.ordinary_preserves represented atomic) _ readonly
+    (fun q shielded outside => frame q outside.1.2.1 outside.1.1.2.1 (guarded q shielded))
+    (fun region _ => preserved.on region)
+    (fun _ _ q _ outside (notCaller : ¬ (Action.query request).CallerRegion q) =>
+      frame q outside.1.2.1 outside.1.1.2.1 notCaller)
+  change _ = queryObservations [] (.integer 0)
+    (request.expected model.solve reference.state reference.control.history.time) request.count
+  rw [readback, stored.control.history.time]
+
 /-- A successful numerical action or restart retains its complete call
 certificate, all observations and the deterministic reference clock. -/
 theorem run_correct (header : CFenv.Header) (objects : Objects) (literals : CLiteralAddresses)
@@ -97,7 +176,7 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
       program.internal = LiteralPreparation.program model sigs →
       program.externals "strcmp" = some (CStringCalls.compareExternal (by rfl)) →
       capability.Bound program →
-      StaticReset.ExecutionContract program →
+      StaticReset.ExecutionContract program → InstanceQuery.QuietContract model program →
       program.internal.definitions InitializationCalls.signature.name = some (.tree InitializationCalls.function) →
       program.internal.definitions InitializationExit.signature.name = some (.tree (Runtime.function model InitializationExit.signature)) →
       ∀ heap p clock reference addresses buffer action (owners : SlotOwners.State objects.capacity),
@@ -112,7 +191,7 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
         ∀ observed after epochs, returns observed after epochs →
           Returned model objects owners capability enabled p addresses buffer heap after reference clock action observed := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
-  intro program capability enabled actual compare bound reset enterDefined exitDefined heap p clock reference addresses buffer action owners
+  intro program capability enabled actual compare bound reset quietQuery enterDefined exitDefined heap p clock reference addresses buffer action owners
     required configured writable inPool represented literals stored storage allowed ready
   let config := capability.meView enabled
   have valid : config.Valid program objects addresses buffer := capability.me_valid bound required enabled
@@ -124,6 +203,11 @@ theorem action_correct (header : CFenv.Header) (objects : Objects) (model : Solv
       ∀ args before value after, effect.execute args before value after → ∀ q, region q → after q = before q)) :
       config.FramePolicy region := capability.me_frame policy enabled
   cases action with
+  | query request =>
+    obtain ⟨after, called, post⟩ := query_correct quietQuery request configured stored storage inPool represented ready allowed
+    refine ⟨_, False, called, ?_⟩
+    rintro observed next checkpoints ⟨rfl, rfl, rfl⟩
+    exact post
   | counts request =>
     obtain ⟨outcomes, blocked, contract⟩ := MECountCalls.execution header objects model sigs pool counts
       literalBase firstBlock signed program config actual heap p clock reference addresses buffer request owners
@@ -296,7 +380,7 @@ theorem trace_correct (header : CFenv.Header) (objects : Objects) (model : Solve
     ∀ (program : Program Invocation) (capability : Logging.Capability) (enabled : Bool),
       program.internal = LiteralPreparation.program model sigs →
       program.externals "strcmp" = some (CStringCalls.compareExternal (by rfl)) →
-      capability.Bound program → StaticReset.ExecutionContract program →
+      capability.Bound program → StaticReset.ExecutionContract program → InstanceQuery.QuietContract model program →
       program.internal.definitions InitializationCalls.signature.name = some (.tree InitializationCalls.function) →
       program.internal.definitions InitializationExit.signature.name = some (.tree (Runtime.function model InitializationExit.signature)) →
     ∀ (heap : Heap) (p : Address) (clock : Time.Clock) (reference final : MENumericalHistory.ReferenceState)
@@ -320,14 +404,14 @@ theorem trace_correct (header : CFenv.Header) (objects : Objects) (model : Solve
       (∀ writer ∈ actions, ∀ reader ∈ actions, ∀ q, reader.ReaderRegion q → ¬ writer.CallerRegion q) →
       Trace model objects owners capability program p addresses buffer heap enabled reference clock actions final finalClock := by
   letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
-  intro program capability enabled actual compare bound reset enterDefined exitDefined heap p clock reference final finalClock
+  intro program capability enabled actual compare bound reset quietQuery enterDefined exitDefined heap p clock reference final finalClock
     addresses buffer actions owners required configured writable inPool represented literals stored storage admitted ready
     policies readPolicies readerOutside separate
   induction admitted generalizing heap enabled with
   | nil => exact .nil stored storage configured represented
   | @cons rest final finalClock before clock action accepted _ ih =>
     obtain ⟨returns, blocked, called, returned⟩ := action_correct header objects model sigs pool prepared counts nominals logging eventIndicators
-      literalBase firstBlock signed program capability enabled actual compare bound reset enterDefined exitDefined
+      literalBase firstBlock signed program capability enabled actual compare bound reset quietQuery enterDefined exitDefined
       heap p clock before addresses buffer action owners required configured writable inPool represented literals stored storage
       accepted (ready _ (by simp))
     refine .cons called returned ?_

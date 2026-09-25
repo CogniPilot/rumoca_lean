@@ -20,7 +20,8 @@ structure CycleEvidence (model : Solve.Model source) (p : Address) (cycle : Cycl
     (initial : List (Float64Access.Observation Invocation)) (checkpoints : List Heap)
     (observed : List (MENumericalHistory.Observation Invocation)) (epochs : List MENumericalRun.Epoch) : Prop where
   initialization : InitializationEvidence model p cycle.initialization initial checkpoints
-  observations : MEMixedRun.SourceObservations model cycle.simulation observed
+  observations : MEMixedRun.SourceObservations model (InitializationProtocol.meReference cycle.state cycle.args)
+    cycle.simulation observed
   sourceEpochs : MENumericalRun.InitializedEpochs source p epochs
 
 /-- All completed initialization and ME observations survive later resets.

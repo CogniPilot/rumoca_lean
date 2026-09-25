@@ -2,6 +2,7 @@ import Rumoca.FMI3CreatedInitializationProtocol
 import Rumoca.FMI3MEMixedRun
 import RumocaFMI3.InitializationProtocolRunFrames
 import RumocaFMI3.LoggingCapabilityCreation
+import RumocaFMI3.InstanceQueryEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
@@ -24,7 +25,7 @@ structure MEContinuation [CInterface] (model : Solve.Model source) (objects : Ob
     Reset.Storage after (objects.instances.index slot.val) ∧
     capability.Configured after (objects.instances.index slot.val) ((MEMixedRun.loggingUpdate actions).getD enabled) ∧
     Retention (MEMixedRun.loggingUpdate actions) (objects.instances.index slot.val) exited after ∧
-    MEMixedRun.SourceObservations model actions observed ∧
+    MEMixedRun.SourceObservations model initial actions observed ∧
     MENumericalRun.InitializedEpochs source (objects.instances.index slot.val) epochs ∧
     CReadOnly.Preserves original after ∧
     LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .me final.control.mode ∧
@@ -46,6 +47,7 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
     (nominals : NominalEnvironment.PreparedContract model.prepareFMI3 sigs pool)
     (loggingPrepared : DebugLogging.PreparedContract model.prepareFMI3 sigs pool)
     (eventPrepared : EventIndicatorEnvironment.PreparedContract model.prepareFMI3 sigs pool)
+    (queries : InstanceQuery.PreparedContract model.prepareFMI3 sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation) (tag : CAtomicBoolean.Calls.Event → Invocation),
@@ -104,7 +106,8 @@ theorem CreatedSourceContract.me_continuation {source : AST.Model} (model : Solv
       (fun q inside => invariant.caller q (regions action member q inside))
       (fun q inside => invariant.readerFrame q (included action member q inside))
   have certified := MEMixedRun.trace_correct header objects model.prepareFMI3 sigs pool prepared counts nominals loggingPrepared eventPrepared baseHeap firstBlock signed
-    program capability ((loggingUpdate initialization).getD factoryArgs.logging) actual compare bound reset enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
+    program capability ((loggingUpdate initialization).getD factoryArgs.logging) actual compare bound reset
+      (queries.quiet header objects firstBlock program actual termination) enterDefined exitDefined exited p _ _ final finalClock addresses buffer actions
       (SlotOwners.update owners slot (some owner)) required configured writable rfl invariant.ownership invariant.readonly
       stored invariant.stored.reset admitted current policies readPolicies readerOutside separateReaders
   refine ⟨certified, ?_⟩

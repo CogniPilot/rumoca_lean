@@ -8,3 +8,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.MEMixedRun.trace_correct
 #audit axioms Rumoca.FMI3.MEMixedRun.retained_field_outside
 #audit axioms Rumoca.FMI3.MEMixedRun.Returned.of_frame
+#audit axioms Rumoca.FMI3.MEMixedRun.queried_stored
+#audit axioms Rumoca.FMI3.MEMixedRun.query_correct

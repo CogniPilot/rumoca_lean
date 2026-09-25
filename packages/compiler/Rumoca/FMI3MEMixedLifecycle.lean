@@ -5,6 +5,7 @@ import RumocaFMI3.FactoryEnvironment
 import RumocaFMI3.MEMixedLifecycle
 import RumocaFMI3.InitializationStorage
 import RumocaFMI3.LoggingCapabilityCreation
+import RumocaFMI3.InstanceQueryEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.MEMixedRun
@@ -106,7 +107,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
               MENumericalHistory.Stored after p finalClock final addresses buffer ∧ Reset.Storage after p ∧
               capability.Configured after p ((loggingUpdate actions).getD args.logging) ∧
               InitializationProtocol.Retention (loggingUpdate actions) p live after ∧
-              SourceObservations a.solve actions observed ∧
+              SourceObservations a.solve (MENumericalHistory.ReferenceState.initial initArgs initial) actions observed ∧
               MENumericalRun.InitializedEpochs a.parsed.ast p epochs ∧ CReadOnly.Preserves heap after ∧
               LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner))
                 owner .me final.control.mode ∧
@@ -117,8 +118,13 @@ theorem runtime_create_release (compiled : compile input = .ok a)
                 q ≠ AtomicSlots.address objects.flagsBlock slot →
                 LifecycleRelease.releasedHeap after objects slot final.control.mode q = heap q))) := by
   obtain ⟨sigs, unique, resetMember, printed, _, functions, _, _, queries, ready,
-    _, _, _, nominalContract, states, derivative, _, _, initialization, _, factories, runtime, termination, time, entries, completed, discrete, _, loggingContract, eventContract, evaluationContract, _⟩ := build.adapter
+    _, _, _, nominalContract, states, derivative, getter, setter, initialization, _, factories, runtime, termination, time, entries,
+    completed, discrete, _, loggingContract, eventContract, evaluationContract, absentContract, _⟩ := build.adapter
   obtain ⟨pool, made⟩ := Option.isSome_iff_exists.mp ready
+  have queryPrepared : InstanceQuery.PreparedContract a.solve.prepareFMI3 sigs pool :=
+    ⟨Float64Environment.prepared_correct a.solve.prepareFMI3 sigs unique getter.member getter.numerical.fresh made,
+      Float64SetEnvironment.prepared_correct a.solve.prepareFMI3 sigs unique setter.member made,
+      fun ty write => (absentContract ty write).prepared pool made⟩
   have counts : ∀ events, CountEnvironment.PreparedContract a.solve.prepareFMI3 sigs events pool := by
     letI : StaticLiterals := ⟨fun _ => none⟩
     exact fun events => (queries inferInstance events).prepared pool made
@@ -230,7 +236,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
           exact notRecord (same ▸ p.member_in_record name)
         have notFlag : q ≠ AtomicSlots.address objects.flagsBlock slot := by
           cases action with
-          | run _ | reject _ _ | counts _ | nominals _ | eventIndicators _ => cases inside
+          | run _ | reject _ _ | counts _ | nominals _ | eventIndicators _ | query _ => cases inside
           | logging request =>
             have borrowed : InitializationProtocol.ReadBank.Stored [request] heap := by
               intro selected selectedMember
@@ -242,7 +248,11 @@ theorem runtime_create_release (compiled : compile input = .ok a)
           (field "eventTime") (field "lastCompleted") (field "stop") (field "stopDefined") (field "mode")).trans
           (createdFrame q notRecord notFlag))
   have certified := trace_correct header objects a.solve.prepareFMI3 sigs pool prepared counts nominals logging eventIndicators before firstBlock signed
-    program capability args.logging actual compare bound reset enterDefined exitDefined initializedHeap p _ _ final finalClock addresses buffer actions
+    program capability args.logging actual compare bound reset
+    (queryPrepared.quiet header objects firstBlock program actual
+      (TerminationEnvironment.quiet_correct header objects (pool.addresses firstBlock) a.solve.prepareFMI3 program
+        (by rw [actual]; exact LiteralPreparation.function_bound _ sigs unique _ termination.member)))
+    enterDefined exitDefined initializedHeap p _ _ final finalClock addresses buffer actions
     (SlotOwners.update owners slot (some owner)) required initialConfig initialWritable rfl initialOwners
     (literalFrame.trans prefixReadonly) initialStored initialReset admitted current policies readPolicies readOutside separateReaders
   have initialized := InitializationCalls.exited_source_initialized a.solve.prepareFMI3 live p initArgs .me ⟨initial⟩ loaded

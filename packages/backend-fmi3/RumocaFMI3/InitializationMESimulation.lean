@@ -1,6 +1,7 @@
 import RumocaFMI3.InitializationSimulation
 import RumocaFMI3.MEMixedExecution
 import RumocaFMI3.MEMixedProgress
+import RumocaFMI3.InstanceQueryEnvironment
 
 noncomputable section
 namespace Rumoca.FMI3.InitializationProtocol
@@ -36,6 +37,7 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
     (logging : DebugLogging.PreparedContract model sigs pool)
     (eventIndicators : EventIndicatorEnvironment.PreparedContract model sigs pool)
     (lifecycle : LifecycleEnvironment.PreparedContract model sigs)
+    (queries : InstanceQuery.PreparedContract model sigs pool)
     (baseHeap : Heap) (firstBlock : Nat) (signed : Bool) :
     letI : CInterface := RuntimeEnvironment.interface header objects (pool.addresses firstBlock)
     ∀ (program : Program Invocation), program.internal = LiteralPreparation.program model sigs →
@@ -58,7 +60,7 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
   intro program actual compare retained owners original heap p addresses buffer before final clock finalClock actions readers
     persistent inPool guarded readerGuarded readerSafe stored resetStorage admitted requests regions included
   obtain ⟨capability, enabled, configured, bound, required, writable⟩ := persistent.logging
-  obtain ⟨reset, enterDefined, exitDefined, _, _⟩ := lifecycle.execution header objects (pool.addresses firstBlock) program actual
+  obtain ⟨reset, enterDefined, exitDefined, termination, _⟩ := lifecycle.execution header objects (pool.addresses firstBlock) program actual
   have memoryPolicy (region : Address → Prop)
       (subset : ∀ q, region q → Float64Rejection.Protected objects retained q) :
       capability.Requires (fun _ effect => ∀ args before value after,
@@ -83,7 +85,8 @@ theorem me_execution (header : CFenv.Header) (objects : Objects) (model : Solve.
       (fun q inside => persistent.caller q (regions action member q inside))
       (fun q inside => persistent.readerFrame q (included action member q inside))
   have certified := MEMixedRun.trace_correct header objects model sigs pool prepared counts nominals logging eventIndicators baseHeap firstBlock signed
-    program capability enabled actual compare bound reset enterDefined exitDefined heap p clock before final finalClock
+    program capability enabled actual compare bound reset (queries.quiet header objects firstBlock program actual termination)
+    enterDefined exitDefined heap p clock before final finalClock
     addresses buffer actions owners meRequired configured writable inPool persistent.ownership persistent.readonly
     stored resetStorage admitted current
     (fun action member => memoryPolicy action.CallerRegion (regions action member))
