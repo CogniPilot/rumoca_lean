@@ -1,4 +1,5 @@
 import RumocaC.PrinterCertificate
+import RumocaC.FeatureCertificate
 import Rumoca.FMI3StateProofs
 import Rumoca.FMI3DerivativeProofs
 import Rumoca.FMI3Float64Proofs
@@ -73,6 +74,14 @@ elab "verify_fmi3_build_files" : command => do
   let xml := Syntax.mkStrLit description
   let md := Syntax.mkStrLit metadata
   let chars ← quoteCharacters `Rumoca.CheckedFMI3Files.adapter_chars adapter
+  -- Feature inventories of the actual adapter and private-kernel bytes: no
+  -- allocation, no excluded feature. The kernel characters equal the checked `model.c`.
+  discard <| CFeatures.Certificate.certify `Rumoca.CheckedFMI3Files.adapter_chars chars adapter
+  let modelChars ← quoteCharacters `Rumoca.CheckedFMI3Files.model_chars c
+  discard <| CFeatures.Certificate.certify `Rumoca.CheckedFMI3Files.model_chars modelChars c
+  let modelCharsEq := mkIdent `Rumoca.CheckedFMI3Files.model_chars_eq
+  elabCommand (← `(command| theorem $modelCharsEq:ident : $modelChars = ($(Syntax.mkStrLit c)).toList := by
+    decide +kernel))
   let header ← IO.FS.readFile "packages/backend-fmi3/vendor/fmi3/fmi3FunctionTypes.h"
   let .ok signatures := FMI3.Header.signatures header | throwError "invalid FMI signature header"
   let adapterCertificate ← FMI3AdapterCertificate.certify sourceName source adapter signatures chars

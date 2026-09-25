@@ -1,4 +1,5 @@
 import Rumoca.EFMIArtifactCheck
+import RumocaC.FeatureCertificate
 import Rumoca.EFMIProductionProofs
 import RumocaEFMI.Directory
 
@@ -20,6 +21,14 @@ def check (input : EFMICheckOptions.Code) (c : String) : CommandElabM Unit := do
   let inputTerm ← input.inputTerm
   let alg := Syntax.mkStrLit algorithm
   let out := Syntax.mkStrLit c
+  -- Feature inventory of the actual Production C bytes: no allocation, no excluded
+  -- feature. The quoted characters equal the checked Production C member.
+  let productionChars ← CTree.Printer.Certificate.quoteCharacters
+    `Rumoca.CheckedEFMIFiles.production_chars c
+  discard <| CFeatures.Certificate.certify `Rumoca.CheckedEFMIFiles.production_chars productionChars c
+  let productionCharsEq := mkIdent `Rumoca.CheckedEFMIFiles.production_chars_eq
+  elabCommand (← `(command| theorem $productionCharsEq:ident : $productionChars = ($out).toList := by
+    decide +kernel))
   let ebnf := Syntax.mkStrLit grammar
   let algEbnf := Syntax.mkStrLit algGrammar
   let algorithmRoot := mkIdent `Rumoca.CheckedEFMIFiles.source_to_algorithm

@@ -1,4 +1,5 @@
 import RumocaC.PrinterCertificate
+import RumocaC.FeatureCertificate
 import Rumoca.FMI3AdapterCertificate
 import Rumoca.CertificateOptions
 import RumocaFMI3.Header
@@ -144,6 +145,8 @@ def run (p : ProfileBuildInputs) : CommandElabM Unit := do
     theorem $preparedMd:ident : $(p.preparedMdLhs) = $mdTreeId := by rfl))
   -- Adapter byte + contract certificate.
   let adapterChars ← quoteCharacters (p.base.str "adapter_chars") adapter
+  -- Feature inventory of the actual adapter bytes: no allocation, no excluded feature.
+  discard <| CFeatures.Certificate.certify (p.base.str "adapter_chars") adapterChars adapter
   let (adapterContract, adapterArtifact) ← p.adapterCertify adapter signatures adapterChars
   -- model.c byte certificate. Fragment 0 is a fixed string literal; the render
   -- fragments are each a reachable `CTree.Function`'s render, checked against its
@@ -152,6 +155,7 @@ def run (p : ProfileBuildInputs) : CommandElabM Unit := do
   let renderFuncTerms := p.renderFuncTerms
   let renderFuncVals := p.renderFuncVals
   let modelChars ← quoteCharacters (base.str "model_chars") modelC
+  discard <| CFeatures.Certificate.certify (base.str "model_chars") modelChars modelC
   let mut pieceCharIdents : Array Ident := #[]
   let mut pieceEqs : Array Ident := #[]
   let mut pieceLengths : Array Nat := #[]
