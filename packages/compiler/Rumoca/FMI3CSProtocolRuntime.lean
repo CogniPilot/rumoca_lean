@@ -9,9 +9,12 @@ open CTree CMemory CLiteral CStringMemory StaticFactory CCalls.Events
 creation under an explicit slot owner, every admitted initialization/simulation
 history with its exact statuses, readbacks and callback events, and release by
 fmi3FreeInstance from any state or, where accepted, fmi3Terminate followed by
-fmi3FreeInstance. The original owner map is restored; other instances, the
-static pool and the literal pool are preserved outside the declared caller
-regions. Creation, simulation and release share one prepared program. -/
+fmi3FreeInstance. Host ownership places every caller cell outside the static
+instance pool (`Resources`, the output storage and `Plan.PoolSeparate`); under
+it every other instance record is preserved unconditionally. The original owner
+map is restored, and this instance frames the literal pool and every cell outside
+its declared caller regions. Creation, simulation and release share one
+prepared program. -/
 abbrev Lifetime (a : Artifact input) (c description adapter metadata : String) : Prop :=
     Rumoca.ArtifactContract a c .internal ∧
     Float64Metadata.Contract a.solve.prepareFMI3 metadata ∧ Float64SetMetadata.Contract a.parsed.ast metadata ∧
@@ -63,6 +66,7 @@ abbrev Lifetime (a : Artifact input) (c description adapter metadata : String) :
               InitializationProtocol.CSOutputsGuarded objects retained buffers →
               (∀ q, readers.Region q → CSRun.Outside p buffers q) →
               InitializationProtocol.FactoryLogPolicy program objects retained factoryArgs →
+              plan.PoolSeparate objects →
               Admitted header objects retained heap p access buffers readers plan →
               Contract a.solve.prepareFMI3 header program objects retained (SlotOwners.update owners slot (some owner)) heap
                 (pool.install baseHeap firstBlock signed) live p access buffers plan readers ∧
@@ -77,7 +81,7 @@ abbrev Lifetime (a : Artifact input) (c description adapter metadata : String) :
                   q ≠ AtomicSlots.address objects.flagsBlock slot →
                   InitializationProtocol.freedHeap after objects slot q = heap q) ∧
                 (∀ other : Fin objects.capacity, other ≠ slot → ∀ q, (objects.instances.index other.val).InRecord q →
-                  plan.Outside p access buffers q → InitializationProtocol.freedHeap after objects slot q = heap q) ∧
+                  InitializationProtocol.freedHeap after objects slot q = heap q) ∧
                 (plan.Finished →
                   LifecycleRelease.Released objects program tag after slot (SlotOwners.update owners slot (some owner)) owner .cs plan.mode ∧
                   SlotOwners.Represents objects.flagsBlock (LifecycleRelease.releasedHeap after objects slot plan.mode) owners ∧
@@ -85,7 +89,7 @@ abbrev Lifetime (a : Artifact input) (c description adapter metadata : String) :
                     q ≠ AtomicSlots.address objects.flagsBlock slot →
                     LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q) ∧
                   (∀ other : Fin objects.capacity, other ≠ slot → ∀ q, (objects.instances.index other.val).InRecord q →
-                    plan.Outside p access buffers q → LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q))
+                    LifecycleRelease.releasedHeap after objects slot plan.mode q = heap q))
 
 /-- Actual source-bound creation, repeated initialization/simulation cycles,
 and final release share one prepared program and literal pool. Every resource
@@ -109,7 +113,7 @@ theorem runtime_create_release (compiled : compile input = .ok a)
       owners represented available owner
   let p := objects.instances.index slot.val
   refine ⟨trace, slot, live, initial, work, reserved, created, loaded, agreement, creation, ?_⟩
-  intro retained access buffers plan readers resources outputs guarded readerOutside logging admitted
+  intro retained access buffers plan readers resources outputs guarded readerOutside logging owned admitted
   have creationReadonly := termination_preserves ((creation _).mpr rfl)
   have readerFrame := resources.readerInputs.creation_frame represented resources.readerGuarded creationFrame
   have invariant := InitializationProtocol.Invariant.created objects created preserved (literalFrame.trans creationReadonly) logging readerFrame
@@ -145,7 +149,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
     discharged, freed, freedOwners, ?_, ?_, ?_⟩
   · intro q inside outside notFlag
     exact (freedFrame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag)
-  · intro other different q inside outside
+  · intro other different q inside
+    have outside := Plan.outside_other objects different resources.separate outputs plan owned inside
     obtain ⟨pooled, _, notFlag⟩ := InitializationProtocol.other_instance objects different inside
     exact (freedFrame q (Or.inl pooled) outside notFlag).trans (creationFrame q outside.not_record notFlag)
   intro finished
@@ -156,7 +161,8 @@ theorem runtime_create_release (compiled : compile input = .ok a)
   refine ⟨released, restored, ?_, ?_⟩
   · intro q inside outside notFlag
     exact (frame q inside outside notFlag).trans (creationFrame q outside.not_record notFlag)
-  · intro other different q inside outside
+  · intro other different q inside
+    have outside := Plan.outside_other objects different resources.separate outputs plan owned inside
     obtain ⟨pooled, _, notFlag⟩ := InitializationProtocol.other_instance objects different inside
     exact (frame q (Or.inl pooled) outside notFlag).trans (creationFrame q outside.not_record notFlag)
 

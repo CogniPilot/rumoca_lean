@@ -151,3 +151,38 @@ theorem Admitted.can_finish (admitted : Admitted header objects retained origina
 
 end Rumoca.FMI3.CSProtocol
 end
+
+noncomputable section
+namespace Rumoca.FMI3.CSProtocol
+open CMemory StaticFactory
+
+/-- Host ownership of every initialization segment's caller cells. -/
+def Plan.PoolSeparate (objects : Objects) : Plan → Prop
+  | .finish actions _ => ∀ action ∈ actions, action.PoolSeparate objects
+  | .last cycle => ∀ action ∈ cycle.initialization, action.PoolSeparate objects
+  | .next cycle following => (∀ action ∈ cycle.initialization, action.PoolSeparate objects) ∧
+      following.PoolSeparate objects
+
+/-- Under host ownership, every cell of another instance record lies outside
+all caller regions of an owned plan. -/
+theorem Plan.outside_other (objects : Objects) {slot other : Fin objects.capacity} (different : other ≠ slot)
+    (separate : access.Separate (objects.instances.index slot.val))
+    (outputs : StepArguments.Storage heap (objects.instances.index slot.val) buffers)
+    (plan : Plan) (owned : plan.PoolSeparate objects)
+    (inside : (objects.instances.index other.val).InRecord q) :
+    plan.Outside (objects.instances.index slot.val) access buffers q := by
+  obtain ⟨pooled, notRecord, _⟩ := InitializationProtocol.other_instance objects different inside
+  have step : CSRun.Outside (objects.instances.index slot.val) buffers q := by
+    refine ⟨notRecord, ?_, ?_, ?_, ?_⟩ <;> intro same <;> subst same
+    · exact outputs.outsideEvent pooled
+    · exact outputs.outsideTerminate pooled
+    · exact outputs.outsideEarly pooled
+    · exact outputs.outsideLast pooled
+  induction plan with
+  | finish actions _ => exact InitializationProtocol.untouched_other objects different separate owned inside
+  | last cycle => exact ⟨InitializationProtocol.untouched_other objects different separate owned inside, step⟩
+  | next cycle following ih =>
+    exact ⟨InitializationProtocol.untouched_other objects different separate owned.1 inside, step, ih owned.2⟩
+
+end Rumoca.FMI3.CSProtocol
+end

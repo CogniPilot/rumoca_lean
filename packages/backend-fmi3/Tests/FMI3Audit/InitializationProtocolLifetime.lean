@@ -8,3 +8,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.InitializationProtocol.Completed.release
 #audit axioms Rumoca.FMI3.InitializationProtocol.freed_correct
 #audit axioms Rumoca.FMI3.InitializationProtocol.other_instance
+#audit axioms Rumoca.FMI3.InitializationProtocol.untouched_other

@@ -151,3 +151,43 @@ theorem Plan.Outside.not_record {plan : Plan} {p q : Address}
 
 end Rumoca.FMI3.MEProtocol
 end
+
+noncomputable section
+namespace Rumoca.FMI3.MEProtocol
+open CMemory StaticFactory
+
+/-- Host ownership of every initialization segment's caller cells. -/
+def Plan.PoolSeparate (objects : Objects) : Plan → Prop
+  | .finish actions _ => ∀ action ∈ actions, action.PoolSeparate objects
+  | .last cycle => ∀ action ∈ cycle.initialization, action.PoolSeparate objects
+  | .next cycle following => (∀ action ∈ cycle.initialization, action.PoolSeparate objects) ∧
+      following.PoolSeparate objects
+
+/-- Under host ownership, every cell of another instance record lies outside
+all caller regions of an owned plan. -/
+theorem Plan.outside_other (objects : Objects) {slot other : Fin objects.capacity} (different : other ≠ slot)
+    (separate : access.Separate (objects.instances.index slot.val))
+    (outputs : MENumericalHistory.CallerStorage heap (objects.instances.index slot.val) addresses buffer)
+    (plan : Plan) (owned : plan.PoolSeparate objects)
+    (inside : (objects.instances.index other.val).InRecord q) :
+    plan.Outside (objects.instances.index slot.val) access addresses buffer q := by
+  obtain ⟨pooled, notRecord, _⟩ := InitializationProtocol.other_instance objects different inside
+  have field (name : String) : q ≠ (objects.instances.index slot.val).member name :=
+    fun same => notRecord (same ▸ Address.member_in_record _ name)
+  have step : MENumericalRun.Outside (objects.instances.index slot.val) addresses buffer q := by
+    refine ⟨⟨⟨field "time", field "mode", field "eventTime", field "timeMin", field "lastCompleted", ?_⟩,
+      fun same => notRecord (same ▸ (Address.member_in_record _ "model").member "x"), ?_⟩, field "stop", field "stopDefined"⟩
+    · intro name member same
+      subst same
+      exact outputs.outside name member pooled
+    · intro same
+      subst same
+      exact outputs.bufferOutside pooled
+  induction plan with
+  | finish actions _ => exact InitializationProtocol.untouched_other objects different separate owned inside
+  | last cycle => exact ⟨InitializationProtocol.untouched_other objects different separate owned inside, step⟩
+  | next cycle following ih =>
+    exact ⟨InitializationProtocol.untouched_other objects different separate owned.1 inside, step, ih owned.2⟩
+
+end Rumoca.FMI3.MEProtocol
+end

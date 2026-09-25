@@ -99,3 +99,27 @@ theorem other_instance (objects : Objects) {slot other : Fin objects.capacity} (
 
 end Rumoca.FMI3.InitializationProtocol
 end
+
+noncomputable section
+namespace Rumoca.FMI3.InitializationProtocol
+open CMemory StaticFactory
+
+/-- Host ownership of caller cells: every cell an initialization action may
+write lies outside the static instance pool. -/
+def Action.PoolSeparate (objects : Objects) (action : Action) : Prop :=
+  ∀ q, ¬ action.Outside q → q.block ≠ objects.instances.block
+
+/-- Cells of another instance record are untouched by an owned
+initialization segment of this instance. -/
+theorem untouched_other (objects : Objects) {slot other : Fin objects.capacity} (different : other ≠ slot)
+    (separate : buffers.Separate (objects.instances.index slot.val))
+    (owned : ∀ action ∈ actions, action.PoolSeparate objects)
+    (inside : (objects.instances.index other.val).InRecord q) :
+    Untouched (objects.instances.index slot.val) buffers actions q := by
+  obtain ⟨pooled, notRecord, _⟩ := other_instance objects different inside
+  refine ⟨notRecord, Float64Access.instance_outside separate pooled, ?_⟩
+  intro action member
+  exact Classical.byContradiction fun touched => owned action member q touched pooled
+
+end Rumoca.FMI3.InitializationProtocol
+end
