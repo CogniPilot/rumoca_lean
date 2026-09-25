@@ -232,6 +232,205 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### GALEC error signaling (N01 repair) - 2026-09-24; stage OPEN
+
+Recurring whole-subset review for the GALEC grammar growth that repairs N01
+(`dev/numerical-outcomes-review.md`, "Concrete finding N01" and "Closure
+criteria"). Reviewed at `b20e6d4` with the uncommitted MISRA `isfinite`
+patch (backend-c/backend-fmi3 only, under its own gate
+`build/misra-isfinite-gate/`); no grammar, action, core, emitter or artifact
+file is changed by this record and no gate result is claimed. It retains the
+clause mappings, restricted interpretations and open findings of the GALEC
+loop cutover record above; it adds one construct.
+
+Slice construct: eFMI §3.2.5 §1 exposed error signaling, admitted as one
+construct (method `signals` interface, `signal` statement, `if`/`elseif`/`else`
+with `isFinite(e)` or `signal in S` conditions). The pinned rules make the
+parts jointly well-formed and none is admissible alone: a signal statement
+without a matching interface violates §1.3 (2965); an interface without a
+reachable signal is invalid (3397); a check without a preceding reachable
+signal violates §1.4 (2992); a check exists only as an if branch-condition
+(2860-2868). "One construct per spiral" counts language features with a joint
+well-formedness rule, not EBNF productions. A split (for example `if` and
+`isFinite` first) would need a knowingly temporary DoStep policy without an
+exposed signal and is not adopted.
+
+| Required record | Entire admitted subset, evidence and open obligations |
+| --- | --- |
+| Scope and identity | Unchanged admitted sources and products: scalar Integrator C/FMU/Algorithm Code/eFMU; fixed extent-two TensorSquare FMU/Algorithm Code/eFMU (no standalone C); pinned two-state ConstantRates FMU only. No new Modelica case, extent, rank, rate, type, operator or literal value. New GALEC surface, all emitted only in the tensor DoStep: method signal interface, `if`/`elseif`/`else`, error-signal statement, error-signal check, and the single Boolean builtin `isFinite`. Scalar Algorithm Code and tensor Startup/Recalibrate text are unchanged (an empty interface prints nothing). |
+| Architecture continuity | Same general start-symbol `block` grammar on the reusable in-tree LALR engine with generated certificates; rule count 20 -> 24, canonical/LALR state counts (471/121) regenerated and re-certified. Admission stays core static semantics over the generic AST (`packages/core/RumocaCore/GALEC/Elaboration/**`): only the six predefined signals; only `signal in S1, ..., Sn` checks (closure, `not in`, unrestricted and `or` fallback forms parse and are rejected, each with a certified rejection); only `isFinite(e)` as a Boolean condition with `e` an admitted Real expression (every other callee, including `jacobian`, and every call in Real context stay rejected); §1.5 reachability computed once over the AST (loops as a finite fixed point over six signals); method interface = out-reachable set of the imaginary final statement. One owned signal vocabulary (`Signal`, canonical spelling, §1.6 bit, `encode`) next to `GALEC/Names.lean`; the Production status constant `2` is `encode {OVERFLOW}`, not an emitter literal. Every computed non-literal value is guarded explicitly in Algorithm Code (`isFinite(self.u[k] * self.u[k])` and `isFinite(self.u[k] + self.u[k])`, both in the preflight loop before any write). Production C realizes the checks with the shared read-only preflight parametrized by operation: the existing product variant `rumoca_tensor_mul_finite` (`ProductPreflight.function`, `call_correct` on the eFMI machine) and a sum variant instantiated from the same `FinitePreflight` segment mechanism and the one shared `FiniteScan` iteration; no second scanner design, no inline copy. The parametrization must render the product variant byte-identically, so FMU bytes are unchanged. The eFMI chain does not use the finite-square-to-finite-sum lemma; backend-efmi does not import backend-fmi3 (docs/layout.md). |
+| Normative baseline | MLS 3.7, FMI 3.0.2 ME/CS, eFMI 1.0.0 Beta 1 (candidate draft, 9683), MISRA C:2025 (user PDF `~/Documents/MISRA-C-2025.pdf`, Dir 4.15 printed pp. 32-33); pinned vendor schemas/headers unchanged. Extract `build/standards-review/efmi.txt` SHA-256 `2e5aff94511f8499d49a12726085335a3b470fe63950dc26ce4b4407f328f4f9` (9,683 lines) verified at review time; reviewed pre-change `packages/galec-parser/grammar/GALEC.ebnf` SHA-256 `33f6055847967966b8048322dba798c8fca0751952e6e3446c39f286d1897f99`; vendored `efmiAlgorithmCodeManifest.xsd` SHA-256 `01da9ba5687ecdd671ce90811b11d5c39e448e8c5bd9b9b1d03c4000aec81548` (`Signals` optional, `Signal` one or more, six-name enumeration, lines 38-66). The post-change EBNF hash is recorded with the gate. TODO-labelled productions/rules stay labelled; each restricted interpretation adopted is listed below. |
+| MLS | No Modelica EBNF, source or semantics change; all retained clause mappings of the cutover record stand. MLS 3.7 defines no overflow signal; the real source RHS `u^2` and its derivative stay ideal-Real, and non-finite encoded results are numerical outcomes of the target, never real derivative witnesses. Source `jacobian` remains an explicit extension. S01/SR08 and ideal-Real/finite-storage limits remain open. |
+| FMI | No FMI source, adapter, kernel, XML or archive byte change; the FMI ME derivative-getter preflight and Discard contract keep their statements and bytes; only the backend-c preflight definition is generalized by operation, with the product instance unchanged. §§2.2.4, 2.3, 2.4, 2.4.7.2, 2.4.10, 2.5.1.3, 3.2.1 and 4.2.1 obligations and existing finite/history/native limitations remain. FMI CS Euler-update overflow (`EulerPreflight*`) is not touched and stays a separate open part of N01's review scope. |
+| eFMI | §3.2.5 §1.1-§1.6 (2899-3023) instantiated as a strict subset; §1.3 exposed-set rule, §1.4 test-set rule and §1.5 reachability as core static semantics; §1.6 encoding with bit 1 (value 2) for OVERFLOW and bits 6-15 never set (3021). Ordinary Real overflow stays quiet (§3.2.5 §2, 3621-3623); the explicit check is the Algorithm Code source of the status, not a Production-only patch. Failure policy: DoStep returns `encode {OVERFLOW}` = 2 and leaves `u`, `x`, `J`, `samplePeriod` and all storage other than `errorSignalStatus` unchanged; this is project policy supported by §3.2.5 §4 (3733, recommendation) and footnote 1 (9681), not an eFMI requirement. Algorithm manifest gains `<Signals><Signal value="OVERFLOW"/></Signals>` on `AF_DoStep` only, derived from the parsed interface (§3.1.3, 827-828; XSD 38-66); Startup/Recalibrate carry no `Signals` element. `ErrorSignalStatus` anchor (829-832) and the existing Production `errorSignalStatus` mapping are unchanged. Behavioral Model consequences (no Behavioral Model container is produced): error-signal references must be combinations of exposed signals (7700), default 0 (7747), Startup must return 0 (7760), returned signals compared (7764); Startup/Recalibrate expose nothing and return 0. Implicit limitation (3665) has no effect (no ranged entities). N01 at the eFMI level is a Dir 4.15 detection/integration finding, not an eFMI violation: the current DoStep with an empty interface returning 0 on overflow conforms to Beta 1 as written. Block-direction TODO and the Startup input conflict remain. |
+| Formal correspondence | Required in the same change; none established by this record. Core: `Statement` gains `branch`/`signal`, state `Env x SignalSet`, `execute_correct` re-proved; bridge `signalFree_executes` so existing body proofs are reused unchanged; total IEEE `+`/`*` on `Float64.Number` with `number_eval_finite_iff` stated with the admitted operator set as hypothesis (it fails once `/` is admitted); elaboration soundness/completeness for the new cases; guarded lowering theorem with exactly two outcomes over every finite input environment: every encoded square and every encoded sum `u[k] + u[k]` finite -> signal set `{}` and the existing update; otherwise `{OVERFLOW}`, `after = before`, with a real witness for the failing coordinate and operation (`overflowValue <= value u[i] * value u[i]` from `square_detection_overflow`, or the corresponding sum witness), stated without the finite-square-to-finite-sum lemma. The Algorithm Code interleaves the two checks per coordinate while Production C scans all products then all sums; the correspondence is by read-only checks whose only effect is a union into the signal set (order-independent). Target (backend-efmi): total DoStep with `ContextDoStep.OverflowOutcome` (exact `terminates <2, after>`, frame on every non-status cell) composed from `call_reaches` of both preflight variants (same heap), the declare-destination resume and the unchanged success chain. Compiler: `SourceMethod.DoStepOutcomes` replaces `FiniteDoStep` as the mandatory field, `FiniteDoStep` becomes a derived theorem (strictly stronger; nothing weakened); one byte equation for the production prefix gaining `#include <math.h>`. Manifest proof: each `BlockMethod` `Signals` equals the §1.3 exposed set of the selected parsed method and each Production status is its `encode`. Certified rejections: square guard deleted, sum guard deleted, signal deleted, interface deleted, re-raise deleted, `isFinite` argument changed, writes moved before the check, plus the four rejected check forms, a user-defined signal name and a non-`isFinite` condition. Native boundary: extend `tests/efmi-tensor-native.c` (overflow cases `{DBL_MAX, -DBL_MAX}`, `{0x1p+512, 1.0}`, `{above_half, -above_half}`, finite boundary `+-0x1.fffffffffffffp+511`, recovery, and a host-only `FE_DOWNWARD` case `u = {-DBL_MAX, 1.0}` whose finite rounded square is caught by the sum check) and the existing mutation loop (including deletion of either preflight call); no new suite. |
+| Artifact evidence | None yet. Baseline (`build/galec-unify-gate/full-v1/`, `26a7be5`): `TensorSquare.efmu` `767b8dd266552d811ef360857678b66500f8adda256026d188e27edf983f3997` (50 members), `model.alg` `3cf2432e75cc2a34996b6b66edf3ff7aa2401ebd8d3dbac2eb2f5a72c42b6f97`, `production.c` `631023dcec572d90cb61f04f2e51e8f169d12f9bcb30954fba002064041ff866`, Algorithm `manifest.xml` `e118e21c5eb6e27f96a3491eb184a4f3f2833c83eeaeb36b5a0235a33634a71e`, Production `manifest.xml` `b4849d4501092c54d9eefeac8bee462976822651c2cc28bd41381ec9e0184a40`, `__content.xml` `c0ed8a1ca7be1a6a1af72c15cb0758d93fe344a22ee69dac5fc9a540b4406cd4`; `Integrator.efmu` `c52be2f995df2c77f4f690acf16956c50f13c3d59906d377acb70a864659f3be`. Expected delta: tensor `model.alg` (DoStep text only), `production.c` (`#include <math.h>`, the product and sum preflight helpers, guarded DoStep calling both before any write; Startup/Recalibrate and the existing numerical helpers unchanged), Algorithm manifest (`Signals` on DoStep plus checksum), Production manifest and `__content.xml` (checksum attributes only), archive hash; roster stays 50. Byte-identical: every `Integrator.efmu` member, all three FMU adapters/kernels/XML members, standalone tensor C artifacts (the product helper bytes are unchanged by the operation parametrization), the 47 schema/VERSION/LICENSE members. The helper bytes are those in force after the MISRA `isfinite` gate (`isfinite(sample) == 0`); if that gate changes any eFMI member, the baseline is re-taken from it before comparison. |
+| Decision | OPEN. The construct is admitted only as the N01 repair with its complete source/lowering/target/actual-artifact chain; it is not ordinary grammar expansion. N01 (eFMI tensor DoStep detection boundary) may close only after the actual artifacts and the required gate `nix develop .#verification --command lake test` pass; the MISRA Dir 4.15 row closes only for the tensor eFMU numerical paths under the argument below, not for the whole product. All other findings remain OPEN and continue to block ordinary expansion and broad conformance/native/MISRA claims. |
+
+Adopted grammar delta (repository dialect; lines 16 and 18 of `GALEC.ebnf`
+replaced, `signal_interface`, `if_statement`, `error_signal_check` and
+`error_signal_statement` added; the header comment gains the §3.2.5 references):
+
+```ebnf
+method = "method", IDENT, [ signal_interface ], "algorithm", { statement },
+    "end", IDENT, ";";
+signal_interface = "signals", IDENT, { ",", IDENT }, ";";
+
+statement = ( single_assignment | if_statement | for_loop
+    | error_signal_statement ), ";";
+if_statement = "if", ( expression | error_signal_check ), "then", { statement },
+    { "elseif", ( expression | error_signal_check ), "then", { statement } },
+    [ "else", { statement } ], "end", "if";
+error_signal_check = "signal", [ IDENT ],
+    [ [ "not" ], "in", IDENT, { ",", IDENT } ], [ "or", expression ];
+error_signal_statement = "signal", IDENT, { ",", IDENT };
+```
+
+`limit_statement`, call statements and `multi_assignment` stay absent. New
+keywords `signals`, `if`, `then`, `elseif`, `else`, `signal`, `not`, `or` are
+all pinned (G-1.19, 1594, 1598, 1600). LALR notes: statement-initial `signal`
+and condition-initial `signal` are distinct states; after `signal IDENT` the
+lookahead (`;`, `,`, `then`, `in`, `not`, `or`) decides; `end if`/`end for`/
+`end IDENT` are decided by the token after `end`; `[ "or", expression ]` is
+conflict-free only while G-3 has no `or` operator and must be rechecked when
+logical operators are admitted.
+
+Emitted tensor DoStep (printed by `Print.block` from the core builder):
+
+```
+    method DoStep
+        signals OVERFLOW;
+    algorithm
+        for k in 1:1:size(self.u, 1) loop
+            if isFinite(self.u[k] * self.u[k]) then
+            else
+                signal OVERFLOW;
+            end if;
+            if isFinite(self.u[k] + self.u[k]) then
+            else
+                signal OVERFLOW;
+            end if;
+        end for;
+        if signal in OVERFLOW then
+            signal OVERFLOW;
+        else
+            <the existing three loops, unchanged>
+        end if;
+    end DoStep;
+```
+
+§1.5 walk: first loop out-reachable `{OVERFLOW}` (both else bodies signal,
+loop back edge as fixed point); check test set `{OVERFLOW}` is non-empty and a
+subset of the in-reachable `{OVERFLOW}` (2992); check out-reachable `{}`
+(3010); then-body re-signals because the check unsets its test set before the
+body (2996); else-body out `{}`; final out-reachable `{OVERFLOW}` equals the
+interface (2965). The result is the same under either reading of the two
+§1.5 gaps below. Startup/Recalibrate set no signal, so their interfaces are
+empty.
+
+Clause correspondence, eFMI Beta 1 extract `build/standards-review/efmi.txt`:
+
+| Production or rule | Pinned clause (extract lines) | Relation and restricted interpretation |
+| --- | --- | --- |
+| `method`, `signal_interface` | G-2 `function-declaration` with `[ signal-interface ]` (1839-1849), `signal-interface` (1850); §1.3 (2939-2965) | Subset: `method` keyword only, no parameters or local section. Identifiers of the interface form the exposed set (2963); block-interface methods may expose only predefined signals (2964); exposed set must equal the out-reachable set of an imaginary final statement (2965). Invalid-example anchors: never-signaled exposure (3397), uncaught unexposed signal (3400, 3421), non-predefined exposure (3424). Interface order and duplicates carry no meaning; the set is compared. |
+| `statement` | G-TODO.TODO statements (heading 2743, production 2839-2848); S-TODO.TODO (2890-2895) | Subset: no `limit` (2849-2852; saturation to ranges, not detection, and no range attributes), call or multi-assignment statements. The pinned `statement` omits `error-signal-statement` although §1.2 (2926-2938) defines it as a statement and examples use it in statement lists (3132, 3252, 3263, 3274, 3278, 3610); restricted interpretation: it is a `statement` alternative. |
+| `if_statement` | G-TODO `if-statement` (2860-2868); §1.5 branch rules (3004, 3007-3008, 3011) | Same token language. Condition typing is not stated in the TODO rules; restricted interpretation: an expression condition must be Boolean, by S-3.4 (2580-2581) and function-call typing S-3.TODO (2739, output-arity one, type of first output), consistent with the builtin reference usage `if not(isFinite(x)) then` (4988). Only `isFinite(e)` is admitted as an expression condition; relational and logical operators stay absent. Branch bodies may be empty (`{ statement }`). |
+| `error_signal_check` | §1.4 (2966-2996); G-TODO production (2869-2878) | Full syntax parsed; admitted only as `signal in S1, ..., Sn` with predefined names. Closure `signal s` (2988), negation `not in` (2990), unrestricted form (2991) and `or` fallback (2994) are rejected by static semantics. Test set non-empty and subset of in-reachable (2992); signal-satisfied iff a tested signal is set (2993); tested signals unset immediately before the body (2996). |
+| `error_signal_statement` | §1.2 (2926-2938; production 2931-2934) | Only predefined signal names (no signal-closure is admissible); executing sets each named signal (2937); signal-set is their union (2938). |
+| Signal names | §1.1 (2899-2925): declaration (2902), predefined list (2911-2917), meanings (2920-2925); §1.6 (3013-3023) | No `error-signal-declaration` syntax, so user-defined signals are unreachable; every name must read to one of the six predefined signals. OVERFLOW meaning "Some computed floating point value is -inf or +inf" (2921). Bits 0-5 (3015-3020); bits 6-15 never set (3021); manifest spellings from the XSD enumeration. |
+| Reachability analysis | §1.5 (2997-3012) | Implemented once over the AST. Expression signal-sets are unions of called functions' sets (3001); `isFinite` has none. For-loop signal-set is the out-reachable set of its last statement (3003); in-reachable of a loop body's first statement includes the back edge ("preceding statements according to control-flow", 3009), computed as a fixed point. Empty body and `else` gaps: see interpretations below. |
+| `isFinite` | §3.2.6 overview (3770-3771), reference (4726-4731), 3739; §3.2.5 §2 (3621-3623, 3651) | "true if x is finite (neither -inf nor +inf nor qNaN)". Single Real argument; the argument must be an admitted Real expression. No `signals` clause, so its signal-set is empty (3739). Restricted interpretation of the 3651 conflict below. |
+| Keywords | G-1.19 (1591-1606) | All new terminals are pinned keywords. Stray empty alternative after `"not"` (1600) carries no meaning. |
+| Termination | §3.2.1(a) (1055-1057) | No new iteration; fixed iteration counts preserved. The check realizes the design intent that error control-flow shortcuts normal execution (1057, footnote 1 at 9681). |
+
+Restricted interpretations of TODO-labelled or ambiguous pinned text:
+
+- ES01 empty branch bodies: §1.5 defines if signal-sets through "the last
+  statements of its branch-bodies" (3004) without a case for an empty body.
+  Adopted: an empty body contributes its in-reachable set.
+- ES02 `else` in-reachable set: §1.5 defines body in-reachable sets through
+  "the branch-condition of B" (3008); `else` has none. Adopted: the
+  out-reachable set of the last branch-condition (the path on which every
+  condition failed), consistent with 3007 and 3011.
+- ES03 if-condition typing (statement rules TODO-labelled, 2743, 2890-2895):
+  Boolean, as recorded in the clause table.
+- ES04 `statement` omits `error-signal-statement` (2839-2848 against
+  2926-2938): adopted as a `statement` alternative.
+- ES05 unset before body (2996): applies to every satisfied admitted check,
+  after closure initialization (none admitted); hence the explicit re-raise in
+  the then-body is required for the signal to reach the method exit, and its
+  deletion is a certified rejection.
+- ES06 builtin NaN signaling: 3651 says builtins with non-Real outputs trigger
+  NAN on qNaN input, while 3739 says a builtin signals only if its definition
+  says so, and `isFinite` has no `signals` clause (4726-4731) and is built on
+  `isInfinite`, which catches NAN internally (4722-4724); read literally, 3651
+  would also make `isNaN` signal on its own subject (4705). Adopted: the
+  classification builtins `isNaN`, `isInfinite`, `isFinite` do not signal;
+  their static signal-set is empty (3001, 3739). This only matters for qNaN
+  inputs, which are outside the proved domain.
+- ES07 NaN inputs: a qNaN or infinite `u` makes the square non-finite
+  natively and DoStep returns OVERFLOW (2), although the intended meanings
+  are NAN (2922) or INVALID_ARGUMENT (2920). Recorded limit, not a
+  conformance claim; a later slice may add `isNaN` -> NAN. The Lean domain
+  (`TensorPublicStorage.Storage`) requires finite inputs, as on the FMI side.
+- Retained from the cutover record: block-direction TODO (1820, 1879),
+  unfinalized iterator S-TODO (2013), keyword omissions for `constant`/
+  `parameter`; the `plusInfinite` end-name typo (4716) is unrelated.
+
+MISRA C:2025 Dir 4.15 (Required; "Evaluation of floating-point expressions
+shall not lead to the undetected generation of infinities and NaNs"; printed
+pp. 32-33) argument for the tensor eFMU, to be discharged by the proofs above:
+
+- All-path coverage: every computed value is checked. Startup evaluates no
+  floating arithmetic (literal `0.0`/`1.0` stores); Recalibrate is empty.
+  DoStep evaluates exactly `u[k] * u[k]`, `u[k] + u[k]` and literal `0.0`.
+  The product preflight computes every square and the sum preflight every
+  diagonal coefficient, each consumed only in `isfinite(sample) == 0` (the
+  directive's compliant `if (isfinite(c))` pattern), both before any write.
+  On the pass branch the RHS and the diagonal scatter recompute the same
+  operations on the same unchanged operands (`-ffp-contract=off`,
+  `-frounding-math`; the equality is the Lean fact, the native agreement is
+  host evidence only). Off-diagonal cells are literal `0.0`. No lemma from a
+  finite square to a finite sum is used, so the argument does not depend on
+  the rounding mode beyond what the Binary64 model already assumes for the
+  native correspondence: under a directed mode a checked value and its
+  recomputation are the same operation under the same mode (for example
+  `FE_DOWNWARD`, `u = -DBL_MAX` rounds the square to finite `DBL_MAX` and is
+  now caught by the sum check on `-inf`).
+- Downstream consumers: the public `x`, `J` (written only on the pass branch,
+  otherwise unchanged) and the returned/stored status word. Invariant after
+  Startup: `x` and `J` are finite (Startup zeros; each DoStep writes checked
+  finite values or nothing), so no generated infinity or NaN reaches the
+  integration environment; status 2 is the detection signal to it. Delayed
+  detection is not used.
+- Left open: native correspondence of the `isfinite` macro to
+  `Float64.finiteBits` (`<math.h>`, `FiniteValue.lean` header); the Lean
+  machine models round-to-nearest, so non-nearest modes are covered only by
+  the structural same-operation argument above, not by a proof; the
+  preflights raise the sticky `FE_OVERFLOW` flag although the heap is
+  unchanged (flags are outside the heap model); with overflow traps enabled
+  a preflight itself traps, which eFMI §3.2.5 §2 (3620-3623) excludes as a
+  target-environment assumption (non-trapping), an integration precondition
+  rather than a host guarantee. Non-finite inputs are not generated by the
+  unit and are outside the proof; natively they yield status 2 without
+  writes (host evidence only). Uninitialized storage before Startup belongs
+  to the Startup input-initialization conflict. No whole-product Dir 4.15 or
+  other MISRA closure is inferred.
+
+Findings:
+
+- Closable only after the actual artifacts and the required gate: N01 for the
+  tensor eFMI DoStep detection boundary (closure criteria 1, 2 and 4 of the
+  numerical review for this unit).
+- Remaining OPEN: S01/SR08; Startup input-initialization conflict;
+  block-direction TODO; native, ABI, floating-environment (non-trapping
+  precondition, sticky flags, `isfinite` correspondence) and callback
+  correspondence; whole-product MISRA rows; FMI CS Euler-update overflow
+  (criterion 3, separate item); ES07 NaN inputs signaled as OVERFLOW rather
+  than NAN or INVALID_ARGUMENT (recorded limit); ES01-ES06 remain restricted
+  interpretations of a candidate-draft text and are rechecked at every later
+  stage.
+
 ### GALEC loop cutover grammar - 2026-09-24; full gate passed, GJ01/GJ03 closed; stage OPEN for all other findings
 
 Recurring whole-subset review for the GALEC grammar actually adopted for the
