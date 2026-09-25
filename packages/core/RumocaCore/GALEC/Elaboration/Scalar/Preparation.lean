@@ -10,15 +10,15 @@ namespace Rumoca.GALEC.Elaboration.Scalar
 open Elaboration Elaboration.Surface Rumoca.Tensor Rumoca.Solve.Tensor
 
 def startupMethod (state clock : String) : AST.Method :=
-  ⟨.ident "Startup",
+  ⟨.ident "Startup", [],
     [.assign (stateReference state []) (.literal (.number "0.0")),
      .assign (stateReference clock []) (.literal (.number "1.0"))], .ident "Startup"⟩
 
 def recalibrateMethod : AST.Method :=
-  ⟨.ident "Recalibrate", [], .ident "Recalibrate"⟩
+  ⟨.ident "Recalibrate", [], [], .ident "Recalibrate"⟩
 
 def stepMethod (state : String) : AST.Method :=
-  ⟨.ident "DoStep",
+  ⟨.ident "DoStep", [],
     [.assign (stateReference state []) (.parens
       (.binary (.literal "+") (.reference (stateReference state [])) (.literal (.number "1.0"))))],
     .ident "DoStep"⟩
@@ -119,19 +119,21 @@ theorem step_typed (state clock : String) (ceiling : Nat) :
 theorem startup_prepared (name : String) (different : state ≠ clock) (ceiling : Nat) :
     Methods.Preparation.Prepares (.ident "Startup") Capabilities.Initialization.role ceiling
       (source name state clock) (startupResult state clock) :=
-  .body (startup_selected name state clock) (declared different ceiling)
+  .body (startup_selected name state clock)
+    (Reach.exposes_empty _ rfl (.cons .assign (.cons .assign .nil))) (declared different ceiling)
     (startup_typed different ceiling)
 
 theorem recalibrate_prepared (name : String) (different : state ≠ clock) (ceiling : Nat) :
     Methods.Preparation.Prepares (.ident "Recalibrate") Capabilities.DoStep.role ceiling
       (source name state clock) (recalibrateResult state clock) :=
-  .body (recalibrate_selected name state clock) (declared different ceiling) .nil
+  .body (recalibrate_selected name state clock) (Reach.exposes_empty _ rfl .nil)
+    (declared different ceiling) .nil
 
 theorem step_prepared (name : String) (different : state ≠ clock) (ceiling : Nat) :
     Methods.Preparation.Prepares (.ident "DoStep") Capabilities.DoStep.role ceiling
       (source name state clock) (stepResult state clock) :=
-  .body (step_selected name state clock) (declared different ceiling)
-    (step_typed state clock ceiling)
+  .body (step_selected name state clock) (Reach.exposes_empty _ rfl (.cons .assign .nil))
+    (declared different ceiling) (step_typed state clock ceiling)
 
 theorem startup_lowered (name : String) (different : state ≠ clock) (ceiling : Nat) :
     Methods.Preparation.fromBlock (.ident "Startup") Capabilities.Initialization.role ceiling

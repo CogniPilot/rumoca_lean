@@ -13,6 +13,8 @@ namespace Rumoca.GALEC.Names
 @[simp] abbrev state : String := "x"
 /-- The protected sample-period constant. -/
 @[simp] abbrev clock : String := "samplePeriod"
+/-- The builtin finiteness test admitted as a branch condition. -/
+@[simp] abbrev finiteTest : String := "isFinite"
 
 /-- The Algorithm Code name of a lifecycle method. -/
 @[simp] abbrev method : Method → String

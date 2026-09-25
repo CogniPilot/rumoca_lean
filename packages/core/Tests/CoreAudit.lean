@@ -83,6 +83,12 @@ import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Loops_UnitRange
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Loops_Binder
 import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Loops_Header
 import Tests.CoreAudit.RumocaCore_GALEC_Statements
+import Tests.CoreAudit.RumocaCore_GALEC_Signals
+import Tests.CoreAudit.RumocaCore_GALEC_NumberTerms
+import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Signals_Names
+import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Signals_Reachability
+import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Conditions
+import Tests.CoreAudit.RumocaCore_GALEC_Elaboration_Square_Outcomes
 import Tests.CoreAudit.RumocaCore_GALEC_TensorWrites
 import Tests.CoreAudit.RumocaCore_GALEC_CoefficientRealization
 import Tests.CoreAudit.RumocaCore_GALEC_SquareRealization
@@ -100,6 +106,7 @@ import Tests.CoreAudit.RumocaCore_Profile
 import Tests.CoreAudit.RumocaCore_Provenance_Lowering
 import Tests.CoreAudit.RumocaCore_Provenance_Source
 import Tests.CoreAudit.RumocaCore_Real_AdditionResult
+import Tests.CoreAudit.RumocaCore_Real_NumberArithmetic
 import Tests.CoreAudit.RumocaCore_Real_Binary64
 import Tests.CoreAudit.RumocaCore_Real_Comparison
 import Tests.CoreAudit.RumocaCore_Real_Decoding

@@ -15,7 +15,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Square.input_known
 #audit axioms Rumoca.GALEC.Elaboration.Square.jacobian_known
 #audit axioms Rumoca.GALEC.Elaboration.Square.layout_body_lowered
-#audit axioms Rumoca.GALEC.Elaboration.Square.layout_source_executes
+#audit axioms Rumoca.GALEC.Elaboration.Square.layout_source_runs
 #audit axioms Rumoca.GALEC.Elaboration.Square.rhs_known
 #audit axioms Rumoca.GALEC.Elaboration.Square.startupFields
 #audit axioms Rumoca.GALEC.Elaboration.Square.startupRhs

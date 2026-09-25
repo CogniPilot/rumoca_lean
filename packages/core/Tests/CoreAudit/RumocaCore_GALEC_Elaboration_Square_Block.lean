@@ -9,4 +9,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Square.stepResult
 #audit axioms Rumoca.GALEC.Elaboration.Square.preparedResult
 #audit axioms Rumoca.GALEC.Elaboration.Square.interface
+#audit axioms Rumoca.GALEC.Elaboration.Square.startup_exposes
+#audit axioms Rumoca.GALEC.Elaboration.Square.recalibrate_exposes
+#audit axioms Rumoca.GALEC.Elaboration.Square.step_exposes
 #audit axioms Rumoca.GALEC.Elaboration.Square.prepared

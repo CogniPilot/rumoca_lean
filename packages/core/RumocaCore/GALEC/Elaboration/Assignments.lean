@@ -29,7 +29,7 @@ def lower (table : BindingTable inputs outputs) (names : IteratorNames bounds) :
       (TargetLowering.lower table names target).bind fun destination =>
         (ExpressionLowering.lower table names rhs).map
           fun value => .assign destination.ref destination.indices value
-  | .forLoop .. => none
+  | _ => none
 
 inductive Elaborates (table : BindingTable inputs outputs) (names : IteratorNames bounds) :
     AST.Statement → Statement inputs outputs bounds → Prop where

@@ -68,25 +68,25 @@ theorem jacobian_known (positive : 0 < extent) (within : extent ≤ ceiling) :
 /-- No caller-supplied binding or shape oracle: all are built from these
 ordered, independently validated declarations. The extent is not enumerated. -/
 theorem layout_body_lowered (positive : 0 < extent) (within : extent ≤ ceiling) (axisBound : 2 ≤ ceiling) :
-    Layout.body (squareFields extent) ceiling (squareSource "u" Names.state "J") =
-      some (loweredSquare (squareInput extent) (squareRhs extent) (squareJacobian extent)) :=
-  square_lowered _ _ _ (Layout.bindingShape_iff_source _ (square_declared positive within))
+    Layout.body (squareFields extent) ceiling (checkedSource "u" Names.state "J") =
+      some (loweredChecked (squareInput extent) (squareRhs extent) (squareJacobian extent)) :=
+  checked_lowered _ _ _ (Layout.bindingShape_iff_source _ (square_declared positive within))
     _ _ _ (input_bound extent) (rhs_bound extent) (jacobian_bound extent)
     (input_known positive within) (jacobian_known positive within) positive within axisBound
 
-theorem layout_source_executes (positive : 0 < extent) (within : extent ≤ ceiling) (axisBound : 2 ≤ ceiling)
-    (step : BinaryOp → α → α → α → Prop) (zero one : α)
+theorem layout_source_runs (positive : 0 < extent) (within : extent ≤ ceiling) (axisBound : 2 ≤ ceiling)
+    (step : BinaryOp → α → α → α → Prop) (finite : α → Prop) (zero one : α)
     (input : Env α (Layout.inputShapes (squareFields extent))) (env : IteratorEnv [])
-    (before after : Env α (Layout.outputShapes (squareFields extent))) :
-    Bodies.Source.statements (Layout.bindings (squareFields extent))
-      (Declarations.ShapeLookup.HasShape ceiling (squareDeclarations extent)) ceiling step zero one
-      @input .nil @env (squareSource "u" Names.state "J") @before @after ↔
-    (SquareBodies.body (squareInput extent) (squareRhs extent) (squareJacobian extent)).Executes
-      step zero one @input @env @before @after :=
-  square_source_executes _ _ _ (Layout.bindingShape_iff_source _ (square_declared positive within))
+    (before after : Signaled α (Layout.outputShapes (squareFields extent))) :
+    Bodies.Source.runs (Layout.bindings (squareFields extent))
+      (Declarations.ShapeLookup.HasShape ceiling (squareDeclarations extent)) ceiling step finite
+      zero one @input .nil @env (checkedSource "u" Names.state "J") before after ↔
+    (loweredChecked (squareInput extent) (squareRhs extent) (squareJacobian extent)).Runs
+      step finite zero one @input @env before after :=
+  checked_source_runs _ _ _ (Layout.bindingShape_iff_source _ (square_declared positive within))
     _ _ _ (input_bound extent) (rhs_bound extent) (jacobian_bound extent)
     (input_known positive within) (jacobian_known positive within) positive within axisBound
-    step zero one @input @env @before @after
+    step finite zero one @input @env before after
 
 theorem rhs_known (positive : 0 < extent) (within : extent ≤ ceiling) :
     Declarations.ShapeLookup.HasShape ceiling (squareDeclarations extent) [Names.state] ⟨[extent]⟩ :=

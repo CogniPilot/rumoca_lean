@@ -28,6 +28,22 @@ block as a source tree and proves its whole-block preparation and method
 semantics for arbitrary distinct state and clock names; `Elaboration.Square.Block`
 states the tensor square block for any extent and proves its preparation.
 
+Error signals (eFMI §3.2.5 §1) are core static and dynamic semantics.
+`GALEC.Signals` defines the six predefined signals once, with their canonical
+spellings, §1.6 bits and status encoding. `GALEC.Statement` has branches on
+`isFinite(e)` or `signal in S` and error-signal statements; `Statement.Runs`
+carries the signal set, and `Statement.signalFree_executes` shows that every
+signal-free body keeps its data semantics `Statement.Executes`. `GALEC.NumberTerms`
+proves that `isFinite` under partial finite arithmetic is finiteness of the
+total IEEE result for `+` and `*` terms. `Elaboration.Conditions` admits only
+`isFinite` of an admitted Real expression and `signal in S1, ...` checks of
+predefined signals; `Elaboration.Signals.Reachability` computes §1.5 reachability
+once over the AST, enforces the §1.4 test-set rule and requires every method
+interface to equal its out-reachable set. `Elaboration.Square.Outcomes` proves the
+two total outcomes of the checked tensor DoStep: every product and sum finite,
+no signal and the existing square/AD update; otherwise `OVERFLOW` and the store
+unchanged, with a real overflow witness.
+
 Use `lake build check-core` from the repository root for incremental core proofs and
 axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/FiniteChecks.lean` belong to the
 `RumocaCoreChecks` library, also selected by this package's `lake test`. See
@@ -63,6 +79,8 @@ axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/Finit
 | `RumocaCore.Real.Binary64`, `Real.Encoding` | Arithmetic specification, rounding proofs and finite bit encodings |
 | `RumocaCore.Real.ScaledRounding`, `Real.Multiplication`, `Real.Addition` | Exact rational-input nearest/even rounding, finite product/zero-sign contract and Real error bounds |
 | `RumocaCore.Real.Comparison` | Binary64 classification and ordered/unordered comparisons, with finite comparison-to-real-order proofs |
+| `RumocaCore.Real.NumberArithmetic` | IEEE addition and multiplication on the complete numerical domain; a non-finite operand never gives a finite result |
+| `RumocaCore.GALEC.Signals`, `GALEC.Statements`, `GALEC.NumberTerms` | Predefined error signals and encoding, indexed statements with branches and signals, and the IEEE meaning of `isFinite` |
 | `RumocaCore.FMI3.Time` | Independent ME time-history window and its lower-bound representation contract |
 | `RumocaCore.FMI3.Initialization` | Independent finite initialization admission profile, optional argument bits and mathematical order connection |
 | `RumocaCore.Transition` | Generic transitions, termination and observable behaviors |

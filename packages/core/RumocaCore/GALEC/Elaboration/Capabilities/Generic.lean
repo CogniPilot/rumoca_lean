@@ -83,8 +83,20 @@ inductive StatementWrites (Allowed : Declarations.Real.Descriptor → Prop)
   | assign (allowed : ∃ declaration ∈ declarations, ∃ indices,
       Path.Surface target [declaration.name] indices ∧ Allowed declaration) :
       StatementWrites Allowed declarations (.assign target value)
+  | branch : BranchesWrites Allowed declarations branches otherwise →
+      StatementWrites Allowed declarations (.ifThen branches otherwise)
   | loop : BodyWrites Allowed declarations body →
       StatementWrites Allowed declarations (.forLoop binder start stride stop body)
+  | signal : StatementWrites Allowed declarations (.signal raised)
+
+/-- Every branch body and the `else` body obey the write policy. -/
+inductive BranchesWrites (Allowed : Declarations.Real.Descriptor → Prop)
+    (declarations : List Declarations.Real.Descriptor) :
+    List (AST.Condition × List AST.Statement) → Option (List AST.Statement) → Prop where
+  | none : BranchesWrites Allowed declarations [] none
+  | otherwise : BodyWrites Allowed declarations body → BranchesWrites Allowed declarations [] (some body)
+  | cons : BodyWrites Allowed declarations body → BranchesWrites Allowed declarations rest otherwise →
+      BranchesWrites Allowed declarations ((test, body) :: rest) otherwise
 
 inductive BodyWrites (Allowed : Declarations.Real.Descriptor → Prop)
     (declarations : List Declarations.Real.Descriptor) : List AST.Statement → Prop where
@@ -104,8 +116,21 @@ theorem statement_writes
     | assign target value =>
       obtain ⟨declaration, present, indices, spelling, _, writable⟩ := target_writable correct target
       exact .assign ⟨declaration, present, indices, spelling, writable⟩
+  | branch chosen => exact .branch (branches_writes correct chosen)
   | loop _ body => exact .loop (body_writes correct body)
+  | signal _ => exact .signal
 termination_by sizeOf source
+
+theorem branches_writes
+    (correct : ∀ declaration, role declaration = .writable ↔ Allowed declaration)
+    (typed : Bodies.BranchesElaborates (Layout.bindings (fields role declarations))
+      HasShape ceiling names sources otherwise stmt) :
+    BranchesWrites Allowed declarations sources otherwise := by
+  cases typed with
+  | none => exact .none
+  | otherwise body => exact .otherwise (body_writes correct body)
+  | cons _ body rest => exact .cons (body_writes correct body) (branches_writes correct rest)
+termination_by sizeOf sources + sizeOf otherwise
 
 theorem body_writes
     (correct : ∀ declaration, role declaration = .writable ↔ Allowed declaration)

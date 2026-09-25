@@ -5,5 +5,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.GALEC.Elaboration.Square.scatter_equivalent
 #audit axioms Rumoca.GALEC.Elaboration.Square.clear_equivalent
 #audit axioms Rumoca.GALEC.Elaboration.Square.square_equivalent
-#audit axioms Rumoca.GALEC.Elaboration.Square.square_lowered
-#audit axioms Rumoca.GALEC.Elaboration.Square.square_source_executes
+#audit axioms Rumoca.GALEC.Elaboration.Square.checked_lowered
+#audit axioms Rumoca.GALEC.Elaboration.Square.checked_source_runs

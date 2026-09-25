@@ -98,5 +98,49 @@ theorem multiply_detects_iff (a b : Value Binary64.Value shape) :
   push Not
   rfl
 
+/-- The encoded sum of two finite tensors, overflow included. -/
+def add (a b : Value Binary64.Value shape) : Result shape :=
+  a.zipWith Binary64.addResult b
+
+theorem add_finite_iff (a b : Binary64.Value) :
+    (Binary64.addResult a b).isFinite = true ↔
+      -Binary64.overflowUnits < Binary64.units a + Binary64.units b ∧
+        Binary64.units a + Binary64.units b < Binary64.overflowUnits := by
+  constructor
+  · intro finite
+    obtain ⟨value, same⟩ := (Float64.Number.isFinite_iff _).mp finite
+    have spec := Binary64.addResult_spec a b
+    rw [same] at spec
+    exact ⟨(Binary64.sum_above_negative_overflow a b).mp spec.1,
+      (Binary64.sum_below_overflow a b).mp spec.2.1⟩
+  · intro bounded
+    rw [Binary64.addResult_finite a b bounded]
+    rfl
+
+/-- Detection succeeds exactly on the independently specified finite sum domain. -/
+theorem add_allFinite_iff (a b : Value Binary64.Value shape) :
+    allFinite (add a b) = true ↔ ∀ i : Fin shape.volume,
+      -Binary64.overflowUnits < Binary64.units a[i] + Binary64.units b[i] ∧
+        Binary64.units a[i] + Binary64.units b[i] < Binary64.overflowUnits := by
+  simp only [allFinite, Vector.all_eq_true]
+  constructor
+  · intro h i
+    have finite := h i.val i.isLt
+    simp only [add, Value.zipWith] at finite
+    rw [Vector.getElem_zipWith] at finite
+    exact (add_finite_iff _ _).mp finite
+  · intro h i hi
+    simp only [add, Value.zipWith]
+    rw [Vector.getElem_zipWith]
+    exact (add_finite_iff _ _).mpr (h ⟨i, hi⟩)
+
+theorem add_detects_iff (a b : Value Binary64.Value shape) :
+    allFiniteBits (encode (add a b)) = false ↔ ∃ i : Fin shape.volume,
+      ¬ (-Binary64.overflowUnits < Binary64.units a[i] + Binary64.units b[i] ∧
+        Binary64.units a[i] + Binary64.units b[i] < Binary64.overflowUnits) := by
+  simp only [allFiniteBits_encode, Bool.eq_false_iff, ne_eq, add_allFinite_iff]
+  push Not
+  rfl
+
 end
 end Rumoca.Solve.Tensor.Numerical

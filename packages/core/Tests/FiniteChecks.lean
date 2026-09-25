@@ -22,6 +22,10 @@ compiler audit roots so Lake can check this numerical increment independently. -
 #audit axioms Rumoca.Solve.Tensor.Numerical.multiply_unique
 #audit axioms Rumoca.Solve.Tensor.Numerical.multiply_allFinite_iff
 #audit axioms Rumoca.Solve.Tensor.Numerical.multiply_detects_iff
+#audit axioms Rumoca.Solve.Tensor.Numerical.add
+#audit axioms Rumoca.Solve.Tensor.Numerical.add_finite_iff
+#audit axioms Rumoca.Solve.Tensor.Numerical.add_allFinite_iff
+#audit axioms Rumoca.Solve.Tensor.Numerical.add_detects_iff
 #audit axioms Rumoca.ArrayProfile.square_detection_finite_execution
 #audit axioms Rumoca.ArrayProfile.square_detection_overflow
 #audit axioms Rumoca.Binary64.Scaled.round_spec
