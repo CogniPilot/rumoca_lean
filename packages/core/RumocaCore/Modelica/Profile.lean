@@ -55,4 +55,17 @@ theorem select_disjoint (d : Modelica.AST.StoredDefinition) :
     simp only [rates_third, square_third] at third
     cases third
 
+/-- A tree `select` rejects is the tree of no selected parse of any profile. -/
+theorem rejected {source : String} {r : Rejection} (tree : Modelica.Parsed source)
+    (rejection : select tree.ast = .error r) :
+    (AST.selection.Parsed source → False) ∧ (ArrayProfile.selection.Parsed source → False) ∧
+      (ConstantProfile.selection.Parsed source → False) := by
+  have unit : ∀ m, AST.select tree.ast ≠ .ok m := fun m h => by simp [select, h] at rejection
+  have square : ∀ m, ArrayProfile.select tree.ast ≠ .ok m := fun m h => by
+    unfold select at rejection; split at rejection <;> simp_all
+  have rates : ∀ m, ConstantProfile.select tree.ast ≠ .ok m := fun m h => by
+    unfold select at rejection; split at rejection <;> simp_all
+  refine ⟨fun p => unit p.ast ?_, fun p => square p.ast ?_, fun p => rates p.ast ?_⟩ <;>
+    rw [← Modelica.Parsed.unique p.tree tree] <;> exact p.selected
+
 end Rumoca.Modelica.Profile

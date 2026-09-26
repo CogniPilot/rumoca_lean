@@ -5,3 +5,4 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.Modelica.Profile.select
 #audit axioms Rumoca.Modelica.Profile.select_disjoint
+#audit axioms Rumoca.Modelica.Profile.rejected

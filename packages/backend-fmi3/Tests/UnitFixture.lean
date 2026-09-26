@@ -13,7 +13,7 @@ def input : Parser.Source.InputRef :=
 
 certify_source inputTree "model M Real x; equation der(x) = 1; end M;"
 
-def parsed : Parsed input.source := ⟨inputTree.parsed, source, by rfl⟩
+def parsed : Parsed input.source := ⟨inputTree.parsed, source, by rfl, by decide⟩
 
 def prepared : Solve.FMI3Model source :=
   (Solve.lower (DAE.lower

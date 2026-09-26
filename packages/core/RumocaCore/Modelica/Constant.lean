@@ -1,5 +1,7 @@
 import RumocaCore.Modelica.Select
 import ModelicaParser.Constant.Decimal
+import ModelicaParser.Inversion
+import ModelicaParser.Derivations
 
 /-! The G01 constant-rate profile, selected from the general syntax tree: two
 or more plain scalar `Real` states, each with one `der(state) = literal`
@@ -91,10 +93,19 @@ def rateExpr (rate : String) : Modelica.AST.Expr :=
 def rateEquation (e : Equation) : Modelica.AST.Equation :=
   .simple (.call .der [bare (.ident e.derivative)]) (rateExpr e.rate)
 
-/-- An unsigned number spelling, which begins with a digit or a point. -/
+/-- Every point of a spelling is followed by a digit. -/
+def interiorPoints : List Char → Bool
+  | [] => true
+  | '.' :: c :: rest => c.isDigit && interiorPoints (c :: rest)
+  | ['.'] => false
+  | _ :: rest => interiorPoints rest
+
+/-- An unsigned number spelling admitted in a rate: it begins with a digit and
+every point is followed by a digit. The MLS spellings with a point at an edge,
+such as `2.`, `.5` and `2.e3`, are lexed as numbers but not admitted as rates. -/
 def unsignedSpelling (spelling : String) : Bool :=
   match spelling.toList with
-  | c :: _ => c.isDigit || c == '.'
+  | c :: _ => c.isDigit && interiorPoints spelling.toList
   | [] => false
 
 /-- A rate: a signed number, or an unsigned number that is not a digit run. As in
@@ -161,7 +172,7 @@ def rates (pos : Nat) : List Modelica.AST.Equation → Except Rejection (List Eq
   | .simple left right :: rest => do
     let derivative ← Select.derivative pos left
     let rate ← rate (pos + 5) right
-    let others ← rates (pos + 7) rest
+    let others ← rates (pos + (Modelica.Print.equation (.simple left right)).length + 1) rest
     return ⟨derivative, rate⟩ :: others
 
 theorem rates_ok {pos : Nat} {equations : List Modelica.AST.Equation} {read : List Equation}
@@ -233,6 +244,253 @@ theorem select_printed {d : Modelica.AST.StoredDefinition} {m : Model} (h : sele
   · cases h
 
 def selection : Selection Model := ⟨select, Model.tokens, fun _ _ => select_printed⟩
+
+/-! ### Completeness -/
+
+/-- A rate spelling selection admits: a sign and an unsigned spelling, or an
+unsigned spelling that is not a digit run. -/
+def rateSpelling (rate : String) : Bool :=
+  match rate.toList with
+  | '-' :: rest | '+' :: rest => unsignedSpelling (String.ofList rest)
+  | _ => unsignedSpelling rate && !rate.toList.all Char.isDigit
+
+/-- The names a constant-rate record reads from its source. -/
+def Model.names (m : Model) : List String :=
+  m.name :: m.states ++ m.equations.map Equation.derivative ++ [m.endName]
+
+/-- Selection admits exactly the records whose names are not predefined type
+names and whose rates have admitted spellings. -/
+def Model.Admissible (m : Model) : Prop :=
+  (∀ n ∈ m.names, predefined n = false) ∧ ∀ e ∈ m.equations, rateSpelling e.rate = true
+
+instance (m : Model) : Decidable m.Admissible := by
+  unfold Model.Admissible; infer_instance
+
+/-- The syntax tree of a record. -/
+def syntaxTree (m : Model) : Modelica.AST.StoredDefinition :=
+  ⟨[⟨.literal "model", .long (.ident m.name)
+    ⟨m.states.map stateElement, [⟨m.equations.map rateEquation⟩]⟩ (.ident m.endName)⟩]⟩
+
+/-- The tokens of a rate: signs and one number. -/
+theorem rateTokens_cases (rate : String) :
+    rateTokens rate = [.number rate] ∨
+      ∃ sign rest, (sign = .literal "+" ∨ sign = .literal "-") ∧
+        rateTokens rate = [sign, .number rest] ∧ rateExpr rate = .unary sign (bare (.number rest)) := by
+  unfold rateTokens rateExpr
+  split
+  · exact .inr ⟨_, _, .inr rfl, rfl, rfl⟩
+  · exact .inr ⟨_, _, .inl rfl, rfl, rfl⟩
+  · exact .inl rfl
+
+private theorem rateTokens_member {rate : String} {t : Token} (member : t ∈ rateTokens rate) :
+    t = .literal "+" ∨ t = .literal "-" ∨ ∃ s, t = .number s := by
+  rcases rateTokens_cases rate with same | ⟨sign, rest, signed, same, _⟩ <;>
+    rw [same] at member <;> simp at member
+  · exact .inr (.inr ⟨_, member⟩)
+  · rcases member with rfl | rfl
+    · rcases signed with rfl | rfl
+      · exact .inl rfl
+      · exact .inr (.inl rfl)
+    · exact .inr (.inr ⟨_, rfl⟩)
+
+private theorem rateTokens_free {rate : String} {s : String}
+    (other : s ≠ "+" ∧ s ≠ "-" := by decide) : Token.literal s ∉ rateTokens rate := by
+  intro member
+  rcases rateTokens_member member with h | h | ⟨_, h⟩
+  · exact other.1 (Token.literal.inj h)
+  · exact other.2 (Token.literal.inj h)
+  · cases h
+
+open Derivations in
+/-- The certified grammar accepts the tokens of every record. -/
+theorem accepts (m : Model) :
+    EBNF.Accepts Generated.sourceGrammar (m.tokens.map Token.symbol) := by
+  have rated : ∀ rate, EBNF.Derives Generated.sourceGrammar (.ref "expression")
+      ((rateTokens rate).map Token.symbol) := by
+    intro rate
+    rcases rateTokens_cases rate with same | ⟨sign, rest, signed, same, _⟩ <;> rw [same]
+    · exact expression_of_arithmetic arithmetic_ident
+    · apply expression_of_arithmetic
+      apply arithmetic_signed _ (by rcases signed with rfl | rfl <;> simp [Token.symbol])
+      exact term_of_primary primary_ident
+  have declared := many (body := .seq (.ref "element") (.terminal (.literal ";")))
+    (fun _ : String => [Symbol.ident, .ident] ++ [.literal ";"]) m.states
+    fun _ _ => .seq element_declaration (.terminal (by decide))
+  have equated := many (body := .seq (.ref "some_equation") (.terminal (.literal ";")))
+    (fun e : Equation => ([Symbol.literal "der", .literal "(", .ident, .literal ")"] ++
+      .literal "=" :: (rateTokens e.rate).map Token.symbol) ++ [.literal ";"]) m.equations
+    fun e _ => .seq (someEquation (simpleExpression_of_arithmetic
+      (arithmetic_of_term (term_of_primary primary_derivative))) (rated e.rate))
+      (.terminal (by decide))
+  have accepted := accepts_model (composition declared equated)
+  convert accepted using 1
+  simp [Model.tokens, declTokens, equationTokens, Token.symbol, List.map_flatMap]
+
+private theorem elements_of {names : List String} {elements : List Modelica.AST.Element}
+    (valid : ∀ e ∈ elements, Good.element e)
+    (printed : elements.flatMap (fun e => Modelica.Print.element e ++ [.literal ";"]) =
+      names.flatMap declTokens) : elements = names.map stateElement := by
+  induction names generalizing elements with
+  | nil =>
+    cases elements with
+    | nil => rfl
+    | cons _ _ => simp at printed
+  | cons name rest ih =>
+    cases elements with
+    | nil => simp [declTokens] at printed
+    | cons e es =>
+      simp only [List.flatMap_cons, declTokens, List.append_assoc, List.cons_append,
+        List.nil_append] at printed
+      obtain ⟨single, following⟩ := Good.split_unique
+        (Good.not_mem_of_tokens (Good.element_tokens (valid e (List.mem_cons_self ..)))
+          (t := .literal ";") (by decide)) (by simp)
+        (show Modelica.Print.element e ++ .literal ";" :: _ =
+          [.ident "Real", .ident name] ++ .literal ";" :: _ from printed)
+      rw [Good.element_of_printed (valid e (List.mem_cons_self ..)) (by rfl) single,
+        ih (fun x member => valid x (List.mem_cons_of_mem _ member)) following]
+      rfl
+
+private theorem rateExpr_of_printed {rate : String} {r : Modelica.AST.Expr} (valid : Good.expr r)
+    (printed : Modelica.Print.expr r = rateTokens rate) : r = rateExpr rate := by
+  rcases rateTokens_cases rate with same | ⟨sign, rest, signed, same, expression⟩
+  · rw [same] at printed
+    rw [Good.bare_of_printed valid (by rfl) printed]
+    unfold rateExpr rateTokens at *
+    split at same
+    · simp at same
+    · simp at same
+    · rfl
+  · rw [same] at printed
+    rw [expression, Good.signed_of_printed valid (by rfl) signed printed]
+    rfl
+
+private theorem equations_of {read : List Equation} {equations : List Modelica.AST.Equation}
+    (valid : ∀ q ∈ equations, Good.equation q)
+    (printed : equations.flatMap (fun q => Modelica.Print.equation q ++ [.literal ";"]) =
+      read.flatMap equationTokens) : equations = read.map rateEquation := by
+  induction read generalizing equations with
+  | nil =>
+    cases equations with
+    | nil => rfl
+    | cons _ _ => simp at printed
+  | cons e rest ih =>
+    cases equations with
+    | nil => simp [equationTokens] at printed
+    | cons q qs =>
+      simp only [List.flatMap_cons, equationTokens, List.append_assoc, List.cons_append,
+        List.nil_append] at printed
+      obtain ⟨single, following⟩ := Good.split_unique
+        (Good.not_mem_of_tokens (Good.equation_tokens (valid q (List.mem_cons_self ..)))
+          (t := .literal ";") (by decide))
+        (by simp [rateTokens_free])
+        (show Modelica.Print.equation q ++ .literal ";" :: _ =
+          ([.literal "der", .literal "(", .ident e.derivative, .literal ")"] ++
+            .literal "=" :: rateTokens e.rate) ++ .literal ";" :: _ by simpa using printed)
+      obtain ⟨l, r, rfl, validLeft, validRight, left, right⟩ :=
+        Good.equation_of_printed (valid _ (List.mem_cons_self ..)) (by simp) single
+      rw [Good.derivative_of_printed validLeft (by rfl) left, rateExpr_of_printed validRight right,
+        ih (fun x member => valid x (List.mem_cons_of_mem _ member)) following]
+      rfl
+
+/-- The certified parse of a record's tokens is the syntax tree of the record. -/
+theorem parse_tree {m : Model} {ast : Modelica.AST.StoredDefinition}
+    (success : Structural.parse m.tokens = some ast) : ast = syntaxTree m := by
+  have valid := Good.parse_good success
+  have printed := Structural.parse_printed success
+  have body : m.tokens = .literal "model" :: .ident m.name ::
+      (m.states.flatMap declTokens ++ .literal "equation" :: m.equations.flatMap equationTokens) ++
+        [.literal "end", .ident m.endName, .literal ";"] := by
+    simp [Model.tokens]
+  rw [body] at printed
+  obtain ⟨c, rfl, validBody, printedBody⟩ := Good.storedDefinition_of_printed valid
+    (by simp [declTokens, equationTokens, rateTokens_free]) printed
+  obtain ⟨equations, sectioned, declared, equated⟩ := Good.composition_of_printed validBody
+    (by simp [declTokens]) (by simp [equationTokens, rateTokens_free]) printedBody
+  obtain ⟨elements, sections⟩ := c
+  obtain ⟨validElements, validSections⟩ := validBody
+  simp only at sectioned declared validElements validSections
+  subst sectioned
+  rw [elements_of validElements declared,
+    equations_of (equations := equations) (validSections _ (List.mem_singleton_self _)) equated]
+  rfl
+
+private theorem states_map (pos : Nat) (names : List String)
+    (admitted : ∀ n ∈ names, predefined n = false) : states pos (names.map stateElement) = .ok names := by
+  induction names generalizing pos with
+  | nil => rfl
+  | cons name rest ih =>
+    have named := admitted name (List.mem_cons_self ..)
+    simp [states, stateElement, Select.state, declaration, Select.name, named,
+      ih (pos + 3) (fun n member => admitted n (List.mem_cons_of_mem _ member)),
+      bind, Except.bind, pure, Except.pure]
+
+private theorem rate_rateExpr (pos : Nat) {r : String} (admitted : rateSpelling r = true) :
+    rate pos (rateExpr r) = .ok r := by
+  unfold rateSpelling at admitted
+  unfold rateExpr
+  split
+  · rename_i rest same
+    rw [same] at admitted
+    simp only at admitted
+    simp only [rate, bare, beq_self_eq_true, Bool.true_or, admitted, Bool.and_self, ↓reduceIte]
+    congr 1
+    apply String.toList_injective
+    simp [same]
+  · rename_i rest same
+    rw [same] at admitted
+    simp only at admitted
+    simp only [rate, bare, beq_self_eq_true, Bool.or_true, admitted, Bool.and_self, ↓reduceIte]
+    congr 1
+    apply String.toList_injective
+    simp [same]
+  · rename_i minus plus
+    split at admitted
+    · rename_i rest same; exact absurd same (minus rest)
+    · rename_i rest same; exact absurd same (plus rest)
+    · simp [rate, bare, admitted]
+
+private theorem rates_map (pos : Nat) (read : List Equation)
+    (admitted : ∀ e ∈ read, predefined e.derivative = false ∧ rateSpelling e.rate = true) :
+    rates pos (read.map rateEquation) = .ok read := by
+  induction read generalizing pos with
+  | nil => rfl
+  | cons e rest ih =>
+    obtain ⟨named, spelled⟩ := admitted e (List.mem_cons_self ..)
+    simp [rates, rateEquation, Select.derivative, reference, bare, Select.name, named,
+      rate_rateExpr _ spelled, ih _ (fun x member => admitted x (List.mem_cons_of_mem _ member)),
+      bind, Except.bind, pure, Except.pure]
+
+/-- Selection reads every admissible record back from the parse of its tokens. -/
+theorem select_complete (m : Model) (admissible : m.Admissible) :
+    ∃ ast, Structural.parse m.tokens = some ast ∧ select ast = .ok m := by
+  obtain ⟨ast, success⟩ := (Structural.accepts_iff _).mpr (accepts m)
+  refine ⟨ast, success, ?_⟩
+  rw [parse_tree success]
+  obtain ⟨names, spellings⟩ := admissible
+  have named : predefined m.name = false :=
+    names _ (List.mem_append_left _ (List.mem_append_left _ (List.mem_cons_self ..)))
+  have ended : predefined m.endName = false :=
+    names _ (List.mem_append_right _ (List.mem_singleton_self _))
+  have stated := states_map 2 m.states fun n member =>
+    names n (List.mem_append_left _ (List.mem_append_left _ (List.mem_cons_of_mem _ member)))
+  have rated := rates_map (3 + elementsWidth (m.states.map stateElement)) m.equations
+    fun e member => ⟨names _ (List.mem_append_left _ (List.mem_append_right _
+      (List.mem_map_of_mem (f := Equation.derivative) member))), spellings e member⟩
+  obtain ⟨name, state0, state1, statesRest, equation0, equationsRest, endName⟩ := m
+  simp only [Model.states, Model.equations, List.map_cons] at stated rated
+  simp [select, syntaxTree, Select.model, Select.name, named, ended, Model.states,
+    Model.equations, stated, Select.equations, rated, bind, Except.bind, pure, Except.pure]
+
+/-- Every admissible record whose tokens a source lexes to is the selected
+parse of that source. -/
+theorem parse_complete {source : String} (m : Model) (lexes : Lexes source.toList m.tokens)
+    (admissible : m.Admissible) : ∃ p : selection.Parsed source, p.ast = m := by
+  obtain ⟨ast, syntactic, selected⟩ := select_complete m admissible
+  refine Selection.Parsed.complete lexes ?_ syntactic selected
+  simp [Selection.Uncommented, selection, Model.tokens, declTokens, equationTokens, isComment,
+    List.all_flatMap]
+  intro _ _ t member
+  rcases rateTokens_member member with rfl | rfl | ⟨_, rfl⟩ <;> rfl
 
 end Selection
 

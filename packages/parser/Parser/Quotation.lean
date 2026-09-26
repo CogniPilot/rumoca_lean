@@ -26,6 +26,13 @@ def quoteDefinition {α : Type} [ToExpr α] (name : Name) (value : α) : Command
       hints := .abbrev
       safety := .safe })
 
+/-- Only the three standard foundational axioms, carried by referenced
+definitions, are admitted in an equation certificate. -/
+private def auditEquation (name : Name) : CommandElabM Unit := do
+  for dependency in ← collectAxioms name do
+    unless #[``propext, ``Classical.choice, ``Quot.sound].contains dependency do
+      throwError "invalid equation certificate {name}: {dependency}"
+
 /-- Add the theorem `name : type` proved by `Eq.refl right`, so the kernel
 checks the equation. Only the three standard foundational axioms, carried by
 referenced definitions, are admitted in the result. -/
@@ -38,8 +45,21 @@ def checkEquation (name : Name) (type : TSyntax `term) (right : TSyntax `term) :
     let type ← instantiateMVars type
     let proof ← Meta.mkEqRefl (← instantiateMVars right)
     addDecl (.thmDecl { name, levelParams := [], type, value := proof })
-  for dependency in ← collectAxioms name do
-    unless #[``propext, ``Classical.choice, ``Quot.sound].contains dependency do
-      throwError "invalid equation certificate {name}: {dependency}"
+  auditEquation name
+
+/-- Add the theorem `name : ∀ xs, left = right` proved by `fun xs => Eq.refl right`,
+so the kernel checks the equation for every value of the binders. The binders
+may only occur in data the reduction carries, never in data it inspects;
+otherwise the kernel rejects the declaration. -/
+def checkUniversalEquation (name : Name) (type : TSyntax `term) : CommandElabM Unit := do
+  liftTermElabM do
+    let type ← Term.elabType type
+    Term.synthesizeSyntheticMVarsNoPostponing
+    let type ← instantiateMVars type
+    let proof ← Meta.forallTelescope type fun binders equation => do
+      let some (_, _, right) := equation.eq? | throwError "expected an equation: {equation}"
+      Meta.mkLambdaFVars binders (← Meta.mkEqRefl right)
+    addDecl (.thmDecl { name, levelParams := [], type, value := proof })
+  auditEquation name
 
 end Parser.Quotation

@@ -336,4 +336,87 @@ theorem Lexes.ident_not_time (lexed : Lexes cs ts) (name : String) (member : .id
   have := chars '(' paren
   simp [identRest, identStart, asciiLetter] at this
 
+
+/-- The characters of a STRING body: any character other than `"` and `\`, or a
+backslash and an S-ESCAPE character. -/
+inductive StringBody : List Char → Prop where
+  | nil : StringBody []
+  | char : c ≠ '"' → c ≠ '\\' → StringBody cs → StringBody (c :: cs)
+  | escape : escapeChar e = true → StringBody cs → StringBody ('\\' :: e :: cs)
+
+theorem stringLength_body {body rest : List Char} (valid : StringBody body) :
+    stringLength (body ++ '"' :: rest) = some (body.length + 1) := by
+  induction valid with
+  | nil => simp [stringLength]
+  | char quote backslash _ ih =>
+    rw [List.cons_append, stringLength.eq_def]
+    split <;> simp_all
+  | escape escaped _ ih =>
+    simp [stringLength, escaped, ih]
+
+theorem stringLength_sound {cs : List Char} {n : Nat} (found : stringLength cs = some n) :
+    ∃ body rest, cs = body ++ '"' :: rest ∧ StringBody body ∧ n = body.length + 1 := by
+  induction cs using stringLength.induct generalizing n with
+  | case1 => simp [stringLength] at found
+  | case2 rest =>
+    simp only [stringLength, Option.some.injEq] at found
+    exact ⟨[], rest, rfl, .nil, found.symm⟩
+  | case3 e rest escaped ih =>
+    simp only [stringLength, escaped, ↓reduceIte, Option.map_eq_some_iff] at found
+    obtain ⟨k, found, rfl⟩ := found
+    obtain ⟨body, rest', rfl, valid, rfl⟩ := ih found
+    exact ⟨'\\' :: e :: body, rest', rfl, .escape escaped valid, by simp⟩
+  | case4 e rest unescaped => simp [stringLength, unescaped] at found
+  | case5 => simp [stringLength] at found
+  | case6 c rest quote backslash backslashEnd ih =>
+    simp only [stringLength, Option.map_eq_some_iff] at found
+    obtain ⟨k, found, rfl⟩ := found
+    obtain ⟨body, rest', rfl, valid, rfl⟩ := ih found
+    have plain : c ≠ '\\' := by
+      intro same
+      cases body with
+      | nil => exact backslash '"' rest' same rfl
+      | cons e more => exact backslash e (more ++ '"' :: rest') same rfl
+    exact ⟨c :: body, rest', rfl, .char quote plain valid, by simp⟩
+
+/-- A STRING ends at its first unescaped quote: the lexer takes exactly a
+string body and that quote. -/
+theorem string_maximal {cs : List Char} {n : Nat} :
+    stringLength cs = some n ↔ ∃ body rest, cs = body ++ '"' :: rest ∧ StringBody body ∧
+      n = body.length + 1 :=
+  ⟨stringLength_sound, fun ⟨_, _, same, valid, length⟩ => by
+    rw [same, length]; exact stringLength_body valid⟩
+
+/-- A block comment ends at its first `*/`: comments do not nest, and a `/*`
+inside a comment opens nothing. -/
+theorem comment_not_nested {cs : List Char} {n : Nat} (found : blockCommentLength cs = some n) :
+    ∃ body, cs.take n = body ++ ['*', '/'] ∧ ¬ ['*', '/'] <:+: body := by
+  induction cs using blockCommentLength.induct generalizing n with
+  | case1 => simp [blockCommentLength] at found
+  | case2 rest =>
+    simp only [blockCommentLength, Option.some.injEq] at found
+    subst found
+    exact ⟨[], rfl, by simp⟩
+  | case3 c rest unclosed ih =>
+    simp only [blockCommentLength, Option.map_eq_some_iff] at found
+    obtain ⟨k, inner, rfl⟩ := found
+    obtain ⟨body, taken, open'⟩ := ih inner
+    refine ⟨c :: body, by simp [taken], ?_⟩
+    intro inside
+    rcases List.infix_cons_iff.mp inside with ⟨t, atHead⟩ | later
+    · simp only [List.cons_append, List.nil_append, List.cons.injEq] at atHead
+      obtain ⟨rfl, rfl⟩ := atHead
+      cases rest with
+      | nil => simp at taken
+      | cons r rs =>
+        cases k with
+        | zero => simp at taken
+        | succ k =>
+          simp only [List.take_succ_cons, List.cons_append, List.cons.injEq] at taken
+          exact unclosed rs rfl (by rw [taken.1])
+    · exact open' later
+
+/-- A quoted identifier is not scanned. -/
+theorem quoted_identifier_rejected : ∃ d, lex "model 'q' end 'q';" = .error d := ⟨_, rfl⟩
+
 end Rumoca

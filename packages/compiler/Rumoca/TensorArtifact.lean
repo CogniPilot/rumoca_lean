@@ -72,16 +72,23 @@ theorem compileTensor_eq_parsed (input : Source.InputRef) (parsed : ArrayProfile
     ArrayCompiler.prepare_eq_parsed parsed resolved]
   rfl
 
-/-- Every uncommented source whose certified parse selects a resolvable array-profile model
-compiles, with that model. This is the array analogue of the unit profile's
-`compile_complete`. -/
-theorem compileTensor_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
-    (m : ArrayProfile.Model) (selected : ArrayProfile.select tree.ast = .ok m)
-    (uncommented : Modelica.Selection.Uncommented tree.lexemes)
+/-- Every resolvable, admissible array-profile record whose tokens the source
+lexes to compiles, with that model. This is the array analogue of the unit
+profile's `compile_complete`. -/
+theorem compileTensor_complete (input : Source.InputRef) (m : ArrayProfile.Model)
+    (syntaxValid : Lexes input.source.toList m.tokens) (admissible : m.Admissible)
     (resolved : m.Resolved) :
-    ∃ a, compileTensor input = .ok a ∧ a.prepared.parsed.parsed.ast = m :=
-  ⟨TensorArtifact.ofParsed input ⟨tree, m, selected, uncommented⟩ resolved,
-    compileTensor_eq_parsed input _ resolved, rfl⟩
+    ∃ a, compileTensor input = .ok a ∧ a.prepared.parsed.parsed.ast = m := by
+  obtain ⟨parsed, rfl⟩ := ArrayProfile.parse_complete m syntaxValid admissible
+  exact ⟨TensorArtifact.ofParsed input parsed resolved, compileTensor_eq_parsed input _ resolved, rfl⟩
+
+/-- The array compiler rejects every source whose tree no profile selects. -/
+theorem compileTensor_rejected {r : Modelica.Rejection} (tree : Modelica.Parsed input.source)
+    (rejection : Modelica.Profile.select tree.ast = .error r) :
+    ∃ e, compileTensor input = .error e := by
+  cases compiled : compileTensor input with
+  | error e => exact ⟨e, rfl⟩
+  | ok a => exact ((Modelica.Profile.rejected tree rejection).2.1 a.prepared.parsed.parsed).elim
 
 /-! ### The development `TensorSquare` instance
 

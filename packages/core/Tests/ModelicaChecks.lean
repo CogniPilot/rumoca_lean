@@ -190,6 +190,18 @@ certify_source integerRate
 theorem integerRate_rejected :
     Profile.select integerRate.ast = .error ⟨14, "the rate may not be 2"⟩ := by rfl
 
+/- A rate with a trailing point, an MLS number spelling not admitted as a rate. -/
+certify_source trailingPoint
+  "model M Real x; Real y; equation der(x) = 2.; der(y) = -1; end M;"
+theorem trailingPoint_rejected :
+    Profile.select trailingPoint.ast = .error ⟨14, "the rate may not be 2."⟩ := by rfl
+
+/- A rate with a leading point, an MLS number spelling not admitted as a rate. -/
+certify_source leadingPoint
+  "model M Real x; Real y; equation der(x) = 2.5; der(y) = -.5; end M;"
+theorem leadingPoint_rejected :
+    Profile.select leadingPoint.ast = .error ⟨21, "the rate may not be -.5"⟩ := by rfl
+
 /- A rate sign is the leading sign of the arithmetic expression; lexical units
 may be separated by white space. -/
 certify_source separatedSign
@@ -211,6 +223,13 @@ theorem commented_rejected (parsed : AST.selection.Parsed commented.source) : Fa
   have uncommented := parsed.uncommented
   rw [same] at uncommented
   exact absurd uncommented (by decide)
+
+/- A number token satisfies every `IDENT` position of the grammar; static
+semantics rejects it as a name. -/
+certify_source numberName "model 1 Real x; equation der(x) = 1; end 1;"
+theorem numberName_rejected :
+    Profile.select numberName.ast =
+      .error ⟨1, "the model name must be an identifier, not the number 1"⟩ := by rfl
 
 /- An empty stored definition. -/
 certify_source empty ""
@@ -242,6 +261,9 @@ theorem empty_rejected :
 #audit axioms arrayState_rejected
 #audit axioms twoSections_rejected
 #audit axioms integerRate_rejected
+#audit axioms trailingPoint_rejected
+#audit axioms leadingPoint_rejected
+#audit axioms numberName_rejected
 #audit axioms separatedSign_selected
 #audit axioms commented_rejected
 #audit axioms empty_rejected

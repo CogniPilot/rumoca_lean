@@ -1,4 +1,5 @@
 import RumocaCore.Modelica.Select
+import ModelicaParser.Certificate
 
 /-! The unit profile: one plain `Real` state and the equation `der(state) = 1`,
 selected from the general syntax tree. The record keeps the four written names;
@@ -73,6 +74,43 @@ theorem select_printed {d : Modelica.AST.StoredDefinition} {m : Model} (h : sele
   rfl
 
 def selection : Modelica.Selection Model := ⟨select, Model.tokens, fun _ _ => select_printed⟩
+
+/-! ### Completeness -/
+
+/-- The names a unit-profile record reads from its source. -/
+def Model.names (m : Model) : List String := [m.name, m.state, m.derivativeName, m.endName]
+
+/-- Selection admits exactly the records whose names are not predefined type
+names. -/
+def Model.Admissible (m : Model) : Prop := ∀ n ∈ m.names, Modelica.Select.predefined n = false
+
+instance (m : Model) : Decidable m.Admissible := by
+  unfold Model.Admissible; infer_instance
+
+certify_family sourceFamily (name state derivativeName endName)
+  (Model.tokens ⟨name, state, derivativeName, endName⟩)
+
+open Modelica Modelica.Select in
+/-- Selection reads every admissible record back from the parse of its tokens. -/
+theorem select_complete (m : Model) (admissible : m.Admissible) :
+    ∃ ast, Structural.parse m.tokens = some ast ∧ select ast = .ok m := by
+  obtain ⟨name, state, derivativeName, endName⟩ := m
+  refine ⟨_, sourceFamily.syntactic name state derivativeName endName, ?_⟩
+  simp only [Model.Admissible, Model.names, List.mem_cons, List.not_mem_nil, or_false,
+    forall_eq_or_imp, forall_eq] at admissible
+  obtain ⟨named, stated, differentiated, ended⟩ := admissible
+  simp [select, sourceFamily.ast, Select.model, Select.name, named, stated, differentiated, ended,
+    one, Select.state, declaration, Select.equations, Select.derivative, reference, exactly, numeral,
+    bind, Except.bind, pure, Except.pure, Except.map]
+
+/-- Every admissible record whose tokens a source lexes to is the selected
+parse of that source. -/
+theorem parse_complete {source : String} (m : Model) (lexes : Lexes source.toList m.tokens)
+    (admissible : m.Admissible) : ∃ p : selection.Parsed source, p.ast = m := by
+  obtain ⟨ast, syntactic, selected⟩ := select_complete m admissible
+  exact Modelica.Selection.Parsed.complete lexes
+    (by simp [Modelica.Selection.Uncommented, selection, Model.tokens, Modelica.isComment])
+    syntactic selected
 
 end Rumoca.AST
 

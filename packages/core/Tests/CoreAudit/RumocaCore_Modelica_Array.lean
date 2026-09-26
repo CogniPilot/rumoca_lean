@@ -20,3 +20,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ArrayProfile.LocatedParsed.callLocation
 #audit axioms Rumoca.ArrayProfile.LocatedParsed.resolve
 #audit axioms Rumoca.ArrayProfile.LocatedParsed.resolve_complete
+#audit axioms Rumoca.ArrayProfile.Model.names
+#audit axioms Rumoca.ArrayProfile.Model.Admissible
+#audit axioms Rumoca.ArrayProfile.sourceFamily.syntactic
+#audit axioms Rumoca.ArrayProfile.select_complete
+#audit axioms Rumoca.ArrayProfile.parse_complete

@@ -11,6 +11,7 @@ import Parser.LALR.Payloads
 import Parser.LALR.EBNFStructure
 import Parser.LALR.EBNFActions
 import Parser.LALR.ActionYield
+import Parser.LALR.ActionHolds
 import Parser.LALR.Rejection
 import Parser.EBNF.Equivalence
 import Parser.LALR.ActionWords
@@ -129,6 +130,7 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.Source.attach_complete
 #audit axioms Parser.EBNF.Derives.mono
 #audit axioms Parser.EBNF.Derives.nonempty_tokens
+#audit axioms Parser.EBNF.Derives.comment_not_mem
 #audit axioms Parser.LALR.Frontend.Witness.validate_iff
 #audit axioms Parser.LALR.Frontend.Fragment.yields
 #audit axioms Parser.LALR.Frontend.AnnotatedRule.yields
@@ -324,6 +326,9 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Frontend.StructuralActions.denotes_valid
 #audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields
 #audit axioms Parser.LALR.Frontend.StructuralActions.Yield
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Holds
+#audit axioms Parser.LALR.Frontend.StructuralActions.Establishes
+#audit axioms Parser.LALR.Frontend.StructuralActions.Denotes.holds
 #audit axioms Parser.LALR.Frontend.StructuralActions.Denotes.tokens
 #audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.terminal
 #audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.fixed

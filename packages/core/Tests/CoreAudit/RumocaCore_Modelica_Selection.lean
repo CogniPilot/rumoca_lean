@@ -26,3 +26,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.Selection.LocatedParsed.codeLocations_eq
 #audit axioms Rumoca.Modelica.Selection.LocatedParsed.tokenSpan_eq
 #audit axioms Rumoca.Modelica.Selection.commentSpan
+#audit axioms Rumoca.Modelica.Selection.Parsed.complete

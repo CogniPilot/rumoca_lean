@@ -11,6 +11,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.compileTensor_eq
 #audit axioms Rumoca.compileTensor_eq_parsed
 #audit axioms Rumoca.compileTensor_complete
+#audit axioms Rumoca.compileTensor_rejected
 #audit axioms Rumoca.TensorArtifact.ast_determined
 #audit axioms Rumoca.TensorArtifact.tensorModel_square
 #audit axioms Rumoca.TensorArtifact.name_square

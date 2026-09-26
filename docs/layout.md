@@ -18,8 +18,9 @@ packages/
     LALRGenerate.lean        Grammar-parametric LALR candidate generator
     Tests/                   Engine-only proof audits and kernel regressions
   modelica-parser/
-    grammar/                 Selected Modelica EBNF and restrictions
-    ModelicaParser/          Generated tables, lexer, AST, actions and proofs
+    grammar/                 Modelica 3.7 Appendix A EBNF subset, clause table and deviations
+    ModelicaParser/          MLS lexer, generated tables, general syntax tree, structural
+                             actions, printer, tree invariants, parse certificates and proofs
     Bench/                   Optional native stage measurement executable
     Tests/                   Modelica parser, location and parallel-result audits
   galec-parser/
@@ -27,8 +28,9 @@ packages/
     GALECParser/             Generated tables, scanner policy, syntax and proofs
     Tests/                   GALEC instance audits
   core/
-    RumocaCore/               Flat/DAE/Solve IR, arithmetic and transition proofs
-    Tests/                    Core theorem audit and tensor checks
+    RumocaCore/               Modelica static semantics (profile selection over the parsed
+                              tree), Flat/DAE/Solve IR, arithmetic and transition proofs
+    Tests/                    Core theorem audit, selection and rejection certificates, tensor checks
   backend-c/
     RumocaC/                  Shared Solve → C emission, printers and target semantics
     Tests/                    Shared numerical, memory, call and printer proof audits
@@ -83,13 +85,15 @@ their own checks. Both FMI backends and the compiler's manifest checker depend
 on XML; model-specific document construction remains in the backends.
 The compiler also depends on both language frontends, core, backend-c, backend-fmi3 and
 backend-efmi. The runner uses only Std and the external FMPy executable. Core
-uses the source AST. Both FMI backends use backend-c; neither depends on the
-other. Shared C consumes Solve IR and arithmetic, with explicit adapter-owned
-constant/type bindings for object and call execution. The eFMI backend prints
-Algorithm Code from the core GALEC block builders and emits Production Code
-from the Solve algorithm prepared from the DAE; a proved refinement relation
-states that the printed block's methods execute as that Solve algorithm, for
-the scalar and tensor profiles alike. Neither backend performs that preparation.
+depends on modelica-parser: it owns Modelica static semantics, selecting each
+admitted record from the general parsed tree and certifying the rejection of
+every other tree, while the frontend owns only lexing and syntax. Both FMI
+backends use backend-c; neither depends on the other. Shared C consumes Solve IR
+and arithmetic, with explicit adapter-owned constant/type bindings for object and
+call execution. The eFMI backend prints Algorithm Code from the core GALEC block
+builders and emits Production Code from the Solve algorithm prepared from the
+DAE; a proved refinement relation states that the printed block's methods
+execute as that Solve algorithm, for the scalar and tensor profiles alike. Neither backend performs that preparation.
 Parser, core and all backends never import the compiler package. A new backend belongs beside backend-fmi3 and
 must supply its own target contract before its output gains a formal guarantee.
 

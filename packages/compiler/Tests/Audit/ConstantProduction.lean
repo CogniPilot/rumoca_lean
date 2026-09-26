@@ -7,6 +7,7 @@ import ProofAudit.Audit
 #audit axioms Rumoca.compileConstant_eq
 #audit axioms Rumoca.compileConstant_eq_parsed
 #audit axioms Rumoca.compileConstant_complete
+#audit axioms Rumoca.compileConstant_rejected
 #audit axioms Rumoca.ConstantArtifact.name_rates
 #audit axioms Rumoca.ConstantKernel.chars
 #audit axioms Rumoca.ConstantKernel.modelC_programText

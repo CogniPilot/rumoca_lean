@@ -1,4 +1,5 @@
 import RumocaCore.Modelica.Select
+import ModelicaParser.Certificate
 
 /-! The square Jacobian array profile, selected from the general syntax tree:
 an input and a state of extent two, a dense two-by-two Jacobian output, the
@@ -315,6 +316,57 @@ theorem select_printed {d : Modelica.AST.StoredDefinition} {m : Model} (h : sele
   · cases h
 
 def selection : Selection Model := ⟨select, Model.tokens, fun _ _ => select_printed⟩
+
+/-! ### Completeness -/
+
+/-- The names a square-profile record reads from its source. -/
+def Model.names (m : Model) : List String :=
+  [m.header.name, m.header.input, m.header.state, m.header.startAttribute,
+    m.header.fixedAttribute] ++
+  (match m.body with
+    | .jacobian output derivative rhs assigned call =>
+      [output, derivative, rhs.left, rhs.right, assigned, call.name, call.expression.left,
+        call.expression.right, call.wrt]) ++
+  [m.endName]
+
+/-- Selection admits exactly the records whose names are not predefined type
+names. -/
+def Model.Admissible (m : Model) : Prop := ∀ n ∈ m.names, Modelica.Select.predefined n = false
+
+instance (m : Model) : Decidable m.Admissible := by
+  unfold Model.Admissible; infer_instance
+
+certify_family sourceFamily (name input state startAttribute fixedAttribute output derivative
+    left right assigned callee callLeft callRight wrt endName)
+  (Model.tokens ⟨⟨name, input, state, startAttribute, fixedAttribute⟩,
+    .jacobian output derivative ⟨left, right⟩ assigned ⟨callee, ⟨callLeft, callRight⟩, wrt⟩,
+    endName⟩)
+
+/-- Selection reads every admissible record back from the parse of its tokens. -/
+theorem select_complete (m : Model) (admissible : m.Admissible) :
+    ∃ ast, Structural.parse m.tokens = some ast ∧ select ast = .ok m := by
+  obtain ⟨⟨name, input, state, startAttribute, fixedAttribute⟩,
+    ⟨output, derivative, ⟨left, right⟩, assigned, ⟨callee, ⟨callLeft, callRight⟩, wrt⟩⟩,
+    endName⟩ := m
+  refine ⟨_, sourceFamily.syntactic name input state startAttribute fixedAttribute output
+    derivative left right assigned callee callLeft callRight wrt endName, ?_⟩
+  simp only [Model.Admissible, Model.names, List.cons_append, List.nil_append, List.mem_cons,
+    List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq] at admissible
+  obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅⟩ := admissible
+  simp [select, sourceFamily.ast, Select.model, Select.name, h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈, h₉,
+    h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, declaration, vector, matrix, absent, initialization,
+    eachArgument, trueValue, Select.equations, Select.derivative, selectProduct, selectCall,
+    reference, exactly, numeral, bind, Except.bind, pure, Except.pure, Except.map]
+
+/-- Every admissible record whose tokens a source lexes to is the selected
+parse of that source. -/
+theorem parse_complete {source : String} (m : Model) (lexes : Lexes source.toList m.tokens)
+    (admissible : m.Admissible) : ∃ p : selection.Parsed source, p.ast = m := by
+  obtain ⟨ast, syntactic, selected⟩ := select_complete m admissible
+  exact Modelica.Selection.Parsed.complete lexes (by
+    obtain ⟨_, ⟨_, _, _, _, _⟩, _⟩ := m
+    simp [Modelica.Selection.Uncommented, selection, Model.tokens, Header.tokens, Body.tokens,
+      Product.tokens, Call.tokens, Modelica.isComment]) syntactic selected
 
 end Selection
 

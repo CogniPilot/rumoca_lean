@@ -1,6 +1,8 @@
 import ModelicaParser
 import ModelicaParser.Annex
 import ModelicaParser.Certificate
+import ModelicaParser.Inversion
+import ModelicaParser.Derivations
 import ProofAudit.Audit
 
 #audit axioms Rumoca.Generated.source_read_checked
@@ -69,6 +71,80 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.Structural.parse_printed
 #audit axioms Rumoca.Modelica.Annex.arithmetic_expression_iff
 #audit axioms Rumoca.Modelica.Annex.component_reference_iff
+
+#audit axioms Rumoca.Modelica.Good.storedDefinition
+#audit axioms Rumoca.Modelica.Good.expr
+#audit axioms Rumoca.Modelica.Good.name
+#audit axioms Rumoca.Modelica.Good.typePrefix
+#audit axioms Rumoca.Modelica.Good.declaration
+#audit axioms Rumoca.Modelica.Good.declarations
+#audit axioms Rumoca.Modelica.Good.componentClause
+#audit axioms Rumoca.Modelica.Good.element
+#audit axioms Rumoca.Modelica.Good.equation
+#audit axioms Rumoca.Modelica.Good.equationSection
+#audit axioms Rumoca.Modelica.Good.composition
+#audit axioms Rumoca.Modelica.Good.classSpecifier
+#audit axioms Rumoca.Modelica.Good.classDefinition
+#audit axioms Rumoca.Modelica.Good.modification
+#audit axioms Rumoca.Modelica.Good.invariant
+#audit axioms Rumoca.Modelica.Good.exprs_iff
+#audit axioms Rumoca.Modelica.Good.outputs_iff
+#audit axioms Rumoca.Modelica.Good.components_iff
+#audit axioms Rumoca.Modelica.Good.argumentList_iff
+#audit axioms Rumoca.Modelica.Good.leftAssociate
+#audit axioms Rumoca.Modelica.Good.literal_of_symbol
+#audit axioms Rumoca.Modelica.Good.establishes
+#audit axioms Rumoca.Modelica.Good.parse_good
+#audit axioms Rumoca.Modelica.Good.ExpressionToken
+#audit axioms Rumoca.Modelica.Good.ElementToken
+#audit axioms Rumoca.Modelica.Good.BodyToken
+#audit axioms Rumoca.Modelica.Good.expr_tokens
+#audit axioms Rumoca.Modelica.Good.modification_tokens
+#audit axioms Rumoca.Modelica.Good.name_tokens
+#audit axioms Rumoca.Modelica.Good.declaration_tokens
+#audit axioms Rumoca.Modelica.Good.element_tokens
+#audit axioms Rumoca.Modelica.Good.equation_tokens
+#audit axioms Rumoca.Modelica.Good.elements_tokens
+#audit axioms Rumoca.Modelica.Good.equations_tokens
+#audit axioms Rumoca.Modelica.Good.composition_tokens
+#audit axioms Rumoca.Modelica.Good.not_mem_of_tokens
+#audit axioms Rumoca.Modelica.Good.split_unique
+#audit axioms Rumoca.Modelica.Good.not_named_literal
+#audit axioms Rumoca.Modelica.Good.component_ne_nil
+#audit axioms Rumoca.Modelica.Good.reference_ne_nil
+#audit axioms Rumoca.Modelica.Good.expr_ne_nil
+#audit axioms Rumoca.Modelica.Good.callee_ne_nil
+#audit axioms Rumoca.Modelica.Good.reference_head
+#audit axioms Rumoca.Modelica.Good.bare_of_printed
+#audit axioms Rumoca.Modelica.Good.signed_of_printed
+#audit axioms Rumoca.Modelica.Good.derivative_of_printed
+#audit axioms Rumoca.Modelica.Good.subscripts_nil
+#audit axioms Rumoca.Modelica.Good.optionalModification_nil
+#audit axioms Rumoca.Modelica.Good.element_of_printed
+#audit axioms Rumoca.Modelica.Good.not_expression_equals
+#audit axioms Rumoca.Modelica.Good.equation_of_printed
+#audit axioms Rumoca.Modelica.Good.composition_of_printed
+#audit axioms Rumoca.Modelica.Good.storedDefinition_of_printed
+#audit axioms Rumoca.Modelica.Derivations.many
+#audit axioms Rumoca.Modelica.Derivations.componentReference_ident
+#audit axioms Rumoca.Modelica.Derivations.expression_of_arithmetic
+#audit axioms Rumoca.Modelica.Derivations.simpleExpression_of_arithmetic
+#audit axioms Rumoca.Modelica.Derivations.term_of_primary
+#audit axioms Rumoca.Modelica.Derivations.arithmetic_of_term
+#audit axioms Rumoca.Modelica.Derivations.arithmetic_signed
+#audit axioms Rumoca.Modelica.Derivations.primary_ident
+#audit axioms Rumoca.Modelica.Derivations.arithmetic_ident
+#audit axioms Rumoca.Modelica.Derivations.primary_derivative
+#audit axioms Rumoca.Modelica.Derivations.someEquation
+#audit axioms Rumoca.Modelica.Derivations.element_declaration
+#audit axioms Rumoca.Modelica.Derivations.composition
+#audit axioms Rumoca.Modelica.Derivations.accepts_model
+#audit axioms Rumoca.StringBody
+#audit axioms Rumoca.stringLength_body
+#audit axioms Rumoca.stringLength_sound
+#audit axioms Rumoca.string_maximal
+#audit axioms Rumoca.comment_not_nested
+#audit axioms Rumoca.quoted_identifier_rejected
 
 #audit axioms Rumoca.Modelica.isComment
 #audit axioms Rumoca.Modelica.code

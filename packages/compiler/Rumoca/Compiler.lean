@@ -1,4 +1,5 @@
 import RumocaCore.Modelica.UnitOrigins
+import RumocaCore.Modelica.Profile
 import RumocaC.Codegen
 
 open _root_.Parser
@@ -41,13 +42,20 @@ theorem compile_eq_parsed (input : Source.InputRef) (parsed : Parsed input.sourc
   rw [LocatedParsed.resolve_complete parsed.located resolved]
   rfl
 
-/-- Every uncommented source whose certified parse selects a resolvable unit model compiles,
-with that model. -/
-theorem compile_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
-    (m : AST.Model) (selected : AST.select tree.ast = .ok m)
-    (uncommented : Modelica.Selection.Uncommented tree.lexemes) (resolved : AST.Resolved m) :
-    ∃ a, compile input = .ok a ∧ a.parsed.ast = m :=
-  ⟨Artifact.ofParsed input ⟨tree, m, selected, uncommented⟩ resolved,
-    compile_eq_parsed input _ resolved, rfl⟩
+/-- Every resolvable, admissible unit-profile record whose tokens the source
+lexes to compiles, with that model. -/
+theorem compile_complete (input : Source.InputRef) (m : AST.Model)
+    (syntaxValid : Lexes input.source.toList m.tokens) (admissible : m.Admissible)
+    (resolved : AST.Resolved m) :
+    ∃ a, compile input = .ok a ∧ a.parsed.ast = m := by
+  obtain ⟨parsed, rfl⟩ := AST.parse_complete m syntaxValid admissible
+  exact ⟨Artifact.ofParsed input parsed resolved, compile_eq_parsed input _ resolved, rfl⟩
+
+/-- The unit compiler rejects every source whose tree no profile selects. -/
+theorem compile_rejected {r : Modelica.Rejection} (tree : Modelica.Parsed input.source)
+    (rejection : Modelica.Profile.select tree.ast = .error r) : ∃ e, compile input = .error e := by
+  cases compiled : compile input with
+  | error e => exact ⟨e, rfl⟩
+  | ok a => exact ((Modelica.Profile.rejected tree rejection).1 a.parsed).elim
 
 end Rumoca

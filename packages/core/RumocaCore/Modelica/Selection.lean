@@ -76,6 +76,16 @@ def parse (source : String) : Except Diagnostic (s.Parsed source) :=
       | .ok ast => .ok ⟨tree, ast, selected, uncommented⟩
     else .error ⟨"select", 0, "comments are not admitted yet"⟩
 
+/-- Completeness of a selection from the characters of a source: an
+uncommented record whose tokens the source lexes to, whose tokens parse to a
+tree, and which selection reads back from that tree, is the selected parse. -/
+theorem Parsed.complete {m : α} {ast : AST.StoredDefinition}
+    (lexes : Lexes source.toList (s.tokens m)) (uncommented : Uncommented (s.tokens m))
+    (syntactic : Structural.parse (s.tokens m) = some ast) (selected : s.select ast = .ok m) :
+    ∃ p : s.Parsed source, p.ast = m :=
+  ⟨⟨⟨s.tokens m, ast, (lex_correct source _).mpr lexes,
+    by rw [code_uncommented uncommented]; exact syntactic⟩, m, selected, uncommented⟩, rfl⟩
+
 /-- A selected parse describes the actual executable result. -/
 theorem parse_eq_parsed (p : s.Parsed source) : s.parse source = .ok p := by
   obtain ⟨tree, ast, selected, uncommented⟩ := p

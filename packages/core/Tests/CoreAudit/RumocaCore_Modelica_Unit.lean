@@ -29,3 +29,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.LocatedParsed.resolved_references
 #audit axioms Rumoca.LocatedParsed.resolve_complete
 #audit axioms Rumoca.LocatedParsed.resolve_error_locations
+#audit axioms Rumoca.AST.Model.names
+#audit axioms Rumoca.AST.Model.Admissible
+#audit axioms Rumoca.AST.sourceFamily.syntactic
+#audit axioms Rumoca.AST.select_complete
+#audit axioms Rumoca.AST.parse_complete

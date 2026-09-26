@@ -17,3 +17,13 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ConstantProfile.rate
 #audit axioms Rumoca.ConstantProfile.rate_ok
 #audit axioms Rumoca.ConstantProfile.rateExpr_printed
+#audit axioms Rumoca.ConstantProfile.interiorPoints
+#audit axioms Rumoca.ConstantProfile.rateSpelling
+#audit axioms Rumoca.ConstantProfile.Model.names
+#audit axioms Rumoca.ConstantProfile.Model.Admissible
+#audit axioms Rumoca.ConstantProfile.syntaxTree
+#audit axioms Rumoca.ConstantProfile.rateTokens_cases
+#audit axioms Rumoca.ConstantProfile.accepts
+#audit axioms Rumoca.ConstantProfile.parse_tree
+#audit axioms Rumoca.ConstantProfile.select_complete
+#audit axioms Rumoca.ConstantProfile.parse_complete

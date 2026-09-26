@@ -62,4 +62,9 @@ theorem Derives.nonempty_tokens {grammar expr word}
     · exact left symbol member
     · exact right symbol member
 
+/-- A comment is in no derived word: its symbol is the empty literal. -/
+theorem Derives.comment_not_mem {grammar expr word} (derivation : Derives grammar expr word)
+    (text : String) : (Token.comment text).symbol ∉ word :=
+  fun member => derivation.nonempty_tokens _ member rfl
+
 end Parser.EBNF

@@ -19,9 +19,9 @@ inductive Token where
   /-- A string literal spelling, including its quotes; grammar symbol `STRING`. -/
   | string (text : String)
   /-- A comment spelling. Comments separate lexical units and are never grammar
-  terminals: the symbol of a comment is the empty literal, which no grammar word
-  contains. A frontend keeps comments for their source ranges and removes them
-  before parsing. -/
+  terminals: the symbol of a comment is the empty literal, which no derived
+  grammar word contains (`EBNF.Derives.comment_not_mem`). A frontend keeps
+  comments for their source ranges and removes them before parsing. -/
   | comment (text : String)
   deriving Repr, BEq, DecidableEq
 

@@ -136,16 +136,24 @@ theorem compileConstant_eq_parsed (input : Source.InputRef)
     ConstantCompiler.prepare_eq_parsed parsed resolved]
   rfl
 
-/-- Every uncommented source whose certified parse selects a resolvable constant-rate model
-compiles, with that model. This is the constant analogue of the tensor
+/-- Every resolvable, admissible constant-rate record whose tokens the source
+lexes to compiles, with that model. This is the constant analogue of the tensor
 profile's `compileTensor_complete`. -/
-theorem compileConstant_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
-    (m : ConstantProfile.Model) (selected : ConstantProfile.select tree.ast = .ok m)
-    (uncommented : Modelica.Selection.Uncommented tree.lexemes)
+theorem compileConstant_complete (input : Source.InputRef) (m : ConstantProfile.Model)
+    (syntaxValid : Lexes input.source.toList m.tokens) (admissible : m.Admissible)
     (resolved : m.Resolved) :
-    ∃ a, compileConstant input = .ok a ∧ a.prepared.parsed.parsed.ast = m :=
-  ⟨ConstantArtifact.ofParsed input ⟨tree, m, selected, uncommented⟩ resolved,
-    compileConstant_eq_parsed input _ resolved, rfl⟩
+    ∃ a, compileConstant input = .ok a ∧ a.prepared.parsed.parsed.ast = m := by
+  obtain ⟨parsed, rfl⟩ := ConstantProfile.parse_complete m syntaxValid admissible
+  exact ⟨ConstantArtifact.ofParsed input parsed resolved, compileConstant_eq_parsed input _ resolved,
+    rfl⟩
+
+/-- The constant-rate compiler rejects every source whose tree no profile selects. -/
+theorem compileConstant_rejected {r : Modelica.Rejection} (tree : Modelica.Parsed input.source)
+    (rejection : Modelica.Profile.select tree.ast = .error r) :
+    ∃ e, compileConstant input = .error e := by
+  cases compiled : compileConstant input with
+  | error e => exact ⟨e, rfl⟩
+  | ok a => exact ((Modelica.Profile.rejected tree rejection).2.2 a.prepared.parsed.parsed).elim
 
 /-! ### The development `ConstantRates` instance
 
