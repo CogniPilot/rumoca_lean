@@ -101,6 +101,47 @@ archive export and C emission are rejected with a diagnostic. The state count
 stays symbolic in the model's shape parameter; no rate coordinate is enumerated
 during lowering.
 
+## Development strategy
+
+Rumoca grows by spiral development around a core that is verified at every
+step. The invariant: the main branch always holds a compiler whose admitted
+subset is certified end to end, and every change is either a repair inside
+that subset or one new construct carried through the whole chain before the
+next one starts.
+
+- One construct per spiral. A stage adds a single language feature, entered
+  in its permanent general production shape from the pinned standard, never a
+  fixture-shaped rule that would be rewritten later. Admission of anything the
+  broader grammar accepts stays a semantic rejection in core, with a certified
+  rejection theorem, until its own stage admits it.
+- Every admitted case ships complete. A new source case is accepted only with
+  its source semantics, lowering theorem, target execution theorem and
+  actual-artifact certificate in the same change, for both the FMI 3 FMU and,
+  where the profile publishes it, the eFMU.
+- Verified core first, code generation last. Tensor rank, extents and
+  operations stay native in every intermediate representation and in the
+  published interface metadata; element iteration appears only in the emitted
+  C loops.
+- No parallel or legacy paths. When a mechanism is generalized, the old one
+  is deleted in the same change and its proofs are restated on the new
+  representation; nothing is kept behind a fallback.
+- Gate before growth. Each stage passes an independent review, then the
+  required gate (`nix develop .#verification --command lake test`: proofs,
+  axiom audit, generated-grammar freshness, actual-artifact certificates,
+  mutation controls, native FMI behavior matrices and eFMI checks), and its
+  evidence is recorded in the [verification contract](docs/verification.md)
+  and the [recurring standards review](dev/standards-review.md) before the
+  next stage begins. Release readiness is tracked separately as work packages
+  K02-K05 in [trust packages](dev/trust-packages.md).
+- Standards pinned, findings block. MLS 3.7, FMI 3.0.2 and eFMI 1.0.0 Beta 1
+  are pinned; every open conformance or MISRA C:2025 finding for the admitted
+  subset is recorded and blocks ordinary expansion until closed.
+
+The long-term goal is the whole Modelica Standard Library with the theorem
+that a model which compiles simulates correctly, and eventually that every
+valid model compiles. The next stages target `Modelica.Blocks.Sources.Constant`
+one construct at a time.
+
 ## Run
 
 The default `nix develop` shell includes configured Neovim with Lean syntax
