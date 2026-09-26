@@ -86,7 +86,7 @@ fi
 RUMOCA_SOURCE="$task_tmp/Renamed.mo" RUMOCA_C="$verified/Model.c" \
   lake env lean packages/compiler/Tools/CheckArtifact.lean > "$task_tmp/renamed-actual.log" 2>&1
 bash scripts/audit-lean.sh "$task_tmp/renamed-actual.log"
-sed "s/'1'/'2'/" packages/modelica-parser/grammar/Modelica.ebnf > "$task_tmp/Wrong.ebnf"
+sed 's/"der"/"der2"/' packages/modelica-parser/grammar/Modelica.ebnf > "$task_tmp/Wrong.ebnf"
 if cmp -s packages/modelica-parser/grammar/Modelica.ebnf "$task_tmp/Wrong.ebnf"; then
   echo 'grammar mutation did not change the actual grammar' >&2; exit 1
 fi

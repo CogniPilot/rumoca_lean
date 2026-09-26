@@ -42,7 +42,7 @@ jobs:
         with:
           # Keep dependencies and project artifacts together so newly imported
           # mathlib modules and compiler artifact-certificate .olean products are
-+          # retained too. Lake checks all freshness traces and actual input bytes.
+          # retained too. Lake checks all freshness traces and actual input bytes.
           # This cache epoch excludes retired parser builds and old root modules.
           path: |
             .lake/packages
