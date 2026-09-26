@@ -21,7 +21,7 @@ package README](../README.md)); the grammar never encodes a particular model.
 | `equation-section`, `some-equation`, `equation-or-procedure`, `simple-equation` (846-900) | equation sections of simple equations with their `description` | `initial`, if/for/connect/when equations, procedure calls |
 | `expression` through `relation` (1171-1229) | the unit chain | if-expressions, ranges, `or`, `and`, `not`, relational operators |
 | `arithmetic-expression`, `add-operator`, `term`, `mul-operator`, `factor` (1243-1283) | leading sign, `+ - * / .*` | `.+ .- ./`, `^ .^` |
-| `primary` (1288-1320) | references, calls of references and `der`, `false`, `true`, parenthesized output lists | numbers as a separate alternative (see D3), `STRING`, `time`, `initial`/`pure` calls, postfixes, matrix and array constructors, `end` |
+| `primary` (1288-1320) | references, calls of references and `der`, `STRING`, `false`, `true`, parenthesized output lists | numbers as a separate alternative (see D3), `time`, `initial`/`pure` calls, postfixes, matrix and array constructors, `end` |
 | `name`, `component-reference` (1354-1367) | complete | |
 | `function-call-args` through `function-argument` (1387-1463) | positional arguments | reductions, named arguments, partial application |
 | `output-expression-list`, `array-subscripts`, `subscript` (1477-1508) | complete, expression subscripts | `:` subscripts |
@@ -40,7 +40,7 @@ The lexer implements MLS 3.7 A.1 for the ASCII slice by maximal munch:
 identifiers and the §2.3.3 keywords, UNSIGNED-INTEGER and UNSIGNED-REAL numbers
 (`2.` and `.5` included; a sign is always an operator, so `1-x` is three
 lexical units), STRING literals with the S-ESCAPE set (the `STRING` terminal of
-description strings), `//` and non-nesting `/* */` comments, and the symbols.
+description strings and string primaries), `//` and non-nesting `/* */` comments, and the symbols.
 Comments are lexemes with their own source ranges; the grammar reads the other
 lexemes, and static semantics rejects a commented source until comments are
 admitted. `string_maximal` states that a STRING ends at its first unescaped
@@ -49,16 +49,21 @@ Quoted identifiers are not scanned; the lexer rejects them
 (`quoted_identifier_rejected`). Number spellings with a point at an edge (`2.`,
 `.5`) are lexed but not admitted as rates (certified `trailingPoint_rejected`,
 `leadingPoint_rejected`).
+`decodeString` gives the value of a STRING spelling; `decodeString_iff`
+characterizes it by the S-CHAR and S-ESCAPE rules, and `string_decodes` states
+that every STRING the lexer takes has a value.
 
 Description strings, annotations and condition attributes are parsed in full.
 Static semantics rejects every annotation whose meaning changes translation or
 simulation (`Annotation.meaningChanging`, for example `Evaluate`, `Inline` and
 `derivative`) at its name, and every other description string, annotation and
 condition attribute until they are admitted; `Profile.annotation_irrelevant`
-states that erasing annotations does not change a selection.
+states that erasing annotations does not change a selection. A STRING primary
+is a static-semantic rejection wherever a Real number is required (certified
+`stringRate_rejected`).
 
-The grammar has 26 terminals, 98 nonterminals and 146 productions after
-lowering; its 628 canonical LR(1) states merge into 198 LALR states.
+The grammar has 26 terminals, 99 nonterminals and 148 productions after
+lowering; its 642 canonical LR(1) states merge into 200 LALR states.
 
 Regenerate both checked and runtime tables with `lake run generate`. The full
 gate checks freshness and rejects an actual grammar file changed after

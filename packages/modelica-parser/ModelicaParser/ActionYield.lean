@@ -299,8 +299,9 @@ private theorem primary_yields : Yields primary Print.expr :=
         fun ⟨_, _⟩ => by simp [Print.expr, argumentsPrinter])
       (.alt (.map (payload _))
         (.alt (.map (payload _))
-          (.map <| .congr (.seq (fixed "(") (.seq (ref "output_expression_list" as Print.outputs)
-            (fixed ")"))) fun _ => rfl))))
+          (.alt (.map (payload _))
+            (.map <| .congr (.seq (fixed "(") (.seq (ref "output_expression_list" as Print.outputs)
+              (fixed ")"))) fun _ => rfl)))))
 
 private theorem name_yields : Yields name Print.name :=
   .map <| .congr (.seq (payload .ident) (.many (.seq (fixed ".") (payload .ident))))

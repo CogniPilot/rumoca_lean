@@ -70,11 +70,13 @@ private theorem factor_wellFormed : factor.WellFormed := trivial
 private theorem lit_wellFormed (text : String) (nonempty : text ≠ "") : (lit text).WellFormed :=
   fun same => nonempty (Symbol.literal.inj same)
 private theorem ident_wellFormed : ident.WellFormed := fun same => nomatch same
+private theorem string_wellFormed : string.WellFormed := fun same => nomatch same
 
 local macro "literal" : term => `(lit_wellFormed _ (by decide))
 
 private theorem primary_wellFormed : primary.WellFormed :=
-  ⟨trivial, ⟨⟨trivial, literal⟩, trivial⟩, literal, literal, literal, trivial, literal⟩
+  ⟨trivial, ⟨⟨trivial, literal⟩, trivial⟩, string_wellFormed, literal, literal, literal, trivial,
+    literal⟩
 private theorem name_wellFormed : name.WellFormed := by well_formed name
 private theorem componentReference_wellFormed : componentReference.WellFormed :=
   ⟨⟨ident_wellFormed, trivial, literal, ident_wellFormed, trivial⟩,

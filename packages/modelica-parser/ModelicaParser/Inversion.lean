@@ -22,22 +22,22 @@ def spelledIn (spellings : List String) : Token → Bool
   | .literal s => spellings.contains s
   | _ => false
 
-/-- A token an expression prints: a name token or an expression literal. -/
-def ExpressionToken (t : Token) : Prop := Named t ∨ spelledIn expressionLiterals t = true
+/-- A token an expression prints: a name token, a STRING or an expression literal. -/
+def ExpressionToken (t : Token) : Prop :=
+  Named t ∨ t.symbol = .string ∨ spelledIn expressionLiterals t = true
 
 instance : DecidablePred ExpressionToken := fun t => by
   unfold ExpressionToken Named; infer_instance
 
-/-- A token a declaration or equation prints, including the STRING tokens of
-descriptions. -/
+/-- A token a declaration or equation prints. -/
 def ElementToken (t : Token) : Prop :=
-  ExpressionToken t ∨ spelledIn declarationLiterals t = true ∨ t.symbol = .string
+  ExpressionToken t ∨ spelledIn declarationLiterals t = true
 
 instance : DecidablePred ElementToken := fun t => by
   unfold ElementToken; infer_instance
 
 private theorem literal {s : String} (h : spelledIn expressionLiterals (.literal s) = true := by decide) :
-    ExpressionToken (.literal s) := .inr h
+    ExpressionToken (.literal s) := .inr (.inr h)
 
 private theorem operator_token {t : Token} (h : t ∈ operators) : ExpressionToken t := by
   simp only [operators, List.mem_cons, List.not_mem_nil, or_false] at h
@@ -54,6 +54,11 @@ mutual
       · exact literal
       · exact exprs_tokens arguments valid t member
       · exact literal
+    | .string value, valid => by
+      intro t member
+      simp only [Print.expr, List.mem_cons, List.not_mem_nil, or_false] at member
+      subst member
+      exact .inr (.inl valid)
     | .boolean value, valid => by
       intro t member
       simp only [Print.expr, List.mem_cons, List.not_mem_nil, or_false] at member
@@ -192,7 +197,7 @@ private theorem expression_element {t : Token} (h : ExpressionToken t) : Element
 
 private theorem element_literal {s : String}
     (h : spelledIn declarationLiterals (.literal s) = true := by decide) :
-    ElementToken (.literal s) := .inr (.inl h)
+    ElementToken (.literal s) := .inr h
 
 theorem name_tokens {n : Name} (valid : name n) : ∀ t ∈ Print.name n, ElementToken t := by
   obtain ⟨_, named⟩ := valid
@@ -216,11 +221,11 @@ theorem descriptionString_tokens {ss : List Token} (valid : strings ss) :
   | cons first rest =>
     simp only [Print.descriptionString, List.mem_cons, List.mem_flatMap] at member
     rcases member with rfl | ⟨s, found, member⟩
-    · exact .inr (.inr (valid _ (List.mem_cons_self ..)))
+    · exact expression_element (.inr (.inl (valid _ (List.mem_cons_self ..))))
     · simp only [List.not_mem_nil, or_false] at member
       rcases member with rfl | rfl
       · exact expression_element literal
-      · exact .inr (.inr (valid _ (List.mem_cons_of_mem _ found)))
+      · exact expression_element (.inr (.inl (valid _ (List.mem_cons_of_mem _ found))))
 
 mutual
   theorem modification_tokens : (m : Modification) → modification m →
@@ -440,7 +445,7 @@ theorem reference_ne_nil {r : ComponentReference} (valid : reference r) : Print.
 theorem expr_ne_nil {e : Expr} (valid : expr e) : Print.expr e ≠ [] := by
   cases e with
   | reference ref => exact reference_ne_nil valid
-  | call | boolean | parens | unary | binary => simp [Print.expr]
+  | call | string | boolean | parens | unary | binary => simp [Print.expr]
 
 theorem callee_ne_nil {c : Callee} (valid : callee c) : Print.callee c ≠ [] := by
   cases c with
@@ -486,6 +491,10 @@ theorem bare_of_printed {e : Expr} {t : Token} (valid : expr e) (named : Named t
     have := List.length_pos_of_ne_nil (callee_ne_nil valid.1)
     simp [Print.expr] at length
     omega
+  | string value =>
+    simp only [Print.expr, List.cons.injEq, and_true] at printed
+    subst printed
+    exact nomatch (valid.symm.trans named)
   | boolean value =>
     simp only [Print.expr, List.cons.injEq, and_true] at printed
     subst printed
@@ -529,7 +538,7 @@ theorem signed_of_printed {e : Expr} {sign t : Token} (valid : expr e) (named : 
       rcases headed with h | h
       · exact absurd h unnamed.2
       · exact absurd h unnamed.1
-  | boolean value => simp [Print.expr] at printed
+  | string value | boolean value => simp [Print.expr] at printed
   | parens items =>
     simp only [Print.expr, List.cons_append, List.cons.injEq] at printed
     rcases signed with rfl | rfl <;> simp at printed
@@ -589,7 +598,7 @@ theorem derivative_of_printed {e : Expr} {t : Token} (valid : expr e) (named : N
       rcases headed with h | h
       · simp at h
       · exact absurd h not_named_literal
-  | boolean value => simp [Print.expr] at printed
+  | string value | boolean value => simp [Print.expr] at printed
   | parens items => simp [Print.expr] at printed
   | unary operator operand =>
     simp only [Print.expr, List.cons.injEq] at printed

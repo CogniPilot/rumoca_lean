@@ -22,6 +22,7 @@ mutual
   def expr : Expr → Prop
     | .reference ref => reference ref
     | .call function arguments => callee function ∧ exprs arguments
+    | .string value => value.symbol = .string
     | .boolean value => value = .literal "false" ∨ value = .literal "true"
     | .parens items => outputs items
     | .unary operator operand =>
@@ -387,13 +388,14 @@ private theorem mulOperator_holds : ∀ x, Holds Structural.mulOperator x →
   · exact .inr (.inr (literal_of_symbol h))
 
 private theorem primary_holds : ∀ x, Holds Structural.primary x → expr x := by
-  rintro _ (⟨_, rfl, hr⟩ | ⟨⟨_, _⟩, rfl, hc, ha⟩ | ⟨_, rfl, ht⟩ | ⟨_, rfl, ht⟩ |
+  rintro _ (⟨_, rfl, hr⟩ | ⟨⟨_, _⟩, rfl, hc, ha⟩ | ⟨_, rfl, hs⟩ | ⟨_, rfl, ht⟩ | ⟨_, rfl, ht⟩ |
     ⟨⟨_, _, _⟩, rfl, _, hitems, _⟩)
   · exact hr
   · refine ⟨?_, ha⟩
     rcases hc with ⟨_, rfl, hr⟩ | ⟨_, rfl, _⟩
     · exact hr
     · trivial
+  · exact hs
   · exact .inl (literal_of_symbol ht)
   · exact .inr (literal_of_symbol ht)
   · exact hitems

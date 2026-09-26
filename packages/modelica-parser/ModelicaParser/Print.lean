@@ -21,6 +21,7 @@ mutual
     | .reference ref => reference ref
     | .call function arguments =>
         callee function ++ .literal "(" :: exprs arguments ++ [.literal ")"]
+    | .string value => [value]
     | .boolean value => [value]
     | .parens items => .literal "(" :: outputs items ++ [.literal ")"]
     | .unary operator operand => operator :: expr operand

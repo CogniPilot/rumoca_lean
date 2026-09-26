@@ -19,6 +19,7 @@ mutual
   inductive Expr where
     | reference (ref : ComponentReference)
     | call (callee : Callee) (arguments : List Expr)
+    | string (value : Token)
     | boolean (value : Token)
     | parens (items : List (Option Expr))
     | unary (operator : Token) (operand : Expr)

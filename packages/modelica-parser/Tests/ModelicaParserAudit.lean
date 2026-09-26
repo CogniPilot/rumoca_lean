@@ -163,6 +163,15 @@ import ProofAudit.Audit
 #audit axioms Rumoca.string_maximal
 #audit axioms Rumoca.comment_not_nested
 #audit axioms Rumoca.quoted_identifier_rejected
+#audit axioms Rumoca.escapeValue
+#audit axioms Rumoca.escapeValue_isSome
+#audit axioms Rumoca.Decodes
+#audit axioms Rumoca.decodeBody
+#audit axioms Rumoca.decodeBody_iff
+#audit axioms Rumoca.decodeString
+#audit axioms Rumoca.decodeString_iff
+#audit axioms Rumoca.StringBody.decodes
+#audit axioms Rumoca.string_decodes
 
 #audit axioms Rumoca.Modelica.isComment
 #audit axioms Rumoca.Modelica.code
@@ -234,11 +243,14 @@ equation der(x) = 1; end M;"
 /- Description strings, annotations with nested class modifications and
 condition attributes parse in full; admission is static semantics. -/
 certify_source described "model Described \"a\" + \"b\"
-  Real x(start = 1 \"s\") \"state\" annotation(Dialog(group = g, enable = true));
+  Real x(start = 1 \"s\") \"state\" annotation(Dialog(group = \"Parameters\", enable = true));
   Real y if c \"conditional\";
 equation
   der(x) = y \"rate\" annotation(HideResult = true);
-  annotation(Icon(coordinateSystem(preserveAspectRatio = true)), defaultComponentName = c);
+  annotation(Icon(coordinateSystem(preserveAspectRatio = true)), defaultComponentName = \"c\",
+    Documentation(info = \"<html>
+<p>a \\\"quoted\\\" line\\n</p>
+</html>\"));
 end Described;
 "
 

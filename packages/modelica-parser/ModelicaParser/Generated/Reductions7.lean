@@ -8,18 +8,18 @@ namespace Rumoca.Generated
 set_option maxRecDepth 100000
 set_option maxHeartbeats 8000000
 
-noncomputable def reduction_140 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+noncomputable def reduction_140 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false]
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -32,14 +32,14 @@ noncomputable def reduction_141 : Array Bool := #[false, false, false, false, fa
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false]
+  false, false, false, false, false, false, false, false, false, false, false, false, false]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -48,18 +48,18 @@ theorem reduction_141_checked : LALR.Safety.popStates tables.actions.size edges 
     LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]
   decide +kernel
 
-noncomputable def reduction_142 : Array Bool := #[false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false,
+noncomputable def reduction_142 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  true, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false]
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -69,6 +69,46 @@ theorem reduction_142_checked : LALR.Safety.popStates tables.actions.size edges 
   decide +kernel
 
 noncomputable def reduction_143 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+theorem reduction_143_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[143]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[143]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_143 := by
+  rw [LALR.Safety.popStates_eq edge_source_bound (by rw [LALR.Safety.gotoStates, Array.size_ofFn]),
+    LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]
+  decide +kernel
+
+noncomputable def reduction_144 : Array Bool := #[false, false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+theorem reduction_144_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[144]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[144]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_144 := by
+  rw [LALR.Safety.popStates_eq edge_source_bound (by rw [LALR.Safety.gotoStates, Array.size_ofFn]),
+    LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]
+  decide +kernel
+
+noncomputable def reduction_145 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, true, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
@@ -79,51 +119,51 @@ noncomputable def reduction_143 : Array Bool := #[false, false, false, false, fa
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false]
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-theorem reduction_143_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[143]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[143]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_143 := by
-  rw [LALR.Safety.popStates_eq edge_source_bound (by rw [LALR.Safety.gotoStates, Array.size_ofFn]),
-    LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]
-  decide +kernel
-
-noncomputable def reduction_144 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false]
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-theorem reduction_144_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[144]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[144]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_144 := by
-  rw [LALR.Safety.popStates_eq edge_source_bound (by rw [LALR.Safety.gotoStates, Array.size_ofFn]),
-    LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]
-  decide +kernel
-
-noncomputable def reduction_145 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false]
+  false, false, false, false, false, false, false, false, false, false, false, false, false]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 theorem reduction_145_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[145]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[145]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_145 := by
+  rw [LALR.Safety.popStates_eq edge_source_bound (by rw [LALR.Safety.gotoStates, Array.size_ofFn]),
+    LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]
+  decide +kernel
+
+noncomputable def reduction_146 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+theorem reduction_146_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[146]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[146]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_146 := by
+  rw [LALR.Safety.popStates_eq edge_source_bound (by rw [LALR.Safety.gotoStates, Array.size_ofFn]),
+    LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]
+  decide +kernel
+
+noncomputable def reduction_147 : Array Bool := #[false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, true, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
+  false, false, false, false, false, false, false, false, false, false, false, false, false]
+
+set_option maxRecDepth 10000 in
+set_option maxHeartbeats 8000000 in
+theorem reduction_147_checked : LALR.Safety.popStates tables.actions.size edges (grammar.productions[147]?.getD (⟨0, []⟩ : LALR.Production)).output.reverse (LALR.Safety.gotoStates tables (grammar.productions[147]?.getD (⟨0, []⟩ : LALR.Production)).input) = reduction_147 := by
   rw [LALR.Safety.popStates_eq edge_source_bound (by rw [LALR.Safety.gotoStates, Array.size_ofFn]),
     LALR.Safety.gotoMask_eq rfl gotos_size_eq, state_count]
   decide +kernel

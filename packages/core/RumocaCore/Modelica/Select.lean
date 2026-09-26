@@ -48,6 +48,7 @@ theorem reference_ok {pos : Nat} {what s : String} {e : Expr} (h : reference pos
 def numeral (pos : Nat) (what : String) (admitted : String → Bool) : Expr → Except Rejection String
   | .reference ⟨false, [⟨.number spelling, none⟩]⟩ =>
     if admitted spelling then .ok spelling else .error ⟨pos, s!"{what} may not be {spelling}"⟩
+  | .string value => .error ⟨pos, s!"{what} must be a Real number, not the String {value.text}"⟩
   | _ => .error ⟨pos, s!"{what} must be a number"⟩
 
 theorem numeral_ok {pos : Nat} {what : String} {admitted : String → Bool} {e : Expr} {s : String}
@@ -59,6 +60,7 @@ theorem numeral_ok {pos : Nat} {what : String} {admitted : String → Bool} {e :
       cases h
       exact ⟨rfl, admits⟩
     · cases h
+  · cases h
   · cases h
 
 /-- The number spelled exactly `spelling`. -/

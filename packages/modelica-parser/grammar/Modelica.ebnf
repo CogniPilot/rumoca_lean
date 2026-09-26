@@ -54,7 +54,7 @@ mul_operator = "*" | "/" | ".*";
 factor = primary;
 primary = component_reference
     | ( component_reference | "der" ), function_call_args
-    | "false" | "true"
+    | STRING | "false" | "true"
     | "(", output_expression_list, ")";
 
 name = IDENT, { ".", IDENT };

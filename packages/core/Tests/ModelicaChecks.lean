@@ -301,6 +301,12 @@ theorem derivativeAnnotation_rejected :
       .error ⟨15, "the annotation derivative changes the meaning of the model and is not supported"⟩ := by
   rfl
 
+/- A String primary in a Real context. -/
+certify_source stringRate "model M Real x; equation der(x) = \"a\"; end M;"
+theorem stringRate_rejected :
+    Profile.select stringRate.ast =
+      .error ⟨11, "the unit derivative must be a Real number, not the String \"a\""⟩ := by rfl
+
 /- An empty stored definition. -/
 certify_source empty ""
 theorem empty_rejected :
@@ -346,5 +352,6 @@ theorem empty_rejected :
 #audit axioms evaluateAnnotation_rejected
 #audit axioms inlineAnnotation_rejected
 #audit axioms derivativeAnnotation_rejected
+#audit axioms stringRate_rejected
 
 end Rumoca.Modelica.ProfileChecks

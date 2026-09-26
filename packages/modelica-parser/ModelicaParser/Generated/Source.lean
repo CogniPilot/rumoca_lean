@@ -367,6 +367,8 @@ private theorem lexBlock8_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars8 le
   decide +kernel
 
 private def lexToks9 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.name "STRING",
+ Parser.EBNF.Lexeme.punct '|',
  Parser.EBNF.Lexeme.text "false",
  Parser.EBNF.Lexeme.punct '|',
  Parser.EBNF.Lexeme.text "true",
@@ -427,7 +429,7 @@ private def lexToks9 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.punct '|',
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem lexBlock9_lexes : Parser.EBNF.Metalanguage.Lexes sourceChars9 lexToks9 := by
-  apply Parser.EBNF.Reader.tokenize_sound (fuel := 261)
+  apply Parser.EBNF.Reader.tokenize_sound (fuel := 270)
   decide +kernel
 
 private def lexToks10 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "function_call_args",
@@ -996,6 +998,8 @@ private def ruleToks4 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "ari
  Parser.EBNF.Lexeme.punct ',',
  Parser.EBNF.Lexeme.name "function_call_args",
  Parser.EBNF.Lexeme.punct '|',
+ Parser.EBNF.Lexeme.name "STRING",
+ Parser.EBNF.Lexeme.punct '|',
  Parser.EBNF.Lexeme.text "false",
  Parser.EBNF.Lexeme.punct '|',
  Parser.EBNF.Lexeme.text "true",
@@ -1091,14 +1095,16 @@ private def ruleGrammar4 : Parser.EBNF.Grammar := [("arithmetic_expression",
           (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "der")))
         (Parser.EBNF.Expr.ref "function_call_args"))
       (Parser.EBNF.Expr.alt
-        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "false"))
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.string))
         (Parser.EBNF.Expr.alt
-          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "true"))
-          (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "false"))
+          (Parser.EBNF.Expr.alt
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "true"))
             (Parser.EBNF.Expr.seq
-              (Parser.EBNF.Expr.ref "output_expression_list")
-              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")")))))))),
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+              (Parser.EBNF.Expr.seq
+                (Parser.EBNF.Expr.ref "output_expression_list")
+                (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))))))))),
  ("name",
   Parser.EBNF.Expr.seq
     (Parser.EBNF.Expr.terminal (Parser.Symbol.ident))
@@ -1134,7 +1140,7 @@ private def ruleGrammar4 : Parser.EBNF.Grammar := [("arithmetic_expression",
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem ruleBlock4_rules : Parser.EBNF.Metalanguage.Rules ruleGrammar4 ruleToks4 :=
-  (Parser.EBNF.Reader.rules_sound (fuel := 117) (by decide +kernel)).1
+  (Parser.EBNF.Reader.rules_sound (fuel := 119) (by decide +kernel)).1
 
 private def ruleToks5 : List Parser.EBNF.Lexeme := [Parser.EBNF.Lexeme.name "function_call_args",
  Parser.EBNF.Lexeme.punct '=',
@@ -1623,14 +1629,16 @@ theorem «rule_primary» (word : List Parser.Symbol) :
         (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "der")))
       (Parser.EBNF.Expr.ref "function_call_args"))
     (Parser.EBNF.Expr.alt
-      (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "false"))
+      (Parser.EBNF.Expr.terminal (Parser.Symbol.string))
       (Parser.EBNF.Expr.alt
-        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "true"))
-        (Parser.EBNF.Expr.seq
-          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+        (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "false"))
+        (Parser.EBNF.Expr.alt
+          (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "true"))
           (Parser.EBNF.Expr.seq
-            (Parser.EBNF.Expr.ref "output_expression_list")
-            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")")))))))) word :=
+            (Parser.EBNF.Expr.terminal (Parser.Symbol.literal "("))
+            (Parser.EBNF.Expr.seq
+              (Parser.EBNF.Expr.ref "output_expression_list")
+              (Parser.EBNF.Expr.terminal (Parser.Symbol.literal ")"))))))))) word :=
   Parser.EBNF.Derives.ref_iff_of_filter (by decide +kernel) word
 
 theorem «rule_name» (word : List Parser.Symbol) :

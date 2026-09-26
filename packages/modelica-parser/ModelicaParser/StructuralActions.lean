@@ -168,10 +168,11 @@ def primary : Action AST.Expr :=
   .alt (.map AST.Expr.reference (.ref "component_reference"))
     (.alt (.map (fun (callee, arguments) => AST.Expr.call callee arguments)
         (callee ⋄ .ref "function_call_args"))
-      (.alt (.map AST.Expr.boolean (lit "false"))
-        (.alt (.map AST.Expr.boolean (lit "true"))
-          (.map (fun (_, items, _) => AST.Expr.parens items)
-            (lit "(" ⋄ .ref "output_expression_list" ⋄ lit ")")))))
+      (.alt (.map AST.Expr.string string)
+        (.alt (.map AST.Expr.boolean (lit "false"))
+          (.alt (.map AST.Expr.boolean (lit "true"))
+            (.map (fun (_, items, _) => AST.Expr.parens items)
+              (lit "(" ⋄ .ref "output_expression_list" ⋄ lit ")"))))))
 
 def name : Action AST.Name :=
   .map (fun (first, rest) => first :: rest.map Prod.snd) (ident ⋄ .many (lit "." ⋄ ident))

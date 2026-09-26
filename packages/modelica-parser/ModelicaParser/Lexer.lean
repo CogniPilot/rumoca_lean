@@ -387,6 +387,144 @@ theorem string_maximal {cs : List Char} {n : Nat} :
   ⟨stringLength_sound, fun ⟨_, _, same, valid, length⟩ => by
     rw [same, length]; exact stringLength_body valid⟩
 
+/-! ### STRING values -/
+
+/-- The character an MLS 3.7 A.1 S-ESCAPE denotes: the quote, question-mark and
+backslash escapes denote themselves; `\a` alert, `\b` backspace, `\f` form feed,
+`\n` new line, `\r` carriage return, `\t` horizontal tab and `\v` vertical tab
+denote their ASCII control characters. `none` for a character that is not an
+S-ESCAPE. -/
+def escapeValue : Char → Option Char
+  | '\'' => some '\''
+  | '"' => some '"'
+  | '?' => some '?'
+  | '\\' => some '\\'
+  | 'a' => some (Char.ofNat 7)
+  | 'b' => some (Char.ofNat 8)
+  | 'f' => some (Char.ofNat 12)
+  | 'n' => some '\n'
+  | 'r' => some '\r'
+  | 't' => some '\t'
+  | 'v' => some (Char.ofNat 11)
+  | _ => none
+
+/-- Exactly the S-ESCAPE characters have a value. -/
+theorem escapeValue_isSome (e : Char) : (escapeValue e).isSome = escapeChar e := by
+  unfold escapeValue
+  split <;> simp_all [escapeChar]
+
+/-- The value of a STRING body: a character other than `"` and `\` denotes itself
+and an S-ESCAPE denotes its character. -/
+inductive Decodes : List Char → List Char → Prop where
+  | nil : Decodes [] []
+  | char : c ≠ '"' → c ≠ '\\' → Decodes cs vs → Decodes (c :: cs) (c :: vs)
+  | escape : escapeValue e = some v → Decodes cs vs → Decodes ('\\' :: e :: cs) (v :: vs)
+
+/-- The value of a STRING body, or `none` for a quote, a lone backslash or an
+invalid escape. -/
+def decodeBody : List Char → Option (List Char)
+  | [] => some []
+  | '\\' :: e :: rest =>
+    match escapeValue e, decodeBody rest with
+    | some v, some vs => some (v :: vs)
+    | _, _ => none
+  | '\\' :: [] => none
+  | '"' :: _ => none
+  | c :: rest => (decodeBody rest).map (c :: ·)
+
+theorem decodeBody_iff {cs vs : List Char} : decodeBody cs = some vs ↔ Decodes cs vs := by
+  constructor
+  · intro found
+    induction cs using decodeBody.induct generalizing vs with
+    | case1 => simp only [decodeBody, Option.some.injEq] at found; subst found; exact .nil
+    | case2 e rest v more decoded valued ih =>
+      simp only [decodeBody, decoded, valued, Option.some.injEq] at found
+      subst found
+      exact .escape valued (ih decoded)
+    | case3 e rest invalid ih =>
+      simp only [decodeBody] at found
+      cases found
+    | case4 => simp [decodeBody] at found
+    | case5 tail => simp [decodeBody] at found
+    | case6 c rest backslash backslashEnd quote ih =>
+      have plain : c ≠ '\\' := by
+        intro h
+        cases rest with
+        | nil => exact backslashEnd h rfl
+        | cons e more => exact backslash e more h rfl
+      rw [decodeBody.eq_def] at found
+      split at found
+      · contradiction
+      · rename_i e more same; cases same; exact absurd rfl plain
+      · rename_i same; cases same; exact absurd rfl plain
+      · rename_i tail same; cases same; exact absurd rfl quote
+      · rename_i c' rest' _ _ _ same
+        cases same
+        obtain ⟨more, decoded, rfl⟩ := Option.map_eq_some_iff.mp found
+        exact .char quote plain (ih decoded)
+  · intro decodes
+    induction decodes with
+    | nil => rfl
+    | char quote backslash _ ih =>
+      rw [decodeBody.eq_def]
+      split <;> simp_all
+    | escape valued _ ih => simp [decodeBody, valued, ih]
+
+/-- The value of a STRING spelling written with its quotes. -/
+def decodeString (spelling : String) : Option String :=
+  match spelling.toList with
+  | '"' :: rest =>
+    match rest.reverse with
+    | '"' :: body => (decodeBody body.reverse).map String.ofList
+    | _ => none
+  | _ => none
+
+/-- A STRING spelling has a value exactly when it is a quoted body whose
+characters denote that value (MLS 3.7 A.1 S-CHAR and S-ESCAPE). -/
+theorem decodeString_iff {spelling value : String} :
+    decodeString spelling = some value ↔
+      ∃ body, spelling.toList = '"' :: body ++ ['"'] ∧ Decodes body value.toList := by
+  unfold decodeString
+  constructor
+  · intro found
+    split at found
+    · rename_i rest spelled
+      split at found
+      · rename_i body reversed
+        obtain ⟨vs, decoded, rfl⟩ := Option.map_eq_some_iff.mp found
+        refine ⟨body.reverse, ?_, by simpa using decodeBody_iff.mp decoded⟩
+        rw [spelled, show rest = body.reverse ++ ['"'] by
+          simpa using congrArg List.reverse reversed]
+        rfl
+      · cases found
+    · cases found
+  · rintro ⟨body, spelled, decodes⟩
+    rw [spelled]
+    simp only [List.cons_append, List.reverse_append, List.reverse_cons, List.reverse_nil,
+      List.nil_append, List.reverse_reverse]
+    rw [decodeBody_iff.mpr decodes]
+    simp
+
+/-- A STRING body has a value. -/
+theorem StringBody.decodes {body : List Char} (valid : StringBody body) : ∃ vs, Decodes body vs := by
+  induction valid with
+  | nil => exact ⟨[], .nil⟩
+  | char quote backslash _ ih =>
+    obtain ⟨vs, decodes⟩ := ih
+    exact ⟨_, .char quote backslash decodes⟩
+  | escape escaped _ ih =>
+    obtain ⟨vs, decodes⟩ := ih
+    obtain ⟨v, valued⟩ := Option.isSome_iff_exists.mp ((escapeValue_isSome _).trans escaped)
+    exact ⟨_, .escape valued decodes⟩
+
+/-- Every STRING the lexer takes has a value. -/
+theorem string_decodes {cs : List Char} {n : Nat} (found : stringLength cs = some n) :
+    ∃ value, decodeString (String.ofList ('"' :: cs.take n)) = some value := by
+  obtain ⟨body, rest, rfl, valid, rfl⟩ := string_maximal.mp found
+  obtain ⟨vs, decodes⟩ := valid.decodes
+  refine ⟨String.ofList vs, decodeString_iff.mpr ⟨body, ?_, by simpa using decodes⟩⟩
+  simp [List.take_append, List.take_of_length_le]
+
 /-- A block comment ends at its first `*/`: comments do not nest, and a `/*`
 inside a comment opens nothing. -/
 theorem comment_not_nested {cs : List Char} {n : Nat} (found : blockCommentLength cs = some n) :

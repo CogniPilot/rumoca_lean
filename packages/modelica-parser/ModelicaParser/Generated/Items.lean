@@ -176,7 +176,7 @@ private theorem items_chunk_180_checked :
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem items_chunk_190_checked :
-    ∀ j : Fin 8, ∀ i ∈ (LALR.ItemCheck.items itemStates (190 + j.val)), LALR.ItemCheck.Valid grammar i ∧
+    ∀ j : Fin 10, ∀ i ∈ (LALR.ItemCheck.items itemStates (190 + j.val)), LALR.ItemCheck.Valid grammar i ∧
       LALR.ItemCheck.Closed grammar firstFacts (LALR.ItemCheck.items itemStates (190 + j.val)) i ∧
       LALR.ItemCheck.Advances grammar tables itemStates (190 + j.val) i := by decide +kernel
 
@@ -188,7 +188,7 @@ theorem items_checked :
   refine ⟨by decide +kernel, by decide +kernel, first_checked, by decide +kernel, ?_⟩
   intro q
   rcases q with ⟨q, bound⟩
-  change q < 198 at bound
+  change q < 200 at bound
   match q with
     | 0 => exact items_chunk_0_checked ⟨0, by decide⟩
     | 1 => exact items_chunk_0_checked ⟨1, by decide⟩
@@ -388,6 +388,8 @@ theorem items_checked :
     | 195 => exact items_chunk_190_checked ⟨5, by decide⟩
     | 196 => exact items_chunk_190_checked ⟨6, by decide⟩
     | 197 => exact items_chunk_190_checked ⟨7, by decide⟩
-    | n+198 => omega
+    | 198 => exact items_chunk_190_checked ⟨8, by decide⟩
+    | 199 => exact items_chunk_190_checked ⟨9, by decide⟩
+    | n+200 => omega
 
 end Rumoca.Generated

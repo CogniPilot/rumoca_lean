@@ -49,9 +49,9 @@ file to the compiled record. `certify_family` certifies the same way, for all
 values of string parameters, the parse of a token family whose grammar symbols
 do not depend on them.
 
-The generated automaton has 198 LALR states (628 canonical LR(1) states) for
-146 lowered productions; the host C of its tables
-(`.lake/build/ir/ModelicaParser/Generated/Tables.c`) is 10,069,533 bytes.
+The generated automaton has 200 LALR states (642 canonical LR(1) states) for
+148 lowered productions; the host C of its tables
+(`.lake/build/ir/ModelicaParser/Generated/Tables.c`) is 10,208,886 bytes.
 
 `LocatedParser` attaches exact UTF-8 ranges to the same lexed tokens; a syntax
 rejection is reported at the first token the certified parser could not accept.
