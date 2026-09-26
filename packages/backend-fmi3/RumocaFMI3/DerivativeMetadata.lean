@@ -62,6 +62,7 @@ theorem OrderedDerivatives.states (ordered : OrderedDerivatives root pairs) :
 
 theorem described_derivatives (model : Solve.FMI3Model source) :
     OrderedDerivatives (modelDescription model) [(source.state, model.derivativeName)] := by
+  rw [modelDescription_eq]
   refine ⟨_, _, rfl, rfl, List.Forall₂.cons ⟨?_, ?_⟩ .nil⟩
   · exact ⟨"2", _, "1", _, rfl, rfl, ⟨rfl, rfl, rfl⟩,
       rfl, rfl, rfl, ⟨rfl, rfl, rfl⟩⟩

@@ -29,9 +29,6 @@ this storage increment, so `diagonal` is `none`. -/
 def kernel (shape : Shape) : Solve.PointwiseIVP shape :=
   ⟨fill shape .zero, ArrayProfile.squareProgram shape, none⟩
 
-/-- The prepared tensor FMI 3 model for the admitted kernel. -/
-def model (shape : Shape) : Solve.TensorFMI3Model shape := ⟨"TensorSquare", kernel shape⟩
-
 /-- A named C buffer of the instance record, addressed by a member name and the
 element-count parameter. -/
 def namedBuffer (shape : Shape) (name : String) : Named.Buffer shape := ⟨name, "count"⟩

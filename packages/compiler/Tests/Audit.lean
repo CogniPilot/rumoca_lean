@@ -105,6 +105,7 @@ import Tests.Audit.FMI3VersionProofs
 import Tests.Audit.Initialization
 import Tests.Audit.InitializationDiagnosticProofs
 import Tests.Audit.InitializationCorrespondence
+import Tests.Audit.InterfaceContract
 import Tests.Audit.Lowering
 import Tests.Audit.ParseFilesProofs
 import Tests.Audit.Provenance

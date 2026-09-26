@@ -1,6 +1,8 @@
 import Rumoca.Compiler
 import Rumoca.ConstantCompiler
 import RumocaCore.Solve.ConstantFMI3
+import RumocaCore.Constant.Interface
+import Rumoca.InterfaceContract
 import RumocaFMI3.ConstantFunctions
 import RumocaFMI3.ConstantCallPolicy
 import RumocaFMI3.ConstantAdapterContract
@@ -16,9 +18,10 @@ IVP, and carries the certified constant kernel C text (the three rendered
 `ConstantKernelProgram` entries with their preamble), the rendered constant
 adapter, the constant model description and the shared build description.
 
-The constant profile carries no input tensor and no dense output: its state is a
-homogeneous vector of scalar states whose derivatives are signed decimal
-constants. The state count stays symbolic in the model's shape parameter. This
+The constant profile carries no input tensor and no dense output: its states are
+scalar source declarations whose derivatives are signed decimal constants. The
+model description exports each state as its own scalar variable; the instance
+record stores them as one contiguous block whose extent is the state count. This
 path is deliberately kept out of the tensor and unit production admission: the
 default compiler and the tensor path still reject the constant profile. -/
 namespace Rumoca
@@ -39,10 +42,50 @@ def name (a : ConstantArtifact input) : String :=
   a.prepared.parsed.parsed.ast.name
 
 /-- The prepared FMI 3 deployment data for the constant-rate problem: the model
-name paired with the owned constant-rate IVP over the declared state count. -/
+name, the owned constant-rate IVP over the declared state count and the declared
+interface of the parsed source. -/
 def constantModel (a : ConstantArtifact input) :
     Solve.ConstantFMI3Model a.prepared.parsed.parsed.ast.states.length :=
-  ⟨a.name, a.prepared.ivp⟩
+  ⟨a.name, a.prepared.ivp, a.prepared.parsed.parsed.ast.interface⟩
+
+/-- The declared states fill the instance record's state block exactly. -/
+theorem state_block (a : ConstantArtifact input) :
+    (a.constantModel.interface.declarations.map fun d => d.shape.volume).sum =
+      a.constantModel.shape.volume := by
+  rw [Solve.ConstantFMI3Model.shape_volume]
+  simp [constantModel, ConstantProfile.Model.interface, ConstantProfile.Model.declaration,
+    Tensor.scalar, Tensor.Shape.volume, Function.comp_def]
+
+/-- Every region the constant Float64 accessors address lies inside the state
+block: each state and its derivative at the state's element offset. -/
+theorem record_within (a : ConstantArtifact input) :
+    ∀ x ∈ FMI3.Float64Table.recordRegions a.constantModel.interface,
+      x.2.Within 0 a.constantModel.shape.volume 0 := by
+  intro x member
+  have states : ∀ d ∈ a.constantModel.interface.declarations, d.role = .state ∧ d.shape.volume = 1 := by
+    intro d member
+    simp only [constantModel, ConstantProfile.Model.interface, List.mem_map] at member
+    obtain ⟨_, _, rfl⟩ := member
+    exact ⟨rfl, rfl⟩
+  have none : ∀ role, role ≠ .state → FMI3.Float64Table.roleVolume role a.constantModel.interface.declarations = 0 := by
+    intro role other
+    rw [FMI3.Float64Table.roleVolume, List.filter_eq_nil_iff.mpr]
+    · rfl
+    · intro d member
+      simp [(states d member).1, Ne.symm other]
+  have all : FMI3.Float64Table.roleVolume .state a.constantModel.interface.declarations =
+      a.constantModel.shape.volume := by
+    rw [FMI3.Float64Table.roleVolume, List.filter_eq_self.mpr (fun d member => by simp [(states d member).1]),
+      Solve.ConstantFMI3Model.shape_volume]
+    have ones : a.constantModel.interface.declarations.map (fun d => d.shape.volume) =
+        a.constantModel.interface.declarations.map (fun _ => 1) :=
+      List.map_congr_left (fun d member => (states d member).2)
+    rw [ones]
+    simp [constantModel, ConstantProfile.Model.interface, Function.comp_def]
+  refine (FMI3.Float64Table.recordRegions_within _ x member).mono ?_ ?_ ?_
+  · rw [none .input (by decide)]
+  · rw [all]
+  · rw [none .algebraic (by decide)]
 
 theorem constantModel_name (a : ConstantArtifact input) : a.constantModel.name = a.name := rfl
 
@@ -124,7 +167,7 @@ theorem constantRatesAst_resolved : constantRatesAst.Resolved := by decide +kern
 
 /-- The pinned constant model for the development `ConstantRates` source. -/
 def constantRatesModel : Solve.ConstantFMI3Model 2 :=
-  ⟨"ConstantRates", constantRatesAst.lower⟩
+  ⟨"ConstantRates", constantRatesAst.lower, constantRatesAst.interface⟩
 
 namespace ConstantArtifact
 
@@ -237,15 +280,24 @@ structure ConstantSourceBuildContract (a : ConstantArtifact input)
     ∀ [FMI3.StaticLiterals], FMI3.ConstantAdapter.Contract w a.constantModel adapter
   /-- The constant model description decodes to the model identifiers. -/
   model_identifiers : FMI3.decodeModelIdentifiers
-      (FMI3.TensorMetadata.constantModelDescription a.constantModel.shape a.constantModel.name)
+      (FMI3.TensorMetadata.constantModelDescription a.constantModel)
     = some (a.name, FMI3.modelIdentifier a.name, FMI3.modelIdentifier a.name)
   /-- The declared instantiation token is exactly the one the factory validates. -/
-  token : (FMI3.TensorMetadata.constantModelDescription a.constantModel.shape
-      a.constantModel.name).attributes.lookup "instantiationToken"
+  token : (FMI3.TensorMetadata.constantModelDescription a.constantModel).attributes.lookup "instantiationToken"
     = some (FMI3.TensorMetadata.constantToken a.constantModel.name)
   /-- The actual model description bytes are the prepared constant document. -/
   metadata : XML.Document
-    (FMI3.TensorMetadata.constantModelDescription a.constantModel.shape a.constantModel.name) metadata
+    (FMI3.TensorMetadata.constantModelDescription a.constantModel) metadata
+  /-- The model description exports exactly the source declarations read back from
+  the lexed source: one prefix-free scalar state per source declaration, in
+  source order. -/
+  interface : FMI3.InterfaceContract input.source a.prepared.parsed.parsed.tokens a.constantModel.interface
+    (FMI3.TensorMetadata.constantModelDescription a.constantModel)
+  /-- Every region the Float64 accessors address lies inside the instance
+  record's state block, whose extent is the state count; there is no input or
+  output block. -/
+  record : ∀ x ∈ FMI3.Float64Table.recordRegions a.constantModel.interface,
+    x.2.Within 0 a.constantModel.shape.volume 0
 
 /-- Bundle independently checked obligations into the composed contract,
 mirroring `FMI3.sourceBuild_correct` and `tensorSourceBuild_correct`. -/
@@ -258,13 +310,12 @@ theorem constantSourceBuild_correct (a : ConstantArtifact input)
     (adapter' : ∃ (src : AST.Model) (w : Solve.FMI3Model src), src.name = a.name ∧
       ∀ [FMI3.StaticLiterals], FMI3.ConstantAdapter.Contract w a.constantModel adapter)
     (identifiers : FMI3.decodeModelIdentifiers
-        (FMI3.TensorMetadata.constantModelDescription a.constantModel.shape a.constantModel.name)
+        (FMI3.TensorMetadata.constantModelDescription a.constantModel)
       = some (a.name, FMI3.modelIdentifier a.name, FMI3.modelIdentifier a.name))
-    (token : (FMI3.TensorMetadata.constantModelDescription a.constantModel.shape
-        a.constantModel.name).attributes.lookup "instantiationToken"
+    (token : (FMI3.TensorMetadata.constantModelDescription a.constantModel).attributes.lookup "instantiationToken"
       = some (FMI3.TensorMetadata.constantToken a.constantModel.name))
     (metadataDocument : XML.Document
-      (FMI3.TensorMetadata.constantModelDescription a.constantModel.shape a.constantModel.name) metadata) :
+      (FMI3.TensorMetadata.constantModelDescription a.constantModel) metadata) :
     ConstantSourceBuildContract a modelC buildDescription adapter metadata :=
   ⟨kernel, kernelContract, kernelRates, kernelRates ▸ a.no_overflow, build,
     (by
@@ -274,6 +325,12 @@ theorem constantSourceBuild_correct (a : ConstantArtifact input)
       exact ⟨src, w, sigs, renderEq,
         FMI3.ConstantCallPolicy.constant_no_heap w a.constantModel sigs,
         FMI3.ConstantCallPolicy.constant_acyclic w a.constantModel sigs covered⟩),
-    adapter', identifiers, token, metadataDocument⟩
+    adapter', identifiers, token, metadataDocument,
+    FMI3.interface_correct _ _ _ _ _ a.prepared.parsed.parsed.lexical
+      (by rw [ParserActions.parseTokens_sound ConstantProfile.actions a.prepared.parsed.parsed.syntactic]
+          exact a.prepared.parsed.parsed.ast.interface_sound)
+      (a.prepared.parsed.parsed.ast.interface_names a.prepared.resolved)
+      a.prepared.parsed.parsed.ast.interface_closed,
+    a.record_within⟩
 
 end Rumoca

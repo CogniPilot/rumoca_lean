@@ -3,6 +3,7 @@ import RumocaFMI3.SourceLinkageProofs
 import Rumoca.FMI3NameProofs
 import Rumoca.FMI3AdapterProofs
 import RumocaFMI3.CallPolicy
+import Rumoca.InterfaceContract
 
 namespace Rumoca.FMI3
 
@@ -28,6 +29,10 @@ structure SourceBuildContract (a : Artifact source) (c description adapter metad
     CCallPolicy.Acyclic (LiteralPreparation.functions a.solve.prepareFMI3 sigs)
   adapter : AdapterContract a adapter
   metadata : XML.Document (modelDescription a.solve.prepareFMI3) metadata
+  /-- The model description exports exactly the source declaration read back from
+  the lexed source: the one prefix-free scalar state. -/
+  interface : InterfaceContract source.source a.parsed.tokens a.solve.prepareFMI3.interface
+    (modelDescription a.solve.prepareFMI3)
 
 theorem sourceBuild_correct (a : Artifact source) (c description adapter metadata : String)
     (numerical : Rumoca.ArtifactContract a c .internal)
@@ -43,6 +48,12 @@ theorem sourceBuild_correct (a : Artifact source) (c description adapter metadat
       obtain ⟨sigs, printed, covered⟩ := adapter_covered adapterContract
       exact ⟨sigs, printed, CallPolicy.unit_no_heap _ sigs,
         CallPolicy.unit_acyclic _ sigs covered⟩),
-    adapterContract, metadataDocument⟩
+    adapterContract, metadataDocument,
+    interface_correct _ _ _ _ _ a.parsed.lexical
+      (by rw [Rumoca.parseTokens_sound _ _ a.parsed.syntactic]; exact a.solve.prepareFMI3.interface_sound)
+      (List.nodup_singleton _)
+      (fun d member name read => by
+        simp only [Solve.FMI3Model.interface, List.mem_singleton] at member
+        subst member; cases read)⟩
 
 end Rumoca.FMI3

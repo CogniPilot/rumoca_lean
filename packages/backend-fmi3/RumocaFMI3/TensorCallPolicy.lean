@@ -50,13 +50,11 @@ macro "tadmit" : tactic => `(tactic| (
     TensorFactory.function, TensorFactory.functionWith, TensorFactory.code, TensorFactory.codeWith, TensorFactory.initializeInstance,
     TensorInstanceInit.code, TensorInstanceInit.slotStore, TensorInstanceInit.metaCode,
     FactoryPrefix.body, FactoryPrefix.bodyWith, FactoryPrefix.entry, FactoryPrefix.entryWith,
-    TensorFloat64.getFunction, TensorFloat64.getBody, TensorFloat64.getRest, TensorFloat64.getDispatch,
-    TensorFloat64.getDispatch1, TensorFloat64.getDispatch2, TensorFloat64.getDispatch3,
-    TensorFloat64.getDispatch4, TensorFloat64.getArm, TensorFloat64.getOutputArm,
+    TensorFloat64.getFunction, TensorFloat64.getBody, TensorFloat64.getRest,
     TensorFloat64.getLoopSuffix, TensorFloat64.basicReject, TensorFloat64.countReject,
-    TensorFloat64.memberPointer, TensorFloat64.vr0,
-    TensorFloat64.setFunction, TensorFloat64.setBody, TensorFloat64.setRest, TensorFloat64.setDispatch,
-    TensorFloat64.setDispatch2, TensorFloat64.setArm, TensorFloat64.setLoopSuffix,
+    TensorFloat64.vr0,
+    TensorFloat64.setFunction, TensorFloat64.setBody, TensorFloat64.setRest,
+    TensorFloat64.setLoopSuffix,
     TensorFloat64.validateBody, TensorFloat64.getCopyBody, TensorFloat64.setCopyBody,
     TensorFloat64.srcCell, TensorFloat64.dstCell,
     Float64Calls.output, Float64Calls.reference,
@@ -75,7 +73,6 @@ macro "tadmit" : tactic => `(tactic| (
     TensorFloat64.getLoopSuffix, TensorFloat64.setLoopSuffix,
     TensorContinuousStates.derivEntryArgs, TensorContinuousStates.jacobianEntryArgs,
     TensorEntry.rhsArgs, TensorEntry.jacobianArgs, TensorEntry.rhsCall, TensorEntry.jacobianCall,
-    TensorFloat64.getDerivativeArm,
     TensorContinuousStates.jacobianCall, TensorContinuousStates.countReject,
     TensorDoStep.function, TensorDoStep.doStepBody, TensorDoStep.tensorStepSolve,
     TensorDoStep.internalBody, TensorDoStep.eulerTail, TensorDoStep.eulerBody,
@@ -92,6 +89,12 @@ macro "tadmit" : tactic => `(tactic| (
     Runtime.field, Runtime.setMode, Runtime.mode, Runtime.v, Runtime.n, Runtime.call, Runtime.out,
     Runtime.put, Runtime.pointerCheck, Runtime.pointerCheckWith, Runtime.scalarAccessCheck, Runtime.countLoop,
     CLoops.loop, CLoops.counterStep]
+  all_goals first
+    | (apply TensorFloat64.getDispatch_admits <;> simp [StatementAdmits, ExpressionAdmits, acceptedT, accepted,
+        classify, Runtime.fail, Runtime.ret, Runtime.call, Runtime.v, Runtime.region, Runtime.field, Runtime.n,
+        TensorFloat64.tensorReads, TensorEntry.rhsCall, TensorEntry.jacobianCall, TensorEntry.rhsArgs, TensorEntry.jacobianArgs])
+    | (apply TensorFloat64.setDispatch_admits; simp [StatementAdmits, ExpressionAdmits, Runtime.fail, Runtime.ret,
+        Runtime.call, Runtime.v])
   done))
 
 set_option maxHeartbeats 4000000 in
@@ -113,7 +116,6 @@ theorem body_admits (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model 
         (CallPolicy.body_policy model sig stmt member))
     | tadmit
     | (cases hout : m.hasOutput <;> tadmit)
-    | (cases hos : TensorFunctions.outputShape m <;> tadmit)
 
 /-- Every tensor adapter function obeys the tensor call inventory: its complete
 body admits only tensor-accepted callees. The tensor helper prefix reuses the

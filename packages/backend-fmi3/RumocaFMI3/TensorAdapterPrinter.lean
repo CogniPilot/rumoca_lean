@@ -54,8 +54,9 @@ theorem tensorFunction_printable (model : Solve.FMI3Model source)
       | exact StaticFactory.Printer.release_printable.2
       | exact (factory_printable model shape m.hasOutput .me (TensorMetadata.token m)).2
       | exact (factory_printable model shape m.hasOutput .cs (TensorMetadata.token m)).2
-      | exact TensorFloat64.getBody_printable shape (TensorFunctions.outputShape m)
-      | exact TensorFloat64.setBody_printable shape
+      | exact TensorFloat64.getBody_printable (TensorFloat64.tensorReads shape) m.interface
+          (TensorFloat64.tensorReads_printable shape)
+      | exact TensorFloat64.setBody_printable m.interface
       | exact TensorContinuousStates.getBody_printable shape
       | exact TensorContinuousStates.setBody_printable shape
       | exact TensorContinuousStates.derivBody_printable shape m.hasOutput

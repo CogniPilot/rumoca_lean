@@ -35,6 +35,7 @@ def OrderedNominals (root : XML.Element) (states : List (String × ℝ)) : Prop 
 
 theorem described_nominals (model : Solve.FMI3Model source) :
     OrderedNominals (modelDescription model) [(source.state, Binary64.value Binary64.one)] := by
+  rw [modelDescription_eq]
   refine ⟨_, _, rfl, rfl, List.Forall₂.cons ?_ .nil⟩
   refine ⟨"2", _, "1", _, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, ?_⟩
   exact ⟨rfl, rfl, rfl, rfl, rfl, Binary64.value_one⟩

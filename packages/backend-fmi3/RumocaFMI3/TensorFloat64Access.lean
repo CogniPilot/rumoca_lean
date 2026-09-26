@@ -5,36 +5,40 @@ import RumocaFMI3.TensorInstanceJacobian
 import RumocaFMI3.Float64Get
 import RumocaFMI3.DerivativeCalls
 import RumocaFMI3.Float64Dispatch
+import RumocaFMI3.Float64Table
 import RumocaC.PointerConditions
 
-/-! Tensor `fmi3GetFloat64` / `fmi3SetFloat64` bodies over a static tensor
-instance record, as package-checked products.
+/-! `fmi3GetFloat64` / `fmi3SetFloat64` bodies over a static instance record, for
+every profile with a declared interface, as package-checked products.
 
 Each accessor uses the same authored C subset as the scalar runtime. The
 instance handle and lifecycle guard are validated exactly as the scalar bodies
 do (through `Runtime.require`). One array value reference then denotes a whole
-instance region under the FMI 3.0.2 array-access rule: reference `0` denotes the
-independent time base (element count 1), `1` the input tensor `u`, `2` the state
-tensor `x`, `3` the state derivative `der(x)` (each element count `shape.volume`),
-and `4` the dense output tensor `J` (element count `oshape.volume`, present only
-when the instance record carries the output). The getter copies the referenced
-region into the caller's Float64 buffer; the setter copies the caller's values
-into the writable region (`u` or `x`) after checking finiteness. The caller's
-`nValues` must equal the referenced variable's element count; the copy uses one
-counted `size_t` loop whose bound is that symbolic count, so no tensor
-coordinate is enumerated. A request must name exactly one value reference
-(`nValueReferences = 1`); a multi-reference aggregate is rejected, not
-mishandled. Return status is `fmi3OK` on success and the scalar code's status on
-rejection.
+declared variable under the FMI 3.0.2 array-access rule: the dispatch arms are
+the declared value-reference table (`Float64Table.getArms`, `setArms`), each
+staging the variable's record region (member, element offset and element
+count). A calculated variable (a state derivative or an algebraic output) is
+evaluated first by the profile's prepared kernel entry (`Float64Table.Reads`),
+so the value returned is the one the prepared model calculates from the current
+inputs and states, never one left in the region by an earlier call. The getter copies the referenced region into the caller's Float64
+buffer; the setter copies the caller's values into a writable region (an input
+or a state) after checking finiteness. The caller's `nValues` must equal the
+referenced variable's element count; the copy uses one counted `size_t` loop
+whose bound is that symbolic count, so no tensor coordinate is enumerated. A
+request must name exactly one value reference (`nValueReferences = 1`); a
+multi-reference aggregate is rejected, not mishandled. Return status is
+`fmi3OK` on success and the scalar code's status on rejection.
 
-The tensor adapter consumes these bodies and proofs. This module alone does
-not establish source acceptance or certify an actual artifact; those obligations
-belong to the composed adapter/compiler contracts. Every theorem is universal in the tensor shape,
-the instance index of the static pool, the request lengths and the heap. -/
+The tensor and constant-rate adapters consume these bodies and proofs. This
+module alone does not establish source acceptance or certify an actual
+artifact; those obligations belong to the composed adapter/compiler contracts.
+Every theorem is universal in the declared interface, the instance index of the
+static pool, the request lengths and the heap. -/
 noncomputable section
 namespace Rumoca.FMI3.TensorFloat64
 open CTree CMemory CBody CLoops Float64Calls
 open Rumoca.CMemory.TensorView Rumoca.CMemory.TensorRegion Rumoca.FMI3.TensorInstance
+open Rumoca.FMI3.Float64Table (Region getArm setArm pointer)
 
 /-- The reference `valueReferences[0]`. -/
 def vr0 : Expr := .index (Runtime.v "valueReferences") (Runtime.n 0)
@@ -132,106 +136,60 @@ theorem cbranch_true (env : Locals) (types : Types) (heap : Heap) (c : Expr) (ye
 
 end
 
-/-! ### The getter body -/
+/-! ### The dispatch -/
 
-/-- The pointer to a record member's first element staged by a dispatch arm.
-The rank-0 time base is a scalar `double` member, whose exact idiom is
-`&(m->time)`; every other declared member (`u`, `x`, `dx`, `J`) is a `double`
-array, whose element pointer is `&(m->name[0])` (`Runtime.region`). Both denote
-the member's first cell `m.member name`, so the staged region base is the same. -/
-def memberPointer (member : String) : Expr :=
-  if member = timeName then .address (Runtime.field member) else Runtime.region member
+/-- The dispatch statement over a list of arms: the first arm whose reference
+equals `valueReferences[0]` runs; otherwise the fallback runs. -/
+def dispatch (arms : List (Nat × List Stmt)) (fallback : Stmt) : Stmt :=
+  match arms with
+  | [] => fallback
+  | (j, arm) :: rest =>
+    Runtime.branch (Runtime.eqv vr0 (Runtime.n j)) arm
+      (Float64Dispatch.dispatchChain vr0 rest [fallback])
+
+theorem dispatch_chain (arms : List (Nat × List Stmt)) (fallback : Stmt) :
+    Float64Dispatch.dispatchChain vr0 arms [fallback] = [dispatch arms fallback] := by
+  cases arms <;> rfl
+
+theorem dispatchChain_noDecl (arms : List (Nat × List Stmt)) (fallback : List Stmt)
+    (hfallback : fallback.all CLoops.noDeclarations = true)
+    (harms : ∀ a ∈ arms, a.2.all CLoops.noDeclarations = true) :
+    (Float64Dispatch.dispatchChain vr0 arms fallback).all CLoops.noDeclarations = true := by
+  induction arms with
+  | nil => exact hfallback
+  | cons a rest ih =>
+    obtain ⟨j, arm⟩ := a
+    rw [Float64Dispatch.dispatchChain_cons]
+    have harm := harms (j, arm) (List.mem_cons_self ..)
+    have hrest := ih (fun b hb => harms b (List.mem_cons_of_mem _ hb))
+    simp only [List.all_eq_true] at harm hrest
+    simp only [Runtime.branch, List.all_cons, List.all_nil, Bool.and_true]
+    rw [CLoops.noDeclarations]
+    simp only [Bool.and_eq_true, List.all_eq_true, List.mem_attach, forall_const, Subtype.forall]
+    exact ⟨harm, hrest⟩
+
+theorem dispatch_noDecl (arms : List (Nat × List Stmt)) (fallback : Stmt)
+    (hfallback : CLoops.noDeclarations fallback = true)
+    (harms : ∀ a ∈ arms, a.2.all CLoops.noDeclarations = true) :
+    CLoops.noDeclarations (dispatch arms fallback) = true := by
+  have h := dispatchChain_noDecl arms [fallback] (by simp [hfallback]) harms
+  rw [dispatch_chain] at h
+  simpa using h
+
+theorem dispatch_closed (arms : List (Nat × List Stmt)) (fallback : Stmt)
+    (hfallback : CLoops.noDeclarations fallback = true)
+    (harms : ∀ a ∈ arms, a.2.all CLoops.noDeclarations = true) :
+    CBodyEmbedding.closedBlocks (dispatch arms fallback) = true :=
+  CBodyEmbedding.noDeclarations_closed _ (dispatch_noDecl arms fallback hfallback harms)
+
+theorem fail_noDecl (message : String) : CLoops.noDeclarations (Runtime.fail message) = true := by
+  simp [Runtime.fail, Runtime.ret, CLoops.noDeclarations]
+
+/-! ### The getter body -/
 
 /-- The remaining copy-loop suffix, shared by every value reference. -/
 def getLoopSuffix : List Stmt :=
   [.declare "size_t" "k" (Runtime.n 0), CLoops.loop "k" (Runtime.v "expected") getCopyBody, Runtime.ok]
-
-/-- One dispatch arm stages the region pointer and its element count. -/
-def getArm (member : String) (count : Nat) : List Stmt :=
-  [.assign (Runtime.v "src") (memberPointer member), .assign (Runtime.v "expected") (Runtime.n count)]
-
-/-- The `J` arm is present only when the instance record carries the output. The
-dense Jacobian is calculated, so the arm evaluates it before staging it. -/
-def getOutputArm (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
-  match outputShape with
-  | some os => TensorEntry.jacobianCall (Runtime.n shape.volume) shape :: getArm outputName os.volume
-  | none => [Runtime.fail "Unknown value reference"]
-
-/-- The `der(x)` arm evaluates the derivative before staging it. -/
-def getDerivativeArm (shape : Tensor.Shape) : List Stmt :=
-  TensorEntry.rhsCall (Runtime.n shape.volume) :: getArm derivativeName shape.volume
-
-/-- Dispatch tail for reference 4 (the output). -/
-def getDispatch4 (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
-  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 4)) (getOutputArm shape outputShape)
-    [Runtime.fail "Unknown value reference"]]
-
-/-- Dispatch tail for references 3 and above. -/
-def getDispatch3 (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
-  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 3)) (getDerivativeArm shape)
-    (getDispatch4 shape outputShape)]
-
-/-- Dispatch tail for references 2 and above. -/
-def getDispatch2 (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
-  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 2)) (getArm stateName shape.volume)
-    (getDispatch3 shape outputShape)]
-
-/-- Dispatch tail for references 1 and above. -/
-def getDispatch1 (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
-  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 1)) (getArm inputName shape.volume)
-    (getDispatch2 shape outputShape)]
-
-/-- Dispatch one value reference to its region, staging its pointer and count. -/
-def getDispatch (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : Stmt :=
-  Runtime.branch (Runtime.eqv vr0 (Runtime.n 0)) (getArm timeName 1) (getDispatch1 shape outputShape)
-
-/-- The ordered getter dispatch arms as a value-reference list: references
-`0..4` staging the time, input, state, derivative and (conditionally) output
-regions. The tensor getter is the generic `Float64Dispatch.dispatchChain` over
-this list; `getDispatch_chain` records the identity. -/
-def getArms (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List (Nat × List Stmt) :=
-  [(0, getArm timeName 1), (1, getArm inputName shape.volume), (2, getArm stateName shape.volume),
-    (3, getDerivativeArm shape), (4, getOutputArm shape outputShape)]
-
-theorem getDispatch_chain (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    Float64Dispatch.dispatchChain vr0 (getArms shape outputShape)
-        [Runtime.fail "Unknown value reference"] = [getDispatch shape outputShape] := rfl
-
-theorem getArm_noDecl (member : String) (count : Nat) :
-    (getArm member count).all CLoops.noDeclarations = true := by
-  simp [getArm, CLoops.noDeclarations]
-
-theorem derivativeArm_noDecl (shape : Tensor.Shape) :
-    (getDerivativeArm shape).all CLoops.noDeclarations = true := by
-  simp [getDerivativeArm, TensorEntry.rhsCall, getArm, CLoops.noDeclarations]
-
-theorem outputArm_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    (getOutputArm shape outputShape).all CLoops.noDeclarations = true := by
-  cases outputShape <;> simp [getOutputArm, TensorEntry.jacobianCall, getArm, Runtime.fail, Runtime.ret, CLoops.noDeclarations]
-
-theorem d4_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    (getDispatch4 shape outputShape).all CLoops.noDeclarations = true := by
-  cases outputShape <;>
-    simp [getDispatch4, getOutputArm, TensorEntry.jacobianCall, getArm, Runtime.branch, Runtime.eqv, Runtime.fail, Runtime.ret,
-      Runtime.v, CLoops.noDeclarations]
-
-theorem d3_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    (getDispatch3 shape outputShape).all CLoops.noDeclarations = true := by
-  cases outputShape <;>
-    simp [getDispatch3, getDispatch4, getOutputArm, getDerivativeArm, TensorEntry.rhsCall, TensorEntry.jacobianCall, getArm, Runtime.branch, Runtime.eqv, Runtime.fail,
-      Runtime.ret, Runtime.v, CLoops.noDeclarations]
-
-theorem d2_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    (getDispatch2 shape outputShape).all CLoops.noDeclarations = true := by
-  cases outputShape <;>
-    simp [getDispatch2, getDispatch3, getDispatch4, getOutputArm, getDerivativeArm, TensorEntry.rhsCall, TensorEntry.jacobianCall, getArm, Runtime.branch, Runtime.eqv,
-      Runtime.fail, Runtime.ret, Runtime.v, CLoops.noDeclarations]
-
-theorem d1_noDecl (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    (getDispatch1 shape outputShape).all CLoops.noDeclarations = true := by
-  cases outputShape <;>
-    simp [getDispatch1, getDispatch2, getDispatch3, getDispatch4, getOutputArm, getDerivativeArm, TensorEntry.rhsCall, TensorEntry.jacobianCall, getArm, Runtime.branch,
-      Runtime.eqv, Runtime.fail, Runtime.ret, Runtime.v, CLoops.noDeclarations]
 
 /-- The initial request check: a single value reference and non-null arrays. -/
 def basicReject : Stmt :=
@@ -278,35 +236,55 @@ theorem basic_condition_eq [interface : CInterface] (env : Locals) (heap : Heap)
 def countReject : Stmt :=
   Runtime.reject (Runtime.nev (Runtime.v "nValues") (Runtime.v "expected")) "Invalid Float64 value count"
 
+
+/-- Dispatch one value reference to its declared region, staging its pointer and
+count; every other reference fails. -/
+def getDispatch (reads : Float64Table.Reads) (i : Solve.Interface) : Stmt :=
+  dispatch (Float64Table.getArms reads i) (Runtime.fail "Unknown value reference")
+
 /-- The statements after the guard, run in the typed machine. -/
-def getRest (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
+def getRest (reads : Float64Table.Reads) (i : Solve.Interface) : List Stmt :=
   [.declare "fmi3Float64 *" "src" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
-    getDispatch shape outputShape, countReject] ++ getLoopSuffix
+    getDispatch reads i, countReject] ++ getLoopSuffix
 
-def getBody (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : List Stmt :=
-  Runtime.require .get ++ (basicReject :: getRest shape outputShape)
+def getBody (reads : Float64Table.Reads) (i : Solve.Interface) : List Stmt :=
+  Runtime.require .get ++ (basicReject :: getRest reads i)
 
-def getFunction (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) : CTree.Function :=
-  ⟨Float64Calls.signature false, getBody shape outputShape, false⟩
+def getFunction (reads : Float64Table.Reads) (i : Solve.Interface) : CTree.Function :=
+  ⟨Float64Calls.signature false, getBody reads i, false⟩
 
-/-- The getter body around an abstract value-reference dispatch statement, shared
-by every adapter profile: only the dispatch differs. Each profile's `getBody`
-is definitionally `getBodyFor` of its own dispatch, so the shared printability
-proof below is reused by instantiation rather than re-proved per profile. -/
+/-- The getter body around an abstract value-reference dispatch statement: only
+the dispatch depends on the declared interface. -/
 def getBodyFor (dispatch : Stmt) : List Stmt :=
   Runtime.require .get ++ (basicReject ::
     [.declare "fmi3Float64 *" "src" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
       dispatch, countReject] ++ getLoopSuffix)
 
-theorem getBody_closed (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    (getFunction shape outputShape).body.all CBodyEmbedding.closedBlocks = true := by
-  cases outputShape <;>
-    simp [getFunction, getBody, getRest, getDispatch, getDispatch1, getDispatch2, getDispatch3,
-      getDispatch4, basicReject, countReject, getLoopSuffix, getArm, getOutputArm, getDerivativeArm,
-      TensorEntry.rhsCall, TensorEntry.jacobianCall, Runtime.call, Runtime.require,
-      Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail,
-      Runtime.ret, Runtime.ok, getCopyBody, CBodyEmbedding.closedBlocks, CLoops.noDeclarations,
-      CLoops.loop, CLoops.counterStep]
+theorem getDispatch_noDecl (reads : Float64Table.Reads) (i : Solve.Interface)
+    (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true) :
+    CLoops.noDeclarations (getDispatch reads i) = true :=
+  dispatch_noDecl _ _ (fail_noDecl _) (Float64Table.getArms_noDecl reads i closedReads)
+
+theorem getBody_closed (reads : Float64Table.Reads) (i : Solve.Interface)
+    (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true) :
+    (getFunction reads i).body.all CBodyEmbedding.closedBlocks = true := by
+  have closed := CBodyEmbedding.noDeclarations_closed _ (getDispatch_noDecl reads i closedReads)
+  simp only [CBodyEmbedding.closedBlocks] at closed
+  simp [getFunction, getBody, getRest, closed, basicReject, countReject, getLoopSuffix, Runtime.require,
+    Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject, Runtime.branch, Runtime.fail,
+    Runtime.ret, Runtime.ok, getCopyBody, CBodyEmbedding.closedBlocks, CLoops.noDeclarations,
+    CLoops.loop, CLoops.counterStep]
+
+/-- The tensor profile evaluates `der(x)` through `rumoca_rhs` and the dense
+Jacobian through `rumoca_square_jacobian_diag`, both over the record's state
+volume. -/
+def tensorReads (shape : Tensor.Shape) : Float64Table.Reads :=
+  ⟨[TensorEntry.rhsCall (Runtime.n shape.volume)], [TensorEntry.jacobianCall (Runtime.n shape.volume) shape]⟩
+
+theorem tensorReads_noDecl (shape : Tensor.Shape) :
+    ((tensorReads shape).derivative ++ (tensorReads shape).output).all CLoops.noDeclarations = true := by
+  simp [tensorReads, TensorEntry.rhsCall, TensorEntry.jacobianCall, CLoops.noDeclarations]
+
 
 /-- Local bindings after the handle/lifecycle guard: the instance pointer. -/
 def guardEnv (p refs buffer : Address) (n m : UInt64) : Locals :=
@@ -380,21 +358,24 @@ theorem guard_reaches_for (dispatch : Stmt)
     (guardEnv p refs buffer n m) heap heap rest stack 4 defined
     (parameters_bound false _ _ _ _ _) closed prefix_run
 
-/-- The guard of the tensor getter, executed in memory, reaches the typed statements after it. -/
-theorem guard_reaches (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
+/-- The guard of the table-driven getter, executed in memory, reaches the typed
+statements after it. -/
+theorem guard_reaches (reads : Float64Table.Reads) (iface : Solve.Interface)
+    (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true)
     (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer : Address) (n m : UInt64)
     (kind : Kind) (mode : Mode)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction reads iface)))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .get kind mode)
-    (nref : n.toNat = 1) (refs_present : True) (values_present : True) (stack : CCalls.Typed.Continuation) :
+    (nref : n.toNat = 1) (stack : CCalls.Typed.Continuation) :
     ∃ types0, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap stack)
-      (.body (.running (getRest shape outputShape) (guardEnv p refs buffer n m) types0 heap)
+      (.body (.running (getRest reads iface) (guardEnv p refs buffer n m) types0 heap)
         "fmi3Status" stack) :=
-  guard_reaches_for (getDispatch shape outputShape) (getBody_closed shape outputShape) program heap p refs
+  guard_reaches_for (getDispatch reads iface) (getBody_closed reads iface closedReads) program heap p refs
     buffer n m kind mode defined hk hm allowed nref stack
+
 /-- The two staging declarations of every profile's getter, executed in the typed machine. -/
 theorem declares_reaches_for (program : CCalls.Events.Program E) (dispatch : Stmt)
     (env0 : Locals) (types0 : Types) (heap : Heap)
@@ -423,15 +404,15 @@ theorem declares_reaches_for (program : CCalls.Events.Program E) (dispatch : Stm
   exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
 
-/-- The two staging declarations of the tensor getter. -/
-theorem declares_reaches (program : CCalls.Events.Program E) (shape : Tensor.Shape)
-    (outputShape : Option Tensor.Shape) (env0 : Locals) (types0 : Types) (heap : Heap)
+/-- The two staging declarations of the table-driven getter. -/
+theorem declares_reaches (program : CCalls.Events.Program E) (reads : Float64Table.Reads)
+    (iface : Solve.Interface) (env0 : Locals) (types0 : Types) (heap : Heap)
     (stack : CCalls.Typed.Continuation) (fresh_src : env0 "src" = none) (fresh_exp : env0 "expected" = none) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getRest shape outputShape) env0 types0 heap) "fmi3Status" stack)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
+      (.body (.running (getRest reads iface) env0 types0 heap) "fmi3Status" stack)
+      (.body (.running (getDispatch reads iface :: countReject :: getLoopSuffix)
         (declaredEnv env0) (declaredTypes types0) heap) "fmi3Status" stack) :=
-  declares_reaches_for program (getDispatch shape outputShape) env0 types0 heap stack fresh_src fresh_exp
+  declares_reaches_for program (getDispatch reads iface) env0 types0 heap stack fresh_src fresh_exp
 
 /-- The count check and copy loop, run in the typed machine after the dispatch
 has staged the region pointer and count. Region-agnostic. -/
@@ -486,129 +467,6 @@ theorem cvr0_cmp (env : Locals) (types : Types) (heap : Heap) (refs : Address) (
     CLoops.eval env types heap (Runtime.eqv vr0 (Runtime.n j)) = some (boolean (decide ((r : Int) = j))) :=
   CBodyEmbedding.eval_refines env types heap _ _ (vr0_cmp env heap refs r j rBound refRead)
 
-/-- The staged member pointer evaluates to the member's first element cell,
-heap-independently, for both the scalar time base and the array regions. -/
-theorem eval_memberPointer (env : Locals) (heap : Heap) (member : String) (p regionBase : Address)
-    (mResolves : CBody.resolve env "m" = some (.pointer (some p))) (regionEq : p.member member = regionBase) :
-    CBody.eval env heap (memberPointer member) = some (.pointer (some regionBase)) := by
-  subst regionEq
-  unfold memberPointer
-  split
-  · simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CBody.lvalueWith, mResolves, Value.address]
-  · exact Runtime.eval_region env heap member p mResolves
-
-/-- The two dispatch assignments stage the region pointer and count. -/
-theorem stage_reaches (program : CCalls.Events.Program E) (env0 : Locals) (types0 : Types) (heap : Heap)
-    (p regionBase : Address) (member : String) (count : Nat) (rest : List Stmt)
-    (stack : CCalls.Typed.Continuation) (bounded : count < 2 ^ 64)
-    (mBound : env0 "m" = some (.pointer (some p))) (regionEq : p.member member = regionBase) :
-    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getArm member count ++ rest) (declaredEnv env0) (declaredTypes types0) heap)
-        "fmi3Status" stack)
-      (.body (.running rest (stagedEnv env0 regionBase count) (declaredTypes types0) heap)
-        "fmi3Status" stack) := by
-  have addr : CLoops.eval (declaredEnv env0) (declaredTypes types0) heap (memberPointer member) =
-      some (.pointer (some regionBase)) := by
-    apply CBodyEmbedding.eval_refines
-    exact eval_memberPointer (declaredEnv env0) heap member p regionBase
-      (by simp [declaredEnv, CBody.bind, CBody.resolve, mBound]) regionEq
-  have s1 : CLoops.next (.running (getArm member count ++ rest) (declaredEnv env0) (declaredTypes types0) heap) =
-      some (.running (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
-        (CBody.bind (declaredEnv env0) "src" (.pointer (some regionBase))) (declaredTypes types0) heap) := by
-    have := CLoops.assign_local (declaredEnv env0) (declaredTypes types0) heap "src"
-      (memberPointer member) (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
-      (.pointer none) (.pointer (some regionBase)) (.pointer (some regionBase)) .pointer
-      (by simp [declaredEnv, CBody.bind]) (by simp [declaredTypes, CLoops.bindType]) addr rfl
-    simpa [getArm, Runtime.v] using this
-  have s2 : CLoops.next (.running (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
-        (CBody.bind (declaredEnv env0) "src" (.pointer (some regionBase))) (declaredTypes types0) heap) =
-      some (.running rest (stagedEnv env0 regionBase count) (declaredTypes types0) heap) := by
-    have := CLoops.assign_local (CBody.bind (declaredEnv env0) "src" (.pointer (some regionBase)))
-      (declaredTypes types0) heap "expected" (Runtime.n count) rest (.integer 0) (.integer count)
-      (.integer count) .size (by simp [declaredEnv, CBody.bind]) (by simp [declaredTypes, CLoops.bindType])
-      (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat count bounded)
-    simpa [Runtime.v, stagedEnv] using this
-  exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
-    (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
-
-end
-
-/-! ### Complete getter, per value reference -/
-
-section
-variable [static : StaticLiterals]
-private local instance getInterface : CInterface := cInterface static.addresses
-
-/-- The complete getter for one value reference, given the navigation that
-selects the region. Region-agnostic apart from that navigation. -/
-theorem get_reaches_of (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
-    (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer : Address) (n m : UInt64)
-    (kind : Kind) (mode : Mode) (member : String) (rshape : Tensor.Shape) (regionValues : Values rshape)
-    (stack : CCalls.Typed.Continuation)
-    (nref : n.toNat = 1) (matched : m.toNat = rshape.volume) (bounded : rshape.volume < 2 ^ 64)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .get kind mode)
-    (readable : Reads heap (p.member member) regionValues)
-    (writable : Writable heap buffer rshape.volume)
-    (separate : ∀ a < rshape.volume, ∀ b < rshape.volume, (p.member member).index a ≠ buffer.index b)
-    (nav : ∀ types0, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (getArm member rshape.volume ++ (countReject :: getLoopSuffix))
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)) :
-    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap stack)
-      (.returning (.integer 0) (written heap buffer regionValues rshape.volume) stack) := by
-  obtain ⟨types0, entered⟩ := guard_reaches shape outputShape program heap p refs buffer n m kind mode
-    defined hk hm allowed nref trivial trivial stack
-  refine entered.trans ((declares_reaches program shape outputShape (guardEnv p refs buffer n m) types0
-    heap stack (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])).trans ?_)
-  refine (nav types0).trans ?_
-  refine (stage_reaches program (guardEnv p refs buffer n m) types0 heap p (p.member member) member
-    rshape.volume (countReject :: getLoopSuffix) stack bounded (by simp [guardEnv, CBody.bind])
-    rfl).trans ?_
-  exact get_tail_reaches program (guardEnv p refs buffer n m) (declaredTypes types0) heap (p.member member)
-    buffer rshape regionValues m stack bounded matched
-    (by simp [stagedEnv, CBody.bind, CBody.resolve])
-    (by simp [stagedEnv, CBody.bind, CBody.resolve])
-    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
-    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
-    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind])
-    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind]) readable writable separate
-
-theorem get_behaviors_of (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
-    (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer : Address) (n m : UInt64)
-    (kind : Kind) (mode : Mode) (member : String) (rshape : Tensor.Shape) (regionValues : Values rshape)
-    (nref : n.toNat = 1) (matched : m.toNat = rshape.volume) (bounded : rshape.volume < 2 ^ 64)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .get kind mode)
-    (readable : Reads heap (p.member member) regionValues)
-    (writable : Writable heap buffer rshape.volume)
-    (separate : ∀ a < rshape.volume, ∀ b < rshape.volume, (p.member member).index a ≠ buffer.index b)
-    (nav : ∀ types0, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" .done)
-      (.body (.running (getArm member rshape.volume ++ (countReject :: getLoopSuffix))
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" .done))
-    (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap buffer regionValues rshape.volume⟩ :=
-  (CCalls.Events.internal_prefix program (get_reaches_of shape outputShape program heap p refs buffer n m
-    kind mode member rshape regionValues .done nref matched bounded defined hk hm allowed readable writable
-    separate nav) (CCalls.Events.return_forced program _ _)).behaviors behavior
-
-end
-
-/-! ### Per-reference navigation -/
-
-section
-variable [interface : CInterface]
-
 /-- `valueReferences[0]` equals a different literal than the stored reference. -/
 theorem cvr0_ne (env : Locals) (types : Types) (heap : Heap) (refs : Address) (r j : Nat)
     (rBound : resolve env "valueReferences" = some (.pointer (some refs)))
@@ -624,105 +482,176 @@ theorem cvr0_eq (env : Locals) (types : Types) (heap : Heap) (refs : Address) (r
     CLoops.eval env types heap (Runtime.eqv vr0 (Runtime.n r)) = some (boolean true) := by
   rw [cvr0_cmp env types heap refs r r rBound refRead]; simp
 
-variable (program : CCalls.Events.Program E) (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
-  (p refs buffer : Address) (n m : UInt64) (types0 : Types) (heap : Heap)
-  (stack : CCalls.Typed.Continuation)
+/-- The first cell a region addresses in the record at `p`. -/
+def regionBase (p : Address) (r : Region) : Address := (p.member r.member).index r.offset
 
-/-- Env after the guard and staging declarations, over which the dispatch runs. -/
-private def navEnv : Locals := declaredEnv (guardEnv p refs buffer n m)
-private def navTypes : Types := declaredTypes types0
+theorem regionBase_zero (p : Address) (member : String) (count : Nat) :
+    regionBase p ⟨member, 0, count⟩ = p.member member := Address.index_zero _
 
-private theorem navRefs (refs buffer : Address) :
-    resolve (navEnv p refs buffer n m) "valueReferences" = some (.pointer (some refs)) := by
-  simp [navEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve]
+/-- A region of the scalar time base starts at offset `0`. -/
+def Addressable (r : Region) : Prop := r.member = timeName → r.offset = 0
 
-/-- Navigate the dispatch to reference 2 (the state `x`). -/
-theorem get_nav_state (refRead : load heap (refs.index 0) = some (.integer 2)) :
+/-- The staged pointer evaluates to the region's first cell, heap-independently:
+the scalar time base is `&(m->time)`, every other region `&(m->member)[offset]`. -/
+theorem eval_pointer (env : Locals) (heap : Heap) (p : Address) (r : Region)
+    (mResolves : CBody.resolve env "m" = some (.pointer (some p))) (addressable : Addressable r) :
+    CBody.eval env heap (pointer r.member r.offset) = some (.pointer (some (regionBase p r))) := by
+  unfold pointer regionBase
+  split
+  · rename_i time
+    rw [addressable time, Address.index_zero]
+    simp [Runtime.field, Runtime.v, CBody.eval, CBody.evalWith, CBody.lvalueWith, mResolves, Value.address]
+  · have nonnegative : ¬ ((r.offset : Int) < 0) := by omega
+    simp [Runtime.field, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith, CBody.lvalueWith, mResolves,
+      Value.address, nonnegative]
+
+/-- The dispatch reaches the arm whose reference is the stored one. -/
+theorem dispatch_reaches (program : CCalls.Events.Program E) (env : Locals) (types : Types) (heap : Heap)
+    (refs : Address) (r : Nat) (resultType : String) (stack : CCalls.Typed.Continuation)
+    (rBound : resolve env "valueReferences" = some (.pointer (some refs)))
+    (refRead : load heap (refs.index 0) = some (.integer r))
+    (fallback : Stmt) (hfallback : CLoops.noDeclarations fallback = true)
+    (arms : List (Nat × List Stmt)) (harms : ∀ a ∈ arms, a.2.all CLoops.noDeclarations = true)
+    (arm : List Stmt) (found : arms.lookup r = some arm) (rest : List Stmt) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (getArm stateName shape.volume ++ (countReject :: getLoopSuffix))
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack) := by
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d1_noDecl]) (cvr0_ne _ _ heap refs 2 0 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d2_noDecl]) (cvr0_ne _ _ heap refs 2 1 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  refine .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d3_noDecl]) (cvr0_eq _ _ heap refs 2 (navRefs p n m refs buffer) refRead))
-    "fmi3Status" stack) (.refl _)
+      (.body (.running (dispatch arms fallback :: rest) env types heap) resultType stack)
+      (.body (.running (arm ++ rest) env types heap) resultType stack) := by
+  induction arms with
+  | nil => cases found
+  | cons a tl ih =>
+    obtain ⟨j, yes⟩ := a
+    have safe : (yes.all CLoops.noDeclarations &&
+        [dispatch tl fallback].all CLoops.noDeclarations) = true := by
+      have hyes := harms (j, yes) (List.mem_cons_self ..)
+      simp [hyes, dispatch_noDecl tl fallback hfallback (fun b hb => harms b (List.mem_cons_of_mem _ hb))]
+    have shape : dispatch ((j, yes) :: tl) fallback =
+        .branch (Runtime.eqv vr0 (Runtime.n j)) yes [dispatch tl fallback] := by
+      show Runtime.branch _ yes (Float64Dispatch.dispatchChain vr0 tl [fallback]) = _
+      rw [dispatch_chain]; rfl
+    rw [shape]
+    by_cases same : r = j
+    · subst same
+      have : yes = arm := by simpa [List.lookup] using found
+      subst this
+      exact .next (CCalls.Events.body_step program
+        (cbranch_true env types heap _ _ _ rest safe (cvr0_eq env types heap refs r rBound refRead))
+        resultType stack) (.refl _)
+    · have hb : (r == j) = false := by simpa using same
+      have next : tl.lookup r = some arm := by
+        simpa [List.lookup, hb] using found
+      refine .next (CCalls.Events.body_step program
+        (cbranch_false env types heap _ _ _ rest safe (cvr0_ne env types heap refs r j rBound refRead same))
+        resultType stack) ?_
+      exact ih (fun b hb => harms b (List.mem_cons_of_mem _ hb)) next
 
-/-- Navigate the dispatch to reference 0 (the time base). -/
-theorem get_nav_time (refRead : load heap (refs.index 0) = some (.integer 0)) :
+/-- The two dispatch assignments stage the region pointer and count. -/
+theorem stage_reaches (program : CCalls.Events.Program E) (env0 : Locals) (types0 : Types) (heap : Heap)
+    (p : Address) (r : Region) (rest : List Stmt)
+    (stack : CCalls.Typed.Continuation) (bounded : r.count < 2 ^ 64)
+    (mBound : env0 "m" = some (.pointer (some p))) (addressable : Addressable r) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (getArm timeName Tensor.scalar.volume ++ (countReject :: getLoopSuffix))
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack) :=
-  .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d1_noDecl]) (cvr0_eq _ _ heap refs 0 (navRefs p n m refs buffer) refRead))
-    "fmi3Status" stack) (.refl _)
+      (.body (.running (getArm r ++ rest) (declaredEnv env0) (declaredTypes types0) heap)
+        "fmi3Status" stack)
+      (.body (.running rest (stagedEnv env0 (regionBase p r) r.count) (declaredTypes types0) heap)
+        "fmi3Status" stack) := by
+  have addr : CLoops.eval (declaredEnv env0) (declaredTypes types0) heap (pointer r.member r.offset) =
+      some (.pointer (some (regionBase p r))) := by
+    apply CBodyEmbedding.eval_refines
+    exact eval_pointer (declaredEnv env0) heap p r
+      (by simp [declaredEnv, CBody.bind, CBody.resolve, mBound]) addressable
+  have s1 : CLoops.next (.running (getArm r ++ rest) (declaredEnv env0) (declaredTypes types0) heap) =
+      some (.running (.assign (Runtime.v "expected") (Runtime.n r.count) :: rest)
+        (CBody.bind (declaredEnv env0) "src" (.pointer (some (regionBase p r)))) (declaredTypes types0) heap) := by
+    have := CLoops.assign_local (declaredEnv env0) (declaredTypes types0) heap "src"
+      (pointer r.member r.offset) (.assign (Runtime.v "expected") (Runtime.n r.count) :: rest)
+      (.pointer none) (.pointer (some (regionBase p r))) (.pointer (some (regionBase p r))) .pointer
+      (by simp [declaredEnv, CBody.bind]) (by simp [declaredTypes, CLoops.bindType]) addr rfl
+    simpa [getArm, Runtime.v] using this
+  have s2 : CLoops.next (.running (.assign (Runtime.v "expected") (Runtime.n r.count) :: rest)
+        (CBody.bind (declaredEnv env0) "src" (.pointer (some (regionBase p r)))) (declaredTypes types0) heap) =
+      some (.running rest (stagedEnv env0 (regionBase p r) r.count) (declaredTypes types0) heap) := by
+    have := CLoops.assign_local (CBody.bind (declaredEnv env0) "src" (.pointer (some (regionBase p r))))
+      (declaredTypes types0) heap "expected" (Runtime.n r.count) rest (.integer 0) (.integer r.count)
+      (.integer r.count) .size (by simp [declaredEnv, CBody.bind]) (by simp [declaredTypes, CLoops.bindType])
+      (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith])
+      (CLoops.convert_size_nat r.count bounded)
+    simpa [Runtime.v, stagedEnv] using this
+  exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
+    (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
 
-/-- Navigate the dispatch to reference 1 (the input `u`). -/
-theorem get_nav_input (refRead : load heap (refs.index 0) = some (.integer 1)) :
-    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (getArm inputName shape.volume ++ (countReject :: getLoopSuffix))
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack) := by
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d1_noDecl]) (cvr0_ne _ _ heap refs 1 0 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  exact .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d2_noDecl]) (cvr0_eq _ _ heap refs 1 (navRefs p n m refs buffer) refRead))
-    "fmi3Status" stack) (.refl _)
+end
 
-/-- Navigate the dispatch to reference 3 (the derivative `der(x)`). -/
-theorem get_nav_deriv (refRead : load heap (refs.index 0) = some (.integer 3)) :
-    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (getDerivativeArm shape ++ (countReject :: getLoopSuffix))
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack) := by
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d1_noDecl]) (cvr0_ne _ _ heap refs 3 0 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d2_noDecl]) (cvr0_ne _ _ heap refs 3 1 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d3_noDecl]) (cvr0_ne _ _ heap refs 3 2 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  exact .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [derivativeArm_noDecl, d4_noDecl shape]) (cvr0_eq _ _ heap refs 3 (navRefs p n m refs buffer) refRead))
-    "fmi3Status" stack) (.refl _)
+/-! ### The complete getter for a declared value reference -/
 
-/-- Navigate the dispatch to reference 4 (the output `J`), present in the record. -/
-theorem get_nav_output (os : Tensor.Shape) (present : outputShape = some os)
-    (refRead : load heap (refs.index 0) = some (.integer 4)) :
+section
+variable [static : StaticLiterals]
+private local instance getInterface : CInterface := cInterface static.addresses
+
+/-- The complete getter for one value reference whose table arm stages the region
+`⟨member, offset, rshape.volume⟩`: it writes exactly the region's values into
+the caller buffer and changes no other cell. -/
+theorem get_reaches (reads : Float64Table.Reads) (iface : Solve.Interface)
+    (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true) (program : CCalls.Events.Program E) (heap : Heap)
+    (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (reference : Nat)
+    (member : String) (offset : Nat) (rshape : Tensor.Shape) (regionValues : Values rshape)
+    (stack : CCalls.Typed.Continuation)
+    (found : (Float64Table.getArms reads iface).lookup reference = some (getArm ⟨member, offset, rshape.volume⟩))
+    (addressable : Addressable ⟨member, offset, rshape.volume⟩)
+    (nref : n.toNat = 1) (matched : m.toNat = rshape.volume) (bounded : rshape.volume < 2 ^ 64)
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction reads iface)))
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .get kind mode)
+    (refRead : load heap (refs.index 0) = some (.integer reference))
+    (readable : Reads heap ((p.member member).index offset) regionValues)
+    (writable : Writable heap buffer rshape.volume)
+    (separate : ∀ a < rshape.volume, ∀ b < rshape.volume,
+      ((p.member member).index offset).index a ≠ buffer.index b) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix)
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (TensorEntry.jacobianCall (Runtime.n shape.volume) shape :: getArm outputName os.volume ++
-          (countReject :: getLoopSuffix))
-        (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) heap) "fmi3Status" stack) := by
-  subst present
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d1_noDecl]) (cvr0_ne _ _ heap refs 4 0 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d2_noDecl]) (cvr0_ne _ _ heap refs 4 1 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, d3_noDecl]) (cvr0_ne _ _ heap refs 4 2 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [derivativeArm_noDecl, d4_noDecl shape]) (cvr0_ne _ _ heap refs 4 3 (navRefs p n m refs buffer) refRead (by decide)))
-    "fmi3Status" stack) ?_
-  exact .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [getArm_noDecl, getOutputArm, TensorEntry.jacobianCall, Runtime.fail, Runtime.ret, CLoops.noDeclarations])
-      (cvr0_eq _ _ heap refs 4 (navRefs p n m refs buffer) refRead)) "fmi3Status" stack) (.refl _)
+      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap stack)
+      (.returning (.integer 0) (written heap buffer regionValues rshape.volume) stack) := by
+  obtain ⟨types0, entered⟩ := guard_reaches reads iface closedReads program heap p refs buffer n m kind mode
+    defined hk hm allowed nref stack
+  refine entered.trans ((declares_reaches program reads iface (guardEnv p refs buffer n m) types0
+    heap stack (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])).trans ?_)
+  refine (dispatch_reaches program _ _ heap refs reference "fmi3Status" stack
+    (by simp [declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve]) refRead _ (fail_noDecl _)
+    _ (Float64Table.getArms_noDecl reads iface closedReads) _ found _).trans ?_
+  refine (stage_reaches program (guardEnv p refs buffer n m) types0 heap p ⟨member, offset, rshape.volume⟩
+    (countReject :: getLoopSuffix) stack bounded (by simp [guardEnv, CBody.bind]) addressable).trans ?_
+  exact get_tail_reaches program (guardEnv p refs buffer n m) (declaredTypes types0) heap
+    ((p.member member).index offset) buffer rshape regionValues m stack bounded matched
+    (by simp [stagedEnv, regionBase, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind])
+    (by simp [stagedEnv, declaredEnv, guardEnv, parameters, CBody.bind]) readable writable separate
+
+/-- The getter's whole behavior for one declared value reference. -/
+theorem get_behaviors (reads : Float64Table.Reads) (iface : Solve.Interface)
+    (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true) (program : CCalls.Events.Program E) (heap : Heap)
+    (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (reference : Nat)
+    (member : String) (offset : Nat) (rshape : Tensor.Shape) (regionValues : Values rshape)
+    (found : (Float64Table.getArms reads iface).lookup reference = some (getArm ⟨member, offset, rshape.volume⟩))
+    (addressable : Addressable ⟨member, offset, rshape.volume⟩)
+    (nref : n.toNat = 1) (matched : m.toNat = rshape.volume)
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction reads iface)))
+    (hk : load heap (p.member "kind") = some (.integer kind.code))
+    (hm : load heap (p.member "mode") = some (.integer mode.code))
+    (allowed : Reference.Allowed .get kind mode)
+    (refRead : load heap (refs.index 0) = some (.integer reference))
+    (readable : Reads heap ((p.member member).index offset) regionValues)
+    (writable : Writable heap buffer rshape.volume)
+    (separate : ∀ a < rshape.volume, ∀ b < rshape.volume,
+      ((p.member member).index offset).index a ≠ buffer.index b) (behavior) :
+    (CCalls.Events.machine program).Behaves
+      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
+      behavior = .terminates [] ⟨.integer 0, written heap buffer regionValues rshape.volume⟩ :=
+  (CCalls.Events.internal_prefix program (get_reaches reads iface closedReads program heap p refs buffer n m kind mode
+    reference member offset rshape regionValues .done found addressable nref matched
+    (matched ▸ m.toNat_lt_size) defined hk hm allowed refRead readable writable separate)
+    (CCalls.Events.return_forced program _ _)).behaviors behavior
 
 end
 
@@ -774,61 +703,6 @@ theorem writable_state (backing : Heap) (pool : Address) (i : Nat) (shape oshape
     exact writable_place_other (show TensorInstance.stateName ≠ TensorInstance.outputName by decide +kernel)
       (core_writable_state backing pool i shape time state input)
 
-/-! ### The getter behavior for each accepted reference -/
-
-section
-variable [static : StaticLiterals]
-private local instance regionInterface : CInterface := cInterface static.addresses
-variable (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) (program : CCalls.Events.Program E)
-  (heap : Heap) (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode)
-
-/-- The tensor getter reading the time base. -/
-theorem get_behaviors_time (values : Values Tensor.scalar) (nref : n.toNat = 1) (nval : m.toNat = 1)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code)) (allowed : Reference.Allowed .get kind mode)
-    (refRead : load heap (refs.index 0) = some (.integer 0))
-    (readable : Reads heap (p.member timeName) values) (writable : Writable heap buffer 1)
-    (separate : ∀ a < 1, ∀ b < 1, (p.member timeName).index a ≠ buffer.index b) (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap buffer values 1⟩ :=
-  get_behaviors_of shape outputShape program heap p refs buffer n m kind mode timeName Tensor.scalar values
-    nref nval (by decide) defined hk hm allowed readable writable separate
-    (fun types0 => get_nav_time program shape outputShape p refs buffer n m types0 heap .done refRead) behavior
-
-/-- The tensor getter reading the input `u`. -/
-theorem get_behaviors_input (values : Values shape) (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code)) (allowed : Reference.Allowed .get kind mode)
-    (refRead : load heap (refs.index 0) = some (.integer 1))
-    (readable : Reads heap (p.member inputName) values) (writable : Writable heap buffer shape.volume)
-    (separate : ∀ a < shape.volume, ∀ b < shape.volume, (p.member inputName).index a ≠ buffer.index b) (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap buffer values shape.volume⟩ :=
-  get_behaviors_of shape outputShape program heap p refs buffer n m kind mode inputName shape values
-    nref nval (nval ▸ m.toNat_lt_size) defined hk hm allowed readable writable separate
-    (fun types0 => get_nav_input program shape outputShape p refs buffer n m types0 heap .done refRead) behavior
-
-/-- The tensor getter reading the state `x`. -/
-theorem get_behaviors_state (values : Values shape) (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code)) (allowed : Reference.Allowed .get kind mode)
-    (refRead : load heap (refs.index 0) = some (.integer 2))
-    (readable : Reads heap (p.member stateName) values) (writable : Writable heap buffer shape.volume)
-    (separate : ∀ a < shape.volume, ∀ b < shape.volume, (p.member stateName).index a ≠ buffer.index b) (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3GetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap buffer values shape.volume⟩ :=
-  get_behaviors_of shape outputShape program heap p refs buffer n m kind mode stateName shape values
-    nref nval (nval ▸ m.toNat_lt_size) defined hk hm allowed readable writable separate
-    (fun types0 => get_nav_state program shape outputShape p refs buffer n m types0 heap .done refRead) behavior
-
-end
-
 /-! ### The getter bound to the static tensor instance record -/
 
 section
@@ -837,18 +711,23 @@ private local instance instGetInterface : CInterface := cInterface static.addres
 variable (program : CCalls.Events.Program E) (backing : Heap) (pool : Address) (i : Nat)
   (shape oshape : Tensor.Shape) (time : Values Tensor.scalar) (state input : Values shape)
   (output : Option (Values oshape)) (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode)
+  (iface : Solve.Interface) (reference : Nat) (reads : Float64Table.Reads)
+  (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true)
+include closedReads
 
-/-- The tensor getter reading the state region of instance `i`: it writes exactly
+/-- The getter reading the state region of instance `i`: it writes exactly
 the state into the caller buffer and changes no instance cell. -/
-theorem get_instance_behaviors_state (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape (output.map fun _ => oshape))))
+theorem get_instance_behaviors_state (found : (Float64Table.getArms reads iface).lookup reference =
+      some (getArm ⟨stateName, 0, shape.volume⟩))
+    (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction reads iface)))
     (hk : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .get kind mode)
     (refRead : load (TensorInstance.store backing pool i shape oshape time state input output)
-      (refs.index 0) = some (.integer 2))
+      (refs.index 0) = some (.integer reference))
     (writable : Writable (TensorInstance.store backing pool i shape oshape time state input output)
       buffer shape.volume)
     (separate : ∀ a < shape.volume, ∀ b < shape.volume,
@@ -859,20 +738,23 @@ theorem get_instance_behaviors_state (nref : n.toNat = 1) (nval : m.toNat = shap
       behavior = .terminates []
         ⟨.integer 0, written (TensorInstance.store backing pool i shape oshape time state input output)
           buffer state shape.volume⟩ :=
-  get_behaviors_state shape (output.map fun _ => oshape) program _ (TensorInstance.record pool i) refs buffer
-    n m kind mode state nref nval defined hk hm allowed refRead
-    (TensorInstance.reads_state backing pool i shape oshape time state input output) writable separate behavior
+  get_behaviors reads iface closedReads program _ (TensorInstance.record pool i) refs buffer n m kind mode reference stateName 0
+    shape state found (fun _ => rfl) nref nval defined hk hm allowed refRead
+    (by rw [Address.index_zero]; exact TensorInstance.reads_state backing pool i shape oshape time state input output)
+    writable (by simpa only [Address.index_zero] using separate) behavior
 
-/-- The tensor getter reading the input region of instance `i`. -/
-theorem get_instance_behaviors_input (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape (output.map fun _ => oshape))))
+/-- The getter reading the input region of instance `i`. -/
+theorem get_instance_behaviors_input (found : (Float64Table.getArms reads iface).lookup reference =
+      some (getArm ⟨inputName, 0, shape.volume⟩))
+    (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction reads iface)))
     (hk : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .get kind mode)
     (refRead : load (TensorInstance.store backing pool i shape oshape time state input output)
-      (refs.index 0) = some (.integer 1))
+      (refs.index 0) = some (.integer reference))
     (writable : Writable (TensorInstance.store backing pool i shape oshape time state input output)
       buffer shape.volume)
     (separate : ∀ a < shape.volume, ∀ b < shape.volume,
@@ -883,20 +765,23 @@ theorem get_instance_behaviors_input (nref : n.toNat = 1) (nval : m.toNat = shap
       behavior = .terminates []
         ⟨.integer 0, written (TensorInstance.store backing pool i shape oshape time state input output)
           buffer input shape.volume⟩ :=
-  get_behaviors_input shape (output.map fun _ => oshape) program _ (TensorInstance.record pool i) refs buffer
-    n m kind mode input nref nval defined hk hm allowed refRead
-    (TensorInstance.reads_input backing pool i shape oshape time state input output) writable separate behavior
+  get_behaviors reads iface closedReads program _ (TensorInstance.record pool i) refs buffer n m kind mode reference inputName 0
+    shape input found (fun _ => rfl) nref nval defined hk hm allowed refRead
+    (by rw [Address.index_zero]; exact TensorInstance.reads_input backing pool i shape oshape time state input output)
+    writable (by simpa only [Address.index_zero] using separate) behavior
 
-/-- The tensor getter reading the time base of instance `i`. -/
-theorem get_instance_behaviors_time (nref : n.toNat = 1) (nval : m.toNat = 1)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape (output.map fun _ => oshape))))
+/-- The getter reading the time base of instance `i`. -/
+theorem get_instance_behaviors_time (found : (Float64Table.getArms reads iface).lookup reference =
+      some (getArm ⟨timeName, 0, Tensor.scalar.volume⟩))
+    (nref : n.toNat = 1) (nval : m.toNat = 1)
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction reads iface)))
     (hk : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .get kind mode)
     (refRead : load (TensorInstance.store backing pool i shape oshape time state input output)
-      (refs.index 0) = some (.integer 0))
+      (refs.index 0) = some (.integer reference))
     (writable : Writable (TensorInstance.store backing pool i shape oshape time state input output) buffer 1)
     (separate : ∀ a < 1, ∀ b < 1, (TensorInstance.field pool i timeName).index a ≠ buffer.index b) (behavior) :
     (CCalls.Events.machine program).Behaves
@@ -905,16 +790,17 @@ theorem get_instance_behaviors_time (nref : n.toNat = 1) (nval : m.toNat = 1)
       behavior = .terminates []
         ⟨.integer 0, written (TensorInstance.store backing pool i shape oshape time state input output)
           buffer time 1⟩ :=
-  get_behaviors_time shape (output.map fun _ => oshape) program _ (TensorInstance.record pool i) refs buffer
-    n m kind mode time nref nval defined hk hm allowed refRead
-    (reads_time backing pool i shape oshape time state input output) writable separate behavior
+  get_behaviors reads iface closedReads program _ (TensorInstance.record pool i) refs buffer n m kind mode reference timeName 0
+    Tensor.scalar time found (fun _ => rfl) nref nval defined hk hm allowed refRead
+    (by rw [Address.index_zero]; exact reads_time backing pool i shape oshape time state input output)
+    writable (by simpa only [Address.index_zero] using separate) behavior
 
 end
 
 /-! ### Calculated variables are evaluated when they are read
 
-The `der(x)` and `J` arms of the getter call the prepared kernel entries before
-staging the region, so the value returned is the one the prepared model
+The arms of the calculated variables (`Float64Table.Reads`) call the prepared
+kernel entries before staging the region, so the value returned is the one the prepared model
 calculates from the current input and state, never a value left in the region
 by an earlier call. -/
 
@@ -978,7 +864,9 @@ open Rumoca.CTensor.Lowering Solve.Tensor Rumoca.ArrayProfile in
 from the instance's state and input, returns it in the caller buffer with
 `fmi3OK`, leaves it in the `der(x)` region and preserves every other instance.
 This holds whatever the `der(x)` region held before the call. -/
-theorem get_deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem get_deriv_reaches (shape oshape : Tensor.Shape) (iface : Solve.Interface) (reference : Nat)
+    (arm : (Float64Table.getArms (tensorReads shape) iface).lookup reference =
+      some (TensorEntry.rhsCall (Runtime.n shape.volume) :: getArm ⟨derivativeName, 0, shape.volume⟩)) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (found : definitions (TensorInstanceRhs.plan shape).derivative.function.name =
@@ -987,15 +875,14 @@ theorem get_deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Ca
     (time : Values Tensor.scalar) (state input result : Values shape) (output : Option (Values oshape))
     (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (stack : CCalls.Typed.Continuation)
     (nref : n.toNat = 1) (nval : m.toNat = shape.volume) (bounded : shape.volume < 2 ^ 64)
-    (defined : program.internal.definitions "fmi3GetFloat64" =
-      some (.tree (getFunction shape (output.map fun _ => oshape))))
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction (tensorReads shape) iface)))
     (hk : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .get kind mode)
     (refRead : load (TensorInstance.store backing pool i shape oshape time state input output)
-      (refs.index 0) = some (.integer 3))
+      (refs.index 0) = some (.integer reference))
     (executed : Finite.Executes (TensorInstanceRhs.kernel shape).derivative
       (ArrayProfile.environment state input) result)
     (writable : Writable (TensorInstance.store backing pool i shape oshape time state input output)
@@ -1019,15 +906,17 @@ theorem get_deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Ca
         (.returning (.integer 0) (written finalHeap buffer result shape.volume) stack) := by
   set H := TensorInstance.store backing pool i shape oshape time state input output with hH
   set p := TensorInstance.record pool i with hp
-  obtain ⟨types0, entered⟩ := guard_reaches shape (output.map fun _ => oshape) program H p refs buffer n m
-    kind mode defined hk hm allowed nref trivial trivial stack
-  have declared := declares_reaches program shape (output.map fun _ => oshape) (guardEnv p refs buffer n m)
+  obtain ⟨types0, entered⟩ := guard_reaches (tensorReads shape) iface (tensorReads_noDecl shape) program H p
+    refs buffer n m kind mode defined hk hm allowed nref stack
+  have declared := declares_reaches program (tensorReads shape) iface (guardEnv p refs buffer n m)
     types0 H stack (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])
-  have nav := get_nav_deriv program shape (output.map fun _ => oshape) p refs buffer n m types0 H stack refRead
   set env := declaredEnv (guardEnv p refs buffer n m) with henv
   set rest := countReject :: getLoopSuffix with hrest
+  have nav := dispatch_reaches program env (declaredTypes types0) H refs reference "fmi3Status" stack
+    (by simp [henv, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve]) refRead (Runtime.fail "Unknown value reference") (fail_noDecl _)
+    _ (Float64Table.getArms_noDecl (tensorReads shape) iface (tensorReads_noDecl shape)) _ arm rest
   have enterStep := rhs_read_enter program shape env (declaredTypes types0) H p
-    (getArm derivativeName shape.volume ++ rest) "fmi3Status" stack
+    (getArm ⟨derivativeName, 0, shape.volume⟩ ++ rest) "fmi3Status" stack
     (by simp [henv, declaredEnv, guardEnv, CBody.bind])
     (by simp [henv, declaredEnv, guardEnv, parameters, CBody.bind])
   have argsEq : [Value.pointer (some (p.member stateName)), .pointer (some (p.member inputName)),
@@ -1039,14 +928,15 @@ theorem get_deriv_reaches (shape oshape : Tensor.Shape) (definitions : CLoops.Ca
   obtain ⟨finalHeap, reads, _writableDeriv, frameH, others, ran⟩ :=
     TensorInstanceRhs.derivative_writes_events (shape := shape) definitions program linked library found
       backing pool i oshape time state input result output bounded executed resolves
-      (.caller .discard (getArm derivativeName shape.volume ++ rest) env (declaredTypes types0) "fmi3Status" stack)
+      (.caller .discard (getArm ⟨derivativeName, 0, shape.volume⟩ ++ rest) env (declaredTypes types0) "fmi3Status" stack)
   have writableFinal : Writable finalHeap buffer shape.volume := by
     intro b hb
     obtain ⟨old, ho⟩ := writable b hb
     exact ⟨old, (frameH (buffer.index b)
       (TensorInstanceRhs.buffer_outside pool i buffer b hb separate)).trans ho⟩
-  have staged := stage_reaches program (guardEnv p refs buffer n m) types0 finalHeap p (p.member derivativeName)
-    derivativeName shape.volume rest stack bounded (by simp [guardEnv, CBody.bind]) rfl
+  have staged := stage_reaches program (guardEnv p refs buffer n m) types0 finalHeap p
+    ⟨derivativeName, 0, shape.volume⟩ rest stack bounded (by simp [guardEnv, CBody.bind]) (fun _ => rfl)
+  rw [regionBase_zero] at staged
   have tail := get_tail_reaches program (guardEnv p refs buffer n m) (declaredTypes types0) finalHeap
     (p.member derivativeName) buffer shape result m stack bounded nval
     (by simp [stagedEnv, CBody.bind, CBody.resolve])
@@ -1064,7 +954,10 @@ prepared square-Jacobian diagonal from the instance's input, returns
 `diag(2*u)` in the caller buffer with `fmi3OK`, leaves it in the `J` region and
 preserves every other cell outside that region. This holds whatever the `J`
 region held before the call. -/
-theorem get_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.Definitions)
+theorem get_output_reaches (shape : Tensor.Shape) (iface : Solve.Interface) (reference : Nat)
+    (arm : (Float64Table.getArms (tensorReads shape) iface).lookup reference =
+      some (TensorEntry.jacobianCall (Runtime.n shape.volume) shape ::
+        getArm ⟨outputName, 0, (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume⟩)) (definitions : CLoops.Calls.Definitions)
     (linked : CCalls.Typed.Extends definitions program.internal)
     (library : Rumoca.CTensor.Lowering.Library definitions)
     (jacFound : definitions Rumoca.CTensor.SquareDiagonal.function.signature.name = some Rumoca.CTensor.SquareDiagonal.function)
@@ -1074,8 +967,7 @@ theorem get_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.De
     (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (stack : CCalls.Typed.Continuation)
     (nref : n.toNat = 1) (nval : m.toNat = (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
     (bounded2 : (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64)
-    (defined : program.internal.definitions "fmi3GetFloat64" =
-      some (.tree (getFunction shape (some (Rumoca.Tensor.matrixShape shape.volume shape.volume)))))
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction (tensorReads shape) iface)))
     (hk : load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
       time state input (some J)) ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
@@ -1083,7 +975,7 @@ theorem get_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.De
     (allowed : Reference.Allowed .get kind mode)
     (refRead : load (TensorInstance.store backing pool i shape
       (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J))
-      (refs.index 0) = some (.integer 4))
+      (refs.index 0) = some (.integer reference))
     (writable : Writable (TensorInstance.store backing pool i shape
       (Rumoca.Tensor.matrixShape shape.volume shape.volume) time state input (some J))
       buffer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume)
@@ -1116,15 +1008,17 @@ theorem get_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.De
   let os := Rumoca.Tensor.matrixShape shape.volume shape.volume
   let H := TensorInstance.store backing pool i shape os time state input (some J)
   let p := TensorInstance.record pool i
-  obtain ⟨types0, entered⟩ := guard_reaches shape (some os) program H p refs buffer n m
-    kind mode defined hk hm allowed nref trivial trivial stack
-  have declared := declares_reaches program shape (some os) (guardEnv p refs buffer n m)
+  obtain ⟨types0, entered⟩ := guard_reaches (tensorReads shape) iface (tensorReads_noDecl shape) program H p
+    refs buffer n m kind mode defined hk hm allowed nref stack
+  have declared := declares_reaches program (tensorReads shape) iface (guardEnv p refs buffer n m)
     types0 H stack (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])
-  have nav := get_nav_output program shape (some os) p refs buffer n m types0 H stack os rfl refRead
   let env := declaredEnv (guardEnv p refs buffer n m)
   let rest := countReject :: getLoopSuffix
+  have nav := dispatch_reaches program env (declaredTypes types0) H refs reference "fmi3Status" stack
+    (by simp [env, declaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve]) refRead (Runtime.fail "Unknown value reference") (fail_noDecl _)
+    _ (Float64Table.getArms_noDecl (tensorReads shape) iface (tensorReads_noDecl shape)) _ arm rest
   have enterStep := jacobian_read_enter program shape (declaredEnv (guardEnv p refs buffer n m)) (declaredTypes types0) H p
-    (getArm outputName os.volume ++ rest) "fmi3Status" stack
+    (getArm ⟨outputName, 0, os.volume⟩ ++ rest) "fmi3Status" stack
     (by simp [declaredEnv, guardEnv, CBody.bind])
     (by simp [declaredEnv, guardEnv, parameters, CBody.bind])
   have argsEq : [Value.pointer (some (p.member inputName)), .pointer (some (p.member outputName)),
@@ -1140,14 +1034,15 @@ theorem get_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.De
   obtain ⟨jacReads, jacFrame, jacRan⟩ :=
     TensorInstanceJacobian.jacobian_writes_events (shape := shape) definitions program linked library jacFound
       pool i input H bounded2 readsInput writableOutput adds jacResolves
-      (.caller .discard (getArm outputName os.volume ++ rest) env (declaredTypes types0) "fmi3Status" stack)
+      (.caller .discard (getArm ⟨outputName, 0, os.volume⟩ ++ rest) env (declaredTypes types0) "fmi3Status" stack)
   let F := Rumoca.CTensor.Diagonal.resultHeap H (TensorInstance.field pool i outputName) (Rumoca.CTensor.SquareDiagonal.doubled input)
   have writableFinal : Writable F buffer os.volume := by
     intro b hb
     obtain ⟨old, ho⟩ := writable b hb
     exact ⟨old, (jacFrame (buffer.index b) (fun a ha => (separate a ha b hb).symm)).trans ho⟩
-  have staged := stage_reaches program (guardEnv p refs buffer n m) types0 F p (p.member outputName)
-    outputName os.volume rest stack bounded2 (by simp [guardEnv, CBody.bind]) rfl
+  have staged := stage_reaches program (guardEnv p refs buffer n m) types0 F p
+    ⟨outputName, 0, os.volume⟩ rest stack bounded2 (by simp [guardEnv, CBody.bind]) (fun _ => rfl)
+  rw [regionBase_zero] at staged
   have tail := get_tail_reaches program (guardEnv p refs buffer n m) (declaredTypes types0) F
     (p.member outputName) buffer os (Rumoca.CTensor.Diagonal.matrix (Rumoca.CTensor.SquareDiagonal.doubled input)) m stack bounded2 nval
     (by simp [stagedEnv, CBody.bind, CBody.resolve])
@@ -1161,7 +1056,7 @@ theorem get_output_reaches (shape : Tensor.Shape) (definitions : CLoops.Calls.De
 
 end
 
-/-! ### The setter body -/
+
 
 /-- The setter finiteness check applied to each caller value before any write. -/
 def validateBody : List Stmt :=
@@ -1175,59 +1070,38 @@ def setLoopSuffix : List Stmt :=
   [.declare "size_t" "k" (Runtime.n 0), CLoops.loop "k" (Runtime.v "expected") validateBody,
     .assign (Runtime.v "k") (Runtime.n 0), CLoops.loop "k" (Runtime.v "expected") setCopyBody, Runtime.ok]
 
-/-- One setter dispatch arm stages the writable region pointer and its count. -/
-def setArm (member : String) (count : Nat) : List Stmt :=
-  [.assign (Runtime.v "dst") (memberPointer member), .assign (Runtime.v "expected") (Runtime.n count)]
+/-- Dispatch one value reference to its writable declared region; the time base,
+derivatives and calculated outputs are read-only, and every other reference
+fails. -/
+def setDispatch (i : Solve.Interface) : Stmt :=
+  dispatch (Float64Table.setArms i) (Runtime.fail "Unknown or read-only value reference")
 
-/-- Setter dispatch tail for reference 2 (the state `x`). -/
-def setDispatch2 (shape : Tensor.Shape) : List Stmt :=
-  [Runtime.branch (Runtime.eqv vr0 (Runtime.n 2)) (setArm stateName shape.volume)
-    [Runtime.fail "Unknown or read-only value reference"]]
-
-/-- The setter dispatch: only the input `u` (1) and state `x` (2) are writable. -/
-def setDispatch (shape : Tensor.Shape) : Stmt :=
-  Runtime.branch (Runtime.eqv vr0 (Runtime.n 1)) (setArm inputName shape.volume) (setDispatch2 shape)
-
-/-- The ordered setter dispatch arms as a value-reference list: the writable
-input `u` (reference `1`) and state `x` (reference `2`). The tensor setter is the
-generic `Float64Dispatch.dispatchChain` over this list. -/
-def setArms (shape : Tensor.Shape) : List (Nat × List Stmt) :=
-  [(1, setArm inputName shape.volume), (2, setArm stateName shape.volume)]
-
-theorem setDispatch_chain (shape : Tensor.Shape) :
-    Float64Dispatch.dispatchChain vr0 (setArms shape)
-        [Runtime.fail "Unknown or read-only value reference"] = [setDispatch shape] := rfl
-
-def setRest (shape : Tensor.Shape) : List Stmt :=
+def setRest (i : Solve.Interface) : List Stmt :=
   [.declare "fmi3Float64 *" "dst" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
-    setDispatch shape, countReject] ++ setLoopSuffix
+    setDispatch i, countReject] ++ setLoopSuffix
 
-def setBody (shape : Tensor.Shape) : List Stmt :=
-  Runtime.require .setStart ++ (basicReject :: setRest shape)
+def setBody (i : Solve.Interface) : List Stmt :=
+  Runtime.require .setStart ++ (basicReject :: setRest i)
 
-def setFunction (shape : Tensor.Shape) : CTree.Function :=
-  ⟨Float64Calls.signature true, setBody shape, false⟩
+def setFunction (i : Solve.Interface) : CTree.Function :=
+  ⟨Float64Calls.signature true, setBody i, false⟩
 
-/-- The setter body around an abstract value-reference dispatch statement, shared
-by every adapter profile: only the writable-region dispatch differs. Each
-profile's `setBody` is definitionally `setBodyFor` of its own dispatch. -/
+/-- The setter body around an abstract value-reference dispatch statement: only
+the writable-region dispatch depends on the declared interface. -/
 def setBodyFor (dispatch : Stmt) : List Stmt :=
   Runtime.require .setStart ++ (basicReject ::
     [.declare "fmi3Float64 *" "dst" Expr.nullPointer, .declare "size_t" "expected" (Runtime.n 0),
       dispatch, countReject] ++ setLoopSuffix)
 
-theorem setArm_noDecl (member : String) (count : Nat) :
-    (setArm member count).all CLoops.noDeclarations = true := by simp [setArm, CLoops.noDeclarations]
+theorem setDispatch_noDecl (i : Solve.Interface) : CLoops.noDeclarations (setDispatch i) = true :=
+  dispatch_noDecl _ _ (fail_noDecl _) (Float64Table.setArms_noDecl i)
 
-theorem setDispatch2_noDecl (shape : Tensor.Shape) :
-    (setDispatch2 shape).all CLoops.noDeclarations = true := by
-  simp [setDispatch2, setArm, Runtime.branch, Runtime.eqv, Runtime.fail, Runtime.ret, Runtime.v,
-    CLoops.noDeclarations]
-
-theorem setBody_closed (shape : Tensor.Shape) :
-    (setFunction shape).body.all CBodyEmbedding.closedBlocks = true := by
-  simp [setFunction, setBody, setRest, setDispatch, setDispatch2, basicReject, countReject, setLoopSuffix,
-    setArm, validateBody, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
+theorem setBody_closed (i : Solve.Interface) :
+    (setFunction i).body.all CBodyEmbedding.closedBlocks = true := by
+  have closed := CBodyEmbedding.noDeclarations_closed _ (setDispatch_noDecl i)
+  simp only [CBodyEmbedding.closedBlocks] at closed
+  simp [setFunction, setBody, setRest, closed, basicReject, countReject, setLoopSuffix,
+    validateBody, Runtime.require, Runtime.instancePrefix, Runtime.modeGuard, Runtime.reject,
     Runtime.branch, Runtime.fail, Runtime.ret, Runtime.ok, setCopyBody, CBodyEmbedding.closedBlocks,
     CLoops.noDeclarations, CLoops.loop, CLoops.counterStep]
 
@@ -1288,54 +1162,54 @@ variable [static : StaticLiterals]
 private local instance setInterface : CInterface := cInterface static.addresses
 
 /-- The setter guard reaches the typed statements after it. -/
-theorem set_guard_reaches (shape : Tensor.Shape) (program : CCalls.Events.Program E) (heap : Heap)
+theorem set_guard_reaches (iface : Solve.Interface) (program : CCalls.Events.Program E) (heap : Heap)
     (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
+    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction iface)))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .setStart kind mode) (nref : n.toNat = 1)
     (stack : CCalls.Typed.Continuation) :
     ∃ types0, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.calling "fmi3SetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap stack)
-      (.body (.running (setRest shape) (guardEnv p refs buffer n m) types0 heap) "fmi3Status" stack) := by
+      (.body (.running (setRest iface) (guardEnv p refs buffer n m) types0 heap) "fmi3Status" stack) := by
   have accepted := LifecycleGuard.accept (parameters (some p) (some refs) (some buffer) n m) heap p
-    .setStart kind mode (basicReject :: setRest shape)
+    .setStart kind mode (basicReject :: setRest iface)
     (by simp [parameters, CBody.bind]) (by simp [parameters, CBody.bind]) hk hm allowed
   have hc := basic_explicit_pass heap p refs buffer n m nref
-  have prefix_run : CBody.run 4 (.running (setBody shape)
+  have prefix_run : CBody.run 4 (.running (setBody iface)
       (parameters (some p) (some refs) (some buffer) n m) heap) =
-      some (.running (setRest shape) (guardEnv p refs buffer n m) heap) := by
+      some (.running (setRest iface) (guardEnv p refs buffer n m) heap) := by
     rw [setBody, show (4 : Nat) = 3 + 1 from rfl, CBody.run_add, accepted, Option.bind_some]
     exact run_one (reject_false (guardEnv p refs buffer n m) heap _
-      "Invalid Float64 array lengths or pointers" (setRest shape) hc)
-  exact CCalls.Events.body_prefix_reaches program (setFunction shape)
+      "Invalid Float64 array lengths or pointers" (setRest iface) hc)
+  exact CCalls.Events.body_prefix_reaches program (setFunction iface)
     (arguments (some p) (some refs) (some buffer) n m) (parameters (some p) (some refs) (some buffer) n m)
-    (guardEnv p refs buffer n m) heap heap (setRest shape) stack 4 defined
-    (parameters_bound true _ _ _ _ _) (setBody_closed shape) prefix_run
+    (guardEnv p refs buffer n m) heap heap (setRest iface) stack 4 defined
+    (parameters_bound true _ _ _ _ _) (setBody_closed iface) prefix_run
 
 /-- The setter's two staging declarations. -/
-theorem set_declares_reaches (program : CCalls.Events.Program E) (shape : Tensor.Shape) (env0 : Locals)
+theorem set_declares_reaches (program : CCalls.Events.Program E) (iface : Solve.Interface) (env0 : Locals)
     (types0 : Types) (heap : Heap) (stack : CCalls.Typed.Continuation)
     (fresh_dst : env0 "dst" = none) (fresh_exp : env0 "expected" = none) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (setRest shape) env0 types0 heap) "fmi3Status" stack)
-      (.body (.running (setDispatch shape :: countReject :: setLoopSuffix)
+      (.body (.running (setRest iface) env0 types0 heap) "fmi3Status" stack)
+      (.body (.running (setDispatch iface :: countReject :: setLoopSuffix)
         (setDeclaredEnv env0) (setDeclaredTypes types0) heap) "fmi3Status" stack) := by
-  have s1 : CLoops.next (.running (setRest shape) env0 types0 heap) =
+  have s1 : CLoops.next (.running (setRest iface) env0 types0 heap) =
       some (.running (.declare "size_t" "expected" (Runtime.n 0) ::
-        setDispatch shape :: countReject :: setLoopSuffix)
+        setDispatch iface :: countReject :: setLoopSuffix)
         (CBody.bind env0 "dst" (.pointer none)) (CLoops.bindType types0 "dst" .pointer) heap) :=
     declare_step_e env0 types0 heap "fmi3Float64 *" "dst" Expr.nullPointer .pointer (.pointer none)
       (.pointer none) _ fresh_dst rfl
       (by simp [Expr.nullPointer, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.zeroLiteral]) rfl
   have s2 : CLoops.next (.running (.declare "size_t" "expected" (Runtime.n 0) ::
-        setDispatch shape :: countReject :: setLoopSuffix)
+        setDispatch iface :: countReject :: setLoopSuffix)
         (CBody.bind env0 "dst" (.pointer none)) (CLoops.bindType types0 "dst" .pointer) heap) =
-      some (.running (setDispatch shape :: countReject :: setLoopSuffix)
+      some (.running (setDispatch iface :: countReject :: setLoopSuffix)
         (setDeclaredEnv env0) (setDeclaredTypes types0) heap) := by
     have := declare_step_e (CBody.bind env0 "dst" (.pointer none)) (CLoops.bindType types0 "dst" .pointer)
       heap "size_t" "expected" (Runtime.n 0) .size (.integer 0) (.integer 0)
-      (setDispatch shape :: countReject :: setLoopSuffix)
+      (setDispatch iface :: countReject :: setLoopSuffix)
       (by simp [CBody.bind, fresh_exp]) rfl (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) rfl
     simpa [setDeclaredEnv, setDeclaredTypes] using this
   exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
@@ -1343,34 +1217,37 @@ theorem set_declares_reaches (program : CCalls.Events.Program E) (shape : Tensor
 
 /-- The setter's two dispatch assignments stage the writable region pointer and count. -/
 theorem set_stage_reaches (program : CCalls.Events.Program E) (env0 : Locals) (types0 : Types) (heap : Heap)
-    (p regionBase : Address) (member : String) (count : Nat) (rest : List Stmt)
-    (stack : CCalls.Typed.Continuation) (bounded : count < 2 ^ 64)
-    (mBound : env0 "m" = some (.pointer (some p))) (regionEq : p.member member = regionBase) :
+    (p : Address) (r : Region) (rest : List Stmt)
+    (stack : CCalls.Typed.Continuation) (bounded : r.count < 2 ^ 64)
+    (mBound : env0 "m" = some (.pointer (some p))) (addressable : Addressable r) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (setArm member count ++ rest) (setDeclaredEnv env0) (setDeclaredTypes types0) heap)
+      (.body (.running (setArm r ++ rest) (setDeclaredEnv env0) (setDeclaredTypes types0) heap)
         "fmi3Status" stack)
-      (.body (.running rest (stagedSetEnv env0 regionBase count) (setDeclaredTypes types0) heap)
+      (.body (.running rest (stagedSetEnv env0 (regionBase p r) r.count) (setDeclaredTypes types0) heap)
         "fmi3Status" stack) := by
-  have addr : CLoops.eval (setDeclaredEnv env0) (setDeclaredTypes types0) heap (memberPointer member) =
-      some (.pointer (some regionBase)) := by
+  have addr : CLoops.eval (setDeclaredEnv env0) (setDeclaredTypes types0) heap (pointer r.member r.offset) =
+      some (.pointer (some (regionBase p r))) := by
     apply CBodyEmbedding.eval_refines
-    exact eval_memberPointer (setDeclaredEnv env0) heap member p regionBase
-      (by simp [setDeclaredEnv, CBody.bind, CBody.resolve, mBound]) regionEq
-  have s1 : CLoops.next (.running (setArm member count ++ rest) (setDeclaredEnv env0) (setDeclaredTypes types0) heap) =
-      some (.running (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
-        (CBody.bind (setDeclaredEnv env0) "dst" (.pointer (some regionBase))) (setDeclaredTypes types0) heap) := by
+    exact eval_pointer (setDeclaredEnv env0) heap p r
+      (by simp [setDeclaredEnv, CBody.bind, CBody.resolve, mBound]) addressable
+  have s1 : CLoops.next (.running (setArm r ++ rest) (setDeclaredEnv env0) (setDeclaredTypes types0) heap) =
+      some (.running (.assign (Runtime.v "expected") (Runtime.n r.count) :: rest)
+        (CBody.bind (setDeclaredEnv env0) "dst" (.pointer (some (regionBase p r)))) (setDeclaredTypes types0)
+        heap) := by
     have := CLoops.assign_local (setDeclaredEnv env0) (setDeclaredTypes types0) heap "dst"
-      (memberPointer member) (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
-      (.pointer none) (.pointer (some regionBase)) (.pointer (some regionBase)) .pointer
+      (pointer r.member r.offset) (.assign (Runtime.v "expected") (Runtime.n r.count) :: rest)
+      (.pointer none) (.pointer (some (regionBase p r))) (.pointer (some (regionBase p r))) .pointer
       (by simp [setDeclaredEnv, CBody.bind]) (by simp [setDeclaredTypes, CLoops.bindType]) addr rfl
     simpa [setArm, Runtime.v] using this
-  have s2 : CLoops.next (.running (.assign (Runtime.v "expected") (Runtime.n count) :: rest)
-        (CBody.bind (setDeclaredEnv env0) "dst" (.pointer (some regionBase))) (setDeclaredTypes types0) heap) =
-      some (.running rest (stagedSetEnv env0 regionBase count) (setDeclaredTypes types0) heap) := by
-    have := CLoops.assign_local (CBody.bind (setDeclaredEnv env0) "dst" (.pointer (some regionBase)))
-      (setDeclaredTypes types0) heap "expected" (Runtime.n count) rest (.integer 0) (.integer count)
-      (.integer count) .size (by simp [setDeclaredEnv, CBody.bind]) (by simp [setDeclaredTypes, CLoops.bindType])
-      (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith]) (CLoops.convert_size_nat count bounded)
+  have s2 : CLoops.next (.running (.assign (Runtime.v "expected") (Runtime.n r.count) :: rest)
+        (CBody.bind (setDeclaredEnv env0) "dst" (.pointer (some (regionBase p r)))) (setDeclaredTypes types0)
+        heap) =
+      some (.running rest (stagedSetEnv env0 (regionBase p r) r.count) (setDeclaredTypes types0) heap) := by
+    have := CLoops.assign_local (CBody.bind (setDeclaredEnv env0) "dst" (.pointer (some (regionBase p r))))
+      (setDeclaredTypes types0) heap "expected" (Runtime.n r.count) rest (.integer 0) (.integer r.count)
+      (.integer r.count) .size (by simp [setDeclaredEnv, CBody.bind]) (by simp [setDeclaredTypes, CLoops.bindType])
+      (by simp [Runtime.n, CLoops.eval, CLoops.evalWith, CBody.legacyExpressions, CBody.eval, CBody.evalWith])
+      (CLoops.convert_size_nat r.count bounded)
     simpa [Runtime.v, stagedSetEnv] using this
   exact .next (CCalls.Events.body_step program s1 "fmi3Status" stack)
     (.next (CCalls.Events.body_step program s2 "fmi3Status" stack) (.refl _))
@@ -1423,150 +1300,75 @@ theorem set_tail_reaches (program : CCalls.Events.Program E) (env0 : Locals) (ty
 
 end
 
-/-! ### Setter navigation and per-reference behavior -/
 
-section
-variable [interface : CInterface]
-variable (program : CCalls.Events.Program E) (shape : Tensor.Shape) (p refs buffer : Address) (n m : UInt64)
-  (types0 : Types) (heap : Heap) (stack : CCalls.Typed.Continuation)
-
-/-- Navigate the setter dispatch to reference 1 (the input `u`). -/
-theorem set_nav_input (refRead : load heap (refs.index 0) = some (.integer 1)) :
-    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (setDispatch shape :: countReject :: setLoopSuffix)
-        (setDeclaredEnv (guardEnv p refs buffer n m)) (setDeclaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (setArm inputName shape.volume ++ (countReject :: setLoopSuffix))
-        (setDeclaredEnv (guardEnv p refs buffer n m)) (setDeclaredTypes types0) heap) "fmi3Status" stack) := by
-  have rBound : resolve (setDeclaredEnv (guardEnv p refs buffer n m)) "valueReferences" =
-      some (.pointer (some refs)) := by
-    simp [setDeclaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve]
-  exact .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [setArm_noDecl, setDispatch2_noDecl]) (cvr0_eq _ _ heap refs 1 rBound refRead))
-    "fmi3Status" stack) (.refl _)
-
-/-- Navigate the setter dispatch to reference 2 (the state `x`). -/
-theorem set_nav_state (refRead : load heap (refs.index 0) = some (.integer 2)) :
-    Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (setDispatch shape :: countReject :: setLoopSuffix)
-        (setDeclaredEnv (guardEnv p refs buffer n m)) (setDeclaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (setArm stateName shape.volume ++ (countReject :: setLoopSuffix))
-        (setDeclaredEnv (guardEnv p refs buffer n m)) (setDeclaredTypes types0) heap) "fmi3Status" stack) := by
-  have rBound : resolve (setDeclaredEnv (guardEnv p refs buffer n m)) "valueReferences" =
-      some (.pointer (some refs)) := by
-    simp [setDeclaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve]
-  refine .next (CCalls.Events.body_step program (cbranch_false _ _ heap _ _ _ _
-    (by simp [setArm_noDecl, setDispatch2_noDecl]) (cvr0_ne _ _ heap refs 2 1 rBound refRead (by decide)))
-    "fmi3Status" stack) ?_
-  exact .next (CCalls.Events.body_step program (cbranch_true _ _ heap _ _ _ _
-    (by simp [setArm_noDecl, Runtime.fail, Runtime.ret, CLoops.noDeclarations])
-      (cvr0_eq _ _ heap refs 2 rBound refRead)) "fmi3Status" stack) (.refl _)
-
-end
+/-! ### The complete setter for a writable declared value reference -/
 
 section
 variable [static : StaticLiterals]
 private local instance setBehaviorInterface : CInterface := cInterface static.addresses
 
-/-- The complete setter for one writable value reference, given the navigation. -/
-theorem set_reaches_of (shape : Tensor.Shape) (program : CCalls.Events.Program E) (heap : Heap)
-    (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (member : String)
-    (rshape : Tensor.Shape) (values : Values rshape) (stack : CCalls.Typed.Continuation)
+/-- The complete setter for one writable value reference whose table arm stages
+the region `⟨member, offset, rshape.volume⟩`: it replaces exactly that region
+with the caller's finite values. -/
+theorem set_reaches (iface : Solve.Interface) (program : CCalls.Events.Program E) (heap : Heap)
+    (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (reference : Nat)
+    (member : String) (offset : Nat) (rshape : Tensor.Shape) (values : Values rshape)
+    (stack : CCalls.Typed.Continuation)
+    (found : (Float64Table.setArms iface).lookup reference = some (setArm ⟨member, offset, rshape.volume⟩))
+    (addressable : Addressable ⟨member, offset, rshape.volume⟩)
     (nref : n.toNat = 1) (matched : m.toNat = rshape.volume) (bounded : rshape.volume < 2 ^ 64)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
+    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction iface)))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .setStart kind mode)
+    (refRead : load heap (refs.index 0) = some (.integer reference))
     (readable : Reads heap buffer values)
-    (writable : Writable heap (p.member member) rshape.volume)
-    (separate : ∀ a < rshape.volume, ∀ b < rshape.volume, (p.member member).index a ≠ buffer.index b)
-    (nav : ∀ types0, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (setDispatch shape :: countReject :: setLoopSuffix)
-        (setDeclaredEnv (guardEnv p refs buffer n m)) (setDeclaredTypes types0) heap) "fmi3Status" stack)
-      (.body (.running (setArm member rshape.volume ++ (countReject :: setLoopSuffix))
-        (setDeclaredEnv (guardEnv p refs buffer n m)) (setDeclaredTypes types0) heap) "fmi3Status" stack)) :
+    (writable : Writable heap ((p.member member).index offset) rshape.volume)
+    (separate : ∀ a < rshape.volume, ∀ b < rshape.volume,
+      ((p.member member).index offset).index a ≠ buffer.index b) :
     Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
       (.calling "fmi3SetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap stack)
-      (.returning (.integer 0) (written heap (p.member member) values rshape.volume) stack) := by
-  obtain ⟨types0, entered⟩ := set_guard_reaches shape program heap p refs buffer n m kind mode defined
+      (.returning (.integer 0) (written heap ((p.member member).index offset) values rshape.volume) stack) := by
+  obtain ⟨types0, entered⟩ := set_guard_reaches iface program heap p refs buffer n m kind mode defined
     hk hm allowed nref stack
-  refine entered.trans ((set_declares_reaches program shape (guardEnv p refs buffer n m) types0 heap stack
+  refine entered.trans ((set_declares_reaches program iface (guardEnv p refs buffer n m) types0 heap stack
     (by simp [guardEnv, parameters, CBody.bind]) (by simp [guardEnv, parameters, CBody.bind])).trans ?_)
-  refine (nav types0).trans ?_
-  refine (set_stage_reaches program (guardEnv p refs buffer n m) types0 heap p (p.member member) member
-    rshape.volume (countReject :: setLoopSuffix) stack bounded (by simp [guardEnv, CBody.bind])
-    rfl).trans ?_
-  exact set_tail_reaches program (guardEnv p refs buffer n m) (setDeclaredTypes types0) heap (p.member member)
-    buffer rshape values m stack bounded matched
-    (by simp [stagedSetEnv, CBody.bind, CBody.resolve])
+  refine (dispatch_reaches program _ _ heap refs reference "fmi3Status" stack
+    (by simp [setDeclaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve]) refRead _ (fail_noDecl _)
+    _ (Float64Table.setArms_noDecl iface) _ found _).trans ?_
+  refine (set_stage_reaches program (guardEnv p refs buffer n m) types0 heap p ⟨member, offset, rshape.volume⟩
+    (countReject :: setLoopSuffix) stack bounded (by simp [guardEnv, CBody.bind]) addressable).trans ?_
+  exact set_tail_reaches program (guardEnv p refs buffer n m) (setDeclaredTypes types0) heap
+    ((p.member member).index offset) buffer rshape values m stack bounded matched
+    (by simp [stagedSetEnv, regionBase, CBody.bind, CBody.resolve])
     (by simp [stagedSetEnv, CBody.bind, CBody.resolve])
     (by simp [stagedSetEnv, setDeclaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
     (by simp [stagedSetEnv, setDeclaredEnv, guardEnv, parameters, CBody.bind, CBody.resolve])
     (by simp [stagedSetEnv, setDeclaredEnv, guardEnv, parameters, CBody.bind])
     (by simp [stagedSetEnv, setDeclaredEnv, guardEnv, parameters, CBody.bind]) readable writable separate
 
-private theorem set_behaviors_wrap (shape : Tensor.Shape) (program : CCalls.Events.Program E) (heap : Heap)
-    (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (member : String)
-    (rshape : Tensor.Shape) (values : Values rshape)
-    (nref : n.toNat = 1) (matched : m.toNat = rshape.volume) (bounded : rshape.volume < 2 ^ 64)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
+/-- The setter's whole behavior for one writable declared value reference. -/
+theorem set_behaviors (iface : Solve.Interface) (program : CCalls.Events.Program E) (heap : Heap)
+    (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (reference : Nat)
+    (member : String) (offset : Nat) (rshape : Tensor.Shape) (values : Values rshape)
+    (found : (Float64Table.setArms iface).lookup reference = some (setArm ⟨member, offset, rshape.volume⟩))
+    (addressable : Addressable ⟨member, offset, rshape.volume⟩)
+    (nref : n.toNat = 1) (matched : m.toNat = rshape.volume)
+    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction iface)))
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .setStart kind mode)
+    (refRead : load heap (refs.index 0) = some (.integer reference))
     (readable : Reads heap buffer values)
-    (writable : Writable heap (p.member member) rshape.volume)
-    (separate : ∀ a < rshape.volume, ∀ b < rshape.volume, (p.member member).index a ≠ buffer.index b)
-    (nav : ∀ types0, Transition.Reaches (fun s t => CCalls.Events.internalNext program s = some t)
-      (.body (.running (setDispatch shape :: countReject :: setLoopSuffix)
-        (setDeclaredEnv (guardEnv p refs buffer n m)) (setDeclaredTypes types0) heap) "fmi3Status" .done)
-      (.body (.running (setArm member rshape.volume ++ (countReject :: setLoopSuffix))
-        (setDeclaredEnv (guardEnv p refs buffer n m)) (setDeclaredTypes types0) heap) "fmi3Status" .done))
-    (behavior) :
+    (writable : Writable heap ((p.member member).index offset) rshape.volume)
+    (separate : ∀ a < rshape.volume, ∀ b < rshape.volume,
+      ((p.member member).index offset).index a ≠ buffer.index b) (behavior) :
     (CCalls.Events.machine program).Behaves
       (.calling "fmi3SetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap (p.member member) values rshape.volume⟩ :=
-  (CCalls.Events.internal_prefix program (set_reaches_of shape program heap p refs buffer n m kind mode member
-    rshape values .done nref matched bounded defined hk hm allowed readable writable separate nav)
-    (CCalls.Events.return_forced program _ _)).behaviors behavior
-
-/-- The tensor setter writing the input `u`. -/
-theorem set_behaviors_input (shape : Tensor.Shape) (program : CCalls.Events.Program E) (heap : Heap)
-    (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (values : Values shape)
-    (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .setStart kind mode)
-    (refRead : load heap (refs.index 0) = some (.integer 1))
-    (readable : Reads heap buffer values)
-    (writable : Writable heap (p.member inputName) shape.volume)
-    (separate : ∀ a < shape.volume, ∀ b < shape.volume, (p.member inputName).index a ≠ buffer.index b)
-    (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3SetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap (p.member inputName) values shape.volume⟩ :=
-  set_behaviors_wrap shape program heap p refs buffer n m kind mode inputName shape values nref nval
-    (nval ▸ m.toNat_lt_size) defined hk hm allowed readable writable separate
-    (fun types0 => set_nav_input program shape p refs buffer n m types0 heap .done refRead) behavior
-
-/-- The tensor setter writing the state `x`. -/
-theorem set_behaviors_state (shape : Tensor.Shape) (program : CCalls.Events.Program E) (heap : Heap)
-    (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (values : Values shape)
-    (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
-    (hk : load heap (p.member "kind") = some (.integer kind.code))
-    (hm : load heap (p.member "mode") = some (.integer mode.code))
-    (allowed : Reference.Allowed .setStart kind mode)
-    (refRead : load heap (refs.index 0) = some (.integer 2))
-    (readable : Reads heap buffer values)
-    (writable : Writable heap (p.member stateName) shape.volume)
-    (separate : ∀ a < shape.volume, ∀ b < shape.volume, (p.member stateName).index a ≠ buffer.index b)
-    (behavior) :
-    (CCalls.Events.machine program).Behaves
-      (.calling "fmi3SetFloat64" (arguments (some p) (some refs) (some buffer) n m) heap .done) behavior ↔
-      behavior = .terminates [] ⟨.integer 0, written heap (p.member stateName) values shape.volume⟩ :=
-  set_behaviors_wrap shape program heap p refs buffer n m kind mode stateName shape values nref nval
-    (nval ▸ m.toNat_lt_size) defined hk hm allowed readable writable separate
-    (fun types0 => set_nav_state program shape p refs buffer n m types0 heap .done refRead) behavior
+      behavior = .terminates [] ⟨.integer 0, written heap ((p.member member).index offset) values rshape.volume⟩ :=
+  (CCalls.Events.internal_prefix program (set_reaches iface program heap p refs buffer n m kind mode reference
+    member offset rshape values .done found addressable nref matched (matched ▸ m.toNat_lt_size) defined hk hm
+    allowed refRead readable writable separate) (CCalls.Events.return_forced program _ _)).behaviors behavior
 
 end
 
@@ -1593,69 +1395,6 @@ theorem vr0_printable : Printable RuntimePrinter.typedefs vr0 := by
   simp only [vr0, Runtime.v, Runtime.n]
   exact Printable.index (Printable.identifier (by decide +kernel)) (by simp [Postfix]) Printable.natural
 
-/-- A staged record-member pointer prints its intended C token grammar for any
-member whose declared name is a valid C identifier. -/
-theorem memberPointer_printable (member : String) (hv : CIdentifier.valid [] member = true) :
-    Printable RuntimePrinter.typedefs (memberPointer member) := by
-  simp only [memberPointer, Runtime.region, Runtime.field, Runtime.v, Runtime.n]
-  split
-  · exact Printable.address
-      (Printable.field (Printable.identifier (by decide +kernel)) (by simp [Postfix]) (by simp [FieldBase]) hv)
-  · exact Printable.address (Printable.index
-      (Printable.field (Printable.identifier (by decide +kernel)) (by simp [Postfix]) (by simp [FieldBase]) hv)
-      (by simp [Postfix]) Printable.natural)
-
-/-- Every statement of a getter dispatch arm prints its intended C token grammar. -/
-theorem getArm_printable (member : String) (count : Nat) (hv : CIdentifier.valid [] member = true) :
-    ∀ stmt ∈ getArm member count, ItemPrintable RuntimePrinter.typedefs stmt := by
-  intro stmt hs
-  simp only [getArm, List.mem_cons, List.not_mem_nil, or_false] at hs
-  rcases hs with rfl | rfl
-  · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) (memberPointer_printable member hv)
-  · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) Printable.natural
-
-
-/-- The derivative evaluation over `count` elements prints its intended C token grammar. -/
-theorem rhsCall_printable (count : Nat) :
-    ItemPrintable RuntimePrinter.typedefs (TensorEntry.rhsCall (Runtime.n count)) := by
-  simp only [TensorEntry.rhsCall, TensorEntry.rhsArgs, Runtime.call, Runtime.region, Runtime.field,
-    Runtime.v, Runtime.n, stateName, inputName, derivativeName]
-  repeat first
-    | apply And.intro
-    | apply ItemPrintable.eval
-    | apply Printable.address
-    | apply Printable.call
-    | apply Printable.field
-    | apply Printable.index
-    | exact Printable.natural
-    | apply Printable.identifier
-    | decide +kernel
-    | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Postfix, FieldBase]
-
-/-- The Jacobian evaluation prints its intended C token grammar. -/
-theorem jacobianCall_printable (shape : Tensor.Shape) :
-    ItemPrintable RuntimePrinter.typedefs (TensorEntry.jacobianCall (Runtime.n shape.volume) shape) := by
-  simp only [TensorEntry.jacobianCall, TensorEntry.jacobianArgs, Runtime.call, Runtime.region, Runtime.field,
-    Runtime.v, Runtime.n, inputName, outputName]
-  repeat first
-    | apply And.intro
-    | apply ItemPrintable.eval
-    | apply Printable.address
-    | apply Printable.call
-    | apply Printable.field
-    | apply Printable.index
-    | exact Printable.natural
-    | apply Printable.identifier
-    | decide +kernel
-    | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Postfix, FieldBase]
-/-- Every statement of a setter dispatch arm prints its intended C token grammar. -/
-theorem setArm_printable (member : String) (count : Nat) (hv : CIdentifier.valid [] member = true) :
-    ∀ stmt ∈ setArm member count, ItemPrintable RuntimePrinter.typedefs stmt := by
-  intro stmt hs
-  simp only [setArm, List.mem_cons, List.not_mem_nil, or_false] at hs
-  rcases hs with rfl | rfl
-  · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) (memberPointer_printable member hv)
-  · exact ItemPrintable.assign (Printable.identifier (by decide +kernel)) Printable.natural
 
 set_option maxHeartbeats 4000000 in
 /-- Every statement of the getter body around an abstract dispatch prints its
@@ -1754,86 +1493,81 @@ theorem setBodyFor_printable (dispatch : Stmt)
       | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq,
           Postfix, FieldBase]
 
-/-- Each getter dispatch arm prints its intended C token grammar; supplied to the
-generic `dispatchChain_printable`. -/
-theorem getArms_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    ∀ a ∈ getArms shape outputShape, ∀ stmt ∈ a.2, ItemPrintable RuntimePrinter.typedefs stmt := by
-  intro a ha
-  simp only [getArms, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl | rfl | rfl | rfl
-  · exact getArm_printable timeName 1 (by decide +kernel)
-  · exact getArm_printable inputName shape.volume (by decide +kernel)
-  · exact getArm_printable stateName shape.volume (by decide +kernel)
-  · intro stmt hs
-    rcases List.mem_cons.mp hs with rfl | staged
-    · exact rhsCall_printable shape.volume
-    · exact getArm_printable derivativeName shape.volume (by decide +kernel) stmt staged
-  · cases outputShape with
-    | none =>
-      intro stmt hs
-      simp only [getOutputArm, List.mem_cons, List.not_mem_nil, or_false] at hs
-      subst hs; exact fail_printable _
-    | some os =>
-      intro stmt hs
-      rcases List.mem_cons.mp hs with rfl | staged
-      · exact jacobianCall_printable shape
-      · exact getArm_printable outputName os.volume (by decide +kernel) stmt staged
+/-- The derivative evaluation over `count` elements prints its intended C token grammar. -/
+theorem rhsCall_printable (count : Nat) :
+    ItemPrintable RuntimePrinter.typedefs (TensorEntry.rhsCall (Runtime.n count)) := by
+  simp only [TensorEntry.rhsCall, TensorEntry.rhsArgs, Runtime.call, Runtime.region, Runtime.field,
+    Runtime.v, Runtime.n, stateName, inputName, derivativeName]
+  repeat first
+    | apply And.intro
+    | apply ItemPrintable.eval
+    | apply Printable.address
+    | apply Printable.call
+    | apply Printable.field
+    | apply Printable.index
+    | exact Printable.natural
+    | apply Printable.identifier
+    | decide +kernel
+    | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Postfix, FieldBase]
 
-/-- Each setter dispatch arm prints its intended C token grammar; supplied to the
-generic `dispatchChain_printable`. -/
-theorem setArms_printable (shape : Tensor.Shape) :
-    ∀ a ∈ setArms shape, ∀ stmt ∈ a.2, ItemPrintable RuntimePrinter.typedefs stmt := by
-  intro a ha
-  simp only [setArms, List.mem_cons, List.not_mem_nil, or_false] at ha
-  rcases ha with rfl | rfl
-  · exact setArm_printable inputName shape.volume (by decide +kernel)
-  · exact setArm_printable stateName shape.volume (by decide +kernel)
+/-- The Jacobian evaluation prints its intended C token grammar. -/
+theorem jacobianCall_printable (shape : Tensor.Shape) :
+    ItemPrintable RuntimePrinter.typedefs (TensorEntry.jacobianCall (Runtime.n shape.volume) shape) := by
+  simp only [TensorEntry.jacobianCall, TensorEntry.jacobianArgs, Runtime.call, Runtime.region, Runtime.field,
+    Runtime.v, Runtime.n, inputName, outputName]
+  repeat first
+    | apply And.intro
+    | apply ItemPrintable.eval
+    | apply Printable.address
+    | apply Printable.call
+    | apply Printable.field
+    | apply Printable.index
+    | exact Printable.natural
+    | apply Printable.identifier
+    | decide +kernel
+    | simp only [List.mem_cons, List.not_mem_nil, or_false, forall_eq_or_imp, forall_eq, Postfix, FieldBase]
 
-/-- The getter dispatch fallback prints its intended C token grammar. -/
-theorem getFallback_printable :
-    ∀ stmt ∈ [Runtime.fail "Unknown value reference"], ItemPrintable RuntimePrinter.typedefs stmt := by
-  intro stmt hs
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
-  subst hs
-  exact fail_printable _
-
-/-- The setter dispatch fallback prints its intended C token grammar. -/
-theorem setFallback_printable :
-    ∀ stmt ∈ [Runtime.fail "Unknown or read-only value reference"],
+theorem tensorReads_printable (shape : Tensor.Shape) :
+    ∀ stmt ∈ (tensorReads shape).derivative ++ (tensorReads shape).output,
       ItemPrintable RuntimePrinter.typedefs stmt := by
-  intro stmt hs
-  simp only [List.mem_cons, List.not_mem_nil, or_false] at hs
-  subst hs
-  exact fail_printable _
+  intro stmt member
+  simp only [tensorReads, List.cons_append, List.nil_append, List.mem_cons, List.not_mem_nil, or_false] at member
+  rcases member with rfl | rfl
+  · exact rhsCall_printable shape.volume
+  · exact jacobianCall_printable shape
 
-/-- The getter dispatch prints its intended C token grammar, obtained from the
-generic dispatch-chain lemma over the getter reference list rather than a
-per-branch reproof. -/
-theorem getDispatch_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    ItemPrintable RuntimePrinter.typedefs (getDispatch shape outputShape) := by
-  have h := Float64Dispatch.dispatchChain_printable RuntimePrinter.typedefs vr0
-    (getArms shape outputShape) [Runtime.fail "Unknown value reference"] vr0_printable
-    getFallback_printable (getArms_printable shape outputShape)
-  exact h _ (by rw [getDispatch_chain]; simp)
+/-- Every statement of a dispatch prints its intended C token grammar, given its
+arms and fallback do. -/
+theorem dispatch_printable (arms : List (Nat × List Stmt)) (fallback : Stmt)
+    (hfallback : ItemPrintable RuntimePrinter.typedefs fallback)
+    (harms : ∀ a ∈ arms, ∀ stmt ∈ a.2, ItemPrintable RuntimePrinter.typedefs stmt) :
+    ItemPrintable RuntimePrinter.typedefs (dispatch arms fallback) := by
+  have h := Float64Dispatch.dispatchChain_printable RuntimePrinter.typedefs vr0 arms
+    [fallback] vr0_printable (fun stmt hs => by
+      simp only [List.mem_singleton] at hs; subst hs; exact hfallback) harms
+  exact h _ (by rw [dispatch_chain]; simp)
 
-/-- The setter dispatch prints its intended C token grammar, obtained from the
-generic dispatch-chain lemma over the writable-reference list. -/
-theorem setDispatch_printable (shape : Tensor.Shape) :
-    ItemPrintable RuntimePrinter.typedefs (setDispatch shape) := by
-  have h := Float64Dispatch.dispatchChain_printable RuntimePrinter.typedefs vr0
-    (setArms shape) [Runtime.fail "Unknown or read-only value reference"] vr0_printable
-    setFallback_printable (setArms_printable shape)
-  exact h _ (by rw [setDispatch_chain]; simp)
+/-- The getter dispatch prints its intended C token grammar. -/
+theorem getDispatch_printable (reads : Float64Table.Reads) (i : Solve.Interface)
+    (printableReads : ∀ stmt ∈ reads.derivative ++ reads.output, ItemPrintable RuntimePrinter.typedefs stmt) :
+    ItemPrintable RuntimePrinter.typedefs (getDispatch reads i) :=
+  dispatch_printable _ _ (fail_printable _) (Float64Table.getArms_printable reads i printableReads)
+
+/-- The setter dispatch prints its intended C token grammar. -/
+theorem setDispatch_printable (i : Solve.Interface) :
+    ItemPrintable RuntimePrinter.typedefs (setDispatch i) :=
+  dispatch_printable _ _ (fail_printable _) (Float64Table.setArms_printable i)
 
 /-- Every statement of the getter body prints its intended C token grammar. -/
-theorem getBody_printable (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    ∀ stmt ∈ (getFunction shape outputShape).body, ItemPrintable RuntimePrinter.typedefs stmt :=
-  getBodyFor_printable (getDispatch shape outputShape) (getDispatch_printable shape outputShape)
+theorem getBody_printable (reads : Float64Table.Reads) (i : Solve.Interface)
+    (printableReads : ∀ stmt ∈ reads.derivative ++ reads.output, ItemPrintable RuntimePrinter.typedefs stmt) :
+    ∀ stmt ∈ (getFunction reads i).body, ItemPrintable RuntimePrinter.typedefs stmt :=
+  getBodyFor_printable (getDispatch reads i) (getDispatch_printable reads i printableReads)
 
 /-- Every statement of the setter body prints its intended C token grammar. -/
-theorem setBody_printable (shape : Tensor.Shape) :
-    ∀ stmt ∈ (setFunction shape).body, ItemPrintable RuntimePrinter.typedefs stmt :=
-  setBodyFor_printable (setDispatch shape) (setDispatch_printable shape)
+theorem setBody_printable (i : Solve.Interface) :
+    ∀ stmt ∈ (setFunction i).body, ItemPrintable RuntimePrinter.typedefs stmt :=
+  setBodyFor_printable (setDispatch i) (setDispatch_printable i)
 
 /-- The accessor signature prints its intended C token grammar. -/
 theorem signature_printable (write : Bool) :
@@ -1853,15 +1587,55 @@ theorem signature_printable (write : Bool) :
              .named (.typedefName (by decide +kernel) (by decide +kernel))))
 
 /-- The rendered getter denotes its function under the shared C printer. -/
-theorem getFunction_denotes (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    FunctionDenotes RuntimePrinter.typedefs (getFunction shape outputShape).render
-      (getFunction shape outputShape) :=
-  CTree.Printer.function_denotes ⟨signature_printable false, getBody_printable shape outputShape⟩
+theorem getFunction_denotes (reads : Float64Table.Reads) (i : Solve.Interface)
+    (printableReads : ∀ stmt ∈ reads.derivative ++ reads.output, ItemPrintable RuntimePrinter.typedefs stmt) :
+    FunctionDenotes RuntimePrinter.typedefs (getFunction reads i).render (getFunction reads i) :=
+  CTree.Printer.function_denotes ⟨signature_printable false, getBody_printable reads i printableReads⟩
 
 /-- The rendered setter denotes its function under the shared C printer. -/
-theorem setFunction_denotes (shape : Tensor.Shape) :
-    FunctionDenotes RuntimePrinter.typedefs (setFunction shape).render (setFunction shape) :=
-  CTree.Printer.function_denotes ⟨signature_printable true, setBody_printable shape⟩
+theorem setFunction_denotes (i : Solve.Interface) :
+    FunctionDenotes RuntimePrinter.typedefs (setFunction i).render (setFunction i) :=
+  CTree.Printer.function_denotes ⟨signature_printable true, setBody_printable i⟩
+
+end
+
+/-! ### Calls -/
+
+section
+open CCallPolicy
+
+/-- A dispatch calls only what its arms and its fallback call. -/
+theorem dispatch_admits (p : Expr → Prop) (arms : List (Nat × List Stmt)) (fallback : Stmt)
+    (hfallback : StatementAdmits p fallback)
+    (harms : ∀ a ∈ arms, ∀ stmt ∈ a.2, StatementAdmits p stmt) :
+    StatementAdmits p (dispatch arms fallback) := by
+  suffices h : ∀ stmt ∈ Float64Dispatch.dispatchChain vr0 arms [fallback], StatementAdmits p stmt by
+    rw [dispatch_chain] at h
+    exact h _ (List.mem_singleton_self _)
+  induction arms with
+  | nil => intro stmt hs; rw [List.mem_singleton.mp hs]; exact hfallback
+  | cons a rest ih =>
+    obtain ⟨j, arm⟩ := a
+    intro stmt hs
+    rw [Float64Dispatch.dispatchChain_cons, List.mem_singleton] at hs
+    subst hs
+    simp only [Runtime.branch, StatementAdmits]
+    refine ⟨by simp [ExpressionAdmits, Runtime.eqv, vr0, Runtime.v, Runtime.n], ?_, ?_⟩
+    · exact harms (j, arm) (List.mem_cons_self ..)
+    · exact ih (fun b hb => harms b (List.mem_cons_of_mem _ hb))
+
+/-- The Float64 dispatches stage pointers and counts and call only the `fail`
+diagnostic of their fallback. -/
+theorem getDispatch_admits (p : Expr → Prop) (reads : Float64Table.Reads) (i : Solve.Interface)
+    (fallback : StatementAdmits p (Runtime.fail "Unknown value reference"))
+    (evaluations : ∀ stmt ∈ reads.derivative ++ reads.output, StatementAdmits p stmt) :
+    StatementAdmits p (getDispatch reads i) :=
+  dispatch_admits _ _ _ fallback (Float64Table.getArms_admits _ reads i evaluations)
+
+theorem setDispatch_admits (p : Expr → Prop) (i : Solve.Interface)
+    (fallback : StatementAdmits p (Runtime.fail "Unknown or read-only value reference")) :
+    StatementAdmits p (setDispatch i) :=
+  dispatch_admits _ _ _ fallback (Float64Table.setArms_admits _ i)
 
 end
 
@@ -1872,207 +1646,188 @@ variable [static : StaticLiterals]
 private local instance rejectInterface : CInterface := cInterface static.addresses
 
 /-- A null instance handle is rejected with `fmi3Error`, changing nothing. -/
-theorem null_get_behaviors (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
+theorem null_get_behaviors (reads : Float64Table.Reads) (iface : Solve.Interface)
+    (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true)
     (program : CCalls.Events.Program E) (heap : Heap) (refs buffer : Option Address) (n m : UInt64)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction reads iface)))
     (behavior) :
     (CCalls.Events.machine program).Behaves
       (.calling "fmi3GetFloat64" (arguments none refs buffer n m) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩ := by
-  apply GuardedCalls.null_behaviors program (getFunction shape outputShape)
-    (Runtime.modeGuard .get :: basicReject :: getRest shape outputShape)
+  apply GuardedCalls.null_behaviors program (getFunction reads iface)
+    (Runtime.modeGuard .get :: basicReject :: getRest reads iface)
     (arguments none refs buffer n m) (parameters none refs buffer n m) heap defined
     (parameters_bound false _ _ _ _ _) (by simp [getFunction, getBody, Runtime.require, List.append_assoc])
-    rfl (getBody_closed shape outputShape)
+    rfl (getBody_closed reads iface closedReads)
   all_goals simp [parameters, CBody.bind]
 
 /-- A null instance handle is rejected with `fmi3Error`, changing nothing. -/
-theorem null_set_behaviors (shape : Tensor.Shape) (program : CCalls.Events.Program E) (heap : Heap)
+theorem null_set_behaviors (iface : Solve.Interface) (program : CCalls.Events.Program E) (heap : Heap)
     (refs buffer : Option Address) (n m : UInt64)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape))) (behavior) :
+    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction iface))) (behavior) :
     (CCalls.Events.machine program).Behaves
       (.calling "fmi3SetFloat64" (arguments none refs buffer n m) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩ := by
-  apply GuardedCalls.null_behaviors program (setFunction shape)
-    (Runtime.modeGuard .setStart :: basicReject :: setRest shape)
+  apply GuardedCalls.null_behaviors program (setFunction iface)
+    (Runtime.modeGuard .setStart :: basicReject :: setRest iface)
     (arguments none refs buffer n m) (parameters none refs buffer n m) heap defined
     (parameters_bound true _ _ _ _ _) (by simp [setFunction, setBody, Runtime.require, List.append_assoc])
-    rfl (setBody_closed shape)
+    rfl (setBody_closed iface)
   all_goals simp [parameters, CBody.bind]
 
 end
+/-! ### Unknown or read-only value-reference failure paths
 
-/-! ### Unknown or unsupported value-reference failure paths
+The Float64 dispatch reaches the scalar `fail` statement before the copy loop for
+a value reference that names no declared variable (getter) or no writable one
+(setter). The memory-machine execution witness leaves the heap unchanged up to
+that statement; `GuardedCalls.FailurePrefix.silent_behaviors` then returns
+`fmi3Error`. -/
 
-The tensor Float64 dispatch reaches the scalar `fail` statement before the copy
-loop for a value reference that names no supported region: an unknown getter
-reference (`r ∉ {0,1,2,3,4}`), the output reference `4` on a record with no dense
-output (`outputShape = none`), and any non-writable setter reference. The
-memory-machine execution witness leaves the heap unchanged up to that statement;
-`GuardedCalls.FailurePrefix.silent_behaviors` then returns `fmi3Error`. -/
+section
+variable [interface : CInterface]
+
+/-- A reference with no arm runs through every guard to the fallback. -/
+theorem dispatch_fails (env : Locals) (heap : Heap) (refs : Address) (r : Nat)
+    (rBound : resolve env "valueReferences" = some (.pointer (some refs)))
+    (refRead : load heap (refs.index 0) = some (.integer r)) (fallback : Stmt)
+    (arms : List (Nat × List Stmt)) (absent : arms.lookup r = none) (rest : List Stmt) :
+    CBody.run arms.length (.running (dispatch arms fallback :: rest) env heap) =
+      some (.running (fallback :: rest) env heap) := by
+  induction arms with
+  | nil => rfl
+  | cons a tl ih =>
+    obtain ⟨j, yes⟩ := a
+    have different : r ≠ j := by
+      intro same; subst same; simp [List.lookup] at absent
+    have hb : (r == j) = false := by simpa using different
+    have next : tl.lookup r = none := by simpa [List.lookup, hb] using absent
+    have shape : dispatch ((j, yes) :: tl) fallback =
+        .branch (Runtime.eqv vr0 (Runtime.n j)) yes [dispatch tl fallback] := by
+      show Runtime.branch _ yes (Float64Dispatch.dispatchChain vr0 tl [fallback]) = _
+      rw [dispatch_chain]; rfl
+    rw [shape, List.length_cons, Nat.add_comm]
+    exact run_append (run_one (branch_false env heap _ yes [dispatch tl fallback] rest
+      (vr0_bne env heap refs r j rBound refRead different))) (ih next)
+
+end
 
 section
 variable [static : StaticLiterals]
 private local instance failPathInterface : CInterface := cInterface static.addresses
 
-/-- The basic request check passes for a non-null single-reference request. -/
-private theorem basic_pass (heap : Heap) (p refs buffer : Address) (n m : UInt64) (nref : n.toNat = 1) :
-    CBody.eval (guardEnv p refs buffer n m) heap
-      (Runtime.any [Runtime.nev (Runtime.v "nValueReferences") (Runtime.n 1),
-        Runtime.negate (Runtime.v "valueReferences"), Runtime.negate (Runtime.v "values")]) =
-      some (boolean false) := by
-  simp [Runtime.any, Runtime.negate, Runtime.nev, Runtime.v, Runtime.n, CBody.eval, CBody.evalWith,
-    guardEnv, parameters, CBody.bind, CBody.resolve, CBody.comparison, boolean, Value.truth, nref]
-
 /-- The getter's memory-machine execution reaches its `fail` statement before the
-copy loop, leaving the heap unchanged, for an unknown reference or the output
-reference on a record without a dense output. -/
-theorem get_fail_prefix (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
+copy loop, leaving the heap unchanged, for a reference that names no declared
+variable. -/
+theorem get_fail_prefix (reads : Float64Table.Reads) (iface : Solve.Interface)
+    (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true)
     (heap : Heap) (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (r : Nat)
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .get kind mode) (nref : n.toNat = 1)
     (refRead : load heap (refs.index 0) = some (.integer r))
-    (h0 : r ≠ 0) (h1 : r ≠ 1) (h2 : r ≠ 2) (h3 : r ≠ 3) (h4 : r = 4 → outputShape = none) :
-    GuardedCalls.FailurePrefix (getFunction shape outputShape)
+    (absent : (Float64Table.getArms reads iface).lookup r = none) :
+    GuardedCalls.FailurePrefix (getFunction reads iface)
       (arguments (some p) (some refs) (some buffer) n m) heap p "Unknown value reference" heap := by
   set env0 := parameters (some p) (some refs) (some buffer) n m with henv0
   set g := guardEnv p refs buffer n m with hg
   set d := declaredEnv g with hd
   have rv : resolve d "valueReferences" = some (.pointer (some refs)) := by
     simp [hd, declaredEnv, hg, guardEnv, parameters, CBody.bind, CBody.resolve]
-  -- guard, then the basic request check passes
-  have s_accept : CBody.run 3 (.running (getBody shape outputShape) env0 heap) =
-      some (.running (basicReject :: getRest shape outputShape) g heap) :=
-    LifecycleGuard.accept env0 heap p .get kind mode (basicReject :: getRest shape outputShape)
+  have s_accept : CBody.run 3 (.running (getBody reads iface) env0 heap) =
+      some (.running (basicReject :: getRest reads iface) g heap) :=
+    LifecycleGuard.accept env0 heap p .get kind mode (basicReject :: getRest reads iface)
       (by simp [henv0, parameters, CBody.bind]) (by simp [henv0, parameters, CBody.bind]) hk hm allowed
-  have s_reject : CBody.run 1 (.running (basicReject :: getRest shape outputShape) g heap) =
-      some (.running (getRest shape outputShape) g heap) :=
-    run_one (reject_false g heap _ "Invalid Float64 array lengths or pointers" (getRest shape outputShape)
+  have s_reject : CBody.run 1 (.running (basicReject :: getRest reads iface) g heap) =
+      some (.running (getRest reads iface) g heap) :=
+    run_one (reject_false g heap _ "Invalid Float64 array lengths or pointers" (getRest reads iface)
       (basic_explicit_pass heap p refs buffer n m nref))
-  -- stage the two declarations
-  have s_src : CBody.run 1 (.running (getRest shape outputShape) g heap) =
+  have s_src : CBody.run 1 (.running (getRest reads iface) g heap) =
       some (.running (.declare "size_t" "expected" (Runtime.n 0) ::
-        getDispatch shape outputShape :: countReject :: getLoopSuffix)
+        getDispatch reads iface :: countReject :: getLoopSuffix)
         (CBody.bind g "src" (.pointer none)) heap) :=
     run_one (declare_next g heap "fmi3Float64 *" "src" Expr.nullPointer (.pointer none) (.pointer none) _
       (by simp [hg, guardEnv, parameters, CBody.bind])
       (by simp [Expr.nullPointer, CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.zeroLiteral])
       (by simp [CBody.cast, convert]))
   have s_exp : CBody.run 1 (.running (.declare "size_t" "expected" (Runtime.n 0) ::
-        getDispatch shape outputShape :: countReject :: getLoopSuffix)
+        getDispatch reads iface :: countReject :: getLoopSuffix)
         (CBody.bind g "src" (.pointer none)) heap) =
-      some (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix) d heap) :=
+      some (.running (getDispatch reads iface :: countReject :: getLoopSuffix) d heap) :=
     run_one (declare_next (CBody.bind g "src" (.pointer none)) heap "size_t" "expected" (Runtime.n 0)
       (.integer 0) (.integer 0) _ (by simp [hg, guardEnv, parameters, CBody.bind])
       (by simp [Runtime.n, CBody.eval, CBody.evalWith]) (by simp [CBody.cast, convert]))
-  -- dispatch: branch 0..3 fall through
-  have b0 : CBody.run 1 (.running (getDispatch shape outputShape :: countReject :: getLoopSuffix) d heap) =
-      some (.running (getDispatch1 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
-    run_one (branch_false d heap _ (getArm timeName 1) (getDispatch1 shape outputShape) _
-      (vr0_bne d heap refs r 0 rv refRead h0))
-  have b1 : CBody.run 1 (.running (getDispatch1 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
-      some (.running (getDispatch2 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
-    run_one (branch_false d heap _ (getArm inputName shape.volume) (getDispatch2 shape outputShape) _
-      (vr0_bne d heap refs r 1 rv refRead h1))
-  have b2 : CBody.run 1 (.running (getDispatch2 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
-      some (.running (getDispatch3 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
-    run_one (branch_false d heap _ (getArm stateName shape.volume) (getDispatch3 shape outputShape) _
-      (vr0_bne d heap refs r 2 rv refRead h2))
-  have b3 : CBody.run 1 (.running (getDispatch3 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
-      some (.running (getDispatch4 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) :=
-    run_one (branch_false d heap _ (getDerivativeArm shape) (getDispatch4 shape outputShape) _
-      (vr0_bne d heap refs r 3 rv refRead h3))
-  -- branch 4: either falls through (r ≠ 4) or takes the empty output arm (no output)
-  have b4 : CBody.run 1 (.running (getDispatch4 shape outputShape ++ (countReject :: getLoopSuffix)) d heap) =
-      some (.running (Runtime.fail "Unknown value reference" :: countReject :: getLoopSuffix) d heap) := by
-    by_cases hr4 : r = 4
-    · have hnone : outputShape = none := h4 hr4
-      subst hnone
-      refine run_one (branch_true d heap _ (getOutputArm shape none) [Runtime.fail "Unknown value reference"] _ ?_)
-      have := vr0_cmp d heap refs r 4 rv refRead
-      simpa [hr4, getOutputArm] using this
-    · exact run_one (branch_false d heap _ (getOutputArm shape outputShape)
-        [Runtime.fail "Unknown value reference"] _ (vr0_bne d heap refs r 4 rv refRead hr4))
-  have chain : CBody.run 11 (.running (getBody shape outputShape) env0 heap) =
-      some (.running (Runtime.fail "Unknown value reference" :: countReject :: getLoopSuffix) d heap) :=
-    run_append s_accept (run_append s_reject (run_append s_src (run_append s_exp
-      (run_append b0 (run_append b1 (run_append b2 (run_append b3 b4)))))))
-  refine ⟨rfl, getBody_closed shape outputShape, env0, d, countReject :: getLoopSuffix, 11,
+  have s_dispatch := dispatch_fails d heap refs r rv refRead (Runtime.fail "Unknown value reference")
+    (Float64Table.getArms reads iface) absent (countReject :: getLoopSuffix)
+  have chain := run_append s_accept (run_append s_reject (run_append s_src (run_append s_exp s_dispatch)))
+  refine ⟨rfl, getBody_closed reads iface closedReads, env0, d, countReject :: getLoopSuffix, _,
     parameters_bound false _ _ _ _ _, chain, ?_, ?_⟩
   · simp [hd, declaredEnv, hg, guardEnv, parameters, CBody.bind]
   · simp [hd, declaredEnv, hg, guardEnv, parameters, CBody.bind, CBody.resolve]
 
 /-- The setter's memory-machine execution reaches its `fail` statement before the
-copy loop for a reference that names no writable region (`r ∉ {1,2}`). -/
-theorem set_fail_prefix (shape : Tensor.Shape)
+copy loop for a reference that names no writable declared variable. -/
+theorem set_fail_prefix (iface : Solve.Interface)
     (heap : Heap) (p refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode) (r : Nat)
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hm : load heap (p.member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .setStart kind mode) (nref : n.toNat = 1)
     (refRead : load heap (refs.index 0) = some (.integer r))
-    (h1 : r ≠ 1) (h2 : r ≠ 2) :
-    GuardedCalls.FailurePrefix (setFunction shape)
+    (absent : (Float64Table.setArms iface).lookup r = none) :
+    GuardedCalls.FailurePrefix (setFunction iface)
       (arguments (some p) (some refs) (some buffer) n m) heap p "Unknown or read-only value reference" heap := by
   set env0 := parameters (some p) (some refs) (some buffer) n m with henv0
   set g := guardEnv p refs buffer n m with hg
   set d := setDeclaredEnv g with hd
   have rv : resolve d "valueReferences" = some (.pointer (some refs)) := by
     simp [hd, setDeclaredEnv, hg, guardEnv, parameters, CBody.bind, CBody.resolve]
-  have s_accept : CBody.run 3 (.running (setBody shape) env0 heap) =
-      some (.running (basicReject :: setRest shape) g heap) :=
-    LifecycleGuard.accept env0 heap p .setStart kind mode (basicReject :: setRest shape)
+  have s_accept : CBody.run 3 (.running (setBody iface) env0 heap) =
+      some (.running (basicReject :: setRest iface) g heap) :=
+    LifecycleGuard.accept env0 heap p .setStart kind mode (basicReject :: setRest iface)
       (by simp [henv0, parameters, CBody.bind]) (by simp [henv0, parameters, CBody.bind]) hk hm allowed
-  have s_reject : CBody.run 1 (.running (basicReject :: setRest shape) g heap) =
-      some (.running (setRest shape) g heap) :=
-    run_one (reject_false g heap _ "Invalid Float64 array lengths or pointers" (setRest shape)
+  have s_reject : CBody.run 1 (.running (basicReject :: setRest iface) g heap) =
+      some (.running (setRest iface) g heap) :=
+    run_one (reject_false g heap _ "Invalid Float64 array lengths or pointers" (setRest iface)
       (basic_explicit_pass heap p refs buffer n m nref))
-  have s_dst : CBody.run 1 (.running (setRest shape) g heap) =
+  have s_dst : CBody.run 1 (.running (setRest iface) g heap) =
       some (.running (.declare "size_t" "expected" (Runtime.n 0) ::
-        setDispatch shape :: countReject :: setLoopSuffix)
+        setDispatch iface :: countReject :: setLoopSuffix)
         (CBody.bind g "dst" (.pointer none)) heap) :=
     run_one (declare_next g heap "fmi3Float64 *" "dst" Expr.nullPointer (.pointer none) (.pointer none) _
       (by simp [hg, guardEnv, parameters, CBody.bind])
       (by simp [Expr.nullPointer, CBody.eval, CBody.evalWith, CBody.expressionCast, CBody.zeroLiteral])
       (by simp [CBody.cast, convert]))
   have s_exp : CBody.run 1 (.running (.declare "size_t" "expected" (Runtime.n 0) ::
-        setDispatch shape :: countReject :: setLoopSuffix)
+        setDispatch iface :: countReject :: setLoopSuffix)
         (CBody.bind g "dst" (.pointer none)) heap) =
-      some (.running (setDispatch shape :: countReject :: setLoopSuffix) d heap) :=
+      some (.running (setDispatch iface :: countReject :: setLoopSuffix) d heap) :=
     run_one (declare_next (CBody.bind g "dst" (.pointer none)) heap "size_t" "expected" (Runtime.n 0)
       (.integer 0) (.integer 0) _ (by simp [hg, guardEnv, parameters, CBody.bind])
       (by simp [Runtime.n, CBody.eval, CBody.evalWith]) (by simp [CBody.cast, convert]))
-  have b1 : CBody.run 1 (.running (setDispatch shape :: countReject :: setLoopSuffix) d heap) =
-      some (.running (setDispatch2 shape ++ (countReject :: setLoopSuffix)) d heap) :=
-    run_one (branch_false d heap _ (setArm inputName shape.volume) (setDispatch2 shape) _
-      (vr0_bne d heap refs r 1 rv refRead h1))
-  have b2 : CBody.run 1 (.running (setDispatch2 shape ++ (countReject :: setLoopSuffix)) d heap) =
-      some (.running (Runtime.fail "Unknown or read-only value reference" :: countReject :: setLoopSuffix) d heap) :=
-    run_one (branch_false d heap _ (setArm stateName shape.volume)
-      [Runtime.fail "Unknown or read-only value reference"] _ (vr0_bne d heap refs r 2 rv refRead h2))
-  have chain : CBody.run 8 (.running (setBody shape) env0 heap) =
-      some (.running (Runtime.fail "Unknown or read-only value reference" :: countReject :: setLoopSuffix) d heap) :=
-    run_append s_accept (run_append s_reject (run_append s_dst (run_append s_exp
-      (run_append b1 b2))))
-  refine ⟨rfl, setBody_closed shape, env0, d, countReject :: setLoopSuffix, 8,
+  have s_dispatch := dispatch_fails d heap refs r rv refRead
+    (Runtime.fail "Unknown or read-only value reference") (Float64Table.setArms iface) absent
+    (countReject :: setLoopSuffix)
+  have chain := run_append s_accept (run_append s_reject (run_append s_dst (run_append s_exp s_dispatch)))
+  refine ⟨rfl, setBody_closed iface, env0, d, countReject :: setLoopSuffix, _,
     parameters_bound true _ _ _ _ _, chain, ?_, ?_⟩
   · simp [hd, setDeclaredEnv, hg, guardEnv, parameters, CBody.bind]
   · simp [hd, setDeclaredEnv, hg, guardEnv, parameters, CBody.bind, CBody.resolve]
 
-/-- The getter's whole behavior on an unknown or unsupported reference with
+/-- The getter's whole behavior on a reference that names no declared variable, with
 logging disabled: it reaches `fail` before the copy loop and returns `fmi3Error`,
 its only heap change the terminated lifecycle mode. -/
-theorem get_fail_behaviors (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
+theorem get_fail_behaviors (reads : Float64Table.Reads) (iface : Solve.Interface)
+    (closedReads : (reads.derivative ++ reads.output).all CLoops.noDeclarations = true)
     (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer message : Address)
     (n m : UInt64) (kind : Kind) (mode : Mode) (r : Nat) (logger : Option Address)
-    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)))
+    (defined : program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction reads iface)))
     (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
     (messageBound : static.addresses "Unknown value reference" = some message)
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hmode : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
     (allowed : Reference.Allowed .get kind mode) (nref : n.toNat = 1)
     (refRead : load heap (refs.index 0) = some (.integer r))
-    (h0 : r ≠ 0) (h1 : r ≠ 1) (h2 : r ≠ 2) (h3 : r ≠ 3) (h4 : r = 4 → outputShape = none)
+    (absent : (Float64Table.getArms reads iface).lookup r = none)
     (hl : load heap (p.member "logger") = some (.pointer logger))
     (hg : load heap (p.member "logging") = some (.integer 0)) (behavior) :
     (CCalls.Events.machine program).Behaves
@@ -2080,25 +1835,25 @@ theorem get_fail_behaviors (shape : Tensor.Shape) (outputShape : Option Tensor.S
       behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
   have hmodeLoad : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hmode, convert, Mode.code]
-  exact GuardedCalls.FailurePrefix.silent_behaviors program (getFunction shape outputShape)
+  exact GuardedCalls.FailurePrefix.silent_behaviors program (getFunction reads iface)
     (arguments (some p) (some refs) (some buffer) n m) heap heap p message "Unknown value reference"
     (some (.integer mode.code)) logger
-    (get_fail_prefix shape outputShape heap p refs buffer n m kind mode r hk hmodeLoad allowed nref refRead
-      h0 h1 h2 h3 h4) defined helper messageBound hmode hl hg behavior
+    (get_fail_prefix reads iface closedReads heap p refs buffer n m kind mode r hk hmodeLoad allowed nref refRead absent) defined helper messageBound hmode hl hg behavior
 
 /-- The setter's whole behavior on a reference that names no writable region
 with logging disabled: it reaches `fail` before the copy loop and returns
 `fmi3Error`, its only heap change the terminated lifecycle mode. -/
-theorem set_fail_behaviors (shape : Tensor.Shape)
+theorem set_fail_behaviors (iface : Solve.Interface)
     (program : CCalls.Events.Program E) (heap : Heap) (p refs buffer message : Address)
     (n m : UInt64) (kind : Kind) (mode : Mode) (r : Nat) (logger : Option Address)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
+    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction iface)))
     (helper : program.internal.definitions "fail" = some (.tree Runtime.helpers[0]))
     (messageBound : static.addresses "Unknown or read-only value reference" = some message)
     (hk : load heap (p.member "kind") = some (.integer kind.code))
     (hmode : heap (p.member "mode") = some ⟨.int32, true, some (.integer mode.code)⟩)
     (allowed : Reference.Allowed .setStart kind mode) (nref : n.toNat = 1)
-    (refRead : load heap (refs.index 0) = some (.integer r)) (h1 : r ≠ 1) (h2 : r ≠ 2)
+    (refRead : load heap (refs.index 0) = some (.integer r))
+    (absent : (Float64Table.setArms iface).lookup r = none)
     (hl : load heap (p.member "logger") = some (.pointer logger))
     (hg : load heap (p.member "logging") = some (.integer 0)) (behavior) :
     (CCalls.Events.machine program).Behaves
@@ -2106,10 +1861,10 @@ theorem set_fail_behaviors (shape : Tensor.Shape)
       behavior = .terminates [] ⟨.integer 3, LifecycleBodies.writeMode heap p .terminated⟩ := by
   have hmodeLoad : load heap (p.member "mode") = some (.integer mode.code) := by
     cases mode <;> simp [load, hmode, convert, Mode.code]
-  exact GuardedCalls.FailurePrefix.silent_behaviors program (setFunction shape)
+  exact GuardedCalls.FailurePrefix.silent_behaviors program (setFunction iface)
     (arguments (some p) (some refs) (some buffer) n m) heap heap p message "Unknown or read-only value reference"
     (some (.integer mode.code)) logger
-    (set_fail_prefix shape heap p refs buffer n m kind mode r hk hmodeLoad allowed nref refRead h1 h2)
+    (set_fail_prefix iface heap p refs buffer n m kind mode r hk hmodeLoad allowed nref refRead absent)
     defined helper messageBound hmode hl hg behavior
 
 end
@@ -2136,18 +1891,21 @@ private local instance instSetInterface : CInterface := cInterface static.addres
 variable (program : CCalls.Events.Program E) (backing : Heap) (pool : Address) (i : Nat)
   (shape oshape : Tensor.Shape) (time : Values Tensor.scalar) (state input : Values shape)
   (output : Option (Values oshape)) (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode)
+  (iface : Solve.Interface) (reference : Nat)
 
-/-- The tensor setter writing the state region of instance `i` replaces exactly
+/-- The setter writing the state region of instance `i` replaces exactly
 that region with the caller's finite values. -/
-theorem set_instance_behaviors_state (newValues : Values shape) (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
+theorem set_instance_behaviors_state (found : (Float64Table.setArms iface).lookup reference =
+      some (setArm ⟨stateName, 0, shape.volume⟩))
+    (newValues : Values shape) (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
+    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction iface)))
     (hk : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .setStart kind mode)
     (refRead : load (TensorInstance.store backing pool i shape oshape time state input output)
-      (refs.index 0) = some (.integer 2))
+      (refs.index 0) = some (.integer reference))
     (readable : Reads (TensorInstance.store backing pool i shape oshape time state input output) buffer newValues)
     (separate : ∀ a < shape.volume, ∀ b < shape.volume,
       (TensorInstance.field pool i stateName).index a ≠ buffer.index b) (behavior) :
@@ -2156,21 +1914,25 @@ theorem set_instance_behaviors_state (newValues : Values shape) (nref : n.toNat 
         (TensorInstance.store backing pool i shape oshape time state input output) .done) behavior ↔
       behavior = .terminates []
         ⟨.integer 0, written (TensorInstance.store backing pool i shape oshape time state input output)
-          (TensorInstance.field pool i stateName) newValues shape.volume⟩ :=
-  set_behaviors_state shape program _ (TensorInstance.record pool i) refs buffer n m kind mode newValues
-    nref nval defined hk hm allowed refRead readable
-    (writable_state backing pool i shape oshape time state input output) separate behavior
+          (TensorInstance.field pool i stateName) newValues shape.volume⟩ := by
+  have result := set_behaviors iface program _ (TensorInstance.record pool i) refs buffer n m kind mode reference
+    stateName 0 shape newValues found (fun _ => rfl) nref nval defined hk hm allowed refRead readable
+    (by rw [Address.index_zero]; exact writable_state backing pool i shape oshape time state input output)
+    (by simpa only [Address.index_zero] using separate) behavior
+  simpa only [Address.index_zero] using result
 
-/-- The tensor setter writing the input region of instance `i` (writable input). -/
-theorem set_instance_behaviors_input (newValues : Values shape) (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
-    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)))
+/-- The setter writing the input region of instance `i` (writable input). -/
+theorem set_instance_behaviors_input (found : (Float64Table.setArms iface).lookup reference =
+      some (setArm ⟨inputName, 0, shape.volume⟩))
+    (newValues : Values shape) (nref : n.toNat = 1) (nval : m.toNat = shape.volume)
+    (defined : program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction iface)))
     (hk : load (inputWritableStore backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code))
     (hm : load (inputWritableStore backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "mode") = some (.integer mode.code))
     (allowed : Reference.Allowed .setStart kind mode)
     (refRead : load (inputWritableStore backing pool i shape oshape time state input output)
-      (refs.index 0) = some (.integer 1))
+      (refs.index 0) = some (.integer reference))
     (readable : Reads (inputWritableStore backing pool i shape oshape time state input output) buffer newValues)
     (separate : ∀ a < shape.volume, ∀ b < shape.volume,
       (TensorInstance.field pool i inputName).index a ≠ buffer.index b) (behavior) :
@@ -2179,10 +1941,12 @@ theorem set_instance_behaviors_input (newValues : Values shape) (nref : n.toNat 
         (inputWritableStore backing pool i shape oshape time state input output) .done) behavior ↔
       behavior = .terminates []
         ⟨.integer 0, written (inputWritableStore backing pool i shape oshape time state input output)
-          (TensorInstance.field pool i inputName) newValues shape.volume⟩ :=
-  set_behaviors_input shape program _ (TensorInstance.record pool i) refs buffer n m kind mode newValues
-    nref nval defined hk hm allowed refRead readable
-    (inputWritableStore_writable backing pool i shape oshape time state input output) separate behavior
+          (TensorInstance.field pool i inputName) newValues shape.volume⟩ := by
+  have result := set_behaviors iface program _ (TensorInstance.record pool i) refs buffer n m kind mode reference
+    inputName 0 shape newValues found (fun _ => rfl) nref nval defined hk hm allowed refRead readable
+    (by rw [Address.index_zero]; exact inputWritableStore_writable backing pool i shape oshape time state input output)
+    (by simpa only [Address.index_zero] using separate) behavior
+  simpa only [Address.index_zero] using result
 
 /-- The successful setter's result heap preserves every tensor cell of every
 other instance in the static pool. -/
@@ -2200,7 +1964,8 @@ end
 
 These mirror the scalar `Float64Calls.FunctionContract`: the printed function
 text, its declaration closedness, its printed-text denotation under the shared C
-printer, and a rejection guarantee for a null handle. -/
+printer, and a rejection guarantee for a null handle. The tensor getter contract
+also states that reading a calculated variable evaluates it. -/
 
 section
 open CTree.Printer
@@ -2208,19 +1973,20 @@ variable [static : StaticLiterals]
 private local instance contractInterface : CInterface := cInterface static.addresses
 
 /-- The tensor `fmi3GetFloat64` function contract. -/
-structure GetContract (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) (text : String) : Prop where
-  printed : text = (getFunction shape outputShape).render
-  closed : (getFunction shape outputShape).body.all CBodyEmbedding.closedBlocks = true
-  denotes : FunctionDenotes RuntimePrinter.typedefs text (getFunction shape outputShape)
+structure GetContract (shape : Tensor.Shape) (iface : Solve.Interface) (text : String) : Prop where
+  printed : text = (getFunction (tensorReads shape) iface).render
+  closed : (getFunction (tensorReads shape) iface).body.all CBodyEmbedding.closedBlocks = true
+  denotes : FunctionDenotes RuntimePrinter.typedefs text (getFunction (tensorReads shape) iface)
   rejected : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (refs buffer : Option Address)
     (n m : UInt64),
-    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)) →
+    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction (tensorReads shape) iface)) →
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling "fmi3GetFloat64" (arguments none refs buffer n m) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩
   /-- Reading `der(x)` evaluates the prepared derivative from the current state and
   input and returns it; the region's earlier contents do not matter. -/
   derivativeRead : ∀ {E} (program : CCalls.Events.Program E) (definitions : CLoops.Calls.Definitions)
+    (reference : Nat)
     (oshape : Tensor.Shape) (backing : Heap) (pool : Address) (i : Nat)
     (time : Values Tensor.scalar) (state input result : Values shape) (output : Option (Values oshape))
     (refs buffer : Address) (n m : UInt64) (kind : Kind) (mode : Mode),
@@ -2228,16 +1994,17 @@ structure GetContract (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
     Rumoca.CTensor.Lowering.Library definitions →
     definitions (TensorInstanceRhs.plan shape).derivative.function.name =
       some (TensorInstanceRhs.plan shape).derivative.function.tree →
-    output.map (fun _ => oshape) = outputShape →
+    (Float64Table.getArms (tensorReads shape) iface).lookup reference =
+      some (TensorEntry.rhsCall (Runtime.n shape.volume) :: getArm ⟨derivativeName, 0, shape.volume⟩) →
     n.toNat = 1 → m.toNat = shape.volume → shape.volume < 2 ^ 64 →
-    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)) →
+    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction (tensorReads shape) iface)) →
     load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "kind") = some (.integer kind.code) →
     load (TensorInstance.store backing pool i shape oshape time state input output)
       ((TensorInstance.record pool i).member "mode") = some (.integer mode.code) →
     Reference.Allowed .get kind mode →
     load (TensorInstance.store backing pool i shape oshape time state input output)
-      (refs.index 0) = some (.integer 3) →
+      (refs.index 0) = some (.integer reference) →
     Rumoca.Solve.Tensor.Finite.Executes (TensorInstanceRhs.kernel shape).derivative
       (ArrayProfile.environment state input) result →
     Writable (TensorInstance.store backing pool i shape oshape time state input output) buffer shape.volume →
@@ -2261,6 +2028,7 @@ structure GetContract (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
   /-- Reading `J` evaluates the prepared dense Jacobian `diag(2*u)` from the current
   input and returns it; the region's earlier contents do not matter. -/
   outputRead : ∀ {E} (program : CCalls.Events.Program E) (definitions : CLoops.Calls.Definitions)
+    (reference : Nat)
     (backing : Heap) (pool : Address) (i : Nat)
     (time : Values Tensor.scalar) (state input : Values shape)
     (J : Values (Rumoca.Tensor.matrixShape shape.volume shape.volume))
@@ -2269,17 +2037,19 @@ structure GetContract (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
     Rumoca.CTensor.Lowering.Library definitions →
     definitions Rumoca.CTensor.SquareDiagonal.function.signature.name =
       some Rumoca.CTensor.SquareDiagonal.function →
-    outputShape = some (Rumoca.Tensor.matrixShape shape.volume shape.volume) →
+    (Float64Table.getArms (tensorReads shape) iface).lookup reference =
+      some (TensorEntry.jacobianCall (Runtime.n shape.volume) shape ::
+        getArm ⟨outputName, 0, (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume⟩) →
     n.toNat = 1 → m.toNat = (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume →
     (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume < 2 ^ 64 →
-    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction shape outputShape)) →
+    program.internal.definitions "fmi3GetFloat64" = some (.tree (getFunction (tensorReads shape) iface)) →
     load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
       time state input (some J)) ((TensorInstance.record pool i).member "kind") = some (.integer kind.code) →
     load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
       time state input (some J)) ((TensorInstance.record pool i).member "mode") = some (.integer mode.code) →
     Reference.Allowed .get kind mode →
     load (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
-      time state input (some J)) (refs.index 0) = some (.integer 4) →
+      time state input (some J)) (refs.index 0) = some (.integer reference) →
     Writable (TensorInstance.store backing pool i shape (Rumoca.Tensor.matrixShape shape.volume shape.volume)
       time state input (some J)) buffer (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume →
     (∀ a < (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume,
@@ -2309,49 +2079,47 @@ structure GetContract (shape : Tensor.Shape) (outputShape : Option Tensor.Shape)
             (TensorInstance.field pool i outputName) (Rumoca.CTensor.SquareDiagonal.doubled input))
           buffer (Rumoca.CTensor.Diagonal.matrix (Rumoca.CTensor.SquareDiagonal.doubled input))
           (Rumoca.Tensor.matrixShape shape.volume shape.volume).volume⟩
-/-- The tensor `fmi3SetFloat64` function contract. -/
-structure SetContract (shape : Tensor.Shape) (text : String) : Prop where
-  printed : text = (setFunction shape).render
-  closed : (setFunction shape).body.all CBodyEmbedding.closedBlocks = true
-  denotes : FunctionDenotes RuntimePrinter.typedefs text (setFunction shape)
+/-- The `fmi3SetFloat64` function contract. -/
+structure SetContract (iface : Solve.Interface) (text : String) : Prop where
+  printed : text = (setFunction iface).render
+  closed : (setFunction iface).body.all CBodyEmbedding.closedBlocks = true
+  denotes : FunctionDenotes RuntimePrinter.typedefs text (setFunction iface)
   rejected : ∀ {E} (program : CCalls.Events.Program E) (heap : Heap) (refs buffer : Option Address)
     (n m : UInt64),
-    program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction shape)) →
+    program.internal.definitions "fmi3SetFloat64" = some (.tree (setFunction iface)) →
     ∀ behavior, (CCalls.Events.machine program).Behaves
       (.calling "fmi3SetFloat64" (arguments none refs buffer n m) heap .done) behavior ↔
       behavior = .terminates [] ⟨.integer 3, heap⟩
 
-theorem get_contract (shape : Tensor.Shape) (outputShape : Option Tensor.Shape) :
-    GetContract shape outputShape (getFunction shape outputShape).render where
+theorem get_contract (shape : Tensor.Shape) (iface : Solve.Interface) :
+    GetContract shape iface (getFunction (tensorReads shape) iface).render where
   printed := rfl
-  closed := getBody_closed shape outputShape
-  denotes := getFunction_denotes shape outputShape
+  closed := getBody_closed (tensorReads shape) iface (tensorReads_noDecl shape)
+  denotes := getFunction_denotes (tensorReads shape) iface (tensorReads_printable shape)
   rejected program heap refs buffer n m defined :=
-    null_get_behaviors shape outputShape program heap refs buffer n m defined
-  derivativeRead program definitions oshape backing pool i time state input result output refs buffer n m kind
-      mode linked library found shaped nref nval bounded defined hk hm allowed refRead executed writable
+    null_get_behaviors (tensorReads shape) iface (tensorReads_noDecl shape) program heap refs buffer n m defined
+  derivativeRead program definitions reference oshape backing pool i time state input result output refs buffer n
+      m kind mode linked library found arm nref nval bounded defined hk hm allowed refRead executed writable
       separate resolves := by
-    subst shaped
-    obtain ⟨finalHeap, reads, others, ran⟩ := get_deriv_reaches program shape oshape definitions linked
-      library found backing pool i time state input result output refs buffer n m kind mode .done nref nval
-      bounded defined hk hm allowed refRead executed writable separate resolves
+    obtain ⟨finalHeap, reads, others, ran⟩ := get_deriv_reaches program shape oshape iface reference arm
+      definitions linked library found backing pool i time state input result output refs buffer n m kind mode
+      .done nref nval bounded defined hk hm allowed refRead executed writable separate resolves
     exact ⟨finalHeap, reads, others, fun behavior =>
       (CCalls.Events.internal_prefix program ran (CCalls.Events.return_forced program _ _)).behaviors behavior⟩
-  outputRead program definitions backing pool i time state input J refs buffer n m kind mode linked library
-      jacFound present nref nval bounded2 defined hk hm allowed refRead writable separate adds jacResolves := by
-    subst present
-    obtain ⟨reads, ran⟩ := get_output_reaches program shape definitions linked library jacFound backing pool i
-      time state input J refs buffer n m kind mode .done nref nval bounded2 defined hk hm allowed refRead
-      writable separate adds jacResolves
+  outputRead program definitions reference backing pool i time state input J refs buffer n m kind mode linked
+      library jacFound arm nref nval bounded2 defined hk hm allowed refRead writable separate adds jacResolves := by
+    obtain ⟨reads, ran⟩ := get_output_reaches program shape iface reference arm definitions linked library
+      jacFound backing pool i time state input J refs buffer n m kind mode .done nref nval bounded2 defined hk hm
+      allowed refRead writable separate adds jacResolves
     exact ⟨reads, fun behavior =>
       (CCalls.Events.internal_prefix program ran (CCalls.Events.return_forced program _ _)).behaviors behavior⟩
 
-theorem set_contract (shape : Tensor.Shape) : SetContract shape (setFunction shape).render where
+theorem set_contract (iface : Solve.Interface) : SetContract iface (setFunction iface).render where
   printed := rfl
-  closed := setBody_closed shape
-  denotes := setFunction_denotes shape
+  closed := setBody_closed iface
+  denotes := setFunction_denotes iface
   rejected program heap refs buffer n m defined :=
-    null_set_behaviors shape program heap refs buffer n m defined
+    null_set_behaviors iface program heap refs buffer n m defined
 
 end
 end Rumoca.FMI3.TensorFloat64

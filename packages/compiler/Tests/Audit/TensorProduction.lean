@@ -23,3 +23,4 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.tensorNumericalLinkage_correct
 #audit axioms Rumoca.tensorNumericalLinkage_of_source
+#audit axioms Rumoca.TensorArtifact.record_within

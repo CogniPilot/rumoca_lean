@@ -4,7 +4,7 @@ import RumocaFMI3.ConstantDerivative
 import RumocaFMI3.ConstantDoStep
 import RumocaFMI3.ConstantInstanceRhs
 import RumocaFMI3.AdapterProfile
-import RumocaCore.Solve.ConstantFMI3
+import RumocaFMI3.ConstantRecord
 
 /-! The constant-rate (`G01`) FMI 3 adapter function list, the constant analog of
 `TensorFunctions.functions`. Each pinned header signature renders either a
@@ -84,8 +84,8 @@ def constantDispatch (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Mod
       TensorFactory.function model (TensorStorage.regions m.shape false false) .me (TensorMetadata.constantToken m.name)
   | "fmi3InstantiateCoSimulation" =>
       TensorFactory.function model (TensorStorage.regions m.shape false false) .cs (TensorMetadata.constantToken m.name)
-  | "fmi3GetFloat64" => ConstantFloat64.getFunction m.shape
-  | "fmi3SetFloat64" => ConstantFloat64.setFunction m.shape
+  | "fmi3GetFloat64" => TensorFloat64.getFunction ConstantFloat64.reads m.interface
+  | "fmi3SetFloat64" => TensorFloat64.setFunction m.interface
   | "fmi3GetContinuousStates" => TensorContinuousStates.getFunction m.shape
   | "fmi3SetContinuousStates" => TensorContinuousStates.setFunction m.shape
   | "fmi3GetContinuousStateDerivatives" => ConstantDerivative.derivFunction m.shape

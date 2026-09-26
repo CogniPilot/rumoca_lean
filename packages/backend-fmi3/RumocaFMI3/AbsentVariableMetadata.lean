@@ -38,7 +38,8 @@ theorem Absent.selection_empty (absent : Absent root ty) (selected : List XML.El
 
 theorem described_absence (model : Solve.FMI3Model source) (ty : VariableType) :
     Absent (modelDescription model) ty := by
-  refine ⟨(modelDescription model).children[4]'(by simp [modelDescription]), rfl, ?_⟩
+  rw [modelDescription_eq]
+  refine ⟨_, rfl, ?_⟩
   cases ty <;> rfl
 
 def MetadataContract (text : String) : Prop :=

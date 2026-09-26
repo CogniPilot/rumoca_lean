@@ -108,8 +108,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     (∀ (header : CFenv.Header), ConstantDoStep.Contract header (ConstantDoStep.function).render) ∧
     -- Constant Float64 accessors and reused continuous-state copies over the ambient
     -- static literal table.
-    ConstantFloat64.GetContract m.shape (ConstantFloat64.getFunction m.shape).render ∧
-    ConstantFloat64.SetContract m.shape (ConstantFloat64.setFunction m.shape).render ∧
+    ConstantFloat64.GetContract m.shape m.interface (TensorFloat64.getFunction ConstantFloat64.reads m.interface).render ∧
+    TensorFloat64.SetContract m.interface (TensorFloat64.setFunction m.interface).render ∧
     TensorContinuousStates.GetContract m.shape (TensorContinuousStates.getFunction m.shape).render ∧
     TensorContinuousStates.SetContract m.shape (TensorContinuousStates.setFunction m.shape).render ∧
     ConstantDerivative.DerivContract m.shape (ConstantDerivative.derivFunction m.shape).render ∧
@@ -139,12 +139,12 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3Model n)
     -- identifier the constant model description decodes to
     -- (`TensorMetadata.constant_modelIdentifiers_decode`).
     (∃ rest : String, text = "#define FMI3_FUNCTION_PREFIX " ++ modelIdentifier m.name ++ "_\n" ++ rest) ∧
-    decodeModelIdentifiers (TensorMetadata.constantModelDescription m.shape m.name)
+    decodeModelIdentifiers (TensorMetadata.constantModelDescription m)
       = some (m.name, modelIdentifier m.name, modelIdentifier m.name) ∧
     -- Instantiation-token agreement: the constant factory validates exactly the
     -- token the constant model description declares as its `instantiationToken`
     -- attribute (`TensorMetadata.constantToken_attribute`, FMI 3.0.2 §2.4.1).
-    (TensorMetadata.constantModelDescription m.shape m.name).attributes.lookup "instantiationToken"
+    (TensorMetadata.constantModelDescription m).attributes.lookup "instantiationToken"
       = some (TensorMetadata.constantToken m.name) ∧
     -- Call resolution: every function name the constant bodies call resolves. The
     -- three constant kernel entries are forward-declared in the preamble and resolve
@@ -203,8 +203,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3
     TensorSetTime.contract,
     (fun ph => TensorLifecycleModes.contract ph),
     (fun header => ConstantDoStep.contract header),
-    ConstantFloat64.get_contract m.shape,
-    ConstantFloat64.set_contract m.shape,
+    ConstantFloat64.get_contract m.shape m.interface,
+    TensorFloat64.set_contract m.interface,
     TensorContinuousStates.get_contract m.shape,
     TensorContinuousStates.set_contract m.shape,
     ConstantDerivative.deriv_contract m.shape,
@@ -223,8 +223,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.ConstantFMI3
         String.join (ConstantFunctions.helpers.map Function.render) ++
         String.join (sigs.map fun sig => (ConstantFunctions.constantFunction model m sig).render),
       by rw [render, functionPrefix]; simp only [String.append_assoc]⟩,
-    TensorMetadata.constant_modelIdentifiers_decode m.shape m.name,
-    TensorMetadata.constantToken_attribute m.shape m.name,
+    TensorMetadata.constant_modelIdentifiers_decode m,
+    TensorMetadata.constantToken_attribute m,
     -- Call-resolution witnesses.
     ⟨functionPrefix m.name ++ "#include \"model.c\"\n" ++ Runtime.declarationPrefix ++
         TensorStorage.storageRenderG m.shape false false,

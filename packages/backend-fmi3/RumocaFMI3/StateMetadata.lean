@@ -63,6 +63,7 @@ theorem OrderedStates.unique (first : OrderedStates root names)
 
 theorem described_states (model : Solve.FMI3Model source) :
     OrderedStates (modelDescription model) [source.state] := by
+  rw [modelDescription_eq]
   refine ⟨_, _, rfl, rfl, List.Forall₂.cons ?_ .nil⟩
   exact ⟨"2", _, "1", _, rfl, rfl, ⟨rfl, rfl, rfl⟩,
     rfl, rfl, rfl, ⟨rfl, rfl, rfl⟩⟩

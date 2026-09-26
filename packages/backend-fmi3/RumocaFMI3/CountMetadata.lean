@@ -30,6 +30,7 @@ def ScalarCounts (root : XML.Element) (states events : Nat) : Prop :=
 
 theorem described_counts (m : Solve.FMI3Model source) :
     ScalarCounts (modelDescription m) m.problem.stateShape.volume 0 := by
+  rw [modelDescription_eq]
   refine ⟨_, _, rfl, rfl, ?_, ?_⟩
   · refine ⟨rfl, by simp, ?_⟩
     intro node member

@@ -6,3 +6,4 @@ import ProofAudit.Audit
 #audit axioms Rumoca.FMI3.sourcePrefix_correct
 #audit axioms Rumoca.FMI3.sourcePrefix_of_chars
 #audit axioms Rumoca.FMI3.modelIdentifiers_decode
+#audit axioms Rumoca.FMI3.DeclaredMetadata.modelIdentifiers_decode

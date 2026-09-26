@@ -1,4 +1,5 @@
 import RumocaCore.Solve.ConstantFMI3
+import RumocaCore.Constant.Interface
 import RumocaFMI3.ConstantAdapterPrinter
 import RumocaFMI3.ConstantFunctions
 import RumocaFMI3.TensorStorageCode
@@ -26,9 +27,13 @@ open CTree CTree.Printer
 /-- The prepared constant-rate IVP for the development `ConstantRates` fixture: two
 states with the signed decimal rates `der(x) = 2.5` and `der(y) = -1`. -/
 def fixtureIVP : ConstantProfile.ConstantIVP 2 :=
-  ⟨![⟨1, 25, -1⟩, ⟨-1, 1, 0⟩]⟩
+  ⟨![⟨1, 25, -1⟩, ⟨-1, 1, 0⟩], ![0, 0]⟩
 
-def constantModel : Solve.ConstantFMI3Model 2 := ⟨"ConstantRates", fixtureIVP⟩
+/-- The literal `ConstantRates` source AST whose declarations the fixture exports. -/
+def fixtureAst : ConstantProfile.Model :=
+  ⟨"ConstantRates", "x", "y", [], ⟨"x", "2.5"⟩, [⟨"y", "-1"⟩], "ConstantRates"⟩
+
+def constantModel : Solve.ConstantFMI3Model 2 := ⟨"ConstantRates", fixtureIVP, fixtureAst.interface⟩
 
 /-- The scalar model witness for the model-independent adapter bodies, reused from
 the tensor fixture's checked parse/lower/prepare path. -/
@@ -86,9 +91,9 @@ theorem fixture_preamble_layout :
 /-- The adapter's function prefix names the same model identifier the constant model
 description decodes to. -/
 theorem fixture_identifier :
-    decodeModelIdentifiers (TensorMetadata.constantModelDescription constantModel.shape constantModel.name)
+    decodeModelIdentifiers (TensorMetadata.constantModelDescription constantModel)
       = some (constantModel.name, modelIdentifier constantModel.name, modelIdentifier constantModel.name) :=
-  TensorMetadata.constant_modelIdentifiers_decode constantModel.shape constantModel.name
+  TensorMetadata.constant_modelIdentifiers_decode constantModel
 
 end Rumoca.Tests.ConstantAdapterFixture
 

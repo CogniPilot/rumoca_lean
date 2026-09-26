@@ -47,8 +47,16 @@ def ModelIdentifiersContract (modelName xml : String) : Prop :=
   ∃ root, XML.Document root xml ∧
     decodeModelIdentifiers root = some (modelName, modelIdentifier modelName, modelIdentifier modelName)
 
+/-- Every declared-interface document decodes to its model name and model
+identifiers. -/
+theorem DeclaredMetadata.modelIdentifiers_decode (name token : String) (i : Solve.Interface) :
+    decodeModelIdentifiers (DeclaredMetadata.modelDescription name token i) =
+      some (name, modelIdentifier name, modelIdentifier name) := by
+  simp [decodeModelIdentifiers, DeclaredMetadata.modelDescription, guard, Build.only?, List.filter,
+    List.lookup]
+
 theorem modelIdentifiers_decode (m : Solve.FMI3Model source) :
-    decodeModelIdentifiers (modelDescription m) = some (m.name, modelIdentifier m.name, modelIdentifier m.name) := by
-  simp [decodeModelIdentifiers, modelDescription, guard, Build.only?, List.filter, List.lookup]
+    decodeModelIdentifiers (modelDescription m) = some (m.name, modelIdentifier m.name, modelIdentifier m.name) :=
+  DeclaredMetadata.modelIdentifiers_decode _ _ _
 
 end Rumoca.FMI3

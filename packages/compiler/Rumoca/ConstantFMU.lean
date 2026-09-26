@@ -36,7 +36,7 @@ def writeSources (a : ConstantArtifact input) (root vendor : FilePath) : IO Unit
   IO.FS.writeFile (root / "sources/model.c") ConstantKernel.modelC
   IO.FS.writeFile (root / "sources/fmi3.c") (← adapterBytes a signatures)
   IO.FS.writeFile (root / "modelDescription.xml")
-    (XML.document (FMI3.TensorMetadata.constantModelDescription a.constantModel.shape a.constantModel.name))
+    (XML.document (FMI3.TensorMetadata.constantModelDescription a.constantModel))
   IO.FS.writeFile (root / "sources/buildDescription.xml")
     (XML.document (FMI3.Build.description a.name))
   IO.FS.writeFile (root / "documentation/index.html") Package.documentation

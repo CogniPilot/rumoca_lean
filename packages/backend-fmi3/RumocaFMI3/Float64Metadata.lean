@@ -38,25 +38,22 @@ theorem Lookup.unique (first : Lookup root reference name) (second : Lookup root
   exact Option.some.inj (hn.symm.trans hn')
 
 def name (model : Solve.FMI3Model source) : Float64Calls.Variable → String
-  | .time => model.timeName
+  | .time => Solve.timeName
   | .state => model.stateName
   | .derivative => model.derivativeName
 
 theorem described_variable (model : Solve.FMI3Model source) (selected : Float64Calls.Variable) :
     Lookup (modelDescription model) selected.code (name model selected) := by
-  let vars := (modelDescription model).children[4]'(by simp [modelDescription])
+  rw [modelDescription_eq]
   cases selected
-  · refine ⟨vars, vars.children[0]'(by simp [vars, modelDescription]), rfl, ?_, rfl, rfl, rfl, rfl⟩
-    rfl
-  · refine ⟨vars, vars.children[1]'(by simp [vars, modelDescription]), rfl, ?_, rfl, rfl, rfl, rfl⟩
-    rfl
-  · refine ⟨vars, vars.children[2]'(by simp [vars, modelDescription]), rfl, ?_, rfl, rfl, rfl, rfl⟩
-    rfl
+  · exact ⟨_, _, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  · exact ⟨_, _, rfl, rfl, rfl, rfl, rfl, rfl⟩
+  · exact ⟨_, _, rfl, rfl, rfl, rfl, rfl, rfl⟩
 
 /-- The actual three declarations contain no additional value reference. -/
 theorem described_reference (model : Solve.FMI3Model source) (reference : Nat) :
     (∃ variableName, Lookup (modelDescription model) reference variableName) ↔ reference ≤ 2 := by
-  have enough : 4 < (modelDescription model).children.length := by simp [modelDescription]
+  have enough : 4 < (modelDescription model).children.length := by simp [modelDescription_eq]
   constructor
   · rintro ⟨variableName, modelVariables, declaration, hv, hd, _⟩
     have vars : modelVariables = (modelDescription model).children[4] := by
@@ -70,7 +67,7 @@ theorem described_reference (model : Solve.FMI3Model source) (reference : Nat) :
       have inside : declaration ∈ (modelDescription model).children[4].children.filter
           (fun node => referenceOf node == some reference) := by rw [hd]; simp
       exact beq_iff_eq.mp (List.mem_filter.mp inside).2
-    simp only [modelDescription, List.getElem_cons_zero, List.getElem_cons_succ,
+    simp only [modelDescription_eq, List.getElem_cons_zero, List.getElem_cons_succ,
       List.mem_cons, List.not_mem_nil, or_false] at member
     rcases member with rfl | rfl | rfl
     · change some 0 = some reference at selected

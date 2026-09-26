@@ -1,6 +1,7 @@
 import Rumoca.Compiler
 import Rumoca.ArrayCompiler
 import RumocaCore.Solve.TensorFMI3
+import RumocaCore.Array.Interface
 
 /-! Source-owned tensor artifact and preparation facts, independent of backend
 FMI adapter contracts. Declaration names and contents are preserved. -/
@@ -21,9 +22,10 @@ def name (a : TensorArtifact input) : String :=
   a.prepared.parsed.parsed.ast.header.name
 
 /-- The prepared FMI 3 deployment data for the pointwise tensor problem: the
-model name paired with the owned executable kernel. -/
+model name, the owned executable kernel and the declared interface of the
+parsed source. -/
 def tensorModel (a : TensorArtifact input) : Solve.TensorFMI3Model ArrayProfile.stateShape :=
-  ⟨a.name, a.prepared.kernel⟩
+  ⟨a.name, a.prepared.kernel, a.prepared.parsed.parsed.ast.interface⟩
 
 theorem tensorModel_name (a : TensorArtifact input) : a.tensorModel.name = a.name := rfl
 
@@ -100,7 +102,8 @@ theorem squareAst_resolved : squareAst.Resolved := by decide
 
 /-- The pinned tensor model for the development `TensorSquare` source. -/
 def squareModel : Solve.TensorFMI3Model ArrayProfile.stateShape :=
-  ⟨"TensorSquare", ArrayProfile.Solved.lower (ArrayProfile.DAE.lower (ArrayProfile.Flat.lower squareAst squareAst_resolved))⟩
+  ⟨"TensorSquare", ArrayProfile.Solved.lower (ArrayProfile.DAE.lower (ArrayProfile.Flat.lower squareAst squareAst_resolved)),
+    squareAst.interface⟩
 
 namespace TensorArtifact
 
@@ -130,7 +133,7 @@ theorem tensorModel_square (a : TensorArtifact input)
   have hres : res = squareAst_resolved := rfl
   rw [hres] at hlow
   rw [hlow]
-  show (⟨squareAst.header.name, _⟩ : Solve.TensorFMI3Model _) = squareModel
+  show (⟨squareAst.header.name, _, squareAst.interface⟩ : Solve.TensorFMI3Model _) = squareModel
   rw [show squareAst.header.name = "TensorSquare" from rfl]
   rfl
 

@@ -15,16 +15,16 @@ theorem Prepared.source_correct (a : Prepared source) :
   ⟨ParserActions.parsed_lexes actions a.parsed.parsed,
     ParserActions.parsed_in_ebnf a.parsed.parsed⟩
 
-/-- Every declared state's derivative equals its stored IVP rate, and every
-state initializes at `+0`. The lowering chain and initialization are preserved
-in the prepared kernel. -/
+/-- Every declared state's derivative equals its stored IVP rate, and the completed
+initialization starts every state at `+0`. The lowering chain and the completed
+initialization are preserved in the prepared kernel. -/
 theorem Prepared.equation_correct (a : Prepared source) (derivatives : String → Value) :
     a.parsed.parsed.ast.Solves derivatives ↔
       ∀ i, derivatives (a.parsed.parsed.ast.states.get i) = a.ivp.rateValues i := by
   rw [a.ivp_lowered]; exact a.parsed.parsed.ast.lowering_chain derivatives
 
 theorem Prepared.initialization_correct (a : Prepared source) (values : String → Value) :
-    a.parsed.parsed.ast.Initial values ↔
+    a.parsed.parsed.ast.Completed values ↔
       ∀ i, values (a.parsed.parsed.ast.states.get i) = a.ivp.initial i := by
   rw [a.ivp_lowered]; exact a.parsed.parsed.ast.initialization_chain values
 
@@ -43,7 +43,7 @@ theorem prepare_correct (_checked : prepare source = .ok a) (derivatives values 
       EBNF.Accepts Generated.sourceGrammar (a.parsed.parsed.tokens.map Token.symbol) ∧
       (a.parsed.parsed.ast.Solves derivatives ↔
         ∀ i, derivatives (a.parsed.parsed.ast.states.get i) = a.ivp.rateValues i) ∧
-      (a.parsed.parsed.ast.Initial values ↔
+      (a.parsed.parsed.ast.Completed values ↔
         ∀ i, values (a.parsed.parsed.ast.states.get i) = a.ivp.initial i) :=
   ⟨a.parsed.erases, a.source_correct.1, a.source_correct.2,
     a.equation_correct derivatives, a.initialization_correct values⟩

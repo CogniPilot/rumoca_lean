@@ -14,6 +14,8 @@ import Tests.TensorMetadataFixture
 import Tests.TensorAdapterFixture
 import Tests.ConstantAdapterFixture
 import RumocaCore.Solve.ConstantFMI3
+import RumocaCore.Constant.Interface
+import RumocaCore.Array.Interface
 import RumocaFMI3.ConstantFunctions
 import Rumoca.EFMITensorAlgorithm
 import Rumoca.EFMITensorProduction
@@ -90,7 +92,8 @@ def main : IO Unit := do
         IO.FS.writeFile "build/tensor-efmi/AlgorithmCode.xml" (XML.document tensorDocs.algorithm)
         IO.FS.writeFile "build/tensor-efmi/ProductionCode.xml" (XML.document tensorDocs.production)
         IO.FS.writeFile "build/tensor-efmi/content.xml" (XML.document tensorDocs.content)
-        let preparedModel : Solve.TensorFMI3Model ArrayProfile.stateShape := ⟨"TensorSquare", kernel⟩
+        let preparedModel : Solve.TensorFMI3Model ArrayProfile.stateShape :=
+          ⟨"TensorSquare", kernel, p.parsed.ast.interface⟩
         expect "prepared TensorSquare renders the fixture's well-formed tensor model description"
           (preparedModel.hasOutput &&
             (FMI3.TensorMetadata.modelDescription preparedModel).valid &&
@@ -175,7 +178,7 @@ def main : IO Unit := do
     -- witness. This ties the actual ConstantCompiler.prepare rates to the
     -- ConstantAdapterFixture rendering the function-section grammar check certifies.
     let preparedConstantModel : Solve.ConstantFMI3Model ast.states.length :=
-      ⟨"ConstantRates", prepared.ivp⟩
+      ⟨"ConstantRates", prepared.ivp, ast.interface⟩
     expect "prepared ConstantRates renders the fixture's constant adapter bytes"
       (FMI3.ConstantFunctions.render Tests.ConstantAdapterFixture.scalarModel preparedConstantModel
           Tests.ConstantAdapterFixture.signatures

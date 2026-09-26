@@ -37,15 +37,9 @@ model-independent bodies and the numerical kernel; tensor rank and extents stay
 symbolic in the shape parameter. -/
 namespace Rumoca.FMI3.TensorFunctions
 open CTree CMemory CLiteral
-open Rumoca.Tensor (Shape matrixShape)
+open Rumoca.Tensor (Shape)
 set_option autoImplicit false
 variable {source : AST.Model} {shape : Shape}
-
-/-- The optional dense (Jacobian) observation shape carried by the getter for
-`fmi3GetFloat64`: a square matrix over the state element count when the prepared
-problem exposes a dense output, otherwise absent. -/
-def outputShape (m : Solve.TensorFMI3Model shape) : Option Shape :=
-  m.ivp.diagonal.map (fun _ => matrixShape shape.volume shape.volume)
 
 /-- Select the emitted tensor function body for one pinned header signature. The
 19 shape-dependent behavioral functions dispatch by name to their proved tensor
@@ -72,8 +66,8 @@ def tensorDispatch (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model s
   | "fmi3FreeInstance" => TensorFree.function
   | "fmi3InstantiateModelExchange" => TensorFactory.function model (TensorStorage.regions shape true m.hasOutput) .me (TensorMetadata.token m)
   | "fmi3InstantiateCoSimulation" => TensorFactory.function model (TensorStorage.regions shape true m.hasOutput) .cs (TensorMetadata.token m)
-  | "fmi3GetFloat64" => TensorFloat64.getFunction shape (outputShape m)
-  | "fmi3SetFloat64" => TensorFloat64.setFunction shape
+  | "fmi3GetFloat64" => TensorFloat64.getFunction (TensorFloat64.tensorReads shape) m.interface
+  | "fmi3SetFloat64" => TensorFloat64.setFunction m.interface
   | "fmi3GetContinuousStates" => TensorContinuousStates.getFunction shape
   | "fmi3SetContinuousStates" => TensorContinuousStates.setFunction shape
   | "fmi3GetContinuousStateDerivatives" => TensorContinuousStates.derivFunction shape m.hasOutput

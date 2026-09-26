@@ -25,10 +25,9 @@ elab "verify_constant_fmi3_build_files" : command => do
     base := `Rumoca.CheckedConstantFMI3Files
     compileProfile := fun input => do
       let .ok candidate := compileConstant input | throwError "constant source compilation failed"
-      return (candidate.name, FMI3.TensorMetadata.constantModelDescription
-        candidate.constantModel.shape candidate.constantModel.name, ConstantKernel.modelC)
-    preparedMdLhs := ← `(term| FMI3.TensorMetadata.constantModelDescription
-      Rumoca.constantRatesModel.shape Rumoca.constantRatesModel.name)
+      return (candidate.name, FMI3.TensorMetadata.constantModelDescription candidate.constantModel,
+        ConstantKernel.modelC)
+    preparedMdLhs := ← `(term| FMI3.TensorMetadata.constantModelDescription Rumoca.constantRatesModel)
     adapterCertify := ConstantFMI3AdapterCertificate.certify
     literalPiece := Rumoca.CConstant.preamble
     literalPieceTerm := ← `(term| (Rumoca.CConstant.preamble).toList)
@@ -72,13 +71,11 @@ elab "verify_constant_fmi3_build_files" : command => do
           · rw [hmodel, hname]
             exact ⟨($(ctx.adapterArtifact)).parsed.ast, ($(ctx.adapterArtifact)).solve.prepareFMI3, rfl, $(ctx.adapterContract)⟩
           · rw [hmodel, hname]
-            exact FMI3.TensorMetadata.constant_modelIdentifiers_decode
-              Rumoca.constantRatesModel.shape Rumoca.constantRatesModel.name
+            exact FMI3.TensorMetadata.constant_modelIdentifiers_decode Rumoca.constantRatesModel
           · rw [hmodel]
-            exact FMI3.TensorMetadata.constantToken_attribute
-              Rumoca.constantRatesModel.shape Rumoca.constantRatesModel.name
+            exact FMI3.TensorMetadata.constantToken_attribute Rumoca.constantRatesModel
           · show XML.Document (FMI3.TensorMetadata.constantModelDescription
-              Rumoca.constantRatesModel.shape Rumoca.constantRatesModel.name) $(ctx.mdLit)
+              Rumoca.constantRatesModel) $(ctx.mdLit)
             rw [$(ctx.preparedMd):ident, ← $(ctx.mdBytesId):ident]
             exact XML.document_correct $(ctx.mdTreeId) $(ctx.mdValid):ident)) }
 

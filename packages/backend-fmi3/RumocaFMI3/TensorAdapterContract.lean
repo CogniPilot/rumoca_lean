@@ -43,7 +43,7 @@ effects, finite-arithmetic premises and native correspondence remain explicit. -
 noncomputable section
 namespace Rumoca.FMI3.TensorAdapter
 open CTree CMemory CBody StaticFactory CLiteral.Interface
-open TensorFunctions (functions render outputShape)
+open TensorFunctions (functions render)
 
 variable {source : AST.Model} {shape : Rumoca.Tensor.Shape}
 variable [static : StaticLiterals]
@@ -104,8 +104,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
         CMemory.TensorView.Reads (TensorReset.restoreHeap heap p (TensorStorage.regions shape true m.hasOutput))
           (p.member name) v ∧
         ∀ (k : Fin shape.volume) (n : Nat),
-          CDecimal.Denotes ((TensorMetadata.startEntries shape)[k.val]'(by
-            rw [TensorMetadata.startEntries_length]; exact k.isLt)).toList n →
+          CDecimal.Denotes ((DeclaredMetadata.startEntries shape 0)[k.val]'(by
+            rw [DeclaredMetadata.startEntries_length]; exact k.isLt)).toList n →
           Binary64.value v[k] = n) ∧
     TensorNominals.Contract shape (TensorNominals.function shape).render ∧
     (∀ events, TensorCountQueries.Contract shape events (TensorCountQueries.function shape events).render) ∧
@@ -114,8 +114,8 @@ def Contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Model shape)
     (∀ (header : CFenv.Header), TensorDoStep.Contract shape m.hasOutput header
       (TensorDoStep.function shape m.hasOutput).render) ∧
     -- Float64 and continuous-state accessors over the ambient static literal table.
-    TensorFloat64.GetContract shape (outputShape m) (TensorFloat64.getFunction shape (outputShape m)).render ∧
-    TensorFloat64.SetContract shape (TensorFloat64.setFunction shape).render ∧
+    TensorFloat64.GetContract shape m.interface (TensorFloat64.getFunction (TensorFloat64.tensorReads shape) m.interface).render ∧
+    TensorFloat64.SetContract m.interface (TensorFloat64.setFunction m.interface).render ∧
     TensorContinuousStates.GetContract shape (TensorContinuousStates.getFunction shape).render ∧
     TensorContinuousStates.SetContract shape (TensorContinuousStates.setFunction shape).render ∧
     TensorContinuousStates.DerivContract shape m.hasOutput
@@ -223,8 +223,8 @@ theorem render_contract (model : Solve.FMI3Model source) (m : Solve.TensorFMI3Mo
     TensorSetTime.contract,
     (fun ph => TensorLifecycleModes.contract ph),
     (fun header => TensorDoStep.contract shape m.hasOutput header),
-    TensorFloat64.get_contract shape (outputShape m),
-    TensorFloat64.set_contract shape,
+    TensorFloat64.get_contract shape m.interface,
+    TensorFloat64.set_contract m.interface,
     TensorContinuousStates.get_contract shape,
     TensorContinuousStates.set_contract shape,
     TensorContinuousStates.deriv_contract shape m.hasOutput,

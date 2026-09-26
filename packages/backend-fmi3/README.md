@@ -26,7 +26,9 @@ The complete printed ABI adapter and archive capstone remain open; see
 | `CInterface` | FMI-specific constant and type bindings for shared C execution |
 | `CallTypes` | Complete signature coverage, value-reference conversion and fresh typed entry for the rendered helper/API list; separate from body behavior and native ABI |
 | `LiteralPreparation` | Literal collection and constructed definition table for the actual rendered function list; checked declaration block and all-observation pass preservation |
-| `Metadata` | Model-description XML projected from the prepared Solve model |
+| `DeclaredMetadata` | One model-description builder over the declared interface: value references, array variables with declared `Dimension`s, Output/ContinuousStateDerivative/InitialUnknown lists and the exported-interface theorem |
+| `Metadata`, `TensorMetadata` | Unit, tensor and constant-rate model descriptions as instances of `DeclaredMetadata` |
+| `Float64Table`, `ConstantRecord`, `TensorFloat64Access`, `ConstantFloat64Access` | The declared value-reference table as record regions (per-role block offsets, proved inside their blocks) and the one `fmi3GetFloat64`/`fmi3SetFloat64` pair every tensor and constant-rate adapter emits over it; calculated-variable arms first run the profile's kernel entry (`Float64Table.Reads`), with per-profile read contracts |
 | `Identifier`, `IdentifierProofs` | Valid C identifiers, injective for distinct parsed model names |
 | `BuildDescription`, `BuildDescriptionProofs` | Named single-translation-unit recipes, independent XML decoding and native argument requirements |
 | `SourceLinkageProofs` | Certified source prefix/private-kernel include fragment and decoded ME/CS model identifiers |

@@ -41,28 +41,24 @@ theorem Writable.unique (first : Writable root reference variableName)
 
 theorem described_state (model : Solve.FMI3Model source) :
     Writable (modelDescription model) 1 source.state := by
-  let vars := (modelDescription model).children[4]'(by simp [modelDescription])
-  let layout := (modelDescription model).children[5]'(by simp [modelDescription])
-  refine ⟨vars, layout, layout.children[0]'(by simp [layout, modelDescription]),
-    vars.children[2]'(by simp [vars, modelDescription]), vars.children[1]'(by simp [vars, modelDescription]),
-    2, rfl, rfl, ?_, rfl, rfl, ⟨rfl, rfl, rfl⟩, rfl, rfl,
-    rfl, rfl, rfl, rfl, rfl, rfl, Or.inl rfl⟩
-  simp [layout, modelDescription]
+  rw [modelDescription_eq]
+  exact ⟨_, _, _, _, _, 2, rfl, rfl, List.mem_filter.mpr ⟨List.mem_cons_self .., rfl⟩, rfl, rfl,
+    ⟨rfl, rfl, rfl⟩, rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl, Or.inl rfl⟩
 
 theorem described_reference (model : Solve.FMI3Model source) (reference : Nat) :
     (∃ name, Writable (modelDescription model) reference name) ↔ reference = 1 := by
-  have enough : 4 < (modelDescription model).children.length := by simp [modelDescription]
+  have enough : 4 < (modelDescription model).children.length := by simp [modelDescription_eq]
   constructor
   · rintro ⟨name, modelVariables, layout, entry, derivative, declaration, derivativeReference,
       hv, _, _, _, _, _, _, hd, _, _, _, _, causality, initial, _⟩
-    have vars : modelVariables = (modelDescription model).children[4]'(by simp [modelDescription]) :=
+    have vars : modelVariables = (modelDescription model).children[4]'(by simp [modelDescription_eq]) :=
       (List.singleton_inj.mp hv).symm
     subst modelVariables
     have selected : declaration ∈ (modelDescription model).children[4].children.filter
         (fun node => referenceOf node == some reference) := by rw [hd]; simp
     obtain ⟨member, found⟩ := List.mem_filter.mp selected
     have found := beq_iff_eq.mp found
-    simp only [modelDescription, List.getElem_cons_zero, List.getElem_cons_succ,
+    simp only [modelDescription_eq, List.getElem_cons_zero, List.getElem_cons_succ,
       List.mem_cons, List.not_mem_nil, or_false] at member
     rcases member with rfl | rfl | rfl
     · change some "independent" = some "local" at causality

@@ -12,3 +12,5 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ConstantKernel.modelC_programText
 #audit axioms Rumoca.ConstantArtifact.no_overflow
 #audit axioms Rumoca.ConstantKernel.rates_source
+#audit axioms Rumoca.ConstantArtifact.state_block
+#audit axioms Rumoca.ConstantArtifact.record_within

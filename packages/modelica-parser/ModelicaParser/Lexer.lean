@@ -178,4 +178,54 @@ theorem lex_correct (source : String) (ts : List Token) :
     lex source = .ok ts ↔ Lexes source.toList ts :=
   ⟨scan_sound _ _ _ _, fun h => scan_complete h _ _ (Nat.lt_succ_self _)⟩
 
+
+/-- A lexed identifier token is not a reserved word and consists of identifier
+characters only. -/
+theorem Lexes.ident_word (lexed : Lexes cs ts) :
+    ∀ name, .ident name ∈ ts → name ∉ reserved ∧ ∀ c ∈ name.toList, identRest c = true := by
+  induction lexed with
+  | nil => intro name member; cases member
+  | space _ _ ih => exact ih
+  | ident _ start _ ih =>
+    intro name member
+    rcases List.mem_cons.mp member with same | member
+    · unfold classifyWord at same
+      split at same
+      · cases same
+      · rename_i unreserved
+        cases same
+        refine ⟨fun r => unreserved (List.contains_iff_mem.mpr r), ?_⟩
+        intro ch mem
+        rw [String.toList_ofList] at mem
+        rcases List.mem_cons.mp mem with rfl | mem
+        · simp [identRest, start]
+        · exact List.all_eq_true.mp List.all_takeWhile ch mem
+    · exact ih name member
+  | number _ _ _ _ ih =>
+    intro name member
+    rcases List.mem_cons.mp member with same | member
+    · unfold numberToken at same
+      split at same
+      · cases same
+      · split at same <;> cases same
+    · exact ih name member
+  | punct _ _ _ _ _ ih =>
+    intro name member
+    rcases List.mem_cons.mp member with same | member
+    · cases same
+    · exact ih name member
+  | dotmul _ ih =>
+    intro name member
+    rcases List.mem_cons.mp member with same | member
+    · cases same
+    · exact ih name member
+
+/-- No lexed identifier is the reserved word `time` or contains a parenthesis. -/
+theorem Lexes.ident_not_time (lexed : Lexes cs ts) (name : String) (member : .ident name ∈ ts) :
+    name ≠ "time" ∧ '(' ∉ name.toList := by
+  obtain ⟨unreserved, chars⟩ := lexed.ident_word name member
+  refine ⟨fun same => unreserved (by rw [same]; decide), fun paren => ?_⟩
+  have := chars '(' paren
+  simp [identRest, identStart, asciiLetter] at this
+
 end Rumoca

@@ -229,6 +229,6 @@ theorem metadata_correct (model : Solve.FMI3Model source)
     (document : XML.Document (modelDescription model) metadata) : MetadataContract metadata "logStatus" := by
   refine ⟨modelDescription model, ⟨"LogCategories", [], [⟨"Category", [("name", "logStatus")], [], ""⟩], ""⟩,
     ⟨"Category", [("name", "logStatus")], [], ""⟩, document, rfl, ?_, rfl, by simp, rfl, rfl⟩
-  simp [modelDescription]
+  simp [modelDescription_eq]
 
 end Rumoca.FMI3.Logging

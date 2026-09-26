@@ -98,12 +98,13 @@ def _matrix_config(md):
                     calculated=[(3, [9.0, 16.0]), (4, [6.0, 0.0, 0.0, -8.0])])
     if name == "ConstantRates":
         # The constant-rate profile exposes no input and no output: the value
-        # references are 0 (time), 1 (the writable two-element state) and 2 (the
-        # read-only derivative). The state reference 1 is both the writable and
-        # the observed cell for the matrix, set to zero at initialization.
-        # The derivative is calculated, so it reads the rate vector in every mode.
-        return dict(input_vr=1, input_n=2, start=[0.0, 0.0], n_states=2, get_vr=1, get_n=2,
-                    dirty=[3.0, -4.0], starts=[(1, [0.0, 0.0]), (2, [2.5, -1.0])])
+        # references are 0 (time), 1 (the writable scalar state x), 2 (der(x)),
+        # 3 (the writable scalar state y) and 4 (der(y)). The state reference 1
+        # is both the writable and the observed cell for the matrix, set to zero
+        # at initialization. The derivatives are calculated, so they read the
+        # rates in every mode.
+        return dict(input_vr=1, input_n=1, start=[0.0], n_states=2, get_vr=1, get_n=1,
+                    dirty=[3.0], starts=[(1, [0.0]), (2, [2.5]), (3, [0.0]), (4, [-1.0])])
     raise SystemExit("behavior matrix: unsupported model " + name)
 
 
@@ -489,6 +490,45 @@ def behavior_matrix(fmu_path, label):
           "co-simulation GetFloat64 success")
     check(terminate(handle) == OK, "co-simulation Terminate success")
     free(handle)
+
+    if md.modelName == "ConstantRates":
+        # -- second scalar state: the writable y (reference 3) and the read-only
+        # der(y) (reference 4) address element 1 of the state and derivative blocks --
+        one = (D * 1)()
+        handle = cs(False)
+        check(enter_init(handle, False, 0.0, 0.0, False, 0.0) == OK, "constant y fixture EnterInitializationMode")
+        check(set_f64(handle, (VR * 1)(3), 1, (D * 1)(4.0), 1) == OK, "fmi3SetFloat64 writes y (reference 3)")
+        check(get_f64(handle, (VR * 1)(3), 1, one, 1) == OK and list(one) == [4.0],
+              "fmi3GetFloat64 reads back y (reference 3)")
+        check(get_f64(handle, (VR * 1)(1), 1, one, 1) == OK and list(one) == [0.0],
+              "writing y leaves x (reference 1) unchanged")
+        check(exit_init(handle) == OK, "constant y fixture ExitInitializationMode")
+        check(do_step(handle, 0.0, 1.0) == OK, "constant y fixture DoStep")
+        check(get_f64(handle, (VR * 1)(3), 1, one, 1) == OK and list(one) == [3.0],
+              "one unit step moves y by its rate -1 (reference 3)")
+        check(get_f64(handle, (VR * 1)(1), 1, one, 1) == OK and list(one) == [2.5],
+              "one unit step moves x by its rate 2.5 (reference 1)")
+        check(get_f64(handle, (VR * 1)(4), 1, one, 1) == OK and list(one) == [-1.0],
+              "fmi3GetFloat64 evaluates der(y) (reference 4) as its rate -1")
+        check(terminate(handle) == OK, "constant y fixture Terminate")
+        free(handle)
+        # Each rejection is an error that terminates its instance, so each runs on
+        # a fresh instance in initialization mode.
+        rejections = [
+            (lambda h: set_f64(h, (VR * 1)(3), 1, (D * 2)(4.0, 4.0), 2),
+             "fmi3SetFloat64 rejects a mismatched nValues on y"),
+            (lambda h: set_f64(h, (VR * 1)(4), 1, (D * 1)(0.0), 1),
+             "fmi3SetFloat64 rejects the read-only der(y) (reference 4)"),
+            (lambda h: get_f64(h, (VR * 1)(3), 1, scratch, 2),
+             "fmi3GetFloat64 rejects a mismatched nValues on y"),
+            (lambda h: get_f64(h, (VR * 1)(5), 1, one, 1),
+             "fmi3GetFloat64 rejects the first reference past der(y)"),
+        ]
+        for call, description in rejections:
+            handle = cs(False)
+            check(enter_init(handle, False, 0.0, 0.0, False, 0.0) == OK, description + " fixture")
+            check(call(handle) == ERROR, description)
+            free(handle)
 
     # -- model-exchange success path (covers the remaining model-facing functions) --
     handle = me(False)

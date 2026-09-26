@@ -1,4 +1,6 @@
 import Rumoca.TensorArtifact
+import Rumoca.InterfaceContract
+import RumocaFMI3.Float64Table
 import RumocaFMI3.TensorFunctions
 import RumocaFMI3.TensorCallPolicy
 import RumocaFMI3.TensorAdapterContract
@@ -159,6 +161,19 @@ theorem tensorNumericalLinkage_of_source (a : TensorArtifact input) (numerical a
 
 end
 
+/-- The array record blocks: the input, state and derivative blocks have the state
+extent, and the output block the dense matrix extent. -/
+theorem TensorArtifact.record_within (a : TensorArtifact input) :
+    ∀ x ∈ FMI3.Float64Table.recordRegions a.tensorModel.interface,
+      x.2.Within ArrayProfile.stateShape.volume ArrayProfile.stateShape.volume
+        (Tensor.matrixShape ArrayProfile.stateShape.volume ArrayProfile.stateShape.volume).volume := by
+  intro x member
+  refine (FMI3.Float64Table.recordRegions_within _ x member).mono ?_ ?_ ?_ <;>
+    cases hb : a.prepared.parsed.parsed.ast.body <;>
+    simp [TensorArtifact.tensorModel, ArrayProfile.Model.interface, ArrayProfile.Body.outputs, hb,
+      FMI3.Float64Table.roleVolume, ArrayProfile.Model.stateDimensions, ArrayProfile.Model.jacobianDimensions,
+      ArrayProfile.stateShape, Tensor.matrixShape, Tensor.Shape.volume]
+
 /-- The composed tensor source-to-build contract, mirroring
 `FMI3.SourceBuildContract` for the pointwise tensor profile. It bundles the
 certified tensor kernel C text and its pointwise IVP artifact contract, the
@@ -214,6 +229,16 @@ structure TensorSourceBuildContract (a : TensorArtifact input)
     = some (FMI3.TensorMetadata.token a.tensorModel)
   /-- The actual model description bytes are the prepared tensor document. -/
   metadata : XML.Document (FMI3.TensorMetadata.modelDescription a.tensorModel) metadata
+  /-- The model description exports exactly the source declarations read back from
+  the lexed source: the `input` tensor, the `output` state tensor and the `output`
+  Jacobian, with their declared causalities and extents. -/
+  interface : FMI3.InterfaceContract input.source a.prepared.parsed.parsed.tokens a.tensorModel.interface
+    (FMI3.TensorMetadata.modelDescription a.tensorModel)
+  /-- Every region the Float64 accessors address lies inside its instance-record
+  block: `u`, `x` and `dx` of the state extent, `J` of the dense matrix extent. -/
+  record : ∀ x ∈ FMI3.Float64Table.recordRegions a.tensorModel.interface,
+    x.2.Within ArrayProfile.stateShape.volume ArrayProfile.stateShape.volume
+      (Tensor.matrixShape ArrayProfile.stateShape.volume ArrayProfile.stateShape.volume).volume
 
 /-- Bundle independently checked obligations into the composed contract,
 mirroring `FMI3.sourceBuild_correct`. -/
@@ -244,6 +269,12 @@ theorem tensorSourceBuild_correct (a : TensorArtifact input)
       exact ⟨src, w, sigs, renderEq,
         FMI3.TensorCallPolicy.tensor_no_heap w a.tensorModel sigs,
         FMI3.TensorCallPolicy.tensor_acyclic w a.tensorModel sigs covered⟩),
-    adapter', identifiers, token, metadataDocument⟩
+    adapter', identifiers, token, metadataDocument,
+    FMI3.interface_correct _ _ _ _ _ a.prepared.parsed.parsed.lexical
+      (by rw [ParserActions.parseTokens_sound ArrayProfile.actions a.prepared.parsed.parsed.syntactic]
+          exact a.prepared.parsed.parsed.ast.interface_sound)
+      (a.prepared.parsed.parsed.ast.interface_names a.prepared.resolved)
+      (a.prepared.parsed.parsed.ast.interface_closed a.prepared.resolved),
+    a.record_within⟩
 
 end Rumoca

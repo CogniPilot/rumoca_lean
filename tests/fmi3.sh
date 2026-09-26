@@ -209,6 +209,14 @@ md = read_model_description(path)
 vr = {v.name: v.valueReference for v in md.modelVariables}
 udir = extract(path)
 TOKEN = "lean-rumoca-tensor-v1:TensorSquare"
+# The exported variables are the source declarations: input u[2], output x[2]
+# and output J[2,2], arrays with their declared dimensions; both outputs are
+# listed in <Output>.
+vars = {v.name: v for v in md.modelVariables}
+assert vars["u"].causality == "input" and [d.start for d in vars["u"].dimensions] == [2], "u[2] input"
+assert vars["x"].causality == "output" and [d.start for d in vars["x"].dimensions] == [2], "x[2] output"
+assert vars["J"].causality == "output" and [d.start for d in vars["J"].dimensions] == [2, 2], "J[2,2] output"
+assert [u.variable.name for u in md.outputs] == ["x", "J"], "Output lists x and J"
 def arr(vals): return (ctypes.c_double * len(vals))(*vals)
 def approx(a, b): return all(abs(x - y) < 1e-12 for x, y in zip(a, b))
 me = FMU3Model(guid=TOKEN, modelIdentifier=md.modelExchange.modelIdentifier,
@@ -262,7 +270,7 @@ prod_constant_fmu=build/ConstantRates.fmu
 "$runner" validate "$prod_constant_fmu"
 "$runner" info "$prod_constant_fmu"
 # Native all-behavior matrix on the production constant FMU over the constant
-# variable set (references 0..2, no input, no output).
+# variable set (references 0..4: x, der(x), y, der(y); no input, no output).
 python3 tests/fmi3.py --matrix "$prod_constant_fmu" ConstantRates.fmu
 # Constant eFMU archive export stays rejected with a clear diagnostic and must
 # neither publish nor replace an FMU.
@@ -322,6 +330,12 @@ md = read_model_description(path)
 vr = {v.name: v.valueReference for v in md.modelVariables}
 udir = extract(path)
 TOKEN = "lean-rumoca-constant-v1:ConstantRates"
+# The exported variables are the source declarations: the scalar states x and y
+# (no Dimension), each followed by its derivative, at references 1..4.
+assert [(v.name, v.valueReference, v.causality, len(v.dimensions)) for v in md.modelVariables] == [
+    ("time", 0, "independent", 0), ("x", 1, "local", 0), ("der(x)", 2, "local", 0),
+    ("y", 3, "local", 0), ("der(y)", 4, "local", 0)], "ConstantRates exports scalar x, der(x), y, der(y)"
+assert [u.variable.name for u in md.derivatives] == ["der(x)", "der(y)"], "state derivatives in state order"
 def arr(vals): return (ctypes.c_double * len(vals))(*vals)
 def approx(a, b): return all(abs(x - y) < 1e-12 for x, y in zip(a, b))
 me = FMU3Model(guid=TOKEN, modelIdentifier=md.modelExchange.modelIdentifier,
@@ -346,7 +360,8 @@ cs.exitInitializationMode()
 t = 0.0
 for _ in range(3):
     cs.doStep(t, 1.0); t += 1.0
-assert approx(list(cs.getFloat64([vr["x"]], 2)), [7.5, -3.0]), "CS x@t=3 != (7.5, -3)"
+assert approx(list(cs.getFloat64([vr["x"]], 1)), [7.5]), "CS x@t=3 != 7.5"
+assert approx(list(cs.getFloat64([vr["y"]], 1)), [-3.0]), "CS y@t=3 != -3"
 cs.terminate(); cs.freeInstance()
 print("PROD CONSTANT FMU BOUNDARY RUN OK")
 PY

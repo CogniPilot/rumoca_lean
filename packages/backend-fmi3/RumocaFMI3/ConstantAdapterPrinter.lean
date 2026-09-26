@@ -48,8 +48,8 @@ theorem constantFunction_printable (model : Solve.FMI3Model source)
       | exact StaticFactory.Printer.release_printable.2
       | exact (AdapterFunctionsPrinter.factory_printable model m.shape false false .me (TensorMetadata.constantToken m.name)).2
       | exact (AdapterFunctionsPrinter.factory_printable model m.shape false false .cs (TensorMetadata.constantToken m.name)).2
-      | exact ConstantFloat64.getBody_printable m.shape
-      | exact ConstantFloat64.setBody_printable m.shape
+      | exact TensorFloat64.getBody_printable ConstantFloat64.reads m.interface ConstantFloat64.reads_printable
+      | exact TensorFloat64.setBody_printable m.interface
       | exact TensorContinuousStates.getBody_printable m.shape
       | exact TensorContinuousStates.setBody_printable m.shape
       | exact ConstantDerivative.derivBody_printable m.shape

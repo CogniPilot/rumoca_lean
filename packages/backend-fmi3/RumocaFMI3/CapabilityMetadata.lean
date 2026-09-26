@@ -24,6 +24,7 @@ structure Profile (root : XML.Element) : Prop where
       node.name ≠ "Clock" ∧ node.attributes.lookup "causality" ≠ some "structuralParameter"
 
 theorem described (model : Solve.FMI3Model source) : Profile (modelDescription model) := by
+  rw [modelDescription_eq]
   refine ⟨⟨_, rfl, ?_⟩, ⟨_, rfl, ?_⟩, rfl, ⟨_, rfl, ?_⟩⟩
   · intro key member
     simp only [commonFlags, List.mem_cons, List.not_mem_nil, or_false] at member

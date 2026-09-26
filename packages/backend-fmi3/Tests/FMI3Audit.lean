@@ -38,6 +38,7 @@ import Tests.FMI3Audit.ConstantFloat64Access
 import Tests.FMI3Audit.ConstantFunctions
 import Tests.FMI3Audit.ConstantInstanceInit
 import Tests.FMI3Audit.ConstantInstanceRhs
+import Tests.FMI3Audit.ConstantRecord
 import Tests.FMI3Audit.CountContract
 import Tests.FMI3Audit.CountEntry
 import Tests.FMI3Audit.CountEnvironment
@@ -96,6 +97,7 @@ import Tests.FMI3Audit.DebugLoggingPrepared
 import Tests.FMI3Audit.DebugLoggingRejections
 import Tests.FMI3Audit.DebugLoggingRuntime
 import Tests.FMI3Audit.DebugLoggingValidation
+import Tests.FMI3Audit.DeclaredMetadata
 import Tests.FMI3Audit.DerivativeCalls
 import Tests.FMI3Audit.DerivativeContract
 import Tests.FMI3Audit.DerivativeEnvironment
@@ -155,6 +157,7 @@ import Tests.FMI3Audit.Float64SetFailures
 import Tests.FMI3Audit.Float64SetMetadata
 import Tests.FMI3Audit.Float64SetValidation
 import Tests.FMI3Audit.Float64SetWrite
+import Tests.FMI3Audit.Float64Table
 import Tests.FMI3Audit.Float64Validation
 import Tests.FMI3Audit.GuardedCalls
 import Tests.FMI3Audit.GuardedNoop

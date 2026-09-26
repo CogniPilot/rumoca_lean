@@ -199,35 +199,23 @@ structure KernelDecl where
   params : List String
 deriving DecidableEq, Repr
 
-/-- The value-reference dispatch table of a profile's Float64 accessors: the
-ordered getter references (every readable region) and the ordered writable setter
-references. These are the numeric references the dispatch chain in
-`Float64Dispatch.dispatchChain` branches on, in order. -/
-structure References where
-  get : List Nat
-  set : List Nat
-deriving DecidableEq, Repr
-
 /-- The per-profile render and call-policy data of an FMI 3 adapter profile, in
 one record. It carries the presence of the FMI-visible input and output regions
 of an instance record (`hasInput`/`hasOutput`), the prepared kernel entries the
-adapter calls (`kernels`), the Float64 getter/setter value-reference dispatch
-table (`references`), the extra callees the profile's call policy admits beyond
-the shared scalar classification (`extraCallees`), and whether the profile exports
-eFMI production artifacts (`hasEFMI`). This is the single source of truth every
-per-profile adapter definition is checked against. -/
+adapter calls (`kernels`), the extra callees the profile's call policy admits
+beyond the shared scalar classification (`extraCallees`), and whether the
+profile exports eFMI production artifacts (`hasEFMI`). This is the single source
+of truth every per-profile adapter definition is checked against. -/
 structure Profile where
   hasInput : Bool
   hasOutput : Bool
   kernels : List KernelDecl
-  references : References
   extraCallees : List String
   hasEFMI : Bool
 deriving DecidableEq, Repr
 
 /-- The tensor profile: input `u` present, dense output `J` present. It calls the
-prepared right-hand-side and square-Jacobian-diagonal kernels, dispatches Float64
-gets over references `0..4` and Float64 sets over references `1..2`, admits the
+prepared right-hand-side and square-Jacobian-diagonal kernels, admits the
 square-Jacobian-diagonal callee, and exports eFMI production artifacts. -/
 def tensorProfile : Profile :=
   { hasInput := true
@@ -235,14 +223,12 @@ def tensorProfile : Profile :=
     kernels :=
       [{ name := "rumoca_rhs", params := ["const double *", "const double *", "double *", "size_t"] },
        { name := "rumoca_square_jacobian_diag", params := ["const double *", "double *", "size_t", "size_t"] }]
-    references := { get := [0, 1, 2, 3, 4], set := [1, 2] }
     extraCallees := ["rumoca_square_jacobian_diag"]
     hasEFMI := true }
 
 /-- The constant-rate profile: no input tensor and no output tensor. It calls the
-three prepared constant kernels, dispatches Float64 gets over references `0..2`
-(time, state, derivative) and Float64 sets over the single writable state
-reference `1`, admits the three constant callees, and exports no eFMI artifacts. -/
+three prepared constant kernels, admits the three constant callees, and exports
+no eFMI artifacts. -/
 def constantProfile : Profile :=
   { hasInput := false
     hasOutput := false
@@ -250,7 +236,6 @@ def constantProfile : Profile :=
       [{ name := "rumoca_constant_rhs", params := ["double *"] },
        { name := "rumoca_constant_step", params := ["double *"] },
        { name := "rumoca_constant_sample", params := ["double *", "size_t"] }]
-    references := { get := [0, 1, 2], set := [1] }
     extraCallees := ["rumoca_constant_rhs", "rumoca_constant_step", "rumoca_constant_sample"]
     hasEFMI := false }
 

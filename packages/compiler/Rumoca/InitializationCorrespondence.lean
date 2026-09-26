@@ -23,13 +23,16 @@ checker proves for the emitted bytes.
 * `tensorSquare_initialization`: `each start=0, each fixed=true` makes the zero
   state the source initialization. Factory creation and reset store the zero
   fill, and the enter/exit initialization-mode transitions preserve it.
-* `constantRates_initialization`: every declared state initializes at `+0`.
-  Factory creation and reset store the zero fill, and the initialization-mode
-  transitions preserve it.
+* `constantRates_initialization`: the unmodified scalar `Real` states leave their
+  initial values free. The compiler completes each state with the fallback
+  start `0` selected as fixed and records both notices per state. Factory
+  creation and reset store the completed zero fill, and the
+  initialization-mode transitions preserve it.
 
 The tensor and constant theorems cover the default initialization. A finite
 host write to the state in the Instantiated or Initialization mode is not
-related to their source relations, which fix the start value. -/
+related to the tensor source relation, which fixes the start value, nor to the
+constant completion. -/
 noncomputable section
 namespace Rumoca.InitializationCorrespondence
 open CMemory CMemory.TensorView Rumoca.FMI3
@@ -174,16 +177,16 @@ theorem tensorSquare_initialization (a : TensorArtifact input)
 
 /-- The state region at `base` reads a finite vector whose declaration-order
 entries are the prepared initial values, and every named reading of it
-satisfies the source initialization relation. -/
+satisfies the completed initialization. -/
 def ConstantStateInitial (a : ConstantArtifact input) (heap : Heap) (base : Address) : Prop :=
   ∃ v : Values a.constantModel.shape, Reads heap base v ∧
     ∀ values : String → Binary64.Value,
       (∀ i : Fin a.prepared.parsed.parsed.ast.states.length,
         values (a.prepared.parsed.parsed.ast.states.get i) =
           v[i.val]'(by rw [a.constantModel.shape_volume]; exact i.isLt)) →
-      a.prepared.parsed.parsed.ast.Initial values
+      a.prepared.parsed.parsed.ast.Completed values
 
-/-- The binary64 zero fill is the constant-rate source initialization. -/
+/-- The binary64 zero fill is the completed constant-rate initialization. -/
 theorem constant_zero_initial (a : ConstantArtifact input) (heap : Heap) (base : Address)
     (reads : Reads heap base (TensorReset.zeroValues a.constantModel.shape)) :
     ConstantStateInitial a heap base := by
@@ -191,15 +194,26 @@ theorem constant_zero_initial (a : ConstantArtifact input) (heap : Heap) (base :
   apply (a.prepared.initialization_correct values).mpr
   intro i
   rw [named i, a.prepared.ivp_lowered]
-  simp [TensorReset.zeroValues, ConstantProfile.ConstantIVP.initial]
+  simp [TensorReset.zeroValues, ConstantProfile.ConstantIVP.initial, ConstantProfile.Model.lower,
+    ConstantProfile.Model.plan_default, ConstantProfile.startBinary_zero]
 
 /-- The ConstantRates family. For every constant artifact whose emitted bytes
-satisfy the constant source-build contract, the actual adapter satisfies the
-constant adapter contract, whose factory, reset and initialization-mode bodies
-are the shared tensor bodies at the constant state shape. Each of their final
-heaps holds a state satisfying the source initialization relation. -/
+satisfy the constant source-build contract:
+
+1. MLS §8.6: each declared state's completed plan starts from the fallback `0`
+   and records both notices, and the source relation admits every initial value;
+2. the actual adapter satisfies the constant adapter contract, whose factory,
+   reset and initialization-mode bodies are the shared tensor bodies at the
+   constant state block;
+3. each of their final heaps holds a state satisfying the completed
+   initialization. -/
 theorem constantRates_initialization (a : ConstantArtifact input)
     (build : ConstantSourceBuildContract a modelC buildDescription adapter metadata) :
+    (∀ state ∈ a.prepared.parsed.parsed.ast.states,
+      (a.prepared.parsed.parsed.ast.plan state).initial = 0 ∧
+      Initialization.Notice.fallbackUsed ∈ (a.prepared.parsed.parsed.ast.plan state).notices ∧
+      Initialization.Notice.unfixedStartSelected ∈ (a.prepared.parsed.parsed.ast.plan state).notices) ∧
+    (∀ values, a.prepared.parsed.parsed.ast.Initial values) ∧
     (∃ (src : AST.Model) (w : Solve.FMI3Model src), src.name = a.name ∧
       ∀ [StaticLiterals], ConstantAdapter.Contract w a.constantModel adapter) ∧
     (∀ (heap : Heap) (p : Address) (slot : Nat) (kind : Kind) (environment logger : Option Address)
@@ -215,7 +229,8 @@ theorem constantRates_initialization (a : ConstantArtifact input)
     (∀ (heap : Heap) (p : Address) (mode : Mode),
       ConstantStateInitial a heap (p.member TensorInstance.stateName) →
       ConstantStateInitial a (LifecycleBodies.writeMode heap p mode) (p.member TensorInstance.stateName)) :=
-  ⟨build.adapter,
+  ⟨fun state _ => by simp [ConstantProfile.Model.plan_default],
+    a.prepared.parsed.parsed.ast.initial_free, build.adapter,
     fun heap p slot kind environment logger logging => constant_zero_initial a _ _
       (ConstantInstanceInit.reads_state heap p slot kind environment logger logging _),
     fun heap p => constant_zero_initial a _ _

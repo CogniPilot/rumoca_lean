@@ -1,4 +1,5 @@
 import RumocaCore.Solve.IVP
+import RumocaCore.Solve.Interface
 
 /-! Declaration data co-owned with an executable IVP. This is a minimal
 deployment root, not an FMI-specific value-reference table. A backend takes
@@ -10,11 +11,6 @@ open Rumoca.Tensor
 inductive VariableId where
   | state
   | input
-  deriving Repr, BEq, DecidableEq
-
-inductive Causality where
-  | input
-  | output
   deriving Repr, BEq, DecidableEq
 
 /-- The two declarations of the admitted driven profile. Their semantic IDs

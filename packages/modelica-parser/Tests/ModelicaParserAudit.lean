@@ -28,6 +28,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Driven.in_grammar
 #audit axioms Rumoca.AST.decode_sound
 #audit axioms Rumoca.lex_correct
+#audit axioms Rumoca.Lexes.ident_word
+#audit axioms Rumoca.Lexes.ident_not_time
 #audit axioms Rumoca.parseTokens_sound
 #audit axioms Rumoca.parseTokens_complete
 #audit axioms Rumoca.parse_complete

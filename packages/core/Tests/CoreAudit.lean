@@ -2,6 +2,8 @@
 -- Each imported module audits exactly the roots of one source module,
 -- so Lake elaborates them as independent parallel jobs while this
 -- aggregator keeps its check-library root name unchanged.
+import Tests.CoreAudit.RumocaCore_Array_Interface
+import Tests.CoreAudit.RumocaCore_Constant_Interface
 import Tests.CoreAudit.RumocaCore_Constant_Permutation
 import Tests.CoreAudit.RumocaCore_Constant_Semantics
 import Tests.CoreAudit.RumocaCore_Driven_IR
@@ -115,10 +117,10 @@ import Tests.CoreAudit.RumocaCore_Real_Encoding
 import Tests.CoreAudit.RumocaCore_Real_Floor
 import Tests.CoreAudit.RumocaCore_Real_IntegerConversion
 import Tests.CoreAudit.RumocaCore_Solve_AlgorithmOriginProofs
-import Tests.CoreAudit.RumocaCore_Solve_ConstantFMI3
 import Tests.CoreAudit.RumocaCore_Solve_FMI3
 import Tests.CoreAudit.RumocaCore_Solve_FMI3OriginLowering
 import Tests.CoreAudit.RumocaCore_Solve_FMI3OriginProofs
+import Tests.CoreAudit.RumocaCore_Solve_Interface
 import Tests.CoreAudit.RumocaCore_Solve_IVP
 import Tests.CoreAudit.RumocaCore_Solve_ModelData
 import Tests.CoreAudit.RumocaCore_Solve_ModelExchange

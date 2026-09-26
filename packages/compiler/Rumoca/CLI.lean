@@ -41,10 +41,14 @@ private def runTensorCompiler {input : Source.InputRef} (name : String)
 
 /-- Publish an admitted constant-rate profile source. The constant profile is
 admitted for FMI 3 FMU output, whose publication gate is the fixed `constant-fmi3`
-source-build certificate that `ConstantFMU.build` runs. Constant eFMI and C
-emission are not built and are rejected with a diagnostic. -/
+source-build certificate that `ConstantFMU.build` runs. The MLS 3.7 §8.6 notices
+of the completed initialization are printed as warnings at each state's
+declaration. Constant eFMI and C emission are not built and are rejected with a
+diagnostic. -/
 private def runConstantCompiler {input : Source.InputRef} (name : String)
     (constant : ConstantArtifact input) (output : Option String) : IO UInt32 := do
+  for notice in constant.initializationDiagnostics do
+    IO.eprintln (Diagnostics.renderWarning name notice)
   match output with
   | some path =>
     if path.endsWith ".fmu" then

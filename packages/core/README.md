@@ -71,6 +71,7 @@ axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/Finit
 | `RumocaCore.Solve.Tensor.Diagonal`, `Solve.Pointwise`, `Solve.PointwiseProofs` | Prepared IVP and dense diagonal observation using mathlib matrices, with execution contracts |
 | `RumocaCore.Solve.Tensor.Finite` | Independent ordered finite execution, all-intermediate domain characterization and unique evaluator result |
 | `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
+| `RumocaCore.Solve.Interface`, `Array.Interface`, `Constant.Interface` | Resolved declared interface of each profile (name, causality, role, declared extents, start, reads) and its soundness against the parsed source tokens |
 | `RumocaCore.Solve.Tensor.Origins`, `Solve.IVPOrigins`, `Solve.FMI3OriginProofs` | Required unit FMI operation origins and a composed value/source/actual-annotation preparation contract |
 | `RumocaCore.GALEC.Method`, `GALEC.UnitProfile` | Lifecycle methods, the unit state with its clock and Solve-block method execution |
 | `RumocaCore.GALEC.UnitOrigins`, `GALEC.TraceProofs`, `GALEC.OriginLowering` | Required operation/operand/method origins of the unit block, independent rule/parent requirements |

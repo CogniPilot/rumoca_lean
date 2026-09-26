@@ -1,6 +1,7 @@
 import RumocaCore.IR
 import RumocaCore.Solve.IVP
 import RumocaCore.Solve.FMI3OriginLowering
+import RumocaCore.Solve.Interface
 
 /-! Prepared deployment data for the existing unit profile. Names and the
 executable kernel have one owner. Choosing the numerical policy happens here,
@@ -19,8 +20,10 @@ def Model.prepareFMI3 (m : Model source) : FMI3Model source :=
   ⟨m, FMI3Origins.Lowering.lower m⟩
 def FMI3Model.name (_ : FMI3Model source) : String := source.name
 def FMI3Model.stateName (_ : FMI3Model source) : String := source.state
-def FMI3Model.timeName (m : FMI3Model source) : String :=
-  if m.stateName = "time" then "_rumoca_time" else "time"
+/-- The declared interface of the unit source: its one scalar `Real` state,
+without a causality prefix, starting from the completed initialization. -/
+def FMI3Model.interface (m : FMI3Model source) : Interface :=
+  ⟨[⟨source.state, .local, .state, Tensor.scalar, some m.solve.initial.initial, []⟩]⟩
 def FMI3Model.derivativeName (m : FMI3Model source) : String := "der(" ++ m.stateName ++ ")"
 def FMI3Model.policy (_ : FMI3Model source) : IntegrationPolicy := .unitEuler
 
@@ -31,13 +34,10 @@ def FMI3Model.problem (_ : FMI3Model source) : IVP := unitIVP
 def FMI3Model.originTrace (m : FMI3Model source) : IVP.Origins m.origins.table m.problem :=
   m.origins.references.trace
 
-theorem FMI3Model.time_distinct (m : FMI3Model source) : m.timeName ≠ m.stateName := by
-  unfold timeName
-  split
-  · rename_i h
-    rw [h]
-    decide
-  · exact Ne.symm ‹m.stateName ≠ "time"›
+/-- The unit interface is the declaration read back from the parsed source
+tokens: one prefix-free scalar `Real` with the source state name. -/
+theorem FMI3Model.interface_sound (m : FMI3Model source) :
+    declaredIn source.tokens = m.interface.declarations.map Declaration.signature := rfl
 
 theorem FMI3Model.prepared_solve (m : Model source) : m.prepareFMI3.solve = m := rfl
 
