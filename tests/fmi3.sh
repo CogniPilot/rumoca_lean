@@ -177,7 +177,7 @@ from pathlib import Path
 from zipfile import ZipFile
 import sys
 for mutation, signature, before, after in [
-    ('reset', 'fmi3Status fmi3Reset(', 'dst[k] = 0;', 'dst[k] = 2;'),
+    ('reset', 'fmi3Status fmi3Reset(', 'dst[k] = 0e0;', 'dst[k] = 2e0;'),
     ('preflight', 'fmi3Status fmi3GetContinuousStateDerivatives(', 'valid = 0;', 'valid = 1;'),
 ]:
     root = Path(sys.argv[2]) / mutation
@@ -310,7 +310,7 @@ text = path.read_text()
 start = text.index('fmi3Status fmi3Reset(')
 stop = text.index('\n}\n\n', start) + 4
 body = text[start:stop]
-changed = body.replace('dst[k] = 0;', 'dst[k] = 2;', 1)
+changed = body.replace('dst[k] = 0e0;', 'dst[k] = 2e0;', 1)
 assert changed != body
 path.write_text(text[:start] + changed + text[stop:])
 PY
