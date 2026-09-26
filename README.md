@@ -5,13 +5,18 @@ tooling, compiler, source and target semantics, and every proof are Lean.
 Rumoca's AST → Flat → DAE → Solve separation and CompCert's pass-by-pass proof
 approach are design references; neither is a dependency.
 
-The numerical compiler core has checked semantic-preservation proofs. The
-complete FMI/eFMI compiler does **not yet have full verification coverage**:
-adapter execution and complete artifact/compliance obligations remain open.
-No further grammar expansion is allowed until the current admitted subset has
-that complete end-to-end guarantee; passing individual proofs or CI is not
-sufficient. See the [verification contract](docs/verification.md) and
-[remaining obligations].
+Every admitted source case is certified end to end: source text, prepared
+IR, emitted C, FMI 3 adapter bodies and the published FMU and eFMU archive
+bytes are bound in kernel-checked artifact contracts, and the scalar FMU
+carries creation-to-release lifetime theorems for both FMI interfaces. The
+compiler does **not yet meet its release criteria**: the tensor and
+constant-rate FMU lifetimes, the ME/CS trace refinement, the single driver
+theorem, native compilation/ABI correspondence and MISRA C:2025 sign-off
+remain open and are tracked as work packages K02-K05 in
+[trust packages](dev/trust-packages.md). Those packages gate every spiral
+stage; the one recorded exception admits recognition-only grammar slices that
+keep every artifact byte-identical. See the
+[verification contract](docs/verification.md) and [remaining obligations].
 
 This repository is an experimental home for Rumoca's formally verified core.
 The plan is to merge it back into [Rumoca](https://github.com/CogniPilot/rumoca)
@@ -69,8 +74,8 @@ lowering. See the [IR alignment review](dev/ir-review.md),
 [tensor AD notes](dev/tensor-ad.md) and
 [FMI 3 proof obligations](dev/fmi3/contracts.md). Either admitted profile can be
 packaged as one FMI 3 FMU containing both Model Exchange and Co-Simulation. The
-numerical kernels are formally checked; full FMI adapter execution verification
-remains open.
+numerical kernels and adapter bodies are formally checked; the tensor and
+constant-rate lifetime histories remain open (K03).
 
 The production compiler also admits the constant-rate profile shown in
 `examples/ConstantRates.mo`:
@@ -217,21 +222,21 @@ schema validation, independent ME/CS importer runs and raw ABI regressions.
 
 | Layer | Lean guarantee |
 | --- | --- |
-| Modelica lexer/parser | Soundness and completeness for the authored tiny source grammar |
+| Modelica lexer/parser | MLS 3.7 Appendix A production shapes and chapter 2 lexical rules on the reusable LALR engine with generated certificates; admission of the source cases is decided in core, and every other accepted sentence has a certified rejection |
 | EBNF generation | Exact embedded reader result and recursive expression-to-CFG language preservation |
 | Generic LALR | Grammar membership iff parser success, with checked bounds and rejection for every input |
 | AST → Flat → DAE → Solve | Name resolution and equation/derivative preservation |
 | Solve → C AST | RHS preservation and exact rounded-step preservation |
 | Emitted C | Exact output bytes checked; structural printer proofs establish denotation in the independent admitted C grammar |
-| eFMI archive | Actual source, both grammars, GALEC, Production C behavior, correlated XML and every stored-ZIP member bound in one kernel-checked contract |
+| eFMI archive | Actual source, both grammars, GALEC (general block grammar with bounded loops and eFMI error signaling), Production C behavior with total DoStep outcomes, correlated XML and every stored-ZIP member bound in one kernel-checked contract |
 | Binary64 | Bijection with finite 64-bit encodings; signed zeros; nearest/even rounding; no overflow for any finite `x + 1` |
 | C statements | Explicit scope, assignments, modular uint64 decrement, sequencing, loops and returns; all calls terminate with the exact Solve result |
 | Whole compiler | Every C behavior is an allowed source numerical-profile behavior, and conversely; stuck execution and divergence excluded |
 | Real refinement | Unique real ODE solution; exact representable sample horizons; nearest rounding and half-spacing bounds; global error after `n` steps ≤ `n` |
-| FMI lifecycle guards | The generated guard AST implements the authored reference rules for the selected commands; this does not cover the whole adapter |
-| ME state-access bodies | Actual generated get/set trees preserve exact binary64 state and frame other memory under explicit storage preconditions; printed adapter binding remains open |
-| FMI helper calls and ME derivative body | Explicit call frames execute the numerical C statements; internal advancement agrees with shared CS model state and the derivative getter writes the shared ME derivative; public CS time/lifecycle and ABI binding remain open |
-| ME time update | Binary64 comparison results refine real order; the generated guard accepts the represented history window and successful time updates preserve model state; history maintenance and rejected-call paths remain open |
+| FMI adapters | Every public entry point of the three emitted adapters is bound in the FMU build certificate; the scalar adapter has creation-to-release lifetime theorems for Model Exchange and Co-Simulation (`MEProtocol.Lifetime`, `CSProtocol.Lifetime`, exported as `CheckedFMI3Files.lifetimes`); the tensor and constant-rate lifetimes are open (K03) |
+| FMI interface | Model descriptions, value references, structure entries and Float64 dispatch are derived from the resolved source declarations by one mechanism; arrays keep their declared dimensions |
+| ME time update and calculated reads | Binary64 comparison results refine real order; successful time updates preserve model state; calculated variables are evaluated when read; instance slots are fully restored on instantiation and reset |
+| MISRA C:2025 | Row-by-row ledger with kernel-checked allocation-free and feature-absence predicates over the actual bytes, deviation records and the open rows in [the MISRA ledger](dev/misra-c-2025.md); no conformance claim yet |
 
 The global bound includes stagnation: at `x = 2^53`, adding `1` rounds back to
 `x`. It is a conservative bound, not a precision claim. The rounding definition
