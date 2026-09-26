@@ -1,5 +1,20 @@
 # MLS, FMI and eFMI compliance review — 2026-09-10
 
+Declared FMU interface and instance restore (2026-09-25; full gate passed
+`5db7fb5`, evidence `build/misra-interface-gate/full-v1/`, see docs/verification.md): SR10, SR11 and
+SR12 are CLOSED (metadata, value references, structure entries and Float64
+dispatch derive from the resolved declaration list; arrays keep declared
+dimensions, scalars stay scalars; the constant path emits the §8.6 notices).
+K02.3a (slot-reuse/Reset restore) is closed. SR08-B remains open with only the
+ConstantRates setter-then-exit composition outstanding. New finding SR13:
+tensor and constant `fmi3EnterInitializationMode` ignore startTime and
+stopTime (fmi.txt 1813 requires an error past a defined stopTime). The
+empty-selection Clock/Interval/Shift/OutputDerivatives finding (line ~2730)
+is reconfirmed on the new bytes. Passages below that cite `TensorMetadata`
+literals, `ConstantFloat64Access`, `Profile.references`, `time_distinct`,
+`finiteSourceDoStep`, `lower_correct` or `advance_no_overflow` describe
+superseded mechanisms.
+
 Isfinite comparison repair (2026-09-24; full gate passed `6e8c5b8`): bounded
 Rules 10.1/10.4/14.4 work on the emitted FMI adapters, not grammar expansion.
 Owner-v2 4,358 jobs/5,524 reports/64 roots; full gate 2,664 inputs/9,164

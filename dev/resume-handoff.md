@@ -1,5 +1,21 @@
 # Resume handoff — 2026-09-25 UTC
 
+## Current: all 2026-09-25 lanes merged and gated; next is the Constant chunk
+
+HEAD after this record: gate `build/misra-interface-gate/full-v1` at `5db7fb5` (MISRA lane: A0
+instance restore, calculated reads, A1 typed constants, B1/B4 predicates,
+D1/D2; interface lane: declared FMU interface, SR10-SR12 closed). Owner
+4,543 jobs/7,798 reports/1,942 roots; full gate
+2,720 inputs/9,768 reports. No worktrees remain. Open items
+carried: SR08-B (setter-then-exit), SR13 (startTime/stopTime), empty-selection
+Clock/Interval/Shift/OutputDerivatives, floating-constant spelling
+unification, Boolean stores of integer constants (Rule 10.3), tensor/constant
+lifetimes (K03), K03.4 multi-instance, and the K02-K05 items in
+dev/trust-packages.md. Next: the Constant-block chunk per
+~/.claude_documents/home/jgoppert/git/rumoca_lean/constant-block-chunk-plan.md
+(G0 general-grammar cutover first), with at most two subagents at a time, one
+review pass per lane, one gate per two or three byte-identical slices.
+
 ## Current: N01 closed; four lanes merged; MISRA and interface lanes pending
 
 HEAD after this record: the combined gate `build/n01-gate/` (N01 error

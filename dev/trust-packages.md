@@ -6,6 +6,8 @@ say "K02-K05 remain open" ([trust-ledger.md](trust-ledger.md),
 [standards-review.md](standards-review.md), [misra-c-2025.md](misra-c-2025.md),
 [verification.md](../docs/verification.md)) refer here.
 
+**Status 2026-09-25 (gate `build/misra-interface-gate/full-v1`).** K02.3a (slot-reuse/Reset restore) closed; K02.6c (allocation-free predicate, Rule 21.3) closed for generated code; SR10-SR12 closed; K03.3/K03.4 scalar partial per the N01 gate record.
+
 **Gate rule.** No Modelica or GALEC grammar spiral stage and no release may be
 accepted while any K02-K05 exit item below is open. The N01 repair (GALEC error
 signaling, [standards-review.md](standards-review.md)) is the one admitted
