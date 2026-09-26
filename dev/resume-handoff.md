@@ -1,4 +1,26 @@
-# Resume handoff — 2026-09-25 UTC
+# Resume handoff — 2026-09-26 UTC (paused mid-slice)
+
+## Current: Constant chunk G0+L1 committed, fix pass in progress, gate NOT run
+
+Main carries G0 (`81d56e4`, general MLS Appendix A Modelica grammar, 451/176
+LALR states) and L1 (`9bf4edc`, MLS lexical rules) plus README updates
+(`8ecc41b`, `83ef504`). The single review pass
+(~/.claude_documents/home/jgoppert/git/rumoca_lean/g0-l1-review.md) blocked on
+B1 (completeness theorems `compile_complete`/`compileTensor_complete`/
+`compileConstant_complete` must be restated over `Lexes` plus a decidable
+admissibility condition via `select_complete`) and B2 (rate spellings `2.`,
+`.5`, `-.5`, `2.e3` must be certified core rejections; `- 1` stays accepted).
+The implementer was asked to commit its fix pass at pause; if the working
+tree still has uncommitted changes on resume, inspect `git status` and either
+finish the fix (checks: check-modelica-parser, check-core, check-compiler,
+check-lsp, `lake build audit`, FMU/eFMU regeneration) or commit it as is with
+an honest message before anything else. The gate scripts are prepared in
+`build/constant-g0-gate/` (baseline, owner, full-gate, post-audit; predictions
+= all artifacts identical to `build/misra-interface-gate/full-v1`). The stage
+record and ledger text are drafted in the session scratchpad script
+`g0_ledger.py` (session-local; rewrite from the review if the scratchpad is
+gone). Next after the gate: G1/G2 per the chunk plan. Constraints: two agents
+at most, one review pass per lane, batch minor fixes into the next lane.
 
 ## Current: all 2026-09-25 lanes merged and gated; next is the Constant chunk
 
