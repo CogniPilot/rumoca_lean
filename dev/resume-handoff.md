@@ -1,6 +1,8 @@
-# Resume handoff — 2026-09-26 UTC (paused mid-slice)
+# Resume handoff — 2026-09-26 UTC
 
-## Current: Constant chunk G0+L1 committed, fix pass in progress, gate NOT run
+## Current: Constant chunk G0+L1 gated (`98f18cc`, gate `build/constant-g0-gate/full-v1`, owner 4,551 jobs/2,239 roots, full 2,728 inputs/10,187 reports, all artifacts byte-identical); G1+G2 in progress in `build/wt-g1`; next G3/G4; two agents at most
+
+## Superseded pause note (2026-09-26 morning)
 
 Main carries G0 (`81d56e4`, general MLS Appendix A Modelica grammar, 451/176
 LALR states) and L1 (`9bf4edc`, MLS lexical rules) plus README updates
