@@ -29,6 +29,10 @@ lake exe lalrgen --namespace Example.Generated example.ebnf Example.lean
 structural safety, FIRST, LR-item, EBNF preservation and execution-bound
 certificates. It accepts an explicit namespace and imports neither Modelica
 nor GALEC. There is no DFA generator or runtime fallback.
+Each certificate is normalized in bounded pieces: LR items in chunks of ten
+states, and the FIRST closure of a grammar with more than 128 productions as
+its domain header and ranges of 64 productions, joined by
+`FirstProofs.validate_of_ranges`.
 
 `LALR.Completeness.accepts_iff_parse` proves that a grammar accepts a word exactly
 when the checked tables' interpreter accepts it with some finite fuel. This is

@@ -11,6 +11,11 @@ def name : Name → List Token
   | [] => []
   | first :: rest => first :: rest.flatMap fun part => [.literal ".", part]
 
+/-- `[ STRING { "+" STRING } ]`. -/
+def descriptionString : List Token → List Token
+  | [] => []
+  | first :: rest => first :: rest.flatMap fun string => [.literal "+", string]
+
 mutual
   def expr : Expr → List Token
     | .reference ref => reference ref
@@ -87,21 +92,42 @@ mutual
     | ⟨each, target⟩ => (if each then [.literal "each"] else []) ++ elementModification target
 
   def elementModification : ElementModification → List Token
-    | ⟨target, modification⟩ => name target ++ optionalModification modification
+    | ⟨target, modification, description⟩ =>
+        name target ++ optionalModification modification ++ descriptionString description
 
   def optionalModification : Option Modification → List Token
     | none => []
     | some value => modification value
 end
 
+/-- `annotation class-modification`. -/
+def annotationClause (arguments : List Argument) : List Token :=
+  .literal "annotation" :: .literal "(" :: argumentList arguments ++ [.literal ")"]
+
+def annotation : Option (List Argument) → List Token
+  | none => []
+  | some arguments => annotationClause arguments
+
+def description (d : Description) : List Token :=
+  descriptionString d.strings ++ annotation d.annotation
+
+/-- `if expression`. -/
+def condition : Option Expr → List Token
+  | none => []
+  | some value => .literal "if" :: expr value
+
 def typePrefix (value : Option Token) : List Token := value.elim [] fun token => [token]
 
 def declaration (d : Declaration) : List Token :=
   d.name :: subscripts d.subscripts ++ optionalModification d.modification
 
-def declarations : List Declaration → List Token
+def componentDeclaration (c : ComponentDeclaration) : List Token :=
+  declaration c.declaration ++ condition c.condition ++ description c.description
+
+def declarations : List ComponentDeclaration → List Token
   | [] => []
-  | first :: rest => declaration first ++ rest.flatMap fun next => .literal "," :: declaration next
+  | first :: rest =>
+    componentDeclaration first ++ rest.flatMap fun next => .literal "," :: componentDeclaration next
 
 def componentClause (c : ComponentClause) : List Token :=
   typePrefix c.typePrefix ++ name c.typeName ++ subscripts c.subscripts ++ declarations c.declarations
@@ -112,14 +138,23 @@ def element : Element → List Token
 def equation : Equation → List Token
   | .simple left right => expr left ++ .literal "=" :: expr right
 
+def someEquation (q : SomeEquation) : List Token := equation q.equation ++ description q.description
+
 def equationSection (s : EquationSection) : List Token :=
-  .literal "equation" :: s.equations.flatMap fun e => equation e ++ [.literal ";"]
+  .literal "equation" :: s.equations.flatMap fun q => someEquation q ++ [.literal ";"]
+
+/-- The class annotation clause with its terminating `;`. -/
+def classAnnotation : Option (List Argument) → List Token
+  | none => []
+  | some arguments => annotationClause arguments ++ [.literal ";"]
 
 def composition (c : Composition) : List Token :=
-  c.elements.flatMap (fun e => element e ++ [.literal ";"]) ++ c.sections.flatMap equationSection
+  c.elements.flatMap (fun e => element e ++ [.literal ";"]) ++ c.sections.flatMap equationSection ++
+    classAnnotation c.annotation
 
 def classSpecifier : ClassSpecifier → List Token
-  | .long name body endName => name :: composition body ++ [.literal "end", endName]
+  | .long name strings body endName =>
+    name :: descriptionString strings ++ composition body ++ [.literal "end", endName]
 
 def classDefinition (c : ClassDefinition) : List Token :=
   c.prefixes :: classSpecifier c.specifier

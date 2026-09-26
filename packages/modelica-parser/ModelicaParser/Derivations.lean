@@ -81,13 +81,23 @@ theorem primary_derivative :
   exact (Generated.«rule_primary» _).mpr (.altRight (.altLeft
     (cast (by simp) (.seq (.altRight (terminal _)) arguments))))
 
-/-- An equation `left = right`. -/
+/-- The empty description string. -/
+theorem descriptionString_empty : D (.ref "description_string") [] :=
+  (Generated.«rule_description_string» _).mpr .optionalEmpty
+
+/-- The empty description. -/
+theorem description_empty : D (.ref "description") [] :=
+  (Generated.«rule_description» _).mpr (cast (by simp) (.seq descriptionString_empty .optionalEmpty))
+
+/-- An equation `left = right` without a description. -/
 theorem someEquation {left right : List Symbol} (l : D (.ref "simple_expression") left)
     (r : D (.ref "expression") right) : D (.ref "some_equation") (left ++ .literal "=" :: right) :=
-  (Generated.«rule_some_equation» _).mpr <| (Generated.«rule_equation_or_procedure» _).mpr <|
-    (Generated.«rule_simple_equation» _).mpr (cast (by simp) (.seq l (.seq (terminal _) r)))
+  have equation : D (.ref "equation_or_procedure") (left ++ .literal "=" :: right) :=
+    (Generated.«rule_equation_or_procedure» _).mpr
+      ((Generated.«rule_simple_equation» _).mpr (cast (by simp) (.seq l (.seq (terminal _) r))))
+  (Generated.«rule_some_equation» _).mpr (cast (by simp) (.seq equation description_empty))
 
-/-- The plain declaration `T n`. -/
+/-- The plain declaration `T n`, without a condition or description. -/
 theorem element_declaration : D (.ref "element") [.ident, .ident] := by
   have typePrefix : D (.ref "type_prefix") [] := (Generated.«rule_type_prefix» _).mpr .optionalEmpty
   have typeName : D (.ref "type_specifier") [.ident] :=
@@ -96,13 +106,16 @@ theorem element_declaration : D (.ref "element") [.ident, .ident] := by
   have declaration : D (.ref "declaration") [.ident] :=
     (Generated.«rule_declaration» _).mpr
       (cast (by simp) (.seq (terminal _) (.seq .optionalEmpty .optionalEmpty)))
+  have component : D (.ref "component_declaration") [.ident] :=
+    (Generated.«rule_component_declaration» _).mpr
+      (cast (by simp) (.seq declaration (.seq .optionalEmpty description_empty)))
   have declared : D (.ref "component_list") [.ident] :=
-    (Generated.«rule_component_list» _).mpr (cast (by simp)
-      (.seq ((Generated.«rule_component_declaration» _).mpr declaration) .manyEmpty))
+    (Generated.«rule_component_list» _).mpr (cast (by simp) (.seq component .manyEmpty))
   exact (Generated.«rule_element» _).mpr ((Generated.«rule_component_clause» _).mpr
     (cast (by simp) (.seq typePrefix (.seq typeName (.seq .optionalEmpty declared)))))
 
-/-- A class body of declarations and one equation section. -/
+/-- A class body of declarations and one equation section, without a class
+annotation. -/
 theorem composition {elements equations : List Symbol}
     (declared : D (.many (.seq (.ref "element") (.terminal (.literal ";")))) elements)
     (equated : D (.many (.seq (.ref "some_equation") (.terminal (.literal ";")))) equations) :
@@ -110,9 +123,10 @@ theorem composition {elements equations : List Symbol}
   have section' : D (.ref "equation_section") (.literal "equation" :: equations) :=
     (Generated.«rule_equation_section» _).mpr (cast (by simp) (.seq (terminal _) equated))
   exact (Generated.«rule_composition» _).mpr (cast (by simp)
-    (.seq ((Generated.«rule_element_list» _).mpr declared) (.manyCons section' .manyEmpty)))
+    (.seq ((Generated.«rule_element_list» _).mpr declared)
+      (.seq (.manyCons section' .manyEmpty) .optionalEmpty)))
 
-/-- A stored definition of one model class. -/
+/-- A stored definition of one model class without a description string. -/
 theorem accepts_model {body : List Symbol} (composed : D (.ref "composition") body) :
     Accepts Generated.sourceGrammar
       (.literal "model" :: .ident :: body ++ [.literal "end", .ident, .literal ";"]) := by
@@ -120,7 +134,8 @@ theorem accepts_model {body : List Symbol} (composed : D (.ref "composition") bo
   apply (Generated.«rule_stored_definition» _).mpr
   have specified : D (.ref "class_specifier") (.ident :: body ++ [.literal "end", .ident]) :=
     (Generated.«rule_class_specifier» _).mpr ((Generated.«rule_long_class_specifier» _).mpr
-      (cast (by simp) (.seq (terminal _) (.seq composed (.seq (terminal _) (terminal _))))))
+      (cast (by simp) (.seq (terminal _) (.seq descriptionString_empty
+        (.seq composed (.seq (terminal _) (terminal _)))))))
   have defined : D (.ref "class_definition") (.literal "model" :: .ident :: body ++
       [.literal "end", .ident]) :=
     (Generated.«rule_class_definition» _).mpr (cast (by simp)

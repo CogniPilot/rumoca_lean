@@ -12,7 +12,7 @@ below erases semantic maps once; coverage and licensing never simplify inside
 the AST-building functions or repeatedly expand every action definition. -/
 
 local macro "well_formed " name:ident : tactic =>
-  `(tactic| (simp only [$name:ident, lit, ident, partsTail, callee,
+  `(tactic| (simp only [$name:ident, lit, ident, string, partsTail, callee,
       StructuralActions.Action.WellFormed]; decide))
 
 private theorem storedDefinition_wellFormed : storedDefinition.WellFormed := by
@@ -33,7 +33,10 @@ private theorem typePrefix_wellFormed : typePrefix.WellFormed := by well_formed 
 private theorem typeSpecifier_wellFormed : typeSpecifier.WellFormed := trivial
 private theorem componentList_wellFormed : componentList.WellFormed := by
   well_formed componentList
-private theorem componentDeclaration_wellFormed : componentDeclaration.WellFormed := trivial
+private theorem componentDeclaration_wellFormed : componentDeclaration.WellFormed := by
+  well_formed componentDeclaration
+private theorem conditionAttribute_wellFormed : conditionAttribute.WellFormed := by
+  well_formed conditionAttribute
 private theorem declaration_wellFormed : declaration.WellFormed := by well_formed declaration
 private theorem modification_wellFormed : modification.WellFormed := by well_formed modification
 private theorem modificationExpression_wellFormed : modificationExpression.WellFormed := trivial
@@ -48,7 +51,7 @@ private theorem elementModification_wellFormed : elementModification.WellFormed 
   well_formed elementModification
 private theorem equationSection_wellFormed : equationSection.WellFormed := by
   well_formed equationSection
-private theorem someEquation_wellFormed : someEquation.WellFormed := trivial
+private theorem someEquation_wellFormed : someEquation.WellFormed := by well_formed someEquation
 private theorem equationOrProcedure_wellFormed : equationOrProcedure.WellFormed := trivial
 private theorem simpleEquation_wellFormed : simpleEquation.WellFormed := by
   well_formed simpleEquation
@@ -88,6 +91,11 @@ private theorem outputExpressionList_wellFormed : outputExpressionList.WellForme
 private theorem arraySubscripts_wellFormed : arraySubscripts.WellFormed := by
   well_formed arraySubscripts
 private theorem subscript_wellFormed : subscript.WellFormed := trivial
+private theorem description_wellFormed : description.WellFormed := by well_formed description
+private theorem descriptionString_wellFormed : descriptionString.WellFormed := by
+  well_formed descriptionString
+private theorem annotationClause_wellFormed : annotationClause.WellFormed := by
+  well_formed annotationClause
 
 private theorem grammar_actions : Generated.sourceGrammar =
     [("stored_definition", storedDefinition.expr),
@@ -103,6 +111,7 @@ private theorem grammar_actions : Generated.sourceGrammar =
      ("type_specifier", typeSpecifier.expr),
      ("component_list", componentList.expr),
      ("component_declaration", componentDeclaration.expr),
+     ("condition_attribute", conditionAttribute.expr),
      ("declaration", declaration.expr),
      ("modification", modification.expr),
      ("modification_expression", modificationExpression.expr),
@@ -135,7 +144,10 @@ private theorem grammar_actions : Generated.sourceGrammar =
      ("function_argument", functionArgument.expr),
      ("output_expression_list", outputExpressionList.expr),
      ("array_subscripts", arraySubscripts.expr),
-     ("subscript", subscript.expr)] := rfl
+     ("subscript", subscript.expr),
+     ("description", description.expr),
+     ("description_string", descriptionString.expr),
+     ("annotation_clause", annotationClause.expr)] := rfl
 
 /-- Exhaustive over the authored grammar, not a selection of example trees. -/
 theorem covered : StructuralActions.Covers Generated.sourceGrammar rules := by
@@ -144,7 +156,7 @@ theorem covered : StructuralActions.Covers Generated.sourceGrammar rules := by
   simp only [List.mem_cons, List.not_mem_nil, or_false, Prod.mk.injEq] at member
   rcases member with h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h |
     h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h | h |
-    h | h | h | h | h | h
+    h | h | h | h | h | h | h | h | h | h
   all_goals obtain ⟨rfl, rfl⟩ := h
   · exact ⟨_, rfl, rfl, storedDefinition_wellFormed⟩
   · exact ⟨_, rfl, rfl, classDefinition_wellFormed⟩
@@ -159,6 +171,7 @@ theorem covered : StructuralActions.Covers Generated.sourceGrammar rules := by
   · exact ⟨_, rfl, rfl, typeSpecifier_wellFormed⟩
   · exact ⟨_, rfl, rfl, componentList_wellFormed⟩
   · exact ⟨_, rfl, rfl, componentDeclaration_wellFormed⟩
+  · exact ⟨_, rfl, rfl, conditionAttribute_wellFormed⟩
   · exact ⟨_, rfl, rfl, declaration_wellFormed⟩
   · exact ⟨_, rfl, rfl, modification_wellFormed⟩
   · exact ⟨_, rfl, rfl, modificationExpression_wellFormed⟩
@@ -192,6 +205,9 @@ theorem covered : StructuralActions.Covers Generated.sourceGrammar rules := by
   · exact ⟨_, rfl, rfl, outputExpressionList_wellFormed⟩
   · exact ⟨_, rfl, rfl, arraySubscripts_wellFormed⟩
   · exact ⟨_, rfl, rfl, subscript_wellFormed⟩
+  · exact ⟨_, rfl, rfl, description_wellFormed⟩
+  · exact ⟨_, rfl, rfl, descriptionString_wellFormed⟩
+  · exact ⟨_, rfl, rfl, annotationClause_wellFormed⟩
 
 local macro "listed" : tactic =>
   `(tactic| (rw [grammar_actions]; repeat (first | exact List.mem_cons_self | apply List.mem_cons_of_mem)))
@@ -215,6 +231,7 @@ theorem licensed : StructuralActions.Licensed Generated.sourceGrammar rules := b
   · exact ⟨by listed, typeSpecifier_wellFormed⟩
   · exact ⟨by listed, componentList_wellFormed⟩
   · exact ⟨by listed, componentDeclaration_wellFormed⟩
+  · exact ⟨by listed, conditionAttribute_wellFormed⟩
   · exact ⟨by listed, declaration_wellFormed⟩
   · exact ⟨by listed, modification_wellFormed⟩
   · exact ⟨by listed, modificationExpression_wellFormed⟩
@@ -248,6 +265,9 @@ theorem licensed : StructuralActions.Licensed Generated.sourceGrammar rules := b
   · exact ⟨by listed, outputExpressionList_wellFormed⟩
   · exact ⟨by listed, arraySubscripts_wellFormed⟩
   · exact ⟨by listed, subscript_wellFormed⟩
+  · exact ⟨by listed, description_wellFormed⟩
+  · exact ⟨by listed, descriptionString_wellFormed⟩
+  · exact ⟨by listed, annotationClause_wellFormed⟩
 
 theorem storedDefinition_total {v : Structure.Value Token}
     (valid : Structure.Valid Generated.sourceGrammar Token.symbol v)

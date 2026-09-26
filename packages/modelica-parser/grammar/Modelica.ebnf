@@ -13,8 +13,8 @@ stored_definition = { class_definition, ";" };
 class_definition = class_prefixes, class_specifier;
 class_prefixes = "model";
 class_specifier = long_class_specifier;
-long_class_specifier = IDENT, composition, "end", IDENT;
-composition = element_list, { equation_section };
+long_class_specifier = IDENT, description_string, composition, "end", IDENT;
+composition = element_list, { equation_section }, [ annotation_clause, ";" ];
 element_list = { element, ";" };
 element = component_clause;
 
@@ -22,7 +22,8 @@ component_clause = type_prefix, type_specifier, [ array_subscripts ], component_
 type_prefix = [ "input" | "output" ];
 type_specifier = name;
 component_list = component_declaration, { ",", component_declaration };
-component_declaration = declaration;
+component_declaration = declaration, [ condition_attribute ], description;
+condition_attribute = "if", expression;
 declaration = IDENT, [ array_subscripts ], [ modification ];
 
 modification = class_modification, [ "=", modification_expression ]
@@ -32,10 +33,10 @@ class_modification = "(", [ argument_list ], ")";
 argument_list = argument, { ",", argument };
 argument = element_modification_or_replaceable;
 element_modification_or_replaceable = [ "each" ], element_modification;
-element_modification = name, [ modification ];
+element_modification = name, [ modification ], description_string;
 
 equation_section = "equation", { some_equation, ";" };
-some_equation = equation_or_procedure;
+some_equation = equation_or_procedure, description;
 equation_or_procedure = simple_equation;
 simple_equation = simple_expression, "=", expression;
 
@@ -66,3 +67,7 @@ function_argument = expression;
 output_expression_list = [ expression ], { ",", [ expression ] };
 array_subscripts = "[", subscript, { ",", subscript }, "]";
 subscript = expression;
+
+description = description_string, [ annotation_clause ];
+description_string = [ STRING, { "+", STRING } ];
+annotation_clause = "annotation", class_modification;

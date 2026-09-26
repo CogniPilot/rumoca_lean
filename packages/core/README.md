@@ -57,7 +57,8 @@ single-fault rejections) belong to the `RumocaCoreChecks` library, also selected
 | Module | Contents |
 | --- | --- |
 | `RumocaCore.Modelica.Select`, `Modelica.Unit`, `Modelica.Array`, `Modelica.Constant` | Static selection of the unit, square Jacobian and constant-rate records from the general syntax tree, with located rejections, resolution and the proof that a selected tree prints to its record's tokens |
-| `RumocaCore.Modelica.Profile` | Profile dispatch and `select_disjoint`: no tree selects two profiles |
+| `RumocaCore.Modelica.Annotation` | Screening of meaning-changing annotations (MLS chapter 18) and annotation erasure |
+| `RumocaCore.Modelica.Profile` | Profile dispatch after annotation screening; `select_disjoint`: no tree selects two profiles; `annotation_irrelevant` |
 | `RumocaCore.Modelica.UnitOrigins` | Unit-profile source fields and their exact token ranges |
 | `RumocaCore`, `RumocaCore.IR.Flat`, `IR.DAE`, `IR.Solve` | Scalar IR types and lowering functions with required occurrence origins and initialization data |
 | `RumocaCore.Provenance.Source`, `Provenance.Lowering` | Checked input context, closed transformation rules and source ancestry through the scalar chain |

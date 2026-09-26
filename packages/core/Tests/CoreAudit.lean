@@ -12,6 +12,7 @@ import Tests.CoreAudit.RumocaCore_Modelica_Unit
 import Tests.CoreAudit.RumocaCore_Modelica_UnitOrigins
 import Tests.CoreAudit.RumocaCore_Modelica_Array
 import Tests.CoreAudit.RumocaCore_Modelica_Constant
+import Tests.CoreAudit.RumocaCore_Modelica_Annotation
 import Tests.CoreAudit.RumocaCore_Modelica_Profile
 import Tests.CoreAudit.RumocaCore_FMI3_History
 import Tests.CoreAudit.RumocaCore_FMI3_Initialization

@@ -62,6 +62,9 @@ end
 /-- A dotted name: one or more name tokens. -/
 def name (n : Name) : Prop := n ≠ [] ∧ ∀ t ∈ n, Named t
 
+/-- The STRING tokens of a description string. -/
+def strings (ts : List Token) : Prop := ∀ t ∈ ts, t.symbol = .string
+
 mutual
   def modification : Modification → Prop
     | .class arguments value => argumentList arguments ∧ binding value
@@ -79,7 +82,7 @@ mutual
     | ⟨_, target⟩ => elementModification target
 
   def elementModification : ElementModification → Prop
-    | ⟨target, value⟩ => name target ∧ optionalModification value
+    | ⟨target, value, description⟩ => name target ∧ optionalModification value ∧ strings description
 
   def optionalModification : Option Modification → Prop
     | none => True
@@ -92,7 +95,12 @@ def typePrefix (value : Option Token) : Prop :=
 def declaration (d : Declaration) : Prop :=
   Named d.name ∧ subscripts d.subscripts ∧ optionalModification d.modification
 
-def declarations (ds : List Declaration) : Prop := ds ≠ [] ∧ ∀ d ∈ ds, declaration d
+def description (d : Description) : Prop := strings d.strings ∧ ∀ a ∈ d.annotation, argumentList a
+
+def componentDeclaration (c : ComponentDeclaration) : Prop :=
+  declaration c.declaration ∧ (∀ e ∈ c.condition, expr e) ∧ description c.description
+
+def declarations (ds : List ComponentDeclaration) : Prop := ds ≠ [] ∧ ∀ d ∈ ds, componentDeclaration d
 
 def componentClause (c : ComponentClause) : Prop :=
   typePrefix c.typePrefix ∧ name c.typeName ∧ subscripts c.subscripts ∧ declarations c.declarations
@@ -103,13 +111,17 @@ def element : Element → Prop
 def equation : Equation → Prop
   | .simple left right => expr left ∧ expr right
 
-def equationSection (s : EquationSection) : Prop := ∀ e ∈ s.equations, equation e
+def someEquation (q : SomeEquation) : Prop := equation q.equation ∧ description q.description
+
+def equationSection (s : EquationSection) : Prop := ∀ q ∈ s.equations, someEquation q
 
 def composition (c : Composition) : Prop :=
-  (∀ e ∈ c.elements, element e) ∧ ∀ s ∈ c.sections, equationSection s
+  (∀ e ∈ c.elements, element e) ∧ (∀ s ∈ c.sections, equationSection s) ∧
+    ∀ a ∈ c.annotation, argumentList a
 
 def classSpecifier : ClassSpecifier → Prop
-  | .long first body last => Named first ∧ composition body ∧ Named last
+  | .long first description body last =>
+    Named first ∧ strings description ∧ composition body ∧ Named last
 
 def classDefinition (c : ClassDefinition) : Prop :=
   c.prefixes = .literal "model" ∧ classSpecifier c.specifier
@@ -165,20 +177,24 @@ def invariant : (name : String) → Structural.Result name → Prop
   | "type_prefix" => typePrefix
   | "type_specifier" | "name" => name
   | "component_list" => declarations
-  | "component_declaration" | "declaration" => declaration
+  | "component_declaration" => componentDeclaration
+  | "declaration" => declaration
   | "modification" => modification
-  | "class_modification" | "argument_list" => argumentList
+  | "class_modification" | "argument_list" | "annotation_clause" => argumentList
   | "argument" | "element_modification_or_replaceable" => argument
   | "element_modification" => elementModification
   | "equation_section" => equationSection
-  | "some_equation" | "equation_or_procedure" | "simple_equation" => equation
-  | "modification_expression" | "expression" | "simple_expression" | "logical_expression"
+  | "some_equation" => someEquation
+  | "equation_or_procedure" | "simple_equation" => equation
+  | "modification_expression" | "condition_attribute" | "expression" | "simple_expression" | "logical_expression"
     | "logical_term" | "logical_factor" | "relation" | "arithmetic_expression" | "term"
     | "factor" | "primary" | "function_argument" | "subscript" => expr
   | "component_reference" => reference
   | "function_call_args" | "function_arguments" | "array_subscripts" => exprs
   | "function_arguments_non_first" => fun (pair : Expr × List Expr) => expr pair.1 ∧ exprs pair.2
   | "output_expression_list" => outputs
+  | "description" => description
+  | "description_string" => strings
   | _ => fun _ => True
 
 open LALR.Frontend StructuralActions Structural
@@ -240,12 +256,15 @@ private theorem classPrefixes_holds : ∀ x, Holds Structural.classPrefixes x �
 
 private theorem longClassSpecifier_holds :
     ∀ x, Holds Structural.longClassSpecifier x → classSpecifier x := by
-  rintro _ ⟨⟨_, _, _, _⟩, rfl, hn, hc, _, he⟩
-  exact ⟨hn, hc, he⟩
+  rintro _ ⟨⟨_, _, _, _, _⟩, rfl, hn, hs, hc, _, he⟩
+  exact ⟨hn, hs, hc, he⟩
 
 private theorem composition_holds : ∀ x, Holds Structural.composition x → composition x := by
-  rintro _ ⟨⟨_, _⟩, rfl, hels, hsecs⟩
-  exact ⟨hels, hsecs⟩
+  rintro _ ⟨⟨_, _, annotation⟩, rfl, hels, hsecs, ha⟩
+  refine ⟨hels, hsecs, fun a member => ?_⟩
+  cases annotation with
+  | none => cases member
+  | some x => cases member; exact (ha x rfl).1
 
 private theorem elementList_holds :
     ∀ x, Holds Structural.elementList x → ∀ e ∈ x, element e := by
@@ -275,6 +294,15 @@ private theorem componentList_holds : ∀ x, Holds Structural.componentList x �
   · exact hf
   · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp member
     exact (hr y hy).2
+
+private theorem componentDeclaration_holds :
+    ∀ x, Holds Structural.componentDeclaration x → componentDeclaration x := by
+  rintro _ ⟨⟨_, _, _⟩, rfl, hd, hc, hdesc⟩
+  exact ⟨hd, hc, hdesc⟩
+
+private theorem conditionAttribute_holds : ∀ x, Holds Structural.conditionAttribute x → expr x := by
+  rintro _ ⟨⟨_, _⟩, rfl, _, he⟩
+  exact he
 
 private theorem declaration_holds : ∀ x, Holds Structural.declaration x → declaration x := by
   rintro _ ⟨⟨_, _, _⟩, rfl, hn, hs, hm⟩
@@ -310,14 +338,18 @@ private theorem elementModificationOrReplaceable_holds :
 
 private theorem elementModification_holds :
     ∀ x, Holds Structural.elementModification x → elementModification x := by
-  rintro _ ⟨⟨_, _⟩, rfl, hn, hm⟩
-  exact ⟨hn, optionalModification_of hm⟩
+  rintro _ ⟨⟨_, _, _⟩, rfl, hn, hm, hs⟩
+  exact ⟨hn, optionalModification_of hm, hs⟩
 
 private theorem equationSection_holds :
     ∀ x, Holds Structural.equationSection x → equationSection x := by
   rintro _ ⟨⟨_, equations⟩, rfl, _, h⟩ e member
   obtain ⟨y, hy, rfl⟩ := List.mem_map.mp member
   exact (h y hy).1
+
+private theorem someEquation_holds : ∀ x, Holds Structural.someEquation x → someEquation x := by
+  rintro _ ⟨⟨_, _⟩, rfl, he, hd⟩
+  exact ⟨he, hd⟩
 
 private theorem simpleEquation_holds : ∀ x, Holds Structural.simpleEquation x → equation x := by
   rintro _ ⟨⟨_, _, _⟩, rfl, hl, _, hr⟩
@@ -412,6 +444,29 @@ private theorem arraySubscripts_holds : ∀ x, Holds Structural.arraySubscripts 
   · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp member
     exact (hr y hy).2
 
+private theorem description_holds : ∀ x, Holds Structural.description x → description x := by
+  rintro _ ⟨⟨_, _⟩, rfl, hs, ha⟩
+  exact ⟨hs, ha⟩
+
+private theorem descriptionString_holds :
+    ∀ x, Holds Structural.descriptionString x → strings x := by
+  rintro _ ⟨written, rfl, h⟩
+  cases written with
+  | none => intro t member; cases member
+  | some pair =>
+    obtain ⟨first, rest⟩ := pair
+    obtain ⟨hf, hr⟩ := h _ rfl
+    intro t member
+    rcases List.mem_cons.mp member with rfl | member
+    · exact hf
+    · obtain ⟨y, hy, rfl⟩ := List.mem_map.mp member
+      exact (hr y hy).2
+
+private theorem annotationClause_holds :
+    ∀ x, Holds Structural.annotationClause x → argumentList x := by
+  rintro _ ⟨⟨_, _⟩, rfl, _, ha⟩
+  exact ha
+
 /-- Every rule body establishes the invariant of its rule. -/
 theorem establishes : Establishes rules Token.symbol invariant := by
   intro ruleName rule found
@@ -430,7 +485,8 @@ theorem establishes : Establishes rules Token.symbol invariant := by
   · exact typePrefix_holds
   · exact fun _ h => h
   · exact componentList_holds
-  · exact fun _ h => h
+  · exact componentDeclaration_holds
+  · exact conditionAttribute_holds
   · exact declaration_holds
   · exact modification_holds
   · exact fun _ h => h
@@ -440,7 +496,7 @@ theorem establishes : Establishes rules Token.symbol invariant := by
   · exact elementModificationOrReplaceable_holds
   · exact elementModification_holds
   · exact equationSection_holds
-  · exact fun _ h => h
+  · exact someEquation_holds
   · exact fun _ h => h
   · exact simpleEquation_holds
   · exact fun _ h => h
@@ -464,6 +520,9 @@ theorem establishes : Establishes rules Token.symbol invariant := by
   · exact outputExpressionList_holds
   · exact arraySubscripts_holds
   · exact fun _ h => h
+  · exact description_holds
+  · exact descriptionString_holds
+  · exact annotationClause_holds
 
 /-- Every tree the certified parser builds satisfies the invariant. -/
 theorem parse_good {tokens : List Token} {ast : StoredDefinition}

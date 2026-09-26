@@ -17,3 +17,13 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.Select.bind_ok
 #audit axioms Rumoca.Modelica.Select.state_ok
 #audit axioms Rumoca.Modelica.Select.absent_ok
+#audit axioms Rumoca.Modelica.Select.descriptionString
+#audit axioms Rumoca.Modelica.Select.descriptionString_ok
+#audit axioms Rumoca.Modelica.Select.description
+#audit axioms Rumoca.Modelica.Select.description_ok
+#audit axioms Rumoca.Modelica.Select.declaration
+#audit axioms Rumoca.Modelica.Select.plain
+#audit axioms Rumoca.Modelica.Select.plainEquations
+#audit axioms Rumoca.Modelica.Select.plainEquations_ok
+#audit axioms Rumoca.Modelica.Select.plainEquations_plain
+#audit axioms Rumoca.Modelica.Select.equations

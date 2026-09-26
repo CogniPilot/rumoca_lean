@@ -14,17 +14,18 @@ package README](../README.md)); the grammar never encodes a particular model.
 | Productions (annex lines) | Present | Not yet present |
 | --- | --- | --- |
 | `stored-definition` (317-330) | `{ class-definition ";" }` | `within-clause`, `final` |
-| `class-definition`, `class-prefixes`, `class-specifier`, `long-class-specifier` (343-404) | `model`; `IDENT composition end IDENT` | `encapsulated`, `partial` and every other class kind, short and der specifiers, `description-string` |
-| `composition`, `element-list`, `element` (466-536) | element list, equation sections | `public`/`protected`, algorithm sections, `external`, annotation, import, extends, class elements, element prefixes |
-| `component-clause`, `type-prefix`, `type-specifier`, `component-list`, `component-declaration`, `declaration` (653-708) | complete component clause with `input`/`output` | `flow`/`stream`, variability, leading `.` of a type, condition attribute, description |
-| `modification` through `element-modification` (718-785) | both modification forms, `each` | `break`, `final`, redeclaration and replaceable elements, description string |
-| `equation-section`, `some-equation`, `equation-or-procedure`, `simple-equation` (846-900) | equation sections of simple equations | `initial`, if/for/connect/when equations, procedure calls, description |
+| `class-definition`, `class-prefixes`, `class-specifier`, `long-class-specifier` (343-404) | `model`; `IDENT description-string composition end IDENT` | `encapsulated`, `partial` and every other class kind, short and der specifiers |
+| `composition`, `element-list`, `element` (466-536) | element list, equation sections, the class `annotation-clause ";"` | `public`/`protected`, algorithm sections, `external`, import, extends, class elements, element prefixes |
+| `component-clause`, `type-prefix`, `type-specifier`, `component-list`, `component-declaration`, `condition-attribute`, `declaration` (653-708) | complete component clause with `input`/`output`; `declaration [ condition-attribute ] description` | `flow`/`stream`, variability, leading `.` of a type |
+| `modification` through `element-modification` (718-785) | both modification forms, `each`, `name [ modification ] description-string` | `break`, `final`, redeclaration and replaceable elements |
+| `equation-section`, `some-equation`, `equation-or-procedure`, `simple-equation` (846-900) | equation sections of simple equations with their `description` | `initial`, if/for/connect/when equations, procedure calls |
 | `expression` through `relation` (1171-1229) | the unit chain | if-expressions, ranges, `or`, `and`, `not`, relational operators |
 | `arithmetic-expression`, `add-operator`, `term`, `mul-operator`, `factor` (1243-1283) | leading sign, `+ - * / .*` | `.+ .- ./`, `^ .^` |
 | `primary` (1288-1320) | references, calls of references and `der`, `false`, `true`, parenthesized output lists | numbers as a separate alternative (see D3), `STRING`, `time`, `initial`/`pure` calls, postfixes, matrix and array constructors, `end` |
 | `name`, `component-reference` (1354-1367) | complete | |
 | `function-call-args` through `function-argument` (1387-1463) | positional arguments | reductions, named arguments, partial application |
 | `output-expression-list`, `array-subscripts`, `subscript` (1477-1508) | complete, expression subscripts | `:` subscripts |
+| `description`, `description-string`, `annotation-clause` (1513-1535) | complete; an annotation is `annotation` followed by a general class modification | |
 
 Deviations, each with its certificate:
 
@@ -38,8 +39,8 @@ Deviations, each with its certificate:
 The lexer implements MLS 3.7 A.1 for the ASCII slice by maximal munch:
 identifiers and the §2.3.3 keywords, UNSIGNED-INTEGER and UNSIGNED-REAL numbers
 (`2.` and `.5` included; a sign is always an operator, so `1-x` is three
-lexical units), STRING literals with the S-ESCAPE set (a `STRING` token, not yet
-a grammar terminal), `//` and non-nesting `/* */` comments, and the symbols.
+lexical units), STRING literals with the S-ESCAPE set (the `STRING` terminal of
+description strings), `//` and non-nesting `/* */` comments, and the symbols.
 Comments are lexemes with their own source ranges; the grammar reads the other
 lexemes, and static semantics rejects a commented source until comments are
 admitted. `string_maximal` states that a STRING ends at its first unescaped
@@ -48,6 +49,16 @@ Quoted identifiers are not scanned; the lexer rejects them
 (`quoted_identifier_rejected`). Number spellings with a point at an edge (`2.`,
 `.5`) are lexed but not admitted as rates (certified `trailingPoint_rejected`,
 `leadingPoint_rejected`).
+
+Description strings, annotations and condition attributes are parsed in full.
+Static semantics rejects every annotation whose meaning changes translation or
+simulation (`Annotation.meaningChanging`, for example `Evaluate`, `Inline` and
+`derivative`) at its name, and every other description string, annotation and
+condition attribute until they are admitted; `Profile.annotation_irrelevant`
+states that erasing annotations does not change a selection.
+
+The grammar has 26 terminals, 98 nonterminals and 146 productions after
+lowering; its 628 canonical LR(1) states merge into 198 LALR states.
 
 Regenerate both checked and runtime tables with `lake run generate`. The full
 gate checks freshness and rejects an actual grammar file changed after

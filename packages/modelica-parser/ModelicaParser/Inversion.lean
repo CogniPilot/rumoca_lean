@@ -15,7 +15,7 @@ def expressionLiterals : List String :=
   ["(", ")", "[", "]", ",", ".", "+", "-", "*", "/", ".*", "der", "false", "true"]
 
 /-- The further literals a declaration prints. -/
-def declarationLiterals : List String := ["input", "output", "=", "each"]
+def declarationLiterals : List String := ["input", "output", "=", "each", "if", "annotation"]
 
 /-- A literal token whose spelling is in `spellings`. -/
 def spelledIn (spellings : List String) : Token → Bool
@@ -28,9 +28,10 @@ def ExpressionToken (t : Token) : Prop := Named t ∨ spelledIn expressionLitera
 instance : DecidablePred ExpressionToken := fun t => by
   unfold ExpressionToken Named; infer_instance
 
-/-- A token a declaration or equation prints. -/
+/-- A token a declaration or equation prints, including the STRING tokens of
+descriptions. -/
 def ElementToken (t : Token) : Prop :=
-  ExpressionToken t ∨ spelledIn declarationLiterals t = true
+  ExpressionToken t ∨ spelledIn declarationLiterals t = true ∨ t.symbol = .string
 
 instance : DecidablePred ElementToken := fun t => by
   unfold ElementToken; infer_instance
@@ -191,7 +192,7 @@ private theorem expression_element {t : Token} (h : ExpressionToken t) : Element
 
 private theorem element_literal {s : String}
     (h : spelledIn declarationLiterals (.literal s) = true := by decide) :
-    ElementToken (.literal s) := .inr h
+    ElementToken (.literal s) := .inr (.inl h)
 
 theorem name_tokens {n : Name} (valid : name n) : ∀ t ∈ Print.name n, ElementToken t := by
   obtain ⟨_, named⟩ := valid
@@ -206,6 +207,20 @@ theorem name_tokens {n : Name} (valid : name n) : ∀ t ∈ Print.name n, Elemen
       rcases member with rfl | rfl
       · exact expression_element literal
       · exact expression_element (.inl (named _ (List.mem_cons_of_mem _ found)))
+
+theorem descriptionString_tokens {ss : List Token} (valid : strings ss) :
+    ∀ t ∈ Print.descriptionString ss, ElementToken t := by
+  intro t member
+  cases ss with
+  | nil => simp [Print.descriptionString] at member
+  | cons first rest =>
+    simp only [Print.descriptionString, List.mem_cons, List.mem_flatMap] at member
+    rcases member with rfl | ⟨s, found, member⟩
+    · exact .inr (.inr (valid _ (List.mem_cons_self ..)))
+    · simp only [List.not_mem_nil, or_false] at member
+      rcases member with rfl | rfl
+      · exact expression_element literal
+      · exact .inr (.inr (valid _ (List.mem_cons_of_mem _ found)))
 
 mutual
   theorem modification_tokens : (m : Modification) → modification m →
@@ -269,12 +284,13 @@ mutual
 
   theorem elementModification_tokens : (e : ElementModification) → elementModification e →
       ∀ t ∈ Print.elementModification e, ElementToken t
-    | ⟨target, value⟩, ⟨named, valid⟩ => by
+    | ⟨target, value, description⟩, ⟨named, valid, described⟩ => by
       intro t member
-      simp only [Print.elementModification, List.mem_append] at member
-      rcases member with member | member
+      simp only [Print.elementModification, List.mem_append, or_assoc] at member
+      rcases member with member | member | member
       · exact name_tokens named t member
       · exact optionalModification_tokens value valid t member
+      · exact descriptionString_tokens described t member
 
   theorem optionalModification_tokens : (o : Option Modification) → optionalModification o →
       ∀ t ∈ Print.optionalModification o, ElementToken t
@@ -291,6 +307,46 @@ theorem declaration_tokens {d : Declaration} (valid : declaration d) :
   · exact expression_element (.inl named)
   · exact expression_element (subscripts_tokens _ indexed t member)
   · exact optionalModification_tokens _ modified t member
+
+theorem annotationClause_tokens {arguments : List Argument} (valid : argumentList arguments) :
+    ∀ t ∈ Print.annotationClause arguments, ElementToken t := by
+  intro t member
+  simp only [Print.annotationClause, List.mem_cons, List.mem_append, List.not_mem_nil,
+    or_false, or_assoc] at member
+  rcases member with rfl | rfl | member | rfl
+  · exact element_literal
+  · exact expression_element literal
+  · exact argumentList_tokens arguments valid t member
+  · exact expression_element literal
+
+theorem description_tokens {d : Description} (valid : description d) :
+    ∀ t ∈ Print.description d, ElementToken t := by
+  obtain ⟨strings, annotation⟩ := d
+  obtain ⟨stringsValid, annotated⟩ := valid
+  intro t member
+  simp only [Print.description, List.mem_append] at member
+  rcases member with member | member
+  · exact descriptionString_tokens stringsValid t member
+  · cases annotation with
+    | none => simp [Print.annotation] at member
+    | some arguments => exact annotationClause_tokens (annotated _ rfl) t member
+
+theorem componentDeclaration_tokens {c : ComponentDeclaration} (valid : componentDeclaration c) :
+    ∀ t ∈ Print.componentDeclaration c, ElementToken t := by
+  obtain ⟨d, condition, described⟩ := c
+  obtain ⟨declared, conditioned, describedValid⟩ := valid
+  intro t member
+  simp only [Print.componentDeclaration, List.mem_append, or_assoc] at member
+  rcases member with member | member | member
+  · exact declaration_tokens declared t member
+  · cases condition with
+    | none => simp [Print.condition] at member
+    | some value =>
+      simp only [Print.condition, List.mem_cons] at member
+      rcases member with rfl | member
+      · exact element_literal
+      · exact expression_element (expr_tokens value (conditioned _ rfl) t member)
+  · exact description_tokens describedValid t member
 
 theorem element_tokens {e : Element} (valid : element e) : ∀ t ∈ Print.element e, ElementToken t := by
   obtain ⟨⟨typePrefix', typeName, indices, declared⟩⟩ := e
@@ -311,9 +367,9 @@ theorem element_tokens {e : Element} (valid : element e) : ∀ t ∈ Print.eleme
     | cons first rest =>
       simp only [Print.declarations, List.mem_append, List.mem_flatMap, List.mem_cons] at member
       rcases member with member | ⟨d, found, rfl | member⟩
-      · exact declaration_tokens (each _ (List.mem_cons_self ..)) t member
+      · exact componentDeclaration_tokens (each _ (List.mem_cons_self ..)) t member
       · exact expression_element literal
-      · exact declaration_tokens (each _ (List.mem_cons_of_mem _ found)) t member
+      · exact componentDeclaration_tokens (each _ (List.mem_cons_of_mem _ found)) t member
 
 theorem equation_tokens {e : Equation} (valid : equation e) :
     ∀ t ∈ Print.equation e, ElementToken t := by
@@ -325,6 +381,14 @@ theorem equation_tokens {e : Equation} (valid : equation e) :
   · exact expression_element (expr_tokens _ validLeft t member)
   · exact element_literal
   · exact expression_element (expr_tokens _ validRight t member)
+
+theorem someEquation_tokens {q : SomeEquation} (valid : someEquation q) :
+    ∀ t ∈ Print.someEquation q, ElementToken t := by
+  intro t member
+  simp only [Print.someEquation, List.mem_append] at member
+  rcases member with member | member
+  · exact equation_tokens valid.1 t member
+  · exact description_tokens valid.2 t member
 
 /-! ### Delimiters -/
 
@@ -552,11 +616,42 @@ theorem optionalModification_nil {o : Option Modification}
   | none => rfl
   | some m => cases m <;> simp [Print.optionalModification, Print.modification] at empty
 
+theorem condition_nil {o : Option Expr} (empty : Print.condition o = []) : o = none := by
+  cases o <;> simp_all [Print.condition]
+
+theorem description_nil {d : Description} (empty : Print.description d = []) : d = ⟨[], none⟩ := by
+  obtain ⟨strings, annotation⟩ := d
+  cases strings <;> cases annotation <;>
+    simp_all [Print.description, Print.descriptionString, Print.annotation, Print.annotationClause]
+
+/-- A token that is neither a STRING nor the keyword `annotation`: no nonempty
+description prints only such tokens. -/
+def Plain (t : Token) : Prop := t.symbol ≠ .string ∧ t ≠ .literal "annotation"
+
+instance : DecidablePred Plain := fun t => by unfold Plain; infer_instance
+
+/-- A description printed with plain tokens only is empty. -/
+theorem description_plain {d : Description} (valid : description d)
+    (plain : ∀ t ∈ Print.description d, Plain t) : d = ⟨[], none⟩ := by
+  obtain ⟨strings, annotation⟩ := d
+  cases strings with
+  | cons first rest =>
+    have stringed := valid.1 first (List.mem_cons_self ..)
+    exact absurd stringed (plain first (by simp [Print.description, Print.descriptionString])).1
+  | nil =>
+    cases annotation with
+    | none => rfl
+    | some arguments =>
+      exact absurd rfl (plain (.literal "annotation")
+        (by simp [Print.description, Print.descriptionString, Print.annotation,
+          Print.annotationClause])).2
+
 /-- The declaration printed as `T n` is the unprefixed, unmodified scalar
-declaration of the name `n` with the one-token type `T`. -/
+declaration of the name `n` with the one-token type `T`, without a condition
+or description. -/
 theorem element_of_printed {e : Element} {typeName t : Token} (valid : element e)
     (typeNamed : Named typeName) (printed : Print.element e = [typeName, t]) :
-    e = .component ⟨none, [typeName], none, [⟨t, none, none⟩]⟩ := by
+    e = .component ⟨none, [typeName], none, [⟨⟨t, none, none⟩, none, ⟨[], none⟩⟩]⟩ := by
   obtain ⟨⟨typePrefix', typeNames, indices, declared⟩⟩ := e
   obtain ⟨prefixed, ⟨typeNonempty, _⟩, _, ⟨declaredNonempty, _⟩⟩ := valid
   cases typePrefix' with
@@ -573,11 +668,12 @@ theorem element_of_printed {e : Element} {typeName t : Token} (valid : element e
   cases declared with
   | nil => exact absurd rfl declaredNonempty
   | cons d ds =>
-  obtain ⟨dName, dIndices, dModification⟩ := d
+  obtain ⟨⟨dName, dIndices, dModification⟩, dCondition, dDescription⟩ := d
   have length := congrArg List.length printed
   simp only [Print.element, Print.componentClause, Print.typePrefix, Option.elim, Print.name,
-    Print.declarations, Print.declaration, List.nil_append, List.cons_append, List.append_assoc,
-    List.length_cons, List.length_append, List.length_flatMap, List.length_nil] at length
+    Print.declarations, Print.componentDeclaration, Print.declaration, List.nil_append,
+    List.cons_append, List.append_assoc, List.length_cons, List.length_append,
+    List.length_flatMap, List.length_nil] at length
   have restEmpty : rest = [] := by
     cases rest with
     | nil => rfl
@@ -593,25 +689,37 @@ theorem element_of_printed {e : Element} {typeName t : Token} (valid : element e
     subscripts_nil (List.length_eq_zero_iff.mp (by simp at length; omega))
   have dModificationEmpty : dModification = none :=
     optionalModification_nil (List.length_eq_zero_iff.mp (by simp at length; omega))
-  subst indicesEmpty dIndicesEmpty dModificationEmpty
+  have dConditionEmpty : dCondition = none :=
+    condition_nil (List.length_eq_zero_iff.mp (by simp at length; omega))
+  have dDescriptionEmpty : dDescription = ⟨[], none⟩ :=
+    description_nil (List.length_eq_zero_iff.mp (by simp at length; omega))
+  subst indicesEmpty dIndicesEmpty dModificationEmpty dConditionEmpty dDescriptionEmpty
   simp only [Print.element, Print.componentClause, Print.typePrefix, Option.elim, Print.name,
-    Print.declarations, Print.declaration, Print.subscripts, Print.optionalModification,
-    List.flatMap_nil, List.nil_append, List.append_nil, List.cons_append, List.cons.injEq,
-    and_true] at printed
+    Print.declarations, Print.componentDeclaration, Print.declaration, Print.subscripts,
+    Print.optionalModification, Print.condition, Print.description, Print.descriptionString,
+    Print.annotation, List.flatMap_nil, List.nil_append, List.append_nil, List.cons_append,
+    List.cons.injEq, and_true] at printed
   rw [printed.1, printed.2]
 
 theorem not_expression_equals : ¬ ExpressionToken (.literal "=") := by decide
 
-/-- An equation printed with its sides on either side of its only `=`. -/
-theorem equation_of_printed {q : Equation} {left right : List Token} (valid : equation q)
-    (leftFree : .literal "=" ∉ left)
-    (printed : Print.equation q = left ++ .literal "=" :: right) :
-    ∃ l r, q = .simple l r ∧ expr l ∧ expr r ∧ Print.expr l = left ∧ Print.expr r = right := by
-  obtain ⟨l, r⟩ := q
-  obtain ⟨validLeft, validRight⟩ := valid
+/-- An equation printed with its sides on either side of its only `=`, followed
+by plain tokens only, is that simple equation without a description. -/
+theorem equation_of_printed {q : SomeEquation} {left right : List Token} (valid : someEquation q)
+    (leftFree : .literal "=" ∉ left) (rightPlain : ∀ t ∈ right, Plain t)
+    (printed : Print.someEquation q = left ++ .literal "=" :: right) :
+    ∃ l r, q = ⟨.simple l r, ⟨[], none⟩⟩ ∧ expr l ∧ expr r ∧ Print.expr l = left ∧
+      Print.expr r = right := by
+  obtain ⟨⟨l, r⟩, described⟩ := q
+  obtain ⟨⟨validLeft, validRight⟩, validDescription⟩ := valid
+  simp only [Print.someEquation, Print.equation, List.append_assoc, List.cons_append] at printed
   obtain ⟨sameLeft, sameRight⟩ := split_unique
     (not_mem_of_tokens (expr_tokens l validLeft) not_expression_equals) leftFree printed
-  exact ⟨l, r, rfl, validLeft, validRight, sameLeft, sameRight⟩
+  have empty := description_plain validDescription fun t member =>
+    rightPlain t (sameRight ▸ List.mem_append_right _ member)
+  subst empty
+  refine ⟨l, r, rfl, validLeft, validRight, sameLeft, ?_⟩
+  simpa [Print.description, Print.descriptionString, Print.annotation] using sameRight
 
 /-- A token a class body prints. -/
 def BodyToken (t : Token) : Prop :=
@@ -629,22 +737,33 @@ theorem elements_tokens {es : List Element} (valid : ∀ e ∈ es, element e) :
   · exact .inl (element_tokens (valid e found) t member)
   · exact .inr rfl
 
-theorem equations_tokens {qs : List Equation} (valid : ∀ q ∈ qs, equation q) :
-    ∀ t ∈ qs.flatMap (fun q => Print.equation q ++ [.literal ";"]),
+theorem equations_tokens {qs : List SomeEquation} (valid : ∀ q ∈ qs, someEquation q) :
+    ∀ t ∈ qs.flatMap (fun q => Print.someEquation q ++ [.literal ";"]),
       ElementToken t ∨ t = .literal ";" := by
   intro t member
   simp only [List.mem_flatMap, List.mem_append, List.mem_singleton] at member
   obtain ⟨q, found, member | rfl⟩ := member
-  · exact .inl (equation_tokens (valid q found) t member)
+  · exact .inl (someEquation_tokens (valid q found) t member)
   · exact .inr rfl
+
+theorem classAnnotation_tokens {a : Option (List Argument)} (valid : ∀ x ∈ a, argumentList x) :
+    ∀ t ∈ Print.classAnnotation a, ElementToken t ∨ t = .literal ";" := by
+  intro t member
+  cases a with
+  | none => simp [Print.classAnnotation] at member
+  | some arguments =>
+    simp only [Print.classAnnotation, List.mem_append, List.mem_singleton] at member
+    rcases member with member | rfl
+    · exact .inl (annotationClause_tokens (valid _ rfl) t member)
+    · exact .inr rfl
 
 theorem composition_tokens {c : Composition} (valid : composition c) :
     ∀ t ∈ Print.composition c, BodyToken t := by
-  obtain ⟨elements, sections⟩ := c
-  obtain ⟨validElements, validSections⟩ := valid
+  obtain ⟨elements, sections, annotation⟩ := c
+  obtain ⟨validElements, validSections, validAnnotation⟩ := valid
   intro t member
-  simp only [Print.composition, List.mem_append] at member
-  rcases member with member | member
+  simp only [Print.composition, List.mem_append, or_assoc] at member
+  rcases member with member | member | member
   · rcases elements_tokens validElements t member with h | h
     · exact .inl h
     · exact .inr (.inl h)
@@ -655,63 +774,90 @@ theorem composition_tokens {c : Composition} (valid : composition c) :
     · rcases equations_tokens (validSections s found) t member with h | h
       · exact .inl h
       · exact .inr (.inl h)
+  · rcases classAnnotation_tokens validAnnotation t member with h | h
+    · exact .inl h
+    · exact .inr (.inl h)
 
 /-- A class body printed as declarations, the keyword `equation` and the
-equations, with no other `equation` keyword, has exactly that one equation
-section. -/
+equations, with no other `equation` keyword and no `annotation` keyword, has
+exactly that one equation section and no class annotation. -/
 theorem composition_of_printed {c : Composition} {declared equated : List Token}
     (valid : composition c) (declaredFree : .literal "equation" ∉ declared)
-    (equatedFree : .literal "equation" ∉ equated)
+    (equatedFree : .literal "equation" ∉ equated) (unannotated : .literal "annotation" ∉ equated)
     (printed : Print.composition c = declared ++ .literal "equation" :: equated) :
-    ∃ equations, c.sections = [⟨equations⟩] ∧
+    ∃ equations, c.sections = [⟨equations⟩] ∧ c.annotation = none ∧
       c.elements.flatMap (fun e => Print.element e ++ [.literal ";"]) = declared ∧
-      equations.flatMap (fun q => Print.equation q ++ [.literal ";"]) = equated := by
-  obtain ⟨elements, sections⟩ := c
-  obtain ⟨validElements, validSections⟩ := valid
+      equations.flatMap (fun q => Print.someEquation q ++ [.literal ";"]) = equated := by
+  obtain ⟨elements, sections, annotation⟩ := c
+  obtain ⟨validElements, validSections, validAnnotation⟩ := valid
   have elementsFree := not_mem_of_tokens (elements_tokens validElements)
+    (t := .literal "equation") (by decide)
+  have annotationFree := not_mem_of_tokens (classAnnotation_tokens validAnnotation)
     (t := .literal "equation") (by decide)
   cases sections with
   | nil =>
     simp only [Print.composition, List.flatMap_nil, List.append_nil] at printed
-    exact absurd (printed ▸ List.mem_append_right _ (List.mem_cons_self ..)) elementsFree
+    have member : Token.literal "equation" ∈ _ := printed ▸ List.mem_append_right _ (List.mem_cons_self ..)
+    rcases List.mem_append.mp member with member | member
+    · exact absurd member elementsFree
+    · exact absurd member annotationFree
   | cons first rest =>
     obtain ⟨equations⟩ := first
-    simp only [Print.composition, List.flatMap_cons, Print.equationSection, List.cons_append]
-      at printed
+    simp only [Print.composition, List.flatMap_cons, Print.equationSection, List.cons_append,
+      List.append_assoc] at printed
     obtain ⟨sameElements, sameEquations⟩ := split_unique elementsFree declaredFree printed
     cases rest with
-    | nil => exact ⟨equations, rfl, sameElements, by simpa using sameEquations⟩
     | cons next more =>
       have member : Token.literal "equation" ∈ equated := by
         rw [← sameEquations]
         simp [Print.equationSection]
       exact absurd member equatedFree
+    | nil =>
+      cases annotation with
+      | some arguments =>
+        have member : Token.literal "annotation" ∈ equated := by
+          rw [← sameEquations]
+          simp [Print.classAnnotation, Print.annotationClause]
+        exact absurd member unannotated
+      | none =>
+        exact ⟨equations, rfl, rfl, sameElements, by simpa [Print.classAnnotation] using sameEquations⟩
 
-/-- A stored definition printed as `model n B end e ;`, with no `end` in `B`, is
-the one model class with that body. -/
+/-- A stored definition printed as `model n B end e ;`, with no `end` and no
+STRING in `B`, is the one model class without a description string with that
+body. -/
 theorem storedDefinition_of_printed {d : StoredDefinition} {first last : Token}
     {body : List Token} (valid : storedDefinition d) (bodyFree : .literal "end" ∉ body)
+    (bodyUnstrung : ∀ t ∈ body, t.symbol ≠ .string)
     (printed : Print.storedDefinition d =
       .literal "model" :: first :: body ++ [.literal "end", last, .literal ";"]) :
-    ∃ c, d = ⟨[⟨.literal "model", .long first c last⟩]⟩ ∧ composition c ∧
+    ∃ c, d = ⟨[⟨.literal "model", .long first [] c last⟩]⟩ ∧ composition c ∧
       Print.composition c = body := by
   obtain ⟨classes⟩ := d
   cases classes with
   | nil => simp [Print.storedDefinition] at printed
   | cons definition rest =>
-    obtain ⟨prefixes, ⟨first', c, last'⟩⟩ := definition
-    obtain ⟨⟨rfl, _, validBody, _⟩, _⟩ := List.forall_mem_cons.mp valid
+    obtain ⟨prefixes, ⟨first', strings, c, last'⟩⟩ := definition
+    obtain ⟨⟨rfl, _, validStrings, validBody, _⟩, _⟩ := List.forall_mem_cons.mp valid
     simp only [Print.storedDefinition, List.flatMap_cons, Print.classDefinition,
-      Print.classSpecifier, List.cons_append, List.append_assoc,
+      Print.classSpecifier, List.cons_append, List.nil_append, List.append_assoc,
       List.cons.injEq, true_and] at printed
     obtain ⟨rfl, printed⟩ := printed
-    obtain ⟨sameBody, rest'⟩ := split_unique
-      (not_mem_of_tokens (composition_tokens validBody) (t := .literal "end") (by decide))
-      bodyFree printed
+    rw [← List.append_assoc] at printed
+    have stringsFree : Token.literal "end" ∉ Print.descriptionString strings := fun member =>
+      absurd (descriptionString_tokens validStrings _ member) (by decide)
+    have prefixFree : Token.literal "end" ∉ Print.descriptionString strings ++ Print.composition c :=
+      fun member => (List.mem_append.mp member).elim stringsFree
+        (not_mem_of_tokens (composition_tokens validBody) (by decide))
+    obtain ⟨sameBody, rest'⟩ := split_unique prefixFree bodyFree printed
     simp only [List.cons.injEq] at rest'
     obtain ⟨rfl, restEmpty⟩ := rest'
-    cases rest with
-    | nil => exact ⟨c, rfl, validBody, sameBody⟩
-    | cons _ _ => simp at restEmpty
+    cases strings with
+    | cons s more =>
+      exact absurd (validStrings s (List.mem_cons_self ..))
+        (bodyUnstrung s (sameBody ▸ by simp [Print.descriptionString]))
+    | nil =>
+      cases rest with
+      | nil => exact ⟨c, rfl, validBody, by simpa [Print.descriptionString] using sameBody⟩
+      | cons _ _ => simp at restEmpty
 
 end Rumoca.Modelica.Good

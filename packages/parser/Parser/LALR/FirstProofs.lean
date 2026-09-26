@@ -106,6 +106,34 @@ theorem validated_closed (h : FirstCheck.validate g facts = true) : Closed g fac
   · intro t ht
     exact Or.inl (hc.2 t (sequence_begins.mpr ht))
 
+/-- The closure check holds when its domain conditions hold and every production
+lies in one of `count` checked ranges of `size` consecutive productions. -/
+theorem validate_of_ranges (size count : Nat) (header : FirstCheck.header g facts = true)
+    (cover : g.productions.size ≤ count * size)
+    (ranges : ∀ k < count, FirstCheck.productionRange g facts (k * size) (k * size + size) = true) :
+    FirstCheck.validate g facts = true := by
+  simp only [FirstCheck.validate, FirstCheck.header] at header ⊢
+  rw [header, Bool.true_and, Array.all_eq_true]
+  intro i bound
+  have positive : 0 < size := by
+    rcases Nat.eq_zero_or_pos size with zero | positive
+    · subst zero; rw [Nat.mul_zero] at cover; omega
+    · exact positive
+  have below : i / size < count := by
+    apply (Nat.div_lt_iff_lt_mul positive).mpr
+    omega
+  have chunk := ranges (i / size) below
+  unfold FirstCheck.productionRange at chunk
+  rw [Array.all_eq_true] at chunk
+  have lower := Nat.div_mul_le_self i size
+  have upper := Nat.lt_div_mul_add (a := i) positive
+  have within : i - i / size * size <
+      (g.productions.extract (i / size * size) (i / size * size + size)).size := by
+    simp only [Array.size_extract]; omega
+  have same := chunk _ within
+  simpa only [Array.getElem_extract, show i / size * size + (i - i / size * size) = i by omega]
+    using same
+
 theorem rewrites_below (hc : Closed g facts) (hp : p ∈ g.productions.toList)
     (hr : p.Rewrites a b) : Below facts b a := by
   induction hr with

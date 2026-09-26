@@ -15,10 +15,13 @@ open _root_.Parser Parser.Quotation
 
 deriving instance ToExpr for AST.Expr, AST.Callee, AST.ComponentReference, AST.Part
 deriving instance ToExpr for AST.Modification, AST.Argument, AST.ElementModification
+deriving instance ToExpr for AST.Description
 deriving instance ToExpr for AST.Declaration
+deriving instance ToExpr for AST.ComponentDeclaration
 deriving instance ToExpr for AST.ComponentClause
 deriving instance ToExpr for AST.Element
 deriving instance ToExpr for AST.Equation
+deriving instance ToExpr for AST.SomeEquation
 deriving instance ToExpr for AST.EquationSection
 deriving instance ToExpr for AST.Composition
 deriving instance ToExpr for AST.ClassSpecifier

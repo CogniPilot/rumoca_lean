@@ -65,9 +65,9 @@ theorem select_printed {d : Modelica.AST.StoredDefinition} {m : Model} (h : sele
   obtain ⟨derivative, differentiated, h⟩ := bind_ok h
   obtain ⟨_, unit, h⟩ := bind_ok h
   cases h
-  obtain ⟨elements, sections⟩ := body
+  obtain ⟨elements, sections, annotation⟩ := body
   have elements_one : elements = [element] := one_ok single
-  have sections_one : sections = [⟨equations⟩] := equations_ok sectioned
+  have sections_one : sections = [⟨equations.map plain⟩] := equations_ok sectioned
   have equations_one : equations = [.simple left right] := one_ok exact
   subst elements_one sections_one equations_one
   rw [model_ok found, state_ok declared, derivative_ok differentiated, exactly_ok unit]
@@ -100,7 +100,8 @@ theorem select_complete (m : Model) (admissible : m.Admissible) :
     forall_eq_or_imp, forall_eq] at admissible
   obtain ⟨named, stated, differentiated, ended⟩ := admissible
   simp [select, sourceFamily.ast, Select.model, Select.name, named, stated, differentiated, ended,
-    one, Select.state, declaration, Select.equations, Select.derivative, reference, exactly, numeral,
+    one, Select.state, declaration, absent, Select.description, Select.descriptionString,
+    Select.equations, plainEquations, Select.derivative, reference, exactly, numeral,
     bind, Except.bind, pure, Except.pure, Except.map]
 
 /-- Every admissible record whose tokens a source lexes to is the selected

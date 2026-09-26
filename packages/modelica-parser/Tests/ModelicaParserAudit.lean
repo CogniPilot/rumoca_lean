@@ -44,6 +44,8 @@ import ProofAudit.Audit
 
 #audit axioms Rumoca.Modelica.AST.leftAssociate
 #audit axioms Rumoca.Modelica.Print.storedDefinition
+#audit axioms Rumoca.Modelica.Print.description
+#audit axioms Rumoca.Modelica.Print.classAnnotation
 #audit axioms Rumoca.Modelica.Print.expr_leftAssociate
 #audit axioms Rumoca.Modelica.Structural.rules
 #audit axioms Rumoca.Modelica.Structural.printResult
@@ -86,6 +88,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.Good.classSpecifier
 #audit axioms Rumoca.Modelica.Good.classDefinition
 #audit axioms Rumoca.Modelica.Good.modification
+#audit axioms Rumoca.Modelica.Good.strings
+#audit axioms Rumoca.Modelica.Good.description
+#audit axioms Rumoca.Modelica.Good.componentDeclaration
+#audit axioms Rumoca.Modelica.Good.someEquation
 #audit axioms Rumoca.Modelica.Good.invariant
 #audit axioms Rumoca.Modelica.Good.exprs_iff
 #audit axioms Rumoca.Modelica.Good.outputs_iff
@@ -101,6 +107,12 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.Good.expr_tokens
 #audit axioms Rumoca.Modelica.Good.modification_tokens
 #audit axioms Rumoca.Modelica.Good.name_tokens
+#audit axioms Rumoca.Modelica.Good.descriptionString_tokens
+#audit axioms Rumoca.Modelica.Good.annotationClause_tokens
+#audit axioms Rumoca.Modelica.Good.description_tokens
+#audit axioms Rumoca.Modelica.Good.componentDeclaration_tokens
+#audit axioms Rumoca.Modelica.Good.someEquation_tokens
+#audit axioms Rumoca.Modelica.Good.classAnnotation_tokens
 #audit axioms Rumoca.Modelica.Good.declaration_tokens
 #audit axioms Rumoca.Modelica.Good.element_tokens
 #audit axioms Rumoca.Modelica.Good.equation_tokens
@@ -120,6 +132,10 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.Good.derivative_of_printed
 #audit axioms Rumoca.Modelica.Good.subscripts_nil
 #audit axioms Rumoca.Modelica.Good.optionalModification_nil
+#audit axioms Rumoca.Modelica.Good.condition_nil
+#audit axioms Rumoca.Modelica.Good.description_nil
+#audit axioms Rumoca.Modelica.Good.Plain
+#audit axioms Rumoca.Modelica.Good.description_plain
 #audit axioms Rumoca.Modelica.Good.element_of_printed
 #audit axioms Rumoca.Modelica.Good.not_expression_equals
 #audit axioms Rumoca.Modelica.Good.equation_of_printed
@@ -135,6 +151,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.Derivations.primary_ident
 #audit axioms Rumoca.Modelica.Derivations.arithmetic_ident
 #audit axioms Rumoca.Modelica.Derivations.primary_derivative
+#audit axioms Rumoca.Modelica.Derivations.descriptionString_empty
+#audit axioms Rumoca.Modelica.Derivations.description_empty
 #audit axioms Rumoca.Modelica.Derivations.someEquation
 #audit axioms Rumoca.Modelica.Derivations.element_declaration
 #audit axioms Rumoca.Modelica.Derivations.composition
@@ -212,5 +230,20 @@ equation der(x) = 1; end M;"
 #audit axioms commented.lexed
 #audit axioms commented.checked
 #audit axioms commented.syntactic
+
+/- Description strings, annotations with nested class modifications and
+condition attributes parse in full; admission is static semantics. -/
+certify_source described "model Described \"a\" + \"b\"
+  Real x(start = 1 \"s\") \"state\" annotation(Dialog(group = g, enable = true));
+  Real y if c \"conditional\";
+equation
+  der(x) = y \"rate\" annotation(HideResult = true);
+  annotation(Icon(coordinateSystem(preserveAspectRatio = true)), defaultComponentName = c);
+end Described;
+"
+
+#audit axioms described.lexed
+#audit axioms described.checked
+#audit axioms described.syntactic
 
 end Rumoca.Modelica.CertificateCheck

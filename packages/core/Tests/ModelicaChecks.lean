@@ -231,6 +231,76 @@ theorem numberName_rejected :
     Profile.select numberName.ast =
       .error ⟨1, "the model name must be an identifier, not the number 1"⟩ := by rfl
 
+/- A class description string: parsed, not admitted yet. -/
+certify_source classDescription "model M \"d\" Real x; equation der(x) = 1; end M;"
+theorem classDescription_rejected :
+    Profile.select classDescription.ast =
+      .error ⟨2, "description strings are not admitted yet"⟩ := by rfl
+
+/- A component annotation: parsed in full, not admitted yet. -/
+certify_source componentAnnotation
+  "model M Real x annotation(HideResult = true); equation der(x) = 1; end M;"
+theorem componentAnnotation_rejected :
+    Profile.select componentAnnotation.ast =
+      .error ⟨4, "annotations are not admitted yet"⟩ := by rfl
+
+/- A class annotation clause. -/
+certify_source classAnnotation
+  "model M Real x; equation der(x) = 1; annotation(HideResult = true); end M;"
+theorem classAnnotation_rejected :
+    Profile.select classAnnotation.ast =
+      .error ⟨13, "annotations are not admitted yet"⟩ := by rfl
+
+/- A condition attribute. -/
+certify_source conditionAttribute "model M Real x if true; equation der(x) = 1; end M;"
+theorem conditionAttribute_rejected :
+    Profile.select conditionAttribute.ast =
+      .error ⟨4, "condition attributes are not admitted yet"⟩ := by rfl
+
+/- A description string in an element modification. -/
+certify_source modificationDescription "model TensorSquare
+  input Real u[2];
+  output Real x[2](each start=0 \"initial\", each fixed=true);
+  output Real J[2,2];
+equation
+  der(x) = u .* u;
+  J = jacobian (u .* u, u);
+end TensorSquare;
+"
+theorem modificationDescription_rejected :
+    Profile.select modificationDescription.ast =
+      .error ⟨20, "description strings are not admitted yet"⟩ := by rfl
+
+/- An equation description string. -/
+certify_source equationDescription "model M Real x; equation der(x) = 1 \"rate\"; end M;"
+theorem equationDescription_rejected :
+    Profile.select equationDescription.ast =
+      .error ⟨12, "description strings are not admitted yet"⟩ := by rfl
+
+/- Meaning-changing annotations are rejected at their name, before any
+profile is selected: a component `Evaluate`, a class `Inline` and an equation
+`derivative`. -/
+certify_source evaluateAnnotation
+  "model M Real x annotation(Evaluate = true); equation der(x) = 1; end M;"
+theorem evaluateAnnotation_rejected :
+    Profile.select evaluateAnnotation.ast =
+      .error ⟨6, "the annotation Evaluate changes the meaning of the model and is not supported"⟩ := by
+  rfl
+
+certify_source inlineAnnotation
+  "model M Real x; equation der(x) = 1; annotation(Inline = true); end M;"
+theorem inlineAnnotation_rejected :
+    Profile.select inlineAnnotation.ast =
+      .error ⟨15, "the annotation Inline changes the meaning of the model and is not supported"⟩ := by
+  rfl
+
+certify_source derivativeAnnotation
+  "model M Real x; equation der(x) = 1 annotation(each derivative = f); end M;"
+theorem derivativeAnnotation_rejected :
+    Profile.select derivativeAnnotation.ast =
+      .error ⟨15, "the annotation derivative changes the meaning of the model and is not supported"⟩ := by
+  rfl
+
 /- An empty stored definition. -/
 certify_source empty ""
 theorem empty_rejected :
@@ -267,5 +337,14 @@ theorem empty_rejected :
 #audit axioms separatedSign_selected
 #audit axioms commented_rejected
 #audit axioms empty_rejected
+#audit axioms classDescription_rejected
+#audit axioms componentAnnotation_rejected
+#audit axioms classAnnotation_rejected
+#audit axioms conditionAttribute_rejected
+#audit axioms modificationDescription_rejected
+#audit axioms equationDescription_rejected
+#audit axioms evaluateAnnotation_rejected
+#audit axioms inlineAnnotation_rejected
+#audit axioms derivativeAnnotation_rejected
 
 end Rumoca.Modelica.ProfileChecks

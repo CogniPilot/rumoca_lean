@@ -51,21 +51,37 @@ mutual
     each : Bool
     modification : ElementModification
 
+  /-- `name [ modification ] description-string`. -/
   structure ElementModification where
     name : Name
     modification : Option Modification
+    description : List Token
 end
+
+/-- A.2.7 `description`: the STRING tokens of its description string (the `+`
+separators are implied) and the arguments of its optional annotation clause,
+which is `annotation` followed by a class modification. -/
+structure Description where
+  strings : List Token
+  annotation : Option (List Argument)
 
 structure Declaration where
   name : Token
   subscripts : Option (List Expr)
   modification : Option Modification
 
+/-- `declaration [ condition-attribute ] description`; the condition is the
+expression after `if`. -/
+structure ComponentDeclaration where
+  declaration : Declaration
+  condition : Option Expr
+  description : Description
+
 structure ComponentClause where
   typePrefix : Option Token
   typeName : Name
   subscripts : Option (List Expr)
-  declarations : List Declaration
+  declarations : List ComponentDeclaration
 
 inductive Element where
   | component (clause : ComponentClause)
@@ -73,15 +89,24 @@ inductive Element where
 inductive Equation where
   | simple (left right : Expr)
 
-structure EquationSection where
-  equations : List Equation
+/-- `equation-or-procedure description`. -/
+structure SomeEquation where
+  equation : Equation
+  description : Description
 
+structure EquationSection where
+  equations : List SomeEquation
+
+/-- Elements, equation sections and the arguments of the trailing class
+annotation clause. -/
 structure Composition where
   elements : List Element
   sections : List EquationSection
+  annotation : Option (List Argument)
 
 inductive ClassSpecifier where
-  | long (name : Token) (composition : Composition) (endName : Token)
+  /-- `IDENT description-string composition end IDENT`. -/
+  | long (name : Token) (description : List Token) (composition : Composition) (endName : Token)
 
 structure ClassDefinition where
   prefixes : Token

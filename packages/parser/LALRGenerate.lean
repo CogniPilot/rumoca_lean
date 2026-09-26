@@ -278,6 +278,29 @@ private def locatedParserContract : String :=
   "    encodeLocatedTokens, List.map_map, List.length_map, Function.comp_def] using erased\n" ++
   "\n"
 
+/-- The FIRST closure certificate. One `cbv` normalization has a bounded step
+budget, so a grammar with more than `2 * firstChunk` productions is checked as the
+domain header and ranges of `firstChunk` productions, each normalized
+separately and joined by `FirstProofs.validate_of_ranges`. -/
+private def firstCertificate (productions : Nat) : String := Id.run do
+  let firstChunk := 64
+  let options := "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
+    "set_option cbv.warning false in\n"
+  if productions ≤ 2 * firstChunk then
+    return options ++
+      "theorem first_checked : LALR.FirstCheck.validate grammar firstFacts = true := by cbv\n\n"
+  let count := (productions + firstChunk - 1) / firstChunk
+  let mut text := options ++
+    "private theorem first_header_checked : LALR.FirstCheck.header grammar firstFacts = true := by cbv\n\n"
+  let mut cases := ""
+  for k in [:count] do
+    text := text ++ options ++ s!"private theorem first_range_{k}_checked :\n" ++
+      s!"    LALR.FirstCheck.productionRange grammar firstFacts {k * firstChunk} {k * firstChunk + firstChunk} = true := by cbv\n\n"
+    cases := cases ++ s!"    | {k}, _ => first_range_{k}_checked\n"
+  return text ++ "theorem first_checked : LALR.FirstCheck.validate grammar firstFacts = true :=\n" ++
+    s!"  LALR.FirstProofs.validate_of_ranges {firstChunk} {count} first_header_checked (by decide) fun k bound =>\n" ++
+    "    match k, bound with\n" ++ cases ++ s!"    | _ + {count}, bound => absurd bound (by omega)\n\n"
+
 private structure ItemPieces where
   /-- The `itemStates` literal for the data module. -/
   data : String
@@ -547,10 +570,7 @@ private def generatedParts (source : String) : Except String GeneratedParts := d
   -- The item-coverage certificate module.
   let itemsBody :=
     "-- Proof-producing normalization; all resulting terms are kernel checked.\n" ++
-    "set_option maxRecDepth 10000 in\nset_option maxHeartbeats 8000000 in\n" ++
-    "set_option cbv.warning false in\n" ++
-    "theorem first_checked : LALR.FirstCheck.validate grammar firstFacts = true := by cbv\n\n" ++
-    items.proofs
+    firstCertificate g.productions.size ++ items.proofs
   -- The progress/budget certificate group.
   let progressBody := budgetPieces.progress
   -- The safety group joins the reduction certificates.

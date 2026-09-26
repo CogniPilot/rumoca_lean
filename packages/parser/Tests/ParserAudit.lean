@@ -178,6 +178,9 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.FirstProofs.Below.append_right
 #audit axioms Parser.LALR.FirstProofs.Below.cons
 #audit axioms Parser.LALR.FirstProofs.validated_closed
+#audit axioms Parser.LALR.FirstCheck.header
+#audit axioms Parser.LALR.FirstCheck.productionRange
+#audit axioms Parser.LALR.FirstProofs.validate_of_ranges
 #audit axioms Parser.LALR.FirstProofs.rewrites_below
 #audit axioms Parser.LALR.FirstProofs.produces_below
 #audit axioms Parser.LALR.FirstProofs.derives_below

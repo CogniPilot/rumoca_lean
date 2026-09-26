@@ -21,15 +21,19 @@ def printResult : (name : String) → Result name → List Token
   | "type_prefix" => Print.typePrefix
   | "type_specifier" | "name" => Print.name
   | "component_list" => Print.declarations
-  | "component_declaration" | "declaration" => Print.declaration
+  | "component_declaration" => Print.componentDeclaration
+  | "declaration" => Print.declaration
   | "modification" => Print.modification
   | "class_modification" => fun arguments =>
       .literal "(" :: Print.argumentList arguments ++ [.literal ")"]
   | "argument_list" => Print.argumentList
+  | "annotation_clause" => Print.annotationClause
   | "argument" | "element_modification_or_replaceable" => Print.argument
   | "element_modification" => Print.elementModification
   | "equation_section" => Print.equationSection
-  | "some_equation" | "equation_or_procedure" | "simple_equation" => Print.equation
+  | "some_equation" => Print.someEquation
+  | "equation_or_procedure" | "simple_equation" => Print.equation
+  | "condition_attribute" => fun condition => .literal "if" :: Print.expr condition
   | "modification_expression" | "expression" | "simple_expression" | "logical_expression"
     | "logical_term" | "logical_factor" | "relation" | "arithmetic_expression" | "term"
     | "factor" | "primary" | "function_argument" | "subscript" => Print.expr
@@ -39,6 +43,8 @@ def printResult : (name : String) → Result name → List Token
   | "function_arguments_non_first" => fun (first, rest) => Print.exprs (first :: rest)
   | "array_subscripts" => fun indices => .literal "[" :: Print.exprs indices ++ [.literal "]"]
   | "output_expression_list" => Print.outputs
+  | "description" => Print.description
+  | "description_string" => Print.descriptionString
   | _ => fun _ => []
 
 local notation "Yields" => Action.Yields Token.symbol printResult
@@ -138,6 +144,19 @@ private theorem modification_optional (value : Option AST.Modification) :
     Print.optionalModification value = value.elim [] Print.modification := by
   cases value <;> rfl
 
+private theorem condition_optional (value : Option AST.Expr) :
+    Print.condition value = value.elim [] fun condition => .literal "if" :: Print.expr condition := by
+  cases value <;> rfl
+
+private theorem annotation_optional (value : Option (List AST.Argument)) :
+    Print.annotation value = value.elim [] Print.annotationClause := by
+  cases value <;> rfl
+
+private theorem classAnnotation_map (value : Option (List AST.Argument × Token)) :
+    Print.classAnnotation (value.map Prod.fst) =
+      value.elim [] fun xy => Print.annotationClause xy.1 ++ [.literal ";"] := by
+  cases value <;> rfl
+
 private theorem following_exprs (first : AST.Expr)
     (rest : Option (Token × (AST.Expr × List AST.Expr))) :
     Print.exprs (first :: following rest) =
@@ -160,13 +179,16 @@ private theorem classDefinition_yields : Yields classDefinition Print.classDefin
     (ref "class_specifier" as Print.classSpecifier)) fun _ => rfl
 
 private theorem longClassSpecifier_yields : Yields longClassSpecifier Print.classSpecifier :=
-  .map <| .congr (.seq (payload .ident) (.seq (ref "composition" as Print.composition)
-    (.seq (fixed "end") (payload .ident)))) fun ⟨name, body, _, endName⟩ => by
-      simp [Print.classSpecifier]
+  .map <| .congr (.seq (payload .ident) (.seq (ref "description_string" as Print.descriptionString)
+    (.seq (ref "composition" as Print.composition) (.seq (fixed "end") (payload .ident)))))
+    fun ⟨name, strings, body, _, endName⟩ => by simp [Print.classSpecifier]
 
 private theorem composition_yields : Yields composition Print.composition :=
   .map <| .congr (.seq (ref "element_list" as elementsPrinter)
-    (.many (ref "equation_section" as Print.equationSection))) fun _ => rfl
+    (.seq (.many (ref "equation_section" as Print.equationSection))
+      (.optional (.seq (ref "annotation_clause" as Print.annotationClause) (fixed ";")))))
+    fun ⟨elements, sections, annotation⟩ => by
+      simp only [Print.composition, classAnnotation_map, List.append_assoc]; rfl
 
 private theorem elementList_yields : Yields elementList elementsPrinter :=
   .map <| .congr (.many (.seq (ref "element" as Print.element) (fixed ";")))
@@ -187,9 +209,22 @@ private theorem typePrefix_yields : Yields typePrefix Print.typePrefix :=
   .congr (.optional (.alt (payload _) (payload _))) fun _ => rfl
 
 private theorem componentList_yields : Yields componentList Print.declarations :=
-  .map <| .congr (.seq (ref "component_declaration" as Print.declaration)
-    (.many (.seq (fixed ",") (ref "component_declaration" as Print.declaration))))
+  .map <| .congr (.seq (ref "component_declaration" as Print.componentDeclaration)
+    (.many (.seq (fixed ",") (ref "component_declaration" as Print.componentDeclaration))))
     fun ⟨first, rest⟩ => by simp [Print.declarations, flatMap_snd]; rfl
+
+private theorem componentDeclaration_yields :
+    Yields componentDeclaration Print.componentDeclaration :=
+  .map <| .congr (.seq (ref "declaration" as Print.declaration)
+    (.seq (.optional (ref "condition_attribute" as fun condition =>
+        .literal "if" :: Print.expr condition))
+      (ref "description" as Print.description)))
+    fun ⟨declaration, condition, description⟩ => by
+      simp only [Print.componentDeclaration, condition_optional, List.append_assoc]; rfl
+
+private theorem conditionAttribute_yields :
+    Yields conditionAttribute fun condition => .literal "if" :: Print.expr condition :=
+  .map <| .congr (.seq (fixed "if") (ref "expression" as Print.expr)) fun _ => rfl
 
 private theorem declaration_yields : Yields declaration Print.declaration :=
   .map <| .congr (.seq (payload .ident) (.seq (.optional (ref "array_subscripts" as subscriptsPrinter))
@@ -221,14 +256,19 @@ private theorem elementModificationOrReplaceable_yields :
     fun ⟨each, target⟩ => by cases each <;> rfl
 
 private theorem elementModification_yields : Yields elementModification Print.elementModification :=
-  .map <| .congr (.seq (ref "name" as Print.name) (.optional (ref "modification" as Print.modification)))
-    fun ⟨target, modification⟩ => by cases modification <;> simp [Print.elementModification,
+  .map <| .congr (.seq (ref "name" as Print.name) (.seq (.optional (ref "modification" as Print.modification))
+    (ref "description_string" as Print.descriptionString)))
+    fun ⟨target, modification, strings⟩ => by cases modification <;> simp [Print.elementModification,
       Print.optionalModification]
 
 private theorem equationSection_yields : Yields equationSection Print.equationSection :=
   .map <| .congr (.seq (fixed "equation")
-    (.many (.seq (ref "some_equation" as Print.equation) (fixed ";"))))
+    (.many (.seq (ref "some_equation" as Print.someEquation) (fixed ";"))))
     fun ⟨_, equations⟩ => by simp [Print.equationSection, flatMap_fst]; rfl
+
+private theorem someEquation_yields : Yields someEquation Print.someEquation :=
+  .map <| .congr (.seq (ref "equation_or_procedure" as Print.equation)
+    (ref "description" as Print.description)) fun _ => rfl
 
 private theorem simpleEquation_yields : Yields simpleEquation Print.equation :=
   .map <| .congr (.seq (ref "simple_expression" as Print.expr)
@@ -308,6 +348,19 @@ private theorem arraySubscripts_yields : Yields arraySubscripts subscriptsPrinte
     (.seq (.many (.seq (fixed ",") (ref "subscript" as Print.expr))) (fixed "]"))))
     fun ⟨_, first, rest, _⟩ => by simp [subscriptsPrinter, Print.exprs, exprsTail_map]; rfl
 
+private theorem description_yields : Yields description Print.description :=
+  .map <| .congr (.seq (ref "description_string" as Print.descriptionString)
+    (.optional (ref "annotation_clause" as Print.annotationClause)))
+    fun ⟨strings, annotation⟩ => by simp only [Print.description, annotation_optional]; rfl
+
+private theorem descriptionString_yields : Yields descriptionString Print.descriptionString :=
+  .map <| .congr (.optional (.seq (payload .string) (.many (.seq (fixed "+") (payload .string)))))
+    fun strings => by cases strings <;> simp [Print.descriptionString, flatMap_snd]
+
+private theorem annotationClause_yields : Yields annotationClause Print.annotationClause :=
+  .map <| .congr (.seq (fixed "annotation") (ref "class_modification" as fun arguments =>
+    .literal "(" :: Print.argumentList arguments ++ [.literal ")"])) fun _ => rfl
+
 /-- A reference rule body yields the printer of the rule it names. -/
 local macro "delegates " n:str : term =>
   `(.congr (ref' $n (p := printResult $n) fun _ => rfl) fun _ => rfl)
@@ -330,7 +383,8 @@ theorem printed : Yield rules Token.symbol printResult := by
   · exact .congr typePrefix_yields fun _ => rfl
   · exact delegates "name"
   · exact .congr componentList_yields fun _ => rfl
-  · exact delegates "declaration"
+  · exact .congr componentDeclaration_yields fun _ => rfl
+  · exact .congr conditionAttribute_yields fun _ => rfl
   · exact .congr declaration_yields fun _ => rfl
   · exact .congr modification_yields fun _ => rfl
   · exact delegates "expression"
@@ -340,7 +394,7 @@ theorem printed : Yield rules Token.symbol printResult := by
   · exact .congr elementModificationOrReplaceable_yields fun _ => rfl
   · exact .congr elementModification_yields fun _ => rfl
   · exact .congr equationSection_yields fun _ => rfl
-  · exact delegates "equation_or_procedure"
+  · exact .congr someEquation_yields fun _ => rfl
   · exact delegates "simple_equation"
   · exact .congr simpleEquation_yields fun _ => rfl
   · exact delegates "simple_expression"
@@ -364,6 +418,9 @@ theorem printed : Yield rules Token.symbol printResult := by
   · exact .congr outputExpressionList_yields fun _ => rfl
   · exact .congr arraySubscripts_yields fun _ => rfl
   · exact delegates "expression"
+  · exact .congr description_yields fun _ => rfl
+  · exact .congr descriptionString_yields fun _ => rfl
+  · exact .congr annotationClause_yields fun _ => rfl
 
 /-- The payloads of every value a rule denotes are its printed result. -/
 theorem denotes_tokens {name : String} {v : Structure.Value Token} {result : Result name}

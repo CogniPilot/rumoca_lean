@@ -79,7 +79,7 @@ open Modelica Modelica.Select
 
 /-- The element of a plain `Real NAME;` state declaration. -/
 def stateElement (s : String) : Modelica.AST.Element :=
-  .component ⟨none, [.ident "Real"], none, [⟨.ident s, none, none⟩]⟩
+  .component ⟨none, [.ident "Real"], none, [⟨⟨.ident s, none, none⟩, none, ⟨[], none⟩⟩]⟩
 
 /-- The right-hand side written for a rate spelling: a sign applied to the
 unsigned number, or the number alone. -/
@@ -209,12 +209,14 @@ private theorem elements_printed (names : List String) :
   | cons _ _ ih => simp only [List.map_cons, List.flatMap_cons, ih]; rfl
 
 private theorem equation_printed (e : Equation) :
-    Modelica.Print.equation (rateEquation e) ++ [.literal ";"] = equationTokens e := by
-  simp only [rateEquation, Modelica.Print.equation, rateExpr_printed, equationTokens]
+    Modelica.Print.someEquation (plain (rateEquation e)) ++ [.literal ";"] = equationTokens e := by
+  simp only [plain, rateEquation, Modelica.Print.someEquation, Modelica.Print.equation,
+    Modelica.Print.description, Modelica.Print.descriptionString, Modelica.Print.annotation,
+    rateExpr_printed, equationTokens, List.append_nil]
   rfl
 
 private theorem equations_printed (read : List Equation) :
-    ((read.map rateEquation).flatMap fun e => Modelica.Print.equation e ++ [.literal ";"]) =
+    (((read.map rateEquation).map plain).flatMap fun q => Modelica.Print.someEquation q ++ [.literal ";"]) =
       read.flatMap equationTokens := by
   induction read with
   | nil => rfl
@@ -225,7 +227,7 @@ private theorem equations_printed (read : List Equation) :
 theorem select_printed {d : Modelica.AST.StoredDefinition} {m : Model} (h : select d = .ok m) :
     Modelica.Print.storedDefinition d = m.tokens := by
   unfold select at h
-  obtain ⟨⟨name, ⟨elements, sections⟩, endName⟩, found, h⟩ := bind_ok h
+  obtain ⟨⟨name, ⟨elements, sections, annotation⟩, endName⟩, found, h⟩ := bind_ok h
   obtain ⟨declared, stated, h⟩ := bind_ok h
   obtain ⟨equations, sectioned, h⟩ := bind_ok h
   obtain ⟨read, rated, h⟩ := bind_ok h
@@ -237,7 +239,7 @@ theorem select_printed {d : Modelica.AST.StoredDefinition} {m : Model} (h : sele
   · cases h
     simp only [Modelica.Print.storedDefinition, Modelica.Print.classDefinition,
       Modelica.Print.classSpecifier, Modelica.Print.composition, Modelica.Print.equationSection,
-      List.flatMap_cons, List.flatMap_nil, elements_printed, equations_printed, Model.tokens,
+      Modelica.Print.descriptionString, Modelica.Print.classAnnotation, List.flatMap_cons, List.flatMap_nil, elements_printed, equations_printed, Model.tokens,
       Model.states, Model.equations]
     simp
   · cases h
@@ -268,8 +270,9 @@ instance (m : Model) : Decidable m.Admissible := by
 
 /-- The syntax tree of a record. -/
 def syntaxTree (m : Model) : Modelica.AST.StoredDefinition :=
-  ⟨[⟨.literal "model", .long (.ident m.name)
-    ⟨m.states.map stateElement, [⟨m.equations.map rateEquation⟩]⟩ (.ident m.endName)⟩]⟩
+  ⟨[⟨.literal "model", .long (.ident m.name) []
+    ⟨m.states.map stateElement, [⟨(m.equations.map rateEquation).map plain⟩], none⟩
+    (.ident m.endName)⟩]⟩
 
 /-- The tokens of a rate: signs and one number. -/
 theorem rateTokens_cases (rate : String) :
@@ -364,10 +367,14 @@ private theorem rateExpr_of_printed {rate : String} {r : Modelica.AST.Expr} (val
     rw [expression, Good.signed_of_printed valid (by rfl) signed printed]
     rfl
 
-private theorem equations_of {read : List Equation} {equations : List Modelica.AST.Equation}
-    (valid : ∀ q ∈ equations, Good.equation q)
-    (printed : equations.flatMap (fun q => Modelica.Print.equation q ++ [.literal ";"]) =
-      read.flatMap equationTokens) : equations = read.map rateEquation := by
+private theorem rateTokens_plain {rate : String} : ∀ t ∈ rateTokens rate, Good.Plain t := by
+  intro t member
+  rcases rateTokens_member member with rfl | rfl | ⟨_, rfl⟩ <;> simp [Good.Plain, Token.symbol]
+
+private theorem equations_of {read : List Equation} {equations : List Modelica.AST.SomeEquation}
+    (valid : ∀ q ∈ equations, Good.someEquation q)
+    (printed : equations.flatMap (fun q => Modelica.Print.someEquation q ++ [.literal ";"]) =
+      read.flatMap equationTokens) : equations = (read.map rateEquation).map plain := by
   induction read generalizing equations with
   | nil =>
     cases equations with
@@ -380,17 +387,26 @@ private theorem equations_of {read : List Equation} {equations : List Modelica.A
       simp only [List.flatMap_cons, equationTokens, List.append_assoc, List.cons_append,
         List.nil_append] at printed
       obtain ⟨single, following⟩ := Good.split_unique
-        (Good.not_mem_of_tokens (Good.equation_tokens (valid q (List.mem_cons_self ..)))
+        (Good.not_mem_of_tokens (Good.someEquation_tokens (valid q (List.mem_cons_self ..)))
           (t := .literal ";") (by decide))
         (by simp [rateTokens_free])
-        (show Modelica.Print.equation q ++ .literal ";" :: _ =
+        (show Modelica.Print.someEquation q ++ .literal ";" :: _ =
           ([.literal "der", .literal "(", .ident e.derivative, .literal ")"] ++
             .literal "=" :: rateTokens e.rate) ++ .literal ";" :: _ by simpa using printed)
       obtain ⟨l, r, rfl, validLeft, validRight, left, right⟩ :=
-        Good.equation_of_printed (valid _ (List.mem_cons_self ..)) (by simp) single
+        Good.equation_of_printed (valid _ (List.mem_cons_self ..)) (by simp) rateTokens_plain single
       rw [Good.derivative_of_printed validLeft (by rfl) left, rateExpr_of_printed validRight right,
         ih (fun x member => valid x (List.mem_cons_of_mem _ member)) following]
       rfl
+
+/-- No token of a record is a STRING or the keyword `annotation`. -/
+theorem Model.tokens_plain (m : Model) : ∀ t ∈ m.tokens, Good.Plain t := by
+  intro t member
+  simp only [Model.tokens, List.mem_append, List.mem_cons, List.mem_flatMap, declTokens,
+    equationTokens, List.not_mem_nil, or_false] at member
+  rcases member with ((((rfl | rfl) | ⟨_, _, rfl | rfl | rfl⟩) | rfl) |
+      ⟨_, _, ((rfl | rfl | rfl | rfl | rfl) | member) | rfl⟩) | rfl | rfl | rfl <;>
+    first | exact rateTokens_plain t member | simp [Good.Plain, Token.symbol]
 
 /-- The certified parse of a record's tokens is the syntax tree of the record. -/
 theorem parse_tree {m : Model} {ast : Modelica.AST.StoredDefinition}
@@ -401,15 +417,20 @@ theorem parse_tree {m : Model} {ast : Modelica.AST.StoredDefinition}
       (m.states.flatMap declTokens ++ .literal "equation" :: m.equations.flatMap equationTokens) ++
         [.literal "end", .ident m.endName, .literal ";"] := by
     simp [Model.tokens]
-  rw [body] at printed
+  have unstrung : ∀ t ∈ m.tokens, t.symbol ≠ .string := fun t member => (m.tokens_plain t member).1
+  rw [body] at printed unstrung
   obtain ⟨c, rfl, validBody, printedBody⟩ := Good.storedDefinition_of_printed valid
-    (by simp [declTokens, equationTokens, rateTokens_free]) printed
-  obtain ⟨equations, sectioned, declared, equated⟩ := Good.composition_of_printed validBody
-    (by simp [declTokens]) (by simp [equationTokens, rateTokens_free]) printedBody
-  obtain ⟨elements, sections⟩ := c
-  obtain ⟨validElements, validSections⟩ := validBody
-  simp only at sectioned declared validElements validSections
-  subst sectioned
+    (by simp [declTokens, equationTokens, rateTokens_free])
+    (fun t member => unstrung t (List.mem_cons_of_mem _ (List.mem_cons_of_mem _
+      (List.mem_append_left _ member))))
+    printed
+  obtain ⟨equations, sectioned, unannotated, declared, equated⟩ := Good.composition_of_printed
+    validBody (by simp [declTokens]) (by simp [equationTokens, rateTokens_free])
+    (by simp [equationTokens, rateTokens_free]) printedBody
+  obtain ⟨elements, sections, annotation⟩ := c
+  obtain ⟨validElements, validSections, _⟩ := validBody
+  simp only at sectioned unannotated declared validElements validSections
+  subst sectioned unannotated
   rw [elements_of validElements declared,
     equations_of (equations := equations) (validSections _ (List.mem_singleton_self _)) equated]
   rfl
@@ -420,7 +441,8 @@ private theorem states_map (pos : Nat) (names : List String)
   | nil => rfl
   | cons name rest ih =>
     have named := admitted name (List.mem_cons_self ..)
-    simp [states, stateElement, Select.state, declaration, Select.name, named,
+    simp [states, stateElement, Select.state, declaration, Select.name, named, absent,
+      Select.description, Select.descriptionString,
       ih (pos + 3) (fun n member => admitted n (List.mem_cons_of_mem _ member)),
       bind, Except.bind, pure, Except.pure]
 
@@ -478,8 +500,13 @@ theorem select_complete (m : Model) (admissible : m.Admissible) :
       (List.mem_map_of_mem (f := Equation.derivative) member))), spellings e member⟩
   obtain ⟨name, state0, state1, statesRest, equation0, equationsRest, endName⟩ := m
   simp only [Model.states, Model.equations, List.map_cons] at stated rated
+  have planned : ∀ pos, plainEquations pos (plain (rateEquation equation0) ::
+      List.map (plain ∘ rateEquation) equationsRest) =
+      .ok (rateEquation equation0 :: List.map rateEquation equationsRest) := fun pos => by
+    simpa using plainEquations_plain pos (rateEquation equation0 :: equationsRest.map rateEquation)
   simp [select, syntaxTree, Select.model, Select.name, named, ended, Model.states,
-    Model.equations, stated, Select.equations, rated, bind, Except.bind, pure, Except.pure]
+    Model.equations, stated, Select.descriptionString, absent, Select.equations,
+    planned, rated, bind, Except.bind, pure, Except.pure]
 
 /-- Every admissible record whose tokens a source lexes to is the selected
 parse of that source. -/

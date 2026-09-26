@@ -20,26 +20,31 @@ def Result : String → Type
   | "component_clause" => AST.ComponentClause
   | "type_prefix" => Option Token
   | "type_specifier" | "name" => AST.Name
-  | "component_list" => List AST.Declaration
-  | "component_declaration" | "declaration" => AST.Declaration
+  | "component_list" => List AST.ComponentDeclaration
+  | "component_declaration" => AST.ComponentDeclaration
+  | "declaration" => AST.Declaration
   | "modification" => AST.Modification
-  | "class_modification" | "argument_list" => List AST.Argument
+  | "class_modification" | "argument_list" | "annotation_clause" => List AST.Argument
   | "argument" | "element_modification_or_replaceable" => AST.Argument
   | "element_modification" => AST.ElementModification
   | "equation_section" => AST.EquationSection
-  | "some_equation" | "equation_or_procedure" | "simple_equation" => AST.Equation
-  | "modification_expression" | "expression" | "simple_expression" | "logical_expression"
+  | "some_equation" => AST.SomeEquation
+  | "equation_or_procedure" | "simple_equation" => AST.Equation
+  | "modification_expression" | "condition_attribute" | "expression" | "simple_expression" | "logical_expression"
     | "logical_term" | "logical_factor" | "relation" | "arithmetic_expression" | "term"
     | "factor" | "primary" | "function_argument" | "subscript" => AST.Expr
   | "component_reference" => AST.ComponentReference
   | "function_call_args" | "function_arguments" | "array_subscripts" => List AST.Expr
   | "function_arguments_non_first" => AST.Expr × List AST.Expr
   | "output_expression_list" => List (Option AST.Expr)
+  | "description" => AST.Description
+  | "description_string" => List Token
   | _ => Unit
 
 abbrev Action := StructuralActions.Action Token Result
 def lit (s : String) : Action Token := .terminal (.literal s)
 def ident : Action Token := .terminal .ident
+def string : Action Token := .terminal .string
 local infixr:60 " ⋄ " => StructuralActions.Action.seq
 
 def storedDefinition : Action AST.StoredDefinition :=
@@ -54,12 +59,13 @@ def classPrefixes : Action Token := lit "model"
 def classSpecifier : Action AST.ClassSpecifier := .ref "long_class_specifier"
 
 def longClassSpecifier : Action AST.ClassSpecifier :=
-  .map (fun (name, composition, _, endName) => .long name composition endName)
-    (ident ⋄ .ref "composition" ⋄ lit "end" ⋄ ident)
+  .map (fun (name, strings, composition, _, endName) => .long name strings composition endName)
+    (ident ⋄ .ref "description_string" ⋄ .ref "composition" ⋄ lit "end" ⋄ ident)
 
 def composition : Action AST.Composition :=
-  .map (fun (elements, sections) => ⟨elements, sections⟩)
-    (.ref "element_list" ⋄ .many (.ref "equation_section"))
+  .map (fun (elements, sections, annotation) => ⟨elements, sections, annotation.map Prod.fst⟩)
+    (.ref "element_list" ⋄ .many (.ref "equation_section") ⋄
+      .optional (.ref "annotation_clause" ⋄ lit ";"))
 
 def elementList : Action (List AST.Element) :=
   .map (fun elements => elements.map Prod.fst) (.many (.ref "element" ⋄ lit ";"))
@@ -76,11 +82,16 @@ def typePrefix : Action (Option Token) := .optional (.alt (lit "input") (lit "ou
 
 def typeSpecifier : Action AST.Name := .ref "name"
 
-def componentList : Action (List AST.Declaration) :=
+def componentList : Action (List AST.ComponentDeclaration) :=
   .map (fun (first, rest) => first :: rest.map Prod.snd)
     (.ref "component_declaration" ⋄ .many (lit "," ⋄ .ref "component_declaration"))
 
-def componentDeclaration : Action AST.Declaration := .ref "declaration"
+def componentDeclaration : Action AST.ComponentDeclaration :=
+  .map (fun (declaration, condition, description) => ⟨declaration, condition, description⟩)
+    (.ref "declaration" ⋄ .optional (.ref "condition_attribute") ⋄ .ref "description")
+
+def conditionAttribute : Action AST.Expr :=
+  .map (fun (_, condition) => condition) (lit "if" ⋄ .ref "expression")
 
 def declaration : Action AST.Declaration :=
   .map (fun (name, subscripts, modification) => ⟨name, subscripts, modification⟩)
@@ -109,14 +120,16 @@ def elementModificationOrReplaceable : Action AST.Argument :=
     (.optional (lit "each") ⋄ .ref "element_modification")
 
 def elementModification : Action AST.ElementModification :=
-  .map (fun (name, modification) => ⟨name, modification⟩)
-    (.ref "name" ⋄ .optional (.ref "modification"))
+  .map (fun (name, modification, description) => ⟨name, modification, description⟩)
+    (.ref "name" ⋄ .optional (.ref "modification") ⋄ .ref "description_string")
 
 def equationSection : Action AST.EquationSection :=
   .map (fun (_, equations) => ⟨equations.map Prod.fst⟩)
     (lit "equation" ⋄ .many (.ref "some_equation" ⋄ lit ";"))
 
-def someEquation : Action AST.Equation := .ref "equation_or_procedure"
+def someEquation : Action AST.SomeEquation :=
+  .map (fun (equation, description) => ⟨equation, description⟩)
+    (.ref "equation_or_procedure" ⋄ .ref "description")
 def equationOrProcedure : Action AST.Equation := .ref "simple_equation"
 
 def simpleEquation : Action AST.Equation :=
@@ -206,6 +219,20 @@ def arraySubscripts : Action (List AST.Expr) :=
 
 def subscript : Action AST.Expr := .ref "expression"
 
+def description : Action AST.Description :=
+  .map (fun (strings, annotation) => ⟨strings, annotation⟩)
+    (.ref "description_string" ⋄ .optional (.ref "annotation_clause"))
+
+/-- An absent description string is the empty list; the `+` separators are
+implied. -/
+def descriptionString : Action (List Token) :=
+  .map (fun strings => strings.elim [] fun (first, rest) => first :: rest.map Prod.snd)
+    (.optional (string ⋄ .many (lit "+" ⋄ string)))
+
+def annotationClause : Action (List AST.Argument) :=
+  .map (fun (_, arguments) => arguments) (lit "annotation" ⋄ .ref "class_modification")
+
+set_option maxHeartbeats 1000000 in
 def rules : StructuralActions.Rules Token Result
   | "stored_definition" => some storedDefinition
   | "class_definition" => some classDefinition
@@ -220,6 +247,7 @@ def rules : StructuralActions.Rules Token Result
   | "type_specifier" => some typeSpecifier
   | "component_list" => some componentList
   | "component_declaration" => some componentDeclaration
+  | "condition_attribute" => some conditionAttribute
   | "declaration" => some declaration
   | "modification" => some modification
   | "modification_expression" => some modificationExpression
@@ -253,6 +281,9 @@ def rules : StructuralActions.Rules Token Result
   | "output_expression_list" => some outputExpressionList
   | "array_subscripts" => some arraySubscripts
   | "subscript" => some subscript
+  | "description" => some description
+  | "description_string" => some descriptionString
+  | "annotation_clause" => some annotationClause
   | _ => none
 
 end Rumoca.Modelica.Structural

@@ -40,5 +40,16 @@ def validate (g : Grammar) (facts : Array First) : Bool :=
     g.productions.all (fun p =>
       included (firstSequence facts p.output) (facts[p.input]?.getD {}))
 
+/-- The domain conditions of `validate`, without the production obligations. -/
+def header (g : Grammar) (facts : Array First) : Bool :=
+  g.wellFormed && facts.size == g.nonterminals &&
+    facts.all (fun f => f.terminals.all (fun t => t < g.terminals))
+
+/-- The production obligations of `validate` with indices in `[start, stop)`. A
+large grammar is checked in several such ranges, each normalized separately. -/
+def productionRange (g : Grammar) (facts : Array First) (start stop : Nat) : Bool :=
+  (g.productions.extract start stop).all fun p =>
+    included (firstSequence facts p.output) (facts[p.input]?.getD {})
+
 end FirstCheck
 end Parser.LALR

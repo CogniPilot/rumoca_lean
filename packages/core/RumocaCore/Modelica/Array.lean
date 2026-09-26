@@ -146,23 +146,25 @@ theorem matrix_ok {pos : Nat} {what : String} {indices : Option (List Modelica.A
 /-- One `each NAME = value` modification argument. -/
 def eachArgument (pos : Nat) (what : String) (value : Modelica.AST.Expr → Except Rejection Unit) :
     Modelica.AST.Argument → Except Rejection String
-  | ⟨true, ⟨[attr], some (.value written)⟩⟩ => do
+  | ⟨true, ⟨[attr], some (.value written), strings⟩⟩ => do
     let name ← Select.name (pos + 1) what attr
     value written
+    descriptionString (pos + 3 + (Modelica.Print.expr written).length) strings
     return name
   | _ => .error ⟨pos, s!"{what} must be written each NAME = value"⟩
 
 theorem eachArgument_ok {pos : Nat} {what : String}
     {value : Modelica.AST.Expr → Except Rejection Unit} {a : Modelica.AST.Argument} {s : String}
     (h : eachArgument pos what value a = .ok s) :
-    ∃ written u, value written = .ok u ∧ a = ⟨true, ⟨[.ident s], some (.value written)⟩⟩ := by
+    ∃ written u, value written = .ok u ∧ a = ⟨true, ⟨[.ident s], some (.value written), []⟩⟩ := by
   unfold eachArgument at h
   split at h
-  · rename_i attr written
+  · rename_i attr written strings
     obtain ⟨name, named, h⟩ := bind_ok h
     obtain ⟨u, valued, h⟩ := bind_ok h
+    obtain ⟨_, undescribed, h⟩ := bind_ok h
     cases h
-    exact ⟨written, u, valued, by rw [name_ok named]⟩
+    exact ⟨written, u, valued, by rw [name_ok named, descriptionString_ok undescribed]⟩
   · cases h
 
 /-- The value `true`. -/
@@ -189,8 +191,8 @@ def initialization (pos : Nat) : Option Modelica.AST.Modification → Except Rej
 
 theorem initialization_ok {pos : Nat} {m : Option Modelica.AST.Modification} {names : String × String}
     (h : initialization pos m = .ok names) :
-    m = some (.class [⟨true, ⟨[.ident names.1], some (.value (bare (.number "0")))⟩⟩,
-      ⟨true, ⟨[.ident names.2], some (.value (.boolean (.literal "true")))⟩⟩] none) := by
+    m = some (.class [⟨true, ⟨[.ident names.1], some (.value (bare (.number "0"))), []⟩⟩,
+      ⟨true, ⟨[.ident names.2], some (.value (.boolean (.literal "true"))), []⟩⟩] none) := by
   unfold initialization at h
   split at h
   · obtain ⟨startName, started, h⟩ := bind_ok h
@@ -272,11 +274,12 @@ def select (d : Modelica.AST.StoredDefinition) : Except Rejection Model := do
     | _ => throw ⟨width + 9, "the square profile has a derivative and a Jacobian equation"⟩
   | _ => throw ⟨2, "the square profile declares an input, a state and a Jacobian output"⟩
 
+set_option maxHeartbeats 1000000 in
 /-- A selected tree prints to the tokens of its record. -/
 theorem select_printed {d : Modelica.AST.StoredDefinition} {m : Model} (h : select d = .ok m) :
     Modelica.Print.storedDefinition d = m.tokens := by
   unfold select at h
-  obtain ⟨⟨name, ⟨elements, sections⟩, endName⟩, found, h⟩ := bind_ok h
+  obtain ⟨⟨name, ⟨elements, sections, annotation⟩, endName⟩, found, h⟩ := bind_ok h
   rw [model_ok found]
   simp only at h
   split at h
@@ -355,7 +358,8 @@ theorem select_complete (m : Model) (admissible : m.Admissible) :
   obtain ⟨h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈, h₉, h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅⟩ := admissible
   simp [select, sourceFamily.ast, Select.model, Select.name, h₁, h₂, h₃, h₄, h₅, h₆, h₇, h₈, h₉,
     h₁₀, h₁₁, h₁₂, h₁₃, h₁₄, h₁₅, declaration, vector, matrix, absent, initialization,
-    eachArgument, trueValue, Select.equations, Select.derivative, selectProduct, selectCall,
+    eachArgument, trueValue, Select.description, Select.descriptionString, Select.equations,
+    plainEquations, Select.derivative, selectProduct, selectCall,
     reference, exactly, numeral, bind, Except.bind, pure, Except.pure, Except.map]
 
 /-- Every admissible record whose tokens a source lexes to is the selected

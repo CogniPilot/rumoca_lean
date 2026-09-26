@@ -25,5 +25,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ConstantProfile.rateTokens_cases
 #audit axioms Rumoca.ConstantProfile.accepts
 #audit axioms Rumoca.ConstantProfile.parse_tree
+#audit axioms Rumoca.ConstantProfile.Model.tokens_plain
 #audit axioms Rumoca.ConstantProfile.select_complete
 #audit axioms Rumoca.ConstantProfile.parse_complete
