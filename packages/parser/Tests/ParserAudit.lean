@@ -10,6 +10,9 @@ import Parser.LALR.Actions
 import Parser.LALR.Payloads
 import Parser.LALR.EBNFStructure
 import Parser.LALR.EBNFActions
+import Parser.LALR.ActionYield
+import Parser.LALR.Rejection
+import Parser.EBNF.Equivalence
 import Parser.LALR.ActionWords
 import Tests.StructuralActions
 import Parser.LALR.FirstProofs
@@ -278,6 +281,7 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.EBNF.Derives.alt_iff
 #audit axioms Parser.EBNF.Derives.optional_iff
 #audit axioms Parser.EBNF.Derives.ref_iff_of_filter
+#audit axioms Parser.EBNF.Derives.optional_seq_iff
 #audit axioms Parser.EBNF.accepts_iff_of_head
 #audit axioms Parser.LALR.TokenParser.parseWith_execution
 #audit axioms Parser.LALR.TokenParser.parseWith_sound
@@ -318,6 +322,19 @@ import Parser.Scanner.Prefix
 #audit axioms Parser.LALR.Frontend.StructuralActions.total
 #audit axioms Parser.LALR.Frontend.StructuralActions.denotes_expr
 #audit axioms Parser.LALR.Frontend.StructuralActions.denotes_valid
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields
+#audit axioms Parser.LALR.Frontend.StructuralActions.Yield
+#audit axioms Parser.LALR.Frontend.StructuralActions.Denotes.tokens
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.terminal
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.fixed
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.ref
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.seq
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.alt
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.optional
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.many
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.map
+#audit axioms Parser.LALR.Frontend.StructuralActions.Action.Yields.congr
+#audit axioms Parser.LALR.unconsumed
 #audit axioms Parser.LALR.Frontend.StructuralActions.domain
 #audit axioms Parser.LALR.Frontend.StructuralActions.unique
 #audit axioms Parser.LALR.Frontend.StructuralActions.parse_total

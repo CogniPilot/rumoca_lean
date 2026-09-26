@@ -1,13 +1,6 @@
 import ModelicaParser
-import ModelicaParser.ActionsProofs
-import ModelicaParser.Driven
-import ModelicaParser.Array.Located
-import ModelicaParser.Constant.Located
-import ModelicaParser.ParserProofs
-import ModelicaParser.LocatedProofs
-import ModelicaParser.OriginProofs
-import ModelicaParser.LocatedTotal
-import ModelicaParser.ActionsLocatedTotal
+import ModelicaParser.Annex
+import ModelicaParser.Certificate
 import ProofAudit.Audit
 
 #audit axioms Rumoca.Generated.source_read_checked
@@ -23,68 +16,6 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Generated.progress_checked
 #audit axioms Rumoca.Generated.parse_correct
 #audit axioms Rumoca.Generated.parsed_tree
-#audit axioms Rumoca.parsed_tree
-#audit axioms Rumoca.Grammar.unit_in_grammar
-#audit axioms Rumoca.Driven.in_grammar
-#audit axioms Rumoca.AST.decode_sound
-#audit axioms Rumoca.lex_correct
-#audit axioms Rumoca.Lexes.ident_word
-#audit axioms Rumoca.Lexes.ident_not_time
-#audit axioms Rumoca.parseTokens_sound
-#audit axioms Rumoca.parseTokens_complete
-#audit axioms Rumoca.parse_complete
-#audit axioms Rumoca.parse_eq_parsed
-#audit axioms Rumoca.parsed_source
-#audit axioms Rumoca.parsed_in_ebnf
-#audit axioms Rumoca.ParserActions.parseTokens_sound
-#audit axioms Rumoca.ParserActions.parseTokens_complete
-#audit axioms Rumoca.ParserActions.parse_complete
-#audit axioms Rumoca.ParserActions.parsed_in_ebnf
-#audit axioms Rumoca.Driven.decode_sound
-#audit axioms Rumoca.Driven.resolve_complete
-#audit axioms Rumoca.ArrayProfile.Call.jacobian_iff
-#audit axioms Rumoca.ArrayProfile.decode_sound
-#audit axioms Rumoca.ArrayProfile.decode_complete
-#audit axioms Rumoca.ArrayProfile.in_grammar
-#audit axioms Rumoca.ParserActions.LocatedParsed.erases
-#audit axioms Rumoca.ParserActions.LocatedParsed.tokenSpan_text
-#audit axioms Rumoca.ParserActions.LocatedParsed.disjoint
-#audit axioms Rumoca.ArrayProfile.LocatedCall.arguments_contained
-#audit axioms Rumoca.ArrayProfile.LocatedParsed.callLocation
-#audit axioms Rumoca.ArrayProfile.LocatedParsed.resolve_complete
-#audit axioms Rumoca.ParserActions.Parsed.locations_exist
-#audit axioms Rumoca.ParserActions.Parsed.located_parsed
-#audit axioms Rumoca.ParserActions.Parsed.parseLocated_eq
-#audit axioms Rumoca.ParserActions.parseLocated_complete
-#audit axioms Rumoca.located_lex_sound
-#audit axioms Rumoca.LocatedParsed.erases
-#audit axioms Rumoca.LocatedParsed.location_count
-#audit axioms Rumoca.LocatedParsed.fieldSpan_eq_tokenSpan
-#audit axioms Rumoca.LocatedParsed.state_field_text
-#audit axioms Rumoca.Lexes.spelled
-#audit axioms Rumoca.Parsed.locations_exist
-#audit axioms Rumoca.Parsed.located_parsed
-#audit axioms Rumoca.Parsed.parseLocated_eq
-#audit axioms Rumoca.parseLocated_complete
-#audit axioms Rumoca.LocatedParsed.lexemes
-#audit axioms Rumoca.LocatedParsed.disjoint
-#audit axioms Rumoca.Parallel.parse_eq_sequential
-#audit axioms Rumoca.Parallel.parse_input_order
-#audit axioms Rumoca.Parallel.Result.source_sound
-#audit axioms Rumoca.LocatedParsed.tokenSpan_text
-#audit axioms Rumoca.LocatedParsed.modelName_text
-#audit axioms Rumoca.LocatedParsed.state_text
-#audit axioms Rumoca.LocatedParsed.derivativeName_text
-#audit axioms Rumoca.LocatedParsed.endName_text
-#audit axioms Rumoca.LocatedParsed.resolved_references
-#audit axioms Rumoca.LocatedParsed.resolve_complete
-#audit axioms Rumoca.LocatedParsed.resolve_error_locations
-#audit axioms Rumoca.LocatedParsed.field_range_contains
-#audit axioms Rumoca.Origins.lookup
-#audit axioms Rumoca.Origins.source_ancestry
-#audit axioms Rumoca.Origins.leaf_text
-#audit axioms Rumoca.Origins.production_ranges
-#audit axioms Rumoca.Origins.production_boundaries
 #audit axioms Rumoca.Generated.first_checked
 #audit axioms Rumoca.Generated.execution_safe
 #audit axioms Rumoca.Generated.nullable_coverage
@@ -97,7 +28,92 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Generated.source_parseLocated_correct
 #audit axioms Rumoca.Generated.parseLocated_erases
 
-#audit axioms Rumoca.ConstantProfile.decode_sound
-#audit axioms Rumoca.ConstantProfile.decode_complete
-#audit axioms Rumoca.ConstantProfile.in_grammar
-#audit axioms Rumoca.ConstantProfile.LocatedParsed.resolve_complete
+#audit axioms Rumoca.lex_correct
+#audit axioms Rumoca.scan_sound
+#audit axioms Rumoca.scan_complete
+#audit axioms Rumoca.numberToken_text
+#audit axioms Rumoca.Lexes.ident_word
+#audit axioms Rumoca.Lexes.ident_not_time
+#audit axioms Rumoca.Lexes.spelled
+
+#audit axioms Rumoca.Modelica.AST.leftAssociate
+#audit axioms Rumoca.Modelica.Print.storedDefinition
+#audit axioms Rumoca.Modelica.Print.expr_leftAssociate
+#audit axioms Rumoca.Modelica.Structural.rules
+#audit axioms Rumoca.Modelica.Structural.printResult
+#audit axioms Rumoca.Modelica.Structural.covered
+#audit axioms Rumoca.Modelica.Structural.licensed
+#audit axioms Rumoca.Modelica.Structural.printed
+#audit axioms Rumoca.Modelica.Structural.denotes_tokens
+#audit axioms Rumoca.Modelica.Structural.storedDefinition_total
+#audit axioms Rumoca.Modelica.Structural.storedDefinition_domain
+#audit axioms Rumoca.Modelica.Structural.storedDefinition_correct
+#audit axioms Rumoca.Modelica.StructureBridge.total
+#audit axioms Rumoca.Modelica.StructureBridge.sound
+#audit axioms Rumoca.Modelica.StructureBridge.source_accepts_iff
+#audit axioms Rumoca.Modelica.StructureBridge.classifier_compatible
+#audit axioms Rumoca.Modelica.StructureBridge.syntax_sound
+#audit axioms Rumoca.Modelica.StructureBridge.parse_eq_build
+#audit axioms Rumoca.Modelica.StructureBridge.build_total
+#audit axioms Rumoca.Modelica.StructureBridge.build_sound
+#audit axioms Rumoca.Modelica.StructureBridge.root_valid
+#audit axioms Rumoca.Modelica.Structural.build_iff
+#audit axioms Rumoca.Modelica.Structural.build_total
+#audit axioms Rumoca.Modelica.Structural.build_sound
+#audit axioms Rumoca.Modelica.Structural.parse_iff
+#audit axioms Rumoca.Modelica.Structural.accepts_iff
+#audit axioms Rumoca.Modelica.Structural.parse_printed
+#audit axioms Rumoca.Modelica.Annex.arithmetic_expression_iff
+#audit axioms Rumoca.Modelica.Annex.component_reference_iff
+
+#audit axioms Rumoca.Modelica.parse
+#audit axioms Rumoca.Modelica.parse_eq_parsed
+#audit axioms Rumoca.Modelica.Parsed.printed
+#audit axioms Rumoca.Modelica.Parsed.lexes
+#audit axioms Rumoca.Modelica.Parsed.in_ebnf
+#audit axioms Rumoca.Modelica.Parsed.unique
+#audit axioms Rumoca.Modelica.accepts_iff
+#audit axioms Rumoca.Modelica.located_lex_sound
+#audit axioms Rumoca.Modelica.rejectedAt
+#audit axioms Rumoca.Modelica.parseLocated
+#audit axioms Rumoca.Modelica.LocatedParsed.erases
+#audit axioms Rumoca.Modelica.LocatedParsed.lexemes
+#audit axioms Rumoca.Modelica.LocatedParsed.disjoint
+#audit axioms Rumoca.Modelica.LocatedParsed.tokenSpan_text
+#audit axioms Rumoca.Modelica.Parsed.locations_exist
+#audit axioms Rumoca.Modelica.Parsed.located_parsed
+#audit axioms Rumoca.Modelica.Parsed.parseLocated_eq
+#audit axioms Rumoca.Modelica.parseLocated_complete
+
+
+#audit axioms Rumoca.Parallel.parse_eq_sequential
+#audit axioms Rumoca.Parallel.parse_input_order
+#audit axioms Rumoca.Parallel.Result.source_sound
+
+#audit axioms Rumoca.Modelica.Certificate.token_tree
+#audit axioms Rumoca.Modelica.Certificate.syntactic_of_certificates
+
+namespace Rumoca.Modelica.CertificateCheck
+
+set_option maxRecDepth 100000
+set_option maxHeartbeats 8000000
+
+/- Kernel regression of the certificate generator on a nested expression with
+every operator, a call, a global reference and a parenthesized list. Admission
+of these forms is static semantics. -/
+certify_source nested "model Nested
+  input Real u[2, n];
+  output Real x(start = -1.5e3, each fixed = true) = .a.b[1];
+equation
+  der(x) = -f(u .* u, (g), true) + 2 * x / (3 - y);
+  z = ();
+end Nested;
+"
+
+#audit axioms nested.lexed
+#audit axioms nested.checked
+#audit axioms nested.structure_built
+#audit axioms nested.denotes
+#audit axioms nested.syntactic
+
+end Rumoca.Modelica.CertificateCheck

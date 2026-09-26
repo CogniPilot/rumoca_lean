@@ -1,10 +1,10 @@
-# Tiny Modelica frontend
+# Modelica frontend
 
 This Lake package instantiates the generic [parser engine](../parser/README.md).
-It owns the selected [Modelica EBNF](grammar/Modelica.ebnf), generated LALR tables,
-Modelica lexical policy, AST and actions, resolution, source locations and
-bounded parsing of independent files. The semantic API remains in `Rumoca`;
-its implementation modules are `ModelicaParser.*`.
+It owns the [Modelica EBNF](grammar/Modelica.ebnf), its generated LALR tables,
+the Modelica lexical policy, the general syntax tree and its structural actions,
+source locations and bounded parsing of independent files. Its modules are
+`ModelicaParser.*`; the language API keeps the `Rumoca` namespace.
 
 From the root workspace, inside `nix develop`:
 
@@ -16,33 +16,37 @@ lake run check-generated
 
 The coordinating generation command runs `lalrgen` with explicit language
 namespaces. Modelica and GALEC use the same reusable engine, EBNF lowering and
-checked input-size bound. Language ASTs and resolution never become dependencies
-of the engine. The old DFA generator and runtime have been removed.
+checked input-size bound. Language ASTs never become dependencies of the engine.
 
-`Grammar.lean` and the development profile modules derive AST token membership
-from the source EBNF equations. `Actions.lean` instantiates the generic
-`LALR.TokenParser.Actions` contract; frontends may consume the CST and original
-token payloads while defining their own AST relation. The parser/action
-soundness and completeness theorems apply to that relation, rather than relying
-on execution of a fixed token pattern. This cutover adds no grammar case;
-see the [grammar restrictions](grammar/README.md) and
-[verification boundary](../../docs/verification.md).
+`Rumoca.Modelica.parse` lexes once, runs the certified LALR parser once and
+applies the structural actions of every grammar rule (`StructuralActions`) to
+that same tree. `ActionCoverage` proves the actions cover exactly the authored
+grammar; `ActionYield` proves every rule's result prints back to the tokens it
+was parsed from, so `Structural.parse_printed` binds the syntax tree to the
+lexed characters. `StructuralParser.accepts_iff` states the accepted language
+for all token sequences. `Annex` proves that the two left-factored productions
+denote the words of their MLS 3.7 Appendix A forms.
 
-The optional `modelica_parser/frontend-bench` executable measures existing
+The grammar accepts more than any admitted model. Admission is static
+semantics in the core package (`RumocaCore.Modelica`): a selection reads a
+record from the parsed tree or rejects it at an offending token, and proves
+that a selected tree prints to its record's tokens.
+
+`Certificate.certify_source` kernel-checks the parse of a concrete source text:
+the lexer result, the accepted tree, the structural value and the typed action
+result are separate reflexivity or constructor proofs, and the LR parser is not
+evaluated in the kernel. Actual-artifact checkers use it to bind their source
+file to the compiled record.
+
+`LocatedParser` attaches exact UTF-8 ranges to the same lexed tokens; a syntax
+rejection is reported at the first token the certified parser could not accept.
+`LocatedCompleteness` proves that attachment succeeds for every lexed source.
+`Parallel` parses independent files with a sequential-equivalence theorem.
+
+The optional `modelica_parser/frontend-bench` executable measures the
 read/lex/parse/located stages without importing artifact backends. Run it through
 `lake run benchmark-frontend`; raw measurements stay under `build/` and are
-independent of the proof gate. The [performance audit](../../dev/performance-audit.md)
-records the original span-attachment failure, its checked refinement and the
-remaining allocation findings.
-
-`ModelicaParserChecks` audits the source lexer, grammar, AST actions and parser
-contracts, exact identifier spans and sequential/parallel equivalence.
-Name errors include the offending occurrence and a related declaration span;
-the error-location theorem binds both ranges to their actual AST fields and
-exact source text. The same structured diagnostic feeds terminal and LSP clients.
-
-`ModelicaParser.Array.Located` exposes the separate array/AD frontend under
-`Rumoca.ArrayProfile`. Its EBNF, decoder soundness/completeness, recognition and
-source-bound call/operand ranges are checked. `jacobian` uses ordinary call
-syntax and is selected by resolution. See [the array/AD scope](../../dev/tensor-ad.md)
-for its two fixed profiles and the outstanding production lowering contracts.
+independent of the proof gate. `lalr-tests` executes the generated tables
+natively on the lexed example sources. See the [grammar
+restrictions](grammar/README.md) and the [verification
+boundary](../../docs/verification.md).

@@ -78,8 +78,8 @@ def Interface.Closed (i : Interface) : Prop :=
 `[d₁, …, dₖ]`. -/
 def subscriptTokens : List Nat → List Token
   | [] => []
-  | d :: ds => .literal "[" :: .literal (toString d) ::
-      (ds.flatMap fun n => [.literal ",", .literal (toString n)]) ++ [.literal "]"]
+  | d :: ds => .literal "[" :: .number (toString d) ::
+      (ds.flatMap fun n => [.literal ",", .number (toString n)]) ++ [.literal "]"]
 
 /-- The tokens up to and including the closing bracket of a subscript. -/
 def closeSubscript : List Token → List Token
@@ -99,12 +99,17 @@ def causalityBefore : Option Token → Causality
   | _ => .local
 
 /-- Every `Real` component declaration of a token stream, in source order: its
-name, the causality of its prefix and its subscript tokens. -/
-def declaredAfter (previous : Option Token) : List Token → List (String × Causality × List Token)
-  | [] => []
-  | .literal "Real" :: .ident name :: rest =>
-      (name, causalityBefore previous, subscriptAt rest) :: declaredAfter (some (.ident name)) rest
-  | t :: rest => declaredAfter (some t) rest
+name, the causality of its prefix and its subscript tokens. A declaration is
+the type name `Real` followed by an identifier; the class name after `model`
+is never a type name. -/
+def declaredAfter : Option Token → List Token → List (String × Causality × List Token)
+  | _, [] => []
+  | some (.literal "model"), t :: rest => declaredAfter (some t) rest
+  | previous, t :: rest@(.ident name :: more) =>
+    if t = .ident "Real" then
+      (name, causalityBefore previous, subscriptAt more) :: declaredAfter (some (.ident name)) more
+    else declaredAfter (some t) rest
+  | _, t :: rest => declaredAfter (some t) rest
 
 def declaredIn (tokens : List Token) : List (String × Causality × List Token) :=
   declaredAfter none tokens
@@ -117,16 +122,14 @@ def Declaration.signature (d : Declaration) : String × Causality × List Token 
 that stream. -/
 theorem declaredAfter_ident (previous : Option Token) (tokens : List Token) :
     ∀ entry ∈ declaredAfter previous tokens, .ident entry.1 ∈ tokens := by
-  fun_induction declaredAfter previous tokens with
-  | case1 => intro entry member; cases member
-  | case2 previous name rest ih =>
-    intro entry member
-    rcases List.mem_cons.mp member with rfl | member
-    · exact List.mem_cons_of_mem _ (List.mem_cons_self ..)
-    · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (ih entry member))
-  | case3 previous t rest _ ih =>
-    intro entry member
-    exact List.mem_cons_of_mem _ (ih entry member)
+  fun_induction declaredAfter previous tokens <;> intro entry member
+  all_goals first
+    | (cases member; done)
+    | (rename_i ih; exact List.mem_cons_of_mem _ (ih entry member))
+    | (rename_i ih
+       rcases List.mem_cons.mp member with rfl | member
+       · exact List.mem_cons_of_mem _ (List.mem_cons_self ..)
+       · exact List.mem_cons_of_mem _ (List.mem_cons_of_mem _ (ih entry member)))
 
 theorem declaredIn_ident (tokens : List Token) (i : Interface)
     (sound : declaredIn tokens = i.declarations.map Declaration.signature) :

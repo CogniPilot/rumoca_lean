@@ -54,10 +54,9 @@ prepared Solve programs.
 `Rumoca.ArrayCompiler.prepare` is the development array entry point. Its result
 retains the located parse and a stored executable tensor IVP with its lowering
 certificate. `prepare_correct` composes lexical/EBNF binding with the Real
-equation, initialization and Jacobian contracts. The two examples in
-`examples/development/` exercise this path in the existing native checks.
-Production CLI generation still rejects them until their finite C and actual
-FMU/eFMU contracts are complete.
+equation, initialization and Jacobian contracts. `examples/development/TensorSquare.mo`
+exercises this path in the existing native checks, and `ArrayDriven.mo` there
+checks that the driven array body is rejected by selection.
 
 Module imports remain `Rumoca.*` and theorem names are unchanged. The public
 `Rumoca` module includes proofs; the compiler executable imports only runtime

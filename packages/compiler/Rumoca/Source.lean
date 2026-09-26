@@ -1,4 +1,4 @@
-import ModelicaParser.AST
+import RumocaCore.Modelica.Unit
 import RumocaCore.Profile
 import Mathlib.Analysis.Calculus.Deriv.Add
 

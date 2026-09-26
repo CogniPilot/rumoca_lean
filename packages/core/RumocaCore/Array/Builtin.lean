@@ -1,4 +1,4 @@
-import ModelicaParser.Array.Syntax
+import RumocaCore.Modelica.Array
 import RumocaCore.Tensor.Differentiation
 
 /-! Mathematical semantics of the parsed Jacobian extension. Only the selected

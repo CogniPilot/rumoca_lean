@@ -1,5 +1,4 @@
-import ModelicaParser.Constant.Located
-import ModelicaParser.ActionsLocatedTotal
+import RumocaCore.Modelica.Constant
 import RumocaCore.Constant.Semantics
 
 /-! Development source-to-IVP preparation for the G01 constant-rate profile.
@@ -30,7 +29,7 @@ resolution for a pinned AST, as in the array profile's `prepare_eq_parsed`. -/
 theorem prepare_eq_parsed (parsed : ConstantProfile.Parsed source)
     (resolved : parsed.ast.Resolved) :
     prepare source = .ok (prepareParsed parsed.located resolved) := by
-  simp only [prepare, ConstantProfile.parseLocated, bind, Except.bind, parsed.parseLocated_eq]
+  simp only [prepare, bind, Except.bind, parsed.parseLocated_eq]
   rw [ConstantProfile.LocatedParsed.resolve_complete parsed.located resolved]
   rfl
 

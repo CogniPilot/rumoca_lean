@@ -18,9 +18,9 @@ noncomputable def analyzeReference (item : String × Except String String) :
     let error (e : Parser.Source.Diagnostic source) :=
       failure (Diagnostics.toJson e) (Diagnostics.render name e)
     let result := Parallel.parseOne ⟨name, source⟩
-    match result.parsed with
+    match result.parsed.bind AST.selection.selectLocated with
     | .error e => error e
-    | .ok p => match p.resolve with
+    | .ok p => match LocatedParsed.resolve p with
       | .error e => error e
       | .ok _ => (Json.mkObj [("path", toJson name), ("ok", toJson true),
           ("model", toJson p.parsed.ast.name), ("diagnostics", toJson (#[] : Array Json))], none)
@@ -33,10 +33,10 @@ theorem analyze_eq_reference (terminal : Bool) (item : String × Except String S
   cases read with
   | error e => rfl
   | ok source =>
-      cases parsed : (Parallel.parseOne ⟨name, source⟩).parsed with
+      cases parsed : (Parallel.parseOne ⟨name, source⟩).parsed.bind AST.selection.selectLocated with
       | error e => simp [analyze, analyzeReference, parsed]
       | ok p =>
-          cases resolved : p.resolve <;> simp [analyze, analyzeReference, parsed, resolved]
+          cases resolved : LocatedParsed.resolve p <;> simp [analyze, analyzeReference, parsed, resolved]
 
 theorem analyze_json (terminal : Bool) (item : String × Except String String) :
     (analyze terminal item).1 = (analyzeReference item).1 := by

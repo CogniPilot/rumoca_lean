@@ -7,30 +7,14 @@ namespace Rumoca.EFMI.SourceObservation
 open ArrayProfile Rumoca.Tensor CMemory CMemory.TensorView CTensor Solve.Tensor
 open CTensor.SquareJacobianObservation
 
-/-- The SAME artifact's stored lowering proof and a square kernel index exclude
-the driven-only source body. No pinned source AST is assumed. -/
+/-- The SAME artifact's selected source body is the Jacobian body. No pinned
+source AST is assumed. -/
 theorem source_jacobian_body (a : TensorArtifact input)
-    (index : a.prepared.kernel = ProgramFixture.IVPEntry.kernel stateShape) :
+    (_index : a.prepared.kernel = ProgramFixture.IVPEntry.kernel stateShape) :
     ∃ output derivative rhs assigned call,
       a.prepared.parsed.parsed.ast.body = .jacobian output derivative rhs assigned call := by
-  let dae := ArrayProfile.DAE.lower
-    (ArrayProfile.Flat.lower a.prepared.parsed.parsed.ast a.prepared.resolved)
-  have checked := Solved.lower_checked dae
-  rw [← a.prepared.kernel_lowered, index] at checked
   cases body : a.prepared.parsed.parsed.ast.body with
   | jacobian output derivative rhs assigned call => exact ⟨_, _, _, _, _, rfl⟩
-  | driven derivative rhs =>
-    have absent : dae.jacobian = none := by
-      simp only [dae, ArrayProfile.DAE.lower, ArrayProfile.Flat.lower, body,
-        ArrayProfile.Flat.jacobianFor, Option.map_none]
-    obtain ⟨rhsProgram, initial, diagonal, _, _, hj, assembled⟩ :=
-      Solved.lower_fields dae _ checked
-    have shape : diagonal = some (squareJacobianProgram stateShape) :=
-      (congrArg Solve.PointwiseIVP.diagonal assembled).symm
-    rw [absent] at hj
-    have missing : diagonal = none := (Option.some.inj hj).symm
-    rw [missing] at shape
-    cases shape
 
 /-- Source labels, parsed built-in and mathematical Jacobian are tied to this
 artifact's AST and fixed source shape, not an independently supplied model. -/

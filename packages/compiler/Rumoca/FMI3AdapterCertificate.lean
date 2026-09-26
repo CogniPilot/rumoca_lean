@@ -1,6 +1,7 @@
 import RumocaFMI3.PublicAPICertificate
 import Rumoca.FMI3AdapterProofs
 import RumocaC.PrinterCertificate
+import ModelicaParser.Certificate
 import Lean
 
 /-! Kernel certificates for complete adapter bytes. Candidate signatures and
@@ -177,8 +178,9 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
   let derivative := Syntax.mkStrLit candidate.parsed.ast.derivativeName
   let ending := Syntax.mkStrLit candidate.parsed.ast.endName
   elabCommand (← `(command| def $model:ident : AST.Model := ⟨$name, $state, $derivative, $ending⟩))
-  elabCommand (← `(command| def $parsed:ident : Parsed $src :=
-    ⟨($model).tokens, $model, by rfl, parseTokens_complete $model⟩))
+  Modelica.Certificate.certify (mkIdent (base.str "sourceTree")) src
+  let tree := mkIdent ((base.str "sourceTree").str "parsed")
+  elabCommand (← `(command| def $parsed:ident : Parsed $src := ⟨$tree, $model, by rfl⟩))
   elabCommand (← `(command| def $artifact:ident : Artifact $input :=
     Artifact.ofParsed $input $parsed ⟨by decide +kernel, by decide +kernel⟩))
   elabCommand (← `(command| theorem $compiled:ident : compile $input = .ok $artifact :=
@@ -347,8 +349,9 @@ def certifyAdapterBytes (inp : ProfileCertInputs) (adapter : String)
   let derivative := Syntax.mkStrLit witness.parsed.ast.derivativeName
   let ending := Syntax.mkStrLit witness.parsed.ast.endName
   elabCommand (← `(command| def $model:ident : AST.Model := ⟨$name, $state, $derivative, $ending⟩))
-  elabCommand (← `(command| def $parsed:ident : Parsed $src :=
-    ⟨($model).tokens, $model, by rfl, parseTokens_complete $model⟩))
+  Modelica.Certificate.certify (mkIdent (base.str "sourceTree")) src
+  let tree := mkIdent ((base.str "sourceTree").str "parsed")
+  elabCommand (← `(command| def $parsed:ident : Parsed $src := ⟨$tree, $model, by rfl⟩))
   elabCommand (← `(command| def $artifact:ident : Artifact $input :=
     Artifact.ofParsed $input $parsed ⟨by decide +kernel, by decide +kernel⟩))
   elabCommand (← `(command| theorem $compiled:ident : compile $input = .ok $artifact :=

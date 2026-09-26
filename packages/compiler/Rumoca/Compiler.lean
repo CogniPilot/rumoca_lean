@@ -1,4 +1,4 @@
-import ModelicaParser.LocatedTotal
+import RumocaCore.Modelica.UnitOrigins
 import RumocaC.Codegen
 
 open _root_.Parser
@@ -38,13 +38,15 @@ theorem compile_eq_parsed (input : Source.InputRef) (parsed : Parsed input.sourc
     (resolved : AST.Resolved parsed.ast) :
     compile input = .ok (Artifact.ofParsed input parsed resolved) := by
   simp only [compile, parsed.parseLocated_eq, bind, Except.bind]
-  rw [LocatedParsed.resolve_complete _ resolved]
+  rw [LocatedParsed.resolve_complete parsed.located resolved]
   rfl
 
-theorem compile_complete (input : Source.InputRef) (m : AST.Model)
-    (syntaxValid : Lexes input.source.toList m.tokens) (resolved : AST.Resolved m) :
+/-- Every source whose certified parse selects a resolvable unit model compiles,
+with that model. -/
+theorem compile_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
+    (m : AST.Model) (selected : AST.select tree.ast = .ok m) (resolved : AST.Resolved m) :
     ∃ a, compile input = .ok a ∧ a.parsed.ast = m :=
-  ⟨Artifact.ofParsed input (parsedOfSyntax input.source m syntaxValid) resolved,
+  ⟨Artifact.ofParsed input ⟨tree, m, selected⟩ resolved,
     compile_eq_parsed input _ resolved, rfl⟩
 
 end Rumoca

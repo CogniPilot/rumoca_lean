@@ -1,4 +1,4 @@
-import ModelicaParser.Constant.Located
+import RumocaCore.Modelica.Constant
 import RumocaCore.Real.ScaledRounding
 import RumocaCore.Initialization.Scalar
 

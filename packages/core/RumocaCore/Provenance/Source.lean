@@ -1,5 +1,4 @@
-import ModelicaParser.OriginProofs
-import ModelicaParser.LocatedTotal
+import RumocaCore.Modelica.UnitOrigins
 
 /-! The source context owned by actual IR occurrences. A semantic AST alone is
 insufficient: construction requires its checked parse and actual input identity. -/
@@ -85,6 +84,6 @@ theorem Context.source_fields (context : Context model) :
   obtain ⟨parsed, source, sites⟩ := context.correspondence
   refine ⟨parsed, source, ?_⟩
   intro field
-  cases field <;> simp [site, sites, Origins.sites, Origins.Field.index] <;> rfl
+  cases field <;> simp [site, sites, Origins.sites, Origins.Field.index]
 
 end Rumoca.Provenance

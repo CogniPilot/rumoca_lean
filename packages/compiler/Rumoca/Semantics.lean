@@ -1,6 +1,6 @@
 import RumocaC.Lowering
 import Rumoca.Compiler
-import ModelicaParser.ParserProofs
+import RumocaCore.Modelica.Unit
 import Rumoca.Source
 
 open _root_.Parser

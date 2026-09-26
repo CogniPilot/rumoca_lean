@@ -61,10 +61,8 @@ theorem ConstantProfile.Model.state_token (m : ConstantProfile.Model) (i : Nat) 
 theorem ConstantArtifact.state_span (a : ConstantArtifact input) (i : Nat) (state : String)
     (found : a.prepared.parsed.parsed.ast.states[i]? = some state) :
     (a.prepared.parsed.tokenSpan (3 + 3 * i)).text = state := by
-  have tokens := ParserActions.parseTokens_sound ConstantProfile.actions a.prepared.parsed.parsed.syntactic
-  apply a.prepared.parsed.tokenSpan_text (3 + 3 * i) (.ident state)
-  rw [tokens]
-  exact a.prepared.parsed.parsed.ast.state_token i state found
+  exact Modelica.Selection.LocatedParsed.tokenSpan_record a.prepared.parsed (3 + 3 * i) (.ident state)
+    (a.prepared.parsed.parsed.ast.state_token i state found)
 
 /-- Every constant-rate notice is a §8.6 notice of one declared state, located
 at that state's identifier. -/

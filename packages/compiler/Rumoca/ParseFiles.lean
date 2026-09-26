@@ -1,5 +1,6 @@
 import Cli
 import ModelicaParser.Parallel
+import RumocaCore.Modelica.Unit
 import Lean.Data.Json.FromToJson.Basic
 import Lean.Data.Position
 import Rumoca.Diagnostics
@@ -25,9 +26,9 @@ def analyze (terminal : Bool) (item : String × Except String String) : Json × 
     let error (e : Parser.Source.Diagnostic source) :=
       failure (Diagnostics.toJson e) (fun _ => Diagnostics.render name e)
     let result := Parallel.parseOne ⟨name, source⟩
-    match result.parsed with
+    match result.parsed.bind AST.selection.selectLocated with
     | .error e => error e
-    | .ok p => match p.resolve with
+    | .ok p => match LocatedParsed.resolve p with
       | .error e => error e
       | .ok _ => (Json.mkObj [("path", toJson name), ("ok", toJson true),
           ("model", toJson p.parsed.ast.name), ("diagnostics", toJson (#[] : Array Json))], none)

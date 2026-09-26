@@ -6,8 +6,13 @@ import Tests.CoreAudit.RumocaCore_Array_Interface
 import Tests.CoreAudit.RumocaCore_Constant_Interface
 import Tests.CoreAudit.RumocaCore_Constant_Permutation
 import Tests.CoreAudit.RumocaCore_Constant_Semantics
-import Tests.CoreAudit.RumocaCore_Driven_IR
-import Tests.CoreAudit.RumocaCore_Driven_Lowering
+import Tests.CoreAudit.RumocaCore_Modelica_Selection
+import Tests.CoreAudit.RumocaCore_Modelica_Select
+import Tests.CoreAudit.RumocaCore_Modelica_Unit
+import Tests.CoreAudit.RumocaCore_Modelica_UnitOrigins
+import Tests.CoreAudit.RumocaCore_Modelica_Array
+import Tests.CoreAudit.RumocaCore_Modelica_Constant
+import Tests.CoreAudit.RumocaCore_Modelica_Profile
 import Tests.CoreAudit.RumocaCore_FMI3_History
 import Tests.CoreAudit.RumocaCore_FMI3_Initialization
 import Tests.CoreAudit.RumocaCore_FMI3_Lifecycle
@@ -121,8 +126,6 @@ import Tests.CoreAudit.RumocaCore_Solve_FMI3
 import Tests.CoreAudit.RumocaCore_Solve_FMI3OriginLowering
 import Tests.CoreAudit.RumocaCore_Solve_FMI3OriginProofs
 import Tests.CoreAudit.RumocaCore_Solve_Interface
-import Tests.CoreAudit.RumocaCore_Solve_IVP
-import Tests.CoreAudit.RumocaCore_Solve_ModelData
 import Tests.CoreAudit.RumocaCore_Solve_ModelExchange
 import Tests.CoreAudit.RumocaCore_Solve_Run
 import Tests.CoreAudit.RumocaCore_Solve_Tensor

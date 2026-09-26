@@ -4,6 +4,7 @@ import RumocaFMI3.TensorAdapterPrinter
 import RumocaFMI3.TensorStorageCode
 import Tests.TensorMetadataFixture
 import ProofAudit.Audit
+import ModelicaParser.Certificate
 
 /-! Package-level check that the development `TensorSquare` profile renders to a
 concrete tensor FMI 3 adapter whose declaration preamble carries the tensor
@@ -28,8 +29,9 @@ def scalarInput : Parser.Source.InputRef :=
   .single "rumoca-check:/fmi3/TensorSquare.mo"
     "model TensorSquare Real x; equation der(x) = 1; end TensorSquare;"
 
-def scalarParsed : Parsed scalarInput.source :=
-  ⟨scalarSource.tokens, scalarSource, by rfl, parseTokens_complete scalarSource⟩
+certify_source scalarTree "model TensorSquare Real x; equation der(x) = 1; end TensorSquare;"
+
+def scalarParsed : Parsed scalarInput.source := ⟨scalarTree.parsed, scalarSource, by rfl⟩
 
 def scalarModel : Solve.FMI3Model scalarSource :=
   (Solve.lower (DAE.lower

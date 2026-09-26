@@ -1,18 +1,19 @@
 import ModelicaParser.Parser
 import Parser.Located
+import Parser.LALR.Rejection
 
 open _root_.Parser
 
-/-! Located entry point for the existing Modelica profile. Semantic ASTs and
-compiler certificates remain unchanged; the sidecar is tied to the very same
-source and token sequence. AST clients choose which child ranges they expose. -/
-namespace Rumoca
+/-! Located Modelica parse. Token locations are attached to the very same
+lexed tokens the certified parse consumes; syntax consumers choose which token
+ranges they expose. A syntax rejection is placed at the token the certified
+parser could not accept, or at the end of the text. -/
+namespace Rumoca.Modelica
 
-/-- Located tokens retain the existing source-level lexical guarantee. -/
+/-- Located tokens retain the source-level lexical guarantee. -/
 theorem located_lex_sound (l : Parser.Source.Lexed Rumoca.lex source trivia) :
     Rumoca.Lexes source.toList (l.tokens.map (·.value)) :=
   (Rumoca.lex_correct source _).mp l.lexical
-
 
 structure LocatedParsed (source : String) where
   parsed : Parsed source
@@ -22,37 +23,11 @@ structure LocatedParsed (source : String) where
 namespace LocatedParsed
 variable {source : String}
 
-/-- Every admitted AST has sixteen terminals. Semantic field accessors have
-total indices into the actual tokens, without an EOF fallback. -/
-theorem location_count (p : LocatedParsed source) : p.locations.length = 16 := by
-  have h := congrArg List.length p.aligned.erases
-  simp only [List.length_map] at h
-  rw [parseTokens_sound _ _ p.parsed.syntactic] at h
-  exact h
-
-/-- Required span for an AST field; the bound is erased during compilation. -/
-def fieldSpan (p : LocatedParsed source) (index : Fin 16) : Parser.Source.Span source :=
-  (p.locations[index.val]'(by rw [p.location_count]; exact index.isLt)).span
-
+/-- The range of one token, or the end of the text past the last token. -/
 def tokenSpan (p : LocatedParsed source) (index : Nat) : Parser.Source.Span source :=
   (p.locations[index]?).map (·.span) |>.getD (.point source.endPos)
 
-def modelSpan (p : LocatedParsed source) : Parser.Source.Span source :=
-  (p.tokenSpan 0).cover (p.tokenSpan 15)
-
-/-- Name agreement is still the compiler's resolver. Locations only enrich its
-failure report; an end-name error takes the same priority as in AST.resolve. -/
-def resolve (p : LocatedParsed source) :
-    Except (Parser.Source.Diagnostic source) (PLift (AST.Resolved p.parsed.ast)) :=
-  match AST.resolve p.parsed.ast with
-  | .ok resolved => .ok resolved
-  | .error e => .error ⟨e.phase,
-      p.tokenSpan (if p.parsed.ast.endName = p.parsed.ast.name then 8 else 14), e.message,
-      [if p.parsed.ast.endName = p.parsed.ast.name then
-        ⟨p.tokenSpan 3, "state declared here"⟩
-      else ⟨p.tokenSpan 1, "model declared here"⟩]⟩
-
-theorem erases (p : LocatedParsed source) : Rumoca.parse source = .ok p.parsed :=
+theorem erases (p : LocatedParsed source) : parse source = .ok p.parsed :=
   parse_eq_parsed p.parsed
 
 theorem lexemes (p : LocatedParsed source) :
@@ -61,24 +36,40 @@ theorem lexemes (p : LocatedParsed source) :
 theorem disjoint (p : LocatedParsed source) :
     p.locations.Pairwise (fun a b => a.span.stop ≤ b.span.start) := p.aligned.disjoint
 
+theorem tokenSpan_text (p : LocatedParsed source) (index : Nat) (token : Token)
+    (h : p.parsed.tokens[index]? = some token) :
+    (p.tokenSpan index).text = token.text := by
+  have he := congrArg (fun ts : List Token => ts[index]?) p.aligned.erases
+  dsimp only at he
+  rw [List.getElem?_map, h] at he
+  cases hx : p.locations[index]? with
+  | none => simp [hx] at he
+  | some located =>
+    have hv : located.value = token := by simpa [hx] using he
+    have ht := p.lexemes located (List.mem_of_getElem? hx)
+    simpa [tokenSpan, hx, hv] using ht
+
 end LocatedParsed
 
-/-- First mismatching terminal in this fixed profile, or EOF for a missing
-terminal. This is an error location, not error recovery or a second parser. -/
-private def mismatch (source : String) : List (Parser.Source.Located source Token) →
-    List Symbol → Parser.Source.Span source
-  | [], _ => .point source.endPos
-  | t :: _, [] => t.span
-  | t :: ts, s :: ss => if t.value.symbol = s then mismatch source ts ss else t.span
+/-- The number of tokens accepted before the certified parser rejected the
+input. It locates a syntax diagnostic only. -/
+def rejectedAt (tokens : List Token) : Nat :=
+  let word := tokens.map (Generated.encode ∘ Token.symbol)
+  tokens.length - LALR.unconsumed Generated.grammar Generated.tables (Generated.fuel word) ⟨[], word⟩
 
-def parseLocated (source : String) : Except (Parser.Source.Diagnostic source) (LocatedParsed source) :=
+/-- The range of a located token, or the end of the text past the last one. -/
+def locatedSpan (source : String) (tokens : List (Parser.Source.Located source Token))
+    (index : Nat) : Parser.Source.Span source :=
+  (tokens[index]?).map (·.span) |>.getD (.point source.endPos)
+
+def parseLocated (source : String) :
+    Except (Parser.Source.Diagnostic source) (LocatedParsed source) :=
   match Source.lexLocated lex source modelicaSpace with
   | .error e => .error e
   | .ok l =>
-    match hp : parseTokens (l.tokens.map (·.value)) with
-    | none => .error ⟨"parse", mismatch source l.tokens
-        ((AST.Model.mk "" "" "" "").tokens.map Token.symbol),
-        "expected: model NAME Real STATE; equation der(STATE) = 1; end NAME;", []⟩
+    match hp : Structural.parse (l.tokens.map (·.value)) with
+    | none => .error ⟨"parse", locatedSpan source l.tokens (rejectedAt (l.tokens.map (·.value))),
+        "outside the certified Modelica grammar", []⟩
     | some ast => .ok ⟨⟨l.tokens.map (·.value), ast, l.lexical, hp⟩, l.tokens, l.aligned⟩
 
-end Rumoca
+end Rumoca.Modelica

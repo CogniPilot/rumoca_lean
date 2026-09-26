@@ -61,26 +61,34 @@ private def runConstantCompiler {input : Source.InputRef} (name : String)
     IO.eprintln s!"{name}: the constant-rate profile is admitted for FMI 3 FMU (-o out.fmu) output; constant eFMI/eFMU archive export and C emission are not built"
     return 1
 
+/-- The diagnostic reported when no profile admits a source: a resolution
+failure of the profile that selected the source, otherwise the selection
+rejection that reads furthest into the source. Lexical and syntax diagnostics
+are the same for every profile. -/
+private def reported (first second : Source.Diagnostic source) : Source.Diagnostic source :=
+  if first.phase == "resolve" then first
+  else if second.phase == "resolve" then second
+  else if first.span.start.offset.byteIdx < second.span.start.offset.byteIdx then second
+  else first
+
 private def runCompiler (p : Cli.Parsed) : IO UInt32 := do
   let input := p.positionalArg! "model" |>.as! String
   let source ← IO.FS.readFile input
   let inputRef : Source.InputRef := .single input source
   let output := (p.flag? "output").map (·.as! String)
   match compile inputRef with
-  | .error error =>
+  | .error unitError =>
     -- The unit profile rejects the source. Admit the array/tensor profile if the
-    -- source is the array-profile shape the fixed tensor certificate certifies;
-    -- otherwise report the unit diagnostic and neither publish nor replace.
+    -- source selects it and resolves; otherwise try the constant-rate profile.
+    -- A source no profile admits neither publishes nor replaces an output.
     match compileTensor inputRef with
     | .ok tensor => runTensorCompiler input tensor output
-    | .error _ =>
-      -- Admit the constant-rate profile if the source is that development
-      -- shape; otherwise report the unit diagnostic and neither publish nor
-      -- replace.
+    | .error tensorError =>
       match compileConstant inputRef with
       | .ok constant => runConstantCompiler input constant output
-      | .error _ =>
-        IO.eprintln (Diagnostics.render input error)
+      | .error constantError =>
+        IO.eprintln (Diagnostics.render input
+          (reported (reported unitError tensorError) constantError))
         return 1
   | .ok artifact =>
     for notice in artifact.initializationDiagnostics do

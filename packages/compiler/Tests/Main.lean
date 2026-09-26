@@ -1,6 +1,5 @@
 import Rumoca.Compiler
 import Parser.LALR.EBNF
-import ModelicaParser.Driven
 import Rumoca.ArrayCompiler
 import Rumoca.ConstantCompiler
 import RumocaCore.Solve.IVP
@@ -35,21 +34,16 @@ def grammarLowered (s : String) : Bool := match LALR.Frontend.compile s with
   | .ok _ => true
   | .error _ => false
 
-def drivenAccepted (s : String) : Bool := match Driven.parse s with
-  | .error _ => false
-  | .ok parsed => match Driven.resolve parsed.ast with
-    | .error _ => false
-    | .ok _ => true
-
 def main : IO Unit := do
   let good := "model Integrator Real x; equation der(x) = 1; end Integrator;"
   expect "minimal model" (accepted good)
   let driven := "model Driven input Real u; output Real x(start=0, fixed=true); equation der(x)=u; end Driven;"
-  expect "driven parser and resolution" (drivenAccepted driven)
-  expect "driven profile not prematurely admitted by C compiler" (!accepted driven)
+  expect "driven profile not admitted" (!accepted driven)
   let arrayDriven ← IO.FS.readFile "examples/development/ArrayDriven.mo"
+  expect "driven array body not selected by the array profile"
+    (match ArrayCompiler.prepare arrayDriven with | .ok _ => false | .error _ => true)
   let arraySquare ← IO.FS.readFile "examples/development/TensorSquare.mo"
-  for source in [arrayDriven, arraySquare] do
+  for source in [arraySquare] do
     match ArrayCompiler.prepare source with
     | .error e => throw (IO.userError s!"array frontend: {e.message}")
     | .ok prepared =>
@@ -62,8 +56,6 @@ def main : IO Unit := do
         (kernel.problem.initial ops 0 1 == Tensor.Value.fill ArrayProfile.stateShape 0 &&
           kernel.problem.outputs ops 0 1 state input == state)
       match p.parsed.ast.body, kernel.diagonal with
-      | .driven .., none =>
-        expect "parsed driven array reaches executable Solve IR" (kernel.problem.rhs ops 0 1 state input == input)
       | .jacobian .., some matrix =>
         expect "parsed square and Jacobian reach executable Solve IR"
           ((kernel.problem.rhs ops 0 1 state input).data.toArray == #[4, 9] &&
@@ -225,22 +217,8 @@ def main : IO Unit := do
     match ConstantCompiler.prepare bad with
     | .error _ => pure ()
     | .ok _ => throw (IO.userError "constant frontend admitted an unresolved source")
-  expect "attribute names are identifiers" (drivenAccepted
-    "model M input Real fixed; output Real start(start=0, fixed=true); equation der(start)=fixed; end M;")
-  for bad in [driven.replace "der(x)" "der(u)", driven.replace "=u;" "=x;",
-      driven.replace "start=0" "wrong=0", driven.replace "fixed=true" "wrong=true",
-      driven.replace "input Real u" "input Real x", driven.replace "end Driven" "end Other",
-      driven.replace "start=0" "start=1", driven.replace "fixed=true" "fixed=false"] do
-    expect "driven reference/initialization rejection" (!drivenAccepted bad)
   let shape : Tensor.Shape := ⟨[2, 3]⟩
   let input : Tensor.Value Nat shape := ⟨Vector.ofFn (fun i : Fin 6 => i.val + 1)⟩
-  let state := Tensor.Value.fill shape 9
-  expect "tensor derivative preserves every input element"
-    ((Solve.drivenIVP shape).rhs ⟨Nat.add, Nat.mul, Nat.sub, Nat.div, id⟩ 0 1 state input == input)
-  expect "tensor output preserves the state"
-    ((Solve.drivenIVP shape).outputs ⟨Nat.add, Nat.mul, Nat.sub, Nat.div, id⟩ 0 1 state input == state)
-  expect "tensor initialization fills the state"
-    ((Solve.drivenIVP shape).initial ⟨Nat.add, Nat.mul, Nat.sub, Nat.div, id⟩ (0 : Nat) 1 == Tensor.Value.fill shape 0)
   -- One native boundary check for shared nonlinear intermediates: (u .* u + 1)^2.
   let program : Solve.Tensor.Program [shape] shape :=
     .binary .mul .here .here (.fill shape .one
@@ -278,8 +256,8 @@ def main : IO Unit := do
       "model M Real λ; equation der(λ)=1; end M;",
       "// comment\n" ++ good, "/* comment */" ++ good] do
     expect s!"reject {repr bad}" (!accepted bad)
-  for keyword in reserved do
-    expect s!"reserved identifier {keyword}" (!accepted
+  for keyword in reserved ++ ["Real", "Integer", "Boolean", "String"] do
+    expect s!"reserved or predefined identifier {keyword}" (!accepted
       s!"model M Real {keyword}; equation der({keyword})=1; end M;")
   for s in ["s = \"x\";", "s = [\"x\"], {\"y\" | \"z\"};",
       "s = other; other = (\"a\" | \"b\"), IDENT;", "s = \"\";",

@@ -50,7 +50,7 @@ theorem sourceBuild_correct (a : Artifact source) (c description adapter metadat
         CallPolicy.unit_acyclic _ sigs covered⟩),
     adapterContract, metadataDocument,
     interface_correct _ _ _ _ _ a.parsed.lexical
-      (by rw [Rumoca.parseTokens_sound _ _ a.parsed.syntactic]; exact a.solve.prepareFMI3.interface_sound)
+      (by rw [Rumoca.Parsed.tokens_eq a.parsed]; exact a.solve.prepareFMI3.interface_sound)
       (List.nodup_singleton _)
       (fun d member name read => by
         simp only [Solve.FMI3Model.interface, List.mem_singleton] at member

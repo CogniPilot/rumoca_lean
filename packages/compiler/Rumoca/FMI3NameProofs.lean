@@ -24,11 +24,9 @@ theorem lexed_name (h : Rumoca.Lexes chars tokens) (mem : Token.ident name ∈ t
     rcases List.mem_cons.mp mem with hm | hm
     · refine absurd hm ?_
       unfold numberToken
-      split
-      · simp
-      · split <;> simp
+      split <;> simp
     · exact ih hm
-  | punct _ _ _ _ _ ih | dotmul _ ih =>
+  | punct _ _ _ _ _ _ ih | dotmul _ ih =>
     rcases List.mem_cons.mp mem with hm | hm
     · cases hm
     · exact ih hm

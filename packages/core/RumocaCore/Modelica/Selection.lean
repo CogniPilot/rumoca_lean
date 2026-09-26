@@ -1,0 +1,159 @@
+import ModelicaParser.LocatedCompleteness
+
+/-! Admission as static semantics over the general syntax tree. A selection
+reads a record from the parsed tree, or rejects it with a message at the token
+that violates the selection. Each selection states the token sequence of the
+record it returns and proves that a selected tree prints to exactly those
+tokens, so a selected record is bound to the characters of the source text
+without any token-pattern recognition. `Selection.parse` and
+`Selection.parseLocated` compose the one certified parse with one selection;
+the admitted selections are `AST.selection`, `ArrayProfile.selection` and
+`ConstantProfile.selection`. -/
+namespace Rumoca.Modelica
+open _root_.Parser
+
+/-- A rejection of a parsed tree, located at the index of an offending token. -/
+structure Rejection where
+  token : Nat
+  message : String
+  deriving Repr, DecidableEq
+
+structure Selection (α : Type) where
+  select : AST.StoredDefinition → Except Rejection α
+  tokens : α → List Token
+  printed : ∀ tree a, select tree = .ok a → Print.storedDefinition tree = tokens a
+
+namespace Selection
+variable {α : Type} (s : Selection α)
+
+/-- A certified parse together with the record selected from its tree. -/
+structure Parsed (source : String) where
+  tree : Modelica.Parsed source
+  ast : α
+  selected : s.select tree.ast = .ok ast
+
+variable {s} {source : String}
+
+def Parsed.tokens (p : s.Parsed source) : List Token := p.tree.tokens
+
+theorem Parsed.lexical (p : s.Parsed source) : lex source = .ok p.tokens := p.tree.lexical
+
+/-- The parsed tokens are the tokens of the selected record. -/
+theorem Parsed.tokens_eq (p : s.Parsed source) : p.tokens = s.tokens p.ast :=
+  p.tree.printed.symm.trans (s.printed _ _ p.selected)
+
+/-- Soundness reaches the characters of the input file. -/
+theorem Parsed.lexes (p : s.Parsed source) : Lexes source.toList (s.tokens p.ast) := by
+  rw [← p.tokens_eq]
+  exact p.tree.lexes
+
+theorem Parsed.in_ebnf (p : s.Parsed source) :
+    EBNF.Accepts Generated.sourceGrammar (p.tokens.map Token.symbol) := p.tree.in_ebnf
+
+variable (s) in
+def parse (source : String) : Except Diagnostic (s.Parsed source) :=
+  match Modelica.parse source with
+  | .error diagnostic => .error diagnostic
+  | .ok tree =>
+    match selected : s.select tree.ast with
+    | .error rejection => .error ⟨"select", 0, rejection.message⟩
+    | .ok ast => .ok ⟨tree, ast, selected⟩
+
+/-- A selected parse describes the actual executable result. -/
+theorem parse_eq_parsed (p : s.Parsed source) : s.parse source = .ok p := by
+  obtain ⟨tree, ast, selected⟩ := p
+  simp only [parse, Modelica.parse_eq_parsed tree]
+  split
+  · rename_i rejection rejected
+    rw [selected] at rejected
+    contradiction
+  · rename_i other same
+    cases Except.ok.inj (same.symm.trans selected)
+    rfl
+
+theorem Parsed.unique (p q : s.Parsed source) : p = q :=
+  Except.ok.inj ((parse_eq_parsed p).symm.trans (parse_eq_parsed q))
+
+/-- Located tokens and the record selected from their tree. -/
+structure LocatedParsed (s : Selection α) (source : String) where
+  tree : Modelica.LocatedParsed source
+  ast : α
+  selected : s.select tree.parsed.ast = .ok ast
+
+namespace LocatedParsed
+
+def parsed (p : s.LocatedParsed source) : s.Parsed source := ⟨p.tree.parsed, p.ast, p.selected⟩
+
+def locations (p : s.LocatedParsed source) : List (Source.Located source Token) :=
+  p.tree.locations
+
+theorem aligned (p : s.LocatedParsed source) :
+    Source.Aligned modelicaSpace source.startPos p.parsed.tokens p.locations :=
+  p.tree.aligned
+
+def tokenSpan (p : s.LocatedParsed source) (index : Nat) : Source.Span source :=
+  p.tree.tokenSpan index
+
+theorem erases (p : s.LocatedParsed source) : s.parse source = .ok p.parsed :=
+  parse_eq_parsed p.parsed
+
+theorem lexemes (p : s.LocatedParsed source) :
+    ∀ token ∈ p.locations, token.span.text = token.value.text := p.tree.lexemes
+
+theorem disjoint (p : s.LocatedParsed source) :
+    p.locations.Pairwise (fun a b => a.span.stop ≤ b.span.start) := p.tree.disjoint
+
+theorem tokenSpan_text (p : s.LocatedParsed source) (index : Nat) (token : Token)
+    (h : p.parsed.tokens[index]? = some token) :
+    (p.tokenSpan index).text = token.text :=
+  p.tree.tokenSpan_text index token h
+
+/-- The range of a token of the selected record. -/
+theorem tokenSpan_record (p : s.LocatedParsed source) (index : Nat) (token : Token)
+    (h : (s.tokens p.ast)[index]? = some token) :
+    (p.tokenSpan index).text = token.text :=
+  p.tokenSpan_text index token (by rw [show p.parsed.tokens = _ from p.parsed.tokens_eq]; exact h)
+
+end LocatedParsed
+
+variable (s) in
+/-- Select a record from a located parse; a rejection is reported at its token. -/
+def selectLocated (tree : Modelica.LocatedParsed source) :
+    Except (Source.Diagnostic source) (s.LocatedParsed source) :=
+  match selected : s.select tree.parsed.ast with
+  | .error rejection => .error ⟨"select", tree.tokenSpan rejection.token, rejection.message, []⟩
+  | .ok ast => .ok ⟨tree, ast, selected⟩
+
+variable (s) in
+def parseLocated (source : String) :
+    Except (Source.Diagnostic source) (s.LocatedParsed source) :=
+  match Modelica.parseLocated source with
+  | .error diagnostic => .error diagnostic
+  | .ok tree => s.selectLocated tree
+
+/-- Attaching locations to a selected parse is total. -/
+def Parsed.located (p : s.Parsed source) : s.LocatedParsed source :=
+  ⟨p.tree.located, p.ast, p.selected⟩
+
+/-- Requiring location data does not change the selected parse. -/
+theorem Parsed.located_parsed (p : s.Parsed source) : p.located.parsed = p := rfl
+
+/-- The total construction identifies the actual public located parser. -/
+theorem Parsed.parseLocated_eq (p : s.Parsed source) : s.parseLocated source = .ok p.located := by
+  simp only [parseLocated, p.tree.parseLocated_eq, selectLocated]
+  split
+  · rename_i rejection rejected
+    rw [Modelica.Parsed.located_parsed, p.selected] at rejected
+    contradiction
+  · rename_i ast same
+    rw [Modelica.Parsed.located_parsed, p.selected] at same
+    cases Except.ok.inj same
+    rfl
+
+/-- Every selected parse succeeds with spans. -/
+theorem parseLocated_complete (p : s.Parsed source) :
+    ∃ located, s.parseLocated source = .ok located ∧ located.parsed = p :=
+  ⟨p.located, p.parseLocated_eq, rfl⟩
+
+end Selection
+end Rumoca.Modelica

@@ -1,7 +1,5 @@
 import Rumoca.ConstantCompiler
 import RumocaCore.Constant.Permutation
-import ModelicaParser.Constant.Parser
-import ModelicaParser.ActionsProofs
 
 /-! Source-text binding and the instantaneous contract of the constant-rate
 preparation API. Time stepping, finite C and FMU artifacts are separate
@@ -12,8 +10,7 @@ open ConstantProfile _root_.Parser Rumoca.Binary64
 theorem Prepared.source_correct (a : Prepared source) :
     Lexes source.toList a.parsed.parsed.ast.tokens ∧
       EBNF.Accepts Generated.sourceGrammar (a.parsed.parsed.tokens.map Token.symbol) :=
-  ⟨ParserActions.parsed_lexes actions a.parsed.parsed,
-    ParserActions.parsed_in_ebnf a.parsed.parsed⟩
+  ⟨Modelica.Selection.Parsed.lexes a.parsed.parsed, Modelica.Selection.Parsed.in_ebnf a.parsed.parsed⟩
 
 /-- Every declared state's derivative equals its stored IVP rate, and the completed
 initialization starts every state at `+0`. The lowering chain and the completed

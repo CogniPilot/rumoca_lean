@@ -72,18 +72,15 @@ theorem compileTensor_eq_parsed (input : Source.InputRef) (parsed : ArrayProfile
     ArrayCompiler.prepare_eq_parsed parsed resolved]
   rfl
 
-/-- Every resolvable array-profile source in the existing lexical/AST
-specification compiles, with its parsed AST pinned to the given model. This is
-the array analogue of the unit profile's `compile_complete`. -/
-theorem compileTensor_complete (input : Source.InputRef) (m : ArrayProfile.Model)
-    (syntaxValid : Lexes input.source.toList (ArrayProfile.actions.tokens m))
+/-- Every source whose certified parse selects a resolvable array-profile model
+compiles, with that model. This is the array analogue of the unit profile's
+`compile_complete`. -/
+theorem compileTensor_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
+    (m : ArrayProfile.Model) (selected : ArrayProfile.select tree.ast = .ok m)
     (resolved : m.Resolved) :
     ∃ a, compileTensor input = .ok a ∧ a.prepared.parsed.parsed.ast = m :=
-  let parsed : ArrayProfile.Parsed input.source :=
-    ⟨ArrayProfile.actions.tokens m, m, (lex_correct input.source _).mpr syntaxValid,
-      ParserActions.parseTokens_complete ArrayProfile.actions m⟩
-  ⟨TensorArtifact.ofParsed input parsed resolved,
-    compileTensor_eq_parsed input parsed resolved, rfl⟩
+  ⟨TensorArtifact.ofParsed input ⟨tree, m, selected⟩ resolved,
+    compileTensor_eq_parsed input _ resolved, rfl⟩
 
 /-! ### The development `TensorSquare` instance
 
@@ -109,15 +106,14 @@ namespace TensorArtifact
 
 /-- The parsed AST of any tensor artifact is determined by the lexed token
 stream: given the lexer result for the source, the parsed AST is the unique
-model those tokens decode to. -/
+model whose token sequence they are. -/
 theorem ast_determined (a : TensorArtifact input) (m : ArrayProfile.Model)
     (lexeq : Rumoca.lex input.source = .ok m.tokens) :
     a.prepared.parsed.parsed.ast = m := by
   have htok : a.prepared.parsed.parsed.tokens = m.tokens :=
     Except.ok.inj (a.prepared.parsed.parsed.lexical.symm.trans lexeq)
-  have hsyn := a.prepared.parsed.parsed.syntactic
-  rw [htok] at hsyn
-  exact Option.some.inj (hsyn.symm.trans (ParserActions.parseTokens_complete ArrayProfile.actions m))
+  exact ArrayProfile.Model.tokens_injective
+    ((Modelica.Selection.Parsed.tokens_eq a.prepared.parsed.parsed).symm.trans htok)
 
 /- With the parsed AST pinned to `squareAst`, the tensor model is the pinned
 `squareModel`, independent of the erased resolution proof. -/

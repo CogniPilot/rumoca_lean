@@ -8,7 +8,6 @@ import RumocaCore.Array.Lowering
 import RumocaCore.Array.SquareIVP
 import RumocaCore.Array.Finite
 import RumocaCore.Solve.Tensor.ReverseProofs
-import RumocaCore.Driven.Lowering
 
 namespace Rumoca.TensorChecks
 open Rumoca.Tensor
@@ -37,21 +36,9 @@ theorem matrix_storage_order :
 theorem empty_matrix_roundtrip (m : Matrix (Fin 0) (Fin 3) Nat) :
     (Value.ofMatrix m).toMatrix = m := Value.toMatrix_ofMatrix m
 
-/-- Initialization cannot be silently changed when the differential equation
-would otherwise remain correct. -/
-theorem wrong_initialization_rejected (m : Driven.DAE.Model source)
-    (input derivative : Value ℝ scalar) :
-    ¬ m.Initial (Driven.singleton 1) input derivative := by
-  rw [Driven.Solved.lower_initial]
-  change ¬ Driven.singleton (1 : ℝ) = Driven.singleton 0
-  intro h
-  have h := Driven.singleton_injective h
-  norm_num at h
-
 #audit axioms equal_volume_different_shapes
 #audit axioms matrix_storage_order
 #audit axioms empty_matrix_roundtrip
-#audit axioms wrong_initialization_rejected
 #audit axioms Rumoca.Tensor.Value.getElem_zipWith
 #audit axioms Rumoca.Tensor.BinaryOp.eval_correct
 #audit axioms Rumoca.Tensor.AD.hasFDerivAt

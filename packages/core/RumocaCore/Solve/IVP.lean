@@ -30,28 +30,4 @@ def IVP.outputs (m : IVP) (ops : ScalarOps α) (zero one : α) (state : Value α
     (input : Value α m.inputShape) : Value α m.outputShape :=
   m.output.eval ops zero one (m.environment state input)
 
-/-- The initial admitted equation, generalized in representation only to a
-tensor shape. This does not add Modelica array syntax or a tensor solver. -/
-def drivenIVP (shape : Shape) : IVP where
-  stateShape := shape
-  inputShape := shape
-  outputShape := shape
-  initialProgram := fill shape .zero
-  derivative := .ret (.there .here)
-  output := .ret .here
-
-theorem driven_initial (shape : Shape) (ops : ScalarOps α) (zero one : α) :
-    (drivenIVP shape).initial ops zero one = Value.fill shape zero := rfl
-
-theorem driven_rhs (shape : Shape) (ops : ScalarOps α) (zero one : α) (state input : Value α shape) :
-    (drivenIVP shape).rhs ops zero one state input = input := rfl
-
-theorem driven_outputs (shape : Shape) (ops : ScalarOps α) (zero one : α) (state input : Value α shape) :
-    (drivenIVP shape).outputs ops zero one state input = state := rfl
-
-/-- IR size is independent of tensor volume: no per-element instructions. -/
-theorem driven_compact (shape : Shape) :
-    (drivenIVP shape).initialProgram.nodeCount + (drivenIVP shape).derivative.nodeCount +
-      (drivenIVP shape).output.nodeCount = 4 := rfl
-
 end Rumoca.Solve

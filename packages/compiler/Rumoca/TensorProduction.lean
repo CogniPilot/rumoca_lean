@@ -271,7 +271,7 @@ theorem tensorSourceBuild_correct (a : TensorArtifact input)
         FMI3.TensorCallPolicy.tensor_acyclic w a.tensorModel sigs covered⟩),
     adapter', identifiers, token, metadataDocument,
     FMI3.interface_correct _ _ _ _ _ a.prepared.parsed.parsed.lexical
-      (by rw [ParserActions.parseTokens_sound ArrayProfile.actions a.prepared.parsed.parsed.syntactic]
+      (by rw [Modelica.Selection.Parsed.tokens_eq a.prepared.parsed.parsed]
           exact a.prepared.parsed.parsed.ast.interface_sound)
       (a.prepared.parsed.parsed.ast.interface_names a.prepared.resolved)
       (a.prepared.parsed.parsed.ast.interface_closed a.prepared.resolved),

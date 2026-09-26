@@ -1,6 +1,7 @@
 import Rumoca.TensorProduction
 import Rumoca.TensorFMI3AdapterCertificate
 import Rumoca.FMI3ProfileBuildCheck
+import ModelicaParser.Certificate
 
 /-! Fixed actual-file adapter for the development tensor source-build profile.
 The adapter independently reads all five staged files, compiles the source with
@@ -50,15 +51,15 @@ elab "verify_tensor_fmi3_build_files" : command => do
     kernelModelCTerm := ← `(term| Rumoca.TensorKernel.modelC)
     kernelCharsTerm := ← `(term| Rumoca.TensorKernel.chars)
     emitFinal := fun theoremId ctx => do
+      Rumoca.Modelica.Certificate.certify (mkIdent `Rumoca.CheckedTensorFiles.sourceTree) ctx.src
+      let treeId := mkIdent `Rumoca.CheckedTensorFiles.sourceTree.parsed
       elabCommand (← `(command|
         theorem $theoremId:ident : Generated.source = $(ctx.ebnf) ∧
             ∃ a : Rumoca.TensorArtifact $(ctx.inputTerm), Rumoca.compileTensor $(ctx.inputTerm) = .ok a ∧
               Rumoca.TensorSourceBuildContract a (String.ofList $(ctx.modelChars)) $(ctx.buildLit)
                 (String.ofList $(ctx.adapterChars)) $(ctx.mdLit) := by
           refine ⟨by rfl, ?_⟩
-          let parsed : Rumoca.ArrayProfile.Parsed $(ctx.src) :=
-            ⟨Rumoca.squareAst.tokens, Rumoca.squareAst, by rfl,
-              Rumoca.ParserActions.parseTokens_complete Rumoca.ArrayProfile.actions Rumoca.squareAst⟩
+          let parsed : Rumoca.ArrayProfile.Parsed $(ctx.src) := ⟨$treeId, Rumoca.squareAst, by rfl⟩
           let a : Rumoca.TensorArtifact $(ctx.inputTerm) :=
             Rumoca.TensorArtifact.ofParsed $(ctx.inputTerm) parsed Rumoca.squareAst_resolved
           have hc : Rumoca.compileTensor $(ctx.inputTerm) = .ok a :=

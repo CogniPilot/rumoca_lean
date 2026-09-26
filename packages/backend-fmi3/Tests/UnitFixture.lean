@@ -1,4 +1,5 @@
 import RumocaCore.Solve.FMI3
+import ModelicaParser.Certificate
 
 /-! Shared, named in-memory Modelica input for the existing FMI execution
 controls. The same checked parser/location path supplies their mandatory IR
@@ -10,8 +11,9 @@ def source : AST.Model := ⟨"M", "x", "x", "M"⟩
 def input : Parser.Source.InputRef :=
   .single "rumoca-check:/fmi3/M.mo" "model M Real x; equation der(x) = 1; end M;"
 
-def parsed : Parsed input.source :=
-  ⟨source.tokens, source, by rfl, parseTokens_complete source⟩
+certify_source inputTree "model M Real x; equation der(x) = 1; end M;"
+
+def parsed : Parsed input.source := ⟨inputTree.parsed, source, by rfl⟩
 
 def prepared : Solve.FMI3Model source :=
   (Solve.lower (DAE.lower

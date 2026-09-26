@@ -1,6 +1,5 @@
 import Rumoca.ArrayCompiler
 import RumocaCore.Array.Lowering
-import ModelicaParser.ActionsProofs
 
 /-! Source-text binding and the complete instantaneous Real contract of the
 array preparation API. Time stepping, finite C and FMU artifacts are separate
@@ -12,8 +11,7 @@ open ArrayProfile Tensor _root_.Parser
 theorem Prepared.source_correct (a : Prepared source) :
     Lexes source.toList a.parsed.parsed.ast.tokens ∧
       EBNF.Accepts Generated.sourceGrammar (a.parsed.parsed.tokens.map Token.symbol) :=
-  ⟨ParserActions.parsed_lexes actions a.parsed.parsed,
-    ParserActions.parsed_in_ebnf a.parsed.parsed⟩
+  ⟨Modelica.Selection.Parsed.lexes a.parsed.parsed, Modelica.Selection.Parsed.in_ebnf a.parsed.parsed⟩
 
 theorem Prepared.equation_correct (a : Prepared source)
     (values derivatives : String → Value ℝ stateShape) (matrices : String → Jacobian stateShape) :

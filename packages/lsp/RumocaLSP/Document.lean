@@ -1,4 +1,4 @@
-import ModelicaParser.LocatedParser
+import RumocaCore.Modelica.Unit
 import Lean.Data.Lsp.Utf16
 import Lean.Data.Lsp.Diagnostics
 import RumocaCore.Initialization.Diagnostics

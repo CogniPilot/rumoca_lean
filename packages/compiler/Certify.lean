@@ -5,14 +5,14 @@ open Rumoca
 /-- The generator is untrusted: Lean checks the embedded source, emitted bytes,
 source parsing, target grammar, and the complete execution/refinement contract. -/
 def certificate (sourceName source actualC : String) (m : AST.Model) : String :=
-  "import Rumoca.Verified\n\nset_option maxRecDepth 100000\nset_option maxHeartbeats 8000000\n\n" ++
+  "import Rumoca.Verified\nimport ModelicaParser.Certificate\n\nset_option maxRecDepth 100000\nset_option maxHeartbeats 8000000\n\n" ++
   "namespace Rumoca.CheckedArtifact\n\n" ++
   s!"def source : String := {repr source}\n\n" ++
   s!"def input : Parser.Source.InputRef := .single {repr sourceName} source\n\n" ++
   s!"def emitted : String := {repr actualC}\n\n" ++
   s!"def model : AST.Model := ⟨{repr m.name}, {repr m.state}, {repr m.derivativeName}, {repr m.endName}⟩\n\n" ++
-  "def parsed : Parsed source :=\n" ++
-  "  ⟨model.tokens, model, by rfl, parseTokens_complete model⟩\n\n" ++
+  "certify_source sourceTree source\n\n" ++
+  "def parsed : Parsed source := ⟨sourceTree.parsed, model, by rfl⟩\n\n" ++
   "theorem resolved : AST.Resolved model := ⟨by decide +kernel, by decide +kernel⟩\n\n" ++
   "def artifact : Artifact input :=\n" ++
   "  Artifact.ofParsed input parsed resolved\n\n" ++

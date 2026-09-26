@@ -1,5 +1,4 @@
-import ModelicaParser.Array.Located
-import ModelicaParser.ActionsLocatedTotal
+import RumocaCore.Modelica.Array
 import RumocaCore.Array.Solve
 
 /-! Development source-to-Solve preparation. The result retains the original
@@ -30,7 +29,7 @@ certified parse, without kernel-evaluating the LR parser on the source text. -/
 theorem prepare_eq_parsed (parsed : ArrayProfile.Parsed source)
     (resolved : parsed.ast.Resolved) :
     prepare source = .ok (prepareParsed parsed.located resolved) := by
-  simp only [prepare, ArrayProfile.parseLocated, bind, Except.bind, parsed.parseLocated_eq]
+  simp only [prepare, bind, Except.bind, parsed.parseLocated_eq]
   rw [ArrayProfile.LocatedParsed.resolve_complete parsed.located resolved]
   rfl
 

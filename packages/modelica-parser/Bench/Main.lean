@@ -10,11 +10,11 @@ private def frontendStage (stage source : String) : Bool × Nat :=
   | "lex" => match Rumoca.lex source with
       | .ok tokens => (true, tokens.length)
       | .error error => (false, error.offset)
-  | "parse" => match Rumoca.parse source with
-      | .ok parsed => (true, parsed.tokens.length + parsed.ast.name.length)
+  | "parse" => match Rumoca.Modelica.parse source with
+      | .ok parsed => (true, parsed.tokens.length + parsed.ast.classes.length)
       | .error error => (false, error.offset)
-  | _ => match Rumoca.parseLocated source with
-      | .ok parsed => (true, parsed.locations.length + parsed.parsed.ast.name.length)
+  | _ => match Rumoca.Modelica.parseLocated source with
+      | .ok parsed => (true, parsed.locations.length + parsed.parsed.ast.classes.length)
       | .error error => (false, error.span.start.offset.byteIdx)
 
 def main (args : List String) : IO UInt32 := do

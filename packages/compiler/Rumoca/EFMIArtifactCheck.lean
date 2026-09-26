@@ -1,5 +1,6 @@
 import Rumoca.EFMIProofs
 import Rumoca.EFMICheckOptions
+import ModelicaParser.Certificate
 
 open _root_.Parser
 
@@ -31,13 +32,13 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
   let modelNameId := mkIdent `Rumoca.CheckedEFMIFiles.source_model_name
   elabCommand (← `(command|
     def $modelId:ident : AST.Model := ⟨$name, $state, $der, $ending⟩))
+  Modelica.Certificate.certify (mkIdent `Rumoca.CheckedEFMIFiles.sourceTree) src
+  let treeId := mkIdent `Rumoca.CheckedEFMIFiles.sourceTree.parsed
   elabCommand (← `(command|
-    def $parsedId:ident : Parsed $src :=
-      ⟨($modelId).tokens, $modelId, by rfl, parseTokens_complete $modelId⟩))
+    def $parsedId:ident : Parsed $src := ⟨$treeId, $modelId, by rfl⟩))
   elabCommand (← `(command|
     theorem $modelNameId:ident (parsed : Parsed $src) : parsed.ast.name = $name := by
-      have same : parsed = $parsedId :=
-        Except.ok.inj ((parse_eq_parsed parsed).symm.trans (parse_eq_parsed $parsedId))
+      have same : parsed = $parsedId := Modelica.Selection.Parsed.unique parsed $parsedId
       exact congrArg (fun p : Parsed $src => p.ast.name) same))
   elabCommand (← `(command|
     theorem $theoremId:ident :

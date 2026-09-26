@@ -1,4 +1,4 @@
-import ModelicaParser.Array.Syntax
+import RumocaCore.Modelica.Array
 import RumocaCore.Solve.Interface
 
 /-! The declared interface of an array-profile source, produced from its
@@ -11,12 +11,10 @@ open Rumoca.Solve
 
 /-- The names the derivative right-hand side reads. -/
 def Body.derivativeReads : Body → List String
-  | .driven _ rhs => [rhs]
   | .jacobian _ _ rhs _ _ => [rhs.left, rhs.right].eraseDups
 
 /-- The declared Jacobian output of a Jacobian body. -/
 def Body.outputs (dimensions : List Nat) : Body → List Declaration
-  | .driven _ _ => []
   | .jacobian output _ _ _ call =>
       [⟨output, .output, .algebraic, ⟨dimensions⟩, none,
         [call.expression.left, call.expression.right].eraseDups⟩]
@@ -44,8 +42,6 @@ theorem Model.interface_names (m : Model) (resolved : m.Resolved) :
     (m.interface.declarations.map Declaration.name).Nodup := by
   obtain ⟨_, distinct, _, _, body⟩ := resolved
   cases hb : m.body with
-  | driven derivative rhs =>
-    simp [Model.interface, hb, Body.outputs, distinct]
   | jacobian output derivative rhs assigned call =>
     rw [hb] at body
     obtain ⟨ne_input, ne_state, _⟩ := body
@@ -57,15 +53,6 @@ theorem Model.interface_closed (m : Model) (resolved : m.Resolved) : m.interface
   obtain ⟨_, _, _, _, body⟩ := resolved
   intro d member name read
   cases hb : m.body with
-  | driven derivative rhs =>
-    rw [hb] at body
-    obtain ⟨_, rhs_input⟩ := body
-    simp only [Model.interface, hb, Body.outputs, List.append_nil, List.mem_cons, List.not_mem_nil,
-      or_false] at member
-    rcases member with rfl | rfl
-    · cases read
-    · simp only [Body.derivativeReads, hb, List.mem_singleton] at read
-      simp [Model.interface, hb, Body.outputs, read, rhs_input]
   | jacobian output derivative rhs assigned call =>
     rw [hb] at body
     obtain ⟨_, _, _, left, right, _, _, expression_left, expression_right, _⟩ := body

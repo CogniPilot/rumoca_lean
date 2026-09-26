@@ -5,6 +5,8 @@ import ModelicaParser.Generated.Reductions1
 import ModelicaParser.Generated.Reductions2
 import ModelicaParser.Generated.Reductions3
 import ModelicaParser.Generated.Reductions4
+import ModelicaParser.Generated.Reductions5
+import ModelicaParser.Generated.Reductions6
 
 open Parser
 
@@ -13,7 +15,7 @@ namespace Rumoca.Generated
 set_option maxRecDepth 100000
 set_option maxHeartbeats 8000000
 
-private noncomputable def reductions : Array (Array Bool) := #[reduction_0, reduction_1, reduction_2, reduction_3, reduction_4, reduction_5, reduction_6, reduction_7, reduction_8, reduction_9, reduction_10, reduction_11, reduction_12, reduction_13, reduction_14, reduction_15, reduction_16, reduction_17, reduction_18, reduction_19, reduction_20, reduction_21, reduction_22, reduction_23, reduction_24, reduction_25, reduction_26, reduction_27, reduction_28, reduction_29, reduction_30, reduction_31, reduction_32, reduction_33, reduction_34, reduction_35, reduction_36, reduction_37, reduction_38, reduction_39, reduction_40, reduction_41, reduction_42, reduction_43, reduction_44, reduction_45, reduction_46, reduction_47, reduction_48, reduction_49, reduction_50, reduction_51, reduction_52, reduction_53, reduction_54, reduction_55, reduction_56, reduction_57, reduction_58, reduction_59, reduction_60, reduction_61, reduction_62, reduction_63, reduction_64, reduction_65, reduction_66, reduction_67, reduction_68, reduction_69, reduction_70, reduction_71, reduction_72, reduction_73, reduction_74, reduction_75, reduction_76, reduction_77, reduction_78, reduction_79, reduction_80, reduction_81, reduction_82, reduction_83, reduction_84, reduction_85, reduction_86, reduction_87, reduction_88, reduction_89, reduction_90, reduction_91, reduction_92, reduction_93, reduction_94, reduction_95, reduction_96, reduction_97, reduction_98]
+private noncomputable def reductions : Array (Array Bool) := #[reduction_0, reduction_1, reduction_2, reduction_3, reduction_4, reduction_5, reduction_6, reduction_7, reduction_8, reduction_9, reduction_10, reduction_11, reduction_12, reduction_13, reduction_14, reduction_15, reduction_16, reduction_17, reduction_18, reduction_19, reduction_20, reduction_21, reduction_22, reduction_23, reduction_24, reduction_25, reduction_26, reduction_27, reduction_28, reduction_29, reduction_30, reduction_31, reduction_32, reduction_33, reduction_34, reduction_35, reduction_36, reduction_37, reduction_38, reduction_39, reduction_40, reduction_41, reduction_42, reduction_43, reduction_44, reduction_45, reduction_46, reduction_47, reduction_48, reduction_49, reduction_50, reduction_51, reduction_52, reduction_53, reduction_54, reduction_55, reduction_56, reduction_57, reduction_58, reduction_59, reduction_60, reduction_61, reduction_62, reduction_63, reduction_64, reduction_65, reduction_66, reduction_67, reduction_68, reduction_69, reduction_70, reduction_71, reduction_72, reduction_73, reduction_74, reduction_75, reduction_76, reduction_77, reduction_78, reduction_79, reduction_80, reduction_81, reduction_82, reduction_83, reduction_84, reduction_85, reduction_86, reduction_87, reduction_88, reduction_89, reduction_90, reduction_91, reduction_92, reduction_93, reduction_94, reduction_95, reduction_96, reduction_97, reduction_98, reduction_99, reduction_100, reduction_101, reduction_102, reduction_103, reduction_104, reduction_105, reduction_106, reduction_107, reduction_108, reduction_109, reduction_110, reduction_111, reduction_112, reduction_113, reduction_114, reduction_115, reduction_116, reduction_117, reduction_118, reduction_119, reduction_120, reduction_121, reduction_122, reduction_123, reduction_124, reduction_125, reduction_126, reduction_127, reduction_128, reduction_129, reduction_130, reduction_131]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -23,7 +25,7 @@ private theorem reductions_checked :
   · simp only [LALR.Safety.reductionStates, Array.size_map]
     rfl
   · intro i hi _
-    have bound : i < 99 := by
+    have bound : i < 132 := by
       simpa only [LALR.Safety.reductionStates, Array.size_map] using hi
     simp only [LALR.Safety.reductionStates, Array.getElem_map]
     match i with
@@ -126,7 +128,40 @@ private theorem reductions_checked :
     | 96 => exact reduction_96_checked
     | 97 => exact reduction_97_checked
     | 98 => exact reduction_98_checked
-    | n+99 => omega
+    | 99 => exact reduction_99_checked
+    | 100 => exact reduction_100_checked
+    | 101 => exact reduction_101_checked
+    | 102 => exact reduction_102_checked
+    | 103 => exact reduction_103_checked
+    | 104 => exact reduction_104_checked
+    | 105 => exact reduction_105_checked
+    | 106 => exact reduction_106_checked
+    | 107 => exact reduction_107_checked
+    | 108 => exact reduction_108_checked
+    | 109 => exact reduction_109_checked
+    | 110 => exact reduction_110_checked
+    | 111 => exact reduction_111_checked
+    | 112 => exact reduction_112_checked
+    | 113 => exact reduction_113_checked
+    | 114 => exact reduction_114_checked
+    | 115 => exact reduction_115_checked
+    | 116 => exact reduction_116_checked
+    | 117 => exact reduction_117_checked
+    | 118 => exact reduction_118_checked
+    | 119 => exact reduction_119_checked
+    | 120 => exact reduction_120_checked
+    | 121 => exact reduction_121_checked
+    | 122 => exact reduction_122_checked
+    | 123 => exact reduction_123_checked
+    | 124 => exact reduction_124_checked
+    | 125 => exact reduction_125_checked
+    | 126 => exact reduction_126_checked
+    | 127 => exact reduction_127_checked
+    | 128 => exact reduction_128_checked
+    | 129 => exact reduction_129_checked
+    | 130 => exact reduction_130_checked
+    | 131 => exact reduction_131_checked
+    | n+132 => omega
 
 private noncomputable def acceptance : Array Bool := #[false, false, false, false, false, true, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
@@ -138,10 +173,7 @@ private noncomputable def acceptance : Array Bool := #[false, false, false, fals
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
   false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false,
-  false]
+  false, false, false, false, false, false]
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -236,32 +268,7 @@ private theorem chunk_160_checked :
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
 private theorem chunk_170_checked :
-    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (170 + i.val) := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem chunk_180_checked :
-    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (180 + i.val) := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem chunk_190_checked :
-    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (190 + i.val) := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem chunk_200_checked :
-    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (200 + i.val) := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem chunk_210_checked :
-    ∀ i : Fin 10, LALR.Safety.rowValid grammar tables edges reductions acceptance (210 + i.val) := by decide +kernel
-
-set_option maxRecDepth 10000 in
-set_option maxHeartbeats 8000000 in
-private theorem chunk_220_checked :
-    ∀ i : Fin 2, LALR.Safety.rowValid grammar tables edges reductions acceptance (220 + i.val) := by decide +kernel
+    ∀ i : Fin 6, LALR.Safety.rowValid grammar tables edges reductions acceptance (170 + i.val) := by decide +kernel
 
 set_option maxRecDepth 10000 in
 set_option maxHeartbeats 8000000 in
@@ -276,7 +283,7 @@ theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by
   · decide +kernel
   · intro q
     rcases q with ⟨q, bound⟩
-    change q < 222 at bound
+    change q < 176 at bound
     match q with
     | 0 => exact chunk_0_checked ⟨0, by decide⟩
     | 1 => exact chunk_0_checked ⟨1, by decide⟩
@@ -454,52 +461,6 @@ theorem safety_checked : LALR.Safety.validate grammar tables edges = true := by
     | 173 => exact chunk_170_checked ⟨3, by decide⟩
     | 174 => exact chunk_170_checked ⟨4, by decide⟩
     | 175 => exact chunk_170_checked ⟨5, by decide⟩
-    | 176 => exact chunk_170_checked ⟨6, by decide⟩
-    | 177 => exact chunk_170_checked ⟨7, by decide⟩
-    | 178 => exact chunk_170_checked ⟨8, by decide⟩
-    | 179 => exact chunk_170_checked ⟨9, by decide⟩
-    | 180 => exact chunk_180_checked ⟨0, by decide⟩
-    | 181 => exact chunk_180_checked ⟨1, by decide⟩
-    | 182 => exact chunk_180_checked ⟨2, by decide⟩
-    | 183 => exact chunk_180_checked ⟨3, by decide⟩
-    | 184 => exact chunk_180_checked ⟨4, by decide⟩
-    | 185 => exact chunk_180_checked ⟨5, by decide⟩
-    | 186 => exact chunk_180_checked ⟨6, by decide⟩
-    | 187 => exact chunk_180_checked ⟨7, by decide⟩
-    | 188 => exact chunk_180_checked ⟨8, by decide⟩
-    | 189 => exact chunk_180_checked ⟨9, by decide⟩
-    | 190 => exact chunk_190_checked ⟨0, by decide⟩
-    | 191 => exact chunk_190_checked ⟨1, by decide⟩
-    | 192 => exact chunk_190_checked ⟨2, by decide⟩
-    | 193 => exact chunk_190_checked ⟨3, by decide⟩
-    | 194 => exact chunk_190_checked ⟨4, by decide⟩
-    | 195 => exact chunk_190_checked ⟨5, by decide⟩
-    | 196 => exact chunk_190_checked ⟨6, by decide⟩
-    | 197 => exact chunk_190_checked ⟨7, by decide⟩
-    | 198 => exact chunk_190_checked ⟨8, by decide⟩
-    | 199 => exact chunk_190_checked ⟨9, by decide⟩
-    | 200 => exact chunk_200_checked ⟨0, by decide⟩
-    | 201 => exact chunk_200_checked ⟨1, by decide⟩
-    | 202 => exact chunk_200_checked ⟨2, by decide⟩
-    | 203 => exact chunk_200_checked ⟨3, by decide⟩
-    | 204 => exact chunk_200_checked ⟨4, by decide⟩
-    | 205 => exact chunk_200_checked ⟨5, by decide⟩
-    | 206 => exact chunk_200_checked ⟨6, by decide⟩
-    | 207 => exact chunk_200_checked ⟨7, by decide⟩
-    | 208 => exact chunk_200_checked ⟨8, by decide⟩
-    | 209 => exact chunk_200_checked ⟨9, by decide⟩
-    | 210 => exact chunk_210_checked ⟨0, by decide⟩
-    | 211 => exact chunk_210_checked ⟨1, by decide⟩
-    | 212 => exact chunk_210_checked ⟨2, by decide⟩
-    | 213 => exact chunk_210_checked ⟨3, by decide⟩
-    | 214 => exact chunk_210_checked ⟨4, by decide⟩
-    | 215 => exact chunk_210_checked ⟨5, by decide⟩
-    | 216 => exact chunk_210_checked ⟨6, by decide⟩
-    | 217 => exact chunk_210_checked ⟨7, by decide⟩
-    | 218 => exact chunk_210_checked ⟨8, by decide⟩
-    | 219 => exact chunk_210_checked ⟨9, by decide⟩
-    | 220 => exact chunk_220_checked ⟨0, by decide⟩
-    | 221 => exact chunk_220_checked ⟨1, by decide⟩
-    | n+222 => omega
+    | n+176 => omega
 
 end Rumoca.Generated

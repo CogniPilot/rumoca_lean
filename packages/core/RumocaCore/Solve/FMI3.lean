@@ -37,7 +37,9 @@ def FMI3Model.originTrace (m : FMI3Model source) : IVP.Origins m.origins.table m
 /-- The unit interface is the declaration read back from the parsed source
 tokens: one prefix-free scalar `Real` with the source state name. -/
 theorem FMI3Model.interface_sound (m : FMI3Model source) :
-    declaredIn source.tokens = m.interface.declarations.map Declaration.signature := rfl
+    declaredIn source.tokens = m.interface.declarations.map Declaration.signature := by
+  simp [declaredIn, declaredAfter, AST.Model.tokens, causalityBefore, subscriptAt, interface,
+    Declaration.signature, subscriptTokens, Tensor.scalar]
 
 theorem FMI3Model.prepared_solve (m : Model source) : m.prepareFMI3.solve = m := rfl
 

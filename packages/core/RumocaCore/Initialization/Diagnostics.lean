@@ -1,5 +1,5 @@
 import RumocaCore.IR
-import ModelicaParser.LocatedParser
+import RumocaCore.Modelica.Unit
 
 /-! Shared compiler/LSP notices for the completed unit initialization.
 These are nonfatal diagnostics; transport chooses warning severity. -/

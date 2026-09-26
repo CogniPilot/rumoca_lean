@@ -1,3 +1,4 @@
 import ModelicaParser.Parser
 import ModelicaParser.LocatedParser
+import ModelicaParser.LocatedCompleteness
 import ModelicaParser.Parallel

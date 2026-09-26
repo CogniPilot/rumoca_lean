@@ -19,18 +19,15 @@ def JacobianOf (f : AD.Space shape → AD.Space shape) (input : AD.Space shape)
 def Model.Equation (m : Model) (values derivatives : Environment stateShape)
     (matrices : String → Jacobian stateShape) : Prop :=
   match m.body with
-  | .driven derivative rhs => derivatives derivative = values rhs
   | .jacobian _ derivative rhs assigned call =>
       derivatives derivative = rhs.denote values ∧ call.Denotes values (matrices assigned)
 
 def Model.Initial (m : Model) (values : Environment stateShape) : Prop :=
   values m.header.state = fun _ => 0
 
-/-- The named observation on the source side of resolution. The driven
-profile has no matrix observation, so its supplied value is immaterial. -/
+/-- The named observation on the source side of resolution. -/
 def Model.jacobianValue (m : Model) (matrices : String → Jacobian stateShape) : Jacobian stateShape :=
   match m.body with
-  | .driven .. => 0
   | .jacobian output .. => matrices output
 
 def Flat.Expr.denote (state input : AD.Space shape) : Flat.Expr shape → AD.Space shape
@@ -64,10 +61,6 @@ theorem Flat.lower_correct (m : ArrayProfile.Model) (resolved : m.Resolved)
         (derivatives m.header.state) (m.jacobianValue matrices) := by
   obtain ⟨header, body, endName⟩ := m
   cases body with
-  | driven derivative rhs =>
-    obtain ⟨_, _, _, _, hd, hr⟩ := resolved
-    simp only [ArrayProfile.Model.Equation, Model.Equation, lower, rhsFor, jacobianFor,
-      Expr.denote, and_true, hd, hr]
   | jacobian output derivative rhs assigned call =>
     obtain ⟨_, _, _, _, _, _, hd, hl, hr, ha, hb, hcl, hcr, hw⟩ := resolved
     have hp : rhs.denote values =

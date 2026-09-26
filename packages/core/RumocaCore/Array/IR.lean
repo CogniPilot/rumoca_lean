@@ -1,4 +1,4 @@
-import ModelicaParser.Array.Syntax
+import RumocaCore.Modelica.Array
 import RumocaCore.Tensor.Operators
 
 /-! Indexed declarative IRs for the fixed array profile. Resolution removes
@@ -25,14 +25,12 @@ inductive Expr (shape : Shape) where
 
 def rhsFor (body : Body) : Expr shape :=
   match body with
-  | .driven .. => .input
   | .jacobian .. => .binary .mul .input .input
 
 /-- All calls in this profile differentiate with respect to the input tensor.
 That restriction is checked by source resolution, not by a backend. -/
 def jacobianFor (body : Body) : Option (Expr shape) :=
   match body with
-  | .driven .. => none
   | .jacobian .. => some (.binary .mul .input .input)
 
 structure Model (source : ArrayProfile.Model) where

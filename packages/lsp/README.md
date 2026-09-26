@@ -1,7 +1,7 @@
 # Rumoca language server
 
-A small Lean LSP for the existing Modelica unit-derivative grammar. It uses
-the parser package's checked spans and name resolution, and reuses Lean's
+A small Lean LSP for the Modelica unit-derivative profile. It uses the
+frontend's checked spans with the core unit selection and name resolution, and reuses Lean's
 JSON-RPC transport, LSP types, file maps and UTF-16 conversions.
 The protocol reference is the
 [LSP 3.17 specification](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/).

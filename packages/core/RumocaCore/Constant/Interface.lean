@@ -18,16 +18,30 @@ def Model.interface (m : Model) : Interface := ⟨m.states.map m.declaration⟩
 /-- A token that does not begin a `Real` declaration only becomes the preceding
 token of the rest of the stream. -/
 private theorem declared_skip (previous : Option Token) (t : Token) (rest : List Token)
-    (other : t ≠ .literal "Real") :
+    (other : t ≠ .ident "Real" ∨ ∀ name more, rest ≠ .ident name :: more) :
     declaredAfter previous (t :: rest) = declaredAfter (some t) rest := by
-  rw [declaredAfter.eq_def]
-  split
-  · rename_i h; cases h
-  · rename_i h; cases h; exact absurd rfl other
-  · rename_i h; cases h; rfl
+  by_cases named : previous = some (.literal "model")
+  · subst named
+    exact declaredAfter.eq_2 t rest
+  · rcases rest with _ | ⟨next, more⟩
+    · exact declaredAfter.eq_4 _ _ _ (fun _ _ h => by cases h) named
+    · cases next with
+      | ident name =>
+        rw [declaredAfter.eq_3 _ _ _ _ named]
+        rcases other with other | other
+        · rw [if_neg other]
+        · exact absurd rfl (other name more)
+      | literal _ => exact declaredAfter.eq_4 _ _ _ (fun _ _ h => by cases h) named
+      | number _ => exact declaredAfter.eq_4 _ _ _ (fun _ _ h => by cases h) named
+
+/-- The class name after `model` is never a type name. -/
+private theorem declared_model (t : Token) (rest : List Token) :
+    declaredAfter (some (.literal "model")) (t :: rest) = declaredAfter (some t) rest :=
+  declaredAfter.eq_2 t rest
 
 private theorem declared_states (previous : Option Token) (ss : List String) (rest : List Token)
-    (prefixFree : causalityBefore previous = .local) :
+    (prefixFree : causalityBefore previous = .local)
+    (unnamed : previous ≠ some (.literal "model")) :
     declaredAfter previous (ss.flatMap declTokens ++ rest) =
       ss.map (fun s => (s, Causality.local, ([] : List Token))) ++
         declaredAfter (if ss = [] then previous else some (.literal ";")) rest := by
@@ -36,9 +50,9 @@ private theorem declared_states (previous : Option Token) (ss : List String) (re
   | cons s ss ih =>
     simp only [List.flatMap_cons, declTokens, List.cons_append, List.nil_append,
       List.map_cons, reduceCtorEq, if_false]
-    rw [declaredAfter.eq_def]
-    simp only [prefixFree, subscriptAt]
-    rw [declared_skip _ _ _ (by decide), ih _ rfl]
+    rw [declaredAfter.eq_3 _ _ _ _ unnamed, if_pos rfl, prefixFree]
+    simp only [subscriptAt]
+    rw [declared_skip _ _ _ (.inl (by decide)), ih _ rfl (by simp)]
     cases ss <;> simp
 
 private theorem declared_equations (previous : Option Token) (es : List Equation) (rest : List Token) :
@@ -49,10 +63,10 @@ private theorem declared_equations (previous : Option Token) (es : List Equation
   | cons e es ih =>
     simp only [List.flatMap_cons, equationTokens, List.cons_append, List.nil_append,
       reduceCtorEq, if_false]
-    rw [declared_skip _ _ _ (by decide), declared_skip _ _ _ (by decide),
-      declared_skip _ _ _ (by simp), declared_skip _ _ _ (by decide),
-      declared_skip _ _ _ (by decide), declared_skip _ _ _ (by simp),
-      declared_skip _ _ _ (by decide), ih]
+    rw [declared_skip _ _ _ (.inl (by decide)), declared_skip _ _ _ (.inl (by decide)),
+      declared_skip _ _ _ (.inr (by simp)), declared_skip _ _ _ (.inl (by decide)),
+      declared_skip _ _ _ (.inl (by decide)), declared_skip _ _ _ (.inl (by simp)),
+      declared_skip _ _ _ (.inl (by decide)), ih]
     cases es <;> simp
 
 /-- Soundness of the declared interface: the declarations read back from the
@@ -61,11 +75,11 @@ source state in source order. -/
 theorem Model.interface_sound (m : Model) :
     declaredIn m.tokens = m.interface.declarations.map Declaration.signature := by
   simp only [declaredIn, Model.tokens, List.cons_append, List.nil_append, List.append_assoc]
-  rw [declared_skip _ _ _ (by decide), declared_skip _ _ _ (by simp),
-    declared_states _ _ _ rfl, declared_skip _ _ _ (by decide), declared_equations]
+  rw [declared_skip _ _ _ (.inl (by decide)), declared_model,
+    declared_states _ _ _ rfl (by simp), declared_skip _ _ _ (.inl (by decide)), declared_equations]
   simp only [Model.interface, List.map_map]
-  rw [declared_skip _ _ _ (by decide), declared_skip _ _ _ (by simp),
-    declared_skip _ _ _ (by decide)]
+  rw [declared_skip _ _ _ (.inl (by decide)), declared_skip _ _ _ (.inr (by simp)),
+    declared_skip _ _ _ (.inl (by decide))]
   simp [declaredAfter, Function.comp_def, Model.declaration, Declaration.signature, subscriptTokens,
     Tensor.scalar]
 

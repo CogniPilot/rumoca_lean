@@ -118,10 +118,9 @@ theorem compileConstant_eq (input : Source.InputRef)
 
 /-- Total construction of a constant artifact from an already certified constant
 parse and its resolution, mirroring the tensor profile's
-`TensorArtifact.ofParsed`. The generic `ParserActions.Parsed.located` from
-`ActionsLocatedTotal` applies to the constant actions, so the located parse for
-a pinned AST is produced without kernel-evaluating the LR parser on the source
-text. -/
+`TensorArtifact.ofParsed`. The generic `Modelica.Selection.Parsed.located`
+attaches locations to a certified parse without kernel-evaluating the LR parser
+on the source text. -/
 def ConstantArtifact.ofParsed (input : Source.InputRef)
     (parsed : ConstantProfile.Parsed input.source) (resolved : parsed.ast.Resolved) :
     ConstantArtifact input :=
@@ -137,18 +136,15 @@ theorem compileConstant_eq_parsed (input : Source.InputRef)
     ConstantCompiler.prepare_eq_parsed parsed resolved]
   rfl
 
-/-- Every resolvable constant-profile source in the existing lexical/AST
-specification compiles, with its parsed AST pinned to the given model. This is
-the constant analogue of the tensor profile's `compileTensor_complete`. -/
-theorem compileConstant_complete (input : Source.InputRef) (m : ConstantProfile.Model)
-    (syntaxValid : Lexes input.source.toList (ConstantProfile.actions.tokens m))
+/-- Every source whose certified parse selects a resolvable constant-rate model
+compiles, with that model. This is the constant analogue of the tensor
+profile's `compileTensor_complete`. -/
+theorem compileConstant_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
+    (m : ConstantProfile.Model) (selected : ConstantProfile.select tree.ast = .ok m)
     (resolved : m.Resolved) :
     ∃ a, compileConstant input = .ok a ∧ a.prepared.parsed.parsed.ast = m :=
-  let parsed : ConstantProfile.Parsed input.source :=
-    ⟨ConstantProfile.actions.tokens m, m, (lex_correct input.source _).mpr syntaxValid,
-      ParserActions.parseTokens_complete ConstantProfile.actions m⟩
-  ⟨ConstantArtifact.ofParsed input parsed resolved,
-    compileConstant_eq_parsed input parsed resolved, rfl⟩
+  ⟨ConstantArtifact.ofParsed input ⟨tree, m, selected⟩ resolved,
+    compileConstant_eq_parsed input _ resolved, rfl⟩
 
 /-! ### The development `ConstantRates` instance
 
@@ -327,7 +323,7 @@ theorem constantSourceBuild_correct (a : ConstantArtifact input)
         FMI3.ConstantCallPolicy.constant_acyclic w a.constantModel sigs covered⟩),
     adapter', identifiers, token, metadataDocument,
     FMI3.interface_correct _ _ _ _ _ a.prepared.parsed.parsed.lexical
-      (by rw [ParserActions.parseTokens_sound ConstantProfile.actions a.prepared.parsed.parsed.syntactic]
+      (by rw [Modelica.Selection.Parsed.tokens_eq a.prepared.parsed.parsed]
           exact a.prepared.parsed.parsed.ast.interface_sound)
       (a.prepared.parsed.parsed.ast.interface_names a.prepared.resolved)
       a.prepared.parsed.parsed.ast.interface_closed,

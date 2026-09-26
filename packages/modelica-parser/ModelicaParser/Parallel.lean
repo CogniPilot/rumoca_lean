@@ -9,10 +9,10 @@ open _root_.Parser.Source (Input)
 
 structure Result where
   input : Input
-  parsed : Except (Parser.Source.Diagnostic input.source) (LocatedParsed input.source)
-  correct : parsed = Rumoca.parseLocated input.source
+  parsed : Except (Parser.Source.Diagnostic input.source) (Modelica.LocatedParsed input.source)
+  correct : parsed = Modelica.parseLocated input.source
 
-def parseOne (input : Input) : Result := ⟨input, Rumoca.parseLocated input.source, rfl⟩
+def parseOne (input : Input) : Result := ⟨input, Modelica.parseLocated input.source, rfl⟩
 
 def parse (jobs : Nat) (inputs : List Input) : List Result := Parser.Parallel.map jobs parseOne inputs
 
@@ -23,8 +23,8 @@ theorem parse_input_order (jobs : Nat) (inputs : List Input) :
     (parse jobs inputs).map (·.input) = inputs := by
   simp [parse_eq_sequential, List.map_map, Function.comp_def, parseOne]
 
-theorem Result.source_sound (r : Result) (p : LocatedParsed r.input.source)
+theorem Result.source_sound (r : Result) (p : Modelica.LocatedParsed r.input.source)
     (_h : r.parsed = .ok p) :
-    Rumoca.parse r.input.source = .ok p.parsed := p.erases
+    Modelica.parse r.input.source = .ok p.parsed := p.erases
 
 end Rumoca.Parallel

@@ -1,6 +1,7 @@
 import Rumoca.ConstantProduction
 import Rumoca.ConstantFMI3AdapterCertificate
 import Rumoca.FMI3ProfileBuildCheck
+import ModelicaParser.Certificate
 
 /-! Fixed actual-file adapter for the development constant-rate source-build
 profile. The adapter independently reads all five staged files, compiles the
@@ -43,6 +44,8 @@ elab "verify_constant_fmi3_build_files" : command => do
     kernelModelCTerm := ← `(term| Rumoca.ConstantKernel.modelC)
     kernelCharsTerm := ← `(term| Rumoca.ConstantKernel.chars)
     emitFinal := fun theoremId ctx => do
+      Rumoca.Modelica.Certificate.certify (mkIdent `Rumoca.CheckedConstantFiles.sourceTree) ctx.src
+      let treeId := mkIdent `Rumoca.CheckedConstantFiles.sourceTree.parsed
       elabCommand (← `(command|
         theorem $theoremId:ident : Generated.source = $(ctx.ebnf) ∧
             ∃ a : Rumoca.ConstantArtifact $(ctx.inputTerm), Rumoca.compileConstant $(ctx.inputTerm) = .ok a ∧
@@ -50,8 +53,7 @@ elab "verify_constant_fmi3_build_files" : command => do
                 (String.ofList $(ctx.adapterChars)) $(ctx.mdLit) := by
           refine ⟨by rfl, ?_⟩
           let parsed : Rumoca.ConstantProfile.Parsed $(ctx.src) :=
-            ⟨Rumoca.constantRatesAst.tokens, Rumoca.constantRatesAst, by rfl,
-              Rumoca.ParserActions.parseTokens_complete Rumoca.ConstantProfile.actions Rumoca.constantRatesAst⟩
+            ⟨$treeId, Rumoca.constantRatesAst, by rfl⟩
           let a : Rumoca.ConstantArtifact $(ctx.inputTerm) :=
             Rumoca.ConstantArtifact.ofParsed $(ctx.inputTerm) parsed Rumoca.constantRatesAst_resolved
           have hc : Rumoca.compileConstant $(ctx.inputTerm) = .ok a :=

@@ -1,5 +1,6 @@
 import Rumoca.EFMITensorArchiveProofs
 import Rumoca.EFMICheckOptions
+import ModelicaParser.Certificate
 
 open _root_.Parser
 
@@ -23,6 +24,8 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
   let out := Syntax.mkStrLit emitted
   let ebnf := Syntax.mkStrLit grammar
   let algEbnf := Syntax.mkStrLit algGrammar
+  Modelica.Certificate.certify (mkIdent `Rumoca.CheckedTensorEFMIFiles.sourceTree) src
+  let treeId := mkIdent `Rumoca.CheckedTensorEFMIFiles.sourceTree.parsed
   let theoremName := `Rumoca.CheckedTensorEFMIFiles.source_to_algorithm
   let theoremId := mkIdent theoremName
   elabCommand (← `(command|
@@ -31,9 +34,7 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
         ∃ a : TensorArtifact $inputTerm, compileTensor $inputTerm = .ok a ∧
           TensorAlgorithmContract a $out := by
       refine ⟨by rfl, by rfl, ?_⟩
-      let parsed : ArrayProfile.Parsed $src :=
-        ⟨squareAst.tokens, squareAst, by rfl,
-          ParserActions.parseTokens_complete ArrayProfile.actions squareAst⟩
+      let parsed : ArrayProfile.Parsed $src := ⟨$treeId, squareAst, by rfl⟩
       let a : TensorArtifact $inputTerm :=
         TensorArtifact.ofParsed $inputTerm parsed squareAst_resolved
       have hc : compileTensor $inputTerm = .ok a :=

@@ -1,5 +1,6 @@
 import Rumoca.Verified
 import Rumoca.CertificateOptions
+import ModelicaParser.Certificate
 import Lean
 
 open _root_.Parser
@@ -36,12 +37,15 @@ def check (sourceName source emitted grammar : String) (linkage : C.Linkage := .
   let theoremName := `Rumoca.CheckedFiles.source_to_c
   let theoremId := mkIdent theoremName
   let nameId := mkIdent `Rumoca.CheckedFiles.source_model_name
+  -- The certified general parse of the actual source text; selection below is
+  -- evaluated by the kernel on that tree.
+  Modelica.Certificate.certify (mkIdent `Rumoca.CheckedFiles.sourceTree) src
+  let treeId := mkIdent `Rumoca.CheckedFiles.sourceTree.parsed
   elabCommand (← `(command|
     theorem $nameId:ident (p : Parsed $src) : p.ast.name = $name := by
       let model : AST.Model := ⟨$name, $state, $der, $ending⟩
-      let parsed : Parsed $src :=
-        ⟨model.tokens, model, by rfl, parseTokens_complete model⟩
-      have eq : p = parsed := Except.ok.inj ((parse_eq_parsed p).symm.trans (parse_eq_parsed parsed))
+      let parsed : Parsed $src := ⟨$treeId, model, by rfl⟩
+      have eq : p = parsed := Modelica.Selection.Parsed.unique p parsed
       exact congrArg (fun q => q.ast.name) eq))
   -- Native compilation supplies only a candidate AST. Every check below is
   -- subsequently kernel checked against the actual, independently read strings.
@@ -50,8 +54,7 @@ def check (sourceName source emitted grammar : String) (linkage : C.Linkage := .
         compile $inputTerm = .ok a ∧ ArtifactContract a $out $linkageTerm := by
       refine ⟨by rfl, ?_⟩
       let model : AST.Model := ⟨$name, $state, $der, $ending⟩
-      let parsed : Parsed $src :=
-        ⟨model.tokens, model, by rfl, parseTokens_complete model⟩
+      let parsed : Parsed $src := ⟨$treeId, model, by rfl⟩
       have resolved : AST.Resolved model := ⟨by decide +kernel, by decide +kernel⟩
       let a : Artifact $inputTerm := Artifact.ofParsed $inputTerm parsed resolved
       have hc : compile $inputTerm = .ok a := compile_eq_parsed $inputTerm parsed resolved

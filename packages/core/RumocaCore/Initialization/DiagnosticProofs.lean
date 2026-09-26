@@ -1,5 +1,5 @@
 import RumocaCore.Initialization.Diagnostics
-import ModelicaParser.LocatedProofs
+import RumocaCore.Modelica.Unit
 
 namespace Rumoca.Initialization
 

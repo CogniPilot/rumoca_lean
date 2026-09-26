@@ -3,6 +3,7 @@ import Rumoca.EFMITensorArchiveProofs
 import RumocaEFMI.TensorManifestProofs
 import SHA1.CertificateCheck
 import XML.CertificateCheck
+import ModelicaParser.Certificate
 
 /-! Fixed actual-file adapter for the three tensor eFMU manifests. Candidate
 identity fields and XML trees are quoted data, never proof authority. The
@@ -103,6 +104,8 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
   elabCommand (← `(command|
     theorem $valid:ident : (EFMI.TensorManifest.Documents.mk $aTree $pTree $cTree).valid = true := by
       simp only [EFMI.TensorManifest.Documents.valid, $aValid:ident, $pValid:ident, $cValid:ident, Bool.and_self]))
+  Modelica.Certificate.certify (mkIdent `Rumoca.CheckedTensorEFMIFiles.manifestSyntax) srcLit
+  let treeId := mkIdent `Rumoca.CheckedTensorEFMIFiles.manifestSyntax.parsed
   let theoremName := `Rumoca.CheckedTensorEFMIFiles.source_to_manifests
   let theoremId := mkIdent theoremName
   elabCommand (← `(command| attribute [local irreducible] EFMI.TensorManifest.prepare XML.document))
@@ -113,9 +116,7 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
           TensorExecutedManifestContract a ⟨$cid, $aid, $pid, $date⟩ $alg $out $ax $px $cx := by
       obtain ⟨g₁, g₂, a, compiled, code⟩ := $productionRoot:ident
       refine ⟨g₁, g₂, a, compiled, ?_⟩
-      let parsed : ArrayProfile.Parsed $srcLit :=
-        ⟨squareAst.tokens, squareAst, by rfl,
-          ParserActions.parseTokens_complete ArrayProfile.actions squareAst⟩
+      let parsed : ArrayProfile.Parsed $srcLit := ⟨$treeId, squareAst, by rfl⟩
       have hsame : a = TensorArtifact.ofParsed $inputTerm parsed squareAst_resolved :=
         Except.ok.inj (compiled.symm.trans
           (compileTensor_eq_parsed $inputTerm parsed squareAst_resolved))

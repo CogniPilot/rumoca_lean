@@ -49,12 +49,16 @@ no signal and the existing square/AD update; otherwise `OVERFLOW` and the store
 unchanged, with a real overflow witness.
 
 Use `lake build check-core` from the repository root for incremental core proofs and
-axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/FiniteChecks.lean` belong to the
-`RumocaCoreChecks` library, also selected by this package's `lake test`. See
+axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean`, `Tests/FiniteChecks.lean` and
+`Tests/ModelicaChecks.lean` (kernel-checked selection of the example sources and certified
+single-fault rejections) belong to the `RumocaCoreChecks` library, also selected by this package's `lake test`. See
 [development commands](../../docs/development.md).
 
 | Module | Contents |
 | --- | --- |
+| `RumocaCore.Modelica.Select`, `Modelica.Unit`, `Modelica.Array`, `Modelica.Constant` | Static selection of the unit, square Jacobian and constant-rate records from the general syntax tree, with located rejections, resolution and the proof that a selected tree prints to its record's tokens |
+| `RumocaCore.Modelica.Profile` | Profile dispatch and `select_disjoint`: no tree selects two profiles |
+| `RumocaCore.Modelica.UnitOrigins` | Unit-profile source fields and their exact token ranges |
 | `RumocaCore`, `RumocaCore.IR.Flat`, `IR.DAE`, `IR.Solve` | Scalar IR types and lowering functions with required occurrence origins and initialization data |
 | `RumocaCore.Provenance.Source`, `Provenance.Lowering` | Checked input context, closed transformation rules and source ancestry through the scalar chain |
 | `RumocaCore.Initialization.Scalar`, `Initialization.Real`, `Initialization.Diagnostics` | Computable initialization selection, source/uniqueness proofs and exact declaration-based notices |
@@ -70,14 +74,12 @@ axiom checks. `Tests/CoreAudit.lean`, `Tests/TensorChecks.lean` and `Tests/Finit
 | `RumocaCore.Solve.Tensor.Reverse`, `Solve.Tensor.ReverseProofs` | Saved-primal reverse execution with cotangent accumulation and the adjoint/derivative contract |
 | `RumocaCore.Solve.Tensor.Diagonal`, `Solve.Pointwise`, `Solve.PointwiseProofs` | Prepared IVP and dense diagonal observation using mathlib matrices, with execution contracts |
 | `RumocaCore.Solve.Tensor.Finite` | Independent ordered finite execution, all-intermediate domain characterization and unique evaluator result |
-| `RumocaCore.Solve.ModelData` | One executable root paired with typed declaration identities and names |
 | `RumocaCore.Solve.Interface`, `Array.Interface`, `Constant.Interface` | Resolved declared interface of each profile (name, causality, role, declared extents, start, reads) and its soundness against the parsed source tokens |
 | `RumocaCore.Solve.Tensor.Origins`, `Solve.IVPOrigins`, `Solve.FMI3OriginProofs` | Required unit FMI operation origins and a composed value/source/actual-annotation preparation contract |
 | `RumocaCore.GALEC.Method`, `GALEC.UnitProfile` | Lifecycle methods, the unit state with its clock and Solve-block method execution |
 | `RumocaCore.GALEC.UnitOrigins`, `GALEC.TraceProofs`, `GALEC.OriginLowering` | Required operation/operand/method origins of the unit block, independent rule/parent requirements |
 | `RumocaCore.Solve.Algorithm`, `AlgorithmOrigins`, `AlgorithmOriginProofs` | Algorithm Code prepared from DAE: tensor register block with its unit profile, required traces, source ancestry and the source-to-Solve refinement |
 | `RumocaCore.GALEC.Protocol` | Restricted eFMI lifecycle reference and complete permitted-trace refinement |
-| `RumocaCore.Driven.IR`, `Driven.Lowering` | Draft driven profile's Flat/DAE/Solve equations, initialization and per-pass proofs |
 | `RumocaCore.Pass` | Generic behavior-preservation composition and property transfer |
 | `RumocaCore.SolveSemantics` | Interpretation of Solve using the admitted finite sampling policy |
 | `RumocaCore.Solve.ModelExchange` | Shared model state/derivatives, unit solver and nested CS state; internal contracts, not an FMI ABI |
