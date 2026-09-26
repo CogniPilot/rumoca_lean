@@ -1,10 +1,12 @@
 import RumocaCore.Modelica.Select
 
 /-! Annotations (MLS 3.7 chapter 18) are parsed in full as class modifications.
-An annotation that only documents or presents a model is discarded; one whose
-meaning changes translation or simulation is rejected (`screen`), so discarding
-annotations never changes the meaning of a model silently. `erase` removes every
-annotation clause from a syntax tree. An annotation clause occurs in a
+`screen` rejects every annotation whose meaning changes translation or
+simulation and, until the stage that admits annotated sources, every other
+annotation as well; selected trees therefore carry no annotation. `erase`
+removes every annotation clause from a syntax tree; once documentation
+annotations are admitted, selection screens a tree and then resolves its
+erasure, so discarding them never changes the meaning of a model. An annotation clause occurs in a
 description and at the end of a class composition; class modifications and
 description strings contain none. -/
 namespace Rumoca.Modelica.Annotation
