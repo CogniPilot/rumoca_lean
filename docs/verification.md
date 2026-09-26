@@ -1,5 +1,7 @@
 # Exact verification contract
 
+**Modelica general grammar and lexical cutover (G0, L1; full gate passed):** see the stage record in dev/standards-review.md. All artifacts byte-identical (gate `build/constant-g0-gate/full-v1`, owner 4,551 jobs, 2,239 roots; full gate 2,728 inputs, 10,187 reports).
+
 **Instance restore, calculated reads, typed constants, C predicates and the declared FMU interface (full gate passed):**
 Two reviewed lanes were merged and gated together at `5db7fb5`.
 

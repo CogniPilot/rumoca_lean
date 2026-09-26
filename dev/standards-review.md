@@ -247,6 +247,37 @@ review, rather than a one-time backend inspection.
 
 ## Required review at every spiral stage
 
+### Modelica general grammar and lexical cutover (Constant chunk G0 and L1) - 2026-09-26; full gate passed; stage OPEN
+
+Recognition-only slices under the recorded spiral-gate exception; no source
+case is admitted. G0 replaces the fixture-shaped Modelica grammar by the
+general MLS 3.7 Appendix A productions of the chunk plan (451 canonical/176
+LALR states; `Generated/Tables.c` 8.39 MB), with `arithmetic_expression` and
+`component_reference` left-factored under language-equivalence certificates
+(D1, D2) and two recorded semantic-check deviations (D3, D4; numbers in IDENT
+positions rejected by certificate). Admission moves to core: the four admitted
+sources resolve to the same results (`integrator_selected`,
+`tensorSquare_selected`, `constantRates_selected`); every other accepted
+sentence is a certified rejection on the CLI's selection path, including
+`ArrayDriven`, `DrivenIntegrator`, commented sources, quoted identifiers and
+the rate spellings `2.`, `.5`, `-.5`, `2.e3` (S01 rows unchanged; `- 1` is
+accepted as the same token sequence as `-1`, and its S01 row is corrected).
+L1 lexes numbers, strings (`STRING` token in the generic engine, not yet a
+grammar terminal) and comments by MLS chapter 2/A.1 (`string_maximal`,
+`comment_not_nested`; `decodeString` and its iff follow in G2); GALEC tables and the C scanners
+are byte-identical. Completeness is preserved: `compile_complete`,
+`compileTensor_complete` and `compileConstant_complete` are stated over
+`Lexes` plus a decidable admissibility condition through `select_complete`.
+Deleted with their subjects: the fixture productions and their proofs
+(`decode_*`, `in_grammar`, `parseTokens_*`, `parse_complete`,
+`ParserActions.*`, `Driven.*`, `Solve.driven_*`, `ModelData.names_unique`,
+`numberToken_text`); `declaredIn`/`declaredAfter` are restated over the
+general AST. Optional Appendix A parts not needed by the block are deferred
+to G11. Gate `build/constant-g0-gate/full-v1`: owner 4,551 jobs/8,045 reports/
+2,239 roots; full gate 2,728 inputs/10,187 reports,
+matrices 75/75, every FMU member and both eFMU archives byte-identical to the
+previous gate; the first full run at `a84f2f0` failed only in the negative-control script whose grammar mutation targeted a deleted fixture literal (retained as `full-v0-failed-negative-control`), repaired in `98f18cc` to mutate the `der` keyword; the owner receipt was taken at `a84f2f0` and the head differs only by that script and the CI workflow file. K02-K05 and all other findings remain open.
+
 ### GALEC error signaling (N01 repair) - 2026-09-24; full gate passed 2026-09-25, N01 CLOSED; stage OPEN for all other findings
 
 Recurring whole-subset review for the GALEC grammar growth that repairs N01
