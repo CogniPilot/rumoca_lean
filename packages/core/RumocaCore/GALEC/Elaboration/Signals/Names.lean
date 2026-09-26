@@ -18,8 +18,7 @@ theorem readName_iff (name : AST.Name) (signal : Signal) :
   | ident spelling =>
     simp only [readName, Signal.read_iff, Token.ident.injEq]
     exact eq_comm
-  | literal _ => simp [readName]
-  | number _ => simp [readName]
+  | literal _ | number _ | string _ | comment _ => simp [readName]
 
 def signals : List AST.Name → Option (List Signal)
   | [] => some []

@@ -72,14 +72,15 @@ theorem compileTensor_eq_parsed (input : Source.InputRef) (parsed : ArrayProfile
     ArrayCompiler.prepare_eq_parsed parsed resolved]
   rfl
 
-/-- Every source whose certified parse selects a resolvable array-profile model
+/-- Every uncommented source whose certified parse selects a resolvable array-profile model
 compiles, with that model. This is the array analogue of the unit profile's
 `compile_complete`. -/
 theorem compileTensor_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
     (m : ArrayProfile.Model) (selected : ArrayProfile.select tree.ast = .ok m)
+    (uncommented : Modelica.Selection.Uncommented tree.lexemes)
     (resolved : m.Resolved) :
     ∃ a, compileTensor input = .ok a ∧ a.prepared.parsed.parsed.ast = m :=
-  ⟨TensorArtifact.ofParsed input ⟨tree, m, selected⟩ resolved,
+  ⟨TensorArtifact.ofParsed input ⟨tree, m, selected, uncommented⟩ resolved,
     compileTensor_eq_parsed input _ resolved, rfl⟩
 
 /-! ### The development `TensorSquare` instance

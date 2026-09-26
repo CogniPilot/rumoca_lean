@@ -41,12 +41,13 @@ theorem compile_eq_parsed (input : Source.InputRef) (parsed : Parsed input.sourc
   rw [LocatedParsed.resolve_complete parsed.located resolved]
   rfl
 
-/-- Every source whose certified parse selects a resolvable unit model compiles,
+/-- Every uncommented source whose certified parse selects a resolvable unit model compiles,
 with that model. -/
 theorem compile_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
-    (m : AST.Model) (selected : AST.select tree.ast = .ok m) (resolved : AST.Resolved m) :
+    (m : AST.Model) (selected : AST.select tree.ast = .ok m)
+    (uncommented : Modelica.Selection.Uncommented tree.lexemes) (resolved : AST.Resolved m) :
     ∃ a, compile input = .ok a ∧ a.parsed.ast = m :=
-  ⟨Artifact.ofParsed input ⟨tree, m, selected⟩ resolved,
+  ⟨Artifact.ofParsed input ⟨tree, m, selected, uncommented⟩ resolved,
     compile_eq_parsed input _ resolved, rfl⟩
 
 end Rumoca

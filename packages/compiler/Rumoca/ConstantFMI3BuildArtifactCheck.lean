@@ -53,7 +53,7 @@ elab "verify_constant_fmi3_build_files" : command => do
                 (String.ofList $(ctx.adapterChars)) $(ctx.mdLit) := by
           refine ⟨by rfl, ?_⟩
           let parsed : Rumoca.ConstantProfile.Parsed $(ctx.src) :=
-            ⟨$treeId, Rumoca.constantRatesAst, by rfl⟩
+            ⟨$treeId, Rumoca.constantRatesAst, by rfl, by decide⟩
           let a : Rumoca.ConstantArtifact $(ctx.inputTerm) :=
             Rumoca.ConstantArtifact.ofParsed $(ctx.inputTerm) parsed Rumoca.constantRatesAst_resolved
           have hc : Rumoca.compileConstant $(ctx.inputTerm) = .ok a :=

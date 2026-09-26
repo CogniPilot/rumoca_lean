@@ -31,7 +31,11 @@ import ProofAudit.Audit
 #audit axioms Rumoca.lex_correct
 #audit axioms Rumoca.scan_sound
 #audit axioms Rumoca.scan_complete
-#audit axioms Rumoca.numberToken_text
+#audit axioms Rumoca.numberLength
+#audit axioms Rumoca.numberLength_pos
+#audit axioms Rumoca.stringLength
+#audit axioms Rumoca.blockCommentLength
+#audit axioms Rumoca.lineCommentLength
 #audit axioms Rumoca.Lexes.ident_word
 #audit axioms Rumoca.Lexes.ident_not_time
 #audit axioms Rumoca.Lexes.spelled
@@ -66,7 +70,11 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.Annex.arithmetic_expression_iff
 #audit axioms Rumoca.Modelica.Annex.component_reference_iff
 
+#audit axioms Rumoca.Modelica.isComment
+#audit axioms Rumoca.Modelica.code
+#audit axioms Rumoca.Modelica.code_uncommented
 #audit axioms Rumoca.Modelica.parse
+#audit axioms Rumoca.Modelica.Parsed.tokens
 #audit axioms Rumoca.Modelica.parse_eq_parsed
 #audit axioms Rumoca.Modelica.Parsed.printed
 #audit axioms Rumoca.Modelica.Parsed.lexes
@@ -76,7 +84,11 @@ import ProofAudit.Audit
 #audit axioms Rumoca.Modelica.located_lex_sound
 #audit axioms Rumoca.Modelica.rejectedAt
 #audit axioms Rumoca.Modelica.parseLocated
+#audit axioms Rumoca.Modelica.codeLocations
+#audit axioms Rumoca.Modelica.codeLocations_values
+#audit axioms Rumoca.Modelica.locatedSpan
 #audit axioms Rumoca.Modelica.LocatedParsed.erases
+#audit axioms Rumoca.Modelica.LocatedParsed.codeLocations_erase
 #audit axioms Rumoca.Modelica.LocatedParsed.lexemes
 #audit axioms Rumoca.Modelica.LocatedParsed.disjoint
 #audit axioms Rumoca.Modelica.LocatedParsed.tokenSpan_text
@@ -115,5 +127,14 @@ end Nested;
 #audit axioms nested.structure_built
 #audit axioms nested.denotes
 #audit axioms nested.syntactic
+
+/- Comments are lexemes with their own ranges; the grammar reads the code tokens. -/
+certify_source commented "model M // line
+  Real x; /* block */
+equation der(x) = 1; end M;"
+
+#audit axioms commented.lexed
+#audit axioms commented.checked
+#audit axioms commented.syntactic
 
 end Rumoca.Modelica.CertificateCheck

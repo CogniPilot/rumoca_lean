@@ -98,8 +98,9 @@ private theorem readers_complete (fuel : Nat) :
     · intro expr tokens rest valid _ budget
       cases valid with
       | identifier => rfl
-      | reference ordinary =>
-        exact primary.eq_3 fuel _ rest ordinary
+      | string => rfl
+      | reference ordinary unstring =>
+        exact primary.eq_4 fuel _ rest ordinary unstring
       | literal => rfl
       | group valid =>
         have body := ih.1 valid (rest := .punct ')' :: rest)
@@ -144,7 +145,7 @@ theorem rules_complete (valid : Rules grammar tokens) (names : NamesValid gramma
     | zero => simp at budget
     | succ fuel => rfl
   | @cons sep expr bodyTokens grammar suffix name separator body rest ih =>
-    obtain ⟨ordinary, fresh, names⟩ := namesValid_cons.mp names
+    obtain ⟨ordinary, unstring, fresh, names⟩ := namesValid_cons.mp names
     cases fuel with
     | zero => omega
     | succ fuel =>
@@ -163,7 +164,7 @@ theorem rules_complete (valid : Rules grammar tokens) (names : NamesValid gramma
         simpa using different
       simp only [List.length_append, List.length_cons] at bodyRead
       rcases separator with rfl | rfl <;>
-        simp [rules, ordinary, bodyRead, expect, restRead, unique,
+        simp [rules, ordinary, unstring, bodyRead, expect, restRead, unique,
           bind, Except.bind, pure, Except.pure]
 
 end Parser.EBNF.Reader

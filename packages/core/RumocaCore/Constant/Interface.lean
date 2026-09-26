@@ -31,8 +31,8 @@ private theorem declared_skip (previous : Option Token) (t : Token) (rest : List
         rcases other with other | other
         · rw [if_neg other]
         · exact absurd rfl (other name more)
-      | literal _ => exact declaredAfter.eq_4 _ _ _ (fun _ _ h => by cases h) named
-      | number _ => exact declaredAfter.eq_4 _ _ _ (fun _ _ h => by cases h) named
+      | literal _ | number _ | string _ | comment _ =>
+        exact declaredAfter.eq_4 _ _ _ (fun _ _ h => by cases h) named
 
 /-- The class name after `model` is never a type name. -/
 private theorem declared_model (t : Token) (rest : List Token) :
@@ -55,6 +55,14 @@ private theorem declared_states (previous : Option Token) (ss : List String) (re
     rw [declared_skip _ _ _ (.inl (by decide)), ih _ rfl (by simp)]
     cases ss <;> simp
 
+/-- The tokens of a rate never begin a declaration. -/
+private theorem declared_rate (previous : Option Token) (rate : String) (rest : List Token) :
+    declaredAfter previous (rateTokens rate ++ .literal ";" :: rest) =
+      declaredAfter (some (.literal ";")) rest := by
+  unfold rateTokens
+  split <;> simp only [List.cons_append, List.nil_append] <;>
+    repeat rw [declared_skip _ _ _ (.inl (by simp))]
+
 private theorem declared_equations (previous : Option Token) (es : List Equation) (rest : List Token) :
     declaredAfter previous (es.flatMap equationTokens ++ rest) =
       declaredAfter (if es = [] then previous else some (.literal ";")) rest := by
@@ -65,8 +73,8 @@ private theorem declared_equations (previous : Option Token) (es : List Equation
       reduceCtorEq, if_false]
     rw [declared_skip _ _ _ (.inl (by decide)), declared_skip _ _ _ (.inl (by decide)),
       declared_skip _ _ _ (.inr (by simp)), declared_skip _ _ _ (.inl (by decide)),
-      declared_skip _ _ _ (.inl (by decide)), declared_skip _ _ _ (.inl (by simp)),
-      declared_skip _ _ _ (.inl (by decide)), ih]
+      declared_skip _ _ _ (.inl (by decide))]
+    rw [List.append_assoc, List.append_assoc, List.singleton_append, declared_rate, ih]
     cases es <;> simp
 
 /-- Soundness of the declared interface: the declarations read back from the

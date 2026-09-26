@@ -35,7 +35,7 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
   Modelica.Certificate.certify (mkIdent `Rumoca.CheckedEFMIFiles.sourceTree) src
   let treeId := mkIdent `Rumoca.CheckedEFMIFiles.sourceTree.parsed
   elabCommand (← `(command|
-    def $parsedId:ident : Parsed $src := ⟨$treeId, $modelId, by rfl⟩))
+    def $parsedId:ident : Parsed $src := ⟨$treeId, $modelId, by rfl, by decide⟩))
   elabCommand (← `(command|
     theorem $modelNameId:ident (parsed : Parsed $src) : parsed.ast.name = $name := by
       have same : parsed = $parsedId := Modelica.Selection.Parsed.unique parsed $parsedId

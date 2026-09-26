@@ -31,7 +31,7 @@ def scalarInput : Parser.Source.InputRef :=
 
 certify_source scalarTree "model TensorSquare Real x; equation der(x) = 1; end TensorSquare;"
 
-def scalarParsed : Parsed scalarInput.source := ⟨scalarTree.parsed, scalarSource, by rfl⟩
+def scalarParsed : Parsed scalarInput.source := ⟨scalarTree.parsed, scalarSource, by rfl, by decide⟩
 
 def scalarModel : Solve.FMI3Model scalarSource :=
   (Solve.lower (DAE.lower

@@ -12,3 +12,8 @@ import ProofAudit.Audit
 #audit axioms Rumoca.ConstantProfile.Parsed.parseLocated_eq
 #audit axioms Rumoca.ConstantProfile.LocatedParsed.resolve
 #audit axioms Rumoca.ConstantProfile.LocatedParsed.resolve_complete
+#audit axioms Rumoca.ConstantProfile.rateTokens
+#audit axioms Rumoca.ConstantProfile.rateExpr
+#audit axioms Rumoca.ConstantProfile.rate
+#audit axioms Rumoca.ConstantProfile.rate_ok
+#audit axioms Rumoca.ConstantProfile.rateExpr_printed

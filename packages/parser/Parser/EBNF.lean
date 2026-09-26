@@ -3,7 +3,7 @@ import Parser.EBNF.Syntax
 /-! A small, total EBNF reader. Recursive expression semantics and checked
 EBNF-to-CFG lowering are separate modules; there is no regular-rule expander.
 Syntax: name = expression ; or the reference grammar's name : expression ;.
-Single/double quoted terminals, IDENT, comma or whitespace sequences,
+Single/double quoted terminals, IDENT, STRING, comma or whitespace sequences,
 alternatives |, groups (), optionals [], repetitions {}, (* comments *) and
 line comments are supported. Parol action annotations and regexes are not. -/
 namespace Parser.EBNF
@@ -79,6 +79,7 @@ mutual
   def primary : Nat → List Lexeme → Except String (Expr × List Lexeme)
     | 0, _ => .error "EBNF nesting limit exceeded"
     | _ + 1, .name "IDENT" :: tail => .ok (.terminal .ident, tail)
+    | _ + 1, .name "STRING" :: tail => .ok (.terminal .string, tail)
     | _ + 1, .name s :: tail => .ok (.ref s, tail)
     | _ + 1, .text s :: tail => .ok (.terminal (.literal s), tail)
     | fuel + 1, .punct '(' :: tail => do
@@ -99,7 +100,7 @@ def rules : Nat → List Lexeme → Except String Grammar
   | _ + 1, [] => .ok []
   | fuel + 1, .name name :: .punct separator :: input => do
     if separator != '=' && separator != ':' then throw "expected rule = expression ; or rule : expression ;"
-    if name == "IDENT" then throw "IDENT is a reserved lexical category"
+    if name == "IDENT" || name == "STRING" then throw s!"{name} is a reserved lexical category"
     let (body, tail) ← expression (input.length * 4 + 4) input
     let rest ← rules fuel (← expect ';' tail)
     if rest.any (fun r => r.1 == name) then throw s!"duplicate rule {name}"

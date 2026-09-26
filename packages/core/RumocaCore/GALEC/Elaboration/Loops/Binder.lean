@@ -58,7 +58,7 @@ theorem read_iff (names : IteratorNames bounds) (token : Token) (name : String) 
         cases Option.some.inj found
         exact .ident ((available_iff names _).mp allowed)
       · contradiction
-    | number _ | literal _ => cases found
+    | number _ | literal _ | string _ | comment _ => cases found
   · intro accepted
     cases accepted with
     | ident fresh => simp only [read, (available_iff _ _).mpr fresh, ↓reduceIte]

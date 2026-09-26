@@ -180,7 +180,7 @@ def certify (sourceFile source adapter : String) (sigs : List CTree.Signature)
   elabCommand (← `(command| def $model:ident : AST.Model := ⟨$name, $state, $derivative, $ending⟩))
   Modelica.Certificate.certify (mkIdent (base.str "sourceTree")) src
   let tree := mkIdent ((base.str "sourceTree").str "parsed")
-  elabCommand (← `(command| def $parsed:ident : Parsed $src := ⟨$tree, $model, by rfl⟩))
+  elabCommand (← `(command| def $parsed:ident : Parsed $src := ⟨$tree, $model, by rfl, by decide⟩))
   elabCommand (← `(command| def $artifact:ident : Artifact $input :=
     Artifact.ofParsed $input $parsed ⟨by decide +kernel, by decide +kernel⟩))
   elabCommand (← `(command| theorem $compiled:ident : compile $input = .ok $artifact :=
@@ -351,7 +351,7 @@ def certifyAdapterBytes (inp : ProfileCertInputs) (adapter : String)
   elabCommand (← `(command| def $model:ident : AST.Model := ⟨$name, $state, $derivative, $ending⟩))
   Modelica.Certificate.certify (mkIdent (base.str "sourceTree")) src
   let tree := mkIdent ((base.str "sourceTree").str "parsed")
-  elabCommand (← `(command| def $parsed:ident : Parsed $src := ⟨$tree, $model, by rfl⟩))
+  elabCommand (← `(command| def $parsed:ident : Parsed $src := ⟨$tree, $model, by rfl, by decide⟩))
   elabCommand (← `(command| def $artifact:ident : Artifact $input :=
     Artifact.ofParsed $input $parsed ⟨by decide +kernel, by decide +kernel⟩))
   elabCommand (← `(command| theorem $compiled:ident : compile $input = .ok $artifact :=

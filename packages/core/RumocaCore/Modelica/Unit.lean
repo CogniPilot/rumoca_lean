@@ -151,8 +151,9 @@ theorem fieldSpan_eq_tokenSpan (p : LocatedParsed source) (index : Fin 16) :
     simp only [Modelica.Selection.LocatedParsed.locations] at count
     rw [count]
     exact index.isLt
-  simp [fieldSpan, Modelica.Selection.LocatedParsed.tokenSpan, Modelica.LocatedParsed.tokenSpan,
-    Modelica.Selection.LocatedParsed.locations, List.getElem?_eq_getElem bound]
+  simp only [Modelica.Selection.LocatedParsed.tokenSpan]
+  rw [Modelica.Selection.LocatedParsed.tokenSpan_eq]
+  simp [fieldSpan, Modelica.Selection.LocatedParsed.locations, List.getElem?_eq_getElem bound]
 
 private theorem record_text (p : LocatedParsed source) (index : Nat) (token : Token)
     (h : p.parsed.ast.tokens[index]? = some token) : (p.tokenSpan index).text = token.text :=

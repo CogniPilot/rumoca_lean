@@ -93,10 +93,10 @@ def certify (certificateName : Ident) (text : Term) : CommandElabM Unit := do
   let tokens ← match lex source with
     | .ok tokens => pure tokens
     | .error diagnostic => throwError "lexer rejected source: {diagnostic}"
-  let tree ← match StructureBridge.parser.run tokens with
+  let tree ← match StructureBridge.parser.run (code tokens) with
     | .ok tree => pure tree
     | .error _ => throwError "parser rejected source"
-  let structuralValue ← match StructureBridge.build tree tokens with
+  let structuralValue ← match StructureBridge.build tree (code tokens) with
     | some structuralValue => pure structuralValue
     | none => throwError "structural conversion rejected tree"
   let ast ← match LALR.Frontend.StructuralActions.run Structural.rules
@@ -123,16 +123,16 @@ def certify (certificateName : Ident) (text : Term) : CommandElabM Unit := do
     (← `(term| (Except.ok $tokensId : Except Diagnostic (List Token))))
   checkEquation checkedId.getId
     (← `(term| LALR.checkTree Generated.grammar
-      (List.map (Generated.encode ∘ Token.symbol) $tokensId) $treeId = true))
+      (List.map (Generated.encode ∘ Token.symbol) (code $tokensId)) $treeId = true))
     (← `(term| true))
   checkEquation builtId.getId
-    (← `(term| StructureBridge.build $treeId $tokensId = some $valueId))
+    (← `(term| StructureBridge.build $treeId (code $tokensId) = some $valueId))
     (← `(term| some $valueId))
   elabCommand (← `(command|
     theorem $denotesId : LALR.Frontend.StructuralActions.Denotes Structural.rules Token.symbol
         (.ref "stored_definition") $valueId $astId := by action_certificate))
   elabCommand (← `(command|
-    theorem $syntacticId : Structural.parse $tokensId = some $astId :=
+    theorem $syntacticId : Structural.parse (code $tokensId) = some $astId :=
       syntactic_of_certificates _ _ _ _ $checkedId $builtId $denotesId))
   elabCommand (← `(command|
     def $parsedId : Modelica.Parsed $sourceId :=

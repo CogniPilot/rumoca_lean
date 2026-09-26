@@ -68,9 +68,9 @@ This does not make the solver accept other residuals or source grammar cases. -/
 theorem Solved.lower_complete (dae : DAE.Model source) : ∃ kernel, lower? dae = some kernel := by
   simp only [lower?, dae.residual_source, dae.initial_source, dae.jacobian_source,
     dae.flat.rhs_source, dae.flat.initial_source, dae.flat.jacobian_source]
-  cases source.body <;>
-    simp [Flat.rhsFor, Flat.jacobianFor, DAE.lowerExpr, DAE.solveResidual?,
-      DAE.solveInitial?, DAE.solveJacobian?]
+  cases source.body
+  simp [Flat.rhsFor, Flat.jacobianFor, DAE.lowerExpr, DAE.solveResidual?,
+    DAE.solveInitial?, DAE.solveJacobian?]
 
 /-- The rejection arm is unreachable for a source-indexed DAE, by the checked
 completeness theorem. The candidate computation remains the partial solver. -/

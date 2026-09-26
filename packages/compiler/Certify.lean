@@ -12,7 +12,7 @@ def certificate (sourceName source actualC : String) (m : AST.Model) : String :=
   s!"def emitted : String := {repr actualC}\n\n" ++
   s!"def model : AST.Model := ⟨{repr m.name}, {repr m.state}, {repr m.derivativeName}, {repr m.endName}⟩\n\n" ++
   "certify_source sourceTree source\n\n" ++
-  "def parsed : Parsed source := ⟨sourceTree.parsed, model, by rfl⟩\n\n" ++
+  "def parsed : Parsed source := ⟨sourceTree.parsed, model, by rfl, by decide⟩\n\n" ++
   "theorem resolved : AST.Resolved model := ⟨by decide +kernel, by decide +kernel⟩\n\n" ++
   "def artifact : Artifact input :=\n" ++
   "  Artifact.ofParsed input parsed resolved\n\n" ++

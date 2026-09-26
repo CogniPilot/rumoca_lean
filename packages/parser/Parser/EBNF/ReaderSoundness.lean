@@ -105,9 +105,14 @@ private theorem readers_sound (fuel : Nat) :
             simp only [primary] at parsed
             cases Except.ok.inj parsed
             exact ⟨_, rfl, .identifier⟩
-          · have result := (primary.eq_3 fuel name tail identifier).symm.trans parsed
-            cases Except.ok.inj result
-            exact ⟨_, rfl, .reference identifier⟩
+          · by_cases stringName : name = "STRING"
+            · subst name
+              simp only [primary] at parsed
+              cases Except.ok.inj parsed
+              exact ⟨_, rfl, .string⟩
+            · have result := (primary.eq_4 fuel name tail identifier stringName).symm.trans parsed
+              cases Except.ok.inj result
+              exact ⟨_, rfl, .reference identifier stringName⟩
         | text text =>
           simp only [primary] at parsed
           cases Except.ok.inj parsed
@@ -197,7 +202,7 @@ theorem rules_sound (parsed : rules fuel input = .ok grammar) :
               split at parsed
               · contradiction
               · rename_i ordinary
-                have nameAllowed : name ≠ "IDENT" := by simpa using ordinary
+                have nameAllowed : name ≠ "IDENT" ∧ name ≠ "STRING" := by simpa using ordinary
                 obtain ⟨⟨body, following⟩, bodyRead, finish⟩ := bind_ok parsed
                 obtain ⟨remaining, closing, finish⟩ := bind_ok finish
                 obtain ⟨rest, restRead, finish⟩ := bind_ok finish
@@ -213,7 +218,7 @@ theorem rules_sound (parsed : rules fuel input = .ok grammar) :
                   · simpa only [inputEq, followingEq] using
                       Rules.cons separator bodySyntax restSyntax.1 (name := name)
                   · apply namesValid_cons.mpr
-                    refine ⟨nameAllowed, ?_, restSyntax.2⟩
+                    refine ⟨nameAllowed.1, nameAllowed.2, ?_, restSyntax.2⟩
                     intro member
                     obtain ⟨rule, belongs, same⟩ := List.mem_map.mp member
                     apply fresh

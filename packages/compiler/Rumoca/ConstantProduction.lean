@@ -136,14 +136,15 @@ theorem compileConstant_eq_parsed (input : Source.InputRef)
     ConstantCompiler.prepare_eq_parsed parsed resolved]
   rfl
 
-/-- Every source whose certified parse selects a resolvable constant-rate model
+/-- Every uncommented source whose certified parse selects a resolvable constant-rate model
 compiles, with that model. This is the constant analogue of the tensor
 profile's `compileTensor_complete`. -/
 theorem compileConstant_complete (input : Source.InputRef) (tree : Modelica.Parsed input.source)
     (m : ConstantProfile.Model) (selected : ConstantProfile.select tree.ast = .ok m)
+    (uncommented : Modelica.Selection.Uncommented tree.lexemes)
     (resolved : m.Resolved) :
     ∃ a, compileConstant input = .ok a ∧ a.prepared.parsed.parsed.ast = m :=
-  ⟨ConstantArtifact.ofParsed input ⟨tree, m, selected⟩ resolved,
+  ⟨ConstantArtifact.ofParsed input ⟨tree, m, selected, uncommented⟩ resolved,
     compileConstant_eq_parsed input _ resolved, rfl⟩
 
 /-! ### The development `ConstantRates` instance

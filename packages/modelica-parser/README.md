@@ -18,9 +18,9 @@ The coordinating generation command runs `lalrgen` with explicit language
 namespaces. Modelica and GALEC use the same reusable engine, EBNF lowering and
 checked input-size bound. Language ASTs never become dependencies of the engine.
 
-`Rumoca.Modelica.parse` lexes once, runs the certified LALR parser once and
-applies the structural actions of every grammar rule (`StructuralActions`) to
-that same tree. `ActionCoverage` proves the actions cover exactly the authored
+`Rumoca.Modelica.parse` lexes once, runs the certified LALR parser once on the
+code tokens (every lexeme except comments) and applies the structural actions
+of every grammar rule (`StructuralActions`) to that same tree. `ActionCoverage` proves the actions cover exactly the authored
 grammar; `ActionYield` proves every rule's result prints back to the tokens it
 was parsed from, so `Structural.parse_printed` binds the syntax tree to the
 lexed characters. `StructuralParser.accepts_iff` states the accepted language

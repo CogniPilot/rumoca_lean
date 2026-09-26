@@ -34,9 +34,14 @@ Deviations, each with its certificate:
 | D3 | `unsigned-number` is a `primary` alternative | a number is a `Token.number` whose grammar symbol is `IDENT` | A separate `IDENT` alternative is a reduce/reduce conflict with `component-reference`; this is the engine and GALEC precedent. Static semantics reads a number only as a bare, unindexed, undotted reference. |
 | D4 | `Real` is a predefined type name | `Real` is `IDENT` | MLS 2.3.3 does not reserve predefined type names. Static semantics requires the type `Real` and rejects predefined type names as declared or referenced names. |
 
-The lexer covers the admitted ASCII slice: identifiers, reserved words, number
-runs of digits, `.`, exponent letters and signs, and the symbols the grammar
-uses. Comments, strings and quoted identifiers are not scanned yet.
+The lexer implements MLS 3.7 A.1 for the ASCII slice by maximal munch:
+identifiers and the §2.3.3 keywords, UNSIGNED-INTEGER and UNSIGNED-REAL numbers
+(`2.` and `.5` included; a sign is always an operator, so `1-x` is three
+lexical units), STRING literals with the S-ESCAPE set (a `STRING` token, not yet
+a grammar terminal), `//` and non-nesting `/* */` comments, and the symbols.
+Comments are lexemes with their own source ranges; the grammar reads the other
+lexemes, and static semantics rejects a commented source until comments are
+admitted. Quoted identifiers are not scanned.
 
 Regenerate both checked and runtime tables with `lake run generate`. The full
 gate checks freshness and rejects an actual grammar file changed after

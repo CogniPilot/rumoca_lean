@@ -23,7 +23,9 @@ mutual
 
   inductive Primary : Expr → List Lexeme → Prop where
     | identifier : Primary (.terminal .ident) [.name "IDENT"]
-    | reference (ordinary : name ≠ "IDENT") : Primary (.ref name) [.name name]
+    | string : Primary (.terminal .string) [.name "STRING"]
+    | reference (ordinary : name ≠ "IDENT") (unstring : name ≠ "STRING") :
+        Primary (.ref name) [.name name]
     | literal : Primary (.terminal (.literal text)) [.text text]
     | group : Expression e tokens → Primary e (.punct '(' :: tokens ++ [.punct ')'])
     | optional : Expression e tokens →
@@ -69,12 +71,12 @@ theorem Rules.append {g1 t1 g2 t2} (ha : Rules g1 t1) (hb : Rules g2 t2) :
       exact Rules.cons separator body ih
 
 def NamesValid (grammar : Grammar) : Prop :=
-  (grammar.map Prod.fst).Nodup ∧ ∀ rule ∈ grammar, rule.1 ≠ "IDENT"
+  (grammar.map Prod.fst).Nodup ∧ ∀ rule ∈ grammar, rule.1 ≠ "IDENT" ∧ rule.1 ≠ "STRING"
 
 theorem namesValid_nil : NamesValid [] := by simp [NamesValid]
 
 theorem namesValid_cons : NamesValid ((name, expr) :: grammar) ↔
-    name ≠ "IDENT" ∧ name ∉ grammar.map Prod.fst ∧ NamesValid grammar := by
+    name ≠ "IDENT" ∧ name ≠ "STRING" ∧ name ∉ grammar.map Prod.fst ∧ NamesValid grammar := by
   simp [NamesValid, List.nodup_cons, and_assoc, and_left_comm, and_comm]
 
 /-- The public reader promises at least one uniquely named rule. Undefined

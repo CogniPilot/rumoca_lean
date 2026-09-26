@@ -23,15 +23,36 @@ theorem Lexes.spelled (lexical : Lexes cs ts) : Source.Spelled modelicaSpace cs 
           c :: cs.takeWhile identRest := by simp [classifyWord_text]
       have result := Source.Spelled.cons (gap := []) (by rfl) text hs ih
       simpa only [List.nil_append, text, List.cons_append, List.takeWhile_append_dropWhile] using result
-  | @number c ts cs hs hi hd _ ih =>
-      have text : (numberToken (c :: cs.takeWhile numberChar)).text.toList =
-          c :: cs.takeWhile numberChar := by simp [numberToken_text]
+  | @number c cs ts hs hi hd _ ih =>
+      have positive := numberLength_pos c cs hd
+      have split : (c :: cs).take (numberLength (c :: cs)) =
+          c :: cs.take (numberLength (c :: cs) - 1) := by
+        obtain ⟨k, hk⟩ : ∃ k, numberLength (c :: cs) = k + 1 := ⟨_, (Nat.succ_pred_eq_of_pos positive).symm⟩
+        rw [hk]; rfl
+      have text : (Token.number (String.ofList ((c :: cs).take (numberLength (c :: cs))))).text.toList =
+          c :: cs.take (numberLength (c :: cs) - 1) := by simp [Token.text, split]
       have result := Source.Spelled.cons (gap := []) (by rfl) text hs ih
-      simpa only [List.nil_append, text, List.cons_append, List.takeWhile_append_dropWhile] using result
+      rw [List.nil_append, text, ← split, List.take_append_drop] at result
+      exact result
+  | @string cs n ts _ _ ih =>
+      have text : (Token.string (String.ofList ('"' :: cs.take n))).text.toList =
+          '"' :: cs.take n := by simp [Token.text]
+      have result := Source.Spelled.cons (gap := []) (by rfl) text (by decide) ih
+      simpa only [List.nil_append, text, List.cons_append, List.take_append_drop] using result
+  | @lineComment ts cs _ ih =>
+      have text : (Token.comment (String.ofList ('/' :: '/' :: cs.take (lineCommentLength cs)))).text.toList =
+          '/' :: '/' :: cs.take (lineCommentLength cs) := by simp [Token.text]
+      have result := Source.Spelled.cons (gap := []) (by rfl) text (by decide) ih
+      simpa only [List.nil_append, text, List.cons_append, List.take_append_drop] using result
+  | @blockComment cs n ts _ _ ih =>
+      have text : (Token.comment (String.ofList ('/' :: '*' :: cs.take n))).text.toList =
+          '/' :: '*' :: cs.take n := by simp [Token.text]
+      have result := Source.Spelled.cons (gap := []) (by rfl) text (by decide) ih
+      simpa only [List.nil_append, text, List.cons_append, List.take_append_drop] using result
   | dotmul _ ih =>
       exact Source.Spelled.cons (gap := []) (by rfl) (t := .literal ".*") (c := '.')
         (chars := ['*']) rfl (by decide +kernel) ih
-  | @punct c cs ts hs hi hd hop hp _ ih =>
+  | @punct c cs ts hs hi hd hc hop hp _ ih =>
       have text : (Token.literal (String.singleton c)).text.toList = [c] := by simp [Token.text]
       have result := Source.Spelled.cons (gap := []) (by rfl) text hs ih
       simpa only [List.nil_append, text, List.cons_append] using result
@@ -40,15 +61,15 @@ namespace Modelica
 
 /-- Every certified parse has exact aligned token locations. -/
 theorem Parsed.locations_exist (parsed : Parsed source) :
-    ∃ xs, Source.attach modelicaSpace source.startPos parsed.tokens = some xs := by
+    ∃ xs, Source.attach modelicaSpace source.startPos parsed.lexemes = some xs := by
   apply Source.attach_complete parsed.lexes.spelled source.startPos ""
   simp
 
 /-- A computed token-location table and the equality identifying its actual
 attachment result. Both the alignment certificate and this equality are erased. -/
 def Parsed.checkedLocations (parsed : Parsed source) :
-    { xs // Source.attach modelicaSpace source.startPos parsed.tokens = some xs } :=
-  match result : Source.attach modelicaSpace source.startPos parsed.tokens with
+    { xs // Source.attach modelicaSpace source.startPos parsed.lexemes = some xs } :=
+  match result : Source.attach modelicaSpace source.startPos parsed.lexemes with
   | some xs => ⟨xs, rfl⟩
   | none => False.elim (by
       obtain ⟨xs, accepted⟩ := parsed.locations_exist
@@ -77,7 +98,7 @@ theorem Parsed.parseLocated_eq (parsed : Parsed source) :
       rw [parsed.lexical] at failed
       contradiction
     · rename_i tokens accepted
-      have same : tokens = parsed.tokens := Except.ok.inj (accepted.symm.trans parsed.lexical)
+      have same : tokens = parsed.lexemes := Except.ok.inj (accepted.symm.trans parsed.lexical)
       subst tokens
       split
       · rename_i missing

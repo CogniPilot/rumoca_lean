@@ -31,10 +31,12 @@ parsed source tokens, with the causality of their prefixes and their written
 subscripts, are exactly the resolved declarations. -/
 theorem Model.interface_sound (m : Model) :
     declaredIn m.tokens = m.interface.declarations.map Declaration.signature := by
-  cases hb : m.body <;> simp [Model.tokens, Model.interface, hb, Header.tokens, Body.tokens,
+  cases hb : m.body
+  simp [Model.tokens, Model.interface, hb, Header.tokens, Body.tokens,
     Body.outputs, Product.tokens, Call.tokens, declaredIn, declaredAfter, causalityBefore,
     subscriptAt, closeSubscript, subscriptTokens, Declaration.signature, Model.stateDimensions,
-    Model.jacobianDimensions] <;> decide
+    Model.jacobianDimensions]
+  decide
 
 
 /-- A resolved array source declares distinct names. -/
@@ -60,7 +62,7 @@ theorem Model.interface_closed (m : Model) (resolved : m.Resolved) : m.interface
       List.not_mem_nil, or_false] at member
     rcases member with rfl | rfl | rfl
     · cases read
-    · simp only [Body.derivativeReads, hb, List.mem_eraseDups, List.mem_cons, List.not_mem_nil,
+    · simp only [Body.derivativeReads, List.mem_eraseDups, List.mem_cons, List.not_mem_nil,
         or_false] at read
       rcases read with rfl | rfl <;> simp [Model.interface, hb, Body.outputs, left, right]
     · simp only [List.mem_eraseDups, List.mem_cons, List.not_mem_nil, or_false] at read

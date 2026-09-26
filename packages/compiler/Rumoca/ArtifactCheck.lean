@@ -44,7 +44,7 @@ def check (sourceName source emitted grammar : String) (linkage : C.Linkage := .
   elabCommand (← `(command|
     theorem $nameId:ident (p : Parsed $src) : p.ast.name = $name := by
       let model : AST.Model := ⟨$name, $state, $der, $ending⟩
-      let parsed : Parsed $src := ⟨$treeId, model, by rfl⟩
+      let parsed : Parsed $src := ⟨$treeId, model, by rfl, by decide⟩
       have eq : p = parsed := Modelica.Selection.Parsed.unique p parsed
       exact congrArg (fun q => q.ast.name) eq))
   -- Native compilation supplies only a candidate AST. Every check below is
@@ -54,7 +54,7 @@ def check (sourceName source emitted grammar : String) (linkage : C.Linkage := .
         compile $inputTerm = .ok a ∧ ArtifactContract a $out $linkageTerm := by
       refine ⟨by rfl, ?_⟩
       let model : AST.Model := ⟨$name, $state, $der, $ending⟩
-      let parsed : Parsed $src := ⟨$treeId, model, by rfl⟩
+      let parsed : Parsed $src := ⟨$treeId, model, by rfl, by decide⟩
       have resolved : AST.Resolved model := ⟨by decide +kernel, by decide +kernel⟩
       let a : Artifact $inputTerm := Artifact.ofParsed $inputTerm parsed resolved
       have hc : compile $inputTerm = .ok a := compile_eq_parsed $inputTerm parsed resolved

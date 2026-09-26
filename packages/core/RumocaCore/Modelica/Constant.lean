@@ -13,8 +13,8 @@ condition makes the equation order immaterial. -/
 namespace Rumoca.ConstantProfile
 open _root_.Parser
 
-/-- One equation: the differentiated name and the literal spelling of its rate
-(the number token text, for example "2.5" or "-1"). -/
+/-- One equation: the differentiated name and the spelling of its rate: an
+optional sign followed by an unsigned number, for example "2.5" or "-1". -/
 structure Equation where
   derivative : String
   rate : String
@@ -35,9 +35,16 @@ structure Model where
 def declTokens (s : String) : List Token :=
   [.ident "Real", .ident s, .literal ";"]
 
+/-- The tokens of a rate: its sign, when it has one, and the unsigned number. -/
+def rateTokens (rate : String) : List Token :=
+  match rate.toList with
+  | '-' :: rest => [.literal "-", .number (String.ofList rest)]
+  | '+' :: rest => [.literal "+", .number (String.ofList rest)]
+  | _ => [.number rate]
+
 def equationTokens (e : Equation) : List Token :=
-  [.literal "der", .literal "(", .ident e.derivative, .literal ")", .literal "=",
-   .number e.rate, .literal ";"]
+  [.literal "der", .literal "(", .ident e.derivative, .literal ")", .literal "="] ++
+    rateTokens e.rate ++ [.literal ";"]
 
 def Model.states (m : Model) : List String := m.state0 :: m.state1 :: m.statesRest
 def Model.equations (m : Model) : List Equation := m.equation0 :: m.equationsRest
@@ -72,13 +79,64 @@ open Modelica Modelica.Select
 def stateElement (s : String) : Modelica.AST.Element :=
   .component ⟨none, [.ident "Real"], none, [⟨.ident s, none, none⟩]⟩
 
-/-- The equation `der(NAME) = NUMBER;`. -/
-def rateEquation (e : Equation) : Modelica.AST.Equation :=
-  .simple (.call .der [bare (.ident e.derivative)]) (bare (.number e.rate))
+/-- The right-hand side written for a rate spelling: a sign applied to the
+unsigned number, or the number alone. -/
+def rateExpr (rate : String) : Modelica.AST.Expr :=
+  match rate.toList with
+  | '-' :: rest => .unary (.literal "-") (bare (.number (String.ofList rest)))
+  | '+' :: rest => .unary (.literal "+") (bare (.number (String.ofList rest)))
+  | _ => bare (.number rate)
 
-/-- A rate is one number token that is not a digit run. As in the earlier
-lexical profile, an unsigned integer spelling is not a rate literal. -/
-def rateSpelling (spelling : String) : Bool := !spelling.toList.all Char.isDigit
+/-- The equation `der(NAME) = RATE;`. -/
+def rateEquation (e : Equation) : Modelica.AST.Equation :=
+  .simple (.call .der [bare (.ident e.derivative)]) (rateExpr e.rate)
+
+/-- An unsigned number spelling, which begins with a digit or a point. -/
+def unsignedSpelling (spelling : String) : Bool :=
+  match spelling.toList with
+  | c :: _ => c.isDigit || c == '.'
+  | [] => false
+
+/-- A rate: a signed number, or an unsigned number that is not a digit run. As in
+the earlier lexical profile, an unsigned integer spelling is not a rate literal. -/
+def rate (pos : Nat) : Modelica.AST.Expr → Except Rejection String
+  | .reference ⟨false, [⟨.number spelling, none⟩]⟩ =>
+    if unsignedSpelling spelling && !spelling.toList.all Char.isDigit then .ok spelling
+    else .error ⟨pos, s!"the rate may not be {spelling}"⟩
+  | .unary (.literal sign) (.reference ⟨false, [⟨.number spelling, none⟩]⟩) =>
+    if (sign == "-" || sign == "+") && unsignedSpelling spelling then .ok (sign ++ spelling)
+    else .error ⟨pos, s!"the rate may not be {sign}{spelling}"⟩
+  | _ => .error ⟨pos, "the rate must be a signed decimal number"⟩
+
+theorem rate_ok {pos : Nat} {e : Modelica.AST.Expr} {s : String} (h : rate pos e = .ok s) :
+    e = rateExpr s := by
+  unfold rate at h
+  split at h
+  · rename_i spelling
+    split at h
+    · rename_i admitted
+      cases h
+      have first : unsignedSpelling s = true := by simp_all
+      unfold unsignedSpelling at first
+      unfold rateExpr
+      split
+      · rename_i rest same; simp [same] at first
+      · rename_i rest same; simp [same] at first
+      · rfl
+    · cases h
+  · rename_i sign spelling
+    split at h
+    · rename_i admitted
+      cases h
+      simp only [Bool.and_eq_true, Bool.or_eq_true, beq_iff_eq] at admitted
+      obtain ⟨signed | signed, _⟩ := admitted <;> subst signed <;>
+        simp [rateExpr, bare, String.toList_append, String.ofList_toList]
+    · cases h
+  · cases h
+
+theorem rateExpr_printed (s : String) : Modelica.Print.expr (rateExpr s) = rateTokens s := by
+  unfold rateExpr rateTokens
+  split <;> rfl
 
 def states (pos : Nat) : List Modelica.AST.Element → Except Rejection (List String)
   | [] => .ok []
@@ -102,7 +160,7 @@ def rates (pos : Nat) : List Modelica.AST.Equation → Except Rejection (List Eq
   | [] => .ok []
   | .simple left right :: rest => do
     let derivative ← Select.derivative pos left
-    let rate ← numeral (pos + 5) "the rate" rateSpelling right
+    let rate ← rate (pos + 5) right
     let others ← rates (pos + 7) rest
     return ⟨derivative, rate⟩ :: others
 
@@ -116,7 +174,7 @@ theorem rates_ok {pos : Nat} {equations : List Modelica.AST.Equation} {read : Li
     obtain ⟨rate, numbered, h⟩ := bind_ok h
     obtain ⟨others, following, h⟩ := bind_ok h
     cases h
-    rw [derivative_ok differentiated, (numeral_ok numbered).1, ih following]
+    rw [derivative_ok differentiated, rate_ok numbered, ih following]
     rfl
 
 /-- Select the constant-rate profile from a parsed tree. -/
@@ -139,12 +197,18 @@ private theorem elements_printed (names : List String) :
   | nil => rfl
   | cons _ _ ih => simp only [List.map_cons, List.flatMap_cons, ih]; rfl
 
+private theorem equation_printed (e : Equation) :
+    Modelica.Print.equation (rateEquation e) ++ [.literal ";"] = equationTokens e := by
+  simp only [rateEquation, Modelica.Print.equation, rateExpr_printed, equationTokens]
+  rfl
+
 private theorem equations_printed (read : List Equation) :
     ((read.map rateEquation).flatMap fun e => Modelica.Print.equation e ++ [.literal ";"]) =
       read.flatMap equationTokens := by
   induction read with
   | nil => rfl
-  | cons _ _ ih => simp only [List.map_cons, List.flatMap_cons, ih]; rfl
+  | cons e _ ih =>
+    simp only [List.map_cons, List.flatMap_cons, ih, equation_printed]
 
 /-- A selected tree prints to the tokens of its record. -/
 theorem select_printed {d : Modelica.AST.StoredDefinition} {m : Model} (h : select d = .ok m) :

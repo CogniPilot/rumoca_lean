@@ -45,16 +45,19 @@ local notation "Yields" => Action.Yields Token.symbol printResult
 
 /-! ### Terminal and reference printers -/
 
-private theorem literal_unique (s : String) :
+private theorem literal_unique (s : String) (nonempty : s ≠ "") :
     ∀ x : Token, x.symbol = .literal s → x = .literal s := by
   intro x same
   cases x with
   | ident _ => cases same
   | number _ => cases same
+  | string _ => cases same
+  | comment _ => exact absurd (Symbol.literal.inj same).symm nonempty
   | literal t => cases same; rfl
 
-private theorem fixed (s : String) : Yields (lit s) (fun _ => [.literal s]) :=
-  Action.Yields.fixed (literal_unique s)
+private theorem fixed (s : String) (nonempty : s ≠ "" := by decide) :
+    Yields (lit s) (fun _ => [.literal s]) :=
+  Action.Yields.fixed (literal_unique s nonempty)
 
 private theorem payload (s : Parser.Symbol) :
     Yields (.terminal s : Action Token) (fun x => [x]) := Action.Yields.terminal s

@@ -190,11 +190,27 @@ certify_source integerRate
 theorem integerRate_rejected :
     Profile.select integerRate.ast = .error ⟨14, "the rate may not be 2"⟩ := by rfl
 
-/- A sign written apart from its rate is an operator application. -/
+/- A rate sign is the leading sign of the arithmetic expression; lexical units
+may be separated by white space. -/
 certify_source separatedSign
   "model M Real x; Real y; equation der(x) = 2.5; der(y) = - 1; end M;"
-theorem separatedSign_rejected :
-    Profile.select separatedSign.ast = .error ⟨21, "the rate must be a number"⟩ := by rfl
+theorem separatedSign_selected :
+    Profile.select separatedSign.ast =
+      .ok (.rates ⟨"M", "x", "y", [], ⟨"x", "2.5"⟩, [⟨"y", "-1"⟩], "M"⟩) := by rfl
+
+/- A comment is lexed with its range but is not admitted yet: no selection
+admits a commented source. -/
+certify_source commented "model M // integrator
+  Real x;
+equation
+  der(x) = 1;
+end M;
+"
+theorem commented_rejected (parsed : AST.selection.Parsed commented.source) : False := by
+  have same : parsed.tree = commented.parsed := Modelica.Parsed.unique _ _
+  have uncommented := parsed.uncommented
+  rw [same] at uncommented
+  exact absurd uncommented (by decide)
 
 /- An empty stored definition. -/
 certify_source empty ""
@@ -226,7 +242,8 @@ theorem empty_rejected :
 #audit axioms arrayState_rejected
 #audit axioms twoSections_rejected
 #audit axioms integerRate_rejected
-#audit axioms separatedSign_rejected
+#audit axioms separatedSign_selected
+#audit axioms commented_rejected
 #audit axioms empty_rejected
 
 end Rumoca.Modelica.ProfileChecks

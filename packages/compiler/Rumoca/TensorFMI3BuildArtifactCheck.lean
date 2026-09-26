@@ -59,7 +59,7 @@ elab "verify_tensor_fmi3_build_files" : command => do
               Rumoca.TensorSourceBuildContract a (String.ofList $(ctx.modelChars)) $(ctx.buildLit)
                 (String.ofList $(ctx.adapterChars)) $(ctx.mdLit) := by
           refine ⟨by rfl, ?_⟩
-          let parsed : Rumoca.ArrayProfile.Parsed $(ctx.src) := ⟨$treeId, Rumoca.squareAst, by rfl⟩
+          let parsed : Rumoca.ArrayProfile.Parsed $(ctx.src) := ⟨$treeId, Rumoca.squareAst, by rfl, by decide⟩
           let a : Rumoca.TensorArtifact $(ctx.inputTerm) :=
             Rumoca.TensorArtifact.ofParsed $(ctx.inputTerm) parsed Rumoca.squareAst_resolved
           have hc : Rumoca.compileTensor $(ctx.inputTerm) = .ok a :=

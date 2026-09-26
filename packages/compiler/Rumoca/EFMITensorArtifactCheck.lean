@@ -34,7 +34,7 @@ def check (input : EFMICheckOptions.Code) : CommandElabM Unit := do
         ∃ a : TensorArtifact $inputTerm, compileTensor $inputTerm = .ok a ∧
           TensorAlgorithmContract a $out := by
       refine ⟨by rfl, by rfl, ?_⟩
-      let parsed : ArrayProfile.Parsed $src := ⟨$treeId, squareAst, by rfl⟩
+      let parsed : ArrayProfile.Parsed $src := ⟨$treeId, squareAst, by rfl, by decide⟩
       let a : TensorArtifact $inputTerm :=
         TensorArtifact.ofParsed $inputTerm parsed squareAst_resolved
       have hc : compileTensor $inputTerm = .ok a :=

@@ -17,7 +17,7 @@ def name (pos : Nat) (what : String) : Token → Except Rejection String
   | .ident s => if predefined s then .error ⟨pos, s!"{what} may not be the predefined type name {s}"⟩
       else .ok s
   | .number s => .error ⟨pos, s!"{what} must be an identifier, not the number {s}"⟩
-  | .literal s => .error ⟨pos, s!"{what} must be an identifier, not {s}"⟩
+  | token => .error ⟨pos, s!"{what} must be an identifier, not {token.text}"⟩
 
 theorem name_ok {pos : Nat} {what s : String} {t : Token} (h : name pos what t = .ok s) :
     t = .ident s := by
@@ -27,8 +27,7 @@ theorem name_ok {pos : Nat} {what s : String} {t : Token} (h : name pos what t =
     split at h
     · contradiction
     · cases h; rfl
-  | number _ => cases h
-  | literal _ => cases h
+  | number _ | literal _ | string _ | comment _ => cases h
 
 /-- A bare unindexed, undotted reference whose token is the given one. -/
 def bare (token : Token) : Expr := .reference ⟨false, [⟨token, none⟩]⟩

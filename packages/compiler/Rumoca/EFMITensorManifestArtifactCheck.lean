@@ -116,7 +116,7 @@ def check (input : EFMICheckOptions.Code) (files : EFMI.Directory.Snapshot) : Co
           TensorExecutedManifestContract a ⟨$cid, $aid, $pid, $date⟩ $alg $out $ax $px $cx := by
       obtain ⟨g₁, g₂, a, compiled, code⟩ := $productionRoot:ident
       refine ⟨g₁, g₂, a, compiled, ?_⟩
-      let parsed : ArrayProfile.Parsed $srcLit := ⟨$treeId, squareAst, by rfl⟩
+      let parsed : ArrayProfile.Parsed $srcLit := ⟨$treeId, squareAst, by rfl, by decide⟩
       have hsame : a = TensorArtifact.ofParsed $inputTerm parsed squareAst_resolved :=
         Except.ok.inj (compiled.symm.trans
           (compileTensor_eq_parsed $inputTerm parsed squareAst_resolved))

@@ -33,8 +33,9 @@ private def parseExp : List Char → Option Int
   | _ => none
 
 /-- Recognize a signed decimal literal spelling and record its base-ten value.
-A malformed spelling (an ordinary identifier, a trailing point, a bare `e`)
-yields `none`, which resolution reports. -/
+The unsigned part is an MLS 3.7 UNSIGNED-INTEGER or UNSIGNED-REAL, so `2.` and
+`.5` are accepted. A malformed spelling (an ordinary identifier, a lone point,
+a bare `e`) yields `none`, which resolution reports. -/
 def parseDecimal (s : String) : Option Decimal :=
   let cs0 := s.toList
   let (sign, cs1) : Int × List Char := match cs0 with
@@ -42,14 +43,13 @@ def parseDecimal (s : String) : Option Decimal :=
     | '+' :: r => (1, r)
     | _ => (1, cs0)
   let (intDs, cs2) := takeDigits cs1
-  if intDs = [] then none
-  else match cs2 with
-    | '.' :: r =>
-        let (fracDs, cs3) := takeDigits r
-        if fracDs = [] then none
-        else (parseExp cs3).map fun e =>
-          ⟨sign, natOfDigits (intDs ++ fracDs), e - (fracDs.length : Int)⟩
-    | _ => (parseExp cs2).map fun e => ⟨sign, natOfDigits intDs, e⟩
+  match cs2 with
+  | '.' :: r =>
+      let (fracDs, cs3) := takeDigits r
+      if intDs = [] ∧ fracDs = [] then none
+      else (parseExp cs3).map fun e =>
+        ⟨sign, natOfDigits (intDs ++ fracDs), e - (fracDs.length : Int)⟩
+  | _ => if intDs = [] then none else (parseExp cs2).map fun e => ⟨sign, natOfDigits intDs, e⟩
 
 /-- Rate magnitude admission: the exact value `|sign| * mantissa * 10 ^ power`
 is below `2^969`. Its nearest binary64 value is then below `2^970`, half the
@@ -67,6 +67,9 @@ def Decimal.admitted (d : Decimal) : Bool :=
 example : parseDecimal "2.5" = some ⟨1, 25, -1⟩ := by decide
 example : parseDecimal "-1" = some ⟨-1, 1, 0⟩ := by decide
 example : parseDecimal "x" = none := by decide
+example : parseDecimal "2." = some ⟨1, 2, 0⟩ := by decide
+example : parseDecimal ".5" = some ⟨1, 5, -1⟩ := by decide
+example : parseDecimal "." = none := by decide
 example : (parseDecimal "2.5").any Decimal.admitted = true := by decide +kernel
 example : (parseDecimal "1e300").any Decimal.admitted = false := by decide +kernel
 
