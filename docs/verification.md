@@ -1,5 +1,79 @@
 # Exact verification contract
 
+**Instance restore, calculated reads, typed constants, C predicates and the declared FMU interface (full gate passed):**
+Two reviewed lanes were merged and gated together at `5db7fb5`.
+
+MISRA lane. A0: the TensorSquare and ConstantRates factories and `fmi3Reset`
+now restore every instance member through one block built from the record
+layout (x, u, dx, J, clocks, stop, stopDefined, mode); the earlier frame
+theorems that proved `u`, `dx` and `J` keep old contents on slot reuse were
+the incomplete statements behind a real observable defect (a new instance in
+a reused slot, and an instance after Reset, kept the previous run's `u`;
+reproduced natively on the old bytes, absent on the new). `TensorInstanceInit`
+and `TensorReset` now cover every member; `TensorStartValues.restored_start`
+ties each restored state-shaped region to the modelDescription start entries.
+Calculated variables are evaluated when read: every calculated-variable arm
+calls its kernel entry before reading (one shared call constructor for the
+tensor derivative, J and DoStep, and the constant rates), and `derivativeRead`
+/`outputRead` are contract fields consumed by the FMU build contracts. A1:
+floating objects are stored and compared with floating constants (`0e0`,
+`1e0`, `1000000e0`; exactness proved); 19/31/25 sites; three headers that
+named the removed integer constant changed (`StepGuards.grid_condition`,
+`ErrorBodies.nominals_reject_run`, `ErrorCalls.nominals_reject_reaches`); the
+`((double)k)` spelling still coexists (open). B1/B4: `allocationFree` and
+`featureFree` lexical predicates over the actual bytes are kernel-checked
+inside the existing checkers for the three FMU `fmi3.c`/`model.c` and both
+eFMU `production.c`; 27 ledger rows move to "no occurrence, proved". D1 and
+D2 deviation records and 14 category corrections are entered in
+dev/misra-c-2025.md.
+
+Interface lane (SR10, SR11, SR12): one resolved declaration list per parsed
+source (core `Solve/Interface`, `Array/Interface`, `Constant/Interface`) feeds
+one metadata builder (`DeclaredMetadata`) for variables, value references
+(time 0, then declarations in source order, each state followed by its
+derivative), Output/ContinuousStateDerivative/InitialUnknown entries stated on
+the rendered XML, and one Float64 dispatch table (`Float64Table`) for every
+adapter; the hardcoded tensor/constant metadata, the per-reference tensor
+dispatch chain and the ConstantRates vector packing in the Solve IR are
+deleted (the contiguous record layout lives only in backend-fmi3
+`ConstantRecord`). Arrays are exported with their declared dimensions,
+scalars as scalars. `exported_interface` (declared names, causalities and
+dimensions equal the exported ones, over the lexed source tokens) and the
+offset bounds are required fields of all three build contracts;
+`Interface.Closed` rejects unresolvable dependency names; `names_nodup`
+replaces `time_distinct`. The constant path now runs the MLS §8.6
+initialization notices per state (`Initial` is the free relation with
+`initial_free`; `Completed` is the former +0 relation; the start value comes
+from the plan). TensorSquare's `x` is exported as `output` with its Output
+entry; ConstantRates exports scalar `x`, `der(x)`, `y`, `der(y)` at value
+references 1-4 and its adapter gains the offset arms. Restated without
+weakening: the Float64 per-reference and instance theorems (table lookup
+hypothesis), `derivativeRead` (per scalar state), `restored_start`,
+`initialization_chain`/`initialization_correct`/`prepare_correct`;
+`tests/fmi3.sh` mutates the `0e0` reset constant the adapters now emit.
+
+Owner-v1 (`lake build audit`) passed 4,543 jobs and 7,798
+approved reports; 1,721 prior roots retained, 3 removed with
+restated subjects, 221 new: 1,942 required. Required full gate
+`build/misra-interface-gate/full-v1/` passed at `5db7fb5`, exit 0, post-audit exit 0 under
+`LC_ALL=C`: 2,720 frozen tracked inputs, 9,768 complete
+approved reports, all 1,942 selected roots and four retained FMU roots.
+Three matrices passed 75/75 functions, zero discrepancies/unexpected results.
+Adapters and model descriptions match the frozen predictions byte for byte
+(Integrator `fmi3.c` 0e85f3e0…, TensorSquare `fmi3.c` e36d0560…, ConstantRates
+`fmi3.c` 01c42c32…; TensorSquare XML 7c127064…, ConstantRates XML b06925f4…;
+Integrator XML and all three `model.c` unchanged); both eFMU archives are
+byte-identical to the previous gate (the first post-audit attempt failed only
+at its final line because the derived baseline had not copied the prior
+archive hash list; it is retained as `post-exit-attempt1-missing-baseline-archives`,
+and `post-audit-v2.sh` compares against the prior gate's list). Closed: SR10, SR11, SR12, and the
+slot-reuse defect (recorded as K02.3a). Recorded open: SR08-B (only the
+setter-then-exit composition remains for ConstantRates), SR13 (tensor and
+constant `fmi3EnterInitializationMode` ignore startTime/stopTime; fmi.txt
+1813 requires an error past a defined stopTime), the empty-selection
+Clock/Interval/Shift/OutputDerivatives calls (dev/standards-review.md:2730),
+the coexisting floating-constant spellings, and multi-instance interleaving.
+
 **GALEC error signaling, N01 closed; initialization composition; scalar lifetimes (one full gate passed):**
 Three reviewed lanes were merged and gated together at `682f88f`.
 
